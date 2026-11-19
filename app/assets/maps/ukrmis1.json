@@ -1,0 +1,196 @@
+{
+  "file": "ukrmis1.map",
+  "size": 37708880,
+  "header": "OSWMap13.Map.Ver[0.0]Build.Ver[2.0.0.2843]Core.Ver[1]",
+  "uid": "60209325056515",
+  "markers": {
+    "GameMapSnapShotBegin": 97,
+    "GameMapSnapShotEnd": 125,
+    "GameMapRecordBegin": 147,
+    "Terrain": 15031378,
+    "Resource": 15029613,
+    "Object": 7279911,
+    "Player": 7264881,
+    "Unit": 7267535
+  },
+  "placements_total": 18008,
+  "nations": {
+    "aus": 1752,
+    "fra": 1656,
+    "eng": 1608,
+    "spa": 2005,
+    "rus": 1607,
+    "ukr": 915,
+    "pol": 1640,
+    "swe": 1512,
+    "pru": 1512,
+    "ven": 1512,
+    "tur": 1081,
+    "alg": 664
+  },
+  "top_placements": [
+    {
+      "name": "aussta",
+      "count": 576
+    },
+    {
+      "name": "polsta",
+      "count": 576
+    },
+    {
+      "name": "frasta",
+      "count": 528
+    },
+    {
+      "name": "engsta",
+      "count": 480
+    },
+    {
+      "name": "spasta",
+      "count": 480
+    },
+    {
+      "name": "russta",
+      "count": 480
+    },
+    {
+      "name": "swesta",
+      "count": 480
+    },
+    {
+      "name": "prusta",
+      "count": 480
+    },
+    {
+      "name": "vensta",
+      "count": 480
+    },
+    {
+      "name": "ausba2",
+      "count": 416
+    },
+    {
+      "name": "fraba2",
+      "count": 416
+    },
+    {
+      "name": "engba2",
+      "count": 416
+    },
+    {
+      "name": "spaba2",
+      "count": 320
+    },
+    {
+      "name": "rusba2",
+      "count": 320
+    },
+    {
+      "name": "polba2",
+      "count": 320
+    },
+    {
+      "name": "sweba2",
+      "count": 320
+    },
+    {
+      "name": "pruba2",
+      "count": 320
+    },
+    {
+      "name": "venba2",
+      "count": 320
+    },
+    {
+      "name": "eurtow",
+      "count": 320
+    },
+    {
+      "name": "ausaca",
+      "count": 288
+    },
+    {
+      "name": "fraaca",
+      "count": 288
+    },
+    {
+      "name": "engaca",
+      "count": 288
+    },
+    {
+      "name": "spaaca",
+      "count": 288
+    },
+    {
+      "name": "rusaca",
+      "count": 288
+    },
+    {
+      "name": "polaca",
+      "count": 288
+    },
+    {
+      "name": "sweaca",
+      "count": 288
+    },
+    {
+      "name": "pruaca",
+      "count": 288
+    },
+    {
+      "name": "venaca",
+      "count": 288
+    },
+    {
+      "name": "turaca",
+      "count": 240
+    },
+    {
+      "name": "spakh",
+      "count": 240
+    },
+    {
+      "name": "turbar",
+      "count": 227
+    },
+    {
+      "name": "ausbar",
+      "count": 224
+    },
+    {
+      "name": "ukraca",
+      "count": 224
+    },
+    {
+      "name": "ukrsta",
+      "count": 210
+    },
+    {
+      "name": "spakh5",
+      "count": 203
+    },
+    {
+      "name": "ausart",
+      "count": 192
+    },
+    {
+      "name": "fraart",
+      "count": 192
+    },
+    {
+      "name": "engart",
+      "count": 192
+    },
+    {
+      "name": "spaart",
+      "count": 192
+    },
+    {
+      "name": "rusart",
+      "count": 192
+    }
+  ],
+  "terrain_block_offset": 15031378,
+  "resource_block_offset": 15029613,
+  "note": "Terrain heightmap/tile grid is a closed binary format; offsets above mark where the opaque blocks start. Placements above are the readable ASCII names."
+}

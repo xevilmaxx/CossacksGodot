@@ -1,0 +1,45 @@
+{
+  "id": "ev_80070fad8d18eb39f6afaa2c5177d8356f8cf8aeb99e8262fdc01a16bc92715d",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x47c804"
+  },
+  "result": {
+    "engine": "ghidra",
+    "entry": "0x47c804",
+    "function": "FUN_0047c804",
+    "pseudo_code": "\r\nvoid FUN_0047c804(int param_1,int param_2,undefined4 *param_3)\r\n\r\n{\r\n  undefined1 *puVar1;\r\n  char cVar2;\r\n  int *piVar3;\r\n  undefined4 *in_FS_OFFSET;\r\n  undefined4 uStack_20;\r\n  undefined1 *puStack_1c;\r\n  undefined1 *puStack_18;\r\n  \r\n  puStack_18 = (undefined1 *)0x47c817;\r\n  piVar3 = (int *)(**(code **)(param_2 + -0xc))();\r\n  *param_3 = piVar3;\r\n  puStack_1c = &LAB_0047c842;\r\n  uStack_20 = *in_FS_OFFSET;\r\n  *in_FS_OFFSET = &uStack_20;\r\n  puStack_18 = (undefined1 *)((int)register0x00000010 + -4);\r\n  (**(code **)(*piVar3 + 0x2c))(piVar3,0xffffffff,param_1);\r\n  puVar1 = puStack_18;\r\n  *in_FS_OFFSET = uStack_20;\r\n  if (*(int *)(param_1 + 0x44) == 0) {\r\n    puStack_18 = (undefined1 *)0x47c86b;\r\n    cVar2 = FUN_0040470c(piVar3,PTR_PTR_00472090,puVar1);\r\n    if (cVar2 != '\\0') {\r\n      puStack_18 = (undefined1 *)0x47c878;\r\n      FUN_00492300(piVar3);\r\n      *(int **)(param_1 + 0x44) = piVar3;\r\n    }\r\n  }\r\n  return;\r\n}\r\n\r\n",
+    "signature": "void FUN_0047c804(int param_1,int param_2,undefined4 *param_3);"
+  },
+  "summary": "Pseudo-C for FUN_0047c804 from the Deep engine (34 lines).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "ghidra",
+    "engine_version": "12.2",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "deep_engine",
+      "message": "the pseudo-C comes from the external Deep engine (Ghidra), not the original source"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x47c804"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

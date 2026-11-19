@@ -1,0 +1,42 @@
+{
+  "id": "ev_b22e72725d59bc07a2ab93772e850a59872ddcc5a9b6ad335160530bfda05b92",
+  "subject": {
+    "kind": "pe",
+    "sha256": "68474ddde43fe4aa084613f01946734a7eea6d511fb98dd81326e8be2ed250ab",
+    "name": "editor.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 20,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "Damage"
+  },
+  "result": {
+    "matches": [],
+    "total": 0
+  },
+  "summary": "0 strings match \"Damage\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [],
+  "links": []
+}

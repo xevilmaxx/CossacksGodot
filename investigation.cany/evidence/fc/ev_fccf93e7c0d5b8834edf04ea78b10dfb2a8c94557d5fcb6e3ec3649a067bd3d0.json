@@ -1,0 +1,42 @@
+{
+  "id": "ev_fccf93e7c0d5b8834edf04ea78b10dfb2a8c94557d5fcb6e3ec3649a067bd3d0",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 20,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "FreeRotation"
+  },
+  "result": {
+    "matches": [],
+    "total": 0
+  },
+  "summary": "0 strings match \"FreeRotation\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [],
+  "links": []
+}

@@ -1,0 +1,553 @@
+{
+  "id": "ev_889f400f97644b24ec261541f6afb813908d1bb29a725b0f42ab3b353b425485",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_functions_list",
+  "params": {
+    "limit": 50,
+    "offset": 0
+  },
+  "result": {
+    "functions": [
+      {
+        "address": "0x401000",
+        "blocks": 35,
+        "found_by": "code_pointer",
+        "instructions": 194,
+        "name": "sub_401000",
+        "name_source": "generated",
+        "size": 432,
+        "thunk_of": null
+      },
+      {
+        "address": "0x401084",
+        "blocks": 31,
+        "found_by": "code_pointer",
+        "instructions": 160,
+        "name": "sub_401084",
+        "name_source": "generated",
+        "size": 347,
+        "thunk_of": null
+      },
+      {
+        "address": "0x401118",
+        "blocks": 22,
+        "found_by": "code_pointer",
+        "instructions": 128,
+        "name": "sub_401118",
+        "name_source": "generated",
+        "size": 264,
+        "thunk_of": null
+      },
+      {
+        "address": "0x401134",
+        "blocks": 20,
+        "found_by": "code_pointer",
+        "instructions": 118,
+        "name": "sub_401134",
+        "name_source": "generated",
+        "size": 236,
+        "thunk_of": null
+      },
+      {
+        "address": "0x4012e8",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "CloseHandle@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "CloseHandle"
+      },
+      {
+        "address": "0x4012f0",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "CreateFileA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "CreateFileA"
+      },
+      {
+        "address": "0x4012f8",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetFileType@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetFileType"
+      },
+      {
+        "address": "0x401300",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetFileSize@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetFileSize"
+      },
+      {
+        "address": "0x401308",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetStdHandle@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetStdHandle"
+      },
+      {
+        "address": "0x401310",
+        "blocks": 1,
+        "found_by": "code_pointer",
+        "instructions": 1,
+        "name": "RaiseException@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "RaiseException"
+      },
+      {
+        "address": "0x401318",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "ReadFile@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "ReadFile"
+      },
+      {
+        "address": "0x401320",
+        "blocks": 1,
+        "found_by": "code_pointer",
+        "instructions": 1,
+        "name": "RtlUnwind@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "RtlUnwind"
+      },
+      {
+        "address": "0x401328",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "SetEndOfFile@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "SetEndOfFile"
+      },
+      {
+        "address": "0x401330",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "SetFilePointer@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "SetFilePointer"
+      },
+      {
+        "address": "0x401338",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "UnhandledExceptionFilter@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "UnhandledExceptionFilter"
+      },
+      {
+        "address": "0x401340",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "WriteFile@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "WriteFile"
+      },
+      {
+        "address": "0x401348",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "CharNextA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "CharNextA"
+      },
+      {
+        "address": "0x401350",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "CreateThread@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "CreateThread"
+      },
+      {
+        "address": "0x401358",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "ExitThread@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "ExitThread"
+      },
+      {
+        "address": "0x401360",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "ExitProcess@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "ExitProcess"
+      },
+      {
+        "address": "0x401368",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "MessageBoxA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "MessageBoxA"
+      },
+      {
+        "address": "0x401370",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "FindClose@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "FindClose"
+      },
+      {
+        "address": "0x401378",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "FindFirstFileA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "FindFirstFileA"
+      },
+      {
+        "address": "0x401380",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "FreeLibrary@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "FreeLibrary"
+      },
+      {
+        "address": "0x401388",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetCommandLineA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetCommandLineA"
+      },
+      {
+        "address": "0x401390",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetLastError@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetLastError"
+      },
+      {
+        "address": "0x401398",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetLocaleInfoA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetLocaleInfoA"
+      },
+      {
+        "address": "0x4013a0",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetModuleFileNameA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetModuleFileNameA"
+      },
+      {
+        "address": "0x4013a8",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetModuleHandleA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetModuleHandleA"
+      },
+      {
+        "address": "0x4013b0",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetProcAddress@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetProcAddress"
+      },
+      {
+        "address": "0x4013c0",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetThreadLocale@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetThreadLocale"
+      },
+      {
+        "address": "0x4013c8",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "LoadLibraryExA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "LoadLibraryExA"
+      },
+      {
+        "address": "0x4013d0",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "LoadStringA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "LoadStringA"
+      },
+      {
+        "address": "0x4013d8",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "lstrcpynA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "lstrcpynA"
+      },
+      {
+        "address": "0x4013e0",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "lstrlenA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "lstrlenA"
+      },
+      {
+        "address": "0x4013e8",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "MultiByteToWideChar@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "MultiByteToWideChar"
+      },
+      {
+        "address": "0x4013f0",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "RegCloseKey@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "RegCloseKey"
+      },
+      {
+        "address": "0x4013f8",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "RegOpenKeyExA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "RegOpenKeyExA"
+      },
+      {
+        "address": "0x401400",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "RegQueryValueExA@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "RegQueryValueExA"
+      },
+      {
+        "address": "0x401408",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "WideCharToMultiByte@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "WideCharToMultiByte"
+      },
+      {
+        "address": "0x401418",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "SysAllocStringLen@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "SysAllocStringLen"
+      },
+      {
+        "address": "0x401420",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "SysReAllocStringLen@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "SysReAllocStringLen"
+      },
+      {
+        "address": "0x401428",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "SysFreeString@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "SysFreeString"
+      },
+      {
+        "address": "0x401430",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "InterlockedIncrement@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "InterlockedIncrement"
+      },
+      {
+        "address": "0x401450",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "QueryPerformanceCounter@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "QueryPerformanceCounter"
+      },
+      {
+        "address": "0x401458",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "GetTickCount@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "GetTickCount"
+      },
+      {
+        "address": "0x401484",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "LocalAlloc@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "LocalAlloc"
+      },
+      {
+        "address": "0x4014a4",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "InitializeCriticalSection@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "InitializeCriticalSection"
+      },
+      {
+        "address": "0x4014ac",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "EnterCriticalSection@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "EnterCriticalSection"
+      },
+      {
+        "address": "0x4014b4",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "LeaveCriticalSection@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "LeaveCriticalSection"
+      }
+    ],
+    "total": 18918
+  },
+  "summary": "18918 functions (showing 50).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "instruction_limit",
+      "message": "function discovery stopped after 6000000 instructions; the function list is incomplete and some code is not analysed"
+    },
+    {
+      "code": "indirect_jumps_unresolved",
+      "message": "1238 indirect jumps could not be resolved; code they reach may be missing"
+    },
+    {
+      "code": "stripped_binary",
+      "message": "no local symbols: most function names are generated (sub_…)"
+    },
+    {
+      "code": "static_analysis_only",
+      "message": "functions reached only through computed pointers or at run time may be missing; absence is not proof"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 50,
+    "total": 18918,
+    "next_offset": 50
+  },
+  "locations": [],
+  "links": []
+}

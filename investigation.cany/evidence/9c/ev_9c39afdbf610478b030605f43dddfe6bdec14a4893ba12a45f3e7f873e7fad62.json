@@ -1,0 +1,55 @@
+{
+  "id": "ev_9c39afdbf610478b030605f43dddfe6bdec14a4893ba12a45f3e7f873e7fad62",
+  "subject": {
+    "kind": "pe",
+    "sha256": "68474ddde43fe4aa084613f01946734a7eea6d511fb98dd81326e8be2ed250ab",
+    "name": "editor.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 20,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "Cossack"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0xa9c292",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Cossacks III Editor"
+      },
+      {
+        "address": "0xb6e714",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Cossacks 3"
+      }
+    ],
+    "total": 2
+  },
+  "summary": "2 strings match \"Cossack\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 2,
+    "total": 2
+  },
+  "locations": [],
+  "links": []
+}

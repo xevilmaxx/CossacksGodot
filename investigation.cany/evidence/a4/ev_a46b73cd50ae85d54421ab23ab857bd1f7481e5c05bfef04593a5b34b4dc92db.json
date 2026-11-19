@@ -1,0 +1,48 @@
+{
+  "id": "ev_a46b73cd50ae85d54421ab23ab857bd1f7481e5c05bfef04593a5b34b4dc92db",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_xrefs_list",
+  "params": {
+    "address": "0x958d1a",
+    "limit": 200,
+    "offset": 0
+  },
+  "result": {
+    "address": "0x958d1a",
+    "name": null,
+    "references_from": [],
+    "references_to": [],
+    "total_to": 0
+  },
+  "summary": "0x958d1a is referenced from 0 places and refers to 0.",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "static_references",
+      "message": "references made through computed pointers at run time are not seen"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x958d1a"
+    }
+  ],
+  "links": []
+}

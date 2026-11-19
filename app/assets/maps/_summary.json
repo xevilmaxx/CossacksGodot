@@ -1,0 +1,91 @@
+{
+  "maps": [
+    {
+      "file": "ausmis1.map",
+      "json": "ausmis1.json",
+      "size": 43950027,
+      "placements": 18031,
+      "nations": {
+        "aus": 1829,
+        "fra": 1656,
+        "eng": 1608,
+        "spa": 2004,
+        "rus": 1592,
+        "ukr": 857,
+        "pol": 1608,
+        "swe": 1512,
+        "pru": 1512,
+        "ven": 1512,
+        "tur": 1126,
+        "alg": 664
+      }
+    },
+    {
+      "file": "ukrmis1.map",
+      "json": "ukrmis1.json",
+      "size": 37708880,
+      "placements": 18008,
+      "nations": {
+        "aus": 1752,
+        "fra": 1656,
+        "eng": 1608,
+        "spa": 2005,
+        "rus": 1607,
+        "ukr": 915,
+        "pol": 1640,
+        "swe": 1512,
+        "pru": 1512,
+        "ven": 1512,
+        "tur": 1081,
+        "alg": 664
+      }
+    },
+    {
+      "file": "rusmis1.map",
+      "json": "rusmis1.json",
+      "size": 37362727,
+      "placements": 17780,
+      "nations": {
+        "aus": 1752,
+        "fra": 1656,
+        "eng": 1608,
+        "spa": 1809,
+        "rus": 1805,
+        "ukr": 860,
+        "pol": 1608,
+        "swe": 1512,
+        "pru": 1512,
+        "ven": 1512,
+        "tur": 938,
+        "alg": 664
+      }
+    },
+    {
+      "file": "battle1.map",
+      "json": "battle1.json",
+      "size": 56117715,
+      "placements": 37854,
+      "nations": {
+        "aus": 2043,
+        "fra": 1890,
+        "eng": 1827,
+        "spa": 1827,
+        "rus": 1809,
+        "ukr": 1062,
+        "pol": 1827,
+        "swe": 1827,
+        "pru": 1719,
+        "ven": 1719,
+        "net": 1719,
+        "por": 1827,
+        "pie": 1719,
+        "sax": 1719,
+        "hun": 1827,
+        "sco": 1188,
+        "tur": 1449,
+        "alg": 927
+      }
+    }
+  ],
+  "format": "closed binary (OSWMap13), placements extracted as ASCII"
+}

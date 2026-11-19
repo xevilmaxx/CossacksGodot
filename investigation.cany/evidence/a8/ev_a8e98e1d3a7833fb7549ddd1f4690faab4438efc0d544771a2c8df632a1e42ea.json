@@ -1,0 +1,119 @@
+{
+  "id": "ev_a8e98e1d3a7833fb7549ddd1f4690faab4438efc0d544771a2c8df632a1e42ea",
+  "subject": {
+    "kind": "pe",
+    "sha256": "68474ddde43fe4aa084613f01946734a7eea6d511fb98dd81326e8be2ed250ab",
+    "name": "editor.exe"
+  },
+  "operation": "core_target_triage",
+  "params": {
+    "path": null
+  },
+  "result": {
+    "architecture": "x86",
+    "bits": 32,
+    "dotnet_arch": null,
+    "entry_point": "0xa259b8",
+    "format": "pe",
+    "format_name": "PE (Windows)",
+    "kind": "executable",
+    "libraries": [
+      "GLU32.dll",
+      "PowrProf.dll",
+      "advapi32.dll",
+      "comctl32.dll",
+      "comdlg32.dll",
+      "d3d9.dll",
+      "gdi32.dll",
+      "imm32.dll",
+      "kernel32.dll",
+      "ole32.dll",
+      "oleaut32.dll",
+      "opengl32.dll",
+      "shell32.dll",
+      "user32.dll",
+      "version.dll",
+      "wininet.dll",
+      "winmm.dll",
+      "winspool.drv",
+      "wsock32.dll"
+    ],
+    "next_steps": [
+      {
+        "tool": "core_overview_show",
+        "why": "check section entropy; packed code must be unpacked (run in a sandbox) before static analysis helps"
+      },
+      {
+        "tool": "native_functions_list",
+        "why": "every function we found"
+      },
+      {
+        "tool": "native_strings_find",
+        "why": "find text the program shows or uses"
+      },
+      {
+        "tool": "native_function_study",
+        "why": "a full dossier on one function (start with main or the entry point)"
+      },
+      {
+        "tool": "core_feature_find",
+        "why": "follow a word you see in the app to the code behind it"
+      },
+      {
+        "tool": "native_pe_resources_list",
+        "why": "icons, version information and the manifest"
+      }
+    ],
+    "operating_system": "Windows",
+    "plain_english": "editor.exe is a program for Windows, built for x86 (32-bit). It looks like it was made with Delphi or C++Builder. It appears to be packed or protected (Compressed or encrypted code), so most of its real code is hidden until it runs. Its internal names were removed (stripped), so most functions will have generated names.",
+    "recommended_toolsets": [
+      "core",
+      "native",
+      "formats"
+    ],
+    "stripped": true,
+    "symbol_table_stripped": true,
+    "toolchain_hints": [
+      {
+        "category": "language",
+        "evidence": "Borland/Embarcadero markers",
+        "id": "delphi",
+        "label": "Delphi or C++Builder",
+        "strength": "weak"
+      },
+      {
+        "category": "packer",
+        "evidence": "section .bind has entropy 7.96 bits/byte",
+        "id": "high_entropy",
+        "label": "Compressed or encrypted code",
+        "strength": "weak"
+      }
+    ]
+  },
+  "summary": "editor.exe is a program for Windows, built for x86 (32-bit). It looks like it was made with Delphi or C++Builder. It appears to be packed or protected (Compressed or encrypted code), so most of its real code is hidden until it runs. Its internal names were removed (stripped), so most functions will have generated names.",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "heuristic_hints",
+      "message": "toolchain and packer hints come from markers that can be faked or borrowed"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0xa259b8",
+      "label": "entry point"
+    }
+  ],
+  "links": []
+}

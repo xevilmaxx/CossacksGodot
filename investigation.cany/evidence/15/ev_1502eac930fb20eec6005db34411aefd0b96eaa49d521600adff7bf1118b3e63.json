@@ -1,0 +1,363 @@
+{
+  "id": "ev_1502eac930fb20eec6005db34411aefd0b96eaa49d521600adff7bf1118b3e63",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_browse",
+  "params": {
+    "address": null,
+    "limit": 40,
+    "offset": 0,
+    "section": null
+  },
+  "result": {
+    "strings": [
+      {
+        "address": "0x8f207a",
+        "encoding": "ascii",
+        "file_offset": 5182074,
+        "references": 0,
+        "section": "DATA",
+        "text": "$@"
+      },
+      {
+        "address": "0x8f207c",
+        "encoding": "ascii",
+        "file_offset": 5182076,
+        "references": 1,
+        "section": "DATA",
+        "text": "Error"
+      },
+      {
+        "address": "0x8f2084",
+        "encoding": "ascii",
+        "file_offset": 5182084,
+        "references": 3,
+        "section": "DATA",
+        "text": "Runtime error     at 00000000"
+      },
+      {
+        "address": "0x8f20a4",
+        "encoding": "ascii",
+        "file_offset": 5182116,
+        "references": 0,
+        "section": "DATA",
+        "text": "0123456789ABCDEF"
+      },
+      {
+        "address": "0x8f2896",
+        "encoding": "ascii",
+        "file_offset": 5184150,
+        "references": 0,
+        "section": "DATA",
+        "text": "@v:k"
+      },
+      {
+        "address": "0x8f28b0",
+        "encoding": "ascii",
+        "file_offset": 5184176,
+        "references": 1,
+        "section": "DATA",
+        "text": "%.*d|"
+      },
+      {
+        "address": "0x8f2a4a",
+        "encoding": "ascii",
+        "file_offset": 5184586,
+        "references": 0,
+        "section": "DATA",
+        "text": "AuthenticAMD"
+      },
+      {
+        "address": "0x8f2a57",
+        "encoding": "ascii",
+        "file_offset": 5184599,
+        "references": 0,
+        "section": "DATA",
+        "text": "CentaurHauls"
+      },
+      {
+        "address": "0x8f2a64",
+        "encoding": "ascii",
+        "file_offset": 5184612,
+        "references": 0,
+        "section": "DATA",
+        "text": "CyrixInstead"
+      },
+      {
+        "address": "0x8f2a71",
+        "encoding": "ascii",
+        "file_offset": 5184625,
+        "references": 0,
+        "section": "DATA",
+        "text": "GenuineIntel"
+      },
+      {
+        "address": "0x8f2a7e",
+        "encoding": "ascii",
+        "file_offset": 5184638,
+        "references": 0,
+        "section": "DATA",
+        "text": "GenuineTMx86"
+      },
+      {
+        "address": "0x8f2a8b",
+        "encoding": "ascii",
+        "file_offset": 5184651,
+        "references": 0,
+        "section": "DATA",
+        "text": "NexGenDriven"
+      },
+      {
+        "address": "0x8f2a98",
+        "encoding": "ascii",
+        "file_offset": 5184664,
+        "references": 0,
+        "section": "DATA",
+        "text": "RiseRiseRise"
+      },
+      {
+        "address": "0x8f2aa5",
+        "encoding": "ascii",
+        "file_offset": 5184677,
+        "references": 0,
+        "section": "DATA",
+        "text": "UMC UMC UMC "
+      },
+      {
+        "address": "0x8f2ab2",
+        "encoding": "ascii",
+        "file_offset": 5184690,
+        "references": 0,
+        "section": "DATA",
+        "text": "Geode by NSC"
+      },
+      {
+        "address": "0x8f2abf",
+        "encoding": "ascii",
+        "file_offset": 5184703,
+        "references": 0,
+        "section": "DATA",
+        "text": "SiS SiS SiS"
+      },
+      {
+        "address": "0x8f2b8c",
+        "encoding": "ascii",
+        "file_offset": 5184908,
+        "references": 0,
+        "section": "DATA",
+        "text": " !\"#$%&'()*+,-./0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "address": "0x8f2c6c",
+        "encoding": "ascii",
+        "file_offset": 5185132,
+        "references": 0,
+        "section": "DATA",
+        "text": "%%%%%%%%eeeeeeee        "
+      },
+      {
+        "address": "0x8f2cbc",
+        "encoding": "ascii",
+        "file_offset": 5185212,
+        "references": 0,
+        "section": "DATA",
+        "text": "eeeeeeeeeeeeeeee                "
+      },
+      {
+        "address": "0x8f2ce4",
+        "encoding": "ascii",
+        "file_offset": 5185252,
+        "references": 0,
+        "section": "DATA",
+        "text": "eeeeeeee        "
+      },
+      {
+        "address": "0x8f2cfc",
+        "encoding": "ascii",
+        "file_offset": 5185276,
+        "references": 0,
+        "section": "DATA",
+        "text": "eeeeeeee        `]A"
+      },
+      {
+        "address": "0x8f2e1c",
+        "encoding": "ascii",
+        "file_offset": 5185564,
+        "references": 0,
+        "section": "DATA",
+        "text": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~"
+      },
+      {
+        "address": "0x8f3073",
+        "encoding": "ascii",
+        "file_offset": 5186163,
+        "references": 0,
+        "section": "DATA",
+        "text": "\n\n\n\n\n\n\n\n\n\n"
+      },
+      {
+        "address": "0x8f30fb",
+        "encoding": "ascii",
+        "file_offset": 5186299,
+        "references": 0,
+        "section": "DATA",
+        "text": "\n\n\n\n\n\n\n\n\n\n"
+      },
+      {
+        "address": "0x8f31b8",
+        "encoding": "ascii",
+        "file_offset": 5186488,
+        "references": 1,
+        "section": "DATA",
+        "text": "TPF0"
+      },
+      {
+        "address": "0x8f321b",
+        "encoding": "ascii",
+        "file_offset": 5186587,
+        "references": 1,
+        "section": "DATA",
+        "text": "\rMS Sans Serif"
+      },
+      {
+        "address": "0x8f3f8f",
+        "encoding": "ascii",
+        "file_offset": 5190031,
+        "references": 0,
+        "section": "DATA",
+        "text": "\t deflate 1.0.4 Copyright 1995-1996 Jean-loup Gailly "
+      },
+      {
+        "address": "0x8f403d",
+        "encoding": "ascii",
+        "file_offset": 5190205,
+        "references": 1,
+        "section": "DATA",
+        "text": "1.0.4"
+      },
+      {
+        "address": "0x8f4048",
+        "encoding": "ascii",
+        "file_offset": 5190216,
+        "references": 1,
+        "section": "DATA",
+        "text": "1.0.4"
+      },
+      {
+        "address": "0x8f404e",
+        "encoding": "ascii",
+        "file_offset": 5190222,
+        "references": 0,
+        "section": "DATA",
+        "text": "unknown compression method"
+      },
+      {
+        "address": "0x8f4069",
+        "encoding": "ascii",
+        "file_offset": 5190249,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid window size"
+      },
+      {
+        "address": "0x8f407d",
+        "encoding": "ascii",
+        "file_offset": 5190269,
+        "references": 0,
+        "section": "DATA",
+        "text": "incorrect header check"
+      },
+      {
+        "address": "0x8f4094",
+        "encoding": "ascii",
+        "file_offset": 5190292,
+        "references": 0,
+        "section": "DATA",
+        "text": "need dictionary"
+      },
+      {
+        "address": "0x8f40a4",
+        "encoding": "ascii",
+        "file_offset": 5190308,
+        "references": 0,
+        "section": "DATA",
+        "text": "incorrect data check"
+      },
+      {
+        "address": "0x8f40bc",
+        "encoding": "ascii",
+        "file_offset": 5190332,
+        "references": 0,
+        "section": "DATA",
+        "text": " inflate 1.0.4 Copyright 1995-1996 Mark Adler "
+      },
+      {
+        "address": "0x8f42d8",
+        "encoding": "ascii",
+        "file_offset": 5190872,
+        "references": 1,
+        "section": "DATA",
+        "text": "oversubscribed dynamic bit lengths tree"
+      },
+      {
+        "address": "0x8f4300",
+        "encoding": "ascii",
+        "file_offset": 5190912,
+        "references": 1,
+        "section": "DATA",
+        "text": "incomplete dynamic bit lengths tree"
+      },
+      {
+        "address": "0x8f4324",
+        "encoding": "ascii",
+        "file_offset": 5190948,
+        "references": 0,
+        "section": "DATA",
+        "text": "oversubscribed literal/length tree"
+      },
+      {
+        "address": "0x8f4347",
+        "encoding": "ascii",
+        "file_offset": 5190983,
+        "references": 0,
+        "section": "DATA",
+        "text": "incomplete literal/length tree"
+      },
+      {
+        "address": "0x8f4540",
+        "encoding": "ascii",
+        "file_offset": 5191488,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid block type"
+      }
+    ],
+    "total": 12073
+  },
+  "summary": "12073 strings (showing 40).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "strings are read from data sections; text built at run time or stored compressed isn't listed"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 40,
+    "total": 12073,
+    "next_offset": 40
+  },
+  "locations": [],
+  "links": []
+}

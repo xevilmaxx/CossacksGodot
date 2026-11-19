@@ -1,0 +1,42 @@
+{
+  "id": "ev_54c518fdd214b8f74a59a05b6b6a2073ab52228af29b903895f116f2522fc747",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_find",
+  "params": {
+    "address": "0x954ad0"
+  },
+  "result": {
+    "address": "0x954ad0",
+    "function": null,
+    "reason": "not in executable code"
+  },
+  "summary": "0x954ad0 isn't inside a known function.",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "not_found",
+      "message": "the address may be in code the engine didn't discover (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x954ad0"
+    }
+  ],
+  "links": []
+}

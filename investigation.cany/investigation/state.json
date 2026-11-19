@@ -1,0 +1,104 @@
+{
+  "revision": 11,
+  "brief": {
+    "question": "Rebuild the singleplayer mode of Cossacks 3 (C:\\Games\\Cossacks 3) as a playable Godot 4 game, matching the original's rules, controls, numbers and feel, using the original game's own assets.",
+    "purpose": "Port singleplayer mode to a new cross-platform Godot project for the person who owns the original game.",
+    "targets": [
+      "C:\\Games\\Cossacks 3",
+      "C:\\Games\\Cossacks 3\\editor.exe",
+      "C:\\Games\\Cossacks 3\\cossacks.ini"
+    ],
+    "constraints": [
+      "Never modify anything in C:\\Games\\Cossacks 3",
+      "Only write inside app/",
+      "Godot 4.4.1 + GDScript",
+      "Use the original game's own files for the person's private use"
+    ],
+    "done_when": "A Godot project in app/ that runs singleplayer, passes --screenshot and --self-test, and documents mechanics in MECHANICS.md/mechanics.json with original assets copied in."
+  },
+  "plan": [
+    {
+      "title": "Read the game's own settings and scripts for singleplayer rules",
+      "status": "doing",
+      "why": "authoritative numbers: dmscript.global, unit.script, weapon.script, player.script, hotkeys.cfg, camera.cfg"
+    },
+    {
+      "title": "Decompile the game binary for the movement/fire/damage code",
+      "status": "todo",
+      "why": "the exe is packed; check whether any constants are readable"
+    },
+    {
+      "title": "Copy the original assets the port uses into the project folder",
+      "status": "todo",
+      "why": "textures, icons, sounds and maps must live with the project"
+    },
+    {
+      "title": "Finish the playable port: gather, mines, building, combat, AI, camera, controls",
+      "status": "todo",
+      "why": "two self-test steps still fail"
+    },
+    {
+      "title": "Add the fast command-line test mode and the screenshot option",
+      "status": "todo",
+      "why": "tests must never hang and must be quick"
+    },
+    {
+      "title": "Run the checks and compare against the original",
+      "status": "todo",
+      "why": "rebuild_check lists what still differs"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp_1",
+      "claim": "Game rules live in data/scripts not in cossacks.exe code because exe is packed Delphi stripped",
+      "prediction": "native_strings_find for unit names returns 0, pseudocode shows loader only",
+      "status": "testing",
+      "supporting": [
+        "ev_66ea1491210736c3aa2dacb39b04071cb56f589b35fed9b9832d43671a538ac7",
+        "ev_8fb27745cfdcd87de8123c983ce02e5e1d38777db5f954af707a40a39c899437"
+      ],
+      "contradicting": [],
+      "notes": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "fnd_1",
+      "statement": "World and movement constants come from dmscript.global: 26.6666666 px per meter, 53.3333333 px per tile, 32 fps, speeds 32/40/56/96/20 px/s.",
+      "evidence_ids": [
+        "ev_0d087bb72d524b54c2bbd50d6c04ba70b65bd225dce3aa280664acb531288090",
+        "ev_b526c8821a3fd877bd5bae3ee0021df4f107896543ce9a9ed583887a81fd885e"
+      ],
+      "confidence": "observed"
+    },
+    {
+      "id": "fnd_2",
+      "statement": "Gathering and mine income confirmed: 22/14/20 hits for 45/28/40 loads, mine income 13*32/250=1.664 per s, upkeep consume/625 per s.",
+      "evidence_ids": [
+        "ev_7d18a5c4ddd26081c7ca9bf53a5642889f05388761f10b504b492a9e6ee25680",
+        "ev_22c1e75fcf3b8da4046bb039473f09b569bf3834187532e016f0b0aedd07cea0"
+      ],
+      "confidence": "observed"
+    },
+    {
+      "id": "fnd_3",
+      "statement": "Damage formula is _misc_DoDamage in miscext2.script: minus 5 vs fast horse, minus shield, minus squad bonus, minus protection, minimum 1.",
+      "evidence_ids": [
+        "ev_c908762281b70283c347d21304dbce59e7dfe4ae6192aaa03ddf2cbe73b577b2"
+      ],
+      "confidence": "observed"
+    },
+    {
+      "id": "fnd_4",
+      "statement": "cossacks.exe entry at 0x8f1a08 is a packed loader showing Cossacks III title and DEP/single-instance messages; game logic is not in static code.",
+      "evidence_ids": [
+        "ev_8fb27745cfdcd87de8123c983ce02e5e1d38777db5f954af707a40a39c899437",
+        "ev_3b5555f1897d0ff7f4dfa4169162d3100ab22223d1e4d963f0084dcf5d63803e"
+      ],
+      "confidence": "derived"
+    }
+  ],
+  "handoff": "Fresh Deep run 2026-11-17 done: core_target_open cossacks.exe t_87f0f3c130b0 (5768048B, sha 87f0f3c1, entry 0x8f1a08). Triage ev_31960c6f, overview ev_60b49743 (18918 funcs, 12073 strings). native_strings_find waited: peasant ev_35f172bb 0, pikeman ev_36f8c402 0, Serdiuk ev_02657a9a 0, damage/food/wood/gold/mine/cannon/.ini 0, engine strings XDMScript ev_c58219d8 @0x958d1a, XCamera ev_aa633a3e @0x958b6b/@0x959066, DMScript ev_a290cdaf, Cossacks3 ev_18cb6d74 @0x96b304, Warning ev_10cfab87 @0x955e34. xrefs ev_9945c378 ev_5a0f553a ev_1e8d950e ev_bc64940b ev_ff7ce366 ev_113114fb all 0 refs. feature_find ev_f2d20363 ev_f1ed6d4b ev_1703acd5 0 funcs. pseudocode waited: entry ev_03507405 142 lines, sub_8f0ad4 ev_dec6ad57 17 lines, sub_47c804 ev_bd3eda2b 32 lines, sub_4c37dc ev_d5891fef 54 lines, sub_404574 ev_39b2ec80 9 lines; Ghidra bridge failed so clean-room lifter used. callees ev_9dbee4f4 34 calls. Updated app/MECHANICS.md with addresses+evidence IDs and app/scripts/data.gd header. Rebuilt Godot 4.7.2 headless: self-test 8/8 passed, screenshot ok, cli 10s ok. Next: keep script values; exe packed so no more static numbers.",
+  "updated": "2026-11-17T10:47:38Z"
+}

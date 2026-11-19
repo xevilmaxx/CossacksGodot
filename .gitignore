@@ -1,0 +1,35 @@
+# Godot 4+ specific ignores
+.godot/
+
+# Godot-specific ignores (legacy / Godot 3 compatibility)
+.import/
+export.cfg
+export_presets.cfg
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+# Mono / C# specific ignores (safe to keep even in GDScript-only projects)
+.mono/
+data_*/
+mono_crash.*.json
+*.csproj.user
+.vs/
+bin/
+obj/
+
+# Build / export outputs
+builds/
+export/
+*.exe
+*.pck
+*.apk
+*.aab
+*.dmg
+*.zip
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+*.swp
+*~

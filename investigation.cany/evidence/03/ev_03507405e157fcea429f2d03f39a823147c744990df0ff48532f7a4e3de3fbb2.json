@@ -1,0 +1,94 @@
+{
+  "id": "ev_03507405e157fcea429f2d03f39a823147c744990df0ff48532f7a4e3de3fbb2",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x8f1a08"
+  },
+  "result": {
+    "calls": [
+      "CloseHandle@thunk",
+      "GetLastError@thunk",
+      "MessageBoxA@thunk",
+      "ReleaseMutex@thunk",
+      "WinExec@thunk",
+      "sub_4032a8",
+      "sub_403310",
+      "sub_404574",
+      "sub_405424",
+      "sub_405454",
+      "sub_405780",
+      "sub_40580c",
+      "sub_4058c0",
+      "sub_407d98",
+      "sub_408154",
+      "sub_40d0a4",
+      "sub_40d65c",
+      "sub_4182ac",
+      "sub_47c7ec",
+      "sub_47c804",
+      "sub_47c884",
+      "sub_47cf44",
+      "sub_4c37dc",
+      "sub_4c3c90",
+      "sub_6075d4",
+      "sub_607758",
+      "sub_8f0ad4"
+    ],
+    "engine": "clean-room lifter",
+    "entry": "0x8f1a08",
+    "function": "entry",
+    "gotos": 2,
+    "inline_asm": 0,
+    "pseudo_code": "int64_t entry()\n{\n    ecx = 6;\n    while (true) {\n        ecx--;\n        if (ecx == 0) break;\n    }\n    eax = 0x8f0b48;\n    sub_407d98(ebx);\n    eax = 0;\n    fs:[eax] = esp;\n    sub_4182ac(fs:[eax], 0x8f1c5c, ebp);\n    eax = 0;\n    rax = sub_6075d4();\n    if (al != 0) {\n        eax = *(uint32_t*)0x8fcd0c;\n        *(uint8_t*)(eax) = 1;\n    } else {\n        eax = 0;\n        rax = sub_607758();\n        edx = *(uint32_t*)0x8fcd0c;\n        *(uint8_t*)(edx) = al;\n    }\n    rax = sub_408154(0, 0, 0x8f1c6c);\n    edx = *(uint32_t*)0x8fbcf0;\n    *(uint32_t*)(edx) = eax;\n    eax = *(uint32_t*)0x8fc778;\n    if (*(uint32_t*)(eax) != 1) {\n        rax = GetLastError@thunk();\n        if (eax != 0xb7) {\nlabel_8f1ad9:\n            edx = &arg_ffffffe4;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47cf44();\n            eax = arg_ffffffe4;\n            edx = &arg_ffffffe8;\n            sub_40d0a4();\n            eax = arg_ffffffe8;\n            sub_40d65c();\n            ecx = 0;\n            dl = 1;\n            eax = sub_4c2ec0;\n            rax = sub_4c37dc();\n            ebx = eax;\n            edx = &arg_ffffffdc;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47cf44();\n            eax = arg_ffffffdc;\n            edx = &arg_ffffffe0;\n            sub_40d0a4();\n            edx = arg_ffffffe0;\n            ecx = 0;\n            eax = ebx;\n            sub_4c3c90();\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47c7ec();\n            edx = &arg_ffffffd8;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47cf44();\n            edx = arg_ffffffd8;\n            eax = *(uint32_t*)0x8fbb0c;\n            sub_405454();\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            edx = 0x8f1d8c;\n            sub_8f0ad4();\n            ecx = *(uint32_t*)0x8fbe9c;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            edx = sub_8ee094;\n            sub_47c804();\n            eax = *(uint32_t*)0x8fbe9c;\n            eax = *(uint32_t*)(eax);\n            if (*(uint32_t*)(eax + 0x2fc) != 0) {\n                eax = *(uint32_t*)0x8fc6ac;\n                eax = *(uint32_t*)(eax);\n                sub_47c884();\n            }\n            eax = ebx;\n            sub_404574();\n            eax = *(uint32_t*)0x8fc9d8;\n            if (*(uint8_t*)(eax) != 0) {\n                eax = *(uint32_t*)0x8fbcf0;\n                eax = *(uint32_t*)(eax);\n                ReleaseMutex@thunk(eax);\n                eax = *(uint32_t*)0x8fbcf0;\n                eax = *(uint32_t*)(eax);\n                CloseHandle@thunk(eax);\n                eax = *(uint32_t*)0x8fcdf4;\n                if (*(uint32_t*)(eax) != 0) {\n                    eax = *(uint32_t*)0x8fbb0c;\n                    eax = *(uint32_t*)0x8fcdf4;\n                    eax = &arg_ffffffd0;\n                    edx = 5;\n                    sub_405780(*(uint32_t*)(eax), 0x8f1da4, 0x8f1d60, 0x8f1da4, *(uint32_t*)(eax), 5);\n                    eax = arg_ffffffd0;\n                    rax = sub_4058c0();\n                    WinExec@thunk(eax);\n                } else {\n                    eax = *(uint32_t*)0x8fbb0c;\n                    eax = &arg_ffffffd4;\n                    edx = 3;\n                    sub_405780(0x8f1d60, 0x8f1da4, *(uint32_t*)(eax), 5);\n                    eax = arg_ffffffd4;\n                    rax = sub_4058c0();\n                    WinExec@thunk(eax);\n                }\n            }\n        } else {\n            rax = sub_4032a8();\n            eax--;\n            if (eax < 0) {\nlabel_8f1ac1:\n                MessageBoxA@thunk(0, 0x8f1d6c, 0x8f1c7c, 0);\n            } else {\n                edx = &arg_ffffffec;\n                eax = 1;\n                sub_403310();\n                eax = arg_ffffffec;\n                edx = 0x8f1d60;\n                sub_40580c();\n                if (/* Eq */ flags) {\n                    goto label_8f1ad9;\n                } else {\n                    goto label_8f1ac1;\n                }\n            }\n        }\n    } else {\n        MessageBoxA@thunk(0, 0x8f1c84, 0x8f1c7c, 0);\n    }\n    eax = 0;\n    fs:[eax] = edx;\n    eax = &arg_ffffffd0;\n    edx = 8;\n    sub_405424(0x8f1c63);\n    return rax;\n}\n",
+    "signature": "int64_t entry()",
+    "strings": [],
+    "structured": false
+  },
+  "summary": "Pseudo-C for entry (142 lines, partly unstructured).",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "register_level",
+      "message": "variables are machine registers and stack slots; types are not recovered"
+    },
+    {
+      "code": "calling_convention_assumed",
+      "message": "call arguments follow the usual x86 convention and may be wrong for unusual functions"
+    },
+    {
+      "code": "conditions_from_flags",
+      "message": "branch conditions are rebuilt from the last compare and may be approximate"
+    },
+    {
+      "code": "unstructured_flow",
+      "message": "2 gotos remain where the control flow isn't a simple if/loop"
+    },
+    {
+      "code": "deep_engine_unavailable",
+      "message": "Ghidra couldn't open this program (could not start Ghidra: Ghidra stopped before the bridge started; see C:\\Users\\Maxym.Oboyshev\\AppData\\Roaming\\craft-anything\\engines\\ghidra-cache\\87f0f3c130b027e7-f2dfab6faedc84f0.bridge.log). So this came from the built-in decompiler, which is less exact."
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x8f1a08"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

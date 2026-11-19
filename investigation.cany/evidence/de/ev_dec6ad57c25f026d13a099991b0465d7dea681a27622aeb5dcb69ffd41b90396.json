@@ -1,0 +1,66 @@
+{
+  "id": "ev_dec6ad57c25f026d13a099991b0465d7dea681a27622aeb5dcb69ffd41b90396",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x8f0ad4"
+  },
+  "result": {
+    "calls": [
+      "sub_405400",
+      "sub_4058b0",
+      "sub_47c3d4"
+    ],
+    "engine": "clean-room lifter",
+    "entry": "0x8f0ad4",
+    "function": "sub_8f0ad4",
+    "gotos": 0,
+    "inline_asm": 0,
+    "pseudo_code": "int64_t sub_8f0ad4()\n{\n    arg_fffffffc = edx;\n    ebx = eax;\n    eax = arg_fffffffc;\n    sub_4058b0();\n    eax = 0;\n    fs:[eax] = esp;\n    edx = arg_fffffffc;\n    eax = ebx;\n    sub_47c3d4(fs:[eax], 0x8f0b14);\n    eax = 0;\n    fs:[eax] = edx;\n    eax = &arg_fffffffc;\n    sub_405400(0x8f0b1b);\n    return rax;\n}\n",
+    "signature": "int64_t sub_8f0ad4()",
+    "strings": [],
+    "structured": true
+  },
+  "summary": "Pseudo-C for sub_8f0ad4 (17 lines).",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "register_level",
+      "message": "variables are machine registers and stack slots; types are not recovered"
+    },
+    {
+      "code": "calling_convention_assumed",
+      "message": "call arguments follow the usual x86 convention and may be wrong for unusual functions"
+    },
+    {
+      "code": "conditions_from_flags",
+      "message": "branch conditions are rebuilt from the last compare and may be approximate"
+    },
+    {
+      "code": "deep_engine_unavailable",
+      "message": "Ghidra couldn't open this program (could not start Ghidra: Ghidra stopped before the bridge started; see C:\\Users\\Maxym.Oboyshev\\AppData\\Roaming\\craft-anything\\engines\\ghidra-cache\\87f0f3c130b027e7-f2dfab6faedc84f0.bridge.log). So this came from the built-in decompiler, which is less exact."
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x8f0ad4"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

@@ -1,0 +1,58 @@
+{
+  "id": "ev_c908762281b70283c347d21304dbce59e7dfe4ae6192aaa03ddf2cbe73b577b2",
+  "subject": {
+    "kind": "unknown",
+    "sha256": "984e79f58742aca899c1254a5c4e5b1fac479d89062fe501eebe97444938645f",
+    "name": "miscext2.script"
+  },
+  "operation": "core_text_read",
+  "params": {
+    "limit": 130,
+    "offset": 270,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\miscext2.script"
+  },
+  "result": {
+    "cut_lines": [],
+    "encoding": "utf8",
+    "file_size": 207723,
+    "lines": 130,
+    "more": true,
+    "offset": 270,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\miscext2.script",
+    "replaced_sequences": 583,
+    "text": "   end;\nend;\n\n// _misc_DoDamage\n//\nprocedure _misc_DoDamage(const goHnd, trgHnd, indamage, weapind, weapkind : Integer);\nbegin\n   if (trgHnd<>0) then\n   begin\n      var pobj2 : Pointer = _unit_GetTObj(trgHnd);\n      var bSkipOnDeath : Boolean;\n\n      if (pobj2<>nil) and (not TObj(pobj2).bdead) then\n      begin\n         if (gScenario.bactive) and ((TObj(pobj2).hp>=gc_gameplay_infinitehp) or (not GetGameObjectPlayableObjectByHandle(trgHnd))) then\n         exit;\n\n         var pobj : Pointer = nil;\n         if (goHnd<>0) then\n         pobj := _unit_GetTObj(goHnd);\n         var wounded : Boolean;\n         var bProcessLogic : Boolean = ((not _net_IsReplay) and _net_IsOffline) or _net_IsServer or _net_IsRecord;\n\n         var bPeaceSkip : Boolean;\n         if gbool_peacemode then\n         begin\n            bPeaceSkip := True;\n            if (bProcessLogic) then\n            begin\n               if (pobj<>nil) then\n               begin\n                  var myEnemy : Boolean = _unit_IsOnEnemyTerritory(goHnd, pObj);\n                  var trgEnemy : Boolean = _unit_IsOnEnemyTerritory(trgHnd, pObj2);\n\n                  if (not myEnemy) and (not trgEnemy) then\n                  begin\n                     TObj(pObj).hp := 0;\n                     bSkipOnDeath := True;\n                  end\n                  else\n                  if myEnemy and trgEnemy then\n                  bPeaceSkip := False\n                  else\n                  begin\n                     if myEnemy then\n                     begin\n                        TObj(pObj).hp := 0;\n                        bSkipOnDeath := True;\n                     end;\n\n                     if trgEnemy then\n                     TObj(pObj2).hp := 0;\n                  end;\n               end;\n            end;\n         end;\n         if not bPeaceSkip then\n         begin\n            var pobjbase2 : Pointer = gPlayer[TObj(pobj2).pl].objbase[TObj(pobj2).cid][TObj(pobj2).id];\n            var pobjprop2 : Pointer = gObjProp[TObj(pobj2).cid][TObj(pobj2).id];\n            \n            var damage : Integer = indamage;\n\n            var bCanHeadShot : Boolean = ((weapkind=gc_obj_weapon_kind_arrow) or (weapkind=gc_obj_weapon_kind_bullet)) and (not TObjProp(pobjprop2).bbuilding);\n            var bFastHorseBullet : Boolean = bCanHeadShot and (TObjProp(pobjprop2).usage=gc_obj_usage_fasthorse) and ((GetGameObjectStatesTagByHandle(trgHnd) and gc_statetag_move_walk)<>0);\n            if (bFastHorseBullet) then\n            damage := damage-5;\n\n            if (TObj(pobj2).bbuilt) then\n            damage := damage-TObjBase(pobjbase2).shield\n            else\n            damage := damage-TObjBase(pobjbase2).shield div 3;\n            var pSquad2 : Pointer = nil;\n            if (TObj(pobj2).squad>=0) then\n            pSquad2 := gPlayer[TObj(pobj2).pl].squads.Get(TObj(pobj2).squad);\n\n            if (pSquad2 <> nil) then\n            begin\n               var bonus : Integer;\n               if (TSquad(pSquad2).fHoldMode) then\n               bonus := TSquad(pSquad2).fAddShieldHold\n               else\n               bonus := TSquad(pSquad2).fAddShield;\n               damage := damage-bonus;\n            end;\n            if (goHnd<>0) then\n            begin\n               if (pobj<>nil) then\n               begin\n                  var pobjprop : Pointer = gObjProp[TObj(pobj).cid][TObj(pobj).id];\n\n                  if (not TObjProp(pobjprop).bpriest) then\n                  begin\n                     var plIOInd : Integer = GetPlayerIndexByHandle(GetPlayerHandleInterfaceIO);\n                     if (TObj(pobj2).pl=plIOInd) or ((pobj<>nil) and (TObj(pobj).pl=plIOInd)) then\n                     _misc_DoAlarm(goHnd, trgHnd, gc_gui_alarmevent_attack);\n                  end;\n\n                  if (not bProcessLogic) then\n                  begin\n                     if (TObjProp(pobjprop).bpriest) then\n                     begin\n                        damage := indamage;\n                        TObj(pobj2).hp := TObj(pobj2).hp+damage;\n                        if (TObj(pobj2).hp>=TObjBase(pobjbase2).maxhp) then\n                        TObj(pobj2).hp := TObjBase(pobjbase2).maxhp;\n                     end\n                     else\n                     begin\n                        damage := damage-TObjBase(pobjbase2).protection[weapkind];\n                        if (damage<1) then damage := 1;\n                        if (damage<TObj(pobj2).hp) then // not critical hit for not bprocesslogic\n                        TObj(pobj2).hp := TObj(pobj2).hp-damage;\n                     end;\n                  end\n                  else\n                  begin\n                     if (TObjProp(pobjprop).bpriest) then\n                     begin\n                        damage := indamage;\n                        TObj(pobj2).hp := TObj(pobj2).hp+damage;\n                        if (TObj(pobj2).hp>=TObjBase(pobjbase2).maxhp) then\n                        begin\n                           TObj(pobj2).hp := TObjBase(pobjbase2).maxhp;\n                           _unit_SetSTO(goHnd, 0);\n                           _unit_RemoveOrder(goHnd, 0);\n                           _unit_SetTagStates(goHnd, gc_statetag_execute_none or gc_statetag_move_idle or gc_statetag_action_none);\n                        end;\n                     end\n                     else\n",
+    "total_lines": 4743
+  },
+  "summary": "miscext2.script: lines 271–400 of 4743 (UTF-8).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "text_as_stored",
+      "message": "The file is read as text as it is stored: nothing is run, rendered or formatted, and text a program builds or downloads while it runs isn't here."
+    },
+    {
+      "code": "invalid_text",
+      "message": "583 sequence(s) of bytes aren't valid UTF-8 and show as U+FFFD."
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 130,
+    "total": 4743,
+    "next_offset": 400
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\miscext2.script"
+    }
+  ],
+  "links": []
+}

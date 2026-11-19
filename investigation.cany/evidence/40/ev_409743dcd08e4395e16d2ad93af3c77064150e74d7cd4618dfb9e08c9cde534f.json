@@ -1,0 +1,151 @@
+{
+  "id": "ev_409743dcd08e4395e16d2ad93af3c77064150e74d7cd4618dfb9e08c9cde534f",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 30,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "scroll"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0x8f9f91",
+        "references": [],
+        "section": "DATA",
+        "text": "'\nSCROLLLOCK"
+      },
+      {
+        "address": "0x9092bc",
+        "references": [],
+        "section": ".idata",
+        "text": "ShowScrollBar"
+      },
+      {
+        "address": "0x9093aa",
+        "references": [],
+        "section": ".idata",
+        "text": "SetScrollRange"
+      },
+      {
+        "address": "0x9093bc",
+        "references": [],
+        "section": ".idata",
+        "text": "SetScrollPos"
+      },
+      {
+        "address": "0x9093cc",
+        "references": [],
+        "section": ".idata",
+        "text": "SetScrollInfo"
+      },
+      {
+        "address": "0x9094f4",
+        "references": [],
+        "section": ".idata",
+        "text": "ScrollWindowEx"
+      },
+      {
+        "address": "0x909506",
+        "references": [],
+        "section": ".idata",
+        "text": "ScrollWindow"
+      },
+      {
+        "address": "0x909990",
+        "references": [],
+        "section": ".idata",
+        "text": "GetScrollRange"
+      },
+      {
+        "address": "0x9099a2",
+        "references": [],
+        "section": ".idata",
+        "text": "GetScrollPos"
+      },
+      {
+        "address": "0x9099b2",
+        "references": [],
+        "section": ".idata",
+        "text": "GetScrollInfo"
+      },
+      {
+        "address": "0x909cf6",
+        "references": [],
+        "section": ".idata",
+        "text": "EnableScrollBar"
+      },
+      {
+        "address": "0x9552c0",
+        "references": [],
+        "section": ".rsrc",
+        "text": "None\nScroll Bar"
+      },
+      {
+        "address": "0x95918d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "XGuiScroll"
+      },
+      {
+        "address": "0x95b1ff",
+        "references": [],
+        "section": ".rsrc",
+        "text": "\nScrollBars"
+      },
+      {
+        "address": "0x969e81",
+        "references": [],
+        "section": ".rsrc",
+        "text": "ScrollWidth"
+      },
+      {
+        "address": "0x96a886",
+        "references": [],
+        "section": ".rsrc",
+        "text": "HorzScrollBar.Visible"
+      },
+      {
+        "address": "0x96a89d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "VertScrollBar.Visible"
+      },
+      {
+        "address": "0x96ae02",
+        "references": [],
+        "section": ".rsrc",
+        "text": "alClient\nScrollBars"
+      }
+    ],
+    "total": 18
+  },
+  "summary": "18 strings match \"scroll\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 18,
+    "total": 18
+  },
+  "locations": [],
+  "links": []
+}

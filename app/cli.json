@@ -1,0 +1,18 @@
+{
+  "kills": 0,
+  "mode": "cli",
+  "player0_buildings": 3,
+  "player0_squads": 0,
+  "player0_units": 26,
+  "player1_buildings": 3,
+  "player1_squads": 0,
+  "player1_units": 26,
+  "resources_gathered": {
+    "food": 102,
+    "gold": 0
+  },
+  "shots_fired": 0,
+  "sim_seconds": 273.0,
+  "version": 1,
+  "winner": -1
+}

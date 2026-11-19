@@ -1,0 +1,58 @@
+{
+  "id": "ev_b526c8821a3fd877bd5bae3ee0021df4f107896543ce9a9ed583887a81fd885e",
+  "subject": {
+    "kind": "text",
+    "sha256": "65ddd3860c4bcd28bb1742892d10259121ebf19700650e9fe2df18206ab29590",
+    "name": "dmscript.global"
+  },
+  "operation": "core_text_read",
+  "params": {
+    "limit": 100,
+    "offset": 595,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global"
+  },
+  "result": {
+    "cut_lines": [],
+    "encoding": "utf8",
+    "file_size": 91341,
+    "lines": 100,
+    "more": true,
+    "offset": 595,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global",
+    "replaced_sequences": 4770,
+    "text": "   gc_ai_upg_sid_food140 = 'mil.1'; // @%com%mil.1 ���������������� ������� ����������� ����� %include(style;upgradevalue)%(���� ��� +140%)\n   gc_ai_upg_sid_food250 = 'mil.2'; // @%com%mil.2 ���������������� ������� �������� ����� %include(style;upgradevalue)%(���� ��� +250%)\n   gc_ai_upg_sid_century = 'cen.1'; // @%com%cen.1 ������� � 18 ���\n\n   gc_ai_army_offsetcol = 6;\n   gc_ai_army_offsetrow = 6;\n\n   gc_obj_speed_default = 32;\n   gc_obj_speed_peasant = 40;\n   gc_obj_speed_hardhorse = 56;\n   gc_obj_speed_fasthorse = 96;\n   gc_obj_speed_cannon = 20;\n   gc_obj_speed_mortar = 24;\n   gc_obj_speed_howitzer = 20;\n   gc_obj_speed_multicannon = 16;\n\n   gc_obj_speed_fishboat = 16;\n   gc_obj_speed_ferry = 28; // in cossacks 1 was 16\n   gc_obj_speed_yacht = 40;\n   gc_obj_speed_yachttur = 70;\n   gc_obj_speed_chaika = 55;\n   gc_obj_speed_galley = 40;\n   gc_obj_speed_frigate = 30;\n   gc_obj_speed_xebec = 28;\n   gc_obj_speed_battleship = 16;\n\n   //gc_obj_rotatespeed_default = 16; // in cossacks 1 : default rotate speed for infantry and cavalry. For C3, try to use smaller value for smoother visualization\n   gc_obj_rotatespeed_default = 5;\n   gc_obj_rotatespeed_cannon = 1;\n   gc_obj_rotatespeed_mortar = 4;\n   gc_obj_rotatespeed_howitzer = 4;\n   gc_obj_rotatespeed_multicannon = 5;\n   gc_obj_rotatespeed_ships = 2;\n\n   gc_obj_order_type_none = 0;\n   gc_obj_order_type_move = 1;\n   gc_obj_order_type_attackobj = 2;\n   gc_obj_order_type_gainres = 3;\n   gc_obj_order_type_produce = 4;\n   gc_obj_order_type_patrol = 5;\n   gc_obj_order_type_attackpoint = 6;\n   gc_obj_order_type_continueattackpoint = 7;\n   gc_obj_order_type_performupgrade = 8;\n   gc_obj_order_type_fishing = 9;\n   gc_obj_order_type_creategates = 10;\n   gc_obj_order_type_buildwallcontinue = 11;\n   gc_obj_order_type_buildwall = 12;\n   gc_obj_order_type_gotomine = 13;\n   gc_obj_order_type_gototransport = 14;\n   gc_obj_order_type_leavetransport = 15;\n   gc_obj_order_type_leavebuilding = 16;\n   gc_obj_order_type_build = 17;\n   gc_obj_order_type_guard = 18;\n   gc_obj_order_type_repair = 19;\n   gc_obj_order_type_exitunits = 20;\n\n   gc_obj_order_attack_mode_default = 0;\n   gc_obj_order_attack_mode_locktarget = 1;\n\n   gc_obj_order_move_mode_default = 0;\n   gc_obj_order_move_mode_attack = 1;\n   gc_obj_order_move_mode_runaway = 2;\n   gc_obj_order_move_mode_landing = 3;\n\n   gc_obj_order_produce_infinite = -1;\n   gc_obj_rally_resource_searchradius = 1.5;\n   gc_obj_res_searchradius = 6;\n   gc_obj_res_searchwaitrnd = 0.65;\n\n   gc_obj_radius_default = 10;\n   gc_obj_radius_horse = 15;\n   gc_obj_radius_artillery = 15;\n   gc_obj_radius_ship_fishboat = 40;\n   gc_obj_radius_ship_ferry = 70;\n   gc_obj_radius_ship_yacht = 35;\n   gc_obj_radius_ship_yachttur = 50;\n   gc_obj_radius_ship_chaika = 45;\n   gc_obj_radius_ship_galley = 80;\n   gc_obj_radius_ship_frigate = 90;\n   gc_obj_radius_ship_xebec = 80;\n   gc_obj_radius_ship_battleship = 90;\n   gc_obj_radius_formation_default = 8;\n   gc_obj_radius_formation_horse = 12;\n\n   gc_obj_extract_food_radiusmax = 80*gc_tiles_to_pixels;\n   gc_obj_extract_wood_radiusmax = 40*gc_tiles_to_pixels;\n   gc_obj_extract_stone_radiusmax = 50*gc_tiles_to_pixels;\n   gc_obj_extract_food_radiusmaxSqr = gc_obj_extract_food_radiusmax*gc_obj_extract_food_radiusmax;\n   gc_obj_extract_wood_radiusmaxSqr = gc_obj_extract_wood_radiusmax*gc_obj_extract_wood_radiusmax;\n   gc_obj_extract_stone_radiusmaxSqr = gc_obj_extract_stone_radiusmax*gc_obj_extract_stone_radiusmax;\n\n   gc_weapon_maxmembers = 256;\n   gc_weapon_time_cInfinite = -1;\n   gc_weapon_time_cPlayOnce = 0;\n   gc_weapon_gravity_0 = 0;\n   gc_weapon_gravity_1 = 1;\n   gc_weapon_gravity_2 = 2;\n   gc_weapon_gravity_3 = 3;\n   gc_weapon_gravity_4 = 4;\n   gc_weapon_gravity_5 = 5;\n",
+    "total_lines": 2400
+  },
+  "summary": "dmscript.global: lines 596–695 of 2400 (UTF-8).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "text_as_stored",
+      "message": "The file is read as text as it is stored: nothing is run, rendered or formatted, and text a program builds or downloads while it runs isn't here."
+    },
+    {
+      "code": "invalid_text",
+      "message": "4770 sequence(s) of bytes aren't valid UTF-8 and show as U+FFFD."
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 100,
+    "total": 2400,
+    "next_offset": 695
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global"
+    }
+  ],
+  "links": []
+}

@@ -1,0 +1,14 @@
+{
+  "id": "unk_178abf50107a5b1a",
+  "revision": 2,
+  "question": "What is the exact damage formula in the packed native exe (protection vs shield order, min damage)?",
+  "severity": "low",
+  "domain": "general",
+  "status": "resolved",
+  "probes": [
+    "native_function_pseudocode on the packed cossacks.exe — but the exe is packed (section .bind entropy 7.96), static Ghidra analysis is likely useless; script evidence (data/scripts/lib/miscext2.script _misc_DoDamage) already gives the formula"
+  ],
+  "evidence_for": [],
+  "evidence_against": [],
+  "resolution": "The readable script miscext2.script _misc_DoDamage already gives the exact order: damage -= target shield (full if building finished, /3 otherwise), then protection[weapon kind], then clamp to 1; fast cavalry gets -5 for arrow/bullet. The native exe is packed, so the script evidence is the authoritative readable source."
+}

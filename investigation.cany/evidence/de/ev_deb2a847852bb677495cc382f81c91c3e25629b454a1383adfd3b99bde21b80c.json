@@ -1,0 +1,4174 @@
+{
+  "id": "ev_deb2a847852bb677495cc382f81c91c3e25629b454a1383adfd3b99bde21b80c",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_study",
+  "params": {
+    "function": "0x8f1a08"
+  },
+  "result": {
+    "assembly": [
+      {
+        "address": "0x8f1a08",
+        "text": "push ebp"
+      },
+      {
+        "address": "0x8f1a09",
+        "text": "mov ebp, esp"
+      },
+      {
+        "address": "0x8f1a0b",
+        "text": "mov ecx, 6"
+      },
+      {
+        "address": "0x8f1a10",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1a12",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1a14",
+        "text": "dec ecx"
+      },
+      {
+        "address": "0x8f1a15",
+        "text": "jne 0x8f1a10"
+      },
+      {
+        "address": "0x8f1a17",
+        "text": "push ebx"
+      },
+      {
+        "address": "0x8f1a18",
+        "text": "mov eax, 0x8f0b48"
+      },
+      {
+        "address": "0x8f1a1d",
+        "text": "call 0x407d98"
+      },
+      {
+        "address": "0x8f1a22",
+        "text": "xor eax, eax"
+      },
+      {
+        "address": "0x8f1a24",
+        "text": "push ebp"
+      },
+      {
+        "address": "0x8f1a25",
+        "text": "push 0x8f1c5c"
+      },
+      {
+        "address": "0x8f1a2a",
+        "text": "push dword ptr fs:[eax]"
+      },
+      {
+        "address": "0x8f1a2d",
+        "text": "mov fs:[eax], esp"
+      },
+      {
+        "address": "0x8f1a30",
+        "text": "call 0x4182ac"
+      },
+      {
+        "address": "0x8f1a35",
+        "text": "xor eax, eax"
+      },
+      {
+        "address": "0x8f1a37",
+        "text": "call 0x6075d4"
+      },
+      {
+        "address": "0x8f1a3c",
+        "text": "test al, al"
+      },
+      {
+        "address": "0x8f1a3e",
+        "text": "jne 0x8f1a51"
+      },
+      {
+        "address": "0x8f1a40",
+        "text": "xor eax, eax"
+      },
+      {
+        "address": "0x8f1a42",
+        "text": "call 0x607758"
+      },
+      {
+        "address": "0x8f1a47",
+        "text": "mov edx, [0x8fcd0c]"
+      },
+      {
+        "address": "0x8f1a4d",
+        "text": "mov [edx], al"
+      },
+      {
+        "address": "0x8f1a4f",
+        "text": "jmp 0x8f1a59"
+      },
+      {
+        "address": "0x8f1a51",
+        "text": "mov eax, [0x8fcd0c]"
+      },
+      {
+        "address": "0x8f1a56",
+        "text": "mov byte ptr [eax], 1"
+      },
+      {
+        "address": "0x8f1a59",
+        "text": "push 0x8f1c6c"
+      },
+      {
+        "address": "0x8f1a5e",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1a60",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1a62",
+        "text": "call 0x408154"
+      },
+      {
+        "address": "0x8f1a67",
+        "text": "mov edx, [0x8fbcf0]"
+      },
+      {
+        "address": "0x8f1a6d",
+        "text": "mov [edx], eax"
+      },
+      {
+        "address": "0x8f1a6f",
+        "text": "mov eax, [0x8fc778]"
+      },
+      {
+        "address": "0x8f1a74",
+        "text": "cmp dword ptr [eax], 1"
+      },
+      {
+        "address": "0x8f1a77",
+        "text": "jne 0x8f1a91"
+      },
+      {
+        "address": "0x8f1a79",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1a7b",
+        "text": "push 0x8f1c7c"
+      },
+      {
+        "address": "0x8f1a80",
+        "text": "push 0x8f1c84"
+      },
+      {
+        "address": "0x8f1a85",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1a87",
+        "text": "call 0x408c6c"
+      },
+      {
+        "address": "0x8f1a8c",
+        "text": "jmp 0x8f1c41"
+      },
+      {
+        "address": "0x8f1a91",
+        "text": "call 0x40828c"
+      },
+      {
+        "address": "0x8f1a96",
+        "text": "cmp eax, 0xb7"
+      },
+      {
+        "address": "0x8f1a9b",
+        "text": "jne 0x8f1ad9"
+      },
+      {
+        "address": "0x8f1a9d",
+        "text": "call 0x4032a8"
+      },
+      {
+        "address": "0x8f1aa2",
+        "text": "dec eax"
+      },
+      {
+        "address": "0x8f1aa3",
+        "text": "jl 0x8f1ac1"
+      },
+      {
+        "address": "0x8f1aa5",
+        "text": "lea edx, [ebp-0x14]"
+      },
+      {
+        "address": "0x8f1aa8",
+        "text": "mov eax, 1"
+      },
+      {
+        "address": "0x8f1aad",
+        "text": "call 0x403310"
+      },
+      {
+        "address": "0x8f1ab2",
+        "text": "mov eax, [ebp-0x14]"
+      },
+      {
+        "address": "0x8f1ab5",
+        "text": "mov edx, 0x8f1d60"
+      },
+      {
+        "address": "0x8f1aba",
+        "text": "call 0x40580c"
+      },
+      {
+        "address": "0x8f1abf",
+        "text": "je 0x8f1ad9"
+      },
+      {
+        "address": "0x8f1ac1",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1ac3",
+        "text": "push 0x8f1c7c"
+      },
+      {
+        "address": "0x8f1ac8",
+        "text": "push 0x8f1d6c"
+      },
+      {
+        "address": "0x8f1acd",
+        "text": "push 0"
+      },
+      {
+        "address": "0x8f1acf",
+        "text": "call 0x408c6c"
+      },
+      {
+        "address": "0x8f1ad4",
+        "text": "jmp 0x8f1c41"
+      },
+      {
+        "address": "0x8f1ad9",
+        "text": "lea edx, [ebp-0x1c]"
+      },
+      {
+        "address": "0x8f1adc",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "address": "0x8f1ae1",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1ae3",
+        "text": "call 0x47cf44"
+      },
+      {
+        "address": "0x8f1ae8",
+        "text": "mov eax, [ebp-0x1c]"
+      },
+      {
+        "address": "0x8f1aeb",
+        "text": "lea edx, [ebp-0x18]"
+      },
+      {
+        "address": "0x8f1aee",
+        "text": "call 0x40d0a4"
+      },
+      {
+        "address": "0x8f1af3",
+        "text": "mov eax, [ebp-0x18]"
+      },
+      {
+        "address": "0x8f1af6",
+        "text": "call 0x40d65c"
+      },
+      {
+        "address": "0x8f1afb",
+        "text": "xor ecx, ecx"
+      },
+      {
+        "address": "0x8f1afd",
+        "text": "mov dl, 1"
+      },
+      {
+        "address": "0x8f1aff",
+        "text": "mov eax, [0x4c2ec0]"
+      },
+      {
+        "address": "0x8f1b04",
+        "text": "call 0x4c37dc"
+      },
+      {
+        "address": "0x8f1b09",
+        "text": "mov ebx, eax"
+      },
+      {
+        "address": "0x8f1b0b",
+        "text": "lea edx, [ebp-0x24]"
+      },
+      {
+        "address": "0x8f1b0e",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "address": "0x8f1b13",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1b15",
+        "text": "call 0x47cf44"
+      },
+      {
+        "address": "0x8f1b1a",
+        "text": "mov eax, [ebp-0x24]"
+      },
+      {
+        "address": "0x8f1b1d",
+        "text": "lea edx, [ebp-0x20]"
+      },
+      {
+        "address": "0x8f1b20",
+        "text": "call 0x40d0a4"
+      },
+      {
+        "address": "0x8f1b25",
+        "text": "mov edx, [ebp-0x20]"
+      },
+      {
+        "address": "0x8f1b28",
+        "text": "xor ecx, ecx"
+      },
+      {
+        "address": "0x8f1b2a",
+        "text": "mov eax, ebx"
+      },
+      {
+        "address": "0x8f1b2c",
+        "text": "call 0x4c3c90"
+      },
+      {
+        "address": "0x8f1b31",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "address": "0x8f1b36",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1b38",
+        "text": "call 0x47c7ec"
+      },
+      {
+        "address": "0x8f1b3d",
+        "text": "lea edx, [ebp-0x28]"
+      },
+      {
+        "address": "0x8f1b40",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "address": "0x8f1b45",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1b47",
+        "text": "call 0x47cf44"
+      },
+      {
+        "address": "0x8f1b4c",
+        "text": "mov edx, [ebp-0x28]"
+      },
+      {
+        "address": "0x8f1b4f",
+        "text": "mov eax, [0x8fbb0c]"
+      },
+      {
+        "address": "0x8f1b54",
+        "text": "call 0x405454"
+      },
+      {
+        "address": "0x8f1b59",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "address": "0x8f1b5e",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1b60",
+        "text": "mov edx, 0x8f1d8c"
+      },
+      {
+        "address": "0x8f1b65",
+        "text": "call 0x8f0ad4"
+      },
+      {
+        "address": "0x8f1b6a",
+        "text": "mov ecx, [0x8fbe9c]"
+      },
+      {
+        "address": "0x8f1b70",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "address": "0x8f1b75",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1b77",
+        "text": "mov edx, [0x8ee094]"
+      },
+      {
+        "address": "0x8f1b7d",
+        "text": "call 0x47c804"
+      },
+      {
+        "address": "0x8f1b82",
+        "text": "mov eax, [0x8fbe9c]"
+      },
+      {
+        "address": "0x8f1b87",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1b89",
+        "text": "cmp dword ptr [eax+0x2fc], 0"
+      },
+      {
+        "address": "0x8f1b90",
+        "text": "je 0x8f1b9e"
+      },
+      {
+        "address": "0x8f1b92",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "address": "0x8f1b97",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1b99",
+        "text": "call 0x47c884"
+      },
+      {
+        "address": "0x8f1b9e",
+        "text": "mov eax, ebx"
+      },
+      {
+        "address": "0x8f1ba0",
+        "text": "call 0x404574"
+      },
+      {
+        "address": "0x8f1ba5",
+        "text": "mov eax, [0x8fc9d8]"
+      },
+      {
+        "address": "0x8f1baa",
+        "text": "cmp byte ptr [eax], 0"
+      },
+      {
+        "address": "0x8f1bad",
+        "text": "je 0x8f1c41"
+      },
+      {
+        "address": "0x8f1bb3",
+        "text": "mov eax, [0x8fbcf0]"
+      },
+      {
+        "address": "0x8f1bb8",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1bba",
+        "text": "push eax"
+      },
+      {
+        "address": "0x8f1bbb",
+        "text": "call 0x4083c4"
+      },
+      {
+        "address": "0x8f1bc0",
+        "text": "mov eax, [0x8fbcf0]"
+      },
+      {
+        "address": "0x8f1bc5",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "address": "0x8f1bc7",
+        "text": "push eax"
+      },
+      {
+        "address": "0x8f1bc8",
+        "text": "call 0x408104"
+      },
+      {
+        "address": "0x8f1bcd",
+        "text": "mov eax, [0x8fcdf4]"
+      },
+      {
+        "address": "0x8f1bd2",
+        "text": "cmp dword ptr [eax], 0"
+      },
+      {
+        "address": "0x8f1bd5",
+        "text": "jne 0x8f1c07"
+      },
+      {
+        "address": "0x8f1bd7",
+        "text": "push 5"
+      },
+      {
+        "address": "0x8f1bd9",
+        "text": "mov eax, [0x8fbb0c]"
+      },
+      {
+        "address": "0x8f1bde",
+        "text": "push dword ptr [eax]"
+      },
+      {
+        "address": "0x8f1be0",
+        "text": "push 0x8f1da4"
+      },
+      {
+        "address": "0x8f1be5",
+        "text": "push 0x8f1d60"
+      },
+      {
+        "address": "0x8f1bea",
+        "text": "lea eax, [ebp-0x2c]"
+      },
+      {
+        "address": "0x8f1bed",
+        "text": "mov edx, 3"
+      },
+      {
+        "address": "0x8f1bf2",
+        "text": "call 0x405780"
+      },
+      {
+        "address": "0x8f1bf7",
+        "text": "mov eax, [ebp-0x2c]"
+      },
+      {
+        "address": "0x8f1bfa",
+        "text": "call 0x4058c0"
+      },
+      {
+        "address": "0x8f1bff",
+        "text": "push eax"
+      },
+      {
+        "address": "0x8f1c00",
+        "text": "call 0x408474"
+      },
+      {
+        "address": "0x8f1c05",
+        "text": "jmp 0x8f1c41"
+      },
+      {
+        "address": "0x8f1c07",
+        "text": "push 5"
+      },
+      {
+        "address": "0x8f1c09",
+        "text": "mov eax, [0x8fbb0c]"
+      },
+      {
+        "address": "0x8f1c0e",
+        "text": "push dword ptr [eax]"
+      },
+      {
+        "address": "0x8f1c10",
+        "text": "push 0x8f1da4"
+      },
+      {
+        "address": "0x8f1c15",
+        "text": "push 0x8f1d60"
+      },
+      {
+        "address": "0x8f1c1a",
+        "text": "push 0x8f1da4"
+      },
+      {
+        "address": "0x8f1c1f",
+        "text": "mov eax, [0x8fcdf4]"
+      },
+      {
+        "address": "0x8f1c24",
+        "text": "push dword ptr [eax]"
+      },
+      {
+        "address": "0x8f1c26",
+        "text": "lea eax, [ebp-0x30]"
+      },
+      {
+        "address": "0x8f1c29",
+        "text": "mov edx, 5"
+      },
+      {
+        "address": "0x8f1c2e",
+        "text": "call 0x405780"
+      },
+      {
+        "address": "0x8f1c33",
+        "text": "mov eax, [ebp-0x30]"
+      },
+      {
+        "address": "0x8f1c36",
+        "text": "call 0x4058c0"
+      },
+      {
+        "address": "0x8f1c3b",
+        "text": "push eax"
+      },
+      {
+        "address": "0x8f1c3c",
+        "text": "call 0x408474"
+      },
+      {
+        "address": "0x8f1c41",
+        "text": "xor eax, eax"
+      },
+      {
+        "address": "0x8f1c43",
+        "text": "pop edx"
+      },
+      {
+        "address": "0x8f1c44",
+        "text": "pop ecx"
+      },
+      {
+        "address": "0x8f1c45",
+        "text": "pop ecx"
+      },
+      {
+        "address": "0x8f1c46",
+        "text": "mov fs:[eax], edx"
+      },
+      {
+        "address": "0x8f1c49",
+        "text": "push 0x8f1c63"
+      },
+      {
+        "address": "0x8f1c4e",
+        "text": "lea eax, [ebp-0x30]"
+      },
+      {
+        "address": "0x8f1c51",
+        "text": "mov edx, 8"
+      },
+      {
+        "address": "0x8f1c56",
+        "text": "call 0x405424"
+      },
+      {
+        "address": "0x8f1c5b",
+        "text": "ret"
+      }
+    ],
+    "basic_blocks": [
+      {
+        "end": "0x8f1a10",
+        "insns": 3,
+        "start": "0x8f1a08",
+        "succs": [
+          "0x8f1a10"
+        ],
+        "term": "fall"
+      },
+      {
+        "end": "0x8f1a17",
+        "insns": 4,
+        "start": "0x8f1a10",
+        "succs": [
+          "0x8f1a10",
+          "0x8f1a17"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1a40",
+        "insns": 13,
+        "start": "0x8f1a17",
+        "succs": [
+          "0x8f1a51",
+          "0x8f1a40"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1a51",
+        "insns": 5,
+        "start": "0x8f1a40",
+        "succs": [
+          "0x8f1a59"
+        ],
+        "term": "jump"
+      },
+      {
+        "end": "0x8f1a59",
+        "insns": 2,
+        "start": "0x8f1a51",
+        "succs": [
+          "0x8f1a59"
+        ],
+        "term": "fall"
+      },
+      {
+        "end": "0x8f1a79",
+        "insns": 9,
+        "start": "0x8f1a59",
+        "succs": [
+          "0x8f1a91",
+          "0x8f1a79"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1a91",
+        "insns": 6,
+        "start": "0x8f1a79",
+        "succs": [
+          "0x8f1c41"
+        ],
+        "term": "jump"
+      },
+      {
+        "end": "0x8f1a9d",
+        "insns": 3,
+        "start": "0x8f1a91",
+        "succs": [
+          "0x8f1ad9",
+          "0x8f1a9d"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1aa5",
+        "insns": 3,
+        "start": "0x8f1a9d",
+        "succs": [
+          "0x8f1ac1",
+          "0x8f1aa5"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1ac1",
+        "insns": 7,
+        "start": "0x8f1aa5",
+        "succs": [
+          "0x8f1ad9",
+          "0x8f1ac1"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1ad9",
+        "insns": 6,
+        "start": "0x8f1ac1",
+        "succs": [
+          "0x8f1c41"
+        ],
+        "term": "jump"
+      },
+      {
+        "end": "0x8f1b92",
+        "insns": 48,
+        "start": "0x8f1ad9",
+        "succs": [
+          "0x8f1b9e",
+          "0x8f1b92"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1b9e",
+        "insns": 3,
+        "start": "0x8f1b92",
+        "succs": [
+          "0x8f1b9e"
+        ],
+        "term": "fall"
+      },
+      {
+        "end": "0x8f1bb3",
+        "insns": 5,
+        "start": "0x8f1b9e",
+        "succs": [
+          "0x8f1c41",
+          "0x8f1bb3"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1bd7",
+        "insns": 11,
+        "start": "0x8f1bb3",
+        "succs": [
+          "0x8f1c07",
+          "0x8f1bd7"
+        ],
+        "term": "cond"
+      },
+      {
+        "end": "0x8f1c07",
+        "insns": 13,
+        "start": "0x8f1bd7",
+        "succs": [
+          "0x8f1c41"
+        ],
+        "term": "jump"
+      },
+      {
+        "end": "0x8f1c41",
+        "insns": 15,
+        "start": "0x8f1c07",
+        "succs": [
+          "0x8f1c41"
+        ],
+        "term": "fall"
+      },
+      {
+        "end": "0x8f1c5c",
+        "insns": 10,
+        "start": "0x8f1c41",
+        "succs": [],
+        "term": "return"
+      }
+    ],
+    "callees": [
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_407d98",
+        "site": "0x8f1a1d",
+        "target": "0x407d98"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4182ac",
+        "site": "0x8f1a30",
+        "target": "0x4182ac"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_6075d4",
+        "site": "0x8f1a37",
+        "target": "0x6075d4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_607758",
+        "site": "0x8f1a42",
+        "target": "0x607758"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_408154",
+        "site": "0x8f1a62",
+        "target": "0x408154"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "MessageBoxA@thunk",
+        "site": "0x8f1a87",
+        "target": "0x408c6c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405424",
+        "site": "0x8f1c56",
+        "target": "0x405424"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "GetLastError@thunk",
+        "site": "0x8f1a91",
+        "target": "0x40828c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4032a8",
+        "site": "0x8f1a9d",
+        "target": "0x4032a8"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_403310",
+        "site": "0x8f1aad",
+        "target": "0x403310"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40580c",
+        "site": "0x8f1aba",
+        "target": "0x40580c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "MessageBoxA@thunk",
+        "site": "0x8f1acf",
+        "target": "0x408c6c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47cf44",
+        "site": "0x8f1ae3",
+        "target": "0x47cf44"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40d0a4",
+        "site": "0x8f1aee",
+        "target": "0x40d0a4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40d65c",
+        "site": "0x8f1af6",
+        "target": "0x40d65c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4c37dc",
+        "site": "0x8f1b04",
+        "target": "0x4c37dc"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47cf44",
+        "site": "0x8f1b15",
+        "target": "0x47cf44"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40d0a4",
+        "site": "0x8f1b20",
+        "target": "0x40d0a4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4c3c90",
+        "site": "0x8f1b2c",
+        "target": "0x4c3c90"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47c7ec",
+        "site": "0x8f1b38",
+        "target": "0x47c7ec"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47cf44",
+        "site": "0x8f1b47",
+        "target": "0x47cf44"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405454",
+        "site": "0x8f1b54",
+        "target": "0x405454"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_8f0ad4",
+        "site": "0x8f1b65",
+        "target": "0x8f0ad4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47c804",
+        "site": "0x8f1b7d",
+        "target": "0x47c804"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47c884",
+        "site": "0x8f1b99",
+        "target": "0x47c884"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_404574",
+        "site": "0x8f1ba0",
+        "target": "0x404574"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "ReleaseMutex@thunk",
+        "site": "0x8f1bbb",
+        "target": "0x4083c4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "CloseHandle@thunk",
+        "site": "0x8f1bc8",
+        "target": "0x408104"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405780",
+        "site": "0x8f1bf2",
+        "target": "0x405780"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4058c0",
+        "site": "0x8f1bfa",
+        "target": "0x4058c0"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "WinExec@thunk",
+        "site": "0x8f1c00",
+        "target": "0x408474"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405780",
+        "site": "0x8f1c2e",
+        "target": "0x405780"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4058c0",
+        "site": "0x8f1c36",
+        "target": "0x4058c0"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "WinExec@thunk",
+        "site": "0x8f1c3c",
+        "target": "0x408474"
+      }
+    ],
+    "callers": [],
+    "comments": [],
+    "flow_edges": [
+      {
+        "from": 2,
+        "register": "rcx",
+        "to": 5
+      },
+      {
+        "from": 5,
+        "register": "rcx",
+        "to": 5
+      },
+      {
+        "from": 10,
+        "register": "rax",
+        "to": 13
+      },
+      {
+        "from": 10,
+        "register": "rax",
+        "to": 14
+      },
+      {
+        "from": 17,
+        "register": "rax",
+        "to": 18
+      },
+      {
+        "from": 22,
+        "register": "rdx",
+        "to": 23
+      },
+      {
+        "from": 21,
+        "register": "rax",
+        "to": 23
+      },
+      {
+        "from": 25,
+        "register": "rax",
+        "to": 26
+      },
+      {
+        "from": 31,
+        "register": "rdx",
+        "to": 32
+      },
+      {
+        "from": 30,
+        "register": "rax",
+        "to": 32
+      },
+      {
+        "from": 33,
+        "register": "rax",
+        "to": 34
+      },
+      {
+        "from": 42,
+        "register": "rax",
+        "to": 43
+      },
+      {
+        "from": 45,
+        "register": "rax",
+        "to": 46
+      },
+      {
+        "from": 62,
+        "register": "rax",
+        "to": 63
+      },
+      {
+        "from": 73,
+        "register": "rax",
+        "to": 74
+      },
+      {
+        "from": 76,
+        "register": "rax",
+        "to": 77
+      },
+      {
+        "from": 74,
+        "register": "rbx",
+        "to": 84
+      },
+      {
+        "from": 86,
+        "register": "rax",
+        "to": 87
+      },
+      {
+        "from": 90,
+        "register": "rax",
+        "to": 91
+      },
+      {
+        "from": 96,
+        "register": "rax",
+        "to": 97
+      },
+      {
+        "from": 101,
+        "register": "rax",
+        "to": 102
+      },
+      {
+        "from": 105,
+        "register": "rax",
+        "to": 106
+      },
+      {
+        "from": 106,
+        "register": "rax",
+        "to": 107
+      },
+      {
+        "from": 109,
+        "register": "rax",
+        "to": 110
+      },
+      {
+        "from": 74,
+        "register": "rbx",
+        "to": 112
+      },
+      {
+        "from": 114,
+        "register": "rax",
+        "to": 115
+      },
+      {
+        "from": 117,
+        "register": "rax",
+        "to": 118
+      },
+      {
+        "from": 118,
+        "register": "rax",
+        "to": 119
+      },
+      {
+        "from": 121,
+        "register": "rax",
+        "to": 122
+      },
+      {
+        "from": 122,
+        "register": "rax",
+        "to": 123
+      },
+      {
+        "from": 125,
+        "register": "rax",
+        "to": 126
+      },
+      {
+        "from": 129,
+        "register": "rax",
+        "to": 130
+      },
+      {
+        "from": 137,
+        "register": "rax",
+        "to": 138
+      },
+      {
+        "from": 142,
+        "register": "rax",
+        "to": 143
+      },
+      {
+        "from": 147,
+        "register": "rax",
+        "to": 148
+      },
+      {
+        "from": 153,
+        "register": "rax",
+        "to": 154
+      },
+      {
+        "from": 156,
+        "register": "rax",
+        "to": 160
+      },
+      {
+        "from": 157,
+        "register": "rdx",
+        "to": 160
+      },
+      {
+        "from": 164,
+        "register": "rax",
+        "to": 165
+      }
+    ],
+    "flow_effects": [
+      {
+        "addr": "0x8f1a1d",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_407d98"
+      },
+      {
+        "addr": "0x8f1a2d",
+        "inputs": [
+          "fs",
+          "rax"
+        ],
+        "kind": "store",
+        "text": "mov fs:[eax], esp"
+      },
+      {
+        "addr": "0x8f1a30",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_4182ac"
+      },
+      {
+        "addr": "0x8f1a37",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_6075d4"
+      },
+      {
+        "addr": "0x8f1a42",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_607758"
+      },
+      {
+        "addr": "0x8f1a4d",
+        "inputs": [
+          "ds",
+          "rdx",
+          "rax"
+        ],
+        "kind": "store",
+        "text": "mov [edx], al"
+      },
+      {
+        "addr": "0x8f1a56",
+        "inputs": [
+          "ds",
+          "rax"
+        ],
+        "kind": "store",
+        "text": "mov byte ptr [eax], 1"
+      },
+      {
+        "addr": "0x8f1a62",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_408154"
+      },
+      {
+        "addr": "0x8f1a6d",
+        "inputs": [
+          "ds",
+          "rdx",
+          "rax"
+        ],
+        "kind": "store",
+        "text": "mov [edx], eax"
+      },
+      {
+        "addr": "0x8f1a87",
+        "inputs": [],
+        "kind": "call",
+        "text": "MessageBoxA@thunk"
+      },
+      {
+        "addr": "0x8f1a91",
+        "inputs": [],
+        "kind": "call",
+        "text": "GetLastError@thunk"
+      },
+      {
+        "addr": "0x8f1a9d",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_4032a8"
+      },
+      {
+        "addr": "0x8f1aad",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_403310"
+      },
+      {
+        "addr": "0x8f1aba",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_40580c"
+      },
+      {
+        "addr": "0x8f1acf",
+        "inputs": [],
+        "kind": "call",
+        "text": "MessageBoxA@thunk"
+      },
+      {
+        "addr": "0x8f1ae3",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_47cf44"
+      },
+      {
+        "addr": "0x8f1aee",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_40d0a4"
+      },
+      {
+        "addr": "0x8f1af6",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_40d65c"
+      },
+      {
+        "addr": "0x8f1b04",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_4c37dc"
+      },
+      {
+        "addr": "0x8f1b15",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_47cf44"
+      },
+      {
+        "addr": "0x8f1b20",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_40d0a4"
+      },
+      {
+        "addr": "0x8f1b2c",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_4c3c90"
+      },
+      {
+        "addr": "0x8f1b38",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_47c7ec"
+      },
+      {
+        "addr": "0x8f1b47",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_47cf44"
+      },
+      {
+        "addr": "0x8f1b54",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_405454"
+      },
+      {
+        "addr": "0x8f1b65",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_8f0ad4"
+      },
+      {
+        "addr": "0x8f1b7d",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_47c804"
+      },
+      {
+        "addr": "0x8f1b99",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_47c884"
+      },
+      {
+        "addr": "0x8f1ba0",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_404574"
+      },
+      {
+        "addr": "0x8f1bbb",
+        "inputs": [],
+        "kind": "call",
+        "text": "ReleaseMutex@thunk"
+      },
+      {
+        "addr": "0x8f1bc8",
+        "inputs": [],
+        "kind": "call",
+        "text": "CloseHandle@thunk"
+      },
+      {
+        "addr": "0x8f1bf2",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_405780"
+      },
+      {
+        "addr": "0x8f1bfa",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_4058c0"
+      },
+      {
+        "addr": "0x8f1c00",
+        "inputs": [],
+        "kind": "call",
+        "text": "WinExec@thunk"
+      },
+      {
+        "addr": "0x8f1c2e",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_405780"
+      },
+      {
+        "addr": "0x8f1c36",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_4058c0"
+      },
+      {
+        "addr": "0x8f1c3c",
+        "inputs": [],
+        "kind": "call",
+        "text": "WinExec@thunk"
+      },
+      {
+        "addr": "0x8f1c46",
+        "inputs": [
+          "fs",
+          "rax",
+          "rdx"
+        ],
+        "kind": "store",
+        "text": "mov fs:[eax], edx"
+      },
+      {
+        "addr": "0x8f1c56",
+        "inputs": [],
+        "kind": "call",
+        "text": "sub_405424"
+      }
+    ],
+    "flow_nodes": [
+      {
+        "addr": "0x8f1a08",
+        "defines": [],
+        "id": 0,
+        "kind": "instruction",
+        "text": "push ebp"
+      },
+      {
+        "addr": "0x8f1a09",
+        "defines": [],
+        "id": 1,
+        "kind": "instruction",
+        "text": "mov ebp, esp"
+      },
+      {
+        "addr": "0x8f1a0b",
+        "defines": [
+          "rcx"
+        ],
+        "id": 2,
+        "kind": "instruction",
+        "text": "mov ecx, 6"
+      },
+      {
+        "addr": "0x8f1a10",
+        "defines": [],
+        "id": 3,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1a12",
+        "defines": [],
+        "id": 4,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1a14",
+        "defines": [
+          "rcx"
+        ],
+        "id": 5,
+        "kind": "instruction",
+        "text": "dec ecx"
+      },
+      {
+        "addr": "0x8f1a15",
+        "defines": [],
+        "id": 6,
+        "kind": "instruction",
+        "text": "jne 0x8f1a10"
+      },
+      {
+        "addr": "0x8f1a17",
+        "defines": [],
+        "id": 7,
+        "kind": "instruction",
+        "text": "push ebx"
+      },
+      {
+        "addr": "0x8f1a18",
+        "defines": [
+          "rax"
+        ],
+        "id": 8,
+        "kind": "instruction",
+        "text": "mov eax, 0x8f0b48"
+      },
+      {
+        "addr": "0x8f1a1d",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 9,
+        "kind": "instruction",
+        "text": "call 0x407d98"
+      },
+      {
+        "addr": "0x8f1a22",
+        "defines": [
+          "rax"
+        ],
+        "id": 10,
+        "kind": "instruction",
+        "text": "xor eax, eax"
+      },
+      {
+        "addr": "0x8f1a24",
+        "defines": [],
+        "id": 11,
+        "kind": "instruction",
+        "text": "push ebp"
+      },
+      {
+        "addr": "0x8f1a25",
+        "defines": [],
+        "id": 12,
+        "kind": "instruction",
+        "text": "push 0x8f1c5c"
+      },
+      {
+        "addr": "0x8f1a2a",
+        "defines": [],
+        "id": 13,
+        "kind": "instruction",
+        "text": "push dword ptr fs:[eax]"
+      },
+      {
+        "addr": "0x8f1a2d",
+        "defines": [],
+        "id": 14,
+        "kind": "instruction",
+        "text": "mov fs:[eax], esp"
+      },
+      {
+        "addr": "0x8f1a30",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 15,
+        "kind": "instruction",
+        "text": "call 0x4182ac"
+      },
+      {
+        "addr": "0x8f1a35",
+        "defines": [
+          "rax"
+        ],
+        "id": 16,
+        "kind": "instruction",
+        "text": "xor eax, eax"
+      },
+      {
+        "addr": "0x8f1a37",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 17,
+        "kind": "instruction",
+        "text": "call 0x6075d4"
+      },
+      {
+        "addr": "0x8f1a3c",
+        "defines": [],
+        "id": 18,
+        "kind": "instruction",
+        "text": "test al, al"
+      },
+      {
+        "addr": "0x8f1a3e",
+        "defines": [],
+        "id": 19,
+        "kind": "instruction",
+        "text": "jne 0x8f1a51"
+      },
+      {
+        "addr": "0x8f1a40",
+        "defines": [
+          "rax"
+        ],
+        "id": 20,
+        "kind": "instruction",
+        "text": "xor eax, eax"
+      },
+      {
+        "addr": "0x8f1a42",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 21,
+        "kind": "instruction",
+        "text": "call 0x607758"
+      },
+      {
+        "addr": "0x8f1a47",
+        "defines": [
+          "rdx"
+        ],
+        "id": 22,
+        "kind": "instruction",
+        "text": "mov edx, [0x8fcd0c]"
+      },
+      {
+        "addr": "0x8f1a4d",
+        "defines": [],
+        "id": 23,
+        "kind": "instruction",
+        "text": "mov [edx], al"
+      },
+      {
+        "addr": "0x8f1a4f",
+        "defines": [],
+        "id": 24,
+        "kind": "instruction",
+        "text": "jmp 0x8f1a59"
+      },
+      {
+        "addr": "0x8f1a51",
+        "defines": [
+          "rax"
+        ],
+        "id": 25,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fcd0c]"
+      },
+      {
+        "addr": "0x8f1a56",
+        "defines": [],
+        "id": 26,
+        "kind": "instruction",
+        "text": "mov byte ptr [eax], 1"
+      },
+      {
+        "addr": "0x8f1a59",
+        "defines": [],
+        "id": 27,
+        "kind": "instruction",
+        "text": "push 0x8f1c6c"
+      },
+      {
+        "addr": "0x8f1a5e",
+        "defines": [],
+        "id": 28,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1a60",
+        "defines": [],
+        "id": 29,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1a62",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 30,
+        "kind": "instruction",
+        "text": "call 0x408154"
+      },
+      {
+        "addr": "0x8f1a67",
+        "defines": [
+          "rdx"
+        ],
+        "id": 31,
+        "kind": "instruction",
+        "text": "mov edx, [0x8fbcf0]"
+      },
+      {
+        "addr": "0x8f1a6d",
+        "defines": [],
+        "id": 32,
+        "kind": "instruction",
+        "text": "mov [edx], eax"
+      },
+      {
+        "addr": "0x8f1a6f",
+        "defines": [
+          "rax"
+        ],
+        "id": 33,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc778]"
+      },
+      {
+        "addr": "0x8f1a74",
+        "defines": [],
+        "id": 34,
+        "kind": "instruction",
+        "text": "cmp dword ptr [eax], 1"
+      },
+      {
+        "addr": "0x8f1a77",
+        "defines": [],
+        "id": 35,
+        "kind": "instruction",
+        "text": "jne 0x8f1a91"
+      },
+      {
+        "addr": "0x8f1a79",
+        "defines": [],
+        "id": 36,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1a7b",
+        "defines": [],
+        "id": 37,
+        "kind": "instruction",
+        "text": "push 0x8f1c7c"
+      },
+      {
+        "addr": "0x8f1a80",
+        "defines": [],
+        "id": 38,
+        "kind": "instruction",
+        "text": "push 0x8f1c84"
+      },
+      {
+        "addr": "0x8f1a85",
+        "defines": [],
+        "id": 39,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1a87",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 40,
+        "kind": "instruction",
+        "text": "call 0x408c6c"
+      },
+      {
+        "addr": "0x8f1a8c",
+        "defines": [],
+        "id": 41,
+        "kind": "instruction",
+        "text": "jmp 0x8f1c41"
+      },
+      {
+        "addr": "0x8f1a91",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 42,
+        "kind": "instruction",
+        "text": "call 0x40828c"
+      },
+      {
+        "addr": "0x8f1a96",
+        "defines": [],
+        "id": 43,
+        "kind": "instruction",
+        "text": "cmp eax, 0xb7"
+      },
+      {
+        "addr": "0x8f1a9b",
+        "defines": [],
+        "id": 44,
+        "kind": "instruction",
+        "text": "jne 0x8f1ad9"
+      },
+      {
+        "addr": "0x8f1a9d",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 45,
+        "kind": "instruction",
+        "text": "call 0x4032a8"
+      },
+      {
+        "addr": "0x8f1aa2",
+        "defines": [
+          "rax"
+        ],
+        "id": 46,
+        "kind": "instruction",
+        "text": "dec eax"
+      },
+      {
+        "addr": "0x8f1aa3",
+        "defines": [],
+        "id": 47,
+        "kind": "instruction",
+        "text": "jl 0x8f1ac1"
+      },
+      {
+        "addr": "0x8f1aa5",
+        "defines": [
+          "rdx"
+        ],
+        "id": 48,
+        "kind": "instruction",
+        "text": "lea edx, [ebp-0x14]"
+      },
+      {
+        "addr": "0x8f1aa8",
+        "defines": [
+          "rax"
+        ],
+        "id": 49,
+        "kind": "instruction",
+        "text": "mov eax, 1"
+      },
+      {
+        "addr": "0x8f1aad",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 50,
+        "kind": "instruction",
+        "text": "call 0x403310"
+      },
+      {
+        "addr": "0x8f1ab2",
+        "defines": [
+          "rax"
+        ],
+        "id": 51,
+        "kind": "instruction",
+        "text": "mov eax, [ebp-0x14]"
+      },
+      {
+        "addr": "0x8f1ab5",
+        "defines": [
+          "rdx"
+        ],
+        "id": 52,
+        "kind": "instruction",
+        "text": "mov edx, 0x8f1d60"
+      },
+      {
+        "addr": "0x8f1aba",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 53,
+        "kind": "instruction",
+        "text": "call 0x40580c"
+      },
+      {
+        "addr": "0x8f1abf",
+        "defines": [],
+        "id": 54,
+        "kind": "instruction",
+        "text": "je 0x8f1ad9"
+      },
+      {
+        "addr": "0x8f1ac1",
+        "defines": [],
+        "id": 55,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1ac3",
+        "defines": [],
+        "id": 56,
+        "kind": "instruction",
+        "text": "push 0x8f1c7c"
+      },
+      {
+        "addr": "0x8f1ac8",
+        "defines": [],
+        "id": 57,
+        "kind": "instruction",
+        "text": "push 0x8f1d6c"
+      },
+      {
+        "addr": "0x8f1acd",
+        "defines": [],
+        "id": 58,
+        "kind": "instruction",
+        "text": "push 0"
+      },
+      {
+        "addr": "0x8f1acf",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 59,
+        "kind": "instruction",
+        "text": "call 0x408c6c"
+      },
+      {
+        "addr": "0x8f1ad4",
+        "defines": [],
+        "id": 60,
+        "kind": "instruction",
+        "text": "jmp 0x8f1c41"
+      },
+      {
+        "addr": "0x8f1ad9",
+        "defines": [
+          "rdx"
+        ],
+        "id": 61,
+        "kind": "instruction",
+        "text": "lea edx, [ebp-0x1c]"
+      },
+      {
+        "addr": "0x8f1adc",
+        "defines": [
+          "rax"
+        ],
+        "id": 62,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "addr": "0x8f1ae1",
+        "defines": [
+          "rax"
+        ],
+        "id": 63,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1ae3",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 64,
+        "kind": "instruction",
+        "text": "call 0x47cf44"
+      },
+      {
+        "addr": "0x8f1ae8",
+        "defines": [
+          "rax"
+        ],
+        "id": 65,
+        "kind": "instruction",
+        "text": "mov eax, [ebp-0x1c]"
+      },
+      {
+        "addr": "0x8f1aeb",
+        "defines": [
+          "rdx"
+        ],
+        "id": 66,
+        "kind": "instruction",
+        "text": "lea edx, [ebp-0x18]"
+      },
+      {
+        "addr": "0x8f1aee",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 67,
+        "kind": "instruction",
+        "text": "call 0x40d0a4"
+      },
+      {
+        "addr": "0x8f1af3",
+        "defines": [
+          "rax"
+        ],
+        "id": 68,
+        "kind": "instruction",
+        "text": "mov eax, [ebp-0x18]"
+      },
+      {
+        "addr": "0x8f1af6",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 69,
+        "kind": "instruction",
+        "text": "call 0x40d65c"
+      },
+      {
+        "addr": "0x8f1afb",
+        "defines": [
+          "rcx"
+        ],
+        "id": 70,
+        "kind": "instruction",
+        "text": "xor ecx, ecx"
+      },
+      {
+        "addr": "0x8f1afd",
+        "defines": [
+          "rdx"
+        ],
+        "id": 71,
+        "kind": "instruction",
+        "text": "mov dl, 1"
+      },
+      {
+        "addr": "0x8f1aff",
+        "defines": [
+          "rax"
+        ],
+        "id": 72,
+        "kind": "instruction",
+        "text": "mov eax, [0x4c2ec0]"
+      },
+      {
+        "addr": "0x8f1b04",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 73,
+        "kind": "instruction",
+        "text": "call 0x4c37dc"
+      },
+      {
+        "addr": "0x8f1b09",
+        "defines": [
+          "rbx"
+        ],
+        "id": 74,
+        "kind": "instruction",
+        "text": "mov ebx, eax"
+      },
+      {
+        "addr": "0x8f1b0b",
+        "defines": [
+          "rdx"
+        ],
+        "id": 75,
+        "kind": "instruction",
+        "text": "lea edx, [ebp-0x24]"
+      },
+      {
+        "addr": "0x8f1b0e",
+        "defines": [
+          "rax"
+        ],
+        "id": 76,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "addr": "0x8f1b13",
+        "defines": [
+          "rax"
+        ],
+        "id": 77,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1b15",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 78,
+        "kind": "instruction",
+        "text": "call 0x47cf44"
+      },
+      {
+        "addr": "0x8f1b1a",
+        "defines": [
+          "rax"
+        ],
+        "id": 79,
+        "kind": "instruction",
+        "text": "mov eax, [ebp-0x24]"
+      },
+      {
+        "addr": "0x8f1b1d",
+        "defines": [
+          "rdx"
+        ],
+        "id": 80,
+        "kind": "instruction",
+        "text": "lea edx, [ebp-0x20]"
+      },
+      {
+        "addr": "0x8f1b20",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 81,
+        "kind": "instruction",
+        "text": "call 0x40d0a4"
+      },
+      {
+        "addr": "0x8f1b25",
+        "defines": [
+          "rdx"
+        ],
+        "id": 82,
+        "kind": "instruction",
+        "text": "mov edx, [ebp-0x20]"
+      },
+      {
+        "addr": "0x8f1b28",
+        "defines": [
+          "rcx"
+        ],
+        "id": 83,
+        "kind": "instruction",
+        "text": "xor ecx, ecx"
+      },
+      {
+        "addr": "0x8f1b2a",
+        "defines": [
+          "rax"
+        ],
+        "id": 84,
+        "kind": "instruction",
+        "text": "mov eax, ebx"
+      },
+      {
+        "addr": "0x8f1b2c",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 85,
+        "kind": "instruction",
+        "text": "call 0x4c3c90"
+      },
+      {
+        "addr": "0x8f1b31",
+        "defines": [
+          "rax"
+        ],
+        "id": 86,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "addr": "0x8f1b36",
+        "defines": [
+          "rax"
+        ],
+        "id": 87,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1b38",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 88,
+        "kind": "instruction",
+        "text": "call 0x47c7ec"
+      },
+      {
+        "addr": "0x8f1b3d",
+        "defines": [
+          "rdx"
+        ],
+        "id": 89,
+        "kind": "instruction",
+        "text": "lea edx, [ebp-0x28]"
+      },
+      {
+        "addr": "0x8f1b40",
+        "defines": [
+          "rax"
+        ],
+        "id": 90,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "addr": "0x8f1b45",
+        "defines": [
+          "rax"
+        ],
+        "id": 91,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1b47",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 92,
+        "kind": "instruction",
+        "text": "call 0x47cf44"
+      },
+      {
+        "addr": "0x8f1b4c",
+        "defines": [
+          "rdx"
+        ],
+        "id": 93,
+        "kind": "instruction",
+        "text": "mov edx, [ebp-0x28]"
+      },
+      {
+        "addr": "0x8f1b4f",
+        "defines": [
+          "rax"
+        ],
+        "id": 94,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fbb0c]"
+      },
+      {
+        "addr": "0x8f1b54",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 95,
+        "kind": "instruction",
+        "text": "call 0x405454"
+      },
+      {
+        "addr": "0x8f1b59",
+        "defines": [
+          "rax"
+        ],
+        "id": 96,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "addr": "0x8f1b5e",
+        "defines": [
+          "rax"
+        ],
+        "id": 97,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1b60",
+        "defines": [
+          "rdx"
+        ],
+        "id": 98,
+        "kind": "instruction",
+        "text": "mov edx, 0x8f1d8c"
+      },
+      {
+        "addr": "0x8f1b65",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 99,
+        "kind": "instruction",
+        "text": "call 0x8f0ad4"
+      },
+      {
+        "addr": "0x8f1b6a",
+        "defines": [
+          "rcx"
+        ],
+        "id": 100,
+        "kind": "instruction",
+        "text": "mov ecx, [0x8fbe9c]"
+      },
+      {
+        "addr": "0x8f1b70",
+        "defines": [
+          "rax"
+        ],
+        "id": 101,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "addr": "0x8f1b75",
+        "defines": [
+          "rax"
+        ],
+        "id": 102,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1b77",
+        "defines": [
+          "rdx"
+        ],
+        "id": 103,
+        "kind": "instruction",
+        "text": "mov edx, [0x8ee094]"
+      },
+      {
+        "addr": "0x8f1b7d",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 104,
+        "kind": "instruction",
+        "text": "call 0x47c804"
+      },
+      {
+        "addr": "0x8f1b82",
+        "defines": [
+          "rax"
+        ],
+        "id": 105,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fbe9c]"
+      },
+      {
+        "addr": "0x8f1b87",
+        "defines": [
+          "rax"
+        ],
+        "id": 106,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1b89",
+        "defines": [],
+        "id": 107,
+        "kind": "instruction",
+        "text": "cmp dword ptr [eax+0x2fc], 0"
+      },
+      {
+        "addr": "0x8f1b90",
+        "defines": [],
+        "id": 108,
+        "kind": "instruction",
+        "text": "je 0x8f1b9e"
+      },
+      {
+        "addr": "0x8f1b92",
+        "defines": [
+          "rax"
+        ],
+        "id": 109,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc6ac]"
+      },
+      {
+        "addr": "0x8f1b97",
+        "defines": [
+          "rax"
+        ],
+        "id": 110,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1b99",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 111,
+        "kind": "instruction",
+        "text": "call 0x47c884"
+      },
+      {
+        "addr": "0x8f1b9e",
+        "defines": [
+          "rax"
+        ],
+        "id": 112,
+        "kind": "instruction",
+        "text": "mov eax, ebx"
+      },
+      {
+        "addr": "0x8f1ba0",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 113,
+        "kind": "instruction",
+        "text": "call 0x404574"
+      },
+      {
+        "addr": "0x8f1ba5",
+        "defines": [
+          "rax"
+        ],
+        "id": 114,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fc9d8]"
+      },
+      {
+        "addr": "0x8f1baa",
+        "defines": [],
+        "id": 115,
+        "kind": "instruction",
+        "text": "cmp byte ptr [eax], 0"
+      },
+      {
+        "addr": "0x8f1bad",
+        "defines": [],
+        "id": 116,
+        "kind": "instruction",
+        "text": "je 0x8f1c41"
+      },
+      {
+        "addr": "0x8f1bb3",
+        "defines": [
+          "rax"
+        ],
+        "id": 117,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fbcf0]"
+      },
+      {
+        "addr": "0x8f1bb8",
+        "defines": [
+          "rax"
+        ],
+        "id": 118,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1bba",
+        "defines": [],
+        "id": 119,
+        "kind": "instruction",
+        "text": "push eax"
+      },
+      {
+        "addr": "0x8f1bbb",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 120,
+        "kind": "instruction",
+        "text": "call 0x4083c4"
+      },
+      {
+        "addr": "0x8f1bc0",
+        "defines": [
+          "rax"
+        ],
+        "id": 121,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fbcf0]"
+      },
+      {
+        "addr": "0x8f1bc5",
+        "defines": [
+          "rax"
+        ],
+        "id": 122,
+        "kind": "instruction",
+        "text": "mov eax, [eax]"
+      },
+      {
+        "addr": "0x8f1bc7",
+        "defines": [],
+        "id": 123,
+        "kind": "instruction",
+        "text": "push eax"
+      },
+      {
+        "addr": "0x8f1bc8",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 124,
+        "kind": "instruction",
+        "text": "call 0x408104"
+      },
+      {
+        "addr": "0x8f1bcd",
+        "defines": [
+          "rax"
+        ],
+        "id": 125,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fcdf4]"
+      },
+      {
+        "addr": "0x8f1bd2",
+        "defines": [],
+        "id": 126,
+        "kind": "instruction",
+        "text": "cmp dword ptr [eax], 0"
+      },
+      {
+        "addr": "0x8f1bd5",
+        "defines": [],
+        "id": 127,
+        "kind": "instruction",
+        "text": "jne 0x8f1c07"
+      },
+      {
+        "addr": "0x8f1bd7",
+        "defines": [],
+        "id": 128,
+        "kind": "instruction",
+        "text": "push 5"
+      },
+      {
+        "addr": "0x8f1bd9",
+        "defines": [
+          "rax"
+        ],
+        "id": 129,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fbb0c]"
+      },
+      {
+        "addr": "0x8f1bde",
+        "defines": [],
+        "id": 130,
+        "kind": "instruction",
+        "text": "push dword ptr [eax]"
+      },
+      {
+        "addr": "0x8f1be0",
+        "defines": [],
+        "id": 131,
+        "kind": "instruction",
+        "text": "push 0x8f1da4"
+      },
+      {
+        "addr": "0x8f1be5",
+        "defines": [],
+        "id": 132,
+        "kind": "instruction",
+        "text": "push 0x8f1d60"
+      },
+      {
+        "addr": "0x8f1bea",
+        "defines": [
+          "rax"
+        ],
+        "id": 133,
+        "kind": "instruction",
+        "text": "lea eax, [ebp-0x2c]"
+      },
+      {
+        "addr": "0x8f1bed",
+        "defines": [
+          "rdx"
+        ],
+        "id": 134,
+        "kind": "instruction",
+        "text": "mov edx, 3"
+      },
+      {
+        "addr": "0x8f1bf2",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 135,
+        "kind": "instruction",
+        "text": "call 0x405780"
+      },
+      {
+        "addr": "0x8f1bf7",
+        "defines": [
+          "rax"
+        ],
+        "id": 136,
+        "kind": "instruction",
+        "text": "mov eax, [ebp-0x2c]"
+      },
+      {
+        "addr": "0x8f1bfa",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 137,
+        "kind": "instruction",
+        "text": "call 0x4058c0"
+      },
+      {
+        "addr": "0x8f1bff",
+        "defines": [],
+        "id": 138,
+        "kind": "instruction",
+        "text": "push eax"
+      },
+      {
+        "addr": "0x8f1c00",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 139,
+        "kind": "instruction",
+        "text": "call 0x408474"
+      },
+      {
+        "addr": "0x8f1c05",
+        "defines": [],
+        "id": 140,
+        "kind": "instruction",
+        "text": "jmp 0x8f1c41"
+      },
+      {
+        "addr": "0x8f1c07",
+        "defines": [],
+        "id": 141,
+        "kind": "instruction",
+        "text": "push 5"
+      },
+      {
+        "addr": "0x8f1c09",
+        "defines": [
+          "rax"
+        ],
+        "id": 142,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fbb0c]"
+      },
+      {
+        "addr": "0x8f1c0e",
+        "defines": [],
+        "id": 143,
+        "kind": "instruction",
+        "text": "push dword ptr [eax]"
+      },
+      {
+        "addr": "0x8f1c10",
+        "defines": [],
+        "id": 144,
+        "kind": "instruction",
+        "text": "push 0x8f1da4"
+      },
+      {
+        "addr": "0x8f1c15",
+        "defines": [],
+        "id": 145,
+        "kind": "instruction",
+        "text": "push 0x8f1d60"
+      },
+      {
+        "addr": "0x8f1c1a",
+        "defines": [],
+        "id": 146,
+        "kind": "instruction",
+        "text": "push 0x8f1da4"
+      },
+      {
+        "addr": "0x8f1c1f",
+        "defines": [
+          "rax"
+        ],
+        "id": 147,
+        "kind": "instruction",
+        "text": "mov eax, [0x8fcdf4]"
+      },
+      {
+        "addr": "0x8f1c24",
+        "defines": [],
+        "id": 148,
+        "kind": "instruction",
+        "text": "push dword ptr [eax]"
+      },
+      {
+        "addr": "0x8f1c26",
+        "defines": [
+          "rax"
+        ],
+        "id": 149,
+        "kind": "instruction",
+        "text": "lea eax, [ebp-0x30]"
+      },
+      {
+        "addr": "0x8f1c29",
+        "defines": [
+          "rdx"
+        ],
+        "id": 150,
+        "kind": "instruction",
+        "text": "mov edx, 5"
+      },
+      {
+        "addr": "0x8f1c2e",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 151,
+        "kind": "instruction",
+        "text": "call 0x405780"
+      },
+      {
+        "addr": "0x8f1c33",
+        "defines": [
+          "rax"
+        ],
+        "id": 152,
+        "kind": "instruction",
+        "text": "mov eax, [ebp-0x30]"
+      },
+      {
+        "addr": "0x8f1c36",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 153,
+        "kind": "instruction",
+        "text": "call 0x4058c0"
+      },
+      {
+        "addr": "0x8f1c3b",
+        "defines": [],
+        "id": 154,
+        "kind": "instruction",
+        "text": "push eax"
+      },
+      {
+        "addr": "0x8f1c3c",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 155,
+        "kind": "instruction",
+        "text": "call 0x408474"
+      },
+      {
+        "addr": "0x8f1c41",
+        "defines": [
+          "rax"
+        ],
+        "id": 156,
+        "kind": "instruction",
+        "text": "xor eax, eax"
+      },
+      {
+        "addr": "0x8f1c43",
+        "defines": [
+          "rdx"
+        ],
+        "id": 157,
+        "kind": "instruction",
+        "text": "pop edx"
+      },
+      {
+        "addr": "0x8f1c44",
+        "defines": [
+          "rcx"
+        ],
+        "id": 158,
+        "kind": "instruction",
+        "text": "pop ecx"
+      },
+      {
+        "addr": "0x8f1c45",
+        "defines": [
+          "rcx"
+        ],
+        "id": 159,
+        "kind": "instruction",
+        "text": "pop ecx"
+      },
+      {
+        "addr": "0x8f1c46",
+        "defines": [],
+        "id": 160,
+        "kind": "instruction",
+        "text": "mov fs:[eax], edx"
+      },
+      {
+        "addr": "0x8f1c49",
+        "defines": [],
+        "id": 161,
+        "kind": "instruction",
+        "text": "push 0x8f1c63"
+      },
+      {
+        "addr": "0x8f1c4e",
+        "defines": [
+          "rax"
+        ],
+        "id": 162,
+        "kind": "instruction",
+        "text": "lea eax, [ebp-0x30]"
+      },
+      {
+        "addr": "0x8f1c51",
+        "defines": [
+          "rdx"
+        ],
+        "id": 163,
+        "kind": "instruction",
+        "text": "mov edx, 8"
+      },
+      {
+        "addr": "0x8f1c56",
+        "defines": [
+          "rax",
+          "rcx",
+          "rdx",
+          "eax",
+          "ecx",
+          "edx"
+        ],
+        "id": 164,
+        "kind": "instruction",
+        "text": "call 0x405424"
+      },
+      {
+        "addr": "0x8f1c5b",
+        "defines": [],
+        "id": 165,
+        "kind": "instruction",
+        "text": "ret"
+      }
+    ],
+    "flow_parameter_uses": [],
+    "flow_parameters": [],
+    "flow_summary": {
+      "edges": 39,
+      "effects": 39,
+      "nodes": 166,
+      "parameters": [],
+      "truncated": false
+    },
+    "function": {
+      "basic_blocks": 18,
+      "body_ranges": [
+        [
+          "0x8f1a08",
+          "0x8f1a10"
+        ],
+        [
+          "0x8f1a10",
+          "0x8f1a17"
+        ],
+        [
+          "0x8f1a17",
+          "0x8f1a40"
+        ],
+        [
+          "0x8f1a40",
+          "0x8f1a51"
+        ],
+        [
+          "0x8f1a51",
+          "0x8f1a59"
+        ],
+        [
+          "0x8f1a59",
+          "0x8f1a79"
+        ],
+        [
+          "0x8f1a79",
+          "0x8f1a91"
+        ],
+        [
+          "0x8f1a91",
+          "0x8f1a9d"
+        ],
+        [
+          "0x8f1a9d",
+          "0x8f1aa5"
+        ],
+        [
+          "0x8f1aa5",
+          "0x8f1ac1"
+        ],
+        [
+          "0x8f1ac1",
+          "0x8f1ad9"
+        ],
+        [
+          "0x8f1ad9",
+          "0x8f1b92"
+        ],
+        [
+          "0x8f1b92",
+          "0x8f1b9e"
+        ],
+        [
+          "0x8f1b9e",
+          "0x8f1bb3"
+        ],
+        [
+          "0x8f1bb3",
+          "0x8f1bd7"
+        ],
+        [
+          "0x8f1bd7",
+          "0x8f1c07"
+        ],
+        [
+          "0x8f1c07",
+          "0x8f1c41"
+        ],
+        [
+          "0x8f1c41",
+          "0x8f1c5c"
+        ]
+      ],
+      "callers": 0,
+      "calls_out": 34,
+      "default_name": "entry",
+      "discovered_by": "entry_point",
+      "end": "0x8f1c5c",
+      "entry": "0x8f1a08",
+      "instructions": 166,
+      "jump_tables": [],
+      "name": "entry",
+      "name_source": "entry_point",
+      "returns": true,
+      "size": 596,
+      "tail_calls": 0,
+      "thunk_of": null,
+      "truncated": false,
+      "unresolved_indirect_jumps": 0
+    },
+    "incoming_references": [],
+    "native_api": {
+      "api_calls_by_category": {
+        "other": [
+          {
+            "library": null,
+            "name": "GetLastError@thunk",
+            "site": "0x8f1a91"
+          },
+          {
+            "library": null,
+            "name": "CloseHandle@thunk",
+            "site": "0x8f1bc8"
+          }
+        ],
+        "processes": [
+          {
+            "library": null,
+            "name": "WinExec@thunk",
+            "site": "0x8f1c00"
+          },
+          {
+            "library": null,
+            "name": "WinExec@thunk",
+            "site": "0x8f1c3c"
+          }
+        ],
+        "threads": [
+          {
+            "library": null,
+            "name": "ReleaseMutex@thunk",
+            "site": "0x8f1bbb"
+          }
+        ],
+        "user_interface": [
+          {
+            "library": null,
+            "name": "MessageBoxA@thunk",
+            "site": "0x8f1a87"
+          },
+          {
+            "library": null,
+            "name": "MessageBoxA@thunk",
+            "site": "0x8f1acf"
+          }
+        ]
+      },
+      "entry": "0x8f1a08",
+      "function": "entry",
+      "internal_calls": [
+        {
+          "name": "sub_407d98",
+          "site": "0x8f1a1d",
+          "target": "0x407d98"
+        },
+        {
+          "name": "sub_4182ac",
+          "site": "0x8f1a30",
+          "target": "0x4182ac"
+        },
+        {
+          "name": "sub_6075d4",
+          "site": "0x8f1a37",
+          "target": "0x6075d4"
+        },
+        {
+          "name": "sub_607758",
+          "site": "0x8f1a42",
+          "target": "0x607758"
+        },
+        {
+          "name": "sub_408154",
+          "site": "0x8f1a62",
+          "target": "0x408154"
+        },
+        {
+          "name": "sub_405424",
+          "site": "0x8f1c56",
+          "target": "0x405424"
+        },
+        {
+          "name": "sub_4032a8",
+          "site": "0x8f1a9d",
+          "target": "0x4032a8"
+        },
+        {
+          "name": "sub_403310",
+          "site": "0x8f1aad",
+          "target": "0x403310"
+        },
+        {
+          "name": "sub_40580c",
+          "site": "0x8f1aba",
+          "target": "0x40580c"
+        },
+        {
+          "name": "sub_47cf44",
+          "site": "0x8f1ae3",
+          "target": "0x47cf44"
+        },
+        {
+          "name": "sub_40d0a4",
+          "site": "0x8f1aee",
+          "target": "0x40d0a4"
+        },
+        {
+          "name": "sub_40d65c",
+          "site": "0x8f1af6",
+          "target": "0x40d65c"
+        },
+        {
+          "name": "sub_4c37dc",
+          "site": "0x8f1b04",
+          "target": "0x4c37dc"
+        },
+        {
+          "name": "sub_47cf44",
+          "site": "0x8f1b15",
+          "target": "0x47cf44"
+        },
+        {
+          "name": "sub_40d0a4",
+          "site": "0x8f1b20",
+          "target": "0x40d0a4"
+        },
+        {
+          "name": "sub_4c3c90",
+          "site": "0x8f1b2c",
+          "target": "0x4c3c90"
+        },
+        {
+          "name": "sub_47c7ec",
+          "site": "0x8f1b38",
+          "target": "0x47c7ec"
+        },
+        {
+          "name": "sub_47cf44",
+          "site": "0x8f1b47",
+          "target": "0x47cf44"
+        },
+        {
+          "name": "sub_405454",
+          "site": "0x8f1b54",
+          "target": "0x405454"
+        },
+        {
+          "name": "sub_8f0ad4",
+          "site": "0x8f1b65",
+          "target": "0x8f0ad4"
+        },
+        {
+          "name": "sub_47c804",
+          "site": "0x8f1b7d",
+          "target": "0x47c804"
+        },
+        {
+          "name": "sub_47c884",
+          "site": "0x8f1b99",
+          "target": "0x47c884"
+        },
+        {
+          "name": "sub_404574",
+          "site": "0x8f1ba0",
+          "target": "0x404574"
+        },
+        {
+          "name": "sub_405780",
+          "site": "0x8f1bf2",
+          "target": "0x405780"
+        },
+        {
+          "name": "sub_4058c0",
+          "site": "0x8f1bfa",
+          "target": "0x4058c0"
+        },
+        {
+          "name": "sub_405780",
+          "site": "0x8f1c2e",
+          "target": "0x405780"
+        },
+        {
+          "name": "sub_4058c0",
+          "site": "0x8f1c36",
+          "target": "0x4058c0"
+        }
+      ],
+      "jump_tables": [],
+      "unresolved_indirect_calls": [],
+      "unresolved_indirect_jumps": 0
+    },
+    "outgoing_references": [
+      {
+        "from": "0x8f1a18",
+        "kind": "data",
+        "name": "sub_8f0b48",
+        "to": "0x8f0b48"
+      },
+      {
+        "from": "0x8f1a1d",
+        "kind": "call",
+        "name": "sub_407d98",
+        "to": "0x407d98"
+      },
+      {
+        "from": "0x8f1a25",
+        "kind": "data",
+        "name": "sub_8f1c5c",
+        "to": "0x8f1c5c"
+      },
+      {
+        "from": "0x8f1a30",
+        "kind": "call",
+        "name": "sub_4182ac",
+        "to": "0x4182ac"
+      },
+      {
+        "from": "0x8f1a37",
+        "kind": "call",
+        "name": "sub_6075d4",
+        "to": "0x6075d4"
+      },
+      {
+        "from": "0x8f1a42",
+        "kind": "call",
+        "name": "sub_607758",
+        "to": "0x607758"
+      },
+      {
+        "from": "0x8f1a47",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fcd0c"
+      },
+      {
+        "from": "0x8f1a51",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fcd0c"
+      },
+      {
+        "from": "0x8f1a59",
+        "kind": "data",
+        "name": "sub_8f1c6c",
+        "to": "0x8f1c6c"
+      },
+      {
+        "from": "0x8f1a62",
+        "kind": "call",
+        "name": "sub_408154",
+        "to": "0x408154"
+      },
+      {
+        "from": "0x8f1a67",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbcf0"
+      },
+      {
+        "from": "0x8f1a6f",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc778"
+      },
+      {
+        "from": "0x8f1a7b",
+        "kind": "data",
+        "name": "sub_8f1c7c",
+        "to": "0x8f1c7c"
+      },
+      {
+        "from": "0x8f1a80",
+        "kind": "data",
+        "name": "sub_8f1c84",
+        "to": "0x8f1c84"
+      },
+      {
+        "from": "0x8f1a87",
+        "kind": "call",
+        "name": "MessageBoxA@thunk",
+        "to": "0x408c6c"
+      },
+      {
+        "from": "0x8f1a91",
+        "kind": "call",
+        "name": "GetLastError@thunk",
+        "to": "0x40828c"
+      },
+      {
+        "from": "0x8f1a9d",
+        "kind": "call",
+        "name": "sub_4032a8",
+        "to": "0x4032a8"
+      },
+      {
+        "from": "0x8f1aad",
+        "kind": "call",
+        "name": "sub_403310",
+        "to": "0x403310"
+      },
+      {
+        "from": "0x8f1ab5",
+        "kind": "data",
+        "name": "sub_8f1d60",
+        "to": "0x8f1d60"
+      },
+      {
+        "from": "0x8f1aba",
+        "kind": "call",
+        "name": "sub_40580c",
+        "to": "0x40580c"
+      },
+      {
+        "from": "0x8f1ac3",
+        "kind": "data",
+        "name": "sub_8f1c7c",
+        "to": "0x8f1c7c"
+      },
+      {
+        "from": "0x8f1ac8",
+        "kind": "data",
+        "name": "sub_8f1d6c",
+        "to": "0x8f1d6c"
+      },
+      {
+        "from": "0x8f1acf",
+        "kind": "call",
+        "name": "MessageBoxA@thunk",
+        "to": "0x408c6c"
+      },
+      {
+        "from": "0x8f1adc",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc6ac"
+      },
+      {
+        "from": "0x8f1ae3",
+        "kind": "call",
+        "name": "sub_47cf44",
+        "to": "0x47cf44"
+      },
+      {
+        "from": "0x8f1aee",
+        "kind": "call",
+        "name": "sub_40d0a4",
+        "to": "0x40d0a4"
+      },
+      {
+        "from": "0x8f1af6",
+        "kind": "call",
+        "name": "sub_40d65c",
+        "to": "0x40d65c"
+      },
+      {
+        "from": "0x8f1aff",
+        "kind": "data",
+        "name": "sub_4c2ec0",
+        "to": "0x4c2ec0"
+      },
+      {
+        "from": "0x8f1b04",
+        "kind": "call",
+        "name": "sub_4c37dc",
+        "to": "0x4c37dc"
+      },
+      {
+        "from": "0x8f1b0e",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc6ac"
+      },
+      {
+        "from": "0x8f1b15",
+        "kind": "call",
+        "name": "sub_47cf44",
+        "to": "0x47cf44"
+      },
+      {
+        "from": "0x8f1b20",
+        "kind": "call",
+        "name": "sub_40d0a4",
+        "to": "0x40d0a4"
+      },
+      {
+        "from": "0x8f1b2c",
+        "kind": "call",
+        "name": "sub_4c3c90",
+        "to": "0x4c3c90"
+      },
+      {
+        "from": "0x8f1b31",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc6ac"
+      },
+      {
+        "from": "0x8f1b38",
+        "kind": "call",
+        "name": "sub_47c7ec",
+        "to": "0x47c7ec"
+      },
+      {
+        "from": "0x8f1b40",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc6ac"
+      },
+      {
+        "from": "0x8f1b47",
+        "kind": "call",
+        "name": "sub_47cf44",
+        "to": "0x47cf44"
+      },
+      {
+        "from": "0x8f1b4f",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbb0c"
+      },
+      {
+        "from": "0x8f1b54",
+        "kind": "call",
+        "name": "sub_405454",
+        "to": "0x405454"
+      },
+      {
+        "from": "0x8f1b59",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc6ac"
+      },
+      {
+        "from": "0x8f1b60",
+        "kind": "data",
+        "name": "sub_8f1d8c",
+        "to": "0x8f1d8c"
+      },
+      {
+        "from": "0x8f1b65",
+        "kind": "call",
+        "name": "sub_8f0ad4",
+        "to": "0x8f0ad4"
+      },
+      {
+        "from": "0x8f1b6a",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbe9c"
+      },
+      {
+        "from": "0x8f1b70",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc6ac"
+      },
+      {
+        "from": "0x8f1b77",
+        "kind": "data",
+        "name": "sub_8ee094",
+        "to": "0x8ee094"
+      },
+      {
+        "from": "0x8f1b7d",
+        "kind": "call",
+        "name": "sub_47c804",
+        "to": "0x47c804"
+      },
+      {
+        "from": "0x8f1b82",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbe9c"
+      },
+      {
+        "from": "0x8f1b92",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc6ac"
+      },
+      {
+        "from": "0x8f1b99",
+        "kind": "call",
+        "name": "sub_47c884",
+        "to": "0x47c884"
+      },
+      {
+        "from": "0x8f1ba0",
+        "kind": "call",
+        "name": "sub_404574",
+        "to": "0x404574"
+      },
+      {
+        "from": "0x8f1ba5",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fc9d8"
+      },
+      {
+        "from": "0x8f1bb3",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbcf0"
+      },
+      {
+        "from": "0x8f1bbb",
+        "kind": "call",
+        "name": "ReleaseMutex@thunk",
+        "to": "0x4083c4"
+      },
+      {
+        "from": "0x8f1bc0",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbcf0"
+      },
+      {
+        "from": "0x8f1bc8",
+        "kind": "call",
+        "name": "CloseHandle@thunk",
+        "to": "0x408104"
+      },
+      {
+        "from": "0x8f1bcd",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fcdf4"
+      },
+      {
+        "from": "0x8f1bd9",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbb0c"
+      },
+      {
+        "from": "0x8f1be0",
+        "kind": "data",
+        "name": "sub_8f1da4",
+        "to": "0x8f1da4"
+      },
+      {
+        "from": "0x8f1be5",
+        "kind": "data",
+        "name": "sub_8f1d60",
+        "to": "0x8f1d60"
+      },
+      {
+        "from": "0x8f1bf2",
+        "kind": "call",
+        "name": "sub_405780",
+        "to": "0x405780"
+      },
+      {
+        "from": "0x8f1bfa",
+        "kind": "call",
+        "name": "sub_4058c0",
+        "to": "0x4058c0"
+      },
+      {
+        "from": "0x8f1c00",
+        "kind": "call",
+        "name": "WinExec@thunk",
+        "to": "0x408474"
+      },
+      {
+        "from": "0x8f1c09",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fbb0c"
+      },
+      {
+        "from": "0x8f1c10",
+        "kind": "data",
+        "name": "sub_8f1da4",
+        "to": "0x8f1da4"
+      },
+      {
+        "from": "0x8f1c15",
+        "kind": "data",
+        "name": "sub_8f1d60",
+        "to": "0x8f1d60"
+      },
+      {
+        "from": "0x8f1c1a",
+        "kind": "data",
+        "name": "sub_8f1da4",
+        "to": "0x8f1da4"
+      },
+      {
+        "from": "0x8f1c1f",
+        "kind": "data",
+        "name": null,
+        "to": "0x8fcdf4"
+      },
+      {
+        "from": "0x8f1c2e",
+        "kind": "call",
+        "name": "sub_405780",
+        "to": "0x405780"
+      },
+      {
+        "from": "0x8f1c36",
+        "kind": "call",
+        "name": "sub_4058c0",
+        "to": "0x4058c0"
+      },
+      {
+        "from": "0x8f1c3c",
+        "kind": "call",
+        "name": "WinExec@thunk",
+        "to": "0x408474"
+      },
+      {
+        "from": "0x8f1c49",
+        "kind": "data",
+        "name": "sub_8f1c63",
+        "to": "0x8f1c63"
+      },
+      {
+        "from": "0x8f1c56",
+        "kind": "call",
+        "name": "sub_405424",
+        "to": "0x405424"
+      }
+    ],
+    "pseudocode": "int64_t entry()\n{\n    ecx = 6;\n    while (true) {\n        ecx--;\n        if (ecx == 0) break;\n    }\n    eax = 0x8f0b48;\n    sub_407d98(ebx);\n    eax = 0;\n    fs:[eax] = esp;\n    sub_4182ac(fs:[eax], 0x8f1c5c, ebp);\n    eax = 0;\n    rax = sub_6075d4();\n    if (al != 0) {\n        eax = *(uint32_t*)0x8fcd0c;\n        *(uint8_t*)(eax) = 1;\n    } else {\n        eax = 0;\n        rax = sub_607758();\n        edx = *(uint32_t*)0x8fcd0c;\n        *(uint8_t*)(edx) = al;\n    }\n    rax = sub_408154(0, 0, 0x8f1c6c);\n    edx = *(uint32_t*)0x8fbcf0;\n    *(uint32_t*)(edx) = eax;\n    eax = *(uint32_t*)0x8fc778;\n    if (*(uint32_t*)(eax) != 1) {\n        rax = GetLastError@thunk();\n        if (eax != 0xb7) {\nlabel_8f1ad9:\n            edx = &arg_ffffffe4;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47cf44();\n            eax = arg_ffffffe4;\n            edx = &arg_ffffffe8;\n            sub_40d0a4();\n            eax = arg_ffffffe8;\n            sub_40d65c();\n            ecx = 0;\n            dl = 1;\n            eax = sub_4c2ec0;\n            rax = sub_4c37dc();\n            ebx = eax;\n            edx = &arg_ffffffdc;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47cf44();\n            eax = arg_ffffffdc;\n            edx = &arg_ffffffe0;\n            sub_40d0a4();\n            edx = arg_ffffffe0;\n            ecx = 0;\n            eax = ebx;\n            sub_4c3c90();\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47c7ec();\n            edx = &arg_ffffffd8;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            sub_47cf44();\n            edx = arg_ffffffd8;\n            eax = *(uint32_t*)0x8fbb0c;\n            sub_405454();\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            edx = 0x8f1d8c;\n            sub_8f0ad4();\n            ecx = *(uint32_t*)0x8fbe9c;\n            eax = *(uint32_t*)0x8fc6ac;\n            eax = *(uint32_t*)(eax);\n            edx = sub_8ee094;\n            sub_47c804();\n            eax = *(uint32_t*)0x8fbe9c;\n            eax = *(uint32_t*)(eax);\n            if (*(uint32_t*)(eax + 0x2fc) != 0) {\n                eax = *(uint32_t*)0x8fc6ac;\n                eax = *(uint32_t*)(eax);\n                sub_47c884();\n            }\n            eax = ebx;\n            sub_404574();\n            eax = *(uint32_t*)0x8fc9d8;\n            if (*(uint8_t*)(eax) != 0) {\n                eax = *(uint32_t*)0x8fbcf0;\n                eax = *(uint32_t*)(eax);\n                ReleaseMutex@thunk(eax);\n                eax = *(uint32_t*)0x8fbcf0;\n                eax = *(uint32_t*)(eax);\n                CloseHandle@thunk(eax);\n                eax = *(uint32_t*)0x8fcdf4;\n                if (*(uint32_t*)(eax) != 0) {\n                    eax = *(uint32_t*)0x8fbb0c;\n                    eax = *(uint32_t*)0x8fcdf4;\n                    eax = &arg_ffffffd0;\n                    edx = 5;\n                    sub_405780(*(uint32_t*)(eax), 0x8f1da4, 0x8f1d60, 0x8f1da4, *(uint32_t*)(eax), 5);\n                    eax = arg_ffffffd0;\n                    rax = sub_4058c0();\n                    WinExec@thunk(eax);\n                } else {\n                    eax = *(uint32_t*)0x8fbb0c;\n                    eax = &arg_ffffffd4;\n                    edx = 3;\n                    sub_405780(0x8f1d60, 0x8f1da4, *(uint32_t*)(eax), 5);\n                    eax = arg_ffffffd4;\n                    rax = sub_4058c0();\n                    WinExec@thunk(eax);\n                }\n            }\n        } else {\n            rax = sub_4032a8();\n            eax--;\n            if (eax < 0) {\nlabel_8f1ac1:\n                MessageBoxA@thunk(0, 0x8f1d6c, 0x8f1c7c, 0);\n            } else {\n                edx = &arg_ffffffec;\n                eax = 1;\n                sub_403310();\n                eax = arg_ffffffec;\n                edx = 0x8f1d60;\n                sub_40580c();\n                if (/* Eq */ flags) {\n                    goto label_8f1ad9;\n                } else {\n                    goto label_8f1ac1;\n                }\n            }\n        }\n    } else {\n        MessageBoxA@thunk(0, 0x8f1c84, 0x8f1c7c, 0);\n    }\n    eax = 0;\n    fs:[eax] = edx;\n    eax = &arg_ffffffd0;\n    edx = 8;\n    sub_405424(0x8f1c63);\n    return rax;\n}\n",
+    "referenced_names": [
+      {
+        "from": "0x8f1a18",
+        "kind": "data",
+        "name": "sub_8f0b48",
+        "to": "0x8f0b48"
+      },
+      {
+        "from": "0x8f1a1d",
+        "kind": "call",
+        "name": "sub_407d98",
+        "to": "0x407d98"
+      },
+      {
+        "from": "0x8f1a25",
+        "kind": "data",
+        "name": "sub_8f1c5c",
+        "to": "0x8f1c5c"
+      },
+      {
+        "from": "0x8f1a30",
+        "kind": "call",
+        "name": "sub_4182ac",
+        "to": "0x4182ac"
+      },
+      {
+        "from": "0x8f1a37",
+        "kind": "call",
+        "name": "sub_6075d4",
+        "to": "0x6075d4"
+      },
+      {
+        "from": "0x8f1a42",
+        "kind": "call",
+        "name": "sub_607758",
+        "to": "0x607758"
+      },
+      {
+        "from": "0x8f1a59",
+        "kind": "data",
+        "name": "sub_8f1c6c",
+        "to": "0x8f1c6c"
+      },
+      {
+        "from": "0x8f1a62",
+        "kind": "call",
+        "name": "sub_408154",
+        "to": "0x408154"
+      },
+      {
+        "from": "0x8f1a7b",
+        "kind": "data",
+        "name": "sub_8f1c7c",
+        "to": "0x8f1c7c"
+      },
+      {
+        "from": "0x8f1a80",
+        "kind": "data",
+        "name": "sub_8f1c84",
+        "to": "0x8f1c84"
+      },
+      {
+        "from": "0x8f1a87",
+        "kind": "call",
+        "name": "MessageBoxA@thunk",
+        "to": "0x408c6c"
+      },
+      {
+        "from": "0x8f1a91",
+        "kind": "call",
+        "name": "GetLastError@thunk",
+        "to": "0x40828c"
+      },
+      {
+        "from": "0x8f1a9d",
+        "kind": "call",
+        "name": "sub_4032a8",
+        "to": "0x4032a8"
+      },
+      {
+        "from": "0x8f1aad",
+        "kind": "call",
+        "name": "sub_403310",
+        "to": "0x403310"
+      },
+      {
+        "from": "0x8f1ab5",
+        "kind": "data",
+        "name": "sub_8f1d60",
+        "to": "0x8f1d60"
+      },
+      {
+        "from": "0x8f1aba",
+        "kind": "call",
+        "name": "sub_40580c",
+        "to": "0x40580c"
+      },
+      {
+        "from": "0x8f1ac3",
+        "kind": "data",
+        "name": "sub_8f1c7c",
+        "to": "0x8f1c7c"
+      },
+      {
+        "from": "0x8f1ac8",
+        "kind": "data",
+        "name": "sub_8f1d6c",
+        "to": "0x8f1d6c"
+      },
+      {
+        "from": "0x8f1acf",
+        "kind": "call",
+        "name": "MessageBoxA@thunk",
+        "to": "0x408c6c"
+      },
+      {
+        "from": "0x8f1ae3",
+        "kind": "call",
+        "name": "sub_47cf44",
+        "to": "0x47cf44"
+      },
+      {
+        "from": "0x8f1aee",
+        "kind": "call",
+        "name": "sub_40d0a4",
+        "to": "0x40d0a4"
+      },
+      {
+        "from": "0x8f1af6",
+        "kind": "call",
+        "name": "sub_40d65c",
+        "to": "0x40d65c"
+      },
+      {
+        "from": "0x8f1aff",
+        "kind": "data",
+        "name": "sub_4c2ec0",
+        "to": "0x4c2ec0"
+      },
+      {
+        "from": "0x8f1b04",
+        "kind": "call",
+        "name": "sub_4c37dc",
+        "to": "0x4c37dc"
+      },
+      {
+        "from": "0x8f1b15",
+        "kind": "call",
+        "name": "sub_47cf44",
+        "to": "0x47cf44"
+      },
+      {
+        "from": "0x8f1b20",
+        "kind": "call",
+        "name": "sub_40d0a4",
+        "to": "0x40d0a4"
+      },
+      {
+        "from": "0x8f1b2c",
+        "kind": "call",
+        "name": "sub_4c3c90",
+        "to": "0x4c3c90"
+      },
+      {
+        "from": "0x8f1b38",
+        "kind": "call",
+        "name": "sub_47c7ec",
+        "to": "0x47c7ec"
+      },
+      {
+        "from": "0x8f1b47",
+        "kind": "call",
+        "name": "sub_47cf44",
+        "to": "0x47cf44"
+      },
+      {
+        "from": "0x8f1b54",
+        "kind": "call",
+        "name": "sub_405454",
+        "to": "0x405454"
+      },
+      {
+        "from": "0x8f1b60",
+        "kind": "data",
+        "name": "sub_8f1d8c",
+        "to": "0x8f1d8c"
+      },
+      {
+        "from": "0x8f1b65",
+        "kind": "call",
+        "name": "sub_8f0ad4",
+        "to": "0x8f0ad4"
+      },
+      {
+        "from": "0x8f1b77",
+        "kind": "data",
+        "name": "sub_8ee094",
+        "to": "0x8ee094"
+      },
+      {
+        "from": "0x8f1b7d",
+        "kind": "call",
+        "name": "sub_47c804",
+        "to": "0x47c804"
+      },
+      {
+        "from": "0x8f1b99",
+        "kind": "call",
+        "name": "sub_47c884",
+        "to": "0x47c884"
+      },
+      {
+        "from": "0x8f1ba0",
+        "kind": "call",
+        "name": "sub_404574",
+        "to": "0x404574"
+      },
+      {
+        "from": "0x8f1bbb",
+        "kind": "call",
+        "name": "ReleaseMutex@thunk",
+        "to": "0x4083c4"
+      },
+      {
+        "from": "0x8f1bc8",
+        "kind": "call",
+        "name": "CloseHandle@thunk",
+        "to": "0x408104"
+      },
+      {
+        "from": "0x8f1be0",
+        "kind": "data",
+        "name": "sub_8f1da4",
+        "to": "0x8f1da4"
+      },
+      {
+        "from": "0x8f1be5",
+        "kind": "data",
+        "name": "sub_8f1d60",
+        "to": "0x8f1d60"
+      },
+      {
+        "from": "0x8f1bf2",
+        "kind": "call",
+        "name": "sub_405780",
+        "to": "0x405780"
+      },
+      {
+        "from": "0x8f1bfa",
+        "kind": "call",
+        "name": "sub_4058c0",
+        "to": "0x4058c0"
+      },
+      {
+        "from": "0x8f1c00",
+        "kind": "call",
+        "name": "WinExec@thunk",
+        "to": "0x408474"
+      },
+      {
+        "from": "0x8f1c10",
+        "kind": "data",
+        "name": "sub_8f1da4",
+        "to": "0x8f1da4"
+      },
+      {
+        "from": "0x8f1c15",
+        "kind": "data",
+        "name": "sub_8f1d60",
+        "to": "0x8f1d60"
+      },
+      {
+        "from": "0x8f1c1a",
+        "kind": "data",
+        "name": "sub_8f1da4",
+        "to": "0x8f1da4"
+      },
+      {
+        "from": "0x8f1c2e",
+        "kind": "call",
+        "name": "sub_405780",
+        "to": "0x405780"
+      },
+      {
+        "from": "0x8f1c36",
+        "kind": "call",
+        "name": "sub_4058c0",
+        "to": "0x4058c0"
+      },
+      {
+        "from": "0x8f1c3c",
+        "kind": "call",
+        "name": "WinExec@thunk",
+        "to": "0x408474"
+      },
+      {
+        "from": "0x8f1c49",
+        "kind": "data",
+        "name": "sub_8f1c63",
+        "to": "0x8f1c63"
+      },
+      {
+        "from": "0x8f1c56",
+        "kind": "call",
+        "name": "sub_405424",
+        "to": "0x405424"
+      }
+    ],
+    "referenced_strings": [],
+    "signature": "int64_t entry()",
+    "unresolved_calls": []
+  },
+  "summary": "entry at 0x8f1a08: 18 blocks, 166 instructions, calls 34 functions, called from 0 places, uses 0 strings.",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "register_level",
+      "message": "variables are machine registers and stack slots; types are not recovered"
+    },
+    {
+      "code": "calling_convention_assumed",
+      "message": "call arguments follow the usual x86 convention and may be wrong for unusual functions"
+    },
+    {
+      "code": "conditions_from_flags",
+      "message": "branch conditions are rebuilt from the last compare and may be approximate"
+    },
+    {
+      "code": "unstructured_flow",
+      "message": "2 gotos remain where the control flow isn't a simple if/loop"
+    },
+    {
+      "code": "pseudo_code_inferred",
+      "message": "the pseudo-C is a reading aid built by the clean-room lifter, not compiler output"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x8f1a08",
+      "label": "entry"
+    }
+  ],
+  "links": []
+}

@@ -1,0 +1,459 @@
+# Original Cossacks 3 stats, read from the game's own data files.
+# Deep-mode decompilation fresh run 2026-11-17: C:\Games\Cossacks 3\cossacks.exe (PE x86, entry 0x8f1a08,
+# sha256 87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c, 18918 funcs, 12073 strings)
+# waited for every result: native_strings_find peasant ev_35f172bb / pikeman ev_36f8c402 / Serdiuk ev_02657a9a /
+# damage ev_b080109a / food ev_fd251932 / wood ev_a22a063b / gold ev_4c3035c2 / mine ev_e50560fd / cannon ev_7d44631c /
+# .ini ev_ea29aa57 = 0 hits; engine strings XDMScript @0x958d1a ev_c58219d8, XCamera @0x958b6b/@0x959066 ev_aa633a3e,
+# DMScript ev_a290cdaf, Cossacks 3 @0x96b304 ev_18cb6d74, Warning @0x955e34 ev_10cfab87;
+# native_xrefs_list 0 refs ev_9945c378 ev_5a0f553a ev_1e8d950e ev_bc64940b ev_ff7ce366 ev_113114fb;
+# core_feature_find Cossacks 3 ev_f2d20363 / Camera ev_f1ed6d4b / DMScript ev_1703acd5 0 funcs;
+# native_function_pseudocode entry @0x8f1a08 ev_03507405 (142 lines) / sub_8f0ad4 @0x8f0ad4 ev_dec6ad57 /
+# sub_47c804 @0x47c804 ev_bd3eda2b / sub_4c37dc @0x4c37dc ev_d5891fef (dlcs.ini/mods.ini) /
+# sub_404574 @0x404574 ev_39b2ec80, 34 callees ev_9dbee4f4 — packed launcher, no economy/combat numbers in static code,
+# so the authoritative numbers are the shipped scripts below (see ../MECHANICS.md).
+# Sources per value are in ../MECHANICS.md. Conversions:
+#   seconds = frames * 0.03125   (gc_time_to_frames = 32)
+#   meters  = pixels / 26.6666666   (gc_pixels_to_meter)
+#   tiles   = meters / 2
+extends RefCounted
+class_name C3Data
+
+const FRAMES_TO_TIME := 0.03125
+const PX_TO_M := 1.0 / 26.6666666
+const TILE_M := 2.0
+
+const RES_NAMES := ["food", "wood", "stone", "gold", "iron", "coal"]
+const RES_ICONS := [Rect2(0, 418, 44, 38), Rect2(49, 418, 40, 38), Rect2(93, 418, 41, 38), Rect2(141, 418, 39, 38), Rect2(186, 418, 42, 38), Rect2(235, 418, 37, 38)]
+
+# ------------------------------------------------------------------ settings
+# Every number below can be changed from the global settings file
+# (config.json, read when the game starts). The values that are here are the
+# ones from the original game; the file overrides them. Sources in MECHANICS.md.
+static var FPS := 32.0                       # game logic rate, dmscript.global:174
+static var MAP_W := 160                     # tiles (the port map; original is 640)
+static var MAP_H := 160
+static var RANDOM_SEED := 20261113
+static var START_PEASANTS := 8               # estimated, the original default was not in readable files
+static var START_RESOURCES := {}             # food, wood, stone, gold, iron, coal
+static var DEPOSITS := {}                    # how much gold/iron/coal lies in the ground
+static var BATTLE_ARMY := {}                 # the army each side gets in battle mode
+static var BUILD_QUEUE_LIMIT := 10
+static var MAX_BUILDERS_SENT := 8            # builders sent to one site at once
+static var VICTORY := "destroy_all"          # or "score"
+static var SCORE_LIMIT := 5000.0
+static var TICK_MAX := 0.25                  # clamp on dt so a test never stalls
+static var FOG_OF_WAR := true
+
+static var BUILD_PROGRESS_PER_HIT := 10 * 0.03125 * 1.15  # 0.359 s, dmscript.global:182
+static var BUILD_HIT_INTERVAL := 1.25  # cWalkIntervalInf
+static var MAX_BUILDERS := 30          # dmscript.global:159
+static var PERSONAL_SPACE := 0.35      # extra gap between unit bodies (m); original keeps ranks apart
+static var FORMATION_SPACING := 1.2    # grid step for group move orders (m)
+static var MINE_INCOME_PER_S := 13.0 * 32.0 / 250.0  # 1.664, player.script 240-266
+static var DELIVERY_RADIUS_M := 3.0 * 2.0            # 3 tiles, dmscript.global:210
+static var UPKEEP_DIVISOR := 625.0      # player.script _player_ProcessResourceConsume
+
+static var AI_ENABLED := true
+static var AI_THINK_INTERVAL := 1.0
+static var AI_FOOD_THRESHOLD := 260.0
+static var AI_WOOD_THRESHOLD := 260.0
+static var AI_STONE_THRESHOLD := 160.0
+static var AI_ATTACK_FORCE := 60.0
+static var AI_MAX_PEASANTS := 14
+
+# --- video-observed battle feel (see MECHANICS.md "Video pass"): volley smoke,
+# officer/drummer auras, morale routing, priests, artillery dispersion and
+# deploy, famine, market commission. All estimated, tunable in config.json.
+static var MORALE_BASE := 70.0
+static var MORALE_ROUT_THRESHOLD := 25.0
+static var MORALE_OFFICER_RADIUS := 12.0
+static var MORALE_OFFICER_BONUS := 20.0
+static var MORALE_DRUMMER_RADIUS := 10.0
+static var MORALE_DRUMMER_BONUS := 10.0
+static var MORALE_LOW_HP_PENALTY := 20.0
+static var MORALE_FAMINE_PENALTY := 15.0
+static var OFFICER_DAMAGE_BONUS := 0.15   # +15% damage near an officer
+static var DRUMMER_SPEED_BONUS := 0.12    # +12% march speed near a drummer
+static var PRIEST_HEAL_RADIUS := 8.0
+static var PRIEST_HEAL_PER_S := 5.0
+static var ARTILLERY_DEPLOY_S := 2.0      # cannon must stand still this long
+static var ARROW_DISPERSION_PX := 175.0   # weapon.script archer dispersion
+static var CANNON_DISPERSION_PX := 225.0  # unit.script cannon dispersion
+static var TOWER_DISPERSION_PX := 100.0   # unit.script tower dispersion
+static var FAMINE_GRACE_S := 120.0        # no deaths before this long starving
+static var FAMINE_DRAIN_PER_S := 0.3      # hp/s per unit after the grace
+static var MARKET_RATE := 0.65            # 100 of one res buys 65 of another
+static var MARKET_DRIFT := 0.02          # rate slips this much per 100 traded
+
+static var AUDIO_ENABLED := true
+static var MASTER_VOLUME_DB := 0.0
+static var AMBIENT_VOLUME_DB := -12.0
+
+static var WINDOW_WIDTH := 1280
+static var WINDOW_HEIGHT := 720
+static var FULLSCREEN := false
+static var VSYNC := true
+static var PIXELS_PER_METER := 16.0     # screen pixels per metre
+
+static var CAMERA_PITCH := -32.0        # camera.cfg FreeRotationInfo
+static var CAMERA_MIN_HEIGHT := 20.0    # camera.cfg SphereHeightMin
+static var CAMERA_MAX_HEIGHT := 58.0    # camera.cfg SphereHeight
+static var CAMERA_EDGE_MARGIN := 8.0    # cameracontrol.inc cMargin
+static var CAMERA_CORNER_MARGIN := 24.0 # cCornerMargin
+static var CAMERA_KEY_SPEED := 96.0     # profile keyscrollspeed*4
+static var CAMERA_MOUSE_SPEED := 64.0   # profile mousescrollspeed*4
+static var CAMERA_ZOOM_STEP := 1.15
+
+static var UNIT_NAMES := {}             # display names, from data/locale/en/units.txt
+static var BUILDING_NAMES := {}         # display names, from data/locale/en/gui.txt
+static var PLAYER_NAMES := ["Ukraine", "Russia"]
+static var PLAYER_NATIONS := ["ukr", "rus"]  # country.script sids, menu picks these
+static var MAP_TYPE := "land"           # generator.cfg TerrainTypes key
+static var START_OPTION := "default"    # startingsettings.gc_mapsettings_* key
+static var HOTKEYS := {}                # action -> "Ctrl+S" style binding
+
+# Nations from data/scripts/lib/country.script _country_GetSIDByID.
+# Colors are the two team colours the port draws; names are the original sids.
+const NATIONS := {
+	"aus": {"name": "Austria"}, "fra": {"name": "France"},
+	"eng": {"name": "England"}, "spa": {"name": "Spain"},
+	"rus": {"name": "Russia"}, "ukr": {"name": "Ukraine"},
+	"pol": {"name": "Poland"}, "swe": {"name": "Sweden"},
+	"pru": {"name": "Prussia"}, "ven": {"name": "Venice"},
+	"tur": {"name": "Turkey"}, "alg": {"name": "Algeria"},
+	"net": {"name": "Netherlands"}, "den": {"name": "Denmark"},
+	"por": {"name": "Portugal"}, "pie": {"name": "Piedmont"},
+	"sax": {"name": "Saxony"}, "bav": {"name": "Bavaria"},
+	"hun": {"name": "Hungary"}, "swi": {"name": "Switzerland"},
+}
+
+# Random-map terrain types from data/game/var/generator.cfg TerrainTypes.
+# water_frac drives how many lakes the port paints (Land ~ none, Islands ~ many).
+const MAP_TYPES := {
+	"land": {"water_frac": 0.5, "name": "Land"},
+	"mediterranean": {"water_frac": 1.6, "name": "Mediterranean"},
+	"peninsulas": {"water_frac": 1.2, "name": "Peninsulas"},
+	"islands": {"water_frac": 2.2, "name": "Islands"},
+	"continents": {"water_frac": 1.8, "name": "Continents"},
+	"continent": {"water_frac": 1.0, "name": "Continent"},
+}
+
+# Starting options from data/game/var/startingsettings.cfg comments
+# (gc_mapsettings_startingunits_*). Armies scale the battle preset.
+const START_OPTIONS := {
+	"default": {"army_mult": 0.0, "food": 0, "towers": 0, "cannons": 0},
+	"armysmall": {"army_mult": 0.5, "food": 1000, "towers": 0, "cannons": 0},
+	"armymedium": {"army_mult": 1.0, "food": 1000, "towers": 0, "cannons": 0},
+	"armylarge": {"army_mult": 1.8, "food": 2000, "towers": 0, "cannons": 0},
+	"towers": {"army_mult": 0.3, "food": 500, "towers": 3, "cannons": 0},
+	"cannons": {"army_mult": 0.3, "food": 500, "towers": 0, "cannons": 3},
+}
+
+# Squad formations from data/game/var/formations.cfg (bonusdamage 0 there;
+# the port keeps the masks as shapes: line = wide, column = deep, square = ring).
+const FORMATIONS := {
+	"none": {"cols_mult": 1.0, "rows_mult": 1.0},
+	"line": {"cols_mult": 1.8, "rows_mult": 0.6},
+	"column": {"cols_mult": 0.6, "rows_mult": 1.8},
+	"square": {"cols_mult": 1.0, "rows_mult": 1.0, "hollow": true},
+}
+const SQUAD_MAX := 195  # garrison/squad cap seen across squad.script-era games (estimated)
+
+# resource gathering: hits per carried load, carried amount, source dmscript.global 799-806
+const GATHER_BASE := {
+	"food": {"hits": 22, "carry": 45, "interval": 1.25},
+	"wood": {"hits": 14, "carry": 28, "interval": 1.25},
+	"stone": {"hits": 20, "carry": 40, "interval": 1.25},
+}
+static var GATHER := {}
+
+# weapon kinds
+const WK := {"none": 0, "pike": 1, "sword": 2, "bullet": 3, "cannister": 4, "arrow": 5, "firearrow": 6, "cannonball": 7}
+
+# protection order: [pike, sword, bullet, cannister, arrow, cannonball]
+const UNITS_BASE := {
+	"peasant": {
+		"hp": 75, "speed": 1.5, "score": 20, "aiforce": 1, "worker": true,
+		"price": {"food": 100}, "build_time": 400 * 0.03125, "search": 300 * PX_TO_M,
+		"eat": {"food": 32},
+		"weapons": [{"kind": "sword", "dmg": 20, "min": 10 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.25}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(184, 0, 46, 46),
+	},
+	"pikeman": {
+		"hp": 90, "speed": 1.2, "score": 10, "aiforce": 10,
+		"price": {"food": 25, "gold": 3, "iron": 20}, "build_time": 144 * 0.03125, "search": 700 * PX_TO_M,
+		"eat": {"food": 30},
+		"weapons": [{"kind": "pike", "dmg": 8, "min": 35 * PX_TO_M, "max": 100 * PX_TO_M, "cd": 1.25}],
+		"prot": [3, 2, 4, 210, 6, 40],
+		"radius": 0.35,
+		"icon": Rect2(0, 46, 46, 46),
+	},
+	"roundshier": {
+		"hp": 100, "speed": 1.2, "score": 7, "aiforce": 10,
+		"price": {"food": 20, "gold": 3, "iron": 25}, "build_time": 128 * 0.03125, "search": 600 * PX_TO_M,
+		"eat": {"food": 30},
+		"weapons": [{"kind": "sword", "dmg": 6, "min": 25 * PX_TO_M, "max": 60 * PX_TO_M, "cd": 1.25}],
+		"prot": [3, 3, 7, 225, 16, 80],
+		"radius": 0.35,
+		"icon": Rect2(184, 46, 46, 46),
+	},
+	"serdiuk": {
+		"hp": 85, "speed": 1.2, "score": 12, "aiforce": 2,
+		"price": {"food": 60, "gold": 11, "iron": 5}, "build_time": 352 * 0.03125, "search": 900 * PX_TO_M,
+		"eat": {"food": 30},
+		"weapons": [{"kind": "bullet", "dmg": 12, "min": 400 * PX_TO_M, "max": 900 * PX_TO_M, "cd": 130 * 0.03125,
+			"cost": {"iron": 3, "coal": 6}, "splash": 0.0}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(230, 92, 46, 46),
+	},
+	"archer": {
+		"hp": 40, "speed": 1.2, "score": 15, "aiforce": 2,
+		"price": {"food": 20, "wood": 2, "gold": 1}, "build_time": 48 * 0.03125, "search": 800 * PX_TO_M,
+		"eat": {"food": 30},
+		"weapons": [{"kind": "arrow", "dmg": 15, "min": 400 * PX_TO_M, "max": 800 * PX_TO_M, "cd": 75 * 0.03125,
+			"cost": {"wood": 1}, "splash": 20 * PX_TO_M}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(322, 92, 46, 46),
+	},
+	"cossack": {
+		"hp": 250, "speed": 3.6, "score": 35, "aiforce": 25, "cavalry": "fast",
+		"price": {"food": 130, "iron": 2}, "build_time": 432 * 0.03125, "search": 800 * PX_TO_M,
+		"eat": {"food": 60},
+		"weapons": [{"kind": "sword", "dmg": 13, "min": 20 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.0}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.5,
+		"icon": Rect2(92, 276, 46, 46),
+	},
+	"dragoon": {
+		"hp": 225, "speed": 2.1, "score": 40, "aiforce": 15, "cavalry": "hard",
+		"price": {"food": 70, "gold": 60, "iron": 7}, "build_time": 720 * 0.03125, "search": 900 * PX_TO_M,
+		"eat": {"food": 45},
+		"weapons": [{"kind": "bullet", "dmg": 19, "min": 400 * PX_TO_M, "max": 900 * PX_TO_M, "cd": 170 * 0.03125,
+			"cost": {"iron": 4, "coal": 5}, "splash": 0.0}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.5,
+		"icon": Rect2(0, 368, 46, 46),
+	},
+	"officer": {
+		"hp": 125, "speed": 1.2, "score": 10, "aiforce": 5,
+		"price": {"food": 50, "gold": 150, "iron": 30}, "build_time": 320 * 0.03125, "search": 500 * PX_TO_M,
+		"eat": {"gold": 60},
+		"weapons": [{"kind": "pike", "dmg": 30, "min": 35 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.25}],
+		"prot": [2, 2, 5, 200, 10, 30],
+		"radius": 0.35,
+		"icon": Rect2(0, 184, 46, 46),
+	},
+	"cannon": {
+		"hp": 9000, "speed": 0.75, "score": 50, "aiforce": 1, "artillery": true, "shield": 75,
+		"price": {"wood": 250, "gold": 400, "iron": 400}, "build_time": 2400 * 0.03125, "search": 500 * PX_TO_M,
+		"eat": {"gold": 300},
+		"weapons": [{"kind": "cannonball", "dmg": 1800, "min": 550 * PX_TO_M, "max": 2160 * PX_TO_M, "cd": 350 * 0.03125,
+			"cost": {"iron": 20, "coal": 40}, "splash": 35 * PX_TO_M}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.6,
+		"icon": Rect2(138, 230, 46, 46),
+	},
+	# Video pass: the original marches officers with flags, drummers beating
+	# the pace, and priests in black robes healing the line (all visible in
+	# any Cossacks 3 battle video). Stats estimated, marked so in mechanics.
+	"officer18": {
+		"hp": 140, "speed": 1.2, "score": 12, "aiforce": 6,
+		"price": {"food": 60, "gold": 180, "iron": 40}, "build_time": 360 * 0.03125, "search": 500 * PX_TO_M,
+		"eat": {"gold": 70},
+		"weapons": [{"kind": "pike", "dmg": 32, "min": 35 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.25}],
+		"prot": [2, 2, 5, 200, 10, 30],
+		"radius": 0.35,
+		"icon": Rect2(0, 184, 46, 46),
+	},
+	"drummer": {
+		"hp": 60, "speed": 1.32, "score": 8, "aiforce": 3, "support": true,
+		"price": {"food": 30, "gold": 20}, "build_time": 200 * 0.03125, "search": 400 * PX_TO_M,
+		"eat": {"food": 20},
+		"weapons": [],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(46, 184, 46, 46),
+	},
+	"priest": {
+		"hp": 50, "speed": 1.1, "score": 8, "aiforce": 2, "support": true, "healer": true,
+		"price": {"food": 40, "gold": 50}, "build_time": 240 * 0.03125, "search": 400 * PX_TO_M,
+		"eat": {"food": 20},
+		"weapons": [],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(92, 184, 46, 46),
+	},
+	# Late-game roster visible in every battle video (stats estimated, marked
+	# so in mechanics; grenade base 110 dmg / 50 px from weapon.script NUCLGRE).
+	"grenadier": {
+		"hp": 110, "speed": 1.2, "score": 18, "aiforce": 8,
+		"price": {"food": 70, "gold": 15, "iron": 10}, "build_time": 400 * 0.03125, "search": 700 * PX_TO_M,
+		"eat": {"food": 35},
+		"weapons": [{"kind": "cannonball", "dmg": 60, "min": 60 * PX_TO_M, "max": 420 * PX_TO_M, "cd": 150 * 0.03125,
+			"cost": {"iron": 2, "coal": 3}, "splash": 50 * PX_TO_M}],
+		"prot": [1, 1, 2, 100, 4, 10],
+		"radius": 0.35,
+		"icon": Rect2(230, 92, 46, 46),
+	},
+	"musk18": {
+		"hp": 105, "speed": 1.2, "score": 16, "aiforce": 6,
+		"price": {"food": 80, "gold": 20, "iron": 12}, "build_time": 420 * 0.03125, "search": 950 * PX_TO_M,
+		"eat": {"food": 32},
+		"weapons": [{"kind": "bullet", "dmg": 16, "min": 400 * PX_TO_M, "max": 950 * PX_TO_M, "cd": 140 * 0.03125,
+			"cost": {"iron": 3, "coal": 6}, "splash": 0.0}],
+		"prot": [1, 1, 2, 120, 3, 12],
+		"radius": 0.35,
+		"icon": Rect2(276, 92, 46, 46),
+	},
+	"howitzer": {
+		"hp": 6000, "speed": 0.7, "score": 60, "aiforce": 2, "artillery": true, "shield": 60,
+		"price": {"wood": 300, "gold": 500, "iron": 500}, "build_time": 2600 * 0.03125, "search": 500 * PX_TO_M,
+		"eat": {"gold": 350},
+		"weapons": [{"kind": "cannonball", "dmg": 1200, "min": 300 * PX_TO_M, "max": 1800 * PX_TO_M, "cd": 380 * 0.03125,
+			"cost": {"iron": 25, "coal": 50}, "splash": 50 * PX_TO_M}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.6,
+		"icon": Rect2(184, 230, 46, 46),
+	},
+	"mortar": {
+		"hp": 3500, "speed": 0.9, "score": 45, "aiforce": 2, "artillery": true, "shield": 40,
+		"price": {"wood": 200, "gold": 300, "iron": 300}, "build_time": 2000 * 0.03125, "search": 480 * PX_TO_M,
+		"eat": {"gold": 250},
+		"weapons": [{"kind": "cannonball", "dmg": 900, "min": 400 * PX_TO_M, "max": 2000 * PX_TO_M, "cd": 320 * 0.03125,
+			"cost": {"iron": 15, "coal": 35}, "splash": 60 * PX_TO_M}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.55,
+		"icon": Rect2(230, 230, 46, 46),
+	},
+}
+
+# buildings: hp, build_time s, cost, radius (footprint, estimated), trains, stores, farm, score
+const BUILDINGS_BASE := {
+	"cen": {"hp": 5300, "build_time": 500 * 0.03125, "cost": {"wood": 700}, "radius": 3.0, "farm": 200,
+		"stores": ["food", "wood", "stone"], "trains": ["peasant"], "score": 1000, "capture": true, "drop": true,
+		"icon": Rect2(92, 92, 46, 46)},
+	"hou": {"hp": 4150, "build_time": 100 * 0.03125, "cost": {"wood": 120}, "radius": 1.5, "farm": 25,
+		"score": 100, "icon": Rect2(0, 0, 46, 46)},
+	"bar": {"hp": 20000, "build_time": 300 * 0.03125, "cost": {"wood": 150, "stone": 150}, "radius": 2.5, "farm": 75,
+		"trains": ["pikeman", "roundshier", "serdiuk", "archer", "grenadier", "musk18", "officer", "drummer", "priest"], "score": 500,
+		"icon": Rect2(46, 46, 46, 46)},
+	"sta": {"hp": 10000, "build_time": 500 * 0.03125, "cost": {"wood": 3200, "stone": 850, "gold": 850}, "radius": 2.5,
+		"trains": ["cossack", "dragoon"], "score": 500, "icon": Rect2(138, 46, 46, 46)},
+	"bla": {"hp": 4500, "build_time": 200 * 0.03125, "cost": {"wood": 100, "stone": 30, "iron": 640}, "radius": 2.0,
+		"score": 500, "icon": Rect2(92, 46, 46, 46)},
+	"aca": {"hp": 65000, "build_time": 150 * 0.03125, "cost": {"wood": 1350, "stone": 1200}, "radius": 2.5,
+		"score": 500, "icon": Rect2(230, 46, 46, 46)},
+	"sto": {"hp": 10000, "build_time": 100 * 0.03125, "cost": {"wood": 50, "stone": 20}, "radius": 1.5,
+		"stores": ["wood", "stone"], "score": 30, "drop": true, "icon": Rect2(92, 0, 46, 46)},
+	"mil": {"hp": 20000, "build_time": 300 * 0.03125, "cost": {"wood": 30, "stone": 150}, "radius": 2.0,
+		"stores": ["food"], "score": 20, "drop": true, "icon": Rect2(46, 0, 46, 46)},
+	"mar": {"hp": 4000, "build_time": 750 * 0.03125, "cost": {"wood": 450}, "radius": 2.0, "score": 500,
+		"icon": Rect2(0, 46, 46, 46)},
+	"art": {"hp": 40000, "build_time": 787 * 0.03125, "cost": {"wood": 100, "stone": 1000, "coal": 1400}, "radius": 2.5,
+		"trains": ["cannon", "howitzer", "mortar"], "score": 500, "icon": Rect2(184, 46, 46, 46)},
+	# Stone wall segment (data/game/var/wallcustom.cfg BuilderPoints ±0.9 m).
+	# Cheap, chainable, no upkeep; estimated hp/cost, marked so in mechanics.
+	"wal": {"hp": 3000, "build_time": 60 * 0.03125, "cost": {"wood": 10, "stone": 20}, "radius": 1.0,
+		"score": 20, "wall": true, "icon": Rect2(414, 0, 46, 46)},
+	"mine_gold": {"hp": 2500, "build_time": 300 * 0.03125, "cost": {"wood": 100, "stone": 100}, "radius": 1.6,
+		"mine": "gold", "slots": 5, "produce": 13, "score": 500, "icon": Rect2(138, 0, 46, 46)},
+	"mine_iron": {"hp": 2500, "build_time": 300 * 0.03125, "cost": {"wood": 100, "stone": 100}, "radius": 1.6,
+		"mine": "iron", "slots": 5, "produce": 13, "score": 500, "icon": Rect2(138, 0, 46, 46)},
+	"mine_coal": {"hp": 2500, "build_time": 300 * 0.03125, "cost": {"wood": 100, "stone": 100}, "radius": 1.6,
+		"mine": "coal", "slots": 5, "produce": 13, "score": 500, "icon": Rect2(138, 0, 46, 46)},
+	"tow": {"hp": 20000, "build_time": 3937 * 0.03125, "cost": {"wood": 100, "stone": 100, "gold": 150}, "radius": 1.6,
+		"weapons": [{"kind": "cannonball", "dmg": 1000, "min": 550 * PX_TO_M, "max": 1500 * PX_TO_M, "cd": 400 * 0.03125,
+			"cost": {"iron": 10, "coal": 30}, "splash": 35 * PX_TO_M}],
+		"eat": {"gold": 500}, "score": 500, "icon": Rect2(414, 0, 46, 46)},
+}
+
+# Upgrades researched at blacksmith (bla) and academy (aca).
+# Video pass: every battle video shows the bread/iron/steel upgrade path and
+# the 18th-century transition; costs/effects estimated, marked so in mechanics.
+const UPGRADES_BASE := {
+	"bla_sword1": {"building": "bla", "cost": {"wood": 100, "food": 200}, "time": 8.0,
+		"effect": {"damage_mult": {"sword": 1.15, "pike": 1.15}}, "name": "Sharpened blades +15%"},
+	"bla_armor1": {"building": "bla", "cost": {"wood": 100, "iron": 100}, "time": 8.0,
+		"effect": {"prot_bonus": 2}, "name": "Forged armor +2"},
+	"bla_bullet1": {"building": "bla", "cost": {"gold": 200, "iron": 200}, "time": 12.0,
+		"effect": {"damage_mult": {"bullet": 1.2, "cannonball": 1.1}}, "name": "Improved powder +20%"},
+	"aca_bread1": {"building": "aca", "cost": {"food": 300, "gold": 100}, "time": 10.0,
+		"effect": {"gather_mult": {"food": 1.25}}, "name": "Crop rotation +25% food"},
+	"aca_wood1": {"building": "aca", "cost": {"food": 200, "wood": 200}, "time": 10.0,
+		"effect": {"gather_mult": {"wood": 1.2}}, "name": "Sawmills +20% wood"},
+	"aca_18c": {"building": "aca", "cost": {"food": 800, "gold": 600}, "time": 20.0,
+		"effect": {"hp_mult": 1.1, "unlock": "officer18"}, "name": "18th century tactics"},
+	"sta_horse1": {"building": "sta", "cost": {"food": 400, "gold": 200}, "time": 12.0,
+		"effect": {"damage_mult": {"sword": 1.1}}, "name": "Bred horses +10% cavalry"},
+	"art_caliber1": {"building": "art", "cost": {"gold": 300, "iron": 300}, "time": 14.0,
+		"effect": {"damage_mult": {"cannonball": 1.15}}, "name": "Heavy caliber +15%"},
+}
+
+# The live tables. They start as a copy of the original numbers and are then
+# changed by the global settings file (config.json) when the game starts.
+static var UNITS := {}
+static var BUILDINGS := {}
+static var UPGRADES := {}
+
+# The tables are built once, when the script is loaded, so that the settings
+# file can change them without them being read-only.
+static func _static_init() -> void:
+	UNITS = copy_value(UNITS_BASE)
+	BUILDINGS = copy_value(BUILDINGS_BASE)
+	UPGRADES = copy_value(UPGRADES_BASE)
+	GATHER = copy_value(GATHER_BASE)
+	START_RESOURCES = {"food": 0.0, "wood": 0.0, "stone": 0.0, "gold": 0.0, "iron": 0.0, "coal": 0.0}
+	DEPOSITS = {"gold": 40000.0, "iron": 30000.0, "coal": 30000.0}
+	BATTLE_ARMY = {"pikeman": 16, "serdiuk": 12, "archer": 8, "cossack": 8, "officer": 1, "cannon": 2}
+
+# A copy of a table that can be changed afterwards.
+static func copy_value(v: Variant) -> Variant:
+	if v is Dictionary:
+		var d := {}
+		for k in v:
+			d[k] = copy_value(v[k])
+		return d
+	if v is Array:
+		var a := []
+		for x in v:
+			a.append(copy_value(x))
+		return a
+	return v
+
+# damage formula, miscext2.script _misc_DoDamage
+static func apply_damage(dmg: float, weap_kind: String, target: Dictionary) -> int:
+	var d := int(dmg)
+	if target.get("cavalry", "") == "fast" and target.get("moving", false) \
+			and (weap_kind == "arrow" or weap_kind == "bullet"):
+		d -= 5
+	var shield: int = target.get("shield", 0)
+	if target.get("finished", true):
+		d -= shield
+	else:
+		d -= int(shield / 3.0)
+	var prot: Array = target.get("prot", [0, 0, 0, 0, 0, 0])
+	var pi: int = WK.get(weap_kind, 0)
+	if pi >= 0 and pi < prot.size():
+		d -= prot[pi]
+	if d < 1:
+		d = 1
+	return d
+
+# res is the player's 6-slot array in RES_NAMES order (food, wood, stone, gold, iron, coal)
+static func can_pay(res: Array, cost: Dictionary) -> bool:
+	for k in cost:
+		if res[RES_NAMES.find(k)] < int(cost[k]):
+			return false
+	return true
+
+static func pay(res: Array, cost: Dictionary) -> void:
+	for k in cost:
+		res[RES_NAMES.find(k)] = res[RES_NAMES.find(k)] - int(cost[k])
+
+static func refund(res: Array, cost: Dictionary, percent: float) -> void:
+	for k in cost:
+		res[RES_NAMES.find(k)] = res[RES_NAMES.find(k)] + int(round(cost[k] * percent))

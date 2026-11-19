@@ -1,0 +1,164 @@
+{
+  "id": "ev_7cd94d258d8fc5b1d5b805e17508d90837cb80150ff7e204b69fddf84f4d1fbf",
+  "subject": {
+    "kind": "pe",
+    "sha256": "68474ddde43fe4aa084613f01946734a7eea6d511fb98dd81326e8be2ed250ab",
+    "name": "editor.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 20,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "Speed"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0xab98e3",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0xab98f0",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonRun"
+      },
+      {
+        "address": "0xab9957",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonRunClick"
+      },
+      {
+        "address": "0xab9f74",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0xab9f81",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonStayOnTop"
+      },
+      {
+        "address": "0xaba026",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonStayOnTopClick"
+      },
+      {
+        "address": "0xac4ceb",
+        "references": [],
+        "section": ".rsrc",
+        "text": "LabelMoveSpeedToMark"
+      },
+      {
+        "address": "0xac4d28",
+        "references": [],
+        "section": ".rsrc",
+        "text": "MoveSpeedToMark"
+      },
+      {
+        "address": "0xac4d41",
+        "references": [],
+        "section": ".rsrc",
+        "text": "LabelTurnSpeedToMark"
+      },
+      {
+        "address": "0xac4d7e",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TurnSpeedToMark"
+      },
+      {
+        "address": "0xac4e71",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0xac4e7e",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonTargetPosition"
+      },
+      {
+        "address": "0xac4ecd",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonTargetPositionClick"
+      },
+      {
+        "address": "0xac4f41",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0xac4f4e",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonPosition"
+      },
+      {
+        "address": "0xac4f97",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonPositionClick"
+      },
+      {
+        "address": "0xac4ff4",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0xac5001",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonTrackingOffset"
+      },
+      {
+        "address": "0xac5051",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonTrackingOffsetClick"
+      },
+      {
+        "address": "0xac5756",
+        "references": [],
+        "section": ".rsrc",
+        "text": "EditMoveSpeedToMark"
+      }
+    ],
+    "total": 416
+  },
+  "summary": "416 strings match \"Speed\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 20,
+    "total": 416,
+    "next_offset": 20
+  },
+  "locations": [],
+  "links": []
+}

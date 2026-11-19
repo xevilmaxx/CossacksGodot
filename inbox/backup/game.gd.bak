@@ -1,0 +1,1686 @@
+# Core simulation: map, entities, orders, gathering, building, combat, victory.
+# All numbers come from ../scripts/data.gd (original game files, see MECHANICS.md).
+extends Node
+class_name C3Game
+
+const Data = preload("res://scripts/data.gd")
+
+const TILE := 2.0
+var MAP_W := 160
+var MAP_H := 160
+var TICK_MAX := 0.25  # clamp dt so tests never stall
+
+signal game_over(winner: int)
+signal message(text: String)
+
+var terrain: PackedByteArray = PackedByteArray()
+var blocked: PackedByteArray = PackedByteArray()
+var res_nodes: Array = []
+var entities: Array = []
+var by_id: Dictionary = {}
+var next_id := 1
+var players: Array = []
+var battle_mode := false
+var time_s := 0.0
+var winner := -1
+var rng := RandomNumberGenerator.new()
+var events: Array = []   # {type, pos, kind} consumed by world/hud each frame
+var projectiles: Array = []  # delayed shells/arrows: {pos,target,kind,dmg,splash,owner,t,total}
+var corpses: Array = []  # fading dead units for the battlefield look (capped)
+var squads: Dictionary = {}  # squad_id -> {officer, drummer, members, formation, player}
+var next_squad := 1
+var objectives: Array = []  # [{text, done}] mission objectives (menu/campaigns)
+var stats := {"shots": 0, "hits": 0, "kills": 0, "gathered": {}}
+var paused := false
+var deposits: Dictionary = {}  # "gold"/"iron"/"coal" remaining
+
+func _init() -> void:
+	rng.seed = Data.RANDOM_SEED
+
+func res_list() -> Array:
+	var out: Array = []
+	for r in Data.RES_NAMES:
+		out.append(float(Data.START_RESOURCES.get(r, 0.0)))
+	return out
+
+func new_player(index: int, name: String, is_ai: bool) -> Dictionary:
+	return {"index": index, "name": name, "res": res_list(), "is_ai": is_ai,
+		"farm_cap": 0, "score": 0, "entities": [], "ai_state": {}, "starving": false,
+		"famine_t": 0.0, "famine": false,
+		"damage_mult": {"sword": 1.0, "pike": 1.0, "bullet": 1.0, "arrow": 1.0, "firearrow": 1.0, "cannonball": 1.0, "cannister": 1.0},
+		"gather_mult": {"food": 1.0, "wood": 1.0, "stone": 1.0},
+		"hp_mult": 1.0, "prot_bonus": 0,
+		"upgrades": [], "research": {},
+		"market_rate": Data.MARKET_RATE}
+
+func setup(mode: String) -> void:
+	battle_mode = mode == "battle"
+	MAP_W = Data.MAP_W
+	MAP_H = Data.MAP_H
+	TICK_MAX = Data.TICK_MAX
+	rng.seed = Data.RANDOM_SEED
+	terrain.resize(MAP_W * MAP_H)
+	blocked.resize(MAP_W * MAP_H)
+	for i in terrain.size():
+		terrain[i] = 0
+		blocked[i] = 0
+	# nations come from the menu (Data.PLAYER_NATIONS sids); names follow.
+	var pn := Data.PLAYER_NAMES
+	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else ["ukr", "rus"]
+	players = [new_player(0, _nation_name(0, pn), false), new_player(1, _nation_name(1, pn), true)]
+	players[0]["nation"] = str(pns[0]) if pns.size() > 0 else "ukr"
+	players[1]["nation"] = str(pns[1]) if pns.size() > 1 else "rus"
+	objectives = []
+	deposits = {}
+	for r in Data.RES_NAMES:
+		deposits[r] = float(Data.DEPOSITS.get(r, 0.0))
+	_generate_map()
+	_spawn_starts()
+
+func _nation_name(i: int, pn: Variant) -> String:
+	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else []
+	var sid := str(pns[i]) if pns.size() > i else ""
+	if Data.NATIONS.has(sid):
+		return str(Data.NATIONS[sid].name)
+	if pn is Array and pn.size() > i:
+		return str(pn[i])
+	return "Player %d" % (i + 1)
+
+func set_objectives(texts: Array) -> void:
+	objectives = []
+	for t in texts:
+		objectives.append({"text": str(t), "done": false})
+
+func complete_objective(i: int) -> void:
+	if i >= 0 and i < objectives.size():
+		objectives[i].done = true
+		say("Objective complete: %s" % objectives[i].text)
+
+func set_rally(b: Dictionary, pos: Vector2) -> void:
+	if b.is_empty() or b.kind != "building":
+		return
+	b["rally"] = pos
+
+# ---------------------------------------------------------------- map gen
+func _t(x: int, y: int) -> int:
+	return y * MAP_W + x
+
+func in_bounds(p: Vector2) -> bool:
+	return p.x >= 0 and p.y >= 0 and p.x < MAP_W * TILE and p.y < MAP_H * TILE
+
+func tile_of(p: Vector2) -> Vector2i:
+	return Vector2i(int(p.x / TILE), int(p.y / TILE))
+
+func is_blocked(p: Vector2) -> bool:
+	if not in_bounds(p):
+		return true
+	return blocked[_t(tile_of(p).x, tile_of(p).y)] != 0
+
+func set_blocked_circle(p: Vector2, r_m: float, value: bool) -> void:
+	var t0 := tile_of(p - Vector2(r_m, r_m))
+	var t1 := tile_of(p + Vector2(r_m, r_m))
+	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
+		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
+			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
+			if c.distance_to(p) <= r_m:
+				blocked[_t(x, y)] = 1 if value else 0
+
+func _add_res(type: String, pos: Vector2, hits: int, radius: float) -> void:
+	var node := {"id": next_id, "kind": "res", "type": type, "pos": pos, "hits": hits,
+		"max_hits": hits, "radius": radius}
+	next_id += 1
+	res_nodes.append(node)
+	by_id[node.id] = node
+	if type != "food":
+		set_blocked_circle(pos, radius, true)
+
+func _clear_area(pos: Vector2, r_m: float) -> void:
+	for n in res_nodes:
+		if n.pos.distance_to(pos) < r_m:
+			n.hits = 0  # depleted (removed visually)
+
+func _paint_terrain(pos: Vector2, r_m: float, t: int) -> void:
+	var t0 := tile_of(pos - Vector2(r_m, r_m))
+	var t1 := tile_of(pos + Vector2(r_m, r_m))
+	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
+		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
+			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
+			if c.distance_to(pos) <= r_m and terrain[y * MAP_W + x] != 3:
+				terrain[y * MAP_W + x] = t
+
+func _scatter_forest(center: Vector2, count: int, spread: float) -> void:
+	for i in count:
+		var p := center + Vector2(rng.randf_range(-spread, spread), rng.randf_range(-spread, spread))
+		if not in_bounds(p) or is_blocked(p):
+			continue
+		_add_res("wood", p, 60, 0.7)
+
+func _generate_map() -> void:
+	# Structured skirmish map in the original's style:
+	# open plains + forest belts + hills + lakes + farm fields + rock outcrops.
+	# terrain: 0 grass, 1 dirt, 2 forest floor, 3 water, 4 sand, 5 rock.
+	for y in MAP_H:
+		for x in MAP_W:
+			# base grass with soft large-scale variation (plains vs meadow)
+			var n := _noise2(x * 0.045, y * 0.045)
+			var n2 := _noise2(x * 0.13 + 57.0, y * 0.13 - 31.0)
+			var t := 0
+			if n > 0.28 and n2 > 0.05:
+				t = 1  # dirt patch
+			elif n < -0.3:
+				t = 2  # darker meadow / forest floor tint
+			terrain[_t(x, y)] = t
+	var starts := _start_positions()
+	# map type scales the water: Land ~1 lake, Islands ~3 (generator.cfg).
+	var water_mult: float = float(Data.MAP_TYPES.get(Data.MAP_TYPE, {"water_frac": 0.5}).get("water_frac", 0.5))
+	# lakes: 1-2 ellipses away from starts, with sand shore ring
+	var lake_n := clampi(1 + rng.randi() % maxi(1, int(round(water_mult * 2.0))), 1, 4)
+	for li in lake_n:
+		var cx := rng.randf_range(MAP_W * 0.3, MAP_W * 0.7)
+		var cy := rng.randf_range(MAP_H * 0.3, MAP_H * 0.7)
+		var rx := rng.randf_range(9.0, 16.0)
+		var ry := rng.randf_range(7.0, 13.0)
+		for y in MAP_H:
+			for x in MAP_W:
+				var dx := (x - cx) / rx
+				var dy := (y - cy) / ry
+				var d := dx * dx + dy * dy
+				if d < 1.0:
+					terrain[_t(x, y)] = 3
+					set_blocked_tile(x, y, true)
+				elif d < 1.45:
+					if terrain[_t(x, y)] != 3:
+						terrain[_t(x, y)] = 4
+	# hills: 3-4 rock blobs (passable, rock texture, mines like them)
+	for hi in rng.randi_range(3, 4):
+		var cx := rng.randf_range(MAP_W * 0.2, MAP_W * 0.8)
+		var cy := rng.randf_range(MAP_H * 0.2, MAP_H * 0.8)
+		var rr := rng.randf_range(7.0, 13.0)
+		for y in range(maxi(0, int(cy - rr * 1.4)), mini(MAP_H, int(cy + rr * 1.4) + 1)):
+			for x in range(maxi(0, int(cx - rr * 1.4)), mini(MAP_W, int(cx + rr * 1.4) + 1)):
+				var d := Vector2(x - cx, y - cy).length() / rr
+				if d < 1.0 and terrain[_t(x, y)] != 3:
+					terrain[_t(x, y)] = 5 if d < 0.55 else (1 if d < 0.85 else terrain[_t(x, y)])
+	# dirt road between the two starts through the center
+	_draw_road(starts[0], (starts[0] + starts[1]) * 0.5)
+	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
+	# forests: 6-8 dense belts, kept away from starts
+	var forest_centers: Array = []
+	for f in rng.randi_range(6, 8):
+		var c := Vector2(rng.randf_range(MAP_W * 0.08, MAP_W * 0.92) * TILE,
+			rng.randf_range(MAP_H * 0.08, MAP_H * 0.92) * TILE)
+		var too_close := false
+		for st in starts:
+			if c.distance_to(st) < 22.0 * TILE:
+				too_close = true
+		if too_close:
+			continue
+		if not in_bounds(c) or is_blocked(c):
+			continue
+		forest_centers.append(c)
+		_scatter_forest(c, rng.randi_range(34, 60), 6.5 * TILE)
+	# small groves near each start (firewood in reach)
+	for st in starts:
+		_scatter_forest(st + Vector2(7, -7) * TILE, 26, 5.0 * TILE)
+		_scatter_forest(st + Vector2(-8, 5) * TILE, 18, 4.0 * TILE)
+	# stone outcrops: clustered, some on hills
+	for s in 7:
+		var c := Vector2(rng.randf_range(MAP_W * 0.09, MAP_W * 0.91) * TILE,
+			rng.randf_range(MAP_H * 0.09, MAP_H * 0.91) * TILE)
+		for i in rng.randi_range(5, 8):
+			var p := c + Vector2(rng.randf_range(-4, 4), rng.randf_range(-4, 4)) * TILE
+			if in_bounds(p) and not is_blocked(p):
+				_add_res("stone", p, 80, 0.9)
+	# corn (food): rectangular farm fields near each start, like the original fields
+	for st in starts:
+		for g in 2:
+			var origin := st + Vector2(-10 + g * 7.0, 7.0) * TILE
+			for ix in 5:
+				for iy in 4:
+					var p := origin + Vector2(ix * 1.5, iy * 1.5) * TILE
+					if in_bounds(p) and not is_blocked(p):
+						_add_res("food", p, 50, 0.6)
+	# straggler corn elsewhere
+	for st in starts:
+		var c := st + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)) * TILE
+		for i in 6:
+			var p := c + Vector2(rng.randf_range(-2.5, 2.5), rng.randf_range(-2.5, 2.5)) * TILE
+			if in_bounds(p) and not is_blocked(p):
+				_add_res("food", p, 50, 0.6)
+	# mines: deposits to build on (gold, iron, coal), two of each + one of each near starts
+	var kinds := ["gold", "iron", "coal"]
+	for k in kinds:
+		for m in 2:
+			var p := Vector2(rng.randf_range(MAP_W * 0.15, MAP_W * 0.85),
+				rng.randf_range(MAP_H * 0.15, MAP_H * 0.85)) * TILE + Vector2(1, 1)
+			_add_res(k, p, 0, 0.0)
+	# keep starting areas clear + small dirt town plaza like the original towns
+	for st in starts:
+		_paint_terrain(st, 5.0 * TILE, 1)
+		_clear_area(st, 9.0 * TILE)
+		for n in res_nodes:
+			if n.hits <= 0:
+				set_blocked_circle(n.pos, n.radius, false)
+		# guarantee reachable deposits (original maps always put mines in reach)
+		for ki in kinds.size():
+			var ang := rng.randf() * TAU
+			var dist: float = (14.0 + ki * 5.0) * TILE
+			var dp := st + Vector2(cos(ang), sin(ang)) * dist
+			dp = Vector2(floor(dp.x / TILE) * TILE + 1.0, floor(dp.y / TILE) * TILE + 1.0)
+			if in_bounds(dp) and not is_blocked(dp):
+				_add_res(kinds[ki], dp, 0, 0.0)
+		# re-plant what clearing wiped: farm fields + firewood just outside
+		# the cleared ring so peasants always have work in reach
+		for g in 2:
+			var origin := st + Vector2(-9 + g * 8.0, 8.5) * TILE
+			for ix in 5:
+				for iy in 4:
+					var p := origin + Vector2(ix * 1.5, iy * 1.5) * TILE
+					if in_bounds(p) and not is_blocked(p):
+						_add_res("food", p, 50, 0.6)
+		_scatter_forest(st + Vector2(9, -8) * TILE, 26, 5.0 * TILE)
+		_scatter_forest(st + Vector2(-10, 6) * TILE, 18, 4.0 * TILE)
+	# clear a small ring right around each town center so units never spawn stuck
+	for st in starts:
+		_clear_area(st, 4.0 * TILE)
+
+# cheap deterministic value-noise in [-1, 1] for map biomes (no engine needed)
+func _noise2(x: float, y: float) -> float:
+	var xi := int(floor(x))
+	var yi := int(floor(y))
+	var xf: float = x - floor(x)
+	var yf: float = y - floor(y)
+	var h := func(ix: int, iy: int) -> float:
+		var s := ix * 374761393 + iy * 668265263
+		s = (s ^ (s >> 13)) * 1274126177
+		s = s ^ (s >> 16)
+		return float(s & 65535) / 65535.0 * 2.0 - 1.0
+	var a: float = h.call(xi, yi)
+	var b: float = h.call(xi + 1, yi)
+	var c: float = h.call(xi, yi + 1)
+	var d: float = h.call(xi + 1, yi + 1)
+	var u: float = xf * xf * (3.0 - 2.0 * xf)
+	var v: float = yf * yf * (3.0 - 2.0 * yf)
+	return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
+
+func set_blocked_tile(x: int, y: int, value: bool) -> void:
+	if x >= 0 and y >= 0 and x < MAP_W and y < MAP_H:
+		blocked[_t(x, y)] = 1 if value else 0
+
+func _draw_road(a: Vector2, b: Vector2) -> void:
+	var steps := int(a.distance_to(b) / TILE) + 1
+	for i in steps:
+		var p: Vector2 = a.lerp(b, float(i) / maxf(1.0, float(steps - 1)))
+		p += Vector2(_noise2(p.x * 0.5, p.y * 0.5), _noise2(p.y * 0.5 + 9.0, p.x * 0.5)) * 1.2
+		var t := tile_of(p)
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				var xx := t.x + dx
+				var yy := t.y + dy
+				if xx >= 0 and yy >= 0 and xx < MAP_W and yy < MAP_H:
+					if terrain[_t(xx, yy)] != 3:
+						terrain[_t(xx, yy)] = 1
+
+func mine_deposits(kinds: Array) -> Array:
+	var out: Array = []
+	for n in res_nodes:
+		if n.type in kinds and n.hits == 0 and n.max_hits == 0:
+			out.append(n)
+	return out
+
+# ---------------------------------------------------------------- spawning
+func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictionary:
+	var is_unit: bool = Data.UNITS.has(sid)
+	var def: Dictionary = Data.UNITS[sid] if is_unit else Data.BUILDINGS[sid]
+	var e := {
+		"id": next_id, "kind": "unit" if is_unit else "building", "player": player, "sid": sid,
+		"def": def, "pos": pos, "hp": def.hp, "max_hp": def.hp, "dead": false,
+		"order": {"type": "none"}, "cooldown": 0.0, "carry": 0, "carry_type": "",
+		"inside_of": 0, "moving": false, "finished": finished, "progress": def.build_time if finished else 0.0,
+		"queue": [], "workers": 0, "capture_t": 0.0, "hold": false, "face": 0.0,
+		"morale": Data.MORALE_BASE, "routing": false, "deploy_t": 0.0, "stuck_t": 0.0, "hit_t": 0.0,
+	}
+	if is_unit:
+		e["hp"] = int(float(def.hp) * players[player].get("hp_mult", 1.0))
+		e["max_hp"] = e["hp"]
+	if is_unit:
+		e["shield"] = def.get("shield", 0)
+		e["prot"] = def.prot
+		e["cavalry"] = def.get("cavalry", "")
+	else:
+		e["shield"] = 0
+	next_id += 1
+	entities.append(e)
+	by_id[e.id] = e
+	players[player].entities.append(e.id)
+	if e.kind == "building":
+		set_blocked_circle(pos, def.radius, true)
+		if finished:
+			_on_building_finished(e)
+	players[player].score += def.get("score", 0)
+	return e
+
+func _on_building_finished(e: Dictionary) -> void:
+	var p: Dictionary = players[e.player]
+	if e.def.has("farm"):
+		p.farm_cap += e.def.farm
+	if e.sid.begins_with("mine_"):
+		e["deposit_type"] = e.def.mine
+		e["deposit_left"] = deposits.get(e.def.mine, 0)
+	if e.def.has("trains"):
+		e["rally"] = e.pos + Vector2(0, e.def.radius + 2.0)
+
+func _start_positions() -> Array[Vector2]:
+	# the two corners of the map where the players start
+	return [Vector2(MAP_W * 0.125, MAP_H * 0.125) * TILE,
+		Vector2(MAP_W * 0.875, MAP_H * 0.875) * TILE]
+
+func _spawn_starts() -> void:
+	var starts := _start_positions()
+	var opt: Dictionary = Data.START_OPTIONS.get(Data.START_OPTION, {"army_mult": 0.0, "food": 0, "towers": 0, "cannons": 0})
+	for i in 2:
+		var c := starts[i]
+		var cen := spawn("cen", i, c)
+		players[i].res[0] += float(opt.get("food", 0))
+		for k in Data.START_PEASANTS:
+			var a := TAU * k / maxf(1.0, float(Data.START_PEASANTS))
+			var pe := spawn("peasant", i, c + Vector2(cos(a), sin(a)) * (cen.def.radius + 1.5))
+			pe.order = {"type": "none"}
+		# starting option extras: towers / cannons near the town
+		for t in int(opt.get("towers", 0)):
+			spawn("tow", i, c + Vector2(6.0 + t * 3.0, -5.0))
+		for cc in int(opt.get("cannons", 0)):
+			spawn("cannon", i, c + Vector2(-6.0 - cc * 3.0, 5.0))
+		var mult := float(opt.get("army_mult", 0.0))
+		if battle_mode or mult > 0.0:
+			var army: Dictionary = Data.BATTLE_ARMY
+			var scale := 1.0 if battle_mode else mult
+			var total := 0
+			for sid in army:
+				total += int(round(float(army[sid]) * scale))
+			var ring := 0
+			for sid in army:
+				for k in int(round(float(army[sid]) * scale)):
+					var a := TAU * ring / maxf(1.0, float(total))
+					spawn(sid, i, c + Vector2(cos(a), sin(a)) * (6.0 + (ring % 4) * 1.5))
+					ring += 1
+
+# ---------------------------------------------------------------- helpers
+func unit_count(player: int) -> int:
+	var n := 0
+	for e in entities:
+		if not e.dead and e.kind == "unit" and e.player == player:
+			n += 1
+	return n
+
+func buildings_of(player: int, only_finished := true) -> Array:
+	var out: Array = []
+	for e in entities:
+		if not e.dead and e.kind == "building" and e.player == player and (not only_finished or e.finished):
+			out.append(e)
+	return out
+
+func units_of(player: int) -> Array:
+	var out: Array = []
+	for e in entities:
+		if not e.dead and e.kind == "unit" and e.player == player:
+			out.append(e)
+	return out
+
+# Everything the player has selected (used by the HUD's buttons).
+func get_selected() -> Array:
+	var out: Array = []
+	for e in entities:
+		if e.get("selected", false) and not e.dead:
+			out.append(e)
+	return out
+
+func nearest_drop(e: Dictionary, res: String) -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := 1e9
+	for b in buildings_of(e.player):
+		if not b.finished:
+			continue
+		if Data.BUILDINGS[b.sid].get("stores", []).has(res):
+			var d: float = b.pos.distance_to(e.pos)
+			if d < best_d:
+				best_d = d
+				best = b
+	return best
+
+func nearest_res(pos: Vector2, type: String, max_r := 40.0, exclude_blocked := true) -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := max_r
+	for n in res_nodes:
+		if n.type != type or n.hits <= 0:
+			continue
+		var d: float = n.pos.distance_to(pos)
+		if d < best_d:
+			best_d = d
+			best = n
+	return best
+
+func nearest_mine(pos: Vector2, res: String, player := -1) -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := 1e9
+	for b in buildings_of(0, false) + buildings_of(1, false):
+		if player >= 0 and b.player != player:
+			continue
+		if b.sid == "mine_" + res and not b.dead:
+			var has_deposit: bool = (b.finished and b.get("deposit_left", 0) > 0) or not b.finished
+			if not has_deposit:
+				continue
+			var d: float = b.pos.distance_to(pos)
+			if d < best_d:
+				best_d = d
+				best = b
+	return best
+
+func _mine_debug(res: String) -> String:
+	var out: Array = []
+	for b in buildings_of(0, false) + buildings_of(1, false):
+		out.append("%s/%s fin=%s dep=%s dead=%s" % [b.sid, b.player, b.finished, b.get("deposit_left", -1), b.dead])
+	return "[" + ", ".join(out) + "]"
+
+func enemies_in_radius(pos: Vector2, player: int, r: float, military_only := true) -> Dictionary:
+	var best: Dictionary = {}
+	var best_d := r
+	for e in entities:
+		if e.dead or e.player == player:
+			continue
+		if military_only and (e.kind == "building" or e.sid == "peasant"):
+			continue
+		var d: float = e.pos.distance_to(pos)
+		if d < best_d:
+			best_d = d
+			best = e
+	return best
+
+func has_weapon(e: Dictionary) -> bool:
+	return e.def.has("weapons") and e.def.weapons.size() > 0
+
+func weapon_of(e: Dictionary) -> Dictionary:
+	return e.def.weapons[0] if has_weapon(e) else {}
+
+func pay_cost(player: int, cost: Dictionary) -> bool:
+	if Data.can_pay(players[player].res, cost):
+		Data.pay(players[player].res, cost)
+		return true
+	return false
+
+func post_event(type: String, pos: Vector2, kind := "", extra := "") -> void:
+	if events.size() < 256:
+		events.append({"type": type, "pos": pos, "kind": kind, "extra": extra})
+
+func say(text: String) -> void:
+	message.emit(text)
+
+# ---------------------------------------------------------------- commands
+func cmd_move(e: Dictionary, pos: Vector2) -> void:
+	if e.kind != "unit" or e.dead:
+		return
+	_leave_building(e)
+	e.order = {"type": "move", "pos": pos}
+	e.move_target = pos
+	e.moving = true
+	# officer leads: the squad marches in formation behind him
+	_squad_order_members(e.id, pos, false)
+
+func cmd_attack(e: Dictionary, target: Dictionary) -> void:
+	if e.kind != "unit" or e.dead or target.dead:
+		return
+	_leave_building(e)
+	e.order = {"type": "attack", "target": target.id}
+	e.moving = true
+
+func cmd_attack_move(e: Dictionary, pos: Vector2) -> void:
+	if e.kind != "unit" or e.dead:
+		return
+	_leave_building(e)
+	e.order = {"type": "attackmove", "pos": pos}
+	e.moving = true
+	_squad_order_members(e.id, pos, true)
+
+func cmd_gather(e: Dictionary, res_node: Dictionary) -> void:
+	if e.kind != "unit" or e.dead or e.sid != "peasant":
+		return
+	_leave_building(e)
+	# a load of something else is dropped when the peasant changes its mind
+	e.carry = 0
+	e.carry_type = ""
+	if res_node.type in ["gold", "iron", "coal"]:
+		var mine := nearest_mine(e.pos, res_node.type)
+		if mine.is_empty():
+			say("No %s mine - build one on a deposit." % res_node.type)
+			return
+		e.order = {"type": "gather", "res": res_node.type, "node": mine.id}
+	else:
+		e.order = {"type": "gather", "res": res_node.type, "node": res_node.id}
+	e.moving = true
+
+func cmd_build(e: Dictionary, site: Dictionary) -> void:
+	if e.kind != "unit" or e.dead or e.sid != "peasant":
+		return
+	_leave_building(e)
+	e.order = {"type": "build", "target": site.id}
+	e.moving = true
+
+func cmd_stand_ground(e: Dictionary) -> void:
+	e["hold"] = true
+	e.order = {"type": "none"}
+	e.moving = false
+
+func cmd_no_stand_ground(e: Dictionary) -> void:
+	e["hold"] = false
+
+func cmd_stop(e: Dictionary) -> void:
+	e.order = {"type": "none"}
+	e.moving = false
+	e.move_target = null
+	e["routing"] = false
+
+func cmd_guard(e: Dictionary, target: Dictionary) -> void:
+	if e.kind != "unit" or e.dead or target.get("dead", false):
+		return
+	_leave_building(e)
+	e.order = {"type": "guard", "target": target.id}
+	e.moving = true
+
+func cmd_patrol(e: Dictionary, a: Vector2, b: Vector2) -> void:
+	if e.kind != "unit" or e.dead:
+		return
+	_leave_building(e)
+	e.order = {"type": "patrol", "a": a, "b": b, "leg": 0}
+	e.moving = true
+
+# Squads: officer (slot 0) + drummer (slot 1) + soldiers, like squad.script.
+# A squad is a sticky group: orders to the officer fan out to the members in
+# the squad's formation (line / column / square from formations.cfg).
+func squad_of_unit(uid: int) -> Dictionary:
+	for sid in squads:
+		var s: Dictionary = squads[sid]
+		if int(s.officer) == uid or int(s.get("drummer", 0)) == uid or uid in s.members:
+			return s
+	return {}
+
+func squads_of(player: int) -> Array:
+	var out: Array = []
+	for sid in squads:
+		if int(squads[sid].player) == player:
+			out.append(squads[sid])
+	return out
+
+func squad_form(members: Array) -> Dictionary:
+	# members: Array of unit dicts, same player, first officer leads.
+	var off := 0
+	var dru := 0
+	var ids: Array = []
+	var pl := -1
+	for u in members:
+		if u.is_empty() or u.dead or u.kind != "unit":
+			continue
+		if pl < 0:
+			pl = u.player
+		if u.player != pl:
+			continue
+		if u.sid == "peasant" or u.def.get("support", false) and u.sid != "drummer":
+			continue
+		if (u.sid == "officer" or u.sid == "officer18") and off == 0:
+			off = u.id
+		elif u.sid == "drummer" and dru == 0:
+			dru = u.id
+		else:
+			ids.append(u.id)
+		if ids.size() + (1 if off else 0) + (1 if dru else 0) >= Data.SQUAD_MAX:
+			break
+	if off == 0:
+		say("A squad needs an officer - train one in the barracks.")
+		return {}
+	# leave old squads
+	for uid in [off, dru] + ids:
+		if uid == 0:
+			continue
+		var old := squad_of_unit(uid)
+		if not old.is_empty():
+			squad_remove(old.squad_id, uid)
+	var sid := next_squad
+	next_squad += 1
+	var s := {"squad_id": sid, "officer": off, "drummer": dru, "members": ids,
+		"formation": "line", "player": pl}
+	squads[sid] = s
+	for uid in [off, dru] + ids:
+		if uid == 0:
+			continue
+		var u: Dictionary = by_id.get(uid, {})
+		if not u.is_empty():
+			u["squad"] = sid
+	post_event("squad", by_id[off].pos, "line")
+	say("Squad formed (%d soldiers)." % ids.size())
+	return s
+
+func squad_remove(sid: int, uid: int) -> void:
+	var s: Dictionary = squads.get(sid, {})
+	if s.is_empty():
+		return
+	if int(s.officer) == uid:
+		s.officer = 0
+	if int(s.get("drummer", 0)) == uid:
+		s["drummer"] = 0
+	s.members.erase(uid)
+	var u: Dictionary = by_id.get(uid, {})
+	if not u.is_empty():
+		u.erase("squad")
+
+func squad_disband(sid: int) -> void:
+	var s: Dictionary = squads.get(sid, {})
+	if s.is_empty():
+		return
+	for uid in [int(s.officer), int(s.get("drummer", 0))] + s.members:
+		if uid == 0:
+			continue
+		var u: Dictionary = by_id.get(uid, {})
+		if not u.is_empty():
+			u.erase("squad")
+	squads.erase(sid)
+	say("Squad disbanded.")
+
+func squad_set_formation(sid: int, form: String) -> void:
+	var s: Dictionary = squads.get(sid, {})
+	if s.is_empty() or not Data.FORMATIONS.has(form):
+		return
+	s.formation = form
+	post_event("squad", by_id.get(int(s.officer), {"pos": Vector2.ZERO}).pos, form)
+
+func _squad_order_members(off_id: int, dest: Vector2, attack: bool) -> void:
+	for sid in squads:
+		var s: Dictionary = squads[sid]
+		if int(s.officer) != off_id:
+			continue
+		var all: Array = []
+		for uid in s.members:
+			var u: Dictionary = by_id.get(uid, {})
+			if not u.is_empty() and not u.dead:
+				all.append(u)
+		var du: Dictionary = by_id.get(int(s.get("drummer", 0)), {})
+		if not du.is_empty() and not du.dead:
+			all.append(du)
+		var targets := formation_targets(all, dest, str(s.get("formation", "line")))
+		var fi := 0
+		for u in all:
+			var d: Vector2 = targets[fi] if fi < targets.size() else dest
+			fi += 1
+			_leave_building(u)
+			if attack:
+				u.order = {"type": "attackmove", "pos": d}
+			else:
+				u.order = {"type": "move", "pos": d}
+			u.move_target = d
+			u.moving = true
+
+# Shared box/line/column/square layout for group orders.
+func formation_targets(sel: Array, center: Vector2, formation := "none") -> Array:
+	var n := sel.size()
+	if n == 0:
+		return []
+	if n == 1:
+		return [center]
+	var f: Dictionary = Data.FORMATIONS.get(formation, {"cols_mult": 1.0, "rows_mult": 1.0})
+	var cols := maxi(1, int(ceil(sqrt(float(n)) * float(f.get("cols_mult", 1.0)))))
+	var spacing := float(Data.FORMATION_SPACING)
+	for e in sel:
+		spacing = maxf(spacing, e.def.radius * 2.0 + 0.5)
+	var out: Array = []
+	var rows := int(ceil(float(n) / float(cols)))
+	var hollow: bool = bool(f.get("hollow", false))
+	var cx := (float(cols) - 1.0) * 0.5
+	var cy := (float(rows) - 1.0) * 0.5
+	var idx := 0
+	for r in rows:
+		for c in cols:
+			if idx >= n:
+				break
+			if hollow and r > 0 and r < rows - 1 and c > 0 and c < cols - 1:
+				continue  # square: ring only, officers inside
+			var p := center + Vector2((float(c) - cx) * spacing / maxf(0.6, float(f.get("cols_mult", 1.0)) + 0.4),
+				(float(r) - cy) * spacing / maxf(0.6, float(f.get("rows_mult", 1.0)) + 0.4))
+			if not in_bounds(p):
+				p = center
+			out.append(p)
+			idx += 1
+			if idx >= n:
+				break
+	while out.size() < n:
+		var k := out.size()
+		var ang := float(k) * 2.399963
+		var pad := center + Vector2(cos(ang), sin(ang)) * spacing * 0.5
+		out.append(pad if in_bounds(pad) else center)
+	return out
+
+# Research an upgrade at a finished blacksmith/academy. One at a time per
+# building; effects apply when the timer finishes (see _tick_building).
+func research(player: int, building: Dictionary, uid: String) -> bool:
+	if building.dead or not building.finished or building.player != player:
+		return false
+	var u: Dictionary = Data.UPGRADES.get(uid, {})
+	if u.is_empty() or u.building != building.sid:
+		return false
+	if players[player].upgrades.has(uid) or building.get("research") != null:
+		return false
+	if not pay_cost(player, u.cost):
+		say("Not enough resources for %s." % u.name)
+		return false
+	building["research"] = {"uid": uid, "t": float(u.time)}
+	post_event("research", building.pos, uid)
+	return true
+
+func apply_upgrade(player: int, uid: String) -> void:
+	var u: Dictionary = Data.UPGRADES.get(uid, {})
+	if u.is_empty():
+		return
+	var p: Dictionary = players[player]
+	if p.upgrades.has(uid):
+		return
+	p.upgrades.append(uid)
+	var eff: Dictionary = u.get("effect", {})
+	for k in eff.get("damage_mult", {}):
+		p.damage_mult[k] = float(p.damage_mult.get(k, 1.0)) * float(eff.damage_mult[k])
+	for k in eff.get("gather_mult", {}):
+		p.gather_mult[k] = float(p.gather_mult.get(k, 1.0)) * float(eff.gather_mult[k])
+	p.prot_bonus = int(p.get("prot_bonus", 0)) + int(eff.get("prot_bonus", 0))
+	if eff.has("hp_mult"):
+		p.hp_mult = float(p.get("hp_mult", 1.0)) * float(eff.hp_mult)
+		for e in entities:
+			if not e.dead and e.player == player and e.kind == "unit":
+				var add := int(float(e.def.hp) * (float(eff.hp_mult) - 1.0))
+				e.max_hp += add
+				e.hp += add
+	if eff.has("unlock") and String(eff.unlock) == "officer18":
+		if not Data.BUILDINGS["bar"].trains.has("officer18"):
+			Data.BUILDINGS["bar"].trains.append("officer18")
+	post_event("upgraded", Vector2.ZERO, uid)
+	say("%s researched %s." % [p.name, u.name])
+
+# Market barter: give 100 of one resource, receive rate-adjusted amount of
+# another. The rate drifts down as you dump one resource (video-visible
+# exchange with commission).
+func trade(player: int, give: String, want: String, amount := 100.0) -> bool:
+	if not Data.BUILDINGS.has("mar"):
+		return false
+	var has_market := false
+	for b in buildings_of(player):
+		if b.sid == "mar" and b.finished:
+			has_market = true
+	if not has_market:
+		say("Build a market to trade.")
+		return false
+	var gi: int = Data.RES_NAMES.find(give)
+	var wi: int = Data.RES_NAMES.find(want)
+	if gi < 0 or wi < 0 or give == want:
+		return false
+	var p: Dictionary = players[player]
+	if float(p.res[gi]) < amount:
+		say("Not enough %s to trade." % give)
+		return false
+	var rate: float = float(p.get("market_rate", Data.MARKET_RATE))
+	var got := amount * rate
+	p.res[gi] = float(p.res[gi]) - amount
+	p.res[wi] = float(p.res[wi]) + got
+	p.market_rate = maxf(0.35, rate - Data.MARKET_DRIFT * amount / 100.0)
+	stats.gathered["trade"] = int(stats.gathered.get("trade", 0)) + int(got)
+	post_event("trade", Vector2.ZERO, give + ">" + want)
+	return true
+
+# Officer aura: nearby officer raises damage, drummer raises speed/morale.
+func officer_near(pos: Vector2, player: int) -> bool:
+	for e in entities:
+		if e.dead or e.player != player or e.kind != "unit":
+			continue
+		if (e.sid == "officer" or e.sid == "officer18") and e.pos.distance_to(pos) <= Data.MORALE_OFFICER_RADIUS:
+			return true
+	return false
+
+func drummer_near(pos: Vector2, player: int) -> bool:
+	for e in entities:
+		if e.dead or e.player != player or e.kind != "unit":
+			continue
+		if e.sid == "drummer" and e.pos.distance_to(pos) <= Data.MORALE_DRUMMER_RADIUS:
+			return true
+	return false
+
+func effective_speed(e: Dictionary) -> float:
+	var s: float = e.def.speed
+	if drummer_near(e.pos, e.player):
+		s *= 1.0 + Data.DRUMMER_SPEED_BONUS
+	if e.get("routing", false):
+		s *= 1.35  # routing troops run
+	return s
+
+func effective_damage(player: int, kind: String, pos: Vector2) -> float:
+	var m: float = float(players[player].damage_mult.get(kind, 1.0))
+	if officer_near(pos, player):
+		m *= 1.0 + Data.OFFICER_DAMAGE_BONUS
+	return m
+
+func place_building(player: int, sid: String, pos: Vector2) -> Dictionary:
+	var def: Dictionary = Data.BUILDINGS[sid]
+	if sid.begins_with("mine_"):
+		var dep := false
+		for n in res_nodes:
+			if n.type == def.mine and n.max_hits == 0 and n.pos.distance_to(pos) < 4.0:
+				dep = true
+				pos = n.pos
+		if not dep:
+			say("Mines must be built on a %s deposit." % def.mine)
+			return {}
+	if not pay_cost(player, def.cost):
+		say("Not enough resources.")
+		return {}
+	var b := spawn(sid, player, pos, false)
+	b.hp = maxi(1, int(def.hp * 0.25))
+	post_event("construct", pos, sid)
+	# send nearby peasants to build (the original allows up to 30 builders,
+	# dmscript.global:159; the port sends 8 at a time)
+	var idle: Array = []
+	var busy: Array = []
+	for u in units_of(player):
+		if u.sid != "peasant":
+			continue
+		if u.order.type == "none":
+			idle.append(u)
+		elif u.order.type == "gather":
+			busy.append(u)
+	var sent := 0
+	for u in idle + busy:
+		if sent >= Data.MAX_BUILDERS_SENT:
+			break
+		cmd_build(u, b)
+		sent += 1
+	return b
+
+func train_unit(player: int, building: Dictionary, sid: String) -> bool:
+	if not building.finished or not building.def.get("trains", []).has(sid):
+		return false
+	if building.queue.size() >= Data.BUILD_QUEUE_LIMIT:
+		return false
+	if unit_count(player) + queue_count(player) >= players[player].farm_cap:
+		say("Need more houses — unit limit reached.")
+		return false
+	var cost: Dictionary = Data.UNITS[sid].price
+	if not pay_cost(player, cost):
+		say("Not enough resources for %s." % sid)
+		return false
+	building.queue.append({"sid": sid, "t": Data.UNITS[sid].build_time})
+	return true
+
+func queue_count(player: int) -> int:
+	var n := 0
+	for b in buildings_of(player):
+		n += b.queue.size()
+	return n
+
+func _leave_building(e: Dictionary) -> void:
+	if e.inside_of != 0:
+		var m: Dictionary = by_id.get(e.inside_of, {})
+		if not m.is_empty():
+			m.workers = maxi(0, m.workers - 1)
+		e.inside_of = 0
+
+# ---------------------------------------------------------------- tick
+func tick(dt: float) -> void:
+	if paused or winner != -1:
+		return
+	dt = minf(dt, TICK_MAX)
+	time_s += dt
+	for e in entities:
+		if e.dead:
+			continue
+		if e.kind == "unit":
+			_tick_unit(e, dt)
+		else:
+			_tick_building(e, dt)
+	_tick_projectiles(dt)
+	for c in corpses:
+		c.t += dt
+	corpses = corpses.filter(func(c): return c.t < c.life)
+	_separate_units()
+	_tick_cleanup(dt)
+	_tick_upkeep(dt)
+	_check_victory()
+
+# Like the original, units never stand inside each other: every tick each
+# pair is pushed apart until the gap is r1 + r2 + personal space, and units
+# are pushed out of building footprints. Two relaxation passes, spatial
+# hash so 200+ units stay cheap (no O(n^2) stall on any platform).
+func _separate_units() -> void:
+	var cell := 2.0
+	var grid: Dictionary = {}
+	var units: Array = []
+	for e in entities:
+		if e.dead or e.kind != "unit":
+			continue
+		if e.inside_of != 0:
+			continue
+		units.append(e)
+		var cx := int(floor(e.pos.x / cell))
+		var cy := int(floor(e.pos.y / cell))
+		var key := str(cx) + "," + str(cy)
+		if not grid.has(key):
+			grid[key] = []
+		grid[key].append(e)
+	if units.is_empty():
+		return
+	for _pass in 2:
+		for e in units:
+			if e.dead:
+				continue
+			var cx := int(floor(e.pos.x / cell))
+			var cy := int(floor(e.pos.y / cell))
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					var key := str(cx + ox) + "," + str(cy + oy)
+					if not grid.has(key):
+						continue
+					for o in grid[key]:
+						if o == e or o.dead:
+							continue
+						# order the pair once (avoid double push jitter)
+						if o.id < e.id:
+							continue
+						var delta: Vector2 = o.pos - e.pos
+						var d := delta.length()
+						var want: float = e.def.radius + o.def.radius + Data.PERSONAL_SPACE
+						if d < 0.001:
+							delta = Vector2(0.01 * float((e.id % 7) - 3), 0.01 * float((o.id % 7) - 3))
+							if delta.length() < 0.001:
+								delta = Vector2(0.01, 0.0)
+							d = delta.length()
+						if d < want:
+							var push: Vector2 = delta / d * (want - d) * 0.5
+							var np_e: Vector2 = e.pos - push
+							var np_o: Vector2 = o.pos + push
+							if in_bounds(np_e) and not is_blocked(np_e):
+								e.pos = np_e
+							if in_bounds(np_o) and not is_blocked(np_o):
+								o.pos = np_o
+		# buildings push units out (cheap: only nearby buildings per unit)
+		for e in units:
+			if e.dead:
+				continue
+			for b in entities:
+				if b.dead or b.kind != "building":
+					continue
+				var rr: float = e.def.radius + b.def.radius + 0.15
+				var delta: Vector2 = e.pos - b.pos
+				var d := delta.length()
+				if d < rr and d > 0.001:
+					var np: Vector2 = b.pos + delta / d * rr
+					if in_bounds(np) and not is_blocked(np):
+						# blocked map says building tiles are blocked; allow the
+						# ring right outside the footprint (unblock-tested below)
+						e.pos = np
+					else:
+						# try sliding around the footprint
+						var side := Vector2(-delta.y, delta.x).normalized()
+						var alt: Vector2 = e.pos + side * 0.3
+						if in_bounds(alt) and not is_blocked(alt):
+							e.pos = alt
+
+func _tick_upkeep(dt: float) -> void:
+	# Upkeep, ported from player.script _player_ProcessResourceConsume
+	# (speed 20000, gc_time_to_frames = 32): each unit eats consume/625 units
+	# of food (or gold) per second. Video pass: prolonged famine first shows
+	# the warning, then the original starves the army - slow HP drain after a
+	# grace period so a test never dies instantly (estimated).
+	for pi in 2:
+		var p: Dictionary = players[pi]
+		var eat := {"food": 0.0, "gold": 0.0}
+		for e in entities:
+			if e.dead or e.player != pi:
+				continue
+			var ee: Dictionary = e.def.get("eat", {})
+			for k in ee:
+				if eat.has(k):
+					eat[k] += ee[k] / Data.UPKEEP_DIVISOR  # player.script speed 20000
+		for k in eat:
+			if eat[k] > 0:
+				var idx: int = Data.RES_NAMES.find(k)
+				var have: float = p.res[idx]
+				var need: float = eat[k] * dt
+				if have >= need:
+					p.res[idx] = have - need
+					if k == "food":
+						p["famine"] = false
+						p["famine_t"] = 0.0
+				else:
+					p.res[idx] = 0.0
+					if k == "food":
+						p["famine"] = true
+						p["famine_t"] = float(p.get("famine_t", 0.0)) + dt
+						if float(p["famine_t"]) >= Data.FAMINE_GRACE_S:
+							say("Famine! %s is starving." % p.name)
+							for e in entities:
+								if not e.dead and e.player == pi and e.kind == "unit":
+									e.hp -= Data.FAMINE_DRAIN_PER_S * dt
+
+func _tick_cleanup(dt: float) -> void:
+	for e in entities:
+		if e.dead:
+			continue
+		if e.hp <= 0:
+			_kill(e, null)
+
+func _kill(e: Dictionary, killer = null) -> void:
+	if e.dead:
+		return
+	e.dead = true
+	# squads drop the fallen so a dead officer does not hold the squad
+	if e.kind == "unit" and e.has("squad"):
+		var s: Dictionary = squads.get(int(e.squad), {})
+		if not s.is_empty():
+			squad_remove(int(e.squad), e.id)
+			if int(s.get("officer", 0)) == 0 and s.members.is_empty():
+				squads.erase(int(e.squad))
+		e.erase("squad")
+	players[e.player].score -= e.def.get("score", 0)
+	if e.kind == "unit":
+		_leave_building(e)
+		post_event("death", e.pos, e.sid, e.sid)
+		corpses.append({"pos": e.pos, "sid": e.sid, "player": e.player, "t": 0.0, "life": 14.0})
+		if corpses.size() > 220:
+			corpses.pop_front()
+		if killer != null and not killer.is_empty():
+			stats.kills += 1
+	else:
+		set_blocked_circle(e.pos, e.def.radius, false)
+		if e.get("workers", 0) > 0:
+			for u in entities:
+				if not u.dead and u.inside_of == e.id:
+					u.inside_of = 0
+					u.order = {"type": "none"}
+		post_event("death", e.pos, "building")
+		say("%s lost a %s." % [players[e.player].name, e.sid])
+
+func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive := 0.15) -> bool:
+	# Walk one step towards the target. When the direct line is blocked we try
+	# progressively rotated directions (15..90 degrees) so units slide around
+	# forests and buildings instead of sticking to their edge.
+	var to: Vector2 = target - e.pos
+	var d: float = to.length()
+	if d <= arrive:
+		e.moving = false
+		e["stuck_t"] = 0.0
+		return true
+	var step: float = minf(speed * dt, d)
+	var dir: Vector2 = to / d
+	for i in 13:
+		var ang := 0.0
+		if i > 0:
+			var sgn := 1.0 if (i % 2 == 1) else -1.0
+			ang = sgn * (PI / 12.0) * float((i + 1) / 2)
+		var d2: Vector2 = dir.rotated(ang)
+		var np: Vector2 = e.pos + d2 * step
+		if not is_blocked(np) and not is_blocked(np + d2 * 0.45):
+			e.pos = np
+			e.face = d2.angle()
+			e["stuck_t"] = 0.0
+			return d - step < arrive
+	# boxed in on every side: stay put and let the caller give up
+	e.moving = false
+	e["stuck_t"] = e.get("stuck_t", 0.0) + dt
+	return false
+
+# Deterministic slot around a work point (tree, rock, build site): golden-angle
+# spiral so N workers fan into a ring instead of stacking. Same unit always
+# takes the same slot, so orders are stable and neighbours do not jitter.
+func _work_slot(e: Dictionary, center: Vector2, ring_r: float) -> Vector2:
+	var ang := float(e.id) * 2.399963 + center.x * 0.13 + center.y * 0.07
+	var rr := ring_r + float(e.id % 3) * 0.35
+	var p := center + Vector2(cos(ang), sin(ang)) * rr
+	if in_bounds(p) and not is_blocked(p):
+		return p
+	# blocked side of the ring: try the opposite side
+	var p2 := center - Vector2(cos(ang), sin(ang)) * rr
+	if in_bounds(p2) and not is_blocked(p2):
+		return p2
+	return center
+
+func _tick_unit(e: Dictionary, dt: float) -> void:
+	e.cooldown = maxf(0.0, e.cooldown - dt)
+	# deployed crews: standing still readies the gun
+	if e.moving:
+		e["deploy_t"] = 0.0
+	else:
+		e["deploy_t"] = float(e.get("deploy_t", 0.0)) + dt
+	# video pass: morale. Officers/drumers hold the line, wounds and famine
+	# break it, broken troops rout (run from the enemy, cannot fight).
+	_update_morale(e, dt)
+	if e.get("routing", false):
+		_tick_rout(e, dt)
+		return
+	# video pass: priests heal the line around them every tick
+	if e.sid == "priest" and not e.moving:
+		_priest_heal(e, dt)
+	var o: Dictionary = e.order
+	match o.type:
+		"move":
+			e.moving = true
+			_step_move(e, o.pos, effective_speed(e), dt)
+			if not e.moving:
+				e.order = {"type": "none"}
+		"attackmove":
+			e.moving = true
+			var en := enemies_in_radius(e.pos, e.player, e.def.search)
+			if not en.is_empty():
+				e.order = {"type": "attack", "target": en.id, "resume": o.pos}
+				return
+			_step_move(e, o.pos, effective_speed(e), dt)
+			if not e.moving:
+				e.order = {"type": "none"}
+		"attack":
+			var t: Dictionary = by_id.get(o.get("target", 0), {})
+			if t.is_empty() or t.dead:
+				var resume: Vector2 = o.get("resume", Vector2.INF)
+				if resume != Vector2.INF:
+					e.order = {"type": "attackmove", "pos": resume}
+					e.moving = true
+				elif o.has("resume_guard"):
+					e.order = {"type": "guard", "target": o.resume_guard}
+					e.moving = true
+				elif o.has("resume_patrol"):
+					var a: Vector2 = e.pos + Vector2(-4, 0)
+					var b: Vector2 = e.pos + Vector2(4, 0)
+					e.order = {"type": "patrol", "a": a, "b": b, "leg": 0}
+					e.moving = true
+				else:
+					e.order = {"type": "none"}
+					e.moving = false
+				return
+			var w := weapon_of(e)
+			if w.is_empty():
+				e.order = {"type": "none"}
+				return
+			var d: float = e.pos.distance_to(t.pos)
+			var tr: float = t.def.radius
+			if d > w.max + tr:
+				e.moving = true
+				_step_move(e, t.pos, effective_speed(e), dt)
+			elif d < w.min:
+				# too close: step back (original backs away from melee for shooters)
+				var away: Vector2 = (e.pos - t.pos).normalized() * 1.0
+				e.moving = true
+				_step_move(e, e.pos + away, effective_speed(e), dt)
+			else:
+				e.moving = false
+				if e.cooldown <= 0:
+					_fire(e, t, w)
+		"guard":
+			var gt: Dictionary = by_id.get(o.get("target", 0), {})
+			if gt.is_empty() or gt.dead:
+				e.order = {"type": "none"}
+				e.moving = false
+				return
+			var gd: float = e.pos.distance_to(gt.pos)
+			var foe := enemies_in_radius(e.pos, e.player, e.def.search)
+			if not foe.is_empty() and has_weapon(e):
+				e.order = {"type": "attack", "target": foe.id, "resume_guard": gt.id}
+				return
+			if gd > 3.0:
+				e.moving = true
+				_step_move(e, gt.pos, effective_speed(e), dt, 2.0)
+			else:
+				e.moving = false
+		"patrol":
+			var a: Vector2 = o.get("a", e.pos)
+			var b: Vector2 = o.get("b", e.pos)
+			var foe2 := enemies_in_radius(e.pos, e.player, e.def.search)
+			if not foe2.is_empty() and has_weapon(e):
+				e.order = {"type": "attack", "target": foe2.id, "resume_patrol": true}
+				return
+			var dest: Vector2 = b if int(o.get("leg", 0)) == 0 else a
+			e.moving = true
+			_step_move(e, dest, effective_speed(e), dt, 1.0)
+			if not e.moving:
+				o.leg = 1 - int(o.get("leg", 0))
+		"gather":
+			_tick_gather(e, dt)
+		"build":
+			var site: Dictionary = by_id.get(o.get("target", 0), {})
+			if site.is_empty() or site.dead or site.finished:
+				e.order = {"type": "none"}
+				return
+			# each builder takes its own slot around the site so the crew
+			# rings the foundations instead of stacking on one point
+			var slot_b := _work_slot(e, site.pos, site.def.radius + 0.7)
+			var d: float = e.pos.distance_to(slot_b)
+			if d > 0.6:
+				e.moving = true
+				_step_move(e, slot_b, effective_speed(e), dt, 0.35)
+				if e.get("stuck_t", 0.0) > 8.0:
+					e["stuck_t"] = 0.0
+					e.order = {"type": "none"}
+					e.moving = false
+			else:
+				e.moving = false
+				e["hit_t"] = (e.get("hit_t", 0.0) + dt)
+				if e.hit_t >= Data.BUILD_HIT_INTERVAL:
+					e.hit_t = 0.0
+					site.progress += Data.BUILD_PROGRESS_PER_HIT
+					site.hp = mini(site.max_hp, site.hp + int(site.max_hp * Data.BUILD_PROGRESS_PER_HIT / site.def.build_time * 0.75))
+					if site.progress >= site.def.build_time:
+						site.progress = site.def.build_time
+						site.finished = true
+						_on_building_finished(site)
+						post_event("done", site.pos, site.sid)
+						e.order = {"type": "none"}
+		_:
+			# idle: military auto-acquire (support troops stay out of it)
+			if e.hold:
+				return
+			if e.def.get("support", false):
+				return
+			if has_weapon(e) and e.sid != "peasant":
+				var en := enemies_in_radius(e.pos, e.player, e.def.search)
+				if not en.is_empty():
+					e.order = {"type": "attack", "target": en.id}
+
+func _update_morale(e: Dictionary, dt: float) -> void:
+	if e.kind != "unit" or e.def.get("support", false):
+		return
+	var m := float(e.get("morale", Data.MORALE_BASE))
+	# recover towards base, faster near leaders
+	var want := Data.MORALE_BASE
+	if officer_near(e.pos, e.player):
+		want += Data.MORALE_OFFICER_BONUS
+	if drummer_near(e.pos, e.player):
+		want += Data.MORALE_DRUMMER_BONUS
+	if e.hp < e.max_hp * 0.3:
+		want -= Data.MORALE_LOW_HP_PENALTY
+	if bool(players[e.player].get("famine", false)):
+		want -= Data.MORALE_FAMINE_PENALTY
+	var rate := 6.0 if want > m else 3.0
+	m += clampf(want - m, -rate * dt, rate * dt)
+	e["morale"] = m
+	if not e.get("routing", false) and m < Data.MORALE_ROUT_THRESHOLD and e.sid != "peasant":
+		e["routing"] = true
+		e["routing_t"] = 0.0
+		post_event("rout", e.pos, e.sid, "")
+	elif e.get("routing", false) and m > Data.MORALE_ROUT_THRESHOLD + 25.0:
+		e["routing"] = false
+
+func _tick_rout(e: Dictionary, dt: float) -> void:
+	# run away from the nearest enemy towards home, then recover
+	e["routing_t"] = float(e.get("routing_t", 0.0)) + dt
+	var foe: Dictionary = enemies_in_radius(e.pos, e.player, 25.0, false)
+	var homes: Array = buildings_of(e.player)
+	var home_pos: Vector2 = homes[0].pos if not homes.is_empty() else e.pos
+	var dir := Vector2.ZERO
+	if not foe.is_empty():
+		dir = (e.pos - foe.pos).normalized()
+	else:
+		dir = (home_pos - e.pos).normalized()
+		if e.pos.distance_to(home_pos) < 4.0:
+			e["routing"] = false
+			e.moving = false
+			return
+	e.moving = true
+	_step_move(e, e.pos + dir * 6.0, effective_speed(e), dt)
+	if float(e.get("routing_t", 0.0)) > 12.0:
+		e["routing"] = false
+
+func _priest_heal(e: Dictionary, dt: float) -> void:
+	for u in entities:
+		if u.dead or u.kind != "unit" or u.player != e.player:
+			continue
+		if u.id == e.id:
+			continue
+		if u.hp >= u.max_hp:
+			continue
+		if u.pos.distance_to(e.pos) <= Data.PRIEST_HEAL_RADIUS:
+			u.hp = mini(u.max_hp, int(u.hp + Data.PRIEST_HEAL_PER_S * dt + 0.5))
+			if rng.randf() < dt * 2.0:
+				post_event("heal", u.pos, "priest", "")
+
+func _dispersion_px(kind: String, sid: String) -> float:
+	# Video pass: musket volleys puff smoke and land tight, arrows scatter,
+	# cannonballs scream across half the screen and throw dirt everywhere.
+	if kind == "arrow" or kind == "firearrow":
+		return Data.ARROW_DISPERSION_PX * Data.PX_TO_M
+	if kind == "cannonball":
+		if sid == "tow":
+			return Data.TOWER_DISPERSION_PX * Data.PX_TO_M
+		return Data.CANNON_DISPERSION_PX * Data.PX_TO_M
+	return 0.0
+
+func _fire(e: Dictionary, t: Dictionary, w: Dictionary) -> void:
+	var cost: Dictionary = w.get("cost", {})
+	if not cost.is_empty() and not Data.can_pay(players[e.player].res, cost):
+		e.cooldown = 1.0
+		return
+	# artillery must be deployed: the crew unlimbers before the first shot
+	if e.def.get("artillery", false) and float(e.get("deploy_t", 0.0)) < Data.ARTILLERY_DEPLOY_S:
+		e.cooldown = 0.25
+		return
+	Data.pay(players[e.player].res, cost)
+	e.cooldown = w.cd
+	stats.shots += 1
+	# officer aura + researched powder upgrades multiply the listed damage
+	var mult: float = effective_damage(e.player, w.kind, e.pos)
+	var base_dmg := int(round(float(w.dmg) * mult))
+	post_event("shot", e.pos, w.kind, e.sid)
+	if w.kind == "bullet":
+		post_event("smoke", e.pos, w.kind, e.sid)
+		_apply_hit(e, t, w, base_dmg, t.pos)
+	elif w.kind == "cannonball":
+		# lobbed shell: lands after a flight, scatters, hurts everyone
+		var disp := _dispersion_px(w.kind, e.sid)
+		var aim: Vector2 = t.pos + Vector2(rng.randf_range(-disp, disp), rng.randf_range(-disp, disp)) * 0.5
+		var dist: float = e.pos.distance_to(aim)
+		var flight := clampf(dist / 30.0, 0.5, 1.6)
+		projectiles.append({"pos": e.pos, "target": aim, "kind": w.kind,
+			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
+			"owner": e.id, "player": e.player, "t": 0.0, "total": flight})
+		if projectiles.size() > 64:
+			projectiles.pop_front()
+	elif w.kind == "arrow" or w.kind == "firearrow":
+		var disp2 := _dispersion_px(w.kind, e.sid)
+		var aim2: Vector2 = t.pos + Vector2(rng.randf_range(-disp2, disp2), rng.randf_range(-disp2, disp2)) * 0.4
+		projectiles.append({"pos": e.pos, "target": aim2, "kind": w.kind,
+			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
+			"owner": e.id, "player": e.player, "t": 0.0, "total": 0.45})
+		if projectiles.size() > 64:
+			projectiles.pop_front()
+	else:
+		_apply_hit(e, t, w, base_dmg, t.pos)
+
+func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vector2) -> void:
+	if t.is_empty() or t.dead:
+		return
+	# protection + researched armor, upgrade-aware
+	var prot: Array = (t.get("prot", [0, 0, 0, 0, 0, 0]) as Array).duplicate()
+	var pb: int = int(players[t.player].get("prot_bonus", 0))
+	if pb != 0:
+		for i in prot.size():
+			prot[i] = int(prot[i]) + pb
+	var tmp := {"cavalry": t.get("cavalry", ""), "moving": t.get("moving", false),
+		"shield": t.get("shield", 0), "finished": t.get("finished", true), "prot": prot}
+	var dealt: int = C3Data.apply_damage(dmg, w.kind, tmp)
+	t.hp -= dealt
+	# morale shock when hit
+	if t.kind == "unit":
+		t["morale"] = float(t.get("morale", Data.MORALE_BASE)) - 4.0
+	stats.hits += 1
+	if killer_pair(e, t):
+		stats.kills += 1
+		_morale_shock(t.pos, t.player)
+	# splash hurts everyone (video: friendly fire is real), half to the rim
+	if float(w.get("splash", 0.0)) > 0.0:
+		post_event("explode", at, w.kind, e.sid)
+		for u in entities:
+			if u.dead or u.id == t.id:
+				continue
+			var rr: float = float(w.splash) + (float(u.def.radius) if u.kind == "building" else 0.0)
+			if u.pos.distance_to(at) <= rr:
+				var uprot: Array = (u.get("prot", [0, 0, 0, 0, 0, 0]) as Array).duplicate()
+				if pb != 0 and u.player == t.player:
+					pass
+				var utmp := {"cavalry": u.get("cavalry", ""), "moving": u.get("moving", false),
+					"shield": u.get("shield", 0), "finished": u.get("finished", true), "prot": uprot}
+				var sd: int = C3Data.apply_damage(int(float(dmg) * 0.5), w.kind, utmp)
+				u.hp -= sd
+	post_event("hit", at, w.kind, e.sid)
+
+func _morale_shock(pos: Vector2, player: int) -> void:
+	for u in entities:
+		if u.dead or u.kind != "unit" or u.player != player:
+			continue
+		if u.pos.distance_to(pos) <= 10.0:
+			u["morale"] = float(u.get("morale", Data.MORALE_BASE)) - 6.0
+
+func _tick_projectiles(dt: float) -> void:
+	if projectiles.is_empty():
+		return
+	var keep: Array = []
+	for p in projectiles:
+		p.t += dt
+		if p.t < float(p.total):
+			keep.append(p)
+			continue
+		var owner: Dictionary = by_id.get(p.get("owner", 0), {})
+		# find who is actually at the impact point (friendly fire included)
+		var victim: Dictionary = {}
+		var best_d := 2.0
+		for u in entities:
+			if u.dead:
+				continue
+			var d: float = u.pos.distance_to(p.target)
+			var rr: float = 1.2 + float(u.def.radius)
+			if d <= rr and d < best_d:
+				best_d = d
+				victim = u
+		if victim.is_empty():
+			post_event("explode" if p.kind == "cannonball" else "hit", p.target, p.kind, "")
+		else:
+			if owner.is_empty():
+				owner = {"id": 0, "player": p.player, "pos": p.pos}
+			_apply_hit(owner, victim, {"kind": p.kind, "splash": p.splash}, int(p.dmg), p.target)
+		post_event("crater" if p.kind == "cannonball" else "hit", p.target, p.kind, "")
+	projectiles = keep
+
+func killer_pair(attacker: Dictionary, target: Dictionary) -> bool:
+	return target.hp <= 0 and not target.dead
+
+func _tick_gather(e: Dictionary, dt: float) -> void:
+	var o: Dictionary = e.order
+	var res: String = o.res
+	if e.carry_type != "" and e.carry_type != res:
+		# deliver first
+		_gather_deliver(e, dt)
+		return
+	if res in ["gold", "iron", "coal"]:
+		var mine: Dictionary = by_id.get(o.get("node", 0), {})
+		var valid: bool = not mine.is_empty() and not mine.dead and mine.sid == "mine_" + res \
+			and mine.player == e.player \
+			and ((mine.finished and mine.get("deposit_left", 0) > 0) or not mine.finished)
+		if not valid:
+			mine = nearest_mine(e.pos, res, e.player)
+			if mine.is_empty():
+				e.order = {"type": "none"}
+				return
+			o.node = mine.id
+		if not mine.finished:
+			# walk to the mine site and wait for the builders
+			e.moving = true
+			_step_move(e, mine.pos, e.def.speed, dt, mine.def.radius + 1.2)
+			return
+		var d: float = e.pos.distance_to(mine.pos)
+		if d > mine.def.radius + 1.8:
+			e.moving = true
+			_step_move(e, mine.pos, e.def.speed, dt, mine.def.radius + 0.9)
+		else:
+			e.moving = false
+			if e.inside_of != mine.id:
+				_leave_building(e)
+				mine.workers += 1
+				e.inside_of = mine.id
+		return
+	# field resource (food/wood/stone)
+	# a loaded peasant walks the load to the storehouse first, then goes back
+	var node: Dictionary = by_id.get(o.get("node", 0), {})
+	if e.carry > 0:
+		_gather_deliver(e, dt)
+		return
+	if node.is_empty() or node.get("hits", 0) <= 0:
+		node = nearest_res(e.pos, res, 30.0)
+		if node.is_empty():
+			e.order = {"type": "none"}
+			return
+		o.node = node.id
+	# the spot itself is blocked (a tree stands on it), so the peasant works
+	# from the neighbouring tile: stand-off must be wider than the arrival
+	# radius, otherwise the unit ends up in a dead zone and never works.
+	# each peasant works from its own slot around the tree/rock so workers
+	# fan out instead of overlapping on the same point.
+	var slot := _work_slot(e, node.pos, node.radius + 1.1)
+	var reach: float = 1.4
+	if e.pos.distance_to(slot) > reach:
+		e.moving = true
+		_step_move(e, slot, e.def.speed, dt, 0.5)
+		if e.get("stuck_t", 0.0) > 4.0:
+			# boxed in: look for another spot of the same kind
+			e["stuck_t"] = 0.0
+			var alt := nearest_res(e.pos, res, 45.0)
+			if not alt.is_empty() and alt.id != node.id:
+				o.node = alt.id
+		return
+	e.moving = false
+	e["hit_t"] = (e.get("hit_t", 0.0) + dt)
+	if e.hit_t < Data.GATHER[res].interval:
+		return
+	e.hit_t = 0.0
+	if node.hits > 0:
+		node.hits -= 1
+		e.carry += 1
+		e.carry_type = res
+		post_event("chop", node.pos, res)
+		if node.hits <= 0:
+			if res != "food":
+				set_blocked_circle(node.pos, node.radius, false)
+			post_event("depleted", node.pos, res)
+	if e.carry >= Data.GATHER[res].hits or node.hits <= 0:
+		_gather_deliver(e, dt)
+
+func _gather_deliver(e: Dictionary, dt: float) -> void:
+	var res: String = e.carry_type
+	if res == "":
+		res = e.order.get("res", "wood")
+	var store := nearest_drop(e, res)
+	if store.is_empty():
+		e.order = {"type": "none"}
+		e.carry = 0
+		e.carry_type = ""
+		return
+	var d: float = e.pos.distance_to(store.pos)
+	if d > Data.DELIVERY_RADIUS_M + store.def.radius:
+		e.moving = true
+		e["delivering"] = true
+		_step_move(e, store.pos, e.def.speed, dt)
+		return
+	e.moving = false
+	e["delivering"] = false
+	var portion: int = Data.GATHER.get(res, {}).get("carry", 20)
+	var hits: int = Data.GATHER.get(res, {}).get("hits", 1)
+	var mult_g: float = float(players[e.player].gather_mult.get(res, 1.0))
+	var amount := int(round(float(portion) * minf(e.carry, hits) / hits * mult_g))
+	if amount > 0:
+		players[e.player].res[Data.RES_NAMES.find(res)] += amount
+		stats.gathered[res] = int(stats.gathered.get(res, 0)) + amount
+	e.carry = 0
+	e.carry_type = ""
+	# resume gathering at the last node if it still has resources, but never
+	# overrule an order the peasant was given while it was walking here
+	if e.order.get("res", res) != res:
+		return
+	var node: Dictionary = by_id.get(e.order.get("node", 0), {})
+	if not node.is_empty() and node.get("hits", 0) > 0:
+		e.order = {"type": "gather", "res": res, "node": node.id}
+		e.moving = true
+	else:
+		var nxt := nearest_res(e.pos, res, 30.0)
+		if not nxt.is_empty():
+			e.order = {"type": "gather", "res": res, "node": nxt.id}
+			e.moving = true
+		else:
+			e.order = {"type": "none"}
+
+func _tick_building(e: Dictionary, dt: float) -> void:
+	# production queue
+	if e.finished and e.queue.size() > 0:
+		var job: Dictionary = e.queue[0]
+		job.t -= dt
+		e.queue[0] = job
+		if job.t <= 0.0:
+			e.queue.pop_front()
+			var exit: Vector2 = e.get("rally", e.pos + Vector2(0, e.def.radius + 2.0))
+			var u := spawn(job.sid, e.player, e.pos + (exit - e.pos).normalized() * (e.def.radius + 0.5))
+			cmd_move(u, exit + (exit - e.pos).normalized() * 1.5)
+			post_event("trained", e.pos, job.sid, job.sid)
+	# research queue (one upgrade at a time per blacksmith/academy)
+	if e.finished and e.get("research") != null:
+		var r: Dictionary = e.research
+		r.t -= dt
+		if r.t <= 0.0:
+			e["research"] = null
+			apply_upgrade(e.player, r.uid)
+	# mine income
+	if e.finished and e.sid.begins_with("mine_") and e.workers > 0:
+		var amount: float = e.workers * Data.MINE_INCOME_PER_S * dt
+		var dt_dep: float = e.deposit_left
+		amount = minf(amount, dt_dep)
+		e.deposit_left = e.deposit_left - amount
+		var idx: int = Data.RES_NAMES.find(e.def.mine)
+		players[e.player].res[idx] += amount
+		stats.gathered[e.def.mine] = int(stats.gathered.get(e.def.mine, 0)) + int(amount)
+		if e.deposit_left <= 0:
+			_kill(e, null)
+			say("A %s mine is exhausted." % e.def.mine)
+	# tower weapon
+	if e.finished and e.def.has("weapons"):
+		e.cooldown = maxf(0.0, e.cooldown - dt)
+		var w: Dictionary = e.def.weapons[0]
+		if e.cooldown <= 0 and e.get("active", true):
+			var en := enemies_in_radius(e.pos, e.player, w.max, false)
+			if not en.is_empty() and en.pos.distance_to(e.pos) >= w.min:
+				_fire(e, en, w)
+	# capture: peasants do it properly, soldiers only lean on it.
+	# Video pass: a white flag goes up and the bar fills while peasants swarm
+	# an empty building; garrisoned towers resist.
+	if e.finished and e.def.get("capture", false):
+		var peas := 0
+		var sols := 0
+		var capturer := -1
+		for u in entities:
+			if not u.dead and u.kind == "unit" and u.player != e.player \
+					and u.pos.distance_to(e.pos) < 8.0 + e.def.radius:
+				if u.sid == "peasant":
+					peas += 1
+				else:
+					sols += 1
+				capturer = u.player
+		if capturer >= 0:
+			var speed_c: float = float(peas) * 1.0 + float(sols) * 0.25
+			e.capture_t += dt * speed_c
+			if int(time_s * 2.0) % 2 == 0 and peas > 0:
+				post_event("capture", e.pos, e.sid)
+			var need: float = 5.0 + float(e.max_hp) / 2500.0
+			if e.capture_t >= need:
+				var old: int = e.player
+				e.capture_t = 0.0
+				e.player = capturer
+				players[old].entities.erase(e.id)
+				players[capturer].entities.append(e.id)
+				players[capturer].score += e.def.get("score", 0)
+				if e.def.has("farm"):
+					players[old].farm_cap -= e.def.farm
+					players[capturer].farm_cap += e.def.farm
+				_on_building_finished(e)
+				post_event("capture", e.pos, e.sid)
+				say("A building was captured!")
+		else:
+			e.capture_t = maxf(0.0, e.capture_t - dt)
+
+func _check_victory() -> void:
+	# "destroy_all": the side that has nothing left loses (the port's default,
+	# estimated - the original skirmish condition was not in readable files).
+	# "score": the first side to reach the score limit wins.
+	if Data.VICTORY == "score":
+		for pi in 2:
+			if winner == -1 and players[pi].score >= Data.SCORE_LIMIT:
+				winner = pi
+				game_over.emit(winner)
+				say("%s wins!" % players[winner].name)
+		return
+	for pi in 2:
+		if winner == -1 and buildings_of(pi).is_empty() and units_of(pi).is_empty():
+			winner = 1 - pi
+			game_over.emit(winner)
+			say("%s wins!" % players[winner].name)

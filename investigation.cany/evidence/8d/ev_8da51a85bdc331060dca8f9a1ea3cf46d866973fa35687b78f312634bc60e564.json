@@ -1,0 +1,224 @@
+{
+  "id": "ev_8da51a85bdc331060dca8f9a1ea3cf46d866973fa35687b78f312634bc60e564",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 30,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "speed"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0x95a8af",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0x95a8bc",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonRun"
+      },
+      {
+        "address": "0x95a923",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonRunClick"
+      },
+      {
+        "address": "0x95af40",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0x95af4d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonStayOnTop"
+      },
+      {
+        "address": "0x95aff2",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonStayOnTopClick"
+      },
+      {
+        "address": "0x962000",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TTntSpeedButton"
+      },
+      {
+        "address": "0x962010",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonHigh"
+      },
+      {
+        "address": "0x9620c6",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonHighClick"
+      },
+      {
+        "address": "0x9620dd",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TTntSpeedButton"
+      },
+      {
+        "address": "0x9620ed",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonMedium"
+      },
+      {
+        "address": "0x9621a8",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonMediumClick"
+      },
+      {
+        "address": "0x9621c1",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TTntSpeedButton"
+      },
+      {
+        "address": "0x9621d1",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonLow"
+      },
+      {
+        "address": "0x962286",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonLowClick"
+      },
+      {
+        "address": "0x96229c",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TTntSpeedButton"
+      },
+      {
+        "address": "0x9622ac",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonAutoDetect"
+      },
+      {
+        "address": "0x962370",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonAutoDetectClick"
+      },
+      {
+        "address": "0x96238d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TTntSpeedButton"
+      },
+      {
+        "address": "0x96239d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonUltra"
+      },
+      {
+        "address": "0x962455",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonUltraClick"
+      },
+      {
+        "address": "0x964523",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0x964530",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonEvaluate"
+      },
+      {
+        "address": "0x964ba9",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0x964bb6",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonDeleteWatch"
+      },
+      {
+        "address": "0x964c20",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0x964c2d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonAddWatch"
+      },
+      {
+        "address": "0x964f25",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      },
+      {
+        "address": "0x964f32",
+        "references": [],
+        "section": ".rsrc",
+        "text": "SpeedButtonAddStackVariable"
+      },
+      {
+        "address": "0x964fa6",
+        "references": [],
+        "section": ".rsrc",
+        "text": "TSpeedButton"
+      }
+    ],
+    "total": 38
+  },
+  "summary": "38 strings match \"speed\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 30,
+    "total": 38,
+    "next_offset": 30
+  },
+  "locations": [],
+  "links": []
+}

@@ -1,0 +1,49 @@
+{
+  "id": "ev_d8a53b7ba4a55df08829f0065b374d19587b32a411ffad0cb870f21797bff6cf",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 50,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "Cossacks"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0x96b304",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Cossacks 3"
+      }
+    ],
+    "total": 1
+  },
+  "summary": "1 strings match \"Cossacks\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [],
+  "links": []
+}

@@ -1,0 +1,103 @@
+{
+  "id": "ev_786003bb27dcea6e2ac9775bb305ad52d779ec554db6982545ac76810166243b",
+  "subject": {
+    "kind": "pe",
+    "sha256": "1a88936e831966dfb926b4d954d7ab0dcf42522351685850554803a4213f5040",
+    "name": "cossacks.cdx"
+  },
+  "operation": "native_functions_list",
+  "params": {
+    "limit": 5,
+    "offset": 0
+  },
+  "result": {
+    "functions": [
+      {
+        "address": "0x401000",
+        "blocks": 35,
+        "found_by": "code_pointer",
+        "instructions": 194,
+        "name": "sub_401000",
+        "name_source": "generated",
+        "size": 432,
+        "thunk_of": null
+      },
+      {
+        "address": "0x401084",
+        "blocks": 31,
+        "found_by": "code_pointer",
+        "instructions": 160,
+        "name": "sub_401084",
+        "name_source": "generated",
+        "size": 347,
+        "thunk_of": null
+      },
+      {
+        "address": "0x401118",
+        "blocks": 22,
+        "found_by": "code_pointer",
+        "instructions": 128,
+        "name": "sub_401118",
+        "name_source": "generated",
+        "size": 264,
+        "thunk_of": null
+      },
+      {
+        "address": "0x401134",
+        "blocks": 20,
+        "found_by": "code_pointer",
+        "instructions": 118,
+        "name": "sub_401134",
+        "name_source": "generated",
+        "size": 236,
+        "thunk_of": null
+      },
+      {
+        "address": "0x401338",
+        "blocks": 1,
+        "found_by": "call",
+        "instructions": 1,
+        "name": "UnhandledExceptionFilter@thunk",
+        "name_source": "import_thunk",
+        "size": 6,
+        "thunk_of": "UnhandledExceptionFilter"
+      }
+    ],
+    "total": 18340
+  },
+  "summary": "18340 functions (showing 5).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "instruction_limit",
+      "message": "function discovery stopped after 6000000 instructions; the function list is incomplete and some code is not analysed"
+    },
+    {
+      "code": "indirect_jumps_unresolved",
+      "message": "1245 indirect jumps could not be resolved; code they reach may be missing"
+    },
+    {
+      "code": "stripped_binary",
+      "message": "no local symbols: most function names are generated (sub_…)"
+    },
+    {
+      "code": "static_analysis_only",
+      "message": "functions reached only through computed pointers or at run time may be missing; absence is not proof"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 5,
+    "total": 18340,
+    "next_offset": 5
+  },
+  "locations": [],
+  "links": []
+}

@@ -1,0 +1,1317 @@
+{
+ "peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "pikeman": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.5,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.833,
+    "loop": false
+   }
+  }
+ },
+ "roundshier": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.4,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.7,
+    "loop": false
+   }
+  }
+ },
+ "serdiuk": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.533,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "archer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.7,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.933,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": false
+   }
+  }
+ },
+ "grenadier": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.533,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "musk18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "drummer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.7,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.833,
+    "loop": false
+   }
+  }
+ },
+ "priest": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 1.033,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "officer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.8,
+    "loop": false
+   }
+  }
+ },
+ "cossack": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 1.6,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.433,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.333,
+    "loop": false
+   }
+  }
+ },
+ "dragoon": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.433,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "cannon": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 3.3,
+    "loop": true
+   },
+   "idle": {
+    "frames": 1,
+    "duration": 0.033,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 1.233,
+    "loop": false
+   }
+  }
+ },
+ "howitzer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 3.3,
+    "loop": true
+   },
+   "idle": {
+    "frames": 1,
+    "duration": 0.033,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.4,
+    "loop": false
+   }
+  }
+ },
+ "mortar": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 3.3,
+    "loop": true
+   },
+   "idle": {
+    "frames": 1,
+    "duration": 0.033,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.2,
+    "loop": false
+   }
+  }
+ },
+ "pikeman18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.3,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.833,
+    "loop": false
+   }
+  }
+ },
+ "musketeer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.867,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "strelet": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.733,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "lightinfantry": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.6,
+    "loop": false
+   }
+  }
+ },
+ "officer18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.8,
+    "loop": false
+   }
+  }
+ },
+ "drummer18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.7,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.833,
+    "loop": false
+   }
+  }
+ },
+ "pope": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.833,
+    "loop": false
+   }
+  }
+ },
+ "padre": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 1.033,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "mullah": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 1.033,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.833,
+    "loop": false
+   }
+  }
+ },
+ "bagpiper": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.7,
+    "loop": true
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.833,
+    "loop": false
+   }
+  }
+ },
+ "cossackdon": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "cossackregister": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.833,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "dragoon17": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 1.133,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "hussar": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.533,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "wingedhussar": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.533,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.4,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "cuirassier": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "reiter": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "lightcavalry": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.433,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "hackapell": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.567,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "tatar": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.967,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "sipahi": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.833,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.4,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "spakh": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "mameluke": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "vityaz": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.833,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.4,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "hetman": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.5,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "croat": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.567,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 2.833,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.467,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.367,
+    "loop": false
+   }
+  }
+ },
+ "pandur": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.867,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "chasseur": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.767,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "highlander": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.867,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "jannisary": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.8,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.867,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 2.1,
+    "loop": false
+   }
+  }
+ },
+ "multicannon": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 3.3,
+    "loop": true
+   },
+   "idle": {
+    "frames": 1,
+    "duration": 0.033,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.233,
+    "loop": false
+   }
+  }
+ },
+ "ukr_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "rus_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "pol_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "aus_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "eng_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "spa_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "tur_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ },
+ "sco_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 6,
+    "duration": 0.667,
+    "loop": true
+   },
+   "idle": {
+    "frames": 2,
+    "duration": 1.667,
+    "loop": true
+   },
+   "attack": {
+    "frames": 6,
+    "duration": 0.6,
+    "loop": false
+   },
+   "death": {
+    "frames": 6,
+    "duration": 1.167,
+    "loop": false
+   }
+  }
+ }
+}

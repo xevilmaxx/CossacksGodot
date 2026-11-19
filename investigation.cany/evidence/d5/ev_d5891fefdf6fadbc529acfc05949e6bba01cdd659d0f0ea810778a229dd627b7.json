@@ -1,0 +1,71 @@
+{
+  "id": "ev_d5891fefdf6fadbc529acfc05949e6bba01cdd659d0f0ea810778a229dd627b7",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x4c37dc"
+  },
+  "result": {
+    "calls": [
+      "*(uint32_t*)(edx + 0x30",
+      "sub_4048ec",
+      "sub_405400",
+      "sub_405424",
+      "sub_405780",
+      "sub_42e3c0",
+      "sub_8933d8",
+      "sub_89cd54"
+    ],
+    "engine": "clean-room lifter",
+    "entry": "0x4c37dc",
+    "function": "sub_4c37dc",
+    "gotos": 0,
+    "inline_asm": 0,
+    "pseudo_code": "int64_t sub_4c37dc()\n{\n    if (dl != 0) {\n        sub_4048ec();\n    }\n    esi = ecx;\n    ebx = edx;\n    edi = eax;\n    eax = 0;\n    fs:[eax] = esp;\n    eax = edi + 0x3c;\n    sub_405400(fs:[eax], 0x4c38d8, ebp);\n    eax = *(uint32_t*)0x8fccd4;\n    *(uint8_t*)(eax) = 0x2c;\n    *(uint32_t*)0x8f4d44 = edi;\n    ecx = esi;\n    edx = 0;\n    eax = edi;\n    sub_42e3c0();\n    if (*(uint32_t*)0x8f4d48 != 0) {\n        eax = *(uint32_t*)0x8f4d48;\n        edx = *(uint32_t*)(eax);\n        (**(uint32_t*)(edx + 0x30))();\n    }\n    *(uint32_t*)0x8f4d48 = edi;\n    dl = 1;\n    eax = sub_89c04c;\n    rax = sub_89cd54();\n    *(uint32_t*)(edi + 0x38) = eax;\n    eax = &arg_fffffffc;\n    edx = 3;\n    sub_405780(*(uint32_t*)0x8f4d38, 0x4c3908, *(uint32_t*)0x8f4d34);\n    eax = arg_fffffffc;\n    ecx = *(uint32_t*)0x8f4d34;\n    dl = 1;\n    eax = sub_892324;\n    rax = sub_8933d8();\n    *(uint32_t*)(edi + 0x30) = eax;\n    eax = &arg_fffffff8;\n    edx = 3;\n    sub_405780(*(uint32_t*)0x8f4d30, 0x4c3908, *(uint32_t*)0x8f4d2c);\n    eax = arg_fffffff8;\n    ecx = *(uint32_t*)0x8f4d2c;\n    dl = 1;\n    eax = sub_892324;\n    rax = sub_8933d8();\n    *(uint32_t*)(edi + 0x34) = eax;\n    eax = 0;\n    fs:[eax] = edx;\n    eax = &arg_fffffff8;\n    edx = 2;\n    sub_405424(0x4c38df);\n    return rax;\n}\n",
+    "signature": "int64_t sub_4c37dc()",
+    "strings": [],
+    "structured": true
+  },
+  "summary": "Pseudo-C for sub_4c37dc (54 lines).",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "register_level",
+      "message": "variables are machine registers and stack slots; types are not recovered"
+    },
+    {
+      "code": "calling_convention_assumed",
+      "message": "call arguments follow the usual x86 convention and may be wrong for unusual functions"
+    },
+    {
+      "code": "conditions_from_flags",
+      "message": "branch conditions are rebuilt from the last compare and may be approximate"
+    },
+    {
+      "code": "deep_engine_unavailable",
+      "message": "Ghidra couldn't open this program (could not start Ghidra: Ghidra stopped before the bridge started; see C:\\Users\\Maxym.Oboyshev\\AppData\\Roaming\\craft-anything\\engines\\ghidra-cache\\87f0f3c130b027e7-f2dfab6faedc84f0.bridge.log). So this came from the built-in decompiler, which is less exact."
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x4c37dc"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

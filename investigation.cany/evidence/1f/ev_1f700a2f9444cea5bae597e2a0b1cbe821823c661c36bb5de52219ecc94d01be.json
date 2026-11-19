@@ -1,0 +1,45 @@
+{
+  "id": "ev_1f700a2f9444cea5bae597e2a0b1cbe821823c661c36bb5de52219ecc94d01be",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x4c37dc"
+  },
+  "result": {
+    "engine": "ghidra",
+    "entry": "0x4c37dc",
+    "function": "FUN_004c37dc",
+    "pseudo_code": "\r\nvoid FUN_004c37dc(int param_1,char param_2,undefined4 param_3)\r\n\r\n{\r\n  undefined4 uVar1;\r\n  undefined4 uVar2;\r\n  undefined4 extraout_ECX;\r\n  undefined4 *in_FS_OFFSET;\r\n  undefined *puVar3;\r\n  undefined *puVar4;\r\n  undefined1 *puVar5;\r\n  undefined4 uStack_34;\r\n  undefined1 *puStack_30;\r\n  undefined1 *puStack_2c;\r\n  undefined4 local_c;\r\n  undefined4 local_8;\r\n  \r\n  local_8 = 0;\r\n  local_c = 0;\r\n  if (param_2 != '\\0') {\r\n    puStack_2c = (undefined1 *)0x4c37f2;\r\n    param_1 = FUN_004048ec();\r\n    param_3 = extraout_ECX;\r\n  }\r\n  puStack_30 = &LAB_004c38d8;\r\n  uStack_34 = *in_FS_OFFSET;\r\n  *in_FS_OFFSET = &uStack_34;\r\n  puStack_2c = (undefined1 *)((int)register0x00000010 + -4);\r\n  FUN_00405400(param_1 + 0x3c);\r\n  *PTR_DAT_008fccd4 = 0x2c;\r\n  DAT_008f4d44 = param_1;\r\n  FUN_0042e3c0(param_1,0,param_3);\r\n  if (DAT_008f4d48 != (int *)0x0) {\r\n    (**(code **)(*DAT_008f4d48 + 0x30))();\r\n  }\r\n  DAT_008f4d48 = (int *)param_1;\r\n  uVar1 = FUN_0089cd54(PTR_PTR_0089c04c,1);\r\n  *(undefined4 *)(param_1 + 0x38) = uVar1;\r\n  puVar5 = &LAB_004c3908;\r\n  puVar3 = PTR_s_dlcs_ini_008f4d38;\r\n  puVar4 = PTR_DAT_008f4d34;\r\n  FUN_00405780(&local_8,3);\r\n  uVar1 = FUN_008933d8(PTR_DAT_00892324,1,PTR_DAT_008f4d34,local_8,puVar3,puVar5,puVar4);\r\n  *(undefined4 *)(param_1 + 0x30) = uVar1;\r\n  puVar5 = &LAB_004c3908;\r\n  puVar3 = PTR_s_mods_ini_008f4d30;\r\n  puVar4 = PTR_DAT_008f4d2c;\r\n  FUN_00405780(&local_c,3);\r\n  uVar1 = local_c;\r\n  uVar2 = FUN_008933d8(PTR_DAT_00892324,1,PTR_DAT_008f4d2c,local_c,puVar3,puVar5,puVar4);\r\n  *(undefined4 *)(param_1 + 0x34) = uVar2;\r\n  *in_FS_OFFSET = uVar1;\r\n  FUN_00405424(&local_c,2,puVar5,&LAB_004c38df);\r\n  return;\r\n}\r\n\r\n",
+    "signature": "void FUN_004c37dc(int param_1,char param_2,undefined4 param_3);"
+  },
+  "summary": "Pseudo-C for FUN_004c37dc from the Deep engine (56 lines).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "ghidra",
+    "engine_version": "12.2",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "deep_engine",
+      "message": "the pseudo-C comes from the external Deep engine (Ghidra), not the original source"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x4c37dc"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

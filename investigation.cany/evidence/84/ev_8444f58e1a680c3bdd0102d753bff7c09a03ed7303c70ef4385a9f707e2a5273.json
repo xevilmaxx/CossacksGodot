@@ -1,0 +1,44 @@
+{
+  "id": "ev_8444f58e1a680c3bdd0102d753bff7c09a03ed7303c70ef4385a9f707e2a5273",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "core_feature_find",
+  "params": {
+    "case_sensitive": false,
+    "query": "damage"
+  },
+  "result": {
+    "case_sensitive": false,
+    "function_names": [],
+    "functions": [],
+    "imports": [],
+    "query": "damage",
+    "strings": [],
+    "truncated": false
+  },
+  "summary": "\"damage\": 0 matching strings, 0 matching function names, 0 matching imports; 0 functions involved.",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "no_match",
+      "message": "nothing matched; the text may be built at run time, encrypted, or come from a resource file (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [],
+  "links": []
+}

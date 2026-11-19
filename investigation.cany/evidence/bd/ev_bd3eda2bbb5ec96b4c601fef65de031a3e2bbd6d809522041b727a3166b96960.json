@@ -1,0 +1,67 @@
+{
+  "id": "ev_bd3eda2bbb5ec96b4c601fef65de031a3e2bbd6d809522041b727a3166b96960",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x47c804"
+  },
+  "result": {
+    "calls": [
+      "*(uint32_t*)(eax + 0xfffffff4",
+      "*(uint32_t*)(edi + 0x2c",
+      "sub_40470c",
+      "sub_492300"
+    ],
+    "engine": "clean-room lifter",
+    "entry": "0x47c804",
+    "function": "sub_47c804",
+    "gotos": 0,
+    "inline_asm": 0,
+    "pseudo_code": "int64_t sub_47c804()\n{\n    arg_fffffffc = ecx;\n    ebx = edx;\n    esi = eax;\n    eax = ebx;\n    rax = (**(uint32_t*)(eax + 0xfffffff4))();\n    ebx = eax;\n    eax = arg_fffffffc;\n    *(uint32_t*)(eax) = ebx;\n    eax = 0;\n    fs:[eax] = esp;\n    ecx = esi;\n    edx |= -1;\n    eax = ebx;\n    edi = *(uint32_t*)(eax);\n    (**(uint32_t*)(edi + 0x2c))(fs:[eax], 0x47c842);\n    eax = 0;\n    fs:[eax] = edx;\n    if (*(uint32_t*)(esi + 0x44) == 0) {\n        eax = ebx;\n        edx = sub_472090;\n        rax = sub_40470c();\n        if (al != 0) {\n            edi = ebx;\n            eax = edi;\n            sub_492300();\n            *(uint32_t*)(esi + 0x44) = edi;\n        }\n    }\n    return rax;\n}\n",
+    "signature": "int64_t sub_47c804()",
+    "strings": [],
+    "structured": true
+  },
+  "summary": "Pseudo-C for sub_47c804 (32 lines).",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "register_level",
+      "message": "variables are machine registers and stack slots; types are not recovered"
+    },
+    {
+      "code": "calling_convention_assumed",
+      "message": "call arguments follow the usual x86 convention and may be wrong for unusual functions"
+    },
+    {
+      "code": "conditions_from_flags",
+      "message": "branch conditions are rebuilt from the last compare and may be approximate"
+    },
+    {
+      "code": "deep_engine_unavailable",
+      "message": "Ghidra couldn't open this program (could not start Ghidra: Ghidra stopped before the bridge started; see C:\\Users\\Maxym.Oboyshev\\AppData\\Roaming\\craft-anything\\engines\\ghidra-cache\\87f0f3c130b027e7-f2dfab6faedc84f0.bridge.log). So this came from the built-in decompiler, which is less exact."
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x47c804"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

@@ -1,0 +1,55 @@
+{
+  "id": "ev_7f8256c88e0b56ba0d50194e002b8d80e34939097cbde8bdef2200df0631e356",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 20,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "Not enough"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0x954856",
+        "references": [],
+        "section": ".rsrc",
+        "text": "JPEG Image File(Not enough memory to complete operation.tAn invalid Chunk structure was encountered while reading\rthe database. Usually caused by a corrupt database or file.:The database passed as an argument has not be created yet.SThe database passed as an argument is the wrong kind of\rdatabase for this function."
+      },
+      {
+        "address": "0x955ee6",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Not enough timers available@GroupIndex cannot be less than a previous menu item's GroupIndex5Cannot create form. No MDI forms are currently active*A control cannot have itself as its parent"
+      }
+    ],
+    "total": 2
+  },
+  "summary": "2 strings match \"Not enough\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 2,
+    "total": 2
+  },
+  "locations": [],
+  "links": []
+}

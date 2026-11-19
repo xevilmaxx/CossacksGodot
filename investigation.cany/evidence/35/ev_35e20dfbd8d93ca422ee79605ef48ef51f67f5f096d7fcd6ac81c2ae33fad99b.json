@@ -1,0 +1,45 @@
+{
+  "id": "ev_35e20dfbd8d93ca422ee79605ef48ef51f67f5f096d7fcd6ac81c2ae33fad99b",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x404574"
+  },
+  "result": {
+    "engine": "ghidra",
+    "entry": "0x404574",
+    "function": "FUN_00404574",
+    "pseudo_code": "\r\nvoid FUN_00404574(int *param_1)\r\n\r\n{\r\n  if (param_1 != (int *)0x0) {\r\n    (**(code **)(*param_1 + -4))(param_1,1);\r\n  }\r\n  return;\r\n}\r\n\r\n",
+    "signature": "void FUN_00404574(int *param_1);"
+  },
+  "summary": "Pseudo-C for FUN_00404574 from the Deep engine (10 lines).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "ghidra",
+    "engine_version": "12.2",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "deep_engine",
+      "message": "the pseudo-C comes from the external Deep engine (Ghidra), not the original source"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x404574"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

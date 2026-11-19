@@ -1,0 +1,556 @@
+{
+  "game": "C:\\Games\\Cossacks 3",
+  "models": [
+    {
+      "sid": "peasant",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peaukr.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peaukr.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\peasant.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\peasant.png",
+      "bbox": [
+        -0.7172664999961853,
+        0.7172665596008301,
+        -0.22652101516723633,
+        0.2853986620903015,
+        0.006876183673739433,
+        1.9954692125320435
+      ],
+      "verts": 577,
+      "faces": 921
+    },
+    {
+      "sid": "pikeman",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\pikeman.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\pikeman.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\pikeman.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\pikeman.png",
+      "bbox": [
+        -0.7447852492332458,
+        0.7481208443641663,
+        -0.2681559920310974,
+        0.6866317391395569,
+        0.0014173551462590694,
+        3.5163779258728027
+      ],
+      "verts": 733,
+      "faces": 1062
+    },
+    {
+      "sid": "roundshier",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\roundshier.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\roundshier.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\roundshier.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\roundshier.png",
+      "bbox": [
+        -0.7907978892326355,
+        0.8958696722984314,
+        -1.0952506065368652,
+        0.45016252994537354,
+        0.004354782868176699,
+        1.9702298641204834
+      ],
+      "verts": 710,
+      "faces": 1048
+    },
+    {
+      "sid": "serdiuk",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\serdiuk.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\serdiuk.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\serdiuk.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\serdiuk.png",
+      "bbox": [
+        -0.7188405394554138,
+        0.7228237390518188,
+        -0.23884400725364685,
+        0.7040733098983765,
+        0.0018355250358581543,
+        2.2614197731018066
+      ],
+      "verts": 787,
+      "faces": 1058
+    },
+    {
+      "sid": "archer",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\archer.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\archer.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\archer.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\archer.png",
+      "bbox": [
+        -0.6992169618606567,
+        0.7346013784408569,
+        -0.6706530451774597,
+        0.7123090624809265,
+        0.0014905823627486825,
+        2.0079216957092285
+      ],
+      "verts": 713,
+      "faces": 979
+    },
+    {
+      "sid": "cossack",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\cossacksich.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\cossacksich.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\cossack.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\cossack.png",
+      "bbox": [
+        1.4659368991851807,
+        2.8713440895080566,
+        -0.9467809200286865,
+        0.21908169984817505,
+        0.0018267584964632988,
+        1.877014398574829
+      ],
+      "verts": 692,
+      "faces": 1031
+    },
+    {
+      "sid": "dragoon",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\dragoon18.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\dragoon18.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\dragoon.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\dragoon.png",
+      "bbox": [
+        1.3171098232269287,
+        2.709712266921997,
+        -1.2234479188919067,
+        0.5533814430236816,
+        0.03876541182398796,
+        1.9336743354797363
+      ],
+      "verts": 814,
+      "faces": 1124
+    },
+    {
+      "sid": "officer",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\officer.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\officer.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\officer.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\officer.png",
+      "bbox": [
+        -0.7629826068878174,
+        0.728650689125061,
+        -1.231208086013794,
+        1.2173370122909546,
+        -0.0006272360333241522,
+        2.0366976261138916
+      ],
+      "verts": 826,
+      "faces": 1021
+    },
+    {
+      "sid": "cannon",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\cannon.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\cannon.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\cannon.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\cannon.png",
+      "bbox": [
+        -0.4760005474090576,
+        0.47307154536247253,
+        -0.9163456559181213,
+        2.164191246032715,
+        0.001048845355398953,
+        1.3682241439819336
+      ],
+      "verts": 736,
+      "faces": 564
+    },
+    {
+      "sid": "cen",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\ukr\\ukrcen.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\ukr\\ukrcen.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\cen.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\cen.png",
+      "bbox": [
+        -7.052096843719482,
+        7.052096843719482,
+        -6.525235652923584,
+        6.525235176086426,
+        -0.22895121574401855,
+        11.905742645263672
+      ],
+      "verts": 5611,
+      "faces": 3714
+    },
+    {
+      "sid": "hou",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\ukr\\ukrhou.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\ukr\\ukrhou.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\hou.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\hou.png",
+      "bbox": [
+        -4.809120178222656,
+        5.9731125831604,
+        -4.0380964279174805,
+        4.1359710693359375,
+        -0.02152244560420513,
+        5.507205009460449
+      ],
+      "verts": 2722,
+      "faces": 2298
+    },
+    {
+      "sid": "bar",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\ukr\\ukrbar.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\ukr\\ukrbar.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\bar.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\bar.png",
+      "bbox": [
+        -5.245463848114014,
+        5.120294094085693,
+        -5.288387298583984,
+        5.5905585289001465,
+        -0.16572922468185425,
+        6.410475730895996
+      ],
+      "verts": 5773,
+      "faces": 3557
+    },
+    {
+      "sid": "sta",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\ukr\\ukrsta.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\ukr\\ukrsta.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\sta.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\sta.png",
+      "bbox": [
+        -5.044905662536621,
+        5.044907569885254,
+        -5.672518253326416,
+        5.672517776489258,
+        -0.05219316482543945,
+        6.8787736892700195
+      ],
+      "verts": 5422,
+      "faces": 3712
+    },
+    {
+      "sid": "bla",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\ukr\\ukrbla.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\ukr\\ukrbla.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\bla.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\bla.png",
+      "bbox": [
+        -2.259646415710449,
+        2.5618741512298584,
+        -2.450645685195923,
+        2.4506449699401855,
+        -0.09578723460435867,
+        2.620098352432251
+      ],
+      "verts": 9790,
+      "faces": 8059
+    },
+    {
+      "sid": "aca",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\ukr\\ukraca.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\ukr\\ukraca.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\aca.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\aca.png",
+      "bbox": [
+        -11.903325080871582,
+        11.81666374206543,
+        -3.5913681983947754,
+        3.2671396732330322,
+        -0.004274910315871239,
+        7.911116123199463
+      ],
+      "verts": 15541,
+      "faces": 11489
+    },
+    {
+      "sid": "art",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\ukr\\ukrart.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\ukr\\ukrart.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\art.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\art.png",
+      "bbox": [
+        -7.659186363220215,
+        7.659185409545898,
+        -7.193484783172607,
+        7.193484783172607,
+        -0.03475218266248703,
+        6.468920707702637
+      ],
+      "verts": 7870,
+      "faces": 5505
+    },
+    {
+      "sid": "sto",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\commoneur\\eursto.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\commoneur\\eursto.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\sto.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\sto.png",
+      "bbox": [
+        -1.7080707550048828,
+        2.0697665214538574,
+        -1.7085174322128296,
+        1.5560846328735352,
+        0.0,
+        2.473339080810547
+      ],
+      "verts": 1384,
+      "faces": 914
+    },
+    {
+      "sid": "mil",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\commoneur\\eurmil.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\commoneur\\eurmil.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\mil.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\mil.png",
+      "bbox": [
+        -2.425523519515991,
+        2.778339147567749,
+        -2.4005842208862305,
+        2.3941283226013184,
+        -0.002850709017366171,
+        5.914005756378174
+      ],
+      "verts": 2949,
+      "faces": 2020
+    },
+    {
+      "sid": "mar",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\commoneur\\eurmar.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\commoneur\\eurmar.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\mar.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\mar.png",
+      "bbox": [
+        -6.072466850280762,
+        6.328536033630371,
+        -4.642517566680908,
+        5.378634929656982,
+        -0.056822966784238815,
+        4.6455488204956055
+      ],
+      "verts": 9175,
+      "faces": 8643
+    },
+    {
+      "sid": "tow",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\commoneur\\eurtow.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\commoneur\\eurtow.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\tow.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\tow.png",
+      "bbox": [
+        -2.1742401123046875,
+        2.1742401123046875,
+        -2.470266342163086,
+        2.470266342163086,
+        -0.04814634472131729,
+        9.379703521728516
+      ],
+      "verts": 1315,
+      "faces": 1132
+    },
+    {
+      "sid": "mine_gold",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\minegold.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\minegold.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\mine_gold.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\mine_gold.png",
+      "bbox": [
+        -7.141563415527344,
+        7.88480806350708,
+        -7.912742614746094,
+        7.909084796905518,
+        -1.5513978004455566,
+        0.3618934154510498
+      ],
+      "verts": 1065,
+      "faces": 1234
+    },
+    {
+      "sid": "mine_iron",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\mineiron.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\mineiron.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\mine_iron.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\mine_iron.png",
+      "bbox": [
+        -7.141563415527344,
+        7.88480806350708,
+        -7.912742614746094,
+        7.909084796905518,
+        -1.5513978004455566,
+        0.3618934154510498
+      ],
+      "verts": 1065,
+      "faces": 1234
+    },
+    {
+      "sid": "mine_coal",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\minecoal.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\minecoal.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\mine_coal.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\mine_coal.png",
+      "bbox": [
+        -7.141563415527344,
+        7.88480806350708,
+        -7.912742614746094,
+        7.909084796905518,
+        -1.5513978004455566,
+        0.3618934154510498
+      ],
+      "verts": 1065,
+      "faces": 1234
+    },
+    {
+      "sid": "tree_fir",
+      "kind": "env",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\fir1.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\fir1.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\tree_fir.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\tree_fir.png",
+      "bbox": [
+        -2.038530111312866,
+        1.5455288887023926,
+        -1.5645216703414917,
+        1.8216661214828491,
+        -0.15518267452716827,
+        6.1411261558532715
+      ],
+      "verts": 752,
+      "faces": 865
+    },
+    {
+      "sid": "tree_oak",
+      "kind": "env",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\oak1.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\oak1.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\tree_oak.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\tree_oak.png",
+      "bbox": [
+        -2.757392168045044,
+        2.6288318634033203,
+        -2.638291835784912,
+        2.3684990406036377,
+        -0.16849440336227417,
+        7.634304046630859
+      ],
+      "verts": 1697,
+      "faces": 2249
+    },
+    {
+      "sid": "tree_pine",
+      "kind": "env",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\pine1.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\pine1.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\tree_pine.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\tree_pine.png",
+      "bbox": [
+        -1.8550769090652466,
+        1.4828907251358032,
+        -1.468712568283081,
+        1.7279582023620605,
+        -0.0747862160205841,
+        7.647116661071777
+      ],
+      "verts": 1201,
+      "faces": 1516
+    },
+    {
+      "sid": "rock",
+      "kind": "env",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\rocks1.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\rocks.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\rock.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\rock.png",
+      "bbox": [
+        -7.167500019073486,
+        7.167500019073486,
+        -3.8699541091918945,
+        3.8699541091918945,
+        0.084295354783535,
+        5.157997131347656
+      ],
+      "verts": 187,
+      "faces": 336
+    },
+    {
+      "sid": "stone",
+      "kind": "env",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\stones1.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\stones.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\stone.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\stone.png",
+      "bbox": [
+        -3.1268539428710938,
+        3.1690826416015625,
+        -3.260043144226074,
+        3.288837194442749,
+        -0.045557498931884766,
+        2.0996041297912598
+      ],
+      "verts": 156,
+      "faces": 224
+    },
+    {
+      "sid": "field",
+      "kind": "env",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\field1.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\field1.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\obj\\field.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\assets\\models\\tex\\field.png",
+      "bbox": [
+        -29.259292602539062,
+        29.25927734375,
+        -25.962615966796875,
+        25.962617874145508,
+        -1.6558914184570312,
+        18.796781539916992
+      ],
+      "verts": 546,
+      "faces": 544
+    }
+  ]
+}

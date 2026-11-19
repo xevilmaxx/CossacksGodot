@@ -1,0 +1,14 @@
+{
+  "id": "unk_77d191a587c8d585",
+  "revision": 2,
+  "question": "How does the original decide AI behaviour in skirmish (build order, attack timing)?",
+  "severity": "medium",
+  "domain": "general",
+  "status": "resolved",
+  "probes": [
+    "data/scripts/lib/ai.script and data/scripts/units/global.inc/progresswarai.inc are compiled .aix (packed); progreseconomicai.inc 231KB is also .aix."
+  ],
+  "evidence_for": [],
+  "evidence_against": [],
+  "resolution": "The original skirmish AI lives in compiled .aix files (progreseconomicai.inc, progresswarai.inc) that are packed/binary and not readable here. The port uses an approximation that gathers, builds mines/barracks/stable, trains peasants and military, defends and attacks in waves; exact build order and attack timing remain estimated."
+}

@@ -1,0 +1,59 @@
+{
+  "id": "ev_69e62713418ec39926ee71ce7c9c0a17a9089ac77b7c995c99e4b530e9d23e16",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_bytes_find",
+  "params": {
+    "encoding": "both",
+    "limit": 50,
+    "offset": 0,
+    "path": null,
+    "pattern": "55 55 D5 41",
+    "text": null
+  },
+  "result": {
+    "file_size": 5768048,
+    "limit": 50,
+    "match_cap_reached": false,
+    "matches": [],
+    "native_container": "pe",
+    "offset": 0,
+    "path": "C:\\Games\\Cossacks 3\\cossacks.exe",
+    "searched_for": [
+      {
+        "kind": "pattern",
+        "length": 4
+      }
+    ],
+    "total_matches": 0
+  },
+  "summary": "0 match(es) for pattern in cossacks.exe.",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "file_bytes_only",
+      "message": "The file's bytes are searched as stored: compressed, encrypted or packed regions and data built at run time are not seen, so no match is not proof of absence."
+    },
+    {
+      "code": "unmapped_regions",
+      "message": "Matches in headers, overlays or debug data that are not loaded into memory have no virtual address."
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 0,
+    "total": 0
+  },
+  "locations": [],
+  "links": []
+}

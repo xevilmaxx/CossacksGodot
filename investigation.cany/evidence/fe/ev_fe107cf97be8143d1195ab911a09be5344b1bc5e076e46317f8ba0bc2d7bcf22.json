@@ -1,0 +1,45 @@
+{
+  "id": "ev_fe107cf97be8143d1195ab911a09be5344b1bc5e076e46317f8ba0bc2d7bcf22",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x401fb8"
+  },
+  "result": {
+    "engine": "ghidra",
+    "entry": "0x401fb8",
+    "function": "FUN_00401fb8",
+    "pseudo_code": "\r\n/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */\r\n\r\nvoid FUN_00401fb8(int param_1)\r\n\r\n{\r\n  _DAT_008fd5b4 = _DAT_008fd5b4 + 1;\r\n  _DAT_008fd5b8 = _DAT_008fd5b8 + ((*(uint *)(param_1 + -4) & 0x7ffffffc) - 4);\r\n  FUN_004026d4();\r\n  return;\r\n}\r\n\r\n",
+    "signature": "void FUN_00401fb8(int param_1);"
+  },
+  "summary": "Pseudo-C for FUN_00401fb8 from the Deep engine (12 lines).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "ghidra",
+    "engine_version": "12.2",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "deep_engine",
+      "message": "the pseudo-C comes from the external Deep engine (Ghidra), not the original source"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x401fb8"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

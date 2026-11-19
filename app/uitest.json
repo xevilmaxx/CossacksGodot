@@ -1,0 +1,61 @@
+{
+  "passed": true,
+  "steps": [
+    {
+      "detail": "skirmish setup tur vs rus applied, town hall present: yes",
+      "passed": true,
+      "step": "menu_shell"
+    },
+    {
+      "detail": "3 peasants in selection box, panel shown",
+      "passed": true,
+      "step": "select_box"
+    },
+    {
+      "detail": "attack-move ok, stand ok, engage ok, pause-toggle ok",
+      "passed": true,
+      "step": "order_keys"
+    },
+    {
+      "detail": "house site placed, builders on it 8",
+      "passed": true,
+      "step": "build_flow"
+    },
+    {
+      "detail": "train buttons listed, queue 0 -> 1, returned true",
+      "passed": true,
+      "step": "train_flow"
+    },
+    {
+      "detail": "formed yes, J=line K=column L=square, disbanded yes",
+      "passed": true,
+      "step": "squad_keys"
+    },
+    {
+      "detail": "rally flag set",
+      "passed": true,
+      "step": "rally_panel"
+    },
+    {
+      "detail": "100 wood -> 65 gold",
+      "passed": true,
+      "step": "market_panel"
+    },
+    {
+      "detail": "research buttons listed, bla_sword1 done",
+      "passed": true,
+      "step": "research_panel"
+    },
+    {
+      "detail": "owned peasant deleted, score kept 3340",
+      "passed": true,
+      "step": "delete_key"
+    },
+    {
+      "detail": "game speed set to 2x: yes",
+      "passed": true,
+      "step": "speed_pause"
+    }
+  ],
+  "version": 1
+}

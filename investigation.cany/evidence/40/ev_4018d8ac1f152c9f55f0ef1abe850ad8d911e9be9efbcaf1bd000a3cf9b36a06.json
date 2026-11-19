@@ -1,0 +1,344 @@
+{
+  "id": "ev_4018d8ac1f152c9f55f0ef1abe850ad8d911e9be9efbcaf1bd000a3cf9b36a06",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 50,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "Height"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0x958aa2",
+        "references": [],
+        "section": ".rsrc",
+        "text": "HXHeightField"
+      },
+      {
+        "address": "0x959d2e",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x959db9",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Font.Height"
+      },
+      {
+        "address": "0x959e22",
+        "references": [],
+        "section": ".rsrc",
+        "text": "`\nTextHeight"
+      },
+      {
+        "address": "0x959e5f",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x959e96",
+        "references": [],
+        "section": ".rsrc",
+        "text": "DefaultRowHeight"
+      },
+      {
+        "address": "0x959f95",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a010",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a07e",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a0fe",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a164",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Font.Height"
+      },
+      {
+        "address": "0x95a240",
+        "references": [],
+        "section": ".rsrc",
+        "text": "`\nTextHeight"
+      },
+      {
+        "address": "0x95a278",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a2c3",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a2f6",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a8e1",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95a9b9",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95aa3c",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95aaaf",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95ab1f",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95ab71",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Font.Height"
+      },
+      {
+        "address": "0x95abf4",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95ac8d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95acea",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95ad47",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95adbb",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95ae01",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95ae41",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95aebf",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Font.Height"
+      },
+      {
+        "address": "0x95af27",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95af78",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b03c",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b087",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b0f5",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Font.Height"
+      },
+      {
+        "address": "0x95b161",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b1c0",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Font.Height"
+      },
+      {
+        "address": "0x95b261",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b2e4",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b382",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b420",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b4c8",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b571",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b60f",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b696",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b72c",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b7bf",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b831",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b890",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Height"
+      },
+      {
+        "address": "0x95b8e7",
+        "references": [],
+        "section": ".rsrc",
+        "text": "Constraints.MinHeight"
+      },
+      {
+        "address": "0x95b8fd",
+        "references": [],
+        "section": ".rsrc",
+        "text": "2\nItemHeight"
+      }
+    ],
+    "total": 238
+  },
+  "summary": "238 strings match \"Height\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 50,
+    "total": 238,
+    "next_offset": 50
+  },
+  "locations": [],
+  "links": []
+}

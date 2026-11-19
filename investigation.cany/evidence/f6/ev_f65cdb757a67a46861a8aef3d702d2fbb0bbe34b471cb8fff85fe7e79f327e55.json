@@ -1,0 +1,45 @@
+{
+  "id": "ev_f65cdb757a67a46861a8aef3d702d2fbb0bbe34b471cb8fff85fe7e79f327e55",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x401408"
+  },
+  "result": {
+    "engine": "ghidra",
+    "entry": "0x401408",
+    "function": "WideCharToMultiByte",
+    "pseudo_code": "\r\nint __stdcall\r\nWideCharToMultiByte(UINT CodePage,DWORD dwFlags,LPCWSTR lpWideCharStr,int cchWideChar,\r\n                   LPSTR lpMultiByteStr,int cbMultiByte,LPCSTR lpDefaultChar,\r\n                   LPBOOL lpUsedDefaultChar)\r\n\r\n{\r\n  int iVar1;\r\n  \r\n                    /* WARNING: Could not recover jumptable at 0x00401408. Too many branches */\r\n                    /* WARNING: Treating indirect jump as call */\r\n  iVar1 = WideCharToMultiByte(CodePage,dwFlags,lpWideCharStr,cchWideChar,lpMultiByteStr,cbMultiByte,\r\n                              lpDefaultChar,lpUsedDefaultChar);\r\n  return iVar1;\r\n}\r\n\r\n",
+    "signature": "int __stdcall WideCharToMultiByte(UINT CodePage,DWORD dwFlags,LPCWSTR lpWideCharStr,int cchWideChar,LPSTR lpMultiByteStr,int cbMultiByte,LPCSTR lpDefaultChar,LPBOOL lpUsedDefaultChar);"
+  },
+  "summary": "Pseudo-C for WideCharToMultiByte from the Deep engine (16 lines).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "ghidra",
+    "engine_version": "12.2",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "deep_engine",
+      "message": "the pseudo-C comes from the external Deep engine (Ghidra), not the original source"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x401408"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

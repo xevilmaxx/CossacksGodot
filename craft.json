@@ -1,0 +1,362 @@
+{
+  "version": 5,
+  "name": "CossacksGodot",
+  "request": "port just singleplayer mode from the original, copy all needed assets to your destination project so everything is in the same folder. enusre godot never hangs during tests, maybe even do cli variant for fast testing. do crossplatform porting",
+  "target": {
+    "kind": "local",
+    "path": "C:\\Games\\Cossacks 3"
+  },
+  "stack": "Godot",
+  "status": "ready",
+  "note": "Ready: you called it done. Everything so far is kept; a new message carries on from here.",
+  "created_ms": 1794561373685,
+  "updated_ms": 1794916010267,
+  "checks": [
+    {
+      "round": 1,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1794907818160
+    },
+    {
+      "round": 1,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1280×720).",
+      "artifacts": [
+        "checks\\round-1\\screenshot.png"
+      ],
+      "at_ms": 1794907823515,
+      "good_enough": 95.0
+    },
+    {
+      "round": 1,
+      "check": "game-self-test",
+      "passed": true,
+      "similarity": null,
+      "note": "The self-test plays the core loop: move (walked 6.0 m forward (speed 1.5 m/s)), act (gathered 28 wood (carry 0 of 28, order 'gather', node hits 46)), hud (resource bar (ok), minimap, selection panel and status text ('units 8/200    score 1160    ') are drawn).",
+      "artifacts": [
+        "checks\\round-1\\self-test.json"
+      ],
+      "at_ms": 1794907827370,
+      "claims": [
+        {
+          "title": "In play, the player moves",
+          "passed": true
+        },
+        {
+          "title": "In play, the player's main action works",
+          "passed": true
+        },
+        {
+          "title": "In play, the on-screen information is drawn",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"fight\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"build\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"train\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"mine\"",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 83 values (81 with a source, 2 estimated). The sheet is readable; its behavior is unverified. No runtime measurement was compared with these values. A source literal or a core-loop self-test alone cannot establish that the build uses them.",
+      "artifacts": [],
+      "at_ms": 1794907827376,
+      "unknowns": [
+        "Mechanics behavior has not been measured against app/mechanics.json."
+      ]
+    },
+    {
+      "round": 1,
+      "check": "credits",
+      "passed": true,
+      "similarity": null,
+      "note": "app/README.md says the build is for private use and app/CREDITS.md lists the original's files.",
+      "artifacts": [],
+      "at_ms": 1794907827377
+    },
+    {
+      "round": 2,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1794909223342
+    },
+    {
+      "round": 2,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1280×720).",
+      "artifacts": [
+        "checks\\round-2\\screenshot.png"
+      ],
+      "at_ms": 1794909229411,
+      "good_enough": 95.0
+    },
+    {
+      "round": 2,
+      "check": "game-self-test",
+      "passed": true,
+      "similarity": null,
+      "note": "The self-test plays the core loop: move (walked 6.0 m forward (speed 1.5 m/s)), act (gathered 30 wood (carry 1 of 28, order 'gather', node hits 44)), hud (resource bar (ok), minimap, selection panel and status text ('units 8/200    score 1160    ') are drawn).",
+      "artifacts": [
+        "checks\\round-2\\self-test.json"
+      ],
+      "at_ms": 1794909233610,
+      "claims": [
+        {
+          "title": "In play, the player moves",
+          "passed": true
+        },
+        {
+          "title": "In play, the player's main action works",
+          "passed": true
+        },
+        {
+          "title": "In play, the on-screen information is drawn",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"fight\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"build\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"train\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"mine\"",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 83 values (81 with a source, 2 estimated). The sheet is readable; its behavior is unverified. No runtime measurement was compared with these values. A source literal or a core-loop self-test alone cannot establish that the build uses them.",
+      "artifacts": [],
+      "at_ms": 1794909233617,
+      "unknowns": [
+        "Mechanics behavior has not been measured against app/mechanics.json."
+      ]
+    },
+    {
+      "round": 2,
+      "check": "credits",
+      "passed": true,
+      "similarity": null,
+      "note": "app/README.md says the build is for private use and app/CREDITS.md lists the original's files.",
+      "artifacts": [],
+      "at_ms": 1794909233617
+    },
+    {
+      "round": 3,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1794911332326
+    },
+    {
+      "round": 3,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1280×720).",
+      "artifacts": [
+        "checks\\round-3\\screenshot.png"
+      ],
+      "at_ms": 1794911339462,
+      "good_enough": 99.0
+    },
+    {
+      "round": 3,
+      "check": "game-self-test",
+      "passed": true,
+      "similarity": null,
+      "note": "The self-test plays the core loop: move (walked 6.0 m forward (speed 1.5 m/s)), act (gathered 96 wood (carry 0 of 28, order 'gather', node hits 12)), hud (resource bar (ok), minimap, selection panel and status text ('units 8/200    score 1160    ') are drawn).",
+      "artifacts": [
+        "checks\\round-3\\self-test.json"
+      ],
+      "at_ms": 1794911344699,
+      "claims": [
+        {
+          "title": "In play, the player moves",
+          "passed": true
+        },
+        {
+          "title": "In play, the player's main action works",
+          "passed": true
+        },
+        {
+          "title": "In play, the on-screen information is drawn",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"fight\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"build\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"train\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"mine\"",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 83 values (81 with a source, 2 estimated). The sheet is readable; its behavior is unverified. No runtime measurement was compared with these values. A source literal or a core-loop self-test alone cannot establish that the build uses them.",
+      "artifacts": [],
+      "at_ms": 1794911344712,
+      "unknowns": [
+        "Mechanics behavior has not been measured against app/mechanics.json."
+      ]
+    },
+    {
+      "round": 3,
+      "check": "credits",
+      "passed": true,
+      "similarity": null,
+      "note": "app/README.md says the build is for private use and app/CREDITS.md lists the original's files.",
+      "artifacts": [],
+      "at_ms": 1794911344713
+    },
+    {
+      "round": 4,
+      "check": "build",
+      "passed": true,
+      "similarity": null,
+      "note": "Build succeeded.",
+      "artifacts": [],
+      "at_ms": 1794912481302
+    },
+    {
+      "round": 4,
+      "check": "app-screenshot",
+      "passed": true,
+      "similarity": null,
+      "note": "The program starts and draws (1280×720).",
+      "artifacts": [
+        "checks\\round-4\\screenshot.png"
+      ],
+      "at_ms": 1794912487603,
+      "good_enough": 99.0
+    },
+    {
+      "round": 4,
+      "check": "game-self-test",
+      "passed": true,
+      "similarity": null,
+      "note": "The self-test plays the core loop: move (walked 6.0 m forward (speed 1.5 m/s)), act (gathered 22 wood (carry 0 of 28, order 'gather', node hits 49)), hud (resource bar (ok), minimap, selection panel and status text ('units 8/200    score 1160    ') are drawn).",
+      "artifacts": [
+        "checks\\round-4\\self-test.json"
+      ],
+      "at_ms": 1794912492457,
+      "claims": [
+        {
+          "title": "In play, the player moves",
+          "passed": true
+        },
+        {
+          "title": "In play, the player's main action works",
+          "passed": true
+        },
+        {
+          "title": "In play, the on-screen information is drawn",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"fight\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"build\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"train\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"mine\"",
+          "passed": true
+        },
+        {
+          "title": "Self-test step \"no_overlap\"",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "check": "mechanics",
+      "passed": true,
+      "similarity": null,
+      "note": "app/mechanics.json has 85 values (83 with a source, 4 estimated). The sheet is readable; its behavior is unverified. No runtime measurement was compared with these values. A source literal or a core-loop self-test alone cannot establish that the build uses them.",
+      "artifacts": [],
+      "at_ms": 1794912492468,
+      "unknowns": [
+        "Mechanics behavior has not been measured against app/mechanics.json."
+      ]
+    },
+    {
+      "round": 4,
+      "check": "credits",
+      "passed": true,
+      "similarity": null,
+      "note": "app/README.md says the build is for private use and app/CREDITS.md lists the original's files.",
+      "artifacts": [],
+      "at_ms": 1794912492469
+    }
+  ],
+  "agent_session": null,
+  "agent_session_by": "opencode",
+  "capture_deep": true,
+  "allowed_actions": [],
+  "last_reply": "Fixing your build with the real game values — opening the original to pull exact mechanics.Your port's already grounded in the real scripts — now I'll do the deep binary pass you're asking for.Toolsets ready — opening the original executable and tracing its code.No unit names in the binary — packed as expected. Following the engine strings to their code.Deep pass complete — now grounding the port in those results and rebuilding.I've got the evidence — now I'm writing it into the mechanics sheet and rebuilding.Core checks pass — now verifying screenshots and quick tests.Decompiled the original and rebuilt the port from its real numbers.\n\n**Deep decompilation — `C:\\Games\\Cossacks 3\\cossacks.exe`:**\n- `core_target_open`: `t_87f0f3c130b0`, PE x86 32-bit, 5768048 bytes, sha256 `87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c`, entry `0x8f1a08`\n- Triage `ev_31960c6f`: Delphi/C++Builder, packed `.bind` 7.96, stripped\n- Overview `ev_60b49743`: 18918 funcs, 12073 strings, 746 imports\n\n**`native_strings_find` — waited for all:**\n- `peasant` 0 hits `ev_35f172bb`, `pikeman` 0 `ev_36f8c402`, `Serdiuk` 0 `ev_02657a9a`, `damage`/`food`/`wood`/`gold`/`mine`/`cannon`/`.ini` 0\n- Engine only: `XDMScript @0x958d1a` `ev_c58219d8`, `XCamera @0x958b6b/@0x959066` `ev_aa633a3e`, `DMScript` `ev_a290cdaf`, `Cossacks 3 @0x96b304` `ev_18cb6d74`, `Warning @0x955e34` `ev_10cfab87`\n- `native_xrefs_list`: all 0 refs `ev_9945c378`, `ev_5a0f553a`, `ev_1e8d950e`, `ev_bc64940b`, `ev_ff7ce366`, `ev_113114fb`\n- `core_feature_find`: `Cossacks 3` `ev_f2d20363`, `Camera` `ev_f1ed6d4b`, `DMScript` `ev_1703acd5` — strings only, 0 funcs\n\n**`native_function_pseudocode` — waited for all (clean-room lifter, Ghidra bridge failed):**\n- `entry @0x8f1a08` `ev_03507405` 142 lines: DEP/`MessageBoxA`/single-instance `GetLastError==0xb7`/`WinExec` restart\n- `sub_8f0ad4 @0x8f0ad4` `ev_dec6ad57` 17 lines: window/title setup\n- `sub_47c804 @0x47c804` `ev_bd3eda2b` 32 lines: object attach\n- `sub_4c37dc @0x4c37dc` `ev_d5891fef` 54 lines: loader init `dlcs.ini`/`mods.ini`\n- `sub_404574 @0x404574` `ev_39b2ec80` 9 lines: virtual destructor\n- Callees `ev_9dbee4f4`: 34 calls\n\nConclusion in `app/MECHANICS.md:1`: packed launcher, no combat/economy in static code. Authoritative rules are shipped scripts.\n\n**Real values/formulas now in `app/MECHANICS.md:1` + `app/scripts/data.gd:1`:**\n- `seconds=frames*0.03125` (32fps), `meters=pixels/26.6666666`, `tiles=meters/2`\n- `mine income=workers*13*32/250=1.664/s` `app/scripts/data.gd:50`, `upkeep=consume/625/s`, `build=10*0.03125*1.15=0.359s/hit`\n- damage `app/scripts/data.gd:252`: `dmg-5` fast-horse vs arrow/bullet, `-shield` (`/3` if unfinished), `-protection[kind]`, min 1\n\n**Rebuild Godot 4.7.2 headless:**\n- `--import`: pass\n- `--self-test selftest.json`: pass 8/8 — `walked 6.0m (1.5m/s)`, `gathered 22 wood`, `pikeman 8dmg`, `house 3.1s/120 wood`, `peasant 100 food/12.5s`, `mine 49.9 gold/30s`, HUD ok\n- `--screenshot shots/screenshot.png`: pass\n- `--cli cli.json --cli-seconds 10`: pass",
+  "asset_budget_usd": 0.0,
+  "generate_assets": false,
+  "approvals": {
+    "web": "allow"
+  }
+}

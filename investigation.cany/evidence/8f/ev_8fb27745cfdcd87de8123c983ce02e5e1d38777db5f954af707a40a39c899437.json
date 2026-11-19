@@ -1,0 +1,45 @@
+{
+  "id": "ev_8fb27745cfdcd87de8123c983ce02e5e1d38777db5f954af707a40a39c899437",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x8f1a08"
+  },
+  "result": {
+    "engine": "ghidra",
+    "entry": "0x8f1a08",
+    "function": "entry",
+    "pseudo_code": "\r\nvoid entry(void)\r\n\r\n{\r\n  undefined1 *puVar1;\r\n  char cVar2;\r\n  undefined1 uVar3;\r\n  undefined4 uVar4;\r\n  DWORD DVar5;\r\n  LPCSTR pCVar6;\r\n  int iVar7;\r\n  undefined4 *in_FS_OFFSET;\r\n  undefined4 local_34;\r\n  undefined4 local_30;\r\n  undefined4 uVar8;\r\n  undefined4 uVar9;\r\n  undefined4 uVar10;\r\n  UINT UVar11;\r\n  undefined4 local_1c;\r\n  undefined1 *local_18;\r\n  undefined1 *puStack_14;\r\n  \r\n  iVar7 = 6;\r\n  do {\r\n    iVar7 = iVar7 + -1;\r\n  } while (iVar7 != 0);\r\n  puStack_14 = (undefined1 *)0x8f1a22;\r\n  FUN_00407d98(&DAT_008f0b48);\r\n  local_18 = &LAB_008f1c5c;\r\n  local_1c = *in_FS_OFFSET;\r\n  *in_FS_OFFSET = &local_1c;\r\n  puStack_14 = (undefined1 *)((int)register0x00000010 + -4);\r\n  FUN_004182ac();\r\n  cVar2 = FUN_006075d4(0);\r\n  if (cVar2 == '\\0') {\r\n    uVar3 = FUN_00607758(0);\r\n    *PTR_DAT_008fcd0c = uVar3;\r\n  }\r\n  else {\r\n    *PTR_DAT_008fcd0c = 1;\r\n  }\r\n  uVar10 = 0;\r\n  uVar9 = 0;\r\n  uVar8 = 0x8f1a67;\r\n  uVar4 = FUN_00408154();\r\n  *(undefined4 *)PTR_DAT_008fbcf0 = uVar4;\r\n  if (*(int *)PTR_DAT_008fc778 == 1) {\r\n    local_30 = (undefined *)0x8f1a8c;\r\n    MessageBoxA((HWND)0x0,\r\n                \"Your system DEP setting is set to AlwaysOn. This won\\'t allow game to function properly and run smoothly. In order to run game, you have to change DEP setting. You can find more info by searching \\\"DEP turn off\\\"\"\r\n                ,\"Warning\",0);\r\n    goto LAB_008f1c41;\r\n  }\r\n  DVar5 = GetLastError();\r\n  if (DVar5 == 0xb7) {\r\n    iVar7 = FUN_004032a8();\r\n    uVar3 = iVar7 == 1;\r\n    if (0 < iVar7) {\r\n      FUN_00403310(1,&local_18);\r\n      FUN_0040580c(local_18,\"-restart\");\r\n      if ((bool)uVar3) goto LAB_008f1ad9;\r\n    }\r\n    local_30 = (undefined *)0x8f1ad4;\r\n    MessageBoxA((HWND)0x0,\"Can not be run twice\",\"Warning\",0);\r\n  }\r\n  else {\r\nLAB_008f1ad9:\r\n    uVar4 = 0x8f1ae8;\r\n    FUN_0047cf44(*(undefined4 *)PTR_DAT_008fc6ac,(int)register0x00000010 + -0x20);\r\n    FUN_0040d0a4(uVar4,&local_1c);\r\n    FUN_0040d65c(local_1c);\r\n    uVar4 = FUN_004c37dc(PTR_PTR_004c2ec0,1,0);\r\n    FUN_0047cf44(*(undefined4 *)PTR_DAT_008fc6ac,(int)register0x00000010 + -0x28);\r\n    FUN_0040d0a4(uVar9,(int)register0x00000010 + -0x24);\r\n    FUN_004c3c90(uVar4,uVar10,0);\r\n    FUN_0047c7ec(*(undefined4 *)PTR_DAT_008fc6ac);\r\n    FUN_0047cf44(*(undefined4 *)PTR_DAT_008fc6ac,(int)register0x00000010 + -0x2c);\r\n    FUN_00405454(PTR_DAT_008fbb0c,uVar8);\r\n    FUN_008f0ad4(*(undefined4 *)PTR_DAT_008fc6ac,\"Cossacks III\");\r\n    FUN_0047c804(*(undefined4 *)PTR_DAT_008fc6ac,PTR_PTR_008ee094,PTR_DAT_008fbe9c);\r\n    if (*(int *)(*(int *)PTR_DAT_008fbe9c + 0x2fc) != 0) {\r\n      FUN_0047c884(*(undefined4 *)PTR_DAT_008fc6ac);\r\n    }\r\n    FUN_00404574(uVar4);\r\n    if (*PTR_DAT_008fc9d8 != '\\0') {\r\n      ReleaseMutex(*(HANDLE *)PTR_DAT_008fbcf0);\r\n      CloseHandle(*(HANDLE *)PTR_DAT_008fbcf0);\r\n      if (*(int *)PTR_DAT_008fcdf4 == 0) {\r\n        UVar11 = 5;\r\n        local_30 = (undefined *)0x8f1bf7;\r\n        FUN_00405780(&local_30,3);\r\n        pCVar6 = (LPCSTR)FUN_004058c0(local_30);\r\n        WinExec(pCVar6,UVar11);\r\n      }\r\n      else {\r\n        UVar11 = 5;\r\n        local_30 = &DAT_008f1da4;\r\n        local_34 = *(undefined4 *)PTR_DAT_008fcdf4;\r\n        FUN_00405780(&local_34,5);\r\n        pCVar6 = (LPCSTR)FUN_004058c0(local_34);\r\n        WinExec(pCVar6,UVar11);\r\n      }\r\n    }\r\n  }\r\nLAB_008f1c41:\r\n  puVar1 = puStack_14;\r\n  *in_FS_OFFSET = local_1c;\r\n  puStack_14 = &DAT_008f1c63;\r\n  local_18 = (undefined1 *)0x8f1c5b;\r\n  FUN_00405424(&local_34,8,puVar1);\r\n  return;\r\n}\r\n\r\n",
+    "signature": "void entry(void);"
+  },
+  "summary": "Pseudo-C for entry from the Deep engine (113 lines).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "ghidra",
+    "engine_version": "12.2",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "deep_engine",
+      "message": "the pseudo-C comes from the external Deep engine (Ghidra), not the original source"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x8f1a08"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

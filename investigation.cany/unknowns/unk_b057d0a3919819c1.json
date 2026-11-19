@@ -1,0 +1,15 @@
+{
+  "id": "unk_b057d0a3919819c1",
+  "revision": 2,
+  "question": "What is the exact original skirmish map layout (terrain heights, forest pattern placement, start positions)?",
+  "severity": "medium",
+  "domain": "general",
+  "status": "investigating",
+  "probes": [
+    "game_archives_list shows no Unreal/Unity/Godot archives - .map is a proprietary binary",
+    "data/pattern/*.pattern + data/objects/env props show intended forest/rock clusters",
+    "headless map render now shows plains+forest belts+hills+lakes+fields+roads"
+  ],
+  "evidence_for": [],
+  "evidence_against": []
+}

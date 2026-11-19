@@ -1,0 +1,58 @@
+{
+  "id": "ev_7d18a5c4ddd26081c7ca9bf53a5642889f05388761f10b504b492a9e6ee25680",
+  "subject": {
+    "kind": "text",
+    "sha256": "65ddd3860c4bcd28bb1742892d10259121ebf19700650e9fe2df18206ab29590",
+    "name": "dmscript.global"
+  },
+  "operation": "core_text_read",
+  "params": {
+    "limit": 30,
+    "offset": 790,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global"
+  },
+  "result": {
+    "cut_lines": [],
+    "encoding": "utf8",
+    "file_size": 91341,
+    "lines": 30,
+    "more": true,
+    "offset": 790,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global",
+    "replaced_sequences": 4770,
+    "text": "   gc_resource_type_none = 0;\n   gc_resource_type_food = 1;\n   gc_resource_type_wood = 2;\n   gc_resource_type_stone = 3;\n   gc_resource_type_gold = 4;\n   gc_resource_type_iron = 5;\n   gc_resource_type_coal = 6;\n   \n   gc_resource_hitsneeded_food = 22;\n   gc_resource_hitsneeded_wood = 14;\n   gc_resource_hitsneeded_stone = 20;\n\n   //gc_obj_resource_portion_food = 30;\n   gc_obj_resource_portion_food = 45;\n   gc_obj_resource_portion_wood = 28;\n   gc_obj_resource_portion_stone = 40;\n\n   gc_obj_foodperunit = 30;\n\n   gc_economy_exp = 0.00002;\n   gc_economy_time = 0.0001*gc_time_to_frames;\n\n   // misc\n   gc_epsilon = 0.001;\n   gc_MaxInt = 2147483647;\n   gc_MaxFloat = 2147483647;\n   gc_objectEpsilonDist = 0.25;\n   gc_objectEpsilonDistSqr = gc_objectEpsilonDist*gc_objectEpsilonDist;\n   gc_WaterBorderSize = 3;\n\n",
+    "total_lines": 2400
+  },
+  "summary": "dmscript.global: lines 791–820 of 2400 (UTF-8).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "text_as_stored",
+      "message": "The file is read as text as it is stored: nothing is run, rendered or formatted, and text a program builds or downloads while it runs isn't here."
+    },
+    {
+      "code": "invalid_text",
+      "message": "4770 sequence(s) of bytes aren't valid UTF-8 and show as U+FFFD."
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 30,
+    "total": 2400,
+    "next_offset": 820
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global"
+    }
+  ],
+  "links": []
+}

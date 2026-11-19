@@ -1,0 +1,14 @@
+{
+  "id": "unk_3bcb7213e83fd7ae",
+  "revision": 2,
+  "question": "Mine (gold/iron/coal) income rate application: is produce=13 per peasant per minute?",
+  "severity": "medium",
+  "domain": "general",
+  "status": "resolved",
+  "probes": [
+    "Follow resincome counter application in player.script / country.script to see the time base."
+  ],
+  "evidence_for": [],
+  "evidence_against": [],
+  "resolution": "Resolved from data/scripts/lib/player.script _player_ProcessResourceIncome: income counter is produce-sum (13 per peasant in a mine); applied per tick as resincome*gc_time_to_frames*deltatime/250 (speed=256/1.024) => 13*32/250 = 1.664 units/s per peasant (~100/min). Consumption: resconsume*32/20000 per second (player.script _player_ProcessResourceConsume)."
+}

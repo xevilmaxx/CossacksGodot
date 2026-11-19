@@ -1,0 +1,14 @@
+{
+  "id": "unk_39434fede6c0f729",
+  "revision": 2,
+  "question": "Can the original 3D unit models be converted for Godot, or must units be placeholders?",
+  "severity": "medium",
+  "domain": "general",
+  "status": "resolved",
+  "probes": [
+    "Inspect data/actors model format with game_* tools and check for a readable mesh format."
+  ],
+  "evidence_for": [],
+  "evidence_against": [],
+  "resolution": "Original unit/building models are stored as proprietary binary mesh data (.actor/.osm under data/actors, 5220 files) with no readable mesh converter available here. The port keeps clean markers/shapes carrying the original portraits and icons in the UI, as documented in CREDITS.md."
+}

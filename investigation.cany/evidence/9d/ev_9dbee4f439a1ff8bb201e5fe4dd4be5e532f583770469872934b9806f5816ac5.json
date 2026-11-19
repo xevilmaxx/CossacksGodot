@@ -1,0 +1,278 @@
+{
+  "id": "ev_9dbee4f439a1ff8bb201e5fe4dd4be5e532f583770469872934b9806f5816ac5",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_callees_list",
+  "params": {
+    "function": "0x8f1a08"
+  },
+  "result": {
+    "callees": [
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_407d98",
+        "site": "0x8f1a1d",
+        "target": "0x407d98"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4182ac",
+        "site": "0x8f1a30",
+        "target": "0x4182ac"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_6075d4",
+        "site": "0x8f1a37",
+        "target": "0x6075d4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_607758",
+        "site": "0x8f1a42",
+        "target": "0x607758"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_408154",
+        "site": "0x8f1a62",
+        "target": "0x408154"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "MessageBoxA@thunk",
+        "site": "0x8f1a87",
+        "target": "0x408c6c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405424",
+        "site": "0x8f1c56",
+        "target": "0x405424"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "GetLastError@thunk",
+        "site": "0x8f1a91",
+        "target": "0x40828c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4032a8",
+        "site": "0x8f1a9d",
+        "target": "0x4032a8"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_403310",
+        "site": "0x8f1aad",
+        "target": "0x403310"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40580c",
+        "site": "0x8f1aba",
+        "target": "0x40580c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "MessageBoxA@thunk",
+        "site": "0x8f1acf",
+        "target": "0x408c6c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47cf44",
+        "site": "0x8f1ae3",
+        "target": "0x47cf44"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40d0a4",
+        "site": "0x8f1aee",
+        "target": "0x40d0a4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40d65c",
+        "site": "0x8f1af6",
+        "target": "0x40d65c"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4c37dc",
+        "site": "0x8f1b04",
+        "target": "0x4c37dc"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47cf44",
+        "site": "0x8f1b15",
+        "target": "0x47cf44"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_40d0a4",
+        "site": "0x8f1b20",
+        "target": "0x40d0a4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4c3c90",
+        "site": "0x8f1b2c",
+        "target": "0x4c3c90"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47c7ec",
+        "site": "0x8f1b38",
+        "target": "0x47c7ec"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47cf44",
+        "site": "0x8f1b47",
+        "target": "0x47cf44"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405454",
+        "site": "0x8f1b54",
+        "target": "0x405454"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_8f0ad4",
+        "site": "0x8f1b65",
+        "target": "0x8f0ad4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47c804",
+        "site": "0x8f1b7d",
+        "target": "0x47c804"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_47c884",
+        "site": "0x8f1b99",
+        "target": "0x47c884"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_404574",
+        "site": "0x8f1ba0",
+        "target": "0x404574"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "ReleaseMutex@thunk",
+        "site": "0x8f1bbb",
+        "target": "0x4083c4"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "CloseHandle@thunk",
+        "site": "0x8f1bc8",
+        "target": "0x408104"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405780",
+        "site": "0x8f1bf2",
+        "target": "0x405780"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4058c0",
+        "site": "0x8f1bfa",
+        "target": "0x4058c0"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "WinExec@thunk",
+        "site": "0x8f1c00",
+        "target": "0x408474"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_405780",
+        "site": "0x8f1c2e",
+        "target": "0x405780"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "sub_4058c0",
+        "site": "0x8f1c36",
+        "target": "0x4058c0"
+      },
+      {
+        "import": false,
+        "indirect": false,
+        "name": "WinExec@thunk",
+        "site": "0x8f1c3c",
+        "target": "0x408474"
+      }
+    ],
+    "entry": "0x8f1a08",
+    "function": "entry"
+  },
+  "summary": "entry makes 34 calls (0 unresolved).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [],
+  "coverage": {
+    "status": "complete",
+    "examined": 34,
+    "total": 34
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x8f1a08"
+    }
+  ],
+  "links": []
+}

@@ -1,0 +1,227 @@
+{
+  "id": "ev_60b497434aa3e6cb68b019fd0a3b016ec0415ef6ec1a3189726faa8d3752f4c4",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "core_overview_show",
+  "params": {},
+  "result": {
+    "architecture": "x86",
+    "bits": 32,
+    "counts": {
+      "basic_blocks": 2870977,
+      "cross_references": 177413,
+      "exports": 3,
+      "functions": 18918,
+      "functions_with_generated_names": 18439,
+      "imports": 746,
+      "instructions": 6008734,
+      "jump_tables": 154,
+      "strings": 12073,
+      "symbols": 0
+    },
+    "discovered_by": {
+      "call": 7324,
+      "code_pointer": 9676,
+      "entry_point": 1,
+      "export": 1,
+      "prologue": 1916
+    },
+    "endianness": "little",
+    "entry_point": "0x8f1a08",
+    "file": "cossacks.exe",
+    "format": "pe",
+    "image_base": "0x400000",
+    "info": {
+      "linker_version": "2.25",
+      "subsystem": "windows-gui",
+      "timestamp": "708992537"
+    },
+    "kind": "executable",
+    "libraries": [
+      "GLU32.dll",
+      "PowrProf.dll",
+      "advapi32.dll",
+      "comctl32.dll",
+      "comdlg32.dll",
+      "d3d9.dll",
+      "gdi32.dll",
+      "imm32.dll",
+      "kernel32.dll",
+      "ole32.dll",
+      "oleaut32.dll",
+      "opengl32.dll",
+      "shell32.dll",
+      "user32.dll",
+      "version.dll",
+      "wininet.dll",
+      "winmm.dll",
+      "wsock32.dll"
+    ],
+    "mitigations": {
+      "canary": false,
+      "code_signature": null,
+      "control_flow_guard": false,
+      "encrypted": null,
+      "fortify": null,
+      "high_entropy_va": false,
+      "no_seh": false,
+      "nx": false,
+      "pie": false,
+      "relro": null,
+      "stripped": true
+    },
+    "section_count": 10,
+    "segments": [
+      {
+        "end": "0x8f1da8",
+        "entropy": 6.609200954437256,
+        "kind": "code",
+        "name": "CODE",
+        "perms": "r-x",
+        "size": 5180840,
+        "start": "0x401000"
+      },
+      {
+        "end": "0x8fce24",
+        "entropy": 4.2528767585754395,
+        "kind": "data",
+        "name": "DATA",
+        "perms": "rw-",
+        "size": 44580,
+        "start": "0x8f2000"
+      },
+      {
+        "end": "0x906071",
+        "entropy": null,
+        "kind": "other",
+        "name": "BSS",
+        "perms": "rw-",
+        "size": 36977,
+        "start": "0x8fd000"
+      },
+      {
+        "end": "0x90b10c",
+        "entropy": 5.078319072723389,
+        "kind": "data",
+        "name": ".idata",
+        "perms": "rw-",
+        "size": 16652,
+        "start": "0x907000"
+      },
+      {
+        "end": "0x90c095",
+        "entropy": 4.590201377868652,
+        "kind": "rodata",
+        "name": ".edata",
+        "perms": "r--",
+        "size": 149,
+        "start": "0x90c000"
+      },
+      {
+        "end": "0x90d02c",
+        "entropy": null,
+        "kind": "other",
+        "name": ".tls",
+        "perms": "rw-",
+        "size": 44,
+        "start": "0x90d000"
+      },
+      {
+        "end": "0x90e018",
+        "entropy": 2.2991039752960205,
+        "kind": "rodata",
+        "name": ".rdata",
+        "perms": "r--",
+        "size": 24,
+        "start": "0x90e000"
+      },
+      {
+        "end": "0x94b984",
+        "entropy": 6.716219902038574,
+        "kind": "rodata",
+        "name": ".reloc",
+        "perms": "r--",
+        "size": 248196,
+        "start": "0x90f000"
+      },
+      {
+        "end": "0x96b400",
+        "entropy": 5.080927848815918,
+        "kind": "rodata",
+        "name": ".rsrc",
+        "perms": "r--",
+        "size": 128000,
+        "start": "0x94c000"
+      },
+      {
+        "end": "0x98fd70",
+        "entropy": 7.964790344238281,
+        "kind": "code",
+        "name": ".bind",
+        "perms": "r-x",
+        "size": 146800,
+        "start": "0x96c000"
+      }
+    ],
+    "toolchain_hints": [
+      {
+        "category": "language",
+        "evidence": "Borland/Embarcadero markers",
+        "id": "delphi",
+        "label": "Delphi or C++Builder",
+        "strength": "weak"
+      },
+      {
+        "category": "packer",
+        "evidence": "section .bind has entropy 7.96 bits/byte",
+        "id": "high_entropy",
+        "label": "Compressed or encrypted code",
+        "strength": "weak"
+      }
+    ],
+    "warnings": []
+  },
+  "summary": "PE (Windows) executable for x86 with 18918 functions, 12073 strings, 746 imports from 18 libraries. Function discovery stopped at an analysis limit, so the function list is incomplete.",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "instruction_limit",
+      "message": "function discovery stopped after 6000000 instructions; the function list is incomplete and some code is not analysed"
+    },
+    {
+      "code": "indirect_jumps_unresolved",
+      "message": "1238 indirect jumps could not be resolved; code they reach may be missing"
+    },
+    {
+      "code": "stripped_binary",
+      "message": "no local symbols: most function names are generated (sub_…)"
+    },
+    {
+      "code": "static_analysis_only",
+      "message": "functions reached only through computed pointers or at run time may be missing; absence is not proof"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 1,
+    "total": 1
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x8f1a08",
+      "label": "entry point"
+    }
+  ],
+  "links": []
+}

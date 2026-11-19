@@ -1,0 +1,1643 @@
+{
+  "id": "ev_11311f6dada0080314d9a8c4f931ea59038931b21226bc90026a8e805cb559ec",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_browse",
+  "params": {
+    "address": null,
+    "limit": 200,
+    "offset": 0,
+    "section": null
+  },
+  "result": {
+    "strings": [
+      {
+        "address": "0x8f207a",
+        "encoding": "ascii",
+        "file_offset": 5182074,
+        "references": 0,
+        "section": "DATA",
+        "text": "$@"
+      },
+      {
+        "address": "0x8f207c",
+        "encoding": "ascii",
+        "file_offset": 5182076,
+        "references": 1,
+        "section": "DATA",
+        "text": "Error"
+      },
+      {
+        "address": "0x8f2084",
+        "encoding": "ascii",
+        "file_offset": 5182084,
+        "references": 3,
+        "section": "DATA",
+        "text": "Runtime error     at 00000000"
+      },
+      {
+        "address": "0x8f20a4",
+        "encoding": "ascii",
+        "file_offset": 5182116,
+        "references": 0,
+        "section": "DATA",
+        "text": "0123456789ABCDEF"
+      },
+      {
+        "address": "0x8f2896",
+        "encoding": "ascii",
+        "file_offset": 5184150,
+        "references": 0,
+        "section": "DATA",
+        "text": "@v:k"
+      },
+      {
+        "address": "0x8f28b0",
+        "encoding": "ascii",
+        "file_offset": 5184176,
+        "references": 1,
+        "section": "DATA",
+        "text": "%.*d|"
+      },
+      {
+        "address": "0x8f2a4a",
+        "encoding": "ascii",
+        "file_offset": 5184586,
+        "references": 0,
+        "section": "DATA",
+        "text": "AuthenticAMD"
+      },
+      {
+        "address": "0x8f2a57",
+        "encoding": "ascii",
+        "file_offset": 5184599,
+        "references": 0,
+        "section": "DATA",
+        "text": "CentaurHauls"
+      },
+      {
+        "address": "0x8f2a64",
+        "encoding": "ascii",
+        "file_offset": 5184612,
+        "references": 0,
+        "section": "DATA",
+        "text": "CyrixInstead"
+      },
+      {
+        "address": "0x8f2a71",
+        "encoding": "ascii",
+        "file_offset": 5184625,
+        "references": 0,
+        "section": "DATA",
+        "text": "GenuineIntel"
+      },
+      {
+        "address": "0x8f2a7e",
+        "encoding": "ascii",
+        "file_offset": 5184638,
+        "references": 0,
+        "section": "DATA",
+        "text": "GenuineTMx86"
+      },
+      {
+        "address": "0x8f2a8b",
+        "encoding": "ascii",
+        "file_offset": 5184651,
+        "references": 0,
+        "section": "DATA",
+        "text": "NexGenDriven"
+      },
+      {
+        "address": "0x8f2a98",
+        "encoding": "ascii",
+        "file_offset": 5184664,
+        "references": 0,
+        "section": "DATA",
+        "text": "RiseRiseRise"
+      },
+      {
+        "address": "0x8f2aa5",
+        "encoding": "ascii",
+        "file_offset": 5184677,
+        "references": 0,
+        "section": "DATA",
+        "text": "UMC UMC UMC "
+      },
+      {
+        "address": "0x8f2ab2",
+        "encoding": "ascii",
+        "file_offset": 5184690,
+        "references": 0,
+        "section": "DATA",
+        "text": "Geode by NSC"
+      },
+      {
+        "address": "0x8f2abf",
+        "encoding": "ascii",
+        "file_offset": 5184703,
+        "references": 0,
+        "section": "DATA",
+        "text": "SiS SiS SiS"
+      },
+      {
+        "address": "0x8f2b8c",
+        "encoding": "ascii",
+        "file_offset": 5184908,
+        "references": 0,
+        "section": "DATA",
+        "text": " !\"#$%&'()*+,-./0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "address": "0x8f2c6c",
+        "encoding": "ascii",
+        "file_offset": 5185132,
+        "references": 0,
+        "section": "DATA",
+        "text": "%%%%%%%%eeeeeeee        "
+      },
+      {
+        "address": "0x8f2cbc",
+        "encoding": "ascii",
+        "file_offset": 5185212,
+        "references": 0,
+        "section": "DATA",
+        "text": "eeeeeeeeeeeeeeee                "
+      },
+      {
+        "address": "0x8f2ce4",
+        "encoding": "ascii",
+        "file_offset": 5185252,
+        "references": 0,
+        "section": "DATA",
+        "text": "eeeeeeee        "
+      },
+      {
+        "address": "0x8f2cfc",
+        "encoding": "ascii",
+        "file_offset": 5185276,
+        "references": 0,
+        "section": "DATA",
+        "text": "eeeeeeee        `]A"
+      },
+      {
+        "address": "0x8f2e1c",
+        "encoding": "ascii",
+        "file_offset": 5185564,
+        "references": 0,
+        "section": "DATA",
+        "text": " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~"
+      },
+      {
+        "address": "0x8f3073",
+        "encoding": "ascii",
+        "file_offset": 5186163,
+        "references": 0,
+        "section": "DATA",
+        "text": "\n\n\n\n\n\n\n\n\n\n"
+      },
+      {
+        "address": "0x8f30fb",
+        "encoding": "ascii",
+        "file_offset": 5186299,
+        "references": 0,
+        "section": "DATA",
+        "text": "\n\n\n\n\n\n\n\n\n\n"
+      },
+      {
+        "address": "0x8f31b8",
+        "encoding": "ascii",
+        "file_offset": 5186488,
+        "references": 1,
+        "section": "DATA",
+        "text": "TPF0"
+      },
+      {
+        "address": "0x8f321b",
+        "encoding": "ascii",
+        "file_offset": 5186587,
+        "references": 1,
+        "section": "DATA",
+        "text": "\rMS Sans Serif"
+      },
+      {
+        "address": "0x8f3f8f",
+        "encoding": "ascii",
+        "file_offset": 5190031,
+        "references": 0,
+        "section": "DATA",
+        "text": "\t deflate 1.0.4 Copyright 1995-1996 Jean-loup Gailly "
+      },
+      {
+        "address": "0x8f403d",
+        "encoding": "ascii",
+        "file_offset": 5190205,
+        "references": 1,
+        "section": "DATA",
+        "text": "1.0.4"
+      },
+      {
+        "address": "0x8f4048",
+        "encoding": "ascii",
+        "file_offset": 5190216,
+        "references": 1,
+        "section": "DATA",
+        "text": "1.0.4"
+      },
+      {
+        "address": "0x8f404e",
+        "encoding": "ascii",
+        "file_offset": 5190222,
+        "references": 0,
+        "section": "DATA",
+        "text": "unknown compression method"
+      },
+      {
+        "address": "0x8f4069",
+        "encoding": "ascii",
+        "file_offset": 5190249,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid window size"
+      },
+      {
+        "address": "0x8f407d",
+        "encoding": "ascii",
+        "file_offset": 5190269,
+        "references": 0,
+        "section": "DATA",
+        "text": "incorrect header check"
+      },
+      {
+        "address": "0x8f4094",
+        "encoding": "ascii",
+        "file_offset": 5190292,
+        "references": 0,
+        "section": "DATA",
+        "text": "need dictionary"
+      },
+      {
+        "address": "0x8f40a4",
+        "encoding": "ascii",
+        "file_offset": 5190308,
+        "references": 0,
+        "section": "DATA",
+        "text": "incorrect data check"
+      },
+      {
+        "address": "0x8f40bc",
+        "encoding": "ascii",
+        "file_offset": 5190332,
+        "references": 0,
+        "section": "DATA",
+        "text": " inflate 1.0.4 Copyright 1995-1996 Mark Adler "
+      },
+      {
+        "address": "0x8f42d8",
+        "encoding": "ascii",
+        "file_offset": 5190872,
+        "references": 1,
+        "section": "DATA",
+        "text": "oversubscribed dynamic bit lengths tree"
+      },
+      {
+        "address": "0x8f4300",
+        "encoding": "ascii",
+        "file_offset": 5190912,
+        "references": 1,
+        "section": "DATA",
+        "text": "incomplete dynamic bit lengths tree"
+      },
+      {
+        "address": "0x8f4324",
+        "encoding": "ascii",
+        "file_offset": 5190948,
+        "references": 0,
+        "section": "DATA",
+        "text": "oversubscribed literal/length tree"
+      },
+      {
+        "address": "0x8f4347",
+        "encoding": "ascii",
+        "file_offset": 5190983,
+        "references": 0,
+        "section": "DATA",
+        "text": "incomplete literal/length tree"
+      },
+      {
+        "address": "0x8f4540",
+        "encoding": "ascii",
+        "file_offset": 5191488,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid block type"
+      },
+      {
+        "address": "0x8f4553",
+        "encoding": "ascii",
+        "file_offset": 5191507,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid stored block lengths"
+      },
+      {
+        "address": "0x8f4570",
+        "encoding": "ascii",
+        "file_offset": 5191536,
+        "references": 0,
+        "section": "DATA",
+        "text": "too many length or distance symbols"
+      },
+      {
+        "address": "0x8f4594",
+        "encoding": "ascii",
+        "file_offset": 5191572,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid bit length repeat"
+      },
+      {
+        "address": "0x8f45b0",
+        "encoding": "ascii",
+        "file_offset": 5191600,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid literal/length code"
+      },
+      {
+        "address": "0x8f45cc",
+        "encoding": "ascii",
+        "file_offset": 5191628,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid distance code"
+      },
+      {
+        "address": "0x8f4628",
+        "encoding": "ascii",
+        "file_offset": 5191720,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid distance code"
+      },
+      {
+        "address": "0x8f463e",
+        "encoding": "ascii",
+        "file_offset": 5191742,
+        "references": 0,
+        "section": "DATA",
+        "text": "invalid literal/length code"
+      },
+      {
+        "address": "0x8f46dd",
+        "encoding": "ascii",
+        "file_offset": 5191901,
+        "references": 0,
+        "section": "DATA",
+        "text": " n;^"
+      },
+      {
+        "address": "0x8f472f",
+        "encoding": "utf8",
+        "file_offset": 5191983,
+        "references": 0,
+        "section": "DATA",
+        "text": "!#ĳV"
+      },
+      {
+        "address": "0x8f479d",
+        "encoding": "ascii",
+        "file_offset": 5192093,
+        "references": 0,
+        "section": "DATA",
+        "text": "Qkkbal"
+      },
+      {
+        "address": "0x8f47d5",
+        "encoding": "utf8",
+        "file_offset": 5192149,
+        "references": 0,
+        "section": "DATA",
+        "text": "|ӌeL"
+      },
+      {
+        "address": "0x8f4813",
+        "encoding": "ascii",
+        "file_offset": 5192211,
+        "references": 0,
+        "section": "DATA",
+        "text": "3_L\n"
+      },
+      {
+        "address": "0x8f4869",
+        "encoding": "utf8",
+        "file_offset": 5192297,
+        "references": 0,
+        "section": "DATA",
+        "text": "ұt9G"
+      },
+      {
+        "address": "0x8f4884",
+        "encoding": "ascii",
+        "file_offset": 5192324,
+        "references": 0,
+        "section": "DATA",
+        "text": ">jm\r"
+      },
+      {
+        "address": "0x8f48ab",
+        "encoding": "ascii",
+        "file_offset": 5192363,
+        "references": 0,
+        "section": "DATA",
+        "text": "i]Wb"
+      },
+      {
+        "address": "0x8f48c1",
+        "encoding": "utf8",
+        "file_offset": 5192385,
+        "references": 0,
+        "section": "DATA",
+        "text": "+ӉZz"
+      },
+      {
+        "address": "0x8f4962",
+        "encoding": "utf8",
+        "file_offset": 5192546,
+        "references": 0,
+        "section": "DATA",
+        "text": "c윣ju\n"
+      },
+      {
+        "address": "0x8f49eb",
+        "encoding": "ascii",
+        "file_offset": 5192683,
+        "references": 0,
+        "section": "DATA",
+        "text": "9a&g"
+      },
+      {
+        "address": "0x8f49f4",
+        "encoding": "ascii",
+        "file_offset": 5192692,
+        "references": 0,
+        "section": "DATA",
+        "text": "MGiI"
+      },
+      {
+        "address": "0x8f49f9",
+        "encoding": "utf8",
+        "file_offset": 5192697,
+        "references": 0,
+        "section": "DATA",
+        "text": "wn>JjѮ"
+      },
+      {
+        "address": "0x8f4a3b",
+        "encoding": "ascii",
+        "file_offset": 5192763,
+        "references": 0,
+        "section": "DATA",
+        "text": "#.zf"
+      },
+      {
+        "address": "0x8f4a49",
+        "encoding": "ascii",
+        "file_offset": 5192777,
+        "references": 0,
+        "section": "DATA",
+        "text": "+o*7"
+      },
+      {
+        "address": "0x8f4c68",
+        "encoding": "ascii",
+        "file_offset": 5193320,
+        "references": 2,
+        "section": "DATA",
+        "text": "^$.[()|?+*\\{"
+      },
+      {
+        "address": "0x8f4cc6",
+        "encoding": "utf16le",
+        "file_offset": 5193414,
+        "references": 0,
+        "section": "DATA",
+        "text": "K(K8KHK"
+      },
+      {
+        "address": "0x8f50ef",
+        "encoding": "ascii",
+        "file_offset": 5194479,
+        "references": 0,
+        "section": "DATA",
+        "text": "sAmTb"
+      },
+      {
+        "address": "0x8f50fc",
+        "encoding": "ascii",
+        "file_offset": 5194492,
+        "references": 0,
+        "section": "DATA",
+        "text": "BKbhTb~XBK!;"
+      },
+      {
+        "address": "0x8f5121",
+        "encoding": "ascii",
+        "file_offset": 5194529,
+        "references": 0,
+        "section": "DATA",
+        "text": "A!;I2"
+      },
+      {
+        "address": "0x8f5537",
+        "encoding": "ascii",
+        "file_offset": 5195575,
+        "references": 0,
+        "section": "DATA",
+        "text": "$3br"
+      },
+      {
+        "address": "0x8f5543",
+        "encoding": "ascii",
+        "file_offset": 5195587,
+        "references": 0,
+        "section": "DATA",
+        "text": "%&'()*456789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz"
+      },
+      {
+        "address": "0x8f55e5",
+        "encoding": "ascii",
+        "file_offset": 5195749,
+        "references": 0,
+        "section": "DATA",
+        "text": "\t#3R"
+      },
+      {
+        "address": "0x8f55f9",
+        "encoding": "ascii",
+        "file_offset": 5195769,
+        "references": 0,
+        "section": "DATA",
+        "text": "&'()*56789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz"
+      },
+      {
+        "address": "0x8f568f",
+        "encoding": "ascii",
+        "file_offset": 5195919,
+        "references": 0,
+        "section": "DATA",
+        "text": "sAmTb"
+      },
+      {
+        "address": "0x8f569c",
+        "encoding": "ascii",
+        "file_offset": 5195932,
+        "references": 0,
+        "section": "DATA",
+        "text": "BKbhTb~XBK!;"
+      },
+      {
+        "address": "0x8f56c1",
+        "encoding": "ascii",
+        "file_offset": 5195969,
+        "references": 0,
+        "section": "DATA",
+        "text": "A!;I2"
+      },
+      {
+        "address": "0x8f6214",
+        "encoding": "ascii",
+        "file_offset": 5198868,
+        "references": 0,
+        "section": "DATA",
+        "text": "FRAME 000.......LAYRPNTSPOLSSURFCOLRLUMIDIFFSPECREFLTRANGLOSSIDERFOPRIMGSMANVMAPTAGSPTAGVMADCLIPSTILFACECURVPTCHMBALBONEWGHTTXUVMORFSPOTSURFPARTSMGP"
+      },
+      {
+        "address": "0x8f636c",
+        "encoding": "ascii",
+        "file_offset": 5199212,
+        "references": 0,
+        "section": "DATA",
+        "text": "X94<"
+      },
+      {
+        "address": "0x8f64b3",
+        "encoding": "ascii",
+        "file_offset": 5199539,
+        "references": 0,
+        "section": "DATA",
+        "text": "?q=\n?"
+      },
+      {
+        "address": "0x8f64d4",
+        "encoding": "ascii",
+        "file_offset": 5199572,
+        "references": 0,
+        "section": "DATA",
+        "text": "X94<"
+      },
+      {
+        "address": "0x8f6692",
+        "encoding": "ascii",
+        "file_offset": 5200018,
+        "references": 0,
+        "section": "DATA",
+        "text": "z@333?"
+      },
+      {
+        "address": "0x8f6708",
+        "encoding": "ascii",
+        "file_offset": 5200136,
+        "references": 0,
+        "section": "DATA",
+        "text": "q=:@ff"
+      },
+      {
+        "address": "0x8f67e4",
+        "encoding": "ascii",
+        "file_offset": 5200356,
+        "references": 0,
+        "section": "DATA",
+        "text": "33IB"
+      },
+      {
+        "address": "0x8f690c",
+        "encoding": "ascii",
+        "file_offset": 5200652,
+        "references": 0,
+        "section": "DATA",
+        "text": "X94<"
+      },
+      {
+        "address": "0x8f6962",
+        "encoding": "ascii",
+        "file_offset": 5200738,
+        "references": 0,
+        "section": "DATA",
+        "text": ",@q=J?"
+      },
+      {
+        "address": "0x8f69fc",
+        "encoding": "ascii",
+        "file_offset": 5200892,
+        "references": 0,
+        "section": "DATA",
+        "text": "X94<"
+      },
+      {
+        "address": "0x8f6a0f",
+        "encoding": "ascii",
+        "file_offset": 5200911,
+        "references": 0,
+        "section": "DATA",
+        "text": ">33s?"
+      },
+      {
+        "address": "0x8f6a53",
+        "encoding": "ascii",
+        "file_offset": 5200979,
+        "references": 0,
+        "section": "DATA",
+        "text": "?q=\n?"
+      },
+      {
+        "address": "0x8f6aec",
+        "encoding": "ascii",
+        "file_offset": 5201132,
+        "references": 0,
+        "section": "DATA",
+        "text": "X94<"
+      },
+      {
+        "address": "0x8f6b43",
+        "encoding": "ascii",
+        "file_offset": 5201219,
+        "references": 0,
+        "section": "DATA",
+        "text": "?=\nW>"
+      },
+      {
+        "address": "0x8f6bef",
+        "encoding": "ascii",
+        "file_offset": 5201391,
+        "references": 0,
+        "section": "DATA",
+        "text": ">333?"
+      },
+      {
+        "address": "0x8f6c1e",
+        "encoding": "ascii",
+        "file_offset": 5201438,
+        "references": 0,
+        "section": "DATA",
+        "text": "*B=\nW>"
+      },
+      {
+        "address": "0x8f6d22",
+        "encoding": "ascii",
+        "file_offset": 5201698,
+        "references": 0,
+        "section": "DATA",
+        "text": "3@)\\"
+      },
+      {
+        "address": "0x8f6d30",
+        "encoding": "ascii",
+        "file_offset": 5201712,
+        "references": 0,
+        "section": "DATA",
+        "text": "B`e<"
+      },
+      {
+        "address": "0x8f6dbc",
+        "encoding": "ascii",
+        "file_offset": 5201852,
+        "references": 0,
+        "section": "DATA",
+        "text": "X94<"
+      },
+      {
+        "address": "0x8f6e88",
+        "encoding": "utf8",
+        "file_offset": 5202056,
+        "references": 0,
+        "section": "DATA",
+        "text": "\n׉A)\\"
+      },
+      {
+        "address": "0x8f6ec3",
+        "encoding": "ascii",
+        "file_offset": 5202115,
+        "references": 0,
+        "section": "DATA",
+        "text": "?)\\O?R"
+      },
+      {
+        "address": "0x8f70d3",
+        "encoding": "ascii",
+        "file_offset": 5202643,
+        "references": 0,
+        "section": "DATA",
+        "text": "?Yg`h"
+      },
+      {
+        "address": "0x8f70f6",
+        "encoding": "utf8",
+        "file_offset": 5202678,
+        "references": 0,
+        "section": "DATA",
+        "text": "W1c򈽢s,+|^"
+      },
+      {
+        "address": "0x8f7137",
+        "encoding": "utf8",
+        "file_offset": 5202743,
+        "references": 0,
+        "section": "DATA",
+        "text": "\r#MĹ"
+      },
+      {
+        "address": "0x8f718d",
+        "encoding": "utf8",
+        "file_offset": 5202829,
+        "references": 0,
+        "section": "DATA",
+        "text": "֑]\\d"
+      },
+      {
+        "address": "0x8f7194",
+        "encoding": "utf8",
+        "file_offset": 5202836,
+        "references": 0,
+        "section": "DATA",
+        "text": "غ<Sia"
+      },
+      {
+        "address": "0x8f719b",
+        "encoding": "ascii",
+        "file_offset": 5202843,
+        "references": 0,
+        "section": "DATA",
+        "text": "4h0Z"
+      },
+      {
+        "address": "0x8f796d",
+        "encoding": "ascii",
+        "file_offset": 5204845,
+        "references": 0,
+        "section": "DATA",
+        "text": "BKSP"
+      },
+      {
+        "address": "0x8f7b6e",
+        "encoding": "ascii",
+        "file_offset": 5205358,
+        "references": 0,
+        "section": "DATA",
+        "text": "\tBACKSPACE"
+      },
+      {
+        "address": "0x8f7c70",
+        "encoding": "ascii",
+        "file_offset": 5205616,
+        "references": 0,
+        "section": "DATA",
+        "text": "BREAK"
+      },
+      {
+        "address": "0x8f7d71",
+        "encoding": "ascii",
+        "file_offset": 5205873,
+        "references": 0,
+        "section": "DATA",
+        "text": "CAPSLOCK"
+      },
+      {
+        "address": "0x8f7e72",
+        "encoding": "ascii",
+        "file_offset": 5206130,
+        "references": 0,
+        "section": "DATA",
+        "text": "CLEAR"
+      },
+      {
+        "address": "0x8f8074",
+        "encoding": "ascii",
+        "file_offset": 5206644,
+        "references": 0,
+        "section": "DATA",
+        "text": "DELETE"
+      },
+      {
+        "address": "0x8f8175",
+        "encoding": "ascii",
+        "file_offset": 5206901,
+        "references": 0,
+        "section": "DATA",
+        "text": "DOWN"
+      },
+      {
+        "address": "0x8f8377",
+        "encoding": "ascii",
+        "file_offset": 5207415,
+        "references": 0,
+        "section": "DATA",
+        "text": "ENTER"
+      },
+      {
+        "address": "0x8f8579",
+        "encoding": "ascii",
+        "file_offset": 5207929,
+        "references": 0,
+        "section": "DATA",
+        "text": "ESCAPE"
+      },
+      {
+        "address": "0x8f968a",
+        "encoding": "ascii",
+        "file_offset": 5212298,
+        "references": 0,
+        "section": "DATA",
+        "text": "HELP"
+      },
+      {
+        "address": "0x8f978b",
+        "encoding": "ascii",
+        "file_offset": 5212555,
+        "references": 0,
+        "section": "DATA",
+        "text": "HOME"
+      },
+      {
+        "address": "0x8f998d",
+        "encoding": "ascii",
+        "file_offset": 5213069,
+        "references": 0,
+        "section": "DATA",
+        "text": "LEFT"
+      },
+      {
+        "address": "0x8f9a8e",
+        "encoding": "ascii",
+        "file_offset": 5213326,
+        "references": 0,
+        "section": "DATA",
+        "text": "NUMLOCK"
+      },
+      {
+        "address": "0x8f9b8f",
+        "encoding": "ascii",
+        "file_offset": 5213583,
+        "references": 0,
+        "section": "DATA",
+        "text": "PGDN"
+      },
+      {
+        "address": "0x8f9c90",
+        "encoding": "ascii",
+        "file_offset": 5213840,
+        "references": 0,
+        "section": "DATA",
+        "text": "PGUP"
+      },
+      {
+        "address": "0x8f9d91",
+        "encoding": "ascii",
+        "file_offset": 5214097,
+        "references": 0,
+        "section": "DATA",
+        "text": "PRTSC"
+      },
+      {
+        "address": "0x8f9e92",
+        "encoding": "ascii",
+        "file_offset": 5214354,
+        "references": 0,
+        "section": "DATA",
+        "text": "RIGHT"
+      },
+      {
+        "address": "0x8f9f91",
+        "encoding": "ascii",
+        "file_offset": 5214609,
+        "references": 0,
+        "section": "DATA",
+        "text": "'\nSCROLLLOCK"
+      },
+      {
+        "address": "0x8fa3b4",
+        "encoding": "ascii",
+        "file_offset": 5215668,
+        "references": 0,
+        "section": "DATA",
+        "text": "0123456789ABCDEF"
+      },
+      {
+        "address": "0x8fa41c",
+        "encoding": "ascii",
+        "file_offset": 5215772,
+        "references": 0,
+        "section": "DATA",
+        "text": "QZ^&"
+      },
+      {
+        "address": "0x8fa51f",
+        "encoding": "ascii",
+        "file_offset": 5216031,
+        "references": 0,
+        "section": "DATA",
+        "text": "D"
+      },
+      {
+        "address": "0x8fa520",
+        "encoding": "ascii",
+        "file_offset": 5216032,
+        "references": 3,
+        "section": "DATA",
+        "text": "Drs"
+      },
+      {
+        "address": "0x8fa63e",
+        "encoding": "ascii",
+        "file_offset": 5216318,
+        "references": 0,
+        "section": "DATA",
+        "text": "*>%I"
+      },
+      {
+        "address": "0x8fa8c5",
+        "encoding": "ascii",
+        "file_offset": 5216965,
+        "references": 0,
+        "section": "DATA",
+        "text": "AAAA"
+      },
+      {
+        "address": "0x8fa8cb",
+        "encoding": "ascii",
+        "file_offset": 5216971,
+        "references": 0,
+        "section": "DATA",
+        "text": "AAAB"
+      },
+      {
+        "address": "0x8fa8d1",
+        "encoding": "ascii",
+        "file_offset": 5216977,
+        "references": 0,
+        "section": "DATA",
+        "text": "AAAC"
+      },
+      {
+        "address": "0x8fa8d7",
+        "encoding": "ascii",
+        "file_offset": 5216983,
+        "references": 0,
+        "section": "DATA",
+        "text": "AABA"
+      },
+      {
+        "address": "0x8fa8dd",
+        "encoding": "ascii",
+        "file_offset": 5216989,
+        "references": 0,
+        "section": "DATA",
+        "text": "AABB"
+      },
+      {
+        "address": "0x8fa8e3",
+        "encoding": "ascii",
+        "file_offset": 5216995,
+        "references": 0,
+        "section": "DATA",
+        "text": "AABC"
+      },
+      {
+        "address": "0x8fa8e9",
+        "encoding": "ascii",
+        "file_offset": 5217001,
+        "references": 0,
+        "section": "DATA",
+        "text": "AACA"
+      },
+      {
+        "address": "0x8fa8ef",
+        "encoding": "ascii",
+        "file_offset": 5217007,
+        "references": 0,
+        "section": "DATA",
+        "text": "AACB"
+      },
+      {
+        "address": "0x8fa8f5",
+        "encoding": "ascii",
+        "file_offset": 5217013,
+        "references": 0,
+        "section": "DATA",
+        "text": "AACC"
+      },
+      {
+        "address": "0x8fa8fb",
+        "encoding": "ascii",
+        "file_offset": 5217019,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABAA"
+      },
+      {
+        "address": "0x8fa901",
+        "encoding": "ascii",
+        "file_offset": 5217025,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABAB"
+      },
+      {
+        "address": "0x8fa907",
+        "encoding": "ascii",
+        "file_offset": 5217031,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABAC"
+      },
+      {
+        "address": "0x8fa90d",
+        "encoding": "ascii",
+        "file_offset": 5217037,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABBA"
+      },
+      {
+        "address": "0x8fa913",
+        "encoding": "ascii",
+        "file_offset": 5217043,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABBB"
+      },
+      {
+        "address": "0x8fa919",
+        "encoding": "ascii",
+        "file_offset": 5217049,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABBC"
+      },
+      {
+        "address": "0x8fa91f",
+        "encoding": "ascii",
+        "file_offset": 5217055,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABCA"
+      },
+      {
+        "address": "0x8fa925",
+        "encoding": "ascii",
+        "file_offset": 5217061,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABCB"
+      },
+      {
+        "address": "0x8fa92b",
+        "encoding": "ascii",
+        "file_offset": 5217067,
+        "references": 0,
+        "section": "DATA",
+        "text": "ABCC"
+      },
+      {
+        "address": "0x8fa931",
+        "encoding": "ascii",
+        "file_offset": 5217073,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACAA"
+      },
+      {
+        "address": "0x8fa937",
+        "encoding": "ascii",
+        "file_offset": 5217079,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACAB"
+      },
+      {
+        "address": "0x8fa93d",
+        "encoding": "ascii",
+        "file_offset": 5217085,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACAC"
+      },
+      {
+        "address": "0x8fa943",
+        "encoding": "ascii",
+        "file_offset": 5217091,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACBA"
+      },
+      {
+        "address": "0x8fa949",
+        "encoding": "ascii",
+        "file_offset": 5217097,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACBB"
+      },
+      {
+        "address": "0x8fa94f",
+        "encoding": "ascii",
+        "file_offset": 5217103,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACBC"
+      },
+      {
+        "address": "0x8fa955",
+        "encoding": "ascii",
+        "file_offset": 5217109,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACCA"
+      },
+      {
+        "address": "0x8fa95b",
+        "encoding": "ascii",
+        "file_offset": 5217115,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACCB"
+      },
+      {
+        "address": "0x8fa961",
+        "encoding": "ascii",
+        "file_offset": 5217121,
+        "references": 0,
+        "section": "DATA",
+        "text": "ACCC"
+      },
+      {
+        "address": "0x8fa967",
+        "encoding": "ascii",
+        "file_offset": 5217127,
+        "references": 0,
+        "section": "DATA",
+        "text": "BAAA"
+      },
+      {
+        "address": "0x8fa96d",
+        "encoding": "ascii",
+        "file_offset": 5217133,
+        "references": 0,
+        "section": "DATA",
+        "text": "BAAB"
+      },
+      {
+        "address": "0x8fa973",
+        "encoding": "ascii",
+        "file_offset": 5217139,
+        "references": 0,
+        "section": "DATA",
+        "text": "BAAC"
+      },
+      {
+        "address": "0x8fa979",
+        "encoding": "ascii",
+        "file_offset": 5217145,
+        "references": 0,
+        "section": "DATA",
+        "text": "BABA"
+      },
+      {
+        "address": "0x8fa97f",
+        "encoding": "ascii",
+        "file_offset": 5217151,
+        "references": 0,
+        "section": "DATA",
+        "text": "BABB"
+      },
+      {
+        "address": "0x8fa985",
+        "encoding": "ascii",
+        "file_offset": 5217157,
+        "references": 0,
+        "section": "DATA",
+        "text": "BABC"
+      },
+      {
+        "address": "0x8fa98b",
+        "encoding": "ascii",
+        "file_offset": 5217163,
+        "references": 0,
+        "section": "DATA",
+        "text": "BACA"
+      },
+      {
+        "address": "0x8fa991",
+        "encoding": "ascii",
+        "file_offset": 5217169,
+        "references": 0,
+        "section": "DATA",
+        "text": "BACB"
+      },
+      {
+        "address": "0x8fa997",
+        "encoding": "ascii",
+        "file_offset": 5217175,
+        "references": 0,
+        "section": "DATA",
+        "text": "BACC"
+      },
+      {
+        "address": "0x8fa99d",
+        "encoding": "ascii",
+        "file_offset": 5217181,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBAA"
+      },
+      {
+        "address": "0x8fa9a3",
+        "encoding": "ascii",
+        "file_offset": 5217187,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBAB"
+      },
+      {
+        "address": "0x8fa9a9",
+        "encoding": "ascii",
+        "file_offset": 5217193,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBAC"
+      },
+      {
+        "address": "0x8fa9af",
+        "encoding": "ascii",
+        "file_offset": 5217199,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBBA"
+      },
+      {
+        "address": "0x8fa9b5",
+        "encoding": "ascii",
+        "file_offset": 5217205,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBBB"
+      },
+      {
+        "address": "0x8fa9bb",
+        "encoding": "ascii",
+        "file_offset": 5217211,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBBC"
+      },
+      {
+        "address": "0x8fa9c1",
+        "encoding": "ascii",
+        "file_offset": 5217217,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBCA"
+      },
+      {
+        "address": "0x8fa9c7",
+        "encoding": "ascii",
+        "file_offset": 5217223,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBCB"
+      },
+      {
+        "address": "0x8fa9cd",
+        "encoding": "ascii",
+        "file_offset": 5217229,
+        "references": 0,
+        "section": "DATA",
+        "text": "BBCC"
+      },
+      {
+        "address": "0x8fa9d3",
+        "encoding": "ascii",
+        "file_offset": 5217235,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCAA"
+      },
+      {
+        "address": "0x8fa9d9",
+        "encoding": "ascii",
+        "file_offset": 5217241,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCAB"
+      },
+      {
+        "address": "0x8fa9df",
+        "encoding": "ascii",
+        "file_offset": 5217247,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCAC"
+      },
+      {
+        "address": "0x8fa9e5",
+        "encoding": "ascii",
+        "file_offset": 5217253,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCBA"
+      },
+      {
+        "address": "0x8fa9eb",
+        "encoding": "ascii",
+        "file_offset": 5217259,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCBB"
+      },
+      {
+        "address": "0x8fa9f1",
+        "encoding": "ascii",
+        "file_offset": 5217265,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCBC"
+      },
+      {
+        "address": "0x8fa9f7",
+        "encoding": "ascii",
+        "file_offset": 5217271,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCCA"
+      },
+      {
+        "address": "0x8fa9fd",
+        "encoding": "ascii",
+        "file_offset": 5217277,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCCB"
+      },
+      {
+        "address": "0x8faa03",
+        "encoding": "ascii",
+        "file_offset": 5217283,
+        "references": 0,
+        "section": "DATA",
+        "text": "BCCC"
+      },
+      {
+        "address": "0x8faa09",
+        "encoding": "ascii",
+        "file_offset": 5217289,
+        "references": 0,
+        "section": "DATA",
+        "text": "CAAA"
+      },
+      {
+        "address": "0x8faa0f",
+        "encoding": "ascii",
+        "file_offset": 5217295,
+        "references": 0,
+        "section": "DATA",
+        "text": "CAAB"
+      },
+      {
+        "address": "0x8faa15",
+        "encoding": "ascii",
+        "file_offset": 5217301,
+        "references": 0,
+        "section": "DATA",
+        "text": "CAAC"
+      },
+      {
+        "address": "0x8faa1b",
+        "encoding": "ascii",
+        "file_offset": 5217307,
+        "references": 0,
+        "section": "DATA",
+        "text": "CABA"
+      },
+      {
+        "address": "0x8faa21",
+        "encoding": "ascii",
+        "file_offset": 5217313,
+        "references": 0,
+        "section": "DATA",
+        "text": "CABB"
+      },
+      {
+        "address": "0x8faa27",
+        "encoding": "ascii",
+        "file_offset": 5217319,
+        "references": 0,
+        "section": "DATA",
+        "text": "CABC"
+      },
+      {
+        "address": "0x8faa2d",
+        "encoding": "ascii",
+        "file_offset": 5217325,
+        "references": 0,
+        "section": "DATA",
+        "text": "CACA"
+      },
+      {
+        "address": "0x8faa33",
+        "encoding": "ascii",
+        "file_offset": 5217331,
+        "references": 0,
+        "section": "DATA",
+        "text": "CACB"
+      },
+      {
+        "address": "0x8faa39",
+        "encoding": "ascii",
+        "file_offset": 5217337,
+        "references": 0,
+        "section": "DATA",
+        "text": "CACC"
+      },
+      {
+        "address": "0x8faa3f",
+        "encoding": "ascii",
+        "file_offset": 5217343,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBAA"
+      },
+      {
+        "address": "0x8faa45",
+        "encoding": "ascii",
+        "file_offset": 5217349,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBAB"
+      },
+      {
+        "address": "0x8faa4b",
+        "encoding": "ascii",
+        "file_offset": 5217355,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBAC"
+      },
+      {
+        "address": "0x8faa51",
+        "encoding": "ascii",
+        "file_offset": 5217361,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBBA"
+      },
+      {
+        "address": "0x8faa57",
+        "encoding": "ascii",
+        "file_offset": 5217367,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBBB"
+      },
+      {
+        "address": "0x8faa5d",
+        "encoding": "ascii",
+        "file_offset": 5217373,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBBC"
+      },
+      {
+        "address": "0x8faa63",
+        "encoding": "ascii",
+        "file_offset": 5217379,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBCA"
+      },
+      {
+        "address": "0x8faa69",
+        "encoding": "ascii",
+        "file_offset": 5217385,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBCB"
+      },
+      {
+        "address": "0x8faa6f",
+        "encoding": "ascii",
+        "file_offset": 5217391,
+        "references": 0,
+        "section": "DATA",
+        "text": "CBCC"
+      },
+      {
+        "address": "0x8faa75",
+        "encoding": "ascii",
+        "file_offset": 5217397,
+        "references": 0,
+        "section": "DATA",
+        "text": "CCAA"
+      },
+      {
+        "address": "0x8faa7b",
+        "encoding": "ascii",
+        "file_offset": 5217403,
+        "references": 0,
+        "section": "DATA",
+        "text": "CCAB"
+      },
+      {
+        "address": "0x8faa81",
+        "encoding": "ascii",
+        "file_offset": 5217409,
+        "references": 0,
+        "section": "DATA",
+        "text": "CCAC"
+      },
+      {
+        "address": "0x8faa87",
+        "encoding": "ascii",
+        "file_offset": 5217415,
+        "references": 0,
+        "section": "DATA",
+        "text": "CCBA"
+      }
+    ],
+    "total": 12073
+  },
+  "summary": "12073 strings (showing 200).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "strings are read from data sections; text built at run time or stored compressed isn't listed"
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 200,
+    "total": 12073,
+    "next_offset": 200
+  },
+  "locations": [],
+  "links": []
+}

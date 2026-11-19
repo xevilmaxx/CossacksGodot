@@ -1,0 +1,58 @@
+{
+  "id": "ev_22c1e75fcf3b8da4046bb039473f09b569bf3834187532e016f0b0aedd07cea0",
+  "subject": {
+    "kind": "unknown",
+    "sha256": "9c83789f83a1f6661b9d757e9777a53c9271939c4b39b4d47d3c4fb4abb28fb5",
+    "name": "player.script"
+  },
+  "operation": "core_text_read",
+  "params": {
+    "limit": 60,
+    "offset": 235,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\player.script"
+  },
+  "result": {
+    "cut_lines": [],
+    "encoding": "utf8",
+    "file_size": 145234,
+    "lines": 60,
+    "more": true,
+    "offset": 235,
+    "path": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\player.script",
+    "replaced_sequences": 1137,
+    "text": "   var rawconsume : Float = (gPlayer[plind].counter.resconsume[gc_resource_type_gold]*32/100)/250;\n   Result := (rawincome<rawconsume);\nend;\n\n// _player_ProcessResourceIncome\n//\nprocedure _player_ProcessResourceIncome(const plInd : Integer; const deltatime : Float);\nbegin\n   var i : Integer;\n   for i:=0 to gc_ResCount-1 do\n   begin\n      var resincome : Integer = gPlayer[plInd].counter.resincome[i];\n      if (resincome>0) then\n      begin\n         const mult = 100;\n         const speed = 256/1.024;\n         var resincomerem : Float = gPlayer[plInd].counter.resincomeremains[i]/mult;\n         resincome := resincome*gc_time_to_frames;\n         var bank : Float = resincomerem+resincome*deltatime;\n         var realbank : Float = bank/speed;\n         var value : Integer = floor(realbank);\n         if (value<>0) then\n         begin\n            _res_AddResToPlayerByIndex(plInd, i, value);\n            gPlayer[plInd].stat.restotal[i] := gPlayer[plInd].stat.restotal[i]+value\n         end;\n         bank := (realbank-value)*speed;\n         gPlayer[plInd].counter.resincomeremains[i] := floor(bank*mult);\n      end;\n   end;\nend;\n\n// _player_ProcessResourceConsume\n//\nprocedure _player_ProcessResourceConsume(const plInd : Integer; const deltatime : Float);\nbegin\n   // ����������� ���/������/������/����� �� ���������� ������\n   // ���� ������������� ���������� �� ���������� ������� � ����������� ��������.\n   // ���������/���������� ������ �����, ���������.\n   var i : Integer;\n   for i:=0 to gc_ResCount-1 do\n   begin\n      var resconsume : Integer = gPlayer[plInd].counter.resconsume[i];\n      if (resconsume>0) then\n      begin\n         const mult = 100;\n         const speed = 20000;\n         var resconsumerem : Float = gPlayer[plInd].counter.resconsumeremains[i]/mult;\n         resconsume := resconsume*gc_time_to_frames;\n         var bank : Float = resconsumerem+resconsume*deltatime;\n         var realbank : Float = bank/speed;\n         var value : Integer = floor(realbank);\n         if (value<>0) then\n         begin\n            if (not gPlayer[plInd].res[i]>=value) then\n            begin\n               gPlayer[plInd].stat.resonlife[i] := gPlayer[plInd].stat.resonlife[i]+value;\n               _res_AddResToPlayerByIndex(plInd, i, -value);\n               case i of\n                  gc_resource_type_food : gPlayer[plInd].bfamine := False;\n",
+    "total_lines": 3517
+  },
+  "summary": "player.script: lines 236–295 of 3517 (UTF-8).",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "text_as_stored",
+      "message": "The file is read as text as it is stored: nothing is run, rendered or formatted, and text a program builds or downloads while it runs isn't here."
+    },
+    {
+      "code": "invalid_text",
+      "message": "1137 sequence(s) of bytes aren't valid UTF-8 and show as U+FFFD."
+    }
+  ],
+  "coverage": {
+    "status": "partial",
+    "examined": 60,
+    "total": 3517,
+    "next_offset": 295
+  },
+  "locations": [
+    {
+      "kind": "path",
+      "value": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\player.script"
+    }
+  ],
+  "links": []
+}

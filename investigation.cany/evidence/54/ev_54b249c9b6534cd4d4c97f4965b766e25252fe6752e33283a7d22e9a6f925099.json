@@ -1,0 +1,61 @@
+{
+  "id": "ev_54b249c9b6534cd4d4c97f4965b766e25252fe6752e33283a7d22e9a6f925099",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_strings_find",
+  "params": {
+    "case_sensitive": false,
+    "limit": 30,
+    "mode": "literal",
+    "offset": 0,
+    "pattern": "hp"
+  },
+  "result": {
+    "matches": [
+      {
+        "address": "0x90c051",
+        "references": [],
+        "section": ".edata",
+        "text": "AmdPowerXpressRequestHighPerformance"
+      },
+      {
+        "address": "0x9535a4",
+        "references": [],
+        "section": ".rsrc",
+        "text": "HPascal Files (*.pas;*.pp;*.dpr;*.dpk;*.inc)|*.pas;*.pp;*.dpr;*.dpk;*.inc\rObject Pascal"
+      },
+      {
+        "address": "0x95974d",
+        "references": [],
+        "section": ".rsrc",
+        "text": "AnsiStringReplaceJOHPASUnit12"
+      }
+    ],
+    "total": 3
+  },
+  "summary": "3 strings match \"hp\".",
+  "confidence": "observed",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "data_sections_only",
+      "message": "only strings stored in the file are searched (absence is not proof)"
+    }
+  ],
+  "coverage": {
+    "status": "complete",
+    "examined": 3,
+    "total": 3
+  },
+  "locations": [],
+  "links": []
+}

@@ -1,0 +1,70 @@
+{
+  "id": "ev_75a63eb136aac5157bc308ce9731765d4317bca716a78ce26ae2bd37a70a657d",
+  "subject": {
+    "kind": "pe",
+    "sha256": "68474ddde43fe4aa084613f01946734a7eea6d511fb98dd81326e8be2ed250ab",
+    "name": "editor.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x401000"
+  },
+  "result": {
+    "calls": [],
+    "engine": "clean-room lifter",
+    "entry": "0x401000",
+    "function": "sub_401000",
+    "gotos": 4,
+    "inline_asm": 32,
+    "pseudo_code": "int32_t sub_401000()\n{\n    al += 16;\n    eax++;\n    *(uint8_t*)(ebx) += al;\n    edx++;\n    __asm(\"outsd dx, [esi]\");\n    __asm(\"outsd dx, [esi]\");\n    __asm(\"insb [edi], dx\");\n    __asm(\"popad\");\n    __asm(\"outsb dx, [esi]\");\n    *(uint32_t*)(eax) += eax;\n    *(uint8_t*)(eax) += al;\n    *(uint8_t*)(ecx) += al;\n    *(uint8_t*)(eax) += al;\n    *(uint8_t*)(eax) += al;\n    *(uint8_t*)(eax) += al;\n    eax += 0x736c6146;\n    al += 0x54;\n    if (al < 0 /* unsigned */) {\n        if (/* Gt */ flags) {\n            eax++;\n            *(uint8_t*)(eax + edx) += ch;\n        } else {\n            *(uint8_t*)(eax + 0x1004010) <<= 4;\n            edx++;\n            if (edx >= 0) {\n                *(uint32_t*)(eax) += eax;\n                al |= *(uint8_t*)(esi);\nlabel_40111e:\n                if (/* Eq */ flags) {\n                    ah += bl;\n                    esp++;\n                    eax++;\n                    al += bh;\n                    esp++;\n                    eax++;\n                    *(uint8_t*)(eax * 2 + 0x54070040) += dh;\n                    edi--;\n                    __asm(\"bound ebp, qword ptr [edx+0x65]\");\n                    __asm(\"arpl [esp+ebp*4+0x11], si\");\n                    eax++;\n                    *(uint8_t*)(edi) += al;\n                } else {\n                    ebp = *(uint32_t*)(esi + 0x67) * 0x401128;\n                    ecx |= *(uint32_t*)(edx);\n                    esp = arg_53 * 0x6e697274;\n                }\n            } else {\n                gs:[eax] += eax;\n                *(uint8_t*)(eax) += al;\n                bh += bh;\n                *(uint8_t*)(eax) += al;\n                *(uint8_t*)(eax + 0x4010b4) += dl;\n                *(uint32_t*)(edi + edx * 2) += eax;\n                __asm(\"outsd dx, [esi]\");\n                if (*(uint32_t*)(edi + edx * 2) < 0 /* unsigned */) {\n                    goto label_40111e;\n                } else {\n                    eax += *(uint32_t*)(eax);\n                    *(uint8_t*)(eax) += al;\n                    bh += bh;\n                    *(uint32_t*)(eax)++;\n                    *(uint8_t*)(eax + 0x4010c8) += dl;\n                    *(uint32_t*)(eax) += ecx;\n                    ebx++;\n                    __asm(\"popad\");\n                    if (ebx < 0 /* unsigned */) {\n                        __asm(\"outsb dx, [esi]\");\n                        eax++;\n                        *(uint8_t*)(edi + eax) += cl;\n                        __asm(\"popad\");\n                        if (*(uint8_t*)(edi + eax) < 0 /* unsigned */) {\n                            if (/* Eq */ flags) {\nlabel_401155:\n                                *(uint32_t*)(eax) += eax;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                al = *(uint8_t*)0x4004011;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax + 0xac004047) += ah;\n                                edi++;\n                                eax++;\n                                *(uint8_t*)(eax + 0xb4004047) += dh;\n                                edi++;\n                                eax++;\n                                *(uint8_t*)(eax + 0xdc004047) += ch;\n                            } else {\n                                *(uint32_t*)(eax) += eax;\n                                es = pop();\n                                es = pop();\n                                edi--;\n                                __asm(\"bound ebp, qword ptr [edx+0x65]\");\n                                __asm(\"arpl [eax+0x11], si\");\n                                eax++;\n                                *(uint8_t*)(eax) += al;\nlabel_4011ba:\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(eax) += al;\n                                *(uint8_t*)(esi) += al;\n                                if (*(uint8_t*)(esi) >= 0) {\nlabel_401236:\n                                    *(uint8_t*)(eax) += al;\n                                    esi++;\n                                    *(uint32_t*)(edx) -= edx;\n                                    eax++;\n                                    *(uint8_t*)(eax) += cl;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    arg_12940040 += cl;\n                                    eax++;\n                                    *(uint8_t*)0x4012 += ah;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint8_t*)(edx + edx + 0xc0040) += dl;\n                                    *(uint8_t*)(eax) += al;\n                                    *(uint32_t*)(eax) += eax;\n                                    al = *(uint8_t*)0x6c004047;\n                                    if (*(uint32_t*)(eax) <= 0 /* unsigned */) {\n                                        return eax;\n                                    } else {\n                                        *(uint8_t*)(eax + 0x76) += bh;\n                                        eax++;\n                                        *(uint8_t*)(edi + eax * 2 + 0x47a80040) += dh;\n                                        eax++;\n                                        *(uint8_t*)(eax + 0xf8004076) += cl;\n                                        esp++;\n                                        eax++;\n                                        *(uint8_t*)(eax * 2 + 0x54110040) += dh;\n                                        ecx--;\n                                        __asm(\"outsb dx, [esi]\");\n                                        if (ecx == 0) {\n                                            bh >>= 0x25;\n                                            __asm(\"aam 0xc2\");\n                                            *(uint32_t*)0xffc08b00 = eax;\n                                            eax &= 0xa3c2d0;\n                                        } else {\n                                            if (/* Below */ flags) {\n                                                __asm(\"aam 0xc2\");\n                                                *(uint32_t*)0xffc08b00 = eax;\n                                                eax &= 0xa3c2d0;\n                                            } else {\n                                                __asm(\"popad\");\n                                                __asm(\"arpl [ebp+0x64], sp\");\n                                                edi--;\n                                                __asm(\"bound ebp, qword ptr [edx+0x65]\");\n                                                __asm(\"arpl [ebx+ecx*4-0x40], si\");\n                                                __asm(\"lodsb [esi]\");\n                                                al += *(uint8_t*)(eax);\n                                                al += 9;\n                                                esp++;\n                                                __asm(\"popad\");\n                                                ebp = arg_65 * 0xf825ff01;\n                                                return eax;\n                                            }\n                                        }\n                                    }\n                                } else {\n                                    if (/* Eq */ flags) {\n                                        *(uint8_t*)(eax) += al;\n                                        *(uint8_t*)(eax) += al;\n                                        *(uint8_t*)(eax) += al;\n                                        al += al;\n                                        *(uint8_t*)(eax) += al;\n                                        *(uint8_t*)(eax) += al;\n                                        goto label_401236;\n                                    } else {\n                                        __asm(\"insd [edi], dx\");\n                                        *(uint8_t*)(eax) += al;\n                                        __debugbreak();\n                                    }\n                                }\n                            }\n                        } else {\n                            __asm(\"popad\");\n                            __asm(\"outsb dx, [esi]\");\n                            if (/* Eq */ flags) {\n                                __asm(\"outsb dx, [esi]\");\n                                __asm(\"popad\");\n                                __asm(\"insb [edi], dx\");\n                                eax += 0;\n                            } else {\n                                eax++;\n                                *(uint8_t*)(eax + 0x11) += cl;\n                                eax++;\n                                *(uint8_t*)(edx + ecx) += cl;\n                                edi--;\n                                __asm(\"insb [edi], dx\");\n                                __asm(\"popad\");\n                                if (edi < 0 /* unsigned */) {\n                                    goto label_4011ba;\n                                } else {\n                                    __asm(\"popad\");\n                                    __asm(\"outsb dx, [esi]\");\n                                    goto label_401155;\n                                }\n                            }\n                        }\n                    } else {\n                        ebp = *(uint32_t*)(esi + 0x61) * 0x56c;\n                        *(uint8_t*)(eax) += al;\n                    }\n                }\n            }\n        }\n    } else {\n        eax = eax;\n        al -= 16;\n        eax++;\n        *(uint8_t*)(ecx) += cl;\n        *(uint8_t*)(edi + 0x69) |= dl;\n        ebx++;\n        *(uint8_t*)(eax) += al;\n        bh += bh;\n        *(uint32_t*)(eax)++;\n        *(uint8_t*)(eax + 0x401044) += dl;\n        al += *(uint8_t*)(ebx + eax * 2);\n        *(uint8_t*)(eax) += al;\n        bh += bh;\n        *(uint8_t*)(eax) += al;\n        *(uint8_t*)(eax + 0x401058) += dl;\n        *(uint32_t*)(eax) += ecx;\n        __asm(\"outsb dx, [esi]\");\n    }\n}\n",
+    "signature": "int32_t sub_401000()",
+    "strings": [],
+    "structured": false
+  },
+  "summary": "Pseudo-C for sub_401000 (249 lines, partly unstructured).",
+  "confidence": "inferred",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "builtin",
+    "engine_version": "0.6.1",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "register_level",
+      "message": "variables are machine registers and stack slots; types are not recovered"
+    },
+    {
+      "code": "calling_convention_assumed",
+      "message": "call arguments follow the usual x86 convention and may be wrong for unusual functions"
+    },
+    {
+      "code": "conditions_from_flags",
+      "message": "branch conditions are rebuilt from the last compare and may be approximate"
+    },
+    {
+      "code": "unstructured_flow",
+      "message": "4 gotos remain where the control flow isn't a simple if/loop"
+    },
+    {
+      "code": "inline_asm",
+      "message": "32 instructions have no C rule and are shown as __asm(...)"
+    },
+    {
+      "code": "deep_engine_unavailable",
+      "message": "Ghidra's analysis has no function at this address and it couldn't make one: Ghidra could not disassemble code at this address. So this came from the built-in decompiler, which is less exact."
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x401000"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}

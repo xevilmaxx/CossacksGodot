@@ -1,0 +1,45 @@
+{
+  "id": "ev_3b5555f1897d0ff7f4dfa4169162d3100ab22223d1e4d963f0084dcf5d63803e",
+  "subject": {
+    "kind": "pe",
+    "sha256": "87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c",
+    "name": "cossacks.exe"
+  },
+  "operation": "native_function_pseudocode",
+  "params": {
+    "function": "0x8f0ad4"
+  },
+  "result": {
+    "engine": "ghidra",
+    "entry": "0x8f0ad4",
+    "function": "FUN_008f0ad4",
+    "pseudo_code": "\r\nvoid FUN_008f0ad4(undefined4 param_1,undefined4 param_2)\r\n\r\n{\r\n  undefined1 *puVar1;\r\n  undefined4 *in_FS_OFFSET;\r\n  undefined4 uStack_18;\r\n  undefined1 *puStack_14;\r\n  undefined1 *puStack_10;\r\n  undefined4 local_8;\r\n  \r\n  puStack_10 = (undefined1 *)0x8f0ae6;\r\n  local_8 = param_2;\r\n  FUN_004058b0(param_2);\r\n  puStack_14 = &LAB_008f0b14;\r\n  uStack_18 = *in_FS_OFFSET;\r\n  *in_FS_OFFSET = &uStack_18;\r\n  puStack_10 = (undefined1 *)((int)register0x00000010 + -4);\r\n  FUN_0047c3d4(param_1,local_8);\r\n  puVar1 = puStack_10;\r\n  *in_FS_OFFSET = uStack_18;\r\n  puStack_10 = &LAB_008f0b1b;\r\n  puStack_14 = (undefined1 *)0x8f0b13;\r\n  FUN_00405400(&local_8,uStack_18,puVar1);\r\n  return;\r\n}\r\n\r\n",
+    "signature": "void FUN_008f0ad4(undefined4 param_1,undefined4 param_2);"
+  },
+  "summary": "Pseudo-C for FUN_008f0ad4 from the Deep engine (27 lines).",
+  "confidence": "derived",
+  "authority": "original-files",
+  "environment": {
+    "clean_room": false,
+    "engine": "ghidra",
+    "engine_version": "12.2",
+    "host": "windows-x86_64"
+  },
+  "limitations": [
+    {
+      "code": "deep_engine",
+      "message": "the pseudo-C comes from the external Deep engine (Ghidra), not the original source"
+    }
+  ],
+  "coverage": {
+    "status": "unknown"
+  },
+  "locations": [
+    {
+      "kind": "address",
+      "value": "0x8f0ad4"
+    }
+  ],
+  "links": [],
+  "carries_target_content": true
+}
