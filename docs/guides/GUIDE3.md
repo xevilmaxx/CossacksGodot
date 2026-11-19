@@ -54,7 +54,7 @@ SAFETY RULES (owner's GPU is weak; it once shut the PC down):
 5. TABS for indentation. Match surrounding indentation exactly.
 6. Do not rename existing functions/fields other scripts call.
 7. ONE heavy job at a time (bake XOR long CLI XOR windowed capture).
-8. Every new feature must keep `selftest` 21/21 and `uitest` 11/11 green.
+8. Every new feature must keep `selftest` 28/28 and `uitest` 17/17 green.
    New tests are added in G15; until then the old suites are the gate.
 
 ## 1. What already exists (DO NOT rebuild)
@@ -2350,6 +2350,7 @@ Rebakes (G8.6 tiers) run in background CPU-only while doing G9–G12.
 - [x] G14 audio … done (16 voices + 90ms per-key cooldown + 60m cull/attenuation + preload + music loop)
 - [x] G15 tests (selftest 28/28, uitest 17/17) … done (garrison/capture/resow/attack_ground/save_load/grid_equiv/farm_cap; cursor/groups/frustum/garrison/hotkeys/save_load scenes; bench 196ms/tick + perf.md; battery: import clean, cli60 clean, boosted cli clean through 600s, g3_final.png headless render, j3 27 frames + journey.mp4 + contact.png headless timelapse)
 - [x] G16 docs … done (MECHANICS + mechanics.json est entries + README controls + CREDITS donor files + COMMANDS bench/options + GUIDE1/2 headers + STATUS)
+- [x] UI-scale hardening … done (menu card bounded + scrolling body, CossacksGodot rename, FPS 3-digit corner readout, top bar centered, build HFlow-wrapped, command card fixed 3-col grid auto-hiding when empty; minimap overlap root-caused: TextureRect minimum follows the 160-320px map texture, not custom_minimum_size — fixed with EXPAND_IGNORE_SIZE + explicit panel bounds, selection panel starts at minimap right edge + gap by construction; full menu-driven bridge run verified at 1280x720 with zero overlaps/clips, selftest 28/28 + uitest 17/17 green)
 Executor notes / deviations (required for any deviation from the letter):
 - G2.5/G7.3/G8.6 config+data vars applied together (TERRAIN_PX/QUALITY/SPRITE_CELL/FX_CAP/FOG_INTERVAL/MINIMAP_INTERVAL + CORPSE_LIFE).
 - G9.2: removed cmd_delete's own farm line instead of flipping sign, because G9.1 makes _kill subtract; keeping both would double-subtract. Final: delete relies on _kill (finished-only).

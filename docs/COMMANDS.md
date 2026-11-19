@@ -18,17 +18,18 @@ historical-battle quick mode. See `app/README.md` for controls.
 ## 2. Test it (all self-exiting; CI-safe)
 
 ```
-:: 21-step sim self-test: move/gather/fight/build/train/mine/hud + volley,
+:: 28-step sim self-test: move/gather/fight/build/train/mine/hud + volley,
 :: heal, morale, upgrade, market, capture, squad/formation/bonus/replenish/flee
 godot --headless --path app -- --self-test app/selftest.json
 
-:: 11-scene UI user-journey test (menu, select, keys, build, train, squads,
+:: 17-scene UI user-journey test (menu, select, keys, build, train, squads,
 :: rally, market, research, delete, speed) — drives the real input/HUD code
 godot --headless --path app -- --ui-test app/uitest.json
 :: one scene only (seconds instead of a full run):
 godot --headless --path app -- --ui-test app/uit.json --ui-only squad_keys
 :: scenes: menu_shell select_box order_keys build_flow train_flow squad_keys
 ::          rally_panel market_panel research_panel delete_key speed_pause
+::          cursor_ctx groups minimap_frustum garrison_keys hotkeys_live save_load_ui
 
 :: fast AI-vs-AI match, no window/textures/audio (both sides play)
 godot --headless --path app -- --cli app/cli.json --cli-seconds 60
@@ -40,6 +41,29 @@ godot --path app -- --screenshot app/shots/shot.png --timeout 90
 :: headless screenshot (800x600 CPU map picture, never hangs, no GPU)
 godot --headless --path app -- --screenshot app/shots/shot.png --timeout 90
 ```
+
+## 2b. Clickable test API (windowed, real GUI — menu/HUD verification)
+
+```
+:: terminal 1: launch with the bridge (ALWAYS pass --timeout: the watchdog
+:: UNCONDITIONALLY quits the process, so a run never hangs indefinitely)
+godot --path app -- --test-api 8137 --timeout 280
+:: terminal 2: drive the real GUI (menu -> skirmish screen -> game HUD ->
+:: select-all units -> PNG screenshots of every stage)
+python app/tools/test_drive.py --port 8137 --out app/shots/uidrive
+```
+
+The bridge (`app/scripts/testbridge.gd`, wired in `main.gd`) is a TCP
+JSON-line API, one command per line, one JSON reply per line:
+`ping`, `click {x,y,button}`, `key {key,ctrl,shift,alt}`, `buttons`
+(visible buttons + canvas rects), `tree` (visible controls + rects + `vp`
+viewport and `win` window sizes), `shot {path}`, `resize {w,h}`, `state`
+(fps/frame/has_game/menu/game/layout), `wait {frames}`, `quit`.
+Dumped rects are canvas coordinates — the same space synthetic
+`InputEventMouseButton` positions live in — so they are directly clickable,
+and screenshots are that canvas minified by the window stretch factor.
+One fresh game launch per window size: mid-run window resize breaks
+rendering (black screenshots), so never resize mid-run.
 
 ## 3. Record gameplay video (sequences + MP4)
 
@@ -116,8 +140,8 @@ python -c "from PIL import Image; im=Image.open('app/assets/models/anim/ukr_cen_
 | Goal | Command |
 |---|---|
 | Play | `godot --path app` |
-| Prove the sim works | `--self-test` (21 steps, ~1 min headless) |
-| Prove the UI works like the original | `--ui-test` / `--ui-only <scene>` (11 scenes) |
+| Prove the sim works | `--self-test` (28 steps, ~1 min headless) |
+| Prove the UI works like the original | `--ui-test` / `--ui-only <scene>` (17 scenes) |
 | Prove the AI plays/em* | `--cli` (+ `--config shots/boost.json` to skip the opening) |
 | See it move (video) | `--seq ... --journey` windowed, then `seq_to_mp4.py` |
 | Fast map timelapse, no GPU | `--seq` + headless `--cli` |
@@ -151,8 +175,8 @@ boosted config; natural runs are for timelapses.
 
 ## 9. Acceptance gates (what "done" means here)
 
-- `selftest.json`: `passed: true`, all 21 steps true.
-- `uitest.json`: `passed: true`, all 11 scenes true (or each `--ui-only` true).
+- `selftest.json`: `passed: true`, all 28 steps true.
+- `uitest.json`: `passed: true`, all 17 scenes true (or each `--ui-only` true).
 - `cli.json`: exits 0, both sides grow over time, no errors.
 - `seq_index.json`: `frames` > 10, `journey.mp4` plays (ffprobe shows streams).
 - `g2_final.png`-style screenshot: nation buildings, animated units, HUD intact.

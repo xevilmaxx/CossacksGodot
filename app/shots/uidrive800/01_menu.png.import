@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bfmd6jhdq7ys4"
-path="res://.godot/imported/05_game_hud_800x600.png-40d26fd63b5152dec966f4d107faa15f.ctex"
+uid="uid://c2pwl1qpqwt6k"
+path="res://.godot/imported/01_menu.png-d8cf402c2d5f7b5feff17a8d0c166706.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://shots/uidrive/05_game_hud_800x600.png"
-dest_files=["res://.godot/imported/05_game_hud_800x600.png-40d26fd63b5152dec966f4d107faa15f.ctex"]
+source_file="res://shots/uidrive800/01_menu.png"
+dest_files=["res://.godot/imported/01_menu.png-d8cf402c2d5f7b5feff17a8d0c166706.ctex"]
 
 [params]
 

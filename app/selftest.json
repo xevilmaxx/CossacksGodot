@@ -1,12 +1,13 @@
 {
   "passed": true,
   "resources_gathered": {
-    "food": 412,
-    "gold": 273.727999999998,
+    "food": 58,
+    "gold": 814.112000000035,
+    "stone": 26,
     "trade": 65,
-    "wood": 24
+    "wood": 218
   },
-  "shots_fired": 46,
+  "shots_fired": 67,
   "sim_seconds": 364.15625,
   "steps": [
     {
@@ -35,7 +36,7 @@
       "step": "train"
     },
     {
-      "detail": "mine produced 49.5 gold in 30 s (finished=true worker inside=true workers=1, deposit 30 m away, order=gather res=gold node=668 dist=3.0)",
+      "detail": "mine produced 49.5 gold in 30 s (finished=true worker inside=true workers=1, deposit 30 m away, order=gather res=gold node=674 dist=3.0)",
       "passed": true,
       "step": "mine"
     },
@@ -130,12 +131,12 @@
       "step": "resow"
     },
     {
-      "detail": "cannon shells ground: shots 40 -> 41",
+      "detail": "cannon shells ground: shots 61 -> 62",
       "passed": true,
       "step": "attack_ground"
     },
     {
-      "detail": "serialize 64 ents round-trip: ok",
+      "detail": "serialize 70 ents round-trip: ok",
       "passed": true,
       "step": "save_load"
     },

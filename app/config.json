@@ -32,12 +32,12 @@
   "map_height_tiles": 320,
   "random_seed": 20261113,
   "start_resources": {
-   "food": 0,
-   "wood": 0,
-   "stone": 0,
-   "gold": 0,
-   "iron": 0,
-   "coal": 0
+   "food": 800,
+   "wood": 800,
+   "stone": 400,
+   "gold": 200,
+   "iron": 150,
+   "coal": 150
   },
   "start_peasants": 8,
   "build_queue_limit": 10,

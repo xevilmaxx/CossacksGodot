@@ -22,6 +22,7 @@ var minimap_tex: ImageTexture
 var minimap_img: Image
 var minimap_base: Image
 var minimap_rect: TextureRect
+var minimap_panel: PanelContainer
 var mm_timer := 0.0
 var fps_label: Label
 var fps_t := 0.0
@@ -159,9 +160,22 @@ func _apply_scale() -> void:
 	var mm := minf(_ms(200.0), ui_vp.x * 0.20)
 	if is_instance_valid(minimap_rect):
 		minimap_rect.custom_minimum_size = Vector2(mm, mm)
+	# Bottom strip partition (never overlaps): the minimap texture can be
+	# larger than mm (map is 160-320px), so the rect must ignore texture
+	# size and the panel gets explicit bounds: width = mm + style padding
+	# (14+14 margins + 2 border), height = mm + (10+10 + 2). The selection
+	# panel starts at the minimap's right edge plus a gap, by construction.
 	if is_instance_valid(sel_panel) and is_instance_valid(cmd_panel):
 		var cmd_w: float = minf(_ms(332.0), ui_vp.x * 0.34)
-		var mm_edge: float = _ms(8.0) + mm + _ms(16.0)
+		var mm_pad_w := 30.0
+		var mm_pad_h := 22.0
+		var mm_right: float = _ms(4.0) + mm + mm_pad_w
+		if is_instance_valid(minimap_panel):
+			minimap_panel.offset_left = _ms(4.0)
+			minimap_panel.offset_right = mm_right
+			minimap_panel.offset_top = -(mm + mm_pad_h)
+			minimap_panel.offset_bottom = 0.0
+		var mm_edge: float = mm_right + _ms(8.0)
 		sel_panel.offset_left = mm_edge
 		sel_panel.offset_right = ui_vp.x - cmd_w - _ms(24.0)
 		sel_panel.offset_bottom = 0.0
@@ -396,6 +410,8 @@ func refresh_selection(selected: Array) -> void:
 	# summary line: what is picked, its health and its current order
 	var first: Dictionary = mine[0]
 	summary_label = _mklbl(_selection_summary(mine), 15, Color(1, 0.97, 0.9))
+	summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sel_box.add_child(summary_label)
 	# unit icons row (max 24)
 	var shown := 0
@@ -830,13 +846,11 @@ func _build_minimap() -> void:
 	minimap_rect.set_meta("uimw", 200.0)
 	minimap_rect.set_meta("uimh", 200.0)
 	minimap_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	minimap_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	minimap_rect.anchor_left = 0.0
 	minimap_rect.anchor_right = 0.0
 	minimap_rect.anchor_top = 1.0
 	minimap_rect.anchor_bottom = 1.0
-	minimap_rect.offset_left = 8
-	minimap_rect.offset_top = -208
-	minimap_rect.set_meta("uoffs", [8.0, 0.0, -208.0, 0.0])
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	panel.add_child(minimap_rect)
@@ -846,7 +860,9 @@ func _build_minimap() -> void:
 	panel.anchor_bottom = 1.0
 	panel.offset_left = 4
 	panel.offset_top = -212
-	panel.set_meta("uoffs", [4.0, 0.0, -212.0, 0.0])
+	panel.offset_right = 234
+	panel.offset_bottom = 0
+	minimap_panel = panel
 	add_child(panel)
 	minimap_rect.gui_input.connect(_on_minimap_input)
 

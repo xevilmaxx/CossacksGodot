@@ -88,7 +88,9 @@ func _handle(line: String) -> void:
 		"buttons":
 			_reply({"ok": true, "buttons": _dump_buttons()})
 		"tree":
-			_reply({"ok": true, "tree": _dump_tree(), "vp": _vp_size()})
+			var td := _dump_tree()
+			var ws := get_tree().root.size
+			_reply({"ok": true, "tree": td, "vp": _vp_size(), "win": [ws.x, ws.y]})
 		"shot":
 			pending_shot = str(v.get("path", ""))
 		"wait":
@@ -98,6 +100,8 @@ func _handle(line: String) -> void:
 			_reply({"ok": true, "size": [get_tree().root.size.x, get_tree().root.size.y]})
 		"state":
 			_reply(_state())
+		"xform":
+			_reply(_xform(str(v.get("text", ""))))
 		"quit":
 			_reply({"ok": true, "bye": true})
 			get_tree().quit(0)
@@ -158,18 +162,14 @@ func _btn_text(c: Control) -> String:
 		return str((c as Label).text)
 	return ""
 
-func _vp_pos(p: Vector2) -> Vector2:
-	if not is_instance_valid(get_viewport()):
-		return p
-	return get_viewport().get_canvas_transform() * p
-
 func _ctl_rect(c: Control) -> Array:
-	# Viewport-pixel rect for clicking: control canvas rect mapped through
-	# the root canvas transform (matches InputEventMouseButton space).
+	# Canvas coordinates (Control.get_global_rect space): this is the same
+	# space synthetic InputEventMouseButton positions live in, so dumped
+	# rects are directly clickable, and screenshots are the canvas minified
+	# by the window stretch factor. Verified end to end: full menu-driven
+	# runs navigate and start games with these rects.
 	var r := c.get_global_rect()
-	var a := _vp_pos(r.position)
-	var b := _vp_pos(r.end)
-	return [a.x, a.y, b.x - a.x, b.y - a.y]
+	return [r.position.x, r.position.y, r.size.x, r.size.y]
 
 func _vp_size() -> Array:
 	if not is_instance_valid(get_viewport()):
@@ -219,10 +219,42 @@ func _state() -> Dictionary:
 		h = {"units0": gg.unit_count(0), "units1": gg.unit_count(1),
 			"blds0": gg.buildings_of(0).size(), "time": gg.time_s,
 			"winner": gg.winner, "selected": gg.get_selected().size()}
+	var hud = m.get("hud") if m != null else null
+	var lay := {}
+	if hud != null:
+		lay = {"us": hud.get("ui_us"), "vp": [hud.get("ui_vp").x, hud.get("ui_vp").y] if hud.get("ui_vp") != null else null,
+			"sel_l": hud.sel_panel.offset_left if hud.get("sel_panel") != null else -1,
+			"sel_r": hud.sel_panel.offset_right if hud.get("sel_panel") != null else -1,
+			"win": [get_tree().root.size.x, get_tree().root.size.y]}
 	return {"ok": true, "fps": Performance.get_monitor(Performance.TIME_FPS),
 		"frame": int(m.get("frame")) if m != null else -1,
 		"has_game": g != null, "menu": m.get("menu") != null if m != null else false,
-		"game": h}
+		"game": h, "layout": lay}
+
+func _xform(text: String) -> Dictionary:
+	var vp := get_viewport()
+	var out := {"window": [vp.get_window().size.x, vp.get_window().size.y] if is_instance_valid(vp.get_window()) else [0, 0],
+		"visible": [vp.get_visible_rect().size.x, vp.get_visible_rect().size.y],
+		"canvas": [vp.get_canvas_transform().x.x, vp.get_canvas_transform().x.y, vp.get_canvas_transform().y.x, vp.get_canvas_transform().y.y, vp.get_canvas_transform().origin.x, vp.get_canvas_transform().origin.y],
+		"final": [vp.get_final_transform().x.x, vp.get_final_transform().x.y, vp.get_final_transform().y.x, vp.get_final_transform().y.y, vp.get_final_transform().origin.x, vp.get_final_transform().origin.y]}
+	var found := {}
+	_find_text(get_tree().root, text, found)
+	out["found"] = found
+	return {"ok": true, "xform": out}
+
+func _find_text(n: Node, text: String, out: Dictionary) -> bool:
+	if n is Button and text in str((n as Button).text):
+		var c := n as Control
+		var r := c.get_global_rect()
+		out["rect"] = [r.position.x, r.position.y, r.size.x, r.size.y]
+		var xf := c.get_global_transform_with_canvas()
+		out["with_canvas"] = [xf.x.x, xf.x.y, xf.y.x, xf.y.y, xf.origin.x, xf.origin.y]
+		out["class"] = c.get_class()
+		return true
+	for ch in n.get_children():
+		if _find_text(ch, text, out):
+			return true
+	return false
 
 func _do_shot(path: String) -> void:
 	if path == "":

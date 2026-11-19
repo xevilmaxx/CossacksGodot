@@ -49,7 +49,7 @@ const DEFAULT := {
 		"nation1": "rus",
 		"map_type": "land",
 		"start_option": "default",
-		"start_resources": {"food": 0, "wood": 0, "stone": 0, "gold": 0, "iron": 0, "coal": 0},
+		"start_resources": {"food": 800, "wood": 800, "stone": 400, "gold": 200, "iron": 150, "coal": 150},
 		"start_peasants": 8,
 		"build_queue_limit": 10,
 		"max_builders_sent": 8,

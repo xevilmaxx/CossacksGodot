@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d1dqug2puwl0"
-path="res://.godot/imported/03_skirmish_800x600.png-2f4d69ad58021c9912b570acaf2ff1c7.ctex"
+uid="uid://5uxtmrcea78p"
+path="res://.godot/imported/02_skirmish.png-bf097f4c837d9b41c05a44d1e634c871.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://shots/uidrive/03_skirmish_800x600.png"
-dest_files=["res://.godot/imported/03_skirmish_800x600.png-2f4d69ad58021c9912b570acaf2ff1c7.ctex"]
+source_file="res://shots/uidrive800/02_skirmish.png"
+dest_files=["res://.godot/imported/02_skirmish.png-bf097f4c837d9b41c05a44d1e634c871.ctex"]
 
 [params]
 

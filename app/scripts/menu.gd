@@ -74,10 +74,20 @@ func _apply_scale() -> void:
 			c.custom_minimum_size = Vector2(_mh(mw) if mw > 0.0 else cur.x, _mh(mh) if mh > 0.0 else cur.y)
 	if is_instance_valid(root) and is_instance_valid(menu_scroll) and is_instance_valid(body):
 		root.custom_minimum_size.x = minf(560.0 * ui_us, ui_vp.x * 0.94)
-		var chrome := 150.0 * ui_us
-		var want: float = body.get_combined_minimum_size().y
-		var avail: float = maxf(120.0, ui_vp.y * 0.86 - chrome)
-		printerr("MENU-LAYOUT us=", ui_us, " vp=", ui_vp, " want=", want, " avail=", avail)
+		# Deterministic content height from row types (buttons 40, option /
+		# seed rows 38, labels 40 + separations): measuring combined minimums
+		# is unreliable because autowrapped labels report per-character-wrap
+		# heights when unconstrained (blew the card up to 2.5k px).
+		var want := 0.0
+		for ch in body.get_children():
+			if ch is BaseButton:
+				want += 40.0 * ui_us
+			elif ch is HBoxContainer:
+				want += 34.0 * ui_us
+			elif ch is Label:
+				want += 32.0 * ui_us
+			want += 8.0 * ui_us
+		var avail: float = maxf(120.0, ui_vp.y * 0.86 - 150.0 * ui_us)
 		menu_scroll.custom_minimum_size.y = minf(want, avail)
 
 func _load_data() -> void:
