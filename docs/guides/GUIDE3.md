@@ -2348,17 +2348,18 @@ Rebakes (G8.6 tiers) run in background CPU-only while doing G9–G12.
 - [x] G12 shell/save/options … done (serialize/deserialize v3 + Vector2 codec; F5/F9; Esc overlay; options panel + user://options.json layer; end screen + campaign progress; --seed; menu Quit/Options/Load/difficulty/size/seed + mission list)
 - [x] G13 journey camera … done (follow non-peasant centroid + battle zoom 0.75/1.0)
 - [x] G14 audio … done (16 voices + 90ms per-key cooldown + 60m cull/attenuation + preload + music loop)
-- [x] G15 tests (selftest 28/28, uitest 17/17) … done (garrison/capture/resow/attack_ground/save_load/grid_equiv/farm_cap; cursor/groups/frustum/garrison/hotkeys/save_load scenes; bench + perf.md)
+- [x] G15 tests (selftest 28/28, uitest 17/17) … done (garrison/capture/resow/attack_ground/save_load/grid_equiv/farm_cap; cursor/groups/frustum/garrison/hotkeys/save_load scenes; bench 196ms/tick + perf.md; battery: import clean, cli60 clean, boosted cli clean through 600s, g3_final.png headless render, j3 27 frames + journey.mp4 + contact.png headless timelapse)
 - [x] G16 docs … done (MECHANICS + mechanics.json est entries + README controls + CREDITS donor files + COMMANDS bench/options + GUIDE1/2 headers + STATUS)
 Executor notes / deviations (required for any deviation from the letter):
 - G2.5/G7.3/G8.6 config+data vars applied together (TERRAIN_PX/QUALITY/SPRITE_CELL/FX_CAP/FOG_INTERVAL/MINIMAP_INTERVAL + CORPSE_LIFE).
 - G9.2: removed cmd_delete's own farm line instead of flipping sign, because G9.1 makes _kill subtract; keeping both would double-subtract. Final: delete relies on _kill (finished-only).
 - G9.1/G9.3: farm subtract guarded by finished (unfinished buildings never granted farm).
 - G9.10: attack order stores patrol a/b on acquire so resume restores the route (guide's fabricated ±4m replaced with stored legs).
+- G9/G10 robustness: stuck gatherers remember bad_node/bad_t (120s) and carriers remember bad_store/bad_t; nearest_res/nearest_drop skip them; loaded carriers hold their load when no store is reachable instead of deleting it.
 - G9.12: applied guide's probe formula verbatim (starts at ±30°, skips 15°; noted).
 - G10.4: Data.refund(res, cost, percent) — call passes (players[0].res, price, 1.0).
 - G12 serialize: added Vector2 encode/decode (JSON turns Vector2 into String); squads/stats/objectives have no vectors.
 - G14: music loop via named replay funcs (lambdas with if-statement rejected by parser); _play at-param uses fixed 16.0 px/m.
 - G8.0 bench: measures 30 SIM seconds (not wall) + wall fps; headless run recorded in perf.md. Headless bench is sim-only (world.sync skipped, minimap/fog intervals pinned) since render can't be measured without a display.
-- G11 deviations: place_building gained optional send=false (AI places without auto-send; _resume distributes a capped builder budget instead — fixes pile-on where all builders went to the newest site); unfinished-site gate (max 3 concurrent) serializes construction; attack_force 260→120 in config.json+boost.json (legacy 260 stalls waves; DEFAULT remains 60); mine-wait 60s timeout in _tick_gather.
+- G11 deviations: place_building gained optional send=false (AI places without auto-send; _resume distributes a capped builder budget instead — fixes pile-on where all builders went to the newest site); unfinished-site gate (max 3 concurrent) serializes construction; attack_force 260→120 in config.json+boost.json (legacy 260 stalls waves; DEFAULT remains 60); mine-wait 60s timeout in _tick_gather; walls 12→6 @ 20–30m (less self-enclosure).
 - G3.3 edge cursors skipped (no .cur files verified); G8.6 sprite rebakes (anim96/anim64) not run (CPU budget); VRAM compress applied + imported.

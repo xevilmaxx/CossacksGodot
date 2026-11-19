@@ -1014,15 +1014,6 @@ func _run_cli_incremental() -> void:
 		cli_t += step
 		cli_ticks_left -= 1
 		ticks_this_frame += 1
-		if OS.has_environment("C3_DEBUG_SERIES") and cli_ticks_left % 1920 == 0:
-			var ou := {}
-			for u in game.units_of(0):
-				var k := str(u.order.get("type", "?")) + ":" + str(u.order.get("res", ""))
-				ou[k] = int(ou.get(k, 0)) + 1
-			var r0: Array = game.players[0].res
-			var u1 := game.units_of(1).size()
-			var uf := game.buildings_of(0, false).filter(func(b): return not b.finished).size()
-			printerr("SERIES t=%.0f u0=%d u1=%d unfin0=%d res0=%s ords0=%s" % [cli_t, game.units_of(0).size(), u1, uf, str(r0), JSON.stringify(ou)])
 		# 40 ms per-frame budget: return to the main loop, never block.
 		if Time.get_ticks_msec() - frame_start > 40:
 			break
@@ -1066,21 +1057,6 @@ func _finish_cli() -> void:
 	}
 	var text := JSON.stringify(report, "  ")
 	print(text)
-	if OS.has_environment("C3_DEBUG_AI"):
-		for pi in 2:
-			for b in game.buildings_of(pi, false):
-				if b.sid.begins_with("mine_"):
-					print("DEBUG_MINE p%d %s fin=%s workers=%s dep=%s" % [pi, b.sid, b.finished, b.get("workers", -1), b.get("deposit_left", -1)])
-		var mil0 := {}
-		for u in game.units_of(0):
-			if u.sid != "peasant":
-				mil0[u.sid] = int(mil0.get(u.sid, 0)) + 1
-		print("DEBUG_MIL0 ", JSON.stringify(mil0))
-		var ords := {}
-		for u in game.units_of(0):
-			if u.sid == "peasant":
-				ords[str(u.order.get("type", "?")) + ":" + str(u.order.get("res", ""))] = int(ords.get(str(u.order.get("type", "?")) + ":" + str(u.order.get("res", "")), 0)) + 1
-		print("DEBUG_ORDS0 ", JSON.stringify(ords))
 	if cli_path != "":
 		var out := _write_text(cli_path, text)
 		if out != "":

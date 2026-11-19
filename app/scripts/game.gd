@@ -604,11 +604,19 @@ func get_selected() -> Array:
 			out.append(e)
 	return out
 
+func _bad_id(e: Dictionary, key: String, tkey: String) -> int:
+	if time_s - float(e.get(tkey, -9999.0)) < 120.0:
+		return int(e.get(key, 0))
+	return 0
+
 func nearest_drop(e: Dictionary, res: String) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := 1e9
+	var avoid := _bad_id(e, "bad_store", "bad_t")
 	for b in buildings_of(e.player):
 		if not b.finished:
+			continue
+		if int(b.id) == avoid:
 			continue
 		if Data.BUILDINGS[b.sid].get("stores", []).has(res):
 			var d: float = b.pos.distance_to(e.pos)
@@ -617,11 +625,13 @@ func nearest_drop(e: Dictionary, res: String) -> Dictionary:
 				best = b
 	return best
 
-func nearest_res(pos: Vector2, type: String, max_r := 40.0, exclude_blocked := true) -> Dictionary:
+func nearest_res(pos: Vector2, type: String, max_r := 40.0, exclude_blocked := true, avoid := 0) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := max_r
 	for n in res_nodes:
 		if n.type != type or n.hits <= 0:
+			continue
+		if avoid != 0 and int(n.id) == avoid:
 			continue
 		var d: float = n.pos.distance_to(pos)
 		if d < best_d:
@@ -2316,8 +2326,9 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 	if e.carry > 0:
 		_gather_deliver(e, dt)
 		return
+	var avoid_n := _bad_id(e, "bad_node", "bad_t")
 	if node.is_empty() or node.get("hits", 0) <= 0:
-		node = nearest_res(e.pos, res, 30.0)
+		node = nearest_res(e.pos, res, 30.0, true, avoid_n)
 		if node.is_empty():
 			e.order = {"type": "none"}
 			return
@@ -2346,9 +2357,12 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 		e.moving = true
 		_step_move(e, slot, e.def.speed, dt, 0.5)
 		if e.get("stuck_t", 0.0) > 4.0:
-			# boxed in: look for another spot of the same kind
+			# boxed in: remember the node and look for another spot of the
+			# same kind (avoids re-picking the same unreachable node)
 			e["stuck_t"] = 0.0
-			var alt := nearest_res(e.pos, res, 45.0)
+			e["bad_node"] = node.id
+			e["bad_t"] = time_s
+			var alt := nearest_res(e.pos, res, 45.0, true, node.id)
 			if not alt.is_empty() and alt.id != node.id:
 				o.node = alt.id
 		return
@@ -2377,6 +2391,10 @@ func _gather_deliver(e: Dictionary, dt: float) -> void:
 		res = e.order.get("res", "wood")
 	var store := nearest_drop(e, res)
 	if store.is_empty():
+		if e.carry > 0:
+			# no reachable store right now: hold the load, don't delete it
+			e.moving = false
+			return
 		e.order = {"type": "none"}
 		e.carry = 0
 		e.carry_type = ""
@@ -2386,6 +2404,11 @@ func _gather_deliver(e: Dictionary, dt: float) -> void:
 		e.moving = true
 		e["delivering"] = true
 		_step_move(e, store.pos, e.def.speed, dt)
+		if float(e.get("stuck_t", 0.0)) > 8.0:
+			# store unreachable from here: try another one next tick
+			e["stuck_t"] = 0.0
+			e["bad_store"] = store.id
+			e["bad_t"] = time_s
 		return
 	e.moving = false
 	e["delivering"] = false

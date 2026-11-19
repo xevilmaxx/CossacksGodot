@@ -191,9 +191,9 @@ func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictiona
 	# expansion: second town hall when booming (cost escalation x3 aware)
 	if int(fin.get("cen", 0)) >= 1 and int(counts.get("cen", 0)) < 2 and res.wood >= 2000 and res.stone >= 1500 and res.gold >= 1000:
 		_try_build("cen", home, 30.0, 60.0)
-	# wall ring: 12 segments, not 4
-	if int(counts.get("wal", 0)) < 12 and res.stone >= 200 and res.wood >= 60:
-		_try_build("wal", home, 14.0, 22.0)
+	# wall ring: 6 segments max, placed wide so the base stays reachable
+	if int(counts.get("wal", 0)) < 6 and res.stone >= 200 and res.wood >= 60:
+		_try_build("wal", home, 20.0, 30.0)
 	if int(counts.get("tow", 0)) < 2 and res.wood >= 300 and res.stone >= 400 and int(fin.get("bar", 0)) > 0:
 		_try_build("tow", home, 16.0, 24.0)
 	for b in game.buildings_of(player):
