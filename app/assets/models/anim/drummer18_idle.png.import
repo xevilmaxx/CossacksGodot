@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bhbwbma1npb0w"
-path="res://.godot/imported/drummer18_idle.png-7778e6f7a6fbf6046820eb72ed8453ea.ctex"
+path.s3tc="res://.godot/imported/drummer18_idle.png-7778e6f7a6fbf6046820eb72ed8453ea.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/drummer18_idle.png"
-dest_files=["res://.godot/imported/drummer18_idle.png-7778e6f7a6fbf6046820eb72ed8453ea.ctex"]
+dest_files=["res://.godot/imported/drummer18_idle.png-7778e6f7a6fbf6046820eb72ed8453ea.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

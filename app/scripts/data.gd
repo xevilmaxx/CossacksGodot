@@ -43,6 +43,7 @@ static var VICTORY := "destroy_all"          # or "score"
 static var SCORE_LIMIT := 5000.0
 static var TICK_MAX := 0.25                  # clamp on dt so a test never stalls
 static var FOG_OF_WAR := false
+static var CORPSE_LIFE := 90.0
 static var CAPTURE_ENABLED := true  # match rule "peasant capture" (config rules.peasant_capture)
 
 static var BUILD_PROGRESS_PER_HIT := 10 * 0.03125 * 1.15  # 0.359 s, dmscript.global:182
@@ -61,6 +62,7 @@ static var AI_WOOD_THRESHOLD := 260.0
 static var AI_STONE_THRESHOLD := 160.0
 static var AI_ATTACK_FORCE := 260.0
 static var AI_MAX_PEASANTS := 40
+static var AI_DIFFICULTY := "normal"
 
 # --- video-observed battle feel (see MECHANICS.md "Video pass"): volley smoke,
 # officer/drummer auras, morale routing, priests, artillery dispersion and
@@ -95,6 +97,12 @@ static var WINDOW_HEIGHT := 720
 static var FULLSCREEN := false
 static var VSYNC := true
 static var PIXELS_PER_METER := 16.0     # screen pixels per metre
+static var TERRAIN_PX := 16
+static var QUALITY := "high"
+static var SPRITE_CELL := 160
+static var FX_CAP := 220
+static var FOG_INTERVAL := 0.5
+static var MINIMAP_INTERVAL := 0.25
 
 static var CAMERA_PITCH := -32.0        # camera.cfg FreeRotationInfo
 static var CAMERA_MIN_HEIGHT := 20.0    # camera.cfg SphereHeightMin

@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ctcq5nyp7kcye"
-path="res://.godot/imported/bav_dip_s4.png-d4b0ac2aa78a518c0f58a28fa853de22.ctex"
+path.s3tc="res://.godot/imported/bav_dip_s4.png-d4b0ac2aa78a518c0f58a28fa853de22.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/bav_dip_s4.png"
-dest_files=["res://.godot/imported/bav_dip_s4.png-d4b0ac2aa78a518c0f58a28fa853de22.ctex"]
+dest_files=["res://.godot/imported/bav_dip_s4.png-d4b0ac2aa78a518c0f58a28fa853de22.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

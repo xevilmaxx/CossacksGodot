@@ -581,3 +581,8 @@ Blender CPU-only Cycles (shade-less emission = pixel-identical, no GPU load).
   different vertex counts than the finished mesh (different LOD topology),
   so per-frame skinning cannot apply; unfinished buildings use the finished
   nation sprite with scaffold tint + progress bar instead.
+\
+## GUIDE 3 pass (2026-11-19)
+
+- garrison 10 cap & heal 2/s (est); peasant capture rule (Data.CAPTURE_ENABLED); field re-sow 20 food / 2 s (est); corpse life 90 s (est); difficulty trickle hard +1.5/+0.8 per s (est); deposit pool split per node count (est); attack-ground dispersion reuses cannon dispersion; formation facing rotates offsets.
+\

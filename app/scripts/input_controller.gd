@@ -18,13 +18,25 @@ var ghost_sid := ""
 var hotkeys: Dictionary = {}      # action -> key
 var build_keys: Dictionary = {}    # building id -> key
 var rally_mode := false
+var cursor_tex: Dictionary = {}
+var cursor_now := ""
+var attack_ground_mode := false
+var groups: Dictionary = {}
+var last_click_t := 0.0
+var last_click_sid := ""
 
-func bind(g: C3Game, w: C3World, h: C3HUD, c: C3Camera) -> void:
+func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 	game = g
 	world = w
 	hud = h
-	camera = c
+	camera = cam
 	_read_hotkeys()
+	for cn in ["default", "attack", "captureattack", "artillery", "patrol", "construct", "gainfood", "gainwood", "gainstone", "gotomine", "wait"]:
+		var p := "res://assets/ui/cursor_%s.bmp" % cn
+		if FileAccess.file_exists(p):
+			cursor_tex[cn] = load(p)
+	_set_cursor("default")
+	add_to_group("c3_input")
 
 # The bindings come from the global settings file (config.json); the ones in
 # the original data/game/var/hotkeys.cfg are the values it starts with.
@@ -77,7 +89,49 @@ func _set_selection(arr: Array) -> void:
 	for e in arr:
 		selected_ids.append(e.id)
 		e["selected"] = true
+	game.bld_dirty += 1
 	hud.refresh_selection(get_selected())
+
+func minimap_order(pos: Vector2) -> void:
+	var sel := get_selected().filter(func(e): return e.player == 0 and e.kind == "unit")
+	if sel.is_empty():
+		return
+	var any_enemy := false
+	for e in game.entities:
+		if not e.dead and e.player != 0 and e.pos.distance_to(pos) < 6.0:
+			any_enemy = true
+			break
+	for e in sel:
+		if any_enemy and game.has_weapon(e):
+			game.cmd_attack_move(e, pos)
+		else:
+			game.cmd_move(e, pos)
+
+func command_from_hud(action: String) -> void:
+	var sel := get_selected()
+	match action:
+		"attack_move":
+			attack_move_mode = true
+			hud.show_hint("Attack-move: right-click the destination")
+		"stand_ground":
+			for e in sel:
+				game.cmd_stand_ground(e)
+		"hold_fire":
+			for e in sel:
+				game.cmd_hold_fire(e, true)
+		"feuer_frei":
+			for e in sel:
+				game.cmd_hold_fire(e, false)
+		"patrol":
+			for e in sel:
+				if e.player == 0 and e.kind == "unit":
+					game.cmd_patrol(e, e.pos + Vector2(-6, 0), e.pos + Vector2(6, 0))
+		"guard":
+			for e in sel:
+				game.cmd_stand_ground(e)
+		"stop":
+			for e in sel:
+				game.cmd_stop(e)
 
 func _screen_to_world(p: Vector2) -> Vector2:
 	# Screen pixels -> map meters through the camera (position + zoom),
@@ -143,7 +197,23 @@ func _unhandled_input(event: InputEvent) -> void:
 					_set_selection(arr)
 				else:
 					var e := _pick(pw, false)
-					_set_selection([e] if not e.is_empty() else [])
+					var now := Time.get_ticks_msec() / 1000.0
+					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < 0.35:
+						# double click: all same-type units on screen (original behaviour)
+						var arr2: Array = []
+						for u in game.entities:
+							if not u.dead and u.player == 0 and u.kind == "unit" and u.sid == e.sid and world.view_rect.has_point(u.pos):
+								arr2.append(u)
+						_set_selection(arr2)
+					elif not e.is_empty() and Input.is_key_pressed(KEY_SHIFT):
+						var cur := get_selected()
+						if not cur.has(e):
+							cur.append(e)
+						_set_selection(cur)
+					else:
+						_set_selection([e] if not e.is_empty() else [])
+					last_click_t = now
+					last_click_sid = str(e.sid) if not e.is_empty() else ""
 				drag_start = Vector2.INF
 				dragging = false
 		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
@@ -157,6 +227,12 @@ func _unhandled_input(event: InputEvent) -> void:
 func _right_order(pw: Vector2) -> void:
 	if hud.build_ghost_sid != "":
 		hud.build_ghost_sid = ""
+		return
+	if attack_ground_mode:
+		attack_ground_mode = false
+		for e in get_selected():
+			if e.player == 0 and e.def.get("artillery", false):
+				game.cmd_attack_ground(e, pw)
 		return
 	if rally_mode:
 		rally_mode = false
@@ -199,7 +275,10 @@ func _right_order(pw: Vector2) -> void:
 	var fi := 0
 	for e in sel:
 		if not res.is_empty() and e.sid == "peasant" and not attack_move_mode:
-			game.cmd_gather(e, res)
+			if int(res.get("hits", 1)) <= 0 and str(res.get("type", "")) == "food":
+				game.cmd_resow(e, res)
+			else:
+				game.cmd_gather(e, res)
 		elif target.is_empty():
 			var dest: Vector2 = formation[fi] if fi < formation.size() else pw
 			fi += 1
@@ -210,6 +289,9 @@ func _right_order(pw: Vector2) -> void:
 		elif target.player != 0:
 			game.cmd_attack(e, target)
 		elif target.kind == "building":
+			if target.finished and str(target.sid) in ["tow", "cen"] and e.kind == "unit" and not e.def.get("artillery", false) and e.def.get("cavalry", "") == "":
+				game.cmd_enter(e, target)
+				continue
 			if target.sid.begins_with("mine_") and e.sid == "peasant" and target.finished:
 				var nd := _deposit_near(target)
 				if not nd.is_empty():
@@ -240,7 +322,7 @@ func _pick_res(pw: Vector2) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := 2.5
 	for n in game.res_nodes:
-		if n.max_hits > 0 and n.hits <= 0:
+		if n.max_hits > 0 and n.hits <= 0 and n.type != "food":
 			continue
 		var d: float = n.pos.distance_to(pw)
 		var reach: float = 2.5 + n.radius
@@ -263,10 +345,44 @@ func _formation_targets(sel: Array, center: Vector2) -> Array:
 	return game.formation_targets(sel, center, _sel_formation(sel))
 
 func _handle_key(k: InputEventKey) -> void:
+	if k.keycode >= KEY_1 and k.keycode <= KEY_9:
+		var gi: int = k.keycode - KEY_1 + 1
+		if k.ctrl_pressed:
+			var ids: Array = []
+			for e in get_selected():
+				ids.append(e.id)
+			groups[gi] = ids
+			hud.show_hint("Group %d stored (%d)" % [gi, ids.size()])
+		else:
+			var arr: Array = []
+			for id in groups.get(gi, []):
+				var e: Dictionary = game.by_id.get(id, {})
+				if not e.is_empty() and not e.dead:
+					arr.append(e)
+			if not arr.is_empty():
+				_set_selection(arr)
+				if k.shift_pressed and camera != null:
+					camera.global_position = arr[0].pos * world.view_scale
+		return
+	if k.keycode == KEY_F5:
+		var m = get_tree().get_first_node_in_group("c3_main")
+		if m != null:
+			m.game_save()
+		return
+	if k.keycode == KEY_F9:
+		var m2 = get_tree().get_first_node_in_group("c3_main")
+		if m2 != null:
+			m2.game_load()
+		return
 	if k.keycode == KEY_ESCAPE:
-		hud.build_ghost_sid = ""
-		hud.build_menu_open = false
-		hud.refresh_selection(get_selected())
+		if hud.build_ghost_sid != "" or hud.build_menu_open:
+			hud.build_ghost_sid = ""
+			hud.build_menu_open = false
+			hud.refresh_selection(get_selected())
+		else:
+			var m3 = get_tree().get_first_node_in_group("c3_main")
+			if m3 != null:
+				m3.toggle_menu_overlay()
 		return
 	if k.keycode == KEY_DELETE:
 		var wiped := false
@@ -346,9 +462,45 @@ func _handle_key(k: InputEventKey) -> void:
 				game.squad_set_formation(int(sq3.squad_id), form)
 				break
 		hud.refresh_selection(get_selected())
-	elif _is(k, "rally"):
-		rally_mode = true
-		hud.show_hint("Rally: right-click the map to set the gather point")
+	elif _is(k, "attack_ground"):
+		var has_arty := false
+		for e in get_selected():
+			if e.player == 0 and e.def.get("artillery", false):
+				has_arty = true
+		if has_arty:
+			attack_ground_mode = true
+			hud.show_hint("Bombard: right-click the ground (artillery only)")
+		else:
+			rally_mode = true
+			hud.show_hint("Rally: right-click the map to set the gather point")
+	elif _is(k, "unload"):
+		for e in get_selected():
+			if e.player == 0 and e.kind == "building":
+				game.cmd_unload(e)
+	elif _is(k, "select_all_peasants"):
+		var arrp: Array = []
+		for e in game.units_of(0):
+			if e.sid == "peasant":
+				arrp.append(e)
+		_set_selection(arrp)
+	elif _is(k, "select_idle_mines"):
+		var arrm: Array = []
+		for b in game.buildings_of(0):
+			if b.sid.begins_with("mine_") and b.finished and int(b.workers) < int(b.get("slots", b.def.get("slots", 5))):
+				arrm.append(b)
+		_set_selection(arrm)
+	elif _is(k, "add_same_type"):
+		var sel2 := get_selected()
+		if not sel2.is_empty():
+			var sid2: String = sel2[0].sid
+			var cur2 := sel2.duplicate()
+			for e in game.units_of(0):
+				if e.sid == sid2 and not cur2.has(e):
+					cur2.append(e)
+			_set_selection(cur2)
+	elif _is(k, "minimap_toggle"):
+		if hud != null and hud.minimap_rect != null:
+			hud.minimap_rect.get_parent().visible = not hud.minimap_rect.get_parent().visible
 	elif _is(k, "patrol"):
 		for e in get_selected():
 			if e.player == 0 and e.kind == "unit":
@@ -411,3 +563,75 @@ func _process(_dt: float) -> void:
 		hud.show_hint("Placing %s - left-click to build, right-click to cancel" % hud.build_ghost_sid)
 	elif hud != null and hud.has_method("show_hint"):
 		hud.show_hint("")
+	_update_cursor()
+
+func _set_cursor(name: String) -> void:
+	if name == cursor_now:
+		return
+	cursor_now = name
+	var t: Texture2D = cursor_tex.get(name, cursor_tex.get("default", null))
+	if t == null:
+		return
+	# donor cursors are 32x32 with the hot spot at top-left tip (8,4)
+	Input.set_custom_mouse_cursor(t, Input.CURSOR_ARROW, Vector2(8, 4))
+
+func _update_cursor() -> void:
+	if game == null or world == null:
+		return
+	if hud != null and hud.build_ghost_sid != "":
+		_set_cursor("construct")
+		return
+	if attack_move_mode:
+		_set_cursor("attack")
+		return
+	if attack_ground_mode:
+		_set_cursor("artillery")
+		return
+	if rally_mode:
+		_set_cursor("gotomine")
+		return
+	var pw := _screen_to_world(get_viewport().get_mouse_position())
+	var sel := get_selected()
+	var peas := false
+	var military := false
+	for e in sel:
+		if e.player != 0 or e.kind != "unit":
+			continue
+		if e.sid == "peasant":
+			peas = true
+		else:
+			military = true
+	var tgt := _pick(pw, false)
+	if not tgt.is_empty():
+		if tgt.player != 0 and tgt.kind == "building" and military:
+			_set_cursor("captureattack" if bool(Data.CAPTURE_ENABLED) else "attack")
+			return
+		if tgt.player != 0:
+			_set_cursor("attack")
+			return
+		if peas and tgt.kind == "building" and (not tgt.finished or tgt.hp < tgt.max_hp):
+			_set_cursor("construct")
+			return
+		if peas and tgt.kind == "building" and tgt.sid.begins_with("mine_") and tgt.finished:
+			_set_cursor("gotomine")
+			return
+		if military and tgt.kind == "building" and tgt.finished and (tgt.sid == "tow" or tgt.sid == "cen"):
+			_set_cursor("gotomine")
+			return
+	if peas:
+		var r := _pick_res(pw)
+		if not r.is_empty():
+			match str(r.type):
+				"food":
+					_set_cursor("gainfood")
+					return
+				"wood":
+					_set_cursor("gainwood")
+					return
+				"stone":
+					_set_cursor("gainstone")
+					return
+				"gold", "iron", "coal":
+					_set_cursor("gotomine")
+					return
+	_set_cursor("default")

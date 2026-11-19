@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://fw8a6guhee6a"
-path="res://.godot/imported/sax_bar18.png-4ee86a96b7924e72e7d336326612d310.ctex"
+path.s3tc="res://.godot/imported/sax_bar18.png-4ee86a96b7924e72e7d336326612d310.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/sax_bar18.png"
-dest_files=["res://.godot/imported/sax_bar18.png-4ee86a96b7924e72e7d336326612d310.ctex"]
+dest_files=["res://.godot/imported/sax_bar18.png-4ee86a96b7924e72e7d336326612d310.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

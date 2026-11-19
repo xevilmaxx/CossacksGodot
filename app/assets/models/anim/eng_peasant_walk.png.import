@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dyrpc4g3sgy3s"
-path="res://.godot/imported/eng_peasant_walk.png-df913611f7ec849623fbe5afeda31bdb.ctex"
+path.s3tc="res://.godot/imported/eng_peasant_walk.png-df913611f7ec849623fbe5afeda31bdb.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/eng_peasant_walk.png"
-dest_files=["res://.godot/imported/eng_peasant_walk.png-df913611f7ec849623fbe5afeda31bdb.ctex"]
+dest_files=["res://.godot/imported/eng_peasant_walk.png-df913611f7ec849623fbe5afeda31bdb.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

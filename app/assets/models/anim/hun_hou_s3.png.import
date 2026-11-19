@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://6j61ur3nlhbw"
-path="res://.godot/imported/hun_hou_s3.png-b7f4929ed0e5e690b51432ba6e8dccaa.ctex"
+path.s3tc="res://.godot/imported/hun_hou_s3.png-b7f4929ed0e5e690b51432ba6e8dccaa.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/hun_hou_s3.png"
-dest_files=["res://.godot/imported/hun_hou_s3.png-b7f4929ed0e5e690b51432ba6e8dccaa.ctex"]
+dest_files=["res://.godot/imported/hun_hou_s3.png-b7f4929ed0e5e690b51432ba6e8dccaa.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

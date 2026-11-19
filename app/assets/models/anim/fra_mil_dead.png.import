@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bvkgk75xjg8ph"
-path="res://.godot/imported/fra_mil_dead.png-6279d0abd1b141683032cd6e6a6beadb.ctex"
+path.s3tc="res://.godot/imported/fra_mil_dead.png-6279d0abd1b141683032cd6e6a6beadb.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/fra_mil_dead.png"
-dest_files=["res://.godot/imported/fra_mil_dead.png-6279d0abd1b141683032cd6e6a6beadb.ctex"]
+dest_files=["res://.godot/imported/fra_mil_dead.png-6279d0abd1b141683032cd6e6a6beadb.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

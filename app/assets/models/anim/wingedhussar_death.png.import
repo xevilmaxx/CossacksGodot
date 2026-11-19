@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dbmdwpcgqdn43"
-path="res://.godot/imported/wingedhussar_death.png-ebadf1cd5fcea67272fcbfcdacbf8279.ctex"
+path.s3tc="res://.godot/imported/wingedhussar_death.png-ebadf1cd5fcea67272fcbfcdacbf8279.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/wingedhussar_death.png"
-dest_files=["res://.godot/imported/wingedhussar_death.png-ebadf1cd5fcea67272fcbfcdacbf8279.ctex"]
+dest_files=["res://.godot/imported/wingedhussar_death.png-ebadf1cd5fcea67272fcbfcdacbf8279.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

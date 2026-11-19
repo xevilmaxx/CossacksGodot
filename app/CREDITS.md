@@ -87,3 +87,10 @@ person who owns the game, on their own computer. Must not be shared.
   .aix data).
 - All files above live in the same folder (app/assets/ + config.json), so
   the project runs from one folder on Windows, Linux and macOS.
+\
+## GUIDE3 newly used donor files
+- data/cursors/textures/bmp/*.bmp + cur/*.cur (context + edge cursors)
+- data/game/var/hotkeys.cfg (hotkey fidelity)
+- data/gui/menu.inc/doupdatecursor.inc (cursor rules)
+- data/gui/minimap.cfg (240px bottom-left, frustum)
+\

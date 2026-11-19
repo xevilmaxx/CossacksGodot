@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://5qfijiswdbkr"
-path="res://.godot/imported/alg_cen_dead.png-498e589274e15094ee4a01b068b581df.ctex"
+path.s3tc="res://.godot/imported/alg_cen_dead.png-498e589274e15094ee4a01b068b581df.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/alg_cen_dead.png"
-dest_files=["res://.godot/imported/alg_cen_dead.png-498e589274e15094ee4a01b068b581df.ctex"]
+dest_files=["res://.godot/imported/alg_cen_dead.png-498e589274e15094ee4a01b068b581df.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

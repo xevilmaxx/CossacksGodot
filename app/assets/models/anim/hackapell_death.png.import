@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://yf8s5etovst6"
-path="res://.godot/imported/hackapell_death.png-620c48ab0bbcef1728ef8cf412a72aab.ctex"
+path.s3tc="res://.godot/imported/hackapell_death.png-620c48ab0bbcef1728ef8cf412a72aab.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/hackapell_death.png"
-dest_files=["res://.godot/imported/hackapell_death.png-620c48ab0bbcef1728ef8cf412a72aab.ctex"]
+dest_files=["res://.godot/imported/hackapell_death.png-620c48ab0bbcef1728ef8cf412a72aab.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

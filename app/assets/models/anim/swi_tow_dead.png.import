@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bk3570u5fdth4"
-path="res://.godot/imported/swi_tow_dead.png-e03fdd578fa4ec74eec8c66e7f5cb5d4.ctex"
+path.s3tc="res://.godot/imported/swi_tow_dead.png-e03fdd578fa4ec74eec8c66e7f5cb5d4.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_tow_dead.png"
-dest_files=["res://.godot/imported/swi_tow_dead.png-e03fdd578fa4ec74eec8c66e7f5cb5d4.ctex"]
+dest_files=["res://.godot/imported/swi_tow_dead.png-e03fdd578fa4ec74eec8c66e7f5cb5d4.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

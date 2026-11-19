@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://pddt63uqksrh"
-path="res://.godot/imported/hun_art_dead.png-0d2e5dc99003791e0f45c70ffb6b3e73.ctex"
+path.s3tc="res://.godot/imported/hun_art_dead.png-0d2e5dc99003791e0f45c70ffb6b3e73.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/hun_art_dead.png"
-dest_files=["res://.godot/imported/hun_art_dead.png-0d2e5dc99003791e0f45c70ffb6b3e73.ctex"]
+dest_files=["res://.godot/imported/hun_art_dead.png-0d2e5dc99003791e0f45c70ffb6b3e73.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

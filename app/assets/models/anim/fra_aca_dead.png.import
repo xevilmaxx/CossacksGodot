@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cx6yqtmxqb8fb"
-path="res://.godot/imported/fra_aca_dead.png-71e226f996a75e2c0bc64bfc97bdc2ca.ctex"
+path.s3tc="res://.godot/imported/fra_aca_dead.png-71e226f996a75e2c0bc64bfc97bdc2ca.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/fra_aca_dead.png"
-dest_files=["res://.godot/imported/fra_aca_dead.png-71e226f996a75e2c0bc64bfc97bdc2ca.ctex"]
+dest_files=["res://.godot/imported/fra_aca_dead.png-71e226f996a75e2c0bc64bfc97bdc2ca.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

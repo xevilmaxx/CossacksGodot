@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bcxr4jx04djmb"
-path="res://.godot/imported/ven_dip_dead.png-8447609c48554d204f609992fb3f41fa.ctex"
+path.s3tc="res://.godot/imported/ven_dip_dead.png-8447609c48554d204f609992fb3f41fa.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/ven_dip_dead.png"
-dest_files=["res://.godot/imported/ven_dip_dead.png-8447609c48554d204f609992fb3f41fa.ctex"]
+dest_files=["res://.godot/imported/ven_dip_dead.png-8447609c48554d204f609992fb3f41fa.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://1uxno1bea7qb"
-path="res://.godot/imported/aus_mil.png-bfdc6683ace5c3c6f6bbfca1b36d8611.ctex"
+path.s3tc="res://.godot/imported/aus_mil.png-bfdc6683ace5c3c6f6bbfca1b36d8611.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/aus_mil.png"
-dest_files=["res://.godot/imported/aus_mil.png-bfdc6683ace5c3c6f6bbfca1b36d8611.ctex"]
+dest_files=["res://.godot/imported/aus_mil.png-bfdc6683ace5c3c6f6bbfca1b36d8611.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

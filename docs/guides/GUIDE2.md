@@ -1,4 +1,4 @@
-# GUIDE 2 — Cossacks 3 Godot port: closing the fidelity gap
+# GUIDE 2 — Cossacks 3 Godot port: closing the fidelity gap (SUPERSEDED by GUIDE3.md - status below, all steps were verified complete before G3)
 ### A step-by-step, paste-ready implementation guide for a simpler executor model
 
 **Read section 0 and 1 fully before touching any file.** Then do steps S1→S10

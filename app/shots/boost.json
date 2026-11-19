@@ -139,14 +139,24 @@
     "mar": "M",
     "tow": "T",
     "mine": "N",
-    "wal": "W"
+    "wal": "W",
+    "dip": "D",
+    "bar18": "K"
    },
    "squad_form": "F",
    "squad_disband": "Shift+F",
    "squad_line": "J",
    "squad_column": "K",
    "squad_square": "L",
-   "rally": "R"
+   "hold_fire": "D",
+   "feuer_frei": "E",
+   "engage": "V",
+   "attack_ground": "R",
+   "unload": "U",
+   "select_all_peasants": "Ctrl+`",
+   "select_idle_mines": "Ctrl+M",
+   "add_same_type": "Shift+Z",
+   "minimap_toggle": "Alt+M"
   }
  },
  "names": {

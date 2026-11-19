@@ -18,6 +18,8 @@ var players: Array = []
 var next_player := 0
 var music_player: AudioStreamPlayer
 var ambient_player: AudioStreamPlayer
+var last_play: Dictionary = {}
+var music_on := false
 
 func _ready() -> void:
 	var d := DirAccess.open(DIR)
@@ -25,21 +27,25 @@ func _ready() -> void:
 		for f in d.get_files():
 			if f.get_extension().to_lower() == "ogg":
 				files.append(f.get_basename())
-	for i in 8:
+	for i in 16:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		players.append(p)
+	for f in files:
+		_stream(f)
 
 # The music of the player's nation and the air around it.
 func start_music(nation := "ukr") -> void:
 	if not Data.AUDIO_ENABLED:
 		return
+	music_on = true
 	music_player = AudioStreamPlayer.new()
 	var m := _stream(nation)
 	if m != null:
 		music_player.stream = m
 		music_player.volume_db = Data.AMBIENT_VOLUME_DB - 6.0
 		add_child(music_player)
+		music_player.finished.connect(_replay_music)
 		music_player.play()
 	ambient_player = AudioStreamPlayer.new()
 	var a := _stream("amb_atmosphere")
@@ -47,9 +53,19 @@ func start_music(nation := "ukr") -> void:
 		ambient_player.stream = a
 		ambient_player.volume_db = Data.AMBIENT_VOLUME_DB
 		add_child(ambient_player)
+		ambient_player.finished.connect(_replay_ambient)
+		ambient_player.play()
+
+func _replay_music() -> void:
+	if music_on and music_player != null and is_instance_valid(music_player):
+		music_player.play()
+
+func _replay_ambient() -> void:
+	if music_on and ambient_player != null and is_instance_valid(ambient_player):
 		ambient_player.play()
 
 func stop_all() -> void:
+	music_on = false
 	for p in players:
 		if is_instance_valid(p):
 			p.stop()
@@ -86,9 +102,21 @@ func _stream(name: String) -> AudioStream:
 	return s
 
 # Play one of the sounds that starts with one of the given words.
-func play(prefixes: Array, vol_db := 0.0) -> void:
+func play(prefixes: Array, vol_db := 0.0, at := Vector2.INF) -> void:
 	if not Data.AUDIO_ENABLED or players.is_empty():
 		return
+	var key: String = str(prefixes[0]) if prefixes.size() > 0 else ""
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - float(last_play.get(key, -10.0)) < 0.09:
+		return
+	last_play[key] = now
+	if at != Vector2.INF:
+		var cam := get_viewport().get_camera_2d() if get_viewport() != null else null
+		if cam != null:
+			var d: float = at.distance_to(cam.global_position / 16.0)
+			if d > 60.0:
+				return
+			vol_db -= clampf((d - 20.0) * 0.15, 0.0, 12.0)
 	var names := names_for(prefixes)
 	if names.is_empty():
 		return

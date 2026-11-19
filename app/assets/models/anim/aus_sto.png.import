@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cndnio27rspjx"
-path="res://.godot/imported/aus_sto.png-99a728955e9df9936894ef435eba0c58.ctex"
+path.s3tc="res://.godot/imported/aus_sto.png-99a728955e9df9936894ef435eba0c58.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/aus_sto.png"
-dest_files=["res://.godot/imported/aus_sto.png-99a728955e9df9936894ef435eba0c58.ctex"]
+dest_files=["res://.godot/imported/aus_sto.png-99a728955e9df9936894ef435eba0c58.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

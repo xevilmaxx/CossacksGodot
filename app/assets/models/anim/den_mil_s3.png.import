@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b4c7x6gvmh6k6"
-path="res://.godot/imported/den_mil_s3.png-401a3570aa109747dad7f28bf20a3e2e.ctex"
+path.s3tc="res://.godot/imported/den_mil_s3.png-401a3570aa109747dad7f28bf20a3e2e.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/den_mil_s3.png"
-dest_files=["res://.godot/imported/den_mil_s3.png-401a3570aa109747dad7f28bf20a3e2e.ctex"]
+dest_files=["res://.godot/imported/den_mil_s3.png-401a3570aa109747dad7f28bf20a3e2e.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

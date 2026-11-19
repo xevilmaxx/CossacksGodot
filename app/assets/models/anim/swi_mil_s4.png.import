@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cce2csw28tr0h"
-path="res://.godot/imported/swi_mil_s4.png-e5b9927c8b8c0a1c914fbe61710164da.ctex"
+path.s3tc="res://.godot/imported/swi_mil_s4.png-e5b9927c8b8c0a1c914fbe61710164da.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_mil_s4.png"
-dest_files=["res://.godot/imported/swi_mil_s4.png-e5b9927c8b8c0a1c914fbe61710164da.ctex"]
+dest_files=["res://.godot/imported/swi_mil_s4.png-e5b9927c8b8c0a1c914fbe61710164da.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

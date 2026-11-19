@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://1nhjc7p2ev6n"
-path="res://.godot/imported/sax_tow_s4.png-09b8b7889655db32a2e610d2bc003f53.ctex"
+path.s3tc="res://.godot/imported/sax_tow_s4.png-09b8b7889655db32a2e610d2bc003f53.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/sax_tow_s4.png"
-dest_files=["res://.godot/imported/sax_tow_s4.png-09b8b7889655db32a2e610d2bc003f53.ctex"]
+dest_files=["res://.godot/imported/sax_tow_s4.png-09b8b7889655db32a2e610d2bc003f53.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

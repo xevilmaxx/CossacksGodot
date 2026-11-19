@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dt8uf8wwhtw3r"
-path="res://.godot/imported/bav_sta_s1.png-1290731c5d6993ecf45b5a0482ce146f.ctex"
+path.s3tc="res://.godot/imported/bav_sta_s1.png-1290731c5d6993ecf45b5a0482ce146f.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/bav_sta_s1.png"
-dest_files=["res://.godot/imported/bav_sta_s1.png-1290731c5d6993ecf45b5a0482ce146f.ctex"]
+dest_files=["res://.godot/imported/bav_sta_s1.png-1290731c5d6993ecf45b5a0482ce146f.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

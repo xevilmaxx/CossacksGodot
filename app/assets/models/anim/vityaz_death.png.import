@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b2qkhpyk8g4h0"
-path="res://.godot/imported/vityaz_death.png-191bbe090a5843ca5d48163c1a36489a.ctex"
+path.s3tc="res://.godot/imported/vityaz_death.png-191bbe090a5843ca5d48163c1a36489a.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/vityaz_death.png"
-dest_files=["res://.godot/imported/vityaz_death.png-191bbe090a5843ca5d48163c1a36489a.ctex"]
+dest_files=["res://.godot/imported/vityaz_death.png-191bbe090a5843ca5d48163c1a36489a.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

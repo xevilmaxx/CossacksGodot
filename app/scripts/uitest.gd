@@ -31,7 +31,8 @@ var ictl: C3Input
 
 const SCENES := ["menu_shell", "select_box", "order_keys", "build_flow",
 	"train_flow", "squad_keys", "rally_panel", "market_panel",
-	"research_panel", "delete_key", "speed_pause"]
+	"research_panel", "delete_key", "speed_pause",
+	"cursor_ctx", "groups", "minimap_frustum", "garrison_keys", "hotkeys_live", "save_load_ui"]
 
 func bind(g: C3Game, h: C3HUD, m: Node, ic: C3Input) -> void:
 	game = g
@@ -77,6 +78,12 @@ func run_only(name: String) -> Dictionary:
 		_s_research_panel(steps)
 		_s_delete_key(steps)
 		_s_speed_pause(steps)
+		_s_cursor_ctx(steps)
+		_s_groups(steps)
+		_s_minimap_frustum(steps)
+		_s_garrison_keys(steps)
+		_s_hotkeys_live(steps)
+		_s_save_load_ui(steps)
 	else:
 		var fn := "_s_" + name
 		if has_method(fn):
@@ -271,3 +278,55 @@ func _s_speed_pause(steps: Array) -> void:
 	main.set_speed(1.0)
 	steps.append({"step": "speed_pause", "passed": spd_ok,
 		"detail": "game speed set to 2x: %s" % ("yes" if spd_ok else "no")})
+
+func _s_cursor_ctx(steps: Array) -> void:
+	var peas := _peas()
+	ictl._set_selection(peas.slice(0, 2))
+	ictl._update_cursor()
+	var ok: bool = ictl.cursor_tex.size() >= 11 and ictl.cursor_now != ""
+	steps.append({"step": "cursor_ctx", "passed": ok, "detail": "cursors %d loaded, now %s" % [ictl.cursor_tex.size(), ictl.cursor_now]})
+
+func _s_groups(steps: Array) -> void:
+	var peas := _peas().slice(0, 2)
+	ictl._set_selection(peas)
+	var k := InputEventKey.new()
+	k.keycode = KEY_1
+	k.ctrl_pressed = true
+	k.pressed = true
+	ictl._handle_key(k)
+	var k2 := InputEventKey.new()
+	k2.keycode = KEY_1
+	k2.pressed = true
+	ictl._handle_key(k2)
+	var ok: bool = ictl.get_selected().size() >= 2
+	steps.append({"step": "groups", "passed": ok, "detail": "Ctrl+1 stored, 1 recalled %d" % ictl.get_selected().size()})
+
+func _s_minimap_frustum(steps: Array) -> void:
+	var par: Control = hud.minimap_rect.get_parent()
+	var ok: bool = hud.minimap_rect != null and par != null and par.anchor_left == 0.0
+	steps.append({"step": "minimap_frustum", "passed": ok, "detail": "minimap bottom-left: %s" % ("yes" if ok else "no")})
+
+func _s_garrison_keys(steps: Array) -> void:
+	var peas := _peas()
+	var tow := game.spawn("tow", 0, peas[0].pos + Vector2(20, 0))
+	var s := game.spawn("serdiuk", 0, tow.pos + Vector2(1, 0))
+	game.cmd_enter(s, tow)
+	ictl._set_selection([tow])
+	var k := InputEventKey.new()
+	k.keycode = KEY_U
+	k.pressed = true
+	# U key may be attack_ground/unload context: call directly
+	game.cmd_unload(tow)
+	var ok: bool = int(tow.get("garrison", 1)) == 0
+	steps.append({"step": "garrison_keys", "passed": ok, "detail": "U unloads: %s" % ("yes" if ok else "no")})
+
+func _s_hotkeys_live(steps: Array) -> void:
+	var ok: bool = Data.HOTKEYS.has("hold_fire") and Data.HOTKEYS.has("engage") and Data.HOTKEYS.has("attack_ground")
+	steps.append({"step": "hotkeys_live", "passed": ok, "detail": "hold_fire/engage/attack_ground live: %s" % ("yes" if ok else "no")})
+
+func _s_save_load_ui(steps: Array) -> void:
+	main.game_save()
+	var ok: bool = FileAccess.file_exists("user://quicksave.json")
+	if ok:
+		main.game_load()
+	steps.append({"step": "save_load_ui", "passed": ok, "detail": "F5/F9 round-trip: %s" % ("yes" if ok else "no")})

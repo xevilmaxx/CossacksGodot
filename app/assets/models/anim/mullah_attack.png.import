@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cprosv8gijgv4"
-path="res://.godot/imported/mullah_attack.png-88616700ade4aebbec4d794572815013.ctex"
+path.s3tc="res://.godot/imported/mullah_attack.png-88616700ade4aebbec4d794572815013.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/mullah_attack.png"
-dest_files=["res://.godot/imported/mullah_attack.png-88616700ade4aebbec4d794572815013.ctex"]
+dest_files=["res://.godot/imported/mullah_attack.png-88616700ade4aebbec4d794572815013.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -5,22 +5,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     28,
+     40,
+     132,
+     119
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.7438,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     39,
+     40,
+     121,
+     115
+    ],
+    "fig_h": 0.4688,
+    "foot": 0.7188,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     0,
+     8,
+     160,
+     125
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.7812,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     29,
+     152,
+     126
+    ],
+    "fig_h": 0.6062,
+    "foot": 0.7875,
+    "cx": 0.5
    }
   }
  },
@@ -30,22 +66,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     19,
+     23,
+     141,
+     127
+    ],
+    "fig_h": 0.65,
+    "foot": 0.7937,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     24,
+     26,
+     136,
+     124
+    ],
+    "fig_h": 0.6125,
+    "foot": 0.775,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.5,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     4,
+     38,
+     155,
+     130
+    ],
+    "fig_h": 0.575,
+    "foot": 0.8125,
+    "cx": 0.4969
    },
    "death": {
     "frames": 6,
     "duration": 1.833,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     27,
+     152,
+     146
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.9125,
+    "cx": 0.5
    }
   }
  },
@@ -55,22 +127,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     27,
+     30,
+     133,
+     109
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.6813,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     43,
+     32,
+     116,
+     106
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.6625,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.4,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     30,
+     152,
+     109
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.6813,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.7,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     20,
+     152,
+     125
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.7812,
+    "cx": 0.5
    }
   }
  },
@@ -80,22 +188,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     8,
+     11,
+     152,
+     118
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     12,
+     16,
+     148,
+     113
+    ],
+    "fig_h": 0.6062,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.533,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     0,
+     17,
+     160,
+     114
+    ],
+    "fig_h": 0.6062,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     6,
+     16,
+     154,
+     152
+    ],
+    "fig_h": 0.85,
+    "foot": 0.95,
+    "cx": 0.5
    }
   }
  },
@@ -105,22 +249,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     0,
+     26,
+     160,
+     133
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.8313,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.7,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     1,
+     22,
+     159,
+     125
+    ],
+    "fig_h": 0.6438,
+    "foot": 0.7812,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.933,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     1,
+     18,
+     159,
+     125
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.7812,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.667,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     1,
+     22,
+     159,
+     142
+    ],
+    "fig_h": 0.75,
+    "foot": 0.8875,
+    "cx": 0.5
    }
   }
  },
@@ -130,22 +310,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     42,
+     36,
+     118,
+     104
+    ],
+    "fig_h": 0.425,
+    "foot": 0.65,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     42,
+     36,
+     117,
+     99
+    ],
+    "fig_h": 0.3937,
+    "foot": 0.6188,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.533,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     17,
+     20,
+     143,
+     118
+    ],
+    "fig_h": 0.6125,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     20,
+     152,
+     136
+    ],
+    "fig_h": 0.725,
+    "foot": 0.85,
+    "cx": 0.5
    }
   }
  },
@@ -155,22 +371,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     16,
+     30,
+     144,
+     124
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.775,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     17,
+     29,
+     143,
+     122
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.7625,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     5,
+     13,
+     154,
+     123
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.7688,
+    "cx": 0.4969
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     0,
+     28,
+     160,
+     145
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.9062,
+    "cx": 0.5
    }
   }
  },
@@ -180,17 +432,44 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     13,
+     26,
+     147,
+     118
+    ],
+    "fig_h": 0.575,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.7,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     27,
+     33,
+     133,
+     112
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.7,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.833,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     20,
+     152,
+     145
+    ],
+    "fig_h": 0.7812,
+    "foot": 0.9062,
+    "cx": 0.5
    }
   }
  },
@@ -200,22 +479,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     18,
+     19,
+     142,
+     125
+    ],
+    "fig_h": 0.6625,
+    "foot": 0.7812,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     18,
+     20,
+     142,
+     120
+    ],
+    "fig_h": 0.625,
+    "foot": 0.75,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 1.033,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     7,
+     152,
+     120
+    ],
+    "fig_h": 0.7063,
+    "foot": 0.75,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     20,
+     152,
+     149
+    ],
+    "fig_h": 0.8063,
+    "foot": 0.9313,
+    "cx": 0.5
    }
   }
  },
@@ -225,22 +540,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     18,
+     22,
+     142,
+     119
+    ],
+    "fig_h": 0.6062,
+    "foot": 0.7438,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     27,
+     25,
+     133,
+     116
+    ],
+    "fig_h": 0.5687,
+    "foot": 0.725,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     9,
+     19,
+     152,
+     122
+    ],
+    "fig_h": 0.6438,
+    "foot": 0.7625,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 1.8,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     24,
+     152,
+     138
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.8625,
+    "cx": 0.5
    }
   }
  },
@@ -250,22 +601,58 @@
    "walk": {
     "frames": 6,
     "duration": 1.6,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     10,
+     10,
+     150,
+     117
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.7312,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     28,
+     31,
+     132,
+     104
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.65,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.433,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     17,
+     4,
+     142,
+     110
+    ],
+    "fig_h": 0.6625,
+    "foot": 0.6875,
+    "cx": 0.4969
    },
    "death": {
     "frames": 6,
     "duration": 2.333,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     11,
+     10,
+     149,
+     160
+    ],
+    "fig_h": 0.9375,
+    "foot": 1.0,
+    "cx": 0.5
    }
   }
  },
@@ -275,22 +662,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     26,
+     8,
+     134,
+     101
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.6312,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     26,
+     14,
+     133,
+     105
+    ],
+    "fig_h": 0.5687,
+    "foot": 0.6562,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.433,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     20,
+     13,
+     140,
+     113
+    ],
+    "fig_h": 0.625,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     19,
+     1,
+     140,
+     158
+    ],
+    "fig_h": 0.9812,
+    "foot": 0.9875,
+    "cx": 0.4969
    }
   }
  },
@@ -300,17 +723,44 @@
    "walk": {
     "frames": 6,
     "duration": 3.3,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     7,
+     20,
+     152,
+     140
+    ],
+    "fig_h": 0.75,
+    "foot": 0.875,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     8,
+     21,
+     152,
+     140
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.875,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 1.233,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     21,
+     152,
+     144
+    ],
+    "fig_h": 0.7688,
+    "foot": 0.9,
+    "cx": 0.5
    }
   }
  },
@@ -320,17 +770,44 @@
    "walk": {
     "frames": 6,
     "duration": 3.3,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     8,
+     1,
+     153,
+     160
+    ],
+    "fig_h": 0.9938,
+    "foot": 1.0,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     8,
+     1,
+     153,
+     160
+    ],
+    "fig_h": 0.9938,
+    "foot": 1.0,
+    "cx": 0.5031
    },
    "attack": {
     "frames": 6,
     "duration": 0.4,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     0,
+     152,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    }
   }
  },
@@ -340,17 +817,44 @@
    "walk": {
     "frames": 6,
     "duration": 3.3,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     4,
+     37,
+     157,
+     156
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.975,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     4,
+     37,
+     156,
+     155
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9688,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.2,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     4,
+     37,
+     157,
+     157
+    ],
+    "fig_h": 0.75,
+    "foot": 0.9812,
+    "cx": 0.5031
    }
   }
  },
@@ -360,22 +864,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     21,
+     146,
+     126
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.7875,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     27,
+     28,
+     133,
+     122
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.7625,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.3,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     4,
+     36,
+     156,
+     130
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.8125,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.833,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     27,
+     152,
+     143
+    ],
+    "fig_h": 0.725,
+    "foot": 0.8938,
+    "cx": 0.5
    }
   }
  },
@@ -385,22 +925,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     16,
+     30,
+     145,
+     121
+    ],
+    "fig_h": 0.5687,
+    "foot": 0.7562,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     22,
+     30,
+     138,
+     116
+    ],
+    "fig_h": 0.5375,
+    "foot": 0.725,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.867,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     18,
+     151,
+     117
+    ],
+    "fig_h": 0.6188,
+    "foot": 0.7312,
+    "cx": 0.4969
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     3,
+     22,
+     157,
+     150
+    ],
+    "fig_h": 0.8,
+    "foot": 0.9375,
+    "cx": 0.5
    }
   }
  },
@@ -410,22 +986,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     9,
+     19,
+     151,
+     118
+    ],
+    "fig_h": 0.6188,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     14,
+     21,
+     145,
+     114
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.7125,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.733,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     15,
+     152,
+     114
+    ],
+    "fig_h": 0.6188,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     6,
+     21,
+     154,
+     148
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.925,
+    "cx": 0.5
    }
   }
  },
@@ -435,22 +1047,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     29,
+     41,
+     131,
+     121
+    ],
+    "fig_h": 0.5,
+    "foot": 0.7562,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     37,
+     44,
+     123,
+     119
+    ],
+    "fig_h": 0.4688,
+    "foot": 0.7438,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     3,
+     16,
+     158,
+     132
+    ],
+    "fig_h": 0.725,
+    "foot": 0.825,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 1.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     30,
+     152,
+     140
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.875,
+    "cx": 0.5
    }
   }
  },
@@ -460,22 +1108,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     22,
+     23,
+     138,
+     117
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.7312,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     30,
+     26,
+     130,
+     114
+    ],
+    "fig_h": 0.55,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     9,
+     19,
+     151,
+     121
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.7562,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.8,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     9,
+     26,
+     152,
+     135
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.8438,
+    "cx": 0.5031
    }
   }
  },
@@ -485,17 +1169,44 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     12,
+     25,
+     149,
+     118
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.7375,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 2,
     "duration": 1.7,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     26,
+     32,
+     134,
+     112
+    ],
+    "fig_h": 0.5,
+    "foot": 0.7,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.833,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     20,
+     152,
+     145
+    ],
+    "fig_h": 0.7812,
+    "foot": 0.9062,
+    "cx": 0.5
    }
   }
  },
@@ -505,22 +1216,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     41,
+     37,
+     120,
+     115
+    ],
+    "fig_h": 0.4875,
+    "foot": 0.7188,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     46,
+     35,
+     114,
+     110
+    ],
+    "fig_h": 0.4688,
+    "foot": 0.6875,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.8,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     23,
+     152,
+     110
+    ],
+    "fig_h": 0.5437,
+    "foot": 0.6875,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.833,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     24,
+     152,
+     138
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.8625,
+    "cx": 0.5
    }
   }
  },
@@ -530,22 +1277,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     14,
+     145,
+     128
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.8,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     16,
+     16,
+     144,
+     121
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.7562,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 1.033,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     7,
+     1,
+     154,
+     121
+    ],
+    "fig_h": 0.75,
+    "foot": 0.7562,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     16,
+     152,
+     150
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.9375,
+    "cx": 0.5
    }
   }
  },
@@ -555,22 +1338,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     44,
+     37,
+     115,
+     116
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.725,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     30,
+     29,
+     130,
+     106
+    ],
+    "fig_h": 0.4813,
+    "foot": 0.6625,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 1.033,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     22,
+     152,
+     106
+    ],
+    "fig_h": 0.525,
+    "foot": 0.6625,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.833,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     26,
+     152,
+     126
+    ],
+    "fig_h": 0.625,
+    "foot": 0.7875,
+    "cx": 0.5
    }
   }
  },
@@ -580,17 +1399,44 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     26,
+     35,
+     133,
+     120
+    ],
+    "fig_h": 0.5312,
+    "foot": 0.75,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 2,
     "duration": 1.7,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     38,
+     34,
+     122,
+     115
+    ],
+    "fig_h": 0.5062,
+    "foot": 0.7188,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.833,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     6,
+     24,
+     154,
+     142
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.8875,
+    "cx": 0.5
    }
   }
  },
@@ -600,22 +1446,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     13,
+     5,
+     146,
+     111
+    ],
+    "fig_h": 0.6625,
+    "foot": 0.6937,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     23,
+     6,
+     137,
+     114
+    ],
+    "fig_h": 0.675,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     14,
+     6,
+     146,
+     117
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.7312,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     20,
+     2,
+     140,
+     159
+    ],
+    "fig_h": 0.9812,
+    "foot": 0.9938,
+    "cx": 0.5
    }
   }
  },
@@ -625,22 +1507,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     12,
+     6,
+     148,
+     114
+    ],
+    "fig_h": 0.675,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     19,
+     8,
+     141,
+     115
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.7188,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     12,
+     7,
+     148,
+     118
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     19,
+     1,
+     141,
+     156
+    ],
+    "fig_h": 0.9688,
+    "foot": 0.975,
+    "cx": 0.5
    }
   }
  },
@@ -650,22 +1568,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     27,
+     11,
+     132,
+     97
+    ],
+    "fig_h": 0.5375,
+    "foot": 0.6062,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     29,
+     13,
+     131,
+     97
+    ],
+    "fig_h": 0.525,
+    "foot": 0.6062,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 1.133,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     17,
+     18,
+     143,
+     118
+    ],
+    "fig_h": 0.625,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     18,
+     3,
+     142,
+     158
+    ],
+    "fig_h": 0.9688,
+    "foot": 0.9875,
+    "cx": 0.5
    }
   }
  },
@@ -675,22 +1629,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.533,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     12,
+     3,
+     148,
+     100
+    ],
+    "fig_h": 0.6062,
+    "foot": 0.625,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     12,
+     6,
+     148,
+     99
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.6188,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     9,
+     0,
+     151,
+     110
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.6875,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     12,
+     0,
+     148,
+     154
+    ],
+    "fig_h": 0.9625,
+    "foot": 0.9625,
+    "cx": 0.5
    }
   }
  },
@@ -700,22 +1690,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.533,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     10,
+     3,
+     151,
+     125
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.7812,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     19,
+     3,
+     141,
+     124
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.775,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.4,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     10,
+     3,
+     150,
+     135
+    ],
+    "fig_h": 0.825,
+    "foot": 0.8438,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     12,
+     0,
+     147,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.4969
    }
   }
  },
@@ -725,22 +1751,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     20,
+     4,
+     140,
+     109
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.6813,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     29,
+     10,
+     132,
+     111
+    ],
+    "fig_h": 0.6312,
+    "foot": 0.6937,
+    "cx": 0.5031
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     20,
+     3,
+     143,
+     117
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.7312,
+    "cx": 0.5094
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     16,
+     4,
+     144,
+     160
+    ],
+    "fig_h": 0.975,
+    "foot": 1.0,
+    "cx": 0.5
    }
   }
  },
@@ -750,22 +1812,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     14,
+     8,
+     147,
+     117
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.7312,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     14,
+     9,
+     146,
+     117
+    ],
+    "fig_h": 0.675,
+    "foot": 0.7312,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     22,
+     14,
+     138,
+     110
+    ],
+    "fig_h": 0.6,
+    "foot": 0.6875,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     13,
+     3,
+     146,
+     152
+    ],
+    "fig_h": 0.9313,
+    "foot": 0.95,
+    "cx": 0.4969
    }
   }
  },
@@ -775,22 +1873,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     24,
+     9,
+     135,
+     101
+    ],
+    "fig_h": 0.575,
+    "foot": 0.6312,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     26,
+     15,
+     134,
+     104
+    ],
+    "fig_h": 0.5563,
+    "foot": 0.65,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.433,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     19,
+     15,
+     141,
+     114
+    ],
+    "fig_h": 0.6188,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     19,
+     0,
+     141,
+     159
+    ],
+    "fig_h": 0.9938,
+    "foot": 0.9938,
+    "cx": 0.5
    }
   }
  },
@@ -800,22 +1934,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.567,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     8,
+     145,
+     110
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.6875,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     14,
+     144,
+     116
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.725,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     24,
+     10,
+     135,
+     105
+    ],
+    "fig_h": 0.5938,
+    "foot": 0.6562,
+    "cx": 0.4969
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     15,
+     3,
+     144,
+     158
+    ],
+    "fig_h": 0.9688,
+    "foot": 0.9875,
+    "cx": 0.4969
    }
   }
  },
@@ -825,22 +1995,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     16,
+     0,
+     144,
+     113
+    ],
+    "fig_h": 0.7063,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     32,
+     146,
+     108
+    ],
+    "fig_h": 0.475,
+    "foot": 0.675,
+    "cx": 0.5031
    },
    "attack": {
     "frames": 6,
     "duration": 0.967,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     15,
+     5,
+     146,
+     108
+    ],
+    "fig_h": 0.6438,
+    "foot": 0.675,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     15,
+     4,
+     146,
+     160
+    ],
+    "fig_h": 0.975,
+    "foot": 1.0,
+    "cx": 0.5031
    }
   }
  },
@@ -850,22 +2056,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     8,
+     145,
+     116
+    ],
+    "fig_h": 0.675,
+    "foot": 0.725,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     9,
+     144,
+     116
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.725,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.4,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     21,
+     2,
+     140,
+     109
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.6813,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     16,
+     3,
+     144,
+     158
+    ],
+    "fig_h": 0.9688,
+    "foot": 0.9875,
+    "cx": 0.5
    }
   }
  },
@@ -875,22 +2117,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     4,
+     145,
+     121
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.7562,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     20,
+     6,
+     140,
+     114
+    ],
+    "fig_h": 0.675,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     14,
+     3,
+     146,
+     114
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     18,
+     5,
+     143,
+     160
+    ],
+    "fig_h": 0.9688,
+    "foot": 1.0,
+    "cx": 0.5031
    }
   }
  },
@@ -900,22 +2178,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     19,
+     1,
+     141,
+     121
+    ],
+    "fig_h": 0.75,
+    "foot": 0.7562,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     18,
+     2,
+     143,
+     112
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.7,
+    "cx": 0.5031
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     16,
+     2,
+     144,
+     113
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     16,
+     2,
+     144,
+     160
+    ],
+    "fig_h": 0.9875,
+    "foot": 1.0,
+    "cx": 0.5
    }
   }
  },
@@ -925,22 +2239,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     14,
+     5,
+     146,
+     116
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.725,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     14,
+     7,
+     146,
+     116
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.725,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.4,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     19,
+     0,
+     141,
+     110
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.6875,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     14,
+     3,
+     146,
+     157
+    ],
+    "fig_h": 0.9625,
+    "foot": 0.9812,
+    "cx": 0.5
    }
   }
  },
@@ -950,22 +2300,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     25,
+     14,
+     135,
+     105
+    ],
+    "fig_h": 0.5687,
+    "foot": 0.6562,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     36,
+     17,
+     124,
+     108
+    ],
+    "fig_h": 0.5687,
+    "foot": 0.675,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.5,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     25,
+     8,
+     134,
+     108
+    ],
+    "fig_h": 0.625,
+    "foot": 0.675,
+    "cx": 0.4969
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     29,
+     0,
+     131,
+     153
+    ],
+    "fig_h": 0.9563,
+    "foot": 0.9563,
+    "cx": 0.5
    }
   }
  },
@@ -975,22 +2361,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.567,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     16,
+     8,
+     145,
+     111
+    ],
+    "fig_h": 0.6438,
+    "foot": 0.6937,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 2,
     "duration": 2.833,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     15,
+     14,
+     145,
+     116
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.725,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.467,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     20,
+     0,
+     140,
+     108
+    ],
+    "fig_h": 0.675,
+    "foot": 0.675,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.367,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     15,
+     4,
+     145,
+     158
+    ],
+    "fig_h": 0.9625,
+    "foot": 0.9875,
+    "cx": 0.5
    }
   }
  },
@@ -1000,22 +2422,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     1,
+     17,
+     159,
+     118
+    ],
+    "fig_h": 0.6312,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     14,
+     20,
+     146,
+     113
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.867,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     5,
+     16,
+     155,
+     114
+    ],
+    "fig_h": 0.6125,
+    "foot": 0.7125,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     5,
+     18,
+     155,
+     153
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9563,
+    "cx": 0.5
    }
   }
  },
@@ -1025,22 +2483,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     4,
+     17,
+     156,
+     118
+    ],
+    "fig_h": 0.6312,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     12,
+     18,
+     147,
+     113
+    ],
+    "fig_h": 0.5938,
+    "foot": 0.7063,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.767,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     2,
+     19,
+     159,
+     114
+    ],
+    "fig_h": 0.5938,
+    "foot": 0.7125,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     6,
+     18,
+     154,
+     147
+    ],
+    "fig_h": 0.8063,
+    "foot": 0.9187,
+    "cx": 0.5
    }
   }
  },
@@ -1050,22 +2544,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     38,
+     30,
+     122,
+     103
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.6438,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     36,
+     29,
+     124,
+     101
+    ],
+    "fig_h": 0.45,
+    "foot": 0.6312,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.867,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     26,
+     25,
+     134,
+     102
+    ],
+    "fig_h": 0.4813,
+    "foot": 0.6375,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     20,
+     152,
+     135
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.8438,
+    "cx": 0.5
    }
   }
  },
@@ -1075,22 +2605,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.8,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     18,
+     24,
+     141,
+     117
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.7312,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     23,
+     25,
+     137,
+     115
+    ],
+    "fig_h": 0.5625,
+    "foot": 0.7188,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.867,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     14,
+     21,
+     147,
+     115
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.7188,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 2.1,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     0,
+     22,
+     160,
+     142
+    ],
+    "fig_h": 0.75,
+    "foot": 0.8875,
+    "cx": 0.5
    }
   }
  },
@@ -1100,17 +2666,44 @@
    "walk": {
     "frames": 6,
     "duration": 3.3,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     8,
+     10,
+     153,
+     150
+    ],
+    "fig_h": 0.875,
+    "foot": 0.9375,
+    "cx": 0.5031
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     8,
+     10,
+     153,
+     150
+    ],
+    "fig_h": 0.875,
+    "foot": 0.9375,
+    "cx": 0.5031
    },
    "attack": {
     "frames": 6,
     "duration": 0.233,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     9,
+     153,
+     150
+    ],
+    "fig_h": 0.8812,
+    "foot": 0.9375,
+    "cx": 0.5031
    }
   }
  },
@@ -1120,22 +2713,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     28,
+     40,
+     132,
+     119
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.7438,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     39,
+     40,
+     120,
+     115
+    ],
+    "fig_h": 0.4688,
+    "foot": 0.7188,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     0,
+     9,
+     160,
+     125
+    ],
+    "fig_h": 0.725,
+    "foot": 0.7812,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     29,
+     153,
+     126
+    ],
+    "fig_h": 0.6062,
+    "foot": 0.7875,
+    "cx": 0.5031
    }
   }
  },
@@ -1145,22 +2774,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     33,
+     47,
+     127,
+     117
+    ],
+    "fig_h": 0.4375,
+    "foot": 0.7312,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     42,
+     41,
+     117,
+     112
+    ],
+    "fig_h": 0.4437,
+    "foot": 0.7,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     1,
+     11,
+     160,
+     123
+    ],
+    "fig_h": 0.7,
+    "foot": 0.7688,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     30,
+     152,
+     124
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.775,
+    "cx": 0.5
    }
   }
  },
@@ -1170,22 +2835,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     20,
+     27,
+     140,
+     122
+    ],
+    "fig_h": 0.5938,
+    "foot": 0.7625,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     41,
+     40,
+     118,
+     116
+    ],
+    "fig_h": 0.475,
+    "foot": 0.725,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     0,
+     6,
+     160,
+     128
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.8,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     29,
+     152,
+     127
+    ],
+    "fig_h": 0.6125,
+    "foot": 0.7937,
+    "cx": 0.5
    }
   }
  },
@@ -1195,22 +2896,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     38,
+     44,
+     122,
+     118
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     48,
+     48,
+     112,
+     113
+    ],
+    "fig_h": 0.4062,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     4,
+     16,
+     157,
+     126
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.7875,
+    "cx": 0.5031
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     32,
+     152,
+     125
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.7812,
+    "cx": 0.5
    }
   }
  },
@@ -1220,22 +2957,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     33,
+     42,
+     127,
+     118
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     44,
+     44,
+     116,
+     113
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     1,
+     13,
+     159,
+     123
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.7688,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     9,
+     32,
+     151,
+     126
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.7875,
+    "cx": 0.5
    }
   }
  },
@@ -1245,22 +3018,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     38,
+     46,
+     122,
+     118
+    ],
+    "fig_h": 0.45,
+    "foot": 0.7375,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     50,
+     49,
+     110,
+     113
+    ],
+    "fig_h": 0.4,
+    "foot": 0.7063,
+    "cx": 0.5
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     3,
+     17,
+     157,
+     126
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.7875,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     32,
+     152,
+     126
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.7875,
+    "cx": 0.5
    }
   }
  },
@@ -1270,22 +3079,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     31,
+     47,
+     129,
+     120
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.75,
+    "cx": 0.5
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     39,
+     39,
+     120,
+     115
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7188,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     0,
+     9,
+     160,
+     124
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.775,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     28,
+     152,
+     126
+    ],
+    "fig_h": 0.6125,
+    "foot": 0.7875,
+    "cx": 0.5
    }
   }
  },
@@ -1295,22 +3140,58 @@
    "walk": {
     "frames": 6,
     "duration": 0.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     38,
+     43,
+     121,
+     118
+    ],
+    "fig_h": 0.4688,
+    "foot": 0.7375,
+    "cx": 0.4969
    },
    "idle": {
     "frames": 2,
     "duration": 1.667,
-    "loop": true
+    "loop": true,
+    "bbox": [
+     49,
+     49,
+     110,
+     113
+    ],
+    "fig_h": 0.4,
+    "foot": 0.7063,
+    "cx": 0.4969
    },
    "attack": {
     "frames": 6,
     "duration": 0.6,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     3,
+     15,
+     157,
+     126
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.7875,
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
     "duration": 1.167,
-    "loop": false
+    "loop": false,
+    "bbox": [
+     8,
+     30,
+     153,
+     124
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.775,
+    "cx": 0.5031
    }
   }
  }

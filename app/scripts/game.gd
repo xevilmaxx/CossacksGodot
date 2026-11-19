@@ -30,6 +30,17 @@ var corpses: Array = []  # fading dead units for the battlefield look (capped)
 var rubble: Array = []  # lingering destroyed-building rubble (capped)
 var squads: Dictionary = {}  # squad_id -> {officer, drummer, members, formation, player}
 var gates: Array = []
+var grid: Dictionary = {}          # Vector2i cell -> Array of entity dicts
+const GRID_M := 8.0
+var live_units: Array = []
+var live_blds: Array = []
+var officers: Array = [[], []]
+var drummers: Array = [[], []]
+var priests: Array = [[], []]
+var compact_t := 0.0
+var res_dirty := 0
+var bld_dirty := 0
+var ai_cheat_t := 0.0
 func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 	if is_blocked(p):
 		return true
@@ -48,6 +59,72 @@ var deposits: Dictionary = {}  # "gold"/"iron"/"coal" remaining
 
 func _init() -> void:
 	rng.seed = Data.RANDOM_SEED
+
+func _grid_rebuild() -> void:
+	grid.clear()
+	live_units.clear()
+	live_blds.clear()
+	officers[0].clear(); officers[1].clear()
+	drummers[0].clear(); drummers[1].clear()
+	priests[0].clear(); priests[1].clear()
+	for e in entities:
+		if e.dead:
+			continue
+		var c := Vector2i(int(e.pos.x / GRID_M), int(e.pos.y / GRID_M))
+		if not grid.has(c):
+			grid[c] = []
+		grid[c].append(e)
+		if e.kind == "unit":
+			live_units.append(e)
+			var p: int = int(e.player)
+			if p >= 0 and p < 2:
+				if str(e.sid) in ["officer", "officer18"]:
+					officers[p].append(e)
+				elif str(e.sid) in ["drummer", "drummer18"]:
+					drummers[p].append(e)
+				elif str(e.sid) in ["priest", "pope", "padre", "mullah"]:
+					priests[p].append(e)
+		else:
+			live_blds.append(e)
+
+func grid_query(pos: Vector2, r: float) -> Array:
+	var out: Array = []
+	var c0 := Vector2i(int((pos.x - r) / GRID_M), int((pos.y - r) / GRID_M))
+	var c1 := Vector2i(int((pos.x + r) / GRID_M), int((pos.y + r) / GRID_M))
+	for cy in range(c0.y, c1.y + 1):
+		for cx in range(c0.x, c1.x + 1):
+			var cell: Array = grid.get(Vector2i(cx, cy), [])
+			for e in cell:
+				out.append(e)
+	return out
+
+func _compact() -> void:
+	var keep: Array = []
+	for e in entities:
+		if e.dead:
+			by_id.erase(e.id)
+		else:
+			keep.append(e)
+	entities = keep
+	for pi in 2:
+		var pl: Array = []
+		for id in players[pi].entities:
+			var e: Dictionary = by_id.get(id, {})
+			if not e.is_empty():
+				pl.append(id)
+		players[pi].entities = pl
+	var gk: Array = []
+	for g in gates:
+		if not g.dead:
+			gk.append(g)
+	gates = gk
+	var rk: Array = []
+	for n in res_nodes:
+		if n.max_hits == 0 or n.hits > 0 or n.type == "food":
+			rk.append(n)
+		else:
+			by_id.erase(n.id)
+	res_nodes = rk
 
 func res_list() -> Array:
 	var out: Array = []
@@ -88,6 +165,7 @@ func setup(mode: String) -> void:
 		deposits[r] = float(Data.DEPOSITS.get(r, 0.0))
 	_generate_map()
 	_spawn_starts()
+	_grid_rebuild()
 
 func _nation_name(i: int, pn: Variant) -> String:
 	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else []
@@ -145,6 +223,7 @@ func _add_res(type: String, pos: Vector2, hits: int, radius: float) -> void:
 	by_id[node.id] = node
 	if type != "food":
 		set_blocked_circle(pos, radius, true)
+	res_dirty += 1
 
 func _clear_area(pos: Vector2, r_m: float) -> void:
 	for n in res_nodes:
@@ -306,26 +385,42 @@ func _generate_map() -> void:
 	# clear a small ring right around each town center so units never spawn stuck
 	for st in starts:
 		_clear_area(st, 4.0 * TILE)
+	# per-node deposit split: each deposit holds its share of the global pool
+	var cnt := {"gold": 0, "iron": 0, "coal": 0}
+	for n in res_nodes:
+		if n.max_hits == 0 and cnt.has(n.type):
+			cnt[n.type] = int(cnt[n.type]) + 1
+	for n in res_nodes:
+		if n.max_hits == 0 and cnt.has(n.type) and int(cnt[n.type]) > 0:
+			n["left"] = float(Data.DEPOSITS.get(n.type, 30000)) / float(cnt[n.type])
 
 # cheap deterministic value-noise in [-1, 1] for map biomes (no engine needed)
 func height_at(p: Vector2) -> float:
 	var t := tile_of(p)
 	return _noise2(float(t.x) * 0.07, float(t.y) * 0.07) * 2.0
 
+const TARGET_TABLE := {
+	"melee": {"melee": 1.0, "ranged": 0.6, "cavalry": 1.4, "artillery": 0.3, "building": 0.5},
+	"ranged": {"melee": 1.4, "ranged": 1.0, "cavalry": 0.6, "artillery": 0.3, "building": 0.8},
+	"cavalry": {"melee": 0.6, "ranged": 1.8, "cavalry": 1.0, "artillery": 1.8, "building": 0.4},
+	"artillery": {"melee": 1.6, "ranged": 1.6, "cavalry": 0.4, "artillery": 1.0, "building": 1.6},
+}
+
+static func _hash2(ix: int, iy: int) -> float:
+	var s := ix * 374761393 + iy * 668265263
+	s = (s ^ (s >> 13)) * 1274126177
+	s = s ^ (s >> 16)
+	return float(s & 65535) / 65535.0 * 2.0 - 1.0
+
 func _noise2(x: float, y: float) -> float:
 	var xi := int(floor(x))
 	var yi := int(floor(y))
 	var xf: float = x - floor(x)
 	var yf: float = y - floor(y)
-	var h := func(ix: int, iy: int) -> float:
-		var s := ix * 374761393 + iy * 668265263
-		s = (s ^ (s >> 13)) * 1274126177
-		s = s ^ (s >> 16)
-		return float(s & 65535) / 65535.0 * 2.0 - 1.0
-	var a: float = h.call(xi, yi)
-	var b: float = h.call(xi + 1, yi)
-	var c: float = h.call(xi, yi + 1)
-	var d: float = h.call(xi + 1, yi + 1)
+	var a: float = _hash2(xi, yi)
+	var b: float = _hash2(xi + 1, yi)
+	var c: float = _hash2(xi, yi + 1)
+	var d: float = _hash2(xi + 1, yi + 1)
 	var u: float = xf * xf * (3.0 - 2.0 * xf)
 	var v: float = yf * yf * (3.0 - 2.0 * yf)
 	return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
@@ -366,11 +461,23 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 		"inside_of": 0, "moving": false, "finished": finished, "progress": def.build_time if finished else 0.0,
 		"queue": [], "workers": 0, "capture_t": 0.0, "hold": false, "hold_fire": false, "face": 0.0,
 		"morale": Data.MORALE_BASE, "routing": false, "deploy_t": 0.0, "stuck_t": 0.0, "hit_t": 0.0,
-		"death_t": -1.0, "fire_t": -1.0,
+		"death_t": -1.0, "fire_t": -1.0, "acq_t": 0.0, "aur_off": false, "aur_dru": false,
 	}
 	if is_unit:
 		e["hp"] = int(float(def.hp) * players[player].get("hp_mult", 1.0))
 		e["max_hp"] = e["hp"]
+		var pp: Dictionary = players[player]
+		var kind := "unit"
+		if def.get("artillery", false):
+			e.max_hp = int(e.max_hp * float(pp.get("art_hp", 1.0)))
+			e.hp = e.max_hp
+	if not is_unit:
+		var pp2: Dictionary = players[player]
+		var kind2 := "building"
+		if true:
+			var add: int = int(pp2.get("fort_hp_add", 0)) if sid in ["wal", "tow", "gat"] else int(pp2.get("bld_hp_add", 0))
+			e.max_hp += add
+			e.hp += add
 	if is_unit:
 		e["shield"] = def.get("shield", 0)
 		e["prot"] = def.prot
@@ -381,6 +488,22 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 	entities.append(e)
 	by_id[e.id] = e
 	players[player].entities.append(e.id)
+	# keep grid/cached lists fresh for commands issued between ticks (selftest)
+	var gc := Vector2i(int(e.pos.x / GRID_M), int(e.pos.y / GRID_M))
+	if not grid.has(gc):
+		grid[gc] = []
+	grid[gc].append(e)
+	if e.kind == "unit":
+		live_units.append(e)
+		if player >= 0 and player < 2:
+			if str(e.sid) in ["officer", "officer18"]:
+				officers[player].append(e)
+			elif str(e.sid) in ["drummer", "drummer18"]:
+				drummers[player].append(e)
+			elif str(e.sid) in ["priest", "pope", "padre", "mullah"]:
+				priests[player].append(e)
+	else:
+		live_blds.append(e)
 	if e.kind == "building":
 		set_blocked_circle(pos, def.radius, true)
 		if sid == "gat":
@@ -388,6 +511,8 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 			gates.append(e)
 		if finished:
 			_on_building_finished(e)
+		else:
+			bld_dirty += 1
 	players[player].score += def.get("score", 0)
 	return e
 
@@ -397,9 +522,22 @@ func _on_building_finished(e: Dictionary) -> void:
 		p.farm_cap += e.def.farm
 	if e.sid.begins_with("mine_"):
 		e["deposit_type"] = e.def.mine
-		e["deposit_left"] = deposits.get(e.def.mine, 0)
+		var node: Dictionary = {}
+		var bd := 1e9
+		for n in res_nodes:
+			if n.type == e.def.mine and n.max_hits == 0:
+				var dd: float = n.pos.distance_to(e.pos)
+				if dd < bd:
+					bd = dd
+					node = n
+		if not node.is_empty():
+			e["deposit_node"] = node.id
+			e["deposit_left"] = float(node.get("left", 0.0))
+		else:
+			e["deposit_left"] = deposits.get(e.def.mine, 0)
 	if e.def.has("trains"):
 		e["rally"] = e.pos + Vector2(0, e.def.radius + 2.0)
+	bld_dirty += 1
 
 func _start_positions() -> Array[Vector2]:
 	# the two corners of the map where the players start
@@ -439,21 +577,21 @@ func _spawn_starts() -> void:
 # ---------------------------------------------------------------- helpers
 func unit_count(player: int) -> int:
 	var n := 0
-	for e in entities:
+	for e in live_units:
 		if not e.dead and e.kind == "unit" and e.player == player:
 			n += 1
 	return n
 
 func buildings_of(player: int, only_finished := true) -> Array:
 	var out: Array = []
-	for e in entities:
+	for e in live_blds:
 		if not e.dead and e.kind == "building" and e.player == player and (not only_finished or e.finished):
 			out.append(e)
 	return out
 
 func units_of(player: int) -> Array:
 	var out: Array = []
-	for e in entities:
+	for e in live_units:
 		if not e.dead and e.kind == "unit" and e.player == player:
 			out.append(e)
 	return out
@@ -516,7 +654,7 @@ func _mine_debug(res: String) -> String:
 func enemies_in_radius(pos: Vector2, player: int, r: float, military_only := true) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := r
-	for e in entities:
+	for e in grid_query(pos, r):
 		if e.dead or e.player == player:
 			continue
 		if military_only and (e.kind == "building" or e.sid == "peasant"):
@@ -544,19 +682,13 @@ func _kind_class(e: Dictionary) -> String:
 func _target_score(a: Dictionary, t: Dictionary) -> float:
 	var ac := _kind_class(a)
 	var tc := _kind_class(t)
-	var table := {
-		"melee": {"melee": 1.0, "ranged": 0.6, "cavalry": 1.4, "artillery": 0.3, "building": 0.5},
-		"ranged": {"melee": 1.4, "ranged": 1.0, "cavalry": 0.6, "artillery": 0.3, "building": 0.8},
-		"cavalry": {"melee": 0.6, "ranged": 1.8, "cavalry": 1.0, "artillery": 1.8, "building": 0.4},
-		"artillery": {"melee": 1.6, "ranged": 1.6, "cavalry": 0.4, "artillery": 1.0, "building": 1.6},
-	}
-	var row: Dictionary = table.get(ac, {})
+	var row: Dictionary = TARGET_TABLE.get(ac, {})
 	return float(row.get(tc, 1.0))
 
 func enemies_preferred(pos: Vector2, player: int, r: float, a: Dictionary) -> Dictionary:
 	var best: Dictionary = {}
 	var best_s := -1.0
-	for e in entities:
+	for e in grid_query(pos, r):
 		if e.dead or e.player == player or e.kind == "building" or e.sid == "peasant":
 			continue
 		var d: float = e.pos.distance_to(pos)
@@ -634,6 +766,14 @@ func cmd_gather(e: Dictionary, res_node: Dictionary) -> void:
 		e.order = {"type": "gather", "res": res_node.type, "node": res_node.id}
 	e.moving = true
 
+func cmd_resow(e: Dictionary, node: Dictionary) -> void:
+	if e.dead or str(e.sid) != "peasant" or node.is_empty() or str(node.type) != "food":
+		return
+	if node.hits > 0:
+		cmd_gather(e, node)
+		return
+	e.order = {"type": "resow", "node": node.id}
+
 func cmd_build(e: Dictionary, site: Dictionary) -> void:
 	if e.kind != "unit" or e.dead or e.sid != "peasant":
 		return
@@ -677,6 +817,40 @@ func cmd_patrol(e: Dictionary, a: Vector2, b: Vector2) -> void:
 	_leave_building(e)
 	e.order = {"type": "patrol", "a": a, "b": b, "leg": 0}
 	e.moving = true
+
+func cmd_attack_ground(e: Dictionary, pos: Vector2) -> void:
+	if e.dead or not e.def.get("artillery", false):
+		return
+	e.order = {"type": "attackground", "pos": pos}
+
+func cmd_enter(e: Dictionary, b: Dictionary) -> void:
+	if e.dead or e.kind != "unit" or e.player != b.player or b.dead or not b.finished:
+		return
+	if not str(b.sid) in ["tow", "cen"]:
+		return
+	if e.def.get("artillery", false) or e.def.get("cavalry", "") != "":
+		return
+	if int(b.get("garrison", 0)) >= 10:
+		return
+	_leave_building(e)
+	e.inside_of = b.id
+	e.order = {"type": "none"}
+	e["hidden"] = true
+	b["garrison"] = int(b.get("garrison", 0)) + 1
+
+func cmd_unload(b: Dictionary) -> void:
+	if b.dead or b.kind != "building":
+		return
+	var k := 0
+	for e in live_units:
+		if e.dead or e.inside_of != b.id or not bool(e.get("hidden", false)):
+			continue
+		e.inside_of = 0
+		e["hidden"] = false
+		e.pos = b.pos + Vector2(cos(k * 2.4), sin(k * 2.4)) * (b.def.radius + 1.0)
+		e.order = {"type": "none"}
+		k += 1
+	b["garrison"] = 0
 
 # Squads: officer (slot 0) + drummer (slot 1) + soldiers, like squad.script.
 # A squad is a sticky group: orders to the officer fan out to the members in
@@ -912,6 +1086,9 @@ func _squad_order_members(off_id: int, dest: Vector2, attack: bool) -> void:
 		var s: Dictionary = squads[sid]
 		if int(s.officer) != off_id:
 			continue
+		var off: Dictionary = by_id.get(off_id, {})
+		if not off.is_empty():
+			s["face"] = (dest - off.pos).angle()
 		var all: Array = []
 		for uid in s.members:
 			var u: Dictionary = by_id.get(uid, {})
@@ -940,6 +1117,11 @@ func formation_targets(sel: Array, center: Vector2, formation := "none") -> Arra
 		return []
 	if n == 1:
 		return [center]
+	var fa := 0.0
+	if not sel.is_empty():
+		var s0: Dictionary = squad_of_unit(int(sel[0].id))
+		if not s0.is_empty():
+			fa = float(s0.get("face", 0.0))
 	var f: Dictionary = Data.FORMATIONS.get(formation, {"cols_mult": 1.0, "rows_mult": 1.0})
 	var cols := maxi(1, int(ceil(sqrt(float(n)) * float(f.get("cols_mult", 1.0)))))
 	var spacing := float(Data.FORMATION_SPACING)
@@ -965,8 +1147,9 @@ func formation_targets(sel: Array, center: Vector2, formation := "none") -> Arra
 				break
 			if hollow and r > 0 and r < rows - 1 and c > 0 and c < cols - 1:
 				continue  # square: ring only, officers inside
-			var p := center + Vector2((float(c) - cx) * spacing / maxf(0.6, float(f.get("cols_mult", 1.0)) + 0.4),
+			var off := Vector2((float(c) - cx) * spacing / maxf(0.6, float(f.get("cols_mult", 1.0)) + 0.4),
 				(float(r) - cy) * spacing / maxf(0.6, float(f.get("rows_mult", 1.0)) + 0.4))
+			var p := center + off.rotated(fa)
 			if not in_bounds(p):
 				p = center
 			out.append(p)
@@ -1122,24 +1305,28 @@ func trade(player: int, give: String, want: String, amount := 100.0) -> bool:
 
 # Officer aura: nearby officer raises damage, drummer raises speed/morale.
 func officer_near(pos: Vector2, player: int) -> bool:
-	for e in entities:
-		if e.dead or e.player != player or e.kind != "unit":
+	if player < 0 or player > 1:
+		return false
+	for e in officers[player]:
+		if e.dead:
 			continue
-		if (e.sid == "officer" or e.sid == "officer18") and e.pos.distance_to(pos) <= Data.MORALE_OFFICER_RADIUS:
+		if e.pos.distance_to(pos) <= Data.MORALE_OFFICER_RADIUS:
 			return true
 	return false
 
 func drummer_near(pos: Vector2, player: int) -> bool:
-	for e in entities:
-		if e.dead or e.player != player or e.kind != "unit":
+	if player < 0 or player > 1:
+		return false
+	for e in drummers[player]:
+		if e.dead:
 			continue
-		if e.sid == "drummer" and e.pos.distance_to(pos) <= Data.MORALE_DRUMMER_RADIUS:
+		if e.pos.distance_to(pos) <= Data.MORALE_DRUMMER_RADIUS:
 			return true
 	return false
 
 func effective_speed(e: Dictionary) -> float:
 	var s: float = e.def.speed
-	if drummer_near(e.pos, e.player):
+	if bool(e.get("aur_dru", false)):
 		s *= 1.0 + Data.DRUMMER_SPEED_BONUS
 	if e.get("routing", false):
 		s *= 1.35  # routing troops run
@@ -1252,6 +1439,20 @@ func tick(dt: float) -> void:
 		return
 	dt = minf(dt, TICK_MAX)
 	time_s += dt
+	ai_cheat_t += dt
+	if ai_cheat_t >= 1.0 and Data.AI_DIFFICULTY == "hard":
+		ai_cheat_t = 0.0
+		players[1].res[0] += 1.5
+		players[1].res[1] += 1.5
+		players[1].res[2] += 1.5
+		players[1].res[3] += 0.8
+		players[1].res[4] += 0.8
+		players[1].res[5] += 0.8
+	_grid_rebuild()
+	compact_t += dt
+	if compact_t >= 5.0:
+		compact_t = 0.0
+		_compact()
 	for e in entities:
 		if e.dead:
 			continue
@@ -1262,10 +1463,14 @@ func tick(dt: float) -> void:
 	_tick_projectiles(dt)
 	for c in corpses:
 		c.t += dt
-	corpses = corpses.filter(func(c): return c.t < c.life)
+	for i in range(corpses.size() - 1, -1, -1):
+		if float(corpses[i].t) >= float(corpses[i].life):
+			corpses.remove_at(i)
 	for rb in rubble:
 		rb.t += dt
-	rubble = rubble.filter(func(rb): return rb.t < rb.life)
+	for i in range(rubble.size() - 1, -1, -1):
+		if float(rubble[i].t) >= float(rubble[i].life):
+			rubble.remove_at(i)
 	_separate_units()
 	_tick_cleanup(dt)
 	_tick_upkeep(dt)
@@ -1277,7 +1482,7 @@ func tick(dt: float) -> void:
 # hash so 200+ units stay cheap (no O(n^2) stall on any platform).
 func _separate_units() -> void:
 	var cell := 2.0
-	var grid: Dictionary = {}
+	var lgrid: Dictionary = {}
 	var units: Array = []
 	for e in entities:
 		if e.dead or e.kind != "unit":
@@ -1287,10 +1492,10 @@ func _separate_units() -> void:
 		units.append(e)
 		var cx := int(floor(e.pos.x / cell))
 		var cy := int(floor(e.pos.y / cell))
-		var key := str(cx) + "," + str(cy)
-		if not grid.has(key):
-			grid[key] = []
-		grid[key].append(e)
+		var key := Vector2i(cx, cy)
+		if not lgrid.has(key):
+			lgrid[key] = []
+		lgrid[key].append(e)
 	if units.is_empty():
 		return
 	for _pass in 2:
@@ -1301,10 +1506,10 @@ func _separate_units() -> void:
 			var cy := int(floor(e.pos.y / cell))
 			for oy in range(-1, 2):
 				for ox in range(-1, 2):
-					var key := str(cx + ox) + "," + str(cy + oy)
-					if not grid.has(key):
+					var key := Vector2i(cx + ox, cy + oy)
+					if not lgrid.has(key):
 						continue
-					for o in grid[key]:
+					for o in lgrid[key]:
 						if o == e or o.dead:
 							continue
 						# order the pair once (avoid double push jitter)
@@ -1330,7 +1535,7 @@ func _separate_units() -> void:
 		for e in units:
 			if e.dead:
 				continue
-			for b in entities:
+			for b in grid_query(e.pos, 6.0):
 				if b.dead or b.kind != "building":
 					continue
 				var rr: float = e.def.radius + b.def.radius + 0.15
@@ -1357,14 +1562,22 @@ func _tick_upkeep(dt: float) -> void:
 	# grace period so a test never dies instantly (estimated).
 	for pi in 2:
 		var p: Dictionary = players[pi]
+		p["famine_msg_t"] = maxf(0.0, float(p.get("famine_msg_t", 0.0)) - dt)
 		var eat := {"food": 0.0, "gold": 0.0, "stone": 0.0}
-		for e in entities:
+		for e in live_units:
 			if e.dead or e.player != pi:
 				continue
 			var ee: Dictionary = e.def.get("eat", {})
 			for k in ee:
 				if eat.has(k):
 					eat[k] += ee[k] / Data.UPKEEP_DIVISOR  # player.script speed 20000
+		for e in live_blds:
+			if e.dead or e.player != pi:
+				continue
+			var ee2: Dictionary = e.def.get("eat", {})
+			for k in ee2:
+				if eat.has(k):
+					eat[k] += ee2[k] / Data.UPKEEP_DIVISOR
 		for k in eat:
 			if eat[k] > 0:
 				var idx: int = Data.RES_NAMES.find(k)
@@ -1383,7 +1596,9 @@ func _tick_upkeep(dt: float) -> void:
 						p["famine"] = true
 						p["famine_t"] = float(p.get("famine_t", 0.0)) + dt
 						if float(p["famine_t"]) >= Data.FAMINE_GRACE_S:
-							say("Famine! %s is starving." % p.name)
+							if float(p.get("famine_msg_t", 0.0)) <= 0.0:
+								p["famine_msg_t"] = 10.0
+								say("Famine! %s is starving." % p.name)
 							for e in entities:
 								if not e.dead and e.player == pi and e.kind == "unit":
 									e.hp -= Data.FAMINE_DRAIN_PER_S * dt
@@ -1414,15 +1629,24 @@ func _kill(e: Dictionary, killer = null, loud := true) -> void:
 				squads.erase(int(e.squad))
 		e.erase("squad")
 	players[e.player].score -= e.def.get("score", 0)
+	if e.kind == "building" and bool(e.get("finished", true)):
+		players[e.player].farm_cap = maxi(0, int(players[e.player].farm_cap) - int(e.def.get("farm", 0)))
 	if e.kind == "unit":
 		_leave_building(e)
 		post_event("death", e.pos, e.sid, e.sid)
-		corpses.append({"pos": e.pos, "sid": e.sid, "player": e.player, "t": 0.0, "life": 14.0, "death_t": time_s, "face": e.get("face", 0.0)})
-		if corpses.size() > 220:
+		corpses.append({"pos": e.pos, "sid": e.sid, "player": e.player, "t": 0.0, "life": float(Data.CORPSE_LIFE), "death_t": time_s, "face": e.get("face", 0.0)})
+		if corpses.size() > 600:
 			corpses.pop_front()
 		if killer != null and not killer.is_empty():
 			stats.kills += 1
 	else:
+		# garrison dies with the building (siege feel); unload first to find them
+		var hid: Array = []
+		for u in live_units:
+			if not u.dead and int(u.get("inside_of", 0)) == e.id and bool(u.get("hidden", false)):
+				hid.append(u)
+		for u in hid:
+			_kill(u, killer, false)
 		set_blocked_circle(e.pos, e.def.radius, false)
 		if e.get("workers", 0) > 0:
 			for u in entities:
@@ -1435,21 +1659,26 @@ func _kill(e: Dictionary, killer = null, loud := true) -> void:
 		rubble.append({"pos": e.pos, "sid": e.sid, "player": e.player, "t": 0.0, "life": 20.0})
 		if rubble.size() > 60:
 			rubble.pop_front()
+		bld_dirty += 1
 
 func cmd_make_gate(w: Dictionary) -> void:
-	if w.dead or w.sid != "wal" or not w.finished or w.player != 0:
+	if w.dead or w.sid != "wal" or not w.finished or w.player < 0:
 		return
 	set_blocked_circle(w.pos, w.def.radius, false)
 	w.sid = "gat"
 	w.def = Data.BUILDINGS["gat"]
 	w["closed"] = false
 	gates.append(w)
+	bld_dirty += 1
 	say("Wall segment converted to a gate.")
 
 func cmd_gate_toggle(g: Dictionary) -> void:
 	if g.dead or g.sid != "gat":
 		return
+	if g.player != 0:
+		return
 	g["closed"] = not bool(g.get("closed", false))
+	bld_dirty += 1
 	say("Gate %s." % ("closed" if g["closed"] else "open"))
 
 func cmd_repair(pe: Dictionary, b: Dictionary) -> void:
@@ -1465,8 +1694,6 @@ func cmd_repair(pe: Dictionary, b: Dictionary) -> void:
 func cmd_delete(e: Dictionary) -> void:
 	if e.dead or e.player != 0:
 		return
-	if e.kind == "building" and e.def.has("farm"):
-		players[e.player].farm_cap += int(e.def.farm)
 	var sc: int = players[e.player].score
 	_kill(e, null, false)
 	players[e.player].score = sc
@@ -1487,8 +1714,8 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 	for i in 13:
 		var ang := 0.0
 		if i > 0:
-			var sgn := 1.0 if (i % 2 == 1) else -1.0
-			ang = sgn * (PI / 12.0) * float((i + 1) / 2)
+			var step_i: int = (i + 1) / 2 + 1
+			ang = (PI / 12.0) * float(step_i) * (1.0 if i % 2 == 0 else -1.0)
 		var d2: Vector2 = dir.rotated(ang)
 		var np: Vector2 = e.pos + d2 * step
 		if not _blocked_for(e, np) and not _blocked_for(e, np + d2 * 0.45):
@@ -1518,6 +1745,14 @@ func _work_slot(e: Dictionary, center: Vector2, ring_r: float) -> Vector2:
 
 func _tick_unit(e: Dictionary, dt: float) -> void:
 	e.cooldown = maxf(0.0, e.cooldown - dt)
+	e.acq_t = float(e.get("acq_t", 0.0)) - dt
+	if e.acq_t <= 0.0:
+		e.acq_t = 0.125
+		e["acq_now"] = true
+		e.aur_off = officer_near(e.pos, e.player)
+		e.aur_dru = drummer_near(e.pos, e.player)
+	else:
+		e["acq_now"] = false
 	# deployed crews: standing still readies the gun
 	if e.moving:
 		e["deploy_t"] = 0.0
@@ -1537,11 +1772,21 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 		"move":
 			e.moving = true
 			_step_move(e, o.pos, effective_speed(e), dt)
+			var sqm: Dictionary = squad_of_unit(e.id)
+			if not sqm.is_empty() and int(sqm.get("officer", 0)) == e.id:
+				sqm["face"] = (o.pos - e.pos).angle()
 			if not e.moving:
 				e.order = {"type": "none"}
 		"attackmove":
 			e.moving = true
-			var en := enemies_preferred(e.pos, e.player, e.def.search, e)
+			var en: Dictionary = {}
+			if bool(e.get("acq_now", false)):
+				en = enemies_preferred(e.pos, e.player, float(e.def.search), e)
+				e["acq_target"] = en.id if not en.is_empty() else 0
+			else:
+				en = by_id.get(int(e.get("acq_target", 0)), {})
+				if not en.is_empty() and (en.dead or en.player == e.player or en.pos.distance_to(e.pos) > float(e.def.search)):
+					en = {}
 			if not en.is_empty() and not bool(e.get("hold_fire", false)):
 				e.order = {"type": "attack", "target": en.id, "resume": o.pos}
 				return
@@ -1559,9 +1804,9 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 					e.order = {"type": "guard", "target": o.resume_guard}
 					e.moving = true
 				elif o.has("resume_patrol"):
-					var a: Vector2 = e.pos + Vector2(-4, 0)
-					var b: Vector2 = e.pos + Vector2(4, 0)
-					e.order = {"type": "patrol", "a": a, "b": b, "leg": 0}
+					var pa: Vector2 = o.get("a", e.pos)
+					var pb2: Vector2 = o.get("b", e.pos)
+					e.order = {"type": "patrol", "a": pa, "b": pb2, "leg": 0}
 					e.moving = true
 				else:
 					e.order = {"type": "none"}
@@ -1573,21 +1818,22 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 				return
 			var d: float = e.pos.distance_to(t.pos)
 			var tr: float = t.def.radius
+			e.face = (t.pos - e.pos).angle()
 			var w := _pick_weapon(e, d)
 			if w.get("only_buildings", false) and t.kind != "building":
 				# mortars can only attack buildings: hold fire, keep the order
 				e.moving = false
 				return
-			if e.def.get("artillery", false):
-				w = w.duplicate()
-				w["max"] = float(w.max) * float(players[e.player].get("art_range", 1.0))
-			var hd: float = height_at(e.pos) - height_at(t.pos)
-			if hd > 0.6 and str(w.kind) in ["bullet", "arrow", "firearrow", "cannonball", "cannister"]:
-				w = w.duplicate()
-				w["max"] = float(w.max) * 1.25
 			if d > w.max + tr:
 				e.moving = true
 				_step_move(e, t.pos, effective_speed(e), dt)
+				if not e.moving:
+					e.stuck_t = float(e.get("stuck_t", 0.0)) + dt
+					if e.stuck_t > 6.0:
+						e.stuck_t = 0.0
+						e.order = {"type": "attackmove", "pos": t.pos}
+				else:
+					e.stuck_t = 0.0
 			elif d < w.min:
 				if bool(e.def.get("no_melee", false)):
 					# 17th-century shooters have no bayonet: fall back out of
@@ -1602,6 +1848,13 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 			else:
 				e.moving = false
 				if e.cooldown <= 0:
+					if e.def.get("artillery", false):
+						w = w.duplicate()
+						w["max"] = float(w.max) * float(players[e.player].get("art_range", 1.0))
+					var hd: float = height_at(e.pos) - height_at(t.pos)
+					if hd > 0.6 and str(w.kind) in ["bullet", "arrow", "firearrow", "cannonball", "cannister"]:
+						w = w.duplicate()
+						w["max"] = float(w.max) * 1.25
 					_fire(e, t, w)
 		"guard":
 			var gt: Dictionary = by_id.get(o.get("target", 0), {})
@@ -1610,7 +1863,14 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 				e.moving = false
 				return
 			var gd: float = e.pos.distance_to(gt.pos)
-			var foe := enemies_preferred(e.pos, e.player, e.def.search, e)
+			var foe: Dictionary = {}
+			if bool(e.get("acq_now", false)):
+				foe = enemies_preferred(e.pos, e.player, float(e.def.search), e)
+				e["acq_target"] = foe.id if not foe.is_empty() else 0
+			else:
+				foe = by_id.get(int(e.get("acq_target", 0)), {})
+				if not foe.is_empty() and (foe.dead or foe.player == e.player or foe.pos.distance_to(e.pos) > float(e.def.search)):
+					foe = {}
 			if not foe.is_empty() and has_weapon(e) and not bool(e.get("hold_fire", false)):
 				e.order = {"type": "attack", "target": foe.id, "resume_guard": gt.id}
 				return
@@ -1622,9 +1882,16 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 		"patrol":
 			var a: Vector2 = o.get("a", e.pos)
 			var b: Vector2 = o.get("b", e.pos)
-			var foe2 := enemies_preferred(e.pos, e.player, e.def.search, e)
+			var foe2: Dictionary = {}
+			if bool(e.get("acq_now", false)):
+				foe2 = enemies_preferred(e.pos, e.player, float(e.def.search), e)
+				e["acq_target"] = foe2.id if not foe2.is_empty() else 0
+			else:
+				foe2 = by_id.get(int(e.get("acq_target", 0)), {})
+				if not foe2.is_empty() and (foe2.dead or foe2.player == e.player or foe2.pos.distance_to(e.pos) > float(e.def.search)):
+					foe2 = {}
 			if not foe2.is_empty() and has_weapon(e) and not bool(e.get("hold_fire", false)):
-				e.order = {"type": "attack", "target": foe2.id, "resume_patrol": true}
+				e.order = {"type": "attack", "target": foe2.id, "resume_patrol": true, "a": a, "b": b}
 				return
 			var dest: Vector2 = b if int(o.get("leg", 0)) == 0 else a
 			e.moving = true
@@ -1633,6 +1900,28 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 				o.leg = 1 - int(o.get("leg", 0))
 		"gather":
 			_tick_gather(e, dt)
+		"resow":
+			var fn: Dictionary = by_id.get(o.get("node", 0), {})
+			if fn.is_empty() or fn.hits > 0:
+				e.order = {"type": "none"}
+				return
+			var fslot := _work_slot(e, fn.pos, fn.radius + 0.7)
+			if e.pos.distance_to(fslot) > 0.6:
+				e.moving = true
+				_step_move(e, fslot, effective_speed(e), dt, 0.35)
+			else:
+				e.moving = false
+				e.face = (fn.pos - e.pos).angle()
+				e["hit_t"] = float(e.get("hit_t", 0.0)) + dt
+				if e.hit_t >= 2.0:
+					e.hit_t = 0.0
+					if not pay_cost(e.player, {"food": 20}):
+						e.order = {"type": "none"}
+						return
+					fn.hits = int(fn.max_hits)
+					res_dirty += 1
+					post_event("construct", fn.pos, "field")
+					e.order = {"type": "gather", "node": fn.id, "res": "food"}
 		"repair":
 			var rb: Dictionary = by_id.get(o.get("target", 0), {})
 			if rb.is_empty() or rb.dead or rb.hp >= rb.max_hp:
@@ -1651,6 +1940,25 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 					rb.hp = mini(rb.max_hp, rb.hp + maxi(1, add))
 					if not pay_cost(e.player, {"stone": 1}):
 						e.order = {"type": "none"}
+		"attackground":
+			var gp: Vector2 = o.get("pos", e.pos)
+			var gd: float = e.pos.distance_to(gp)
+			var gw := _pick_weapon(e, gd)
+			if gw.is_empty():
+				e.order = {"type": "none"}
+				return
+			if gd > float(gw.max):
+				e.moving = true
+				_step_move(e, gp, effective_speed(e), dt, 0.5)
+			else:
+				e.moving = false
+				e.face = (gp - e.pos).angle()
+				e.deploy_t = float(e.get("deploy_t", 0.0)) + dt
+				e.cooldown = float(e.get("cooldown", 0.0)) - dt
+				if e.cooldown <= 0.0 and e.deploy_t >= Data.ARTILLERY_DEPLOY_S:
+					e.cooldown = float(gw.cd)
+					var fake := {"pos": gp, "kind": "unit", "player": -1, "dead": false, "hp": 1, "max_hp": 1, "def": {"radius": 0.5}, "prot": [0, 0, 0, 0, 0, 0]}
+					_fire(e, fake, gw)
 		"build":
 			var site: Dictionary = by_id.get(o.get("target", 0), {})
 			if site.is_empty() or site.dead or site.finished:
@@ -1669,11 +1977,13 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 					e.moving = false
 			else:
 				e.moving = false
+				e.face = (site.pos - e.pos).angle()
 				e["hit_t"] = (e.get("hit_t", 0.0) + dt)
 				if e.hit_t >= Data.BUILD_HIT_INTERVAL:
 					e.hit_t = 0.0
 					site.progress += Data.BUILD_PROGRESS_PER_HIT / float(players[site.player].get("build_mult", 1.0))
 					site.hp = mini(site.max_hp, site.hp + int(site.max_hp * Data.BUILD_PROGRESS_PER_HIT / site.def.build_time * 0.75))
+					bld_dirty += 1
 					if site.progress >= site.def.build_time:
 						site.progress = site.def.build_time
 						site.finished = true
@@ -1687,7 +1997,14 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 			if e.def.get("support", false):
 				return
 			if has_weapon(e) and e.sid != "peasant":
-				var en := enemies_in_radius(e.pos, e.player, e.def.search)
+				var en: Dictionary = {}
+				if bool(e.get("acq_now", false)):
+					en = enemies_in_radius(e.pos, e.player, float(e.def.search))
+					e["acq_target"] = en.id if not en.is_empty() else 0
+				else:
+					en = by_id.get(int(e.get("acq_target", 0)), {})
+					if not en.is_empty() and (en.dead or en.player == e.player or en.pos.distance_to(e.pos) > float(e.def.search)):
+						en = {}
 				if not en.is_empty():
 					e.order = {"type": "attack", "target": en.id}
 
@@ -1697,9 +2014,9 @@ func _update_morale(e: Dictionary, dt: float) -> void:
 	var m := float(e.get("morale", Data.MORALE_BASE))
 	# recover towards base, faster near leaders
 	var want := Data.MORALE_BASE
-	if officer_near(e.pos, e.player):
+	if bool(e.get("aur_off", false)):
 		want += Data.MORALE_OFFICER_BONUS
-	if drummer_near(e.pos, e.player):
+	if bool(e.get("aur_dru", false)):
 		want += Data.MORALE_DRUMMER_BONUS
 	if e.hp < e.max_hp * 0.3:
 		want -= Data.MORALE_LOW_HP_PENALTY
@@ -1719,8 +2036,15 @@ func _tick_rout(e: Dictionary, dt: float) -> void:
 	# run away from the nearest enemy towards home, then recover
 	e["routing_t"] = float(e.get("routing_t", 0.0)) + dt
 	var foe: Dictionary = enemies_in_radius(e.pos, e.player, 25.0, false)
-	var homes: Array = buildings_of(e.player)
-	var home_pos: Vector2 = homes[0].pos if not homes.is_empty() else e.pos
+	var best_hd := 1e9
+	var home_pos: Vector2 = e.pos
+	for b in live_blds:
+		if b.dead or b.player != e.player:
+			continue
+		var d: float = b.pos.distance_to(e.pos)
+		if d < best_hd:
+			best_hd = d
+			home_pos = b.pos
 	var dir := Vector2.ZERO
 	if not foe.is_empty():
 		dir = (e.pos - foe.pos).normalized()
@@ -1736,7 +2060,7 @@ func _tick_rout(e: Dictionary, dt: float) -> void:
 		e["routing"] = false
 
 func _priest_heal(e: Dictionary, dt: float) -> void:
-	for u in entities:
+	for u in grid_query(e.pos, 8.0):
 		if u.dead or u.kind != "unit" or u.player != e.player:
 			continue
 		if u.id == e.id:
@@ -1762,7 +2086,7 @@ func _dispersion_px(kind: String, sid: String) -> float:
 # Walls block direct fire: flat-trajectory shots stop at the first segment
 # between shooter and target (howitzers/mortars arc over; wiki Wall).
 func _wall_between(a: Vector2, b: Vector2) -> bool:
-	for e in entities:
+	for e in grid_query((a + b) * 0.5, a.distance_to(b) * 0.5 + 4.0):
 		if e.dead or e.kind != "building":
 			continue
 		if e.sid != "wal" and not (e.sid == "gat" and bool(e.get("closed", false))):
@@ -1776,7 +2100,7 @@ func _wall_between(a: Vector2, b: Vector2) -> bool:
 			return true
 	return false
 
-func _fire(e: Dictionary, t: Dictionary, w: Dictionary) -> void:
+func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 	var cost: Dictionary = w.get("cost", {})
 	if not cost.is_empty() and not Data.can_pay(players[e.player].res, cost):
 		e.cooldown = 1.0
@@ -1801,8 +2125,19 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary) -> void:
 	stats.shots += 1
 	# officer aura + researched powder upgrades multiply the listed damage
 	var mult: float = effective_damage(e.player, w.kind, e.pos)
-	var base_dmg := int(round(float(w.dmg) * mult)) + _formation_atk(e, w.kind)
+	var base_dmg := int(round(float(w.dmg) * mult)) + _formation_atk(e, w.kind) + bonus
 	post_event("shot", e.pos, w.kind, e.sid)
+	if int(t.get("player", 0)) == -1:
+		var disp := _dispersion_px("cannonball", e.sid) * float(players[e.player].get("art_acc", 1.0))
+		var aim: Vector2 = t.pos + Vector2(rng.randf_range(-disp, disp), rng.randf_range(-disp, disp)) * 0.5
+		var dist: float = e.pos.distance_to(aim)
+		var flight := clampf(dist / 30.0, 0.5, 1.6)
+		projectiles.append({"pos": e.pos, "target": aim, "kind": "cannonball",
+			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
+			"owner": e.id, "player": e.player, "t": 0.0, "total": flight})
+		if projectiles.size() > 512:
+			projectiles.pop_front()
+		return
 	if w.kind == "bullet":
 		post_event("smoke", e.pos, w.kind, e.sid)
 		_apply_hit(e, t, w, base_dmg, t.pos)
@@ -1815,7 +2150,7 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary) -> void:
 		projectiles.append({"pos": e.pos, "target": aim, "kind": w.kind,
 			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
 			"owner": e.id, "player": e.player, "t": 0.0, "total": flight})
-		if projectiles.size() > 64:
+		if projectiles.size() > 512:
 			projectiles.pop_front()
 	elif w.kind == "arrow" or w.kind == "firearrow":
 		var disp2 := _dispersion_px(w.kind, e.sid) * float(players[e.player].get("art_acc", 1.0))
@@ -1823,13 +2158,27 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary) -> void:
 		projectiles.append({"pos": e.pos, "target": aim2, "kind": w.kind,
 			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
 			"owner": e.id, "player": e.player, "t": 0.0, "total": 0.45})
-		if projectiles.size() > 64:
+		if projectiles.size() > 512:
 			projectiles.pop_front()
 	else:
 		_apply_hit(e, t, w, base_dmg, t.pos)
 
 func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vector2) -> void:
 	if t.is_empty() or t.dead:
+		return
+	if t.kind == "unit" and str(t.sid) == "peasant" and e.kind == "unit" \
+			and e.player != t.player and not e.def.get("support", false) \
+			and bool(Data.CAPTURE_ENABLED) and str(e.sid) != "peasant":
+		var oldp: int = int(t.player)
+		t.player = e.player
+		t.order = {"type": "none"}
+		t.inside_of = 0
+		t["morale"] = 70.0
+		players[oldp].entities.erase(t.id)
+		players[int(e.player)].entities.append(t.id)
+		post_event("capture", t.pos, "unit")
+		if e.player == 0:
+			say("Enemy peasant captured!")
 		return
 	# towers are fortifications: only artillery, grenades and arrows hurt them
 	if t.kind == "building" and t.sid in ["tow", "wal", "gat"] and not str(w.kind) in ["cannonball", "cannister", "arrow", "firearrow"]:
@@ -1848,6 +2197,8 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 		"shield": t.get("shield", 0), "finished": t.get("finished", true), "prot": prot}
 	var dealt: int = C3Data.apply_damage(dmg, w.kind, tmp)
 	t.hp -= dealt
+	if t.kind == "building":
+		bld_dirty += 1
 	# morale shock when hit
 	if t.kind == "unit":
 		t["morale"] = float(t.get("morale", Data.MORALE_BASE)) - 4.0
@@ -1858,22 +2209,24 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 	# splash hurts everyone (video: friendly fire is real), half to the rim
 	if float(w.get("splash", 0.0)) > 0.0:
 		post_event("explode", at, w.kind, e.sid)
-		for u in entities:
+		for u in grid_query(at, float(w.get("splash", 0.0)) + 2.0):
 			if u.dead or u.id == t.id:
 				continue
 			var rr: float = float(w.splash) + (float(u.def.radius) if u.kind == "building" else 0.0)
 			if u.pos.distance_to(at) <= rr:
-				var uprot: Array = (u.get("prot", [0, 0, 0, 0, 0, 0]) as Array).duplicate()
-				if pb != 0 and u.player == t.player:
-					pass
+				var vp: Array = u.prot.duplicate()
+				for k in 6:
+					vp[k] = int(vp[k]) + int(players[u.player].get("prot_bonus", 0)) + _formation_def(u)
 				var utmp := {"cavalry": u.get("cavalry", ""), "moving": u.get("moving", false),
-					"shield": u.get("shield", 0), "finished": u.get("finished", true), "prot": uprot}
+					"shield": u.get("shield", 0), "finished": u.get("finished", true), "prot": vp}
 				var sd: int = C3Data.apply_damage(int(float(dmg) * 0.5), w.kind, utmp)
 				u.hp -= sd
+				if u.kind == "building":
+					bld_dirty += 1
 	post_event("hit", at, w.kind, e.sid)
 
 func _morale_shock(pos: Vector2, player: int) -> void:
-	for u in entities:
+	for u in grid_query(pos, 10.0):
 		if u.dead or u.kind != "unit" or u.player != player:
 			continue
 		if u.pos.distance_to(pos) <= 10.0:
@@ -1892,7 +2245,7 @@ func _tick_projectiles(dt: float) -> void:
 		# find who is actually at the impact point (friendly fire included)
 		var victim: Dictionary = {}
 		var best_d := 2.0
-		for u in entities:
+		for u in grid_query(p.target, 3.0):
 			if u.dead:
 				continue
 			var d: float = u.pos.distance_to(p.target)
@@ -1969,7 +2322,7 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 	var slot := _work_slot(e, node.pos, node.radius + 1.1)
 	if res == "food":
 		var on_node := 0
-		for u in entities:
+		for u in grid_query(node.pos, node.radius + 2.0):
 			if not u.dead and u.id != e.id and u.order.type == "gather" and u.order.get("node", 0) == node.id and u.pos.distance_to(node.pos) < node.radius + 2.0:
 				on_node += 1
 		if on_node >= 2:
@@ -1992,6 +2345,7 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 				o.node = alt.id
 		return
 	e.moving = false
+	e.face = (node.pos - e.pos).angle()
 	e["hit_t"] = (e.get("hit_t", 0.0) + dt)
 	if e.hit_t < Data.GATHER[res].interval:
 		return
@@ -2005,6 +2359,7 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 			if res != "food":
 				set_blocked_circle(node.pos, node.radius, false)
 			post_event("depleted", node.pos, res)
+			res_dirty += 1
 	if e.carry >= Data.GATHER[res].hits or node.hits <= 0:
 		_gather_deliver(e, dt)
 
@@ -2082,6 +2437,9 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 		var dt_dep: float = e.deposit_left
 		amount = minf(amount, dt_dep)
 		e.deposit_left = e.deposit_left - amount
+		var nd: Dictionary = by_id.get(int(e.get("deposit_node", 0)), {})
+		if not nd.is_empty():
+			nd["left"] = maxf(0.0, float(nd.get("left", 0.0)) - amount)
 		var idx: int = Data.RES_NAMES.find(e.def.mine)
 		players[e.player].res[idx] += amount
 		stats.gathered[e.def.mine] = int(stats.gathered.get(e.def.mine, 0)) + int(amount)
@@ -2099,7 +2457,12 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				if w.get("only_buildings", false) and en.kind != "building":
 					return
 				if en.pos.distance_to(e.pos) >= w.min:
-					_fire(e, en, w)
+					_fire(e, en, w, 2 * int(e.get("garrison", 0)))
+	# garrisoned units heal while inside
+	if int(e.get("garrison", 0)) > 0:
+		for u in live_units:
+			if not u.dead and int(u.get("inside_of", 0)) == e.id and bool(u.get("hidden", false)):
+				u.hp = mini(u.max_hp, int(u.hp + 2.0 * dt))
 	# capture: peasants do it properly, soldiers only lean on it.
 	# Video pass: a white flag goes up and the bar fills while peasants swarm
 	# an empty building; garrisoned towers resist.
@@ -2108,7 +2471,7 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 		var peas := 0
 		var sols := 0
 		var capturer := -1
-		for u in entities:
+		for u in grid_query(e.pos, 8.0 + e.def.radius):
 			if not u.dead and u.kind == "unit" and u.player != e.player \
 					and u.pos.distance_to(e.pos) < 8.0 + e.def.radius:
 				if u.sid == "peasant":
@@ -2121,8 +2484,12 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				capturer = u.player
 		if capturer >= 0:
 			var speed_c: float = float(peas) * 1.0 + float(sols) * 0.25
+			if int(e.get("garrison", 0)) > 0:
+				speed_c *= 0.5
 			e.capture_t += dt * speed_c
-			if int(time_s * 2.0) % 2 == 0 and peas > 0:
+			e["cap_evt_t"] = float(e.get("cap_evt_t", 0.0)) - dt
+			if float(e.get("cap_evt_t", 0.0)) <= 0.0 and peas > 0:
+				e["cap_evt_t"] = 0.5
 				post_event("capture", e.pos, e.sid)
 			var need: float = 5.0 + float(e.max_hp) / 2500.0
 			if e.capture_t >= need:
@@ -2133,9 +2500,11 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				players[capturer].entities.append(e.id)
 				players[capturer].score += e.def.get("score", 0)
 				if e.def.has("farm"):
-					players[old].farm_cap -= e.def.farm
+					players[old].farm_cap = maxi(0, int(players[old].farm_cap) - int(e.def.get("farm", 0)))
 					players[capturer].farm_cap += e.def.farm
-				_on_building_finished(e)
+				if e.sid.begins_with("mine_"):
+					e["deposit_left"] = float(e.get("deposit_left", 0.0))
+				e.erase("rally")
 				post_event("capture", e.pos, e.sid)
 				say("A building was captured!")
 		else:
@@ -2157,3 +2526,108 @@ func _check_victory() -> void:
 			winner = 1 - pi
 			game_over.emit(winner)
 			say("%s wins!" % players[winner].name)
+
+func _vec_enc(v: Variant) -> Variant:
+	if v is Vector2:
+		return [v.x, v.y]
+	if v is Dictionary:
+		var o := {}
+		for k in v:
+			o[k] = _vec_enc(v[k])
+		return o
+	if v is Array:
+		var a := []
+		for x in v:
+			a.append(_vec_enc(x))
+		return a
+	return v
+
+func _vec_dec(v: Variant) -> Variant:
+	if v is Array and v.size() == 2 and (v[0] is float or v[0] is int) and (v[1] is float or v[1] is int):
+		return Vector2(float(v[0]), float(v[1]))
+	if v is String and v.begins_with("(") and v.ends_with(")"):
+		var s: String = v.substr(1, v.length() - 2).replace(" ", "")
+		var p: PackedStringArray = s.split(",")
+		if p.size() == 2 and p[0].is_valid_float() and p[1].is_valid_float():
+			return Vector2(float(p[0]), float(p[1]))
+	if v is Dictionary:
+		var o := {}
+		for k in v:
+			o[k] = _vec_dec(v[k])
+		return o
+	if v is Array:
+		var a := []
+		for x in v:
+			a.append(_vec_dec(x))
+		return a
+	return v
+
+func serialize() -> Dictionary:
+	var ents: Array = []
+	for e in entities:
+		if e.dead:
+			continue
+		var d: Dictionary = {}
+		for k in e:
+			if k in ["def", "order", "queue"]:
+				continue
+			d[k] = _vec_enc(e[k])
+		d["order"] = _vec_enc(e.order.duplicate(true))
+		d["queue"] = _vec_enc(e.queue.duplicate(true))
+		ents.append(d)
+	var nodes: Array = []
+	for n in res_nodes:
+		var nd: Dictionary = {}
+		for k in n:
+			nd[k] = _vec_enc(n[k])
+		nodes.append(nd)
+	var pls: Array = []
+	for p in players:
+		var pd: Dictionary = {}
+		for k in p:
+			pd[k] = _vec_enc(p[k])
+		pls.append(pd)
+	return {
+		"version": 3, "time_s": time_s, "winner": winner, "next_id": next_id,
+		"next_squad": next_squad, "battle_mode": battle_mode,
+		"terrain": Marshalls.raw_to_base64(terrain), "blocked": Marshalls.raw_to_base64(blocked),
+		"map_w": MAP_W, "map_h": MAP_H,
+		"entities": ents, "res_nodes": nodes, "players": pls,
+		"squads": squads.duplicate(true), "deposits": deposits.duplicate(),
+		"stats": stats.duplicate(true), "objectives": objectives.duplicate(true),
+	}
+
+func deserialize(d: Dictionary) -> bool:
+	if int(d.get("version", 0)) != 3:
+		return false
+	MAP_W = int(d.map_w); MAP_H = int(d.map_h)
+	terrain = Marshalls.base64_to_raw(str(d.terrain))
+	blocked = Marshalls.base64_to_raw(str(d.blocked))
+	time_s = float(d.time_s); winner = int(d.winner)
+	next_id = int(d.next_id); next_squad = int(d.next_squad)
+	battle_mode = bool(d.battle_mode)
+	entities.clear(); by_id.clear()
+	for ed in d.entities:
+		var e: Dictionary = (_vec_dec(ed) as Dictionary).duplicate(true)
+		var sid: String = str(e.sid)
+		e["def"] = Data.UNITS[sid] if e.kind == "unit" else Data.BUILDINGS[sid]
+		entities.append(e)
+		by_id[int(e.id)] = e
+	res_nodes = []
+	for n in d.res_nodes:
+		var nn: Dictionary = (_vec_dec(n) as Dictionary).duplicate(true)
+		res_nodes.append(nn)
+		by_id[int(nn.id)] = nn
+	players = []
+	for p in d.players:
+		players.append((_vec_dec(p) as Dictionary).duplicate(true))
+	squads = d.squads.duplicate(true)
+	deposits = d.deposits.duplicate()
+	stats = d.stats.duplicate(true)
+	objectives = d.objectives.duplicate(true)
+	gates.clear()
+	for e in entities:
+		if e.kind == "building" and str(e.sid) == "gat":
+			gates.append(e)
+	_grid_rebuild()
+	return true

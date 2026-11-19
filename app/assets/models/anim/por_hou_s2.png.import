@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cqae3ecp455fb"
-path="res://.godot/imported/por_hou_s2.png-01ad825d129f22762f3edb3b8838167c.ctex"
+path.s3tc="res://.godot/imported/por_hou_s2.png-01ad825d129f22762f3edb3b8838167c.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/por_hou_s2.png"
-dest_files=["res://.godot/imported/por_hou_s2.png-01ad825d129f22762f3edb3b8838167c.ctex"]
+dest_files=["res://.godot/imported/por_hou_s2.png-01ad825d129f22762f3edb3b8838167c.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

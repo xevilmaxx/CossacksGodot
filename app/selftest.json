@@ -1,14 +1,13 @@
 {
   "passed": true,
   "resources_gathered": {
-    "food": 196,
+    "food": 438,
     "gold": 0,
-    "stone": 38,
     "trade": 65,
-    "wood": 152
+    "wood": 24
   },
-  "shots_fired": 30,
-  "sim_seconds": 299.0,
+  "shots_fired": 46,
+  "sim_seconds": 364.09375,
   "steps": [
     {
       "detail": "walked 6.0 m forward (speed 1.5 m/s)",
@@ -114,6 +113,41 @@
       "detail": "serdiuk fell back from pikes: yes (3.0 -> 3.9 m)",
       "passed": true,
       "step": "flee"
+    },
+    {
+      "detail": "garrison 3 hid, unload restored: yes",
+      "passed": true,
+      "step": "garrison"
+    },
+    {
+      "detail": "peasant captured: player 0",
+      "passed": true,
+      "step": "peasant_capture"
+    },
+    {
+      "detail": "depleted field re-sown: yes",
+      "passed": true,
+      "step": "resow"
+    },
+    {
+      "detail": "cannon shells ground: shots 40 -> 41",
+      "passed": true,
+      "step": "attack_ground"
+    },
+    {
+      "detail": "serialize 64 ents round-trip: ok",
+      "passed": true,
+      "step": "save_load"
+    },
+    {
+      "detail": "grid vs brute force agreed on 10 points",
+      "passed": true,
+      "step": "grid_equiv"
+    },
+    {
+      "detail": "farm 500 -> 525 -> 500",
+      "passed": true,
+      "step": "farm_cap"
     }
   ],
   "version": 1

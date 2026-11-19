@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bf36vjwn4upre"
-path="res://.godot/imported/pie_art_s3.png-28bd609fb1c9989756bff3506b13d473.ctex"
+path.s3tc="res://.godot/imported/pie_art_s3.png-28bd609fb1c9989756bff3506b13d473.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/pie_art_s3.png"
-dest_files=["res://.godot/imported/pie_art_s3.png-28bd609fb1c9989756bff3506b13d473.ctex"]
+dest_files=["res://.godot/imported/pie_art_s3.png-28bd609fb1c9989756bff3506b13d473.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

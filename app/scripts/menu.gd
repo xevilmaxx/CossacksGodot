@@ -21,6 +21,9 @@ var map_type := "land"
 var start_option := "default"
 var mode := "skirmish"
 var mission_name := ""
+var difficulty := "normal"
+var map_size := 320
+var seed_val := 20261113
 
 func _ready() -> void:
 	layer = 20
@@ -113,6 +116,15 @@ func _show_main() -> void:
 	var b3 := _btn("Campaigns (%d)" % _campaigns().size())
 	b3.pressed.connect(_show_campaigns)
 	body.add_child(b3)
+	var lb := _btn("Load game")
+	lb.pressed.connect(_on_load_game)
+	body.add_child(lb)
+	var ob := _btn("Options")
+	ob.pressed.connect(_show_options)
+	body.add_child(ob)
+	var qb := _btn("Quit")
+	qb.pressed.connect(func(): get_tree().quit())
+	body.add_child(qb)
 	var hint := Label.new()
 	hint.text = "Maps are generated in the original's style (open plains, forest belts, hills, lakes). Picks change nations, armies and objectives."
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -146,6 +158,20 @@ func _show_skirmish() -> void:
 	body.add_child(_opt_row("Enemy nation", _nations(), nation1, func(id: String): nation1 = id))
 	body.add_child(_opt_row("Map type", _map_types(), map_type, func(id: String): map_type = id))
 	body.add_child(_opt_row("Starting", _starts(), start_option, func(id: String): start_option = id))
+	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
+	body.add_child(_opt_row("Map size", [{"id": "240", "name": "240"}, {"id": "320", "name": "320"}, {"id": "400", "name": "400"}], str(map_size), func(id: String): map_size = int(id)))
+	var shb := HBoxContainer.new()
+	var sl := Label.new()
+	sl.text = "Seed"
+	sl.custom_minimum_size = Vector2(150, 0)
+	shb.add_child(sl)
+	var seedbox := SpinBox.new()
+	seedbox.min_value = 0
+	seedbox.max_value = 99999999
+	seedbox.value = seed_val
+	seedbox.value_changed.connect(func(v: float): seed_val = int(v))
+	shb.add_child(seedbox)
+	body.add_child(shb)
 	var go := _btn("Start skirmish")
 	go.pressed.connect(func(): _emit_start("Skirmish"))
 	body.add_child(go)
@@ -173,16 +199,34 @@ func _on_battle(bd: Dictionary) -> void:
 
 func _show_campaigns() -> void:
 	_clear()
+	var prog := {}
+	if FileAccess.file_exists("user://campaign_progress.json"):
+		var v = JSON.parse_string(FileAccess.get_file_as_string("user://campaign_progress.json"))
+		if v is Dictionary:
+			prog = v
 	for c in _campaigns():
 		var cd: Dictionary = c
 		var missions: Array = cd.get("missions", [])
-		var cb := _btn("%s (%d missions)" % [str(cd.get("id", "?")), missions.size()])
-		cb.tooltip_text = ", ".join(missions.slice(0, 5))
-		cb.pressed.connect(_on_campaign.bind(cd))
-		body.add_child(cb)
+		for mi in missions.size():
+			var mid := str(missions[mi])
+			var mb := _btn("%s - %s" % [str(cd.get("id", "?")), mid])
+			var locked := mi > 0 and not bool(prog.get(str(missions[mi - 1]), false))
+			mb.disabled = locked
+			if locked:
+				mb.tooltip_text = "Win the previous mission to unlock"
+			else:
+				mb.tooltip_text = mid
+			mb.pressed.connect(_on_mission.bind(cd, mid))
+			body.add_child(mb)
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
 	body.add_child(back)
+
+func _on_mission(cd: Dictionary, mid: String) -> void:
+	mode = "campaign"
+	mission_name = mid
+	start_option = "default"
+	_emit_start("Campaign %s - %s" % [str(cd.get("id", "")), mission_name])
 
 func _on_campaign(cd: Dictionary) -> void:
 	var missions: Array = cd.get("missions", [])
@@ -191,8 +235,44 @@ func _on_campaign(cd: Dictionary) -> void:
 	start_option = "default"
 	_emit_start("Campaign %s - %s" % [str(cd.get("id", "")), mission_name])
 
+func _on_load_game() -> void:
+	_clear()
+	var found: Array = []
+	if FileAccess.file_exists("user://quicksave.json"):
+		found.append("user://quicksave.json")
+	for i in 5:
+		var p := "user://save_%d.json" % i
+		if FileAccess.file_exists(p):
+			found.append(p)
+	if found.is_empty():
+		var l := Label.new()
+		l.text = "No saves found"
+		body.add_child(l)
+	else:
+		for p in found:
+			var b := _btn(p.get_file())
+			b.pressed.connect(func(): chosen.emit({"mode": mode, "nation0": nation0, "nation1": nation1, "map_type": map_type, "start_option": start_option, "mission": mission_name, "descr": "loaded", "load_save": p, "difficulty": difficulty, "map_size": map_size, "seed": seed_val}))
+			body.add_child(b)
+	var back := _btn("Back")
+	back.pressed.connect(_show_main)
+	body.add_child(back)
+
+func _show_options() -> void:
+	_clear()
+	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id; _save_options()))
+	var back := _btn("Back")
+	back.pressed.connect(_show_main)
+	body.add_child(back)
+
+func _save_options() -> void:
+	var f := FileAccess.open("user://options.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"ai": {"difficulty": difficulty}}))
+		f.close()
+
 func _emit_start(descr: String) -> void:
 	var cfg := {"mode": mode, "nation0": nation0, "nation1": nation1,
 		"map_type": map_type, "start_option": start_option,
-		"mission": mission_name, "descr": descr}
+		"mission": mission_name, "descr": descr,
+		"difficulty": difficulty, "map_size": map_size, "seed": seed_val}
 	chosen.emit(cfg)

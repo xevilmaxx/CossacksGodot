@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bos5qeg8xbofk"
-path="res://.godot/imported/bav_mar_s4.png-29d2e6d5f6b60cd405bce0be08c353aa.ctex"
+path.s3tc="res://.godot/imported/bav_mar_s4.png-29d2e6d5f6b60cd405bce0be08c353aa.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/bav_mar_s4.png"
-dest_files=["res://.godot/imported/bav_mar_s4.png-29d2e6d5f6b60cd405bce0be08c353aa.ctex"]
+dest_files=["res://.godot/imported/bav_mar_s4.png-29d2e6d5f6b60cd405bce0be08c353aa.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

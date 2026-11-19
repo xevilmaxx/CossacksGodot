@@ -1,6 +1,4 @@
-# Computer opponent: gather, build, train, attack in waves.
-# Original AI scripts are compiled (.aix, packed), so behaviour here is an
-# original-flavoured approximation (recorded as estimated in MECHANICS.md).
+# Computer opponent: quota economy, mass production, combined-arms waves.
 extends RefCounted
 class_name C3AI
 
@@ -10,6 +8,8 @@ var game: C3Game
 var player: int
 var think_t := 0.0
 var wave := 0
+var raid_ids: Array = []
+var retreat_t := 0.0
 
 func _init(g: C3Game, p: int) -> void:
 	game = g
@@ -33,269 +33,146 @@ func tick(dt: float) -> void:
 			peasants.append(u)
 		else:
 			military.append(u)
-	# home center
-	var homes := game.buildings_of(player)
-	if homes.is_empty():
+	var blds := game.buildings_of(player, false)
+	var counts: Dictionary = {}
+	for b in blds:
+		counts[b.sid] = int(counts.get(b.sid, 0)) + 1
+	var fin: Dictionary = {}
+	for b in blds:
+		if b.finished:
+			fin[b.sid] = int(fin.get(b.sid, 0)) + 1
+	if fin.is_empty():
 		return
-	var home: Dictionary = homes[0]
-	# 1. put idle peasants to work
+	var home: Dictionary = game.by_id.get(int(p.get("home_id", 0)), {})
+	if home.is_empty():
+		home = blds[0]
+		p["home_id"] = home.id
+	_economy(peasants, res, p, counts, fin)
+	_build(res, counts, fin, home, p)
+	_research(res, fin)
+	_train(peasants, military, res, counts, fin, p)
+	_form_squads(military)
+	_repair(peasants, blds)
+	if _defense(military, home):
+		return
+	_raids(military, res)
+	_waves(military, home, p)
+
+# --- economy: target quotas instead of threshold ping-pong ---
+func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionary, fin: Dictionary) -> void:
+	var n := peasants.size()
+	if n == 0:
+		return
+	# desired distribution: food 35%, wood 25%, stone 15%, mines 25%
+	var want := {"food": int(n * 0.35), "wood": int(n * 0.25), "stone": int(n * 0.15)}
+	var on := {"food": 0, "wood": 0, "stone": 0, "mine": 0}
+	var idle: Array = []
 	for pe in peasants:
-		if pe.order.type != "none" or pe.inside_of != 0:
+		if pe.inside_of != 0:
+			on["mine"] += 1
 			continue
-		if res.food < Data.AI_FOOD_THRESHOLD or p.get("famine", false):
-			# famine: the original computer player sends every free peasant
-			# to the fields (progresseconomicai.inc _ai_GainResourcesByPeasants)
-			_gather_or_field(pe, "food")
-		elif res.wood < Data.AI_WOOD_THRESHOLD:
-			_gather_or_field(pe, "wood")
-		elif res.stone < Data.AI_STONE_THRESHOLD and game.nearest_res(pe.pos, "stone", 60.0).size() > 0:
-			game.cmd_gather(pe, game.nearest_res(pe.pos, "stone", 60.0))
-		else:
-			var dep := _mine_for(pe, ["gold", "iron", "coal"])
-			if dep != "":
-				var node := _deposit_node(dep)
-				if not node.is_empty():
-					game.cmd_gather(pe, node)
-			else:
-				_gather_or_field(pe, "food")
-	# bootstrap: the starting crew piles onto one resource and never lets go
-	# (only idle peasants are reassigned above), so split some to wood/stone
-	var on_food := 0
-	for pe in peasants:
-		if pe.order.type == "gather" and pe.order.get("res", "") == "food" and pe.inside_of == 0:
-			on_food += 1
-	if res.wood < 60.0 and on_food > 4:
-		_reassign(peasants, "food", "wood", 2)
-	if res.stone < 60.0 and on_food > 6:
-		_reassign(peasants, "food", "stone", 2)
-	# 2. build
-	if res.wood >= 120 and (game.unit_count(player) + game.queue_count(player) + 3 >= p.farm_cap):
-		_try_build("hou", home)
-	if _count_sid("mine_gold") + _count_unfinished("mine_gold") == 0 and res.wood >= 100 and res.stone >= 100 and peasants.size() >= 6:
-		_build_mine("gold", home)
-	if _count_sid("mine_coal") + _count_unfinished("mine_coal") == 0 and res.wood >= 100 and res.stone >= 100 and peasants.size() >= 8:
-		_build_mine("coal", home)
-	if _count_sid("mine_iron") + _count_unfinished("mine_iron") == 0 and res.wood >= 100 and res.stone >= 100 and (_count_sid("mine_gold") > 0 or _count_sid("bar") > 0):
-		_build_mine("iron", home)
-	if _count_sid("bar") + _count_unfinished("bar") < 3 and res.wood >= 150 and res.stone >= 150:
-		_try_build("bar", home)
-	if _count_sid("bar18") + _count_unfinished("bar18") == 0 and bool(p.get("has18c", false)) and res.wood >= 300 and res.stone >= 300:
-		_try_build("bar18", home)
-	if _count_sid("dip") + _count_unfinished("dip") == 0 and res.wood >= 400 and res.gold >= 200:
-		_try_build("dip", home)
-	if _count_sid("sta") + _count_unfinished("sta") < 2 and res.wood >= 3200 and res.stone >= 850 and res.gold >= 850:
-		_try_build("sta", home)
-	if _count_sid("sto") + _count_unfinished("sto") == 0 and res.wood >= 50 and res.stone >= 20:
-		_try_build("sto", home)
-	# stone wall ring around the town (wallcustom.cfg): cheap chainable walls
-	if _count_sid("wal") + _count_unfinished("wal") < 4 and res.wood >= 60 and res.stone >= 120 and peasants.size() >= 4:
-		_try_build("wal", home)
-	# 2b. market + upgrades: trade away lopsided stockpiles, research cheap boosts
-	for b in game.buildings_of(player):
-		if b.sid == "mar" and b.finished:
-			_market_balance(b)
-	if _count_sid("mar") + _count_unfinished("mar") == 0 and res.wood >= 450 and peasants.size() >= 6:
-		_try_build("mar", home)
-	# smithy + academy: unlocks the upgrade rows and officer/drummer training
-	if _count_sid("bla") + _count_unfinished("bla") == 0 and res.wood >= 100 and res.stone >= 30:
-		_try_build("bla", home)
-	if _count_sid("aca") + _count_unfinished("aca") == 0 and res.wood >= 1350 and res.stone >= 1200:
-		_try_build("aca", home)
-	_research_where_possible(res)
-	# 3. train
-	if _count_sid("cen") > 0 and peasants.size() < Data.AI_MAX_PEASANTS and res.food >= 100:
-		for b in game.buildings_of(player):
-			if b.sid == "cen" and b.finished and b.queue.size() < 2:
-				game.train_unit(player, b, "peasant")
+		if pe.order.type == "gather":
+			var r: String = str(pe.order.get("res", ""))
+			if r == "food" and pe.order.get("node", 0) != 0:
+				var nd: Dictionary = game.by_id.get(int(pe.order.node), {})
+				if not nd.is_empty() and nd.hits <= 0:
+					game.cmd_resow(pe, nd)
+					continue
+			if on.has(r):
+				on[r] += 1
+				continue
+		if pe.order.type == "none":
+			idle.append(pe)
+	# reassign only idle + surplus workers, never interrupt carriers
+	for kind in ["food", "wood", "stone"]:
+		var deficit: int = int(want[kind]) - int(on[kind])
+		while deficit > 0 and not idle.is_empty():
+			var pe: Dictionary = idle.pop_front()
+			var node := game.nearest_res(pe.pos, kind, 80.0)
+			if node.is_empty():
 				break
-	# keep a priest + drummer with the army (video: they march in the column)
-	_train_support(res)
-	if _count_sid("bar") > 0:
-		var army_force := 0
-		for m in military:
-			army_force += m.def.aiforce
-		for b in game.buildings_of(player):
-			if b.finished and b.def.has("trains") and b.queue.size() < 6:
-				var options: Array = b.def.trains
-				var counts := {"melee": 0, "ranged": 0, "cavalry": 0, "artillery": 0}
-				for mm in military:
-					counts[game._kind_class(mm)] = int(counts.get(game._kind_class(mm), 0)) + 1
-				var want := "melee"
-				if counts["ranged"] < counts["melee"]:
-					want = "ranged"
-				elif counts["cavalry"] < counts["melee"] / 2:
-					want = "cavalry"
-				var pick: String = ""
-				for o in options:
-					var rsv: String = Data.resolve_sid(str(Data.PLAYER_NATIONS[player]) if player < Data.PLAYER_NATIONS.size() else "", o)
-					if game._kind_class({"def": Data.UNITS[rsv], "kind": "unit"}) == want:
-						pick = rsv
-						break
-				if pick == "":
-					pick = Data.resolve_sid(str(Data.PLAYER_NATIONS[player]) if player < Data.PLAYER_NATIONS.size() else "", options[game.rng.randi() % options.size()])
-				var ud: Dictionary = Data.UNITS[pick]
-				if army_force < 600 and game.pay_cost(player, ud.price):
-					b.queue.append({"sid": pick, "t": ud.build_time})
-					army_force += ud.aiforce
-	# form squads like a player: officer + drummer + >=15 same type
-	if _count_sid("aca") > 0:
-		var offs: Array = []
-		for u in game.units_of(player):
-			if str(u.sid) in ["officer", "officer18"] and game.squad_of_unit(u.id).is_empty():
-				offs.append(u)
-		for off in offs:
-			game.cmd_form_size(off, 36)
-	# 4. defense
-	var threat := game.enemies_in_radius(home.pos, player, 40.0, false)
-	if not threat.is_empty():
-		for m in military:
-			if m.order.type == "none" or m.order.type == "attackmove":
-				if game._kind_class(m) == "ranged" and threat.pos.distance_to(home.pos) <= 25.0:
-					game.cmd_stand_ground(m)
-				else:
-					game.cmd_attack(m, threat)
-		return
-	# 5. attack waves
-	var force := 0
-	for m in military:
-		force += m.def.aiforce
-	if force >= Data.AI_ATTACK_FORCE or (game.battle_mode and military.size() >= 6):
-		var enemy_home: Dictionary = _nearest_enemy_building(home.pos)
-		if not enemy_home.is_empty():
-			wave += 1
-			for m in military:
-				if m.order.type != "none" and not (m.order.type == "attack" and m.order.get("resume", Vector2.INF) == Vector2.INF and wave % 3 == 0):
-					continue
-				var msq := game.squad_of_unit(m.id)
-				if not msq.is_empty():
-					var moff: Dictionary = game.by_id.get(int(msq.officer), {})
-					if not moff.is_empty() and not moff.dead and moff.order.type == "none":
-						game.cmd_attack_move(moff, enemy_home.pos)
-					continue
-				game.cmd_attack_move(m, enemy_home.pos)
+			game.cmd_gather(pe, node)
+			deficit -= 1
+	for pe in idle:
+		var dep := _mine_for(pe)
+		if dep != "":
+			var node := _deposit_node(dep)
+			if not node.is_empty():
+				game.cmd_gather(pe, node)
+				continue
+		var f := game.nearest_res(pe.pos, "food", 80.0)
+		if not f.is_empty():
+			game.cmd_gather(pe, f)
+	# famine override: everyone to food
+	if bool(p.get("famine", false)):
+		for pe in peasants:
+			if pe.inside_of == 0 and pe.order.type != "resow":
+				var f2 := game.nearest_res(pe.pos, "food", 120.0)
+				if not f2.is_empty():
+					game.cmd_gather(pe, f2)
 
-func _reassign(peasants: Array, from_res: String, to_res: String, n: int) -> void:
-	var moved := 0
-	for pe in peasants:
-		if moved >= n:
-			break
-		if pe.order.type == "gather" and pe.order.get("res", "") == from_res \
-				and pe.carry == 0 and pe.inside_of == 0:
-			if _gather_or_field(pe, to_res):
-				moved += 1
-
-func _gather_or_field(pe: Dictionary, res: String) -> bool:
-	var node := game.nearest_res(pe.pos, res, 60.0)
-	if not node.is_empty():
-		game.cmd_gather(pe, node)
-		return true
-	return false
-
-func _market_balance(market: Dictionary) -> void:
-	var p: Dictionary = game.players[player]
-	var res: Dictionary = {}
-	for i in 6:
-		res[Data.RES_NAMES[i]] = p.res[i]
-	var order := ["wood", "stone", "food", "gold", "iron", "coal"]
-	var poor := ["iron", "coal", "gold", "food"]
-	var rich := ""
-	var best := 900.0
-	for k in order:
-		if res.get(k, 0.0) > best:
-			best = res.get(k, 0.0)
-			rich = k
-	if rich == "" or res.get(rich, 0.0) < 1500.0:
-		return
-	for k in poor:
-		if res.get(k, 0.0) < 800.0 and k != rich:
-			game.trade(player, rich, k, 100.0)
-			return
-
-func _research_where_possible(res: Dictionary) -> void:
-	var order := ["aca_bread1", "bla_sword1", "bla_armor1", "aca_wood1", "bla_bullet1", "sta_horse1", "art_caliber1", "cen_18c"]
-	for uid in order:
-		var u: Dictionary = Data.UPGRADES.get(uid, {})
-		if u.is_empty():
-			continue
-		if game.players[player].upgrades.has(uid):
-			continue
-		for b in game.buildings_of(player):
-			if b.sid == u.building and b.finished and b.get("research") == null:
-				if game.research(player, b, uid):
-					return
-
-func _train_support(res: Dictionary) -> void:
-	var priests := 0
-	var drums := 0
-	for u in game.units_of(player):
-		if u.sid == "priest" or u.sid == "pope" or u.sid == "padre" or u.sid == "mullah":
-			priests += 1
-		if u.sid == "drummer" or u.sid == "drummer18":
-			drums += 1
-	for b in game.buildings_of(player):
-		if b.sid == "bar" and b.finished and b.queue.size() < 3:
-			if priests < 1 and res.food >= 40 and res.gold >= 50:
-				if game.train_unit(player, b, "priest"):
-					return
-			if drums < 1 and res.food >= 30 and res.gold >= 20:
-				if game.train_unit(player, b, "drummer"):
-					return
-
-func _mine_for(pe: Dictionary, kinds: Array) -> String:
-	for k in kinds:
-		if game.nearest_mine(pe.pos, k, player).size() > 0:
+func _mine_for(pe: Dictionary) -> String:
+	for k in ["gold", "iron", "coal"]:
+		var m := game.nearest_mine(pe.pos, k, player)
+		if not m.is_empty() and int(m.workers) < int(m.get("slots", m.def.get("slots", 5))):
 			return k
 	return ""
 
 func _deposit_node(kind: String) -> Dictionary:
+	var best: Dictionary = {}
+	var bd := 1e9
 	for n in game.res_nodes:
 		if n.type == kind and n.max_hits == 0:
-			return n
-	return {}
-
-func _count_sid(sid: String) -> int:
-	var n := 0
-	for b in game.buildings_of(player):
-		if b.sid == sid:
-			n += 1
-	return n
-
-func _count_unfinished(sid: String) -> int:
-	var n := 0
-	for e in game.entities:
-		if not e.dead and e.kind == "building" and e.player == player and e.sid == sid and not e.finished:
-			n += 1
-	return n
-
-func _nearest_enemy_building(pos: Vector2) -> Dictionary:
-	var best: Dictionary = {}
-	var best_d := 1e9
-	for b in game.buildings_of(1 - player):
-		var d: float = b.pos.distance_to(pos)
-		if d < best_d:
-			best_d = d
-			best = b
+			var d: float = n.pos.distance_to(game.players[player].get("home_pos", Vector2.ZERO))
+			if d < bd:
+				bd = d
+				best = n
 	return best
 
-func _find_spot(home: Dictionary, def: Dictionary, min_d: float, max_d: float) -> Vector2:
-	for attempt in 24:
-		var a := game.rng.randf() * TAU
-		var r: float = game.rng.randf_range(min_d, max_d)
-		var pos: Vector2 = home.pos + Vector2(cos(a), sin(a)) * r
-		if not game.in_bounds(pos) or game.is_blocked(pos):
-			continue
-		var ok := true
-		for b in game.buildings_of(player):
-			if b.pos.distance_to(pos) < b.def.radius + def.radius + 1.0:
-				ok = false
-				break
-		if ok:
-			return pos
-	return Vector2.INF
+# --- build order with expansion ---
+func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictionary, p: Dictionary) -> void:
+	var p0: Vector2 = home.pos
+	p["home_pos"] = p0
+	if res.wood >= 120 and game.unit_count(player) + game.queue_count(player) + 3 >= int(p.farm_cap):
+		_try_build("hou", home)
+	for k in ["gold", "iron", "coal"]:
+		var sid: String = "mine_" + k
+		if int(counts.get(sid, 0)) == 0 and res.wood >= 100 and res.stone >= 100:
+			_build_mine(k, home)
+	if int(counts.get("bar", 0)) < 3 and res.wood >= 150 and res.stone >= 150:
+		_try_build("bar", home)
+	if int(counts.get("sto", 0)) == 0 and res.wood >= 50 and res.stone >= 20:
+		_try_build("sto", home)
+	if int(counts.get("bla", 0)) == 0 and res.wood >= 100 and res.stone >= 30:
+		_try_build("bla", home)
+	if int(counts.get("mil", 0)) == 0 and res.wood >= 200 and res.stone >= 100:
+		_try_build("mil", home)
+	if int(counts.get("mar", 0)) == 0 and res.wood >= 450:
+		_try_build("mar", home)
+	if int(counts.get("aca", 0)) == 0 and res.wood >= 1350 and res.stone >= 1200:
+		_try_build("aca", home)
+	if int(counts.get("sta", 0)) < 2 and res.wood >= 3200 and res.stone >= 850 and res.gold >= 850:
+		_try_build("sta", home)
+	if bool(p.get("has18c", false)) and int(counts.get("bar18", 0)) == 0 and res.wood >= 300 and res.stone >= 300:
+		_try_build("bar18", home)
+	if int(counts.get("dip", 0)) == 0 and res.wood >= 400 and res.gold >= 200:
+		_try_build("dip", home)
+	# expansion: second town hall when booming (cost escalation x3 aware)
+	if int(fin.get("cen", 0)) >= 1 and int(counts.get("cen", 0)) < 2 and res.wood >= 2000 and res.stone >= 1500 and res.gold >= 1000:
+		_try_build("cen", home, 30.0, 60.0)
+	# wall ring: 12 segments, not 4
+	if int(counts.get("wal", 0)) < 12 and res.stone >= 200 and res.wood >= 60:
+		_try_build("wal", home, 14.0, 22.0)
+	if int(counts.get("tow", 0)) < 2 and res.wood >= 300 and res.stone >= 400 and int(fin.get("bar", 0)) > 0:
+		_try_build("tow", home, 16.0, 24.0)
+	for b in game.buildings_of(player):
+		if b.sid == "mar" and b.finished:
+			_market_balance(b)
 
-func _try_build(sid: String, home: Dictionary) -> void:
+func _try_build(sid: String, home: Dictionary, min_d := 0.0, max_d := 18.0) -> void:
 	var def: Dictionary = Data.BUILDINGS[sid]
-	var pos := _find_spot(home, def, def.radius + 2.5, 18.0)
+	var lo: float = min_d if min_d > 0.0 else def.radius + 2.5
+	var pos := _find_spot(home, def, lo, max_d)
 	if pos == Vector2.INF:
 		return
 	game.place_building(player, sid, pos)
@@ -311,5 +188,216 @@ func _build_mine(kind: String, home: Dictionary) -> void:
 				best = n
 	if best.is_empty():
 		return
-	var sid := "mine_" + kind
-	game.place_building(player, sid, best.pos)
+	game.place_building(player, "mine_" + kind, best.pos)
+
+func _find_spot(home: Dictionary, def: Dictionary, min_d: float, max_d: float) -> Vector2:
+	for attempt in 24:
+		var a := game.rng.randf() * TAU
+		var r := game.rng.randf_range(min_d, max_d)
+		var pos: Vector2 = home.pos + Vector2(cos(a), sin(a)) * r
+		if not game.in_bounds(pos) or game.is_blocked(pos):
+			continue
+		var ok := true
+		for b in game.buildings_of(player, false):
+			if b.pos.distance_to(pos) < b.def.radius + def.radius + 1.0:
+				ok = false
+				break
+		if ok:
+			return pos
+	return Vector2.INF
+
+func _market_balance(market: Dictionary) -> void:
+	var p: Dictionary = game.players[player]
+	var res: Dictionary = {}
+	for i in 6:
+		res[Data.RES_NAMES[i]] = p.res[i]
+	var rich := ""
+	var best := 1500.0
+	for k in ["wood", "stone", "food", "gold", "iron", "coal"]:
+		if res.get(k, 0.0) > best:
+			best = res.get(k, 0.0)
+			rich = k
+	if rich == "":
+		return
+	for k in ["iron", "coal", "gold", "food"]:
+		if res.get(k, 0.0) < 800.0 and k != rich:
+			game.trade(player, rich, k, 100.0)
+			return
+
+func _research(res: Dictionary, fin: Dictionary) -> void:
+	var order := ["aca_bread1", "bla_sword1", "bla_armor1", "aca_wood1", "bla_bullet1", "sta_horse1", "art_caliber1", "mil_food1", "aca_field1", "cen_18c", "art_range1", "art_hp1"]
+	for uid in order:
+		var u: Dictionary = Data.UPGRADES.get(uid, {})
+		if u.is_empty() or game.players[player].upgrades.has(uid):
+			continue
+		for b in game.buildings_of(player):
+			if b.sid == u.building and b.finished and b.get("research") == null:
+				if game.research(player, b, uid):
+					return
+
+# --- production: always fill queues, respect limits (uses train_unit!) ---
+func _train(peasants: Array, military: Array, res: Dictionary, counts: Dictionary, fin: Dictionary, p: Dictionary) -> void:
+	if int(fin.get("cen", 0)) > 0 and peasants.size() < Data.AI_MAX_PEASANTS and res.food >= 100:
+		for b in game.buildings_of(player):
+			if b.sid == "cen" and b.finished and b.queue.size() < 3:
+				game.train_unit(player, b, "peasant")
+				break
+	var priests := 0
+	var drums := 0
+	var offs := 0
+	for u in military:
+		if str(u.sid) in ["priest", "pope", "padre", "mullah"]:
+			priests += 1
+		elif str(u.sid) in ["drummer", "drummer18"]:
+			drums += 1
+		elif str(u.sid) in ["officer", "officer18"]:
+			offs += 1
+	var force := 0.0
+	var cls := {"melee": 0, "ranged": 0, "cavalry": 0, "artillery": 0}
+	for m in military:
+		force += float(m.def.aiforce)
+		cls[game._kind_class(m)] = int(cls.get(game._kind_class(m), 0)) + 1
+	for b in game.buildings_of(player):
+		if not b.finished or not b.def.has("trains") or b.queue.size() >= 6:
+			continue
+		if b.sid == "bar" or b.sid == "bar18" or b.sid == "sta" or b.sid == "dip" or b.sid == "art":
+			# support first
+			if b.sid == "bar" and int(fin.get("aca", 0)) > 0:
+				if drums < 1 + int(fin.get("bar", 0)) / 2 and game.train_unit(player, b, "drummer"):
+					continue
+				if offs < 1 + int(fin.get("bar", 0)) / 2 and game.train_unit(player, b, "officer"):
+					continue
+				if priests < 1 and game.train_unit(player, b, "priest"):
+					continue
+			if force >= float(Data.AI_ATTACK_FORCE) * 2.0:
+				continue
+			var want := "melee"
+			if cls["ranged"] < cls["melee"]:
+				want = "ranged"
+			elif cls["cavalry"] < cls["melee"] / 2:
+				want = "cavalry"
+			elif cls["artillery"] < 3 and b.sid == "art":
+				want = "artillery"
+			var pick := ""
+			for o in b.def.trains:
+				var rs: String = Data.resolve_sid(str(Data.PLAYER_NATIONS[player]), str(o))
+				if not Data.UNITS.has(rs):
+					continue
+				if game._kind_class({"def": Data.UNITS[rs], "kind": "unit"}) == want:
+					pick = rs
+					break
+			if pick == "":
+				continue
+			if game.train_unit(player, b, pick):
+				force += float(Data.UNITS[pick].aiforce)
+
+func _form_squads(military: Array) -> void:
+	if int(game.buildings_of(player).size()) == 0:
+		return
+	for u in military:
+		if str(u.sid) in ["officer", "officer18"] and game.squad_of_unit(u.id).is_empty():
+			game.cmd_form_size(u, 72 if military.size() > 90 else 36)
+
+func _repair(peasants: Array, blds: Array) -> void:
+	for b in blds:
+		if b.finished and b.hp < b.max_hp * 0.7 and b.player == player:
+			var sent := 0
+			for pe in peasants:
+				if sent >= 2:
+					break
+				if pe.order.type == "none" and pe.inside_of == 0:
+					game.cmd_repair(pe, b)
+					sent += 1
+
+func _defense(military: Array, home: Dictionary) -> bool:
+	var threat := game.enemies_in_radius(home.pos, player, 45.0, false)
+	if threat.is_empty():
+		return false
+	for m in military:
+		if m.order.type == "none" or m.order.type == "attackmove" or m.order.type == "attackground":
+			if game._kind_class(m) == "ranged" and threat.pos.distance_to(home.pos) <= 25.0:
+				game.cmd_stand_ground(m)
+			elif game._kind_class(m) == "artillery":
+				game.cmd_attack_ground(m, threat.pos)
+			else:
+				game.cmd_attack(m, threat)
+	return true
+
+# --- cavalry raids on enemy economy (video 1) ---
+func _raids(military: Array, res: Dictionary) -> void:
+	var cav: Array = []
+	for m in military:
+		if game._kind_class(m) == "cavalry" and m.order.type == "none":
+			cav.append(m)
+	if cav.size() < 6:
+		return
+	if raid_ids.is_empty():
+		for i in range(0, mini(cav.size(), 12)):
+			raid_ids.append(cav[i].id)
+	var target: Dictionary = {}
+	var bd := 1e9
+	for n in game.res_nodes:
+		if n.type == "food" and n.hits > 0:
+			for e in game.entities:
+				if not e.dead and e.player != player and e.kind == "unit" and str(e.sid) == "peasant" and e.pos.distance_to(n.pos) < 8.0:
+					var d: float = n.pos.distance_to(game.players[player].get("home_pos", Vector2.ZERO))
+					if d < bd:
+						bd = d
+						target = e
+					break
+	if target.is_empty():
+		raid_ids.clear()
+		return
+	for id in raid_ids:
+		var u: Dictionary = game.by_id.get(id, {})
+		if u.is_empty() or u.dead:
+			continue
+		if u.order.type == "none" or u.order.type == "attack":
+			game.cmd_attack(u, target)
+
+# --- waves: combined arms, retreat when broken ---
+func _waves(military: Array, home: Dictionary, p: Dictionary) -> void:
+	var force := 0.0
+	var routing := 0
+	for m in military:
+		force += float(m.def.aiforce)
+		if bool(m.get("routing", false)):
+			routing += 1
+	if routing > maxi(3, military.size() / 4):
+		retreat_t = 20.0
+	if retreat_t > 0.0:
+		retreat_t -= Data.AI_THINK_INTERVAL
+		for m in military:
+			if m.order.type == "attack" or m.order.type == "attackmove":
+				game.cmd_move(m, home.pos + Vector2(0, 6))
+		return
+	if force < float(Data.AI_ATTACK_FORCE) and not (game.battle_mode and military.size() >= 6):
+		return
+	var enemy_home: Dictionary = {}
+	var bd := 1e9
+	for b in game.buildings_of(1 - player):
+		var d: float = b.pos.distance_to(home.pos)
+		if d < bd:
+			bd = d
+			enemy_home = b
+	if enemy_home.is_empty():
+		return
+	wave += 1
+	for m in military:
+		if m.order.type != "none" and m.order.type != "attackmove":
+			continue
+		var sq := game.squad_of_unit(m.id)
+		if not sq.is_empty():
+			var off: Dictionary = game.by_id.get(int(sq.officer), {})
+			if not off.is_empty() and not off.dead and off.order.type == "none":
+				game.cmd_attack_move(off, enemy_home.pos)
+			continue
+		var kc := game._kind_class(m)
+		if kc == "artillery":
+			game.cmd_attack_ground(m, enemy_home.pos)
+		elif kc == "ranged":
+			game.cmd_attack_move(m, enemy_home.pos + (home.pos - enemy_home.pos).normalized() * 14.0)
+		elif kc == "cavalry":
+			game.cmd_attack_move(m, enemy_home.pos + Vector2(10, -10))
+		else:
+			game.cmd_attack_move(m, enemy_home.pos)

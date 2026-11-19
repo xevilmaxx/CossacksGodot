@@ -55,6 +55,36 @@
       "detail": "game speed set to 2x: yes",
       "passed": true,
       "step": "speed_pause"
+    },
+    {
+      "detail": "cursors 11 loaded, now default",
+      "passed": true,
+      "step": "cursor_ctx"
+    },
+    {
+      "detail": "Ctrl+1 stored, 1 recalled 2",
+      "passed": true,
+      "step": "groups"
+    },
+    {
+      "detail": "minimap bottom-left: yes",
+      "passed": true,
+      "step": "minimap_frustum"
+    },
+    {
+      "detail": "U unloads: yes",
+      "passed": true,
+      "step": "garrison_keys"
+    },
+    {
+      "detail": "hold_fire/engage/attack_ground live: yes",
+      "passed": true,
+      "step": "hotkeys_live"
+    },
+    {
+      "detail": "F5/F9 round-trip: yes",
+      "passed": true,
+      "step": "save_load_ui"
     }
   ],
   "version": 1

@@ -112,3 +112,10 @@ and forest look); no store images are shipped with the game.
   `python tools/copy_assets.py --game PATH_TO_GAME`,
   `python tools/convert_models.py --game PATH_TO_GAME --out assets/models`,
   `python tools/extract_map.py --game PATH_TO_GAME --out assets/maps`.
+\
+## GUIDE3 controls
+- Groups 1-9 (Ctrl+1 store, 1 recall, Shift+1 jump), double-click same-type, Shift-add.
+- Command card: Attack-move A, Stand S, Hold fire D, Feuer frei E, Patrol Q, Guard G, Stop Ctrl+S.
+- U unload garrison/town, R bombard (artillery) or rally context, Ctrl+M idle mines, Ctrl+backtick all peasants, Shift+Z add same type, Alt+M minimap, F5/F9 save/load, Esc menu.
+- Quality presets high/medium/low (terrain_px, sprite_cell, fx_cap); save/load quicksave.json; context cursors.
+\

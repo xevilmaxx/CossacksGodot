@@ -23,6 +23,12 @@ const DEFAULT := {
 		"vsync": true,
 		"pixels_per_meter": 16.0,
 		"fog_of_war": false,
+		"terrain_px": 16,
+		"quality": "high",
+		"sprite_cell": 160,
+		"fx_cap": 220,
+		"fog_interval": 0.5,
+		"minimap_interval": 0.25,
 	},
 	"camera": {
 		"pitch_degrees": -32.0,
@@ -50,6 +56,7 @@ const DEFAULT := {
 		"victory": "destroy_all",
 		"score_limit": 5000,
 		"max_tick_seconds": 0.25,
+		"corpse_life": 90.0,
 		"deposits": {"gold": 40000, "iron": 30000, "coal": 30000},
 		"battle_army": {"pikeman": 16, "serdiuk": 12, "archer": 8, "cossack": 8, "officer": 1, "cannon": 2},
 	},
@@ -85,6 +92,7 @@ const DEFAULT := {
 		"stone_threshold": 160.0,
 		"attack_force": 60.0,
 		"max_peasants": 14.0,
+		"difficulty": "normal",
 	},
 	"audio": {
 		"enabled": true,
@@ -112,10 +120,16 @@ const DEFAULT := {
 			"squad_line": "J",
 			"squad_column": "K",
 			"squad_square": "L",
-			"rally": "R",
+			"attack_ground": "R",
+			"unload": "U",
+			"select_all_peasants": "Ctrl+`",
+			"select_idle_mines": "Ctrl+M",
+			"add_same_type": "Shift+Z",
+			"minimap_toggle": "Alt+M",
 			"build": {
 				"cen": "C", "hou": "H", "bla": "L", "bar": "B", "aca": "E", "sta": "S",
-				"art": "R", "mil": "I", "sto": "O", "mar": "M", "tow": "T", "mine": "N", "wal": "W", "bar18": "2", "dip": "3",
+				"art": "R", "mil": "I", "sto": "O", "mar": "M", "tow": "T", "mine": "N", "wal": "W",
+				"dip": "D", "bar18": "K",
 			},
 		},
 	},
@@ -190,6 +204,13 @@ func load_all(extra_path := "") -> void:
 			problems.append("extra settings file not found: %s" % extra_path)
 	data = base
 	source = found if found != "" else "built-in defaults"
+	# third layer: user options from the in-game Options panel
+	var opt_txt := _read("user://options.json")
+	if opt_txt != "":
+		var opt := _parse(opt_txt, "user://options.json")
+		if opt is Dictionary:
+			base = _merge(base, opt)
+			data = base
 	active = self
 
 # Where a settings file may live: the project folder (res://), the same
@@ -314,6 +335,12 @@ func apply() -> void:
 	Data.VSYNC = flag("display.vsync", true)
 	Data.PIXELS_PER_METER = num("display.pixels_per_meter", 16.0)
 	Data.FOG_OF_WAR = flag("display.fog_of_war", false)
+	Data.TERRAIN_PX = int(num("display.terrain_px", 16))
+	Data.QUALITY = text("display.quality", "high")
+	Data.SPRITE_CELL = int(num("display.sprite_cell", 160))
+	Data.FX_CAP = int(num("display.fx_cap", 220))
+	Data.FOG_INTERVAL = num("display.fog_interval", 0.5)
+	Data.MINIMAP_INTERVAL = num("display.minimap_interval", 0.25)
 	Data.CAPTURE_ENABLED = flag("rules.peasant_capture", true)
 
 	var cam := section("camera")
@@ -336,6 +363,7 @@ func apply() -> void:
 	Data.VICTORY = text("gameplay.victory", "destroy_all")
 	Data.SCORE_LIMIT = num("gameplay.score_limit", 5000.0)
 	Data.TICK_MAX = maxf(0.01, num("gameplay.max_tick_seconds", 0.25))
+	Data.CORPSE_LIFE = num("gameplay.corpse_life", 90.0)
 	var sr: Variant = section("gameplay").get("start_resources", {})
 	var start_res := {}
 	for r in Data.RES_NAMES:
@@ -391,6 +419,12 @@ func apply() -> void:
 	Data.AI_STONE_THRESHOLD = num("ai.stone_threshold", 160.0)
 	Data.AI_ATTACK_FORCE = num("ai.attack_force", 60.0)
 	Data.AI_MAX_PEASANTS = int(num("ai.max_peasants", 14.0))
+	Data.AI_DIFFICULTY = text("ai.difficulty", "normal")
+	if Data.AI_DIFFICULTY == "easy":
+		Data.AI_THINK_INTERVAL *= 1.6
+		Data.AI_ATTACK_FORCE *= 0.7
+	elif Data.AI_DIFFICULTY == "hard":
+		Data.AI_ATTACK_FORCE *= 1.3
 
 	var au := section("audio")
 	Data.AUDIO_ENABLED = flag("audio.enabled", true)
@@ -407,8 +441,17 @@ func apply() -> void:
 	Data.PLAYER_NAMES = pl if pl is Array else ["Ukraine", "Russia"]
 
 	# hotkeys
-	var hk: Dictionary = section("controls").get("hotkeys", {})
-	Data.HOTKEYS = _copy(hk) if hk is Dictionary else {}
+	var hk_def: Dictionary = _copy(DEFAULT.get("controls", {}).get("hotkeys", {}))
+	var hk: Dictionary = section("controls.hotkeys")
+	for action in hk:
+		if action == "build":
+			var bd: Dictionary = hk_def.get("build", {})
+			for sid in hk[action]:
+				bd[sid] = hk[action][sid]
+			hk_def["build"] = bd
+		else:
+			hk_def[action] = hk[action]
+	Data.HOTKEYS = hk_def
 
 	# the units and the buildings themselves
 	var uo: Dictionary = section("units")

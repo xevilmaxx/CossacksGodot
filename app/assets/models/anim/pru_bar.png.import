@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c0mgtbgv4pssk"
-path="res://.godot/imported/pru_bar.png-35ddfc81cd45ad740fe87b9246fb8c80.ctex"
+path.s3tc="res://.godot/imported/pru_bar.png-35ddfc81cd45ad740fe87b9246fb8c80.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/pru_bar.png"
-dest_files=["res://.godot/imported/pru_bar.png-35ddfc81cd45ad740fe87b9246fb8c80.ctex"]
+dest_files=["res://.godot/imported/pru_bar.png-35ddfc81cd45ad740fe87b9246fb8c80.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

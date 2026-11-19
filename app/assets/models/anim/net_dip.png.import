@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dksj5bghdi6xo"
-path="res://.godot/imported/net_dip.png-55b00accfec7b9eb4c019fc0d8062b3d.ctex"
+path.s3tc="res://.godot/imported/net_dip.png-55b00accfec7b9eb4c019fc0d8062b3d.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/net_dip.png"
-dest_files=["res://.godot/imported/net_dip.png-55b00accfec7b9eb4c019fc0d8062b3d.ctex"]
+dest_files=["res://.godot/imported/net_dip.png-55b00accfec7b9eb4c019fc0d8062b3d.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

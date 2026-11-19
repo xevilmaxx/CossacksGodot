@@ -89,9 +89,19 @@ var cfg = null
 var is_headless := false
 var menu = null
 var pending_cfg: Dictionary = {}
+var bench_mode := false
+var bench_t := 0.0
+var bench_frames := 0
+var bench_sim_ms := 0.0
+var menu_overlay: CanvasLayer = null
+var end_panel: PanelContainer = null
+var last_cfg: Dictionary = {}
+var seed_arg := -1
+var journey_cam_t := 0.0
 
 func _ready() -> void:
 	started_ms = Time.get_ticks_msec()
+	add_to_group("c3_main")
 	_parse_args(OS.get_cmdline_args())
 	_parse_args(OS.get_cmdline_user_args())
 	is_headless = DisplayServer.get_name() == "headless"
@@ -99,6 +109,8 @@ func _ready() -> void:
 	cfg = C3ConfigScript.new()
 	cfg.load_all(config_path)
 	cfg.apply()
+	if seed_arg >= 0:
+		Data.RANDOM_SEED = seed_arg
 	for p in cfg.problems:
 		printerr("settings: ", p)
 	if not battle_requested:
@@ -112,7 +124,7 @@ func _ready() -> void:
 		return
 
 	var hard_limit := limit_s if limit_s > 0.0 else 120.0
-	if screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or journey_mode or cli_mode:
+	if bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or journey_mode or cli_mode:
 		deadline_ms = started_ms + int(hard_limit * 1000.0)
 		watchdog = hard_limit
 	else:
@@ -124,8 +136,15 @@ func _ready() -> void:
 		return
 
 	# Test / capture modes skip the menu so they never wait for input.
-	if screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or battle_requested:
+	if bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or battle_requested:
 		_setup_full_game()
+		if bench_mode:
+			for pi in 2:
+				var home: Vector2 = game._start_positions()[pi]
+				for i in 300:
+					var sid: String = ["pikeman", "serdiuk", "archer", "cossack"][i % 4]
+					game.spawn(sid, pi, home + Vector2((i % 20) * 1.2 - 12, (i / 20) * 1.2 - 12))
+			bench_t = 0.0
 		if screenshot_path != "":
 			_setup_screenshot_window()
 		return
@@ -139,14 +158,28 @@ func _setup_menu() -> void:
 
 func _on_menu_chosen(cfg: Dictionary) -> void:
 	pending_cfg = cfg
+	last_cfg = cfg
 	Data.PLAYER_NATIONS = [str(cfg.get("nation0", "ukr")), str(cfg.get("nation1", "rus"))]
 	Data.PLAYER_NAMES = [_menu_nation_name(str(cfg.get("nation0", "ukr")), 0),
 		_menu_nation_name(str(cfg.get("nation1", "rus")), 1)]
 	Data.MAP_TYPE = str(cfg.get("map_type", "land"))
 	Data.START_OPTION = str(cfg.get("start_option", "default"))
+	if cfg.has("difficulty"):
+		Data.AI_DIFFICULTY = str(cfg.get("difficulty", "normal"))
+	if cfg.has("map_size"):
+		Data.MAP_W = int(cfg.get("map_size", 320))
+		Data.MAP_H = int(cfg.get("map_size", 320))
+	if cfg.has("seed"):
+		Data.RANDOM_SEED = int(cfg.get("seed", Data.RANDOM_SEED))
 	if not battle_requested:
 		start_mode = str(cfg.get("mode", "skirmish"))
 	_setup_full_game()
+	if cfg.has("load_save"):
+		var pth := str(cfg.get("load_save", ""))
+		if pth != "" and FileAccess.file_exists(pth):
+			var d = JSON.parse_string(FileAccess.get_file_as_string(pth))
+			if d is Dictionary:
+				game.deserialize(d)
 	# mission objectives shown in the HUD (campaign / battle flavor)
 	var descr := str(cfg.get("descr", ""))
 	var mission := str(cfg.get("mission", ""))
@@ -332,6 +365,8 @@ func _parse_args(args: PackedStringArray) -> void:
 				dump_config = true
 			"--battle":
 				battle_requested = true
+			"--bench":
+				bench_mode = true
 			"--stats":
 				show_stats = true
 			"--fast":
@@ -341,6 +376,7 @@ func _parse_args(args: PackedStringArray) -> void:
 				i += 2
 				continue
 			"--seed":
+				seed_arg = int(args[i + 1]) if i + 1 < args.size() else -1
 				i += 2
 				continue
 			_:
@@ -361,6 +397,167 @@ func _quit(code: int) -> void:
 func _on_game_over(w: int) -> void:
 	if hud != null and is_instance_valid(hud):
 		hud.game_over(w)
+	if end_panel != null and is_instance_valid(end_panel):
+		end_panel.queue_free()
+	end_panel = PanelContainer.new()
+	end_panel.set_anchors_preset(Control.PRESET_CENTER)
+	var vb := VBoxContainer.new()
+	end_panel.add_child(vb)
+	var title := Label.new()
+	title.text = "Victory!" if w == 0 else "Defeat"
+	title.add_theme_font_size_override("font_size", 36)
+	vb.add_child(title)
+	var lines := "time %.0fs  shots %d  hits %d  kills %d" % [game.time_s, game.stats.shots, game.stats.hits, game.stats.kills]
+	var sl := Label.new()
+	sl.text = lines
+	vb.add_child(sl)
+	for pi in 2:
+		var l := Label.new()
+		l.text = "P%d units %d bldgs %d score %d" % [pi, game.unit_count(pi), game.buildings_of(pi).size(), game.players[pi].score]
+		vb.add_child(l)
+	var hb := HBoxContainer.new()
+	vb.add_child(hb)
+	var rb := Button.new()
+	rb.text = "Restart"
+	rb.pressed.connect(func(): last_cfg = pending_cfg; get_tree().reload_current_scene())
+	hb.add_child(rb)
+	var qb := Button.new()
+	qb.text = "Quit to menu"
+	qb.pressed.connect(func(): get_tree().reload_current_scene())
+	hb.add_child(qb)
+	var sv := Button.new()
+	sv.text = "Save replay"
+	sv.pressed.connect(func(): var f := FileAccess.open("user://lastgame.json", FileAccess.WRITE); if f: f.store_string(JSON.stringify(game.serialize())); f.close())
+	hb.add_child(sv)
+	add_child(end_panel)
+	if start_mode == "campaign" or str(pending_cfg.get("mode", "")) == "campaign":
+		var prog := {}
+		if FileAccess.file_exists("user://campaign_progress.json"):
+			prog = JSON.parse_string(FileAccess.get_file_as_string("user://campaign_progress.json"))
+			if not prog is Dictionary:
+				prog = {}
+		if w == 0:
+			prog[str(pending_cfg.get("mission", "m1"))] = true
+			var f2 := FileAccess.open("user://campaign_progress.json", FileAccess.WRITE)
+			if f2:
+				f2.store_string(JSON.stringify(prog))
+				f2.close()
+
+func game_save() -> void:
+	if game == null:
+		return
+	var f := FileAccess.open("user://quicksave.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(game.serialize()))
+		f.close()
+		if hud:
+			hud.show_hint("Game saved (F9 loads)")
+
+func game_load() -> void:
+	if not FileAccess.file_exists("user://quicksave.json"):
+		return
+	var d = JSON.parse_string(FileAccess.get_file_as_string("user://quicksave.json"))
+	if d is Dictionary and game.deserialize(d):
+		world.fog_explored.fill(0)
+		world.fog_vis.fill(0)
+		world._update_fog()
+		if hud:
+			hud.refresh_selection([])
+			hud.show_hint("Game loaded")
+
+func toggle_menu_overlay() -> void:
+	if menu_overlay != null and is_instance_valid(menu_overlay):
+		menu_overlay.queue_free()
+		menu_overlay = null
+		return
+	menu_overlay = CanvasLayer.new()
+	add_child(menu_overlay)
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	menu_overlay.add_child(panel)
+	var vb := VBoxContainer.new()
+	panel.add_child(vb)
+	var resume := Button.new()
+	resume.text = "Resume"
+	resume.pressed.connect(toggle_menu_overlay)
+	vb.add_child(resume)
+	var sb := Button.new()
+	sb.text = "Save (F5)"
+	sb.pressed.connect(game_save)
+	vb.add_child(sb)
+	var lb := Button.new()
+	lb.text = "Load (F9)"
+	lb.pressed.connect(game_load)
+	vb.add_child(lb)
+	var ob := Button.new()
+	ob.text = "Options"
+	ob.pressed.connect(_show_options.bind(vb))
+	vb.add_child(ob)
+	var qb := Button.new()
+	qb.text = "Quit to menu"
+	qb.pressed.connect(func(): get_tree().reload_current_scene())
+	vb.add_child(qb)
+	var rb := Button.new()
+	rb.text = "Restart"
+	rb.pressed.connect(func(): get_tree().reload_current_scene())
+	vb.add_child(rb)
+
+func _show_options(parent: VBoxContainer) -> void:
+	for c in parent.get_children():
+		parent.remove_child(c)
+		c.queue_free()
+	var vol := HSlider.new()
+	vol.min_value = -24
+	vol.max_value = 6
+	vol.value = Data.MASTER_VOLUME_DB
+	vol.value_changed.connect(func(v: float): Data.MASTER_VOLUME_DB = v)
+	parent.add_child(vol)
+	var amb := HSlider.new()
+	amb.min_value = -24
+	amb.max_value = 6
+	amb.value = Data.AMBIENT_VOLUME_DB
+	amb.value_changed.connect(func(v: float): Data.AMBIENT_VOLUME_DB = v)
+	parent.add_child(amb)
+	var qopt := OptionButton.new()
+	for q in ["high", "medium", "low"]:
+		qopt.add_item(q)
+	qopt.selected = ["high", "medium", "low"].find(Data.QUALITY)
+	qopt.item_selected.connect(func(i: int):
+		var q2: String = ["high", "medium", "low"][i]
+		Data.QUALITY = q2
+		if q2 == "high":
+			Data.TERRAIN_PX = 16; Data.SPRITE_CELL = 160; Data.FX_CAP = 220
+		elif q2 == "medium":
+			Data.TERRAIN_PX = 12; Data.SPRITE_CELL = 96; Data.FX_CAP = 120
+		else:
+			Data.TERRAIN_PX = 8; Data.SPRITE_CELL = 64; Data.FX_CAP = 60
+		for k in world.terrain_chunks.values():
+			(k as Sprite2D).queue_free()
+		world.terrain_chunks.clear()
+		world.terrain_order.clear()
+		world.terrain_px = Data.TERRAIN_PX
+	)
+	parent.add_child(qopt)
+	var fogb := CheckButton.new()
+	fogb.text = "Fog of war"
+	fogb.button_pressed = Data.FOG_OF_WAR
+	fogb.toggled.connect(func(on: bool): Data.FOG_OF_WAR = on; world.fog_sprite.visible = on)
+	parent.add_child(fogb)
+	var capb := CheckButton.new()
+	capb.text = "Peasant capture"
+	capb.button_pressed = Data.CAPTURE_ENABLED
+	capb.toggled.connect(func(on: bool): Data.CAPTURE_ENABLED = on)
+	parent.add_child(capb)
+	var dopt := OptionButton.new()
+	for d in ["easy", "normal", "hard"]:
+		dopt.add_item(d)
+	dopt.selected = ["easy", "normal", "hard"].find(Data.AI_DIFFICULTY)
+	dopt.item_selected.connect(func(i: int): Data.AI_DIFFICULTY = ["easy", "normal", "hard"][i])
+	parent.add_child(dopt)
+	var back := Button.new()
+	back.text = "Back"
+	back.pressed.connect(toggle_menu_overlay)
+	parent.add_child(back)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
@@ -391,15 +588,58 @@ func _process(dt: float) -> void:
 	while acc >= step and steps < 64:
 		acc -= step
 		steps += 1
+		var t0 := Time.get_ticks_usec()
 		game.tick(step)
+		bench_sim_ms += float(Time.get_ticks_usec() - t0) / 1000.0
 		ai.tick(step)
 		if journey_mode and cli_ai0 != null:
 			cli_ai0.tick(step)
 		# Never block inside the loop: bail out if the frame budget is spent.
 		if steps % 16 == 0 and Time.get_ticks_msec() >= deadline_ms - 500 and deadline_ms > 0:
 			break
+	if bench_mode:
+		bench_frames += 1
+		bench_t += dt
+		if bench_t >= 30.0:
+			var rep := {"fps": float(bench_frames) / 30.0, "sim_ms_per_tick": bench_sim_ms / maxf(1.0, float(bench_frames) * Data.FPS), "units": game.entities.size()}
+			var bp := ProjectSettings.globalize_path("res://shots/bench.json")
+			var bf := FileAccess.open(bp, FileAccess.WRITE)
+			if bf != null:
+				bf.store_string(JSON.stringify(rep, "  "))
+				bf.close()
+				print("bench report: ", bp)
+			else:
+				print(JSON.stringify(rep))
+			_quit(0)
+			return
 	if world != null and is_instance_valid(world):
 		world.sync(dt)
+	if journey_mode and camera != null and game != null:
+		journey_cam_t -= dt
+		if journey_cam_t <= 0.0:
+			journey_cam_t = 1.0
+			var focus := Vector2.ZERO
+			var n := 0
+			var fighting := false
+			for e in game.live_units:
+				if e.player != 0:
+					continue
+				if str(e.sid) == "peasant":
+					continue
+				focus += e.pos
+				n += 1
+				if e.order.type == "attack":
+					fighting = true
+			if n == 0:
+				for b in game.buildings_of(0):
+					focus = b.pos
+					n = 1
+					break
+			if n > 0:
+				var target: Vector2 = (focus / float(n)) * world.view_scale
+				camera.position = camera.position.lerp(target, 0.35)
+				var want_zoom: float = 0.75 if fighting else 1.0
+				camera.zoom = camera.zoom.lerp(Vector2(want_zoom, want_zoom), 0.2)
 	_consume_events()
 	walk_snd_t -= dt
 	if walk_snd_t <= 0.0:
@@ -442,13 +682,13 @@ func _consume_events() -> void:
 				world.add_fx("shot", ev.pos)
 				match ev.kind:
 					"bullet":
-						_play(["musket1", "musket2"])
+						_play(["musket1", "musket2"], 0.0, ev.pos)
 					"arrow", "firearrow":
-						_play(["arrow1"])
+						_play(["arrow1"], 0.0, ev.pos)
 					"cannonball":
-						_play(["shotcannon1"])
+						_play(["shotcannon1"], 0.0, ev.pos)
 					_:
-						_play(["sabre1"])
+						_play(["sabre1"], 0.0, ev.pos)
 			"smoke":
 				world.add_fx("smoke", ev.pos)
 			"heal":
@@ -466,26 +706,27 @@ func _consume_events() -> void:
 				_play(["btnclick"], -4.0)
 			"hit":
 				if ev.kind == "bullet":
-					_play(["arrowimpact1"], -8.0)
+					_play(["arrowimpact1"], -8.0, ev.pos)
 			"explode":
 				world.add_fx("explode", ev.pos)
-				_play(["cannonexpl1"])
+				_play(["cannonexpl1"], 0.0, ev.pos)
 			"chop":
 				world.add_fx("chop", ev.pos)
+				_play(["chop"], -8.0, ev.pos)
 			"death":
 				if ev.kind == "building":
-					_play(["deathbuilding1"])
+					_play(["deathbuilding1"], 0.0, ev.pos)
 				else:
-					_play(["deathinf1", "deathinf2"])
+					_play(["deathinf1", "deathinf2"], 0.0, ev.pos)
 			"capture":
 				_play(["alarm"])
 			"done":
 				_play(audio.building_sound(ev.kind), -6.0)
 	game.events.clear()
 
-func _play(names: Array, vol := 0.0) -> void:
+func _play(names: Array, vol := 0.0, at := Vector2.INF) -> void:
 	if audio != null and is_instance_valid(audio) and bool(audio.get_meta("can_play", false)):
-		audio.play(names, vol)
+		audio.play(names, vol, at)
 
 # ------------------------------------------------------------------ outputs
 func _candidate_paths(given: String) -> Array:

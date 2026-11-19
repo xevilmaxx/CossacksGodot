@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://k1yct2vo4vgo"
-path="res://.godot/imported/drummer18_walk.png-ac7350b6cb1588b1d103123fbfba6f58.ctex"
+path.s3tc="res://.godot/imported/drummer18_walk.png-ac7350b6cb1588b1d103123fbfba6f58.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/drummer18_walk.png"
-dest_files=["res://.godot/imported/drummer18_walk.png-ac7350b6cb1588b1d103123fbfba6f58.ctex"]
+dest_files=["res://.godot/imported/drummer18_walk.png-ac7350b6cb1588b1d103123fbfba6f58.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

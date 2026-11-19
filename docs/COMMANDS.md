@@ -75,11 +75,14 @@ godot --path app -- --screenshot app/shots/x.png --speed 8 --timeout 60  :: fast
 
 Key `app/config.json` sections: `gameplay` (map size, start resources,
 victory), `economy` (rates, upkeep, famine, market), `ai` (thresholds, force,
-peasants), `display` (window, pixels-per-meter, fog), `controls.hotkeys`,
-`units`/`buildings` (display names). `app/shots/boost.json` is the committed
+peasants, difficulty), `display` (window, pixels-per-meter, fog, quality,
+terrain_px, sprite_cell, fx_cap, fog_interval, minimap_interval),
+`controls.hotkeys`, `units`/`buildings` (display names). `app/shots/boost.json` is the committed
 test helper (2000/2000/1500 start resources). **Note:** a `--config` file
 *replaces* the keys it contains — including `ai.*` and `gameplay.map_*` —
 so boosted runs must keep those keys in sync with `config.json`.
+`user://options.json` (from in-game Options) merges as a third layer.
+`--bench` writes `app/shots/bench.json` (fps + sim_ms_per_tick @600 units).
 
 ## 5. Asset pipeline (Blender CPU-only, Pillow)
 

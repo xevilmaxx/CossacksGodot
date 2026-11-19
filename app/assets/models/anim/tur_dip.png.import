@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dfrdjp43utt0w"
-path="res://.godot/imported/tur_dip.png-b8b58bf4e25d0db904dd88ef12bc6b9b.ctex"
+path.s3tc="res://.godot/imported/tur_dip.png-b8b58bf4e25d0db904dd88ef12bc6b9b.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/tur_dip.png"
-dest_files=["res://.godot/imported/tur_dip.png-b8b58bf4e25d0db904dd88ef12bc6b9b.ctex"]
+dest_files=["res://.godot/imported/tur_dip.png-b8b58bf4e25d0db904dd88ef12bc6b9b.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

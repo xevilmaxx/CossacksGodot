@@ -42,6 +42,8 @@ var last_ids: Array = []
 var summary_label: Label
 var prog_entries: Array = []  # {label, e}
 var dyn_buttons: Array = []   # {b, kind, e, sid, uid}
+var cmd_panel: PanelContainer
+var cmd_bar: HBoxContainer
 
 func bind(g: C3Game, w: C3World) -> void:
 	game = g
@@ -207,8 +209,8 @@ func _build_bottom() -> void:
 	sel_panel.anchor_top = 1.0
 	sel_panel.anchor_bottom = 1.0
 	sel_panel.offset_top = -128
-	sel_panel.offset_left = 8
-	sel_panel.offset_right = 560
+	sel_panel.offset_left = 220
+	sel_panel.offset_right = 780
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.10, 0.08, 0.06, 0.88)
 	style.set_corner_radius_all(4)
@@ -224,6 +226,19 @@ func _build_bottom() -> void:
 	build_bar.add_theme_constant_override("separation", 4)
 	vb.add_child(build_bar)
 	add_child(sel_panel)
+	cmd_panel = PanelContainer.new()
+	cmd_panel.anchor_left = 1.0
+	cmd_panel.anchor_right = 1.0
+	cmd_panel.anchor_top = 1.0
+	cmd_panel.anchor_bottom = 1.0
+	cmd_panel.offset_left = -300
+	cmd_panel.offset_right = -8
+	cmd_panel.offset_top = -128
+	cmd_panel.add_theme_stylebox_override("panel", style)
+	cmd_bar = HBoxContainer.new()
+	cmd_bar.add_theme_constant_override("separation", 4)
+	cmd_panel.add_child(cmd_bar)
+	add_child(cmd_panel)
 
 func _unit_button(tex: Texture2D, region: Rect2, tip: String) -> Button:
 	var b := Button.new()
@@ -314,6 +329,7 @@ func refresh_selection(selected: Array) -> void:
 					elif q > 0:
 						tb.text = str(q)
 					tb.pressed.connect(_on_train.bind(e, rsid))
+					tb.gui_input.connect(_on_train_gui.bind(e, rsid))
 					train_buttons[rsid] = tb
 					build_bar.add_child(tb)
 					dyn_buttons.append({"b": tb, "kind": "train", "e": e, "sid": rsid, "uid": ""})
@@ -346,6 +362,13 @@ func refresh_selection(selected: Array) -> void:
 					ob.custom_minimum_size = Vector2(56, 50)
 					ob.pressed.connect(_on_gate_toggle.bind(e))
 					build_bar.add_child(ob)
+				if str(e.sid) in ["tow", "cen"] and int(e.get("garrison", 0)) > 0:
+					var ub := Button.new()
+					ub.text = "Unload [U]"
+					ub.tooltip_text = "Unload garrison"
+					ub.custom_minimum_size = Vector2(80, 50)
+					ub.pressed.connect(_on_unload.bind(e))
+					build_bar.add_child(ub)
 				if str(e.sid) in ["officer", "officer18"] and e.player == 0:
 					for fs in [15, 36, 72, 120, 196, 400]:
 						var fb := Button.new()
@@ -405,6 +428,23 @@ func refresh_selection(selected: Array) -> void:
 				db.custom_minimum_size = Vector2(80, 50)
 				db.pressed.connect(_on_squad_disband.bind(int(sq.squad_id)))
 				build_bar.add_child(db)
+	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.player == 0):
+		_clear_row(cmd_bar)
+		for spec in [["Attack-move [A]", "attack_move"], ["Stand [S]", "stand_ground"], ["Hold fire [D]", "hold_fire"], ["Feuer frei [E]", "feuer_frei"], ["Patrol [Q]", "patrol"], ["Guard [G]", "guard"], ["Stop [Ctrl+S]", "stop"]]:
+			var cb := Button.new()
+			cb.text = spec[0]
+			cb.custom_minimum_size = Vector2(86, 40)
+			cb.pressed.connect(_on_cmd_button.bind(str(spec[1])))
+			cmd_bar.add_child(cb)
+		if mine.any(func(e): return str(e.sid) in ["officer", "officer18"]):
+			for form in ["line", "column", "square", "wedge"]:
+				var fb2 := Button.new()
+				fb2.text = form.substr(0, 3).to_upper()
+				fb2.custom_minimum_size = Vector2(44, 40)
+				fb2.pressed.connect(_on_cmd_form.bind(form))
+				cmd_bar.add_child(fb2)
+	else:
+		_clear_row(cmd_bar)
 	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.sid == "peasant"):
 		build_menu_open = true
 		_refresh_build_menu(mine)
@@ -415,6 +455,16 @@ func _on_train(bld: Dictionary, sid: String) -> void:
 	audio_click.play()
 	game.train_unit(0, bld, sid)
 	refresh_selection(game.get_selected())
+
+func _on_train_gui(ev: InputEvent, bld: Dictionary, sid: String) -> void:
+	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and Input.is_key_pressed(KEY_SHIFT):
+		for i in range(bld.queue.size() - 1, -1, -1):
+			if bld.queue[i].sid == sid:
+				bld.queue.remove_at(i)
+				Data.refund(game.players[0].res, Data.UNITS[sid].price, 1.0)
+				get_viewport().set_input_as_handled()
+				refresh_selection(game.get_selected())
+				return
 
 func _on_research(bld: Dictionary, uid: String) -> void:
 	audio_click.play()
@@ -429,6 +479,11 @@ func _on_make_gate(b: Dictionary) -> void:
 func _on_gate_toggle(b: Dictionary) -> void:
 	audio_click.play()
 	game.cmd_gate_toggle(b)
+	refresh_selection([b])
+
+func _on_unload(b: Dictionary) -> void:
+	audio_click.play()
+	game.cmd_unload(b)
 	refresh_selection([b])
 
 func _on_form_size(off: Dictionary, size: int) -> void:
@@ -464,6 +519,21 @@ func _on_squad_form_set(sid: int, form: String) -> void:
 func _on_squad_disband(sid: int) -> void:
 	audio_click.play()
 	game.squad_disband(sid)
+	refresh_selection(game.get_selected())
+
+func _on_cmd_button(action: String) -> void:
+	audio_click.play()
+	var ictl = get_tree().get_first_node_in_group("c3_input")
+	if ictl != null:
+		ictl.command_from_hud(action)
+
+func _on_cmd_form(form: String) -> void:
+	audio_click.play()
+	for e in game.get_selected():
+		var sq: Dictionary = game.squad_of_unit(e.id)
+		if not sq.is_empty():
+			game.squad_set_formation(int(sq.squad_id), form)
+			break
 	refresh_selection(game.get_selected())
 
 func _on_attack_hint() -> void:
@@ -641,7 +711,7 @@ func _process(dt: float) -> void:
 			msg_label.text = ""
 	mm_timer -= dt
 	if mm_timer <= 0.0:
-		mm_timer = 0.25
+		mm_timer = Data.MINIMAP_INTERVAL
 		_update_minimap()
 	# live refresh: texts and affordable states only (never frees buttons,
 	# so a click in flight always lands). Structural changes rebuild above.
@@ -656,36 +726,43 @@ func _build_minimap() -> void:
 	minimap_tex = ImageTexture.create_from_image(minimap_img)
 	minimap_rect = TextureRect.new()
 	minimap_rect.texture = minimap_tex
-	minimap_rect.custom_minimum_size = Vector2(160, 160)
+	minimap_rect.custom_minimum_size = Vector2(200, 200)
 	minimap_rect.stretch_mode = TextureRect.STRETCH_SCALE
-	minimap_rect.anchor_left = 1.0
-	minimap_rect.anchor_right = 1.0
+	minimap_rect.anchor_left = 0.0
+	minimap_rect.anchor_right = 0.0
 	minimap_rect.anchor_top = 1.0
 	minimap_rect.anchor_bottom = 1.0
-	minimap_rect.offset_left = -176
-	minimap_rect.offset_top = -176
+	minimap_rect.offset_left = 8
+	minimap_rect.offset_top = -208
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.08, 0.07, 0.05, 0.9)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", style)
 	panel.add_child(minimap_rect)
-	panel.anchor_left = 1.0
-	panel.anchor_right = 1.0
+	panel.anchor_left = 0.0
+	panel.anchor_right = 0.0
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = -184
-	panel.offset_top = -184
+	panel.offset_left = 4
+	panel.offset_top = -212
 	add_child(panel)
 	minimap_rect.gui_input.connect(_on_minimap_input)
 
 func _on_minimap_input(ev: InputEvent) -> void:
-	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-		var mp := minimap_rect.get_local_mouse_position() / minimap_rect.size
-		var world_pos := Vector2(mp.x * game.MAP_W, mp.y * game.MAP_H) * Data.TILE_M
+	var mp := minimap_rect.get_local_mouse_position() / minimap_rect.size
+	var world_pos := Vector2(mp.x * game.MAP_W, mp.y * game.MAP_H) * Data.TILE_M
+	var cam := get_viewport().get_camera_2d()
+	if ev is InputEventMouseButton and ev.pressed:
 		get_viewport().set_input_as_handled()
-		var cam := get_viewport().get_camera_2d()
-		if cam:
+		if ev.button_index == MOUSE_BUTTON_LEFT and cam:
 			cam.global_position = world_pos * world.view_scale
+		elif ev.button_index == MOUSE_BUTTON_RIGHT:
+			# right-click on minimap = move/attack-move order for the selection
+			var ictl = get_tree().get_first_node_in_group("c3_input")
+			if ictl != null:
+				ictl.minimap_order(world_pos)
+	elif ev is InputEventMouseMotion and ev.button_mask & MOUSE_BUTTON_MASK_LEFT and cam:
+		cam.global_position = world_pos * world.view_scale
 
 func _update_minimap() -> void:
 	if world == null:
@@ -727,6 +804,13 @@ func _update_minimap() -> void:
 	for e in game.entities:
 		if e.dead:
 			continue
+		if e.player != 0:
+			if e.kind == "building":
+				if not world.tile_explored(e.pos):
+					continue
+			else:
+				if not world.tile_visible(e.pos):
+					continue
 		var t := game.tile_of(e.pos)
 		if e.kind == "building":
 			for dy in 2:
@@ -744,6 +828,19 @@ func _update_minimap() -> void:
 			if world.fog_explored[i] == 0:
 				var c: Color = minimap_img.get_pixel(x, y)
 				minimap_img.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
+	var cam := get_viewport().get_camera_2d()
+	if cam != null and world != null:
+		var vr: Rect2 = world.view_rect
+		var x0 := clampi(int(vr.position.x / Data.TILE_M), 0, game.MAP_W - 1)
+		var y0 := clampi(int(vr.position.y / Data.TILE_M), 0, game.MAP_H - 1)
+		var x1 := clampi(int(vr.end.x / Data.TILE_M), 0, game.MAP_W - 1)
+		var y1 := clampi(int(vr.end.y / Data.TILE_M), 0, game.MAP_H - 1)
+		for x in range(x0, x1 + 1):
+			minimap_img.set_pixel(x, y0, Color(1, 1, 1, 0.9))
+			minimap_img.set_pixel(x, y1, Color(1, 1, 1, 0.9))
+		for y in range(y0, y1 + 1):
+			minimap_img.set_pixel(x0, y, Color(1, 1, 1, 0.9))
+			minimap_img.set_pixel(x1, y, Color(1, 1, 1, 0.9))
 	minimap_tex.update(minimap_img)
 
 func hud_report() -> Dictionary:

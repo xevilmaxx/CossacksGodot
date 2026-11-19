@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dh8xwxougb3vf"
-path="res://.godot/imported/chasseur_idle.png-eb8c8b104fd71424530a93f6f3eb5825.ctex"
+path.s3tc="res://.godot/imported/chasseur_idle.png-eb8c8b104fd71424530a93f6f3eb5825.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/chasseur_idle.png"
-dest_files=["res://.godot/imported/chasseur_idle.png-eb8c8b104fd71424530a93f6f3eb5825.ctex"]
+dest_files=["res://.godot/imported/chasseur_idle.png-eb8c8b104fd71424530a93f6f3eb5825.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

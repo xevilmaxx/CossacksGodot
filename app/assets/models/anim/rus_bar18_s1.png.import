@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://32lc2xusioy2"
-path="res://.godot/imported/rus_bar18_s1.png-b94428c55e605f23468364f22ad97cc7.ctex"
+path.s3tc="res://.godot/imported/rus_bar18_s1.png-b94428c55e605f23468364f22ad97cc7.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/rus_bar18_s1.png"
-dest_files=["res://.godot/imported/rus_bar18_s1.png-b94428c55e605f23468364f22ad97cc7.ctex"]
+dest_files=["res://.godot/imported/rus_bar18_s1.png-b94428c55e605f23468364f22ad97cc7.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

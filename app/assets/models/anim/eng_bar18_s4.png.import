@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dwl4thlbikbuc"
-path="res://.godot/imported/eng_bar18_s4.png-091ebe69a8b41e8cbbcac3805c03d4b6.ctex"
+path.s3tc="res://.godot/imported/eng_bar18_s4.png-091ebe69a8b41e8cbbcac3805c03d4b6.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/eng_bar18_s4.png"
-dest_files=["res://.godot/imported/eng_bar18_s4.png-091ebe69a8b41e8cbbcac3805c03d4b6.ctex"]
+dest_files=["res://.godot/imported/eng_bar18_s4.png-091ebe69a8b41e8cbbcac3805c03d4b6.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

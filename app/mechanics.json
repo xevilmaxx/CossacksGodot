@@ -1336,6 +1336,70 @@
    "unit": "morale",
    "source": "cossacks3.pl hunger_and_rebellion",
    "estimated": true
+  },
+  {
+   "name": "garrison cap",
+   "group": "combat",
+   "value": 10,
+   "unit": "units",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "garrison heal",
+   "group": "combat",
+   "value": 2.0,
+   "unit": "hp/s",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "field resow cost",
+   "group": "economy",
+   "value": 20,
+   "unit": "food",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "corpse life",
+   "group": "fx",
+   "value": 90.0,
+   "unit": "s",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "difficulty trickle (hard)",
+   "group": "ai",
+   "value": "+1.5 food/wood/stone, +0.8 gold/iron/coal per s",
+   "unit": "res/s",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "deposit split",
+   "group": "economy",
+   "value": "global pool / node count",
+   "unit": "share",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "attack-ground dispersion",
+   "group": "combat",
+   "value": "reuse cannon dispersion",
+   "unit": "m",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "formation facing",
+   "group": "combat",
+   "value": "squad face rotates offsets",
+   "unit": "rad",
+   "source": "GUIDE3 estimate",
+   "estimated": true
   }
  ]
 }

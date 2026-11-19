@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://di6o86ry5bo25"
-path="res://.godot/imported/bav_cen.png-314783904f0c363dc9c0bead15025fb8.ctex"
+path.s3tc="res://.godot/imported/bav_cen.png-314783904f0c363dc9c0bead15025fb8.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/bav_cen.png"
-dest_files=["res://.godot/imported/bav_cen.png-314783904f0c363dc9c0bead15025fb8.ctex"]
+dest_files=["res://.godot/imported/bav_cen.png-314783904f0c363dc9c0bead15025fb8.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d1wxk407w6lqc"
-path="res://.godot/imported/den_aca_s3.png-aaaf4d8b563796587d6fa6bbc7fd3caf.ctex"
+path.s3tc="res://.godot/imported/den_aca_s3.png-aaaf4d8b563796587d6fa6bbc7fd3caf.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/den_aca_s3.png"
-dest_files=["res://.godot/imported/den_aca_s3.png-aaaf4d8b563796587d6fa6bbc7fd3caf.ctex"]
+dest_files=["res://.godot/imported/den_aca_s3.png-aaaf4d8b563796587d6fa6bbc7fd3caf.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

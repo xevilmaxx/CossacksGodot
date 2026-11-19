@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bkffjxbte7k8e"
-path="res://.godot/imported/jannisary_walk.png-e97a42446663bdfa0522bfc6e7f36b1d.ctex"
+path.s3tc="res://.godot/imported/jannisary_walk.png-e97a42446663bdfa0522bfc6e7f36b1d.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/jannisary_walk.png"
-dest_files=["res://.godot/imported/jannisary_walk.png-e97a42446663bdfa0522bfc6e7f36b1d.ctex"]
+dest_files=["res://.godot/imported/jannisary_walk.png-e97a42446663bdfa0522bfc6e7f36b1d.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

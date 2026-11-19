@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cyyone482i5mo"
-path="res://.godot/imported/cossackdon_death.png-6a5ec6c730aece7eb52589a62019e779.ctex"
+path.s3tc="res://.godot/imported/cossackdon_death.png-6a5ec6c730aece7eb52589a62019e779.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/cossackdon_death.png"
-dest_files=["res://.godot/imported/cossackdon_death.png-6a5ec6c730aece7eb52589a62019e779.ctex"]
+dest_files=["res://.godot/imported/cossackdon_death.png-6a5ec6c730aece7eb52589a62019e779.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

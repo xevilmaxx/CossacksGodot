@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1mbfbc2w0lav"
-path="res://.godot/imported/musketeer_death.png-2aa77bd3f891bae1239b716977993d01.ctex"
+path.s3tc="res://.godot/imported/musketeer_death.png-2aa77bd3f891bae1239b716977993d01.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/musketeer_death.png"
-dest_files=["res://.godot/imported/musketeer_death.png-2aa77bd3f891bae1239b716977993d01.ctex"]
+dest_files=["res://.godot/imported/musketeer_death.png-2aa77bd3f891bae1239b716977993d01.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

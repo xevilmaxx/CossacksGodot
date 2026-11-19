@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bcpnn4jk5tc6r"
-path="res://.godot/imported/pol_peasant_attack.png-19286e76f9c99ae94d6e8d8aebd91ff3.ctex"
+path.s3tc="res://.godot/imported/pol_peasant_attack.png-19286e76f9c99ae94d6e8d8aebd91ff3.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/pol_peasant_attack.png"
-dest_files=["res://.godot/imported/pol_peasant_attack.png-19286e76f9c99ae94d6e8d8aebd91ff3.ctex"]
+dest_files=["res://.godot/imported/pol_peasant_attack.png-19286e76f9c99ae94d6e8d8aebd91ff3.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

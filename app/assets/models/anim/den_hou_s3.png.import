@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b1rqjb1hn83ya"
-path="res://.godot/imported/den_hou_s3.png-7f197cb72043b24ec4b25cfd2a73cbe1.ctex"
+path.s3tc="res://.godot/imported/den_hou_s3.png-7f197cb72043b24ec4b25cfd2a73cbe1.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/den_hou_s3.png"
-dest_files=["res://.godot/imported/den_hou_s3.png-7f197cb72043b24ec4b25cfd2a73cbe1.ctex"]
+dest_files=["res://.godot/imported/den_hou_s3.png-7f197cb72043b24ec4b25cfd2a73cbe1.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

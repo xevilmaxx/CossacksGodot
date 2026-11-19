@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://t21k8gyit84"
-path="res://.godot/imported/sipahi_idle.png-f6bcefa44981b3f7c64ff400436e4dba.ctex"
+path.s3tc="res://.godot/imported/sipahi_idle.png-f6bcefa44981b3f7c64ff400436e4dba.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/sipahi_idle.png"
-dest_files=["res://.godot/imported/sipahi_idle.png-f6bcefa44981b3f7c64ff400436e4dba.ctex"]
+dest_files=["res://.godot/imported/sipahi_idle.png-f6bcefa44981b3f7c64ff400436e4dba.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

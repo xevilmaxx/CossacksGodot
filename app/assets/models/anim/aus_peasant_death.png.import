@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://m1mlcwny57dw"
-path="res://.godot/imported/aus_peasant_death.png-23ce1ce3f3bf9fd51fe7e71a6283509a.ctex"
+path.s3tc="res://.godot/imported/aus_peasant_death.png-23ce1ce3f3bf9fd51fe7e71a6283509a.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/aus_peasant_death.png"
-dest_files=["res://.godot/imported/aus_peasant_death.png-23ce1ce3f3bf9fd51fe7e71a6283509a.ctex"]
+dest_files=["res://.godot/imported/aus_peasant_death.png-23ce1ce3f3bf9fd51fe7e71a6283509a.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b1ar7r74k3k56"
-path="res://.godot/imported/fra_mar_dead.png-df86dab54d6d25f6861a3c887db78bac.ctex"
+path.s3tc="res://.godot/imported/fra_mar_dead.png-df86dab54d6d25f6861a3c887db78bac.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/fra_mar_dead.png"
-dest_files=["res://.godot/imported/fra_mar_dead.png-df86dab54d6d25f6861a3c887db78bac.ctex"]
+dest_files=["res://.godot/imported/fra_mar_dead.png-df86dab54d6d25f6861a3c887db78bac.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

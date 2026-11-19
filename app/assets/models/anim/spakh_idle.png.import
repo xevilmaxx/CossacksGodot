@@ -3,19 +3,20 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bvy4gu8adfkp3"
-path="res://.godot/imported/spakh_idle.png-10d472bbf361385e08296fcd1ae975ae.ctex"
+path.s3tc="res://.godot/imported/spakh_idle.png-10d472bbf361385e08296fcd1ae975ae.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/anim/spakh_idle.png"
-dest_files=["res://.godot/imported/spakh_idle.png-10d472bbf361385e08296fcd1ae975ae.ctex"]
+dest_files=["res://.godot/imported/spakh_idle.png-10d472bbf361385e08296fcd1ae975ae.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

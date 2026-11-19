@@ -19,7 +19,17 @@ var fog_sprite: Sprite2D
 var fog_img: Image
 var fog_tex: ImageTexture
 var fog_explored: PackedByteArray = PackedByteArray()
+var fog_vis: PackedByteArray = PackedByteArray()
+var fog_counts: PackedInt32Array
 var fog_timer := 0.0
+const CHUNK_T := 32          # tiles per chunk side
+var terrain_chunks: Dictionary = {}   # Vector2i -> Sprite2D
+var terrain_order: Array = []         # LRU keys
+var terrain_px := 16
+var res_dirty := 0
+var bld_dirty := 0
+var last_view_pos := Vector2.INF
+var terrain_hlv: Array = []
 var unit_layer: Node2D
 var bld_layer: Node2D
 var res_layer: Node2D
@@ -37,6 +47,9 @@ var sprites: Dictionary = {}
 # Animated original-model sheets (tools/bake_sprites.py): key -> {cell, actions}.
 var anim_index := {}
 var anim_tex := {}
+var ov_shadow: Texture2D
+var ov_ring: Array = []
+var ov_sel: Texture2D
 const SPRITE_ALIAS := {"musk18": "serdiuk", "grenadier": "roundshier",
 	"officer18": "officer", "drummer": "officer", "priest": "officer",
 	"howitzer": "cannon", "mortar": "cannon"}
@@ -46,7 +59,8 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	game = g
 	hud = h
 	view_scale = Data.PIXELS_PER_METER
-	_build_terrain()
+	terrain_px = Data.TERRAIN_PX
+	terrain_hlv = _prep_variants()
 	res_layer = Node2D.new()
 	res_layer.z_index = 1
 	add_child(res_layer)
@@ -64,12 +78,18 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	unit_layer.draw.connect(_draw_units)
 	fx_layer.draw.connect(_draw_fx)
 	_load_sprites()
-	var j := FileAccess.get_file_as_string("res://assets/models/anim/index.json")
+	ov_shadow = load("res://assets/ui/overlays/shadow.png")
+	ov_ring = [load("res://assets/ui/overlays/ring_p0.png"), load("res://assets/ui/overlays/ring_p1.png")]
+	ov_sel = load("res://assets/ui/overlays/ring_sel.png")
+	var j := FileAccess.get_file_as_string(_anim_dir() + "/index.json")
 	if j != "":
 		var parsed = JSON.parse_string(j)
 		if parsed is Dictionary:
 			anim_index = parsed
 	fog_explored.resize(game.MAP_W * game.MAP_H)
+	fog_vis.resize(game.MAP_W * game.MAP_H)
+	fog_counts.resize(game.MAP_W * game.MAP_H)
+	fog_timer = Data.FOG_INTERVAL
 	fog_img = Image.create(game.MAP_W, game.MAP_H, false, Image.FORMAT_RGBA8)
 	fog_img.fill(Color(0, 0, 0, 0.78))
 	fog_tex = ImageTexture.create_from_image(fog_img)
@@ -164,6 +184,15 @@ func _anim_action(e: Dictionary) -> String:
 		return "walk"
 	return "idle"
 
+func _anim_dir() -> String:
+	if Data.SPRITE_CELL != 160:
+		var d := "res://assets/models/anim%d" % Data.SPRITE_CELL
+		if DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(d)):
+			return d
+		if FileAccess.file_exists(d + "/index.json"):
+			return d
+	return "res://assets/models/anim"
+
 func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	var key := _anim_key(e.sid, int(e.player))
 	var info: Dictionary = anim_index.get(key, {})
@@ -175,7 +204,7 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 		return false
 	var tk := key + "_" + act
 	if not anim_tex.has(tk):
-		var path := "res://assets/models/anim/%s.png" % tk
+		var path := "%s/%s.png" % [_anim_dir(), tk]
 		if not FileAccess.file_exists(path):
 			return false
 		anim_tex[tk] = load(path)
@@ -194,10 +223,14 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 		fi = int(anim_t / maxf(0.05, float(a.duration)) * n) % n
 	var dir := int(fposmod(roundf(float(e.get("face", 0.0)) / (PI / 4.0)), 8.0)) % 8
 	var src := Rect2(dir * cell, fi * cell, cell, cell)
-	var world_h := _unit_height(e)
-	var sc: float = world_h * view_scale / float(cell)
+	# G1: scale by the measured ink height, anchor feet at the ink bottom and
+	# horizontal centre at the ink centre (tools swinging must not shift feet).
+	var fig_h: float = float(a.get("fig_h", 1.0))
+	var foot: float = float(a.get("foot", 0.82))
+	var cx: float = float(a.get("cx", 0.5))
+	var sc: float = _unit_height(e) * view_scale / maxf(8.0, float(cell) * fig_h)
 	var sz := Vector2(cell, cell) * sc
-	var tl := p - Vector2(sz.x * 0.5, sz.y * 0.82)
+	var tl := p - Vector2(sz.x * cx, sz.y * foot)
 	unit_layer.draw_texture_rect_region(tex, Rect2(tl, sz), src, tint)
 	return true
 
@@ -208,7 +241,7 @@ func _bld_key(e: Dictionary) -> String:
 		nat = str(Data.PLAYER_NATIONS[int(e.player)])
 	if nat != "":
 		var nk := "%s_%s" % [nat, e.sid]
-		if FileAccess.file_exists("res://assets/models/anim/%s.png" % nk):
+		if FileAccess.file_exists("%s/%s.png" % [_anim_dir(), nk]):
 			return nk
 	return e.sid
 
@@ -220,7 +253,7 @@ func _bld_anim(key: String) -> Texture2D:
 			anim_tex.erase(key)
 			return null
 		return t
-	var path := "res://assets/models/anim/%s.png" % key
+	var path := "%s/%s.png" % [_anim_dir(), key]
 	if not FileAccess.file_exists(path):
 		return null
 	anim_tex[key] = load(path)
@@ -249,8 +282,8 @@ func _draw_sprite(layer: Node2D, tex: Texture2D, p: Vector2, world_h: float, tin
 	var sc: float = px_h / maxf(1.0, float(tex.get_height()))
 	var sz := Vector2(float(tex.get_width()), float(tex.get_height())) * sc
 	var top_left := p - Vector2(sz.x * 0.5, sz.y * 0.82)
-	if shadow:
-		layer.draw_circle(p + Vector2(1.5, 2.5), sz.x * 0.32, Color(0, 0, 0, 0.28))
+	if shadow and Data.QUALITY != "low":
+		layer.draw_circle(p + Vector2(1.0, 2.0), sz.x * 0.22, Color(0, 0, 0, 0.16))
 	layer.draw_texture(tex, top_left, tint)
 
 func _src(path: String) -> Image:
@@ -288,7 +321,7 @@ func _tint(im: Image, mul: Color) -> Image:
 			c.set_pixel(x, y, Color(p.r * mul.r, p.g * mul.g, p.b * mul.b))
 	return c
 
-func _build_terrain() -> void:
+func _prep_variants() -> Array:
 	var grass_imgs: Array = []
 	for i in 5:
 		var im := _src("res://assets/terrain/grass%d.png" % (i + 1))
@@ -355,41 +388,114 @@ func _build_terrain() -> void:
 						c.set_pixel(px, py, Color(minf(1.0, col.r * f), minf(1.0, col.g * f), minf(1.0, col.b * f)))
 				arr.append(c)
 			hlv[lvl].append(arr)
-	var px_per_tile := 8
-	var img := Image.create(game.MAP_W * px_per_tile, game.MAP_H * px_per_tile, false, Image.FORMAT_RGB8)
-	for y in game.MAP_H:
-		for x in game.MAP_W:
+	return hlv
+
+func _chunk_key(cx: int, cy: int) -> Vector2i:
+	return Vector2i(cx, cy)
+
+func _build_chunk(cx: int, cy: int) -> Sprite2D:
+	var px := terrain_px
+	var img := Image.create(CHUNK_T * px, CHUNK_T * px, false, Image.FORMAT_RGB8)
+	var masks: Array = []
+	for d in 4:
+		var m := Image.create(px, px, false, Image.FORMAT_L8)
+		for y in px:
+			for x in px:
+				var t: float = 0.0
+				match d:
+					0: t = clampf(1.0 - float(x) / (px * 0.45), 0.0, 1.0)   # left neighbour
+					1: t = clampf(1.0 - float(px - 1 - x) / (px * 0.45), 0.0, 1.0)
+					2: t = clampf(1.0 - float(y) / (px * 0.45), 0.0, 1.0)
+					3: t = clampf(1.0 - float(px - 1 - y) / (px * 0.45), 0.0, 1.0)
+				m.set_pixel(x, y, Color(t, t, t))
+		masks.append(m)
+	for ly in CHUNK_T:
+		for lx in CHUNK_T:
+			var x := cx * CHUNK_T + lx
+			var y := cy * CHUNK_T + ly
+			if x >= game.MAP_W or y >= game.MAP_H:
+				continue
 			var t: int = game.terrain[y * game.MAP_W + x]
 			if t < 0 or t > 5:
 				t = 0
-			# variant picked by soft noise only (no per-tile hash), so
-			# neighbours share variants and the field reads as one meadow
 			var m: float = _wnoise(float(x) * 0.13, float(y) * 0.13)
 			var vi: int = absi(int(m * 5.0) + (x / 4) + (y / 4)) % 8
 			var hh: float = game.height_at(Vector2((float(x) + 0.5) * Data.TILE_M, (float(y) + 0.5) * Data.TILE_M))
 			var lvl := 0 if hh < -0.6 else (2 if hh > 0.6 else 1)
-			var sim: Image = (hlv[lvl] as Array)[t][vi]
-			img.blit_rect(sim, Rect2i(0, 0, px_per_tile, px_per_tile), Vector2i(x * px_per_tile, y * px_per_tile))
+			var sim: Image = (terrain_hlv[lvl] as Array)[t][vi]
+			var big := sim.duplicate() as Image
+			big.resize(px, px, Image.INTERPOLATE_BILINEAR)
+			img.blit_rect(big, Rect2i(0, 0, px, px), Vector2i(lx * px, ly * px))
+			# soft blend toward each different-type neighbour (no hard seams)
+			for d in 4:
+				var nx: int = x + [-1, 1, 0, 0][d]
+				var ny: int = y + [0, 0, -1, 1][d]
+				if nx < 0 or ny < 0 or nx >= game.MAP_W or ny >= game.MAP_H:
+					continue
+				var nt: int = game.terrain[ny * game.MAP_W + nx]
+				if nt == t or nt < 0 or nt > 5:
+					continue
+				var nsim: Image = (terrain_hlv[lvl] as Array)[nt][vi]
+				var nbig := nsim.duplicate() as Image
+				nbig.resize(px, px, Image.INTERPOLATE_BILINEAR)
+				# soft masked paste toward the neighbour type (no hard seams)
+				for yy in px:
+					for xx in px:
+						var a: float = masks[d].get_pixel(xx, yy).r * 0.85
+						if a <= 0.01:
+							continue
+						var c0: Color = img.get_pixel(lx * px + xx, ly * px + yy)
+						var c1: Color = nbig.get_pixel(xx, yy)
+						img.set_pixel(lx * px + xx, ly * px + yy, c0.lerp(c1, a))
 	var tex := ImageTexture.create_from_image(img)
-	terrain_sprite = Sprite2D.new()
-	terrain_sprite.texture = tex
-	terrain_sprite.centered = false
-	terrain_sprite.scale = Vector2(game.MAP_W * Data.TILE_M * view_scale / img.get_width(), game.MAP_H * Data.TILE_M * view_scale / img.get_height())
-	terrain_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	terrain_sprite.z_index = -10
-	add_child(terrain_sprite)
+	var sp := Sprite2D.new()
+	sp.texture = tex
+	sp.centered = false
+	sp.position = Vector2(cx * CHUNK_T * Data.TILE_M * view_scale, cy * CHUNK_T * Data.TILE_M * view_scale)
+	sp.scale = Vector2(Data.TILE_M * view_scale / float(px), Data.TILE_M * view_scale / float(px))
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	sp.z_index = -10
+	add_child(sp)
+	return sp
+
+func _sync_terrain_chunks() -> void:
+	var t0 := game.tile_of(view_rect.position)
+	var t1 := game.tile_of(view_rect.end)
+	var c0x := maxi(0, t0.x / CHUNK_T)
+	var c0y := maxi(0, t0.y / CHUNK_T)
+	var c1x := mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T)
+	var c1y := mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T)
+	for cy in range(c0y, c1y + 1):
+		for cx in range(c0x, c1x + 1):
+			var k := _chunk_key(cx, cy)
+			if not terrain_chunks.has(k):
+				terrain_chunks[k] = _build_chunk(cx, cy)
+				terrain_order.append(k)
+				while terrain_order.size() > 24:
+					var old: Vector2i = terrain_order.pop_front()
+					var sp2: Sprite2D = terrain_chunks.get(old, null)
+					if sp2 != null:
+						sp2.queue_free()
+					terrain_chunks.erase(old)
 
 func sync(dt: float) -> void:
 	# visible WORLD rect (not screen pixels): cull in the same space the
 	# entities are drawn in, otherwise big maps hide everything
 	view_rect = get_viewport().get_canvas_transform().affine_inverse() * get_viewport_rect()
+	_sync_terrain_chunks()
 	anim_t += dt
 	fog_timer -= dt
 	if fog_timer <= 0.0:
-		fog_timer = 0.5
+		fog_timer = Data.FOG_INTERVAL
 		_update_fog()
-	bld_layer.queue_redraw()
-	res_layer.queue_redraw()
+	var moved := last_view_pos == Vector2.INF or last_view_pos.distance_to(view_rect.position) > 4.0 or last_view_pos.distance_to(view_rect.end) > 4.0
+	last_view_pos = view_rect.position
+	if moved or game.res_dirty != res_dirty:
+		res_dirty = game.res_dirty
+		res_layer.queue_redraw()
+	if moved or game.bld_dirty != bld_dirty:
+		bld_dirty = game.bld_dirty
+		bld_layer.queue_redraw()
 	unit_layer.queue_redraw()
 	fx_layer.queue_redraw()
 	for f in fx_items:
@@ -407,12 +513,14 @@ func _update_fog() -> void:
 	for rq in game.reveal_requests:
 		var c: Vector2 = rq.pos
 		var rr: float = rq.r
-		for ty in game.MAP_H:
-			for tx in game.MAP_W:
+		var t0 := game.tile_of(c - Vector2(rr, rr))
+		var t1 := game.tile_of(c + Vector2(rr, rr))
+		for ty in range(maxi(0, t0.y), mini(game.MAP_H, t1.y + 1)):
+			for tx in range(maxi(0, t0.x), mini(game.MAP_W, t1.x + 1)):
 				if Vector2(tx * 2 + 1, ty * 2 + 1).distance_to(c) <= rr:
 					fog_explored[ty * game.MAP_W + tx] = 1
 	game.reveal_requests.clear()
-	var vis := {}
+	fog_counts.fill(0)
 	for e in game.entities:
 		if e.dead or e.player != 0:
 			continue
@@ -423,18 +531,39 @@ func _update_fog() -> void:
 			for x in range(maxi(0, t0.x), mini(game.MAP_W, t1.x + 1)):
 				var c := Vector2((x + 0.5) * Data.TILE_M, (y + 0.5) * Data.TILE_M)
 				if c.distance_to(e.pos) <= r:
-					vis[y * game.MAP_W + x] = true
-	for y in game.MAP_H:
-		for x in game.MAP_W:
-			var i := y * game.MAP_W + x
-			if vis.has(i):
-				fog_explored[i] = 1
-				fog_img.set_pixel(x, y, Color(0, 0, 0, 0))
-			elif fog_explored[i] == 1:
-				fog_img.set_pixel(x, y, Color(0, 0, 0, 0.30))
-			else:
-				fog_img.set_pixel(x, y, Color(0, 0, 0, 0.78))
+					fog_counts[y * game.MAP_W + x] += 1
+	for i in game.MAP_W * game.MAP_H:
+		var v: int = 1 if fog_counts[i] > 0 else 0
+		if v == 1:
+			fog_explored[i] = 1
+		if fog_vis[i] == v:
+			continue
+		fog_vis[i] = v
+		var x: int = i % game.MAP_W
+		var y: int = i / game.MAP_W
+		if v == 1:
+			fog_img.set_pixel(x, y, Color(0, 0, 0, 0))
+		elif fog_explored[i] == 1:
+			fog_img.set_pixel(x, y, Color(0, 0, 0, 0.30))
+		else:
+			fog_img.set_pixel(x, y, Color(0, 0, 0, 0.78))
 	fog_tex.update(fog_img)
+
+func tile_visible(p: Vector2) -> bool:
+	if not Data.FOG_OF_WAR:
+		return true
+	var t := game.tile_of(p)
+	if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
+		return false
+	return fog_vis[t.y * game.MAP_W + t.x] == 1
+
+func tile_explored(p: Vector2) -> bool:
+	if not Data.FOG_OF_WAR:
+		return true
+	var t := game.tile_of(p)
+	if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
+		return false
+	return fog_explored[t.y * game.MAP_W + t.x] == 1
 
 # deterministic hash for prop variation
 func _hash(x: float, y: float) -> float:
@@ -482,7 +611,7 @@ func _draw_resources() -> void:
 			"wood":
 				var tree := _prop_tex(["tree_fir", "tree_oak", "tree_pine"], n.pos)
 				if tree != null:
-					_draw_sprite(res_layer, tree, p, 3.6 + h * 1.6)
+					_draw_sprite(res_layer, tree, p, 2.9 + h * 1.1)
 					continue
 				# fallback below (no sprites): tall pines + broad oaks
 				var pine := h > 0.42
@@ -505,7 +634,7 @@ func _draw_resources() -> void:
 			"stone":
 				var rock := _prop_tex(["rock", "stone"], n.pos)
 				if rock != null:
-					_draw_sprite(res_layer, rock, p, 1.6 + h * 0.8)
+					_draw_sprite(res_layer, rock, p, 1.3 + h * 0.6)
 					continue
 				res_layer.draw_circle(p + Vector2(0, 2), 7.0, Color(0, 0, 0, 0.2))
 				res_layer.draw_circle(p, 5.5, Color(0.5, 0.5, 0.49))
@@ -528,7 +657,7 @@ func _draw_resources() -> void:
 				var col: Color = {"gold": Color(0.9, 0.75, 0.2), "iron": Color(0.7, 0.45, 0.3), "coal": Color(0.28, 0.28, 0.3)}[n.type]
 				var outcrop := _prop_tex(["rock"], n.pos)
 				if outcrop != null:
-					_draw_sprite(res_layer, outcrop, p, 2.2)
+					_draw_sprite(res_layer, outcrop, p, 1.8)
 					res_layer.draw_circle(p + Vector2(2, -4), 3.0, col)
 					res_layer.draw_circle(p + Vector2(-1, 1), 2.0, col.lightened(0.2))
 					continue
@@ -545,6 +674,8 @@ func _draw_buildings() -> void:
 			continue
 		var p := world_to_px(e.pos)
 		if not view_rect.grow(96).has_point(p):
+			continue
+		if e.player != 0 and not tile_explored(e.pos):
 			continue
 		var col := _player_color(e.player)
 		var r: float = e.def.radius * view_scale
@@ -762,8 +893,12 @@ func _draw_units() -> void:
 	for e in game.entities:
 		if e.dead or e.kind != "unit":
 			continue
+		if bool(e.get("hidden", false)):
+			continue
 		var p := world_to_px(e.pos)
 		if not view_rect.grow(64).has_point(p):
+			continue
+		if e.player != 0 and not tile_visible(e.pos):
 			continue
 		var col := _player_color(e.player)
 		var coat := col.darkened(0.08)
@@ -774,10 +909,12 @@ func _draw_units() -> void:
 		# soft contact shadow (two alpha layers) + idle/march bob
 		var bob := sin(anim_t * 5.0 + float(e.id) * 1.7) * (1.4 if e.moving else 0.5)
 		var pb := p + Vector2(0, bob * 0.4)
-		unit_layer.draw_circle(pb + Vector2(1.5, 3.0), vr * 1.05, Color(0, 0, 0, 0.16))
-		unit_layer.draw_circle(pb + Vector2(1, 2), vr * 0.95, Color(0, 0, 0, 0.26))
-		# team ring under the unit so sides read at a glance
-		unit_layer.draw_arc(pb, vr + 1.5, 0, TAU, 22, Color(col.r, col.g, col.b, 0.55), 2.0)
+		if ov_shadow != null and Data.QUALITY != "low":
+			var shw := vr * 2.6
+			unit_layer.draw_texture_rect(ov_shadow, Rect2(pb.x - shw / 2, pb.y - shw * 0.25 + 2, shw, shw * 0.5), false, Color(1, 1, 1, 0.8))
+		if bool(e.get("selected", false)) and ov_ring.size() > int(e.player):
+			var rw := vr * 2.9
+			unit_layer.draw_texture_rect(ov_ring[int(e.player)], Rect2(p.x - rw / 2, p.y - rw * 0.25, rw, rw * 0.5), false)
 		# animated original-model sheets (tools/bake_sprites.py) first,
 		# static sprite, procedural body below stays as the fallback
 		var tint: Color = SPRITE_TINT.get(e.sid, Color(1, 1, 1))
@@ -883,8 +1020,9 @@ func _draw_units() -> void:
 		if e.get("selected", false):
 			var fd := Vector2(cos(e.face), sin(e.face))
 			unit_layer.draw_line(p + fd * (vr + 2.0), p + fd * (vr + 7.0), Color(1, 1, 1, 0.9), 2.0)
-			unit_layer.draw_arc(p, vr + 5.0, 0, TAU, 24, Color(0.1, 0.1, 0.1, 0.8), 3.0)
-			unit_layer.draw_arc(p, vr + 5.0, 0, TAU, 24, Color(1, 1, 1, 0.95), 1.5)
+			if ov_sel != null:
+				var sw := vr * 3.2
+				unit_layer.draw_texture_rect(ov_sel, Rect2(p.x - sw / 2, p.y - sw * 0.25, sw, sw * 0.5), false)
 		if e.hp < e.max_hp:
 			var w: float = vr * 2.4
 			unit_layer.draw_rect(Rect2(p.x - w / 2, p.y - vr - 11, w + 2, 6), Color(0, 0, 0, 0.7))
@@ -911,6 +1049,8 @@ func _draw_corpses() -> void:
 		var p := world_to_px(c.pos)
 		if not view_rect.grow(64).has_point(p):
 			continue
+		if int(c.player) != 0 and not tile_explored(c.pos):
+			continue
 		var a := clampf(1.0 - c.t / c.life, 0.0, 1.0) * 0.55
 		# death sheet (tools/bake_sprites.py): last falls linger, then fade
 		var ckey := str(c.sid)
@@ -921,8 +1061,8 @@ func _draw_corpses() -> void:
 			var dd: float = maxf(0.05, float(dact.duration))
 			var dcell: int = int(cinfo.cell)
 			var dtk := ckey + "_death"
-			if not anim_tex.has(dtk) and FileAccess.file_exists("res://assets/models/anim/%s.png" % dtk):
-				anim_tex[dtk] = load("res://assets/models/anim/%s.png" % dtk)
+			if not anim_tex.has(dtk) and FileAccess.file_exists("%s/%s.png" % [_anim_dir(), dtk]):
+				anim_tex[dtk] = load("%s/%s.png" % [_anim_dir(), dtk])
 			if anim_tex.has(dtk):
 				var dtex: Texture2D = anim_tex[dtk]
 				if dtex == null:
@@ -931,9 +1071,12 @@ func _draw_corpses() -> void:
 					var dfi: int = mini(dn - 1, int(float(c.t) / dd * dn))
 					var ddir := int(fposmod(roundf(float(c.get("face", 0.0)) / (PI / 4.0)), 8.0)) % 8
 					var dsrc := Rect2(ddir * dcell, dfi * dcell, dcell, dcell)
-					var dsc: float = 1.9 * view_scale / float(dcell)
+					var dfig: float = float(dact.get("fig_h", 1.0))
+					var dfoot: float = float(dact.get("foot", 0.82))
+					var dcx: float = float(dact.get("cx", 0.5))
+					var dsc: float = 1.9 * view_scale / maxf(8.0, float(dcell) * dfig)
 					var dsz := Vector2(dcell, dcell) * dsc
-					var dtl := p - Vector2(dsz.x * 0.5, dsz.y * 0.82)
+					var dtl := p - Vector2(dsz.x * dcx, dsz.y * dfoot)
 					unit_layer.draw_texture_rect_region(dtex, Rect2(dtl, dsz), dsrc, Color(0.55, 0.5, 0.5, a))
 					continue
 		var cspr := _sprite_for(str(c.sid), 0.0)
@@ -1003,7 +1146,7 @@ func add_fx(kind: String, pos: Vector2) -> void:
 		"capture", "rout":
 			life = 1.2
 	fx_items.append({"kind": kind, "pos": world_to_px(pos), "t": 0.0, "life": life})
-	if fx_items.size() > 220:
+	if fx_items.size() > Data.FX_CAP:
 		fx_items.pop_front()
 
 func _draw_fx() -> void:
@@ -1028,6 +1171,8 @@ func _draw_fx() -> void:
 	if game != null:
 		for e in game.entities:
 			if e.dead or e.kind != "building" or not e.has("rally"):
+				continue
+			if e.player != 0:
 				continue
 			var rp: Vector2 = e.rally
 			var bp := world_to_px(e.pos)
