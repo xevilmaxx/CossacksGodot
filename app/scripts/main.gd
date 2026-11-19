@@ -405,32 +405,34 @@ func _on_game_over(w: int) -> void:
 		end_panel.queue_free()
 	end_panel = PanelContainer.new()
 	end_panel.set_anchors_preset(Control.PRESET_CENTER)
+	end_panel.add_theme_stylebox_override("panel", C3ConfigScript.ui_panel_style())
 	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", maxi(6, int(8 * _menu_us())))
 	end_panel.add_child(vb)
 	var title := Label.new()
 	title.text = "Victory!" if w == 0 else "Defeat"
-	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_font_size_override("font_size", maxi(24, int(36 * _menu_us())))
 	vb.add_child(title)
 	var lines := "time %.0fs  shots %d  hits %d  kills %d" % [game.time_s, game.stats.shots, game.stats.hits, game.stats.kills]
 	var sl := Label.new()
 	sl.text = lines
+	sl.add_theme_font_size_override("font_size", maxi(12, int(15 * _menu_us())))
 	vb.add_child(sl)
 	for pi in 2:
 		var l := Label.new()
 		l.text = "P%d units %d bldgs %d score %d" % [pi, game.unit_count(pi), game.buildings_of(pi).size(), game.players[pi].score]
+		l.add_theme_font_size_override("font_size", maxi(12, int(14 * _menu_us())))
 		vb.add_child(l)
 	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", maxi(6, int(8 * _menu_us())))
 	vb.add_child(hb)
-	var rb := Button.new()
-	rb.text = "Restart"
+	var rb := _menu_btn("Restart")
 	rb.pressed.connect(func(): last_cfg = pending_cfg; get_tree().reload_current_scene())
 	hb.add_child(rb)
-	var qb := Button.new()
-	qb.text = "Quit to menu"
+	var qb := _menu_btn("Quit to menu")
 	qb.pressed.connect(func(): get_tree().reload_current_scene())
 	hb.add_child(qb)
-	var sv := Button.new()
-	sv.text = "Save replay"
+	var sv := _menu_btn("Save replay")
 	sv.pressed.connect(func(): var f := FileAccess.open("user://lastgame.json", FileAccess.WRITE); if f: f.store_string(JSON.stringify(game.serialize())); f.close())
 	hb.add_child(sv)
 	add_child(end_panel)
@@ -469,6 +471,36 @@ func game_load() -> void:
 			hud.refresh_selection([])
 			hud.show_hint("Game loaded")
 
+func _menu_btn(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(maxi(200, int(240 * _menu_us())), maxi(34, int(40 * _menu_us())))
+	b.add_theme_font_size_override("font_size", maxi(13, int(15 * _menu_us())))
+	C3ConfigScript.ui_style_button(b)
+	return b
+
+func _menu_us() -> float:
+	var s := Vector2(1280, 720)
+	if is_instance_valid(get_viewport()):
+		s = get_viewport().get_visible_rect().size
+	return C3ConfigScript.ui_scale_for(s)
+
+func _overlay_base(min_w: float) -> VBoxContainer:
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	menu_overlay.add_child(center)
+	var card := PanelContainer.new()
+	var vw := 1280.0
+	if is_instance_valid(get_viewport()):
+		vw = get_viewport().get_visible_rect().size.x
+	card.custom_minimum_size = Vector2(minf(min_w * _menu_us(), vw * 0.94), 0)
+	card.add_theme_stylebox_override("panel", C3ConfigScript.ui_panel_style())
+	center.add_child(card)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", maxi(6, int(8 * _menu_us())))
+	card.add_child(vb)
+	return vb
+
 func toggle_menu_overlay() -> void:
 	if menu_overlay != null and is_instance_valid(menu_overlay):
 		menu_overlay.queue_free()
@@ -476,33 +508,23 @@ func toggle_menu_overlay() -> void:
 		return
 	menu_overlay = CanvasLayer.new()
 	add_child(menu_overlay)
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	menu_overlay.add_child(panel)
-	var vb := VBoxContainer.new()
-	panel.add_child(vb)
-	var resume := Button.new()
-	resume.text = "Resume"
+	var vb := _overlay_base(340.0)
+	var resume := _menu_btn("Resume")
 	resume.pressed.connect(toggle_menu_overlay)
 	vb.add_child(resume)
-	var sb := Button.new()
-	sb.text = "Save (F5)"
+	var sb := _menu_btn("Save (F5)")
 	sb.pressed.connect(game_save)
 	vb.add_child(sb)
-	var lb := Button.new()
-	lb.text = "Load (F9)"
+	var lb := _menu_btn("Load (F9)")
 	lb.pressed.connect(game_load)
 	vb.add_child(lb)
-	var ob := Button.new()
-	ob.text = "Options"
+	var ob := _menu_btn("Options")
 	ob.pressed.connect(_show_options.bind(vb))
 	vb.add_child(ob)
-	var qb := Button.new()
-	qb.text = "Quit to menu"
+	var qb := _menu_btn("Quit to menu")
 	qb.pressed.connect(func(): get_tree().reload_current_scene())
 	vb.add_child(qb)
-	var rb := Button.new()
-	rb.text = "Restart"
+	var rb := _menu_btn("Restart")
 	rb.pressed.connect(func(): get_tree().reload_current_scene())
 	vb.add_child(rb)
 
@@ -526,6 +548,8 @@ func _show_options(parent: VBoxContainer) -> void:
 	for q in ["high", "medium", "low"]:
 		qopt.add_item(q)
 	qopt.selected = ["high", "medium", "low"].find(Data.QUALITY)
+	C3ConfigScript.ui_style_button(qopt)
+	qopt.add_theme_font_size_override("font_size", maxi(13, int(15 * _menu_us())))
 	qopt.item_selected.connect(func(i: int):
 		var q2: String = ["high", "medium", "low"][i]
 		Data.QUALITY = q2
@@ -540,26 +564,37 @@ func _show_options(parent: VBoxContainer) -> void:
 		world.terrain_chunks.clear()
 		world.terrain_order.clear()
 		world.terrain_px = Data.TERRAIN_PX
+		world.terrain_masks = world._build_masks(Data.TERRAIN_PX)
+		world.anim_tex.clear()
+		world.anim_index = {}
+		var j := FileAccess.get_file_as_string(world._anim_dir() + "/index.json")
+		if j != "":
+			var parsed = JSON.parse_string(j)
+			if parsed is Dictionary:
+				world.anim_index = parsed
 	)
 	parent.add_child(qopt)
 	var fogb := CheckButton.new()
 	fogb.text = "Fog of war"
 	fogb.button_pressed = Data.FOG_OF_WAR
 	fogb.toggled.connect(func(on: bool): Data.FOG_OF_WAR = on; world.fog_sprite.visible = on)
+	fogb.add_theme_font_size_override("font_size", maxi(13, int(15 * _menu_us())))
 	parent.add_child(fogb)
 	var capb := CheckButton.new()
 	capb.text = "Peasant capture"
 	capb.button_pressed = Data.CAPTURE_ENABLED
 	capb.toggled.connect(func(on: bool): Data.CAPTURE_ENABLED = on)
+	capb.add_theme_font_size_override("font_size", maxi(13, int(15 * _menu_us())))
 	parent.add_child(capb)
 	var dopt := OptionButton.new()
 	for d in ["easy", "normal", "hard"]:
 		dopt.add_item(d)
 	dopt.selected = ["easy", "normal", "hard"].find(Data.AI_DIFFICULTY)
 	dopt.item_selected.connect(func(i: int): Data.AI_DIFFICULTY = ["easy", "normal", "hard"][i])
+	C3ConfigScript.ui_style_button(dopt)
+	dopt.add_theme_font_size_override("font_size", maxi(13, int(15 * _menu_us())))
 	parent.add_child(dopt)
-	var back := Button.new()
-	back.text = "Back"
+	var back := _menu_btn("Back")
 	back.pressed.connect(toggle_menu_overlay)
 	parent.add_child(back)
 

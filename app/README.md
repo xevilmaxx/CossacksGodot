@@ -119,3 +119,14 @@ and forest look); no store images are shipped with the game.
 - U unload garrison/town, R bombard (artillery) or rally context, Ctrl+M idle mines, Ctrl+backtick all peasants, Shift+Z add same type, Alt+M minimap, F5/F9 save/load, Esc menu.
 - Quality presets high/medium/low (terrain_px, sprite_cell, fx_cap); save/load quicksave.json; context cursors.
 \
+
+## FPS readout (engine vs sim)
+
+Top bar shows live ps ms u (render fps, frame ms EMA, live units). Rule of thumb: fps high + game sluggish = sim/design cost (ticks, AI, upkeep) - try the low quality preset in Options or fewer units; fps low = rendering cost - lower quality / window size.
+
+
+## HUD readout + scalable interface
+
+- Upper right corner shows a 3-digit FPS number (render fps only). High fps + sluggish game = sim cost: try the low quality preset in Options or field fewer units.
+- All interface (menu, top bar, panels, minimap, dialogs) scales with the window between 1280x720 and 4K (factor 0.75-2.5x), in windowed and fullscreen: fonts, buttons and panels grow proportionally while the battlefield view itself is untouched.
+

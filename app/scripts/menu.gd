@@ -11,6 +11,8 @@ extends CanvasLayer
 
 signal chosen(cfg: Dictionary)
 
+const ConfigScript = preload("res://scripts/config.gd")
+
 var data: Dictionary = {}
 var root: PanelContainer
 var title_label: Label
@@ -24,11 +26,58 @@ var mission_name := ""
 var difficulty := "normal"
 var map_size := 320
 var seed_val := 20261113
+var ui_us := 1.0
+var ui_vp := Vector2(1280, 720)
+var menu_scroll: ScrollContainer
 
 func _ready() -> void:
 	layer = 20
 	_load_data()
 	_build()
+	_apply_scale()
+	if is_instance_valid(get_tree()) and is_instance_valid(get_tree().root) and not get_tree().root.size_changed.is_connected(_on_vp_resize):
+		get_tree().root.size_changed.connect(_on_vp_resize)
+
+func _on_vp_resize() -> void:
+	ui_us = _calc_us()
+	_apply_scale()
+
+func _calc_us() -> float:
+	var s := Vector2(1280, 720)
+	if is_instance_valid(get_viewport()):
+		s = get_viewport().get_visible_rect().size
+	ui_vp = s
+	return ConfigScript.ui_scale_for(s)
+
+func _fs(base: int) -> int:
+	return maxi(10, int(round(float(base) * ui_us)))
+
+func _mh(base: float) -> float:
+	return base * ui_us
+
+# Walk the whole menu tree and apply the current scale to every widget that
+# opted in via set_meta("uifs"/"uimh"/"uimw"...). Static chrome is
+# tagged at build time; dynamic rows re-tag on creation. The card itself is
+# bounded to the viewport (width + content-aware scroll height) so content
+# can never clip, at any window size.
+func _apply_scale() -> void:
+	for n in find_children("*", "Control", true, false):
+		var c := n as Control
+		if c == null:
+			continue
+		if c.has_meta("uifs"):
+			c.add_theme_font_size_override("font_size", _fs(int(c.get_meta("uifs"))))
+		var mw := float(c.get_meta("uimw", 0.0))
+		var mh := float(c.get_meta("uimh", 0.0))
+		if mw > 0.0 or mh > 0.0:
+			var cur: Vector2 = c.custom_minimum_size
+			c.custom_minimum_size = Vector2(_mh(mw) if mw > 0.0 else cur.x, _mh(mh) if mh > 0.0 else cur.y)
+	if is_instance_valid(root) and is_instance_valid(menu_scroll) and is_instance_valid(body):
+		root.custom_minimum_size.x = minf(560.0 * ui_us, ui_vp.x * 0.94)
+		var chrome := 150.0 * ui_us
+		var want: float = body.get_combined_minimum_size().y
+		var avail: float = maxf(120.0, ui_vp.y * 0.86 - chrome)
+		menu_scroll.custom_minimum_size.y = minf(want, avail)
 
 func _load_data() -> void:
 	var paths := ["res://assets/missions.json", "user://missions.json"]
@@ -64,33 +113,38 @@ func _battles() -> Array:
 	return data.get("battles", [])
 
 func _build() -> void:
+	ui_us = _calc_us()
+	# Full-rect centering + a card that can never outgrow the window: the
+	# body scrolls instead of clipping, at any window size or aspect.
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
 	root = PanelContainer.new()
-	root.set_anchors_preset(Control.PRESET_CENTER)
-	root.custom_minimum_size = Vector2(560, 0)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.09, 0.07, 0.05, 0.96)
-	style.set_corner_radius_all(6)
-	style.set_border_width_all(2)
-	style.border_color = Color(0.72, 0.6, 0.32)
-	root.add_theme_stylebox_override("panel", style)
-	add_child(root)
+	root.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	center.add_child(root)
 	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 8)
+	vb.add_theme_constant_override("separation", 10)
 	root.add_child(vb)
 	title_label = Label.new()
-	title_label.text = "COSSACKS 3 - singleplayer port"
-	title_label.add_theme_font_size_override("font_size", 26)
+	title_label.text = "COSSACKS 3 — singleplayer"
+	title_label.set_meta("uifs", 30)
 	title_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vb.add_child(title_label)
 	var sub := Label.new()
-	sub.text = "Skirmish, historical battles and campaigns (original names from campaigns.cfg / battles.cfg)"
-	sub.add_theme_font_size_override("font_size", 13)
+	sub.text = "Skirmish · historical battles · campaigns"
+	sub.set_meta("uifs", 14)
 	sub.add_theme_color_override("font_color", Color(0.8, 0.78, 0.7))
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vb.add_child(sub)
+	menu_scroll = ScrollContainer.new()
+	menu_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vb.add_child(menu_scroll)
 	body = VBoxContainer.new()
-	body.add_theme_constant_override("separation", 6)
-	vb.add_child(body)
+	body.add_theme_constant_override("separation", 8)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	menu_scroll.add_child(body)
 	_show_main()
 
 func _clear() -> void:
@@ -101,9 +155,20 @@ func _clear() -> void:
 func _btn(text: String) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(0, 36)
+	b.custom_minimum_size = Vector2(0, 40)
+	b.set_meta("uimh", 40.0)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.set_meta("uifs", 15)
+	ConfigScript.ui_style_button(b)
 	return b
+
+func _lbl(text: String, fs := 13, col := Color(0.75, 0.72, 0.65)) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.set_meta("uifs", fs)
+	l.add_theme_color_override("font_color", col)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	return l
 
 func _show_main() -> void:
 	_clear()
@@ -125,21 +190,23 @@ func _show_main() -> void:
 	var qb := _btn("Quit")
 	qb.pressed.connect(func(): get_tree().quit())
 	body.add_child(qb)
-	var hint := Label.new()
-	hint.text = "Maps are generated in the original's style (open plains, forest belts, hills, lakes). Picks change nations, armies and objectives."
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.add_theme_font_size_override("font_size", 12)
-	hint.add_theme_color_override("font_color", Color(0.7, 0.7, 0.65))
+	var hint := _lbl("Maps are generated in the original's style (open plains, forest belts, hills, lakes). Picks change nations, armies and objectives.", 12, Color(0.7, 0.7, 0.65))
 	body.add_child(hint)
+	_apply_scale()
 
 func _opt_row(label_text: String, items: Array, current: String, on_pick: Callable) -> HBoxContainer:
 	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 10)
 	var l := Label.new()
 	l.text = label_text
 	l.custom_minimum_size = Vector2(150, 0)
+	l.set_meta("uimw", 150.0)
+	l.set_meta("uifs", 14)
 	hb.add_child(l)
 	var ob := OptionButton.new()
 	ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ConfigScript.ui_style_button(ob)
+	ob.set_meta("uifs", 14)
 	var sel := 0
 	for i in items.size():
 		var it: Dictionary = items[i]
@@ -161,14 +228,19 @@ func _show_skirmish() -> void:
 	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
 	body.add_child(_opt_row("Map size", [{"id": "240", "name": "240"}, {"id": "320", "name": "320"}, {"id": "400", "name": "400"}], str(map_size), func(id: String): map_size = int(id)))
 	var shb := HBoxContainer.new()
+	shb.add_theme_constant_override("separation", 10)
 	var sl := Label.new()
 	sl.text = "Seed"
 	sl.custom_minimum_size = Vector2(150, 0)
+	sl.set_meta("uimw", 150.0)
+	sl.set_meta("uifs", 14)
 	shb.add_child(sl)
 	var seedbox := SpinBox.new()
 	seedbox.min_value = 0
 	seedbox.max_value = 99999999
 	seedbox.value = seed_val
+	seedbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	seedbox.set_meta("uifs", 14)
 	seedbox.value_changed.connect(func(v: float): seed_val = int(v))
 	shb.add_child(seedbox)
 	body.add_child(shb)
@@ -178,6 +250,7 @@ func _show_skirmish() -> void:
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
 	body.add_child(back)
+	_apply_scale()
 
 func _show_battles() -> void:
 	_clear()
@@ -190,6 +263,7 @@ func _show_battles() -> void:
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
 	body.add_child(back)
+	_apply_scale()
 
 func _on_battle(bd: Dictionary) -> void:
 	mode = "battle"
@@ -221,6 +295,7 @@ func _show_campaigns() -> void:
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
 	body.add_child(back)
+	_apply_scale()
 
 func _on_mission(cd: Dictionary, mid: String) -> void:
 	mode = "campaign"
@@ -245,8 +320,7 @@ func _on_load_game() -> void:
 		if FileAccess.file_exists(p):
 			found.append(p)
 	if found.is_empty():
-		var l := Label.new()
-		l.text = "No saves found"
+		var l := _lbl("No saves found")
 		body.add_child(l)
 	else:
 		for p in found:
@@ -256,6 +330,7 @@ func _on_load_game() -> void:
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
 	body.add_child(back)
+	_apply_scale()
 
 func _show_options() -> void:
 	_clear()
@@ -263,6 +338,7 @@ func _show_options() -> void:
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
 	body.add_child(back)
+	_apply_scale()
 
 func _save_options() -> void:
 	var f := FileAccess.open("user://options.json", FileAccess.WRITE)

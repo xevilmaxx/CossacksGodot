@@ -503,3 +503,62 @@ static func parse_hotkey(s: String) -> Dictionary:
 # The settings as they are now, for --dump-config.
 func dump() -> String:
 	return JSON.stringify(data, "  ")
+
+# ------------------------------------------------------------------ UI scale
+# One scale factor for every interface (menu + HUD), so windowed,
+# fullscreen and resized windows all stay proportional. The game world is
+# untouched (camera zoom owns the view); only Control fonts, paddings and
+# minimum sizes multiply by this.
+static func ui_scale_for(vp: Vector2) -> float:
+	if vp.x <= 0.0 or vp.y <= 0.0:
+		return 1.0
+	return clampf(minf(vp.x / 1280.0, vp.y / 720.0), 0.75, 2.5)
+
+static var _ui_panel_style: StyleBoxFlat = null
+static var _ui_btn_styles: Dictionary = {}
+
+# Modern shared look: flat dark parchment, soft 10px corners, brighter
+# hover, dimmed disabled. Cached once, reused by every button/panel.
+static func ui_panel_style() -> StyleBoxFlat:
+	if _ui_panel_style == null:
+		var s := StyleBoxFlat.new()
+		s.bg_color = Color(0.11, 0.09, 0.07, 0.95)
+		s.set_corner_radius_all(10)
+		s.set_border_width_all(1)
+		s.border_color = Color(0.72, 0.60, 0.32)
+		s.content_margin_left = 14
+		s.content_margin_right = 14
+		s.content_margin_top = 10
+		s.content_margin_bottom = 10
+		_ui_panel_style = s
+	return _ui_panel_style
+
+static func ui_button_styles() -> Dictionary:
+	if _ui_btn_styles.is_empty():
+		var normal := StyleBoxFlat.new()
+		normal.bg_color = Color(0.17, 0.14, 0.11, 0.96)
+		normal.set_corner_radius_all(8)
+		normal.set_border_width_all(1)
+		normal.border_color = Color(0.55, 0.45, 0.26)
+		normal.content_margin_left = 12
+		normal.content_margin_right = 12
+		normal.content_margin_top = 7
+		normal.content_margin_bottom = 7
+		var hover := normal.duplicate() as StyleBoxFlat
+		hover.bg_color = Color(0.24, 0.20, 0.14, 0.98)
+		hover.border_color = Color(0.85, 0.70, 0.38)
+		var pressed := normal.duplicate() as StyleBoxFlat
+		pressed.bg_color = Color(0.10, 0.08, 0.06, 0.98)
+		var disabled := normal.duplicate() as StyleBoxFlat
+		disabled.bg_color = Color(0.10, 0.09, 0.08, 0.7)
+		disabled.border_color = Color(0.35, 0.30, 0.22)
+		_ui_btn_styles = {"normal": normal, "hover": hover, "pressed": pressed, "disabled": disabled, "focus": StyleBoxEmpty.new()}
+	return _ui_btn_styles
+
+static func ui_style_button(b: Button) -> void:
+	var st := ui_button_styles()
+	for k in st:
+		b.add_theme_stylebox_override(k, st[k])
+	b.add_theme_color_override("font_hover_color", Color(1, 0.93, 0.65))
+	b.add_theme_color_override("font_pressed_color", Color(1, 0.88, 0.55))
+	b.add_theme_color_override("font_disabled_color", Color(0.55, 0.52, 0.45))

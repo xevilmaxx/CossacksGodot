@@ -13,15 +13,19 @@ var top_panel: PanelContainer
 var res_labels: Array = []
 var sel_panel: PanelContainer
 var sel_box: HBoxContainer
-var build_bar: HBoxContainer
+var build_bar: HFlowContainer
 var msg_label: Label
 var msg_timer := 0.0
 var status_label: Label
 var settings_label: Label
 var minimap_tex: ImageTexture
 var minimap_img: Image
+var minimap_base: Image
 var minimap_rect: TextureRect
 var mm_timer := 0.0
+var fps_label: Label
+var fps_t := 0.0
+var fps_ema := 60.0
 var sel_timer := 0.75
 var build_menu_open := false
 var build_buttons: Dictionary = {}   # sid -> Button
@@ -43,11 +47,12 @@ var summary_label: Label
 var prog_entries: Array = []  # {label, e}
 var dyn_buttons: Array = []   # {b, kind, e, sid, uid}
 var cmd_panel: PanelContainer
-var cmd_bar: HBoxContainer
+var cmd_bar: HFlowContainer
 
 func bind(g: C3Game, w: C3World) -> void:
 	game = g
 	world = w
+	ui_us = _calc_us()
 	icons_tex = load("res://assets/ui/icons.bmp")
 	units_tex = load("res://assets/ui/iconsunits.bmp")
 	audio_click = AudioStreamPlayer.new()
@@ -56,28 +61,106 @@ func bind(g: C3Game, w: C3World) -> void:
 	_build_top()
 	_build_bottom()
 	_build_minimap()
-	msg_label = Label.new()
+	msg_label = _mklbl("", 15, Color(1, 0.95, 0.8))
 	msg_label.position = Vector2(340, 36)
-	msg_label.add_theme_font_size_override("font_size", 15)
-	msg_label.add_theme_color_override("font_color", Color(1, 0.95, 0.8))
 	add_child(msg_label)
-	hint_label = Label.new()
+	hint_label = _mklbl("", 14, Color(1, 0.9, 0.5))
 	hint_label.position = Vector2(340, 58)
-	hint_label.add_theme_font_size_override("font_size", 14)
-	hint_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
 	add_child(hint_label)
-	game_over_label = Label.new()
+	game_over_label = _mklbl("", 42, Color(1, 1, 1))
 	game_over_label.set_anchors_preset(Control.PRESET_CENTER)
-	game_over_label.add_theme_font_size_override("font_size", 42)
 	game_over_label.visible = false
 	add_child(game_over_label)
 	game.message.connect(_on_message)
+	_apply_scale()
+	if is_instance_valid(get_tree()) and is_instance_valid(get_tree().root) and not get_tree().root.size_changed.is_connected(_on_vp_resize):
+		get_tree().root.size_changed.connect(_on_vp_resize)
 
 func atlas(src: Texture2D, region: Rect2) -> AtlasTexture:
 	var at := AtlasTexture.new()
 	at.atlas = src
 	at.region = region
 	return at
+
+var ui_us := 1.0
+var ui_vp := Vector2(1280, 720)
+
+# UI scale: fonts, paddings and minimum sizes follow the window; the world
+# view is untouched. Widgets opt in via set_meta("uifs"/"uimh"/"uimw") or the
+# _mkbtn/_mklbl constructors; _apply_scale walks the subtree on resize.
+func _calc_us() -> float:
+	var s := Vector2(1280, 720)
+	if is_instance_valid(get_viewport()):
+		s = get_viewport().get_visible_rect().size
+	ui_vp = s
+	return ConfigScript.ui_scale_for(s)
+
+func _fs(base: int) -> int:
+	return maxi(10, int(round(float(base) * ui_us)))
+
+func _ms(base: float) -> float:
+	return base * ui_us
+
+func _mkbtn(text: String, fs := 15, mh := 40, mw := 0) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.set_meta("uifs", fs)
+	b.set_meta("uimh", mh)
+	if mw > 0:
+		b.set_meta("uimw", mw)
+	ConfigScript.ui_style_button(b)
+	return b
+
+func _mklbl(text: String, fs := 14, col := Color(1, 1, 1)) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.set_meta("uifs", fs)
+	l.add_theme_color_override("font_color", col)
+	return l
+
+func _reg(c: Control, fs := 0, mh := 0, mw := 0) -> Control:
+	if fs > 0:
+		c.set_meta("uifs", fs)
+	if mh > 0:
+		c.set_meta("uimh", mh)
+	if mw > 0:
+		c.set_meta("uimw", mw)
+	return c
+
+func _on_vp_resize() -> void:
+	ui_us = _calc_us()
+	_apply_scale()
+
+func _apply_scale() -> void:
+	for n in find_children("*", "Control", true, false):
+		var c := n as Control
+		if c == null:
+			continue
+		if c.has_meta("uifs"):
+			c.add_theme_font_size_override("font_size", _fs(int(c.get_meta("uifs"))))
+		var mw := float(c.get_meta("uimw", 0.0))
+		var mh := float(c.get_meta("uimh", 0.0))
+		if mw > 0.0 or mh > 0.0:
+			var cur: Vector2 = c.custom_minimum_size
+			c.custom_minimum_size = Vector2(_ms(mw) if mw > 0.0 else cur.x, _ms(mh) if mh > 0.0 else cur.y)
+		if c.has_meta("uoffs"):
+			var o: Array = c.get_meta("uoffs")
+			c.offset_left = _ms(float(o[0]))
+			c.offset_right = _ms(float(o[1]))
+			c.offset_top = _ms(float(o[2]))
+			c.offset_bottom = _ms(float(o[3]))
+	# bottom panels: fully proportional band + content-fitted height, so rows
+	# can wrap (HFlow) without ever spilling past the card at any scale
+	if is_instance_valid(sel_panel) and is_instance_valid(cmd_panel):
+		sel_panel.offset_left = ui_vp.x * 0.17
+		sel_panel.offset_right = ui_vp.x * 0.61
+		sel_panel.offset_bottom = 0.0
+		var roomy: bool = build_menu_open or build_bar.get_child_count() > 5
+		sel_panel.offset_top = -_ms(250.0 if roomy else 150.0)
+		cmd_panel.offset_left = -_ms(320.0)
+		cmd_panel.offset_right = -8.0
+		cmd_panel.offset_bottom = 0.0
+		cmd_panel.offset_top = -_ms(170.0)
 
 func _build_top() -> void:
 	top_panel = PanelContainer.new()
@@ -86,78 +169,74 @@ func _build_top() -> void:
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 10)
 	top_panel.add_child(bar)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.08, 0.06, 0.88)
-	style.set_corner_radius_all(4)
-	style.set_border_width_all(1)
-	style.border_color = Color(0.72, 0.6, 0.32)
-	top_panel.add_theme_stylebox_override("panel", style)
+	top_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	for i in 6:
 		var ic := TextureRect.new()
 		ic.texture = atlas(icons_tex, Data.RES_ICONS[i])
 		ic.custom_minimum_size = Vector2(36, 31)
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		bar.add_child(ic)
-		var l := Label.new()
-		l.text = "0"
-		l.add_theme_font_size_override("font_size", 17)
-		l.add_theme_color_override("font_color", Color(1, 0.97, 0.9))
+		var l := _mklbl("0", 17, Color(1, 0.97, 0.9))
 		bar.add_child(l)
 		res_labels.append(l)
 	var sep := VSeparator.new()
 	bar.add_child(sep)
-	status_label = Label.new()
-	status_label.text = ""
-	status_label.add_theme_font_size_override("font_size", 15)
-	status_label.add_theme_color_override("font_color", Color(0.8, 0.85, 1))
+	status_label = _mklbl("", 15, Color(0.8, 0.85, 1))
 	bar.add_child(status_label)
 	# game speed + menu, like the original's top-right controls
 	var sep2 := VSeparator.new()
 	bar.add_child(sep2)
 	for sp in [["II", 0.0], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0]]:
-		var sb := Button.new()
-		sb.text = sp[0]
+		var sb := _mkbtn(sp[0], 14, 30, 40)
 		sb.tooltip_text = "Game speed %s (Space pauses)" % sp[0]
-		sb.custom_minimum_size = Vector2(40, 30)
 		sb.pressed.connect(_on_speed.bind(float(sp[1])))
 		bar.add_child(sb)
 		speed_buttons.append(sb)
-	var mb := Button.new()
-	mb.text = "Menu"
+	var mb := _mkbtn("Menu", 14, 30, 60)
 	mb.tooltip_text = "Back to the singleplayer menu"
-	mb.custom_minimum_size = Vector2(60, 30)
 	mb.pressed.connect(_on_menu)
 	bar.add_child(mb)
-	speed_label = Label.new()
-	speed_label.text = "1x"
-	speed_label.add_theme_font_size_override("font_size", 14)
-	speed_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+	speed_label = _mklbl("1x", 14, Color(1, 0.9, 0.5))
 	bar.add_child(speed_label)
 	add_child(top_panel)
+	# FPS: bare 3-digit number, upper right corner (engine fps only — if the
+	# number is high but play feels slow, the cost is sim, not rendering)
+	fps_label = Label.new()
+	fps_label.text = "060"
+	fps_label.set_meta("uifs", 22)
+	fps_label.tooltip_text = "Render fps (engine). High fps + slow game = sim cost: try low quality or fewer units."
+	fps_label.add_theme_color_override("font_color", Color(0.55, 1, 0.55))
+	fps_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	fps_label.add_theme_constant_override("shadow_offset_x", 2)
+	fps_label.add_theme_constant_override("shadow_offset_y", 2)
+	fps_label.anchor_left = 1.0
+	fps_label.anchor_right = 1.0
+	fps_label.anchor_top = 0.0
+	fps_label.anchor_bottom = 0.0
+	fps_label.offset_left = -90
+	fps_label.offset_right = -12
+	fps_label.offset_top = 10
+	fps_label.offset_bottom = 40
+	fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	fps_label.set_meta("uoffs", [-90.0, -12.0, 10.0, 40.0])
+	add_child(fps_label)
 	_build_objectives()
 	# which settings file the game is running with, shown small in the corner
-	settings_label = Label.new()
-	settings_label.text = _settings_text()
-	settings_label.add_theme_font_size_override("font_size", 12)
-	settings_label.add_theme_color_override("font_color", Color(0.65, 0.68, 0.75))
+	settings_label = _mklbl(_settings_text(), 12, Color(0.65, 0.68, 0.75))
 	settings_label.anchor_left = 1.0
 	settings_label.anchor_right = 1.0
 	settings_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	settings_label.offset_left = -420
 	settings_label.offset_top = 10
 	settings_label.offset_right = -12
+	settings_label.set_meta("uoffs", [-420.0, -12.0, 10.0, 10.0])
 	add_child(settings_label)
 
 func _build_objectives() -> void:
 	obj_panel = PanelContainer.new()
 	obj_panel.position = Vector2(8, 56)
 	obj_panel.visible = false
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.08, 0.06, 0.85)
-	style.set_corner_radius_all(4)
-	style.set_border_width_all(1)
-	style.border_color = Color(0.72, 0.6, 0.32)
-	obj_panel.add_theme_stylebox_override("panel", style)
+	obj_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	obj_box = VBoxContainer.new()
 	obj_panel.add_child(obj_box)
 	add_child(obj_panel)
@@ -172,16 +251,10 @@ func refresh_objectives() -> void:
 		obj_panel.visible = false
 		return
 	obj_panel.visible = true
-	var head := Label.new()
-	head.text = "Objectives"
-	head.add_theme_font_size_override("font_size", 14)
-	head.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+	var head := _mklbl("Objectives", 14, Color(1, 0.9, 0.5))
 	obj_box.add_child(head)
 	for o in game.objectives:
-		var l := Label.new()
-		l.text = ("[x] " if bool(o.get("done", false)) else "[ ] ") + str(o.get("text", ""))
-		l.add_theme_font_size_override("font_size", 13)
-		l.add_theme_color_override("font_color", Color(0.85, 0.85, 0.8))
+		var l := _mklbl(("[x] " if bool(o.get("done", false)) else "[ ] ") + str(o.get("text", "")), 13, Color(0.85, 0.85, 0.8))
 		obj_box.add_child(l)
 
 func refresh_speed(sp: float, paused: bool) -> void:
@@ -208,22 +281,18 @@ func _build_bottom() -> void:
 	sel_panel = PanelContainer.new()
 	sel_panel.anchor_top = 1.0
 	sel_panel.anchor_bottom = 1.0
-	sel_panel.offset_top = -128
+	sel_panel.offset_top = -140
 	sel_panel.offset_left = 220
 	sel_panel.offset_right = 780
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.08, 0.06, 0.88)
-	style.set_corner_radius_all(4)
-	style.set_border_width_all(1)
-	style.border_color = Color(0.72, 0.6, 0.32)
-	sel_panel.add_theme_stylebox_override("panel", style)
+	sel_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	var vb := VBoxContainer.new()
 	sel_panel.add_child(vb)
 	sel_box = HBoxContainer.new()
 	sel_box.add_theme_constant_override("separation", 4)
 	vb.add_child(sel_box)
-	build_bar = HBoxContainer.new()
-	build_bar.add_theme_constant_override("separation", 4)
+	build_bar = HFlowContainer.new()
+	build_bar.add_theme_constant_override("h_separation", 4)
+	build_bar.add_theme_constant_override("v_separation", 4)
 	vb.add_child(build_bar)
 	add_child(sel_panel)
 	cmd_panel = PanelContainer.new()
@@ -231,26 +300,29 @@ func _build_bottom() -> void:
 	cmd_panel.anchor_right = 1.0
 	cmd_panel.anchor_top = 1.0
 	cmd_panel.anchor_bottom = 1.0
-	cmd_panel.offset_left = -300
+	cmd_panel.offset_left = -320
 	cmd_panel.offset_right = -8
-	cmd_panel.offset_top = -128
-	cmd_panel.add_theme_stylebox_override("panel", style)
-	cmd_bar = HBoxContainer.new()
-	cmd_bar.add_theme_constant_override("separation", 4)
+	cmd_panel.offset_top = -140
+	cmd_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	cmd_bar = HFlowContainer.new()
+	cmd_bar.add_theme_constant_override("h_separation", 4)
+	cmd_bar.add_theme_constant_override("v_separation", 4)
 	cmd_panel.add_child(cmd_bar)
 	add_child(cmd_panel)
 
 func _unit_button(tex: Texture2D, region: Rect2, tip: String) -> Button:
 	var b := Button.new()
 	b.icon = atlas(tex, region)
-	b.custom_minimum_size = Vector2(52, 52)
+	b.set_meta("uimw", 52.0)
+	b.set_meta("uimh", 52.0)
 	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.expand_icon = true
 	b.tooltip_text = tip
+	ConfigScript.ui_style_button(b)
 	b.pressed.connect(func(): audio_click.play())
 	return b
 
-func _clear_row(row: HBoxContainer) -> void:
+func _clear_row(row: Container) -> void:
 	for c in row.get_children():
 		row.remove_child(c)
 		c.queue_free()
@@ -268,28 +340,23 @@ func refresh_selection(selected: Array) -> void:
 		if not e.dead:
 			last_ids.append(e.id)
 	if selected.is_empty():
-		var hint := Label.new()
-		hint.text = "Nothing selected. Left-click or drag to select."
-		hint.add_theme_color_override("font_color", Color(0.75, 0.72, 0.65))
+		var hint := _mklbl("Nothing selected. Left-click or drag to select.", 14, Color(0.75, 0.72, 0.65))
 		sel_box.add_child(hint)
+		_apply_scale()
 		return
 	var mine := selected.filter(func(e): return e.player == 0)
 	if mine.is_empty():
-		var l := Label.new()
-		l.text = "Enemy %s  HP %d/%d" % [_name_of(selected[0]), maxi(0, selected[0].hp), selected[0].max_hp]
-		l.add_theme_color_override("font_color", Color(1, 0.6, 0.55))
+		var l := _mklbl("Enemy %s  HP %d/%d" % [_name_of(selected[0]), maxi(0, selected[0].hp), selected[0].max_hp], 14, Color(1, 0.6, 0.55))
 		sel_box.add_child(l)
-		var atk := Button.new()
-		atk.text = "Attack"
+		var atk := _mkbtn("Attack", 14, 40)
 		atk.tooltip_text = "Select your units, then right-click the enemy"
 		atk.pressed.connect(_on_attack_hint)
 		build_bar.add_child(atk)
+		_apply_scale()
 		return
 	# summary line: what is picked, its health and its current order
 	var first: Dictionary = mine[0]
-	summary_label = Label.new()
-	summary_label.text = _selection_summary(mine)
-	summary_label.add_theme_color_override("font_color", Color(1, 0.97, 0.9))
+	summary_label = _mklbl(_selection_summary(mine), 15, Color(1, 0.97, 0.9))
 	sel_box.add_child(summary_label)
 	# unit icons row (max 24)
 	var shown := 0
@@ -309,10 +376,9 @@ func refresh_selection(selected: Array) -> void:
 			var b := _unit_button(icons_tex, Data.BUILDINGS[e.sid].icon, "%s  HP %d/%d" % [ConfigScript.building_name(e.sid), maxi(0, e.hp), e.max_hp])
 			sel_box.add_child(b)
 			if not e.finished:
-				var prog := Label.new()
+				var prog := _mklbl("", 13, Color(0.7, 0.9, 0.7))
 				var kp: float = clampf(e.progress / maxf(1.0, e.def.build_time), 0.0, 1.0)
 				prog.text = "building %d%%" % int(kp * 100.0)
-				prog.add_theme_color_override("font_color", Color(0.7, 0.9, 0.7))
 				sel_box.add_child(prog)
 				prog_entries.append({"label": prog, "e": e})
 			# train buttons
@@ -339,65 +405,49 @@ func refresh_selection(selected: Array) -> void:
 					var u: Dictionary = Data.UPGRADES[uid]
 					if u.building != e.sid:
 						continue
-					var rb := Button.new()
 					var done: bool = game.players[0].upgrades.has(uid)
 					var researching: bool = e.get("research") != null and e.research.uid == uid
-					rb.text = ("[x] " if done else ("... " if researching else "")) + str(u.name)
+					var rb := _mkbtn(("[x] " if done else ("... " if researching else "")) + str(u.name), 13, 50, 120)
 					rb.tooltip_text = "%s - %s%s" % [u.name, _price_text(u.cost), " (researched)" if done else ""]
 					rb.disabled = done or researching
-					rb.custom_minimum_size = Vector2(120, 50)
 					rb.pressed.connect(_on_research.bind(e, uid))
 					build_bar.add_child(rb)
 					dyn_buttons.append({"b": rb, "kind": "research", "e": e, "sid": "", "uid": uid})
 				if e.sid == "wal" and e.finished:
-					var gb := Button.new()
-					gb.text = "Gate"
+					var gb := _mkbtn("Gate", 14, 50, 56)
 					gb.tooltip_text = "Convert this wall segment into a gate"
-					gb.custom_minimum_size = Vector2(56, 50)
 					gb.pressed.connect(_on_make_gate.bind(e))
 					build_bar.add_child(gb)
 				if e.sid == "gat":
-					var ob := Button.new()
-					ob.text = "Open" if bool(e.get("closed", false)) else "Close"
-					ob.custom_minimum_size = Vector2(56, 50)
+					var ob := _mkbtn("Open" if bool(e.get("closed", false)) else "Close", 14, 50, 56)
 					ob.pressed.connect(_on_gate_toggle.bind(e))
 					build_bar.add_child(ob)
 				if str(e.sid) in ["tow", "cen"] and int(e.get("garrison", 0)) > 0:
-					var ub := Button.new()
-					ub.text = "Unload [U]"
+					var ub := _mkbtn("Unload [U]", 14, 50, 80)
 					ub.tooltip_text = "Unload garrison"
-					ub.custom_minimum_size = Vector2(80, 50)
 					ub.pressed.connect(_on_unload.bind(e))
 					build_bar.add_child(ub)
 				if str(e.sid) in ["officer", "officer18"] and e.player == 0:
 					for fs in [15, 36, 72, 120, 196, 400]:
-						var fb := Button.new()
-						fb.text = str(fs)
+						var fb := _mkbtn(str(fs), 14, 50, 40)
 						fb.tooltip_text = "Form a %d-man formation from nearby troops" % fs
-						fb.custom_minimum_size = Vector2(40, 50)
 						fb.pressed.connect(_on_form_size.bind(e, fs))
 						build_bar.add_child(fb)
 				# market barter (video: the exchange sliders in the market)
 				if e.sid == "mar":
-					var amt := Button.new()
-					amt.text = "%d" % int(trade_amount)
+					var amt := _mkbtn("%d" % int(trade_amount), 14, 50, 56)
 					amt.tooltip_text = "Trade amount per click (100/500)"
-					amt.custom_minimum_size = Vector2(56, 50)
 					amt.pressed.connect(_on_trade_amount)
 					build_bar.add_child(amt)
 					for pair in [["wood", "gold"], ["food", "iron"], ["stone", "coal"], ["gold", "food"]]:
-						var mb := Button.new()
-						mb.text = "%s>%s" % [pair[0].substr(0, 1).to_upper(), pair[1].substr(0, 1).to_upper()]
+						var mb := _mkbtn("%s>%s" % [pair[0].substr(0, 1).to_upper(), pair[1].substr(0, 1).to_upper()], 14, 50, 56)
 						mb.tooltip_text = "Trade %d %s for %s (rate %d%%)" % [int(trade_amount), pair[0], pair[1], int(game.players[0].market_rate * 100.0)]
-						mb.custom_minimum_size = Vector2(56, 50)
 						mb.pressed.connect(_on_trade.bind(e, pair[0], pair[1]))
 						build_bar.add_child(mb)
 				# rally point: one click enters the mode, right-click then sets it
 				if e.def.get("trains", []).size() > 0:
-					var ral := Button.new()
-					ral.text = "Rally [R]"
+					var ral := _mkbtn("Rally [R]", 14, 50, 64)
 					ral.tooltip_text = "Set rally point: click, then right-click the map"
-					ral.custom_minimum_size = Vector2(64, 50)
 					ral.pressed.connect(_on_rally_mode)
 					build_bar.add_child(ral)
 	# squad panel: officer + soldiers -> Form [F], Line [J], Column [K], Square [L]
@@ -407,40 +457,30 @@ func refresh_selection(selected: Array) -> void:
 		for o in offs:
 			var sq: Dictionary = game.squad_of_unit(o.id)
 			var label := "Form [F]" if sq.is_empty() else "Squad %d (%s)" % [int(sq.squad_id), str(sq.get("formation", "line"))]
-			var fb := Button.new()
-			fb.text = label
+			var fb := _mkbtn(label, 14, 50, 110)
 			fb.tooltip_text = "Form a squad around this officer (F). Soldiers keep formation."
-			fb.custom_minimum_size = Vector2(110, 50)
 			fb.pressed.connect(_on_squad_form.bind(mine))
 			build_bar.add_child(fb)
 			if not sq.is_empty():
 				for form in ["line", "column", "square"]:
-					var fob := Button.new()
-					fob.text = form.substr(0, 3).to_upper()
+					var fob := _mkbtn(form.substr(0, 3).to_upper(), 14, 50, 48)
 					fob.tooltip_text = "%s formation (%s)" % [form, "J" if form == "line" else ("K" if form == "column" else "L")]
 					fob.disabled = str(sq.get("formation", "")) == form
-					fob.custom_minimum_size = Vector2(48, 50)
 					fob.pressed.connect(_on_squad_form_set.bind(int(sq.squad_id), form))
 					build_bar.add_child(fob)
-				var db := Button.new()
-				db.text = "Disband"
+				var db := _mkbtn("Disband", 14, 50, 80)
 				db.tooltip_text = "Disband the squad (Shift+F)"
-				db.custom_minimum_size = Vector2(80, 50)
 				db.pressed.connect(_on_squad_disband.bind(int(sq.squad_id)))
 				build_bar.add_child(db)
 	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.player == 0):
 		_clear_row(cmd_bar)
 		for spec in [["Attack-move [A]", "attack_move"], ["Stand [S]", "stand_ground"], ["Hold fire [D]", "hold_fire"], ["Feuer frei [E]", "feuer_frei"], ["Patrol [Q]", "patrol"], ["Guard [G]", "guard"], ["Stop [Ctrl+S]", "stop"]]:
-			var cb := Button.new()
-			cb.text = spec[0]
-			cb.custom_minimum_size = Vector2(86, 40)
+			var cb := _mkbtn(spec[0], 13, 40, 86)
 			cb.pressed.connect(_on_cmd_button.bind(str(spec[1])))
 			cmd_bar.add_child(cb)
 		if mine.any(func(e): return str(e.sid) in ["officer", "officer18"]):
 			for form in ["line", "column", "square", "wedge"]:
-				var fb2 := Button.new()
-				fb2.text = form.substr(0, 3).to_upper()
-				fb2.custom_minimum_size = Vector2(44, 40)
+				var fb2 := _mkbtn(form.substr(0, 3).to_upper(), 13, 40, 44)
 				fb2.pressed.connect(_on_cmd_form.bind(form))
 				cmd_bar.add_child(fb2)
 	else:
@@ -450,6 +490,7 @@ func refresh_selection(selected: Array) -> void:
 		_refresh_build_menu(mine)
 	elif build_menu_open:
 		build_menu_open = false
+	_apply_scale()
 
 func _on_train(bld: Dictionary, sid: String) -> void:
 	audio_click.play()
@@ -606,10 +647,7 @@ func _refresh_build_menu(peasants: Array) -> void:
 	var order := ["cen", "hou", "wal", "bar", "sta", "bla", "aca", "sto", "mil", "mar", "art", "tow", "mine_gold", "mine_iron", "mine_coal"]
 	for sid in order:
 		var def: Dictionary = Data.BUILDINGS[sid]
-		var b := Button.new()
-		b.icon = atlas(icons_tex, def.icon)
-		b.custom_minimum_size = Vector2(50, 50)
-		b.expand_icon = true
+		var b := _unit_button(icons_tex, def.icon, "")
 		b.tooltip_text = "%s  [%s]  %s" % [ConfigScript.building_name(sid), _key_text(sid),
 			_price_text(def.cost)]
 		b.disabled = not Data.can_pay(game.players[0].res, def.cost)
@@ -617,8 +655,7 @@ func _refresh_build_menu(peasants: Array) -> void:
 		build_buttons[sid] = b
 		build_bar.add_child(b)
 		dyn_buttons.append({"b": b, "kind": "build", "e": {}, "sid": sid, "uid": ""})
-	var cancel := Button.new()
-	cancel.text = "Cancel build menu (Esc)"
+	var cancel := _mkbtn("Cancel build menu (Esc)", 13, 40)
 	cancel.pressed.connect(_on_cancel_build_menu)
 	build_bar.add_child(cancel)
 
@@ -698,6 +735,15 @@ func game_over(winner: int) -> void:
 func _process(dt: float) -> void:
 	if game == null:
 		return
+	# fps readout: engine fps + frame-time EMA + live units. If fps is high
+	# but the game feels slow, the cost is sim/design (ticks, AI, upkeep),
+	# not rendering — check low quality preset next.
+	if dt > 0.0:
+		fps_ema = lerpf(fps_ema, 1.0 / maxf(dt, 0.0001), 0.05)
+	fps_t -= dt
+	if fps_t <= 0.0 and fps_label != null:
+		fps_t = 0.5
+		fps_label.text = "%03d" % int(Performance.get_monitor(Performance.TIME_FPS))
 	for i in 6:
 		res_labels[i].text = str(int(game.players[0].res[i]))
 	var ucount := game.unit_count(0) + game.queue_count(0)
@@ -722,11 +768,30 @@ func _process(dt: float) -> void:
 			_update_dynamic()
 
 func _build_minimap() -> void:
-	minimap_img = Image.create(game.MAP_W, game.MAP_H, false, Image.FORMAT_RGBA8)
+	minimap_base = Image.create(game.MAP_W, game.MAP_H, false, Image.FORMAT_RGBA8)
+	for y in game.MAP_H:
+		for x in game.MAP_W:
+			var i := y * game.MAP_W + x
+			var c := Color(0.29, 0.42, 0.2)
+			match int(game.terrain[i]):
+				1:
+					c = Color(0.45, 0.35, 0.22)
+				2:
+					c = Color(0.22, 0.34, 0.17)
+				3:
+					c = Color(0.16, 0.34, 0.55)
+				4:
+					c = Color(0.72, 0.64, 0.42)
+				5:
+					c = Color(0.45, 0.44, 0.4)
+			minimap_base.set_pixel(x, y, c)
+	minimap_img = minimap_base.duplicate()
 	minimap_tex = ImageTexture.create_from_image(minimap_img)
 	minimap_rect = TextureRect.new()
 	minimap_rect.texture = minimap_tex
 	minimap_rect.custom_minimum_size = Vector2(200, 200)
+	minimap_rect.set_meta("uimw", 200.0)
+	minimap_rect.set_meta("uimh", 200.0)
 	minimap_rect.stretch_mode = TextureRect.STRETCH_SCALE
 	minimap_rect.anchor_left = 0.0
 	minimap_rect.anchor_right = 0.0
@@ -734,10 +799,9 @@ func _build_minimap() -> void:
 	minimap_rect.anchor_bottom = 1.0
 	minimap_rect.offset_left = 8
 	minimap_rect.offset_top = -208
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.07, 0.05, 0.9)
+	minimap_rect.set_meta("uoffs", [8.0, 0.0, -208.0, 0.0])
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	panel.add_child(minimap_rect)
 	panel.anchor_left = 0.0
 	panel.anchor_right = 0.0
@@ -745,6 +809,7 @@ func _build_minimap() -> void:
 	panel.anchor_bottom = 1.0
 	panel.offset_left = 4
 	panel.offset_top = -212
+	panel.set_meta("uoffs", [4.0, 0.0, -212.0, 0.0])
 	add_child(panel)
 	minimap_rect.gui_input.connect(_on_minimap_input)
 
@@ -767,23 +832,9 @@ func _on_minimap_input(ev: InputEvent) -> void:
 func _update_minimap() -> void:
 	if world == null:
 		return
-	for y in game.MAP_H:
-		for x in game.MAP_W:
-			var i := y * game.MAP_W + x
-			var c := Color(0.29, 0.42, 0.2)
-			var t: int = game.terrain[i]
-			match t:
-				1:
-					c = Color(0.45, 0.35, 0.22)
-				2:
-					c = Color(0.22, 0.34, 0.17)
-				3:
-					c = Color(0.16, 0.34, 0.55)
-				4:
-					c = Color(0.72, 0.64, 0.42)
-				5:
-					c = Color(0.45, 0.44, 0.4)
-			minimap_img.set_pixel(x, y, c)
+	# terrain base is static: duplicate the cached image (C++ fast) instead
+	# of repainting 100k tiles every update
+	minimap_img = minimap_base.duplicate()
 	for n in game.res_nodes:
 		if n.hits <= 0:
 			continue
@@ -821,20 +872,23 @@ func _update_minimap() -> void:
 		else:
 			if t.x >= 0 and t.y >= 0 and t.x < game.MAP_W and t.y < game.MAP_H:
 				minimap_img.set_pixel(t.x, t.y, Color(0.4, 0.7, 1) if e.player == 0 else Color(1, 0.3, 0.25))
-	# fog
-	for y in game.MAP_H:
-		for x in game.MAP_W:
-			var i := y * game.MAP_W + x
-			if world.fog_explored[i] == 0:
-				var c: Color = minimap_img.get_pixel(x, y)
-				minimap_img.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
+	# fog dimming only matters when fog is on (otherwise everything is known)
+	if Data.FOG_OF_WAR:
+		for y in game.MAP_H:
+			for x in game.MAP_W:
+				var i := y * game.MAP_W + x
+				if world.fog_explored[i] == 0:
+					var c: Color = minimap_img.get_pixel(x, y)
+					minimap_img.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
 	var cam := get_viewport().get_camera_2d()
 	if cam != null and world != null:
+		# view_rect is canvas pixels; tiles are meters / TILE_M
+		var pxm: float = Data.TILE_M * world.view_scale
 		var vr: Rect2 = world.view_rect
-		var x0 := clampi(int(vr.position.x / Data.TILE_M), 0, game.MAP_W - 1)
-		var y0 := clampi(int(vr.position.y / Data.TILE_M), 0, game.MAP_H - 1)
-		var x1 := clampi(int(vr.end.x / Data.TILE_M), 0, game.MAP_W - 1)
-		var y1 := clampi(int(vr.end.y / Data.TILE_M), 0, game.MAP_H - 1)
+		var x0 := clampi(int(vr.position.x / pxm), 0, game.MAP_W - 1)
+		var y0 := clampi(int(vr.position.y / pxm), 0, game.MAP_H - 1)
+		var x1 := clampi(int(vr.end.x / pxm), 0, game.MAP_W - 1)
+		var y1 := clampi(int(vr.end.y / pxm), 0, game.MAP_H - 1)
 		for x in range(x0, x1 + 1):
 			minimap_img.set_pixel(x, y0, Color(1, 1, 1, 0.9))
 			minimap_img.set_pixel(x, y1, Color(1, 1, 1, 0.9))

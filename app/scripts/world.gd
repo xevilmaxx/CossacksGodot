@@ -30,6 +30,7 @@ var res_dirty := 0
 var bld_dirty := 0
 var last_view_pos := Vector2.INF
 var terrain_hlv: Array = []
+var terrain_masks: Array = []  # 4 soft edge masks, built once per terrain_px
 var unit_layer: Node2D
 var bld_layer: Node2D
 var res_layer: Node2D
@@ -61,6 +62,7 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	view_scale = Data.PIXELS_PER_METER
 	terrain_px = Data.TERRAIN_PX
 	terrain_hlv = _prep_variants()
+	terrain_masks = _build_masks(terrain_px)
 	res_layer = Node2D.new()
 	res_layer.z_index = 1
 	add_child(res_layer)
@@ -393,9 +395,7 @@ func _prep_variants() -> Array:
 func _chunk_key(cx: int, cy: int) -> Vector2i:
 	return Vector2i(cx, cy)
 
-func _build_chunk(cx: int, cy: int) -> Sprite2D:
-	var px := terrain_px
-	var img := Image.create(CHUNK_T * px, CHUNK_T * px, false, Image.FORMAT_RGB8)
+func _build_masks(px: int) -> Array:
 	var masks: Array = []
 	for d in 4:
 		var m := Image.create(px, px, false, Image.FORMAT_L8)
@@ -409,6 +409,12 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 					3: t = clampf(1.0 - float(px - 1 - y) / (px * 0.45), 0.0, 1.0)
 				m.set_pixel(x, y, Color(t, t, t))
 		masks.append(m)
+	return masks
+
+func _build_chunk(cx: int, cy: int) -> Sprite2D:
+	var px := terrain_px
+	var img := Image.create(CHUNK_T * px, CHUNK_T * px, false, Image.FORMAT_RGB8)
+	var masks: Array = terrain_masks
 	for ly in CHUNK_T:
 		for lx in CHUNK_T:
 			var x := cx * CHUNK_T + lx
@@ -459,18 +465,25 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	return sp
 
 func _sync_terrain_chunks() -> void:
-	var t0 := game.tile_of(view_rect.position)
-	var t1 := game.tile_of(view_rect.end)
+	# view_rect is canvas pixels (meters x view_scale); tile_of wants meters
+	var m0 := view_rect.position / view_scale
+	var m1 := view_rect.end / view_scale
+	var t0 := game.tile_of(m0)
+	var t1 := game.tile_of(m1)
 	var c0x := maxi(0, t0.x / CHUNK_T)
 	var c0y := maxi(0, t0.y / CHUNK_T)
 	var c1x := mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T)
 	var c1y := mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T)
+	var built := 0
 	for cy in range(c0y, c1y + 1):
 		for cx in range(c0x, c1x + 1):
 			var k := _chunk_key(cx, cy)
 			if not terrain_chunks.has(k):
+				if built >= 2:
+					return  # amortize: big GDScript bake, no multi-second hitch
 				terrain_chunks[k] = _build_chunk(cx, cy)
 				terrain_order.append(k)
+				built += 1
 				while terrain_order.size() > 24:
 					var old: Vector2i = terrain_order.pop_front()
 					var sp2: Sprite2D = terrain_chunks.get(old, null)

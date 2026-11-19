@@ -201,8 +201,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < 0.35:
 						# double click: all same-type units on screen (original behaviour)
 						var arr2: Array = []
+						var vp := world.view_rect
 						for u in game.entities:
-							if not u.dead and u.player == 0 and u.kind == "unit" and u.sid == e.sid and world.view_rect.has_point(u.pos):
+							if not u.dead and u.player == 0 and u.kind == "unit" and u.sid == e.sid and vp.has_point(u.pos * world.view_scale):
 								arr2.append(u)
 						_set_selection(arr2)
 					elif not e.is_empty() and Input.is_key_pressed(KEY_SHIFT):

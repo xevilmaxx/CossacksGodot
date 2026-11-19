@@ -586,3 +586,23 @@ Blender CPU-only Cycles (shade-less emission = pixel-identical, no GPU load).
 
 - garrison 10 cap & heal 2/s (est); peasant capture rule (Data.CAPTURE_ENABLED); field re-sow 20 food / 2 s (est); corpse life 90 s (est); difficulty trickle hard +1.5/+0.8 per s (est); deposit pool split per node count (est); attack-ground dispersion reuses cannon dispersion; formation facing rotates offsets.
 \
+
+## Post-GUIDE3 fixes (2026-11-19, windowed playtest)
+
+- Black map background: view_rect is canvas pixels (meters x view_scale) but was fed straight into tile_of() (meters) - chunk window clamped to the far map corner, so no terrain ever built under the camera. Same meters/px mix-up hid the minimap frustum (divided px by TILE_M) and broke double-click select (tested meters against a px rect, always empty). Fixed by converting px->meters at all three sites.
+- Terrain chunk bake hitch: GDScript per-pixel blending built ~9 chunks on the first frame (multi-second freeze). Now max 2 chunks/frame + edge masks built once.
+- Minimap full repaint was ~100k set_pixel every 0.25s. Terrain base is now cached once per map; per update only duplicates it (C++), draws entities, and dims fog only when fog is on (default off previously dimmed the whole minimap).
+- FPS readout in the top bar (fps + frame ms + live units) so engine vs sim cost can be told apart; quality switch now also rebuilds blend masks and clears the sprite cache.
+
+
+## Scalable UI + FPS readout (2026-11-19)
+
+- Single ui_scale_for(vp) helper (0.75-2.5x over 1280x720): every interface widget opts in via uifs/uimh/uimw metas and is rescaled on window resize and on every dynamic rebuild; shared modern StyleBox set (dark parchment, 8-10px radius, hover/pressed/disabled) in config.gd, used by menu, HUD, Esc overlay and end screen. No gameplay-signal changes.
+- FPS readout is render-fps only (Performance.TIME_FPS, 3 digits, upper right); sim cost is separate by design.
+
+
+## Responsive UI pass (2026-11-19, user report: start menu clipped)
+
+- Root cause was structural, not sizing: the menu card was centered with no bounds, so any window shorter than its content clipped top and bottom; HUD bottom panels were fixed-height single rows holding up to 15+ buttons that spilled past the card edges.
+- Fix: menu = full-rect CenterContainer + card capped at 94% width + body in a ScrollContainer capped at content-or-86%-height (scrolls only when needed); HUD build/command bars are HFlowContainers (wrap instead of spill) with content-fitted heights (150/250/170 x scale) and a proportional 17-61% width band; overlays use bounded centered cards.
+

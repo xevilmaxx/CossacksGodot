@@ -1,13 +1,13 @@
 {
   "passed": true,
   "resources_gathered": {
-    "food": 426,
+    "food": 412,
     "gold": 273.727999999998,
     "trade": 65,
     "wood": 24
   },
   "shots_fired": 46,
-  "sim_seconds": 364.0625,
+  "sim_seconds": 364.15625,
   "steps": [
     {
       "detail": "walked 6.0 m forward (speed 1.5 m/s)",
