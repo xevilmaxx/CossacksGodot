@@ -77,6 +77,7 @@ func _apply_scale() -> void:
 		var chrome := 150.0 * ui_us
 		var want: float = body.get_combined_minimum_size().y
 		var avail: float = maxf(120.0, ui_vp.y * 0.86 - chrome)
+		printerr("MENU-LAYOUT us=", ui_us, " vp=", ui_vp, " want=", want, " avail=", avail)
 		menu_scroll.custom_minimum_size.y = minf(want, avail)
 
 func _load_data() -> void:
@@ -126,7 +127,7 @@ func _build() -> void:
 	vb.add_theme_constant_override("separation", 10)
 	root.add_child(vb)
 	title_label = Label.new()
-	title_label.text = "COSSACKS 3 — singleplayer"
+	title_label.text = "CossacksGodot — singleplayer"
 	title_label.set_meta("uifs", 30)
 	title_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

@@ -38,6 +38,7 @@ const C3InputScript = preload("res://scripts/input_controller.gd")
 const C3AIScript = preload("res://scripts/ai.gd")
 const C3SelfTest = preload("res://scripts/selftest.gd")
 const C3UITestScript = preload("res://scripts/uitest.gd")
+const C3TestBridgeScript = preload("res://scripts/testbridge.gd")
 const C3MenuScript = preload("res://scripts/menu.gd")
 
 var game: C3Game
@@ -53,6 +54,8 @@ var frame := 0
 var screenshot_path := ""
 var screenshot_frames := 120
 var screenshot_done := false
+var test_api_port := 0
+var test_bridge: C3TestBridge = null
 var selftest_path := ""
 var uitest_path := ""
 var uitest_only := ""
@@ -124,8 +127,14 @@ func _ready() -> void:
 		_quit(0)
 		return
 
+	if test_api_port > 0:
+		if not is_headless:
+			get_window().size = Vector2i(Data.WINDOW_WIDTH, Data.WINDOW_HEIGHT)
+		test_bridge = C3TestBridgeScript.new(test_api_port)
+		add_child(test_bridge)
+
 	var hard_limit := limit_s if limit_s > 0.0 else 120.0
-	if bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or journey_mode or cli_mode:
+	if bench_mode or screenshot_path != "" or test_api_port > 0 or selftest_path != "" or uitest_path != "" or seq_dir != "" or journey_mode or cli_mode:
 		deadline_ms = started_ms + int(hard_limit * 1000.0)
 		watchdog = hard_limit
 	else:
@@ -319,6 +328,10 @@ func _parse_args(args: PackedStringArray) -> void:
 				continue
 			"--screenshot-frames":
 				screenshot_frames = maxi(10, int(args[i + 1])) if i + 1 < args.size() else 120
+				i += 2
+				continue
+			"--test-api":
+				test_api_port = int(args[i + 1]) if i + 1 < args.size() else 8123
 				i += 2
 				continue
 			"--self-test":
@@ -608,6 +621,8 @@ func _process(dt: float) -> void:
 		printerr("watchdog: wall-clock limit reached, forced exit")
 		_quit(1)
 		return
+	if test_bridge != null:
+		test_bridge.poll()
 	if game == null or ai == null:
 		return
 	if cli_mode:

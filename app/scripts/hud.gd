@@ -47,7 +47,8 @@ var summary_label: Label
 var prog_entries: Array = []  # {label, e}
 var dyn_buttons: Array = []   # {b, kind, e, sid, uid}
 var cmd_panel: PanelContainer
-var cmd_bar: HFlowContainer
+var cmd_bar: GridContainer
+var top_center: CenterContainer
 
 func bind(g: C3Game, w: C3World) -> void:
 	game = g
@@ -149,23 +150,64 @@ func _apply_scale() -> void:
 			c.offset_right = _ms(float(o[1]))
 			c.offset_top = _ms(float(o[2]))
 			c.offset_bottom = _ms(float(o[3]))
-	# bottom panels: fully proportional band + content-fitted height, so rows
-	# can wrap (HFlow) without ever spilling past the card at any scale
+	# Layout zones (never overlap, at any size):
+	# - top strip: centered bar + corner FPS (bar clips instead of spilling)
+	# - bottom strip, partitioned left->right: minimap | selection | orders
+	if is_instance_valid(top_center):
+		top_center.offset_top = _ms(8.0)
+		top_center.offset_bottom = _ms(8.0) + _ms(64.0)
+	var mm := minf(_ms(200.0), ui_vp.x * 0.20)
+	if is_instance_valid(minimap_rect):
+		minimap_rect.custom_minimum_size = Vector2(mm, mm)
 	if is_instance_valid(sel_panel) and is_instance_valid(cmd_panel):
-		sel_panel.offset_left = ui_vp.x * 0.17
-		sel_panel.offset_right = ui_vp.x * 0.61
+		var cmd_w: float = minf(_ms(332.0), ui_vp.x * 0.34)
+		var mm_edge: float = _ms(8.0) + mm + _ms(16.0)
+		sel_panel.offset_left = mm_edge
+		sel_panel.offset_right = ui_vp.x - cmd_w - _ms(24.0)
 		sel_panel.offset_bottom = 0.0
 		var roomy: bool = build_menu_open or build_bar.get_child_count() > 5
 		sel_panel.offset_top = -_ms(250.0 if roomy else 150.0)
-		cmd_panel.offset_left = -_ms(320.0)
-		cmd_panel.offset_right = -8.0
+		cmd_panel.offset_left = -(cmd_w + _ms(8.0))
+		cmd_panel.offset_right = -_ms(8.0)
 		cmd_panel.offset_bottom = 0.0
-		cmd_panel.offset_top = -_ms(170.0)
+		var ncmd := cmd_bar.get_child_count()
+		cmd_panel.visible = ncmd > 0
+		cmd_panel.offset_top = -_ms(320.0 if ncmd > 7 else 200.0)
+	# corner/edge labels keep clear of the bars
+	if is_instance_valid(fps_label):
+		fps_label.offset_left = -_ms(12.0) - _ms(110.0)
+		fps_label.offset_right = -_ms(12.0)
+		fps_label.offset_top = _ms(10.0)
+		fps_label.offset_bottom = _ms(10.0) + _ms(34.0)
+	if is_instance_valid(msg_label):
+		msg_label.anchor_left = 0.5
+		msg_label.anchor_right = 0.5
+		msg_label.offset_left = -_ms(300.0)
+		msg_label.offset_right = _ms(300.0)
+		msg_label.offset_top = _ms(84.0)
+		msg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if is_instance_valid(hint_label):
+		hint_label.anchor_left = 0.5
+		hint_label.anchor_right = 0.5
+		hint_label.offset_left = -_ms(300.0)
+		hint_label.offset_right = _ms(300.0)
+		hint_label.offset_top = _ms(106.0)
+		hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if is_instance_valid(obj_panel):
+		obj_panel.position = Vector2(_ms(8.0), _ms(84.0))
 
 func _build_top() -> void:
+	# centered bar like the original: a full-width strip that only forwards
+	# clicks to its children, so map orders still work underneath it
+	top_center = CenterContainer.new()
+	top_center.anchor_right = 1.0
+	top_center.offset_top = 8
+	top_center.offset_bottom = 72
+	top_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(top_center)
 	top_panel = PanelContainer.new()
-	top_panel.position = Vector2(8, 8)
 	top_panel.custom_minimum_size = Vector2(0, 0)
+	top_panel.clip_contents = true
 	var bar := HBoxContainer.new()
 	bar.add_theme_constant_override("separation", 10)
 	top_panel.add_child(bar)
@@ -198,7 +240,10 @@ func _build_top() -> void:
 	bar.add_child(mb)
 	speed_label = _mklbl("1x", 14, Color(1, 0.9, 0.5))
 	bar.add_child(speed_label)
-	add_child(top_panel)
+	settings_label = _mklbl(_settings_text(), 11, Color(0.65, 0.68, 0.75))
+	settings_label.tooltip_text = "Settings file in use (--dump-config shows all values)"
+	bar.add_child(settings_label)
+	top_center.add_child(top_panel)
 	# FPS: bare 3-digit number, upper right corner (engine fps only — if the
 	# number is high but play feels slow, the cost is sim, not rendering)
 	fps_label = Label.new()
@@ -218,19 +263,8 @@ func _build_top() -> void:
 	fps_label.offset_top = 10
 	fps_label.offset_bottom = 40
 	fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	fps_label.set_meta("uoffs", [-90.0, -12.0, 10.0, 40.0])
 	add_child(fps_label)
 	_build_objectives()
-	# which settings file the game is running with, shown small in the corner
-	settings_label = _mklbl(_settings_text(), 12, Color(0.65, 0.68, 0.75))
-	settings_label.anchor_left = 1.0
-	settings_label.anchor_right = 1.0
-	settings_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	settings_label.offset_left = -420
-	settings_label.offset_top = 10
-	settings_label.offset_right = -12
-	settings_label.set_meta("uoffs", [-420.0, -12.0, 10.0, 10.0])
-	add_child(settings_label)
 
 func _build_objectives() -> void:
 	obj_panel = PanelContainer.new()
@@ -284,6 +318,7 @@ func _build_bottom() -> void:
 	sel_panel.offset_top = -140
 	sel_panel.offset_left = 220
 	sel_panel.offset_right = 780
+	sel_panel.clip_contents = true
 	sel_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	var vb := VBoxContainer.new()
 	sel_panel.add_child(vb)
@@ -303,8 +338,10 @@ func _build_bottom() -> void:
 	cmd_panel.offset_left = -320
 	cmd_panel.offset_right = -8
 	cmd_panel.offset_top = -140
+	cmd_panel.clip_contents = true
 	cmd_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
-	cmd_bar = HFlowContainer.new()
+	cmd_bar = GridContainer.new()
+	cmd_bar.columns = 3
 	cmd_bar.add_theme_constant_override("h_separation", 4)
 	cmd_bar.add_theme_constant_override("v_separation", 4)
 	cmd_panel.add_child(cmd_bar)
@@ -330,6 +367,8 @@ func _clear_row(row: Container) -> void:
 func refresh_selection(selected: Array) -> void:
 	_clear_row(sel_box)
 	_clear_row(build_bar)
+	_clear_row(cmd_bar)
+	cmd_panel.visible = false
 	train_buttons.clear()
 	build_buttons.clear()
 	summary_label = null
@@ -473,18 +512,16 @@ func refresh_selection(selected: Array) -> void:
 				db.pressed.connect(_on_squad_disband.bind(int(sq.squad_id)))
 				build_bar.add_child(db)
 	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.player == 0):
-		_clear_row(cmd_bar)
-		for spec in [["Attack-move [A]", "attack_move"], ["Stand [S]", "stand_ground"], ["Hold fire [D]", "hold_fire"], ["Feuer frei [E]", "feuer_frei"], ["Patrol [Q]", "patrol"], ["Guard [G]", "guard"], ["Stop [Ctrl+S]", "stop"]]:
-			var cb := _mkbtn(spec[0], 13, 40, 86)
+		for spec in [["Attack-move", "attack_move", "A"], ["Stand", "stand_ground", "S"], ["Hold fire", "hold_fire", "D"], ["Feuer frei", "feuer_frei", "E"], ["Patrol", "patrol", "Q"], ["Guard", "guard", "G"], ["Stop", "stop", "Ctrl+S"]]:
+			var cb := _mkbtn("%s\n[%s]" % [spec[0], spec[2]], 12, 56, 96)
 			cb.pressed.connect(_on_cmd_button.bind(str(spec[1])))
 			cmd_bar.add_child(cb)
 		if mine.any(func(e): return str(e.sid) in ["officer", "officer18"]):
 			for form in ["line", "column", "square", "wedge"]:
-				var fb2 := _mkbtn(form.substr(0, 3).to_upper(), 13, 40, 44)
+				var fb2 := _mkbtn(form.substr(0, 3).to_upper(), 13, 56, 96)
 				fb2.pressed.connect(_on_cmd_form.bind(form))
 				cmd_bar.add_child(fb2)
-	else:
-		_clear_row(cmd_bar)
+		cmd_panel.visible = true
 	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.sid == "peasant"):
 		build_menu_open = true
 		_refresh_build_menu(mine)

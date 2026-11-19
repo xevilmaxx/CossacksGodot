@@ -606,3 +606,17 @@ Blender CPU-only Cycles (shade-less emission = pixel-identical, no GPU load).
 - Root cause was structural, not sizing: the menu card was centered with no bounds, so any window shorter than its content clipped top and bottom; HUD bottom panels were fixed-height single rows holding up to 15+ buttons that spilled past the card edges.
 - Fix: menu = full-rect CenterContainer + card capped at 94% width + body in a ScrollContainer capped at content-or-86%-height (scrolls only when needed); HUD build/command bars are HFlowContainers (wrap instead of spill) with content-fitted heights (150/250/170 x scale) and a proportional 17-61% width band; overlays use bounded centered cards.
 
+
+## In-game HUD restyle vs Cossacks 3 reference (2026-11-19, user report: game UI wrong)
+
+- Compared layout zones with the original (top resource bar, minimap bottom-left per donor minimap.cfg, portraits bottom-center, command grid bottom-right). Same zones, modernized styling; not a copy.
+- Top bar is now centered (full-width strip, clicks pass through to the map) instead of floating top-left.
+- Command card is a fixed 3-column grid of uniform two-line buttons (was: unpredictable flowing row spilling 2x past the panel); empty card auto-hides. Build menu keeps its wrapping flow.
+- Bottom panels: proportional width band (17-61%) + content-fitted heights; nothing can spill past a card at any scale.
+
+
+## No-overlap HUD guarantee (2026-11-19, user report: panels overlap at some sizes)
+
+- Root causes: fixed-pixel panel geometry vs variable windows; settings tag sharing the FPS corner; message labels at fixed x inside the centered bar's span; build/command rows wider than their cards.
+- Fix by construction, not tuning: top bar centered in a click-through full-width strip (clips instead of spilling); settings tag moved inside the bar; messages centered below the bar; objectives pinned below the bar strip; bottom strip partitioned left-to-right with zero shared pixels (minimap | selection | orders, all width-capped proportionally); command card is a fixed 3-column grid, build card wraps, empty cards hide; all cards clip as a backstop. Verified by layout math at 400-2560px widths (proportional, no shared pixels); suites green.
+
