@@ -2,3 +2,43 @@
 OpenGL API 3.3.0 NVIDIA 571.96 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce MX130
 
 test-api: listening on 127.0.0.1:8153
+sprites: 29 sets loaded (sids=65)
+PERF tick_ms=0.52 ai_ms=0.06 sync_ms=8.10 steps_per_frame=0.3 redraws r/b/u/f=2/2/120/120
+PERF tick_ms=0.39 ai_ms=0.01 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.39 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.39 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.42 ai_ms=0.00 sync_ms=0.06 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.56 ai_ms=0.00 sync_ms=0.06 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.45 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.34 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.31 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.32 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.37 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.35 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.34 ai_ms=0.00 sync_ms=0.05 steps_per_frame=0.2 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.54 ai_ms=0.00 sync_ms=0.06 steps_per_frame=0.3 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=0.97 ai_ms=0.01 sync_ms=0.05 steps_per_frame=0.6 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=1.17 ai_ms=0.01 sync_ms=0.04 steps_per_frame=0.6 redraws r/b/u/f=0/0/120/120
+PERF tick_ms=1.08 ai_ms=0.01 sync_ms=1.90 steps_per_frame=0.6 redraws r/b/u/f=1/2/120/120
+PERF tick_ms=1.31 ai_ms=0.01 sync_ms=4.09 steps_per_frame=0.6 redraws r/b/u/f=1/3/120/120
+PERF tick_ms=1.55 ai_ms=0.02 sync_ms=2.25 steps_per_frame=0.6 redraws r/b/u/f=2/5/120/120
+PERF tick_ms=1.70 ai_ms=0.02 sync_ms=0.08 steps_per_frame=0.5 redraws r/b/u/f=0/3/120/120
+PERF tick_ms=1.84 ai_ms=0.02 sync_ms=0.07 steps_per_frame=0.5 redraws r/b/u/f=0/3/120/120
+PERF tick_ms=1.78 ai_ms=0.03 sync_ms=0.06 steps_per_frame=0.5 redraws r/b/u/f=0/4/120/120
+PERF tick_ms=1.55 ai_ms=0.02 sync_ms=0.06 steps_per_frame=0.5 redraws r/b/u/f=0/2/120/120
+PERF tick_ms=1.67 ai_ms=0.02 sync_ms=3.42 steps_per_frame=0.6 redraws r/b/u/f=1/5/120/120
+PERF tick_ms=1.54 ai_ms=0.01 sync_ms=0.06 steps_per_frame=0.5 redraws r/b/u/f=0/4/120/120
+PERF tick_ms=1.61 ai_ms=0.01 sync_ms=6.28 steps_per_frame=0.7 redraws r/b/u/f=11/12/120/120
+PERF tick_ms=1.97 ai_ms=0.03 sync_ms=12.72 steps_per_frame=0.9 redraws r/b/u/f=57/57/120/120
+PERF tick_ms=1.68 ai_ms=0.02 sync_ms=0.07 steps_per_frame=0.5 redraws r/b/u/f=4/4/120/120
+ERROR: 1 RID allocations of type 'N5GLES37TextureE' were leaked at exit.
+godot : ERROR: Texture with GL ID of 137: leaked 5460 bytes.
+At line:1 char:1
++ godot --path app -- --test-api 8153 --timeout 500 2>&1 | Out-File -Fi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: Texture ...ked 5460 bytes.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:82)
+ERROR: Parameter "RenderingServer::get_singleton()" is null.
+   at: ~CompressedTexture2D (scene/resources/compressed_texture.cpp:464)
