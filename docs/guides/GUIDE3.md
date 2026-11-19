@@ -2344,7 +2344,7 @@ Rebakes (G8.6 tiers) run in background CPU-only while doing G9–G12.
 - [x] G8 perf (bench numbers: see app/shots/perf.md; headless sim_ms_per_tick measured via --bench) … done (grid+lists+compact; grid queries; TARGET_TABLE/_hash2/artillery hoist/reverse filter loops; 8Hz acq; dirty flags; quality presets + _anim_dir tiers)
 - [x] G9 sim fixes … done (farm on destruction; delete relies on _kill; capture single farm no refill + rally erase; per-node deposits; splash per-victim; post-research HP; gate player-only; famine throttle; stuck give-up; patrol a/b preserved; proj cap 512; symmetric probes; capture timer)
 - [x] G10 mechanics … done (garrison enter/unload kill-with-building heal+2 tower bonus capture resist hidden skip + HUD Unload; peasant capture; resow 20 food; shift-cancel refund; attack-ground + fake-player projectile path; formation facing rotation)
-- [x] G11 AI … done (ai.gd quota economy/expansion/repair/raids/retreat/waves replaced; difficulty + easy/hard scaling + hard trickle)
+- [x] G11 AI … done (ai.gd quota economy/expansion/serialized construction + builder budget + mine surplus rotation/repair/raids/retreat/waves replaced; difficulty + easy/hard scaling + hard trickle; attack_force 120 in config+boost; mine-wait 60s timeout)
 - [x] G12 shell/save/options … done (serialize/deserialize v3 + Vector2 codec; F5/F9; Esc overlay; options panel + user://options.json layer; end screen + campaign progress; --seed; menu Quit/Options/Load/difficulty/size/seed + mission list)
 - [x] G13 journey camera … done (follow non-peasant centroid + battle zoom 0.75/1.0)
 - [x] G14 audio … done (16 voices + 90ms per-key cooldown + 60m cull/attenuation + preload + music loop)
@@ -2359,5 +2359,6 @@ Executor notes / deviations (required for any deviation from the letter):
 - G10.4: Data.refund(res, cost, percent) — call passes (players[0].res, price, 1.0).
 - G12 serialize: added Vector2 encode/decode (JSON turns Vector2 into String); squads/stats/objectives have no vectors.
 - G14: music loop via named replay funcs (lambdas with if-statement rejected by parser); _play at-param uses fixed 16.0 px/m.
-- G8.0 bench: measures 30 SIM seconds (not wall) + wall fps; headless run recorded in perf.md.
+- G8.0 bench: measures 30 SIM seconds (not wall) + wall fps; headless run recorded in perf.md. Headless bench is sim-only (world.sync skipped, minimap/fog intervals pinned) since render can't be measured without a display.
+- G11 deviations: place_building gained optional send=false (AI places without auto-send; _resume distributes a capped builder budget instead — fixes pile-on where all builders went to the newest site); unfinished-site gate (max 3 concurrent) serializes construction; attack_force 260→120 in config.json+boost.json (legacy 260 stalls waves; DEFAULT remains 60); mine-wait 60s timeout in _tick_gather.
 - G3.3 edge cursors skipped (no .cur files verified); G8.6 sprite rebakes (anim96/anim64) not run (CPU budget); VRAM compress applied + imported.

@@ -105,7 +105,7 @@
   "food_threshold": 260.0,
   "wood_threshold": 260.0,
   "stone_threshold": 160.0,
-  "attack_force": 260.0,
+  "attack_force": 120.0,
   "max_peasants": 40
  },
  "audio": {

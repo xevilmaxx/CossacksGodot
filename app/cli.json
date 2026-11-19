@@ -9,12 +9,12 @@
   "player1_units": 34,
   "resources_gathered": {
     "food": 238,
-    "gold": 0,
+    "gold": 2662.8159999995,
     "stone": 22,
     "wood": 330
   },
   "shots_fired": 0,
-  "sim_seconds": 300.0,
+  "sim_seconds": 450.0,
   "version": 1,
   "winner": -1
 }

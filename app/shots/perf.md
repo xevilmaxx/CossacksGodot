@@ -1,5 +1,25 @@
 # Perf (GUIDE 3 G8/G15.3)
 
+## CLI growth (boosted start, headless debug)
+
+| sim_seconds | p0 units | p1 units | p0 bldgs | p1 bldgs | gathered (food/gold/stone/wood) | shots | squads |
+|---|---|---|---|---|---|---|---|
+| 60 (plain) | 8 | 8 | 1 | 1 | none | 0 | 0 |
+| 120 | 17 | 17 | 5 | 5 | 114/0/6/162 | 0 | 0 |
+| 300 | 31 | 34 | 12 | 5 | 238/0/22/330 | 0 | 0 |
+| 300 (mine-rotation fix) | 31 | 34 | 12 | 5 | 238/0/22/330 | 0 | 0 |
+| 600 | 31 | 0 | 12 | 5 | 238/3396/22/330 | 0 | 0 |
+
+Notes:
+- Growth compounds (8→17→31 units, mines staffed, gold income online,
+  pikemen training) but slowly in debug headless; no errors on any run.
+- P1 collapses to 0 units by ~600s (famine spiral under investigation;
+  see STATUS). Waves/shots not yet observed: force 50 at 300s vs gate 120.
+- Guide G11 acceptance (>120 units/side at 120s, squads>0) is not met in
+  this environment; training throughput is ~1 peasant/12.5s per town hall.
+- `attack_force` lowered 260→120 (config.json, boost.json) toward livelier
+  waves; DEFAULT stays 60 with easy ×0.7 / hard ×1.3 scaling.
+
 Machine: container headless, Godot 4.7.2 debug (GDScript interpreted, no
 release export). Headless bench = sim-only (`--bench` skips `world.sync`;
 minimap/fog intervals pinned). Numbers are wall-measured in this environment.

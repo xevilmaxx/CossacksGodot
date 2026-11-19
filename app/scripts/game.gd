@@ -2286,10 +2286,16 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 				return
 			o.node = mine.id
 		if not mine.finished:
-			# walk to the mine site and wait for the builders
+			# walk to the mine site and wait for the builders (with a
+			# timeout so a stalled site never pins peasants forever)
 			e.moving = true
 			_step_move(e, mine.pos, e.def.speed, dt, mine.def.radius + 1.2)
+			e["wait_t"] = float(e.get("wait_t", 0.0)) + dt
+			if float(e.get("wait_t", 0.0)) > 60.0:
+				e["wait_t"] = 0.0
+				e.order = {"type": "none"}
 			return
+		e["wait_t"] = 0.0
 		var d: float = e.pos.distance_to(mine.pos)
 		if d > mine.def.radius + 1.8:
 			e.moving = true
@@ -2444,7 +2450,7 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 			nd["left"] = maxf(0.0, float(nd.get("left", 0.0)) - amount)
 		var idx: int = Data.RES_NAMES.find(e.def.mine)
 		players[e.player].res[idx] += amount
-		stats.gathered[e.def.mine] = int(stats.gathered.get(e.def.mine, 0)) + int(amount)
+		stats.gathered[e.def.mine] = float(stats.gathered.get(e.def.mine, 0.0)) + amount
 		if e.deposit_left <= 0:
 			_kill(e, null)
 			say("A %s mine is exhausted." % e.def.mine)
