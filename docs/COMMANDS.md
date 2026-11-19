@@ -64,6 +64,16 @@ Dumped rects are canvas coordinates — the same space synthetic
 and screenshots are that canvas minified by the window stretch factor.
 One fresh game launch per window size: mid-run window resize breaks
 rendering (black screenshots), so never resize mid-run.
+`app/tools/video_build.py` drives a full interactive build with the REAL OS
+cursor (placement ghost follows a real cursor; synthetic motion does not move
+it) and records an MP4: menu -> skirmish -> select peasants -> house icon ->
+placement -> construction -> finished -> quit. The game window must stay
+foreground and the mouse untouched during the run; focus is verified before
+every real click.
+`app/tools/record_session.py` is the hands-off variant: it only polls `shot`
++ `state` (read-only, never touches mouse/keyboard) while a HUMAN plays,
+then assembles `session.mp4` + contact sheet when the game window closes.
+This is the current fidelity workflow (video shows what stills hide).
 
 ## 3. Record gameplay video (sequences + MP4)
 

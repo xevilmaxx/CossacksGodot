@@ -265,6 +265,23 @@ func _bld_anim(key: String) -> Texture2D:
 		return null
 	return t2
 
+var decal_tex: Dictionary = {}
+
+# Original dirt plates under buildings (data/terrain/decals/buildings), keyed
+# {nation}{sid} like the source files (rushoud, ukrcend...). Mines use the ore
+# name (eurgold). Converted to PNG by copy_assets; missing keys fall back to
+# the procedural dirt ellipse.
+func _bld_decal(nat: String, sid: String) -> Texture2D:
+	var key := "%s%s" % [nat, sid]
+	if decal_tex.has(key):
+		return decal_tex[key] as Texture2D
+	var path := "res://assets/terrain/decals_png/%s%sd.png" % [nat, sid]
+	var tex: Texture2D = null
+	if FileAccess.file_exists(path):
+		tex = load(path) as Texture2D
+	decal_tex[key] = tex
+	return tex
+
 func _bld_tex(e: Dictionary) -> Texture2D:
 	var bk := _bld_key(e)
 	if not e.finished:
@@ -341,10 +358,27 @@ func _tint(im: Image, mul: Color) -> Image:
 
 func _prep_variants() -> Array:
 	var grass_imgs: Array = []
-	for i in 5:
+	for i in 10:
 		var im := _src("res://assets/terrain/grass%d.png" % (i + 1))
 		if im != null:
 			grass_imgs.append(im)
+	# dirt-flecked meadow tiles (original transitions grass into worn ground;
+	# sprinkled sparsely through the grass pool so meadows read organic)
+	var ground_imgs: Array = []
+	for i in 3:
+		var gim := _src("res://assets/terrain/ground%d.png" % (i + 1))
+		if gim != null:
+			ground_imgs.append(gim)
+	var sandgrass_imgs: Array = []
+	for i in 2:
+		var sgim := _src("res://assets/terrain/grasssand%d.png" % (i + 1))
+		if sgim != null:
+			sandgrass_imgs.append(sgim)
+	var rock_imgs: Array = []
+	for i in 3:
+		var rim := _src("res://assets/terrain/rock%d.png" % (i + 1))
+		if rim != null:
+			rock_imgs.append(rim)
 	var dirt := _src("res://assets/terrain/dirt1.png")
 	var rockg := _src("res://assets/terrain/rockgrass1.png")
 	if grass_imgs.is_empty():
@@ -356,23 +390,25 @@ func _prep_variants() -> Array:
 	if rockg == null:
 		rockg = grass_imgs[0]
 	variants = [[], [], [], [], [], []]
-	# few near-identical variants per type so neighbours do not checker;
-	# the large soft patches already come from the terrain-type map itself
-	var grass0 := _src("res://assets/terrain/grass1.png")
-	if grass0 == null:
-		grass0 = grass_imgs[0]
-	for v in 4:
-		variants[0].append(_crop_variant(grass0, 1000 + v * 77))
+	# mixed grass pool: ten pure meadows + three dirt-flecked ones, strided
+	# so neighbours rarely repeat (the old code cropped grass1 only)
+	var gpool: Array = grass_imgs + ground_imgs
+	for v in 8:
+		variants[0].append(_crop_variant(gpool[(v * 5 + 1) % gpool.size()], 1000 + v * 77))
 		var dirt_warm := _tint(_crop_variant(dirt, 2000 + v * 77), Color(1.06, 0.94, 0.80))
 		variants[1].append(dirt_warm)
-		var dark := _crop_variant(grass0, 3000 + v * 77)
+		var dark := _crop_variant(grass_imgs[v % grass_imgs.size()], 3000 + v * 77)
 		dark.adjust_bcs(0.96, 1.0, 1.01)
 		variants[2].append(dark)
-		# sand: dirt warmed up
-		var sand := _crop_variant(dirt, 4000 + v * 77)
-		variants[4].append(_tint(sand, Color(1.18, 1.08, 0.78)))
-		# rock: rockgrass cooled/greyed
-		var rk := _crop_variant(rockg, 5000 + v * 77)
+		# sand: dirt warmed up, alternating with the original sandy-grass tiles
+		if v % 2 == 0 or sandgrass_imgs.is_empty():
+			var sand := _crop_variant(dirt, 4000 + v * 77)
+			variants[4].append(_tint(sand, Color(1.18, 1.08, 0.78)))
+		else:
+			variants[4].append(_crop_variant(sandgrass_imgs[(v / 2) % sandgrass_imgs.size()], 4000 + v * 77))
+		# rock: rockgrass cooled/greyed, alternating with the original rocks
+		var rpool: Array = [rockg] + rock_imgs
+		var rk := _crop_variant(rpool[v % rpool.size()], 5000 + v * 77)
 		variants[5].append(_tint(rk, Color(1.02, 1.0, 0.96)))
 	# pad to 8 slots (index % 8 is used below; water is filled next)
 	for t in 6:
@@ -469,6 +505,15 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 						var c0: Color = img.get_pixel(lx * px + xx, ly * px + yy)
 						var c1: Color = nbig.get_pixel(xx, yy)
 						img.set_pixel(lx * px + xx, ly * px + yy, c0.lerp(c1, a))
+			# meadow mottling + warm daylight gain per tile (original grass has
+			# light/dark patches spanning many tiles; the source PNGs render
+			# unlit and muddy without a sun gain). Per-tile, not per-pixel:
+			# the wavelength is ~9 tiles and chunk bakes must stay cheap.
+			var g := (1.0 + 0.085 * _wnoise(float(x) * 0.11, float(y) * 0.11) + 0.04 * _wnoise(float(x) * 0.31 + 7.0, float(y) * 0.31)) * 1.22
+			for yy in px:
+				for xx in px:
+					var c2: Color = img.get_pixel(lx * px + xx, ly * px + yy)
+					img.set_pixel(lx * px + xx, ly * px + yy, Color(minf(1.0, c2.r * g), minf(1.0, c2.g * g * 0.99), minf(1.0, c2.b * g * 0.93)))
 	var tex := ImageTexture.create_from_image(img)
 	var sp := Sprite2D.new()
 	sp.texture = tex
@@ -640,7 +685,10 @@ func _draw_resources() -> void:
 			"wood":
 				var tree := _prop_tex(["tree_fir", "tree_oak", "tree_pine"], n.pos)
 				if tree != null:
-					_draw_sprite(res_layer, tree, p, 2.9 + h * 1.1)
+					# original pines tower over peasants (~6m); the bake is dark,
+					# so lift it slightly and ground it with a wide soft shadow
+					_ground_ellipse(res_layer, p + Vector2(0, 3), 20.0 + h * 8.0, 10.0 + h * 4.0, Color(0, 0, 0, 0.22))
+					_draw_sprite(res_layer, tree, p, 5.4 + h * 2.0, Color(1.16, 1.16, 1.06))
 					continue
 				# fallback below (no sprites): tall pines + broad oaks
 				var pine := h > 0.42
@@ -663,7 +711,8 @@ func _draw_resources() -> void:
 			"stone":
 				var rock := _prop_tex(["rock", "stone"], n.pos)
 				if rock != null:
-					_draw_sprite(res_layer, rock, p, 1.3 + h * 0.6)
+					_ground_ellipse(res_layer, p + Vector2(0, 2), 14.0 + h * 6.0, 7.0 + h * 3.0, Color(0, 0, 0, 0.2))
+					_draw_sprite(res_layer, rock, p, 2.2 + h * 1.2)
 					continue
 				res_layer.draw_circle(p + Vector2(0, 2), 7.0, Color(0, 0, 0, 0.2))
 				res_layer.draw_circle(p, 5.5, Color(0.5, 0.5, 0.49))
@@ -671,24 +720,24 @@ func _draw_resources() -> void:
 				res_layer.draw_circle(p + Vector2(3, 1), 2.4, Color(0.6, 0.6, 0.58))
 				res_layer.draw_circle(p + Vector2(0.5, -1), 1.2, Color(0.8, 0.8, 0.78))
 			"food":
-				var field := _prop_tex(["field"], n.pos)
-				if field != null:
-					_draw_sprite(res_layer, field, p, 1.8, Color(1, 1, 1), false)
-					continue
-				# corn field tuft: golden stalks with green base
-				res_layer.draw_circle(p + Vector2(0, 2), 5.0, Color(0, 0, 0, 0.15))
-				for k in 5:
-					var a := h * 6.28 + k * 1.256
-					var tip := p + Vector2(cos(a), sin(a)) * (3.0 + h * 2.0) + Vector2(0, -6 - h * 3.0)
-					res_layer.draw_line(p + Vector2(0, 2), tip, Color(0.35, 0.42, 0.18), 1.5)
-					res_layer.draw_circle(tip, 2.2, Color(0.85 + h * 0.08, 0.72, 0.25))
+				# baked field.png came out unlit (black stalks), so wheat is
+				# procedural: tall golden sheaf like the original farm plots
+				res_layer.draw_circle(p + Vector2(0, 3), 7.0, Color(0, 0, 0, 0.15))
+				for k in 9:
+					var a := h * 6.28 + k * 0.698
+					var sway := 5.0 + h * 4.0
+					var tip := p + Vector2(cos(a), sin(a)) * sway + Vector2(0, -11 - h * 5.0)
+					res_layer.draw_line(p + Vector2(0, 3), tip, Color(0.42, 0.46, 0.2), 1.8)
+					res_layer.draw_circle(tip, 2.6, Color(0.88 + h * 0.08, 0.74, 0.28))
+					res_layer.draw_circle(tip + Vector2(0, -2), 1.4, Color(0.95, 0.85, 0.4))
 			"gold", "iron", "coal":
 				var col: Color = {"gold": Color(0.9, 0.75, 0.2), "iron": Color(0.7, 0.45, 0.3), "coal": Color(0.28, 0.28, 0.3)}[n.type]
 				var outcrop := _prop_tex(["rock"], n.pos)
 				if outcrop != null:
-					_draw_sprite(res_layer, outcrop, p, 1.8)
-					res_layer.draw_circle(p + Vector2(2, -4), 3.0, col)
-					res_layer.draw_circle(p + Vector2(-1, 1), 2.0, col.lightened(0.2))
+					_ground_ellipse(res_layer, p + Vector2(0, 2), 20.0, 10.0, Color(0, 0, 0, 0.22))
+					_draw_sprite(res_layer, outcrop, p, 2.6)
+					res_layer.draw_circle(p + Vector2(3, -6), 4.5, col)
+					res_layer.draw_circle(p + Vector2(-2, 2), 3.0, col.lightened(0.2))
 					continue
 				# rock outcrop with ore veins (like original mine rocks)
 				res_layer.draw_circle(p + Vector2(0, 2), 8.0, Color(0, 0, 0, 0.22))
@@ -725,9 +774,18 @@ func _draw_buildings() -> void:
 			# ring, damage smoke and capture flag below still draw on top
 			var bspr := _bld_tex(e)
 			var tint_b := Color(0.55, 0.55, 0.6) if not e.finished else Color(1, 1, 1)
-			# cleared dirt under the footprint, like the original (buildings
+			# cleared dirt under the footprint: original dirt plates per nation +
+			# building when converted, procedural ellipse otherwise (buildings
 			# sit on worked ground, not on raw grass)
-			_ground_ellipse(bld_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, Color(0.42, 0.33, 0.21, 0.9))
+			var bnat := ""
+			if int(e.player) >= 0 and int(e.player) < Data.PLAYER_NATIONS.size():
+				bnat = str(Data.PLAYER_NATIONS[int(e.player)])
+			var dec := _bld_decal(bnat, str(e.sid))
+			if dec != null:
+				var dw := r * 2.0 * 2.8
+				bld_layer.draw_texture_rect(dec, Rect2(p.x - dw / 2, p.y - dw * 0.25 + 3, dw, dw * 0.5), false)
+			else:
+				_ground_ellipse(bld_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, Color(0.42, 0.33, 0.21, 0.9))
 			bld_layer.draw_circle(p + Vector2(0, 4), r * 1.5, Color(0, 0, 0, 0.22))
 			_draw_sprite(bld_layer, bspr, p, _bld_height(e), tint_b)
 			var bw := r * 2.0
@@ -895,6 +953,7 @@ func _draw_mine(p: Vector2, e: Dictionary, col: Color) -> void:
 	var mspr := _sprite_for(e.sid, -1)
 	if mspr != null:
 		var tint_m := Color(0.55, 0.55, 0.6) if not e.finished else Color(1, 1, 1)
+		_ground_ellipse(bld_layer, p + Vector2(0, 3), r * 2.2, r * 1.1, Color(0.4, 0.32, 0.22, 0.9))
 		bld_layer.draw_circle(p + Vector2(0, 4), r * 1.5, Color(0, 0, 0, 0.22))
 		_draw_sprite(bld_layer, mspr, p, 3.0, tint_m)
 		if not e.finished:

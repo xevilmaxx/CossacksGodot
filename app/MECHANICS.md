@@ -615,6 +615,15 @@ Blender CPU-only Cycles (shade-less emission = pixel-identical, no GPU load).
 - Bottom panels: proportional width band (17-61%) + content-fitted heights; nothing can spill past a card at any scale.
 
 
+## Original-fidelity rendering pass (2026-11-19, vs Cossacks 3 footage + tiles)
+
+- Sprite scale/anchor was dead code: `_draw_sprite` computed `sz` then called native-size `draw_texture`. Every building/tree/rock rendered at native px (house == town hall size, art center ~(+136,+121)px off its footprint). Fix: `draw_texture_rect(Rect2(top_left, sz))` — one line, fixes scale + centroid for buildings, trees, rocks, mines, rubble, static corpses.
+- Trees 2.9-4m → 5.4-7.4m with lifted tint + wide ground shadows; rocks 1.3-1.9m → 2.2-3.4m; outcrops 1.8 → 2.6m; wheat is procedural golden tufts (the baked `field.png` is unlit black stalks — bypassed, documented).
+- Original tiles ARE richer than what the port used (grass1-10, grass_ground1-3 with dirt flecks, grasssand, rock1-3 all exist in C:\Games\Cossacks 3). Grass pool went from "crops of grass1 only" to a 13-source strided mix; rock/sand pools likewise. `copy_assets.py` already covered these files — they just were never copied in.
+- Buildings sit on the original dirt plates (`decals/buildings/{nat}{sid}d`, converted to `assets/terrain/decals_png/`, lazy-loaded, fallback ellipse); mines get dirt ellipses. Ghost preview restyled to the original's ground footprint ring.
+- Daylight: source tiles are the original PNGs but rendered unlit (muddy); chunk bake adds per-tile sun gain x1.22 warm + low-frequency meadow mottling (kept per-tile so the 2-chunk/frame amortization stays cheap; a per-pixel version tanked startup to ~4fps).
+- Unit art is faithful (bakes of original models; nation coats baked in) and already scaled/anchored correctly — units read better automatically once terrain/trees/scale were fixed. Suites green (selftest 28/28, uitest 17/17); FPS recovers to 60 after the chunk-build storm.
+
 ## No-overlap HUD guarantee (2026-11-19, user report: panels overlap at some sizes)
 
 - Root causes: fixed-pixel panel geometry vs variable windows; settings tag sharing the FPS corner; message labels at fixed x inside the centered bar's span; build/command rows wider than their cards.
