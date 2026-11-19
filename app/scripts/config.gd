@@ -22,7 +22,7 @@ const DEFAULT := {
 		"fullscreen": false,
 		"vsync": true,
 		"pixels_per_meter": 16.0,
-		"fog_of_war": true,
+		"fog_of_war": false,
 	},
 	"camera": {
 		"pitch_degrees": -32.0,
@@ -313,7 +313,7 @@ func apply() -> void:
 	Data.FULLSCREEN = flag("display.fullscreen", false)
 	Data.VSYNC = flag("display.vsync", true)
 	Data.PIXELS_PER_METER = num("display.pixels_per_meter", 16.0)
-	Data.FOG_OF_WAR = flag("display.fog_of_war", true)
+	Data.FOG_OF_WAR = flag("display.fog_of_war", false)
 	Data.CAPTURE_ENABLED = flag("rules.peasant_capture", true)
 
 	var cam := section("camera")

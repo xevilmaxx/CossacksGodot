@@ -42,7 +42,7 @@ static var MAX_BUILDERS_SENT := 8            # builders sent to one site at once
 static var VICTORY := "destroy_all"          # or "score"
 static var SCORE_LIMIT := 5000.0
 static var TICK_MAX := 0.25                  # clamp on dt so a test never stalls
-static var FOG_OF_WAR := true
+static var FOG_OF_WAR := false
 static var CAPTURE_ENABLED := true  # match rule "peasant capture" (config rules.peasant_capture)
 
 static var BUILD_PROGRESS_PER_HIT := 10 * 0.03125 * 1.15  # 0.359 s, dmscript.global:182

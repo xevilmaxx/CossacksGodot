@@ -14,7 +14,7 @@
     "fullscreen": false,
     "vsync": true,
     "pixels_per_meter": 16.0,
-    "fog_of_war": true
+    "fog_of_war": false
   },
   "camera": {
     "pitch_degrees": -32.0,
