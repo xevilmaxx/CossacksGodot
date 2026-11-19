@@ -104,6 +104,22 @@ static var FX_CAP := 220
 static var FOG_INTERVAL := 0.5
 static var MINIMAP_INTERVAL := 0.25
 
+# Quality presets: one switch scales render cost (terrain px, sprite cells,
+# fx) and update rates (fog/minimap). Called from the Options menu live
+# (the caller rebuilds world caches) and at startup from config.
+static func set_quality(q: String) -> void:
+	QUALITY = q
+	match q:
+		"low":
+			TERRAIN_PX = 8; SPRITE_CELL = 64; FX_CAP = 60
+			FOG_INTERVAL = 1.5; MINIMAP_INTERVAL = 1.0
+		"medium":
+			TERRAIN_PX = 12; SPRITE_CELL = 96; FX_CAP = 120
+			FOG_INTERVAL = 0.8; MINIMAP_INTERVAL = 0.5
+		_:
+			TERRAIN_PX = 16; SPRITE_CELL = 160; FX_CAP = 220
+			FOG_INTERVAL = 0.5; MINIMAP_INTERVAL = 0.25
+
 static var CAMERA_PITCH := -32.0        # camera.cfg FreeRotationInfo
 static var CAMERA_MIN_HEIGHT := 20.0    # camera.cfg SphereHeightMin
 static var CAMERA_MAX_HEIGHT := 58.0    # camera.cfg SphereHeight

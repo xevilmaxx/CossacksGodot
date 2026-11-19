@@ -28,7 +28,12 @@ var terrain_order: Array = []         # LRU keys
 var terrain_px := 16
 var res_dirty := 0
 var bld_dirty := 0
+var dbg_res := 0
+var dbg_bld := 0
+var dbg_unit := 0
+var dbg_fx := 0
 var last_view_pos := Vector2.INF
+var last_view_end := Vector2.INF
 var terrain_hlv: Array = []
 var terrain_masks: Array = []  # 4 soft edge masks, built once per terrain_px
 var unit_layer: Node2D
@@ -266,6 +271,42 @@ func _bld_anim(key: String) -> Texture2D:
 	return t2
 
 var decal_tex: Dictionary = {}
+var gain_map: Image = null  # coarse meadow-gain tile, baked once and shared by all chunks
+
+# Meadow gain in tile space (wavelength ~9 tiles like the original patches).
+# Precomputed once into an 80x80 map so chunk bakes stay cheap: per-chunk
+# noise would stall the 2-chunk/frame budget and cost startup FPS.
+func _gain_at(tx: float, ty: float) -> float:
+	if gain_map == null:
+		gain_map = Image.create(80, 80, false, Image.FORMAT_R8)
+		for y in 80:
+			for x in 80:
+				gain_map.set_pixel(x, y, Color(1.0 + 0.085 * _wnoise(float(x) * 0.44, float(y) * 0.44), 0, 0))
+	var gx := clampi(int(tx / 4.0), 0, 79)
+	var gy := clampi(int(ty / 4.0), 0, 79)
+	return gain_map.get_pixel(gx, gy).r
+var blob_tex: Texture2D = null
+
+# Soft round blob (white with radial alpha): one shared texture for all
+# ground shadows and dirt patches — a single blit each, no per-frame
+# polygon loops (those cost milliseconds every frame over hundreds of trees).
+func _blob() -> Texture2D:
+	if blob_tex != null:
+		return blob_tex
+	var im := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	for y in 64:
+		for x in 64:
+			var d := Vector2(float(x) - 31.5, float(y) - 31.5).length() / 32.0
+			var a := clampf(1.0 - d, 0.0, 1.0)
+			im.set_pixel(x, y, Color(1, 1, 1, a * a))
+	blob_tex = ImageTexture.create_from_image(im)
+	return blob_tex
+
+func _blob_rect(layer: Node2D, p: Vector2, rx: float, ry: float, col: Color) -> void:
+	var b := _blob()
+	if b == null:
+		return
+	layer.draw_texture_rect(b, Rect2(p.x - rx, p.y - ry, rx * 2.0, ry * 2.0), false, col)
 
 # Original dirt plates under buildings (data/terrain/decals/buildings), keyed
 # {nation}{sid} like the source files (rushoud, ukrcend...). Mines use the ore
@@ -333,17 +374,18 @@ func _src(path: String) -> Image:
 	return im
 
 func _crop_variant(base: Image, rng_seed: int) -> Image:
-	# random 64x64 crop of the real texture -> 16x16 tile, with gentle shade
-	# variation (kept tight so neighbouring tiles do not checker like before)
+	# random crop of the real texture -> 16x16 tile (chunk tiles are 16px, so
+	# no upscale blur), with gentle shade variation (kept tight so neighbours
+	# do not checker like before)
 	var r := RandomNumberGenerator.new()
 	r.seed = rng_seed
 	var bw := base.get_width()
 	var bh := base.get_height()
-	var cs := mini(96, mini(bw, bh) - 4)
+	var cs := mini(192, mini(bw, bh) - 4)
 	var ox := r.randi() % maxi(1, bw - cs)
 	var oy := r.randi() % maxi(1, bh - cs)
 	var im := base.get_region(Rect2i(ox, oy, cs, cs))
-	im.resize(8, 8, Image.INTERPOLATE_BILINEAR)
+	im.resize(16, 16, Image.INTERPOLATE_BILINEAR)
 	var shade := 0.99 + 0.02 * r.randf()
 	im.adjust_bcs(shade, 1.0, 1.0)
 	return im
@@ -390,11 +432,32 @@ func _prep_variants() -> Array:
 	if rockg == null:
 		rockg = grass_imgs[0]
 	variants = [[], [], [], [], [], []]
-	# mixed grass pool: ten pure meadows + three dirt-flecked ones, strided
-	# so neighbours rarely repeat (the old code cropped grass1 only)
-	var gpool: Array = grass_imgs + ground_imgs
+	# grass pool: six pure meadows in rotation + two dirt-flecked ones, so
+	# most tiles are calm meadow with sparse organic flecks (like the
+	# original) instead of a busy checkerboard
+	var gpool: Array = []
 	for v in 8:
-		variants[0].append(_crop_variant(gpool[(v * 5 + 1) % gpool.size()], 1000 + v * 77))
+		if v < 6:
+			gpool.append(grass_imgs[(v * 2 + 1) % grass_imgs.size()])
+		else:
+			gpool.append(ground_imgs[(v - 6) % maxi(1, ground_imgs.size())] if not ground_imgs.is_empty() else grass_imgs[v % grass_imgs.size()])
+	for v in 8:
+		# normalize each crop toward meadow mean (clamped): neighbours share
+		# a base tone so variant swaps don't checker, detail stays
+		var crop := _crop_variant(gpool[v], 1000 + v * 77)
+		var tot := 0.0
+		var cnt := 0
+		for yy in crop.get_height():
+			for xx in crop.get_width():
+				var cc: Color = crop.get_pixel(xx, yy)
+				tot += 0.35 * cc.r + 0.55 * cc.g + 0.1 * cc.b
+				cnt += 1
+		var f := clampf(0.30 / maxf(0.05, tot / maxf(1, cnt)), 0.88, 1.12)
+		for yy in crop.get_height():
+			for xx in crop.get_width():
+				var cc2: Color = crop.get_pixel(xx, yy)
+				crop.set_pixel(xx, yy, Color(minf(1.0, cc2.r * f), minf(1.0, cc2.g * f), minf(1.0, cc2.b * f)))
+		variants[0].append(crop)
 		var dirt_warm := _tint(_crop_variant(dirt, 2000 + v * 77), Color(1.06, 0.94, 0.80))
 		variants[1].append(dirt_warm)
 		var dark := _crop_variant(grass_imgs[v % grass_imgs.size()], 3000 + v * 77)
@@ -476,8 +539,11 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 			var t: int = game.terrain[y * game.MAP_W + x]
 			if t < 0 or t > 5:
 				t = 0
-			var m: float = _wnoise(float(x) * 0.13, float(y) * 0.13)
-			var vi: int = absi(int(m * 5.0) + (x / 4) + (y / 4)) % 8
+			# coherent variant areas (low-frequency patches, not per-tile dice):
+			# neighbours share a variant so the ground reads uniform like the
+			# original meadows; detail comes from the tile art itself
+			var pv: float = _wnoise(float(x) * 0.07 + 31.0, float(y) * 0.07 - 17.0)
+			var vi: int = clampi(int((pv * 0.5 + 0.5) * 8.0), 0, 7)
 			var hh: float = game.height_at(Vector2((float(x) + 0.5) * Data.TILE_M, (float(y) + 0.5) * Data.TILE_M))
 			var lvl := 0 if hh < -0.6 else (2 if hh > 0.6 else 1)
 			var sim: Image = (terrain_hlv[lvl] as Array)[t][vi]
@@ -505,15 +571,22 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 						var c0: Color = img.get_pixel(lx * px + xx, ly * px + yy)
 						var c1: Color = nbig.get_pixel(xx, yy)
 						img.set_pixel(lx * px + xx, ly * px + yy, c0.lerp(c1, a))
-			# meadow mottling + warm daylight gain per tile (original grass has
-			# light/dark patches spanning many tiles; the source PNGs render
-			# unlit and muddy without a sun gain). Per-tile, not per-pixel:
-			# the wavelength is ~9 tiles and chunk bakes must stay cheap.
-			var g := (1.0 + 0.085 * _wnoise(float(x) * 0.11, float(y) * 0.11) + 0.04 * _wnoise(float(x) * 0.31 + 7.0, float(y) * 0.31)) * 1.22
-			for yy in px:
-				for xx in px:
-					var c2: Color = img.get_pixel(lx * px + xx, ly * px + yy)
-					img.set_pixel(lx * px + xx, ly * px + yy, Color(minf(1.0, c2.r * g), minf(1.0, c2.g * g * 0.99), minf(1.0, c2.b * g * 0.93)))
+	# meadow mottling + warm daylight gain in 4px blocks (original grass has
+	# light/dark patches spanning many tiles; the source PNGs render unlit
+	# and muddy without a sun gain). Blocked, not per-pixel: full-res noise
+	# would stall the 2-chunk/frame bake budget and cost startup FPS.
+	var iw := img.get_width()
+	var ih := img.get_height()
+	var bs := 4
+	for by in range(0, ih, bs):
+		for bx in range(0, iw, bs):
+			var tx := float(cx * CHUNK_T * px + bx) / float(px)
+			var ty := float(cy * CHUNK_T * px + by) / float(px)
+			var g := _gain_at(tx, ty) * 1.22
+			for yy in range(by, mini(by + bs, ih)):
+				for xx in range(bx, mini(bx + bs, iw)):
+					var c2: Color = img.get_pixel(xx, yy)
+					img.set_pixel(xx, yy, Color(minf(1.0, c2.r * g), minf(1.0, c2.g * g * 0.99), minf(1.0, c2.b * g * 0.93)))
 	var tex := ImageTexture.create_from_image(img)
 	var sp := Sprite2D.new()
 	sp.texture = tex
@@ -562,8 +635,9 @@ func sync(dt: float) -> void:
 	if fog_timer <= 0.0:
 		fog_timer = Data.FOG_INTERVAL
 		_update_fog()
-	var moved := last_view_pos == Vector2.INF or last_view_pos.distance_to(view_rect.position) > 4.0 or last_view_pos.distance_to(view_rect.end) > 4.0
+	var moved := last_view_pos == Vector2.INF or last_view_pos.distance_to(view_rect.position) > 4.0 or last_view_end.distance_to(view_rect.end) > 4.0
 	last_view_pos = view_rect.position
+	last_view_end = view_rect.end
 	if moved or game.res_dirty != res_dirty:
 		res_dirty = game.res_dirty
 		res_layer.queue_redraw()
@@ -674,6 +748,7 @@ func _prop_tex(names: Array, seed_pos: Vector2) -> Texture2D:
 	return frames[0]
 
 func _draw_resources() -> void:
+	dbg_res += 1
 	for n in game.res_nodes:
 		if n.hits <= 0:
 			continue
@@ -687,7 +762,7 @@ func _draw_resources() -> void:
 				if tree != null:
 					# original pines tower over peasants (~6m); the bake is dark,
 					# so lift it slightly and ground it with a wide soft shadow
-					_ground_ellipse(res_layer, p + Vector2(0, 3), 20.0 + h * 8.0, 10.0 + h * 4.0, Color(0, 0, 0, 0.22))
+					_blob_rect(res_layer, p + Vector2(0, 3), 20.0 + h * 8.0, 10.0 + h * 4.0, Color(0, 0, 0, 0.22))
 					_draw_sprite(res_layer, tree, p, 5.4 + h * 2.0, Color(1.16, 1.16, 1.06))
 					continue
 				# fallback below (no sprites): tall pines + broad oaks
@@ -711,7 +786,7 @@ func _draw_resources() -> void:
 			"stone":
 				var rock := _prop_tex(["rock", "stone"], n.pos)
 				if rock != null:
-					_ground_ellipse(res_layer, p + Vector2(0, 2), 14.0 + h * 6.0, 7.0 + h * 3.0, Color(0, 0, 0, 0.2))
+					_blob_rect(res_layer, p + Vector2(0, 2), 14.0 + h * 6.0, 7.0 + h * 3.0, Color(0, 0, 0, 0.2))
 					_draw_sprite(res_layer, rock, p, 2.2 + h * 1.2)
 					continue
 				res_layer.draw_circle(p + Vector2(0, 2), 7.0, Color(0, 0, 0, 0.2))
@@ -734,7 +809,7 @@ func _draw_resources() -> void:
 				var col: Color = {"gold": Color(0.9, 0.75, 0.2), "iron": Color(0.7, 0.45, 0.3), "coal": Color(0.28, 0.28, 0.3)}[n.type]
 				var outcrop := _prop_tex(["rock"], n.pos)
 				if outcrop != null:
-					_ground_ellipse(res_layer, p + Vector2(0, 2), 20.0, 10.0, Color(0, 0, 0, 0.22))
+					_blob_rect(res_layer, p + Vector2(0, 2), 20.0, 10.0, Color(0, 0, 0, 0.22))
 					_draw_sprite(res_layer, outcrop, p, 2.6)
 					res_layer.draw_circle(p + Vector2(3, -6), 4.5, col)
 					res_layer.draw_circle(p + Vector2(-2, 2), 3.0, col.lightened(0.2))
@@ -747,6 +822,7 @@ func _draw_resources() -> void:
 				res_layer.draw_circle(p + Vector2(-1, 1), 2.0, col.lightened(0.2))
 
 func _draw_buildings() -> void:
+	dbg_bld += 1
 	for e in game.entities:
 		if e.dead or e.kind != "building":
 			continue
@@ -785,7 +861,7 @@ func _draw_buildings() -> void:
 				var dw := r * 2.0 * 2.8
 				bld_layer.draw_texture_rect(dec, Rect2(p.x - dw / 2, p.y - dw * 0.25 + 3, dw, dw * 0.5), false)
 			else:
-				_ground_ellipse(bld_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, Color(0.42, 0.33, 0.21, 0.9))
+				_blob_rect(bld_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, Color(0.42, 0.33, 0.21, 0.9))
 			bld_layer.draw_circle(p + Vector2(0, 4), r * 1.5, Color(0, 0, 0, 0.22))
 			_draw_sprite(bld_layer, bspr, p, _bld_height(e), tint_b)
 			var bw := r * 2.0
@@ -927,8 +1003,27 @@ func _draw_buildings() -> void:
 	_draw_rubble()
 
 func _bld_height(e: Dictionary) -> float:
-	# sprite stand height in meters, from the footprint the sim uses
-	return clampf(e.def.radius * 2.0, 2.0, 7.0)
+	# sprite stand height in meters, matched to the original's proportions:
+	# a hut stands ~2.4x a peasant, town hall and barracks class above that,
+	# towers tallest. Footprint (radius) stays the sim's — art may overhang
+	# it like the original's yards and fences do.
+	match str(e.sid):
+		"hou", "sto":
+			return 4.5
+		"bla":
+			return 5.0
+		"mar":
+			return 5.5
+		"mil":
+			return 6.5
+		"bar", "bar18", "sta", "aca", "art", "dip":
+			return 6.5
+		"cen":
+			return 7.5
+		"tow":
+			return 8.0
+		_:
+			return clampf(e.def.radius * 2.0, 2.0, 7.0)
 
 func _draw_wall(p: Vector2, e: Dictionary) -> void:
 	var r: float = e.def.radius * view_scale
@@ -953,7 +1048,7 @@ func _draw_mine(p: Vector2, e: Dictionary, col: Color) -> void:
 	var mspr := _sprite_for(e.sid, -1)
 	if mspr != null:
 		var tint_m := Color(0.55, 0.55, 0.6) if not e.finished else Color(1, 1, 1)
-		_ground_ellipse(bld_layer, p + Vector2(0, 3), r * 2.2, r * 1.1, Color(0.4, 0.32, 0.22, 0.9))
+		_blob_rect(bld_layer, p + Vector2(0, 3), r * 2.2, r * 1.1, Color(0.4, 0.32, 0.22, 0.9))
 		bld_layer.draw_circle(p + Vector2(0, 4), r * 1.5, Color(0, 0, 0, 0.22))
 		_draw_sprite(bld_layer, mspr, p, 3.0, tint_m)
 		if not e.finished:
@@ -980,6 +1075,7 @@ func _draw_mine(p: Vector2, e: Dictionary, col: Color) -> void:
 		bld_layer.draw_rect(Rect2(p.x - r, p.y - r - 8, r * 2 * k, 4), Color(0.2, 0.9, 0.2))
 
 func _draw_units() -> void:
+	dbg_unit += 1
 	_draw_corpses()
 	for e in game.entities:
 		if e.dead or e.kind != "unit":
@@ -1243,6 +1339,7 @@ func add_fx(kind: String, pos: Vector2) -> void:
 		fx_items.pop_front()
 
 func _draw_fx() -> void:
+	dbg_fx += 1
 	# squad links: faint lines from the officer to his soldiers (selected only)
 	if game != null:
 		for sid in game.squads:

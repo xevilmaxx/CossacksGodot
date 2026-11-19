@@ -233,7 +233,11 @@ func _state() -> Dictionary:
 	return {"ok": true, "fps": Performance.get_monitor(Performance.TIME_FPS),
 		"frame": int(m.get("frame")) if m != null else -1,
 		"has_game": g != null, "menu": m.get("menu") != null if m != null else false,
-		"game": h, "layout": lay}
+		"game": h, "layout": lay,
+		"perf": {"process_ms": Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			"physics_ms": Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+			"draw_calls": Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+			"prims": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)}}
 
 func _xform(text: String) -> Dictionary:
 	var vp := get_viewport()

@@ -97,6 +97,15 @@ var bench_t := 0.0
 var bench_frames := 0
 var bench_sim_ms := 0.0
 var bench_start_ms := 0
+var dbg_n := 0
+var dbg_tick := 0.0
+var dbg_ai := 0.0
+var dbg_sync := 0.0
+var dbg_steps := 0
+var dbg_res := 0
+var dbg_bld := 0
+var dbg_unit := 0
+var dbg_fx := 0
 var menu_overlay: CanvasLayer = null
 var end_panel: PanelContainer = null
 var last_cfg: Dictionary = {}
@@ -565,13 +574,7 @@ func _show_options(parent: VBoxContainer) -> void:
 	qopt.add_theme_font_size_override("font_size", maxi(13, int(15 * _menu_us())))
 	qopt.item_selected.connect(func(i: int):
 		var q2: String = ["high", "medium", "low"][i]
-		Data.QUALITY = q2
-		if q2 == "high":
-			Data.TERRAIN_PX = 16; Data.SPRITE_CELL = 160; Data.FX_CAP = 220
-		elif q2 == "medium":
-			Data.TERRAIN_PX = 12; Data.SPRITE_CELL = 96; Data.FX_CAP = 120
-		else:
-			Data.TERRAIN_PX = 8; Data.SPRITE_CELL = 64; Data.FX_CAP = 60
+		Data.set_quality(q2)
 		for k in world.terrain_chunks.values():
 			(k as Sprite2D).queue_free()
 		world.terrain_chunks.clear()
@@ -639,18 +642,41 @@ func _process(dt: float) -> void:
 	acc += dt * speed
 	var step := 1.0 / Data.FPS
 	var steps := 0
+	var t_tick := 0.0
+	var t_ai := 0.0
 	while acc >= step and steps < 64:
 		acc -= step
 		steps += 1
 		var t0 := Time.get_ticks_usec()
 		game.tick(step)
 		bench_sim_ms += float(Time.get_ticks_usec() - t0) / 1000.0
+		t_tick += float(Time.get_ticks_usec() - t0) / 1000.0
+		t0 = Time.get_ticks_usec()
 		ai.tick(step)
+		t_ai += float(Time.get_ticks_usec() - t0) / 1000.0
 		if journey_mode and cli_ai0 != null:
 			cli_ai0.tick(step)
 		# Never block inside the loop: bail out if the frame budget is spent.
 		if steps % 16 == 0 and Time.get_ticks_msec() >= deadline_ms - 500 and deadline_ms > 0:
 			break
+	dbg_n += 1
+	dbg_tick += t_tick
+	dbg_ai += t_ai
+	dbg_sync += 0.0
+	dbg_steps += steps
+	if dbg_n >= 120:
+		var _wr = world
+		print("PERF tick_ms=%.2f ai_ms=%.2f sync_ms=%.2f steps_per_frame=%.1f redraws r/b/u/f=%d/%d/%d/%d" % [dbg_tick / maxf(1.0, float(dbg_n)), dbg_ai / maxf(1.0, float(dbg_n)), dbg_sync / maxf(1.0, float(dbg_n)), float(dbg_steps) / maxf(1.0, float(dbg_n)), _wr.dbg_res if _wr != null else -1, _wr.dbg_bld if _wr != null else -1, _wr.dbg_unit if _wr != null else -1, _wr.dbg_fx if _wr != null else -1])
+		dbg_n = 0
+		dbg_tick = 0.0
+		dbg_ai = 0.0
+		dbg_sync = 0.0
+		dbg_steps = 0
+		if _wr != null:
+			_wr.dbg_res = 0
+			_wr.dbg_bld = 0
+			_wr.dbg_unit = 0
+			_wr.dbg_fx = 0
 	if bench_mode:
 		bench_frames += 1
 		bench_t += float(steps) * step
@@ -668,7 +694,9 @@ func _process(dt: float) -> void:
 			_quit(0)
 			return
 	if world != null and is_instance_valid(world) and not (bench_mode and is_headless):
+		var t1 := Time.get_ticks_usec()
 		world.sync(dt)
+		dbg_sync += float(Time.get_ticks_usec() - t1) / 1000.0
 	if journey_mode and camera != null and game != null:
 		journey_cam_t -= dt
 		if journey_cam_t <= 0.0:

@@ -1,13 +1,13 @@
 {
   "passed": true,
   "resources_gathered": {
-    "food": 58,
-    "gold": 814.112000000035,
-    "stone": 26,
+    "food": 100,
+    "gold": 820.768000000036,
+    "stone": 24,
     "trade": 65,
-    "wood": 218
+    "wood": 162
   },
-  "shots_fired": 67,
+  "shots_fired": 88,
   "sim_seconds": 364.15625,
   "steps": [
     {
@@ -16,7 +16,7 @@
       "step": "move"
     },
     {
-      "detail": "gathered 16 wood (carry 1 of 28, order 'gather', node hits 51)",
+      "detail": "gathered 18 wood (carry 0 of 28, order 'gather', node hits 51)",
       "passed": true,
       "step": "act"
     },
@@ -36,7 +36,7 @@
       "step": "train"
     },
     {
-      "detail": "mine produced 49.5 gold in 30 s (finished=true worker inside=true workers=1, deposit 30 m away, order=gather res=gold node=674 dist=3.0)",
+      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 41 m away, order=gather res=gold node=653 dist=3.3)",
       "passed": true,
       "step": "mine"
     },
@@ -46,17 +46,17 @@
       "step": "hud"
     },
     {
-      "detail": "min gap 0.20 m vs bodies (want >= -0.25 tolerance)",
+      "detail": "min gap 0.57 m vs bodies (want >= -0.25 tolerance)",
       "passed": true,
       "step": "no_overlap"
     },
     {
-      "detail": "serdiuk fired 2 shots, smoke seen, target hp 88",
+      "detail": "serdiuk fired 4 shots, smoke seen, target hp 82",
       "passed": true,
       "step": "volley"
     },
     {
-      "detail": "priest healed pikeman 30 -> 56 hp",
+      "detail": "priest healed pikeman 30 -> 70 hp",
       "passed": true,
       "step": "heal"
     },
@@ -131,7 +131,7 @@
       "step": "resow"
     },
     {
-      "detail": "cannon shells ground: shots 61 -> 62",
+      "detail": "cannon shells ground: shots 82 -> 83",
       "passed": true,
       "step": "attack_ground"
     },

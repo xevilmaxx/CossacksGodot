@@ -882,6 +882,20 @@ func _on_minimap_input(ev: InputEvent) -> void:
 	elif ev is InputEventMouseMotion and ev.button_mask & MOUSE_BUTTON_MASK_LEFT and cam:
 		cam.global_position = world_pos * world.view_scale
 
+func _mm_plot(t: Vector2i, c: Color, big: bool) -> void:
+	# minimap blip with map-bounds guard; deposits and forests draw 2x2 so
+	# they read as landmarks like in the original, units stay 1px dots
+	if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
+		return
+	minimap_img.set_pixel(t.x, t.y, c)
+	if big:
+		if t.x + 1 < game.MAP_W:
+			minimap_img.set_pixel(t.x + 1, t.y, c)
+		if t.y + 1 < game.MAP_H:
+			minimap_img.set_pixel(t.x, t.y + 1, c)
+		if t.x + 1 < game.MAP_W and t.y + 1 < game.MAP_H:
+			minimap_img.set_pixel(t.x + 1, t.y + 1, c)
+
 func _update_minimap() -> void:
 	if world == null:
 		return
@@ -889,22 +903,29 @@ func _update_minimap() -> void:
 	# of repainting 100k tiles every update
 	minimap_img = minimap_base.duplicate()
 	for n in game.res_nodes:
+		var t := game.tile_of(n.pos)
+		if n.max_hits == 0 and (n.type == "gold" or n.type == "iron" or n.type == "coal"):
+			# unbuilt ore deposit: landmark quad, only once scouted
+			if not world.tile_explored(n.pos):
+				continue
+			var dc: Color = {"gold": Color(0.9, 0.75, 0.2), "iron": Color(0.7, 0.45, 0.3), "coal": Color(0.25, 0.25, 0.28)}[n.type]
+			_mm_plot(t, dc, true)
+			continue
 		if n.hits <= 0:
 			continue
-		var t := game.tile_of(n.pos)
 		match n.type:
 			"wood":
-				minimap_img.set_pixel(t.x, t.y, Color(0.05, 0.2, 0.05))
+				_mm_plot(t, Color(0.05, 0.2, 0.05), true)
 			"stone":
-				minimap_img.set_pixel(t.x, t.y, Color(0.6, 0.6, 0.55))
+				_mm_plot(t, Color(0.6, 0.6, 0.55), false)
 			"food":
-				minimap_img.set_pixel(t.x, t.y, Color(0.85, 0.75, 0.3))
+				_mm_plot(t, Color(0.85, 0.75, 0.3), false)
 			"gold":
-				minimap_img.set_pixel(t.x, t.y, Color(0.9, 0.75, 0.2))
+				_mm_plot(t, Color(0.9, 0.75, 0.2), false)
 			"iron":
-				minimap_img.set_pixel(t.x, t.y, Color(0.7, 0.45, 0.3))
+				_mm_plot(t, Color(0.7, 0.45, 0.3), false)
 			"coal":
-				minimap_img.set_pixel(t.x, t.y, Color(0.25, 0.25, 0.28))
+				_mm_plot(t, Color(0.25, 0.25, 0.28), false)
 	for e in game.entities:
 		if e.dead:
 			continue
@@ -924,7 +945,10 @@ func _update_minimap() -> void:
 					minimap_img.set_pixel(px, py, Color(1, 1, 1) if e.player == 0 else Color(1, 0.2, 0.2))
 		else:
 			if t.x >= 0 and t.y >= 0 and t.x < game.MAP_W and t.y < game.MAP_H:
-				minimap_img.set_pixel(t.x, t.y, Color(0.4, 0.7, 1) if e.player == 0 else Color(1, 0.3, 0.25))
+				if bool(e.get("selected", false)):
+					minimap_img.set_pixel(t.x, t.y, Color(1, 1, 1))
+				else:
+					minimap_img.set_pixel(t.x, t.y, Color(0.4, 0.7, 1) if e.player == 0 else Color(1, 0.3, 0.25))
 	# fog dimming only matters when fog is on (otherwise everything is known)
 	if Data.FOG_OF_WAR:
 		for y in game.MAP_H:

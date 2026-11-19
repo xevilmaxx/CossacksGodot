@@ -623,6 +623,7 @@ Blender CPU-only Cycles (shade-less emission = pixel-identical, no GPU load).
 - Buildings sit on the original dirt plates (`decals/buildings/{nat}{sid}d`, converted to `assets/terrain/decals_png/`, lazy-loaded, fallback ellipse); mines get dirt ellipses. Ghost preview restyled to the original's ground footprint ring.
 - Daylight: source tiles are the original PNGs but rendered unlit (muddy); chunk bake adds per-tile sun gain x1.22 warm + low-frequency meadow mottling (kept per-tile so the 2-chunk/frame amortization stays cheap; a per-pixel version tanked startup to ~4fps).
 - Unit art is faithful (bakes of original models; nation coats baked in) and already scaled/anchored correctly — units read better automatically once terrain/trees/scale were fixed. Suites green (selftest 28/28, uitest 17/17); FPS recovers to 60 after the chunk-build storm.
+- Minimap blips like the original: own buildings white 2x2 quads, enemy buildings red 2x2 once scouted (explored-gated); own units blue 1px dots, selected units white, enemy units red only while visible (fog-gated); resources: forests as dark-green 2x2 masses, unbuilt ore deposits as 2x2 ore-colored landmarks once scouted (skipped entirely before), stone/food/ores 1px dots; terrain base (grass/dirt/forest-floor/water/sand/rock), fog dimming for unexplored, white view-frustum rect.
 
 ## No-overlap HUD guarantee (2026-11-19, user report: panels overlap at some sizes)
 

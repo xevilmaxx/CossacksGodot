@@ -16,6 +16,8 @@ signal message(text: String)
 var terrain: PackedByteArray = PackedByteArray()
 var blocked: PackedByteArray = PackedByteArray()
 var res_nodes: Array = []
+var map_starts: Array = []  # start positions of the generated map (groves near them are sacred)
+var cluster_zones: Array = []  # claimed {pos, r} so clusters never overlap
 var entities: Array = []
 var by_id: Dictionary = {}
 var next_id := 1
@@ -244,24 +246,75 @@ func _scatter_forest(center: Vector2, count: int, spread: float) -> void:
 		var p := center + Vector2(rng.randf_range(-spread, spread), rng.randf_range(-spread, spread))
 		if not in_bounds(p) or is_blocked(p):
 			continue
+		# trees grow on grass/meadow/dirt only — never on rock, sand or water
+		# (covers hills and lake shores whatever the placement order)
+		var tt: int = terrain[_t(int(p.x / TILE), int(p.y / TILE))]
+		if tt != 0 and tt != 1 and tt != 2:
+			continue
+		# never plant into quarries, mine sites or fields: clusters stay pure
+		# (the managed park around starts is exempt — groves belong there)
+		var clash := false
+		var near_home := false
+		for st in map_starts:
+			if p.distance_to(st) < 12.0 * TILE:
+				near_home = true
+				break
+		if not near_home:
+			for n in res_nodes:
+				if n.type != "wood" and n.pos.distance_to(p) < 4.0 * TILE:
+					clash = true
+					break
+		if clash:
+			continue
 		_add_res("wood", p, 60, 0.7)
+
+# Original maps keep resource kinds apart: quarries sit in rock/dirt
+# clearings (never inside forest), mines on worked dirt. Wood nodes inside
+# the given radius are depleted (stumps vanish) so stone never mixes trees.
+# The starting groves (peasant work area) are sacred: nothing clears them.
+func _clear_trees(pos: Vector2, r_m: float) -> void:
+	for n in res_nodes:
+		if n.type != "wood" or n.pos.distance_to(pos) >= r_m:
+			continue
+		var near_home := false
+		for st in map_starts:
+			if n.pos.distance_to(st) < 12.0 * TILE:
+				near_home = true
+				break
+		if not near_home:
+			n.hits = 0
+
+# Cluster registry: forests, quarries, mines and fields claim ground so
+# clusters sit near each other but never overlap (original map layout).
+func _claim_cluster(pos: Vector2, r_m: float, margin_m := 4.0) -> bool:
+	for z in cluster_zones:
+		var zd: Dictionary = z
+		if pos.distance_to(zd.pos) < r_m + float(zd.r) + margin_m:
+			return false
+	cluster_zones.append({"pos": pos, "r": r_m})
+	return true
 
 func _generate_map() -> void:
 	# Structured skirmish map in the original's style:
 	# open plains + forest belts + hills + lakes + farm fields + rock outcrops.
 	# terrain: 0 grass, 1 dirt, 2 forest floor, 3 water, 4 sand, 5 rock.
+	# Large homogeneous zones (low-frequency noise): the original has broad
+	# meadows and dirt expanses with soft passes between them, not per-tile
+	# speckle. Tile edges are softened by the blend masks at bake time.
 	for y in MAP_H:
 		for x in MAP_W:
 			# base grass with soft large-scale variation (plains vs meadow)
-			var n := _noise2(x * 0.045, y * 0.045)
-			var n2 := _noise2(x * 0.13 + 57.0, y * 0.13 - 31.0)
+			var n := _noise2(x * 0.012, y * 0.012)
+			var n2 := _noise2(x * 0.05 + 57.0, y * 0.05 - 31.0)
 			var t := 0
-			if n > 0.28 and n2 > 0.05:
-				t = 1  # dirt patch
-			elif n < -0.3:
-				t = 2  # darker meadow / forest floor tint
+			if n > 0.22 and n2 > -0.15:
+				t = 1  # dirt zone
+			# no random dark patches: forest floor (type 2) is painted only
+			# under real forests below, so dark grass always means trees
 			terrain[_t(x, y)] = t
 	var starts := _start_positions()
+	map_starts = starts
+	cluster_zones = []
 	# map type scales the water: Land ~1 lake, Islands ~3 (generator.cfg).
 	var water_mult: float = float(Data.MAP_TYPES.get(Data.MAP_TYPE, {"water_frac": 0.5}).get("water_frac", 0.5))
 	# lakes: 1-2 ellipses away from starts, with sand shore ring
@@ -295,33 +348,60 @@ func _generate_map() -> void:
 	# dirt road between the two starts through the center
 	_draw_road(starts[0], (starts[0] + starts[1]) * 0.5)
 	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
-	# forests: 6-8 dense belts, kept away from starts
+	# forests: 6-8 dense belts, kept away from starts and from each other
+	# (claimed zones: distinct forests with meadow between, never merged)
 	var forest_centers: Array = []
 	for f in rng.randi_range(6, 8):
-		var c := Vector2(rng.randf_range(MAP_W * 0.08, MAP_W * 0.92) * TILE,
-			rng.randf_range(MAP_H * 0.08, MAP_H * 0.92) * TILE)
-		var too_close := false
-		for st in starts:
-			if c.distance_to(st) < 22.0 * TILE:
-				too_close = true
-		if too_close:
-			continue
-		if not in_bounds(c) or is_blocked(c):
+		var c := Vector2(-1, -1)
+		for attempt in 8:
+			var cand := Vector2(rng.randf_range(MAP_W * 0.08, MAP_W * 0.92) * TILE,
+				rng.randf_range(MAP_H * 0.08, MAP_H * 0.92) * TILE)
+			var too_close := false
+			for st in starts:
+				if cand.distance_to(st) < 22.0 * TILE:
+					too_close = true
+					break
+			if too_close:
+				continue
+			if not in_bounds(cand) or is_blocked(cand):
+				continue
+			if _claim_cluster(cand, 7.0 * TILE):
+				c = cand
+				break
+		if c.x < 0.0:
 			continue
 		forest_centers.append(c)
+		# dark forest floor under the belt (original woods grow on dark ground)
+		_paint_terrain(c, 5.5 * TILE, 2)
 		_scatter_forest(c, rng.randi_range(34, 60), 6.5 * TILE)
 	# small groves near each start (firewood in reach)
 	for st in starts:
+		_paint_terrain(st + Vector2(7, -7) * TILE, 4.5 * TILE, 2)
 		_scatter_forest(st + Vector2(7, -7) * TILE, 26, 5.0 * TILE)
+		_paint_terrain(st + Vector2(-8, 5) * TILE, 4.0 * TILE, 2)
 		_scatter_forest(st + Vector2(-8, 5) * TILE, 18, 4.0 * TILE)
-	# stone outcrops: clustered, some on hills
+	# stone outcrops: clustered, some on hills, always in rock/dirt clearings
+	# (never inside forest — cleared + painted like the original quarries).
+	# claimed zones: distinct quarries, never overlapping forests or mines.
 	for s in 7:
-		var c := Vector2(rng.randf_range(MAP_W * 0.09, MAP_W * 0.91) * TILE,
-			rng.randf_range(MAP_H * 0.09, MAP_H * 0.91) * TILE)
+		var c := Vector2(-1, -1)
+		for attempt in 8:
+			var cand := Vector2(rng.randf_range(MAP_W * 0.09, MAP_W * 0.91) * TILE,
+				rng.randf_range(MAP_H * 0.09, MAP_H * 0.91) * TILE)
+			if not in_bounds(cand) or is_blocked(cand):
+				continue
+			if _claim_cluster(cand, 7.0 * TILE):
+				c = cand
+				break
+		if c.x < 0.0:
+			continue
 		for i in rng.randi_range(5, 8):
 			var p := c + Vector2(rng.randf_range(-4, 4), rng.randf_range(-4, 4)) * TILE
 			if in_bounds(p) and not is_blocked(p):
 				_add_res("stone", p, 80, 0.9)
+		_paint_terrain(c, 6.0 * TILE, 1)
+		_paint_terrain(c, 3.5 * TILE, 5)
+		_clear_trees(c, 7.0 * TILE)
 	# guaranteed stone near each start (original maps always keep stone in
 	# reach; without it the economy can never leave the wood/food stage).
 	# tiny tight cluster: small blocked footprint, inside gather range.
@@ -333,6 +413,9 @@ func _generate_map() -> void:
 				var p := cc + Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * TILE
 				if in_bounds(p) and not is_blocked(p):
 					_add_res("stone", p, 80, 0.9)
+			_paint_terrain(cc, 4.0 * TILE, 1)
+			_paint_terrain(cc, 2.0 * TILE, 5)
+			_clear_trees(cc, 5.0 * TILE)
 	# corn (food): rectangular farm fields near each start, like the original fields
 	for st in starts:
 		for g in 2:
@@ -342,20 +425,39 @@ func _generate_map() -> void:
 					var p := origin + Vector2(ix * 1.5, iy * 1.5) * TILE
 					if in_bounds(p) and not is_blocked(p):
 						_add_res("food", p, 50, 0.6)
-	# straggler corn elsewhere
+	# straggler corn elsewhere: small claimed patches, never inside other clusters
 	for st in starts:
-		var c := st + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)) * TILE
-		for i in 6:
-			var p := c + Vector2(rng.randf_range(-2.5, 2.5), rng.randf_range(-2.5, 2.5)) * TILE
-			if in_bounds(p) and not is_blocked(p):
-				_add_res("food", p, 50, 0.6)
-	# mines: deposits to build on (gold, iron, coal), two of each + one of each near starts
+		for attempt in 6:
+			var c := st + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)) * TILE
+			if not in_bounds(c) or is_blocked(c):
+				continue
+			if not _claim_cluster(c, 4.0 * TILE):
+				continue
+			for i in 6:
+				var p := c + Vector2(rng.randf_range(-2.5, 2.5), rng.randf_range(-2.5, 2.5)) * TILE
+				if in_bounds(p) and not is_blocked(p):
+					_add_res("food", p, 50, 0.6)
+			break
+	# mines: deposits to build on (gold, iron, coal), two of each + one of each near starts.
+	# each sits on its own dirt clearing with no trees (original mine sites).
+	# claimed zones: never inside forests, quarries or other deposits.
 	var kinds := ["gold", "iron", "coal"]
 	for k in kinds:
 		for m in 2:
-			var p := Vector2(rng.randf_range(MAP_W * 0.15, MAP_W * 0.85),
-				rng.randf_range(MAP_H * 0.15, MAP_H * 0.85)) * TILE + Vector2(1, 1)
+			var p := Vector2(-1, -1)
+			for attempt in 8:
+				var cand := Vector2(rng.randf_range(MAP_W * 0.15, MAP_W * 0.85),
+					rng.randf_range(MAP_H * 0.15, MAP_H * 0.85)) * TILE + Vector2(1, 1)
+				if not in_bounds(cand) or is_blocked(cand):
+					continue
+				if _claim_cluster(cand, 6.0 * TILE):
+					p = cand
+					break
+			if p.x < 0.0:
+				continue
 			_add_res(k, p, 0, 0.0)
+			_paint_terrain(p, 4.0 * TILE, 1)
+			_clear_trees(p, 5.0 * TILE)
 	# keep starting areas clear + small dirt town plaza like the original towns
 	for st in starts:
 		_paint_terrain(st, 5.0 * TILE, 1)
@@ -371,6 +473,8 @@ func _generate_map() -> void:
 			dp = Vector2(floor(dp.x / TILE) * TILE + 1.0, floor(dp.y / TILE) * TILE + 1.0)
 			if in_bounds(dp) and not is_blocked(dp):
 				_add_res(kinds[ki], dp, 0, 0.0)
+				_paint_terrain(dp, 4.0 * TILE, 1)
+				_clear_trees(dp, 5.0 * TILE)
 		# re-plant what clearing wiped: farm fields + firewood just outside
 		# the cleared ring so peasants always have work in reach
 		for g in 2:
@@ -381,7 +485,9 @@ func _generate_map() -> void:
 					if in_bounds(p) and not is_blocked(p):
 						_add_res("food", p, 50, 0.6)
 		_scatter_forest(st + Vector2(9, -8) * TILE, 26, 5.0 * TILE)
+		_paint_terrain(st + Vector2(9, -8) * TILE, 4.5 * TILE, 2)
 		_scatter_forest(st + Vector2(-10, 6) * TILE, 18, 4.0 * TILE)
+		_paint_terrain(st + Vector2(-10, 6) * TILE, 4.0 * TILE, 2)
 	# clear a small ring right around each town center so units never spawn stuck
 	for st in starts:
 		_clear_area(st, 4.0 * TILE)
