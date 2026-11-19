@@ -725,7 +725,7 @@ func _seq_ensure_dir() -> void:
 # Windowed it grabs the real viewport (a gameplay video in stills); headless
 # it saves the CPU map render (a sim-progression timelapse). Bounded by
 # seq_max frames so disk can never fill; index lists sim time per frame for
-# video assembly (see tools/seq_contact.py + COMMANDS.md ffmpeg line).
+# video assembly (see tools/seq_to_mp4.py + docs/COMMANDS.md ffmpeg line).
 func _save_seq_frame() -> void:
 	seq_saving = true
 	var idx := seq_count

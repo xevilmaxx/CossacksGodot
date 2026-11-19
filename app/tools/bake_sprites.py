@@ -4,7 +4,7 @@ Run: blender.exe --background --factory-startup --python tools/bake_sprites.py -
      --game "C:\\Games\\Cossacks 3" --out assets/models/anim [--only sid,sid] [--size 160]
 Sheets: <key>_<action>.png, cols=8 dirs (0,45..315), rows=sampled frames.
 index.json: {key: {"cell": N, "actions": {action: {"frames": n, "duration": s, "loop": bool}}}}
-EXECUTION_PLAN.md Step 1. Minimal syntax fixes vs plan draft:
+GUIDE1.md (docs/guides) Step 1. Minimal syntax fixes vs plan draft:
 - attack names ("attack0","attack") -> ("attack0","attack1","attack") (missing comma in draft = implicit concat)
 - bake_building cands inner tuples missing comma fixed
 - bake_building center Vector missing commas fixed

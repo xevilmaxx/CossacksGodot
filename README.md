@@ -52,7 +52,7 @@ python tools\seq_to_mp4.py --dir shots/j1 --fps 10        :: assemble journey.mp
 
 > The window stays behind other windows and exits by itself in every test
 > mode. Headless runs use a CPU map render — they work on machines with no
-> GPU at all. See **[COMMANDS.md](COMMANDS.md)** for the full manual.
+> GPU at all. See **[COMMANDS.md](docs/COMMANDS.md)** for the full manual.
 
 ## Controls
 
@@ -81,18 +81,22 @@ app/
   shots/        screenshots, sequences, test configs (boost.json)
   mechanics.json / MECHANICS.md   every gameplay number + its source
   config.json / selftest.json / uitest.json / cli.json   settings + reports
-GUIDE2.md       step-by-step build guide (S1–S10, all completed)
-EXECUTION_PLAN.md  round-1 plan (superseded by GUIDE2)
+docs/
+  COMMANDS.md             full manual: flags, tools, when/why, troubleshooting
+  guides/
+    GUIDE1.md             round-1 execution plan (superseded by GUIDE2)
+    GUIDE2.md             round-2 guide S1-S10, all completed
 reference/videos.md  17 gameplay videos + wiki mechanics research
 inbox/backup/  safety copies of every edited script
 ```
 
 ## Docs — where to go next
 
-- 🎮 **Playing & testing everything** → [COMMANDS.md](COMMANDS.md) — every
+- 🎮 **Playing & testing everything** → [COMMANDS.md](docs/COMMANDS.md) — every
   Godot flag, every Python tool, when to use which, troubleshooting, acceptance gates
-- 🔨 **How it was built, step by step** → [GUIDE2.md](GUIDE2.md) — the S1–S10
-  execution guide (formation values, upgrade ladders, baker fixes, AI tuning)
+- 🔨 **How it was built, step by step** → [GUIDE2.md](docs/guides/GUIDE2.md) — the S1–S10
+  execution guide (formation values, upgrade ladders, baker fixes, AI tuning);
+  round 1 lives in [GUIDE1.md](docs/guides/GUIDE1.md)
 - 📏 **Every number + its source** → [app/MECHANICS.md](app/MECHANICS.md),
   [app/mechanics.json](app/mechanics.json)
 - 🎬 **What "correct" looks like** → [reference/videos.md](reference/videos.md)

@@ -8,7 +8,7 @@ command. Do ONE step, run its acceptance, only then continue. If a step's
 acceptance fails: restore that file from `inbox/backup/`, re-read the step,
 retry. Never skip ahead. Never "improve" code beyond what a step says.
 
-Companion docs (read-only context): `EXECUTION_PLAN.md` (round 1, DONE),
+Companion docs (read-only context): `GUIDE1.md` (round 1, DONE),
 `app/MECHANICS.md`, `app/mechanics.json`, `reference/videos.md`.
 Rule sources: cossacks3.fandom.com wiki + cossacks.fandom.com/wiki/Battle_tactics
 + gamepressure.com/cossacks3 + Steam community guides (numbers reproduced in
@@ -967,7 +967,7 @@ expect fewer town halls, more houses: correct).
    `"estimated": true` where the port chose a number the wiki didn't give).
 6. Update `app/README.md` controls list (D/E/V, gate/repair buttons, formation
    size buttons) and `app/CREDITS.md` (ba2/dip meshes, stage/death meshes).
-7. Update `EXECUTION_PLAN.md` header status: GUIDE 2 complete.
+7. Update `GUIDE1.md` header status: GUIDE 2 complete.
 
 ---
 

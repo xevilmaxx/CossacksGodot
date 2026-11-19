@@ -1,4 +1,4 @@
-# EXECUTION PLAN — Cossacks 3 Godot clone, next improvement round (SUPERSEDED by GUIDE2.md — all steps verified complete, see GUIDE2.md + status below)
+# EXECUTION PLAN - Cossacks 3 Godot clone, first improvement round = GUIDE 1 (SUPERSEDED by GUIDE2.md - all steps verified complete, see GUIDE2.md + status below)
 
 **STATUS 2026-11-18: EXECUTION PLAN 100% COMPLETE.** Steps 1 (54 unit sheets
 + 215 nation-building sheets, CPU-only Cycles), 2 (anim wiring + lazy

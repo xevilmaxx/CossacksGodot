@@ -134,7 +134,7 @@ boosted config; natural runs are for timelapses.
   comma in a dict literal; restore from `inbox/backup/<name>.bak2` and redo.
 - `ui-test` hangs → a runtime error repeats every frame until the watchdog
   fires; run with `--timeout 60` and read the first `SCRIPT ERROR` above the
-  watchdog line (usually a wrong field name — see Appendix C of GUIDE2.md).
+  watchdog line (usually a wrong field name - see Appendix C of guides/GUIDE2.md).
 - Self-test `wall` fails after mapgen edits → a resource cluster blocks the
   build site; keep guaranteed deposits ≤ 20 tiles out and tight (±2 tiles).
 - CLI shows identical 8/15 units forever → check `ai.max_peasants` /
