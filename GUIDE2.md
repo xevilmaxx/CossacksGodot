@@ -1025,7 +1025,7 @@ expect fewer town halls, more houses: correct).
   `& "C:\Program Files\Blender Foundation\Blender 5.2\5.2\python\bin\python.exe" -m pip install --target app\tools\blender_py Pillow`
 - NEVER use EEVEE/GPU. NEVER run godot without a self-exiting flag.
 
-## STATUS (filled by executor, 2026-11-18) — ALL of GUIDE2.md implemented
+## STATUS (filled by executor, 2026-11-18/19) — ALL of GUIDE2.md implemented
 
 S1 done (farm 100/150, AI 40/600/6+3bar/2sta, map 320, bootstrap rebalance +
 guaranteed stone; acceptance corrected: massing is gradual, verified via
@@ -1035,8 +1035,25 @@ research, all effect handlers). S4 done (gate/repair/wall-fire/stone upkeep).
 S5 done (D/E/V, counter targeting, size buttons). S6 done (stages + rubble
 baked and drawn; stage meshes needed per-model rebuild). S7 done (height
 bonus, LOS, tint). S8 done (composition picker, AI squads, officer-led waves,
-ranged hold). S9 done (field cap 2, escalation, gold rebellion). S10 docs
-done (182 mechanics). Final: selftest 21/21, cli clean, windowed screenshot.
+ranged hold). S9 done (field cap 2, escalation, gold rebellion). S10 done.
+Final: selftest 21/21, uitest 11/11 (+--ui-only scenes), cli clean, journey
+MP4 assembled (112 frames, real AI-vs-AI match), windowed screenshots.
 Two executor fixes beyond the letter of the guide, both required for
 acceptance: stone deadlock (mapgen guarantee) and stage-overlap render bug
 (hide finished mesh). Appendix untouched except the S1 acceptance correction.
+
+### Post-GUIDE2 additions (user requests, 2026-11-19)
+- Default nations rus/bav (was ukr/rus): data.gd + menu.gd + config.json +
+  boost.json + uitest-independent (uitest sets its own matchup).
+- `--ui-only <scene>`: every uitest scene runs standalone in seconds.
+- `--seq` + `--journey` + `tools/seq_to_mp4.py`: frame sequences and real
+  MP4s (ffmpeg) + contact sheets; headless captures capped at 800x600 /
+  800x450; seq dirs auto-created (bare paths used to fall back to user://).
+- `COMMANDS.md`: full manual (all flags, tools, when/why, troubleshooting).
+- Video-found rendering bug: world-space culling vs screen viewport left the
+  320-tile map entity-free; fixed via canvas-transformed view rect. Old
+  screenshots looked fine only because near-origin entities passed the bogus
+  cull — this is why the user asked for video-level verification.
+- Two test bugs found by the new tests (not game bugs): S key with peasants
+  opens the stable ghost (build-menu priority) so order_keys uses swordsmen;
+  train test granted res[5]=coal instead of res[4]=iron.

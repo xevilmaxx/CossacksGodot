@@ -45,9 +45,9 @@ godot --headless --path app -- --screenshot app/shots/shot.png --timeout 90
 
 ```
 :: windowed journey: BOTH sides played by the AI at 4x, frames captured live
-godot --path app -- --seq shots/j1 --seq-seconds 240 --seq-step 2 --speed 4 --config shots/boost.json --journey --timeout 400
+godot --path app -- --seq app/shots/j1 --seq-seconds 240 --seq-step 2 --speed 4 --config shots/boost.json --journey --timeout 400
 :: headless timelapse instead (800x450 CPU map frames, zero GPU):
-godot --headless --path app -- --seq shots/j1 --seq-seconds 120 --seq-step 2 --config shots/boost.json --cli app/cli.json --cli-seconds 120
+godot --headless --path app -- --seq app/shots/j1 --seq-seconds 120 --seq-step 2 --config shots/boost.json --cli app/cli.json --cli-seconds 120
 
 :: assemble (needs ffmpeg on PATH: `winget install ffmpeg`):
 python app/tools/seq_to_mp4.py --dir app/shots/j1 --fps 10

@@ -15,8 +15,8 @@ var data: Dictionary = {}
 var root: PanelContainer
 var title_label: Label
 var body: VBoxContainer
-var nation0 := "ukr"
-var nation1 := "rus"
+var nation0 := "rus"
+var nation1 := "bav"
 var map_type := "land"
 var start_option := "default"
 var mode := "skirmish"

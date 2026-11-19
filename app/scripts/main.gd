@@ -64,6 +64,7 @@ var seq_count := 0
 var seq_max := 600
 var seq_saving := false
 var seq_done := false
+var seq_ready := false
 var cli_path := ""
 var cli_mode := false
 var cli_seconds := 60.0
@@ -424,6 +425,9 @@ func _process(dt: float) -> void:
 	elif uitest_path != "" and frame > 4:
 		_run_uitest()
 	if seq_dir != "" and not seq_done:
+		if not seq_ready:
+			seq_ready = true
+			_seq_ensure_dir()
 		if game != null and not seq_saving and game.time_s >= seq_next:
 			seq_next = game.time_s + seq_step
 			_save_seq_frame()
@@ -705,6 +709,18 @@ func _run_uitest() -> void:
 	print("ui-test report: ", out)
 	_quit(0 if report.get("passed", false) else 1)
 
+# Sequence output must land in the project (app/shots/...) even when the
+# folder does not exist yet: _pick_target skips missing dirs and would
+# otherwise fall back to a flat user:// folder.
+func _seq_ensure_dir() -> void:
+	var d := seq_dir
+	if d.begins_with("res://"):
+		d = ProjectSettings.globalize_path(d)
+	elif not d.is_absolute_path() and not d.begins_with("user://"):
+		d = ProjectSettings.globalize_path("res://").get_base_dir().path_join(seq_dir)
+	if d != "" and not DirAccess.dir_exists_absolute(d):
+		DirAccess.make_dir_recursive_absolute(d)
+
 # Sequence capture: one frame every seq_step sim-seconds until seq_seconds.
 # Windowed it grabs the real viewport (a gameplay video in stills); headless
 # it saves the CPU map render (a sim-progression timelapse). Bounded by
@@ -759,6 +775,9 @@ func _run_cli_incremental() -> void:
 			printerr("cli: wall-clock limit reached")
 			break
 	if seq_dir != "" and not seq_done and not cli_done:
+		if not seq_ready:
+			seq_ready = true
+			_seq_ensure_dir()
 		# journey timelapse in CLI mode: at most one map frame per real
 		# frame (never blocks the budget); cadence kept by sim time
 		if cli_t >= seq_next:

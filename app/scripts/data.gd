@@ -107,8 +107,8 @@ static var CAMERA_ZOOM_STEP := 1.15
 
 static var UNIT_NAMES := {}             # display names, from data/locale/en/units.txt
 static var BUILDING_NAMES := {}         # display names, from data/locale/en/gui.txt
-static var PLAYER_NAMES := ["Ukraine", "Russia"]
-static var PLAYER_NATIONS := ["ukr", "rus"]  # country.script sids, menu picks these
+static var PLAYER_NAMES := ["Russia", "Bavaria"]
+static var PLAYER_NATIONS := ["rus", "bav"]  # country.script sids, menu picks these
 static var MAP_TYPE := "land"           # generator.cfg TerrainTypes key
 static var START_OPTION := "default"    # startingsettings.gc_mapsettings_* key
 static var HOTKEYS := {}                # action -> "Ctrl+S" style binding

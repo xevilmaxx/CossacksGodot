@@ -58,8 +58,8 @@
    "officer": 1,
    "cannon": 2
   },
-  "nation0": "ukr",
-  "nation1": "rus",
+  "nation0": "rus",
+  "nation1": "bav",
   "map_type": "land",
   "start_option": "default"
  },
@@ -186,8 +186,8 @@
    "wal": "Stone Wall"
   },
   "player": [
-   "Ukraine",
-   "Russia"
+   "Russia",
+   "Bavaria"
   ]
  },
  "units": {
