@@ -1,0 +1,16 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 571.96 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce MX130
+
+test-api: listening on 127.0.0.1:8141
+sprites: 29 sets loaded (sids=65)
+ERROR: 1 RID allocations of type 'N5GLES37TextureE' were leaked at exit.
+godot : ERROR: Texture with GL ID of 137: leaked 5460 bytes.
+At line:1 char:1
++ godot --path app -- --test-api 8141 --timeout 400 2>&1 | Out-File -Fi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: Texture ...ked 5460 bytes.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:82)
+ERROR: Parameter "RenderingServer::get_singleton()" is null.
+   at: ~CompressedTexture2D (scene/resources/compressed_texture.cpp:464)

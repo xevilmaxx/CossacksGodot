@@ -216,8 +216,12 @@ func _state() -> Dictionary:
 	var h: Dictionary = {}
 	if g != null:
 		var gg = g as C3Game
+		var unfin := 0
+		for b in gg.buildings_of(0):
+			if not bool(b.get("finished", true)):
+				unfin += 1
 		h = {"units0": gg.unit_count(0), "units1": gg.unit_count(1),
-			"blds0": gg.buildings_of(0).size(), "time": gg.time_s,
+			"blds0": gg.buildings_of(0).size(), "unfin0": unfin, "time": gg.time_s,
 			"winner": gg.winner, "selected": gg.get_selected().size()}
 	var hud = m.get("hud") if m != null else null
 	var lay := {}
