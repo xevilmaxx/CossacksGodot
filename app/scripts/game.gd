@@ -1338,7 +1338,7 @@ func effective_damage(player: int, kind: String, pos: Vector2) -> float:
 		m *= 1.0 + Data.OFFICER_DAMAGE_BONUS
 	return m
 
-func place_building(player: int, sid: String, pos: Vector2) -> Dictionary:
+func place_building(player: int, sid: String, pos: Vector2, send := true) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[sid]
 	if sid == "bar18" and not bool(players[player].get("has18c", false)):
 		say("Research the 18th century at the Town Hall first.")
@@ -1371,6 +1371,8 @@ func place_building(player: int, sid: String, pos: Vector2) -> Dictionary:
 	var b := spawn(sid, player, pos, false)
 	b.hp = maxi(1, int(def.hp * 0.25))
 	post_event("construct", pos, sid)
+	if not send:
+		return b
 	# send nearby peasants to build (the original allows up to 30 builders,
 	# dmscript.global:159; the port sends 8 at a time)
 	var idle: Array = []

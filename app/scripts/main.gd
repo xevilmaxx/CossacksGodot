@@ -93,6 +93,7 @@ var bench_mode := false
 var bench_t := 0.0
 var bench_frames := 0
 var bench_sim_ms := 0.0
+var bench_start_ms := 0
 var menu_overlay: CanvasLayer = null
 var end_panel: PanelContainer = null
 var last_cfg: Dictionary = {}
@@ -139,12 +140,15 @@ func _ready() -> void:
 	if bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or battle_requested:
 		_setup_full_game()
 		if bench_mode:
+			Data.MINIMAP_INTERVAL = 9999.0
+			Data.FOG_INTERVAL = 9999.0
 			for pi in 2:
 				var home: Vector2 = game._start_positions()[pi]
 				for i in 300:
 					var sid: String = ["pikeman", "serdiuk", "archer", "cossack"][i % 4]
 					game.spawn(sid, pi, home + Vector2((i % 20) * 1.2 - 12, (i / 20) * 1.2 - 12))
 			bench_t = 0.0
+			bench_start_ms = Time.get_ticks_msec()
 		if screenshot_path != "":
 			_setup_screenshot_window()
 		return
@@ -599,9 +603,10 @@ func _process(dt: float) -> void:
 			break
 	if bench_mode:
 		bench_frames += 1
-		bench_t += dt
+		bench_t += float(steps) * step
 		if bench_t >= 30.0:
-			var rep := {"fps": float(bench_frames) / 30.0, "sim_ms_per_tick": bench_sim_ms / maxf(1.0, float(bench_frames) * Data.FPS), "units": game.entities.size()}
+			var wall_s := maxf(1.0, float(Time.get_ticks_msec() - bench_start_ms) / 1000.0)
+			var rep := {"fps": float(bench_frames) / wall_s, "sim_ms_per_tick": bench_sim_ms / maxf(1.0, bench_t * Data.FPS), "units": game.entities.size(), "sim_seconds": bench_t, "wall_seconds": wall_s, "headless_sim_only": is_headless}
 			var bp := ProjectSettings.globalize_path("res://shots/bench.json")
 			var bf := FileAccess.open(bp, FileAccess.WRITE)
 			if bf != null:
@@ -612,7 +617,7 @@ func _process(dt: float) -> void:
 				print(JSON.stringify(rep))
 			_quit(0)
 			return
-	if world != null and is_instance_valid(world):
+	if world != null and is_instance_valid(world) and not (bench_mode and is_headless):
 		world.sync(dt)
 	if journey_mode and camera != null and game != null:
 		journey_cam_t -= dt

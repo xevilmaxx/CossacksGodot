@@ -47,8 +47,9 @@ func tick(dt: float) -> void:
 	if home.is_empty():
 		home = blds[0]
 		p["home_id"] = home.id
-	_economy(peasants, res, p, counts, fin)
 	_build(res, counts, fin, home, p)
+	_resume(peasants)
+	_economy(peasants, res, p, counts, fin)
 	_research(res, fin)
 	_train(peasants, military, res, counts, fin, p)
 	_form_squads(military)
@@ -66,6 +67,7 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 	# desired distribution: food 35%, wood 25%, stone 15%, mines 25%
 	var want := {"food": int(n * 0.35), "wood": int(n * 0.25), "stone": int(n * 0.15)}
 	var on := {"food": 0, "wood": 0, "stone": 0, "mine": 0}
+	var by_res := {"food": [], "wood": [], "stone": []}
 	var idle: Array = []
 	for pe in peasants:
 		if pe.inside_of != 0:
@@ -74,12 +76,13 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 		if pe.order.type == "gather":
 			var r: String = str(pe.order.get("res", ""))
 			if r == "food" and pe.order.get("node", 0) != 0:
-				var nd: Dictionary = game.by_id.get(int(pe.order.node), {})
+				var nd: Dictionary = game.by_id.get(int(pe.order.get("node", 0)), {})
 				if not nd.is_empty() and nd.hits <= 0:
 					game.cmd_resow(pe, nd)
 					continue
 			if on.has(r):
 				on[r] += 1
+				(by_res[r] as Array).append(pe)
 				continue
 		if pe.order.type == "none":
 			idle.append(pe)
@@ -93,6 +96,25 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 				break
 			game.cmd_gather(pe, node)
 			deficit -= 1
+	# surplus gatherers (no load) rotate onto mines with free slots
+	for kind in ["food", "wood", "stone"]:
+		var surplus: Array = []
+		for pe3 in by_res[kind]:
+			if int(pe3.get("carry", 0)) == 0 and pe3.inside_of == 0 and pe3.order.type == "gather":
+				surplus.append(pe3)
+		while int(on[kind]) > int(want[kind]) and not surplus.is_empty():
+			var pe2: Dictionary = surplus.pop_back()
+			if pe2.order.type != "gather" or int(pe2.get("carry", 0)) != 0:
+				continue
+			var dep2 := _mine_for(pe2)
+			if dep2 == "":
+				break
+			var node2 := _deposit_node(dep2)
+			if node2.is_empty():
+				break
+			game.cmd_gather(pe2, node2)
+			on[kind] -= 1
+			on["mine"] += 1
 	for pe in idle:
 		var dep := _mine_for(pe)
 		if dep != "":
@@ -133,6 +155,15 @@ func _deposit_node(kind: String) -> Dictionary:
 func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictionary, p: Dictionary) -> void:
 	var p0: Vector2 = home.pos
 	p["home_pos"] = p0
+	var unfin := 0
+	for b in game.buildings_of(player, false):
+		if not b.finished and not b.dead:
+			unfin += 1
+	if unfin >= 3:
+		# finish what's started before opening new sites (farm exception)
+		if res.wood >= 120 and game.unit_count(player) + game.queue_count(player) + 3 >= int(p.farm_cap):
+			_try_build("hou", home)
+		return
 	if res.wood >= 120 and game.unit_count(player) + game.queue_count(player) + 3 >= int(p.farm_cap):
 		_try_build("hou", home)
 	for k in ["gold", "iron", "coal"]:
@@ -175,7 +206,7 @@ func _try_build(sid: String, home: Dictionary, min_d := 0.0, max_d := 18.0) -> v
 	var pos := _find_spot(home, def, lo, max_d)
 	if pos == Vector2.INF:
 		return
-	game.place_building(player, sid, pos)
+	game.place_building(player, sid, pos, false)
 
 func _build_mine(kind: String, home: Dictionary) -> void:
 	var best: Dictionary = {}
@@ -188,7 +219,35 @@ func _build_mine(kind: String, home: Dictionary) -> void:
 				best = n
 	if best.is_empty():
 		return
-	game.place_building(player, "mine_" + kind, best.pos)
+	game.place_building(player, "mine_" + kind, best.pos, false)
+
+func _resume(peasants: Array) -> void:
+	var idle: Array = []
+	var crew_total := 0
+	for pe in peasants:
+		if pe.order.type == "build" and pe.inside_of == 0:
+			crew_total += 1
+		elif pe.order.type == "none" and pe.inside_of == 0:
+			idle.append(pe)
+	if idle.is_empty():
+		return
+	var budget: int = maxi(2, peasants.size() / 3)
+	for b in game.buildings_of(player, false):
+		if crew_total >= budget:
+			break
+		if b.finished or b.dead:
+			continue
+		var crew := 0
+		for pe in peasants:
+			if pe.order.type == "build" and int(pe.order.get("target", 0)) == b.id:
+				crew += 1
+		while crew < 2 and crew_total < budget and not idle.is_empty():
+			var pe2: Dictionary = idle.pop_front()
+			game.cmd_build(pe2, b)
+			crew += 1
+			crew_total += 1
+		if idle.is_empty():
+			break
 
 func _find_spot(home: Dictionary, def: Dictionary, min_d: float, max_d: float) -> Vector2:
 	for attempt in 24:
