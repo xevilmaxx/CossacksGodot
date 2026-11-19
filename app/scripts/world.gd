@@ -279,14 +279,30 @@ func _bld_tex(e: Dictionary) -> Texture2D:
 	return _bld_anim(bk)
 
 func _draw_sprite(layer: Node2D, tex: Texture2D, p: Vector2, world_h: float, tint := Color(1, 1, 1), shadow := true) -> void:
-	# world_h: how tall the figure should stand, in meters
+	# world_h: how tall the figure should stand, in meters. The texture is
+	# scaled to that height (footprint-derived sizes stay proportional like
+	# the original: hut < town hall < cathedral) and anchored with the foot
+	# at the logical position, like the unit animator does.
 	var px_h: float = world_h * view_scale
 	var sc: float = px_h / maxf(1.0, float(tex.get_height()))
 	var sz := Vector2(float(tex.get_width()), float(tex.get_height())) * sc
 	var top_left := p - Vector2(sz.x * 0.5, sz.y * 0.82)
 	if shadow and Data.QUALITY != "low":
 		layer.draw_circle(p + Vector2(1.0, 2.0), sz.x * 0.22, Color(0, 0, 0, 0.16))
-	layer.draw_texture(tex, top_left, tint)
+	layer.draw_texture_rect(tex, Rect2(top_left, sz), false, tint)
+
+# Ground-plane ellipse (filled or ring): the map reads as tilted 2:1 like
+# the original, so footprints, dirt and ghost rings squash vertically.
+func _ground_ellipse(layer: Node2D, p: Vector2, rx: float, ry: float, col: Color, width := -1.0) -> void:
+	var pts := PackedVector2Array()
+	for i in range(25):
+		var a := TAU * float(i) / 24.0
+		pts.append(p + Vector2(cos(a) * rx, sin(a) * ry))
+	if width < 0.0:
+		layer.draw_colored_polygon(pts, col)
+	else:
+		pts.append(pts[0])
+		layer.draw_polyline(pts, col, width)
 
 func _src(path: String) -> Image:
 	var tex: Texture2D = load(path)
@@ -709,6 +725,9 @@ func _draw_buildings() -> void:
 			# ring, damage smoke and capture flag below still draw on top
 			var bspr := _bld_tex(e)
 			var tint_b := Color(0.55, 0.55, 0.6) if not e.finished else Color(1, 1, 1)
+			# cleared dirt under the footprint, like the original (buildings
+			# sit on worked ground, not on raw grass)
+			_ground_ellipse(bld_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, Color(0.42, 0.33, 0.21, 0.9))
 			bld_layer.draw_circle(p + Vector2(0, 4), r * 1.5, Color(0, 0, 0, 0.22))
 			_draw_sprite(bld_layer, bspr, p, _bld_height(e), tint_b)
 			var bw := r * 2.0
@@ -1142,7 +1161,9 @@ func _draw_ghost() -> void:
 	var c := Color(0.2, 1.0, 0.3, 0.5) if ok else Color(1.0, 0.25, 0.2, 0.5)
 	var p := world_to_px(wp)
 	var r: float = def.radius * view_scale
-	fx_layer.draw_arc(p, r + 4.0, 0, TAU, 28, c, 2.0)
+	# placement ring on the ground (original style: glowing footprint ring,
+	# green = buildable, red = blocked) plus the footprint box
+	_ground_ellipse(fx_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, c, 2.5)
 	fx_layer.draw_rect(Rect2(p.x - r, p.y - r, r * 2, r * 2), c, false, 1.5)
 
 func add_fx(kind: String, pos: Vector2) -> void:

@@ -15,6 +15,8 @@ import argparse, ctypes, json, os, socket, subprocess, sys, time
 
 user32 = ctypes.windll.user32
 
+hwnd = None
+
 def make_rpc(sock, timeout=60.0):
     buf = bytearray()
     def recv_line():
@@ -70,6 +72,8 @@ def move_cursor_smooth(tx, ty, steps=25, delay=0.02):
         time.sleep(delay)
 
 def real_click(tag="click"):
+    global hwnd
+    ensure_focus()
     fg = user32.GetForegroundWindow()
     print("focus: game=%s fg=%s match=%s" % (hwnd, fg, fg == hwnd), flush=True)
     pt = POINT()
@@ -80,6 +84,7 @@ def real_click(tag="click"):
     user32.mouse_event(0x0004, 0, 0, 0, 0)  # LEFTUP
 
 def ensure_focus():
+    global hwnd
     if user32.GetForegroundWindow() != hwnd:
         print("refocusing game window", flush=True)
         user32.SetForegroundWindow(hwnd)
@@ -89,11 +94,12 @@ def ensure_focus():
                            "do not touch mouse/keyboard during the run")
 
 def main():
+    global hwnd
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8141)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--out", default="app/shots/build_house")
-    ap.add_argument("--place", default="800,480")
+    ap.add_argument("--place", default="350,350")
     a = ap.parse_args()
     # fresh frame dir (old build_house frames would corrupt the mp4)
     import shutil
@@ -133,9 +139,15 @@ def main():
         d = rpc({"cmd": "tree"})
         return any("Placing hou" in str(b["text"]) for b in d.get("tree", []))
 
-    def menu_click(needle):
-        bs = rpc({"cmd": "buttons"})["buttons"]
-        c = center(bs, needle)
+    def menu_click(needle, timeout=40.0):
+        t0 = time.time()
+        c = None
+        while time.time() - t0 < timeout:
+            bs = rpc({"cmd": "buttons"})["buttons"]
+            c = center(bs, needle)
+            if c:
+                break
+            time.sleep(1.0)
         assert c, "no button: " + needle
         sx, sy = to_screen(*c)
         move_cursor_smooth(sx, sy)

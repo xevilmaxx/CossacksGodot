@@ -701,8 +701,8 @@ func _refresh_build_menu(peasants: Array) -> void:
 	for sid in order:
 		var def: Dictionary = Data.BUILDINGS[sid]
 		var b := _unit_button(icons_tex, def.icon, "")
-		b.tooltip_text = "%s  [%s]  %s" % [ConfigScript.building_name(sid), _key_text(sid),
-			_price_text(def.cost)]
+		b.tooltip_text = "%s  [%s]  %s  Time: %ds" % [ConfigScript.building_name(sid), _key_text(sid),
+			_price_text(def.cost), int(round(float(def.get("build_time", 0.0))))]
 		b.disabled = not Data.can_pay(game.players[0].res, def.cost)
 		b.pressed.connect(_on_build_pick.bind(sid))
 		build_buttons[sid] = b
