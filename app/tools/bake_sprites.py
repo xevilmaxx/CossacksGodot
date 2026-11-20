@@ -61,9 +61,17 @@ def read_aaf(path):
     return acts
 
 def qmat(x,y,z,w):
-    return ((1-2*(y*y+z*z),2*(x*y-z*w),2*(x*z+y*w)),
-            (2*(x*y+z*w),1-2*(x*x+z*z),2*(y*z-x*w)),
-            (2*(x*z-y*w),2*(y*z+x*w),1-2*(x*x+y*y)))
+    # Donor rotations apply transposed (row-vector convention): with the
+    # textbook matrix the right hand lands mirrored at (-0.98,-0.38,1.75)
+    # and its tool 1.2 m away at idle; transposed, the hand hangs at
+    # (+0.36,-0.03,0.85) with the tool gripped at (+0.27,+0.06,1.34).
+    # Verified bone by bone against the bind pose (arms hang, tool in hand).
+    M=((1-2*(y*y+z*z),2*(x*y-z*w),2*(x*z+y*w)),
+       (2*(x*y+z*w),1-2*(x*x+z*z),2*(y*z-x*w)),
+       (2*(x*z-y*w),2*(y*z+x*w),1-2*(x*x+y*y)))
+    return ((M[0][0],M[1][0],M[2][0]),
+            (M[0][1],M[1][1],M[2][1]),
+            (M[0][2],M[1][2],M[2][2]))
 
 def skin(m, fr):
     mats=[qmat(*m["anim"][bi][fr][3:]) for bi in range(len(m["anim"]))]
@@ -128,14 +136,23 @@ def make_mat(png):
         if n.type=="BSDF_PRINCIPLED": nt.nodes.remove(n)
     return mat
 
-def build_mesh(m, mat):
-    me=bpy.data.meshes.new("mesh"); me.from_pydata(m["verts"],[],m["faces"]); me.update()
+def build_mesh(m, mat, m2=None, mat2=None):
+    nB=len(m["verts"])
+    av=list(m["verts"])+list(m2["verts"]) if m2 else list(m["verts"])
+    af=list(m["faces"])+([(a+nB,b+nB,c+nB) for a,b,c in m2["faces"]]) if m2 else list(m["faces"])
+    auv=list(m["uvs"])+list(m2["uvs"]) if m2 else list(m["uvs"])
+    auvf=list(m["uvf"])+([(a+nB,b+nB,c+nB) for a,b,c in m2["uvf"]]) if m2 else list(m["uvf"])
+    me=bpy.data.meshes.new("mesh"); me.from_pydata(av,[],af); me.update()
     uv=me.uv_layers.new(name="UVMap")
-    for fi,tri in enumerate(m["faces"]):
+    for fi,tri in enumerate(af):
         for li in range(3):
-            uv.data[fi*3+li].uv=m["uvs"][m["uvf"][fi][li]]
+            uv.data[fi*3+li].uv=auv[auvf[fi][li]]
     ob=bpy.data.objects.new("model",me); bpy.context.collection.objects.link(ob)
     ob.data.materials.append(mat)
+    if m2 and mat2:
+        ob.data.materials.append(mat2)
+        for i, poly in enumerate(ob.data.polygons):
+            poly.material_index=0 if i < len(m["faces"]) else 1
     return ob
 
 def camera(center, az, ortho):
@@ -147,6 +164,21 @@ def camera(center, az, ortho):
     cam.location=pos
     cam.rotation_euler=(center-pos).normalized().to_track_quat("-Z","Y").to_euler()
     return cam
+
+def ground_anchor_ay(cam, size):
+    """Project the world origin (entity feet) into the cell.
+
+    Returns (ax, ay) in 0..1 from top-left. With the camera centred at
+    XZ=(0,0) the origin projects to x=0.5 for every azimuth and to a single
+    y for the whole unit, so every action/dir shares one ground anchor:
+    feet never slide when the pose changes (the old ink-union cx/foot moved
+    with pikes and hammers, shifting soldiers off their tile).
+    """
+    from bpy_extras.object_utils import world_to_camera_view
+    bpy.context.view_layer.update()
+    sc=bpy.context.scene
+    ndc=world_to_camera_view(sc, cam, Vector((0.0,0.0,0.0)))
+    return (round(float(ndc.x),4), round(1.0-float(ndc.y),4))
 
 def render_cell(path,size):
     sc=bpy.context.scene; sc.render.resolution_x=size; sc.render.resolution_y=size
@@ -167,61 +199,252 @@ def dds_to_png(src,dst,opaque):
 def bake_unit(game,out,key,base,size,samples,tmp):
     m=read_oss(os.path.join(game,"data","actors","units",base+".oss"))
     acts=read_aaf(os.path.join(game,"data","animations","aaf",base+".aaf"))
-    # The donor AAF has DISTINCT actions for combat and for work. Reusing
-    # "attack0" for chopping/carrying (the old port) made peasants dance.
+    # Donor clips, in priority order. attack1 is the musket volley (musketeer,
+    # serdiuk, grenadier...); attack0 is pike/sword melee. Preferring attack0
+    # gave gunpowder units a melee lunge for "attack". Peasant carry/idle
+    # variants (walkwood/idlewood/...) are baked so loaded peasants no longer
+    # walk empty-handed.
     plan=[]
-    for action,names,n,loop in (("walk",("walk","walk0"),12,True),
+    for action,names,n,loop in (("walk",("walk",),12,True),
                                  ("idle",("idle","idle0"),6,True),
-                                 ("attack",("attack0","attack1","attack"),12,False),
+                                 ("attack",("attack1","attack0","attack2","attack"),12,False),
                                  ("workwood",("workwood",),10,True),
                                  ("workfood",("workfood",),10,True),
                                  ("workstone",("workstone",),10,True),
                                  ("construct",("construct",),8,True),
-                                 ("death",("death",),8,False)):
+                                 ("walkwood",("walkwood",),10,True),
+                                 ("walkfood",("walkfood",),10,True),
+                                 ("walkstone",("walkstone",),10,True),
+                                 ("idlewood",("idlewood",),6,True),
+                                 ("idlefood",("idlefood",),6,True),
+                                 ("idlestone",("idlestone",),6,True),
+                                 ("death",("death","death0","death1"),8,False)):
         rng=next((acts[x] for x in names if x in acts),None)
         if rng:
             frs=sample(rng,n)
             plan.append((action,frs,loop,(rng[1]-rng[0]+1)/max(1,m["fps"])))
     if not plan: return False
-    frames=[]
-    for action,frs,loop,dur in plan:
-        for fr in frs: frames.append((action,fr))
-    # In-place locomotion, tracked on the torso bone (the bone carrying the
-    # most vertices): the donor engine moves the entity while the animation
-    # plays in place, but the .oss walk keys (horse gallop: 6m per cycle at
-    # 3.6 m/s) carry travel.  Subtracting the torso's per-frame XZ delta keeps
-    # every frame centred (no sliding across the cell, tight union bboxes).
-    # Bone 0 is NOT the root for horses (it barely moves).
-    torso=0; best=-1.0
-    for bi in range(len(m["anim"])):
-        wsum=sum(w for vw in m["weights"] for b2,w in vw if b2==bi)
-        if wsum>best: best=wsum; torso=bi
+    # In-place locomotion, tracked on skeleton root (bone 0 = hips/pelvis,
+    # the stable central bone; the bind pose is already centred at the
+    # origin with feet at z~0). Never use the max-weight bone here: on the
+    # peasant that is the HEAD/HAT (z 1.6..2.0), and pinning the head blows
+    # the union to ~6 m and makes the body swing around the hat.
+    # Reference (HOME) is global for all standing clips, per-clip for death
+    # (see below).
+    root = 0
     skinned_all={}
-    for action,frs,loop,dur in plan:
-        ref=(m["anim"][torso][frs[0]][0],m["anim"][torso][frs[0]][1])
+    # HOME is the unit's defined position: root at the first idle frame
+    # (bind-adjacent stance, feet at the origin). Every standing frame is
+    # re-based to HOME, so Builder/work clips that roam metres around their
+    # station (workfood spans y -1..+3: pacing around the field) render
+    # centred on the entity instead of dragging the union to ~8 m. The roam
+    # itself is entity motion in the donor, not sprite motion. Death keeps a
+    # per-clip reference (its first frame ≈ standing): a fall must play out
+    # relative to where the unit stood, not be pinned upright.
+    idle_home = None
+    for action, frs, loop, dur in plan:
+        if action in ("idle",) and idle_home is None:
+            idle_home = (m["anim"][root][frs[0]][0], m["anim"][root][frs[0]][1])
+    if idle_home is None:
+        idle_home = (m["anim"][root][plan[0][1][0]][0], m["anim"][root][plan[0][1][0]][1])
+    for action, frs, loop, dur in plan:
+        if action == "death":
+            ref = (m["anim"][root][frs[0]][0], m["anim"][root][frs[0]][1])
+        else:
+            ref = idle_home
         for fr in frs:
             if fr in skinned_all: continue
-            s=skin(m,fr)
-            rx,ry=(m["anim"][torso][fr][0]-ref[0],m["anim"][torso][fr][1]-ref[1])
-            skinned_all[fr]=[(x-rx,y-ry,z) for x,y,z in s]
+            s = skin(m, fr)
+            rx, ry = (m["anim"][root][fr][0] - ref[0], m["anim"][root][fr][1] - ref[1])
+            skinned_all[fr] = [(x - rx, y - ry, z) for x, y, z in s]
+    # Attached props: the donor keeps hand tools as SEPARATE meshes
+    # (data/actors/units/attach/<base>_<tool>.oss: axe, hammer, hoe, pick,
+    # bag, lumber, cart), each with its own single-bone 483-frame track over
+    # the same AAF timeline. The action picks the tool: axe for chopping,
+    # hammer for building, hoe/pick for field/mine, lumber/bag/cart for the
+    # loaded carry walks and idles. Without them the peasant's hands are
+    # empty - the stub verts inside the body mesh are NOT the tool.
+    ATTACH_ACTIONS={"axe": ["workwood", "attack"], "hammer": ["construct"],
+        "hoe": ["workfood"], "pick": ["workstone"],
+        "lumber": ["walkwood", "idlewood"], "bag": ["walkfood", "idlefood"],
+        "cart": ["walkstone", "idlestone"]}
+    attach_mesh={}
+    def attach_for(action):
+        for _tool, _acts in ATTACH_ACTIONS.items():
+            if action in _acts:
+                return _tool
+        return None
+    def attach_load(tool):
+        _key=(base, tool)
+        if _key not in attach_mesh:
+            _p=os.path.join(game, "data", "actors", "units", "attach", "%s_%s.oss" % (base, tool))
+            attach_mesh[_key]=read_oss(_p) if os.path.exists(_p) else None
+        return attach_mesh[_key]
+    skinned_tool={}
+    for _action, _frs, _loop, _dur in plan:
+        _tool=attach_for(_action)
+        if not _tool:
+            continue
+        _am=attach_load(_tool)
+        if not _am:
+            continue
+        if _action == "death":
+            _r2=(m["anim"][root][_frs[0]][0], m["anim"][root][_frs[0]][1])
+        else:
+            _r2=idle_home
+        for _fr in _frs:
+            if (_fr, _tool) in skinned_tool:
+                continue
+            _M=qmat(*_am["anim"][0][_fr][3:])
+            _pp=_am["anim"][0][_fr][:3]
+            _rx, _ry=(m["anim"][root][_fr][0]-_r2[0], m["anim"][root][_fr][1]-_r2[1])
+            skinned_tool[(_fr, _tool)]=[(_M[0][0]*x+_M[0][1]*y+_M[0][2]*z+_pp[0]-_rx,
+                _M[1][0]*x+_M[1][1]*y+_M[1][2]*z+_pp[1]-_ry,
+                _M[2][0]*x+_M[2][1]*y+_M[2][2]*z+_pp[2]) for x, y, z in _am["verts"]]
+    def tool_of(action):
+        _t=attach_for(action)
+        _a=attach_load(_t) if _t else None
+        return (_t, _a) if _a else (None, None)
+    # unions/framing include the attached prop of each action
+    def union_of_group(group):
+        lo=Vector((1e9,)*3); hi=Vector((-1e9,)*3)
+        for _action, _frs, _loop, _dur in plan:
+            _g="death" if _action == "death" else "stand"
+            if _g != group:
+                continue
+            _t, _a=tool_of(_action)
+            for _fr in _frs:
+                _seqs=[skinned_all[_fr]]
+                if _t and (_fr, _t) in skinned_tool:
+                    _seqs.append(skinned_tool[(_fr, _t)])
+                for _sq in _seqs:
+                    for x,y,z in _sq:
+                        if x<lo.x: lo.x=x
+                        if y<lo.y: lo.y=y
+                        if z<lo.z: lo.z=z
+                        if x>hi.x: hi.x=x
+                        if y>hi.y: hi.y=y
+                        if z>hi.z: hi.z=z
+        return lo,hi
+    def projected_ortho_group(group, center):
+        import math as _math
+        el=_math.radians(32.0); ce=_math.cos(el); se=_math.sin(el)
+        worst=1e-6
+        for d in range(8):
+            az=_math.radians(d*45.0); ca=_math.cos(az); sa=_math.sin(az)
+            rx,ry,rz=(-sa,ca,0.0)
+            bx,by,bz=(ca*ce,sa*ce,se)
+            ux,uy,uz=(by*rz-bz*ry,bz*rx-bx*rz,bx*ry-by*rx)
+            x0=y0=1e9; x1=y1=-1e9
+            for _action, _frs, _loop, _dur in plan:
+                _g="death" if _action == "death" else "stand"
+                if _g != group:
+                    continue
+                _t, _a=tool_of(_action)
+                for _fr in _frs:
+                    _seqs=[skinned_all[_fr]]
+                    if _t and (_fr, _t) in skinned_tool:
+                        _seqs.append(skinned_tool[(_fr, _t)])
+                    for _sq in _seqs:
+                        for x,y,z in _sq:
+                            dx,dy,dz=(x-center[0],y-center[1],z-center[2])
+                            px=dx*rx+dy*ry+dz*rz; py=dx*ux+dy*uy+dz*uz
+                            if px<x0: x0=px
+                            if px>x1: x1=px
+                            if py<y0: y0=py
+                            if py>y1: y1=py
+            worst=max(worst,2.0*max(abs(x0),abs(x1),abs(y0),abs(y1)))
+        return worst*1.12
+    def union_of(frlist):
+        lo=Vector((1e9,)*3); hi=Vector((-1e9,)*3)
+        for fr in frlist:
+            for x,y,z in skinned_all[fr]:
+                if x<lo.x: lo.x=x
+                if y<lo.y: lo.y=y
+                if z<lo.z: lo.z=z
+                if x>hi.x: hi.x=x
+                if y>hi.y: hi.y=y
+                if z>hi.z: hi.z=z
+        return lo,hi
+    def projected_ortho(frlist, center):
+        # Exact 2D extents: project every skinned vertex of every frame onto
+        # the orthographic camera plane for all 8 azimuths (elevation 32 deg,
+        # the same rig `camera()` builds in Blender) and fit the widest span.
+        # Axis-aligned 3D bounds * 1.4 underestimate diagonal views (a long
+        # cannon barrel at 45 deg spans the full cell), while over-padding
+        # compact poses. Measured projection + 12 % AA bleed is tight and
+        # never clips.
+        import math as _math
+        el=_math.radians(32.0); ce=_math.cos(el); se=_math.sin(el)
+        worst=1e-6
+        for d in range(8):
+            az=_math.radians(d*45.0); ca=_math.cos(az); sa=_math.sin(az)
+            rx,ry,rz=(-sa,ca,0.0)
+            bx,by,bz=(ca*ce,sa*ce,se)
+            ux,uy,uz=(by*rz-bz*ry,bz*rx-bx*rz,bx*ry-by*rx)
+            x0=y0=1e9; x1=y1=-1e9
+            for fr in frlist:
+                for x,y,z in skinned_all[fr]:
+                    dx,dy,dz=(x-center[0],y-center[1],z-center[2])
+                    px=dx*rx+dy*ry+dz*rz; py=dx*ux+dy*uy+dz*uz
+                    if px<x0: x0=px
+                    if px>x1: x1=px
+                    if py<y0: y0=py
+                    if py>y1: y1=py
+            # The camera is centred on `center`, so each half (not the full
+            # span) must fit: lunges are asymmetric (min -2.0 / max +0.7),
+            # and fitting the width alone clips the long side.
+            worst=max(worst,2.0*max(abs(x0),abs(x1),abs(y0),abs(y1)))
+        return worst*1.12
+    groups={}
+    if any(True for _a, _f, _l, _d in plan if _a != "death"):
+        lo,hi=union_of_group("stand")
+        center=Vector((0.0,0.0,(lo.z+hi.z)*0.5))
+        # XZ pinned at the entity origin: the feet never leave the tile when
+        # the pose changes. Z is the union mid-height.
+        groups["stand"]=(center,projected_ortho_group("stand",center))
+    if any(True for _a, _f, _l, _d in plan if _a == "death"):
+        lo,hi=union_of_group("death")
+        center=Vector((0.0,0.0,(lo.z+hi.z)*0.5))
+        groups["death"]=(center,projected_ortho_group("death",center))
     png=dds_to_png(tex_png(game,"unit",base),os.path.join(tmp,base+".png"),True)
-    setup_scene(); mat=make_mat(png); ob=build_mesh(m,mat)
-    me=ob.data
+    _need_tool=any(tool_of(_a)[1] is not None for _a, _f, _l, _d in plan)
+    tpng=None
+    if _need_tool:
+        tpng=dds_to_png(os.path.join(game,"data","materials","units","peaaustools.dds"),os.path.join(tmp,"tools.png"),True)
+    setup_scene(); mat=make_mat(png)
+    tmat=make_mat(tpng) if tpng else None
+    ob=None; me=None; cur_tool=object()
+    # Ground anchor: project the world origin once per group. Identical for
+    # every action/dir in the group, so switching walk->attack->construct
+    # cannot shift the feet (the old per-action ink-union cx/foot did).
+    anchors={}
+    for g,(center,ortho) in groups.items():
+        cam=camera(center,0.0,ortho)
+        ax,ay=ground_anchor_ay(cam,size)
+        bpy.data.objects.remove(cam,do_unlink=True)
+        anchors[g]=(ax,ay)
     entry={"cell":size,"actions":{}}
     for action,frs,loop,dur in plan:
-        # Per-action framing: every action gets its own centre+ortho from its
-        # own in-place union (walk bodies fill walk cells even though attack
-        # swings span 5m).  One shared ortho shrank everyday bodies to ~40%
-        # of the cell; true-scale drawing keeps world sizes exact across
-        # actions (see world.gd _draw_anim).
-        lo=Vector((1e9,)*3); hi=Vector((-1e9,)*3)
-        for fr in frs:
-            for x,y,z in skinned_all[fr]:
-                lo=Vector((min(lo.x,x),min(lo.y,y),min(lo.z,z))); hi=Vector((max(hi.x,x),max(hi.y,y),max(hi.z,z)))
-        center=(lo+hi)*0.5; ortho=max(hi.x-lo.x,hi.y-lo.y,hi.z-lo.z)*1.12
+        g="death" if action=="death" else "stand"
+        center,ortho=groups[g]; ax,ay=anchors[g]
+        _t,_a=tool_of(action)
+        _key=_t if _a else None
+        if ob is None or _key != cur_tool:
+            if ob is not None:
+                bpy.data.objects.remove(ob,do_unlink=True)
+            if _a:
+                ob=build_mesh(m,mat,_a,tmat)
+            else:
+                ob=build_mesh(m,mat)
+            me=ob.data
+            cur_tool=_key
+        nB=len(m["verts"])
         sheet=Image.new("RGBA",(size*8,size*len(frs)),(0,0,0,0))
         for ri,fr in enumerate(frs):
             verts=skinned_all[fr]
+            if _t and (fr,_t) in skinned_tool:
+                verts=verts+skinned_tool[(fr,_t)]
             me.vertices.foreach_set("co",[c for v in verts for c in v]); me.update()
             for d in range(8):
                 cam=camera(center,d*45.0,ortho)
@@ -232,7 +455,9 @@ def bake_unit(game,out,key,base,size,samples,tmp):
         sheet.save(os.path.join(out,"%s_%s.png"%(key,action)))
         entry["actions"][action]={"frames":len(frs),"duration":round(dur,3),"loop":loop,
             "ortho":round(ortho,3),
-            "center":[round(center.x,3),round(center.y,3),round(center.z,3)]}
+            "center":[round(center.x,3),round(center.y,3),round(center.z,3)],
+            "ax":ax,"ay":ay,
+            "tool":_t}
     bpy.data.objects.remove(ob,do_unlink=True)
     return entry
 

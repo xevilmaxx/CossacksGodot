@@ -205,8 +205,9 @@ func _anim_action(e: Dictionary) -> String:
 	if o.type == "attack" and float(e.get("fire_t", -1.0)) >= 0.0 and gt - float(e.fire_t) < 0.9:
 		return "attack"
 	if not bool(e.get("moving", false)):
-		# donor AAF has separate work/construct clips: chopping wood with a
-		# sword swing ("attack") is what made peasants look like they danced.
+		# Donor AAF has separate work/construct clips (workwood 237-254 is the
+		# axe chop, construct 186-198 the hammering). Loaded idles
+		# (idlewood/idlefood/idlestone: sack/log on the back) show the load.
 		if o.type == "gather":
 			match str(o.get("res", "")):
 				"wood": return "workwood"
@@ -215,7 +216,13 @@ func _anim_action(e: Dictionary) -> String:
 				_: return "workwood"
 		if o.type == "build" or o.type == "repair":
 			return "construct"
+		var cy := str(e.get("carry_type", ""))
+		if int(e.get("carry", 0)) > 0 and cy in ["wood", "food", "stone"]:
+			return "idle" + cy
 	if bool(e.get("moving", false)):
+		var cy2 := str(e.get("carry_type", ""))
+		if int(e.get("carry", 0)) > 0 and cy2 in ["wood", "food", "stone"]:
+			return "walk" + cy2
 		return "walk"
 	return "idle"
 
@@ -234,6 +241,14 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	if info.is_empty():
 		return false
 	var act := _anim_action(e)
+	# Fallback chain for sheets a unit does not have: carry walks fall back
+	# to plain walk, carry idles to plain idle, work/construct to the attack
+	# clip and finally idle (old sheets without carry clips keep working).
+	if not info.actions.has(act):
+		if act in ["walkwood", "walkfood", "walkstone"]:
+			act = "walk"
+		elif act in ["idlewood", "idlefood", "idlestone"]:
+			act = "idle"
 	if not info.actions.has(act):
 		act = "attack" if act in ["workwood", "workfood", "workstone", "construct"] else "idle"
 	var a: Dictionary = info.actions.get(act, info.actions.get("idle", {}))
@@ -263,16 +278,16 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 		fi = int((anim_t + phase) / maxf(0.05, float(a.duration)) * n) % n
 	var dir := int(fposmod(roundf(float(e.get("face", 0.0)) / (PI / 4.0)), 8.0)) % 8
 	var src := Rect2(dir * cell, fi * cell, cell, cell)
-	# True donor scale: each baked sheet's ortho (world meters across one cell,
-	# stored in index.json by tools/compute_ortho.py) converts sheet pixels to
-	# meters, so a pikeman's pike fits without shrinking his body and a horse
-	# stays longer than a man is tall.  The old forced-height formula
-	# (unit_height / ink fraction) shrank cavalry ~25% and stretched pikes.
-	# Feet stay anchored at the measured ink bottom / horizontal centre, so
-	# swinging tools never shift the stance.
+	# True donor scale: each group (stand/death) shares one baked ortho (world
+	# meters across one cell), so walk/idle/attack/work/construct keep one
+	# body size and one ground anchor. The anchor is the projected world
+	# origin (ax/ay in index.json), identical for every action/dir in the
+	# group: feet never slide when the pose changes. The old ink-union
+	# cx/foot moved with pikes and hammers, shifting soldiers off their tile
+	# and shrinking peasants when they started building.
 	var fig_h: float = float(a.get("fig_h", 1.0))
-	var foot: float = float(a.get("foot", 0.82))
-	var cx: float = float(a.get("cx", 0.5))
+	var foot: float = float(a.get("ay", a.get("foot", 0.82)))
+	var cx: float = float(a.get("ax", a.get("cx", 0.5)))
 	var sc: float
 	var o: float = float(a.get("ortho", info.get("ortho", 0.0)))
 	if o > 0.0:
@@ -1382,8 +1397,8 @@ func _draw_corpses() -> void:
 					var ddir := int(fposmod(roundf(float(c.get("face", 0.0)) / (PI / 4.0)), 8.0)) % 8
 					var dsrc := Rect2(ddir * dcell, dfi * dcell, dcell, dcell)
 					var dfig: float = float(dact.get("fig_h", 1.0))
-					var dfoot: float = float(dact.get("foot", 0.82))
-					var dcx: float = float(dact.get("cx", 0.5))
+					var dfoot: float = float(dact.get("ay", dact.get("foot", 0.82)))
+					var dcx: float = float(dact.get("ax", dact.get("cx", 0.5)))
 					var dsc: float = 1.9 * view_scale / maxf(8.0, float(dcell) * dfig)
 					var dsz := Vector2(dcell, dcell) * dsc
 					var dtl := p - Vector2(dsz.x * dcx, dsz.y * dfoot)

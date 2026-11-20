@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Compute per-unit bake ortho (max skinned extent * 1.12) exactly as bake_sprites.py does,
-and store it in assets/models/anim/index.json as info['ortho'].
-Pure Python (no Blender) - replicates read_oss/skin/sample from the baker."""
+"""Ortho audit (no longer writes): bake_sprites.py owns per-action
+ortho/center/ax/ay now. This script replicates the baker's torso-based
+in-place logic in pure Python and REPORTS the expected global stand/death
+orthos, so a bad bake can be spotted without Blender."""
 import json, os, struct
 
 GAME = r"C:\Games\Cossacks 3"
@@ -50,9 +51,14 @@ def read_aaf(path):
     return acts
 
 def qmat(x,y,z,w):
-    return ((1-2*(y*y+z*z),2*(x*y-z*w),2*(x*z+y*w)),
-            (2*(x*y+z*w),1-2*(x*x+z*z),2*(y*z-x*w)),
-            (2*(x*z-y*w),2*(y*z+x*w),1-2*(x*x+y*y)))
+    # Row-vector (transposed) convention, like bake_sprites.py: verified
+    # tool-in-hand at idle rest pose.
+    M=((1-2*(y*y+z*z),2*(x*y-z*w),2*(x*z+y*w)),
+       (2*(x*y+z*w),1-2*(x*x+z*z),2*(y*z-x*w)),
+       (2*(x*z-y*w),2*(y*z+x*w),1-2*(x*x+y*y)))
+    return ((M[0][0],M[1][0],M[2][0]),
+            (M[0][1],M[1][1],M[2][1]),
+            (M[0][2],M[1][2],M[2][2]))
 
 def skin(m, fr):
     mats=[qmat(*m["anim"][bi][fr][3:]) for bi in range(len(m["anim"]))]
@@ -76,7 +82,6 @@ def sample(rng, n):
     return [a+round((b-a)*i/(n-1)) for i in range(n)] if n>1 else [a]
 
 idx=json.load(open(IDX,encoding="utf-8"))
-changed=0
 for key,info in idx.items():
     base=TABLE.get(key,key)
     try:
@@ -84,25 +89,63 @@ for key,info in idx.items():
         acts=read_aaf(os.path.join(GAME,"data","animations","aaf",base+".aaf"))
     except Exception as e:
         print("SKIP",key,e); continue
+    root=0  # skeleton root, like the baker (never the max-weight bone)
     plan=[]
-    for names,n in ((("walk","walk0"),12),(("idle","idle0"),6),(("attack0","attack1","attack"),12),
-                    (("workwood",),10),(("workfood",),10),(("workstone",),10),(("construct",),8),(("death",),8)):
+    for action,names,n in (("walk",("walk",),12),("idle",("idle","idle0"),6),
+        ("attack",("attack1","attack0","attack2","attack"),12),
+        ("workwood",("workwood",),10),("workfood",("workfood",),10),
+        ("workstone",("workstone",),10),("construct",("construct",),8),
+        ("death",("death","death0","death1"),8)):
         rng=next((acts[x] for x in names if x in acts),None)
-        if rng: plan.append((sample(rng,n)))
-    frs=sorted({f for grp in plan for f in grp})
-    # same in-place fix as bake_sprites.py: root XZ removed per frame
-    raw={fr: skin(m,fr) for fr in frs}
-    for fr in frs:
-        rx,ry=m["anim"][0][fr][0],m["anim"][0][fr][1]
-        raw[fr]=[(x-rx,y-ry,z) for x,y,z in raw[fr]]
-    lo=[1e9]*3; hi=[-1e9]*3
-    for fr in frs:
-        for x,y,z in raw[fr]:
-            lo[0]=min(lo[0],x); lo[1]=min(lo[1],y); lo[2]=min(lo[2],z)
-            hi[0]=max(hi[0],x); hi[1]=max(hi[1],y); hi[2]=max(hi[2],z)
-    ortho=max(hi[0]-lo[0],hi[1]-lo[1],hi[2]-lo[2])*1.12
-    info["ortho"]=round(ortho,3)
-    changed+=1
-    print(key,base,"ortho",round(ortho,3))
-json.dump(idx,open(IDX,"w",encoding="utf-8"),indent=1)
-print("wrote ortho for",changed,"units")
+        if rng: plan.append((action,sample(rng,n)))
+    import math as _math
+    home=None
+    for action,frs in plan:
+        if action=="idle":
+            home=(m["anim"][root][frs[0]][0],m["anim"][root][frs[0]][1])
+            break
+    if home is None:
+        home=(m["anim"][root][plan[0][1][0]][0],m["anim"][root][plan[0][1][0]][1])
+    sk={}
+    for action,frs in plan:
+        ref=(m["anim"][root][frs[0]][0],m["anim"][root][frs[0]][1]) if action=="death" else home
+        for fr in frs:
+            if fr in sk: continue
+            s=skin(m,fr)
+            rx,ry=(m["anim"][root][fr][0]-ref[0],m["anim"][root][fr][1]-ref[1])
+            sk[fr]=[(x-rx,y-ry,z) for x,y,z in s]
+    def union(frlist):
+        lo=[1e9]*3; hi=[-1e9]*3
+        for fr in frlist:
+            for x,y,z in sk[fr]:
+                lo[0]=min(lo[0],x); lo[1]=min(lo[1],y); lo[2]=min(lo[2],z)
+                hi[0]=max(hi[0],x); hi[1]=max(hi[1],y); hi[2]=max(hi[2],z)
+        return lo,hi
+    def por(frlist,cx,cy,cz):
+        el=_math.radians(32.0); ce=_math.cos(el); se=_math.sin(el)
+        w=1e-6
+        for d in range(8):
+            az=_math.radians(d*45.0); ca=_math.cos(az); sa=_math.sin(az)
+            rx,ry,rz=(-sa,ca,0.0)
+            bx,by,bz=(ca*ce,sa*ce,se)
+            ux,uy,uz=(by*rz-bz*ry,bz*rx-bx*rz,bx*ry-by*rx)
+            x0=y0=1e9; x1=y1=-1e9
+            for fr in frlist:
+                for x,y,z in sk[fr]:
+                    dx,dy,dz=(x-cx,y-cy,z-cz)
+                    px=dx*rx+dy*ry+dz*rz; py=dx*ux+dy*uy+dz*uz
+                    x0=min(x0,px); x1=max(x1,px); y0=min(y0,py); y1=max(y1,py)
+            w=max(w,2.0*max(abs(x0),abs(x1),abs(y0),abs(y1)))
+        return w*1.12
+    stand=[fr for a,frs in plan if a!="death" for fr in frs]
+    dead=[fr for a,frs in plan if a=="death" for fr in frs]
+    out=[]
+    if stand:
+        lo,hi=union(stand)
+        out.append("stand %.2f" % por(stand,0.0,0.0,(lo[2]+hi[2])*0.5))
+    if dead:
+        lo,hi=union(dead)
+        out.append("death %.2f" % por(dead,0.0,0.0,(lo[2]+hi[2])*0.5))
+    baked=info.get("actions",{}).get("walk",{}).get("ortho",info.get("ortho"))
+    print(key,"base",base,"root",root,"expect","/".join(out),"baked walk ortho",baked)
+print("audit only: bake_sprites.py owns index.json now.")

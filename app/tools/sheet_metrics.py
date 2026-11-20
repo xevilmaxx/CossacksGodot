@@ -22,6 +22,9 @@ def main():
     for key, info in idx.items():
         cell = int(info["cell"])
         for act, ad in info.get("actions", {}).items():
+            # ax/ay ground anchors (from the baker's origin projection) are
+            # authoritative: never overwrite them here. bbox/fig_h/foot/cx
+            # remain as fallback info for old clients and clip detection.
             if "bbox" in ad and not a.force:
                 continue
             p = os.path.join(a.dir, "%s_%s.png" % (key, act))
@@ -43,6 +46,11 @@ def main():
             ad["fig_h"] = round((y1 - y0) / float(cell), 4)
             ad["foot"] = round(y1 / float(cell), 4)
             ad["cx"] = round((x0 + x1) / 2.0 / float(cell), 4)
+            # Clip alarm: ink touching a cell edge means the baker's ortho
+            # was too tight and the pose is cut off in-game.
+            if x0 <= 0 or y0 <= 0 or x1 >= cell or y1 >= cell:
+                print("CLIP %s_%s union %s (ortho %.3f too tight)" % (
+                    key, act, ad["bbox"], float(ad.get("ortho", 0.0))))
             changed += 1
     if a.normalize:
         for key, info in idx.items():
