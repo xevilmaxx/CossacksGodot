@@ -65,14 +65,24 @@ func _process(dt: float) -> void:
 			or Input.is_key_pressed(KEY_UP) or Input.is_key_pressed(KEY_DOWN) else mouse_speed) * dt / zoom
 		clamp_pos()
 
+func _zoom_at_cursor(factor: float) -> void:
+	# zoom keeps the world point under the mouse fixed (donor-style: zoom
+	# happens where you point, not at the screen centre). Camera2D position
+	# is the view centre (see clamp_pos), so re-anchor it around the cursor.
+	var vp_size := get_viewport().get_visible_rect().size
+	var m := get_viewport().get_mouse_position()
+	var off: Vector2 = (m - vp_size * 0.5) / zoom.x
+	var w: Vector2 = position + off
+	zoom = Vector2.ONE * clampf(zoom.x * factor, min_zoom, max_zoom)
+	position = w - (m - vp_size * 0.5) / zoom.x
+	clamp_pos()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
-		zoom = Vector2.ONE * clampf(zoom.x * zoom_step, min_zoom, max_zoom)
-		clamp_pos()
+		_zoom_at_cursor(zoom_step)
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-		zoom = Vector2.ONE * clampf(zoom.x / zoom_step, min_zoom, max_zoom)
-		clamp_pos()
+		_zoom_at_cursor(1.0 / zoom_step)
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
 		clamp_pos()

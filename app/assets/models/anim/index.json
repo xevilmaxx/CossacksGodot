@@ -3,59 +3,163 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     28,
-     40,
-     132,
-     119
+    "ortho": 2.922,
+    "center": [
+     -0.012,
+     0.026,
+     0.978
     ],
-    "fig_h": 0.4938,
-    "foot": 0.7438,
+    "bbox": [
+     0,
+     10,
+     160,
+     145
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9062,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     39,
-     40,
-     121,
-     115
+    "ortho": 2.35,
+    "center": [
+     -0.002,
+     0.292,
+     0.996
     ],
-    "fig_h": 0.4688,
-    "foot": 0.7188,
+    "bbox": [
+     0,
+     0,
+     160,
+     155
+    ],
+    "fig_h": 0.9688,
+    "foot": 0.9688,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
+    "ortho": 5.21,
+    "center": [
+     0.354,
+     -0.127,
+     1.11
+    ],
     "bbox": [
      0,
-     8,
+     5,
      160,
-     125
+     126
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.171,
+    "center": [
+     0.354,
+     -0.109,
+     1.11
+    ],
+    "bbox": [
+     0,
+     4,
+     160,
+     126
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 4.81,
+    "center": [
+     -0.356,
+     0.96,
+     0.963
+    ],
+    "bbox": [
+     7,
+     14,
+     153,
+     132
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.825,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.349,
+    "center": [
+     -0.362,
+     -0.453,
+     1.184
+    ],
+    "bbox": [
+     0,
+     13,
+     160,
+     129
+    ],
+    "fig_h": 0.725,
+    "foot": 0.8063,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.368,
+    "center": [
+     0.674,
+     -0.354,
+     1.084
+    ],
+    "bbox": [
+     0,
+     16,
+     160,
+     133
     ],
     "fig_h": 0.7312,
-    "foot": 0.7812,
+    "foot": 0.8313,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
+    "ortho": 4.718,
+    "center": [
+     -0.323,
+     -0.144,
+     0.879
+    ],
     "bbox": [
      8,
-     29,
+     23,
      152,
-     126
+     139
     ],
-    "fig_h": 0.6062,
-    "foot": 0.7875,
+    "fig_h": 0.725,
+    "foot": 0.8688,
     "cx": 0.5
    }
   }
@@ -64,59 +168,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     19,
-     23,
-     141,
-     127
+    "ortho": 3.674,
+    "center": [
+     -0.558,
+     0.172,
+     1.489
     ],
-    "fig_h": 0.65,
-    "foot": 0.7937,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     24,
-     26,
-     136,
-     124
+    "ortho": 3.624,
+    "center": [
+     -0.454,
+     -0.193,
+     1.442
     ],
-    "fig_h": 0.6125,
-    "foot": 0.775,
+    "bbox": [
+     8,
+     0,
+     152,
+     153
+    ],
+    "fig_h": 0.9563,
+    "foot": 0.9563,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.5,
     "loop": false,
-    "bbox": [
-     4,
-     38,
-     155,
-     130
+    "ortho": 7.179,
+    "center": [
+     0.0,
+     1.552,
+     0.999
     ],
-    "fig_h": 0.575,
-    "foot": 0.8125,
-    "cx": 0.4969
-   },
-   "death": {
-    "frames": 6,
-    "duration": 1.833,
-    "loop": false,
     "bbox": [
      8,
-     27,
+     36,
      152,
-     146
+     129
     ],
-    "fig_h": 0.7438,
-    "foot": 0.9125,
+    "fig_h": 0.5813,
+    "foot": 0.8063,
+    "cx": 0.5
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.833,
+    "loop": false,
+    "ortho": 8.23,
+    "center": [
+     -0.657,
+     1.511,
+     1.209
+    ],
+    "bbox": [
+     8,
+     33,
+     152,
+     144
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.9,
     "cx": 0.5
    }
   }
@@ -125,58 +253,82 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     27,
-     30,
-     133,
-     109
+    "ortho": 3.11,
+    "center": [
+     -0.143,
+     -0.399,
+     0.963
     ],
-    "fig_h": 0.4938,
-    "foot": 0.6813,
+    "bbox": [
+     7,
+     8,
+     153,
+     147
+    ],
+    "fig_h": 0.8688,
+    "foot": 0.9187,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     43,
-     32,
-     116,
-     106
+    "ortho": 2.522,
+    "center": [
+     -0.223,
+     0.024,
+     1.032
     ],
-    "fig_h": 0.4625,
-    "foot": 0.6625,
-    "cx": 0.4969
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.4,
     "loop": false,
+    "ortho": 4.9,
+    "center": [
+     -0.036,
+     -0.043,
+     1.032
+    ],
     "bbox": [
      8,
-     30,
+     26,
      152,
-     109
+     122
     ],
-    "fig_h": 0.4938,
-    "foot": 0.6813,
+    "fig_h": 0.6,
+    "foot": 0.7625,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.7,
     "loop": false,
+    "ortho": 5.632,
+    "center": [
+     0.073,
+     0.675,
+     0.743
+    ],
     "bbox": [
      8,
-     20,
+     16,
      152,
      125
     ],
-    "fig_h": 0.6562,
+    "fig_h": 0.6813,
     "foot": 0.7812,
     "cx": 0.5
    }
@@ -186,59 +338,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     8,
-     11,
-     152,
-     118
+    "ortho": 3.796,
+    "center": [
+     -0.188,
+     -0.034,
+     0.994
     ],
-    "fig_h": 0.6687,
-    "foot": 0.7375,
+    "bbox": [
+     1,
+     2,
+     159,
+     135
+    ],
+    "fig_h": 0.8313,
+    "foot": 0.8438,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     12,
-     16,
-     148,
-     113
+    "ortho": 2.369,
+    "center": [
+     -0.328,
+     -0.362,
+     1.014
     ],
-    "fig_h": 0.6062,
-    "foot": 0.7063,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.533,
     "loop": false,
+    "ortho": 4.984,
+    "center": [
+     0.098,
+     -0.002,
+     1.107
+    ],
     "bbox": [
      0,
      17,
      160,
-     114
+     124
     ],
-    "fig_h": 0.6062,
-    "foot": 0.7125,
+    "fig_h": 0.6687,
+    "foot": 0.775,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
-    "bbox": [
-     6,
-     16,
-     154,
-     152
+    "ortho": 5.106,
+    "center": [
+     -0.253,
+     0.328,
+     0.657
     ],
-    "fig_h": 0.85,
-    "foot": 0.95,
+    "bbox": [
+     0,
+     13,
+     160,
+     157
+    ],
+    "fig_h": 0.9,
+    "foot": 0.9812,
     "cx": 0.5
    }
   }
@@ -247,59 +423,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
+    "ortho": 3.81,
+    "center": [
+     -0.318,
+     -0.132,
+     0.989
+    ],
     "bbox": [
      0,
-     26,
+     14,
      160,
-     133
+     136
     ],
-    "fig_h": 0.6687,
-    "foot": 0.8313,
+    "fig_h": 0.7625,
+    "foot": 0.85,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.7,
     "loop": true,
-    "bbox": [
-     1,
-     22,
-     159,
-     125
+    "ortho": 2.824,
+    "center": [
+     -0.118,
+     0.35,
+     1.003
     ],
-    "fig_h": 0.6438,
-    "foot": 0.7812,
+    "bbox": [
+     0,
+     0,
+     160,
+     148
+    ],
+    "fig_h": 0.925,
+    "foot": 0.925,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.933,
     "loop": false,
-    "bbox": [
-     1,
-     18,
-     159,
-     125
+    "ortho": 5.432,
+    "center": [
+     -0.721,
+     -1.066,
+     1.217
     ],
-    "fig_h": 0.6687,
-    "foot": 0.7812,
+    "bbox": [
+     0,
+     20,
+     160,
+     135
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.8438,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.667,
     "loop": false,
-    "bbox": [
-     1,
-     22,
-     159,
-     142
+    "ortho": 4.539,
+    "center": [
+     -0.072,
+     0.7,
+     0.907
     ],
-    "fig_h": 0.75,
-    "foot": 0.8875,
+    "bbox": [
+     8,
+     22,
+     152,
+     132
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.825,
     "cx": 0.5
    }
   }
@@ -308,59 +508,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     42,
-     36,
-     118,
-     104
+    "ortho": 3.24,
+    "center": [
+     -0.293,
+     -0.14,
+     1.133
     ],
-    "fig_h": 0.425,
-    "foot": 0.65,
+    "bbox": [
+     0,
+     6,
+     160,
+     149
+    ],
+    "fig_h": 0.8938,
+    "foot": 0.9313,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     42,
-     36,
-     117,
-     99
+    "ortho": 2.569,
+    "center": [
+     -0.333,
+     -0.482,
+     1.141
     ],
-    "fig_h": 0.3937,
-    "foot": 0.6188,
-    "cx": 0.4969
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.533,
     "loop": false,
-    "bbox": [
-     17,
-     20,
-     143,
-     118
+    "ortho": 5.658,
+    "center": [
+     -0.524,
+     0.075,
+     1.094
     ],
-    "fig_h": 0.6125,
-    "foot": 0.7375,
+    "bbox": [
+     9,
+     21,
+     152,
+     134
+    ],
+    "fig_h": 0.7063,
+    "foot": 0.8375,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
-    "bbox": [
-     8,
-     20,
-     152,
-     136
+    "ortho": 6.253,
+    "center": [
+     -0.155,
+     -0.021,
+     0.629
     ],
-    "fig_h": 0.725,
-    "foot": 0.85,
+    "bbox": [
+     9,
+     14,
+     152,
+     145
+    ],
+    "fig_h": 0.8187,
+    "foot": 0.9062,
     "cx": 0.5
    }
   }
@@ -369,59 +593,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     16,
-     30,
-     144,
-     124
+    "ortho": 3.17,
+    "center": [
+     -0.675,
+     -0.088,
+     1.116
     ],
-    "fig_h": 0.5875,
-    "foot": 0.775,
+    "bbox": [
+     0,
+     0,
+     160,
+     156
+    ],
+    "fig_h": 0.975,
+    "foot": 0.975,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     17,
-     29,
-     143,
-     122
+    "ortho": 2.895,
+    "center": [
+     -0.65,
+     -0.368,
+     1.12
     ],
-    "fig_h": 0.5813,
-    "foot": 0.7625,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     5,
-     13,
-     154,
-     123
+    "ortho": 4.928,
+    "center": [
+     -1.076,
+     0.355,
+     1.093
     ],
-    "fig_h": 0.6875,
-    "foot": 0.7688,
-    "cx": 0.4969
-   },
-   "death": {
-    "frames": 6,
-    "duration": 2.1,
-    "loop": false,
     "bbox": [
      0,
-     28,
+     12,
      160,
-     145
+     136
     ],
-    "fig_h": 0.7312,
-    "foot": 0.9062,
+    "fig_h": 0.775,
+    "foot": 0.85,
+    "cx": 0.5
+   },
+   "death": {
+    "frames": 8,
+    "duration": 2.1,
+    "loop": false,
+    "ortho": 7.876,
+    "center": [
+     -0.863,
+     1.051,
+     0.902
+    ],
+    "bbox": [
+     8,
+     33,
+     151,
+     135
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.8438,
     "cx": 0.5
    }
   }
@@ -430,45 +678,63 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     13,
-     26,
-     147,
-     118
+    "ortho": 3.141,
+    "center": [
+     0.275,
+     -0.339,
+     0.997
     ],
-    "fig_h": 0.575,
-    "foot": 0.7375,
+    "bbox": [
+     0,
+     21,
+     160,
+     156
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.975,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.7,
     "loop": true,
-    "bbox": [
-     27,
-     33,
-     133,
-     112
+    "ortho": 2.395,
+    "center": [
+     0.314,
+     -0.199,
+     1.016
     ],
-    "fig_h": 0.4938,
-    "foot": 0.7,
+    "bbox": [
+     8,
+     7,
+     152,
+     160
+    ],
+    "fig_h": 0.9563,
+    "foot": 1.0,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.833,
     "loop": false,
+    "ortho": 4.96,
+    "center": [
+     -0.773,
+     -0.379,
+     0.733
+    ],
     "bbox": [
-     8,
-     20,
-     152,
-     145
+     4,
+     17,
+     156,
+     142
     ],
     "fig_h": 0.7812,
-    "foot": 0.9062,
+    "foot": 0.8875,
     "cx": 0.5
    }
   }
@@ -477,59 +743,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     18,
-     19,
-     142,
-     125
+    "ortho": 3.41,
+    "center": [
+     0.277,
+     -0.334,
+     1.24
     ],
-    "fig_h": 0.6625,
-    "foot": 0.7812,
+    "bbox": [
+     2,
+     0,
+     158,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     18,
-     20,
-     142,
-     120
+    "ortho": 2.963,
+    "center": [
+     0.243,
+     -0.769,
+     1.322
     ],
-    "fig_h": 0.625,
-    "foot": 0.75,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 1.033,
     "loop": false,
-    "bbox": [
-     8,
-     7,
-     152,
-     120
+    "ortho": 3.645,
+    "center": [
+     0.076,
+     -0.692,
+     1.563
     ],
-    "fig_h": 0.7063,
-    "foot": 0.75,
+    "bbox": [
+     1,
+     0,
+     158,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
+    "ortho": 5.712,
+    "center": [
+     -0.603,
+     -0.695,
+     1.096
+    ],
     "bbox": [
      8,
-     20,
+     13,
      152,
-     149
+     137
     ],
-    "fig_h": 0.8063,
-    "foot": 0.9313,
+    "fig_h": 0.775,
+    "foot": 0.8562,
     "cx": 0.5
    }
   }
@@ -538,59 +828,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     18,
-     22,
-     142,
-     119
+    "ortho": 4.136,
+    "center": [
+     0.299,
+     -0.131,
+     1.293
     ],
-    "fig_h": 0.6062,
-    "foot": 0.7438,
+    "bbox": [
+     4,
+     2,
+     157,
+     141
+    ],
+    "fig_h": 0.8688,
+    "foot": 0.8812,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     27,
-     25,
-     133,
-     116
+    "ortho": 2.775,
+    "center": [
+     0.246,
+     -0.462,
+     1.25
     ],
-    "fig_h": 0.5687,
-    "foot": 0.725,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     9,
-     19,
-     152,
-     122
+    "ortho": 4.769,
+    "center": [
+     0.717,
+     0.097,
+     1.164
     ],
-    "fig_h": 0.6438,
-    "foot": 0.7625,
-    "cx": 0.5031
+    "bbox": [
+     4,
+     11,
+     157,
+     140
+    ],
+    "fig_h": 0.8063,
+    "foot": 0.875,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.8,
     "loop": false,
+    "ortho": 5.581,
+    "center": [
+     -0.649,
+     -0.158,
+     1.043
+    ],
     "bbox": [
      8,
-     24,
-     152,
-     138
+     9,
+     153,
+     142
     ],
-    "fig_h": 0.7125,
-    "foot": 0.8625,
+    "fig_h": 0.8313,
+    "foot": 0.8875,
     "cx": 0.5
    }
   }
@@ -599,58 +913,82 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 1.6,
     "loop": true,
-    "bbox": [
-     10,
-     10,
-     150,
-     117
+    "ortho": 9.506,
+    "center": [
+     -0.428,
+     0.494,
+     2.671
     ],
-    "fig_h": 0.6687,
-    "foot": 0.7312,
+    "bbox": [
+     8,
+     22,
+     152,
+     146
+    ],
+    "fig_h": 0.775,
+    "foot": 0.9125,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     28,
-     31,
-     132,
-     104
+    "ortho": 5.958,
+    "center": [
+     -0.024,
+     0.685,
+     1.286
     ],
-    "fig_h": 0.4562,
-    "foot": 0.65,
+    "bbox": [
+     8,
+     3,
+     152,
+     137
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.8562,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.433,
     "loop": false,
-    "bbox": [
-     17,
-     4,
-     142,
-     110
+    "ortho": 10.257,
+    "center": [
+     -0.503,
+     -0.538,
+     2.704
     ],
-    "fig_h": 0.6625,
-    "foot": 0.6875,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     22,
+     151,
+     143
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.8938,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.333,
     "loop": false,
+    "ortho": 10.511,
+    "center": [
+     -0.031,
+     0.553,
+     0.501
+    ],
     "bbox": [
-     11,
-     10,
-     149,
+     24,
+     2,
+     137,
      160
     ],
-    "fig_h": 0.9375,
+    "fig_h": 0.9875,
     "foot": 1.0,
     "cx": 0.5
    }
@@ -660,60 +998,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     26,
-     8,
-     134,
-     101
+    "ortho": 7.842,
+    "center": [
+     -0.21,
+     -0.096,
+     1.895
     ],
-    "fig_h": 0.5813,
-    "foot": 0.6312,
+    "bbox": [
+     8,
+     9,
+     152,
+     134
+    ],
+    "fig_h": 0.7812,
+    "foot": 0.8375,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     26,
-     14,
-     133,
-     105
+    "ortho": 7.346,
+    "center": [
+     -0.19,
+     -0.341,
+     1.676
     ],
-    "fig_h": 0.5687,
-    "foot": 0.6562,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     5,
+     152,
+     138
+    ],
+    "fig_h": 0.8313,
+    "foot": 0.8625,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.433,
     "loop": false,
-    "bbox": [
-     20,
-     13,
-     140,
-     113
+    "ortho": 8.685,
+    "center": [
+     -0.063,
+     -0.163,
+     1.861
     ],
-    "fig_h": 0.625,
-    "foot": 0.7063,
+    "bbox": [
+     8,
+     17,
+     152,
+     141
+    ],
+    "fig_h": 0.775,
+    "foot": 0.8812,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     19,
-     1,
-     140,
-     158
+    "ortho": 10.22,
+    "center": [
+     -0.401,
+     -0.795,
+     0.429
     ],
-    "fig_h": 0.9812,
-    "foot": 0.9875,
-    "cx": 0.4969
+    "bbox": [
+     21,
+     4,
+     139,
+     154
+    ],
+    "fig_h": 0.9375,
+    "foot": 0.9625,
+    "cx": 0.5
    }
   }
  },
@@ -721,46 +1083,64 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 3.3,
     "loop": true,
+    "ortho": 3.457,
+    "center": [
+     0.012,
+     0.623,
+     0.678
+    ],
     "bbox": [
      7,
-     20,
-     152,
-     140
+     19,
+     153,
+     146
     ],
-    "fig_h": 0.75,
-    "foot": 0.875,
+    "fig_h": 0.7937,
+    "foot": 0.9125,
     "cx": 0.4969
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
     "loop": true,
-    "bbox": [
-     8,
-     21,
-     152,
-     140
+    "ortho": 3.452,
+    "center": [
+     0.024,
+     0.624,
+     0.683
     ],
-    "fig_h": 0.7438,
-    "foot": 0.875,
-    "cx": 0.5
+    "bbox": [
+     7,
+     19,
+     152,
+     146
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.9125,
+    "cx": 0.4969
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 1.233,
     "loop": false,
+    "ortho": 3.561,
+    "center": [
+     0.024,
+     0.575,
+     0.684
+    ],
     "bbox": [
      8,
-     21,
+     22,
      152,
-     144
+     145
     ],
     "fig_h": 0.7688,
-    "foot": 0.9,
-    "cx": 0.5
+    "foot": 0.9062,
+    "cx": 0.4969
    }
   }
  },
@@ -768,44 +1148,62 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 3.3,
     "loop": true,
+    "ortho": 2.248,
+    "center": [
+     0.028,
+     0.737,
+     0.776
+    ],
     "bbox": [
      8,
-     1,
+     0,
      153,
      160
     ],
-    "fig_h": 0.9938,
+    "fig_h": 1.0,
     "foot": 1.0,
-    "cx": 0.5031
+    "cx": 0.5
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
     "loop": true,
-    "bbox": [
-     8,
-     1,
-     153,
-     160
+    "ortho": 2.248,
+    "center": [
+     0.038,
+     0.737,
+     0.802
     ],
-    "fig_h": 0.9938,
-    "foot": 1.0,
-    "cx": 0.5031
-   },
-   "attack": {
-    "frames": 6,
-    "duration": 0.4,
-    "loop": false,
     "bbox": [
      8,
-     0,
+     2,
      152,
      160
     ],
-    "fig_h": 1.0,
+    "fig_h": 0.9875,
+    "foot": 1.0,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.4,
+    "loop": false,
+    "ortho": 2.281,
+    "center": [
+     -0.006,
+     0.747,
+     0.787
+    ],
+    "bbox": [
+     7,
+     1,
+     152,
+     160
+    ],
+    "fig_h": 0.9938,
     "foot": 1.0,
     "cx": 0.5
    }
@@ -815,37 +1213,55 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 3.3,
     "loop": true,
+    "ortho": 2.391,
+    "center": [
+     -0.037,
+     -0.004,
+     0.7
+    ],
     "bbox": [
      4,
      37,
      157,
-     156
+     157
     ],
-    "fig_h": 0.7438,
-    "foot": 0.975,
+    "fig_h": 0.75,
+    "foot": 0.9812,
     "cx": 0.5031
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
     "loop": true,
+    "ortho": 2.391,
+    "center": [
+     -0.045,
+     -0.004,
+     0.7
+    ],
     "bbox": [
      4,
-     37,
-     156,
+     38,
+     157,
      155
     ],
-    "fig_h": 0.7375,
+    "fig_h": 0.7312,
     "foot": 0.9688,
-    "cx": 0.5
+    "cx": 0.5031
    },
    "attack": {
     "frames": 6,
     "duration": 0.2,
     "loop": false,
+    "ortho": 2.394,
+    "center": [
+     -0.032,
+     -0.004,
+     0.699
+    ],
     "bbox": [
      4,
      37,
@@ -862,58 +1278,82 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     15,
-     21,
-     146,
-     126
+    "ortho": 3.918,
+    "center": [
+     -0.506,
+     0.075,
+     1.418
     ],
-    "fig_h": 0.6562,
-    "foot": 0.7875,
-    "cx": 0.5031
+    "bbox": [
+     0,
+     0,
+     160,
+     149
+    ],
+    "fig_h": 0.9313,
+    "foot": 0.9313,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     27,
-     28,
-     133,
-     122
+    "ortho": 3.469,
+    "center": [
+     -0.589,
+     -0.191,
+     1.408
     ],
-    "fig_h": 0.5875,
-    "foot": 0.7625,
+    "bbox": [
+     8,
+     0,
+     152,
+     156
+    ],
+    "fig_h": 0.975,
+    "foot": 0.975,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 9,
     "duration": 0.3,
     "loop": false,
+    "ortho": 7.009,
+    "center": [
+     0.159,
+     1.55,
+     0.988
+    ],
     "bbox": [
-     4,
-     36,
-     156,
+     8,
+     35,
+     152,
      130
     ],
-    "fig_h": 0.5875,
+    "fig_h": 0.5938,
     "foot": 0.8125,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.833,
     "loop": false,
+    "ortho": 8.072,
+    "center": [
+     -0.596,
+     1.675,
+     1.226
+    ],
     "bbox": [
      8,
-     27,
+     34,
      152,
      143
     ],
-    "fig_h": 0.725,
+    "fig_h": 0.6813,
     "foot": 0.8938,
     "cx": 0.5
    }
@@ -923,59 +1363,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     16,
-     30,
-     145,
-     121
+    "ortho": 3.705,
+    "center": [
+     -0.634,
+     0.147,
+     0.967
     ],
-    "fig_h": 0.5687,
-    "foot": 0.7562,
-    "cx": 0.5031
+    "bbox": [
+     4,
+     21,
+     156,
+     142
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.8875,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     22,
-     30,
-     138,
-     116
+    "ortho": 2.898,
+    "center": [
+     -0.666,
+     -0.315,
+     0.991
     ],
-    "fig_h": 0.5375,
-    "foot": 0.725,
+    "bbox": [
+     0,
+     7,
+     160,
+     156
+    ],
+    "fig_h": 0.9313,
+    "foot": 0.975,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.867,
     "loop": false,
+    "ortho": 5.306,
+    "center": [
+     -0.155,
+     0.022,
+     1.106
+    ],
     "bbox": [
-     8,
-     18,
-     151,
-     117
+     0,
+     20,
+     160,
+     119
     ],
     "fig_h": 0.6188,
-    "foot": 0.7312,
-    "cx": 0.4969
+    "foot": 0.7438,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
-    "bbox": [
-     3,
-     22,
-     157,
-     150
+    "ortho": 6.58,
+    "center": [
+     -0.619,
+     0.411,
+     0.732
     ],
-    "fig_h": 0.8,
-    "foot": 0.9375,
+    "bbox": [
+     8,
+     24,
+     152,
+     134
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.8375,
     "cx": 0.5
    }
   }
@@ -984,59 +1448,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     9,
-     19,
-     151,
-     118
+    "ortho": 5.601,
+    "center": [
+     -0.201,
+     0.801,
+     1.007
     ],
-    "fig_h": 0.6188,
-    "foot": 0.7375,
+    "bbox": [
+     8,
+     21,
+     151,
+     126
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.7875,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     14,
-     21,
-     145,
-     114
+    "ortho": 4.621,
+    "center": [
+     -0.313,
+     0.71,
+     1.022
     ],
-    "fig_h": 0.5813,
-    "foot": 0.7125,
-    "cx": 0.4969
+    "bbox": [
+     5,
+     17,
+     155,
+     131
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.8187,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.733,
     "loop": false,
-    "bbox": [
-     8,
-     15,
-     152,
-     114
+    "ortho": 4.732,
+    "center": [
+     0.039,
+     0.145,
+     1.017
     ],
-    "fig_h": 0.6188,
-    "foot": 0.7125,
+    "bbox": [
+     0,
+     12,
+     160,
+     122
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.7625,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
-    "bbox": [
-     6,
-     21,
-     154,
-     148
+    "ortho": 6.116,
+    "center": [
+     -1.325,
+     0.267,
+     0.671
     ],
-    "fig_h": 0.7937,
-    "foot": 0.925,
+    "bbox": [
+     0,
+     17,
+     160,
+     152
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.95,
     "cx": 0.5
    }
   }
@@ -1049,13 +1537,13 @@
     "duration": 0.8,
     "loop": true,
     "bbox": [
-     29,
-     41,
-     131,
-     121
+     8,
+     22,
+     152,
+     137
     ],
-    "fig_h": 0.5,
-    "foot": 0.7562,
+    "fig_h": 0.7188,
+    "foot": 0.8562,
     "cx": 0.5
    },
    "idle": {
@@ -1084,7 +1572,7 @@
     ],
     "fig_h": 0.725,
     "foot": 0.825,
-    "cx": 0.5031
+    "cx": 0.5
    },
    "death": {
     "frames": 6,
@@ -1100,66 +1588,91 @@
     "foot": 0.875,
     "cx": 0.5
    }
-  }
+  },
+  "ortho": 5.309
  },
  "officer18": {
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     22,
-     23,
-     138,
-     117
+    "ortho": 4.135,
+    "center": [
+     0.263,
+     -0.123,
+     1.297
     ],
-    "fig_h": 0.5875,
-    "foot": 0.7312,
+    "bbox": [
+     0,
+     2,
+     160,
+     141
+    ],
+    "fig_h": 0.8688,
+    "foot": 0.8812,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     30,
-     26,
-     130,
-     114
+    "ortho": 2.811,
+    "center": [
+     0.147,
+     -0.579,
+     1.267
     ],
-    "fig_h": 0.55,
-    "foot": 0.7125,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
-    "bbox": [
-     9,
-     19,
-     151,
-     121
+    "ortho": 4.936,
+    "center": [
+     0.542,
+     0.143,
+     1.149
     ],
-    "fig_h": 0.6375,
-    "foot": 0.7562,
+    "bbox": [
+     0,
+     8,
+     159,
+     135
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.8438,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.8,
     "loop": false,
-    "bbox": [
-     9,
-     26,
-     152,
-     135
+    "ortho": 5.593,
+    "center": [
+     -0.641,
+     -0.154,
+     1.044
     ],
-    "fig_h": 0.6813,
-    "foot": 0.8438,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     9,
+     153,
+     142
+    ],
+    "fig_h": 0.8313,
+    "foot": 0.8875,
+    "cx": 0.5
    }
   }
  },
@@ -1167,45 +1680,63 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     12,
-     25,
-     149,
-     118
+    "ortho": 3.191,
+    "center": [
+     0.253,
+     -0.356,
+     0.991
     ],
-    "fig_h": 0.5813,
-    "foot": 0.7375,
-    "cx": 0.5031
+    "bbox": [
+     0,
+     22,
+     160,
+     156
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.975,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.7,
     "loop": true,
-    "bbox": [
-     26,
-     32,
-     134,
-     112
+    "ortho": 2.405,
+    "center": [
+     0.286,
+     -0.222,
+     1.005
     ],
-    "fig_h": 0.5,
-    "foot": 0.7,
+    "bbox": [
+     8,
+     7,
+     152,
+     159
+    ],
+    "fig_h": 0.95,
+    "foot": 0.9938,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.833,
     "loop": false,
-    "bbox": [
-     8,
-     20,
-     152,
-     145
+    "ortho": 4.94,
+    "center": [
+     -0.786,
+     -0.386,
+     0.724
     ],
-    "fig_h": 0.7812,
-    "foot": 0.9062,
+    "bbox": [
+     2,
+     16,
+     157,
+     142
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.8875,
     "cx": 0.5
    }
   }
@@ -1214,59 +1745,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     41,
-     37,
-     120,
-     115
+    "ortho": 2.47,
+    "center": [
+     -0.189,
+     0.05,
+     0.934
     ],
-    "fig_h": 0.4875,
-    "foot": 0.7188,
-    "cx": 0.5031
+    "bbox": [
+     3,
+     0,
+     158,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     46,
-     35,
-     114,
-     110
+    "ortho": 2.316,
+    "center": [
+     -0.141,
+     -0.12,
+     1.036
     ],
-    "fig_h": 0.4688,
-    "foot": 0.6875,
+    "bbox": [
+     0,
+     0,
+     160,
+     156
+    ],
+    "fig_h": 0.975,
+    "foot": 0.975,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": false,
-    "bbox": [
-     8,
-     23,
-     152,
-     110
+    "ortho": 3.846,
+    "center": [
+     -0.525,
+     -0.701,
+     1.037
     ],
-    "fig_h": 0.5437,
-    "foot": 0.6875,
+    "bbox": [
+     2,
+     11,
+     158,
+     139
+    ],
+    "fig_h": 0.8,
+    "foot": 0.8688,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.833,
     "loop": false,
-    "bbox": [
-     8,
-     24,
-     152,
-     138
+    "ortho": 4.452,
+    "center": [
+     -0.501,
+     -0.013,
+     0.789
     ],
-    "fig_h": 0.7125,
-    "foot": 0.8625,
+    "bbox": [
+     0,
+     15,
+     160,
+     152
+    ],
+    "fig_h": 0.8562,
+    "foot": 0.95,
     "cx": 0.5
    }
   }
@@ -1275,59 +1830,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     15,
-     14,
-     145,
-     128
+    "ortho": 3.523,
+    "center": [
+     0.329,
+     -0.299,
+     1.274
     ],
-    "fig_h": 0.7125,
-    "foot": 0.8,
+    "bbox": [
+     4,
+     0,
+     156,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     16,
-     16,
-     144,
-     121
+    "ortho": 2.998,
+    "center": [
+     0.305,
+     -0.78,
+     1.34
     ],
-    "fig_h": 0.6562,
-    "foot": 0.7562,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 1.033,
     "loop": false,
-    "bbox": [
-     7,
-     1,
-     154,
-     121
+    "ortho": 3.705,
+    "center": [
+     -0.119,
+     -0.796,
+     1.563
     ],
-    "fig_h": 0.75,
-    "foot": 0.7562,
-    "cx": 0.5031
+    "bbox": [
+     4,
+     0,
+     157,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
+    "ortho": 5.228,
+    "center": [
+     0.306,
+     0.433,
+     1.112
+    ],
     "bbox": [
      8,
-     16,
+     4,
      152,
-     150
+     153
     ],
-    "fig_h": 0.8375,
-    "foot": 0.9375,
+    "fig_h": 0.9313,
+    "foot": 0.9563,
     "cx": 0.5
    }
   }
@@ -1336,59 +1915,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     44,
-     37,
-     115,
-     116
+    "ortho": 2.421,
+    "center": [
+     -0.018,
+     0.061,
+     0.931
     ],
-    "fig_h": 0.4938,
-    "foot": 0.725,
-    "cx": 0.4969
+    "bbox": [
+     10,
+     0,
+     150,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     30,
-     29,
-     130,
-     106
+    "ortho": 2.521,
+    "center": [
+     -0.03,
+     0.637,
+     0.983
     ],
-    "fig_h": 0.4813,
-    "foot": 0.6625,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 1.033,
     "loop": false,
+    "ortho": 4.445,
+    "center": [
+     0.043,
+     0.35,
+     1.028
+    ],
     "bbox": [
      8,
      22,
-     152,
-     106
+     153,
+     136
     ],
-    "fig_h": 0.525,
-    "foot": 0.6625,
+    "fig_h": 0.7125,
+    "foot": 0.85,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.833,
     "loop": false,
-    "bbox": [
-     8,
-     26,
-     152,
-     126
+    "ortho": 4.51,
+    "center": [
+     -0.697,
+     0.628,
+     0.805
     ],
-    "fig_h": 0.625,
-    "foot": 0.7875,
+    "bbox": [
+     0,
+     19,
+     160,
+     150
+    ],
+    "fig_h": 0.8187,
+    "foot": 0.9375,
     "cx": 0.5
    }
   }
@@ -1397,45 +2000,63 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     26,
-     35,
-     133,
-     120
+    "ortho": 2.824,
+    "center": [
+     0.118,
+     -0.037,
+     1.064
     ],
-    "fig_h": 0.5312,
-    "foot": 0.75,
-    "cx": 0.4969
+    "bbox": [
+     0,
+     18,
+     160,
+     153
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9563,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.7,
     "loop": true,
-    "bbox": [
-     38,
-     34,
-     122,
-     115
+    "ortho": 2.5,
+    "center": [
+     0.16,
+     0.215,
+     1.121
     ],
-    "fig_h": 0.5062,
-    "foot": 0.7188,
+    "bbox": [
+     0,
+     4,
+     160,
+     158
+    ],
+    "fig_h": 0.9625,
+    "foot": 0.9875,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.833,
     "loop": false,
-    "bbox": [
-     6,
-     24,
-     154,
-     142
+    "ortho": 4.904,
+    "center": [
+     -0.653,
+     -0.089,
+     0.867
     ],
-    "fig_h": 0.7375,
-    "foot": 0.8875,
+    "bbox": [
+     7,
+     18,
+     153,
+     145
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.9062,
     "cx": 0.5
    }
   }
@@ -1444,60 +2065,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     13,
-     5,
-     146,
-     111
+    "ortho": 9.612,
+    "center": [
+     0.237,
+     0.113,
+     2.032
     ],
-    "fig_h": 0.6625,
-    "foot": 0.6937,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     16,
+     152,
+     135
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.8438,
+    "cx": 0.5031
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     23,
-     6,
-     137,
-     114
+    "ortho": 8.91,
+    "center": [
+     0.269,
+     -0.249,
+     1.827
     ],
-    "fig_h": 0.675,
-    "foot": 0.7125,
-    "cx": 0.5
+    "bbox": [
+     9,
+     6,
+     152,
+     138
+    ],
+    "fig_h": 0.825,
+    "foot": 0.8625,
+    "cx": 0.5031
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     14,
-     6,
-     146,
-     117
+    "ortho": 10.125,
+    "center": [
+     0.313,
+     -0.792,
+     1.774
     ],
-    "fig_h": 0.6937,
-    "foot": 0.7312,
-    "cx": 0.5
+    "bbox": [
+     8,
+     10,
+     152,
+     132
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.825,
+    "cx": 0.5031
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     20,
-     2,
-     140,
-     159
+    "ortho": 10.946,
+    "center": [
+     -0.144,
+     -0.256,
+     0.461
     ],
-    "fig_h": 0.9812,
-    "foot": 0.9938,
-    "cx": 0.5
+    "bbox": [
+     22,
+     2,
+     139,
+     160
+    ],
+    "fig_h": 0.9875,
+    "foot": 1.0,
+    "cx": 0.5031
    }
   }
  },
@@ -1505,59 +2150,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.833,
     "loop": true,
-    "bbox": [
-     12,
-     6,
-     148,
-     114
+    "ortho": 9.914,
+    "center": [
+     0.28,
+     0.19,
+     1.698
     ],
-    "fig_h": 0.675,
-    "foot": 0.7125,
+    "bbox": [
+     8,
+     14,
+     152,
+     133
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.8313,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     19,
-     8,
-     141,
-     115
+    "ortho": 8.964,
+    "center": [
+     0.345,
+     -0.269,
+     1.853
     ],
-    "fig_h": 0.6687,
-    "foot": 0.7188,
+    "bbox": [
+     8,
+     7,
+     152,
+     137
+    ],
+    "fig_h": 0.8125,
+    "foot": 0.8562,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     12,
-     7,
-     148,
-     118
+    "ortho": 9.771,
+    "center": [
+     0.287,
+     -0.594,
+     1.805
     ],
-    "fig_h": 0.6937,
-    "foot": 0.7375,
+    "bbox": [
+     8,
+     10,
+     152,
+     134
+    ],
+    "fig_h": 0.775,
+    "foot": 0.8375,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     19,
-     1,
-     141,
-     156
+    "ortho": 10.939,
+    "center": [
+     -0.542,
+     -0.269,
+     0.419
     ],
-    "fig_h": 0.9688,
-    "foot": 0.975,
+    "bbox": [
+     21,
+     2,
+     139,
+     155
+    ],
+    "fig_h": 0.9563,
+    "foot": 0.9688,
     "cx": 0.5
    }
   }
@@ -1566,60 +2235,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     27,
-     11,
-     132,
-     97
+    "ortho": 7.81,
+    "center": [
+     -0.282,
+     -0.244,
+     1.94
     ],
-    "fig_h": 0.5375,
-    "foot": 0.6062,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     8,
+     152,
+     129
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.8063,
+    "cx": 0.5031
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     29,
-     13,
-     131,
-     97
+    "ortho": 8.144,
+    "center": [
+     -0.17,
+     -0.049,
+     1.781
     ],
-    "fig_h": 0.525,
-    "foot": 0.6062,
-    "cx": 0.5
+    "bbox": [
+     9,
+     11,
+     152,
+     126
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.7875,
+    "cx": 0.5031
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 1.133,
     "loop": false,
-    "bbox": [
-     17,
-     18,
-     143,
-     118
+    "ortho": 9.438,
+    "center": [
+     0.037,
+     -0.197,
+     1.923
     ],
-    "fig_h": 0.625,
-    "foot": 0.7375,
-    "cx": 0.5
+    "bbox": [
+     8,
+     26,
+     152,
+     144
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9,
+    "cx": 0.5031
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     18,
-     3,
-     142,
-     158
+    "ortho": 10.646,
+    "center": [
+     -0.371,
+     -1.272,
+     0.414
     ],
-    "fig_h": 0.9688,
-    "foot": 0.9875,
-    "cx": 0.5
+    "bbox": [
+     15,
+     2,
+     146,
+     156
+    ],
+    "fig_h": 0.9625,
+    "foot": 0.975,
+    "cx": 0.5031
    }
   }
  },
@@ -1627,59 +2320,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.533,
     "loop": true,
-    "bbox": [
-     12,
-     3,
-     148,
-     100
+    "ortho": 8.277,
+    "center": [
+     -0.186,
+     1.182,
+     2.022
     ],
-    "fig_h": 0.6062,
-    "foot": 0.625,
+    "bbox": [
+     8,
+     11,
+     152,
+     135
+    ],
+    "fig_h": 0.775,
+    "foot": 0.8438,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     12,
-     6,
-     148,
-     99
+    "ortho": 7.903,
+    "center": [
+     -0.064,
+     1.372,
+     1.779
     ],
-    "fig_h": 0.5813,
-    "foot": 0.6188,
+    "bbox": [
+     8,
+     8,
+     152,
+     135
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.8438,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     9,
-     0,
-     151,
-     110
+    "ortho": 11.463,
+    "center": [
+     -0.743,
+     -0.147,
+     2.572
     ],
-    "fig_h": 0.6875,
-    "foot": 0.6875,
+    "bbox": [
+     8,
+     23,
+     152,
+     137
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.8562,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     12,
-     0,
-     148,
-     154
+    "ortho": 10.962,
+    "center": [
+     -0.017,
+     1.163,
+     0.512
     ],
-    "fig_h": 0.9625,
-    "foot": 0.9625,
+    "bbox": [
+     21,
+     0,
+     139,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    }
   }
@@ -1688,60 +2405,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.533,
     "loop": true,
-    "bbox": [
-     10,
-     3,
-     151,
-     125
+    "ortho": 9.459,
+    "center": [
+     1.248,
+     -0.034,
+     1.592
     ],
-    "fig_h": 0.7625,
-    "foot": 0.7812,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     13,
+     152,
+     143
+    ],
+    "fig_h": 0.8125,
+    "foot": 0.8938,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     19,
-     3,
-     141,
-     124
+    "ortho": 8.616,
+    "center": [
+     0.947,
+     -0.291,
+     1.589
     ],
-    "fig_h": 0.7562,
-    "foot": 0.775,
+    "bbox": [
+     8,
+     5,
+     152,
+     148
+    ],
+    "fig_h": 0.8938,
+    "foot": 0.925,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.4,
     "loop": false,
-    "bbox": [
-     10,
-     3,
-     150,
-     135
+    "ortho": 9.491,
+    "center": [
+     1.332,
+     -0.681,
+     1.474
     ],
-    "fig_h": 0.825,
-    "foot": 0.8438,
+    "bbox": [
+     7,
+     5,
+     153,
+     143
+    ],
+    "fig_h": 0.8625,
+    "foot": 0.8938,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     12,
-     0,
-     147,
-     160
+    "ortho": 10.045,
+    "center": [
+     -0.603,
+     -0.619,
+     0.421
     ],
-    "fig_h": 1.0,
-    "foot": 1.0,
-    "cx": 0.4969
+    "bbox": [
+     6,
+     0,
+     154,
+     157
+    ],
+    "fig_h": 0.9812,
+    "foot": 0.9812,
+    "cx": 0.5
    }
   }
  },
@@ -1749,58 +2490,82 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     20,
-     4,
-     140,
-     109
+    "ortho": 6.915,
+    "center": [
+     0.003,
+     0.449,
+     1.913
     ],
-    "fig_h": 0.6562,
-    "foot": 0.6813,
+    "bbox": [
+     8,
+     2,
+     152,
+     148
+    ],
+    "fig_h": 0.9125,
+    "foot": 0.925,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     29,
-     10,
-     132,
-     111
+    "ortho": 6.682,
+    "center": [
+     -0.026,
+     0.051,
+     1.733
     ],
-    "fig_h": 0.6312,
-    "foot": 0.6937,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     0,
+     152,
+     147
+    ],
+    "fig_h": 0.9187,
+    "foot": 0.9187,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     20,
-     3,
-     143,
-     117
+    "ortho": 7.736,
+    "center": [
+     -0.534,
+     -0.136,
+     2.052
     ],
-    "fig_h": 0.7125,
-    "foot": 0.7312,
-    "cx": 0.5094
+    "bbox": [
+     8,
+     12,
+     152,
+     153
+    ],
+    "fig_h": 0.8812,
+    "foot": 0.9563,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
+    "ortho": 10.02,
+    "center": [
+     -0.15,
+     0.039,
+     0.514
+    ],
     "bbox": [
-     16,
-     4,
-     144,
+     26,
+     2,
+     134,
      160
     ],
-    "fig_h": 0.975,
+    "fig_h": 0.9875,
     "foot": 1.0,
     "cx": 0.5
    }
@@ -1810,60 +2575,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     14,
-     8,
-     147,
-     117
+    "ortho": 9.529,
+    "center": [
+     0.019,
+     0.139,
+     1.969
     ],
-    "fig_h": 0.6813,
-    "foot": 0.7312,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     17,
+     152,
+     137
+    ],
+    "fig_h": 0.75,
+    "foot": 0.8562,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     14,
-     9,
-     146,
-     117
+    "ortho": 9.522,
+    "center": [
+     0.005,
+     0.135,
+     1.825
     ],
-    "fig_h": 0.675,
-    "foot": 0.7312,
+    "bbox": [
+     8,
+     16,
+     152,
+     137
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.8562,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     22,
-     14,
-     138,
-     110
+    "ortho": 8.549,
+    "center": [
+     -0.061,
+     0.387,
+     1.725
     ],
-    "fig_h": 0.6,
-    "foot": 0.6875,
+    "bbox": [
+     9,
+     11,
+     151,
+     130
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.8125,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     13,
-     3,
-     146,
-     152
+    "ortho": 10.679,
+    "center": [
+     -0.307,
+     0.159,
+     0.453
     ],
-    "fig_h": 0.9313,
-    "foot": 0.95,
-    "cx": 0.4969
+    "bbox": [
+     16,
+     3,
+     144,
+     159
+    ],
+    "fig_h": 0.975,
+    "foot": 0.9938,
+    "cx": 0.5
    }
   }
  },
@@ -1871,59 +2660,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     24,
-     9,
-     135,
-     101
+    "ortho": 7.894,
+    "center": [
+     -0.239,
+     -0.069,
+     1.896
     ],
-    "fig_h": 0.575,
-    "foot": 0.6312,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     10,
+     152,
+     132
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.825,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     26,
-     15,
-     134,
-     104
+    "ortho": 7.353,
+    "center": [
+     -0.217,
+     -0.334,
+     1.68
     ],
-    "fig_h": 0.5563,
-    "foot": 0.65,
+    "bbox": [
+     8,
+     6,
+     152,
+     135
+    ],
+    "fig_h": 0.8063,
+    "foot": 0.8438,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.433,
     "loop": false,
-    "bbox": [
-     19,
-     15,
-     141,
-     114
+    "ortho": 8.671,
+    "center": [
+     -0.054,
+     -0.195,
+     1.825
     ],
-    "fig_h": 0.6188,
-    "foot": 0.7125,
+    "bbox": [
+     8,
+     18,
+     152,
+     140
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.875,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     19,
-     0,
-     141,
-     159
+    "ortho": 10.19,
+    "center": [
+     -0.427,
+     -0.789,
+     0.494
     ],
-    "fig_h": 0.9938,
-    "foot": 0.9938,
+    "bbox": [
+     21,
+     4,
+     139,
+     156
+    ],
+    "fig_h": 0.95,
+    "foot": 0.975,
     "cx": 0.5
    }
   }
@@ -1932,60 +2745,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.567,
     "loop": true,
-    "bbox": [
-     15,
-     8,
-     145,
-     110
+    "ortho": 9.229,
+    "center": [
+     0.129,
+     0.054,
+     1.656
     ],
-    "fig_h": 0.6375,
-    "foot": 0.6875,
+    "bbox": [
+     8,
+     14,
+     152,
+     128
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.8,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     15,
-     14,
-     144,
-     116
+    "ortho": 8.477,
+    "center": [
+     -0.003,
+     -0.342,
+     1.902
     ],
-    "fig_h": 0.6375,
-    "foot": 0.725,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     13,
+     152,
+     140
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.875,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     24,
-     10,
-     135,
-     105
+    "ortho": 6.603,
+    "center": [
+     -0.677,
+     0.473,
+     2.319
     ],
-    "fig_h": 0.5938,
-    "foot": 0.6562,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     0,
+     152,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     15,
-     3,
-     144,
-     158
+    "ortho": 10.299,
+    "center": [
+     -0.088,
+     -0.318,
+     0.528
     ],
-    "fig_h": 0.9688,
-    "foot": 0.9875,
-    "cx": 0.4969
+    "bbox": [
+     21,
+     1,
+     139,
+     160
+    ],
+    "fig_h": 0.9938,
+    "foot": 1.0,
+    "cx": 0.5
    }
   }
  },
@@ -1993,60 +2830,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     16,
-     0,
-     144,
-     113
+    "ortho": 8.942,
+    "center": [
+     -0.145,
+     -0.133,
+     2.161
     ],
-    "fig_h": 0.7063,
-    "foot": 0.7063,
+    "bbox": [
+     8,
+     10,
+     152,
+     142
+    ],
+    "fig_h": 0.825,
+    "foot": 0.8875,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     15,
-     32,
-     146,
-     108
+    "ortho": 7.468,
+    "center": [
+     -0.021,
+     -1.061,
+     1.528
     ],
-    "fig_h": 0.475,
-    "foot": 0.675,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     24,
+     152,
+     128
+    ],
+    "fig_h": 0.65,
+    "foot": 0.8,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.967,
     "loop": false,
-    "bbox": [
-     15,
-     5,
-     146,
-     108
+    "ortho": 9.482,
+    "center": [
+     0.293,
+     -0.162,
+     1.948
     ],
-    "fig_h": 0.6438,
-    "foot": 0.675,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     8,
+     152,
+     128
+    ],
+    "fig_h": 0.75,
+    "foot": 0.8,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
+    "ortho": 10.34,
+    "center": [
+     0.903,
+     0.014,
+     0.435
+    ],
     "bbox": [
      15,
-     4,
-     146,
-     160
+     0,
+     145,
+     155
     ],
-    "fig_h": 0.975,
-    "foot": 1.0,
-    "cx": 0.5031
+    "fig_h": 0.9688,
+    "foot": 0.9688,
+    "cx": 0.5
    }
   }
  },
@@ -2054,60 +2915,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.833,
     "loop": true,
-    "bbox": [
-     15,
-     8,
-     145,
-     116
+    "ortho": 9.578,
+    "center": [
+     -0.059,
+     0.129,
+     2.006
     ],
-    "fig_h": 0.675,
-    "foot": 0.725,
-    "cx": 0.5
+    "bbox": [
+     8,
+     17,
+     152,
+     138
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.8625,
+    "cx": 0.4969
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     15,
-     9,
-     144,
-     116
+    "ortho": 9.523,
+    "center": [
+     -0.027,
+     0.111,
+     1.857
     ],
-    "fig_h": 0.6687,
-    "foot": 0.725,
+    "bbox": [
+     7,
+     17,
+     152,
+     137
+    ],
+    "fig_h": 0.75,
+    "foot": 0.8562,
     "cx": 0.4969
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.4,
     "loop": false,
-    "bbox": [
-     21,
-     2,
-     140,
-     109
+    "ortho": 8.42,
+    "center": [
+     -0.69,
+     0.066,
+     2.453
     ],
-    "fig_h": 0.6687,
-    "foot": 0.6813,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     12,
+     152,
+     147
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9187,
+    "cx": 0.4969
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     16,
-     3,
-     144,
-     158
+    "ortho": 10.41,
+    "center": [
+     -0.068,
+     0.135,
+     0.587
     ],
-    "fig_h": 0.9688,
-    "foot": 0.9875,
-    "cx": 0.5
+    "bbox": [
+     14,
+     1,
+     146,
+     160
+    ],
+    "fig_h": 0.9938,
+    "foot": 1.0,
+    "cx": 0.4969
    }
   }
  },
@@ -2115,60 +3000,84 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     15,
-     4,
-     145,
-     121
+    "ortho": 8.92,
+    "center": [
+     0.241,
+     -0.091,
+     1.895
     ],
-    "fig_h": 0.7312,
-    "foot": 0.7562,
+    "bbox": [
+     8,
+     13,
+     152,
+     140
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.875,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     20,
-     6,
-     140,
-     114
+    "ortho": 8.197,
+    "center": [
+     -0.198,
+     -0.071,
+     1.784
     ],
-    "fig_h": 0.675,
-    "foot": 0.7125,
+    "bbox": [
+     8,
+     7,
+     152,
+     136
+    ],
+    "fig_h": 0.8063,
+    "foot": 0.85,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     14,
-     3,
-     146,
-     114
+    "ortho": 9.853,
+    "center": [
+     -0.264,
+     -0.647,
+     1.799
     ],
-    "fig_h": 0.6937,
-    "foot": 0.7125,
+    "bbox": [
+     8,
+     12,
+     152,
+     126
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.7875,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
+    "ortho": 10.31,
+    "center": [
+     -0.781,
+     -0.249,
+     0.484
+    ],
     "bbox": [
-     18,
-     5,
-     143,
+     19,
+     3,
+     142,
      160
     ],
-    "fig_h": 0.9688,
+    "fig_h": 0.9812,
     "foot": 1.0,
-    "cx": 0.5031
+    "cx": 0.5
    }
   }
  },
@@ -2176,55 +3085,79 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     19,
-     1,
-     141,
-     121
+    "ortho": 8.456,
+    "center": [
+     -0.054,
+     -0.252,
+     2.103
     ],
-    "fig_h": 0.75,
-    "foot": 0.7562,
+    "bbox": [
+     8,
+     6,
+     152,
+     149
+    ],
+    "fig_h": 0.8938,
+    "foot": 0.9313,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     18,
-     2,
-     143,
-     112
+    "ortho": 8.143,
+    "center": [
+     -0.206,
+     -0.049,
+     2.129
     ],
-    "fig_h": 0.6875,
-    "foot": 0.7,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     8,
+     152,
+     142
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.8875,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     16,
-     2,
-     144,
-     113
+    "ortho": 9.888,
+    "center": [
+     -0.275,
+     -0.828,
+     2.096
     ],
-    "fig_h": 0.6937,
-    "foot": 0.7063,
+    "bbox": [
+     8,
+     14,
+     152,
+     129
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.8063,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
+    "ortho": 10.426,
+    "center": [
+     -0.819,
+     -0.185,
+     0.505
+    ],
     "bbox": [
-     16,
+     21,
      2,
-     144,
+     140,
      160
     ],
     "fig_h": 0.9875,
@@ -2237,59 +3170,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.833,
     "loop": true,
-    "bbox": [
-     14,
-     5,
-     146,
-     116
+    "ortho": 9.583,
+    "center": [
+     0.011,
+     0.129,
+     1.946
     ],
-    "fig_h": 0.6937,
-    "foot": 0.725,
+    "bbox": [
+     8,
+     17,
+     152,
+     137
+    ],
+    "fig_h": 0.75,
+    "foot": 0.8562,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     14,
-     7,
-     146,
-     116
+    "ortho": 9.527,
+    "center": [
+     0.003,
+     0.111,
+     1.797
     ],
-    "fig_h": 0.6813,
-    "foot": 0.725,
+    "bbox": [
+     8,
+     16,
+     152,
+     137
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.8562,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.4,
     "loop": false,
-    "bbox": [
-     19,
-     0,
-     141,
-     110
+    "ortho": 8.429,
+    "center": [
+     -0.744,
+     0.065,
+     2.438
     ],
-    "fig_h": 0.6875,
-    "foot": 0.6875,
+    "bbox": [
+     8,
+     11,
+     152,
+     147
+    ],
+    "fig_h": 0.85,
+    "foot": 0.9187,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     14,
-     3,
-     146,
-     157
+    "ortho": 10.153,
+    "center": [
+     -0.06,
+     0.135,
+     0.558
     ],
-    "fig_h": 0.9625,
-    "foot": 0.9812,
+    "bbox": [
+     13,
+     1,
+     147,
+     160
+    ],
+    "fig_h": 0.9938,
+    "foot": 1.0,
     "cx": 0.5
    }
   }
@@ -2298,59 +3255,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     25,
-     14,
-     135,
-     105
+    "ortho": 6.397,
+    "center": [
+     -0.117,
+     1.401,
+     2.095
     ],
-    "fig_h": 0.5687,
-    "foot": 0.6562,
+    "bbox": [
+     8,
+     6,
+     152,
+     160
+    ],
+    "fig_h": 0.9625,
+    "foot": 1.0,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     36,
-     17,
-     124,
-     108
+    "ortho": 6.765,
+    "center": [
+     -0.011,
+     0.683,
+     1.908
     ],
-    "fig_h": 0.5687,
-    "foot": 0.675,
+    "bbox": [
+     8,
+     0,
+     152,
+     155
+    ],
+    "fig_h": 0.9688,
+    "foot": 0.9688,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.5,
     "loop": false,
-    "bbox": [
-     25,
-     8,
-     134,
-     108
+    "ortho": 8.353,
+    "center": [
+     -0.603,
+     0.074,
+     2.52
     ],
-    "fig_h": 0.625,
-    "foot": 0.675,
-    "cx": 0.4969
+    "bbox": [
+     8,
+     11,
+     152,
+     154
+    ],
+    "fig_h": 0.8938,
+    "foot": 0.9625,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     29,
-     0,
-     131,
-     153
+    "ortho": 11.342,
+    "center": [
+     -0.391,
+     0.29,
+     0.436
     ],
-    "fig_h": 0.9563,
-    "foot": 0.9563,
+    "bbox": [
+     28,
+     2,
+     132,
+     158
+    ],
+    "fig_h": 0.975,
+    "foot": 0.9875,
     "cx": 0.5
    }
   }
@@ -2359,59 +3340,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.567,
     "loop": true,
-    "bbox": [
-     16,
-     8,
-     145,
-     111
+    "ortho": 9.183,
+    "center": [
+     0.137,
+     0.069,
+     1.657
     ],
-    "fig_h": 0.6438,
-    "foot": 0.6937,
-    "cx": 0.5031
+    "bbox": [
+     8,
+     14,
+     152,
+     129
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.8063,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 2.833,
     "loop": true,
-    "bbox": [
-     15,
-     14,
-     145,
-     116
+    "ortho": 8.409,
+    "center": [
+     -0.002,
+     -0.328,
+     1.895
     ],
-    "fig_h": 0.6375,
-    "foot": 0.725,
+    "bbox": [
+     8,
+     13,
+     152,
+     140
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.875,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.467,
     "loop": false,
-    "bbox": [
-     20,
-     0,
-     140,
-     108
+    "ortho": 8.067,
+    "center": [
+     -0.462,
+     -0.054,
+     2.331
     ],
-    "fig_h": 0.675,
-    "foot": 0.675,
+    "bbox": [
+     8,
+     6,
+     152,
+     140
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.875,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.367,
     "loop": false,
-    "bbox": [
-     15,
-     4,
-     145,
-     158
+    "ortho": 10.24,
+    "center": [
+     -0.022,
+     -0.304,
+     0.535
     ],
-    "fig_h": 0.9625,
-    "foot": 0.9875,
+    "bbox": [
+     21,
+     1,
+     139,
+     160
+    ],
+    "fig_h": 0.9938,
+    "foot": 1.0,
     "cx": 0.5
    }
   }
@@ -2420,59 +3425,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
+    "ortho": 4.009,
+    "center": [
+     -0.297,
+     -0.004,
+     0.995
+    ],
     "bbox": [
      1,
-     17,
+     16,
      159,
-     118
+     131
     ],
-    "fig_h": 0.6312,
-    "foot": 0.7375,
+    "fig_h": 0.7188,
+    "foot": 0.8187,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     14,
-     20,
-     146,
-     113
+    "ortho": 2.261,
+    "center": [
+     -0.333,
+     -0.452,
+     1.013
     ],
-    "fig_h": 0.5813,
-    "foot": 0.7063,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.867,
     "loop": false,
-    "bbox": [
-     5,
-     16,
-     155,
-     114
+    "ortho": 4.821,
+    "center": [
+     0.017,
+     0.041,
+     1.108
     ],
-    "fig_h": 0.6125,
-    "foot": 0.7125,
+    "bbox": [
+     0,
+     15,
+     160,
+     124
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.775,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
-    "bbox": [
-     5,
-     18,
-     155,
-     153
+    "ortho": 4.848,
+    "center": [
+     -1.078,
+     -0.057,
+     0.654
     ],
-    "fig_h": 0.8438,
-    "foot": 0.9563,
+    "bbox": [
+     0,
+     11,
+     160,
+     160
+    ],
+    "fig_h": 0.9313,
+    "foot": 1.0,
     "cx": 0.5
    }
   }
@@ -2481,59 +3510,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     4,
-     17,
-     156,
-     118
+    "ortho": 3.418,
+    "center": [
+     -0.369,
+     -0.177,
+     1.032
     ],
-    "fig_h": 0.6312,
-    "foot": 0.7375,
+    "bbox": [
+     0,
+     5,
+     160,
+     143
+    ],
+    "fig_h": 0.8625,
+    "foot": 0.8938,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     12,
-     18,
-     147,
-     113
+    "ortho": 2.319,
+    "center": [
+     -0.345,
+     -0.455,
+     1.039
     ],
-    "fig_h": 0.5938,
-    "foot": 0.7063,
-    "cx": 0.4969
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.767,
     "loop": false,
-    "bbox": [
-     2,
-     19,
-     159,
-     114
+    "ortho": 4.86,
+    "center": [
+     0.024,
+     0.022,
+     1.112
     ],
-    "fig_h": 0.5938,
-    "foot": 0.7125,
-    "cx": 0.5031
+    "bbox": [
+     0,
+     14,
+     160,
+     123
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.7688,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
-    "bbox": [
-     6,
-     18,
-     154,
-     147
+    "ortho": 6.104,
+    "center": [
+     -1.298,
+     0.223,
+     0.693
     ],
-    "fig_h": 0.8063,
-    "foot": 0.9187,
+    "bbox": [
+     0,
+     18,
+     160,
+     153
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9563,
     "cx": 0.5
    }
   }
@@ -2542,59 +3595,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     38,
-     30,
-     122,
-     103
+    "ortho": 3.154,
+    "center": [
+     -0.15,
+     -0.073,
+     0.976
     ],
-    "fig_h": 0.4562,
-    "foot": 0.6438,
+    "bbox": [
+     8,
+     2,
+     152,
+     141
+    ],
+    "fig_h": 0.8688,
+    "foot": 0.8812,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     36,
-     29,
-     124,
-     101
+    "ortho": 2.343,
+    "center": [
+     -0.171,
+     -0.481,
+     0.982
     ],
-    "fig_h": 0.45,
-    "foot": 0.6312,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.867,
     "loop": false,
-    "bbox": [
-     26,
-     25,
-     134,
-     102
+    "ortho": 4.062,
+    "center": [
+     -0.447,
+     0.075,
+     1.088
     ],
-    "fig_h": 0.4813,
-    "foot": 0.6375,
+    "bbox": [
+     0,
+     8,
+     160,
+     134
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.8375,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 2.1,
     "loop": false,
-    "bbox": [
-     8,
-     20,
-     152,
-     135
+    "ortho": 5.972,
+    "center": [
+     -1.191,
+     -0.876,
+     0.469
     ],
-    "fig_h": 0.7188,
-    "foot": 0.8438,
+    "bbox": [
+     1,
+     13,
+     159,
+     148
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.925,
     "cx": 0.5
    }
   }
@@ -2603,59 +3680,83 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.8,
     "loop": true,
-    "bbox": [
-     18,
-     24,
-     141,
-     117
+    "ortho": 3.253,
+    "center": [
+     -0.402,
+     -0.109,
+     1.135
     ],
-    "fig_h": 0.5813,
-    "foot": 0.7312,
-    "cx": 0.4969
+    "bbox": [
+     0,
+     2,
+     160,
+     150
+    ],
+    "fig_h": 0.925,
+    "foot": 0.9375,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     23,
-     25,
-     137,
-     115
+    "ortho": 2.539,
+    "center": [
+     -0.419,
+     -0.517,
+     1.138
     ],
-    "fig_h": 0.5625,
-    "foot": 0.7188,
+    "bbox": [
+     0,
+     0,
+     160,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.867,
     "loop": false,
-    "bbox": [
-     14,
-     21,
-     147,
-     115
+    "ortho": 4.088,
+    "center": [
+     -0.409,
+     0.19,
+     1.118
     ],
-    "fig_h": 0.5875,
-    "foot": 0.7188,
-    "cx": 0.5031
-   },
-   "death": {
-    "frames": 6,
-    "duration": 2.1,
-    "loop": false,
     "bbox": [
      0,
-     22,
+     0,
      160,
-     142
+     135
     ],
-    "fig_h": 0.75,
-    "foot": 0.8875,
+    "fig_h": 0.8438,
+    "foot": 0.8438,
+    "cx": 0.5
+   },
+   "death": {
+    "frames": 8,
+    "duration": 2.1,
+    "loop": false,
+    "ortho": 6.143,
+    "center": [
+     -1.365,
+     0.218,
+     0.804
+    ],
+    "bbox": [
+     0,
+     21,
+     160,
+     155
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.9688,
     "cx": 0.5
    }
   }
@@ -2664,46 +3765,64 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 3.3,
     "loop": true,
+    "ortho": 3.416,
+    "center": [
+     0.011,
+     0.665,
+     0.845
+    ],
     "bbox": [
      8,
-     10,
+     9,
      153,
-     150
+     151
     ],
-    "fig_h": 0.875,
-    "foot": 0.9375,
-    "cx": 0.5031
+    "fig_h": 0.8875,
+    "foot": 0.9437,
+    "cx": 0.5
    },
    "idle": {
     "frames": 1,
     "duration": 0.033,
     "loop": true,
-    "bbox": [
-     8,
-     10,
-     153,
-     150
+    "ortho": 3.416,
+    "center": [
+     0.017,
+     0.665,
+     0.845
     ],
-    "fig_h": 0.875,
-    "foot": 0.9375,
-    "cx": 0.5031
-   },
-   "attack": {
-    "frames": 6,
-    "duration": 0.233,
-    "loop": false,
     "bbox": [
      8,
      9,
-     153,
+     152,
+     151
+    ],
+    "fig_h": 0.8875,
+    "foot": 0.9437,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 7,
+    "duration": 0.233,
+    "loop": false,
+    "ortho": 3.465,
+    "center": [
+     0.017,
+     0.643,
+     0.845
+    ],
+    "bbox": [
+     8,
+     9,
+     152,
      150
     ],
     "fig_h": 0.8812,
     "foot": 0.9375,
-    "cx": 0.5031
+    "cx": 0.5
    }
   }
  },
@@ -2711,60 +3830,164 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     28,
-     40,
-     132,
-     119
+    "ortho": 2.922,
+    "center": [
+     -0.012,
+     0.026,
+     0.978
     ],
-    "fig_h": 0.4938,
-    "foot": 0.7438,
+    "bbox": [
+     0,
+     10,
+     160,
+     145
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9062,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     39,
-     40,
-     120,
-     115
+    "ortho": 2.35,
+    "center": [
+     -0.002,
+     0.292,
+     0.996
     ],
-    "fig_h": 0.4688,
-    "foot": 0.7188,
-    "cx": 0.4969
-   },
-   "attack": {
-    "frames": 6,
-    "duration": 0.6,
-    "loop": false,
     "bbox": [
      0,
-     9,
+     0,
      160,
-     125
+     155
+    ],
+    "fig_h": 0.9688,
+    "foot": 0.9688,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.21,
+    "center": [
+     0.354,
+     -0.127,
+     1.11
+    ],
+    "bbox": [
+     0,
+     5,
+     160,
+     126
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.171,
+    "center": [
+     0.354,
+     -0.109,
+     1.11
+    ],
+    "bbox": [
+     0,
+     4,
+     160,
+     126
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 4.81,
+    "center": [
+     -0.356,
+     0.96,
+     0.963
+    ],
+    "bbox": [
+     7,
+     14,
+     153,
+     132
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.825,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.349,
+    "center": [
+     -0.362,
+     -0.453,
+     1.184
+    ],
+    "bbox": [
+     0,
+     13,
+     160,
+     129
     ],
     "fig_h": 0.725,
-    "foot": 0.7812,
+    "foot": 0.8063,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.368,
+    "center": [
+     0.674,
+     -0.354,
+     1.084
+    ],
+    "bbox": [
+     0,
+     16,
+     160,
+     133
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.8313,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
+    "ortho": 4.718,
+    "center": [
+     -0.323,
+     -0.144,
+     0.879
+    ],
     "bbox": [
      8,
-     29,
-     153,
-     126
+     23,
+     152,
+     139
     ],
-    "fig_h": 0.6062,
-    "foot": 0.7875,
-    "cx": 0.5031
+    "fig_h": 0.725,
+    "foot": 0.8688,
+    "cx": 0.5
    }
   }
  },
@@ -2772,59 +3995,163 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     33,
-     47,
-     127,
-     117
+    "ortho": 3.379,
+    "center": [
+     -0.086,
+     0.183,
+     1.014
     ],
-    "fig_h": 0.4375,
-    "foot": 0.7312,
+    "bbox": [
+     3,
+     17,
+     156,
+     143
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.8938,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     42,
-     41,
-     117,
-     112
+    "ortho": 2.368,
+    "center": [
+     -0.0,
+     0.292,
+     1.035
     ],
-    "fig_h": 0.4437,
-    "foot": 0.7,
-    "cx": 0.4969
+    "bbox": [
+     0,
+     0,
+     160,
+     159
+    ],
+    "fig_h": 0.9938,
+    "foot": 0.9938,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
-    "bbox": [
-     1,
-     11,
-     160,
-     123
+    "ortho": 5.264,
+    "center": [
+     0.368,
+     -0.108,
+     1.109
     ],
-    "fig_h": 0.7,
-    "foot": 0.7688,
-    "cx": 0.5031
+    "bbox": [
+     0,
+     5,
+     160,
+     126
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.264,
+    "center": [
+     0.398,
+     -0.108,
+     1.109
+    ],
+    "bbox": [
+     0,
+     6,
+     160,
+     126
+    ],
+    "fig_h": 0.75,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 4.731,
+    "center": [
+     -0.329,
+     1.082,
+     0.97
+    ],
+    "bbox": [
+     2,
+     12,
+     158,
+     138
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.8625,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.46,
+    "center": [
+     -0.366,
+     -0.416,
+     1.181
+    ],
+    "bbox": [
+     0,
+     13,
+     160,
+     127
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.7937,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.465,
+    "center": [
+     0.706,
+     -0.377,
+     1.081
+    ],
+    "bbox": [
+     0,
+     18,
+     160,
+     132
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.825,
+    "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
+    "ortho": 4.698,
+    "center": [
+     -0.37,
+     -0.05,
+     0.858
+    ],
     "bbox": [
      8,
-     30,
+     23,
      152,
-     124
+     135
     ],
-    "fig_h": 0.5875,
-    "foot": 0.775,
+    "fig_h": 0.7,
+    "foot": 0.8438,
     "cx": 0.5
    }
   }
@@ -2833,59 +4160,163 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     20,
-     27,
-     140,
-     122
+    "ortho": 3.046,
+    "center": [
+     -0.075,
+     -0.073,
+     0.982
     ],
-    "fig_h": 0.5938,
-    "foot": 0.7625,
+    "bbox": [
+     0,
+     4,
+     160,
+     145
+    ],
+    "fig_h": 0.8812,
+    "foot": 0.9062,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     41,
-     40,
-     118,
-     116
+    "ortho": 2.346,
+    "center": [
+     -0.002,
+     0.363,
+     0.977
     ],
-    "fig_h": 0.475,
-    "foot": 0.725,
-    "cx": 0.4969
+    "bbox": [
+     2,
+     0,
+     158,
+     156
+    ],
+    "fig_h": 0.975,
+    "foot": 0.975,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
+    "ortho": 5.072,
+    "center": [
+     0.417,
+     -0.072,
+     1.133
+    ],
     "bbox": [
      0,
-     6,
+     4,
      160,
-     128
+     131
     ],
-    "fig_h": 0.7625,
-    "foot": 0.8,
+    "fig_h": 0.7937,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.072,
+    "center": [
+     0.417,
+     -0.072,
+     1.133
+    ],
+    "bbox": [
+     0,
+     4,
+     160,
+     131
+    ],
+    "fig_h": 0.7937,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 4.508,
+    "center": [
+     -0.339,
+     1.077,
+     0.955
+    ],
+    "bbox": [
+     4,
+     13,
+     156,
+     137
+    ],
+    "fig_h": 0.775,
+    "foot": 0.8562,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.226,
+    "center": [
+     -0.409,
+     -0.363,
+     1.181
+    ],
+    "bbox": [
+     0,
+     11,
+     160,
+     129
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.8063,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.443,
+    "center": [
+     0.658,
+     -0.398,
+     1.078
+    ],
+    "bbox": [
+     0,
+     18,
+     160,
+     130
+    ],
+    "fig_h": 0.7,
+    "foot": 0.8125,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
+    "ortho": 4.315,
+    "center": [
+     -0.315,
+     0.02,
+     0.815
+    ],
     "bbox": [
      8,
-     29,
+     18,
      152,
-     127
+     138
     ],
-    "fig_h": 0.6125,
-    "foot": 0.7937,
+    "fig_h": 0.75,
+    "foot": 0.8625,
     "cx": 0.5
    }
   }
@@ -2894,60 +4325,164 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     38,
-     44,
-     122,
-     118
+    "ortho": 2.999,
+    "center": [
+     -0.046,
+     0.17,
+     1.026
     ],
-    "fig_h": 0.4625,
-    "foot": 0.7375,
-    "cx": 0.5
+    "bbox": [
+     5,
+     8,
+     155,
+     148
+    ],
+    "fig_h": 0.875,
+    "foot": 0.925,
+    "cx": 0.5031
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     48,
-     48,
-     112,
-     113
+    "ortho": 2.35,
+    "center": [
+     0.008,
+     0.206,
+     1.048
     ],
-    "fig_h": 0.4062,
-    "foot": 0.7063,
-    "cx": 0.5
+    "bbox": [
+     8,
+     4,
+     153,
+     158
+    ],
+    "fig_h": 0.9625,
+    "foot": 0.9875,
+    "cx": 0.5031
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
+    "ortho": 5.173,
+    "center": [
+     0.445,
+     -0.041,
+     1.126
+    ],
     "bbox": [
-     4,
-     16,
-     157,
-     126
+     0,
+     5,
+     160,
+     130
+    ],
+    "fig_h": 0.7812,
+    "foot": 0.8125,
+    "cx": 0.5031
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.108,
+    "center": [
+     0.474,
+     -0.041,
+     1.126
+    ],
+    "bbox": [
+     0,
+     5,
+     160,
+     131
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.8187,
+    "cx": 0.5031
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 4.94,
+    "center": [
+     -0.386,
+     1.04,
+     0.92
+    ],
+    "bbox": [
+     8,
+     24,
+     152,
+     133
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.8313,
+    "cx": 0.5031
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.633,
+    "center": [
+     0.203,
+     -0.434,
+     1.121
+    ],
+    "bbox": [
+     0,
+     17,
+     160,
+     127
     ],
     "fig_h": 0.6875,
-    "foot": 0.7875,
+    "foot": 0.7937,
+    "cx": 0.5031
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.512,
+    "center": [
+     0.506,
+     -0.522,
+     0.882
+    ],
+    "bbox": [
+     0,
+     24,
+     160,
+     140
+    ],
+    "fig_h": 0.725,
+    "foot": 0.875,
     "cx": 0.5031
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
-    "bbox": [
-     8,
-     32,
-     152,
-     125
+    "ortho": 4.941,
+    "center": [
+     -0.295,
+     -0.112,
+     0.962
     ],
-    "fig_h": 0.5813,
-    "foot": 0.7812,
-    "cx": 0.5
+    "bbox": [
+     6,
+     20,
+     154,
+     138
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.8625,
+    "cx": 0.5031
    }
   }
  },
@@ -2955,59 +4490,163 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     33,
-     42,
-     127,
-     118
+    "ortho": 2.968,
+    "center": [
+     0.002,
+     0.068,
+     1.031
     ],
-    "fig_h": 0.475,
-    "foot": 0.7375,
+    "bbox": [
+     6,
+     10,
+     153,
+     146
+    ],
+    "fig_h": 0.85,
+    "foot": 0.9125,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     44,
-     44,
-     116,
-     113
+    "ortho": 2.37,
+    "center": [
+     0.004,
+     0.202,
+     1.058
     ],
-    "fig_h": 0.4313,
-    "foot": 0.7063,
+    "bbox": [
+     4,
+     0,
+     156,
+     157
+    ],
+    "fig_h": 0.9812,
+    "foot": 0.9812,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
-    "bbox": [
-     1,
-     13,
-     159,
-     123
+    "ortho": 5.232,
+    "center": [
+     0.373,
+     -0.129,
+     1.111
     ],
-    "fig_h": 0.6875,
-    "foot": 0.7688,
+    "bbox": [
+     0,
+     5,
+     160,
+     126
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.232,
+    "center": [
+     0.397,
+     -0.129,
+     1.111
+    ],
+    "bbox": [
+     0,
+     5,
+     160,
+     127
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.7937,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.082,
+    "center": [
+     -0.338,
+     0.999,
+     0.937
+    ],
+    "bbox": [
+     8,
+     22,
+     152,
+     130
+    ],
+    "fig_h": 0.675,
+    "foot": 0.8125,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 6.046,
+    "center": [
+     -0.201,
+     -0.58,
+     1.101
+    ],
+    "bbox": [
+     6,
+     23,
+     154,
+     125
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.7812,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.631,
+    "center": [
+     0.557,
+     -0.433,
+     0.893
+    ],
+    "bbox": [
+     3,
+     26,
+     157,
+     139
+    ],
+    "fig_h": 0.7063,
+    "foot": 0.8688,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
-    "bbox": [
-     9,
-     32,
-     151,
-     126
+    "ortho": 4.928,
+    "center": [
+     -0.179,
+     -0.091,
+     0.921
     ],
-    "fig_h": 0.5875,
-    "foot": 0.7875,
+    "bbox": [
+     8,
+     18,
+     151,
+     143
+    ],
+    "fig_h": 0.7812,
+    "foot": 0.8938,
     "cx": 0.5
    }
   }
@@ -3016,59 +4655,163 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     38,
-     46,
-     122,
-     118
+    "ortho": 3.571,
+    "center": [
+     0.016,
+     0.403,
+     0.979
     ],
-    "fig_h": 0.45,
-    "foot": 0.7375,
+    "bbox": [
+     7,
+     18,
+     153,
+     142
+    ],
+    "fig_h": 0.775,
+    "foot": 0.8875,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     50,
-     49,
-     110,
-     113
+    "ortho": 2.235,
+    "center": [
+     -0.017,
+     0.207,
+     0.999
     ],
-    "fig_h": 0.4,
-    "foot": 0.7063,
+    "bbox": [
+     3,
+     0,
+     157,
+     158
+    ],
+    "fig_h": 0.9875,
+    "foot": 0.9875,
     "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
+    "ortho": 5.19,
+    "center": [
+     0.437,
+     -0.043,
+     1.144
+    ],
     "bbox": [
-     3,
-     17,
-     157,
-     126
+     0,
+     6,
+     160,
+     130
+    ],
+    "fig_h": 0.775,
+    "foot": 0.8125,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.135,
+    "center": [
+     0.461,
+     -0.043,
+     1.144
+    ],
+    "bbox": [
+     0,
+     6,
+     160,
+     132
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.825,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 4.933,
+    "center": [
+     -0.493,
+     0.94,
+     0.971
+    ],
+    "bbox": [
+     8,
+     24,
+     152,
+     133
     ],
     "fig_h": 0.6813,
-    "foot": 0.7875,
+    "foot": 0.8313,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.497,
+    "center": [
+     0.198,
+     -0.473,
+     1.128
+    ],
+    "bbox": [
+     0,
+     15,
+     160,
+     128
+    ],
+    "fig_h": 0.7063,
+    "foot": 0.8,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.498,
+    "center": [
+     0.477,
+     -0.534,
+     0.893
+    ],
+    "bbox": [
+     0,
+     24,
+     160,
+     141
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.8812,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
+    "ortho": 4.674,
+    "center": [
+     -0.467,
+     -0.205,
+     0.917
+    ],
     "bbox": [
      8,
-     32,
+     20,
      152,
-     126
+     140
     ],
-    "fig_h": 0.5875,
-    "foot": 0.7875,
+    "fig_h": 0.75,
+    "foot": 0.875,
     "cx": 0.5
    }
   }
@@ -3077,59 +4820,163 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     31,
-     47,
-     129,
-     120
+    "ortho": 3.205,
+    "center": [
+     -0.117,
+     0.192,
+     0.986
     ],
-    "fig_h": 0.4562,
-    "foot": 0.75,
+    "bbox": [
+     2,
+     13,
+     158,
+     144
+    ],
+    "fig_h": 0.8187,
+    "foot": 0.9,
     "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     39,
-     39,
-     120,
-     115
+    "ortho": 2.416,
+    "center": [
+     -0.026,
+     0.258,
+     0.991
     ],
-    "fig_h": 0.475,
-    "foot": 0.7188,
-    "cx": 0.4969
-   },
-   "attack": {
-    "frames": 6,
-    "duration": 0.6,
-    "loop": false,
     "bbox": [
      0,
-     9,
+     0,
      160,
-     124
+     153
     ],
-    "fig_h": 0.7188,
-    "foot": 0.775,
+    "fig_h": 0.9563,
+    "foot": 0.9563,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.276,
+    "center": [
+     0.372,
+     -0.128,
+     1.112
+    ],
+    "bbox": [
+     0,
+     6,
+     160,
+     125
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.7812,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.24,
+    "center": [
+     0.372,
+     -0.112,
+     1.112
+    ],
+    "bbox": [
+     0,
+     5,
+     160,
+     126
+    ],
+    "fig_h": 0.7562,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.451,
+    "center": [
+     -0.723,
+     0.424,
+     0.914
+    ],
+    "bbox": [
+     8,
+     20,
+     152,
+     128
+    ],
+    "fig_h": 0.675,
+    "foot": 0.8,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.381,
+    "center": [
+     -0.373,
+     -0.466,
+     1.19
+    ],
+    "bbox": [
+     0,
+     13,
+     160,
+     129
+    ],
+    "fig_h": 0.725,
+    "foot": 0.8063,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.444,
+    "center": [
+     0.723,
+     -0.358,
+     1.098
+    ],
+    "bbox": [
+     0,
+     16,
+     160,
+     133
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.8313,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
+    "ortho": 4.36,
+    "center": [
+     -0.319,
+     0.027,
+     0.858
+    ],
     "bbox": [
      8,
-     28,
+     18,
      152,
-     126
+     139
     ],
-    "fig_h": 0.6125,
-    "foot": 0.7875,
+    "fig_h": 0.7562,
+    "foot": 0.8688,
     "cx": 0.5
    }
   }
@@ -3138,60 +4985,164 @@
   "cell": 160,
   "actions": {
    "walk": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.667,
     "loop": true,
-    "bbox": [
-     38,
-     43,
-     121,
-     118
+    "ortho": 2.959,
+    "center": [
+     -0.058,
+     0.158,
+     0.957
     ],
-    "fig_h": 0.4688,
-    "foot": 0.7375,
-    "cx": 0.4969
+    "bbox": [
+     2,
+     4,
+     158,
+     145
+    ],
+    "fig_h": 0.8812,
+    "foot": 0.9062,
+    "cx": 0.5
    },
    "idle": {
-    "frames": 2,
+    "frames": 6,
     "duration": 1.667,
     "loop": true,
-    "bbox": [
-     49,
-     49,
-     110,
-     113
+    "ortho": 2.175,
+    "center": [
+     0.005,
+     0.211,
+     0.967
     ],
-    "fig_h": 0.4,
-    "foot": 0.7063,
-    "cx": 0.4969
+    "bbox": [
+     1,
+     0,
+     159,
+     160
+    ],
+    "fig_h": 1.0,
+    "foot": 1.0,
+    "cx": 0.5
    },
    "attack": {
-    "frames": 6,
+    "frames": 12,
     "duration": 0.6,
     "loop": false,
-    "bbox": [
-     3,
-     15,
-     157,
-     126
+    "ortho": 5.153,
+    "center": [
+     0.414,
+     -0.016,
+     1.124
     ],
-    "fig_h": 0.6937,
-    "foot": 0.7875,
+    "bbox": [
+     0,
+     4,
+     160,
+     130
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.8125,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.153,
+    "center": [
+     0.448,
+     -0.016,
+     1.124
+    ],
+    "bbox": [
+     0,
+     5,
+     160,
+     131
+    ],
+    "fig_h": 0.7875,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 4.755,
+    "center": [
+     -0.381,
+     0.96,
+     0.922
+    ],
+    "bbox": [
+     8,
+     23,
+     152,
+     133
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.8313,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.431,
+    "center": [
+     0.205,
+     -0.521,
+     1.119
+    ],
+    "bbox": [
+     0,
+     15,
+     160,
+     130
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.8125,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.437,
+    "center": [
+     0.521,
+     -0.549,
+     0.883
+    ],
+    "bbox": [
+     0,
+     23,
+     160,
+     143
+    ],
+    "fig_h": 0.75,
+    "foot": 0.8938,
     "cx": 0.5
    },
    "death": {
-    "frames": 6,
+    "frames": 8,
     "duration": 1.167,
     "loop": false,
-    "bbox": [
-     8,
-     30,
-     153,
-     124
+    "ortho": 4.766,
+    "center": [
+     -0.27,
+     -0.193,
+     0.909
     ],
-    "fig_h": 0.5875,
-    "foot": 0.775,
-    "cx": 0.5031
+    "bbox": [
+     6,
+     18,
+     154,
+     140
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.875,
+    "cx": 0.5
    }
   }
  }

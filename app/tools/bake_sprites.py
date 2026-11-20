@@ -28,7 +28,7 @@ def parse_args():
     ap.add_argument("--game", required=True); ap.add_argument("--out", required=True)
     ap.add_argument("--only", default=""); ap.add_argument("--size", type=int, default=160)
     ap.add_argument("--samples", type=int, default=4)
-    ap.add_argument("--engine", default="cycles", choices=["cycles", "eevee"])
+    ap.add_argument("--engine", default="cycles", choices=["cycles", "eevee", "workbench"])
     ap.add_argument("--buildings", action="store_true")
     ap.add_argument("--nations", default="ukr,rus,pol,aus,fra,eng,spa,swe,pru,ven,tur,alg,net,den,por,pie,sax,bav,hun,swi")
     return ap.parse_args(rest)
@@ -80,15 +80,27 @@ def skin(m, fr):
     return out
 
 def sample(rng, n):
+    """Frames a..b in DONOR ORDER. Keep every frame when the action is short:
+    decimating a 20-frame walk to 6 poses made movement look strange."""
     a,b=rng
     if b<=a: return [a]
+    total=b-a+1
+    if total<=n: return list(range(a,b+1))
     return [a+round((b-a)*i/(n-1)) for i in range(n)] if n>1 else [a]
 
 def setup_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     w=bpy.data.worlds.new("w"); bpy.context.scene.world=w; w.use_nodes=True
     sc=bpy.context.scene
-    if _ENGINE == "eevee":
+    if _ENGINE == "workbench":
+        sc.render.engine="BLENDER_WORKBENCH"
+        try:
+            sc.display.shading.light="FLAT"
+            sc.display.shading.color_type="TEXTURE"
+            sc.display.shading.show_shadows=False
+            sc.display.shading.show_cavity=False
+        except Exception: pass
+    elif _ENGINE == "eevee":
         try: sc.render.engine="BLENDER_EEVEE_NEXT"
         except Exception: sc.render.engine="BLENDER_EEVEE"
         try: sc.eevee.taa_render_samples=max(1,_SAMPLES)
@@ -155,31 +167,61 @@ def dds_to_png(src,dst,opaque):
 def bake_unit(game,out,key,base,size,samples,tmp):
     m=read_oss(os.path.join(game,"data","actors","units",base+".oss"))
     acts=read_aaf(os.path.join(game,"data","animations","aaf",base+".aaf"))
+    # The donor AAF has DISTINCT actions for combat and for work. Reusing
+    # "attack0" for chopping/carrying (the old port) made peasants dance.
     plan=[]
-    for action,names,n,loop in (("walk",("walk","walk0"),6,True),
-                                ("idle",("idle","idle0"),2,True),
-                                ("attack",("attack0","attack1","attack"),6,False),
-                                ("death",("death",),6,False)):
+    for action,names,n,loop in (("walk",("walk","walk0"),12,True),
+                                 ("idle",("idle","idle0"),6,True),
+                                 ("attack",("attack0","attack1","attack"),12,False),
+                                 ("workwood",("workwood",),10,True),
+                                 ("workfood",("workfood",),10,True),
+                                 ("workstone",("workstone",),10,True),
+                                 ("construct",("construct",),8,True),
+                                 ("death",("death",),8,False)):
         rng=next((acts[x] for x in names if x in acts),None)
-        if rng: plan.append((action,sample(rng,n),loop,(rng[1]-rng[0]+1)/max(1,m["fps"])))
+        if rng:
+            frs=sample(rng,n)
+            plan.append((action,frs,loop,(rng[1]-rng[0]+1)/max(1,m["fps"])))
     if not plan: return False
     frames=[]
     for action,frs,loop,dur in plan:
         for fr in frs: frames.append((action,fr))
-    skinned=[skin(m,fr) for _,fr in frames]
-    lo=Vector((1e9,)*3); hi=Vector((-1e9,)*3)
-    for s in skinned:
-        for x,y,z in s:
-            lo=Vector((min(lo.x,x),min(lo.y,y),min(lo.z,z))); hi=Vector((max(hi.x,x),max(hi.y,y),max(hi.z,z)))
-    center=(lo+hi)*0.5; ortho=max(hi.x-lo.x,hi.y-lo.y,hi.z-lo.z)*1.12
+    # In-place locomotion, tracked on the torso bone (the bone carrying the
+    # most vertices): the donor engine moves the entity while the animation
+    # plays in place, but the .oss walk keys (horse gallop: 6m per cycle at
+    # 3.6 m/s) carry travel.  Subtracting the torso's per-frame XZ delta keeps
+    # every frame centred (no sliding across the cell, tight union bboxes).
+    # Bone 0 is NOT the root for horses (it barely moves).
+    torso=0; best=-1.0
+    for bi in range(len(m["anim"])):
+        wsum=sum(w for vw in m["weights"] for b2,w in vw if b2==bi)
+        if wsum>best: best=wsum; torso=bi
+    skinned_all={}
+    for action,frs,loop,dur in plan:
+        ref=(m["anim"][torso][frs[0]][0],m["anim"][torso][frs[0]][1])
+        for fr in frs:
+            if fr in skinned_all: continue
+            s=skin(m,fr)
+            rx,ry=(m["anim"][torso][fr][0]-ref[0],m["anim"][torso][fr][1]-ref[1])
+            skinned_all[fr]=[(x-rx,y-ry,z) for x,y,z in s]
     png=dds_to_png(tex_png(game,"unit",base),os.path.join(tmp,base+".png"),True)
     setup_scene(); mat=make_mat(png); ob=build_mesh(m,mat)
     me=ob.data
     entry={"cell":size,"actions":{}}
     for action,frs,loop,dur in plan:
+        # Per-action framing: every action gets its own centre+ortho from its
+        # own in-place union (walk bodies fill walk cells even though attack
+        # swings span 5m).  One shared ortho shrank everyday bodies to ~40%
+        # of the cell; true-scale drawing keeps world sizes exact across
+        # actions (see world.gd _draw_anim).
+        lo=Vector((1e9,)*3); hi=Vector((-1e9,)*3)
+        for fr in frs:
+            for x,y,z in skinned_all[fr]:
+                lo=Vector((min(lo.x,x),min(lo.y,y),min(lo.z,z))); hi=Vector((max(hi.x,x),max(hi.y,y),max(hi.z,z)))
+        center=(lo+hi)*0.5; ortho=max(hi.x-lo.x,hi.y-lo.y,hi.z-lo.z)*1.12
         sheet=Image.new("RGBA",(size*8,size*len(frs)),(0,0,0,0))
         for ri,fr in enumerate(frs):
-            verts=skinned[frames.index((action,fr))]
+            verts=skinned_all[fr]
             me.vertices.foreach_set("co",[c for v in verts for c in v]); me.update()
             for d in range(8):
                 cam=camera(center,d*45.0,ortho)
@@ -188,7 +230,9 @@ def bake_unit(game,out,key,base,size,samples,tmp):
                 sheet.paste(img,(d*size,ri*size),img)
                 bpy.data.objects.remove(cam,do_unlink=True)
         sheet.save(os.path.join(out,"%s_%s.png"%(key,action)))
-        entry["actions"][action]={"frames":len(frs),"duration":round(dur,3),"loop":loop}
+        entry["actions"][action]={"frames":len(frs),"duration":round(dur,3),"loop":loop,
+            "ortho":round(ortho,3),
+            "center":[round(center.x,3),round(center.y,3),round(center.z,3)]}
     bpy.data.objects.remove(ob,do_unlink=True)
     return entry
 

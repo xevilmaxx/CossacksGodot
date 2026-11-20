@@ -17,7 +17,7 @@
       "step": "order_keys"
     },
     {
-      "detail": "house site placed, builders on it 8",
+      "detail": "house site placed, builders on it 1",
       "passed": true,
       "step": "build_flow"
     },

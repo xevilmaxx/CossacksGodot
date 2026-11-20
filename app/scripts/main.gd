@@ -107,6 +107,12 @@ var dbg_bld := 0
 var dbg_unit := 0
 var dbg_fx := 0
 var menu_overlay: CanvasLayer = null
+var loading_layer: CanvasLayer = null
+var loading_bar: ProgressBar = null
+var loading_stage: Label = null
+var loading_pct: Label = null
+var loading_active := false
+var loading_gen := 0
 var end_panel: PanelContainer = null
 var last_cfg: Dictionary = {}
 var seed_arg := -1
@@ -186,6 +192,21 @@ func _setup_menu() -> void:
 func _on_menu_chosen(cfg: Dictionary) -> void:
 	pending_cfg = cfg
 	last_cfg = cfg
+	_apply_menu_cfg(cfg)
+	if is_headless:
+		# Headless tests / captures stay synchronous so scripted journeys
+		# (uitest menu_shell) see a ready game on the next line.
+		_setup_full_game()
+		_apply_menu_post(cfg)
+		if menu != null and is_instance_valid(menu):
+			menu.queue_free()
+			menu = null
+		return
+	# Interactive: staged load with a progress bar so the Start click shows
+	# how much is left until playing. Fire-and-forget: the coroutine owns it.
+	_do_async_load(cfg)
+
+func _apply_menu_cfg(cfg: Dictionary) -> void:
 	Data.PLAYER_NATIONS = [str(cfg.get("nation0", "ukr")), str(cfg.get("nation1", "rus"))]
 	Data.PLAYER_NAMES = [_menu_nation_name(str(cfg.get("nation0", "ukr")), 0),
 		_menu_nation_name(str(cfg.get("nation1", "rus")), 1)]
@@ -200,7 +221,10 @@ func _on_menu_chosen(cfg: Dictionary) -> void:
 		Data.RANDOM_SEED = int(cfg.get("seed", Data.RANDOM_SEED))
 	if not battle_requested:
 		start_mode = str(cfg.get("mode", "skirmish"))
-	_setup_full_game()
+
+func _apply_menu_post(cfg: Dictionary) -> void:
+	if game == null:
+		return
 	if cfg.has("load_save"):
 		var pth := str(cfg.get("load_save", ""))
 		if pth != "" and FileAccess.file_exists(pth):
@@ -217,10 +241,204 @@ func _on_menu_chosen(cfg: Dictionary) -> void:
 		if descr != "":
 			objs.append(descr)
 		game.set_objectives(objs)
-		hud.refresh_objectives()
+		if hud != null and is_instance_valid(hud):
+			hud.refresh_objectives()
+
+# ---------------------------------------------------------------- loading bar
+# Shown the moment Start is clicked; updated between mapgen stages so the
+# player sees how much is left until the match is playable.
+func _show_loading() -> void:
+	_hide_loading()
+	loading_layer = CanvasLayer.new()
+	loading_layer.layer = 30
+	add_child(loading_layer)
+	var dim := ColorRect.new()
+	dim.color = Color(0.03, 0.03, 0.03, 0.85)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	loading_layer.add_child(dim)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	loading_layer.add_child(center)
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", C3ConfigScript.ui_panel_style())
+	center.add_child(card)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 10)
+	vb.custom_minimum_size = Vector2(460, 0)
+	card.add_child(vb)
+	var title := Label.new()
+	title.text = "Loading battle..."
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+	vb.add_child(title)
+	loading_stage = Label.new()
+	loading_stage.text = "Preparing..."
+	loading_stage.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading_stage.add_theme_font_size_override("font_size", 14)
+	loading_stage.add_theme_color_override("font_color", Color(0.85, 0.82, 0.72))
+	vb.add_child(loading_stage)
+	loading_bar = ProgressBar.new()
+	loading_bar.min_value = 0.0
+	loading_bar.max_value = 100.0
+	loading_bar.value = 0.0
+	loading_bar.show_percentage = false
+	loading_bar.custom_minimum_size = Vector2(420, 22)
+	vb.add_child(loading_bar)
+	loading_pct = Label.new()
+	loading_pct.text = "0%"
+	loading_pct.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading_pct.add_theme_font_size_override("font_size", 14)
+	loading_pct.add_theme_color_override("font_color", Color(1, 0.95, 0.8))
+	vb.add_child(loading_pct)
+
+func _set_loading(frac: float, stage: String) -> void:
+	var f := clampf(frac, 0.0, 1.0)
+	if loading_bar != null and is_instance_valid(loading_bar):
+		loading_bar.value = f * 100.0
+	if loading_stage != null and is_instance_valid(loading_stage):
+		loading_stage.text = stage
+	if loading_pct != null and is_instance_valid(loading_pct):
+		loading_pct.text = "%d%%  %s" % [int(round(f * 100.0)), stage]
+
+func _hide_loading() -> void:
+	loading_active = false
+	if loading_layer != null and is_instance_valid(loading_layer):
+		loading_layer.queue_free()
+	loading_layer = null
+	loading_bar = null
+	loading_stage = null
+	loading_pct = null
+
+func _loading_tick(frac: float, stage: String, gen: int) -> bool:
+	# Returns false if this load was superseded (a newer Start click won).
+	if gen != loading_gen:
+		return false
+	_set_loading(frac, stage)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	return gen == loading_gen
+
+func _do_async_load(cfg: Dictionary) -> void:
+	loading_gen += 1
+	var gen := loading_gen
+	loading_active = true
+	# Hide the menu at once so a second Start click cannot queue.
 	if menu != null and is_instance_valid(menu):
 		menu.queue_free()
 		menu = null
+	_show_loading()
+	_set_loading(0.02, "Preparing...")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if gen != loading_gen:
+		return
+	if not is_headless:
+		get_window().size = Vector2i(Data.WINDOW_WIDTH, Data.WINDOW_HEIGHT)
+		if Data.FULLSCREEN:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		DisplayServer.window_set_vsync_mode(
+			DisplayServer.VSYNC_ENABLED if Data.VSYNC else DisplayServer.VSYNC_DISABLED)
+	# --- sim stages (each awaits so the bar repaints between them) ---
+	game = C3Game.new()
+	add_child(game)
+	if not await _loading_tick(0.06, "Starting simulation...", gen):
+		return
+	game.setup_begin(start_mode)
+	if not await _loading_tick(0.14, "Shaping land and water...", gen):
+		return
+	game._gen_base()
+	if not await _loading_tick(0.34, "Growing forests...", gen):
+		return
+	game._gen_forests()
+	if not await _loading_tick(0.52, "Placing stone and mines...", gen):
+		return
+	game._gen_resources()
+	if not await _loading_tick(0.66, "Raising towns...", gen):
+		return
+	game._gen_finish()
+	if not await _loading_tick(0.76, "Painting terrain...", gen):
+		return
+	game._assign_tileblocks()
+	if not await _loading_tick(0.86, "Mustering armies...", gen):
+		return
+	game.setup_spawns()
+	game.game_over.connect(func(w: int) -> void: _on_game_over(w))
+	_apply_menu_post_loadsave(cfg)
+	if not await _loading_tick(0.90, "Loading art...", gen):
+		return
+	world = C3WorldScript.new()
+	world.bind(game)
+	add_child(world)
+	if not await _loading_tick(0.94, "Building interface...", gen):
+		return
+	camera = C3CameraScript.new()
+	add_child(camera)
+	camera.bind(world)
+	var homes := game.buildings_of(0)
+	if not homes.is_empty():
+		camera.position = homes[0].pos * world.view_scale
+	else:
+		camera.position = Vector2(20, 20) * Data.TILE_M * world.view_scale
+	hud = C3HUDScript.new()
+	add_child(hud)
+	hud.bind(game, world)
+	world.hud = hud
+	hud.speed_cb = func(s: float) -> void:
+		if s <= 0.0:
+			game.paused = true
+		else:
+			game.paused = false
+			set_speed(s)
+		hud.refresh_speed(speed, game.paused)
+	hud.menu_cb = func() -> void:
+		get_tree().reload_current_scene()
+	hud.refresh_selection([])
+	hud.refresh_objectives()
+	input_ctl = C3InputScript.new()
+	add_child(input_ctl)
+	input_ctl.bind(game, world, hud, camera)
+	var homes2 := game.buildings_of(0)
+	if not homes2.is_empty():
+		input_ctl._set_selection([homes2[0]])
+	ai = C3AIScript.new(game, 1)
+	if journey_mode:
+		cli_ai0 = C3AIScript.new(game, 0)
+	audio = C3AudioScript.new()
+	add_child(audio)
+	var can_play := not is_headless
+	if can_play:
+		audio.start_music(str(game.players[0].get("nation", "ukr")))
+	audio.set_meta("can_play", can_play)
+	_apply_menu_post_objectives(cfg)
+	if not await _loading_tick(1.0, "Ready!", gen):
+		return
+	_hide_loading()
+
+func _apply_menu_post_loadsave(cfg: Dictionary) -> void:
+	if game == null:
+		return
+	if cfg.has("load_save"):
+		var pth := str(cfg.get("load_save", ""))
+		if pth != "" and FileAccess.file_exists(pth):
+			var d = JSON.parse_string(FileAccess.get_file_as_string(pth))
+			if d is Dictionary:
+				game.deserialize(d)
+
+func _apply_menu_post_objectives(cfg: Dictionary) -> void:
+	if game == null:
+		return
+	var descr := str(cfg.get("descr", ""))
+	var mission := str(cfg.get("mission", ""))
+	if descr != "" or mission != "":
+		var objs := ["Destroy all enemy buildings"]
+		if mission != "":
+			objs.append("Mission: %s" % mission)
+		if descr != "":
+			objs.append(descr)
+		game.set_objectives(objs)
+		if hud != null and is_instance_valid(hud):
+			hud.refresh_objectives()
 
 func _menu_nation_name(sid: String, i: int) -> String:
 	if Data.NATIONS.has(sid):

@@ -13,6 +13,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", required=True)
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--normalize", action="store_true",
+                    help="use the idle action's body metrics for every action")
     a = ap.parse_args()
     ip = os.path.join(a.dir, "index.json")
     idx = json.load(open(ip, encoding="utf-8"))
@@ -42,6 +44,18 @@ def main():
             ad["foot"] = round(y1 / float(cell), 4)
             ad["cx"] = round((x0 + x1) / 2.0 / float(cell), 4)
             changed += 1
+    if a.normalize:
+        for key, info in idx.items():
+            acts = info.get("actions", {})
+            ref = acts.get("idle") or acts.get("walk")
+            if not ref or "fig_h" not in ref:
+                continue
+            for act, ad in acts.items():
+                if "fig_h" not in ad:
+                    continue
+                ad["fig_h"] = ref["fig_h"]
+                ad["foot"] = ref["foot"]
+                ad["cx"] = ref["cx"]
     json.dump(idx, open(ip, "w", encoding="utf-8"), indent=1)
     print("measured", changed, "action sheets")
 

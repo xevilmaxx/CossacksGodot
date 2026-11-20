@@ -20,6 +20,18 @@ func _sim(seconds: float) -> void:
 	for i in steps:
 		game.tick(0.25)
 
+func _spot(sid: String, near: Vector2) -> Vector2:
+	# buildable point near the requested one: visual footprints are much
+	# bigger than the old gameplay radii, so fixed offsets can land inside
+	# another building's visual disc. Try a ring of candidates instead.
+	for r in [6.0, 10.0, 14.0, 18.0, 24.0]:
+		for k in 8:
+			var a: float = TAU * float(k) / 8.0 + float(r)
+			var p: Vector2 = near + Vector2(cos(a), sin(a)) * float(r)
+			if bool(game.can_place(0, sid, p).get("ok", false)):
+				return p
+	return Vector2.INF
+
 func run() -> Dictionary:
 	var steps: Array = []
 	# ---- move
@@ -60,7 +72,8 @@ func run() -> Dictionary:
 
 	# ---- build a house with peasants
 	game.players[0].res[1] += 500
-	var house := game.place_building(0, "hou", peasant.pos + Vector2(4, 4))
+	var hpos := _spot("hou", peasant.pos)
+	var house := game.place_building(0, "hou", hpos, true, [peasant]) if hpos != Vector2.INF else {}
 	var built := false
 	if not house.is_empty():
 		_sim(25.0)
@@ -99,14 +112,23 @@ func run() -> Dictionary:
 	if not dep.is_empty():
 		game.players[0].res[1] += 500
 		game.players[0].res[2] += 500
-		var mine := game.place_building(0, "mine_gold", dep.pos)
+		var crew: Array = []
+		for u in game.units_of(0):
+			if u.sid == "peasant" and crew.size() < 3:
+				crew.append(u)
+		var mine := game.place_building(0, "mine_gold", dep.pos, true, crew)
 		if not mine.is_empty():
-			_sim(40.0)  # builders walk over and finish the site
+			_sim(60.0)  # builders walk over and finish the site
+			# nearest free peasant to the finished mine (a far one can't
+			# walk around the big visual footprints within the window)
 			var worker: Dictionary = {}
+			var wbest := 1e9
 			for u in game.units_of(0):
 				if u.sid == "peasant" and u.order.type != "build":
-					worker = u
-					break
+					var dd: float = u.pos.distance_to(mine.pos)
+					if dd < wbest:
+						wbest = dd
+						worker = u
 			if not worker.is_empty():
 				game.cmd_gather(worker, dep)
 				var gold0: float = game.players[0].res[3]
@@ -235,7 +257,8 @@ func run() -> Dictionary:
 	# ---- menu/shell pass: stone wall + rally + objectives
 	game.players[0].res[1] += 500
 	game.players[0].res[2] += 500
-	var wall := game.place_building(0, "wal", peasant.pos + Vector2(-14, -14))
+	var wpos := _spot("wal", peasant.pos)
+	var wall := game.place_building(0, "wal", wpos, true, [peasant]) if wpos != Vector2.INF else {}
 	var wall_ok := not wall.is_empty()
 	if wall_ok:
 		_sim(30.0)
@@ -381,10 +404,14 @@ func run() -> Dictionary:
 	# ---- G15: farm cap on build/kill
 	var cap0: int = int(game.players[0].farm_cap)
 	game.players[0].res[1] += 500.0
-	var houtest := game.place_building(0, "hou", peasant.pos + Vector2(8, 0))
-	_sim(25.0)
+	var houtest := {}
+	var fpos := _spot("hou", peasant.pos)
+	if fpos != Vector2.INF:
+		houtest = game.place_building(0, "hou", fpos, true, [peasant])
+		_sim(25.0)
 	var cap1: int = int(game.players[0].farm_cap)
-	game.cmd_delete(houtest)
+	if not houtest.is_empty():
+		game.cmd_delete(houtest)
 	var cap2: int = int(game.players[0].farm_cap)
 	steps.append({"step": "farm_cap", "passed": cap1 == cap0 + 25 and cap2 == cap0, "detail": "farm %d -> %d -> %d" % [cap0, cap1, cap2]})
 

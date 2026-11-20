@@ -204,8 +204,17 @@ func _anim_action(e: Dictionary) -> String:
 	var gt: float = game.time_s
 	if o.type == "attack" and float(e.get("fire_t", -1.0)) >= 0.0 and gt - float(e.fire_t) < 0.9:
 		return "attack"
-	if (o.type == "gather" or o.type == "build") and not bool(e.get("moving", false)):
-		return "attack"
+	if not bool(e.get("moving", false)):
+		# donor AAF has separate work/construct clips: chopping wood with a
+		# sword swing ("attack") is what made peasants look like they danced.
+		if o.type == "gather":
+			match str(o.get("res", "")):
+				"wood": return "workwood"
+				"food": return "workfood"
+				"stone": return "workstone"
+				_: return "workwood"
+		if o.type == "build" or o.type == "repair":
+			return "construct"
 	if bool(e.get("moving", false)):
 		return "walk"
 	return "idle"
@@ -225,6 +234,8 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	if info.is_empty():
 		return false
 	var act := _anim_action(e)
+	if not info.actions.has(act):
+		act = "attack" if act in ["workwood", "workfood", "workstone", "construct"] else "idle"
 	var a: Dictionary = info.actions.get(act, info.actions.get("idle", {}))
 	if a.is_empty():
 		return false
@@ -243,18 +254,31 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	var gt: float = game.time_s
 	var t0: float = float(e.get("death_t", -1.0)) if act == "death" else (float(e.get("fire_t", -1.0)) if act == "attack" and e.order.type == "attack" else -1.0)
 	var fi: int
+	# per-entity phase so armies don't march in lockstep (donor units are
+	# desynced; the old global anim_t made whole lines lift legs together).
+	var phase: float = fposmod(float(int(e.get("id", 0))) * 0.61803, 1.0) * maxf(0.05, float(a.get("duration", 1.0)))
 	if t0 >= 0.0:
 		fi = mini(n - 1, int((gt - t0) / maxf(0.05, float(a.duration)) * n))
 	else:
-		fi = int(anim_t / maxf(0.05, float(a.duration)) * n) % n
+		fi = int((anim_t + phase) / maxf(0.05, float(a.duration)) * n) % n
 	var dir := int(fposmod(roundf(float(e.get("face", 0.0)) / (PI / 4.0)), 8.0)) % 8
 	var src := Rect2(dir * cell, fi * cell, cell, cell)
-	# G1: scale by the measured ink height, anchor feet at the ink bottom and
-	# horizontal centre at the ink centre (tools swinging must not shift feet).
+	# True donor scale: each baked sheet's ortho (world meters across one cell,
+	# stored in index.json by tools/compute_ortho.py) converts sheet pixels to
+	# meters, so a pikeman's pike fits without shrinking his body and a horse
+	# stays longer than a man is tall.  The old forced-height formula
+	# (unit_height / ink fraction) shrank cavalry ~25% and stretched pikes.
+	# Feet stay anchored at the measured ink bottom / horizontal centre, so
+	# swinging tools never shift the stance.
 	var fig_h: float = float(a.get("fig_h", 1.0))
 	var foot: float = float(a.get("foot", 0.82))
 	var cx: float = float(a.get("cx", 0.5))
-	var sc: float = _unit_height(e) * view_scale / maxf(8.0, float(cell) * fig_h)
+	var sc: float
+	var o: float = float(a.get("ortho", info.get("ortho", 0.0)))
+	if o > 0.0:
+		sc = o * view_scale / maxf(8.0, float(cell))
+	else:
+		sc = _unit_height(e) * view_scale / maxf(8.0, float(cell) * fig_h)
 	var sz := Vector2(cell, cell) * sc
 	var tl := p - Vector2(sz.x * cx, sz.y * foot)
 	unit_layer.draw_texture_rect_region(tex, Rect2(tl, sz), src, tint)
@@ -288,6 +312,28 @@ func _bld_anim(key: String) -> Texture2D:
 		anim_tex.erase(key)
 		return null
 	return t2
+
+var bld_scale_idx := {}
+func _bld_scale(key: String) -> Dictionary:
+	# true-scale drawing data (tools/compute_buildings.py): ortho + ink box
+	# of the baked sheet -> screen pixels per sheet pixel + anchor fractions.
+	if bld_scale_idx.is_empty():
+		var j := FileAccess.get_file_as_string(_anim_dir() + "/buildings.json")
+		if j != "":
+			var parsed = JSON.parse_string(j)
+			if parsed is Dictionary:
+				bld_scale_idx = parsed
+	if not bld_scale_idx.has(key):
+		return {}
+	var e: Dictionary = bld_scale_idx[key]
+	var cell: float = float(e.get("cell", 320.0))
+	var ink: Array = e.get("ink", [0, 0, cell, cell])
+	var sc: float = float(e.get("ortho", 10.0)) * view_scale / maxf(8.0, cell)
+	return {"sc": sc, "cell": cell,
+		"cx": float(e.get("cx", (float(ink[0]) + float(ink[2])) * 0.5 / cell)),
+		"foot": float(ink[3]) / cell,
+		"rm": float(e.get("rm", 0.0)),
+		"w": (float(ink[2]) - float(ink[0])) * sc}
 
 var decal_tex: Dictionary = {}
 var gain_map: Image = null  # coarse meadow-gain tile, baked once and shared by all chunks
@@ -330,9 +376,11 @@ func _blob_rect(layer: Node2D, p: Vector2, rx: float, ry: float, col: Color) -> 
 # Original dirt plates under buildings (data/terrain/decals/buildings), keyed
 # {nation}{sid} like the source files (rushoud, ukrcend...). Mines use the ore
 # name (eurgold). Converted to PNG by copy_assets; missing keys fall back to
-# the procedural dirt ellipse.
+# the procedural dirt ellipse. bar18 is baked from donor ba2, so it shares
+# that plate.
+const BLD_DECAL_ALIAS := {"bar18": "ba2"}
 func _bld_decal(nat: String, sid: String) -> Texture2D:
-	var key := "%s%s" % [nat, sid]
+	var key := "%s%s" % [nat, str(BLD_DECAL_ALIAS.get(sid, sid))]
 	if decal_tex.has(key):
 		return decal_tex[key] as Texture2D
 	var path := "res://assets/terrain/decals_png/%s%sd.png" % [nat, sid]
@@ -555,7 +603,7 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 		for lx in CHUNK_T:
 			var wx := float(cx * CHUNK_T + lx)
 			var wy := float(cy * CHUNK_T + ly)
-			mot[ly * CHUNK_T + lx] = 0.94 + 0.12 * (0.5 + 0.5 * _wnoise(wx * 0.05 + 11.0, wy * 0.05 - 7.0))
+			mot[ly * CHUNK_T + lx] = 0.91 + 0.18 * (0.5 + 0.5 * _wnoise(wx * 0.05 + 11.0, wy * 0.05 - 7.0))
 	# per-block wrap regions present in this chunk (strict offsets = seamless)
 	var present := {}
 	for ly in CHUNK_T:
@@ -613,6 +661,16 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 					img.blend_rect_mask(tile_im, terrain_masks[mi], tile_rect, dst)
 			var hh: float = game.height_at(Vector2((float(x) + 0.5) * Data.TILE_M, (float(y) + 0.5) * Data.TILE_M))
 			var bright: float = mot[ly * CHUNK_T + lx] * clampf(1.0 + hh * 0.12, 0.80, 1.18)
+			# donor light is directional: shade slopes from NW so hills and
+			# lake bowls read as relief instead of flat painted patches.
+			if game.height.size() == game.MAP_W * game.MAP_H:
+				var xl: int = maxi(0, x - 1)
+				var xr: int = mini(game.MAP_W - 1, x + 1)
+				var yu: int = maxi(0, y - 1)
+				var yd: int = mini(game.MAP_H - 1, y + 1)
+				var gx: float = game.height[game._t(xl, y)] - game.height[game._t(xr, y)]
+				var gy: float = game.height[game._t(x, yu)] - game.height[game._t(x, yd)]
+				bright *= clampf(1.0 + (gx + gy) * 0.22, 0.74, 1.26)
 			if absf(bright - 1.0) > 0.004:
 				tile_im.blit_rect(img, rect, Vector2i(0, 0))
 				tile_im.adjust_bcs(bright, 1.0, 1.0)
@@ -908,14 +966,28 @@ func _draw_buildings() -> void:
 			if int(e.player) >= 0 and int(e.player) < Data.PLAYER_NATIONS.size():
 				bnat = str(Data.PLAYER_NATIONS[int(e.player)])
 			var dec := _bld_decal(bnat, str(e.sid))
+			# True donor scale (buildings.json from tools/compute_buildings.py):
+			# a 14 m town hall next to 2 m peasants, like the original — the
+			# old _bld_height fudge (4.5-8 m) shrank big buildings ~40% and
+			# left them floating in oversized dirt plates.
+			var bsc := _bld_scale(_bld_key(e))
+			var vwid: float = r * 2.0
+			if bsc.has("w"):
+				vwid = float(bsc.w)
 			if dec != null:
-				var dw := r * 2.0 * 2.8
+				var dw := r * 2.0 * 2.8 if bsc.is_empty() else vwid * 1.25
 				bld_layer.draw_texture_rect(dec, Rect2(p.x - dw / 2, p.y - dw * 0.25 + 3, dw, dw * 0.5), false)
 			else:
-				_blob_rect(bld_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, Color(0.42, 0.33, 0.21, 0.9))
-			bld_layer.draw_circle(p + Vector2(0, 4), r * 1.5, Color(0, 0, 0, 0.22))
-			_draw_sprite(bld_layer, bspr, p, _bld_height(e), tint_b)
-			var bw := r * 2.0
+				_blob_rect(bld_layer, p + Vector2(0, 3), vwid * 0.72, vwid * 0.36, Color(0.42, 0.33, 0.21, 0.9))
+			bld_layer.draw_circle(p + Vector2(0, 4), vwid * 0.75, Color(0, 0, 0, 0.22))
+			if bsc.has("sc"):
+				var cell2: float = float(bsc.get("cell", 320.0))
+				var sz2 := Vector2(cell2, cell2) * float(bsc.sc)
+				var tl2 := p - Vector2(sz2.x * float(bsc.cx), sz2.y * float(bsc.foot))
+				bld_layer.draw_texture_rect(bspr, Rect2(tl2, sz2), false, tint_b)
+			else:
+				_draw_sprite(bld_layer, bspr, p, _bld_height(e), tint_b)
+			var bw := vwid
 			if not e.finished:
 				var k: float = clampf(e.progress / maxf(1.0, e.def.build_time), 0.0, 1.0)
 				bld_layer.draw_rect(Rect2(p.x - bw / 2, p.y + 6, bw * k, 5), Color(0.3, 0.8, 0.3))
@@ -1370,15 +1442,26 @@ func _draw_ghost() -> void:
 		reason = "Not enough resources."
 	var c := Color(0.2, 1.0, 0.3, 0.5) if ok else Color(1.0, 0.25, 0.2, 0.5)
 	var p := world_to_px(wp)
-	var r: float = def.radius * view_scale
+	var gkey := game._bld_scale_key(0, sid)
+	var gsc: Dictionary = _bld_scale(gkey)
+	var gr: float = def.radius * view_scale
+	if gsc.has("w"):
+		gr = float(gsc.w) * 0.5
 	# transparent building: nation sheet if baked, else static sprite, else ring only
 	var ghost_tex: Texture2D = _bld_tex({"player": 0, "sid": sid, "finished": true, "progress": 1.0, "def": def})
 	if ghost_tex != null:
 		var tint := Color(1, 1, 1, 0.45) if ok else Color(1, 0.4, 0.4, 0.45)
-		_draw_sprite(bld_layer, ghost_tex, p, 3.0, tint, false)
+		if gsc.has("sc"):
+			var gcell: float = float(gsc.get("cell", 320.0))
+			var gsz := Vector2(gcell, gcell) * float(gsc.sc)
+			var gtl := p - Vector2(gsz.x * float(gsc.cx), gsz.y * float(gsc.foot))
+			bld_layer.draw_texture_rect(ghost_tex, Rect2(gtl, gsz), false, tint)
+		else:
+			_draw_sprite(bld_layer, ghost_tex, p, 3.0, tint, false)
 	# placement ring on the ground (original style: glowing footprint ring,
 	# green = buildable, red = blocked)
-	_ground_ellipse(fx_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, c, 2.5)
+	_ground_ellipse(fx_layer, p + Vector2(0, 3), gr * 1.45, gr * 0.72, c, 2.5)
+	var r := gr
 	if not ok:
 		fx_layer.draw_line(p + Vector2(-r, -r * 0.5), p + Vector2(r, r * 0.5), Color(1, 0.2, 0.2, 0.9), 2.0)
 		fx_layer.draw_line(p + Vector2(-r, r * 0.5), p + Vector2(r, -r * 0.5), Color(1, 0.2, 0.2, 0.9), 2.0)

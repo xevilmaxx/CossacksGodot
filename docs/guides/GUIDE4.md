@@ -2187,3 +2187,78 @@ KNOWN LIMITATIONS (honest, do not hide):
    lists 41 transition blocks with no PNG (unused today).
  - Static map dump JSONs are large (~1 MB) because Godot sorts base64 keys
    first; scan_map.py reads the whole file to find map_w.
+
+----------------------------------------------------------------------
+BUILD LOG 2026-11-20d — animation sequence, builder selection, relief light
+----------------------------------------------------------------------
+USER REPORT: "graphics is so far away from the video level, units animations
+are wrong, all peasants go to build not just selected ones". Video reference
+https://www.youtube.com/watch?v=cZW0AEupCaI (thumbnail kept as
+app/shots/video_ref_thumb.jpg): donor look = crisp 3D buildings with
+scaffolding, dense formed armies, rich photographic terrain, warm directional
+light and real shadows. The port is a 2D top-down sprite port; matching that
+exactly is a multi-stage effort, not one flag. This log records what was fixed
+now and what remains.
+
+DONOR ANIMATION TRUTH (read from C:\Games\Cossacks 3\data\animations\aaf\*.aaf):
+ peaukr.aaf (fps 30 from the .oss header):
+   walk 1..20 (20 frames), idle 64..113 (50), death 115..149 (35),
+   attack0 237..254 (18), workwood 237..254 (18), workfood 278..299 (22),
+   workstone 217..234 (18), construct 186..198 (13),
+   plus carry/idle variants walkwood 22..41, idlefood 405..454, ...
+ pikeman.aaf walk 1..24 / attack0 32..46 / idle 209..258 / death 80..134.
+ The donor therefore has SEPARATE clips for chopping, farming, mining and
+ building. The old port baked only 6 walk frames out of 20 and reused the
+ COMBAT attack sheet for gather/build -> "strange dance", the user's exact
+ complaint. Two further bugs made it worse:
+   - duration was len(sampled_frames)/fps, so an 8-of-35 death played in
+     0.27 s instead of the donor's 1.17 s (hyper-flip);
+   - skinned[frames.index((action,fr))] could return the wrong frame when two
+     actions share a range (attack0 and workwood are both 237..254).
+
+FIXED (files):
+ app/tools/bake_sprites.py
+   - sample() keeps EVERY donor frame when the action is <= cap; long idle/
+     death ranges are evenly reduced. Order is donor order a..b.
+   - added workwood/workfood/workstone/construct actions (caps 10/10/10/8).
+   - duration = (b-a+1)/fps (donor full cycle, independent of decimation).
+   - frame_index keyed by (action,frame), not Python id(int) (intering bug).
+   - added --engine workbench: flat textured CPU render, one unit in ~26 s
+     vs Cycles minutes. CPU-only, weak-GPU safe.
+ app/tools/sheet_metrics.py --normalize: all actions of a unit inherit the
+   idle action's fig_h/foot/cx, so units no longer grow/shrink ~56% when they
+   switch idle -> attack -> death (GUIDE4 L7.04, previously unfixed).
+ app/scripts/world.gd
+   - _anim_action() picks workwood/workfood/workstone by order.res and
+     construct for build/repair, falling back to attack for units with no
+     dedicated work sheet; _draw_anim falls back correctly when missing.
+   - _build_chunk() applies directional slope shading (NW light) from the
+     stored height field, so hills/lake bowls read as relief.
+ app/scripts/game.gd + input_controller.gd
+   - place_building(..., builders:Array = []) sends ONLY the selected
+     peasants (previously it swept up 8 idle AND gathering peasants).
+     AI still uses send=false; selftest/uitest pass explicit builders.
+
+REBAKED UNITS (Workbench, 160px, 1 sample): peasant, rus_peasant, pikeman,
+ musketeer, serdiuk, archer, officer, drummer, priest, cossack, cannon.
+ Remaining 43 sheets still use the old 6-frame decimation; their durations
+ were already donor-correct, so they are playable but choppier.
+
+ATOMIC GATES: selftest 28/28 True, uitest True, screenshot g4_shading.png.
+ Peasant durations now walk .667 / idle 1.667 / attack .600 / workwood .600 /
+ workfood .733 / construct .433 / death 1.167 s (donor values).
+
+GRAPHICS PLAN (still open, do not pretend it is done):
+ 1. terrain: donor blocks are 1024px but the port renders 16px/tile at high
+    quality (32 screen px/tile) -> detail is lost. Consider 32px/tile on
+    "high" with the 2/frame chunk budget, and copy the donor's dirt/rock
+    transition blocks (41 preset names still have no PNG).
+ 2. water: donor uses an animated separate water field; port still paints a
+    tiled blue plane. Import diffusewaves0/2 frames as a flipbook.
+ 3. army density: the video shows hundreds of formed men; port cap is 200
+    per side and skirmish starts 8 peasants. Need instanced/cheap crowd
+    rendering before raising counts (weak GPU rule still applies).
+ 4. buildings/shadows: nation sheets exist (215) but read small; add contact
+    shadows, construction-stage art is baked (s1..s4) but not always shown.
+ 5. food nodes currently render as glowing yellow dots (flowers). Donor has
+    contiguous golden wheat fields: draw a field patch per 5x4 food cluster.

@@ -150,7 +150,7 @@ func _pick(pw: Vector2, players_only := true) -> Dictionary:
 		if players_only and e.player != 0:
 			continue
 		var d: float = e.pos.distance_to(pw)
-		var r: float = e.def.radius + 1.4
+		var r: float = game.pick_radius(e)
 		if d < r and d < best_d:
 			best_d = d
 			best = e
@@ -173,7 +173,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			if mb.pressed:
 				if hud.build_ghost_sid != "":
 					var pos := pw
-					var b: Dictionary = game.place_building(0, hud.build_ghost_sid, pos)
+					var sel_peasants: Array = []
+					for su in game.get_selected():
+						if not su.is_empty() and str(su.get("sid", "")) == "peasant":
+							sel_peasants.append(su)
+					var b: Dictionary = game.place_building(0, hud.build_ghost_sid, pos, true, sel_peasants)
 					if not b.is_empty() and not Input.is_key_pressed(KEY_SHIFT):
 						hud.build_ghost_sid = ""
 						_set_selection([b])

@@ -31,6 +31,12 @@ var tbl_idx := {}
 var res_nodes: Array = []
 var map_starts: Array = []  # start positions of the generated map (groves near them are sacred)
 var cluster_zones: Array = []  # claimed {pos, r} so clusters never overlap
+# Staged-loading state: _generate_map runs in 4 chunks so the loading bar can
+# repaint between them (menu Start -> playing). Sync setup() just calls them
+# back-to-back; the async loader in main.gd awaits a frame between each.
+var _st_budget: Dictionary = {}
+var _st_mscale: float = 1.0
+var _st_forest: PackedFloat32Array = PackedFloat32Array()
 var entities: Array = []
 var by_id: Dictionary = {}
 var next_id := 1
@@ -158,6 +164,15 @@ func new_player(index: int, name: String, is_ai: bool) -> Dictionary:
 		"market_rate": Data.MARKET_RATE}
 
 func setup(mode: String) -> void:
+	setup_begin(mode)
+	_gen_base()
+	_gen_forests()
+	_gen_resources()
+	_gen_finish()
+	_assign_tileblocks()
+	setup_spawns()
+
+func setup_begin(mode: String) -> void:
 	battle_mode = mode == "battle"
 	MAP_W = Data.MAP_W
 	MAP_H = Data.MAP_H
@@ -180,7 +195,15 @@ func setup(mode: String) -> void:
 	deposits = {}
 	for r in Data.RES_NAMES:
 		deposits[r] = float(Data.DEPOSITS.get(r, 0.0))
-	_generate_map()
+	res_nodes = []
+	map_starts = []
+	cluster_zones = []
+	hill_list = []
+	_st_budget = Data.mapgen_budget()
+	_st_mscale = clampf(float(MAP_W) / 160.0, 1.0, 2.0)
+	_st_forest = PackedFloat32Array()
+
+func setup_spawns() -> void:
 	_spawn_starts()
 	_grid_rebuild()
 
@@ -343,6 +366,14 @@ func _claim_cluster(pos: Vector2, r_m: float, margin_m := 4.0) -> bool:
 	return true
 
 func _generate_map() -> void:
+	_gen_base()
+	_gen_forests()
+	_gen_resources()
+	_gen_finish()
+	# donor TextureMap -> SmoothTiles -> SmoothForestBorders.
+	_assign_tileblocks()
+
+func _gen_base() -> void:
 	# DONOR PIPELINE (data/scripts/common.inc/generatemap.inc -> dogenerate.inc):
 	# 1. pick a hand-authored RGB terrain mask (R relief, G forest/stone,
 	#    B water, white = start) from data/gen/terrainmasks/<terrain>/.
@@ -353,16 +384,18 @@ func _generate_map() -> void:
 	#    SHAPE of every map (coast, lakes, start positions) now comes from the
 	#    donor mask, not from per-seed blobs.
 	# 4. TextureMap + SmoothTiles runs at the end (_assign_tileblocks).
-	var budget: Dictionary = Data.mapgen_budget()
+	var budget: Dictionary = _st_budget if not _st_budget.is_empty() else Data.mapgen_budget()
+	_st_budget = budget
 	# donor scales pattern frequency with map size (_misc_GetFreePatternMaskModifier).
 	# The port's pattern radii were tuned at 160 tiles; scale them to this map.
-	var mscale: float = clampf(float(MAP_W) / 160.0, 1.0, 2.0)
+	var mscale: float = _st_mscale
 	var mg: Dictionary = C3MapGen.build(str(Data.MAP_TYPE), int(Data.RANDOM_SEED),
 		MAP_W, MAP_H, TILE, str(Data.QUALITY))
 	height = mg.get("height", PackedFloat32Array())
 	map_meta = {"type": str(Data.MAP_TYPE), "quality": str(Data.QUALITY),
 		"mask": mg.get("mask", {}), "mask_water": float(mg.get("water", 0.0))}
 	var forest_field: PackedFloat32Array = mg.get("forest", PackedFloat32Array())
+	_st_forest = forest_field
 	var starts: Array[Vector2] = []
 	for sv in mg.get("starts", []):
 		starts.append(sv as Vector2)
@@ -482,6 +515,14 @@ func _generate_map() -> void:
 	# alpha -> ground1/test2/test3; port keeps one simple road).
 	_draw_road(starts[0], (starts[0] + starts[1]) * 0.5)
 	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
+
+func _gen_forests() -> void:
+	var budget: Dictionary = _st_budget
+	var mscale: float = _st_mscale
+	var forest_field: PackedFloat32Array = _st_forest
+	var starts: Array[Vector2] = []
+	for sv in map_starts:
+		starts.append(sv as Vector2)
 	# forests: the donor places forest_* pattern families globally, but never
 	# in the three elliptical keep-clear zones around a start.  The G channel
 	# of the mask (where present) biases belt centres to natural woodland.
@@ -519,6 +560,12 @@ func _generate_map() -> void:
 		_scatter_forest(st + Vector2(7, -7) * TILE * mscale, int(26.0 * mscale), 5.0 * TILE * mscale)
 		_paint_terrain(st + Vector2(-8, 5) * TILE * mscale, 4.0 * TILE * mscale, 2)
 		_scatter_forest(st + Vector2(-8, 5) * TILE * mscale, int(18.0 * mscale), 4.0 * TILE * mscale)
+
+func _gen_resources() -> void:
+	var budget: Dictionary = _st_budget
+	var starts: Array[Vector2] = []
+	for sv in map_starts:
+		starts.append(sv as Vector2)
 	# quarries: donor stones/stoneforests patterns, always clear of woodland.
 	for _s in int(budget.get("quarries", 7)):
 		var c := Vector2(-1, -1)
@@ -596,6 +643,12 @@ func _generate_map() -> void:
 			_clear_trees(p, 6.0 * TILE)
 	if bool(budget.get("decor", true)):
 		_scatter_bushes()
+
+func _gen_finish() -> void:
+	var starts: Array[Vector2] = []
+	for sv in map_starts:
+		starts.append(sv as Vector2)
+	var kinds := ["gold", "iron", "coal"]
 	# keep the three elliptical start zones clear (donor gPatternMask).
 	for st in starts:
 		_paint_terrain(st, 5.0 * TILE, 1)
@@ -640,8 +693,6 @@ func _generate_map() -> void:
 	for n in res_nodes:
 		if n.max_hits == 0 and cnt.has(n.type) and int(cnt[n.type]) > 0:
 			n["left"] = float(Data.DEPOSITS.get(n.type, 30000)) / float(cnt[n.type])
-	# donor TextureMap -> SmoothTiles -> SmoothForestBorders.
-	_assign_tileblocks()
 
 func _load_terrain_structs() -> void:
 	if not tbl_names.is_empty():
@@ -655,6 +706,82 @@ func _load_terrain_structs() -> void:
 	if a2 is Array:
 		tbl_smooth = a2
 
+var tile_low_im: Image
+var tile_high_im: Image
+var bld_scale_idx := {}  # nation_sid -> {ortho, cx, rm} (tools/compute_buildings.py)
+
+func _bld_scale_key(player: int, sid: String) -> String:
+	var nat := ""
+	if player >= 0 and player < Data.PLAYER_NATIONS.size():
+		nat = str(Data.PLAYER_NATIONS[player])
+	return ("%s_%s" % [nat, sid]) if nat != "" else ""
+
+func bld_rm(player: int, sid: String) -> float:
+	# visual half-width in meters for sprite-drawn nation buildings (0 = none:
+	# walls, gates, mines, procedural fallbacks keep their gameplay radius).
+	if bld_scale_idx.is_empty():
+		var j := FileAccess.get_file_as_string("res://assets/models/anim/buildings.json")
+		if j != "":
+			var parsed = JSON.parse_string(j)
+			if parsed is Dictionary:
+				bld_scale_idx = parsed
+	var e: Dictionary = bld_scale_idx.get(_bld_scale_key(player, sid), {})
+	return float(e.get("rm", 0.0))
+
+func bld_block_r(e: Dictionary) -> float:
+	# impassable footprint: the visual size when known, else gameplay radius.
+	var rm := bld_rm(int(e.get("player", -1)), str(e.get("sid", "")))
+	if rm > 0.0:
+		return rm
+	return float(e.def.radius)
+
+func pick_radius(e: Dictionary) -> float:
+	# click target size: visual footprint for sprite-drawn buildings (clicking
+	# the drawn walls works), gameplay radius + grab margin otherwise.
+	if e.get("kind", "") == "building":
+		return bld_block_r(e) + 1.4
+	return float(e.def.radius) + 1.4
+
+func _load_detail_bitmaps() -> void:
+	# donor data/gen/bitmap/ext/tile_low/highground.bmp (320x320, R = tex*2):
+	# LoadTextureTerrainFromBitmap picks the bitmap by height and paints every
+	# cell still on TileBlock 0 with the bitmap's tile.  Copied to
+	# assets/terrain/structs/*.png by tools/copy_assets.py.
+	if tile_low_im != null and tile_high_im != null:
+		return
+	tile_low_im = Image.new()
+	if tile_low_im.load("res://assets/terrain/structs/tile_lowground.png") != OK:
+		tile_low_im = null
+	tile_high_im = Image.new()
+	if tile_high_im.load("res://assets/terrain/structs/tile_highground.png") != OK:
+		tile_high_im = null
+
+func _apply_detail_pass() -> void:
+	# donor loadtextureterrainfrombitmap.inc: h < 0.1 reads tile_lowground,
+	# else tile_highground; tex = R div 2; only cells still on block 0 change.
+	_load_detail_bitmaps()
+	if tile_low_im == null or tile_high_im == null:
+		return
+	var grass0 := _blk("grass1")
+	var lw := tile_low_im.get_width()
+	var lh := tile_low_im.get_height()
+	var hw := tile_high_im.get_width()
+	var hh2 := tile_high_im.get_height()
+	for y in MAP_H:
+		for x in MAP_W:
+			var i := _t(x, y)
+			if int(tileblock[i]) != grass0:
+				continue
+			var h: float = height[i] if height.size() == MAP_W * MAP_H else 0.0
+			var im: Image = tile_low_im if h < 0.1 else tile_high_im
+			var iw := lw if h < 0.1 else hw
+			var ih := lh if h < 0.1 else hh2
+			var sx: int = clampi(int(float(x) / float(MAP_W) * float(iw)), 0, iw - 1)
+			var sy: int = clampi(int(float(y) / float(MAP_H) * float(ih)), 0, ih - 1)
+			var tex: int = int(im.get_pixel(sx, sy).r * 255.0) / 2
+			if tex >= 0 and tex < tbl_names.size():
+				tileblock[i] = tex
+
 func _blk(n: String) -> int:
 	return int(tbl_idx.get(n, 0))
 
@@ -664,48 +791,29 @@ func _assign_tileblocks() -> void:
 	tileblock.resize(MAP_W * MAP_H)
 	var brng := RandomNumberGenerator.new()
 	brng.seed = int(Data.RANDOM_SEED) + 7
-	# 1) base blocks from biome proportions (donor tile_low/highground stats:
-	# meadow = grass1 + test7/8/9 worn patches + grass variety speckles)
+	# 1) base blocks from the donor pipeline: every land cell starts as the
+	# default TileBlock (grass1 = presets Summer index 0, like donor
+	# SetTileIndex(x,y,0) in generatemap.inc).  Meadow variety does NOT come
+	# from random speckles here — the donor paints detail later from the
+	# tile_low/highground bitmaps (_apply_detail_pass below), then blends
+	# neighbours with 3 SmoothTileMap passes.  Random per-tile test7/8/9
+	# speckles (the old port) checkerboarded because those blocks are
+	# transition blends, not meadow variation.
 	for y in MAP_H:
 		for x in MAP_W:
 			var t: int = terrain[_t(x, y)]
 			var b := _blk("grass1")
 			var r := brng.randf()
 			match t:
-				0:
-					var hh := height_at(Vector2((float(x) + 0.5) * TILE, (float(y) + 0.5) * TILE))
-					if hh > 0.6:
-						if r < 0.40:
-							b = _blk("test7")
-						elif r < 0.65:
-							b = _blk("test8")
-						elif r < 0.85:
-							b = _blk("test9")
-						elif r < 0.95:
-							b = _blk("grass8")
-						else:
-							b = _blk("grass2")
-					else:
-						if r < 0.50:
-							b = _blk("grass1")
-						elif r < 0.60:
-							b = _blk("test7")
-						elif r < 0.70:
-							b = _blk("test8")
-						elif r < 0.80:
-							b = _blk("test9")
-						elif r < 0.84:
-							b = _blk("grass2")
-						elif r < 0.88:
-							b = _blk("grass8")
-						elif r < 0.92:
-							b = _blk("grass10")
-						elif r < 0.96:
-							b = _blk("grass7")
-						else:
-							b = _blk("grass9")
 				1:
-					b = _blk("ground1")
+					# donor PlaceRoads (texturemap.inc): broad-mask dirt is
+					# ground1 half the time, test2/test3 otherwise
+					if r < 0.5:
+						b = _blk("ground1")
+					elif r < 0.75:
+						b = _blk("test2")
+					else:
+						b = _blk("test3")
 				2:
 					if r < 0.64:
 						b = _blk("grass_ground1")
@@ -734,8 +842,19 @@ func _assign_tileblocks() -> void:
 	# 2) oriented shores + cliffs (donor texturemap.inc 8-sector tables)
 	_apply_shore_cliffs()
 	# 3) exact 3-pass SmoothTileMap (donor smoothtiles.inc)
-	_smooth_tilemap(brng)
-	# 4) forest-border stamps (donor smoothforestborders.inc: grass5/rock9
+	_smooth_tilemap(brng, 3)
+	# 4) donor detail variety (loadtextureterrainfrombitmap.inc): cells still
+	# on the default block get their TileBlock from the low/high-ground
+	# bitmaps (R div 2), picked by height.  This is the real meadow mottling.
+	_apply_detail_pass()
+	# 4b) one more smoothing pass over the fresh detail adjacencies.  The donor
+	# fills detail after smoothing, but its bitmaps are authored 1:1 with the
+	# map so neighbours already agree; our 160px sampling of the 320px donor
+	# bitmaps can place contrasting blocks side by side (visible quilt
+	# squares), so a single extra pass inserts the proper transition blends.
+	_smooth_tilemap(brng, 1)
+	_apply_detail_pass()
+	# 5) forest-border stamps (donor smoothforestborders.inc: grass5/rock9
 	# tiles + bushes at edge cells with exactly one forest neighbour)
 	_stamp_forest_borders(brng)
 
@@ -898,8 +1017,8 @@ func _tb_smooth_pair(x1: int, y1: int, x2: int, y2: int, brng: RandomNumberGener
 		if ni4 >= 0:
 			tileblock[_t(x1, y1)] = ni4
 
-func _smooth_tilemap(brng: RandomNumberGenerator) -> void:
-	for _pass in 3:
+func _smooth_tilemap(brng: RandomNumberGenerator, passes: int = 3) -> void:
+	for _pass in passes:
 		for y in MAP_H:
 			for x in range(0, MAP_W - 1):
 				_tb_smooth_pair(x, y, x + 1, y, brng)
@@ -1055,9 +1174,15 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 	else:
 		live_blds.append(e)
 	if e.kind == "building":
-		set_blocked_circle(pos, def.radius, true)
+		# impassable footprint matches the drawn visual (true-scale art is up
+		# to 2x the old gameplay radius; blocking only the small radius let
+		# units walk through walls visually). Stored so destroy unblocks
+		# exactly what was blocked.
+		var br: float = bld_block_r(e) if sid != "gat" else 0.0
+		e["block_r"] = br
+		if br > 0.0:
+			set_blocked_circle(pos, br, true)
 		if sid == "gat":
-			set_blocked_circle(pos, def.radius, false)
 			gates.append(e)
 		if finished:
 			_on_building_finished(e)
@@ -1086,7 +1211,7 @@ func _on_building_finished(e: Dictionary) -> void:
 		else:
 			e["deposit_left"] = deposits.get(e.def.mine, 0)
 	if e.def.has("trains"):
-		e["rally"] = e.pos + Vector2(0, e.def.radius + 2.0)
+		e["rally"] = e.pos + Vector2(0, float(e.get("block_r", e.def.radius)) + 2.0)
 	bld_dirty += 1
 
 func _start_positions() -> Array[Vector2]:
@@ -1103,16 +1228,17 @@ func _spawn_starts() -> void:
 	for i in 2:
 		var c := starts[i]
 		var cen := spawn("cen", i, c)
+		var cr: float = float(cen.get("block_r", cen.def.radius))
 		players[i].res[0] += float(opt.get("food", 0))
 		for k in Data.START_PEASANTS:
 			var a := TAU * k / maxf(1.0, float(Data.START_PEASANTS))
-			var pe := spawn("peasant", i, c + Vector2(cos(a), sin(a)) * (cen.def.radius + 1.5))
+			var pe := spawn("peasant", i, c + Vector2(cos(a), sin(a)) * (cr + 1.5))
 			pe.order = {"type": "none"}
 		# starting option extras: towers / cannons near the town
 		for t in int(opt.get("towers", 0)):
-			spawn("tow", i, c + Vector2(6.0 + t * 3.0, -5.0))
+			spawn("tow", i, c + Vector2(cr + 4.0 + t * 4.0, -5.0))
 		for cc in int(opt.get("cannons", 0)):
-			spawn("cannon", i, c + Vector2(-6.0 - cc * 3.0, 5.0))
+			spawn("cannon", i, c + Vector2(-(cr + 3.0) - cc * 3.0, 5.0))
 		var mult := float(opt.get("army_mult", 0.0))
 		if battle_mode or mult > 0.0:
 			var army: Dictionary = Data.BATTLE_ARMY
@@ -1124,7 +1250,7 @@ func _spawn_starts() -> void:
 			for sid in army:
 				for k in int(round(float(army[sid]) * scale)):
 					var a := TAU * ring / maxf(1.0, float(total))
-					spawn(sid, i, c + Vector2(cos(a), sin(a)) * (6.0 + (ring % 4) * 1.5))
+					spawn(sid, i, c + Vector2(cos(a), sin(a)) * (cr + 3.0 + (ring % 4) * 1.5))
 					ring += 1
 
 # ---------------------------------------------------------------- helpers
@@ -1410,7 +1536,7 @@ func cmd_unload(b: Dictionary) -> void:
 			continue
 		e.inside_of = 0
 		e["hidden"] = false
-		e.pos = b.pos + Vector2(cos(k * 2.4), sin(k * 2.4)) * (b.def.radius + 1.0)
+		e.pos = b.pos + Vector2(cos(k * 2.4), sin(k * 2.4)) * (float(b.get("block_r", b.def.radius)) + 1.0)
 		e.order = {"type": "none"}
 		k += 1
 	b["garrison"] = 0
@@ -1925,7 +2051,8 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 			continue
 		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0:
 			continue
-		var rr: float = float(def.radius) + float(n.get("radius", 0.5))
+		var rr: float = bld_rm(player, sid) if bld_rm(player, sid) > 0.0 else float(def.radius)
+		rr += float(n.get("radius", 0.5))
 		if n.pos.distance_to(pos) < rr:
 			match str(n.get("type", "")):
 				"wood":
@@ -1940,7 +2067,8 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 	for b in live_blds:
 		if b.dead:
 			continue
-		var rr2: float = float(def.radius) + float(b.def.radius) + 0.3
+		var my_r: float = bld_rm(player, sid) if bld_rm(player, sid) > 0.0 else float(def.radius)
+		var rr2: float = my_r + float(b.get("block_r", b.def.radius)) + 0.3
 		if b.pos.distance_to(pos) < rr2:
 			if (sid == "wal" or sid == "gat") and str(b.sid) in ["wal", "gat"] and b.player == player:
 				continue
@@ -1949,7 +2077,7 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 		return {"ok": false, "reason": "Blocked ground (rock/forest/water)."}
 	return {"ok": true, "reason": ""}
 
-func place_building(player: int, sid: String, pos: Vector2, send := true) -> Dictionary:
+func place_building(player: int, sid: String, pos: Vector2, send := true, builders: Array = []) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[sid]
 	if sid == "bar18" and not bool(players[player].get("has18c", false)):
 		say("Research the 18th century at the Town Hall first.")
@@ -1985,21 +2113,17 @@ func place_building(player: int, sid: String, pos: Vector2, send := true) -> Dic
 	post_event("construct", pos, sid)
 	if not send:
 		return b
-	# send nearby peasants to build (the original allows up to 30 builders,
-	# dmscript.global:159; the port sends 8 at a time)
-	var idle: Array = []
-	var busy: Array = []
-	for u in units_of(player):
-		if u.sid != "peasant":
-			continue
-		if u.order.type == "none":
-			idle.append(u)
-		elif u.order.type == "gather":
-			busy.append(u)
+	# Only the SELECTED peasants are sent to the site.  The old code swept up
+	# every idle AND gathering peasant on the map, which emptied the economy.
+	# AI calls pass send=false and issues its own build orders.
 	var sent := 0
-	for u in idle + busy:
+	for u in builders:
 		if sent >= Data.MAX_BUILDERS_SENT:
 			break
+		if not (u is Dictionary) or bool(u.get("dead", false)):
+			continue
+		if int(u.get("player", -1)) != player or str(u.get("sid", "")) != "peasant":
+			continue
 		cmd_build(u, b)
 		sent += 1
 	return b
@@ -2159,10 +2283,10 @@ func _separate_units() -> void:
 		for e in units:
 			if e.dead:
 				continue
-			for b in grid_query(e.pos, 6.0):
+			for b in grid_query(e.pos, 9.0):
 				if b.dead or b.kind != "building":
 					continue
-				var rr: float = e.def.radius + b.def.radius + 0.15
+				var rr: float = e.def.radius + float(b.get("block_r", b.def.radius)) + 0.15
 				var delta: Vector2 = e.pos - b.pos
 				var d := delta.length()
 				if d < rr and d > 0.001:
@@ -2271,7 +2395,7 @@ func _kill(e: Dictionary, killer = null, loud := true) -> void:
 				hid.append(u)
 		for u in hid:
 			_kill(u, killer, false)
-		set_blocked_circle(e.pos, e.def.radius, false)
+		set_blocked_circle(e.pos, float(e.get("block_r", e.def.radius)), false)
 		if e.get("workers", 0) > 0:
 			for u in entities:
 				if not u.dead and u.inside_of == e.id:
@@ -2449,7 +2573,7 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 				e.order = {"type": "none"}
 				return
 			var d: float = e.pos.distance_to(t.pos)
-			var tr: float = t.def.radius
+			var tr: float = float(t.get("block_r", t.def.radius))
 			e.face = (t.pos - e.pos).angle()
 			var w := _pick_weapon(e, d)
 			if w.get("only_buildings", false) and t.kind != "building":
@@ -2559,7 +2683,7 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 			if rb.is_empty() or rb.dead or rb.hp >= rb.max_hp:
 				e.order = {"type": "none"}
 				return
-			var rslot := _work_slot(e, rb.pos, rb.def.radius + 0.7)
+			var rslot := _work_slot(e, rb.pos, float(rb.get("block_r", rb.def.radius)) + 0.7)
 			if e.pos.distance_to(rslot) > 0.6:
 				e.moving = true
 				_step_move(e, rslot, effective_speed(e), dt, 0.35)
@@ -2598,7 +2722,7 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 				return
 			# each builder takes its own slot around the site so the crew
 			# rings the foundations instead of stacking on one point
-			var slot_b := _work_slot(e, site.pos, site.def.radius + 0.7)
+			var slot_b := _work_slot(e, site.pos, float(site.get("block_r", site.def.radius)) + 0.7)
 			var d: float = e.pos.distance_to(slot_b)
 			if d > 0.6:
 				e.moving = true
@@ -2877,11 +3001,11 @@ func _tick_projectiles(dt: float) -> void:
 		# find who is actually at the impact point (friendly fire included)
 		var victim: Dictionary = {}
 		var best_d := 2.0
-		for u in grid_query(p.target, 3.0):
+		for u in grid_query(p.target, 8.0):
 			if u.dead:
 				continue
 			var d: float = u.pos.distance_to(p.target)
-			var rr: float = 1.2 + float(u.def.radius)
+			var rr: float = 1.2 + float(u.get("block_r", u.def.radius))
 			if d <= rr and d < best_d:
 				best_d = d
 				victim = u
@@ -3070,8 +3194,9 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 		e.queue[0] = job
 		if job.t <= 0.0:
 			e.queue.pop_front()
+			var brexit: float = float(e.get("block_r", e.def.radius))
 			var exit: Vector2 = e.get("rally", e.pos + Vector2(0, e.def.radius + 2.0))
-			var u := spawn(job.sid, e.player, e.pos + (exit - e.pos).normalized() * (e.def.radius + 0.5))
+			var u := spawn(job.sid, e.player, e.pos + (exit - e.pos).normalized() * (brexit + 0.5))
 			cmd_move(u, exit + (exit - e.pos).normalized() * 1.5)
 			post_event("trained", e.pos, job.sid, job.sid)
 	# research queue (one upgrade at a time per blacksmith/academy)

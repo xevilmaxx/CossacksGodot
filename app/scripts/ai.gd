@@ -202,8 +202,9 @@ func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictiona
 
 func _try_build(sid: String, home: Dictionary, min_d := 0.0, max_d := 18.0) -> void:
 	var def: Dictionary = Data.BUILDINGS[sid]
-	var lo: float = min_d if min_d > 0.0 else def.radius + 2.5
-	var pos := _find_spot(home, def, lo, max_d)
+	var vr: float = game.bld_rm(player, sid)
+	var lo: float = min_d if min_d > 0.0 else (vr if vr > 0.0 else def.radius) + 2.5
+	var pos := _find_spot(home, def, sid, lo, max_d)
 	if pos == Vector2.INF:
 		return
 	game.place_building(player, sid, pos, false)
@@ -249,16 +250,18 @@ func _resume(peasants: Array) -> void:
 		if idle.is_empty():
 			break
 
-func _find_spot(home: Dictionary, def: Dictionary, min_d: float, max_d: float) -> Vector2:
+func _find_spot(home: Dictionary, def: Dictionary, sid: String, min_d: float, max_d: float) -> Vector2:
 	for attempt in 24:
 		var a := game.rng.randf() * TAU
 		var r := game.rng.randf_range(min_d, max_d)
 		var pos: Vector2 = home.pos + Vector2(cos(a), sin(a)) * r
 		if not game.in_bounds(pos) or game.is_blocked(pos):
 			continue
+		var vr: float = game.bld_rm(player, sid)
+		var my_r: float = vr if vr > 0.0 else def.radius
 		var ok := true
 		for b in game.buildings_of(player, false):
-			if b.pos.distance_to(pos) < b.def.radius + def.radius + 1.0:
+			if b.pos.distance_to(pos) < float(b.get("block_r", b.def.radius)) + my_r + 1.0:
 				ok = false
 				break
 		if ok:

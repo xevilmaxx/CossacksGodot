@@ -163,7 +163,7 @@ func _s_build_flow(steps: Array) -> void:
 	game.players[0].res[1] += 500.0
 	game.players[0].res[2] += 500.0
 	hud.build_ghost_sid = "hou"
-	var site := game.place_building(0, hud.build_ghost_sid, peas[0].pos + Vector2(10, 6))
+	var site := game.place_building(0, hud.build_ghost_sid, peas[0].pos + Vector2(10, 6), true, [peas[0]])
 	hud.build_ghost_sid = ""
 	var crew := 0
 	for u in game.units_of(0):

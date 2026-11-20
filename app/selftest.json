@@ -1,13 +1,13 @@
 {
   "passed": true,
   "resources_gathered": {
-    "food": 158,
-    "gold": 827.424000000037,
+    "food": 168,
+    "gold": 842.816000000039,
     "trade": 65,
-    "wood": 352
+    "wood": 360
   },
-  "shots_fired": 73,
-  "sim_seconds": 365.40625,
+  "shots_fired": 40,
+  "sim_seconds": 385.90625,
   "steps": [
     {
       "detail": "walked 6.0 m forward (speed 1.5 m/s)",
@@ -35,7 +35,7 @@
       "step": "train"
     },
     {
-      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 17 m away, order=gather res=gold node=1064 dist=2.5)",
+      "detail": "mine produced 30.8 gold in 30 s (finished=true worker inside=true workers=1, deposit 19 m away, order=gather res=gold node=1064 dist=3.4)",
       "passed": true,
       "step": "mine"
     },
@@ -45,12 +45,12 @@
       "step": "hud"
     },
     {
-      "detail": "min gap 0.36 m vs bodies (want >= -0.25 tolerance)",
+      "detail": "min gap 0.20 m vs bodies (want >= -0.25 tolerance)",
       "passed": true,
       "step": "no_overlap"
     },
     {
-      "detail": "serdiuk fired 2 shots, smoke seen, target hp 88",
+      "detail": "serdiuk fired 1 shots, smoke seen, target hp 89",
       "passed": true,
       "step": "volley"
     },
@@ -110,7 +110,7 @@
       "step": "replenish"
     },
     {
-      "detail": "serdiuk fell back from pikes: yes (3.0 -> 4.1 m)",
+      "detail": "serdiuk fell back from pikes: yes (3.0 -> 3.9 m)",
       "passed": true,
       "step": "flee"
     },
@@ -130,7 +130,7 @@
       "step": "resow"
     },
     {
-      "detail": "cannon shells ground: shots 67 -> 68",
+      "detail": "cannon shells ground: shots 34 -> 35",
       "passed": true,
       "step": "attack_ground"
     },
