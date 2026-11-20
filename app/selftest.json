@@ -1,14 +1,14 @@
 {
   "passed": true,
   "resources_gathered": {
-    "food": 100,
-    "gold": 820.768000000036,
-    "stone": 24,
+    "food": 118,
+    "gold": 794.560000000033,
+    "stone": 18,
     "trade": 65,
-    "wood": 162
+    "wood": 124
   },
-  "shots_fired": 88,
-  "sim_seconds": 364.15625,
+  "shots_fired": 54,
+  "sim_seconds": 364.40625,
   "steps": [
     {
       "detail": "walked 6.0 m forward (speed 1.5 m/s)",
@@ -16,7 +16,7 @@
       "step": "move"
     },
     {
-      "detail": "gathered 18 wood (carry 0 of 28, order 'gather', node hits 51)",
+      "detail": "gathered 20 wood (carry 1 of 28, order 'gather', node hits 49)",
       "passed": true,
       "step": "act"
     },
@@ -36,7 +36,7 @@
       "step": "train"
     },
     {
-      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 41 m away, order=gather res=gold node=653 dist=3.3)",
+      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 25 m away, order=gather res=gold node=655 dist=2.4)",
       "passed": true,
       "step": "mine"
     },
@@ -46,12 +46,12 @@
       "step": "hud"
     },
     {
-      "detail": "min gap 0.57 m vs bodies (want >= -0.25 tolerance)",
+      "detail": "min gap 0.49 m vs bodies (want >= -0.25 tolerance)",
       "passed": true,
       "step": "no_overlap"
     },
     {
-      "detail": "serdiuk fired 4 shots, smoke seen, target hp 82",
+      "detail": "serdiuk fired 2 shots, smoke seen, target hp 88",
       "passed": true,
       "step": "volley"
     },
@@ -131,7 +131,7 @@
       "step": "resow"
     },
     {
-      "detail": "cannon shells ground: shots 82 -> 83",
+      "detail": "cannon shells ground: shots 48 -> 49",
       "passed": true,
       "step": "attack_ground"
     },

@@ -110,6 +110,7 @@ var menu_overlay: CanvasLayer = null
 var end_panel: PanelContainer = null
 var last_cfg: Dictionary = {}
 var seed_arg := -1
+var dump_path := ""
 var journey_cam_t := 0.0
 
 func _ready() -> void:
@@ -152,6 +153,10 @@ func _ready() -> void:
 
 	if cli_mode:
 		_setup_cli_only()
+		return
+
+	if dump_path != "":
+		_dump_map()
 		return
 
 	# Test / capture modes skip the menu so they never wait for input.
@@ -239,6 +244,37 @@ func _setup_cli_only() -> void:
 	cli_ticks_left = int(cli_seconds * Data.FPS)
 	cli_t = 0.0
 	cli_done = false
+
+func _dump_map() -> void:
+	# Headless map dump for the L6 quality scan: sim only, no world/hud/audio.
+	game = C3Game.new()
+	add_child(game)
+	game.setup(start_mode)
+	var res: Array = []
+	for n in game.res_nodes:
+		res.append({"t": str(n.type), "x": float(n.pos.x), "y": float(n.pos.y),
+			"hits": int(n.hits), "r": float(n.radius)})
+	var starts: Array = []
+	for s in game.map_starts:
+		starts.append({"x": float(s.x), "y": float(s.y)})
+	var zones: Array = []
+	for z in game.cluster_zones:
+		var zd: Dictionary = z
+		zones.append({"x": float(zd.pos.x), "y": float(zd.pos.y), "r": float(zd.r)})
+	var dump := {
+		"seed": Data.RANDOM_SEED, "map_w": game.MAP_W, "map_h": game.MAP_H,
+		"terrain": Marshalls.raw_to_base64(game.terrain),
+		"blocked": Marshalls.raw_to_base64(game.blocked),
+		"height": Marshalls.raw_to_base64(game.height.to_byte_array()),
+		"starts": starts, "clusters": zones, "res": res,
+	}
+	var out := _write_text(dump_path, JSON.stringify(dump))
+	if out == "":
+		printerr("dump-map: could not write ", dump_path)
+		_quit(1)
+		return
+	print("map dump: ", out)
+	_quit(0)
 
 func _setup_full_game() -> void:
 	if not is_headless:
@@ -403,6 +439,10 @@ func _parse_args(args: PackedStringArray) -> void:
 				continue
 			"--seed":
 				seed_arg = int(args[i + 1]) if i + 1 < args.size() else -1
+				i += 2
+				continue
+			"--dump-map":
+				dump_path = args[i + 1] if i + 1 < args.size() else ""
 				i += 2
 				continue
 			_:
@@ -957,6 +997,10 @@ func _render_headless_image(w: int, h: int) -> Image:
 		match n.type:
 			"wood":
 				c2 = Color(0.12, 0.35, 0.12)
+			"stump":
+				c2 = Color(0.42, 0.32, 0.2)
+			"bush":
+				c2 = Color(0.3, 0.42, 0.2)
 			"stone":
 				c2 = Color(0.6, 0.6, 0.58)
 			"gold":

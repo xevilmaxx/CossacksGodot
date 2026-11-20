@@ -750,12 +750,30 @@ func _prop_tex(names: Array, seed_pos: Vector2) -> Texture2D:
 func _draw_resources() -> void:
 	dbg_res += 1
 	for n in game.res_nodes:
-		if n.hits <= 0:
+		if int(n.get("hits", 0)) <= 0 and str(n.get("type", "")) != "stump":
 			continue
 		var p := world_to_px(n.pos)
 		if not view_rect.grow(64).has_point(p):
 			continue
 		var h := _hash(n.pos.x, n.pos.y)
+		if str(n.get("type", "")) == "stump":
+			var stump_tex := _prop_tex(["tree_stump", "rock", "stone"], n.pos)
+			if stump_tex != null:
+				_draw_sprite(res_layer, stump_tex, p, 0.55, Color(0.55, 0.42, 0.28), false)
+			else:
+				res_layer.draw_circle(p, 4.0, Color(0.42, 0.32, 0.2))
+				res_layer.draw_rect(Rect2(p.x - 1.5, p.y - 5, 3.0, 5), Color(0.35, 0.25, 0.14))
+			continue
+		if str(n.get("type", "")) == "bush":
+			var bush_tex := _prop_tex(["bush_rock", "bush_sand", "rock"], n.pos)
+			if bush_tex != null:
+				_draw_sprite(res_layer, bush_tex, p, 0.8, Color(1, 1, 1), false)
+			else:
+				res_layer.draw_circle(p + Vector2(0, 1), 4.5, Color(0, 0, 0, 0.14))
+				res_layer.draw_circle(p, 3.2, Color(0.25, 0.36, 0.18))
+				res_layer.draw_circle(p + Vector2(-1.5, -2), 2.0, Color(0.32, 0.44, 0.22))
+				res_layer.draw_circle(p + Vector2(1.5, -1), 1.5, Color(0.38, 0.5, 0.26))
+			continue
 		match n.type:
 			"wood":
 				var tree := _prop_tex(["tree_fir", "tree_oak", "tree_pine"], n.pos)
@@ -1312,14 +1330,27 @@ func _draw_ghost() -> void:
 	if not game.in_bounds(wp):
 		return
 	var def: Dictionary = Data.BUILDINGS[sid]
-	var ok := not game.is_blocked(wp) and Data.can_pay(game.players[0].res, def.cost)
+	var chk: Dictionary = game.can_place(0, sid, wp)
+	var ok: bool = bool(chk.get("ok", false)) and Data.can_pay(game.players[0].res, def.cost)
+	var reason: String = str(chk.get("reason", ""))
+	if not Data.can_pay(game.players[0].res, def.cost):
+		reason = "Not enough resources."
 	var c := Color(0.2, 1.0, 0.3, 0.5) if ok else Color(1.0, 0.25, 0.2, 0.5)
 	var p := world_to_px(wp)
 	var r: float = def.radius * view_scale
+	# transparent building: nation sheet if baked, else static sprite, else ring only
+	var ghost_tex: Texture2D = _bld_tex({"player": 0, "sid": sid, "finished": true, "progress": 1.0, "def": def})
+	if ghost_tex != null:
+		var tint := Color(1, 1, 1, 0.45) if ok else Color(1, 0.4, 0.4, 0.45)
+		_draw_sprite(bld_layer, ghost_tex, p, 3.0, tint, false)
 	# placement ring on the ground (original style: glowing footprint ring,
-	# green = buildable, red = blocked) plus the footprint box
+	# green = buildable, red = blocked)
 	_ground_ellipse(fx_layer, p + Vector2(0, 3), r * 1.45, r * 0.72, c, 2.5)
-	fx_layer.draw_rect(Rect2(p.x - r, p.y - r, r * 2, r * 2), c, false, 1.5)
+	if not ok:
+		fx_layer.draw_line(p + Vector2(-r, -r * 0.5), p + Vector2(r, r * 0.5), Color(1, 0.2, 0.2, 0.9), 2.0)
+		fx_layer.draw_line(p + Vector2(-r, r * 0.5), p + Vector2(r, -r * 0.5), Color(1, 0.2, 0.2, 0.9), 2.0)
+		if hud != null and hud.has_method("show_hint") and reason != "":
+			hud.show_hint(reason)
 
 func add_fx(kind: String, pos: Vector2) -> void:
 	var life := 0.35

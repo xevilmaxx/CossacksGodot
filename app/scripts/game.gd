@@ -15,6 +15,8 @@ signal message(text: String)
 
 var terrain: PackedByteArray = PackedByteArray()
 var blocked: PackedByteArray = PackedByteArray()
+var height: PackedFloat32Array = PackedFloat32Array()
+var hill_list: Array = []
 var res_nodes: Array = []
 var map_starts: Array = []  # start positions of the generated map (groves near them are sacred)
 var cluster_zones: Array = []  # claimed {pos, r} so clusters never overlap
@@ -152,9 +154,11 @@ func setup(mode: String) -> void:
 	rng.seed = Data.RANDOM_SEED
 	terrain.resize(MAP_W * MAP_H)
 	blocked.resize(MAP_W * MAP_H)
+	height.resize(MAP_W * MAP_H)
 	for i in terrain.size():
 		terrain[i] = 0
 		blocked[i] = 0
+		height[i] = 0.0
 	# nations come from the menu (Data.PLAYER_NATIONS sids); names follow.
 	var pn := Data.PLAYER_NAMES
 	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else ["ukr", "rus"]
@@ -223,7 +227,7 @@ func _add_res(type: String, pos: Vector2, hits: int, radius: float) -> void:
 	next_id += 1
 	res_nodes.append(node)
 	by_id[node.id] = node
-	if type != "food":
+	if type not in ["food", "bush", "stump"]:
 		set_blocked_circle(pos, radius, true)
 	res_dirty += 1
 
@@ -268,11 +272,44 @@ func _scatter_forest(center: Vector2, count: int, spread: float) -> void:
 			continue
 		_add_res("wood", p, 60, 0.7)
 
+# Dry shrubs near quarries and on sand (donor decor dcr/str families).
+# Deco only: hits 0, radius 0.3, never blocks, never gathered, never claimed.
+func _scatter_bushes() -> void:
+	for attempt in 40:
+		var cand := Vector2(rng.randf_range(MAP_W * 0.08, MAP_W * 0.92) * TILE,
+			rng.randf_range(MAP_H * 0.08, MAP_H * 0.92) * TILE)
+		if not in_bounds(cand) or is_blocked(cand):
+			continue
+		var near_start := false
+		for st in map_starts:
+			if cand.distance_to(st) < 9.0 * TILE:
+				near_start = true
+				break
+		if near_start:
+			continue
+		var tt: int = terrain[_t(int(cand.x / TILE), int(cand.y / TILE))]
+		if tt == 3:
+			continue
+		var near_stone := false
+		for n in res_nodes:
+			if n.type == "stone" and n.pos.distance_to(cand) < 5.0 * TILE:
+				near_stone = true
+				break
+		var want := false
+		if near_stone and (tt == 1 or tt == 5) and rng.randf() < 0.5:
+			want = true
+		elif tt == 4 and rng.randf() < 0.3:
+			want = true
+		if not want:
+			continue
+		_add_res("bush", cand, 0, 0.3)
+
 # Original maps keep resource kinds apart: quarries sit in rock/dirt
 # clearings (never inside forest), mines on worked dirt. Wood nodes inside
-# the given radius are depleted (stumps vanish) so stone never mixes trees.
-# The starting groves (peasant work area) are sacred: nothing clears them.
-func _clear_trees(pos: Vector2, r_m: float) -> void:
+# the given radius are depleted so stone never mixes trees.
+# The starting groves (peasant work area) are sacred: nothing clears them
+# unless ignore_home is set (final purity pass: deposits/quarries win).
+func _clear_trees(pos: Vector2, r_m: float, ignore_home := false) -> void:
 	for n in res_nodes:
 		if n.type != "wood" or n.pos.distance_to(pos) >= r_m:
 			continue
@@ -281,7 +318,7 @@ func _clear_trees(pos: Vector2, r_m: float) -> void:
 			if n.pos.distance_to(st) < 12.0 * TILE:
 				near_home = true
 				break
-		if not near_home:
+		if not near_home or ignore_home:
 			n.hits = 0
 
 # Cluster registry: forests, quarries, mines and fields claim ground so
@@ -336,15 +373,46 @@ func _generate_map() -> void:
 					if terrain[_t(x, y)] != 3:
 						terrain[_t(x, y)] = 4
 	# hills: 3-4 rock blobs (passable, rock texture, mines like them)
+	hill_list = []
 	for hi in rng.randi_range(3, 4):
 		var cx := rng.randf_range(MAP_W * 0.2, MAP_W * 0.8)
 		var cy := rng.randf_range(MAP_H * 0.2, MAP_H * 0.8)
 		var rr := rng.randf_range(7.0, 13.0)
+		hill_list.append({"x": cx, "y": cy, "rr": rr})
 		for y in range(maxi(0, int(cy - rr * 1.4)), mini(MAP_H, int(cy + rr * 1.4) + 1)):
 			for x in range(maxi(0, int(cx - rr * 1.4)), mini(MAP_W, int(cx + rr * 1.4) + 1)):
 				var d := Vector2(x - cx, y - cy).length() / rr
-				if d < 1.0 and terrain[_t(x, y)] != 3:
+				if d < 1.0 and not (terrain[_t(x, y)] in [3, 4]):
 					terrain[_t(x, y)] = 5 if d < 0.55 else (1 if d < 0.85 else terrain[_t(x, y)])
+	# height field: base noise + hill domes - lake bowls (stored, bilinear read)
+	for y in MAP_H:
+		for x in MAP_W:
+			var base := _noise2(x * 0.07, y * 0.07) * 1.2
+			var hb := 0.0
+			for h in hill_list:
+				var dd := Vector2(x - float(h.x), y - float(h.y)).length() / float(h.rr)
+				if dd < 1.0:
+					hb += (1.0 - dd) * (1.0 - dd) * 1.8
+			var lake := 0.0
+			if terrain[_t(x, y)] == 3:
+				lake = -1.8
+			elif terrain[_t(x, y)] == 4:
+				lake = -0.5
+			height[_t(x, y)] = base + hb + lake
+	# cliff pass: steep rock becomes blocked (impassable, like editor steep hills)
+	for y in MAP_H:
+		for x in MAP_W:
+			if terrain[_t(x, y)] == 3:
+				continue
+			var h0: float = height[_t(x, y)]
+			var smax := 0.0
+			if x + 1 < MAP_W:
+				smax = maxf(smax, absf(height[_t(x + 1, y)] - h0) / TILE)
+			if y + 1 < MAP_H:
+				smax = maxf(smax, absf(height[_t(x, y + 1)] - h0) / TILE)
+			if smax > 0.55:
+				terrain[_t(x, y)] = 5
+				set_blocked_tile(x, y, true)
 	# dirt road between the two starts through the center
 	_draw_road(starts[0], (starts[0] + starts[1]) * 0.5)
 	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
@@ -373,7 +441,7 @@ func _generate_map() -> void:
 		forest_centers.append(c)
 		# dark forest floor under the belt (original woods grow on dark ground)
 		_paint_terrain(c, 5.5 * TILE, 2)
-		_scatter_forest(c, rng.randi_range(34, 60), 6.5 * TILE)
+		_scatter_forest(c, rng.randi_range(34, 60), 5.0 * TILE)
 	# small groves near each start (firewood in reach)
 	for st in starts:
 		_paint_terrain(st + Vector2(7, -7) * TILE, 4.5 * TILE, 2)
@@ -390,7 +458,7 @@ func _generate_map() -> void:
 				rng.randf_range(MAP_H * 0.09, MAP_H * 0.91) * TILE)
 			if not in_bounds(cand) or is_blocked(cand):
 				continue
-			if _claim_cluster(cand, 7.0 * TILE):
+			if _claim_cluster(cand, 7.0 * TILE, 6.0):
 				c = cand
 				break
 		if c.x < 0.0:
@@ -406,16 +474,18 @@ func _generate_map() -> void:
 	# reach; without it the economy can never leave the wood/food stage).
 	# tiny tight cluster: small blocked footprint, inside gather range.
 	for st in starts:
-		var ang0 := rng.randf() * TAU
-		var cc := st + Vector2(cos(ang0), sin(ang0)) * 16.0 * TILE
-		if in_bounds(cc) and not is_blocked(cc):
-			for i in 3:
-				var p := cc + Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * TILE
-				if in_bounds(p) and not is_blocked(p):
-					_add_res("stone", p, 80, 0.9)
-			_paint_terrain(cc, 4.0 * TILE, 1)
-			_paint_terrain(cc, 2.0 * TILE, 5)
-			_clear_trees(cc, 5.0 * TILE)
+		for attempt in 8:
+			var ang0 := rng.randf() * TAU
+			var cc := st + Vector2(cos(ang0), sin(ang0)) * 16.0 * TILE
+			if in_bounds(cc) and not is_blocked(cc):
+				for i in 3:
+					var p := cc + Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * TILE
+					if in_bounds(p) and not is_blocked(p):
+						_add_res("stone", p, 80, 0.9)
+				_paint_terrain(cc, 4.0 * TILE, 1)
+				_paint_terrain(cc, 2.0 * TILE, 5)
+				_clear_trees(cc, 5.0 * TILE)
+				break
 	# corn (food): rectangular farm fields near each start, like the original fields
 	for st in starts:
 		for g in 2:
@@ -450,14 +520,16 @@ func _generate_map() -> void:
 					rng.randf_range(MAP_H * 0.15, MAP_H * 0.85)) * TILE + Vector2(1, 1)
 				if not in_bounds(cand) or is_blocked(cand):
 					continue
-				if _claim_cluster(cand, 6.0 * TILE):
+				if _claim_cluster(cand, 6.0 * TILE, 8.0):
 					p = cand
 					break
 			if p.x < 0.0:
 				continue
 			_add_res(k, p, 0, 0.0)
 			_paint_terrain(p, 4.0 * TILE, 1)
-			_clear_trees(p, 5.0 * TILE)
+			_clear_trees(p, 6.0 * TILE)
+	# decor bushes near quarries and on sand (after clusters, before plaza clear)
+	_scatter_bushes()
 	# keep starting areas clear + small dirt town plaza like the original towns
 	for st in starts:
 		_paint_terrain(st, 5.0 * TILE, 1)
@@ -467,14 +539,16 @@ func _generate_map() -> void:
 				set_blocked_circle(n.pos, n.radius, false)
 		# guarantee reachable deposits (original maps always put mines in reach)
 		for ki in kinds.size():
-			var ang := rng.randf() * TAU
 			var dist: float = (14.0 + ki * 5.0) * TILE
-			var dp := st + Vector2(cos(ang), sin(ang)) * dist
-			dp = Vector2(floor(dp.x / TILE) * TILE + 1.0, floor(dp.y / TILE) * TILE + 1.0)
-			if in_bounds(dp) and not is_blocked(dp):
-				_add_res(kinds[ki], dp, 0, 0.0)
-				_paint_terrain(dp, 4.0 * TILE, 1)
-				_clear_trees(dp, 5.0 * TILE)
+			for attempt in 8:
+				var ang := rng.randf() * TAU
+				var dp := st + Vector2(cos(ang), sin(ang)) * dist
+				dp = Vector2(floor(dp.x / TILE) * TILE + 1.0, floor(dp.y / TILE) * TILE + 1.0)
+				if in_bounds(dp) and not is_blocked(dp):
+					_add_res(kinds[ki], dp, 0, 0.0)
+					_paint_terrain(dp, 4.0 * TILE, 1)
+					_clear_trees(dp, 6.0 * TILE)
+					break
 		# re-plant what clearing wiped: farm fields + firewood just outside
 		# the cleared ring so peasants always have work in reach
 		for g in 2:
@@ -488,6 +562,10 @@ func _generate_map() -> void:
 		_paint_terrain(st + Vector2(9, -8) * TILE, 4.5 * TILE, 2)
 		_scatter_forest(st + Vector2(-10, 6) * TILE, 18, 4.0 * TILE)
 		_paint_terrain(st + Vector2(-10, 6) * TILE, 4.0 * TILE, 2)
+	# final purity pass: late groves must not invade quarries or mine pads
+	for n in res_nodes:
+		if n.type == "stone" or (n.max_hits == 0 and str(n.type) in ["gold", "iron", "coal"]):
+			_clear_trees(n.pos, 5.0 * TILE, true)
 	# clear a small ring right around each town center so units never spawn stuck
 	for st in starts:
 		_clear_area(st, 4.0 * TILE)
@@ -500,10 +578,28 @@ func _generate_map() -> void:
 		if n.max_hits == 0 and cnt.has(n.type) and int(cnt[n.type]) > 0:
 			n["left"] = float(Data.DEPOSITS.get(n.type, 30000)) / float(cnt[n.type])
 
-# cheap deterministic value-noise in [-1, 1] for map biomes (no engine needed)
+# stored height field (filled in _generate_map); bilinear read for smooth slopes
 func height_at(p: Vector2) -> float:
-	var t := tile_of(p)
-	return _noise2(float(t.x) * 0.07, float(t.y) * 0.07) * 2.0
+	if height.size() != MAP_W * MAP_H:
+		var t := tile_of(p)
+		return _noise2(float(t.x) * 0.07, float(t.y) * 0.07) * 2.0
+	var fx := clampf(p.x / TILE - 0.5, 0.0, float(MAP_W - 1) - 1.001)
+	var fy := clampf(p.y / TILE - 0.5, 0.0, float(MAP_H - 1) - 1.001)
+	var x0 := int(fx)
+	var y0 := int(fy)
+	var tx := fx - x0
+	var ty := fy - y0
+	var h00: float = height[_t(x0, y0)]
+	var h10: float = height[_t(x0 + 1, y0)]
+	var h01: float = height[_t(x0, y0 + 1)]
+	var h11: float = height[_t(x0 + 1, y0 + 1)]
+	return h00 + (h10 - h00) * tx + (h01 - h00) * ty + (h00 - h10 - h01 + h11) * tx * ty
+
+func slope_to(a: Vector2, b: Vector2) -> float:
+	var d := a.distance_to(b)
+	if d < 0.001:
+		return 0.0
+	return absf(height_at(b) - height_at(a)) / d
 
 const TARGET_TABLE := {
 	"melee": {"melee": 1.0, "ranged": 0.6, "cavalry": 1.4, "artillery": 0.3, "building": 0.5},
@@ -1454,6 +1550,54 @@ func effective_damage(player: int, kind: String, pos: Vector2) -> float:
 		m *= 1.0 + Data.OFFICER_DAMAGE_BONUS
 	return m
 
+func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
+	# Single source of truth for build legality. Returns {ok, reason}.
+	var def: Dictionary = Data.BUILDINGS[sid]
+	if not in_bounds(pos):
+		return {"ok": false, "reason": "Outside the map."}
+	if sid.begins_with("mine_"):
+		var dep := false
+		for n in res_nodes:
+			if n.type == def.mine and n.max_hits == 0 and n.pos.distance_to(pos) < 4.0:
+				dep = true
+				break
+		if not dep:
+			return {"ok": false, "reason": "Mines must be built on a %s deposit." % def.mine}
+		return {"ok": true, "reason": ""}
+	var t := tile_of(pos)
+	var terr: int = terrain[_t(t.x, t.y)]
+	if terr == 3:
+		return {"ok": false, "reason": "Too wet - cannot build on water."}
+	# footprint vs resources (stone fields, trees, groves; deco/stumps excluded)
+	for n in res_nodes:
+		if str(n.get("type", "")) in ["bush", "stump"]:
+			continue
+		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0:
+			continue
+		var rr: float = float(def.radius) + float(n.get("radius", 0.5))
+		if n.pos.distance_to(pos) < rr:
+			match str(n.get("type", "")):
+				"wood":
+					return {"ok": false, "reason": "Trees in the way - clear them first."}
+				"stone":
+					return {"ok": false, "reason": "Stone field - pick open dirt."}
+				"food":
+					return {"ok": false, "reason": "Cornfield - pick open dirt."}
+				_:
+					return {"ok": false, "reason": "Deposit - build the right mine here."}
+	# footprint vs live buildings (own + enemy + unfinished sites)
+	for b in live_blds:
+		if b.dead:
+			continue
+		var rr2: float = float(def.radius) + float(b.def.radius) + 0.3
+		if b.pos.distance_to(pos) < rr2:
+			if (sid == "wal" or sid == "gat") and str(b.sid) in ["wal", "gat"] and b.player == player:
+				continue
+			return {"ok": false, "reason": "Too close to %s." % str(b.sid)}
+	if is_blocked(pos) and not (sid in ["wal", "gat"]):
+		return {"ok": false, "reason": "Blocked ground (rock/forest/water)."}
+	return {"ok": true, "reason": ""}
+
 func place_building(player: int, sid: String, pos: Vector2, send := true) -> Dictionary:
 	var def: Dictionary = Data.BUILDINGS[sid]
 	if sid == "bar18" and not bool(players[player].get("has18c", false)):
@@ -1462,15 +1606,16 @@ func place_building(player: int, sid: String, pos: Vector2, send := true) -> Dic
 	if sid == "multicannon" and not bool(players[player].get("has_multi", false)):
 		say("Research the multi-barrelled cannon at the artillery depot first.")
 		return {}
+	var chk := can_place(player, sid, pos)
+	if not bool(chk.get("ok", false)):
+		if player == 0:
+			say(str(chk.get("reason", "Cannot build here.")))
+		return {}
 	if sid.begins_with("mine_"):
-		var dep := false
 		for n in res_nodes:
 			if n.type == def.mine and n.max_hits == 0 and n.pos.distance_to(pos) < 4.0:
-				dep = true
 				pos = n.pos
-		if not dep:
-			say("Mines must be built on a %s deposit." % def.mine)
-			return {}
+				break
 	var mult := 1.0
 	if not sid.begins_with("mine_") and sid != "wal" and sid != "gat":
 		var cnt := 0
@@ -1589,6 +1734,16 @@ func tick(dt: float) -> void:
 	for i in range(rubble.size() - 1, -1, -1):
 		if float(rubble[i].t) >= float(rubble[i].life):
 			rubble.remove_at(i)
+	for n in res_nodes:
+		if str(n.get("type", "")) == "stump":
+			n["stump_t"] = float(n.get("stump_t", 0.0)) + dt
+	for i in range(res_nodes.size() - 1, -1, -1):
+		var nn: Dictionary = res_nodes[i]
+		if str(nn.get("type", "")) == "stump" and float(nn.get("stump_t", 0.0)) > 60.0:
+			set_blocked_circle(nn.pos, nn.radius, false)
+			by_id.erase(nn.id)
+			res_nodes.remove_at(i)
+			res_dirty += 1
 	_separate_units()
 	_tick_cleanup(dt)
 	_tick_upkeep(dt)
@@ -1837,6 +1992,14 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 		var d2: Vector2 = dir.rotated(ang)
 		var np: Vector2 = e.pos + d2 * step
 		if not _blocked_for(e, np) and not _blocked_for(e, np + d2 * 0.45):
+			var sl := slope_to(e.pos, np)
+			if sl > 0.55:
+				continue
+			var esp := speed
+			if height_at(np) > height_at(e.pos) + 0.05 and sl > 0.25:
+				esp *= 0.6
+				if esp * dt < step:
+					np = e.pos + d2 * esp * dt
 			e.pos = np
 			e.face = d2.angle()
 			e["stuck_t"] = 0.0
@@ -2484,7 +2647,12 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 		e.carry_type = res
 		post_event("chop", node.pos, res)
 		if node.hits <= 0:
-			if res != "food":
+			if res == "wood":
+				node.type = "stump"
+				node["stump_t"] = 0.0
+				node["max_hits"] = 0
+				set_blocked_circle(node.pos, node.radius, false)
+			elif res != "food":
 				set_blocked_circle(node.pos, node.radius, false)
 			post_event("depleted", node.pos, res)
 			res_dirty += 1
@@ -2725,9 +2893,10 @@ func serialize() -> Dictionary:
 			pd[k] = _vec_enc(p[k])
 		pls.append(pd)
 	return {
-		"version": 3, "time_s": time_s, "winner": winner, "next_id": next_id,
+		"version": 4, "time_s": time_s, "winner": winner, "next_id": next_id,
 		"next_squad": next_squad, "battle_mode": battle_mode,
 		"terrain": Marshalls.raw_to_base64(terrain), "blocked": Marshalls.raw_to_base64(blocked),
+		"height": Marshalls.raw_to_base64(height.to_byte_array()),
 		"map_w": MAP_W, "map_h": MAP_H,
 		"entities": ents, "res_nodes": nodes, "players": pls,
 		"squads": squads.duplicate(true), "deposits": deposits.duplicate(),
@@ -2735,11 +2904,20 @@ func serialize() -> Dictionary:
 	}
 
 func deserialize(d: Dictionary) -> bool:
-	if int(d.get("version", 0)) != 3:
+	if int(d.get("version", 0)) not in [3, 4]:
 		return false
 	MAP_W = int(d.map_w); MAP_H = int(d.map_h)
 	terrain = Marshalls.base64_to_raw(str(d.terrain))
 	blocked = Marshalls.base64_to_raw(str(d.blocked))
+	if int(d.get("version", 0)) == 4 and d.has("height"):
+		var raw := Marshalls.base64_to_raw(str(d.height))
+		height.resize(MAP_W * MAP_H)
+		for i in mini(height.size(), int(raw.size() / 4)):
+			height[i] = raw.decode_float(i * 4)
+	else:
+		height.resize(MAP_W * MAP_H)
+		for i in height.size():
+			height[i] = 0.0
 	time_s = float(d.time_s); winner = int(d.winner)
 	next_id = int(d.next_id); next_squad = int(d.next_squad)
 	battle_mode = bool(d.battle_mode)

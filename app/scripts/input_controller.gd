@@ -323,6 +323,8 @@ func _pick_res(pw: Vector2) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := 2.5
 	for n in game.res_nodes:
+		if str(n.get("type", "")) in ["stump", "bush"]:
+			continue
 		if n.max_hits > 0 and n.hits <= 0 and n.type != "food":
 			continue
 		var d: float = n.pos.distance_to(pw)
