@@ -76,7 +76,7 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	view_scale = Data.PIXELS_PER_METER
 	terrain_px = Data.TERRAIN_PX
 	terrain_hlv = _prep_variants()
-	terrain_masks = _build_masks(terrain_px)
+	terrain_masks = _build_masks(_bake_px())
 	res_layer = Node2D.new()
 	res_layer.z_index = 1
 	add_child(res_layer)
@@ -474,31 +474,32 @@ func _prep_variants() -> Array:
 func _chunk_key(cx: int, cy: int) -> Vector2i:
 	return Vector2i(cx, cy)
 
+func _bake_px() -> int:
+	return mini(terrain_px * 2, 32)
+
 func _build_masks(px: int) -> Array:
-	# dithered-edge masks: blend_rect_mask treats mask alpha as BINARY
-	# (0/skip vs >0/full, verified empirically), so soft alpha is impossible.
-	# Instead: solid tile interior + ragged dithered edge band (bayer-ordered,
-	# 16 phase variants tile-picked by hash). Transitions read as organic
-	# texture grain, never a grid line; interiors stay solid (roads solid,
-	# water solid, forest floor solid).
-	var bayer := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+	# donor organic transition masks (data/terrain/tiles/textures/alpha*.bmp):
+	# cloudy noise blobs, intensity = alpha. blend_rect_mask is binary, so the
+	# bake runs at 2x and downsamples: hard organic edges become true soft
+	# gradients, exactly the original's modulate-transparency look.
 	var out: Array = []
-	for i in 16:
-		var ox := i % 4
-		var oy := i / 4
+	var files: Array = []
+	var dp := "res://assets/terrain/dmask/d_%02d.png"
+	for i in range(6, 24):
+		files.append(dp % i)
+	for f in files:
+		if not FileAccess.file_exists(f):
+			continue
+		var im := Image.new()
+		var err := im.load(f)
+		if err != OK:
+			continue
+		if im.get_width() != px or im.get_height() != px:
+			im.resize(px, px, Image.INTERPOLATE_BILINEAR)
+		out.append(im)
+	if out.is_empty():
 		var m := Image.create(px, px, false, Image.FORMAT_RGBA8)
-		for y in px:
-			for x in px:
-				# narrow ragged band (outer ~25%): solid interior, organic edge
-				var e: float = minf(minf(float(x), float(px - 1 - x)), minf(float(y), float(px - 1 - y))) / maxf(1.0, float(px) * 0.25)
-				e = clampf(e, 0.0, 1.0)
-				var a := 0.0
-				if e >= 1.0:
-					a = 1.0
-				elif e > 0.02:
-					var b: float = float(bayer[((y + oy) % 4) * 4 + ((x + ox) % 4)]) / 16.0
-					a = 1.0 if b < e else 0.0
-				m.set_pixel(x, y, Color(1, 1, 1, a))
+		m.fill(Color(1, 1, 1, 1))
 		out.append(m)
 	ter_white = Image.create(px, px, false, Image.FORMAT_RGB8)
 	ter_white.fill(Color(1, 1, 1))
@@ -508,7 +509,8 @@ func _build_masks(px: int) -> Array:
 
 func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var px := terrain_px
-	var S := CHUNK_T * px
+	var bpx := _bake_px()
+	var S := CHUNK_T * bpx
 	# wrap-continuous base: same strict offsets as every neighbour chunk, so
 	# the meadow flows across chunk borders with no seam and no repetition
 	var img := _wrap_crop(ter_src["grass"], cx * S, cy * S, S)
@@ -545,8 +547,8 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 		crops[5] = _wrap_crop(ter_src["rock"], cx * S + 900, cy * S + 100, S)
 	# blend_rect_mask is binary (0/skip vs >0/full), so ragged-dithered masks
 	# (hash-picked per tile): organic transitions, never a grid line
-	var tile_im := Image.create(px, px, false, Image.FORMAT_RGB8)
-	var tile_rect := Rect2i(0, 0, px, px)
+	var tile_im := Image.create(bpx, bpx, false, Image.FORMAT_RGB8)
+	var tile_rect := Rect2i(0, 0, bpx, bpx)
 	for ly in CHUNK_T:
 		for lx in CHUNK_T:
 			var x := cx * CHUNK_T + lx
@@ -556,21 +558,39 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 			var t: int = game.terrain[y * game.MAP_W + x]
 			if t < 0 or t > 5:
 				t = 0
-			var dst := Vector2i(lx * px, ly * px)
-			var rect := Rect2i(dst.x, dst.y, px, px)
+			var dst := Vector2i(lx * bpx, ly * bpx)
+			var rect := Rect2i(dst.x, dst.y, bpx, bpx)
 			if t >= 1 and t <= 5:
-				var feather: Image = terrain_masks[posmod(x * 3 + y * 5, 16)]
+				# donor masks sorted by coverage ASC: foreign-neighbour count
+				# picks coverage (peninsulas wispy, near-interior solid) + hash
+				# jitter. Interior tiles paste hard (fast + perfectly solid).
+				var f := 0
+				for oy in [-1, 0, 1]:
+					for ox in [-1, 0, 1]:
+						if ox == 0 and oy == 0:
+							continue
+						var nx: int = x + ox
+						var ny: int = y + oy
+						var nt := -1
+						if nx >= 0 and ny >= 0 and nx < game.MAP_W and ny < game.MAP_H:
+							nt = game.terrain[ny * game.MAP_W + nx]
+						if nt != t:
+							f += 1
 				if t == 2:
 					tile_im.blit_rect(dark_stock, rect, Vector2i(0, 0))
 				elif t == 3:
-					# water: deep blue-green, depth varies smoothly tile to tile
+					# water: muted teal, depth varies smoothly tile to tile
 					var depth := 0.9 + 0.2 * (0.5 + 0.5 * _wnoise(float(x) * 0.3, float(y) * 0.3))
-					tile_im.fill(Color(0.13 * depth, 0.30 * depth, 0.50 * depth))
+					tile_im.fill(Color(0.15 * depth, 0.34 * depth, 0.46 * depth))
 				elif t in crops:
 					tile_im.blit_rect(crops[t], rect, Vector2i(0, 0))
 				else:
 					tile_im.blit_rect(dark_stock, rect, Vector2i(0, 0))
-				img.blend_rect_mask(tile_im, feather, tile_rect, dst)
+				if f == 0:
+					img.blit_rect(tile_im, tile_rect, dst)
+				else:
+					var mi: int = clampi(int((1.0 - float(f) / 8.0) * 17.0) + posmod(x * 5 + y * 11, 5) - 2, 0, 17)
+					img.blend_rect_mask(tile_im, terrain_masks[mi], tile_rect, dst)
 			# gentle per-tile tone: mottle field x continuous height shade.
 			# Both fields are smooth, so adjacent tiles agree (~1%) and no
 			# grid can appear, while hills/valleys and meadow patches read.
@@ -580,6 +600,9 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 				tile_im.blit_rect(img, rect, Vector2i(0, 0))
 				tile_im.adjust_bcs(bright, 1.0, 1.0)
 				img.blit_rect(tile_im, tile_rect, dst)
+	# supersample resolve: hard organic edges become true soft gradients
+	if bpx != px:
+		img.resize(CHUNK_T * px, CHUNK_T * px, Image.INTERPOLATE_BILINEAR)
 	var tex := ImageTexture.create_from_image(img)
 	var sp := Sprite2D.new()
 	sp.texture = tex

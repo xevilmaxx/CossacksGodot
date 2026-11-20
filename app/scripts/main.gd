@@ -620,7 +620,7 @@ func _show_options(parent: VBoxContainer) -> void:
 		world.terrain_chunks.clear()
 		world.terrain_order.clear()
 		world.terrain_px = Data.TERRAIN_PX
-		world.terrain_masks = world._build_masks(Data.TERRAIN_PX)
+		world.terrain_masks = world._build_masks(world._bake_px())
 		world.anim_tex.clear()
 		world.anim_index = {}
 		var j := FileAccess.get_file_as_string(world._anim_dir() + "/index.json")

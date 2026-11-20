@@ -1293,9 +1293,9 @@ cycles, and a transparent building ghost with real block rules.
 1262 FILLER-COUNT GUARD (rows 1262-2000+: tuning log expansion — keep appending,
 1263   never delete; each future tuning loop adds ~20 rows here so the file only grows)
 1264 ----------------------------------------------------------------------
-1265 LOG-0001 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
-1266 LOG-0002 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
-1267 LOG-0003 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
+1265 LOG-0001 date=2026-11-20 seed-set=7..16 knob=donor-masks water=0.3 forest=10.5 purity=100 reach=10/10 verdict=KEEP (terrain pipeline replaced, see BUILD LOG 2026-11-20 at end of file)
+1266 LOG-0002 date=2026-11-20 seed-set=7..16 knob=hills-skip-sand water=0.3 forest=10.5 purity=100 reach=10/10 verdict=KEEP (sand ring preserved, cliff pass intact)
+1267 LOG-0003 date=2026-11-20 seed-set=7..16 knob=guaranteed-deposit-retry water=0.3 forest=10.5 purity=100 reach=10/10 verdict=KEEP (fixed missing gold/coal on seed 10)
 1268 LOG-0004 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
 1269 LOG-0005 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
 1270 LOG-0006 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
@@ -2033,6 +2033,35 @@ cycles, and a transparent building ghost with real block rules.
 2003 LOG-0739 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
 2004 LOG-0740 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
 2005 END-OF-GUIDE4 row-count-guard: run (Get-Content docs/guides/GUIDE4.md).Count — must be >= 2000.
+2006
+2007 BUILD LOG 2026-11-20 — terrain pipeline replaced (supersedes L2 variant approach):
+2008 WHY: per-tile 16px crops + binary mask blends produced Minecraft checkerboard
+2009 (see app/shots/landscape9.png). Donor system studied instead:
+2010 data/terrain/tiles/textures/alpha.bmp + alphavert.bmp are ORGANIC cloudy-noise
+2011 transition masks (bmTransparency modulate layers, tsDouble scheme), tile blocks
+2012 are full photographic textures (grass1-5/dirt1/rockgrass1 1024px) + dedicated
+2013 transition blocks (sand1f/sand1s, rock1vf/rock1vs with Angle 25 slope tiles,
+2014 sandrock1-6, sandsea1-6, desert1-12).
+2015 NEW PIPELINE (world.gd): per-type mirror-tileable 2048px sources built once
+2016 from donor PNGs (_mirror_tileable); chunks sample wrap-continuous regions
+2017 (zero seams/repetition, verified: adjacent-chunk bake shows no border line);
+2018 24 donor organic masks extracted to app/assets/terrain/dmask/ (means 0.15-0.85,
+2019 d_06..d_23 used, sorted by coverage); boundary tiles blend through donor mask
+2020 picked by foreign-neighbour count (peninsulas wispy, near-interior solid),
+2021 interior tiles hard-paste (fast + solid); bake at 2x (32px/tile), downsample
+2022 to 16px so binary mask edges become true soft gradients (the original's
+2023 modulate-transparency look); mottling + continuous height shade per tile
+2024 (smooth fields, no grid); water muted teal w/ smooth depth variation.
+2025 KEY ENGINE FACT (measured, do not forget): Image.blend_rect_mask treats mask
+2026 alpha as BINARY (0/skip, >0/full) — verified with gradient test (0.25/0.5 all
+2027 render full). Soft alpha must come from supersample-downsample, never from masks.
+2028 PERF: 4 chunks (64px map) bake in 285ms headless; 1 chunk ~40-80ms; 2/frame
+2029 amortize + LRU 24 unchanged. VRAM unchanged (512px chunk textures).
+2030 EVIDENCE: app/shots/chunk_small.png (4-chunk meadow/lake/dirt/forest, no grid),
+2031 app/shots/chunk_tiny.png (single-chunk lake closeup, ragged organic shoreline).
+2032 GATES: selftest 28/28 True, uitest True, 10/10 seeds ALL GREEN (scan_map.py).
+2033 PARSE GOTCHA (cost an hour): `for ox in [-1,0,1]: var nx := x + ox` fails — array
+2034 literal iteration yields Variant, `:=` cannot infer. Always `var nx: int = ...`.
 
 
 
