@@ -17,6 +17,17 @@ var terrain: PackedByteArray = PackedByteArray()
 var blocked: PackedByteArray = PackedByteArray()
 var height: PackedFloat32Array = PackedFloat32Array()
 var hill_list: Array = []
+var map_meta: Dictionary = {}  # donor terrain type + chosen heightmask (for the quality scan)
+# Donor tile system (data/terrain/tiles + data/gen/tilesmooth_scripts.cfg):
+# every map cell carries a TileBlock index (summer preset order). Base blocks
+# come from biome proportions, then TextureMap-style oriented shores/cliffs,
+# then the exact 3-pass SmoothTileMap transition insertion, then meadow detail.
+# Water cells hold BLK_WATER (donor renders water as a separate plane).
+const BLK_WATER := 255
+var tileblock: PackedByteArray = PackedByteArray()
+var tbl_names: Array = []
+var tbl_smooth: Array = []
+var tbl_idx := {}
 var res_nodes: Array = []
 var map_starts: Array = []  # start positions of the generated map (groves near them are sacred)
 var cluster_zones: Array = []  # claimed {pos, r} so clusters never overlap
@@ -332,96 +343,155 @@ func _claim_cluster(pos: Vector2, r_m: float, margin_m := 4.0) -> bool:
 	return true
 
 func _generate_map() -> void:
-	# Structured skirmish map in the original's style:
-	# open plains + forest belts + hills + lakes + farm fields + rock outcrops.
-	# terrain: 0 grass, 1 dirt, 2 forest floor, 3 water, 4 sand, 5 rock.
-	# Large homogeneous zones (low-frequency noise): the original has broad
-	# meadows and dirt expanses with soft passes between them, not per-tile
-	# speckle. Tile edges are softened by the blend masks at bake time.
-	for y in MAP_H:
-		for x in MAP_W:
-			# base grass with soft large-scale variation (plains vs meadow)
-			var n := _noise2(x * 0.012, y * 0.012)
-			var n2 := _noise2(x * 0.05 + 57.0, y * 0.05 - 31.0)
-			var t := 0
-			if n > 0.22 and n2 > -0.15:
-				t = 1  # dirt zone
-			# no random dark patches: forest floor (type 2) is painted only
-			# under real forests below, so dark grass always means trees
-			terrain[_t(x, y)] = t
-	var starts := _start_positions()
+	# DONOR PIPELINE (data/scripts/common.inc/generatemap.inc -> dogenerate.inc):
+	# 1. pick a hand-authored RGB terrain mask (R relief, G forest/stone,
+	#    B water, white = start) from data/gen/terrainmasks/<terrain>/.
+	# 2. SetHeightData: h = -1.1*b*(1+r*3.5) + relief(r); water < -0.25,
+	#    shore < -0.1; 3 coastal smoothing passes.
+	# 3. pattern passes: relief domes, mines at start rings, forests, stones,
+	#    decor, fields.  We keep the port's pattern equivalents below but the
+	#    SHAPE of every map (coast, lakes, start positions) now comes from the
+	#    donor mask, not from per-seed blobs.
+	# 4. TextureMap + SmoothTiles runs at the end (_assign_tileblocks).
+	var budget: Dictionary = Data.mapgen_budget()
+	# donor scales pattern frequency with map size (_misc_GetFreePatternMaskModifier).
+	# The port's pattern radii were tuned at 160 tiles; scale them to this map.
+	var mscale: float = clampf(float(MAP_W) / 160.0, 1.0, 2.0)
+	var mg: Dictionary = C3MapGen.build(str(Data.MAP_TYPE), int(Data.RANDOM_SEED),
+		MAP_W, MAP_H, TILE, str(Data.QUALITY))
+	height = mg.get("height", PackedFloat32Array())
+	map_meta = {"type": str(Data.MAP_TYPE), "quality": str(Data.QUALITY),
+		"mask": mg.get("mask", {}), "mask_water": float(mg.get("water", 0.0))}
+	var forest_field: PackedFloat32Array = mg.get("forest", PackedFloat32Array())
+	var starts: Array[Vector2] = []
+	for sv in mg.get("starts", []):
+		starts.append(sv as Vector2)
+	if starts.size() < 2:
+		starts = _start_positions()
 	map_starts = starts
 	cluster_zones = []
-	# map type scales the water: Land ~1 lake, Islands ~3 (generator.cfg).
-	var water_mult: float = float(Data.MAP_TYPES.get(Data.MAP_TYPE, {"water_frac": 0.5}).get("water_frac", 0.5))
-	# lakes: 1-2 ellipses away from starts, with sand shore ring
-	var lake_n := clampi(1 + rng.randi() % maxi(1, int(round(water_mult * 2.0))), 1, 4)
-	for li in lake_n:
-		var cx := rng.randf_range(MAP_W * 0.3, MAP_W * 0.7)
-		var cy := rng.randf_range(MAP_H * 0.3, MAP_H * 0.7)
-		var rx := rng.randf_range(9.0, 16.0)
-		var ry := rng.randf_range(7.0, 13.0)
-		for y in MAP_H:
-			for x in MAP_W:
-				var dx := (x - cx) / rx
-				var dy := (y - cy) / ry
-				var d := dx * dx + dy * dy
-				if d < 1.0:
-					terrain[_t(x, y)] = 3
-					set_blocked_tile(x, y, true)
-				elif d < 1.45:
-					if terrain[_t(x, y)] != 3:
-						terrain[_t(x, y)] = 4
-	# hills: 3-4 rock blobs (passable, rock texture, mines like them)
+	# relief domes = the donor's hills_dark/hills_light/mountains pattern passes.
+	# Donor cHillHeight = 1.317 (half of the 2.964 plateau).
 	hill_list = []
-	for hi in rng.randi_range(3, 4):
+	for _hi in int(budget.get("domes", 3)):
 		var cx := rng.randf_range(MAP_W * 0.2, MAP_W * 0.8)
 		var cy := rng.randf_range(MAP_H * 0.2, MAP_H * 0.8)
 		var rr := rng.randf_range(7.0, 13.0)
 		hill_list.append({"x": cx, "y": cy, "rr": rr})
-		for y in range(maxi(0, int(cy - rr * 1.4)), mini(MAP_H, int(cy + rr * 1.4) + 1)):
-			for x in range(maxi(0, int(cx - rr * 1.4)), mini(MAP_W, int(cx + rr * 1.4) + 1)):
-				var d := Vector2(x - cx, y - cy).length() / rr
-				if d < 1.0 and not (terrain[_t(x, y)] in [3, 4]):
-					terrain[_t(x, y)] = 5 if d < 0.55 else (1 if d < 0.85 else terrain[_t(x, y)])
-	# height field: base noise + hill domes - lake bowls (stored, bilinear read)
+		for y in range(maxi(0, int(cy - rr)), mini(MAP_H, int(cy + rr) + 1)):
+			for x in range(maxi(0, int(cx - rr)), mini(MAP_W, int(cx + rr) + 1)):
+				var dd: float = Vector2(x - cx, y - cy).length() / rr
+				if dd >= 1.0:
+					continue
+				var i := _t(x, y)
+				if height[i] < C3MapGen.WATER_SHORE:
+					continue
+				height[i] += (1.0 - dd) * (1.0 - dd) * (2.964 / 2.25)
+	# base tile roles from the donor height thresholds (guides shore/collision):
+	# h < -0.25 = water plane, -0.25..-0.1 = wet sand collar, above = meadow
+	# (with broad dirt expanses from low-frequency noise).
 	for y in MAP_H:
 		for x in MAP_W:
-			var base := _noise2(x * 0.07, y * 0.07) * 1.2
-			var hb := 0.0
-			for h in hill_list:
-				var dd := Vector2(x - float(h.x), y - float(h.y)).length() / float(h.rr)
-				if dd < 1.0:
-					hb += (1.0 - dd) * (1.0 - dd) * 1.8
-			var lake := 0.0
-			if terrain[_t(x, y)] == 3:
-				lake = -1.8
-			elif terrain[_t(x, y)] == 4:
-				lake = -0.5
-			height[_t(x, y)] = base + hb + lake
-	# cliff pass: steep rock becomes blocked (impassable, like editor steep hills)
-	for y in MAP_H:
-		for x in MAP_W:
-			if terrain[_t(x, y)] == 3:
-				continue
-			var h0: float = height[_t(x, y)]
-			var smax := 0.0
-			if x + 1 < MAP_W:
-				smax = maxf(smax, absf(height[_t(x + 1, y)] - h0) / TILE)
-			if y + 1 < MAP_H:
-				smax = maxf(smax, absf(height[_t(x, y + 1)] - h0) / TILE)
-			if smax > 0.55:
-				terrain[_t(x, y)] = 5
+			var i := _t(x, y)
+			var hh: float = height[i]
+			var t := 0
+			if hh < C3MapGen.WATER_DEEP:
+				t = 3
 				set_blocked_tile(x, y, true)
-	# dirt road between the two starts through the center
+			elif hh < -0.05:
+				t = 4  # donor sandsea collar: Mask B gradient makes a ~2-3 tile band
+			else:
+				var n := _noise2(x * 0.012 + float(Data.RANDOM_SEED % 997) * 0.01,
+					y * 0.012 - float(Data.RANDOM_SEED % 991) * 0.01)
+				var n2 := _noise2(x * 0.05 + 57.0, y * 0.05 - 31.0)
+				if n > 0.22 and n2 > -0.15:
+					t = 1
+			terrain[i] = t
+	# donor TextureMap paints the wet sandsea* rim ON the water cells that
+	# touch land (orientation = ripple direction).  Port equivalent: turn the
+	# outermost water ring into walkable sand.  This gives every lake/sea a
+	# continuous collar instead of a one-pixel hairline.
+	var shore_ring := PackedByteArray()
+	shore_ring.resize(MAP_W * MAP_H)
+	for y in MAP_H:
+		for x in MAP_W:
+			var i := _t(x, y)
+			if terrain[i] != 3:
+				continue
+			var touches := false
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					var nx: int = x + ox
+					var ny: int = y + oy
+					if nx < 0 or ny < 0 or nx >= MAP_W or ny >= MAP_H:
+						continue
+					if terrain[_t(nx, ny)] != 3:
+						touches = true
+						break
+				if touches:
+					break
+			if touches:
+				shore_ring[i] = 1
+	for i in shore_ring.size():
+		if shore_ring[i] == 1:
+			terrain[i] = 4
+			blocked[i] = 0
+	# collision pass of donor texturemap.inc: cardinal |dh|>0.5 or diagonal
+	# |dh|>0.55 becomes impassable rock (cDiff1 / cDiff2).  Skip water AND sand
+	# so the shore collar keeps its sand art and stays walkable.
+	for y in MAP_H:
+		for x in MAP_W:
+			var i := _t(x, y)
+			if terrain[i] == 3 or terrain[i] == 4:
+				continue
+			var h0: float = height[i]
+			var steep := false
+			if x + 1 < MAP_W and absf(height[i + 1] - h0) > 0.5:
+				steep = true
+			if x > 0 and absf(height[i - 1] - h0) > 0.5:
+				steep = true
+			if y + 1 < MAP_H and absf(height[i + MAP_W] - h0) > 0.5:
+				steep = true
+			if y > 0 and absf(height[i - MAP_W] - h0) > 0.5:
+				steep = true
+			if x > 0 and y > 0 and absf(height[i - MAP_W + 1] - h0) > 0.55:
+				steep = true
+			if x + 1 < MAP_W and y + 1 < MAP_H and absf(height[i + MAP_W + 1] - h0) > 0.55:
+				steep = true
+			if steep:
+				terrain[i] = 5
+				set_blocked_tile(x, y, true)
+	# Starts can land in shallow water on a mask edge: snap to the nearest land.
+	for si in starts.size():
+		var st: Vector2 = starts[si]
+		if terrain[_t(int(st.x / TILE), int(st.y / TILE))] != 3:
+			continue
+		var best := st
+		var bd := 1.0e9
+		for y in MAP_H:
+			for x in MAP_W:
+				if terrain[_t(x, y)] == 3:
+					continue
+				var d: float = Vector2(float(x) + 0.5, float(y) + 0.5).distance_to(st / TILE)
+				if d < bd:
+					bd = d
+					best = Vector2(float(x) + 0.5, float(y) + 0.5) * TILE
+		starts[si] = best
+	map_starts = starts
+	# dirt road between the two starts through the centre (donor broad mask
+	# alpha -> ground1/test2/test3; port keeps one simple road).
 	_draw_road(starts[0], (starts[0] + starts[1]) * 0.5)
 	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
-	# forests: 6-8 dense belts, kept away from starts and from each other
-	# (claimed zones: distinct forests with meadow between, never merged)
+	# forests: the donor places forest_* pattern families globally, but never
+	# in the three elliptical keep-clear zones around a start.  The G channel
+	# of the mask (where present) biases belt centres to natural woodland.
+	var belts: Array = budget.get("belts", [6, 8])
+	var trees: Array = budget.get("trees", [34, 60])
 	var forest_centers: Array = []
-	for f in rng.randi_range(6, 8):
+	for _f in rng.randi_range(int(belts[0]), int(belts[1])):
 		var c := Vector2(-1, -1)
-		for attempt in 8:
+		var best_bias := -1.0
+		for attempt in 14:
 			var cand := Vector2(rng.randf_range(MAP_W * 0.08, MAP_W * 0.92) * TILE,
 				rng.randf_range(MAP_H * 0.08, MAP_H * 0.92) * TILE)
 			var too_close := false
@@ -429,29 +499,28 @@ func _generate_map() -> void:
 				if cand.distance_to(st) < 22.0 * TILE:
 					too_close = true
 					break
-			if too_close:
+			if too_close or not in_bounds(cand) or is_blocked(cand):
 				continue
-			if not in_bounds(cand) or is_blocked(cand):
-				continue
-			if _claim_cluster(cand, 7.0 * TILE):
+			var tt := tile_of(cand)
+			var bias: float = forest_field[_t(tt.x, tt.y)] if forest_field.size() == MAP_W * MAP_H else 0.0
+			if bias > best_bias and _claim_cluster(cand, 7.0 * TILE * mscale):
+				best_bias = bias
 				c = cand
-				break
+				if bias > 0.5:
+					break
 		if c.x < 0.0:
 			continue
 		forest_centers.append(c)
-		# dark forest floor under the belt (original woods grow on dark ground)
-		_paint_terrain(c, 5.5 * TILE, 2)
-		_scatter_forest(c, rng.randi_range(34, 60), 5.0 * TILE)
-	# small groves near each start (firewood in reach)
+		_paint_terrain(c, 5.5 * TILE * mscale, 2)
+		_scatter_forest(c, int(float(rng.randi_range(int(trees[0]), int(trees[1]))) * mscale), 5.0 * TILE * mscale)
+	# two groves per start (donor cCircle1 keep-clear outer ring = firewood).
 	for st in starts:
-		_paint_terrain(st + Vector2(7, -7) * TILE, 4.5 * TILE, 2)
-		_scatter_forest(st + Vector2(7, -7) * TILE, 26, 5.0 * TILE)
-		_paint_terrain(st + Vector2(-8, 5) * TILE, 4.0 * TILE, 2)
-		_scatter_forest(st + Vector2(-8, 5) * TILE, 18, 4.0 * TILE)
-	# stone outcrops: clustered, some on hills, always in rock/dirt clearings
-	# (never inside forest — cleared + painted like the original quarries).
-	# claimed zones: distinct quarries, never overlapping forests or mines.
-	for s in 7:
+		_paint_terrain(st + Vector2(7, -7) * TILE * mscale, 4.5 * TILE * mscale, 2)
+		_scatter_forest(st + Vector2(7, -7) * TILE * mscale, int(26.0 * mscale), 5.0 * TILE * mscale)
+		_paint_terrain(st + Vector2(-8, 5) * TILE * mscale, 4.0 * TILE * mscale, 2)
+		_scatter_forest(st + Vector2(-8, 5) * TILE * mscale, int(18.0 * mscale), 4.0 * TILE * mscale)
+	# quarries: donor stones/stoneforests patterns, always clear of woodland.
+	for _s in int(budget.get("quarries", 7)):
 		var c := Vector2(-1, -1)
 		for attempt in 8:
 			var cand := Vector2(rng.randf_range(MAP_W * 0.09, MAP_W * 0.91) * TILE,
@@ -470,9 +539,7 @@ func _generate_map() -> void:
 		_paint_terrain(c, 6.0 * TILE, 1)
 		_paint_terrain(c, 3.5 * TILE, 5)
 		_clear_trees(c, 7.0 * TILE)
-	# guaranteed stone near each start (original maps always keep stone in
-	# reach; without it the economy can never leave the wood/food stage).
-	# tiny tight cluster: small blocked footprint, inside gather range.
+	# guaranteed stone near each start (SetupStartingResources cCircle2 ring).
 	for st in starts:
 		for attempt in 8:
 			var ang0 := rng.randf() * TAU
@@ -486,7 +553,7 @@ func _generate_map() -> void:
 				_paint_terrain(cc, 2.0 * TILE, 5)
 				_clear_trees(cc, 5.0 * TILE)
 				break
-	# corn (food): rectangular farm fields near each start, like the original fields
+	# seed wheat (donor cSeedWheat): rectangular farm strips by each town.
 	for st in starts:
 		for g in 2:
 			var origin := st + Vector2(-10 + g * 7.0, 7.0) * TILE
@@ -495,7 +562,7 @@ func _generate_map() -> void:
 					var p := origin + Vector2(ix * 1.5, iy * 1.5) * TILE
 					if in_bounds(p) and not is_blocked(p):
 						_add_res("food", p, 50, 0.6)
-	# straggler corn elsewhere: small claimed patches, never inside other clusters
+	# straggler fields: small claimed patches, never inside other clusters.
 	for st in starts:
 		for attempt in 6:
 			var c := st + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)) * TILE
@@ -508,9 +575,8 @@ func _generate_map() -> void:
 				if in_bounds(p) and not is_blocked(p):
 					_add_res("food", p, 50, 0.6)
 			break
-	# mines: deposits to build on (gold, iron, coal), two of each + one of each near starts.
-	# each sits on its own dirt clearing with no trees (original mine sites).
-	# claimed zones: never inside forests, quarries or other deposits.
+	# mines: donor SetupMines distance bands (mng/mni/mnc) + 1/kind guaranteed
+	# per start. Each sits on its own dirt pad, clear of trees.
 	var kinds := ["gold", "iron", "coal"]
 	for k in kinds:
 		for m in 2:
@@ -528,16 +594,15 @@ func _generate_map() -> void:
 			_add_res(k, p, 0, 0.0)
 			_paint_terrain(p, 4.0 * TILE, 1)
 			_clear_trees(p, 6.0 * TILE)
-	# decor bushes near quarries and on sand (after clusters, before plaza clear)
-	_scatter_bushes()
-	# keep starting areas clear + small dirt town plaza like the original towns
+	if bool(budget.get("decor", true)):
+		_scatter_bushes()
+	# keep the three elliptical start zones clear (donor gPatternMask).
 	for st in starts:
 		_paint_terrain(st, 5.0 * TILE, 1)
 		_clear_area(st, 9.0 * TILE)
 		for n in res_nodes:
 			if n.hits <= 0:
 				set_blocked_circle(n.pos, n.radius, false)
-		# guarantee reachable deposits (original maps always put mines in reach)
 		for ki in kinds.size():
 			var dist: float = (14.0 + ki * 5.0) * TILE
 			for attempt in 8:
@@ -549,8 +614,7 @@ func _generate_map() -> void:
 					_paint_terrain(dp, 4.0 * TILE, 1)
 					_clear_trees(dp, 6.0 * TILE)
 					break
-		# re-plant what clearing wiped: farm fields + firewood just outside
-		# the cleared ring so peasants always have work in reach
+		# re-plant what the keep-clear wiped: wheat + firewood in reach.
 		for g in 2:
 			var origin := st + Vector2(-9 + g * 8.0, 8.5) * TILE
 			for ix in 5:
@@ -562,14 +626,13 @@ func _generate_map() -> void:
 		_paint_terrain(st + Vector2(9, -8) * TILE, 4.5 * TILE, 2)
 		_scatter_forest(st + Vector2(-10, 6) * TILE, 18, 4.0 * TILE)
 		_paint_terrain(st + Vector2(-10, 6) * TILE, 4.0 * TILE, 2)
-	# final purity pass: late groves must not invade quarries or mine pads
+	# purity pass: late groves must not invade quarries or mine pads.
 	for n in res_nodes:
 		if n.type == "stone" or (n.max_hits == 0 and str(n.type) in ["gold", "iron", "coal"]):
 			_clear_trees(n.pos, 5.0 * TILE, true)
-	# clear a small ring right around each town center so units never spawn stuck
 	for st in starts:
 		_clear_area(st, 4.0 * TILE)
-	# per-node deposit split: each deposit holds its share of the global pool
+	# per-node deposit split: each deposit holds its share of the global pool.
 	var cnt := {"gold": 0, "iron": 0, "coal": 0}
 	for n in res_nodes:
 		if n.max_hits == 0 and cnt.has(n.type):
@@ -577,14 +640,294 @@ func _generate_map() -> void:
 	for n in res_nodes:
 		if n.max_hits == 0 and cnt.has(n.type) and int(cnt[n.type]) > 0:
 			n["left"] = float(Data.DEPOSITS.get(n.type, 30000)) / float(cnt[n.type])
+	# donor TextureMap -> SmoothTiles -> SmoothForestBorders.
+	_assign_tileblocks()
+
+func _load_terrain_structs() -> void:
+	if not tbl_names.is_empty():
+		return
+	var a1 = JSON.parse_string(FileAccess.get_file_as_string("res://assets/terrain/structs/presets_summer.json"))
+	if a1 is Array:
+		tbl_names = a1
+	for i in tbl_names.size():
+		tbl_idx[str(tbl_names[i])] = i
+	var a2 = JSON.parse_string(FileAccess.get_file_as_string("res://assets/terrain/structs/smooth_summer.json"))
+	if a2 is Array:
+		tbl_smooth = a2
+
+func _blk(n: String) -> int:
+	return int(tbl_idx.get(n, 0))
+
+func _assign_tileblocks() -> void:
+	# deterministic stream of its own (same map on every load, no save data)
+	_load_terrain_structs()
+	tileblock.resize(MAP_W * MAP_H)
+	var brng := RandomNumberGenerator.new()
+	brng.seed = int(Data.RANDOM_SEED) + 7
+	# 1) base blocks from biome proportions (donor tile_low/highground stats:
+	# meadow = grass1 + test7/8/9 worn patches + grass variety speckles)
+	for y in MAP_H:
+		for x in MAP_W:
+			var t: int = terrain[_t(x, y)]
+			var b := _blk("grass1")
+			var r := brng.randf()
+			match t:
+				0:
+					var hh := height_at(Vector2((float(x) + 0.5) * TILE, (float(y) + 0.5) * TILE))
+					if hh > 0.6:
+						if r < 0.40:
+							b = _blk("test7")
+						elif r < 0.65:
+							b = _blk("test8")
+						elif r < 0.85:
+							b = _blk("test9")
+						elif r < 0.95:
+							b = _blk("grass8")
+						else:
+							b = _blk("grass2")
+					else:
+						if r < 0.50:
+							b = _blk("grass1")
+						elif r < 0.60:
+							b = _blk("test7")
+						elif r < 0.70:
+							b = _blk("test8")
+						elif r < 0.80:
+							b = _blk("test9")
+						elif r < 0.84:
+							b = _blk("grass2")
+						elif r < 0.88:
+							b = _blk("grass8")
+						elif r < 0.92:
+							b = _blk("grass10")
+						elif r < 0.96:
+							b = _blk("grass7")
+						else:
+							b = _blk("grass9")
+				1:
+					b = _blk("ground1")
+				2:
+					if r < 0.64:
+						b = _blk("grass_ground1")
+					elif r < 0.6428:
+						b = _blk("grass_ground2")
+					else:
+						b = _blk("grass_ground3")
+				3:
+					b = BLK_WATER
+				4:
+					b = _blk(["sand1", "sand2", "sand7"][brng.randi() % 3])
+				5:
+					if r < 0.16:
+						b = _blk("rock1")
+					elif r < 0.32:
+						b = _blk("rock2")
+					elif r < 0.48:
+						b = _blk("rock3")
+					elif r < 0.64:
+						b = _blk("rock6")
+					elif r < 0.80:
+						b = _blk("rock7")
+					else:
+						b = _blk("rock4")
+			tileblock[_t(x, y)] = b
+	# 2) oriented shores + cliffs (donor texturemap.inc 8-sector tables)
+	_apply_shore_cliffs()
+	# 3) exact 3-pass SmoothTileMap (donor smoothtiles.inc)
+	_smooth_tilemap(brng)
+	# 4) forest-border stamps (donor smoothforestborders.inc: grass5/rock9
+	# tiles + bushes at edge cells with exactly one forest neighbour)
+	_stamp_forest_borders(brng)
+
+func _shore_tile_for(x: int, y: int) -> String:
+	var dx := 0.0
+	var dy := 0.0
+	for oy in [-1, 0, 1]:
+		for ox in [-1, 0, 1]:
+			if ox == 0 and oy == 0:
+				continue
+			var nx: int = x + ox
+			var ny: int = y + oy
+			if nx < 0 or ny < 0 or nx >= MAP_W or ny >= MAP_H:
+				continue
+			if int(terrain[_t(nx, ny)]) == 3:
+				dx += float(x - nx)
+				dy += float(y - ny)
+	if dx == 0.0 and dy == 0.0:
+		return ""
+	var ang := fposmod(rad_to_deg(atan2(dy, dx)), 360.0)
+	if ang >= 337.5 or ang < 22.5:
+		return "sandsea6"
+	if ang < 67.5:
+		return "sandsea6"
+	if ang < 112.5:
+		return "sandsea1"
+	if ang < 157.5:
+		return "sandsea5"
+	if ang < 202.5:
+		return "sandsea6"
+	if ang < 247.5:
+		return "sandsea6"
+	if ang < 292.5:
+		return "sandsea1"
+	return "sandsea5"
+
+func _cliff_tile_for(x: int, y: int) -> String:
+	# exact donor texturemap.inc:426-447,557-609 cliff orientation
+	var lh: float = height[_t(maxi(0, x - 1), y)]
+	var rh: float = height[_t(mini(MAP_W - 1, x + 1), y)]
+	var th: float = height[_t(x, maxi(0, y - 1))]
+	var bh: float = height[_t(x, mini(MAP_H - 1, y + 1))]
+	var dir_x := lh - rh
+	var dir_y := th - bh
+	if absf(dir_x) < 0.01 and absf(dir_y) < 0.01:
+		return ""
+	var ang := rad_to_deg(atan2(dir_y, dir_x))
+	if dir_y < 0.0:
+		ang = -ang
+	var nt := ""
+	if ang >= 22.5 and ang <= 67.5:
+		nt = "rock4"       # bRB
+	elif ang >= 120.0 and ang <= 170.0:
+		nt = "rock7"       # bLB
+	elif ang >= -45.0 and ang <= 45.0:
+		nt = "rock4"       # bR (donor commented out rock2)
+	elif ang >= 45.0 and ang <= 135.0:
+		nt = "rock1"       # bB
+	elif ang >= -135.0 and ang <= -45.0:
+		nt = "rock4"       # bT
+	else:
+		nt = "rock3"       # bL
+	var h0: float = height[_t(x, y)]
+	if absf(h0) > 2.7:
+		nt = "rock8"
+	elif absf(h0) > 2.4:
+		nt = "rock4"
+	elif absf(h0) < 0.1:
+		return ""
+	return nt
+
+func _apply_shore_cliffs() -> void:
+	for y in MAP_H:
+		for x in MAP_W:
+			var t: int = terrain[_t(x, y)]
+			if t == 4:
+				var s := _shore_tile_for(x, y)
+				if s != "":
+					tileblock[_t(x, y)] = _blk(s)
+			elif t == 5:
+				var c := _cliff_tile_for(x, y)
+				if c != "":
+					tileblock[_t(x, y)] = _blk(c)
+
+func _tb_pick(li: int, gi: int, brng: RandomNumberGenerator) -> int:
+	var chain: Array = tbl_smooth[li]
+	if gi < 0 or gi >= chain.size():
+		return -1
+	var group: Array = chain[gi]
+	var total := 0.0
+	for td in group:
+		total += float(td.get("prob", 0.0))
+	if total <= 0.0:
+		return -1
+	var r := brng.randf() * total
+	var acc := 0.0
+	for td in group:
+		var p := float(td.get("prob", 0.0))
+		acc += p
+		if p > 0.0 and r < acc:
+			return _blk(str(td.get("name", "")))
+	return -1
+
+func _tb_smooth_pair(x1: int, y1: int, x2: int, y2: int, brng: RandomNumberGenerator) -> void:
+	var i1: int = tileblock[_t(x1, y1)]
+	var i2: int = tileblock[_t(x2, y2)]
+	if i1 == BLK_WATER or i2 == BLK_WATER or i1 == i2:
+		return
+	if i1 >= tbl_names.size() or i2 >= tbl_names.size():
+		return
+	var n1 := str(tbl_names[i1])
+	var n2 := str(tbl_names[i2])
+	var best := -1
+	var bi1 := -1
+	var bi2 := -1
+	var az_best := false
+	var bz_best := false
+	var md := 1000000
+	for li in tbl_smooth.size():
+		var chain: Array = tbl_smooth[li]
+		var a := -1
+		var b := -1
+		var az := false
+		var bz := false
+		for gi in chain.size():
+			for td in chain[gi]:
+				var nm := str(td.get("name", ""))
+				if nm == n1:
+					a = gi
+					az = float(td.get("prob", 1.0)) <= 0.0
+				if nm == n2:
+					b = gi
+					bz = float(td.get("prob", 1.0)) <= 0.0
+		if a >= 0 and b >= 0 and a != b and absi(a - b) < md:
+			md = absi(a - b)
+			best = li
+			bi1 = a
+			bi2 = b
+			az_best = az
+			bz_best = bz
+	if best < 0:
+		return
+	# donor: adjacent groups are compatible only if at least one has prob>0
+	if absi(bi1 - bi2) == 1 and not (az_best and bz_best):
+		return
+	if bi1 - bi2 == 2:
+		var ni := _tb_pick(best, int((bi1 + bi2) / 2), brng)
+		if ni >= 0:
+			tileblock[_t(x1, y1)] = ni
+	elif bi2 - bi1 == 2:
+		var ni2 := _tb_pick(best, int((bi1 + bi2) / 2), brng)
+		if ni2 >= 0:
+			tileblock[_t(x2, y2)] = ni2
+	elif bi1 < bi2:
+		var ni3 := _tb_pick(best, bi1 + 1, brng)
+		if ni3 >= 0:
+			tileblock[_t(x2, y2)] = ni3
+	else:
+		var ni4 := _tb_pick(best, bi2 + 1, brng)
+		if ni4 >= 0:
+			tileblock[_t(x1, y1)] = ni4
+
+func _smooth_tilemap(brng: RandomNumberGenerator) -> void:
+	for _pass in 3:
+		for y in MAP_H:
+			for x in range(0, MAP_W - 1):
+				_tb_smooth_pair(x, y, x + 1, y, brng)
+		for x in MAP_W:
+			for y in range(0, MAP_H - 1):
+				_tb_smooth_pair(x, y, x, y + 1, brng)
+
+func _stamp_forest_borders(brng: RandomNumberGenerator) -> void:
+	for y in MAP_H:
+		for x in MAP_W:
+			if int(terrain[_t(x, y)]) != 2:
+				continue
+			var n := 0
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var nx: int = x + d.x
+				var ny: int = y + d.y
+				if nx >= 0 and ny >= 0 and nx < MAP_W and ny < MAP_H and int(terrain[_t(nx, ny)]) == 2:
+					n += 1
+			if n == 1:
+				tileblock[_t(x, y)] = _blk("grass5") if brng.randf() < 0.34 else _blk("rock9")
 
 # stored height field (filled in _generate_map); bilinear read for smooth slopes
 func height_at(p: Vector2) -> float:
 	if height.size() != MAP_W * MAP_H:
 		var t := tile_of(p)
 		return _noise2(float(t.x) * 0.07, float(t.y) * 0.07) * 2.0
-	var fx := clampf(p.x / TILE - 0.5, 0.0, float(MAP_W - 1) - 1.001)
-	var fy := clampf(p.y / TILE - 0.5, 0.0, float(MAP_H - 1) - 1.001)
+	var fx := clampf(p.x / TILE - 0.5, 0.0, float(MAP_W - 1) - 0.001)
+	var fy := clampf(p.y / TILE - 0.5, 0.0, float(MAP_H - 1) - 0.001)
 	var x0 := int(fx)
 	var y0 := int(fy)
 	var tx := fx - x0
@@ -609,7 +952,8 @@ const TARGET_TABLE := {
 }
 
 static func _hash2(ix: int, iy: int) -> float:
-	var s := ix * 374761393 + iy * 668265263
+	# seed-folding: every random map gets its own meadow/mottle pattern
+	var s := ix * 374761393 + iy * 668265263 + (int(Data.RANDOM_SEED) * 2246822519)
 	s = (s ^ (s >> 13)) * 1274126177
 	s = s ^ (s >> 16)
 	return float(s & 65535) / 65535.0 * 2.0 - 1.0
@@ -642,8 +986,12 @@ func _draw_road(a: Vector2, b: Vector2) -> void:
 				var xx := t.x + dx
 				var yy := t.y + dy
 				if xx >= 0 and yy >= 0 and xx < MAP_W and yy < MAP_H:
-					if terrain[_t(xx, yy)] != 3:
-						terrain[_t(xx, yy)] = 1
+					var ri := _t(xx, yy)
+					if terrain[ri] != 3:
+						# a road is walkable: clear any cliff block it covers
+						if terrain[ri] == 5:
+							blocked[ri] = 0
+						terrain[ri] = 1
 
 func mine_deposits(kinds: Array) -> Array:
 	var out: Array = []
@@ -747,7 +1095,10 @@ func _start_positions() -> Array[Vector2]:
 		Vector2(MAP_W * 0.875, MAP_H * 0.875) * TILE]
 
 func _spawn_starts() -> void:
-	var starts := _start_positions()
+	# The donor reads startx/starty from the chosen mask's white markers;
+	# spawning at fixed corners would leave the player far from its guaranteed
+	# grove/fields/deposits (the exact "something is wrong" symptom).
+	var starts: Array[Vector2] = map_starts if map_starts.size() >= 2 else _start_positions()
 	var opt: Dictionary = Data.START_OPTIONS.get(Data.START_OPTION, {"army_mult": 0.0, "food": 0, "towers": 0, "cannons": 0})
 	for i in 2:
 		var c := starts[i]
@@ -2893,7 +3244,8 @@ func serialize() -> Dictionary:
 			pd[k] = _vec_enc(p[k])
 		pls.append(pd)
 	return {
-		"version": 4, "time_s": time_s, "winner": winner, "next_id": next_id,
+		"version": 4, "seed": int(Data.RANDOM_SEED),
+		"time_s": time_s, "winner": winner, "next_id": next_id,
 		"next_squad": next_squad, "battle_mode": battle_mode,
 		"terrain": Marshalls.raw_to_base64(terrain), "blocked": Marshalls.raw_to_base64(blocked),
 		"height": Marshalls.raw_to_base64(height.to_byte_array()),
@@ -2945,4 +3297,9 @@ func deserialize(d: Dictionary) -> bool:
 		if e.kind == "building" and str(e.sid) == "gat":
 			gates.append(e)
 	_grid_rebuild()
+	# tile art uses its own deterministic stream — restore the seed first so a
+	# quicksave made with seed A reloads with seed A's shore/smooth/variant art.
+	if d.has("seed"):
+		Data.RANDOM_SEED = int(d.seed)
+	_assign_tileblocks()
 	return true

@@ -1,0 +1,268 @@
+default : section.begin
+   Material : struct.begin
+      Name = polartd
+      Tag = 500
+      Shader = [nil]
+      Texture2Name = 
+      TextureOffset : struct.begin
+         X = 0
+         Y = 0
+         Z = 0
+      struct.end
+      TextureScale : struct.begin
+         X = 1
+         Y = 1
+         Z = 1
+      struct.end
+      BlendingMode = bmTransparency
+      FaceCulling = fcCull
+      MaterialOptions : struct.begin
+         moIgnoreFog = False
+         moNoLighting = False
+      struct.end
+      LibTextureName = 
+      Texture : struct.begin
+         imagebrightness = 1
+         ImageGamma = 1
+         disabled = False
+         Compression = tcHighSpeed
+         filteringquality = tfIsotropic
+         image = .\data\terrain\decals\buildings\polartd.dds
+         imagealpha = tiaDefault
+         magfilter = maLinear
+         minfilter = miLinearMipmapLinear
+         mappingmode = tmmUser
+         textureformat = tfDefault
+         texturemode = tmModulate
+         texturewrap = twBoth
+         mappingscoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+         mappingtcoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+      struct.end
+      BackProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+      FrontProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+   struct.end
+section.end
+section.begin {refkey=default}
+   Material.Name = bavacad
+   Material.Texture.image = .\data\terrain\decals\buildings\bavacad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavartd
+   Material.Texture.image = .\data\terrain\decals\buildings\bavartd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavba2d
+   Material.Texture.image = .\data\terrain\decals\buildings\bavba2d.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavbard
+   Material.Texture.image = .\data\terrain\decals\buildings\bavbard.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavblad
+   Material.Texture.image = .\data\terrain\decals\buildings\bavblad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavcend
+   Material.Texture.image = .\data\terrain\decals\buildings\bavcend.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavdipd
+   Material.Texture.image = .\data\terrain\decals\buildings\bavdipd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavhoud
+   Material.Texture.image = .\data\terrain\decals\buildings\bavhoud.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavstad
+   Material.Texture.image = .\data\terrain\decals\buildings\bavstad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavtemd
+   Material.Texture.image = .\data\terrain\decals\buildings\bavtemd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxacad
+   Material.Texture.image = .\data\terrain\decals\buildings\saxacad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxartd
+   Material.Texture.image = .\data\terrain\decals\buildings\saxartd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxba2d
+   Material.Texture.image = .\data\terrain\decals\buildings\saxba2d.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxbard
+   Material.Texture.image = .\data\terrain\decals\buildings\saxbard.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxblad
+   Material.Texture.image = .\data\terrain\decals\buildings\saxblad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxcend
+   Material.Texture.image = .\data\terrain\decals\buildings\saxcend.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxdipd
+   Material.Texture.image = .\data\terrain\decals\buildings\saxdipd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxhoud
+   Material.Texture.image = .\data\terrain\decals\buildings\saxhoud.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxstad
+   Material.Texture.image = .\data\terrain\decals\buildings\saxstad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxtemd
+   Material.Texture.image = .\data\terrain\decals\buildings\saxtemd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavacadw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavacadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavartdw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavartdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavba2dw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavba2dw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavbardw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavbardw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavbladw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavbladw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavcendw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavcendw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavdipdw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavdipdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavhoudw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavhoudw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavstadw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavstadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = bavtemdw
+   Material.Texture.image = .\data\terrain\decals\buildings\bavtemdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxacadw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxacadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxartdw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxartdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxba2dw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxba2dw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxbardw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxbardw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxbladw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxbladw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxcendw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxcendw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxdipdw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxdipdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxhoudw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxhoudw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxstadw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxstadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = saxtemdw
+   Material.Texture.image = .\data\terrain\decals\buildings\saxtemdw.dds
+section.end

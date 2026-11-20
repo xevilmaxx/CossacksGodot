@@ -1,0 +1,196 @@
+default : section.begin
+   name = polartd
+   Decal : struct.begin
+      material.libmaterialname = polartd
+      SummerLibMaterialName = polartd
+      AutumnLibMaterialName = 
+      WinterLibMaterialName = polartdw
+      SpringLibMaterialName = 
+      width = 4
+      height = 4
+      selected = False
+      position : struct.begin
+         X = 0
+         Y = 0
+      struct.end
+      texoffset : struct.begin
+         X = 0
+         Y = 0
+      struct.end
+      scalefactor : struct.begin
+         X = 1
+         Y = 1
+      struct.end
+      texscale : struct.begin
+         X = 1
+         Y = 1
+      struct.end
+      texrollangle = 0
+      epsilon = 0.01
+      texrotateenable = True
+      texscaleenable = True
+      texoffsetenable = True
+      texoffsetbyrotate = True
+      texflipvertical = True
+   struct.end
+section.end
+section.begin {refkey=default}
+   name = denacad
+   Decal.material.libmaterialname = denacad
+   Decal.SummerLibMaterialName = denacad
+   Decal.WinterLibMaterialName = denacadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = denartd
+   Decal.material.libmaterialname = denartd
+   Decal.SummerLibMaterialName = denartd
+   Decal.WinterLibMaterialName = denartdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = denba2d
+   Decal.material.libmaterialname = denba2d
+   Decal.SummerLibMaterialName = denba2d
+   Decal.WinterLibMaterialName = denba2dw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = denbard
+   Decal.material.libmaterialname = denbard
+   Decal.SummerLibMaterialName = denbard
+   Decal.WinterLibMaterialName = denbardw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = denblad
+   Decal.material.libmaterialname = denblad
+   Decal.SummerLibMaterialName = denblad
+   Decal.WinterLibMaterialName = denbladw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = dencend
+   Decal.material.libmaterialname = dencend
+   Decal.SummerLibMaterialName = dencend
+   Decal.WinterLibMaterialName = dencendw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = dendipd
+   Decal.material.libmaterialname = dendipd
+   Decal.SummerLibMaterialName = dendipd
+   Decal.WinterLibMaterialName = dendipdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = denhoud
+   Decal.material.libmaterialname = denhoud
+   Decal.SummerLibMaterialName = denhoud
+   Decal.WinterLibMaterialName = denhoudw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = denstad
+   Decal.material.libmaterialname = denstad
+   Decal.SummerLibMaterialName = denstad
+   Decal.WinterLibMaterialName = denstadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = dentemd
+   Decal.material.libmaterialname = dentemd
+   Decal.SummerLibMaterialName = dentemd
+   Decal.WinterLibMaterialName = dentemdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netacad
+   Decal.material.libmaterialname = netacad
+   Decal.SummerLibMaterialName = netacad
+   Decal.WinterLibMaterialName = netacadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netartd
+   Decal.material.libmaterialname = netartd
+   Decal.SummerLibMaterialName = netartd
+   Decal.WinterLibMaterialName = netartdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netba2d
+   Decal.material.libmaterialname = netba2d
+   Decal.SummerLibMaterialName = netba2d
+   Decal.WinterLibMaterialName = netba2dw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netbard
+   Decal.material.libmaterialname = netbard
+   Decal.SummerLibMaterialName = netbard
+   Decal.WinterLibMaterialName = netbardw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netblad
+   Decal.material.libmaterialname = netblad
+   Decal.SummerLibMaterialName = netblad
+   Decal.WinterLibMaterialName = netbladw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netcend
+   Decal.material.libmaterialname = netcend
+   Decal.SummerLibMaterialName = netcend
+   Decal.WinterLibMaterialName = netcendw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netdipd
+   Decal.material.libmaterialname = netdipd
+   Decal.SummerLibMaterialName = netdipd
+   Decal.WinterLibMaterialName = netdipdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = nethoud
+   Decal.material.libmaterialname = nethoud
+   Decal.SummerLibMaterialName = nethoud
+   Decal.WinterLibMaterialName = nethoudw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = netstad
+   Decal.material.libmaterialname = netstad
+   Decal.SummerLibMaterialName = netstad
+   Decal.WinterLibMaterialName = netstadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = nettemd
+   Decal.material.libmaterialname = nettemd
+   Decal.SummerLibMaterialName = nettemd
+   Decal.WinterLibMaterialName = nettemdw
+   Decal.width = 7
+   Decal.height = 7
+section.end

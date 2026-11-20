@@ -1,20 +1,18 @@
 {
   "kills": 0,
   "mode": "cli",
-  "player0_buildings": 2,
+  "player0_buildings": 1,
   "player0_squads": 0,
-  "player0_units": 12,
-  "player1_buildings": 2,
+  "player0_units": 10,
+  "player1_buildings": 1,
   "player1_squads": 0,
-  "player1_units": 12,
+  "player1_units": 10,
   "resources_gathered": {
-    "food": 48,
-    "gold": 66.0919999999996,
-    "stone": 4,
-    "wood": 42
+    "food": 16,
+    "wood": 58
   },
   "shots_fired": 0,
-  "sim_seconds": 60.0,
+  "sim_seconds": 30.0,
   "version": 1,
   "winner": -1
 }

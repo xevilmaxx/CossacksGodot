@@ -2034,6 +2034,31 @@ cycles, and a transparent building ghost with real block rules.
 2004 LOG-0740 date=____ seed-set=1..20 knob=base water=__ forest=__ purity=__ reach=__ verdict=__
 2005 END-OF-GUIDE4 row-count-guard: run (Get-Content docs/guides/GUIDE4.md).Count — must be >= 2000.
 2006
+2007 BUILD LOG 2026-11-20b — full donor tile system port (replaces L2 variant approach):
+2008 READ THE DONOR FIRST (all paths under C:/Games/Cossacks 3):
+2009 - data/scripts/common.inc/texturemap.inc: TextureMap assigns base tiles +
+2010   oriented shores (sandsea1/5/6 by 8-sector vecangle table) + oriented cliffs
+2011   (rock1/3/4/7); water is a SEPARATE plane (data/water, DiffuseWaves0/2 active),
+2012   never a tile. Collision: water plane + terrain where |dh|>0.5/0.55 (our 0.55).
+2013 - smoothtiles.inc: exact SmoothTileMap — 3 passes H then V, GetNeighbourTiles
+2014   picks min |ind1-ind2| list, |diff|==1 compatible (no change), ==2 inserts
+2015   middle-list tile (prob-weighted), else steps inward. Ported 1:1 in game.gd.
+2016 - data/gen/tilesmooth_scripts.cfg: 10 summer chains parsed by
+2017   tools/parse_terrain.py into structs/smooth_summer.json (59 groups, donor probs).
+2018 - tile_low/highground.bmp red/2 = meadow recipe: grass1 50% + test7/8/9 30% +
+2019   grass variety 15%; rock base mix 0.16x5+0.20; grass_ground 0.64/0.0028/0.36.
+2020 - sandsea1/5/6 = wet rippled sand (orientation = ripple dir), rock1 = vertical
+2021   strata cliff art, test2 = pebbly dirt — all photographic, transitions are
+2022   PAINTED IN the tiles, so renderer pastes 1 tile = 1 texture, zero blending.
+2023 - alpha.bmp/alphavert.bmp = organic cloudy transition masks (tsDouble scheme);
+2024   24 cells extracted to terrain/dmask/, used as bake fringe masks + 2x
+2025   supersample resolve (blend_rect_mask alpha is BINARY: 0/skip, >0/full).
+2026 - tiles.presets Summer order (124) = tile indices; structs/presets_summer.json.
+2027 - cliffs.lib + covers.lib are EMPTY (0 bytes) in the donor: nothing to port.
+2028 - decals/buildings 470 DDS copied as-is (Godot reads DDS natively) for _bld_decal;
+2029   envfieldd = tilled soil (fields), groundexp0-3 = scorch craters (cannon hits);
+2030   diffusewaves0/2 = animated water (bake into water tiles for now).
+2006
 2007 BUILD LOG 2026-11-20 — terrain pipeline replaced (supersedes L2 variant approach):
 2008 WHY: per-tile 16px crops + binary mask blends produced Minecraft checkerboard
 2009 (see app/shots/landscape9.png). Donor system studied instead:
@@ -2063,9 +2088,102 @@ cycles, and a transparent building ghost with real block rules.
 2033 PARSE GOTCHA (cost an hour): `for ox in [-1,0,1]: var nx := x + ox` fails — array
 2034 literal iteration yields Variant, `:=` cannot infer. Always `var nx: int = ...`.
 
+----------------------------------------------------------------------
+BUILD LOG 2026-11-20c — DONOR HEIGHTMASK PIPELINE (definitive, supersedes the
+blob/noise "landscape" approach in L1-L6; read this before touching terrain)
+----------------------------------------------------------------------
+WHY THE OLD PORT WAS WRONG (measured, not guessed):
+ 1. The donor does NOT invent coastlines from ellipses + noise. Every random
+    map is a hand-authored RGB heightmask picked from
+    data/gen/terrainmasks/<TerrainType>/Xpl_mask_*_gauss.tga.  The port painted
+    1-4 random ellipses: "Land" ended up with 0.3-0.5% water and all seeds had
+    the same silhouette.  Islands/Mediterranean/Peninsulas were just multipliers
+    on lake count, not different worlds.
+ 2. `_spawn_starts()` still used `_start_positions()` (two fixed corners) while
+    resource clusters were generated around mask positions → players spawned
+    200+ m from their grove/fields/deposits. This was the visible "something is
+    really wrong" (no trees within 60 m, nearest gold 250 m).
+ 3. The cliff pass divided height differences by TILE and only looked at +x/+y,
+    turning half of every shore into blocked rock and erasing the sand collar.
+ 4. world.gd counted tileblock-index differences as "boundary" and blended with
+    an organic mask at every random grass variant → checkerboard returned.
+ 5. `_tb_smooth_pair()` computed the donor's prob-zero flags (az/bz) and never
+    used them; the scan tool's sand_ring divided by total water AREA (a radius
+    20 lake has only ~10% perimeter tiles, so >70% was geometrically impossible)
+    and accepted water=0 while its own docstring said 3-8%.
 
+DONOR TRUTH (source of truth files, all read and quoted):
+ C:\Games\Cossacks 3\data\scripts\common.inc\generatemap.inc
+   - cPlateauHeight 2.964, cHillHeight 1.317, cRavineHeight -2.964,
+     cWaterHeight -1.1; mask R=relief (255/96/48), G=forest/stone, B=water;
+     pure white = start marker. Height = -1.1*b*(1+r*3.5) + relief(r).
+     White marker pixels are skipped when writing height.
+   - 3 coastal smoothing passes (rad 2, power 0.35, lerp 0.5) + 1 land pass.
+   - water fields on a 2x2 half-grid, cOffsetY = -0.5.
+   - calls TextureMap -> SmoothTiles -> LoadTextureTerrainFromBitmap.
+ C:\Games\Cossacks 3\data\scripts\common.inc\dogenerate.inc
+   - stage order: load patterns -> 25x25 tile cracks -> GenerateMap (mask) ->
+     shore mask (height < -0.1) -> starts from white pixels -> relief table ->
+     SetupMines (rings 14-22/32-42/70-82/22-38...) -> SetupStartingResources
+     (stoneforest/stones in cCircle2 ring) -> global forests/stones/swamps/
+     plains -> peasants -> collision/topology.
+   - relief table (relieftype 0..4): plt .000010/.000020/.000075/.000055/.000090;
+     mnt .000020/.000002/.000075/.000120/.000035;
+     hil .000075/.000125/.000030/.000050/.000035.
+   - frs_big .0009, frs_mid .0009, frs_small .00054, stn1 .00016, stn2 .00012;
+     multiplied by probsmall/mid/large and 640/((W+H)/2) map-size modifier.
+   - foreststype forced 0 (pine/fir/spruce) in this build.
+ C:\Games\Cossacks 3\data\scripts\common.inc\texturemap.inc
+   - water < -0.25, shore -0.1, slope cDiff1 .5 / cDiff2 .55;
+     8-sector shore table -> sandsea1/5/6; 6-sector cliff table ->
+     rock7/1/3/4; height overrides rock8 >2.7, rock4 >2.4.
+ C:\Games\Cossacks 3\data\scripts\common.inc\smoothtiles.inc
+   - 3 H/V passes, FindRandomTileIndex uses relative Prob weights, |gap| 1 =
+     compatible (if one prob>0), 2 = midpoint insert, >2 = step inward.
+   - data/gen/tilesmooth_scripts.cfg has 10 summer chains / 59 groups;
+     app/assets/terrain/structs/smooth_summer.json is an exact copy.
+ C:\Games\Cossacks 3\data\gen\terrainmasks\ + moddersread.txt
+   - gauss masks are postprocessed to 320x320 with noisy water borders;
+     R/G are zero except white starts, so relief/forest come from patterns.
 
+IMPLEMENTED (files, all in <root>):
+ app/tools/import_donor_masks.py   reads the donor TGAs, writes 56 compact RGB
+   PNGs (838 kB) to app/assets/terrain/masks/<type>/ + manifest.json with
+   water fraction and start-pixel coordinates. Re-runnable provenance tool.
+ app/scripts/mapgen.gd  C3MapGen: picks a mask by (seed,type), box-samples its
+   RGB into height/forest fields at map resolution, applies the donor height
+   formula + 1/2/3 coastal smoothing passes by quality, extracts the two
+   farthest white start markers for a 2-player game.
+ app/scripts/game.gd   `_generate_map()` rewritten around the mask; donor
+   thresholds, donor cliff orientation, donor pattern-style caps; RANDOM_SEED
+   folded into base noise; seed saved in serialize(); _spawn_starts() now uses
+   the mask's map_starts; donor prob-zero smooth rule; road unblocks cliffs.
+ app/scripts/data.gd   Data.MAPGEN budget keyed by the SAME quality preset:
+   low 4-5 belts/16-28 trees/4 quarries/2 domes/no decor/1 smooth pass,
+   medium 5-6/24-40/5/3/decor/2, high 6-8/34-60/7/4/decor/3.
+ app/scripts/world.gd  chunk fringe now keys on terrain TYPE, not tileblock
+   index (kills variant-checker while keeping real shore seams).
+ app/scripts/main.gd   dump includes tileblock + meta{type,quality,mask}.
+ app/tools/scan_map.py donor-accurate gates: generated water must match the
+   chosen mask (+/-5pp), coastline sand coverage >=90%, steep-tile collision
+   100%, BLK_WATER alignment 100%, 8-16 belts, reachability, purity/clearance.
+ app/scripts/selftest.gd capture step picks a walkable tile (map-agnostic).
 
+ATOMIC EVIDENCE (each command run alone, not a bulk loop):
+ seed 7   land_125 mask, water 9.6% vs mask 10.2%, coast 98%, cliff 100%,
+          tileflow 100%, patches 12, reach OK.
+ seed 8   islands_10 mask, water 73.8%, coast 91% (real donor archipelago),
+          same gates green -- MAP_TYPE now changes the WORLD, not just a count.
+ low seed 8: 648 resource nodes vs high 1056 (build budget is quality-driven).
+ selftest 28/28, uitest True, screenshots g4_final_land.png / g4_final_islands.png.
 
-
-
+KNOWN LIMITATIONS (honest, do not hide):
+ - Donor relief at 640 cells comes from plateau/hill/mountain PATTERN masks;
+   the port uses dome fields scaled by map size. Height thresholds and collision
+   are donor-exact; the dome shapes are an approximation.
+ - Water is still a tiled plane (donor uses a separate animated water field);
+   sandsea art is approximated by the converted outer water ring.
+ - nowater2 masks are imported as their own type; presets_summer.json still
+   lists 41 transition blocks with no PNG (unused today).
+ - Static map dump JSONs are large (~1 MB) because Godot sorts base64 keys
+   first; scan_map.py reads the whole file to find map_w.

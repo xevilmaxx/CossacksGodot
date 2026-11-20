@@ -41,10 +41,15 @@ var terrain_masks: Array = []  # feather mask + shade tiles, rebuilt per terrain
 # donor PNGs). Every chunk samples strictly wrap-continuous regions, so
 # meadows flow across chunk borders with zero repetition seams. Type
 # transitions share one feather mask; mottling uses a world-coherent mask.
-const TER_TILEABLE := 2048
-var ter_src := {}          # String -> tileable Image RGB8 (2048, sand 512)
-var ter_white: Image       # px white w/ alpha (height lighten)
-var ter_black: Image       # px black w/ alpha (height darken)
+const BLK_CACHE := 10
+var blk_cache := {}
+var blk_order: Array = []
+var ter_water: Image
+var ter_blue: Image
+var ter_blueA: Image
+var ter_src := {}
+var ter_white: Image
+var ter_black: Image
 var unit_layer: Node2D
 var bld_layer: Node2D
 var res_layer: Node2D
@@ -77,6 +82,11 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	terrain_px = Data.TERRAIN_PX
 	terrain_hlv = _prep_variants()
 	terrain_masks = _build_masks(_bake_px())
+	# pre-warm the block LRU with the common meadow set so first paint
+	# doesn't hitch on disk loads (one-time bind cost, not per-frame)
+	for bn in ["grass1", "grass2", "ground1", "test7", "test8", "test9",
+			"sand1", "rock1", "grass_ground1", "test2", "grass5", "rock9"]:
+		_block_img(bn)
 	res_layer = Node2D.new()
 	res_layer.z_index = 1
 	add_child(res_layer)
@@ -448,28 +458,42 @@ func _wrap_crop(src: Image, ox: int, oy: int, s: int) -> Image:
 	return out
 
 func _prep_variants() -> Array:
-	# one mirror-tileable source per type; offsets at bake are strictly
-	# wrap-continuous, so no chunk border or repetition seam can appear
-	ter_src.clear()
-	var g1 := _src("res://assets/terrain/grass1.png")
-	var dirt := _src("res://assets/terrain/dirt1.png")
-	var rockg := _src("res://assets/terrain/rockgrass1.png")
-	var sg := _src("res://assets/terrain/grasssand1.png")
-	if g1 != null:
-		ter_src["grass"] = _mirror_tileable(g1, TER_TILEABLE)
-	if dirt != null:
-		ter_src["dirt"] = _mirror_tileable(dirt, TER_TILEABLE)
-	if rockg != null:
-		ter_src["rock"] = _mirror_tileable(rockg, TER_TILEABLE)
-	if sg != null:
-		ter_src["sand"] = _mirror_tileable(sg, 512)
-	var fb: Image = ter_src.get("grass", ter_src.get("dirt", null))
-	for k in ["grass", "dirt", "rock", "sand"]:
-		if not ter_src.has(k) and fb != null:
-			ter_src[k] = fb
+	# water wave art only; land renders from TileBlock images (LRU).
+	ter_water = null
+	var w := Image.new()
+	if w.load("res://assets/terrain/water_png/diffusewaves2.png") == OK:
+		if w.get_format() != Image.FORMAT_RGB8:
+			w.convert(Image.FORMAT_RGB8)
+		ter_water = _mirror_tileable(w, 1024)
+	if ter_water == null:
+		ter_water = Image.create(64, 64, false, Image.FORMAT_RGB8)
+		ter_water.fill(Color(0.2, 0.35, 0.5))
 	variants = [[], [], [], [], [], []]
 	terrain_hlv = []
 	return []
+
+func _block_img(nm: String) -> Image:
+	# TileBlock art, mirror-tiled to 1024 (seamless wrap sampling).
+	var hit: Image = blk_cache.get(nm, null)
+	if hit != null:
+		blk_order.erase(nm)
+		blk_order.append(nm)
+		return hit
+	var im: Image = Image.new()
+	if im.load("res://assets/terrain/blocks/%s.png" % nm) != OK:
+		im = null
+	if im == null:
+		im = Image.create(64, 64, false, Image.FORMAT_RGB8)
+		im.fill(Color(0.4, 0.45, 0.25))
+	if im.get_format() != Image.FORMAT_RGB8:
+		im.convert(Image.FORMAT_RGB8)
+	im = _mirror_tileable(im, 1024)
+	blk_cache[nm] = im
+	blk_order.append(nm)
+	while blk_order.size() > BLK_CACHE:
+		var old: String = blk_order.pop_front()
+		blk_cache.erase(old)
+	return im
 
 func _chunk_key(cx: int, cy: int) -> Vector2i:
 	return Vector2i(cx, cy)
@@ -505,21 +529,26 @@ func _build_masks(px: int) -> Array:
 	ter_white.fill(Color(1, 1, 1))
 	ter_black = Image.create(px, px, false, Image.FORMAT_RGB8)
 	ter_black.fill(Color(0, 0, 0))
+	ter_blue = Image.create(px, px, false, Image.FORMAT_RGB8)
+	ter_blue.fill(Color(0.16, 0.36, 0.44))
+	# blend_rect_mask is binary: dither the uniform alpha (bayer 60% density)
+	# so the downsample resolve reads it as a true 60% blue glaze over waves
+	ter_blueA = Image.create(px, px, false, Image.FORMAT_RGBA8)
+	var bayer := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+	for yy in px:
+		for xx in px:
+			var on: float = 1.0 if float(bayer[(yy % 4) * 4 + (xx % 4)]) / 16.0 < 0.6 else 0.0
+			ter_blueA.set_pixel(xx, yy, Color(1, 1, 1, on))
 	return out
 
 func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var px := terrain_px
 	var bpx := _bake_px()
 	var S := CHUNK_T * bpx
-	# wrap-continuous base: same strict offsets as every neighbour chunk, so
-	# the meadow flows across chunk borders with no seam and no repetition
-	var img := _wrap_crop(ter_src["grass"], cx * S, cy * S, S)
-	# forest floor stock: the SAME base darkened, so clearings always match
-	var dark_stock: Image = img.duplicate() as Image
-	dark_stock.adjust_bcs(0.68, 1.0, 1.03)
-	# smooth world-coherent fields: mottling + continuous height shade.
-	# Neighbor tiles differ by ~1%, so hard pastes below show no seams while
-	# large-scale tone drifts emerge over 10+ tiles (like the original).
+	var tile_im := Image.create(bpx, bpx, false, Image.FORMAT_RGB8)
+	var tile_rect := Rect2i(0, 0, bpx, bpx)
+	var img := _wrap_crop(_block_img("grass1"), cx * S, cy * S, S)
+	# smooth brightness field (mottle x continuous height shade)
 	var mot: PackedFloat32Array = PackedFloat32Array()
 	mot.resize(CHUNK_T * CHUNK_T)
 	for ly in CHUNK_T:
@@ -527,7 +556,7 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 			var wx := float(cx * CHUNK_T + lx)
 			var wy := float(cy * CHUNK_T + ly)
 			mot[ly * CHUNK_T + lx] = 0.94 + 0.12 * (0.5 + 0.5 * _wnoise(wx * 0.05 + 11.0, wy * 0.05 - 7.0))
-	# only sample type textures actually present in this chunk
+	# per-block wrap regions present in this chunk (strict offsets = seamless)
 	var present := {}
 	for ly in CHUNK_T:
 		for lx in CHUNK_T:
@@ -535,65 +564,53 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 			var y := cy * CHUNK_T + ly
 			if x >= game.MAP_W or y >= game.MAP_H:
 				continue
-			var tt: int = game.terrain[y * game.MAP_W + x]
-			if tt >= 1 and tt <= 5:
-				present[tt] = true
+			var bi0: int = game.tileblock[game._t(x, y)]
+			if bi0 != game.BLK_WATER:
+				present[bi0] = true
 	var crops := {}
-	if present.get(1, false):
-		crops[1] = _wrap_crop(ter_src["dirt"], cx * S + 128, cy * S + 1024, S)
-	if present.get(4, false):
-		crops[4] = _wrap_crop(ter_src["sand"], cx * S + 64, cy * S + 300, S)
-	if present.get(5, false):
-		crops[5] = _wrap_crop(ter_src["rock"], cx * S + 900, cy * S + 100, S)
-	# blend_rect_mask is binary (0/skip vs >0/full), so ragged-dithered masks
-	# (hash-picked per tile): organic transitions, never a grid line
-	var tile_im := Image.create(bpx, bpx, false, Image.FORMAT_RGB8)
-	var tile_rect := Rect2i(0, 0, bpx, bpx)
+	for bi0 in present:
+		var bname0: String = str(game.tbl_names[bi0]) if bi0 < game.tbl_names.size() else "grass1"
+		var coff: int = abs(hash(bname0)) % 256
+		crops[bi0] = _wrap_crop(_block_img(bname0), cx * S + coff, cy * S + coff, S)
+	# water waves region (hard-filled first; shores blend over it)
+	var wavereg := _wrap_crop(ter_water, cx * S + 300, cy * S + 700, S)
 	for ly in CHUNK_T:
 		for lx in CHUNK_T:
 			var x := cx * CHUNK_T + lx
 			var y := cy * CHUNK_T + ly
 			if x >= game.MAP_W or y >= game.MAP_H:
 				continue
-			var t: int = game.terrain[y * game.MAP_W + x]
-			if t < 0 or t > 5:
-				t = 0
+			var bi: int = game.tileblock[game._t(x, y)]
 			var dst := Vector2i(lx * bpx, ly * bpx)
 			var rect := Rect2i(dst.x, dst.y, bpx, bpx)
-			if t >= 1 and t <= 5:
-				# donor masks sorted by coverage ASC: foreign-neighbour count
-				# picks coverage (peninsulas wispy, near-interior solid) + hash
-				# jitter. Interior tiles paste hard (fast + perfectly solid).
+			if bi == game.BLK_WATER:
+				tile_im.blit_rect(wavereg, rect, Vector2i(0, 0))
+				tile_im.blend_rect_mask(ter_blue, ter_blueA, tile_rect, Vector2i(0, 0))
+				img.blit_rect(tile_im, tile_rect, dst)
+			else:
+				# Donor pastes ONE tile = ONE texture: only real terrain-type
+				# boundaries get an organic dmask fringe.  Comparing tileblock
+				# indices here would blend every random grass variant and bring
+				# back the checkerboard this pipeline replaced.
 				var f := 0
+				var ti: int = int(game.terrain[game._t(x, y)])
 				for oy in [-1, 0, 1]:
 					for ox in [-1, 0, 1]:
 						if ox == 0 and oy == 0:
 							continue
 						var nx: int = x + ox
 						var ny: int = y + oy
-						var nt := -1
+						var nt := -2
 						if nx >= 0 and ny >= 0 and nx < game.MAP_W and ny < game.MAP_H:
-							nt = game.terrain[ny * game.MAP_W + nx]
-						if nt != t:
+							nt = int(game.terrain[game._t(nx, ny)])
+						if nt != ti:
 							f += 1
-				if t == 2:
-					tile_im.blit_rect(dark_stock, rect, Vector2i(0, 0))
-				elif t == 3:
-					# water: muted teal, depth varies smoothly tile to tile
-					var depth := 0.9 + 0.2 * (0.5 + 0.5 * _wnoise(float(x) * 0.3, float(y) * 0.3))
-					tile_im.fill(Color(0.15 * depth, 0.34 * depth, 0.46 * depth))
-				elif t in crops:
-					tile_im.blit_rect(crops[t], rect, Vector2i(0, 0))
-				else:
-					tile_im.blit_rect(dark_stock, rect, Vector2i(0, 0))
+				tile_im.blit_rect(crops[bi], rect, Vector2i(0, 0))
 				if f == 0:
 					img.blit_rect(tile_im, tile_rect, dst)
 				else:
-					var mi: int = clampi(int((1.0 - float(f) / 8.0) * 17.0) + posmod(x * 5 + y * 11, 5) - 2, 0, 17)
+					var mi: int = clampi(17 - f * 2 + posmod(x * 5 + y * 11, 5) - 2, 0, 17)
 					img.blend_rect_mask(tile_im, terrain_masks[mi], tile_rect, dst)
-			# gentle per-tile tone: mottle field x continuous height shade.
-			# Both fields are smooth, so adjacent tiles agree (~1%) and no
-			# grid can appear, while hills/valleys and meadow patches read.
 			var hh: float = game.height_at(Vector2((float(x) + 0.5) * Data.TILE_M, (float(y) + 0.5) * Data.TILE_M))
 			var bright: float = mot[ly * CHUNK_T + lx] * clampf(1.0 + hh * 0.12, 0.80, 1.18)
 			if absf(bright - 1.0) > 0.004:

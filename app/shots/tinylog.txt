@@ -1,0 +1,10 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+stage: new game
+stage: setup
+stage: setup done
+stage: prep
+stage: prep done
+stage: masks done n=18
+bake 1 chunk ms: 1090
+saved: C:/Users/Maxym.Oboyshev/Documents/Craft Anything/cossacks-3-3/app/shots/chunk_tiny.png

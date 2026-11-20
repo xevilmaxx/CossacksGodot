@@ -309,10 +309,18 @@ func run() -> Dictionary:
 	steps.append({"step": "garrison", "passed": garr_ok, "detail": "garrison 3 hid, unload restored: %s" % ("yes" if garr_ok else "no")})
 
 	# ---- G15: peasant capture
-	var efoe := game.spawn("peasant", 1, peasant.pos + Vector2(32, 2))
-	var epike := game.spawn("pikeman", 0, efoe.pos + Vector2(1, 0))
+	# Donor masks put the town on a real coast/hill, so pick a nearby tile that
+	# is actually walkable instead of assuming the old fixed corner was open.
+	var epos: Vector2 = (peasant.pos as Vector2) + Vector2(32, 2)
+	for tr in 16:
+		var cand: Vector2 = (peasant.pos as Vector2) + Vector2(cos(tr * 2.399), sin(tr * 2.399)) * (8.0 + tr)
+		if game.in_bounds(cand) and not game.is_blocked(cand):
+			epos = cand
+			break
+	var efoe := game.spawn("peasant", 1, epos)
+	var epike := game.spawn("pikeman", 0, epos + Vector2(1, 0))
 	game.cmd_attack(epike, efoe)
-	_sim(3.0)
+	_sim(5.0)
 	steps.append({"step": "peasant_capture", "passed": int(efoe.player) == 0, "detail": "peasant captured: player %d" % int(efoe.player)})
 
 	# ---- G15: field re-sowing

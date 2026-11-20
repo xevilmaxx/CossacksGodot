@@ -266,7 +266,8 @@ func _dump_map() -> void:
 		"terrain": Marshalls.raw_to_base64(game.terrain),
 		"blocked": Marshalls.raw_to_base64(game.blocked),
 		"height": Marshalls.raw_to_base64(game.height.to_byte_array()),
-		"starts": starts, "clusters": zones, "res": res,
+		"tileblock": Marshalls.raw_to_base64(game.tileblock),
+		"starts": starts, "clusters": zones, "res": res, "meta": game.map_meta,
 	}
 	var out := _write_text(dump_path, JSON.stringify(dump))
 	if out == "":

@@ -104,6 +104,23 @@ static var FX_CAP := 220
 static var FOG_INTERVAL := 0.5
 static var MINIMAP_INTERVAL := 0.25
 
+# Donor-mask map build budget, keyed by the SAME quality preset.  The donor
+# scales pattern counts by map size; the port scales them by GPU/CPU budget so
+# a weak machine gets a lighter (but structurally identical) random map.
+#   belts / trees / quarries / relief domes = pattern pass density
+#   smooth = coastal height passes, decor = bushes + forest-border stamps
+const MAPGEN := {
+	"low": {"belts": [4, 5], "trees": [16, 28], "quarries": 4, "domes": 2,
+		"decor": false, "stamps": false, "lake_detail": 0},
+	"medium": {"belts": [5, 6], "trees": [24, 40], "quarries": 5, "domes": 3,
+		"decor": true, "stamps": true, "lake_detail": 1},
+	"high": {"belts": [6, 8], "trees": [34, 60], "quarries": 7, "domes": 4,
+		"decor": true, "stamps": true, "lake_detail": 2},
+}
+
+static func mapgen_budget() -> Dictionary:
+	return MAPGEN.get(QUALITY, MAPGEN["high"])
+
 # Quality presets: one switch scales render cost (terrain px, sprite cells,
 # fx) and update rates (fog/minimap). Called from the Options menu live
 # (the caller rebuilds world caches) and at startup from config.
