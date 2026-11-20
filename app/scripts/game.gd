@@ -270,14 +270,24 @@ func _clear_area(pos: Vector2, r_m: float) -> void:
 		if n.pos.distance_to(pos) < r_m:
 			n.hits = 0  # depleted (removed visually)
 
-func _paint_terrain(pos: Vector2, r_m: float, t: int) -> void:
+func _paint_terrain(pos: Vector2, r_m: float, t: int, feather := 2.5) -> void:
+	# Soft disc: full paint inside r-feather, then a noisy dithered rim so
+	# pads/groves/roads melt into the meadow instead of stamping squares
+	# (the donor's plain_*/forest patterns all have organic fringes).
 	var t0 := tile_of(pos - Vector2(r_m, r_m))
 	var t1 := tile_of(pos + Vector2(r_m, r_m))
 	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
 		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
 			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
-			if c.distance_to(pos) <= r_m and terrain[y * MAP_W + x] != 3:
-				terrain[y * MAP_W + x] = t
+			var d := c.distance_to(pos)
+			if d > r_m or terrain[y * MAP_W + x] == 3:
+				continue
+			if feather > 0.0 and d > r_m - feather:
+				var edge := (d - (r_m - feather)) / maxf(0.01, feather)
+				var n := _noise2(float(x) * 0.9 + 13.0, float(y) * 0.9 - 5.0) * 0.5 + 0.5
+				if edge > 1.0 - n * 0.9:
+					continue
+			terrain[y * MAP_W + x] = t
 
 func _scatter_forest(center: Vector2, count: int, spread: float) -> void:
 	for i in count:
@@ -421,8 +431,11 @@ func _gen_base() -> void:
 					continue
 				height[i] += (1.0 - dd) * (1.0 - dd) * (2.964 / 2.25)
 	# base tile roles from the donor height thresholds (guides shore/collision):
-	# h < -0.25 = water plane, -0.25..-0.1 = wet sand collar, above = meadow
-	# (with broad dirt expanses from low-frequency noise).
+	# h < -0.25 = water plane, -0.25..-0.1 = wet sand collar, above = meadow.
+	# Meadow mottling comes from the donor tile_low/highground bitmaps
+	# (_apply_detail_pass), NOT from random dirt blobs: the gauss masks carry
+	# no broad/alpha channel, so the original paints dirt only via plain_*
+	# patterns and roads. A few small soft plain blobs break the monotony.
 	for y in MAP_H:
 		for x in MAP_W:
 			var i := _t(x, y)
@@ -433,13 +446,14 @@ func _gen_base() -> void:
 				set_blocked_tile(x, y, true)
 			elif hh < -0.05:
 				t = 4  # donor sandsea collar: Mask B gradient makes a ~2-3 tile band
-			else:
-				var n := _noise2(x * 0.012 + float(Data.RANDOM_SEED % 997) * 0.01,
-					y * 0.012 - float(Data.RANDOM_SEED % 991) * 0.01)
-				var n2 := _noise2(x * 0.05 + 57.0, y * 0.05 - 31.0)
-				if n > 0.22 and n2 > -0.15:
-					t = 1
 			terrain[i] = t
+	for _pb in 7:
+		var pc := Vector2(rng.randf_range(MAP_W * 0.15, MAP_W * 0.85),
+			rng.randf_range(MAP_H * 0.15, MAP_H * 0.85)) * TILE
+		var pr := rng.randf_range(3.0, 6.0) * TILE
+		if not in_bounds(pc) or is_blocked(pc):
+			continue
+		_paint_terrain(pc, pr, 1, 2.5)
 	# donor TextureMap paints the wet sandsea* rim ON the water cells that
 	# touch land (orientation = ripple direction).  Port equivalent: turn the
 	# outermost water ring into walkable sand.  This gives every lake/sea a
@@ -552,7 +566,7 @@ func _gen_forests() -> void:
 		if c.x < 0.0:
 			continue
 		forest_centers.append(c)
-		_paint_terrain(c, 5.5 * TILE * mscale, 2)
+		_paint_terrain(c, 5.5 * TILE * mscale, 2, 3.5)
 		_scatter_forest(c, int(float(rng.randi_range(int(trees[0]), int(trees[1]))) * mscale), 5.0 * TILE * mscale)
 	# two groves per start (donor cCircle1 keep-clear outer ring = firewood).
 	for st in starts:
@@ -812,10 +826,12 @@ func _assign_tileblocks() -> void:
 			match t:
 				1:
 					# donor PlaceRoads (texturemap.inc): broad-mask dirt is
-					# ground1 half the time, test2/test3 otherwise
+					# ground1 half the time, test2 37.5%, test3 12.5% (two
+					# sequential RandomExt draws, not one flat roll).
+					var r2 := brng.randf()
 					if r < 0.5:
 						b = _blk("ground1")
-					elif r < 0.75:
+					elif r2 > 0.25:
 						b = _blk("test2")
 					else:
 						b = _blk("test3")
@@ -851,50 +867,46 @@ func _assign_tileblocks() -> void:
 	# 4) donor detail variety (loadtextureterrainfrombitmap.inc): cells still
 	# on the default block get their TileBlock from the low/high-ground
 	# bitmaps (R div 2), picked by height.  This is the real meadow mottling.
-	_apply_detail_pass()
-	# 4b) one more smoothing pass over the fresh detail adjacencies.  The donor
-	# fills detail after smoothing, but its bitmaps are authored 1:1 with the
-	# map so neighbours already agree; our 160px sampling of the 320px donor
-	# bitmaps can place contrasting blocks side by side (visible quilt
-	# squares), so a single extra pass inserts the proper transition blends.
-	_smooth_tilemap(brng, 1)
+	# Single pass, exactly like the original (SmoothTiles ran BEFORE it, the
+	# bitmaps are authored to agree with their neighbours, so no second
+	# smooth/detail round that would quilt contrasting samples together).
 	_apply_detail_pass()
 	# 5) forest-border stamps (donor smoothforestborders.inc: grass5/rock9
 	# tiles + bushes at edge cells with exactly one forest neighbour)
 	_stamp_forest_borders(brng)
 
 func _shore_tile_for(x: int, y: int) -> String:
-	var dx := 0.0
-	var dy := 0.0
-	for oy in [-1, 0, 1]:
-		for ox in [-1, 0, 1]:
-			if ox == 0 and oy == 0:
-				continue
-			var nx: int = x + ox
-			var ny: int = y + oy
-			if nx < 0 or ny < 0 or nx >= MAP_W or ny >= MAP_H:
-				continue
-			if int(terrain[_t(nx, ny)]) == 3:
-				dx += float(x - nx)
-				dy += float(y - ny)
-	if dx == 0.0 and dy == 0.0:
-		return ""
-	var ang := fposmod(rad_to_deg(atan2(dy, dx)), 360.0)
-	if ang >= 337.5 or ang < 22.5:
+	# donor texturemap.inc: shore tiles key off the HEIGHT GRADIENT at the
+	# cell (lh-rh, th-bh, vecangle+180 into 8 sectors), not the direction to
+	# water. bLB->sandsea5 bRB->sandsea6 bB->sandsea1 bL/bR->sandsea6
+	# bT->sandsea1 bRT->sandsea5 bLT->sandsea6.
+	if height.size() != MAP_W * MAP_H:
 		return "sandsea6"
-	if ang < 67.5:
+	var lh: float = height[_t(maxi(0, x - 1), y)]
+	var rh: float = height[_t(mini(MAP_W - 1, x + 1), y)]
+	var th: float = height[_t(x, maxi(0, y - 1))]
+	var bh: float = height[_t(x, mini(MAP_H - 1, y + 1))]
+	var dx := lh - rh
+	var dy := th - bh
+	if absf(dx) < 0.005 and absf(dy) < 0.005:
 		return "sandsea6"
-	if ang < 112.5:
-		return "sandsea1"
-	if ang < 157.5:
-		return "sandsea5"
-	if ang < 202.5:
-		return "sandsea6"
-	if ang < 247.5:
-		return "sandsea6"
-	if ang < 292.5:
-		return "sandsea1"
-	return "sandsea5"
+	var ang := fposmod(rad_to_deg(atan2(dy, dx)) + 180.0, 360.0)
+	const A := 45.0
+	if ang >= 7 * A - A / 2.0 or ang < A / 2.0:
+		return "sandsea6"  # bR
+	if ang < A + A / 2.0:
+		return "sandsea6"  # bRB
+	if ang < 2 * A + A / 2.0:
+		return "sandsea1"  # bB
+	if ang < 3 * A + A / 2.0:
+		return "sandsea5"  # bLB
+	if ang < 4 * A + A / 2.0:
+		return "sandsea6"  # bL
+	if ang < 5 * A + A / 2.0:
+		return "sandsea6"  # bLT
+	if ang < 6 * A + A / 2.0:
+		return "sandsea1"  # bT
+	return "sandsea5"  # bRT
 
 func _cliff_tile_for(x: int, y: int) -> String:
 	# exact donor texturemap.inc:426-447,557-609 cliff orientation
@@ -1100,22 +1112,35 @@ func set_blocked_tile(x: int, y: int, value: bool) -> void:
 		blocked[_t(x, y)] = 1 if value else 0
 
 func _draw_road(a: Vector2, b: Vector2) -> void:
+	# Narrow organic cart track (single tile, noisy centre line, feathered rim)
+	# instead of the old 3x3 square stamp that paved a highway of dirt.
 	var steps := int(a.distance_to(b) / TILE) + 1
 	for i in steps:
 		var p: Vector2 = a.lerp(b, float(i) / maxf(1.0, float(steps - 1)))
-		p += Vector2(_noise2(p.x * 0.5, p.y * 0.5), _noise2(p.y * 0.5 + 9.0, p.x * 0.5)) * 1.2
+		p += Vector2(_noise2(p.x * 0.35, p.y * 0.35), _noise2(p.y * 0.35 + 9.0, p.x * 0.35)) * 2.0
 		var t := tile_of(p)
-		for dy in range(-1, 2):
-			for dx in range(-1, 2):
-				var xx := t.x + dx
-				var yy := t.y + dy
-				if xx >= 0 and yy >= 0 and xx < MAP_W and yy < MAP_H:
-					var ri := _t(xx, yy)
-					if terrain[ri] != 3:
-						# a road is walkable: clear any cliff block it covers
-						if terrain[ri] == 5:
-							blocked[ri] = 0
-						terrain[ri] = 1
+		if t.x < 0 or t.y < 0 or t.x >= MAP_W or t.y >= MAP_H:
+			continue
+		var ri := _t(t.x, t.y)
+		if terrain[ri] == 3:
+			continue
+		# a road is walkable: clear any cliff block it covers
+		if terrain[ri] == 5:
+			blocked[ri] = 0
+		terrain[ri] = 1
+		# dithered single-tile fringe, not a full 3x3 block
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var xx: int = t.x + d.x
+			var yy: int = t.y + d.y
+			if xx < 0 or yy < 0 or xx >= MAP_W or yy >= MAP_H:
+				continue
+			var rj := _t(xx, yy)
+			if terrain[rj] == 3 or terrain[rj] == 1:
+				continue
+			if _noise2(float(xx) * 0.9 + 3.0, float(yy) * 0.9 - 8.0) > 0.25:
+				if terrain[rj] == 5:
+					blocked[rj] = 0
+				terrain[rj] = 1
 
 func mine_deposits(kinds: Array) -> Array:
 	var out: Array = []

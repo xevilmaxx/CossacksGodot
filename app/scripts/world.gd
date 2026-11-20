@@ -624,14 +624,16 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var tile_im := Image.create(bpx, bpx, false, Image.FORMAT_RGB8)
 	var tile_rect := Rect2i(0, 0, bpx, bpx)
 	var img := _wrap_crop(_block_img("grass1"), cx * S, cy * S, S)
-	# smooth brightness field (mottle x continuous height shade)
+	# smooth brightness field (mottle x continuous height shade), blurred 3x3
+	# so neighbouring tiles share light instead of stamping a quilt grid
+	# (the old per-tile scalar made every dirt pad read as squares).
 	var mot: PackedFloat32Array = PackedFloat32Array()
 	mot.resize(CHUNK_T * CHUNK_T)
 	for ly in CHUNK_T:
 		for lx in CHUNK_T:
 			var wx := float(cx * CHUNK_T + lx)
 			var wy := float(cy * CHUNK_T + ly)
-			mot[ly * CHUNK_T + lx] = 0.91 + 0.18 * (0.5 + 0.5 * _wnoise(wx * 0.05 + 11.0, wy * 0.05 - 7.0))
+			mot[ly * CHUNK_T + lx] = 0.94 + 0.12 * (0.5 + 0.5 * _wnoise(wx * 0.05 + 11.0, wy * 0.05 - 7.0))
 	# per-block wrap regions present in this chunk (strict offsets = seamless)
 	var present := {}
 	for ly in CHUNK_T:
@@ -688,7 +690,17 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 					var mi: int = clampi(17 - f * 2 + posmod(x * 5 + y * 11, 5) - 2, 0, 17)
 					img.blend_rect_mask(tile_im, terrain_masks[mi], tile_rect, dst)
 			var hh: float = game.height_at(Vector2((float(x) + 0.5) * Data.TILE_M, (float(y) + 0.5) * Data.TILE_M))
-			var bright: float = mot[ly * CHUNK_T + lx] * clampf(1.0 + hh * 0.12, 0.80, 1.18)
+			# 3x3 mean of the mottle grid: light flows across tiles, no seams.
+			var msum := 0.0
+			var mcnt := 0
+			for oy2 in range(-1, 2):
+				for ox2 in range(-1, 2):
+					var qx := lx + ox2
+					var qy := ly + oy2
+					if qx >= 0 and qy >= 0 and qx < CHUNK_T and qy < CHUNK_T:
+						msum += mot[qy * CHUNK_T + qx]
+						mcnt += 1
+			var bright: float = (msum / maxf(1.0, float(mcnt))) * clampf(1.0 + hh * 0.06, 0.88, 1.12)
 			# donor light is directional: shade slopes from NW so hills and
 			# lake bowls read as relief instead of flat painted patches.
 			if game.height.size() == game.MAP_W * game.MAP_H:
@@ -698,7 +710,7 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 				var yd: int = mini(game.MAP_H - 1, y + 1)
 				var gx: float = game.height[game._t(xl, y)] - game.height[game._t(xr, y)]
 				var gy: float = game.height[game._t(x, yu)] - game.height[game._t(x, yd)]
-				bright *= clampf(1.0 + (gx + gy) * 0.22, 0.74, 1.26)
+				bright *= clampf(1.0 + (gx + gy) * 0.12, 0.86, 1.14)
 			if absf(bright - 1.0) > 0.004:
 				tile_im.blit_rect(img, rect, Vector2i(0, 0))
 				tile_im.adjust_bcs(bright, 1.0, 1.0)
