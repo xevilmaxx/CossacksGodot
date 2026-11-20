@@ -41,7 +41,7 @@ var terrain_masks: Array = []  # feather mask + shade tiles, rebuilt per terrain
 # donor PNGs). Every chunk samples strictly wrap-continuous regions, so
 # meadows flow across chunk borders with zero repetition seams. Type
 # transitions share one feather mask; mottling uses a world-coherent mask.
-const BLK_CACHE := 10
+const BLK_CACHE := 32
 var blk_cache := {}
 var blk_order: Array = []
 var ter_water: Image
@@ -145,21 +145,21 @@ func _load_sprites() -> void:
 	for n in ["tree_fir", "tree_oak", "tree_pine", "rock", "stone", "field"]:
 		if not sids.has(n):
 			sids.append(n)
-	# NOTE: ResourceLoader.exists misses never-imported PNGs on this setup,
-	# so probe with FileAccess (the editor import cache does not know them).
+	# NOTE: probe with _res_exists (ResourceLoader.exists for exported .pck
+	# builds, FileAccess fallback for never-imported editor PNGs).
 	for key in sids:
 		var frames: Array = []
 		var has_dir := false
 		for d in 8:
 			var p := "res://assets/models/sprites/%s_%03d.png" % [key, d * 45]
-			if FileAccess.file_exists(p):
+			if _res_exists(p):
 				has_dir = true
 				frames.append(load(p) as Texture2D)
 			else:
 				frames.append(null)
 		if has_dir:
 			sprites[key] = frames
-		elif FileAccess.file_exists("res://assets/models/sprites/%s.png" % key):
+		elif _res_exists("res://assets/models/sprites/%s.png" % key):
 			sprites[key] = [load("res://assets/models/sprites/%s.png" % key) as Texture2D]
 	print("sprites: %d sets loaded (sids=%d)" % [sprites.size(), sids.size()])
 
@@ -257,7 +257,7 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	var tk := key + "_" + act
 	if not anim_tex.has(tk):
 		var path := "%s/%s.png" % [_anim_dir(), tk]
-		if not FileAccess.file_exists(path):
+		if not _res_exists(path):
 			return false
 		anim_tex[tk] = load(path)
 	var tex: Texture2D = anim_tex[tk]
@@ -276,7 +276,7 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 		fi = mini(n - 1, int((gt - t0) / maxf(0.05, float(a.duration)) * n))
 	else:
 		fi = int((anim_t + phase) / maxf(0.05, float(a.duration)) * n) % n
-	var dir := int(fposmod(roundf(float(e.get("face", 0.0)) / (PI / 4.0)), 8.0)) % 8
+	var dir := posmod(int(fposmod(roundf(float(e.get("face", 0.0)) / (PI / 4.0)), 8.0)) + 4, 8)
 	var src := Rect2(dir * cell, fi * cell, cell, cell)
 	# True donor scale: each group (stand/death) shares one baked ortho (world
 	# meters across one cell), so walk/idle/attack/work/construct keep one
@@ -306,7 +306,7 @@ func _bld_key(e: Dictionary) -> String:
 		nat = str(Data.PLAYER_NATIONS[int(e.player)])
 	if nat != "":
 		var nk := "%s_%s" % [nat, e.sid]
-		if FileAccess.file_exists("%s/%s.png" % [_anim_dir(), nk]):
+		if _res_exists("%s/%s.png" % [_anim_dir(), nk]):
 			return nk
 	return e.sid
 
@@ -319,7 +319,7 @@ func _bld_anim(key: String) -> Texture2D:
 			return null
 		return t
 	var path := "%s/%s.png" % [_anim_dir(), key]
-	if not FileAccess.file_exists(path):
+	if not _res_exists(path):
 		return null
 	anim_tex[key] = load(path)
 	var t2: Texture2D = anim_tex[key]
@@ -400,7 +400,7 @@ func _bld_decal(nat: String, sid: String) -> Texture2D:
 		return decal_tex[key] as Texture2D
 	var path := "res://assets/terrain/decals_png/%s%sd.png" % [nat, sid]
 	var tex: Texture2D = null
-	if FileAccess.file_exists(path):
+	if _res_exists(path):
 		tex = load(path) as Texture2D
 	decal_tex[key] = tex
 	return tex
@@ -520,11 +520,24 @@ func _wrap_crop(src: Image, ox: int, oy: int, s: int) -> Image:
 		x += w
 	return out
 
+func _load_image_tex(path: String) -> Image:
+	# Export-safe: res:// PNGs ship as imported CompressedTexture2D, not raw
+	# files. Image.load(path) warns ("Loaded resource as image file...") and
+	# fails in exported builds; Texture2D.get_image() works in both.
+	var tex: Texture2D = ResourceLoader.load(path) as Texture2D
+	if tex == null:
+		return null
+	return tex.get_image()
+
+func _res_exists(path: String) -> bool:
+	# Export-safe existence probe for res:// imported assets.
+	return ResourceLoader.exists(path) or FileAccess.file_exists(path)
+
 func _prep_variants() -> Array:
 	# water wave art only; land renders from TileBlock images (LRU).
 	ter_water = null
-	var w := Image.new()
-	if w.load("res://assets/terrain/water_png/diffusewaves2.png") == OK:
+	var w: Image = _load_image_tex("res://assets/terrain/water_png/diffusewaves2.png")
+	if w != null:
 		if w.get_format() != Image.FORMAT_RGB8:
 			w.convert(Image.FORMAT_RGB8)
 		ter_water = _mirror_tileable(w, 1024)
@@ -542,9 +555,7 @@ func _block_img(nm: String) -> Image:
 		blk_order.erase(nm)
 		blk_order.append(nm)
 		return hit
-	var im: Image = Image.new()
-	if im.load("res://assets/terrain/blocks/%s.png" % nm) != OK:
-		im = null
+	var im: Image = _load_image_tex("res://assets/terrain/blocks/%s.png" % nm)
 	if im == null:
 		im = Image.create(64, 64, false, Image.FORMAT_RGB8)
 		im.fill(Color(0.4, 0.45, 0.25))
@@ -575,11 +586,13 @@ func _build_masks(px: int) -> Array:
 	for i in range(6, 24):
 		files.append(dp % i)
 	for f in files:
-		if not FileAccess.file_exists(f):
+		if not _res_exists(f):
 			continue
-		var im := Image.new()
-		var err := im.load(f)
-		if err != OK:
+		var ftex: Texture2D = ResourceLoader.load(f) as Texture2D
+		if ftex == null:
+			continue
+		var im: Image = ftex.get_image()
+		if im == null:
 			continue
 		if im.get_width() != px or im.get_height() != px:
 			im.resize(px, px, Image.INTERPOLATE_BILINEAR)
@@ -1386,7 +1399,7 @@ func _draw_corpses() -> void:
 			var dd: float = maxf(0.05, float(dact.duration))
 			var dcell: int = int(cinfo.cell)
 			var dtk := ckey + "_death"
-			if not anim_tex.has(dtk) and FileAccess.file_exists("%s/%s.png" % [_anim_dir(), dtk]):
+			if not anim_tex.has(dtk) and _res_exists("%s/%s.png" % [_anim_dir(), dtk]):
 				anim_tex[dtk] = load("%s/%s.png" % [_anim_dir(), dtk])
 			if anim_tex.has(dtk):
 				var dtex: Texture2D = anim_tex[dtk]
@@ -1394,7 +1407,7 @@ func _draw_corpses() -> void:
 					anim_tex.erase(dtk)
 				else:
 					var dfi: int = mini(dn - 1, int(float(c.t) / dd * dn))
-					var ddir := int(fposmod(roundf(float(c.get("face", 0.0)) / (PI / 4.0)), 8.0)) % 8
+					var ddir := posmod(int(fposmod(roundf(float(c.get("face", 0.0)) / (PI / 4.0)), 8.0)) + 4, 8)
 					var dsrc := Rect2(ddir * dcell, dfi * dcell, dcell, dcell)
 					var dfig: float = float(dact.get("fig_h", 1.0))
 					var dfoot: float = float(dact.get("ay", dact.get("foot", 0.82)))

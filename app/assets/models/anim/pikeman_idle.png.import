@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ypcucdcedn4s"
+path="res://.godot/imported/pikeman_idle.png-64060e49530a66823f12bf8c2bac5fe3.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dwxbihq8m8swo"
+path="res://.godot/imported/hussar_attack.png-0905878daaac615e260852756a89cea8.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

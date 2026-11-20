@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dedlwejk3b234"
+path="res://.godot/imported/net_dip_s1.png-9aee27fd61ff0d577e49bd60644bbb14.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

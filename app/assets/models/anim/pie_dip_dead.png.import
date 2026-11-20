@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://df5jeal32j221"
+path="res://.godot/imported/pie_dip_dead.png-29909b01412599ae4d2b7cacbe088da7.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

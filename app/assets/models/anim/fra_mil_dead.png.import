@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bvkgk75xjg8ph"
+path="res://.godot/imported/fra_mil_dead.png-6279d0abd1b141683032cd6e6a6beadb.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

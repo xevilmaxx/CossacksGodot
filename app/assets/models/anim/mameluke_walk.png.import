@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cu488oxrb2fif"
+path="res://.godot/imported/mameluke_walk.png-340eaf8c7a0e27358d5879796b5d7b78.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

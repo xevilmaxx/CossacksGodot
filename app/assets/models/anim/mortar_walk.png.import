@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpk80m7inyito"
+path="res://.godot/imported/mortar_walk.png-fe78fa02e3fc35abcb648eeec3d2afd8.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

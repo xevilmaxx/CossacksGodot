@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bvhn3pa6il3xs"
+path="res://.godot/imported/musketeer_idle.png-8c94445a39767e7bce14872bacb6d027.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

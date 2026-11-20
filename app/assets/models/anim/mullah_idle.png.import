@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bgtasgn2kgij5"
+path="res://.godot/imported/mullah_idle.png-1129059e1b5db976104f86f2b8b4e50a.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

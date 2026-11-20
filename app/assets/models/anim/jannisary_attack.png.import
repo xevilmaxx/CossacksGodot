@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://hch7b2fy6tyx"
+path="res://.godot/imported/jannisary_attack.png-e36395c103f750f9f02a7f6d42db74a5.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

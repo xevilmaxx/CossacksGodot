@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b68u4yp462bw0"
+path="res://.godot/imported/peasant_death.png-922087ccdef06fe2402dff3eb8cecff6.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

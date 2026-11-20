@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://vr0pthllxanv"
+path="res://.godot/imported/mameluke_idle.png-43a080fcf5d7f486fcf6f530026a8e99.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

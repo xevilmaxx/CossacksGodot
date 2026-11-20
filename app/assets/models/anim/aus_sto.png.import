@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cndnio27rspjx"
+path="res://.godot/imported/aus_sto.png-99a728955e9df9936894ef435eba0c58.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

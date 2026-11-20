@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bge2f60alfr4j"
+path="res://.godot/imported/chasseur_walk.png-38ca0c8a60c8374a4b08d76099959bfb.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

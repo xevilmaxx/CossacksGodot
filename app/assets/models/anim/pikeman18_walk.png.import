@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bedtj55dmmgqn"
+path="res://.godot/imported/pikeman18_walk.png-137ad7b213568c37ec67a0831b404151.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

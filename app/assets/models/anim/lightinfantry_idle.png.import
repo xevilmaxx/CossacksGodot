@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://k4hnp37pau5"
+path="res://.godot/imported/lightinfantry_idle.png-7531bc201758cc42a068a15f28f410a7.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

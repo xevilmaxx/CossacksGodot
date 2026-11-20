@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bkffjxbte7k8e"
+path="res://.godot/imported/jannisary_walk.png-e97a42446663bdfa0522bfc6e7f36b1d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

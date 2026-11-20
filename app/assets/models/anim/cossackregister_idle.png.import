@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dnl7keqa8u2it"
+path="res://.godot/imported/cossackregister_idle.png-4c8f5052be813aa774f48428de8528af.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

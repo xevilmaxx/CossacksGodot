@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dhui6jaa2ul37"
+path="res://.godot/imported/hun_hou.png-2aa39e0730cca69649398fda2b738e8c.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

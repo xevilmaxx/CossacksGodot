@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dn20ivsmnkv3d"
+path="res://.godot/imported/hun_dip_dead.png-6933a28696789aae78da9a76fe4a17d1.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

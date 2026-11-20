@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://sa6jbvejloen"
+path="res://.godot/imported/musk18_death.png-5286328521119479bf7fe5d9ddd8d93f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cndveowhde6kv"
+path="res://.godot/imported/bagpiper_idle.png-04c5900fa95dd5219fabbc0470748a3e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://7ubiji0q3vib"
+path="res://.godot/imported/pandur_attack.png-03a776517fe8b83ffbe3e78e6307f980.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

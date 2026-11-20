@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://u7ykhc0e7hd1"
+path="res://.godot/imported/peasant_idle.png-40374d05fdf105fd8adc788ef8aee203.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

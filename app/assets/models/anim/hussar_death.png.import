@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://boa6envg5iicf"
+path="res://.godot/imported/hussar_death.png-b97e6c0015665951535e70e4d98f4b89.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

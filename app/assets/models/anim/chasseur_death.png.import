@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bn2k8wik7aenw"
+path="res://.godot/imported/chasseur_death.png-dcfc6f7a43c1366b652f4d6a056e3137.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

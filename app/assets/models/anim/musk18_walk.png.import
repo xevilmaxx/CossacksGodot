@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dbt4yttp57g1y"
+path="res://.godot/imported/musk18_walk.png-50396b5f3be04a13e42e33325586f49b.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

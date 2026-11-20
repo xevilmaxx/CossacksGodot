@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b16xjkvjbixfj"
+path="res://.godot/imported/bav_bar18.png-96f951d00171f01ad50bdd5840fd281f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

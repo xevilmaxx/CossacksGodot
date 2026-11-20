@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bp6xocl2twf8k"
+path="res://.godot/imported/pie_mar_dead.png-b53fe0313cfd4e4970b127c0f21c6064.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

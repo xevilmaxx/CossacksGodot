@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b0meruog1awec"
+path="res://.godot/imported/pie_sto_s3.png-3ccbd9bd296e829667e35ea80706dc6c.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://brp8yxvuwvp0a"
+path="res://.godot/imported/hackapell_attack.png-50c7486f6b5291e7c6aee94c10fb4e70.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

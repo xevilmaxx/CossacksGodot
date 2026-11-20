@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dh64a6ah5mrl2"
+path="res://.godot/imported/cossack_death.png-fa39023d73b25c8fbf23facdbf287a9f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

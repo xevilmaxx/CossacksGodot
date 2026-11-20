@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://g503wox0juro"
+path="res://.godot/imported/lightinfantry_attack.png-9fa714e962044799478c261c180f0c1d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

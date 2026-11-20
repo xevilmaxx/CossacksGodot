@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dbh3njsefosi1"
+path="res://.godot/imported/musketeer_walk.png-1c6ed946c5ffc5c59aa4158382a910e7.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

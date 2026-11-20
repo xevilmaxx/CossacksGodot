@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bq7yvu6vsaq6k"
+path="res://.godot/imported/howitzer_walk.png-6967076281345eebfacd42c0d631174e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

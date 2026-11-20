@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://1krjjeu7ugiu"
+path="res://.godot/imported/pol_dip_s3.png-dd8fe4b3b61cf96f5ce2ca823cc73b30.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

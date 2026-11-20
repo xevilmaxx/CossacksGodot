@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dywyts3js26wf"
+path="res://.godot/imported/pie_bar18_s4.png-ace754a1d50720352678bf017a42232b.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

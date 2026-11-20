@@ -742,6 +742,15 @@ func pick_radius(e: Dictionary) -> float:
 		return bld_block_r(e) + 1.4
 	return float(e.def.radius) + 1.4
 
+func _load_image_tex(path: String) -> Image:
+	# Export-safe Image load: res:// PNGs are imported as CompressedTexture2D.
+	# Image.load(path) warns ("Loaded resource as image file...") and breaks
+	# on export; going through Texture2D works in editor and in .pck builds.
+	var tex: Texture2D = ResourceLoader.load(path) as Texture2D
+	if tex == null:
+		return null
+	return tex.get_image()
+
 func _load_detail_bitmaps() -> void:
 	# donor data/gen/bitmap/ext/tile_low/highground.bmp (320x320, R = tex*2):
 	# LoadTextureTerrainFromBitmap picks the bitmap by height and paints every
@@ -749,12 +758,8 @@ func _load_detail_bitmaps() -> void:
 	# assets/terrain/structs/*.png by tools/copy_assets.py.
 	if tile_low_im != null and tile_high_im != null:
 		return
-	tile_low_im = Image.new()
-	if tile_low_im.load("res://assets/terrain/structs/tile_lowground.png") != OK:
-		tile_low_im = null
-	tile_high_im = Image.new()
-	if tile_high_im.load("res://assets/terrain/structs/tile_highground.png") != OK:
-		tile_high_im = null
+	tile_low_im = _load_image_tex("res://assets/terrain/structs/tile_lowground.png")
+	tile_high_im = _load_image_tex("res://assets/terrain/structs/tile_highground.png")
 
 func _apply_detail_pass() -> void:
 	# donor loadtextureterrainfrombitmap.inc: h < 0.1 reads tile_lowground,

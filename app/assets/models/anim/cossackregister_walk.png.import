@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://niluy876kgbq"
+path="res://.godot/imported/cossackregister_walk.png-7edd6f781d85ac5c59595687845cb609.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

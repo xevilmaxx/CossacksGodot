@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://scn1mxwrhmin"
+path="res://.godot/imported/archer_attack.png-b04767927ab727ea452909b3c38a54fc.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

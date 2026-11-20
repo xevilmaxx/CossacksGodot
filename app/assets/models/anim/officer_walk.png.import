@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://by3aed6ain3lg"
+path="res://.godot/imported/officer_walk.png-2d55d3ce8c81444bbd87a48c319fb9da.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

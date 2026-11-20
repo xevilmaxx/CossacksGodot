@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ya31oi38byxl"
+path="res://.godot/imported/alg_tow_s1.png-69333747927b15e68cc80736b104d99b.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

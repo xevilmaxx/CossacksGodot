@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dvshlisr53lpy"
+path="res://.godot/imported/pie_hou_dead.png-21f4823e45172bab98bb64eba84325dd.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

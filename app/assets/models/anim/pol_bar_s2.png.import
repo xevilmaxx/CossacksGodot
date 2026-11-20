@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cap1wqrwbiqc5"
+path="res://.godot/imported/pol_bar_s2.png-b04735702a2a0c2e8eb73c5615fca147.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

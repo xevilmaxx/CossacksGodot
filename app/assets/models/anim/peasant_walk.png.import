@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://do56wdyxwuuer"
+path="res://.godot/imported/peasant_walk.png-b7ee9b6fad445a5ee27d44f6891a41ed.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

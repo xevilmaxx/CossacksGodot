@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://coe5270hrdwg2"
+path="res://.godot/imported/hackapell_idle.png-827275ad49f10172c04d6ac1ce2d5081.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

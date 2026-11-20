@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dnoi0jduiqgk0"
+path="res://.godot/imported/mortar_idle.png-5b6c1d73e1a857cf7454d23125b850a6.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

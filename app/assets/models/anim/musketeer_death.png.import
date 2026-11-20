@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1mbfbc2w0lav"
+path="res://.godot/imported/musketeer_death.png-2aa77bd3f891bae1239b716977993d01.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

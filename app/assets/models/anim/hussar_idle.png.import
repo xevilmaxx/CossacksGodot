@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvp2flqywf2kd"
+path="res://.godot/imported/hussar_idle.png-59c1cf000b50db010acb7811ffdf0395.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

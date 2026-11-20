@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d0x0e4h6g7mro"
+path="res://.godot/imported/mortar_attack.png-045aa947381a63f51bbc1e43dc5fe52f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

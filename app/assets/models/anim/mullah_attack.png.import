@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cprosv8gijgv4"
+path="res://.godot/imported/mullah_attack.png-88616700ade4aebbec4d794572815013.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

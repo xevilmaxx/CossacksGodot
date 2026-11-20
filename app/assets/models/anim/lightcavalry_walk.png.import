@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpkvabwmmefvg"
+path="res://.godot/imported/lightcavalry_walk.png-ebe1f46e11e1fe2b2ce71760cd4b70fb.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

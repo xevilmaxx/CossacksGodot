@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bugrfyqimrijv"
+path="res://.godot/imported/peasant_attack.png-93cc8ecad74221ecaf2e0e672b6f1adf.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

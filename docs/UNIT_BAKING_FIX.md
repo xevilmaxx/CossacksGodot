@@ -216,3 +216,14 @@ Two project-level traps made even correct sheets look bad and huge:
 
 Sheet total is ~280 MB PNG (vs donor units ~212 MB meshes+textures) — inherent
 to 8-dir × ~10-frame RGBA sprites; figures lazy-load per drawn unit.
+
+## 9. Facing mirror (2026-11-20)
+
+Compass check (`peasant_walk` dirs 0/2/4/6 + `pikeman_attack` pike direction,
+plus a skin-pixel front/back recount that overturned the first reading)
+proved the bake runs 180° off the game's facing angle: game dir 0
+(eastward move) must pick the east-facing cell (col 4), not col 0. The first
+attempt mirrored (`posmod(4 - d)`, fixing E/W but flipping N/S. Correct map
+is a half-turn: `world.gd` `_draw_anim` and the corpse preview now use
+`dir = posmod(dir + 4, 8)`. Verified at file level (pike thrust matches
+movement compass); sim self-test still green.

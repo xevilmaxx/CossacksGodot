@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cb4thtoldjckw"
+path="res://.godot/imported/fra_tow_s4.png-e43af3551f42f52d40f10ea6215ac491.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

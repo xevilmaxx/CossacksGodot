@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c15ajb3cr24c4"
+path="res://.godot/imported/hun_bla_s3.png-82535cc9d2b2af001d7f767429363bc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

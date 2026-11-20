@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://drakkn8kssy6e"
+path="res://.godot/imported/jannisary_death.png-bf3465a15183044fbcc9e51abc670a19.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

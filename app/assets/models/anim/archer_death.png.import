@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://br0kjbiw2uyqo"
+path="res://.godot/imported/archer_death.png-73a95b2962665aab65750d880d2f7126.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -122,11 +122,15 @@ static func build(map_type: String, seed: int, w: int, h: int, tile: float,
 			forest[i] = 0.0
 		return {"height": height, "forest": forest,
 			"starts": _starts_from_mask({}, w, h, tile), "mask": {}, "water": 0.0}
-	var im := Image.new()
 	var path := "res://assets/terrain/masks/" + str(m.get("file", ""))
-	if im.load(path) != OK:
+	# Export-safe: masks are imported as Texture2D (CompressedTexture2D).
+	# Image.load() on res:// works in-editor but warns and fails on export
+	# (raw PNG not shipped). Load via Texture2D and read the Image instead.
+	var mtex: Texture2D = ResourceLoader.load(path) as Texture2D
+	if mtex == null:
 		push_warning("mapgen: missing mask ", path)
 		return build("land", seed + 1, w, h, tile, quality)
+	var im: Image = mtex.get_image()
 	if im.get_format() != Image.FORMAT_RGB8:
 		im.convert(Image.FORMAT_RGB8)
 	var iw := im.get_width()

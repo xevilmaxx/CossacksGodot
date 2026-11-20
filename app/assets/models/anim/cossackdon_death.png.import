@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cyyone482i5mo"
+path="res://.godot/imported/cossackdon_death.png-6a5ec6c730aece7eb52589a62019e779.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

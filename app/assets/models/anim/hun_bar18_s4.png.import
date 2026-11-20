@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b2uwqaovrqc4a"
+path="res://.godot/imported/hun_bar18_s4.png-a1a7b1ab2d70cd1ff99fdf95616b80e0.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

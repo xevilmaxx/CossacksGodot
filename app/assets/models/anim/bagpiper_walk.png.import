@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b05rwstxh86sj"
+path="res://.godot/imported/bagpiper_walk.png-a40f8f084b0275e125ca5ded8f3c745e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

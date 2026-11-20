@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cfhm8735bq26l"
+path="res://.godot/imported/highlander_idle.png-dffe88288e5d892218990c88cb8986b4.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

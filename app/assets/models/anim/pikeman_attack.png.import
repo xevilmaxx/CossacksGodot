@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://btv7ka6visylg"
+path="res://.godot/imported/pikeman_attack.png-133b314df4ab665e5078de8dc63b4bac.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

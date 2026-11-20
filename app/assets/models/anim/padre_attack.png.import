@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ds767akyn2eb1"
+path="res://.godot/imported/padre_attack.png-1fd09ce6e4ad68debfbee7dd2c5d3e46.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

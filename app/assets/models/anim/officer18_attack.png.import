@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dx4qoqbs2wmv7"
+path="res://.godot/imported/officer18_attack.png-057f0f47e0f45a15f5e0494ac7f1726c.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

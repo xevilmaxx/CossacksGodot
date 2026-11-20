@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cuqjlu1vmd04r"
+path="res://.godot/imported/cossackdon_walk.png-8fca1ab1ce35f9ecf44f96a7598d62c8.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

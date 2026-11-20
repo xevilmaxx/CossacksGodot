@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://xkl3ceuhekuk"
+path="res://.godot/imported/bav_mil_s1.png-d6a1f8f57e5e8de62735bd6451e2f98c.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bqkxw80f1tsle"
+path="res://.godot/imported/lightcavalry_death.png-0ec4a9fd0ab19960cb538d39323d8da8.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

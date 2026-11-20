@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://fjvx0py1j1p8"
+path="res://.godot/imported/fra_mil_s1.png-8ddcc4441cab8f305f418ba91c26356d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

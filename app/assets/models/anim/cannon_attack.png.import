@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bwhup3xannb05"
+path="res://.godot/imported/cannon_attack.png-e0ebb53d82f0a6d6b5649fd15026758e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

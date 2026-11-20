@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://yf8s5etovst6"
+path="res://.godot/imported/hackapell_death.png-620c48ab0bbcef1728ef8cf412a72aab.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

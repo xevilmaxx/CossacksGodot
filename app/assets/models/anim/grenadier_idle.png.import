@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://brl4erjnijk6q"
+path="res://.godot/imported/grenadier_idle.png-2c641388acf854831abe02530f866fa9.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

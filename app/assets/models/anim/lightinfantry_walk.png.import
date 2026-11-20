@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bmt4yi8evhv3q"
+path="res://.godot/imported/lightinfantry_walk.png-9cab1a7b28f0490eeb21a73617be9315.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

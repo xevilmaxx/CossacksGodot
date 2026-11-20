@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dftoeh6cte1va"
+path="res://.godot/imported/highlander_death.png-f351978be458abee6de2e7a8f4a9f930.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

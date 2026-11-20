@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ckcjrmwn1ekip"
+path="res://.godot/imported/officer18_idle.png-ca39346f333832311de24f390473b8d8.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

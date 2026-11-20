@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cpju6q3wtdufr"
+path="res://.godot/imported/jannisary_idle.png-fece6958617f6fa7fdfc840b290bb667.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

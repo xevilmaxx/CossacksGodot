@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c40kui73lmrxt"
+path="res://.godot/imported/hackapell_walk.png-de9fc2efd034379fd57d0a9aa4a069db.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

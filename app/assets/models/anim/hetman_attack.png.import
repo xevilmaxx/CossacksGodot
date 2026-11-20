@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ke07shxoh3l8"
+path="res://.godot/imported/hetman_attack.png-f2cb6b8631b8500fb08560b45da52c3d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

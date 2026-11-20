@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dn2e1ci54pm7q"
+path="res://.godot/imported/chasseur_attack.png-a45f95310326960d36f0258a31c4e30f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

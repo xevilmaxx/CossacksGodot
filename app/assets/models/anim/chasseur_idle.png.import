@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dh8xwxougb3vf"
+path="res://.godot/imported/chasseur_idle.png-eb8c8b104fd71424530a93f6f3eb5825.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

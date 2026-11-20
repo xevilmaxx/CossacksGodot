@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bxk8kvr2obklq"
+path="res://.godot/imported/archer_walk.png-21bebfda392105174ac3ffb83ef6614b.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

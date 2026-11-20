@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ko06xugn2a0d"
+path="res://.godot/imported/howitzer_idle.png-581d53e745389c08bd714a99587cd134.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

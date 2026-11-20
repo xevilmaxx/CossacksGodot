@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dhcjcx0n1bxny"
+path="res://.godot/imported/pandur_death.png-826aaeefda98d1cdb9f5d28907ea5f30.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -7,7 +7,7 @@
     "wood": 360
   },
   "shots_fired": 40,
-  "sim_seconds": 385.9375,
+  "sim_seconds": 385.90625,
   "steps": [
     {
       "detail": "walked 6.0 m forward (speed 1.5 m/s)",

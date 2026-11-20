@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b6u5x4yoay3g4"
+path="res://.godot/imported/pikeman_death.png-9a8f4ca24243215f0e735ea2f80cf9da.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

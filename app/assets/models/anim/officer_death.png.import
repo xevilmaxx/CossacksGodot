@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c6aertru2n8tx"
+path="res://.godot/imported/officer_death.png-735c23b0196feb6d658b14d544ae93f5.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

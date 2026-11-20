@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bf2msf5dron2t"
+path="res://.godot/imported/cossackdon_attack.png-771549a3b8857e6650caeb794f4675e4.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

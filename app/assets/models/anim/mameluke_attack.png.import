@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://xv5shqo85fd"
+path="res://.godot/imported/mameluke_attack.png-111378a1103d92c22516c7269de703e5.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

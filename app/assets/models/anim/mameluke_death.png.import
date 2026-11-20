@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d0d1n6cuaj0md"
+path="res://.godot/imported/mameluke_death.png-e9a89582600d0bcddfb5dd230fa6aead.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

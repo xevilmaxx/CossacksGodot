@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d2lfqojxnm4ll"
+path="res://.godot/imported/cannon_walk.png-94c9b4d0da1727d8f04943d0dfb5412c.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

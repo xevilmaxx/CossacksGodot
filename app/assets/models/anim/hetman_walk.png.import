@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cppq0rnel3210"
+path="res://.godot/imported/hetman_walk.png-e7ef1abc3c365c031c279246d280d33b.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

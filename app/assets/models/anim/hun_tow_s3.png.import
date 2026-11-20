@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://gtt887fdgm81"
+path="res://.godot/imported/hun_tow_s3.png-1d21dfe29d9d502ea77cae6680b22c3a.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bkal6lhgi5pio"
+path="res://.godot/imported/padre_idle.png-91c42d437baf598ad9300e9e4dd7f656.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

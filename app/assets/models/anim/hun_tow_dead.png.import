@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bwnvkdw41s65b"
+path="res://.godot/imported/hun_tow_dead.png-07cbadcc71d78bb88b20b41f5bcdd407.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

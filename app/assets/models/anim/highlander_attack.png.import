@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dyo4h7k7e0ayp"
+path="res://.godot/imported/highlander_attack.png-d4dcd4b544595ce6a16a5db707acc7db.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

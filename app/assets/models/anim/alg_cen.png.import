@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://coed3mtdks5h5"
+path="res://.godot/imported/alg_cen.png-73b874f1b044768a0a62f56972e05988.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

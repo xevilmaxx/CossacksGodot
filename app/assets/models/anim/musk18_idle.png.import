@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://rlk03ppg1axo"
+path="res://.godot/imported/musk18_idle.png-ec3849a4bb7692518e3f1b24a33b96b6.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

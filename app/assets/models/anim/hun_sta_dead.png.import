@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://df1nq3sl4t7w5"
+path="res://.godot/imported/hun_sta_dead.png-966a5dd9ffb151765c7f81d966c0e251.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

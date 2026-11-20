@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bjthru08uwbn2"
+path="res://.godot/imported/net_mar.png-b919f31a872c2558c22d4e6519930d4f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

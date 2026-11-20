@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://h1aeaogfp8e5"
+path="res://.godot/imported/cossackregister_attack.png-fc1292fec981e46e04dcf07647b9d73e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

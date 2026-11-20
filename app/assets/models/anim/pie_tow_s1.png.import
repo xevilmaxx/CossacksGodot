@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bawkqnkryawqs"
+path="res://.godot/imported/pie_tow_s1.png-c15909262c1a19a83131cff9f566b0d1.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

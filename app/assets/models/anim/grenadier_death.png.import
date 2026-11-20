@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d08fvfkgcbyno"
+path="res://.godot/imported/grenadier_death.png-f97c476f3e7e70808f5bed41fc1175c6.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

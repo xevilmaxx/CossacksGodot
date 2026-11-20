@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dyicwcjj2lc0c"
+path="res://.godot/imported/cannon_idle.png-e9adc3717010c2119ed71b52514f4366.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

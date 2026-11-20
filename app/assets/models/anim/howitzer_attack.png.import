@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://davrrfhntbiiu"
+path="res://.godot/imported/howitzer_attack.png-3a182c7dd4d8f5a4a1b0ddd6a2258541.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]

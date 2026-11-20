@@ -3,9 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dgxkij32dp02f"
+path="res://.godot/imported/hussar_walk.png-11e6f6aa1069210aea223a6e03c9d4d5.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
