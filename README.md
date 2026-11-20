@@ -30,7 +30,7 @@ sounds, damage formulas, gathering rates, upkeep, formation sizes.
 | 📏 **Donor-accurate sim** | Damage formula, 1.664/s mine income, /625 upkeep, famine, capture, market drift — 182 documented values in `app/mechanics.json` |
 | 🎖️ **Line warfare** | 15–400-man formations with officers + drummers, +2/+3 bonuses (+9/+9 on hold), morale, routs, priests, 17c flee vs 18c bayonets |
 | 🤖 **Computer opponent** | Expands, techs, forms squads, combined-arms waves; officer-led batteries |
-| 🧪 **Never hangs, always tested** | 21-step sim self-test, 11-step UI user-journey test, AI-vs-AI CLI matches, frame-sequence capture → MP4 |
+| 🧪 **Never hangs, always tested** | 28-step sim self-test, 17-step UI user-journey test, AI-vs-AI CLI matches, frame-sequence capture → MP4 |
 
 ![animated battle](app/shots/g2_final.png)
 
@@ -43,8 +43,8 @@ You need: **Godot 4.7**, **Blender 5.2** (CPU Cycles only — no GPU needed),
 ```bat
 cd app
 godot --path .                                   :: play (skirmish by default)
-godot --headless --path . -- --self-test report.json     :: 21-step sim test
-godot --headless --path . -- --ui-test uitest.json       :: 11-step UI journey test
+godot --headless --path . -- --self-test report.json     :: 28-step sim test
+godot --headless --path . -- --ui-test uitest.json       :: 17-step UI journey test
 godot --headless --path . -- --cli cli.json --cli-seconds 60   :: fast AI vs AI
 godot --path . -- --seq shots/j1 --seq-seconds 120 --seq-step 2 --speed 8 --config shots/boost.json --journey   :: record a match
 python tools\seq_to_mp4.py --dir shots/j1 --fps 10        :: assemble journey.mp4
@@ -72,20 +72,27 @@ python tools\seq_to_mp4.py --dir shots/j1 --fps 10        :: assemble journey.mp
 
 ```
 app/
-  scripts/      game sim (game.gd), rendering (world.gd), HUD, input, AI,
-                menu, selftest.gd (21 sim steps), uitest.gd (11 UI steps)
+  scripts/      game sim (game.gd), mapgen (mapgen.gd), rendering (world.gd),
+                HUD, input, AI, menu, selftest.gd (28 sim steps),
+                uitest.gd (17 UI steps)
   assets/models/anim/   baked sheets: 54 units + 215 nation buildings (+stages/rubble)
   assets/models/{obj,tex}/ converted donor meshes (tools/convert_models.py)
-  tools/        bake_sprites.py (Blender baker), copy/convert/extract,
-                seq_to_mp4.py (video assembly)
+  tools/        bake_sprites.py (Blender/Workbench baker), compute_ortho.py,
+                sheet_metrics.py, scan_map.py, copy/convert/extract,
+                seq_to_mp4.py (video assembly), video_build.py / record_session.py
   shots/        screenshots, sequences, test configs (boost.json)
   mechanics.json / MECHANICS.md   every gameplay number + its source
   config.json / selftest.json / uitest.json / cli.json   settings + reports
 docs/
   COMMANDS.md             full manual: flags, tools, when/why, troubleshooting
+  UNIT_BAKING_FIX.md      unit sprite baking: donor .oss format, the bugs + fixes,
+                          frame-by-frame peasant verification (2026-11-20)
   guides/
     GUIDE1.md             round-1 execution plan (superseded by GUIDE2)
     GUIDE2.md             round-2 guide S1-S10, all completed
+    GUIDE3.md             round-3 G1-G16: fidelity, UI, sprites, AI, weak-GPU perf — done
+    GUIDE4.md             round-4 L1-L8: landscape, clusters, height, stumps, anims,
+                          building ghost — in progress (anims/shading applied)
 reference/videos.md  17 gameplay videos + wiki mechanics research
 inbox/backup/  safety copies of every edited script
 ```
@@ -93,10 +100,19 @@ inbox/backup/  safety copies of every edited script
 ## Docs — where to go next
 
 - 🎮 **Playing & testing everything** → [COMMANDS.md](docs/COMMANDS.md) — every
-  Godot flag, every Python tool, when to use which, troubleshooting, acceptance gates
-- 🔨 **How it was built, step by step** → [GUIDE2.md](docs/guides/GUIDE2.md) — the S1–S10
-  execution guide (formation values, upgrade ladders, baker fixes, AI tuning);
-  round 1 lives in [GUIDE1.md](docs/guides/GUIDE1.md)
+  Godot flag, every Python tool (incl. `video_build.py` / `record_session.py` fidelity
+  capture), when to use which, troubleshooting, acceptance gates
+- 🔨 **How it was built, step by step** → [GUIDE3.md](docs/guides/GUIDE3.md)
+  (round 3, G1–G16: fidelity, UI logic, sprite correctness, AI, speed on weak GPUs —
+  all done) and [GUIDE4.md](docs/guides/GUIDE4.md) (round 4, L1–L8: landscape,
+  resource clusters, height, stumps, correct anim cycles, transparent building ghost
+  — in progress). Earlier rounds: [GUIDE2.md](docs/guides/GUIDE2.md) (S1–S10),
+  [GUIDE1.md](docs/guides/GUIDE1.md) (round 1)
+- 🎞️ **How unit sprites are baked** → [UNIT_BAKING_FIX.md](docs/UNIT_BAKING_FIX.md) —
+  the definitive 2026-11-20 fix: donor `.oss`/`.aaf` format, the 5 documented bugs
+  (transposed rotations, de-travel pin, per-action camera, clipped diagonal views,
+  missing attach props) and the frame-by-frame peasant check rolled out to all 54
+  unit keys; dedicated work/gather clips now play instead of the combat attack
 - 📏 **Every number + its source** → [app/MECHANICS.md](app/MECHANICS.md),
   [app/mechanics.json](app/mechanics.json)
 - 🎬 **What "correct" looks like** → [reference/videos.md](reference/videos.md)
