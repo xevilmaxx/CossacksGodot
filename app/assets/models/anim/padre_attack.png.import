@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ds767akyn2eb1"
-path.s3tc="res://.godot/imported/padre_attack.png-1fd09ce6e4ad68debfbee7dd2c5d3e46.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/padre_attack.png"
-dest_files=["res://.godot/imported/padre_attack.png-1fd09ce6e4ad68debfbee7dd2c5d3e46.s3tc.ctex"]
+dest_files=["res://.godot/imported/padre_attack.png-1fd09ce6e4ad68debfbee7dd2c5d3e46.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

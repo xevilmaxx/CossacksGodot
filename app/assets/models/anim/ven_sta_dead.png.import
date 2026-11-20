@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://vrirfq5s6ihi"
-path.s3tc="res://.godot/imported/ven_sta_dead.png-576be7190918e6af64298aa18c636ebe.s3tc.ctex"
+path="res://.godot/imported/ven_sta_dead.png-576be7190918e6af64298aa18c636ebe.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/ven_sta_dead.png"
-dest_files=["res://.godot/imported/ven_sta_dead.png-576be7190918e6af64298aa18c636ebe.s3tc.ctex"]
+dest_files=["res://.godot/imported/ven_sta_dead.png-576be7190918e6af64298aa18c636ebe.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

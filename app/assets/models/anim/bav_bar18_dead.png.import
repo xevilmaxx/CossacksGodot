@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cpsag1p42w0vg"
-path.s3tc="res://.godot/imported/bav_bar18_dead.png-3701d20bdf211bb9295c8212023e4361.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/bav_bar18_dead.png"
-dest_files=["res://.godot/imported/bav_bar18_dead.png-3701d20bdf211bb9295c8212023e4361.s3tc.ctex"]
+dest_files=["res://.godot/imported/bav_bar18_dead.png-3701d20bdf211bb9295c8212023e4361.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

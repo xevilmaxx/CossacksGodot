@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://6ear1lfbrs1k"
-path.s3tc="res://.godot/imported/multicannon_attack.png-9b42c5c2ac055a3e028de92fe08525c1.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/multicannon_attack.png"
-dest_files=["res://.godot/imported/multicannon_attack.png-9b42c5c2ac055a3e028de92fe08525c1.s3tc.ctex"]
+dest_files=["res://.godot/imported/multicannon_attack.png-9b42c5c2ac055a3e028de92fe08525c1.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dix1end62dknf"
-path.s3tc="res://.godot/imported/swi_dip_s2.png-be0f952d0de1b944ae7ebec541af02b8.s3tc.ctex"
+path="res://.godot/imported/swi_dip_s2.png-be0f952d0de1b944ae7ebec541af02b8.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_dip_s2.png"
-dest_files=["res://.godot/imported/swi_dip_s2.png-be0f952d0de1b944ae7ebec541af02b8.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_dip_s2.png-be0f952d0de1b944ae7ebec541af02b8.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bdykgtna0cy4o"
-path.s3tc="res://.godot/imported/pie_hou.png-b8e498d307564cec176c6ed00b72883b.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/pie_hou.png"
-dest_files=["res://.godot/imported/pie_hou.png-b8e498d307564cec176c6ed00b72883b.s3tc.ctex"]
+dest_files=["res://.godot/imported/pie_hou.png-b8e498d307564cec176c6ed00b72883b.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bge2f60alfr4j"
-path.s3tc="res://.godot/imported/chasseur_walk.png-38ca0c8a60c8374a4b08d76099959bfb.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/chasseur_walk.png"
-dest_files=["res://.godot/imported/chasseur_walk.png-38ca0c8a60c8374a4b08d76099959bfb.s3tc.ctex"]
+dest_files=["res://.godot/imported/chasseur_walk.png-38ca0c8a60c8374a4b08d76099959bfb.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

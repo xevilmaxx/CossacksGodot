@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c540bchgtdaij"
-path.s3tc="res://.godot/imported/roundshier_idle.png-23567ec1f13bd6e501ba59b77d7efa73.s3tc.ctex"
+path="res://.godot/imported/roundshier_idle.png-23567ec1f13bd6e501ba59b77d7efa73.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/roundshier_idle.png"
-dest_files=["res://.godot/imported/roundshier_idle.png-23567ec1f13bd6e501ba59b77d7efa73.s3tc.ctex"]
+dest_files=["res://.godot/imported/roundshier_idle.png-23567ec1f13bd6e501ba59b77d7efa73.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

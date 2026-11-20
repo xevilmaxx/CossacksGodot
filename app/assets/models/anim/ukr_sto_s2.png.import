@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bo7nu5e4g6ohn"
-path.s3tc="res://.godot/imported/ukr_sto_s2.png-ad98d8b75fcd9672a044b95e9b159b6e.s3tc.ctex"
+path="res://.godot/imported/ukr_sto_s2.png-ad98d8b75fcd9672a044b95e9b159b6e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/ukr_sto_s2.png"
-dest_files=["res://.godot/imported/ukr_sto_s2.png-ad98d8b75fcd9672a044b95e9b159b6e.s3tc.ctex"]
+dest_files=["res://.godot/imported/ukr_sto_s2.png-ad98d8b75fcd9672a044b95e9b159b6e.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

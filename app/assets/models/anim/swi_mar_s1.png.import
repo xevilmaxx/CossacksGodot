@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dujyrkbe8q1hy"
-path.s3tc="res://.godot/imported/swi_mar_s1.png-ef9325518d3917b11512b33e8293dfdc.s3tc.ctex"
+path="res://.godot/imported/swi_mar_s1.png-ef9325518d3917b11512b33e8293dfdc.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_mar_s1.png"
-dest_files=["res://.godot/imported/swi_mar_s1.png-ef9325518d3917b11512b33e8293dfdc.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_mar_s1.png-ef9325518d3917b11512b33e8293dfdc.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

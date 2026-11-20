@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dfju2vvah26fa"
-path.s3tc="res://.godot/imported/cuirassier_death.png-a7a809d83faa3213d3a1ed26f3210ce0.s3tc.ctex"
+path="res://.godot/imported/cuirassier_death.png-a7a809d83faa3213d3a1ed26f3210ce0.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/cuirassier_death.png"
-dest_files=["res://.godot/imported/cuirassier_death.png-a7a809d83faa3213d3a1ed26f3210ce0.s3tc.ctex"]
+dest_files=["res://.godot/imported/cuirassier_death.png-a7a809d83faa3213d3a1ed26f3210ce0.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

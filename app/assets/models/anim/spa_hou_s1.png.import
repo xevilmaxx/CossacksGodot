@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cj5x2ogfo5ac8"
-path.s3tc="res://.godot/imported/spa_hou_s1.png-5b88d1bdcd1497b2c912686c24151f7e.s3tc.ctex"
+path="res://.godot/imported/spa_hou_s1.png-5b88d1bdcd1497b2c912686c24151f7e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/spa_hou_s1.png"
-dest_files=["res://.godot/imported/spa_hou_s1.png-5b88d1bdcd1497b2c912686c24151f7e.s3tc.ctex"]
+dest_files=["res://.godot/imported/spa_hou_s1.png-5b88d1bdcd1497b2c912686c24151f7e.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

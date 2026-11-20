@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1cb1s5iiyr03"
-path.s3tc="res://.godot/imported/rus_bar_dead.png-504928ca5bf7ef9751d681c7acbb07c4.s3tc.ctex"
+path="res://.godot/imported/rus_bar_dead.png-504928ca5bf7ef9751d681c7acbb07c4.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/rus_bar_dead.png"
-dest_files=["res://.godot/imported/rus_bar_dead.png-504928ca5bf7ef9751d681c7acbb07c4.s3tc.ctex"]
+dest_files=["res://.godot/imported/rus_bar_dead.png-504928ca5bf7ef9751d681c7acbb07c4.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

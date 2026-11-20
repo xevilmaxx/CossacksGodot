@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dvtk1nh16623k"
-path.s3tc="res://.godot/imported/swi_aca_s3.png-7f0196b11027560f93e848db89d50697.s3tc.ctex"
+path="res://.godot/imported/swi_aca_s3.png-7f0196b11027560f93e848db89d50697.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_aca_s3.png"
-dest_files=["res://.godot/imported/swi_aca_s3.png-7f0196b11027560f93e848db89d50697.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_aca_s3.png-7f0196b11027560f93e848db89d50697.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

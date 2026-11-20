@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ko8ivoxcg5p"
-path.s3tc="res://.godot/imported/bav_tow_s3.png-eafdc3241c396117a2455951588a7b53.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/bav_tow_s3.png"
-dest_files=["res://.godot/imported/bav_tow_s3.png-eafdc3241c396117a2455951588a7b53.s3tc.ctex"]
+dest_files=["res://.godot/imported/bav_tow_s3.png-eafdc3241c396117a2455951588a7b53.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

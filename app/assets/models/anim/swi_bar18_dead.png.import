@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvx1gs7wq18vw"
-path.s3tc="res://.godot/imported/swi_bar18_dead.png-2a592a39929abe24dc8a32b32abb9b48.s3tc.ctex"
+path="res://.godot/imported/swi_bar18_dead.png-2a592a39929abe24dc8a32b32abb9b48.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_bar18_dead.png"
-dest_files=["res://.godot/imported/swi_bar18_dead.png-2a592a39929abe24dc8a32b32abb9b48.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_bar18_dead.png-2a592a39929abe24dc8a32b32abb9b48.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

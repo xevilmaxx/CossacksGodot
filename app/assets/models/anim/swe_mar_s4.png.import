@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://5ef8ial23251"
-path.s3tc="res://.godot/imported/swe_mar_s4.png-d437e6f2f7ab7547d98830ce5b00d255.s3tc.ctex"
+path="res://.godot/imported/swe_mar_s4.png-d437e6f2f7ab7547d98830ce5b00d255.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swe_mar_s4.png"
-dest_files=["res://.godot/imported/swe_mar_s4.png-d437e6f2f7ab7547d98830ce5b00d255.s3tc.ctex"]
+dest_files=["res://.godot/imported/swe_mar_s4.png-d437e6f2f7ab7547d98830ce5b00d255.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

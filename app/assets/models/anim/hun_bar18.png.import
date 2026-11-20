@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://do226e7esf10t"
-path.s3tc="res://.godot/imported/hun_bar18.png-4a2d04975b3de45ab1d0bc3436f35e06.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/hun_bar18.png"
-dest_files=["res://.godot/imported/hun_bar18.png-4a2d04975b3de45ab1d0bc3436f35e06.s3tc.ctex"]
+dest_files=["res://.godot/imported/hun_bar18.png-4a2d04975b3de45ab1d0bc3436f35e06.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

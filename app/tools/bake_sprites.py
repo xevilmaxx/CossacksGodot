@@ -512,7 +512,11 @@ def main():
     a=parse_args(); a.game=os.path.abspath(a.game); a.out=os.path.abspath(a.out)
     _ENGINE=a.engine; _SAMPLES=a.samples
     os.makedirs(a.out,exist_ok=True)
-    tmp=os.path.join(a.out,"tmp"); os.makedirs(tmp,exist_ok=True)
+    # Scratch renders + converted textures live OUTSIDE res:// (system temp):
+    # keeping 800+ MB of intermediate PNGs inside the project made Godot
+    # import them all (thousands of .import entries, gigabytes of .godot).
+    import tempfile
+    tmp=os.path.join(tempfile.gettempdir(),"cossacks_bake",os.path.basename(a.out)); os.makedirs(tmp,exist_ok=True)
     idx_path=os.path.join(a.out,"index.json")
     idx=json.load(open(idx_path)) if os.path.exists(idx_path) else {}
     if a.buildings:

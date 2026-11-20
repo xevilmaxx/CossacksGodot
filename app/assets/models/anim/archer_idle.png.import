@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bryiusfddkjx8"
-path.s3tc="res://.godot/imported/archer_idle.png-d6c08f54b2d33eafa8bc1388a7f8bb32.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/archer_idle.png"
-dest_files=["res://.godot/imported/archer_idle.png-d6c08f54b2d33eafa8bc1388a7f8bb32.s3tc.ctex"]
+dest_files=["res://.godot/imported/archer_idle.png-d6c08f54b2d33eafa8bc1388a7f8bb32.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

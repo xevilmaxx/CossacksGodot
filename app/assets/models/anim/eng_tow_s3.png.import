@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c0dth023p0lx0"
-path.s3tc="res://.godot/imported/eng_tow_s3.png-2d28b048142e37d6439a9f0177f14d18.s3tc.ctex"
+path="res://.godot/imported/eng_tow_s3.png-2d28b048142e37d6439a9f0177f14d18.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/eng_tow_s3.png"
-dest_files=["res://.godot/imported/eng_tow_s3.png-2d28b048142e37d6439a9f0177f14d18.s3tc.ctex"]
+dest_files=["res://.godot/imported/eng_tow_s3.png-2d28b048142e37d6439a9f0177f14d18.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

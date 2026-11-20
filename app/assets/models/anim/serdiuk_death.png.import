@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dijtg6rg8pbvm"
-path.s3tc="res://.godot/imported/serdiuk_death.png-624114662bd3b09a024a63eb1ca11f04.s3tc.ctex"
+path="res://.godot/imported/serdiuk_death.png-624114662bd3b09a024a63eb1ca11f04.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/serdiuk_death.png"
-dest_files=["res://.godot/imported/serdiuk_death.png-624114662bd3b09a024a63eb1ca11f04.s3tc.ctex"]
+dest_files=["res://.godot/imported/serdiuk_death.png-624114662bd3b09a024a63eb1ca11f04.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

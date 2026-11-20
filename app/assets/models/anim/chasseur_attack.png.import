@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dn2e1ci54pm7q"
-path.s3tc="res://.godot/imported/chasseur_attack.png-a45f95310326960d36f0258a31c4e30f.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/chasseur_attack.png"
-dest_files=["res://.godot/imported/chasseur_attack.png-a45f95310326960d36f0258a31c4e30f.s3tc.ctex"]
+dest_files=["res://.godot/imported/chasseur_attack.png-a45f95310326960d36f0258a31c4e30f.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

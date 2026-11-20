@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b0t6smy073s74"
-path.s3tc="res://.godot/imported/spa_bar18.png-9a2c4d9b7a4d33e4361708b4f0cc05bd.s3tc.ctex"
+path="res://.godot/imported/spa_bar18.png-9a2c4d9b7a4d33e4361708b4f0cc05bd.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/spa_bar18.png"
-dest_files=["res://.godot/imported/spa_bar18.png-9a2c4d9b7a4d33e4361708b4f0cc05bd.s3tc.ctex"]
+dest_files=["res://.godot/imported/spa_bar18.png-9a2c4d9b7a4d33e4361708b4f0cc05bd.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

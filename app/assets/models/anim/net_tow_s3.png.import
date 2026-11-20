@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bi88ynvil5yea"
-path.s3tc="res://.godot/imported/net_tow_s3.png-623e499f1100f707a36aa3f5dc402073.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/net_tow_s3.png"
-dest_files=["res://.godot/imported/net_tow_s3.png-623e499f1100f707a36aa3f5dc402073.s3tc.ctex"]
+dest_files=["res://.godot/imported/net_tow_s3.png-623e499f1100f707a36aa3f5dc402073.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

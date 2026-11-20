@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvp2flqywf2kd"
-path.s3tc="res://.godot/imported/hussar_idle.png-59c1cf000b50db010acb7811ffdf0395.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/hussar_idle.png"
-dest_files=["res://.godot/imported/hussar_idle.png-59c1cf000b50db010acb7811ffdf0395.s3tc.ctex"]
+dest_files=["res://.godot/imported/hussar_idle.png-59c1cf000b50db010acb7811ffdf0395.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

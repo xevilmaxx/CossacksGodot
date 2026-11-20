@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dioxljhcx75rc"
-path.s3tc="res://.godot/imported/fra_tow_s1.png-d8ee9df862c8cb901f0b8128324afe7f.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/fra_tow_s1.png"
-dest_files=["res://.godot/imported/fra_tow_s1.png-d8ee9df862c8cb901f0b8128324afe7f.s3tc.ctex"]
+dest_files=["res://.godot/imported/fra_tow_s1.png-d8ee9df862c8cb901f0b8128324afe7f.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

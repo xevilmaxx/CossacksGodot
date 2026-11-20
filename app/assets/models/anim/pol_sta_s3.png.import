@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cfpt46myn0r5f"
-path.s3tc="res://.godot/imported/pol_sta_s3.png-e06aacc0b504a654220f7e5d7e8b54a4.s3tc.ctex"
+path="res://.godot/imported/pol_sta_s3.png-e06aacc0b504a654220f7e5d7e8b54a4.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/pol_sta_s3.png"
-dest_files=["res://.godot/imported/pol_sta_s3.png-e06aacc0b504a654220f7e5d7e8b54a4.s3tc.ctex"]
+dest_files=["res://.godot/imported/pol_sta_s3.png-e06aacc0b504a654220f7e5d7e8b54a4.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

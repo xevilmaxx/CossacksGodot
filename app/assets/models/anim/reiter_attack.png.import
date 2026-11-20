@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ct8a3fec84o5j"
-path.s3tc="res://.godot/imported/reiter_attack.png-d040fec11b6a95da767b9110889d5f10.s3tc.ctex"
+path="res://.godot/imported/reiter_attack.png-d040fec11b6a95da767b9110889d5f10.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/reiter_attack.png"
-dest_files=["res://.godot/imported/reiter_attack.png-d040fec11b6a95da767b9110889d5f10.s3tc.ctex"]
+dest_files=["res://.godot/imported/reiter_attack.png-d040fec11b6a95da767b9110889d5f10.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

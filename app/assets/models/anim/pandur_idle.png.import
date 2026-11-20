@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://doh261j1u4hbh"
-path.s3tc="res://.godot/imported/pandur_idle.png-7974beb76f81eacc04276d0a6ce9f3b3.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/pandur_idle.png"
-dest_files=["res://.godot/imported/pandur_idle.png-7974beb76f81eacc04276d0a6ce9f3b3.s3tc.ctex"]
+dest_files=["res://.godot/imported/pandur_idle.png-7974beb76f81eacc04276d0a6ce9f3b3.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

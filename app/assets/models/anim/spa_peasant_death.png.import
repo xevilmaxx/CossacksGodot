@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://hdb0ixs0v0dg"
-path.s3tc="res://.godot/imported/spa_peasant_death.png-872bfe3f4e1f74a89d30e91cbdc29b5d.s3tc.ctex"
+path="res://.godot/imported/spa_peasant_death.png-872bfe3f4e1f74a89d30e91cbdc29b5d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/spa_peasant_death.png"
-dest_files=["res://.godot/imported/spa_peasant_death.png-872bfe3f4e1f74a89d30e91cbdc29b5d.s3tc.ctex"]
+dest_files=["res://.godot/imported/spa_peasant_death.png-872bfe3f4e1f74a89d30e91cbdc29b5d.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

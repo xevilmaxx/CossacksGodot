@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cmawosqur1np7"
-path.s3tc="res://.godot/imported/net_sto_s3.png-faa4d367eaf92e1e0eeec8971e6dd4cb.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/net_sto_s3.png"
-dest_files=["res://.godot/imported/net_sto_s3.png-faa4d367eaf92e1e0eeec8971e6dd4cb.s3tc.ctex"]
+dest_files=["res://.godot/imported/net_sto_s3.png-faa4d367eaf92e1e0eeec8971e6dd4cb.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

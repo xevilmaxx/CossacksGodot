@@ -198,3 +198,21 @@ for readability, composite the donor's own prop meshes instead.
   differences (only `peaaustools.dds` ships) to confirm visually.
 - Headless `--screenshot` currently writes nothing in this environment; visual
   in-game proof still needs a windowed capture or the `test_drive.py` bridge.
+
+## 8. Import & bloat notes (2026-11-20)
+
+Two project-level traps made even correct sheets look bad and huge:
+
+- Every baked PNG was imported as **lossy VRAM (S3TC, quality 0.7)** — the
+  per-file default (`compress/mode=2`, `vram_texture`). At 160 px cells that
+  smears 30 px figures into mush, which is why the game looked worse than the
+  PNGs. Fix: all `anim/*.png.import` set to `compress/mode=0` (lossless;
+  ~173 KB `.ctex` per sheet instead of 2.4 MB S3TC), orphan `*.s3tc.ctex`
+  files (~385 MB) deleted from `.godot/imported`.
+- The baker's scratch dir (`anim/tmp/`: converted donor textures, per-cell
+  renders — **833 MB**) lived inside `res://`, so Godot imported all of it.
+  Fix: scratch moved to the system temp dir (`bake_sprites.py` `main()`),
+  `anim/tmp/` deleted. Re-bakes reconvert donor textures on demand (seconds).
+
+Sheet total is ~280 MB PNG (vs donor units ~212 MB meshes+textures) — inherent
+to 8-dir × ~10-frame RGBA sprites; figures lazy-load per drawn unit.

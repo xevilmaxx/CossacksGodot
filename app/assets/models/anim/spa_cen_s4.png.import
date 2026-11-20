@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://tatf8gykysk7"
-path.s3tc="res://.godot/imported/spa_cen_s4.png-4dfb89c8c999d61f53cc1df26b764613.s3tc.ctex"
+path="res://.godot/imported/spa_cen_s4.png-4dfb89c8c999d61f53cc1df26b764613.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/spa_cen_s4.png"
-dest_files=["res://.godot/imported/spa_cen_s4.png-4dfb89c8c999d61f53cc1df26b764613.s3tc.ctex"]
+dest_files=["res://.godot/imported/spa_cen_s4.png-4dfb89c8c999d61f53cc1df26b764613.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

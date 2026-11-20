@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b77qjbo74gr4r"
-path.s3tc="res://.godot/imported/swe_sta.png-5c2812d9e152e90f84f076aef4dfb859.s3tc.ctex"
+path="res://.godot/imported/swe_sta.png-5c2812d9e152e90f84f076aef4dfb859.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swe_sta.png"
-dest_files=["res://.godot/imported/swe_sta.png-5c2812d9e152e90f84f076aef4dfb859.s3tc.ctex"]
+dest_files=["res://.godot/imported/swe_sta.png-5c2812d9e152e90f84f076aef4dfb859.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

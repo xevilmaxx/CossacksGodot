@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpiavkthm18ur"
-path.s3tc="res://.godot/imported/swi_mar_dead.png-4bb5c99227ced260be4749d24a1fe331.s3tc.ctex"
+path="res://.godot/imported/swi_mar_dead.png-4bb5c99227ced260be4749d24a1fe331.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_mar_dead.png"
-dest_files=["res://.godot/imported/swi_mar_dead.png-4bb5c99227ced260be4749d24a1fe331.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_mar_dead.png-4bb5c99227ced260be4749d24a1fe331.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://djooujjvsweko"
-path.s3tc="res://.godot/imported/swi_bar.png-9daae1f610b16b608cb634d01c6bf528.s3tc.ctex"
+path="res://.godot/imported/swi_bar.png-9daae1f610b16b608cb634d01c6bf528.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_bar.png"
-dest_files=["res://.godot/imported/swi_bar.png-9daae1f610b16b608cb634d01c6bf528.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_bar.png-9daae1f610b16b608cb634d01c6bf528.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

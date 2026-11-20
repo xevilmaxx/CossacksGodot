@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ret7ix2gl550"
-path.s3tc="res://.godot/imported/swi_hou_s1.png-014a7dcb9b5ee526e3a80d098d91a308.s3tc.ctex"
+path="res://.godot/imported/swi_hou_s1.png-014a7dcb9b5ee526e3a80d098d91a308.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_hou_s1.png"
-dest_files=["res://.godot/imported/swi_hou_s1.png-014a7dcb9b5ee526e3a80d098d91a308.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_hou_s1.png-014a7dcb9b5ee526e3a80d098d91a308.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

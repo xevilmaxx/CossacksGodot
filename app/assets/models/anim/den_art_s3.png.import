@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c3wa1x0lmk54m"
-path.s3tc="res://.godot/imported/den_art_s3.png-6c8c6a83b688b186e88cdc50dc14b37b.s3tc.ctex"
+path="res://.godot/imported/den_art_s3.png-6c8c6a83b688b186e88cdc50dc14b37b.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/den_art_s3.png"
-dest_files=["res://.godot/imported/den_art_s3.png-6c8c6a83b688b186e88cdc50dc14b37b.s3tc.ctex"]
+dest_files=["res://.godot/imported/den_art_s3.png-6c8c6a83b688b186e88cdc50dc14b37b.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

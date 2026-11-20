@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bh6wjunoqap7o"
-path.s3tc="res://.godot/imported/aus_sto_dead.png-9a7038a8fc298578e8296cd78193ef10.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/aus_sto_dead.png"
-dest_files=["res://.godot/imported/aus_sto_dead.png-9a7038a8fc298578e8296cd78193ef10.s3tc.ctex"]
+dest_files=["res://.godot/imported/aus_sto_dead.png-9a7038a8fc298578e8296cd78193ef10.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

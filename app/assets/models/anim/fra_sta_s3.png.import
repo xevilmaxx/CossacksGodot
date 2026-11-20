@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cwjgw805q4bqn"
-path.s3tc="res://.godot/imported/fra_sta_s3.png-cc08b8fdab135140671b41746b4f3567.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/fra_sta_s3.png"
-dest_files=["res://.godot/imported/fra_sta_s3.png-cc08b8fdab135140671b41746b4f3567.s3tc.ctex"]
+dest_files=["res://.godot/imported/fra_sta_s3.png-cc08b8fdab135140671b41746b4f3567.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

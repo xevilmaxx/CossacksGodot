@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://5a3ekj3idv0n"
-path.s3tc="res://.godot/imported/por_mil.png-e010c1dbe826557a6399832e34619d56.s3tc.ctex"
+path="res://.godot/imported/por_mil.png-e010c1dbe826557a6399832e34619d56.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/por_mil.png"
-dest_files=["res://.godot/imported/por_mil.png-e010c1dbe826557a6399832e34619d56.s3tc.ctex"]
+dest_files=["res://.godot/imported/por_mil.png-e010c1dbe826557a6399832e34619d56.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://waxoey01b0wk"
-path.s3tc="res://.godot/imported/sax_art_s4.png-23a8121bbf9d3ef886deb5ad7fcf1f86.s3tc.ctex"
+path="res://.godot/imported/sax_art_s4.png-23a8121bbf9d3ef886deb5ad7fcf1f86.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/sax_art_s4.png"
-dest_files=["res://.godot/imported/sax_art_s4.png-23a8121bbf9d3ef886deb5ad7fcf1f86.s3tc.ctex"]
+dest_files=["res://.godot/imported/sax_art_s4.png-23a8121bbf9d3ef886deb5ad7fcf1f86.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

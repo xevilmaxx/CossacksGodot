@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://enom5wh02nit"
-path.s3tc="res://.godot/imported/fra_bla.png-3a0277b3c1193b33ba98e88dab82da3d.s3tc.ctex"
+path="res://.godot/imported/fra_bla.png-3a0277b3c1193b33ba98e88dab82da3d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/fra_bla.png"
-dest_files=["res://.godot/imported/fra_bla.png-3a0277b3c1193b33ba98e88dab82da3d.s3tc.ctex"]
+dest_files=["res://.godot/imported/fra_bla.png-3a0277b3c1193b33ba98e88dab82da3d.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

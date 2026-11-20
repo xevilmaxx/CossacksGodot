@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dwxbihq8m8swo"
-path.s3tc="res://.godot/imported/hussar_attack.png-0905878daaac615e260852756a89cea8.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/hussar_attack.png"
-dest_files=["res://.godot/imported/hussar_attack.png-0905878daaac615e260852756a89cea8.s3tc.ctex"]
+dest_files=["res://.godot/imported/hussar_attack.png-0905878daaac615e260852756a89cea8.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

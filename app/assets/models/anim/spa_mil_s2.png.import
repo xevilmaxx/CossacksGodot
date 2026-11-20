@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cxs1lqnnnks2k"
-path.s3tc="res://.godot/imported/spa_mil_s2.png-85d7d02de29d482261d83b44671d39ea.s3tc.ctex"
+path="res://.godot/imported/spa_mil_s2.png-85d7d02de29d482261d83b44671d39ea.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/spa_mil_s2.png"
-dest_files=["res://.godot/imported/spa_mil_s2.png-85d7d02de29d482261d83b44671d39ea.s3tc.ctex"]
+dest_files=["res://.godot/imported/spa_mil_s2.png-85d7d02de29d482261d83b44671d39ea.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cna6n4tg8jhqp"
-path.s3tc="res://.godot/imported/alg_sto_s4.png-235e501eb468a6494e888d52f0af18e5.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/alg_sto_s4.png"
-dest_files=["res://.godot/imported/alg_sto_s4.png-235e501eb468a6494e888d52f0af18e5.s3tc.ctex"]
+dest_files=["res://.godot/imported/alg_sto_s4.png-235e501eb468a6494e888d52f0af18e5.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

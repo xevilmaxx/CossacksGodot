@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bv8ttnsfr7fg4"
-path.s3tc="res://.godot/imported/por_sta.png-c3489e68e5bbf3dc5917d4eee76cf883.s3tc.ctex"
+path="res://.godot/imported/por_sta.png-c3489e68e5bbf3dc5917d4eee76cf883.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/por_sta.png"
-dest_files=["res://.godot/imported/por_sta.png-c3489e68e5bbf3dc5917d4eee76cf883.s3tc.ctex"]
+dest_files=["res://.godot/imported/por_sta.png-c3489e68e5bbf3dc5917d4eee76cf883.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

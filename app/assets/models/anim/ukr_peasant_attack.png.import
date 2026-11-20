@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c2rdpxpxw0nkt"
-path.s3tc="res://.godot/imported/ukr_peasant_attack.png-fb466bcc72d5d96fb45b9d9fd550b828.s3tc.ctex"
+path="res://.godot/imported/ukr_peasant_attack.png-fb466bcc72d5d96fb45b9d9fd550b828.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/ukr_peasant_attack.png"
-dest_files=["res://.godot/imported/ukr_peasant_attack.png-fb466bcc72d5d96fb45b9d9fd550b828.s3tc.ctex"]
+dest_files=["res://.godot/imported/ukr_peasant_attack.png-fb466bcc72d5d96fb45b9d9fd550b828.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

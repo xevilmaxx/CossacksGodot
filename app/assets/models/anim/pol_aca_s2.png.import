@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c0mhrubm5wv3s"
-path.s3tc="res://.godot/imported/pol_aca_s2.png-d02d62bc53768a13f0fefaee7b948cca.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/pol_aca_s2.png"
-dest_files=["res://.godot/imported/pol_aca_s2.png-d02d62bc53768a13f0fefaee7b948cca.s3tc.ctex"]
+dest_files=["res://.godot/imported/pol_aca_s2.png-d02d62bc53768a13f0fefaee7b948cca.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

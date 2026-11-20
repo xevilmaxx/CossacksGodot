@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bmt4yi8evhv3q"
-path.s3tc="res://.godot/imported/lightinfantry_walk.png-9cab1a7b28f0490eeb21a73617be9315.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/lightinfantry_walk.png"
-dest_files=["res://.godot/imported/lightinfantry_walk.png-9cab1a7b28f0490eeb21a73617be9315.s3tc.ctex"]
+dest_files=["res://.godot/imported/lightinfantry_walk.png-9cab1a7b28f0490eeb21a73617be9315.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

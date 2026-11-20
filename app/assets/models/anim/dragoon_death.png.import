@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bk8spoj3pwt8k"
-path.s3tc="res://.godot/imported/dragoon_death.png-8f8e51be918a2483ef6d82512842710e.s3tc.ctex"
+path="res://.godot/imported/dragoon_death.png-8f8e51be918a2483ef6d82512842710e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/dragoon_death.png"
-dest_files=["res://.godot/imported/dragoon_death.png-8f8e51be918a2483ef6d82512842710e.s3tc.ctex"]
+dest_files=["res://.godot/imported/dragoon_death.png-8f8e51be918a2483ef6d82512842710e.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

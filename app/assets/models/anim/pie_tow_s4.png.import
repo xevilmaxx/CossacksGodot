@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://brlp2vblxb3x1"
-path.s3tc="res://.godot/imported/pie_tow_s4.png-b2b306f36ba7eb56021b52bfcb880a03.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/pie_tow_s4.png"
-dest_files=["res://.godot/imported/pie_tow_s4.png-b2b306f36ba7eb56021b52bfcb880a03.s3tc.ctex"]
+dest_files=["res://.godot/imported/pie_tow_s4.png-b2b306f36ba7eb56021b52bfcb880a03.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

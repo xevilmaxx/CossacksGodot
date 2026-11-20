@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c2wfqr6djbsjg"
-path.s3tc="res://.godot/imported/tur_art_dead.png-5e9fc8abfb50875724b052999d29fe61.s3tc.ctex"
+path="res://.godot/imported/tur_art_dead.png-5e9fc8abfb50875724b052999d29fe61.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/tur_art_dead.png"
-dest_files=["res://.godot/imported/tur_art_dead.png-5e9fc8abfb50875724b052999d29fe61.s3tc.ctex"]
+dest_files=["res://.godot/imported/tur_art_dead.png-5e9fc8abfb50875724b052999d29fe61.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

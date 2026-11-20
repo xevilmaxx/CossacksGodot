@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bt4bjfjjflb8o"
-path.s3tc="res://.godot/imported/pol_bla_s2.png-0214460712696b43c2a3190d9a5d523f.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/pol_bla_s2.png"
-dest_files=["res://.godot/imported/pol_bla_s2.png-0214460712696b43c2a3190d9a5d523f.s3tc.ctex"]
+dest_files=["res://.godot/imported/pol_bla_s2.png-0214460712696b43c2a3190d9a5d523f.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

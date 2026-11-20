@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://5pjgi5y02qq1"
-path.s3tc="res://.godot/imported/vityaz_idle.png-1ec1a77e4c8326dd1b459aa3690d2873.s3tc.ctex"
+path="res://.godot/imported/vityaz_idle.png-1ec1a77e4c8326dd1b459aa3690d2873.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/vityaz_idle.png"
-dest_files=["res://.godot/imported/vityaz_idle.png-1ec1a77e4c8326dd1b459aa3690d2873.s3tc.ctex"]
+dest_files=["res://.godot/imported/vityaz_idle.png-1ec1a77e4c8326dd1b459aa3690d2873.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

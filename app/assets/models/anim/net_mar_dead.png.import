@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dgi7fjpiqtax"
-path.s3tc="res://.godot/imported/net_mar_dead.png-09b33f86e8436cc0302f6a0bde4a1d84.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/net_mar_dead.png"
-dest_files=["res://.godot/imported/net_mar_dead.png-09b33f86e8436cc0302f6a0bde4a1d84.s3tc.ctex"]
+dest_files=["res://.godot/imported/net_mar_dead.png-09b33f86e8436cc0302f6a0bde4a1d84.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

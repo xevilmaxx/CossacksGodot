@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cjp5t8wajrt08"
-path.s3tc="res://.godot/imported/pie_bar_s4.png-5dfa1312fa1e73e24fc73019a7c0bddb.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/pie_bar_s4.png"
-dest_files=["res://.godot/imported/pie_bar_s4.png-5dfa1312fa1e73e24fc73019a7c0bddb.s3tc.ctex"]
+dest_files=["res://.godot/imported/pie_bar_s4.png-5dfa1312fa1e73e24fc73019a7c0bddb.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

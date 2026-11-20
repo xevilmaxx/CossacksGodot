@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cc5dt8sch4oh6"
-path.s3tc="res://.godot/imported/aus_aca_s4.png-7a68f50708e5ef48acf56e8e53379766.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/aus_aca_s4.png"
-dest_files=["res://.godot/imported/aus_aca_s4.png-7a68f50708e5ef48acf56e8e53379766.s3tc.ctex"]
+dest_files=["res://.godot/imported/aus_aca_s4.png-7a68f50708e5ef48acf56e8e53379766.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

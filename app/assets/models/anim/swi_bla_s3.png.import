@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://fvuycspmg2m0"
-path.s3tc="res://.godot/imported/swi_bla_s3.png-95b7b7d25cdb5d4a0bcc76ce709f3a1a.s3tc.ctex"
+path="res://.godot/imported/swi_bla_s3.png-95b7b7d25cdb5d4a0bcc76ce709f3a1a.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swi_bla_s3.png"
-dest_files=["res://.godot/imported/swi_bla_s3.png-95b7b7d25cdb5d4a0bcc76ce709f3a1a.s3tc.ctex"]
+dest_files=["res://.godot/imported/swi_bla_s3.png-95b7b7d25cdb5d4a0bcc76ce709f3a1a.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

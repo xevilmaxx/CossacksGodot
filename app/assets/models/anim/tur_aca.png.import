@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bneppckoswu8w"
-path.s3tc="res://.godot/imported/tur_aca.png-038b96d3a9db19373c10daf0d5078fc1.s3tc.ctex"
+path="res://.godot/imported/tur_aca.png-038b96d3a9db19373c10daf0d5078fc1.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/tur_aca.png"
-dest_files=["res://.godot/imported/tur_aca.png-038b96d3a9db19373c10daf0d5078fc1.s3tc.ctex"]
+dest_files=["res://.godot/imported/tur_aca.png-038b96d3a9db19373c10daf0d5078fc1.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

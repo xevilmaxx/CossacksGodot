@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b7rfvo1j88o1j"
-path.s3tc="res://.godot/imported/hun_tow.png-573ab13e76e70f747507d6679e8d1d30.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/hun_tow.png"
-dest_files=["res://.godot/imported/hun_tow.png-573ab13e76e70f747507d6679e8d1d30.s3tc.ctex"]
+dest_files=["res://.godot/imported/hun_tow.png-573ab13e76e70f747507d6679e8d1d30.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

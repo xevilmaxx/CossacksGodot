@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ccn5k1ck0tsam"
-path.s3tc="res://.godot/imported/swe_mil_dead.png-d0b924f1af852400bbf12fff15343f81.s3tc.ctex"
+path="res://.godot/imported/swe_mil_dead.png-d0b924f1af852400bbf12fff15343f81.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/swe_mil_dead.png"
-dest_files=["res://.godot/imported/swe_mil_dead.png-d0b924f1af852400bbf12fff15343f81.s3tc.ctex"]
+dest_files=["res://.godot/imported/swe_mil_dead.png-d0b924f1af852400bbf12fff15343f81.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

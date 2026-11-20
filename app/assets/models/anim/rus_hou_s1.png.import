@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://r64fbspx2ceg"
-path.s3tc="res://.godot/imported/rus_hou_s1.png-f87db494f8ad9074aa66b39b379df752.s3tc.ctex"
+path="res://.godot/imported/rus_hou_s1.png-f87db494f8ad9074aa66b39b379df752.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/rus_hou_s1.png"
-dest_files=["res://.godot/imported/rus_hou_s1.png-f87db494f8ad9074aa66b39b379df752.s3tc.ctex"]
+dest_files=["res://.godot/imported/rus_hou_s1.png-f87db494f8ad9074aa66b39b379df752.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

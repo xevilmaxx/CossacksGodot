@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cefq3hui07ak7"
-path.s3tc="res://.godot/imported/pikeman18_death.png-247f54b54207a423713c586bc093354c.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/pikeman18_death.png"
-dest_files=["res://.godot/imported/pikeman18_death.png-247f54b54207a423713c586bc093354c.s3tc.ctex"]
+dest_files=["res://.godot/imported/pikeman18_death.png-247f54b54207a423713c586bc093354c.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

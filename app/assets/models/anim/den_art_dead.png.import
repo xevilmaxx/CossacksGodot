@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ixs3nty164po"
-path.s3tc="res://.godot/imported/den_art_dead.png-f360282e6b844a3a3b027a533544b81f.s3tc.ctex"
+path="res://.godot/imported/den_art_dead.png-f360282e6b844a3a3b027a533544b81f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/den_art_dead.png"
-dest_files=["res://.godot/imported/den_art_dead.png-f360282e6b844a3a3b027a533544b81f.s3tc.ctex"]
+dest_files=["res://.godot/imported/den_art_dead.png-f360282e6b844a3a3b027a533544b81f.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

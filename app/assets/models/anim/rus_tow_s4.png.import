@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b735qqqjoq6l6"
-path.s3tc="res://.godot/imported/rus_tow_s4.png-afaaf54cca7f2d83318a5560431429f7.s3tc.ctex"
+path="res://.godot/imported/rus_tow_s4.png-afaaf54cca7f2d83318a5560431429f7.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/rus_tow_s4.png"
-dest_files=["res://.godot/imported/rus_tow_s4.png-afaaf54cca7f2d83318a5560431429f7.s3tc.ctex"]
+dest_files=["res://.godot/imported/rus_tow_s4.png-afaaf54cca7f2d83318a5560431429f7.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

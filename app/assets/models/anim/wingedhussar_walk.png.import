@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cn58ekv60275j"
-path.s3tc="res://.godot/imported/wingedhussar_walk.png-b042f22f1be2f48d7d109d54bbf8809b.s3tc.ctex"
+path="res://.godot/imported/wingedhussar_walk.png-b042f22f1be2f48d7d109d54bbf8809b.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/wingedhussar_walk.png"
-dest_files=["res://.godot/imported/wingedhussar_walk.png-b042f22f1be2f48d7d109d54bbf8809b.s3tc.ctex"]
+dest_files=["res://.godot/imported/wingedhussar_walk.png-b042f22f1be2f48d7d109d54bbf8809b.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

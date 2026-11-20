@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://djm8cqkgi1x65"
-path.s3tc="res://.godot/imported/hetman_death.png-4a818e5b1d0669b2497ecf49c214da69.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/hetman_death.png"
-dest_files=["res://.godot/imported/hetman_death.png-4a818e5b1d0669b2497ecf49c214da69.s3tc.ctex"]
+dest_files=["res://.godot/imported/hetman_death.png-4a818e5b1d0669b2497ecf49c214da69.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

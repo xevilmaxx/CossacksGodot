@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c6a12pqlxxd1i"
-path.s3tc="res://.godot/imported/den_mar_s3.png-4622956d23c33474c85c016b627c76bc.s3tc.ctex"
+path="res://.godot/imported/den_mar_s3.png-4622956d23c33474c85c016b627c76bc.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/den_mar_s3.png"
-dest_files=["res://.godot/imported/den_mar_s3.png-4622956d23c33474c85c016b627c76bc.s3tc.ctex"]
+dest_files=["res://.godot/imported/den_mar_s3.png-4622956d23c33474c85c016b627c76bc.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

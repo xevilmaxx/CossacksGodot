@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b8bqc50rbt82l"
-path.s3tc="res://.godot/imported/tur_bar_dead.png-db8c68ca175f9bce89c61dc8de9ade0d.s3tc.ctex"
+path="res://.godot/imported/tur_bar_dead.png-db8c68ca175f9bce89c61dc8de9ade0d.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/tur_bar_dead.png"
-dest_files=["res://.godot/imported/tur_bar_dead.png-db8c68ca175f9bce89c61dc8de9ade0d.s3tc.ctex"]
+dest_files=["res://.godot/imported/tur_bar_dead.png-db8c68ca175f9bce89c61dc8de9ade0d.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

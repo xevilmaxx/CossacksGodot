@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dyo4h7k7e0ayp"
-path.s3tc="res://.godot/imported/highlander_attack.png-d4dcd4b544595ce6a16a5db707acc7db.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/highlander_attack.png"
-dest_files=["res://.godot/imported/highlander_attack.png-d4dcd4b544595ce6a16a5db707acc7db.s3tc.ctex"]
+dest_files=["res://.godot/imported/highlander_attack.png-d4dcd4b544595ce6a16a5db707acc7db.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

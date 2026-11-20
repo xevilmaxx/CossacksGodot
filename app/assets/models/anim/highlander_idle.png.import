@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cfhm8735bq26l"
-path.s3tc="res://.godot/imported/highlander_idle.png-dffe88288e5d892218990c88cb8986b4.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/highlander_idle.png"
-dest_files=["res://.godot/imported/highlander_idle.png-dffe88288e5d892218990c88cb8986b4.s3tc.ctex"]
+dest_files=["res://.godot/imported/highlander_idle.png-dffe88288e5d892218990c88cb8986b4.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

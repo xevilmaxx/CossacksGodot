@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dhp6dj18u1p1g"
-path.s3tc="res://.godot/imported/aus_hou_dead.png-f31dd1afff64f5a49ab9b842d0fb96cc.s3tc.ctex"
+path="res://.godot/imported/aus_hou_dead.png-f31dd1afff64f5a49ab9b842d0fb96cc.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/aus_hou_dead.png"
-dest_files=["res://.godot/imported/aus_hou_dead.png-f31dd1afff64f5a49ab9b842d0fb96cc.s3tc.ctex"]
+dest_files=["res://.godot/imported/aus_hou_dead.png-f31dd1afff64f5a49ab9b842d0fb96cc.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

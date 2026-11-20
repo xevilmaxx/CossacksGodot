@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ybdwjx7n8m1u"
-path.s3tc="res://.godot/imported/sax_cen_s2.png-9e7d0fd0246a362bc81d4323235ae21e.s3tc.ctex"
+path="res://.godot/imported/sax_cen_s2.png-9e7d0fd0246a362bc81d4323235ae21e.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/sax_cen_s2.png"
-dest_files=["res://.godot/imported/sax_cen_s2.png-9e7d0fd0246a362bc81d4323235ae21e.s3tc.ctex"]
+dest_files=["res://.godot/imported/sax_cen_s2.png-9e7d0fd0246a362bc81d4323235ae21e.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

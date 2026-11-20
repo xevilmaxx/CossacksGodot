@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bxdm5y87amqld"
-path.s3tc="res://.godot/imported/net_bar18_s2.png-f8e7fcb2ed6cc0d62599ad3007d535d1.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/net_bar18_s2.png"
-dest_files=["res://.godot/imported/net_bar18_s2.png-f8e7fcb2ed6cc0d62599ad3007d535d1.s3tc.ctex"]
+dest_files=["res://.godot/imported/net_bar18_s2.png-f8e7fcb2ed6cc0d62599ad3007d535d1.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

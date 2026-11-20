@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cl3ba2rlxdh2e"
-path.s3tc="res://.godot/imported/ukr_dip.png-3f05b65ed4385a6a17f5910c9edfb072.s3tc.ctex"
+path="res://.godot/imported/ukr_dip.png-3f05b65ed4385a6a17f5910c9edfb072.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/ukr_dip.png"
-dest_files=["res://.godot/imported/ukr_dip.png-3f05b65ed4385a6a17f5910c9edfb072.s3tc.ctex"]
+dest_files=["res://.godot/imported/ukr_dip.png-3f05b65ed4385a6a17f5910c9edfb072.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

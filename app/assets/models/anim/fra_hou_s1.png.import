@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://tghoe4i8y24v"
-path.s3tc="res://.godot/imported/fra_hou_s1.png-c5d43ab73eedc70321c48056be1aabcb.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/fra_hou_s1.png"
-dest_files=["res://.godot/imported/fra_hou_s1.png-c5d43ab73eedc70321c48056be1aabcb.s3tc.ctex"]
+dest_files=["res://.godot/imported/fra_hou_s1.png-c5d43ab73eedc70321c48056be1aabcb.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dc21ochuifou1"
-path.s3tc="res://.godot/imported/pru_bar18_dead.png-51a5d32a19c9e2c773a5b6ea71bd7f4f.s3tc.ctex"
+path="res://.godot/imported/pru_bar18_dead.png-51a5d32a19c9e2c773a5b6ea71bd7f4f.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/pru_bar18_dead.png"
-dest_files=["res://.godot/imported/pru_bar18_dead.png-51a5d32a19c9e2c773a5b6ea71bd7f4f.s3tc.ctex"]
+dest_files=["res://.godot/imported/pru_bar18_dead.png-51a5d32a19c9e2c773a5b6ea71bd7f4f.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

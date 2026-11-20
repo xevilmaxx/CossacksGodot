@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://exkvxqfitvhk"
-path.s3tc="res://.godot/imported/aus_hou_s3.png-7122615fc117f2c1fc0b6f44c36d2412.s3tc.ctex"
+path="res://.godot/imported/aus_hou_s3.png-7122615fc117f2c1fc0b6f44c36d2412.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/aus_hou_s3.png"
-dest_files=["res://.godot/imported/aus_hou_s3.png-7122615fc117f2c1fc0b6f44c36d2412.s3tc.ctex"]
+dest_files=["res://.godot/imported/aus_hou_s3.png-7122615fc117f2c1fc0b6f44c36d2412.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

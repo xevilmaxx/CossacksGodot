@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dyopww3a4lge2"
-path.s3tc="res://.godot/imported/pol_peasant_death.png-09916a585a7e7e50cc8e83d01e3f0fe6.s3tc.ctex"
+path="res://.godot/imported/pol_peasant_death.png-09916a585a7e7e50cc8e83d01e3f0fe6.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/pol_peasant_death.png"
-dest_files=["res://.godot/imported/pol_peasant_death.png-09916a585a7e7e50cc8e83d01e3f0fe6.s3tc.ctex"]
+dest_files=["res://.godot/imported/pol_peasant_death.png-09916a585a7e7e50cc8e83d01e3f0fe6.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

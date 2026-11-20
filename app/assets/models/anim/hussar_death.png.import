@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://boa6envg5iicf"
-path.s3tc="res://.godot/imported/hussar_death.png-b97e6c0015665951535e70e4d98f4b89.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/hussar_death.png"
-dest_files=["res://.godot/imported/hussar_death.png-b97e6c0015665951535e70e4d98f4b89.s3tc.ctex"]
+dest_files=["res://.godot/imported/hussar_death.png-b97e6c0015665951535e70e4d98f4b89.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,7 +3,6 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dj2nt3rec66so"
-path.s3tc="res://.godot/imported/bav_bla_s4.png-fb7a38c1664f9c8ac6509b9e9a9be0e2.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -12,11 +11,11 @@ metadata={
 [deps]
 
 source_file="res://assets/models/anim/bav_bla_s4.png"
-dest_files=["res://.godot/imported/bav_bla_s4.png-fb7a38c1664f9c8ac6509b9e9a9be0e2.s3tc.ctex"]
+dest_files=["res://.godot/imported/bav_bla_s4.png-fb7a38c1664f9c8ac6509b9e9a9be0e2.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

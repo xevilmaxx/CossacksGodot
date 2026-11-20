@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://8kn1xyfeg8jh"
-path.s3tc="res://.godot/imported/drummer18_death.png-ec3ccd479d40e674016bdeb41a4581c6.s3tc.ctex"
+path="res://.godot/imported/drummer18_death.png-ec3ccd479d40e674016bdeb41a4581c6.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/drummer18_death.png"
-dest_files=["res://.godot/imported/drummer18_death.png-ec3ccd479d40e674016bdeb41a4581c6.s3tc.ctex"]
+dest_files=["res://.godot/imported/drummer18_death.png-ec3ccd479d40e674016bdeb41a4581c6.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

@@ -3,20 +3,19 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://n87o8nyh8dod"
-path.s3tc="res://.godot/imported/tur_hou_s3.png-5efbd2a13b525a65a29e1edde4101cb4.s3tc.ctex"
+path="res://.godot/imported/tur_hou_s3.png-5efbd2a13b525a65a29e1edde4101cb4.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
 source_file="res://assets/models/anim/tur_hou_s3.png"
-dest_files=["res://.godot/imported/tur_hou_s3.png-5efbd2a13b525a65a29e1edde4101cb4.s3tc.ctex"]
+dest_files=["res://.godot/imported/tur_hou_s3.png-5efbd2a13b525a65a29e1edde4101cb4.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
