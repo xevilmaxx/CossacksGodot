@@ -412,9 +412,11 @@ available in `inbox/backup/` (agentAB → T3W, 11 backups).
   grid_peak **0.0964 → 0.0228** (target <0.20); visual = smooth olive meadow, lattice gone. Gates
   29/29 + 17/17, bench 143.46 ms PASS. Captures t4ground_land/relief.png. Clean state saved as
   `world.gd.bak-T4CLEAN`.
-- T4-BLEND IN_PROGRESS (world.gd only): SAFE subset of donor tile fidelity — 6/3 distinct donor blocks
-  per chunk with exact per-cell coverage, NO gain/patch/hard-rim. Rollback to bak-T4CLEAN if grid_peak
-  ≥0.20, visual worsens, or any gate fails.
+- T4-BLEND KEPT (world.gd, +31/−44, rollback target bak-T4CLEAN untouched): BLOCKS_PER_CHUNK 3→6,
+  PER_ROLE 2→3, exact per-cell coverage (no 2×2 alpha wash), chunk-dominant donor block as base.
+  NO gain/patch/hard-rim symbols remain. Real capture grid_peak 0.0246→**0.0628** (≈ donor-style
+  0.064), all crops <0.20, no lattice; visual = organic donor tile patches. Gates 29/29 + 17/17,
+  bench **109.16 ms** PASS. Capture t4blend_land.png. This is the current accepted ground state.
 
 ## T3 FIX WAVE — CLOSED (but visually rejected by owner — metrics alone were not sufficient)
 

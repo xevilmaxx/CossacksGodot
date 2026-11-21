@@ -1,101 +1,6 @@
 {
   "history": [
     {
-      "ticket": 433,
-      "id": "manifest-t_upgrades",
-      "argv": [
-        "--headless",
-        "--path",
-        "app",
-        "--script",
-        "res://tests/t_upgrades.gd"
-      ],
-      "created": 1795253076.1609695,
-      "wait": 0.0007712841033935547,
-      "run": 2.1942825317382812,
-      "exit": 0,
-      "timeout": 90.0,
-      "status": "ok",
-      "stdout": "app\\.godot_queue\\results\\00000433_manifest-t_upgrades\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000433_manifest-t_upgrades\\stderr.txt"
-    },
-    {
-      "ticket": 434,
-      "id": "manifest-t_roster_scotland",
-      "argv": [
-        "--headless",
-        "--path",
-        "app",
-        "--script",
-        "res://tests/t_roster_scotland.gd"
-      ],
-      "created": 1795253078.5772412,
-      "wait": 0.0007421970367431641,
-      "run": 3.4047577381134033,
-      "exit": 0,
-      "timeout": 90.0,
-      "status": "ok",
-      "stdout": "app\\.godot_queue\\results\\00000434_manifest-t_roster_scotland\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000434_manifest-t_roster_scotland\\stderr.txt"
-    },
-    {
-      "ticket": 435,
-      "id": "manifest-t_squads",
-      "argv": [
-        "--headless",
-        "--path",
-        "app",
-        "--script",
-        "res://tests/t_squads.gd"
-      ],
-      "created": 1795253082.189102,
-      "wait": 0.0008835792541503906,
-      "run": 2.184997081756592,
-      "exit": 0,
-      "timeout": 90.0,
-      "status": "ok",
-      "stdout": "app\\.godot_queue\\results\\00000435_manifest-t_squads\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000435_manifest-t_squads\\stderr.txt"
-    },
-    {
-      "ticket": 436,
-      "id": "manifest-t_multi_ai",
-      "argv": [
-        "--headless",
-        "--path",
-        "app",
-        "--script",
-        "res://tests/t_multi_ai.gd"
-      ],
-      "created": 1795253084.5954638,
-      "wait": 0.0008380413055419922,
-      "run": 2.4764387607574463,
-      "exit": 0,
-      "timeout": 120.0,
-      "status": "ok",
-      "stdout": "app\\.godot_queue\\results\\00000436_manifest-t_multi_ai\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000436_manifest-t_multi_ai\\stderr.txt"
-    },
-    {
-      "ticket": 437,
-      "id": "manifest-t_teams",
-      "argv": [
-        "--headless",
-        "--path",
-        "app",
-        "--script",
-        "res://tests/t_teams.gd"
-      ],
-      "created": 1795253087.2767296,
-      "wait": 0.0007135868072509766,
-      "run": 2.192009210586548,
-      "exit": 0,
-      "timeout": 120.0,
-      "status": "ok",
-      "stdout": "app\\.godot_queue\\results\\00000437_manifest-t_teams\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000437_manifest-t_teams\\stderr.txt"
-    },
-    {
       "ticket": 438,
       "id": "manifest-t_smoke_fx",
       "argv": [
@@ -10957,6 +10862,117 @@
       "status": "ok",
       "stdout": "app\\.godot_queue\\results\\00000933_t4ground-bench\\stdout.txt",
       "stderr": "app\\.godot_queue\\results\\00000933_t4ground-bench\\stderr.txt"
+    },
+    {
+      "ticket": 934,
+      "id": "t4blend-shot-land",
+      "argv": [
+        "--path",
+        "app",
+        "--",
+        "--config",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\terrain_land.json",
+        "--screenshot",
+        "app/shots/t4blend_land.png",
+        "--screenshot-frames",
+        "120",
+        "--timeout",
+        "210"
+      ],
+      "created": 1795281192.7813013,
+      "wait": 0.0008594989776611328,
+      "run": 22.211018800735474,
+      "exit": 0,
+      "timeout": 240.0,
+      "status": "ok",
+      "stdout": "app\\.godot_queue\\results\\00000934_t4blend-shot-land\\stdout.txt",
+      "stderr": "app\\.godot_queue\\results\\00000934_t4blend-shot-land\\stderr.txt"
+    },
+    {
+      "ticket": 935,
+      "id": "t4blend-check",
+      "argv": [
+        "--headless",
+        "--path",
+        "app",
+        "--check-only",
+        "--script",
+        "res://scripts/world.gd"
+      ],
+      "created": 1795281308.3752267,
+      "wait": 0.0007522106170654297,
+      "run": 1.0138328075408936,
+      "exit": 0,
+      "timeout": 180.0,
+      "status": "ok",
+      "stdout": "app\\.godot_queue\\results\\00000935_t4blend-check\\stdout.txt",
+      "stderr": "app\\.godot_queue\\results\\00000935_t4blend-check\\stderr.txt"
+    },
+    {
+      "ticket": 936,
+      "id": "t4blend-selftest",
+      "argv": [
+        "--headless",
+        "--path",
+        "app",
+        "--",
+        "--self-test",
+        "app/selftest.json"
+      ],
+      "created": 1795281316.5479631,
+      "wait": 0.0008502006530761719,
+      "run": 61.388317584991455,
+      "exit": 0,
+      "timeout": 180.0,
+      "status": "ok",
+      "stdout": "app\\.godot_queue\\results\\00000936_t4blend-selftest\\stdout.txt",
+      "stderr": "app\\.godot_queue\\results\\00000936_t4blend-selftest\\stderr.txt"
+    },
+    {
+      "ticket": 937,
+      "id": "t4blend-uitest",
+      "argv": [
+        "--headless",
+        "--path",
+        "app",
+        "--",
+        "--ui-test",
+        "app/uitest.json"
+      ],
+      "created": 1795281393.3654287,
+      "wait": 0.0010387897491455078,
+      "run": 78.60023283958435,
+      "exit": 0,
+      "timeout": 180.0,
+      "status": "ok",
+      "stdout": "app\\.godot_queue\\results\\00000937_t4blend-uitest\\stdout.txt",
+      "stderr": "app\\.godot_queue\\results\\00000937_t4blend-uitest\\stderr.txt"
+    },
+    {
+      "ticket": 938,
+      "id": "t4blend-bench",
+      "argv": [
+        "--headless",
+        "--path",
+        "app",
+        "--",
+        "--config",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\perf_low.json",
+        "--screenshot",
+        "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\qa1_bake_bench.png",
+        "--screenshot-frames",
+        "120",
+        "--timeout",
+        "210.0"
+      ],
+      "created": 1795281486.8641095,
+      "wait": 0.0008761882781982422,
+      "run": 30.80013084411621,
+      "exit": 0,
+      "timeout": 240.0,
+      "status": "ok",
+      "stdout": "app\\.godot_queue\\results\\00000938_t4blend-bench\\stdout.txt",
+      "stderr": "app\\.godot_queue\\results\\00000938_t4blend-bench\\stderr.txt"
     }
   ]
 }

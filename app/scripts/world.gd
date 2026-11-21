@@ -57,11 +57,11 @@ var terrain_masks: Array = []
 # meadows flow across chunk borders with zero repetition seams. Type
 # transitions share one feather mask; mottling uses a world-coherent mask.
 const BLK_CACHE := 32
-# TB-B1a/B1b + QA-P1: cap distinct block textures composited per chunk. 6/4
-# was cold-cache dominated (645 ms bake); 3/2 still shows >=3 donor families
-# plus the textured shore/cliff passes, but halves the blend/grid work.
-const BLOCKS_PER_CHUNK := 3
-const BLOCKS_PER_ROLE := 2
+# T4-BLEND: donor-faithful SAFE SUBSET. Raise the per-chunk distinct-donor cap
+# from 3/2 to 6/3 (base/roles) for real tile variety, still bounded by the
+# BLK_CACHE 32 LRU and re-gated by the N-07 bake bench (max_ms < 250).
+const BLOCKS_PER_CHUNK := 6
+const BLOCKS_PER_ROLE := 3
 var blk_cache := {}
 var blk_order: Array = []
 var ter_water: Image         # diffusewaves2 (512²), mirror-normalised
@@ -1055,22 +1055,21 @@ func _role_block_names(cx: int, cy: int, role: int, already: Array) -> Array:
 		out.append(n)
 	return out
 
-# Composite one cached, mirror-tiled crop per block name over `img`.  Each
-# block's alpha grid holds the fraction of the 4 surrounding cells using that
-# name, bilinearly upscaled to SxS (same smooth grid + blend_rect_mask path the
-# old two-grass mix used).  role_filter >= 0 restricts both the name match and
-# the coverage count to cells of that terrain role, giving sand/cliff bands a
-# role-shaped mask.  Equal neighbours stay pixel-identical; differing ones
-# cross-fade over one tile.
+# T4-BLEND: one cached, mirror-tiled crop per distinct donor block name over
+# `img`. Coverage is now EXACT per cell (no 2x2 fractional wash): a grid node
+# takes the name of its own cell and gets coverage 1 for that name and 0 for
+# all others. The existing bilinear _alpha_mask() upscale feathers only across
+# name borders (one tile wide) - that is the only anti-aliasing. role_filter >=
+# 0 restricts both the name match and coverage to cells of that terrain role;
+# max_alpha/falloff stay as scalar controls for the shore role pass.
 func _composite_blocks(img: Image, cx: int, cy: int, S: int, N: int, names: Array, role_filter: int,
 		max_alpha := 1.0, falloff := 1.0) -> void:
 	if names.is_empty():
 		return
 	var full := Rect2i(0, 0, S, S)
 	var origin := Vector2i.ZERO
-	# QA-P1: one pass over the 2x2 neighbourhood grid computes coverage for
-	# EVERY block name at once. The old code rebuilt the same 33x33 grid once
-	# per name (6/4/4 -> 14 times), which was pure GDScript loop overhead.
+	# Single pass: node (gx,gy) -> the cell whose top-left corner it is. Clamp
+	# the extra N=CHUNK_T+1 row/column onto the last real cell.
 	var nn := names.size()
 	var name_idx := {}
 	for ni in nn:
@@ -1078,28 +1077,17 @@ func _composite_blocks(img: Image, cx: int, cy: int, S: int, N: int, names: Arra
 	var grids: Array = []
 	for ni in nn:
 		grids.append(Image.create(N, N, false, Image.FORMAT_RGB8))
-	var sums := PackedFloat32Array()
-	sums.resize(nn)
 	for gy in N:
 		for gx in N:
-			sums.fill(0.0)
-			var cnt := 0
-			for oy in [-1, 0]:
-				for ox in [-1, 0]:
-					var x: int = cx * CHUNK_T + gx + int(ox)
-					var y: int = cy * CHUNK_T + gy + int(oy)
-					if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
-						var i: int = game._t(x, y)
-						if role_filter < 0 or int(game.terrain[i]) == role_filter:
-							var bn: String = _art_name(i)
-							var idx: int = int(name_idx.get(bn, -1))
-							if idx >= 0:
-								sums[idx] += 1.0
-							cnt += 1
+			var x: int = cx * CHUNK_T + mini(gx, CHUNK_T - 1)
+			var y: int = cy * CHUNK_T + mini(gy, CHUNK_T - 1)
+			var idx: int = -1
+			if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+				var ti: int = game._t(x, y)
+				if role_filter < 0 or int(game.terrain[ti]) == role_filter:
+					idx = int(name_idx.get(_art_name(ti), -1))
 			for ni in nn:
-				var v: float = sums[ni] / maxf(1.0, float(cnt))
-				# TB-B1e: optional soft falloff (gamma >1 shrinks the visible
-				# edge) and a lower alpha ceiling for the shore pass only.
+				var v: float = 1.0 if ni == idx else 0.0
 				if falloff != 1.0:
 					v = pow(v, falloff)
 				v *= max_alpha
@@ -1405,13 +1393,10 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var comp_px := bpx if px > 8 else px
 	var S := CHUNK_T * comp_px
 	var tile_rect := Rect2i(0, 0, comp_px, comp_px)
-	# TB-B1a: start on the single continuous grass surface, then composite one
-	# cached mirror-tiled crop per DISTINCT donor block present in the chunk
-	# through the same smooth 33x33 alpha grid the old two-grass hash mix used.
-	# The block name is no longer discarded as a scalar weight: sand / rock /
-	# sandsea cells now draw their real art.  The distinct set is capped so the
-	# per-chunk bake cost stays bounded.
-	var img := _wrap_crop(_block_img(_winter_art("grass1")), cx * S, cy * S, S)
+	# T4-BLEND: base on the chunk's DOMINANT donor block (not a global grass1),
+	# then composite up to BLOCKS_PER_CHUNK distinct donor names with exact
+	# per-cell coverage. The block name drives the art; the count cap and the
+	# BLK_CACHE 32 LRU bound the bake (N-07 bench re-gated separately).
 	var N := CHUNK_T + 1
 	var full := Rect2i(0, 0, S, S)
 	var origin := Vector2i.ZERO
@@ -1427,9 +1412,11 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 				var bn: String = block_at.call(x, y)
 				counts[bn] = int(counts.get(bn, 0)) + 1
 	var block_names: Array = _rank_blocks(counts, BLOCKS_PER_CHUNK)
-	# TB-B1e: sandsea* is shore-only art. Painting it here chunk-wide at full
-	# alpha (and again in the role pass) was the wide flat tan ring. Reserve it
-	# for the softened role-4 pass below so its real grain shows through.
+	var dominant: String = str(block_names[0]) if not block_names.is_empty() else _winter_art("grass1")
+	var img := _wrap_crop(_block_img(dominant), cx * S, cy * S, S)
+	# TB-B1e: sandsea* is shore-only art. Painting it here chunk-wide was the
+	# wide flat tan ring; reserve it for the softened role-4 pass below. With
+	# exact per-cell coverage only that block's own cells are painted anyway.
 	var base_names: Array = []
 	for bn in block_names:
 		if not str(bn).begins_with("sandsea"):
