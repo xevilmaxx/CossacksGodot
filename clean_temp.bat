@@ -106,7 +106,7 @@ if "%FULL%"=="1" (
     echo       removed ^(reimport on next launch^).
 ) else echo       skipped.
 
-echo [5/5] Generated screenshots...
+echo [6/6] Generated screenshots...
 if "%SHOTS%"=="1" (
     rem Keep only essential images used by README / docs.
     set "KEEP_PNG=portvis-final.png g2_final.png final_nations.png p35_ghost_recheck.png"
