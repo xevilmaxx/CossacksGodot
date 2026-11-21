@@ -42,6 +42,18 @@ data files — see MECHANICS.md and mechanics.json.
 - `--dump-config` / `--config <file>` — see which settings the game runs
   with, or run with another settings file (see config.json).
 
+## Swarm / agent coordination
+
+Agents working on this port (private-use donor build — never redistribute)
+must follow `tools/AGENT_PROTOCOL.md` and see `../docs/COMMANDS.md` (§0 covers
+the runner) before running anything:
+
+| Need | Do |
+|---|---|
+| Launch Godot | `python tools\godot_runner.py run --id <your-id>-<purpose> --timeout <sec> -- <godot args...>` — never `godot` directly |
+| Check / clean the queue | `python tools\godot_runner.py status` / `doctor` |
+| Full command reference | `../docs/COMMANDS.md` |
+
 ## Cross-platform
 
 - Renderer: Compatibility (gl_compatibility) — same picture on Windows,

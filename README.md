@@ -92,7 +92,7 @@ docs/
     GUIDE2.md             round-2 guide S1-S10, all completed
     GUIDE3.md             round-3 G1-G16: fidelity, UI, sprites, AI, weak-GPU perf — done
     GUIDE4.md             round-4 L1-L8: landscape, clusters, height, stumps, anims,
-                          building ghost — in progress (anims/shading applied)
+                          building ghost — implemented; verification pass in progress
 reference/videos.md  17 gameplay videos + wiki mechanics research
 inbox/backup/  safety copies of every edited script
 ```
@@ -106,7 +106,7 @@ inbox/backup/  safety copies of every edited script
   (round 3, G1–G16: fidelity, UI logic, sprite correctness, AI, speed on weak GPUs —
   all done) and [GUIDE4.md](docs/guides/GUIDE4.md) (round 4, L1–L8: landscape,
   resource clusters, height, stumps, correct anim cycles, transparent building ghost
-  — in progress). Earlier rounds: [GUIDE2.md](docs/guides/GUIDE2.md) (S1–S10),
+  — implemented; verification pass in progress). Earlier rounds: [GUIDE2.md](docs/guides/GUIDE2.md) (S1–S10),
   [GUIDE1.md](docs/guides/GUIDE1.md) (round 1)
 - 🎞️ **How unit sprites are baked** → [UNIT_BAKING_FIX.md](docs/UNIT_BAKING_FIX.md) —
   the definitive 2026-11-20 fix: donor `.oss`/`.aaf` format, the 5 documented bugs

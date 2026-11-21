@@ -2,11 +2,32 @@
 """Ortho audit (no longer writes): bake_sprites.py owns per-action
 ortho/center/ax/ay now. This script replicates the baker's torso-based
 in-place logic in pure Python and REPORTS the expected global stand/death
-orthos, so a bad bake can be spotted without Blender."""
-import json, os, struct
+orthos, so a bad bake can be spotted without Blender.
 
-GAME = r"C:\Games\Cossacks 3"
-IDX = r"C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3\app\assets\models\anim\index.json"
+Usage: python tools/compute_ortho.py [--game PATH] [--idx PATH]
+  --game defaults to $COSSACKS3_DIR (or C:\\Games\\Cossacks 3); --idx defaults to
+  the project's app/assets/models/anim/index.json. Donor is private — never
+  redistribute it.
+"""
+import argparse, json, os, struct
+from pathlib import Path
+
+APP = Path(__file__).resolve().parents[1]
+DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
+DEFAULT_IDX = APP / "assets" / "models" / "anim" / "index.json"
+
+def parse_args():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--game", default=DEFAULT_GAME,
+                    help="installed game folder (default: $COSSACKS3_DIR or "
+                         "C:\\Games\\Cossacks 3)")
+    ap.add_argument("--idx", default=str(DEFAULT_IDX),
+                    help="anim/index.json to audit (default: project asset)")
+    return ap.parse_args()
+
+_args = parse_args()
+GAME = str(Path(_args.game).expanduser())
+IDX = str(Path(_args.idx).expanduser())
 
 TABLE = {"peasant":"peaukr","pikeman":"pikeman","pikeman18":"pikeman18",
   "roundshier":"roundshier","musketeer":"musketeer","serdiuk":"serdiuk","strelet":"strelet",

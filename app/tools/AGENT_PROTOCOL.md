@@ -1,0 +1,88 @@
+# Agent protocol — Cossacks 3 → Godot port
+
+You are one worker in a coordinated swarm. Follow these rules exactly. They exist
+to guarantee mutual exclusion, no starvation, and no lost work.
+
+## 0. Boundaries
+- Project root: `C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3`
+- Donor (private use, **never redistribute**): `C:\Games\Cossacks 3`
+- You may **only edit the files listed in your task assignment**. Straying into
+  another worker's files causes lost updates.
+- Before editing any file: copy it to `inbox\backup\<name>.bak-<your-id>`.
+- A missing backup for any owned file BLOCKS merge (REVIEW→QA) — no rollback path.
+
+## 1. THE ONE RULE THAT MATTERS: never launch Godot directly
+Do **not** run `godot ...` from your shell. Doing so creates orphaned 100%-CPU
+zombies (there were 6 of them on 2026-11-21) and races other workers.
+
+Always submit through the serialized runner, with YOUR UNIQUE job id prefix:
+
+```
+python app\tools\godot_runner.py run --id <your-id>-<purpose> --timeout <sec> -- <godot args...>
+```
+
+Examples:
+```
+python app\tools\godot_runner.py run --id agentA-selftest --timeout 180 -- --headless --path app -- --self-test app/selftest.json
+python app\tools\godot_runner.py run --id agentA-shot --timeout 90 -- --path app -- --screenshot app/shots/g4_l1.png --timeout 60
+```
+
+The runner gives every job a FIFO ticket, holds an exclusive lock while Godot
+runs, kills the process tree after `--timeout`, and writes results to
+`app\.godot_queue\results\<ticket>_<id>\`. Check `stdout.txt` / `stderr.txt`
+there. `python app\tools\godot_runner.py status` shows queue depth and wait
+statistics — proof that no job waits forever.
+
+Never call `godot` with `--script` + a script that calls `quit()` in
+`_initialize()`; that is the exact hang pattern already observed.
+
+## 1b. Queue waits are NOT hangs (important at WIP 20)
+
+The runner is FIFO by design, so with ~20 live workers a job can legitimately
+wait 100–400 s before Godot starts. Your shell/tool call has its own timeout
+(often 120 s) that is SHORTER than the runner's queue wait. Do not treat that as
+a hang and do not re-submit the job — re-submitting creates duplicate tickets.
+
+- Give every runner call a generous tool timeout (>= 300000 ms), or start it as
+  a background process and read the result directory later.
+- Check `python app\tools\godot_runner.py status` to see `pending`, `now_serving`
+  and `max wait`. A pending ticket is healthy.
+- Results land in `app\.godot_queue\results\<ticket>_<id>\stdout.txt` and
+  `stderr.txt`. A job that is still pending has no result directory yet.
+- Only a runner result of `timed-out`, `error`, or `skipped` means a problem.
+  `doctor` kills true orphans; `assert_clean.py` asserts none exist.
+
+**Build-wide parse failure = stop re-submitting.** If one runner job reports
+`Could not parse global class ...` (e.g. `C3Game` from `game.gd`), every other
+test will fail at preload for the same reason. Do NOT re-queue your test — that
+only floods the FIFO and starves the syntax check. Wait for a fresh
+`--check-only --script res://scripts/game.gd` job to pass, then run once.
+
+**Job budget (capacity control).** The runner is the throughput bottleneck, so
+do not spend queue slots redundantly:
+- Docs/tool-only tasks with no `.gd` impact: **zero** Godot jobs. Pure-Python
+  `--help` / `py_compile` checks are enough.
+- A code-changing ticket: at most **two** jobs (selftest + uitest). Add a third
+  only for a ticket-specific repro (screenshot/CLI), and name why.
+- Do not re-run a job just because its result was red — read the report first;
+  another worker's in-flight edit may be the cause. Re-runs need a reason.
+- Review/QA desks own the final full-suite run; builders do not duplicate it.
+
+## 2. Acceptance after every change
+```
+python app\tools\godot_runner.py run --id <your-id>-selftest --timeout 180 -- --headless --path app -- --self-test app/selftest.json
+python app\tools\godot_runner.py run --id <your-id>-uitest  --timeout 180 -- --headless --path app -- --ui-test app/uitest.json
+```
+`app/selftest.json` must report `"passed": true` (28/28 steps) and
+`app/uitest.json` must report 17/17. If your change breaks either, revert it
+and report instead of "fixing" the test.
+
+## 3. Style
+- Tabs inside `.gd` files. Match surrounding indentation exactly.
+- Do not rename functions/fields other scripts call.
+- Do not "improve" beyond your assigned step. Small, verifiable diffs only.
+- Run commands from the project root. Quote paths with spaces.
+
+## 4. Reporting
+When done, report: files changed, runner job ids used, selftest/uitest result,
+and any open question. Be concise. If you had to kill a Godot process, say why.

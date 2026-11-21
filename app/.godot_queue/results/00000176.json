@@ -1,0 +1,20 @@
+{
+  "ticket": 176,
+  "id": "t-anim-metrics",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_anim_metrics.gd"
+  ],
+  "created": 1795245661.6506793,
+  "wait": 400.50324630737305,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000176_t-anim-metrics\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000176_t-anim-metrics\\stderr.txt",
+  "error": "ticket 176 waited > 400s for its turn"
+}

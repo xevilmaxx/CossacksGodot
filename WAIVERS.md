@@ -1,0 +1,78 @@
+# Donor-asset waivers (private-use build)
+
+This project is a private-use, singleplayer-skirmish port of Cossacks 3. Donor
+files come from the locally installed game at `C:\Games\Cossacks 3` and are used
+only on the owner's own computer. The brief asked to port "every micro aspect"
+of the donor; two donor aspects were **waived** by coordinator triage decisions
+Q3 and Q4 (`SWARM_BACKLOG.md`, "Coordinator decisions", 2026-11-21).
+
+A waiver here is a **scope decision for this port** — it is not a finding about
+the donor files themselves, and it is not permission to redistribute anything.
+
+## Waiver 1 — `data/video` cinematics (decision Q4)
+
+- **Status:** WAIVED as non-playable.
+- **Rationale:** cinematic video has no bearing on the singleplayer skirmish /
+  historical-battle gameplay this port targets — economy, construction, army,
+  AI, and map generation are unaffected. Embedding video would add bulk with no
+  playable value.
+- **Decision:** do not port, convert, or commit any donor video file. No donor
+  video exists under `app/assets/`. Tracked in backlog ticket N-16.
+
+## Waiver 2 — naval / yacht meshes (decision Q3)
+
+- **Status:** WAIVED **pending evidence**. This is a waiver, **not a verified
+  absence**: it has not been established that the relevant ship meshes are
+  missing or unreadable in the donor.
+- **Rationale:** no naval unit family is implemented, and no port code reads
+  ship meshes, animations, or dock objects. Per the coordinator decision, worker
+  W-01 will inspect `C:\Games\Cossacks 3\data\actors` **read-only** and record
+  whether `.oss` ship meshes exist; there will be no port without readable
+  meshes.
+- **Decision:** no naval port in this scope. Tracked in backlog ticket N-11.
+  This waiver must not be read as "the donor has no naval meshes" — it is a
+  scope deferral until the read-only evidence is recorded.
+
+## Licence families cross-checked
+
+Read-only cross-check of `app/CREDITS.md` and the `app/README.md` licence wording
+against the file families actually present under `app/assets/`:
+
+| Donor family (source path) | Referenced in | Present under `app/assets/` |
+|---|---|---|
+| Terrain textures, DDS → PNG (`data/terrain/tiles/textures`) | CREDITS §Terrain textures | `terrain/*.png` (grass, rock, sand, dirt) — yes |
+| Building ground decals, DDS (`data/terrain/decals`) | CREDITS §Building ground decals | `terrain/decals/*.dds` — yes |
+| UI icons / atlas + cursors, BMP (`data/hud/textures/ui`, `data/cursors`) | CREDITS §UI, GUIDE3 | `ui/*.bmp` (icons, iconsunits, 11 cursors) — yes |
+| Sounds, OGG, 305 files (`data/sounds/*`) | CREDITS §Sounds | `sounds/*.ogg` — yes (305) |
+| Models, OSS/OSM → OBJ + MTL + PNG, 29 (`data/actors`, `data/objects`) | CREDITS §Placeholders/models | `models/obj/*.obj`, `models/tex/*.png` — yes (29) |
+| Baked sprites + animated sheets, PNG | CREDITS §Placeholders/models | `models/sprites/`, `models/anim/` + `index.json` — yes |
+| Map extracts, JSON (`data/maps/missions/*.map`) | CREDITS §Placeholders/maps | `maps/*.json` — yes |
+| Config / scripts read-only (`data/game/var`, `data/scripts`, `data/gui`) | CREDITS §Gameplay numbers | documented in `MECHANICS.md`, no binary copied — yes |
+| Cinematics (`data/video`) | waived, decision Q4 | not present — waived |
+| Naval meshes (`data/actors` ships) | waived, decision Q3 | not present — waived pending evidence |
+
+Godot import metadata (`.import` / `.uid`) and flattened textures are generated
+from the above; donor paths in all documentation point to the local install only.
+
+## Compliance statement
+
+**No donor asset is redistributed.** All donor file paths referenced in this
+document and in `app/CREDITS.md` point to the locally installed game at
+`C:\Games\Cossacks 3` on the owner's own computer. Nothing is downloaded,
+uploaded, published, or shared. Files under `app/assets/` are private-use copies
+and conversions of the owner's own game files and must not be distributed.
+This follows `SWARM_OPS.md` §3.5 and `app/tools/AGENT_PROTOCOL.md` §0.
+
+## Open questions
+
+- Q4 is closed: cinematics are waived and no follow-up evidence is required.
+- **Q3 UPDATE (2026-11-21): naval waiver is WITHDRAWN.** Worker W-01 recorded
+  read-only evidence in `NAVAL_EVIDENCE.md`: 54 naval meshes in
+  `data\actors\units` across 7 families, 5 readable animated `.oss` files
+  (e.g. `yacht.oss`: 311 frames, 30 fps, 20 bones, 584 verts), 8 decorative
+  boat/wreck meshes in `actors\env`, and 24 naval `.aaf` + 9 `.acl` clips in
+  `data\animations`. The meshes ARE readable, so "not present" was wrong.
+  Naval units are a PORT ticket (P-10), not a waiver. The table above is
+  historical; this update supersedes its naval row.
+
+- Inventory reference: `docs/DLC_INVENTORY.md` — read-only DLC-family and `data/video` file inventory (tickets N-15/N-16); no waiver decision changed.

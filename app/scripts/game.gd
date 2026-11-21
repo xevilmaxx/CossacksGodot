@@ -79,10 +79,20 @@ var ai_cheat_t := 0.0
 func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 	if is_blocked(p):
 		return true
+	# A builder must be able to walk over its own unfinished site: the L8
+	# true-scale ink box is large enough to trap a peasant that spawned inside
+	# it, so ignore the site currently under construction (never a finished
+	# building - that keeps the solid-footprint rule intact).
+	var build_target: int = 0
+	var ord: Dictionary = e.get("order", {})
+	if str(ord.get("type", "")) == "build":
+		build_target = int(ord.get("target", 0))
 	# Buildings are solid 2D blocks: the drawn sprite's ink box stays impassable
 	# in every direction, not just the base circle stamped into `blocked`.
 	for b in live_blds:
 		if b.dead:
+			continue
+		if build_target != 0 and int(b.id) == build_target:
 			continue
 		var r: Rect2 = b.get("block_rect", Rect2())
 		if r.has_area() and r.has_point(p):
@@ -182,6 +192,9 @@ func new_player(index: int, name: String, is_ai: bool) -> Dictionary:
 		"damage_mult": {"sword": 1.0, "pike": 1.0, "bullet": 1.0, "arrow": 1.0, "firearrow": 1.0, "cannonball": 1.0, "cannister": 1.0},
 		"gather_mult": {"food": 1.0, "wood": 1.0, "stone": 1.0},
 		"hp_mult": 1.0, "prot_bonus": 0,
+		"rof_mult": {}, "cost_mult": 1.0, "melee_mult": 1.0, "melee_add": 0,
+		"cav_damage_mult": {}, "cav_dmg_add": 0, "cav_prot_bonus": 0,
+		"train_speed_mult": 1.0, "art_cost_mult": 1.0, "art_build_mult": 1.0,
 		"upgrades": [], "research": {},
 		"market_rate": Data.MARKET_RATE}
 
@@ -2013,7 +2026,7 @@ func research(player: int, building: Dictionary, uid: String) -> bool:
 	if u.is_empty() or u.building != building.sid:
 		return false
 	# Ukraine/Turkey/Algeria cannot advance to the 18th century (wiki nations)
-	if uid == "cen_18c" or uid == "art_multi1":
+	if uid == "cen_18c" or uid == "art_multi1" or bool(u.get("no18c", false)):
 		var nnat := str(Data.PLAYER_NATIONS[player]) if player >= 0 and player < Data.PLAYER_NATIONS.size() else ""
 		if bool(Data.NATIONS.get(nnat, {}).get("no18c", false)):
 			if player == 0:
@@ -2103,6 +2116,40 @@ func apply_upgrade(player: int, uid: String) -> void:
 		game_reveal(Vector2(Data.MAP_W, Data.MAP_H), 1e9)
 	if eff.has("unlock_multi"):
 		p["has_multi"] = true
+	# Skirmish combat tree (RB G-02..G-06, G-08). These are inert until the
+	# matching upgrade is researched, so default gameplay is unchanged.
+	var rm: Dictionary = p.get("rof_mult", {})
+	for k in eff.get("rof_mult", {}):
+		rm[k] = float(rm.get(k, 1.0)) * float(eff.rof_mult[k])
+	p["rof_mult"] = rm
+	if eff.has("cost_mult"):
+		p["cost_mult"] = float(p.get("cost_mult", 1.0)) * float(eff.cost_mult)
+	if eff.has("melee_mult"):
+		p["melee_mult"] = float(p.get("melee_mult", 1.0)) * float(eff.melee_mult)
+	if eff.has("melee_add"):
+		p["melee_add"] = int(p.get("melee_add", 0)) + int(eff.melee_add)
+	var cdm: Dictionary = p.get("cav_damage_mult", {})
+	for k in eff.get("cav_damage_mult", {}):
+		cdm[k] = float(cdm.get(k, 1.0)) * float(eff.cav_damage_mult[k])
+	p["cav_damage_mult"] = cdm
+	if eff.has("cav_dmg_add"):
+		p["cav_dmg_add"] = int(p.get("cav_dmg_add", 0)) + int(eff.cav_dmg_add)
+	if eff.has("cav_prot_bonus"):
+		p["cav_prot_bonus"] = int(p.get("cav_prot_bonus", 0)) + int(eff.cav_prot_bonus)
+	if eff.has("train_speed_mult"):
+		p["train_speed_mult"] = float(p.get("train_speed_mult", 1.0)) * float(eff.train_speed_mult)
+	if eff.has("art_cost_mult"):
+		p["art_cost_mult"] = float(p.get("art_cost_mult", 1.0)) * float(eff.art_cost_mult)
+	if eff.has("art_build_mult"):
+		p["art_build_mult"] = float(p.get("art_build_mult", 1.0)) * float(eff.art_build_mult)
+	if eff.has("heal_all"):
+		for hu in entities:
+			if not hu.dead and hu.player == player and hu.kind == "unit":
+				hu.hp = int(hu.max_hp)
+	if eff.has("repair_arty"):
+		for ha in entities:
+			if not ha.dead and ha.player == player and ha.def.get("artillery", false):
+				ha.hp = int(ha.max_hp)
 	post_event("upgraded", Vector2.ZERO, uid)
 	say("%s researched %s." % [p.name, u.name])
 
@@ -2173,8 +2220,13 @@ func effective_speed(e: Dictionary) -> float:
 		s *= 1.35  # routing troops run
 	return s
 
-func effective_damage(player: int, kind: String, pos: Vector2) -> float:
-	var m: float = float(players[player].damage_mult.get(kind, 1.0))
+func effective_damage(player: int, kind: String, pos: Vector2, e: Dictionary = {}) -> float:
+	var p: Dictionary = players[player]
+	var m: float = float(p.damage_mult.get(kind, 1.0))
+	if str(kind) in ["sword", "pike"]:
+		m *= float(p.get("melee_mult", 1.0))
+		if not str(e.get("cavalry", "")).is_empty():
+			m *= float(p.get("cav_damage_mult", {}).get(kind, 1.0))
 	if officer_near(pos, player):
 		m *= 1.0 + Data.OFFICER_DAMAGE_BONUS
 	return m
@@ -3135,6 +3187,14 @@ func _wall_between(a: Vector2, b: Vector2) -> bool:
 
 func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 	var cost: Dictionary = w.get("cost", {})
+	# Flintlock / foundry upgrades scale the listed shot cost.
+	var cscale: float = float(players[e.player].get("cost_mult", 1.0))
+	if e.def.get("artillery", false):
+		cscale *= float(players[e.player].get("art_cost_mult", 1.0))
+	if cscale != 1.0 and not cost.is_empty():
+		cost = cost.duplicate()
+		for k in cost:
+			cost[k] = float(cost[k]) * cscale
 	if not cost.is_empty() and not Data.can_pay(players[e.player].res, cost):
 		e.cooldown = 1.0
 		return
@@ -3153,12 +3213,21 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 			e.cooldown = 0.5
 			return
 	Data.pay(players[e.player].res, cost)
-	e.cooldown = w.cd * (float(e.get("rof_mult", 1.0)) if e.kind == "building" else 1.0)
+	var rof: float = 1.0
+	if e.kind == "building":
+		rof = float(e.get("rof_mult", 1.0))
+	else:
+		rof = float(players[e.player].get("rof_mult", {}).get(str(w.kind), 1.0))
+	e.cooldown = w.cd * rof
 	e.fire_t = time_s
 	stats.shots += 1
 	# officer aura + researched powder upgrades multiply the listed damage
-	var mult: float = effective_damage(e.player, w.kind, e.pos)
+	var mult: float = effective_damage(e.player, w.kind, e.pos, e)
 	var base_dmg := int(round(float(w.dmg) * mult)) + _formation_atk(e, w.kind) + bonus
+	if str(w.kind) in ["sword", "pike"]:
+		base_dmg += int(players[e.player].get("melee_add", 0))
+		if not str(e.get("cavalry", "")).is_empty():
+			base_dmg += int(players[e.player].get("cav_dmg_add", 0))
 	post_event("shot", e.pos, w.kind, e.sid)
 	if int(t.get("player", 0)) == -1:
 		var disp := _dispersion_px("cannonball", e.sid) * float(players[e.player].get("art_acc", 1.0))
@@ -3219,6 +3288,8 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 	# protection + researched armor, upgrade-aware
 	var prot: Array = (t.get("prot", [0, 0, 0, 0, 0, 0]) as Array).duplicate()
 	var pb: int = int(players[t.player].get("prot_bonus", 0))
+	if not str(t.get("cavalry", "")).is_empty():
+		pb += int(players[t.player].get("cav_prot_bonus", 0))
 	if pb != 0:
 		for i in prot.size():
 			prot[i] = int(prot[i]) + pb
@@ -3467,7 +3538,12 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 	# production queue
 	if e.finished and e.queue.size() > 0:
 		var job: Dictionary = e.queue[0]
-		job.t -= dt
+		var tsm: float = 1.0
+		if not str(Data.UNITS.get(job.sid, {}).get("cavalry", "")).is_empty():
+			tsm = float(players[e.player].get("train_speed_mult", 1.0))
+		if e.sid == "art":
+			tsm = float(players[e.player].get("art_build_mult", 1.0))
+		job.t -= dt * tsm
 		e.queue[0] = job
 		if job.t <= 0.0:
 			e.queue.pop_front()

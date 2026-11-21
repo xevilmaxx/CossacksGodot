@@ -39,12 +39,10 @@ from PIL import Image
 APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TERRAIN = os.path.join(APP, "assets", "terrain")
 MASKS = os.path.join(TERRAIN, "masks")
-PATTERNS = os.path.join(os.path.dirname(os.path.dirname(APP)),
-                        "Games", "Cossacks 3", "data", "pattern")
-# Fallback when the donor is installed on another drive.
-if not os.path.isdir(PATTERNS):
-    PATTERNS = r"C:\Games\Cossacks 3\data\pattern"
-GENERATOR_CFG = r"C:\Games\Cossacks 3\data\game\var\generator.cfg"
+# Portable donor root: $COSSACKS3_DIR overrides the historical Windows default.
+GAME = os.path.expanduser(os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3"))
+PATTERNS = os.path.join(GAME, "data", "pattern")
+GENERATOR_CFG = os.path.join(GAME, "data", "game", "var", "generator.cfg")
 
 # Donor terrain ids used by the preview renderer.
 GRASS, DIRT, FLOOR, WATER, SAND, ROCK = range(6)

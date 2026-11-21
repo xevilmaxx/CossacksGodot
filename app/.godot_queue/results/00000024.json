@@ -1,0 +1,22 @@
+{
+  "ticket": 24,
+  "id": "agentG-cli",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795241775.798226,
+  "wait": 209.9477972984314,
+  "run": 16.586847066879272,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000024_agentG-cli\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000024_agentG-cli\\stderr.txt"
+}

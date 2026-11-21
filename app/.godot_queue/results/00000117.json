@@ -1,0 +1,23 @@
+{
+  "ticket": 117,
+  "id": "t-capture-rerun",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_capture.gd"
+  ],
+  "created": 1795244130.976221,
+  "wait": 754.8130452632904,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000117_t-capture-rerun\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000117_t-capture-rerun\\stderr.txt",
+  "error": "ticket 117 was skipped (serving=125)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245447.607746
+}

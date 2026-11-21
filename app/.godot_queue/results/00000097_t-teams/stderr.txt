@@ -1,0 +1,12 @@
+SCRIPT ERROR: Parse Error: Could not preload resource script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_teams.gd:25)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_teams.gd:25)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "idx" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_teams.gd:72)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "roster_ok" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_teams.gd:90)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "ally_excluded" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_teams.gd:108)
+ERROR: Failed to load script "res://tests/t_teams.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

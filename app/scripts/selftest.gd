@@ -408,7 +408,13 @@ func run() -> Dictionary:
 	var fpos := _spot("hou", peasant.pos)
 	if fpos != Vector2.INF:
 		houtest = game.place_building(0, "hou", fpos, true, [peasant])
-		_sim(25.0)
+		# This late-game site can be a long walk from the selected peasant, and
+		# the cap only rises when the house FINISHES. Wait for completion (with
+		# a hard cap) instead of assuming a fixed 25 s is enough.
+		for w in 240:
+			game.tick(0.25)
+			if not houtest.is_empty() and bool(houtest.finished):
+				break
 	var cap1: int = int(game.players[0].farm_cap)
 	if not houtest.is_empty():
 		game.cmd_delete(houtest)

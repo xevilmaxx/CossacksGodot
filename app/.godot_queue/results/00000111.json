@@ -1,0 +1,23 @@
+{
+  "ticket": 111,
+  "id": "agentSC-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795243990.5074778,
+  "wait": 707.3501448631287,
+  "run": 180.58111929893494,
+  "exit": -9,
+  "timeout": 180.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000111_agentSC-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000111_agentSC-uitest\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245441.889511
+}

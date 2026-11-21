@@ -9,10 +9,14 @@ forest come from the pattern passes. We still copy RGB so the format stays
 identical and a future mask with relief/forest data works without a reimport.
 
 Usage (from project root):
-  python app/tools/import_donor_masks.py
+  python app/tools/import_donor_masks.py [--game PATH]
+
+The donor root comes from --game or $COSSACKS3_DIR (default:
+C:/Games/Cossacks 3). Donor files are private use — never redistribute.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 from collections import deque
@@ -20,7 +24,14 @@ from pathlib import Path
 
 from PIL import Image
 
-DONOR = Path(r"C:\Games\Cossacks 3\data\gen\terrainmasks")
+# Portable donor location: $COSSACKS3_DIR overrides the historical Windows
+# default (mirrors copy_assets.py). OUT stays project-relative.
+DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
+
+def donor_for(game):
+    return Path(game).expanduser() / "data" / "gen" / "terrainmasks"
+
+DONOR = donor_for(DEFAULT_GAME)
 OUT = Path(__file__).resolve().parent.parent / "assets" / "terrain" / "masks"
 MANIFEST = OUT / "manifest.json"
 PER_TYPE = 8  # keep the asset set light: enough variety without shipping ~1000 files
@@ -54,13 +65,19 @@ def start_dots(rgb) -> list[list[float]]:
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--game", default=DEFAULT_GAME,
+                    help="installed game folder (default: $COSSACKS3_DIR or C:/Games/Cossacks 3)")
+    a = ap.parse_args()
+    donor = donor_for(a.game)
+
     import numpy as np
 
     OUT.mkdir(parents=True, exist_ok=True)
     types: dict[str, dict] = {}
     for folder in ("land", "nowater2", "mediterranean", "peninsulas",
                    "islands", "continents", "continent"):
-        src = DONOR / folder
+        src = donor / folder
         files = sorted(src.glob("*pl*_gauss.tga"))
         if not files:
             print(f"skip {folder}: no gauss masks")
@@ -87,7 +104,7 @@ def main() -> None:
         print(f"{key}: {len(entry['masks'])} masks")
     data = {
         "version": 1,
-        "source": str(DONOR).replace("\\", "/"),
+        "source": str(donor).replace("\\", "/"),
         "note": "RGB terrain masks: R=relief, G=forest/stone, B=water, white=start",
         "types": types,
     }

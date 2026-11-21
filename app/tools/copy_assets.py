@@ -1,5 +1,6 @@
 # Copies the needed original assets from the installed game into the project.
 # Run:  python tools/copy_assets.py [--game PATH] [--dst PATH]
+#   (game path defaults to $COSSACKS3_DIR or C:\Games\Cossacks 3)
 # Reads only from the game folder; writes only into app/assets/.
 # Cross-platform: uses pathlib, forward slashes, no OS-specific calls.
 # The converted PNGs and OGGs are already committed in app/assets/, so this
@@ -14,7 +15,10 @@ from pathlib import Path
 HERE = Path(__file__).resolve()
 APP = HERE.parents[1]
 DEFAULT_DST = APP / "assets"
-DEFAULT_GAME = Path(r"C:\Games\Cossacks 3")
+# Portable donor location: COSSACKS3_DIR overrides the historical Windows
+# default so existing command lines keep working on Linux/macOS too.
+# Donor is private use only — never redistribute its contents.
+DEFAULT_GAME = Path(os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3"))
 
 try:
     from PIL import Image
@@ -62,7 +66,8 @@ def main() -> int:
     dst_root = Path(args.dst)
     if not game.exists():
         print("game folder not found:", game)
-        print("pass --game PATH on Linux/macOS, e.g. --game ~/games/cossacks3")
+        print("set COSSACKS3_DIR or pass --game PATH on Linux/macOS, "
+              "e.g. --game ~/games/cossacks3")
         return 2
 
     # --- terrain tiles (DDS -> PNG) ---

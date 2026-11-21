@@ -1,0 +1,22 @@
+{
+  "ticket": 4,
+  "id": "agentB-dump7b",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/scan_7.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795241406.9965146,
+  "wait": 0.0013637542724609375,
+  "run": 7.560164451599121,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000004_agentB-dump7b\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000004_agentB-dump7b\\stderr.txt"
+}

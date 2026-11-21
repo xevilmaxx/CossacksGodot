@@ -1,0 +1,6 @@
+SCRIPT ERROR: Parse Error: Could not resolve class "C3Game", because of a parser error.
+   at: GDScript::reload (res://tests/t_water.gd:116)
+SCRIPT ERROR: Parse Error: Could not resolve class "C3Game", because of a parser error.
+   at: GDScript::reload (res://tests/t_water.gd:131)
+ERROR: Failed to load script "res://tests/t_water.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

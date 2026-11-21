@@ -1,0 +1,20 @@
+{
+  "ticket": 124,
+  "id": "t-teams",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_teams.gd"
+  ],
+  "created": 1795244414.5011945,
+  "wait": 470.3864347934723,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 120.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000124_t-teams\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000124_t-teams\\stderr.txt",
+  "error": "ticket 124 was skipped (serving=125)"
+}

@@ -6,10 +6,13 @@ The driver never touches mouse/keyboard — it only polls `shot` + `state`
 and the recorder assembles the MP4 + contact sheet by itself.
 
 Usage:
-  Terminal 1: godot --path app -- --test-api 8142 --timeout 900
+  Terminal 1: launch Godot through the serialized runner (NEVER call `godot`
+              directly) -- see app/tools/godot_runner.py, e.g.
+              python app\\tools\\godot_runner.py run --id agentS-record --timeout 900 -- --path app -- --test-api 8142 --timeout 900
   Terminal 2: python app/tools/record_session.py --port 8142 --out app/shots/session1
 """
 import argparse, json, os, shutil, socket, subprocess, sys, time
+from pathlib import Path
 
 def make_rpc(sock, timeout=60.0):
     buf = bytearray()
@@ -89,13 +92,19 @@ def main():
         print("no frames captured", flush=True)
         return 1
     mp4 = os.path.join(os.path.abspath(a.out), "session.mp4")
-    cmd = [sys.executable, os.path.abspath("app/tools/seq_to_mp4.py"),
+    # Resolve the helper relative to THIS script, not the current working dir.
+    seq_tool = str(Path(__file__).resolve().parent / "seq_to_mp4.py")
+    cmd = [sys.executable, seq_tool,
            "--dir", os.path.abspath(a.out), "--fps", "8", "--out", mp4]
     print("+", " ".join(cmd), flush=True)
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, shell=False)
     print(r.stdout[-1500:])
     if r.returncode != 0:
         print(r.stderr[-2000:])
+        return 1
+    if not os.path.isfile(mp4):
+        print("no MP4 produced (ffmpeg missing?) - contact sheet kept;",
+              "install ffmpeg and re-run seq_to_mp4.py", flush=True)
         return 1
     print("video:", mp4, os.path.getsize(mp4), "bytes,", n, "frames")
     return 0

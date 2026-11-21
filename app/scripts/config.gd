@@ -23,12 +23,10 @@ const DEFAULT := {
 		"vsync": true,
 		"pixels_per_meter": 16.0,
 		"fog_of_war": false,
-		"terrain_px": 16,
+		# Quality preset supplies terrain_px / sprite_cell / fx_cap and the
+		# fog + minimap rates. Keeping high-quality numbers here as defaults
+		# made a low/medium preset only half apply (forced high render cost).
 		"quality": "high",
-		"sprite_cell": 160,
-		"fx_cap": 220,
-		"fog_interval": 0.5,
-		"minimap_interval": 0.25,
 		"unit_scale": 1.25,
 		"show_centroids": false,
 		"units_opaque": true,
@@ -322,7 +320,9 @@ func text(path: String, fallback: String) -> String:
 	return str(v) if (v is String) else fallback
 
 func section(name: String) -> Dictionary:
-	var v: Variant = data.get(name, {})
+	# Go through value() so dotted names such as "controls.hotkeys" reach the
+	# nested table; data.get() treated the whole string as one literal key.
+	var v: Variant = value(name, {})
 	return v if v is Dictionary else {}
 
 # ------------------------------------------------------------------ applying
@@ -339,8 +339,10 @@ func apply() -> void:
 	Data.VSYNC = flag("display.vsync", true)
 	Data.PIXELS_PER_METER = num("display.pixels_per_meter", 16.0)
 	Data.FOG_OF_WAR = flag("display.fog_of_war", false)
-	Data.TERRAIN_PX = int(num("display.terrain_px", 16))
+	# Preset first: it sets the render-cost values, and the explicit display
+	# keys below override only what the person actually wrote in the file.
 	Data.set_quality(text("display.quality", "high"))
+	Data.TERRAIN_PX = clampi(int(num("display.terrain_px", Data.TERRAIN_PX)), 1, 64)
 	Data.SPRITE_CELL = int(num("display.sprite_cell", Data.SPRITE_CELL))
 	Data.FX_CAP = int(num("display.fx_cap", Data.FX_CAP))
 	Data.FOG_INTERVAL = num("display.fog_interval", Data.FOG_INTERVAL)

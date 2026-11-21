@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  PASS  firepower_tiers_depth - bullet damage_mult tiers with >1x = 6 (need >= 3): ["aca_fire1=1.10", "aca_fire2=1.15", "aca_fire3=1.20", "aca_fire4=1.30", "bla_bullet1=1.20", "sta_fire1=1.15"]
+  PASS  firepower_damage_stacks - effective bullet damage 1.000 -> 1.265 (want 1.265, 2 tiers applied)
+  PASS  flintlock_cost_and_rof - cost-reduction effects=["bla_flint1"], rof_mult effects=["aca_rof1", "aca_rof2"]
+  FAIL  bayonet_melee_upgrade - melee_mult ids=[], bayonet/melee damage ids=[]
+  PASS  cavalry_and_drills - cavalry recruit effects=["bla_harness1"], drill effects=["aca_riding1", "sta_fence1", "sta_fire1", "bar_phys1", "bar_music1", "bar_grenade1"]
+  PASS  no_duplicate_application - sword mult 1.000 -> 1.150 -> 1.150, upgrade recorded 1 times

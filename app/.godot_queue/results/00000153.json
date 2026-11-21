@@ -1,0 +1,19 @@
+{
+  "ticket": 153,
+  "id": "t-teams",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_teams.gd"
+  ],
+  "created": 1795245215.9323392,
+  "wait": 192.33829188346863,
+  "run": 6.967977046966553,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000153_t-teams\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000153_t-teams\\stderr.txt"
+}

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Build app/assets/missions.json from the original's own config files.
 
-Reads (when present, all inside C:\\Games\\Cossacks 3 by default):
+Reads (when present, all inside the game folder by default;
+$COSSACKS3_DIR or C:/Games/Cossacks 3):
   data/game/var/campaigns.cfg    - campaign -> missions (tut + nations)
   data/game/var/battles.cfg      - historical battles battle1..8
   data/game/var/generator.cfg    - random-map terrain types
@@ -12,12 +13,17 @@ start_options. The game menu (scripts/menu.gd) reads this file; if it is
 missing the menu falls back to built-in defaults.
 
 Usage:
-  python tools/build_missions.py --game "C:\\Games\\Cossacks 3" --out assets/missions.json
+  python tools/build_missions.py --game "C:/Games/Cossacks 3" --out assets/missions.json
 """
 import argparse
 import json
 import os
 import re
+from pathlib import Path
+
+# Portable donor location: $COSSACKS3_DIR overrides the historical Windows
+# default so existing command lines keep working on Linux/macOS too.
+DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 
 NATIONS = [
     ("aus", "Austria"), ("fra", "France"), ("eng", "England"),
@@ -102,11 +108,12 @@ def parse_battles(txt):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--game", default=r"C:\Games\Cossacks 3")
+    ap.add_argument("--game", default=DEFAULT_GAME,
+                    help="installed game folder (default: $COSSACKS3_DIR or C:/Games/Cossacks 3)")
     ap.add_argument("--out", default=os.path.join("assets", "missions.json"))
     args = ap.parse_args()
 
-    base = args.game
+    base = Path(args.game).expanduser()
     campaigns_txt = _read(os.path.join(base, "data", "game", "var", "campaigns.cfg"))
     battles_txt = _read(os.path.join(base, "data", "game", "var", "battles.cfg"))
     gen_txt = _read(os.path.join(base, "data", "game", "var", "generator.cfg"))

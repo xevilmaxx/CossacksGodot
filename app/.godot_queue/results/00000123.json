@@ -1,0 +1,23 @@
+{
+  "ticket": 123,
+  "id": "t-map-variety-recheck",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_map_variety.gd"
+  ],
+  "created": 1795244335.6124368,
+  "wait": 550.1146562099457,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 120.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000123_t-map-variety-recheck\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000123_t-map-variety-recheck\\stderr.txt",
+  "error": "ticket 123 was skipped (serving=125)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245447.0214632
+}

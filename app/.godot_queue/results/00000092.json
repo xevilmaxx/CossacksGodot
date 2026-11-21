@@ -1,0 +1,20 @@
+{
+  "ticket": 92,
+  "id": "t-squads",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_squads.gd"
+  ],
+  "created": 1795243646.5188937,
+  "wait": 316.313773393631,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000092_t-squads\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000092_t-squads\\stderr.txt",
+  "error": "ticket 92 was skipped (serving=94)"
+}

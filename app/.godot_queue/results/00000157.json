@@ -1,0 +1,19 @@
+{
+  "ticket": 157,
+  "id": "t-multi-ai",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_multi_ai.gd"
+  ],
+  "created": 1795245222.4478502,
+  "wait": 235.03457355499268,
+  "run": 1.2064266204833984,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000157_t-multi-ai\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000157_t-multi-ai\\stderr.txt"
+}

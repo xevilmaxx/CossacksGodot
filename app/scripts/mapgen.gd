@@ -110,7 +110,7 @@ static func _near_water(height: PackedFloat32Array, w: int, h: int) -> PackedByt
 	return near
 
 static func build(map_type: String, seed: int, w: int, h: int, tile: float,
-		quality: String) -> Dictionary:
+		quality: String, depth: int = 0) -> Dictionary:
 	var m := pick(map_type, seed)
 	var height := PackedFloat32Array()
 	height.resize(w * h)
@@ -129,7 +129,16 @@ static func build(map_type: String, seed: int, w: int, h: int, tile: float,
 	var mtex: Texture2D = ResourceLoader.load(path) as Texture2D
 	if mtex == null:
 		push_warning("mapgen: missing mask ", path)
-		return build("land", seed + 1, w, h, tile, quality)
+		# Fall back to a land mask once; if that is missing too (or retries pile
+		# up) return a flat empty map. Never recurse without a bound: with a
+		# missing asset this looped forever and hung map generation.
+		if map_type == "land" or depth >= 4:
+			for i in height.size():
+				height[i] = 0.0
+				forest[i] = 0.0
+			return {"height": height, "forest": forest,
+				"starts": _starts_from_mask({}, w, h, tile), "mask": {}, "water": 0.0}
+		return build("land", seed + 1, w, h, tile, quality, depth + 1)
 	var im: Image = mtex.get_image()
 	if im.get_format() != Image.FORMAT_RGB8:
 		im.convert(Image.FORMAT_RGB8)

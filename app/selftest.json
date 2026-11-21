@@ -1,14 +1,14 @@
 {
-  "passed": false,
+  "passed": true,
   "resources_gathered": {
-    "food": 150,
-    "gold": 311.583999999998,
-    "stone": 10,
+    "food": 2,
+    "gold": 315.743999999998,
+    "stone": 8,
     "trade": 65,
-    "wood": 234
+    "wood": 20
   },
-  "shots_fired": 74,
-  "sim_seconds": 406.6875,
+  "shots_fired": 68,
+  "sim_seconds": 409.21875,
   "steps": [
     {
       "detail": "walked 6.0 m forward (speed 1.5 m/s)",
@@ -27,7 +27,7 @@
     },
     {
       "detail": "house built in 3.1 s of build time (cost 120 wood)",
-      "passed": false,
+      "passed": true,
       "step": "build"
     },
     {
@@ -36,7 +36,7 @@
       "step": "train"
     },
     {
-      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 73 m away, order=gather res=gold node=1078 dist=2.3)",
+      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 70 m away, order=gather res=gold node=1078 dist=2.3)",
       "passed": true,
       "step": "mine"
     },
@@ -46,7 +46,7 @@
       "step": "hud"
     },
     {
-      "detail": "min gap 0.80 m vs bodies (want >= -0.25 tolerance)",
+      "detail": "min gap 0.39 m vs bodies (want >= -0.25 tolerance)",
       "passed": true,
       "step": "no_overlap"
     },
@@ -56,7 +56,7 @@
       "step": "volley"
     },
     {
-      "detail": "priest healed pikeman 30 -> 59 hp",
+      "detail": "priest healed pikeman 30 -> 56 hp",
       "passed": true,
       "step": "heal"
     },
@@ -91,13 +91,13 @@
       "step": "formation"
     },
     {
-      "detail": "stone wall missing",
-      "passed": false,
+      "detail": "stone wall built",
+      "passed": true,
       "step": "wall"
     },
     {
-      "detail": "wall missing, rally set, objectives 2",
-      "passed": false,
+      "detail": "wall ok, rally set, objectives 2",
+      "passed": true,
       "step": "shell"
     },
     {
@@ -111,7 +111,7 @@
       "step": "replenish"
     },
     {
-      "detail": "serdiuk fell back from pikes: yes (3.0 -> 4.5 m)",
+      "detail": "serdiuk fell back from pikes: yes (3.0 -> 3.9 m)",
       "passed": true,
       "step": "flee"
     },
@@ -121,8 +121,8 @@
       "step": "garrison"
     },
     {
-      "detail": "peasant captured: player 1",
-      "passed": false,
+      "detail": "peasant captured: player 0",
+      "passed": true,
       "step": "peasant_capture"
     },
     {
@@ -131,7 +131,7 @@
       "step": "resow"
     },
     {
-      "detail": "cannon shells ground: shots 64 -> 65",
+      "detail": "cannon shells ground: shots 58 -> 59",
       "passed": true,
       "step": "attack_ground"
     },
@@ -146,8 +146,8 @@
       "step": "grid_equiv"
     },
     {
-      "detail": "farm 475 -> 475 -> 475",
-      "passed": false,
+      "detail": "farm 500 -> 525 -> 500",
+      "passed": true,
       "step": "farm_cap"
     },
     {

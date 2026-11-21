@@ -1,0 +1,159 @@
+# Small test: HUD information fidelity (board P-25, RE gap 3).
+#
+# Asserts the INTENDED donor-style economy read-outs driven entirely by real
+# game state: six resource labels, bracketed worker counts, the idle-peasant
+# warning (text + red colour), red deficit colouring and the score line.
+# The HUD is built through the real C3HUD.bind()/hud_report() APIs and its
+# text/colour pass is driven manually with _process(0.0) — no render awaits in
+# headless mode. On a build where the feature has not landed, several checks
+# fail; that is the correct baseline for a pending feature, not a test bug.
+#
+# Run with:
+#   python app\tools\godot_runner.py run --id t-hud-fidelity --timeout 90 -- \
+#       --headless --path app --script res://tests/t_hud_fidelity.gd
+extends SceneTree
+
+const Data = preload("res://scripts/data.gd")
+const C3Game = preload("res://scripts/game.gd")
+const C3HUD = preload("res://scripts/hud.gd")
+
+const OUT_DIR := "res://tests/results"
+
+var _id := "t_hud_fidelity"
+var _checks: Array[Dictionary] = []
+var _ok := true
+var game
+var hud
+
+func check(name: String, cond: bool, detail: String = "") -> void:
+	_checks.append({"name": name, "passed": cond, "detail": detail})
+	print(("  PASS  " if cond else "  FAIL  ") + name + " - " + detail)
+	if not cond:
+		_ok = false
+
+func _write_result() -> void:
+	var abs_dir := ProjectSettings.globalize_path(OUT_DIR)
+	DirAccess.make_dir_recursive_absolute(abs_dir)
+	var path := "%s/%s.json" % [abs_dir, _id]
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		push_error("cannot write test result: " + path)
+		return
+	f.store_string(JSON.stringify({
+		"id": _id,
+		"passed": _ok,
+		"checks": _checks,
+		"unix_ms": Time.get_unix_time_from_system() * 1000.0,
+	}, "\t"))
+	f.close()
+
+func _is_red(c: Color) -> bool:
+	# The donor deficit/warning tint is a strong red (r high, g/b low).
+	return c.r > 0.85 and c.g < 0.65 and c.b < 0.65
+
+func _first_int_after(s: String, prefix: String) -> int:
+	if not s.begins_with(prefix):
+		return -1
+	var parts := s.substr(prefix.length()).split(" ", false)
+	if parts.is_empty():
+		return -1
+	return int(parts[0])
+
+func _label_texts(labels: Array) -> Array:
+	var out: Array = []
+	for l in labels:
+		out.append(str(l.text))
+	return out
+
+func _process_hud() -> void:
+	# Force a fresh economy pass plus the text/colour pass. dt=0 keeps every
+	# timer stable, so nothing depends on frames or rendering.
+	hud.eco_t = 0.0
+	hud._process(0.0)
+
+func _initialize() -> void:
+	Data.AI_ENABLED = false
+	game = C3Game.new()
+	root.add_child(game)
+	game.setup("skirmish")
+
+	# One of the idle starting peasants goes gathering wood: this exercises a
+	# bracketed per-resource worker count while the rest stay idle (for the
+	# idle-peasant warning).
+	var pe := {}
+	for e in game.live_units:
+		if int(e.player) == 0 and str(e.sid) == "peasant":
+			pe = e
+			break
+	if not pe.is_empty():
+		pe.order = {"type": "gather", "res": "wood"}
+
+	hud = C3HUD.new()
+	root.add_child(hud)
+	hud.set_process(false)  # we drive the text/colour pass manually
+	hud.bind(game, null)    # world is not needed for these read-outs
+	hud._recompute_eco()
+	_process_hud()
+
+	var labels: Array = hud.res_labels
+	var report: Dictionary = hud.hud_report()
+
+	# 1. Six resource labels are drawn, each carrying a live value.
+	var six := labels.size() == 6
+	if six:
+		for l in labels:
+			if not (l is Label) or str(l.text).strip_edges() == "":
+				six = false
+	check("six_resource_labels", six and bool(report.get("resource_labels", false)),
+		"res_labels=%d texts=%s hud_report.resource_labels=%s" % [
+			labels.size(), str(_label_texts(labels)), str(report.get("resource_labels", false))])
+
+	# 2. Worker counts are shown as brackets on every resource line, and the
+	#    resource actually being gathered reports a positive bracket count.
+	var wood_i := Data.RES_NAMES.find("wood")
+	var wood_txt := str(labels[wood_i].text) if wood_i >= 0 and labels.size() > wood_i else ""
+	var all_bracketed := true
+	for l in labels:
+		if not str(l.text).contains("["):
+			all_bracketed = false
+	var counts = hud.worker_counts
+	var wood_workers := int(counts.get("wood", 0)) if counts is Dictionary else 0
+	check("worker_counts_brackets",
+		all_bracketed and wood_workers >= 1 and wood_txt.contains("[%d]" % wood_workers),
+		"wood_workers=%d wood_line='%s' all_bracketed=%s worker_counts=%s" % [
+			wood_workers, wood_txt, str(all_bracketed), str(counts)])
+
+	# 3. Idle-villager warning text appears while peasants are idle.
+	var idle := int(hud.idle_count)
+	var eco_txt := str(hud.eco_label.text) if hud.eco_label != null else ""
+	var idle_shown := idle > 0 and _first_int_after(eco_txt, "idle ") == idle
+	check("idle_warning_text", idle_shown,
+		"idle_count=%d eco_label='%s'" % [idle, eco_txt])
+
+	# 4. The same warning is tinted red, not the normal label colour.
+	var eco_col: Color = hud.eco_label.get_theme_color("font_color") if hud.eco_label != null else Color(1, 1, 1)
+	check("idle_warning_colour", _is_red(eco_col),
+		"idle=%d eco_label font_color=%s" % [idle, str(eco_col)])
+
+	# 5. Deficit colouring: famine (food) and gold-famine (gold) turn their
+	#    resource labels red, using the sim's own flags.
+	var food_i := Data.RES_NAMES.find("food")
+	var gold_i := Data.RES_NAMES.find("gold")
+	game.players[0]["famine"] = true
+	game.players[0]["gold_famine_t"] = 1.0
+	_process_hud()
+	var food_red := food_i >= 0 and _is_red(labels[food_i].get_theme_color("font_color"))
+	var gold_red := gold_i >= 0 and _is_red(labels[gold_i].get_theme_color("font_color"))
+	check("red_deficit_colouring", food_red and gold_red,
+		"food_red=%s gold_red=%s res_deficit=%s" % [
+			str(food_red), str(gold_red), str(hud.res_deficit)])
+
+	# 6. The status line carries the player's score.
+	var status := str(hud.status_label.text) if hud.status_label != null else ""
+	var score := int(game.players[0].score)
+	check("score_text", status.contains("score") and status.contains(str(score)),
+		"status='%s' score=%d" % [status, score])
+
+	_write_result()
+	# Never call quit() directly from _initialize() (hangs in Godot 4.7).
+	call_deferred("quit", 0 if _ok else 1)

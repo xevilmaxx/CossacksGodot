@@ -3,13 +3,17 @@
 
 Run headless from the project folder:
 
-    blender.exe --background --factory-startup --python tools/render_models.py -- \
+    blender --background --factory-startup --python tools/render_models.py -- \
         --manifest assets/models/manifest.json --out assets/models/sprites
 
 For every model in the manifest one PNG per viewing direction is written
 (sid.png for a single direction, sid_000.png ... for several).  The camera is
 orthographic, at the original game's low three-quarter view, with a
 transparent background, so the sprites drop straight into the 2-D game.
+
+Portability: run with `blender` (or `blender.exe` on Windows). This file is a
+Blender host script (imports bpy), not a launcher, so it needs no shutil.which.
+All paths are supplied on the command line; none are hardcoded here.
 """
 from __future__ import annotations
 

@@ -1,0 +1,23 @@
+{
+  "ticket": 82,
+  "id": "agentG2-cli",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795243434.0713267,
+  "wait": 347.26045632362366,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 180.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000082_agentG2-cli\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000082_agentG2-cli\\stderr.txt",
+  "error": "ticket 82 was skipped (serving=86)"
+}

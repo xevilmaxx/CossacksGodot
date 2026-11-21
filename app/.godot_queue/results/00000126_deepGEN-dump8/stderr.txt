@@ -1,0 +1,34 @@
+SCRIPT ERROR: Parse Error: Could not parse global class "C3Game" from "res://scripts/game.gd".
+   at: GDScript::reload (res://scripts/main.gd:44)
+SCRIPT ERROR: Parse Error: Could not resolve class "C3Game", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:347)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "bind".
+   at: GDScript::reload (res://scripts/main.gd:375)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "homes" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:382)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "bind".
+   at: GDScript::reload (res://scripts/main.gd:389)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "bind".
+   at: GDScript::reload (res://scripts/main.gd:404)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "homes2" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:405)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "_init".
+   at: GDScript::reload (res://scripts/main.gd:408)
+SCRIPT ERROR: Parse Error: Could not resolve class "C3Game", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:461)
+SCRIPT ERROR: Parse Error: Could not resolve class "C3Game", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:472)
+SCRIPT ERROR: Parse Error: Could not resolve class "C3Game", because of a parser error.
+   at: GDScript::reload (res://scripts/main.gd:510)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "homes" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:522)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "homes2" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/main.gd:549)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "bind".
+   at: GDScript::reload (res://scripts/main.gd:1286)
+SCRIPT ERROR: Parse Error: Could not resolve external class member "bind".
+   at: GDScript::reload (res://scripts/main.gd:1299)
+ERROR: Failed to load script "res://scripts/main.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+
+[runner] KILLED after 300.0s (hard timeout)

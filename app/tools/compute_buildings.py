@@ -7,10 +7,13 @@ fraction of every finished/stage/dead PNG, so world.gd can draw true donor
 sizes (a 12 m town hall next to 2 m peasants) instead of the 4.5-8 m fudge.
 Writes assets/models/anim/buildings.json: {key: {ortho, cell, ink:[x0,y0,x1,y1]}}."""
 import json, os, struct
+from pathlib import Path
 from PIL import Image
 
-GAME = r"C:\Games\Cossacks 3"
-ANIM = r"C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3\app\assets\models\anim"
+# Portable roots: $COSSACKS3_DIR overrides the historical Windows donor
+# default; ANIM is derived from this file so no username is baked in.
+GAME = Path(os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")).expanduser()
+ANIM = Path(__file__).resolve().parents[1] / "assets" / "models" / "anim"
 NATIONS = ["ukr","rus","pol","aus","fra","eng","spa","swe","pru","ven","tur","alg","net","den","por","pie","sax","bav","hun","swi"]
 BLDS = [("cen","cen"),("hou","hou"),("bar","bar"),("sta","sta"),("bla","bla"),("aca","aca"),("art","art"),("sto","sto"),("mil","mil"),("mar","mar"),("tow","tow"),("ba2","bar18"),("dip","dip")]
 

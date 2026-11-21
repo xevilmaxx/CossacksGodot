@@ -1,0 +1,27 @@
+{
+  "_readme": [
+    "An example of a second settings file.",
+    "Start the game with:  godot --path . -- --config tools/example-config.json",
+    "It is merged over config.json, so only the keys below are changed.",
+    "This example makes a bigger map, more peasants, tougher peasants,",
+    "a different attack key and a score-based victory."
+  ],
+
+  "gameplay": {
+    "map_width_tiles": 200,
+    "map_height_tiles": 200,
+    "start_peasants": 16,
+    "victory": "score",
+    "score_limit": 8000
+  },
+
+  "units": {
+    "peasant": { "hp": 120, "speed": 1.8 }
+  },
+
+  "controls": {
+    "hotkeys": {
+      "attack_move": "Q"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+ERROR: Parameter "data.tree" is null.
+   at: get_tree (scene/main/node.h:559)
+   GDScript backtrace (most recent call first):
+       [0] bind (res://scripts/hud.gd:89)
+       [1] _initialize (res://tests/t_hud_fidelity.gd:94)
+SCRIPT ERROR: Invalid call. Nonexistent function 'get_theme_color_override' in base 'Label'.
+   at: _initialize (res://tests/t_hud_fidelity.gd:134)
+   GDScript backtrace (most recent call first):
+       [0] _initialize (res://tests/t_hud_fidelity.gd:134)
+
+[runner] KILLED after 90.0s (hard timeout)

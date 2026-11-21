@@ -6,7 +6,9 @@ extend 2 m forward -> body drawn 1 m back = visible pop at transitions).
 Idle cx keeps the torso fixed while weapons sweep (donor-like). Feet stay
 per-action (lunges/crouches plant correctly). Idempotent."""
 import json
-IDX = r"C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3\app\assets\models\anim\index.json"
+from pathlib import Path
+
+IDX = Path(__file__).resolve().parents[1] / "assets" / "models" / "anim" / "index.json"
 idx = json.load(open(IDX, encoding="utf-8"))
 n = 0
 for key, info in idx.items():

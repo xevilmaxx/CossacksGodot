@@ -1,0 +1,20 @@
+{
+  "ticket": 6,
+  "id": "agentA-diag1",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795241433.318571,
+  "wait": 4.872590065002441,
+  "run": 30.389448642730713,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000006_agentA-diag1\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000006_agentA-diag1\\stderr.txt"
+}

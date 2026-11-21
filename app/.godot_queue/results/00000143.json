@@ -1,0 +1,20 @@
+{
+  "ticket": 143,
+  "id": "t-roster-scotland",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_roster_scotland.gd"
+  ],
+  "created": 1795244959.17779,
+  "wait": 228.52108502388,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000143_t-roster-scotland\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000143_t-roster-scotland\\stderr.txt",
+  "error": "ticket 143 was skipped (serving=144)"
+}

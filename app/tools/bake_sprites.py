@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Bake ANIMATED 8-direction sprite sheets from original .oss meshes.
-Run: blender.exe --background --factory-startup --python tools/bake_sprites.py -- \
+Run: blender --background --factory-startup --python tools/bake_sprites.py -- \
      --game "C:\\Games\\Cossacks 3" --out assets/models/anim [--only sid,sid] [--size 160]
+  Blender is found on PATH (a launcher can use shutil.which("blender")). On
+  Linux/macOS set COSSACKS3_DIR or pass --game; --game defaults to
+  $COSSACKS3_DIR (or C:\\Games\\Cossacks 3). Donor is private — never redistribute.
 Sheets: <key>_<action>.png, cols=8 dirs (0,45..315), rows=sampled frames.
 index.json: {key: {"cell": N, "actions": {action: {"frames": n, "duration": s, "loop": bool}}}}
 GUIDE1.md (docs/guides) Step 1. Minimal syntax fixes vs plan draft:
@@ -10,12 +13,25 @@ GUIDE1.md (docs/guides) Step 1. Minimal syntax fixes vs plan draft:
 - bake_building center Vector missing commas fixed
 """
 import argparse, json, math, os, struct, sys
-_BLENDER_PY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "blender_py")
-if os.path.isdir(_BLENDER_PY) and _BLENDER_PY not in sys.path:
-    sys.path.insert(0, _BLENDER_PY)
-import bpy
-from mathutils import Vector
-from PIL import Image
+from pathlib import Path
+
+# Pure-python `--help` must parse without Blender installed, so defer the
+# Blender-only imports when help was requested (no scene work happens then).
+_WANT_HELP = any(a in ("-h", "--help") for a in sys.argv[1:])
+if not _WANT_HELP:
+    _BLENDER_PY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "blender_py")
+    if os.path.isdir(_BLENDER_PY) and _BLENDER_PY not in sys.path:
+        sys.path.insert(0, _BLENDER_PY)
+    import bpy
+    from mathutils import Vector
+    from PIL import Image
+else:
+    bpy = None
+    Vector = None
+    Image = None
+
+# Portable donor-default: COSSACKS3_DIR overrides the historical Windows path.
+DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 
 # GPU-SAFE defaults: Cycles on CPU never touches the (weak) GPU.
 # Overridden from CLI in main().
@@ -23,10 +39,15 @@ _ENGINE = "cycles"
 _SAMPLES = 4
 
 def parse_args():
-    rest = sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else []
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--game", required=True); ap.add_argument("--out", required=True)
-    ap.add_argument("--only", default=""); ap.add_argument("--size", type=int, default=160)
+    # Under Blender the real arguments follow `--`; under plain
+    # `python tools/bake_sprites.py ...` they are sys.argv[1:] (so --help works).
+    rest = sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else sys.argv[1:]
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--game", default=DEFAULT_GAME,
+                    help="installed game folder (default: $COSSACKS3_DIR or "
+                         "C:\\Games\\Cossacks 3)")
+    ap.add_argument("--out", required=True); ap.add_argument("--only", default="")
+    ap.add_argument("--size", type=int, default=160)
     ap.add_argument("--samples", type=int, default=4)
     ap.add_argument("--engine", default="cycles", choices=["cycles", "eevee", "workbench"])
     ap.add_argument("--buildings", action="store_true")
@@ -509,7 +530,9 @@ def bake_building(game,out,nat,bld,size,tmp,out_sid=""):
 
 def main():
     global _ENGINE, _SAMPLES
-    a=parse_args(); a.game=os.path.abspath(a.game); a.out=os.path.abspath(a.out)
+    a=parse_args()
+    a.game=str(Path(a.game).expanduser().resolve())
+    a.out=str(Path(a.out).expanduser().resolve())
     _ENGINE=a.engine; _SAMPLES=a.samples
     os.makedirs(a.out,exist_ok=True)
     # Scratch renders + converted textures live OUTSIDE res:// (system temp):

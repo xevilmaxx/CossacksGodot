@@ -62,7 +62,7 @@ SAFETY RULES (the owner's GPU is weak and once shut the PC down):
   `world.gd _bld_anim/_bld_tex`. Static fallbacks in `assets/models/sprites/`.
 - Tools: `app/tools/bake_sprites.py` (CPU skinning + Blender CPU Cycles +
   Pillow sheets; `--only`, `--buildings`, `--size`, `--engine`, `--samples`).
-- Tests: `selftest.gd` 21 steps, `--cli` AI-vs-AI, `--screenshot`.
+- Tests: `selftest.gd` 29 steps (28-pass gate; 21 at GUIDE2 authoring), `--cli` AI-vs-AI, `--screenshot`.
 - HUD auto-renders a research button for EVERY entry in `Data.UPGRADES`
   whose `building` matches the selected building's sid (hud.gd ~line 322).
   **So new upgrades only need a data entry + an effect handler.**

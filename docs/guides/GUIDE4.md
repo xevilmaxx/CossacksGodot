@@ -2294,3 +2294,15 @@ GATES: `godot --headless --path app -- --self-test` keeps the "mine" and
   drawn); windowed screenshot runs cleanly; the parallel unified-mine
   regression test passes 11/11. No mapgen placement change was needed —
   the generator was right, the renderer was the whole bug.
+
+SCAN-NOTE-2026-11-21 agentB (evidence: docs/audit/GEN.md, deep-GEN): scan_map.py's
+  fixed 25-tile reach radius was a STALE QA THRESHOLD from the old 160-tile map,
+  not a generator defect. At the configured 320 tiles the donor-faithful
+  generator scales mine/stone distances by s = map_w/160 = 2.0
+  (pattern_gen.gd:47), so ores correctly sit 28-44 tiles from starts; donor
+  cMapSize=640 confirms that scaling. Fix in the JUDGE only:
+  reach_radius(w)=round(25*w/160) -> 25 tiles at 160 (unchanged), 50 at 320.
+  Re-scan seeds 7/8/9: reachability 0/3 -> 3/3. No generator knob changed.
+  Remaining reds (patches 306/315/303, clear 94% seed 8, cliff 0% seed 9)
+  come from game.gd:471 sparse sod paint and game.gd:487 post-collision height
+  mutation - generator owner's files, deliberately untouched here.

@@ -1,0 +1,22 @@
+{
+  "ticket": 159,
+  "id": "t-hud-fidelity",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_hud_fidelity.gd"
+  ],
+  "created": 1795245225.8769825,
+  "wait": 281.0010221004486,
+  "run": 90.34033226966858,
+  "exit": -9,
+  "timeout": 90.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000159_t-hud-fidelity\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000159_t-hud-fidelity\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245723.8200016
+}

@@ -1,0 +1,22 @@
+{
+  "ticket": 42,
+  "id": "agentB-dump9",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/scan_9.json",
+    "--seed",
+    "9"
+  ],
+  "created": 1795242010.5460796,
+  "wait": 431.81427001953125,
+  "run": 12.152320384979248,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000042_agentB-dump9\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000042_agentB-dump9\\stderr.txt"
+}

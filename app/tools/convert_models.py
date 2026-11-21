@@ -12,9 +12,11 @@ the game draws are rendered from those .obj files by render_models.py.
 
 Usage:
     python tools/convert_models.py --game "C:\\Games\\Cossacks 3" --out assets/models
+    # or set COSSACKS3_DIR and omit --game:
+    COSSACKS3_DIR=/path/to/game python tools/convert_models.py --out assets/models
 
 Everything is read from the installed game; nothing is written outside the
-project folder.
+project folder. The donor is private use only — never redistribute it.
 """
 from __future__ import annotations
 
@@ -23,6 +25,10 @@ import json
 import os
 import struct
 import sys
+from pathlib import Path
+
+# Portable donor-default: COSSACKS3_DIR overrides the historical Windows path.
+DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 
 try:
     from PIL import Image
@@ -239,12 +245,15 @@ def env_models(game: str) -> list:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--game", required=True, help="the installed game folder")
+    ap.add_argument("--game", default=DEFAULT_GAME,
+                    help="the installed game folder (default: $COSSACKS3_DIR "
+                         "or C:\\Games\\Cossacks 3)")
     ap.add_argument("--out", required=True, help="the folder inside the project")
     args = ap.parse_args()
 
-    game = os.path.abspath(args.game)
-    out = os.path.abspath(args.out)
+    # expanduser makes ~/: Linux/macOS paths work; Path.resolve is cross-platform.
+    game = str(Path(args.game).expanduser().resolve())
+    out = str(Path(args.out).expanduser().resolve())
     obj_dir = os.path.join(out, "obj")
     tex_dir = os.path.join(out, "tex")
     os.makedirs(obj_dir, exist_ok=True)

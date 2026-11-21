@@ -1,0 +1,22 @@
+{
+  "ticket": 149,
+  "id": "agentO5-cli",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795245211.862772,
+  "wait": 0.0011148452758789062,
+  "run": 31.463839769363403,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000149_agentO5-cli\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000149_agentO5-cli\\stderr.txt"
+}

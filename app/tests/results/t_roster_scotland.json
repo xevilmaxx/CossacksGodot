@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "Data.NATIONS has sco=true, name='Scotland', nations=21 (want sco/Scotland)",
+			"name": "sco_nation_registered",
+			"passed": true
+		},
+		{
+			"detail": "NATION_UNITS has sco=true, sco train sids resolved=[\"bagpiper\"]",
+			"name": "sco_nation_units_wired",
+			"passed": true
+		},
+		{
+			"detail": "sco-specific Data.UNITS keys=2 (want >= 3): [\"bagpiper\", \"highlander\"]",
+			"name": "sco_unique_units_in_roster",
+			"passed": false
+		},
+		{
+			"detail": "_bld_key(player=sco, cen)='cen', sprite loadable=false (want sco_* skin)",
+			"name": "sco_building_skin",
+			"passed": false
+		},
+		{
+			"detail": "_anim_key(peasant, sco)='sco_peasant', in index=true, actions=[\"walk\", \"idle\", \"attack\", \"workwood\", \"workfood\", \"workstone\", \"construct\", \"walkwood\", \"walkfood\", \"walkstone\", \"idlewood\", \"idlefood\", \"idlestone\", \"death\"]",
+			"name": "sco_peasant_sheet_reachable",
+			"passed": true
+		},
+		{
+			"detail": "spawned 'bagpiper' (player 0), order=none, walked 6.0 m (want >= 3.0)",
+			"name": "sco_unit_spawn_and_move",
+			"passed": true
+		}
+	],
+	"id": "t_roster_scotland",
+	"passed": false,
+	"unix_ms": 1795246281553.0
+}

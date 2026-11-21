@@ -59,8 +59,9 @@ SAFETY RULES (owner's GPU is weak; it once shut the PC down):
 
 ## 1. What already exists (DO NOT rebuild)
 
-Sim (`game.gd`, 2159 lines): 32 Hz fixed step (`Data.FPS=32`, main.gd `_process`
-L386–400 accumulator, max 64 steps/frame), entities = Array of Dictionaries +
+Sim (`game.gd`, 3719 lines as of 2026-11-21; 2159 at G3 authoring): 32 Hz fixed
+step (`Data.FPS=32`, main.gd `_process` L386–400 accumulator, max 64
+steps/frame), entities = Array of Dictionaries +
 `by_id`, 6-resource economy, mines with slot ladder, upkeep/famine/gold
 rebellion, market, cost escalation, construction stages, training queues,
 donor damage formula, morale/rout, officer/drummer/priest auras, building
@@ -102,7 +103,7 @@ cursors), donor `icons.bmp` (1024×512) / `iconsunits.bmp` (1024×384) atlases.
 | 10 | Sim bugs: farm_cap grows on delete/never shrinks on destruction; capture double-counts farm + refills mine deposit; global deposit pool copied per mine; splash ignores prot bonuses; post-research spawns miss HP upgrades; enemy gates toggleable by anyone; famine message 32×/s; attack order never gives up when stuck; patrol route lost after combat; projectile cap 64 silently deletes shells. | G9 |
 | 11 | Missing mechanics: garrison (U unload exists in donor hotkeys), peasant capture (rule toggle exists, effect absent), field re-sowing (food finite forever), queue cancel/refund (`Data.refund` unused), attack-ground (donor R), formation facing rotation. | G10 |
 | 12 | AI: threshold ping-pong economy, bypasses pop/queue limits (ai.gd L137–138), 4-segment wall stub, no expansion/repair/raids/retreat, no difficulty. | G11 |
-| 13 | No save/load, no in-game Esc menu, no options, no end-game statistics screen, campaign = first mission only, no Quit button, `--seed` parsed but IGNORED (main.gd L343–345). | G12 |
+| 13 | No save/load, no in-game Esc menu, no options, no end-game statistics screen, campaign = first mission only, no Quit button, `--seed` parsed but IGNORED at authoring (main.gd L343–345) — now applied via main.gd L135–136 (GUIDE4 L6). | G12 |
 | 14 | Journey recordings: camera never follows action (j1 = empty fog for 240s), no battle zoom. | G13 |
 | 15 | Audio: 8 channels steal each other, no per-event cooldown, no distance cull, music never re-loops, streams lazy-load mid-battle (hitch). | G14 |
 | 16 | No perf measurement / quality presets for weak hardware. | G8, G15 |

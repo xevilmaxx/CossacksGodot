@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "res_labels=6 texts=[\"0 [0]\", \"0 [1]\", \"0 [0]\", \"0 [0]\", \"0 [0]\", \"0 [0]\"] hud_report.resource_labels=true",
+			"name": "six_resource_labels",
+			"passed": true
+		},
+		{
+			"detail": "wood_workers=1 wood_line='0 [1]' all_bracketed=true worker_counts={ \"food\": 0, \"wood\": 1, \"stone\": 0, \"gold\": 0, \"iron\": 0, \"coal\": 0 }",
+			"name": "worker_counts_brackets",
+			"passed": true
+		},
+		{
+			"detail": "idle_count=7 eco_label='idle 7  slots 0'",
+			"name": "idle_warning_text",
+			"passed": true
+		},
+		{
+			"detail": "idle=7 eco_label font_color=(1.0, 0.45, 0.4, 1.0)",
+			"name": "idle_warning_colour",
+			"passed": true
+		},
+		{
+			"detail": "food_red=true gold_red=true res_deficit=[true, false, false, true, false, false]",
+			"name": "red_deficit_colouring",
+			"passed": true
+		},
+		{
+			"detail": "status='units 8/100    score 1160    ' score=1160",
+			"name": "score_text",
+			"passed": true
+		}
+	],
+	"id": "t_hud_fidelity",
+	"passed": true,
+	"unix_ms": 1795246112909.0
+}

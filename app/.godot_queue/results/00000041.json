@@ -1,0 +1,20 @@
+{
+  "ticket": 41,
+  "id": "agentL-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795242000.196268,
+  "wait": 395.2743787765503,
+  "run": 46.76555943489075,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000041_agentL-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000041_agentL-uitest\\stderr.txt"
+}

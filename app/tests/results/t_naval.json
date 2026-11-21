@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "index.json parsed=true, owner 'yacht' present=true, actions=[\"walk\", \"hull\"]",
+			"name": "index_parses_with_walk_hull",
+			"passed": true
+		},
+		{
+			"detail": "yacht_walk.png dims=1280x1920 (want 1280x1920)",
+			"name": "walk_sheet_1280x1920",
+			"passed": true
+		},
+		{
+			"detail": "width=1280, cell=160.0, width/cell=8.000 (want 8, cell 160)",
+			"name": "walk_eight_columns",
+			"passed": true
+		},
+		{
+			"detail": "yacht_hull.png exists=true, dims=1280x160 (want 1280x160)",
+			"name": "hull_sheet_exists",
+			"passed": true
+		},
+		{
+			"detail": "cell=160.0, cols=8 -> yacht_walk.png:1280x1920(want 1280x1920), yacht_hull.png:1280x160(want 1280x160)",
+			"name": "metrics_cell_consistent",
+			"passed": true
+		},
+		{
+			"detail": "actions=2, missing=none",
+			"name": "no_missing_referenced_png",
+			"passed": true
+		}
+	],
+	"id": "t_naval",
+	"passed": true,
+	"unix_ms": 1795245416458.0
+}

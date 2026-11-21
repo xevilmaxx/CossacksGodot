@@ -1,0 +1,1405 @@
+{
+ "version": 2,
+ "values": [
+  {
+   "name": "game logic rate",
+   "group": "time",
+   "value": 32,
+   "unit": "fps",
+   "source": "data/scripts/dmscript.global:175 gc_time_to_frames=32"
+  },
+  {
+   "name": "pixels per tile",
+   "group": "world",
+   "value": 53.3333333,
+   "unit": "px",
+   "source": "dmscript.global:172"
+  },
+  {
+   "name": "meters per tile",
+   "group": "world",
+   "value": 2,
+   "unit": "m",
+   "source": "dmscript.global:171"
+  },
+  {
+   "name": "infantry speed",
+   "group": "movement",
+   "value": 1.2,
+   "unit": "m/s",
+   "source": "dmscript.global:603 speed 32 px/s"
+  },
+  {
+   "name": "peasant speed",
+   "group": "movement",
+   "value": 1.5,
+   "unit": "m/s",
+   "source": "dmscript.global:604 speed 40 px/s"
+  },
+  {
+   "name": "light cavalry speed (dragoon)",
+   "group": "movement",
+   "value": 2.1,
+   "unit": "m/s",
+   "source": "dmscript.global:605 speed 56 px/s"
+  },
+  {
+   "name": "fast cavalry speed (cossack)",
+   "group": "movement",
+   "value": 3.6,
+   "unit": "m/s",
+   "source": "dmscript.global:606 speed 96 px/s"
+  },
+  {
+   "name": "cannon speed",
+   "group": "movement",
+   "value": 0.75,
+   "unit": "m/s",
+   "source": "dmscript.global:607"
+  },
+  {
+   "name": "camera pitch",
+   "group": "camera",
+   "value": -32,
+   "unit": "deg",
+   "source": "data/cameras/camera.cfg FreeRotationInfo"
+  },
+  {
+   "name": "camera height min",
+   "group": "camera",
+   "value": 20,
+   "unit": "",
+   "source": "camera.cfg SphereHeightMin"
+  },
+  {
+   "name": "camera height max",
+   "group": "camera",
+   "value": 58,
+   "unit": "",
+   "source": "camera.cfg SphereHeight"
+  },
+  {
+   "name": "edge scroll margin",
+   "group": "camera",
+   "value": 8,
+   "unit": "px",
+   "source": "data/gui/menu.inc/cameracontrol.inc cMargin"
+  },
+  {
+   "name": "camera scroll speed",
+   "group": "camera",
+   "value": 4,
+   "unit": "x profile",
+   "source": "data/gui/menu.inc/oncamera.inc"
+  },
+  {
+   "name": "damage min",
+   "group": "combat",
+   "value": 1,
+   "unit": "hp",
+   "source": "data/scripts/lib/miscext2.script _misc_DoDamage"
+  },
+  {
+   "name": "fast horse bullet bonus",
+   "group": "combat",
+   "value": 5,
+   "unit": "hp",
+   "source": "miscext2.script _misc_DoDamage"
+  },
+  {
+   "name": "shield divisor when under construction",
+   "group": "combat",
+   "value": 3,
+   "unit": "",
+   "source": "miscext2.script _misc_DoDamage"
+  },
+  {
+   "name": "musket damage (serdiuk)",
+   "group": "weapons",
+   "value": 12,
+   "unit": "hp",
+   "source": "unit.script:836"
+  },
+  {
+   "name": "musket cooldown (serdiuk)",
+   "group": "weapons",
+   "value": 130,
+   "unit": "frames",
+   "source": "unit.script:836"
+  },
+  {
+   "name": "musket range min",
+   "group": "weapons",
+   "value": 400,
+   "unit": "px",
+   "source": "unit.script:836"
+  },
+  {
+   "name": "musket range max",
+   "group": "weapons",
+   "value": 900,
+   "unit": "px",
+   "source": "unit.script:836"
+  },
+  {
+   "name": "musket shot cost iron",
+   "group": "weapons",
+   "value": 3,
+   "unit": "",
+   "source": "unit.script:838"
+  },
+  {
+   "name": "musket shot cost coal",
+   "group": "weapons",
+   "value": 6,
+   "unit": "",
+   "source": "unit.script:839"
+  },
+  {
+   "name": "arrow damage",
+   "group": "weapons",
+   "value": 15,
+   "unit": "hp",
+   "source": "unit.script:999"
+  },
+  {
+   "name": "arrow cooldown",
+   "group": "weapons",
+   "value": 75,
+   "unit": "frames",
+   "source": "unit.script:999"
+  },
+  {
+   "name": "arrow range",
+   "group": "weapons",
+   "value": "400-800",
+   "unit": "px",
+   "source": "unit.script:999"
+  },
+  {
+   "name": "arrow dispersion",
+   "group": "weapons",
+   "value": 175,
+   "unit": "px",
+   "source": "unit.script:1001"
+  },
+  {
+   "name": "pikeman damage",
+   "group": "weapons",
+   "value": 8,
+   "unit": "hp",
+   "source": "unit.script:632"
+  },
+  {
+   "name": "cossack damage",
+   "group": "weapons",
+   "value": 13,
+   "unit": "hp",
+   "source": "unit.script:1373"
+  },
+  {
+   "name": "dragoon damage",
+   "group": "weapons",
+   "value": 19,
+   "unit": "hp",
+   "source": "unit.script:1637"
+  },
+  {
+   "name": "tower damage",
+   "group": "weapons",
+   "value": 1000,
+   "unit": "hp",
+   "source": "unit.script:2227"
+  },
+  {
+   "name": "tower shot cost iron",
+   "group": "weapons",
+   "value": 10,
+   "unit": "",
+   "source": "unit.script:2229"
+  },
+  {
+   "name": "tower shot cost coal",
+   "group": "weapons",
+   "value": 30,
+   "unit": "",
+   "source": "unit.script:2230"
+  },
+  {
+   "name": "cannonball damage (field cannon)",
+   "group": "weapons",
+   "value": 1800,
+   "unit": "hp",
+   "source": "unit.script:1703"
+  },
+  {
+   "name": "cannonball cooldown",
+   "group": "weapons",
+   "value": 350,
+   "unit": "frames",
+   "source": "unit.script:1703"
+  },
+  {
+   "name": "cannonball range",
+   "group": "weapons",
+   "value": "550-2160",
+   "unit": "px",
+   "source": "unit.script:1703"
+  },
+  {
+   "name": "peasant hp",
+   "group": "units",
+   "value": 75,
+   "unit": "hp",
+   "source": "unit.script:1212 peaukr"
+  },
+  {
+   "name": "pikeman hp",
+   "group": "units",
+   "value": 90,
+   "unit": "hp",
+   "source": "unit.script:631"
+  },
+  {
+   "name": "roundshier hp",
+   "group": "units",
+   "value": 100,
+   "unit": "hp",
+   "source": "unit.script:736"
+  },
+  {
+   "name": "serdiuk hp",
+   "group": "units",
+   "value": 85,
+   "unit": "hp",
+   "source": "unit.script:834"
+  },
+  {
+   "name": "archer hp",
+   "group": "units",
+   "value": 40,
+   "unit": "hp",
+   "source": "unit.script:998"
+  },
+  {
+   "name": "cossack hp",
+   "group": "units",
+   "value": 250,
+   "unit": "hp",
+   "source": "unit.script:1372"
+  },
+  {
+   "name": "dragoon hp",
+   "group": "units",
+   "value": 225,
+   "unit": "hp",
+   "source": "unit.script:1636"
+  },
+  {
+   "name": "officer hp",
+   "group": "units",
+   "value": 125,
+   "unit": "hp",
+   "source": "unit.script:1063"
+  },
+  {
+   "name": "cannon hp",
+   "group": "units",
+   "value": 9000,
+   "unit": "hp",
+   "source": "unit.script:1697"
+  },
+  {
+   "name": "peasant price",
+   "group": "economy",
+   "value": "100 food",
+   "unit": "",
+   "source": "unit.script:1194"
+  },
+  {
+   "name": "pikeman price",
+   "group": "economy",
+   "value": "25 food, 3 gold, 20 iron",
+   "unit": "",
+   "source": "unit.script:633"
+  },
+  {
+   "name": "serdiuk price",
+   "group": "economy",
+   "value": "60 food, 11 gold, 5 iron",
+   "unit": "",
+   "source": "unit.script:839"
+  },
+  {
+   "name": "archer price",
+   "group": "economy",
+   "value": "20 food, 2 wood, 1 gold",
+   "unit": "",
+   "source": "unit.script:1013"
+  },
+  {
+   "name": "cossack price",
+   "group": "economy",
+   "value": "130 food, 2 iron",
+   "unit": "",
+   "source": "unit.script:1374"
+  },
+  {
+   "name": "town center hp",
+   "group": "buildings",
+   "value": 5300,
+   "unit": "hp",
+   "source": "unit.script:2386 ukr"
+  },
+  {
+   "name": "town center cost",
+   "group": "buildings",
+   "value": "700 wood",
+   "unit": "",
+   "source": "unit.script:2386 ukr"
+  },
+  {
+   "name": "house cost",
+   "group": "buildings",
+   "value": "120 wood",
+   "unit": "",
+   "source": "unit.script:2409 ukr 60*2"
+  },
+  {
+   "name": "house farm cap",
+   "group": "buildings",
+   "value": 25,
+   "unit": "units",
+   "source": "unit.script:2404"
+  },
+  {
+   "name": "town center farm cap",
+   "group": "buildings",
+   "value": 200,
+   "unit": "units",
+   "source": "unit.script:2387 ukr"
+  },
+  {
+   "name": "barracks cost",
+   "group": "buildings",
+   "value": "150 wood, 150 stone",
+   "unit": "",
+   "source": "unit.script:2480 ukr"
+  },
+  {
+   "name": "stable cost",
+   "group": "buildings",
+   "value": "3200 wood, 850 stone, 850 gold",
+   "unit": "",
+   "source": "unit.script:2507 ukr"
+  },
+  {
+   "name": "blacksmith cost",
+   "group": "buildings",
+   "value": "100 wood, 30 stone, 640 iron",
+   "unit": "",
+   "source": "unit.script:2517 ukr"
+  },
+  {
+   "name": "storehouse cost",
+   "group": "buildings",
+   "value": "50 wood, 20 stone",
+   "unit": "",
+   "source": "unit.script:2207"
+  },
+  {
+   "name": "mine cost",
+   "group": "buildings",
+   "value": "100 wood, 100 stone",
+   "unit": "",
+   "source": "unit.script:2314"
+  },
+  {
+   "name": "mine peasant slots",
+   "group": "buildings",
+   "value": 5,
+   "unit": "peasants",
+   "source": "unit.script:2315"
+  },
+  {
+   "name": "mine income",
+   "group": "economy",
+   "value": 1.664,
+   "unit": "units/s per peasant",
+   "source": "player.script:240-266 (13*32/250)"
+  },
+  {
+   "name": "food carried per load",
+   "group": "economy",
+   "value": 45,
+   "unit": "",
+   "source": "dmscript.global:804"
+  },
+  {
+   "name": "wood carried per load",
+   "group": "economy",
+   "value": 28,
+   "unit": "",
+   "source": "dmscript.global:805"
+  },
+  {
+   "name": "stone carried per load",
+   "group": "economy",
+   "value": 40,
+   "unit": "",
+   "source": "dmscript.global:806"
+  },
+  {
+   "name": "food hits per load",
+   "group": "economy",
+   "value": 22,
+   "unit": "hits",
+   "source": "dmscript.global:799"
+  },
+  {
+   "name": "wood hits per load",
+   "group": "economy",
+   "value": 14,
+   "unit": "hits",
+   "source": "dmscript.global:800"
+  },
+  {
+   "name": "stone hits per load",
+   "group": "economy",
+   "value": 20,
+   "unit": "hits",
+   "source": "dmscript.global:801"
+  },
+  {
+   "name": "gather hit interval",
+   "group": "economy",
+   "value": 1.25,
+   "unit": "s",
+   "source": "unit.script:596 cWalkIntervalInf"
+  },
+  {
+   "name": "build progress per hit",
+   "group": "economy",
+   "value": 0.359,
+   "unit": "s",
+   "source": "dmscript.global:182 10*0.03125*1.15"
+  },
+  {
+   "name": "max builders",
+   "group": "economy",
+   "value": 30,
+   "unit": "",
+   "source": "dmscript.global:159"
+  },
+  {
+   "name": "delivery radius",
+   "group": "economy",
+   "value": 3,
+   "unit": "tiles",
+   "source": "dmscript.global:210"
+  },
+  {
+   "name": "upkeep food rate",
+   "group": "economy",
+   "value": "consume/625 per s",
+   "unit": "",
+   "source": "player.script:270-290 speed 20000"
+  },
+  {
+   "name": "personal space",
+   "group": "movement",
+   "value": 0.35,
+   "unit": "m",
+   "source": "data/scripts/dmscript.global:159 spacing role, tuned so ranks never stack",
+   "estimated": true
+  },
+  {
+   "name": "formation spacing",
+   "group": "movement",
+   "value": 1.2,
+   "unit": "m",
+   "source": "original marches in ranks, never stacked",
+   "estimated": true
+  },
+  {
+   "name": "attack search radius pikeman",
+   "group": "ai",
+   "value": 700,
+   "unit": "px",
+   "source": "unit.script:636"
+  },
+  {
+   "name": "attack search radius musketeer",
+   "group": "ai",
+   "value": 900,
+   "unit": "px",
+   "source": "unit.script:840"
+  },
+  {
+   "name": "victory condition",
+   "group": "rules",
+   "value": "enemy loses all buildings",
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "starting units",
+   "group": "rules",
+   "value": "town center + 8 peasants",
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "starting resources",
+   "group": "rules",
+   "value": 0,
+   "unit": "all six",
+   "source": "data/game/var/startingsettings.cfg addresources = 0"
+  },
+  {
+   "name": "hotkey attack",
+   "group": "controls",
+   "value": "A",
+   "unit": "",
+   "source": "data/game/var/hotkeys.cfg"
+  },
+  {
+   "name": "hotkey stand ground",
+   "group": "controls",
+   "value": "S",
+   "unit": "",
+   "source": "data/game/var/hotkeys.cfg"
+  },
+  {
+   "name": "hotkey stop",
+   "group": "controls",
+   "value": "Ctrl+S",
+   "unit": "",
+   "source": "data/game/var/hotkeys.cfg"
+  },
+  {
+   "name": "hotkey select all units",
+   "group": "controls",
+   "value": "Ctrl+A",
+   "unit": "",
+   "source": "data/game/var/hotkeys.cfg"
+  },
+  {
+   "name": "hotkey idle peasants",
+   "group": "controls",
+   "value": "Ctrl+P",
+   "unit": "",
+   "source": "data/game/var/hotkeys.cfg"
+  },
+  {
+   "name": "hotkey patrol",
+   "group": "controls",
+   "value": "Q",
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "morale base",
+   "group": "morale",
+   "value": 70.0,
+   "unit": "",
+   "estimated": true,
+   "source": "battle videos: lines hold near officers, break when mauled"
+  },
+  {
+   "name": "morale rout threshold",
+   "group": "morale",
+   "value": 25.0,
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "officer aura radius",
+   "group": "morale",
+   "value": 12.0,
+   "unit": "m",
+   "estimated": true
+  },
+  {
+   "name": "officer damage bonus",
+   "group": "morale",
+   "value": 0.15,
+   "unit": "x",
+   "estimated": true
+  },
+  {
+   "name": "drummer speed bonus",
+   "group": "morale",
+   "value": 0.12,
+   "unit": "x",
+   "estimated": true
+  },
+  {
+   "name": "priest heal rate",
+   "group": "support",
+   "value": 5.0,
+   "unit": "hp/s",
+   "estimated": true
+  },
+  {
+   "name": "priest heal radius",
+   "group": "support",
+   "value": 8.0,
+   "unit": "m",
+   "estimated": true
+  },
+  {
+   "name": "priest hp",
+   "group": "units",
+   "value": 50,
+   "unit": "hp",
+   "estimated": true
+  },
+  {
+   "name": "drummer hp",
+   "group": "units",
+   "value": 60,
+   "unit": "hp",
+   "estimated": true
+  },
+  {
+   "name": "officer18 hp",
+   "group": "units",
+   "value": 140,
+   "unit": "hp",
+   "estimated": true
+  },
+  {
+   "name": "artillery deploy time",
+   "group": "combat",
+   "value": 2.0,
+   "unit": "s",
+   "estimated": true,
+   "source": "battle videos: guns unlimber before firing"
+  },
+  {
+   "name": "arrow dispersion",
+   "group": "weapons",
+   "value": 175,
+   "unit": "px",
+   "source": "unit.script:1001"
+  },
+  {
+   "name": "cannon dispersion",
+   "group": "weapons",
+   "value": 225,
+   "unit": "px",
+   "source": "unit.script cannon dispersion"
+  },
+  {
+   "name": "tower dispersion",
+   "group": "weapons",
+   "value": 100,
+   "unit": "px",
+   "source": "unit.script tower dispersion"
+  },
+  {
+   "name": "cannonball flight",
+   "group": "weapons",
+   "value": "0.5-1.6",
+   "unit": "s by range",
+   "estimated": true
+  },
+  {
+   "name": "famine grace",
+   "group": "economy",
+   "value": 120.0,
+   "unit": "s",
+   "estimated": true
+  },
+  {
+   "name": "famine drain",
+   "group": "economy",
+   "value": 0.3,
+   "unit": "hp/s",
+   "estimated": true
+  },
+  {
+   "name": "market rate",
+   "group": "economy",
+   "value": 0.65,
+   "unit": "x",
+   "estimated": true,
+   "source": "battle videos: market exchange with commission"
+  },
+  {
+   "name": "capture time base",
+   "group": "rules",
+   "value": "5 + hp/2500",
+   "unit": "s per peasant",
+   "estimated": true
+  },
+  {
+   "name": "upgrade sharpened blades",
+   "group": "upgrades",
+   "value": "+15% sword/pike",
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "upgrade forged armor",
+   "group": "upgrades",
+   "value": "+2 protection",
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "upgrade improved powder",
+   "group": "upgrades",
+   "value": "+20% bullet",
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "upgrade crop rotation",
+   "group": "upgrades",
+   "value": "+25% food",
+   "unit": "",
+   "estimated": true
+  },
+  {
+   "name": "build menu keys",
+   "group": "controls",
+   "value": "C,H,L,B,E,S,R,D,K,J,I,O,M,N,P,T",
+   "unit": "",
+   "source": "data/game/var/hotkeys.cfg"
+  },
+  {
+   "name": "nations",
+   "group": "rules",
+   "value": "20 sids",
+   "unit": "",
+   "source": "data/scripts/lib/country.script _country_GetSIDByID",
+   "estimated": false
+  },
+  {
+   "name": "map types",
+   "group": "rules",
+   "value": "land/mediterranean/peninsulas/islands/continents/continent",
+   "unit": "",
+   "source": "data/game/var/generator.cfg TerrainTypes",
+   "estimated": false
+  },
+  {
+   "name": "start options",
+   "group": "rules",
+   "value": "default/armysmall/armymedium/armylarge/towers/cannons",
+   "unit": "",
+   "source": "startingsettings.cfg gc_mapsettings comments",
+   "estimated": false
+  },
+  {
+   "name": "squad officer slot",
+   "group": "squads",
+   "value": 0,
+   "unit": "slot",
+   "source": "squad.script _squad_GetOfficer slot 0",
+   "estimated": false
+  },
+  {
+   "name": "squad drummer slot",
+   "group": "squads",
+   "value": 1,
+   "unit": "slot",
+   "source": "squad.script _squad_GetDrummer slot 1",
+   "estimated": false
+  },
+  {
+   "name": "squad cols/rows",
+   "group": "squads",
+   "value": "sqrt-based",
+   "unit": "",
+   "source": "group.script _group_CalcColsRows",
+   "estimated": false
+  },
+  {
+   "name": "formation bonus",
+   "group": "squads",
+   "value": 0,
+   "unit": "dmg/shield",
+   "source": "formations.cfg bonusdamage/bonusshield 0",
+   "estimated": false
+  },
+  {
+   "name": "squad cap",
+   "group": "squads",
+   "value": 195,
+   "unit": "units",
+   "source": "squad-era cap",
+   "estimated": true
+  },
+  {
+   "name": "wall footprint",
+   "group": "buildings",
+   "value": 1.8,
+   "unit": "m",
+   "source": "wallcustom.cfg BuilderPoints +-0.9",
+   "estimated": true
+  },
+  {
+   "name": "wall hp",
+   "group": "buildings",
+   "value": 3000,
+   "unit": "hp",
+   "source": "wall role, cheap chainable",
+   "estimated": true
+  },
+  {
+   "name": "grenadier damage",
+   "group": "weapons",
+   "value": 60,
+   "unit": "hp",
+   "source": "role from weapon.script NUCLGRE 110 estimated down",
+   "estimated": true
+  },
+  {
+   "name": "musket18 damage",
+   "group": "weapons",
+   "value": 16,
+   "unit": "hp",
+   "source": "stronger serdiuk",
+   "estimated": true
+  },
+  {
+   "name": "howitzer damage",
+   "group": "weapons",
+   "value": 1200,
+   "unit": "hp",
+   "source": "short-range cannon variant",
+   "estimated": true
+  },
+  {
+   "name": "mortar damage",
+   "group": "weapons",
+   "value": 900,
+   "unit": "hp",
+   "source": "long-arc cannon variant",
+   "estimated": true
+  },
+  {
+   "name": "grenadier price",
+   "group": "economy",
+   "value": "70 food, 15 gold, 10 iron",
+   "unit": "",
+   "source": "estimated",
+   "estimated": true
+  },
+  {
+   "name": "rally point",
+   "group": "controls",
+   "value": "R then right-click",
+   "unit": "",
+   "source": "original barracks flag",
+   "estimated": false
+  },
+  {
+   "name": "game speed",
+   "group": "controls",
+   "value": "pause/1x/2x/4x",
+   "unit": "",
+   "source": "original speed buttons",
+   "estimated": false
+  },
+  {
+   "name": "objectives panel",
+   "group": "rules",
+   "value": "destroy all + mission",
+   "unit": "",
+   "source": "campaign/battle headers",
+   "estimated": false
+  },
+  {
+   "name": "menu shell",
+   "group": "rules",
+   "value": "skirmish/battles/campaigns",
+   "unit": "",
+   "source": "menu.cfg + campaigns.cfg + battles.cfg",
+   "estimated": false
+  },
+  {
+   "name": "trade amount",
+   "group": "economy",
+   "value": "100/500 toggle",
+   "unit": "",
+   "source": "market sliders",
+   "estimated": true
+  },
+  {
+   "name": "skeletal skinning model",
+   "group": "art",
+   "value": "v pose = sum w*(R(f)*v+p(f)), frame 0 = identity bind",
+   "unit": "",
+   "source": "measured: data/actors/units/*.oss (k,fps,bones,verts,faces,uvs + bone-major 7f anim blocks); frame-0 max deviation 1.5e-7, weights sum 1.0"
+  },
+  {
+   "name": "action frame ranges",
+   "group": "art",
+   "value": "walk/idle/attack/death ranges per mesh, e.g. archer walk 1-24 idle 28-78 death 80-129 attack 130-157",
+   "unit": "frames",
+   "source": "data/animations/aaf/<base>.aaf (plain text), paired via .actor Animations.LoadFromFile"
+  },
+  {
+   "name": "oss animation rate",
+   "group": "art",
+   "value": 30,
+   "unit": "fps",
+   "source": "data/actors/units/*.oss header fps field"
+  },
+  {
+   "name": "anim bake sample counts",
+   "group": "art",
+   "value": "walk 6, idle 2, attack 6, death 6 frames x 8 dirs; 160px cells, transparent sheets",
+   "unit": "",
+   "source": "app/tools/bake_sprites.py (Blender CPU Cycles, same center/ortho all cells)",
+   "estimated": true
+  },
+  {
+   "name": "infantry formation sizes",
+   "group": "combat",
+   "value": "15/36/72/120/196/400 + officer + drummer",
+   "unit": "men",
+   "source": "https://cossacks3.fandom.com/wiki/Formations",
+   "estimated": true
+  },
+  {
+   "name": "cavalry formation sizes",
+   "group": "combat",
+   "value": "40/90/160, no officer required",
+   "unit": "horses",
+   "source": "https://cossacks3.fandom.com/wiki/Formations + Steam guide by Toastytoast",
+   "estimated": true
+  },
+  {
+   "name": "formation attack bonus",
+   "group": "combat",
+   "value": "+2 melee, +2 ranged; stand ground +9 melee / +2 ranged",
+   "unit": "dmg",
+   "source": "Steam Cossacks 3 guide (Toastytoast)",
+   "estimated": true
+  },
+  {
+   "name": "formation defense bonus",
+   "group": "combat",
+   "value": "+3; stand ground +9",
+   "unit": "prot",
+   "source": "Steam Cossacks 3 guide (Toastytoast)",
+   "estimated": true
+  },
+  {
+   "name": "17c ranged min-range flee",
+   "group": "combat",
+   "value": "no-bayonet shooter ordered 4 m back when enemy inside weapon.min",
+   "unit": "m",
+   "source": "https://cossacks3.fandom.com/wiki/Combat_basics (17c ranged flee, no melee)",
+   "estimated": true
+  },
+  {
+   "name": "18c bayonet",
+   "group": "combat",
+   "value": "musk18/grenadier 2nd weapon sword 8 dmg 25-60px used under musket min range",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Combat_basics (18c muskets fight melee)",
+   "estimated": true
+  },
+  {
+   "name": "drummer sight",
+   "group": "units",
+   "value": 6000,
+   "unit": "px",
+   "source": "https://cossacks3.fandom.com/wiki/Drummer,_17th_century",
+   "estimated": true
+  },
+  {
+   "name": "mine upgrade",
+   "group": "economy",
+   "value": "mine_up1 per mine (wood 200 stone 100, 10 s): mine_mult x1.5",
+   "unit": "",
+   "source": "reddit r/Cossacks3 (mine upgrades exist, worth it in peacetime)",
+   "estimated": true
+  },
+  {
+   "name": "artillery battery spacing",
+   "group": "combat",
+   "value": "x3 spacing when all selected are artillery",
+   "unit": "",
+   "source": "Steam guide (batteries space guns vs enemy artillery)",
+   "estimated": true
+  },
+  {
+   "name": "cavalry wedge",
+   "group": "combat",
+   "value": "default squad shape for cavalry (cols 0.5 / rows 1.4)",
+   "unit": "",
+   "source": "Steam guide (wedge for horsemen)",
+   "estimated": true
+  },
+  {
+   "name": "peasant capture rule",
+   "group": "rules",
+   "value": "rules.peasant_capture default true; off = peasants do not capture",
+   "unit": "bool",
+   "source": "Cossacks 3 lobby rule no peasant capture (e.g. 4v4 0pt lobbies)",
+   "estimated": true
+  },
+  {
+   "name": "nations without 18th century",
+   "group": "nations",
+   "value": "tur, alg",
+   "unit": "",
+   "source": "Cossacks 3 nation tier guide (Turkey/Algeria: no 18c, janissaries/sipahi/tatars)",
+   "estimated": true
+  },
+  {
+   "name": "nation unit variants",
+   "group": "nations",
+   "value": "rus strelet/cossackdon/pope, pol wingedhussar, tur jannisary/sipahi/mullah, alg mameluke/spakh, swe hackapell + 17c musketeer/dragoon17/hussar/cuirassier/reiter/lightcav/lightinf/tatar/hetman/croat/pandur/chasseur/highlander/pikeman18/drummer18/pope/padre/multicannon",
+   "unit": "",
+   "source": "data/actors/units/*.oss mesh inventory (all meshes exist in donor)",
+   "estimated": true
+  },
+  {
+   "name": "academy gate",
+   "group": "rules",
+   "value": "officer/drummer training needs a finished academy",
+   "unit": "",
+   "source": "https://www.gamepressure.com/cossacks3/formations/zf91b3",
+   "estimated": true
+  },
+  {
+   "name": "replenish radius",
+   "group": "combat",
+   "value": "F on squad officer absorbs loose same-type units within 6 m up to formation label",
+   "unit": "m",
+   "source": "Steam guide (replenish at officer)",
+   "estimated": true
+  },
+  {
+   "name": "nations locked in 17th century",
+   "group": "nations",
+   "value": "ukr, tur, alg (aca_18c research refused)",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Ukraine + nation tier video",
+   "estimated": true
+  },
+  {
+   "name": "heavy cavalry formation bonus",
+   "group": "combat",
+   "value": "+1 attack / +1 defense; hold +5 / +4 (infantry +2/+3, hold +9/+9 / +2/+9)",
+   "unit": "dmg/prot",
+   "source": "https://cossacks.fandom.com/wiki/Battle_tactics (heavy cav +1/+1)",
+   "estimated": true
+  },
+  {
+   "name": "cannon short-range grapeshot",
+   "group": "combat",
+   "value": "cannon/howitzer 2nd weapon cannister 300/250 dmg under 550/300px min range",
+   "unit": "",
+   "source": "https://cossacks.fandom.com/wiki/Battle_tactics (cannons auto-fire grapeshot at short range)",
+   "estimated": true
+  },
+  {
+   "name": "mortar targets",
+   "group": "combat",
+   "value": "mortar only_buildings: holds fire vs units",
+   "unit": "bool",
+   "source": "https://cossacks.fandom.com/wiki/Battle_tactics (mortars can only attack buildings)",
+   "estimated": true
+  },
+  {
+   "name": "tower fortification",
+   "group": "combat",
+   "value": "tower immune to pike/sword/bullet; only cannonball/cannister/arrow/firearrow",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Tower (only artillery, grenadiers, archers)",
+   "estimated": true
+  },
+  {
+   "name": "delete units",
+   "group": "shell",
+   "value": "Delete key removes own selection, no score penalty, farm cap freed",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Capturing (delete what you cannot hold)",
+   "estimated": true
+  },
+  {
+   "name": "unit capture",
+   "group": "rules",
+   "value": "NOT implemented: enemy peasants are not capturable in the port (buildings only)",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Capturing vs port scope",
+   "estimated": true
+  },
+  {
+   "name": "mine slot upgrades / garrison / repair",
+   "group": "rules",
+   "value": "NOT implemented: mine worker-slot upgrades (+5..+40 to 95), tower garrison, building repair",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Mine, Tower; cossacks3.pl building mechanics vs port scope",
+   "estimated": true
+  },
+  {
+   "name": "dwellings",
+   "group": "rules",
+   "value": "cen 100, bar 150 (tur/alg 50), bar18 250, hou 25",
+   "unit": "pop",
+   "source": "https://cossacks3.fandom.com/wiki/Population_capacity"
+  },
+  {
+   "name": "map size",
+   "group": "rules",
+   "value": 320,
+   "unit": "tiles",
+   "source": "port default raised from 160 for mass battles",
+   "estimated": true
+  },
+  {
+   "name": "AI scale targets",
+   "group": "ai",
+   "value": "40 peasants, 600 force, queue 6, 3 barracks, 2 stables",
+   "unit": "",
+   "source": "GUIDE2 S1/S8: mass-army parameters",
+   "estimated": true
+  },
+  {
+   "name": "AI bootstrap",
+   "group": "ai",
+   "value": "reassign idle-locked peasants to wood/stone; guaranteed stone near starts",
+   "unit": "",
+   "source": "measured: stone out of 60 m gather range stalled the AI",
+   "estimated": true
+  },
+  {
+   "name": "18th century location",
+   "group": "rules",
+   "value": "cen_18c at Town Hall, needs hou+bar+sta+bla+aca+art+sto+mil+mar",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Town_Hall"
+  },
+  {
+   "name": "barracks 18th century",
+   "group": "rules",
+   "value": "bar18, farm 250, trains musk18/grenadier/pikeman18/officer18/drummer18, needs has18c",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Population_capacity + donor ba2.osm",
+   "estimated": true
+  },
+  {
+   "name": "diplomatic center",
+   "group": "rules",
+   "value": "dip, trains roundshier/dragoon17/reiter",
+   "unit": "",
+   "source": "donor <nat>dip.osm meshes exist",
+   "estimated": true
+  },
+  {
+   "name": "mill upgrades",
+   "group": "economy",
+   "value": "+140% (750f 250g), +250% (25600f 3350g 2000i)",
+   "unit": "harvest",
+   "source": "https://cossacks3.fandom.com/wiki/Improve_grain_crops_treatment + Mill"
+  },
+  {
+   "name": "mine slot ladder",
+   "group": "economy",
+   "value": "per-mine II+5 III+8 IV+10 V+12 VI+15 VII+40 to 95 workers",
+   "unit": "slots",
+   "source": "https://cossacks3.fandom.com/wiki/Mine"
+  },
+  {
+   "name": "tower rate upgrades",
+   "group": "economy",
+   "value": "per-tower +20/+20/+10% (rof_mult 0.8/0.8/0.9)",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Upgrades#Tower",
+   "estimated": true
+  },
+  {
+   "name": "academy civilian rows",
+   "group": "economy",
+   "value": "bld hp +85, build time -75%, forts +80, food +40/+40, field x3, wood x2, stone x2, geology, balloon",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Upgrades#Academy"
+  },
+  {
+   "name": "academy artillery rows",
+   "group": "economy",
+   "value": "range +5/+10%, durability +150%, accuracy +35%, multi-barrel unlock",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Upgrades#Artillery + Battle_tactics"
+  },
+  {
+   "name": "blacksmith field upgrade",
+   "group": "economy",
+   "value": "field_cap x2",
+   "unit": "",
+   "source": "https://cossacks3.fandom.com/wiki/Upgrades#Blacksmith"
+  },
+  {
+   "name": "wall gate",
+   "group": "rules",
+   "value": "click finished wal -> gat (open/close, blocks when closed or enemy)",
+   "unit": "",
+   "source": "Steam forum gate thread + https://cossacks3.fandom.com/wiki/Wall"
+  },
+  {
+   "name": "wall upkeep",
+   "group": "economy",
+   "value": "stone 40 per building per tick cycle",
+   "unit": "stone",
+   "source": "https://cossacks3.fandom.com/wiki/Wall (consumes stone), rate estimated",
+   "estimated": true
+  },
+  {
+   "name": "repair",
+   "group": "rules",
+   "value": "peasants repair damaged own buildings, 1 stone per hit",
+   "unit": "",
+   "source": "cossacks3.pl building mechanics (repair exists)",
+   "estimated": true
+  },
+  {
+   "name": "wall blocks fire",
+   "group": "combat",
+   "value": "flat shots stop at walls/gates(closed); mortars/howitzers arc over",
+   "unit": "bool",
+   "source": "https://cossacks3.fandom.com/wiki/Wall (no shooting through)"
+  },
+  {
+   "name": "hold fire / feuer frei / engage",
+   "group": "shell",
+   "value": "D stops auto-acquire, E resumes, V clears stand ground",
+   "unit": "keys",
+   "source": "https://cossacks3.fandom.com/wiki/Hotkeys"
+  },
+  {
+   "name": "counter targeting",
+   "group": "combat",
+   "value": "RPS table melee/ranged/cavalry/artillery/building with range falloff",
+   "unit": "score",
+   "source": "https://cossacks3.fandom.com/wiki/Combat_basics + cossacksworld counters",
+   "estimated": true
+  },
+  {
+   "name": "formation size buttons",
+   "group": "shell",
+   "value": "officer panel 15/36/72/120/196/400 forms from troops within 12 m",
+   "unit": "men",
+   "source": "https://cossacks3.fandom.com/wiki/Formations (click size, overflow stays loose)"
+  },
+  {
+   "name": "construction stages",
+   "group": "art",
+   "value": "s1-s4 per model rebuilt meshes + rubble sheets; shown while unfinished/destroyed",
+   "unit": "",
+   "source": "donor <nat><bld>1..4.osm + _death2.osm"
+  },
+  {
+   "name": "hills",
+   "group": "combat",
+   "value": "height_at noise x0.07 x2.0; +25% ranged max range when 0.6 higher; direct cannonball blocked by +0.8 mid ridge",
+   "unit": "m",
+   "source": "Battle_tactics (elevation bonus + hill cover)",
+   "estimated": true
+  },
+  {
+   "name": "AI composition",
+   "group": "ai",
+   "value": "melee-first then ranged then cavalry picks; squads via cmd_form_size(36); officers lead waves; ranged hold near home",
+   "unit": "",
+   "source": "Battle_tactics combined arms + gamepressure assault layout",
+   "estimated": true
+  },
+  {
+   "name": "field worker cap",
+   "group": "economy",
+   "value": "2 peasants per food node, overflow retargets or idles",
+   "unit": "workers",
+   "source": "Steam discussion 350542683212516833"
+  },
+  {
+   "name": "building cost escalation",
+   "group": "economy",
+   "value": "x3 per town hall, x1.5 others; mines/walls/gates exempt",
+   "unit": "mult",
+   "source": "Steam guide 800491181",
+   "estimated": true
+  },
+  {
+   "name": "gold rebellion",
+   "group": "economy",
+   "value": "60 s gold shortage drains mercenary (gold-eater) morale 10/s",
+   "unit": "morale",
+   "source": "cossacks3.pl hunger_and_rebellion",
+   "estimated": true
+  },
+  {
+   "name": "garrison cap",
+   "group": "combat",
+   "value": 10,
+   "unit": "units",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "garrison heal",
+   "group": "combat",
+   "value": 2.0,
+   "unit": "hp/s",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "field resow cost",
+   "group": "economy",
+   "value": 20,
+   "unit": "food",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "corpse life",
+   "group": "fx",
+   "value": 90.0,
+   "unit": "s",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "difficulty trickle (hard)",
+   "group": "ai",
+   "value": "+1.5 food/wood/stone, +0.8 gold/iron/coal per s",
+   "unit": "res/s",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "deposit split",
+   "group": "economy",
+   "value": "global pool / node count",
+   "unit": "share",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "attack-ground dispersion",
+   "group": "combat",
+   "value": "reuse cannon dispersion",
+   "unit": "m",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  },
+  {
+   "name": "formation facing",
+   "group": "combat",
+   "value": "squad face rotates offsets",
+   "unit": "rad",
+   "source": "GUIDE3 estimate",
+   "estimated": true
+  }
+ ]
+}

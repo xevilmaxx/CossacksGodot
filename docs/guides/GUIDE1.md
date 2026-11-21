@@ -35,7 +35,7 @@ mechanics). Existing mechanics sources: `app/MECHANICS.md`, `app/mechanics.json`
 | Godot | 4.7.2 on PATH as `godot` (`godot.exe`) |
 | Blender | `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe` (verified exists) |
 | Python | 3.14.3, Pillow 12.1.1 installed |
-| repo | NOT git. Before editing any existing script, copy it to `inbox/backup/<name>.bak` |
+| repo | Git repo (initialised after this guide was written; it was NOT git on 2026-11-18). Before editing any existing script, copy it to `inbox/backup/<name>.bak` |
 
 Commands (run from project root `...\cossacks-3-3`; quote paths with spaces):
 

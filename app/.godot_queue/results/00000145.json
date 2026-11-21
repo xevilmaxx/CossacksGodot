@@ -1,0 +1,20 @@
+{
+  "ticket": 145,
+  "id": "t-hud-fidelity",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_hud_fidelity.gd"
+  ],
+  "created": 1795244961.1972904,
+  "wait": 226.53558135032654,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000145_t-hud-fidelity\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000145_t-hud-fidelity\\stderr.txt",
+  "error": "ticket 145 was skipped (serving=146)"
+}

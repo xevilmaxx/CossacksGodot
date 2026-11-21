@@ -4,7 +4,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.465,
     "center": [
@@ -4535,7 +4535,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.465,
     "center": [
@@ -4862,7 +4862,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.465,
     "center": [
@@ -5189,7 +5189,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.465,
     "center": [
@@ -5516,7 +5516,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.369,
     "center": [
@@ -5843,7 +5843,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 4.439,
     "center": [
@@ -6170,7 +6170,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.369,
     "center": [
@@ -6497,7 +6497,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.465,
     "center": [
@@ -6824,7 +6824,7 @@
   "actions": {
    "walk": {
     "frames": 12,
-    "duration": 0.667,
+    "duration": 1.08,
     "loop": true,
     "ortho": 5.369,
     "center": [

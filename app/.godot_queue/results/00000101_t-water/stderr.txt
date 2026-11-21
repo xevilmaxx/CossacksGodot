@@ -1,0 +1,12 @@
+SCRIPT ERROR: Parse Error: Could not preload resource script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_water.gd:23)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_water.gd:23)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_water.gd:131)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "t_before" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_water.gd:171)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "advanced" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_water.gd:179)
+ERROR: Failed to load script "res://tests/t_water.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

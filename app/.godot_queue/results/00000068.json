@@ -1,0 +1,24 @@
+{
+  "ticket": 68,
+  "id": "agentAB-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795242509.422481,
+  "wait": 906.6606068611145,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 180.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000068_agentAB-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000068_agentAB-selftest\\stderr.txt",
+  "error": "ticket 68 was skipped (serving=69)",
+  "acknowledged": true,
+  "ack_reason": "runner wedge 2026-11-21 (dead ticket 47, no lock); re-submitted or superseded",
+  "ack_at": 1795243461.7248588
+}

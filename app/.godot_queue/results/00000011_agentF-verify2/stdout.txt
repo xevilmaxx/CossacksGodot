@@ -1,0 +1,14 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  PASS  config.defaults - unit_scale=1.25 show_centroids=false units_opaque=true
+  PASS  config.apply - Data UNIT_SCALE=2.0 SHOW_CENTROIDS=true UNITS_OPAQUE=true
+  PASS  config.clamp - low=0.25 high=4.0
+sprites: 29 sets loaded (sids=65)
+  PASS  shader.attached - unit_anim_layer.material=():<ShaderMaterial#-9223371995482159517>
+  PASS  anim.draw_queued - rect size=(87.44, 87.44)
+  PASS  unit_scale.doubles - 1.0=(87.44, 87.44)  2.0=(174.88, 174.88)
+  PASS  unit_scale.anchored - foot y at scale 2.0=298.97, 1.0=299.48
+sprites: 29 sets loaded (sids=65)
+  PASS  shader.disabled - material=<Object#null>
+  PASS  centroids.toggle - false=false true=true (gates both the prop and building disk draws)
+visual_tuning_test: 9/9 checks passed

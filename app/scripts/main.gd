@@ -116,6 +116,7 @@ var loading_gen := 0
 var end_panel: PanelContainer = null
 var last_cfg: Dictionary = {}
 var seed_arg := -1
+var seed_random := false
 var dump_path := ""
 var journey_cam_t := 0.0
 
@@ -129,7 +130,9 @@ func _ready() -> void:
 	cfg = C3ConfigScript.new()
 	cfg.load_all(config_path)
 	cfg.apply()
-	if seed_arg >= 0:
+	if seed_random:
+		Data.RANDOM_SEED = int(randi())
+	elif seed_arg >= 0:
 		Data.RANDOM_SEED = seed_arg
 	for p in cfg.problems:
 		printerr("settings: ", p)
@@ -658,7 +661,11 @@ func _parse_args(args: PackedStringArray) -> void:
 				i += 2
 				continue
 			"--seed":
-				seed_arg = int(args[i + 1]) if i + 1 < args.size() else -1
+				var sv := str(args[i + 1]) if i + 1 < args.size() else ""
+				if sv == "random":
+					seed_random = true
+				elif sv.is_valid_int():
+					seed_arg = int(sv)
 				i += 2
 				continue
 			"--dump-map":
@@ -1055,7 +1062,7 @@ func _consume_events() -> void:
 				_play(["cannonexpl1"], 0.0, ev.pos)
 			"chop":
 				world.add_fx("chop", ev.pos)
-				_play(["chop"], -8.0, ev.pos)
+				_play(["workwood"], -8.0, ev.pos)
 			"death":
 				if ev.kind == "building":
 					_play(["deathbuilding1"], 0.0, ev.pos)
@@ -1081,7 +1088,9 @@ func _candidate_paths(given: String) -> Array:
 	var ws := proj.get_base_dir()
 	var out: Array = []
 	var parts := given.replace("\\", "/").split("/")
-	if parts.size() > 0 and parts[0] == proj.get_file():
+	if parts.size() > 0:
+		# Relative output paths are workspace-root based, whether they start
+		# with the project folder ("app/shots/x.png") or not ("scans/scan_7.json").
 		out.append(ws.path_join(given))
 	out.append(proj.path_join(given))
 	out.append(given)

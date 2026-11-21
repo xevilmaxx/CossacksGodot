@@ -1,0 +1,22 @@
+{
+  "ticket": 20,
+  "id": "agentF2-millrender",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/mill_render_test.gd"
+  ],
+  "created": 1795241713.057013,
+  "wait": 100.93184757232666,
+  "run": 60.433412313461304,
+  "exit": -9,
+  "timeout": 60.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000020_agentF2-millrender\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000020_agentF2-millrender\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "F-01 fixed by worker F: headless guard in mill_render_test.gd; F3-headless/F3-windowed both ok, zero orphan processes",
+  "ack_at": 1795242893.088457
+}

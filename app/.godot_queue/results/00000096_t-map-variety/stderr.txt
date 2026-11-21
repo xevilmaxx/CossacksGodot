@@ -1,0 +1,14 @@
+SCRIPT ERROR: Parse Error: Could not preload resource script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_map_variety.gd:20)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_map_variety.gd:20)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "terrain_a" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_map_variety.gd:187)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "terrain_b" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_map_variety.gd:190)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "terrain_diff" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_map_variety.gd:191)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "size_ok" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_map_variety.gd:223)
+ERROR: Failed to load script "res://tests/t_map_variety.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

@@ -177,6 +177,13 @@ func _unhandled_input(event: InputEvent) -> void:
 					for su in game.get_selected():
 						if not su.is_empty() and str(su.get("sid", "")) == "peasant":
 							sel_peasants.append(su)
+					# DO-L8.04: echo the central can_place reason on the HUD hint
+					# line before committing. Do NOT block the click: place_building
+					# re-validates (and handles mine-snap), shift-queue still works.
+					var echo_sid := game.resolve_mine_sid(hud.build_ghost_sid, pos)
+					var chk0: Dictionary = game.can_place(0, echo_sid, pos)
+					if not bool(chk0.get("ok", false)) and hud.has_method("show_hint"):
+						hud.show_hint(str(chk0.get("reason", "Cannot build here.")))
 					var b: Dictionary = game.place_building(0, hud.build_ghost_sid, pos, true, sel_peasants)
 					if not b.is_empty() and not Input.is_key_pressed(KEY_SHIFT):
 						hud.build_ghost_sid = ""

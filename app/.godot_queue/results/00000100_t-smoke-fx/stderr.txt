@@ -1,0 +1,20 @@
+SCRIPT ERROR: Parse Error: Could not preload resource script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:15)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:15)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "musk" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:89)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "mtarget" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:90)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "shooter_px" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:97)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "archer" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:142)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "atarget" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:143)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cannon" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:169)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "ctarget" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_smoke_fx.gd:171)
+ERROR: Failed to load script "res://tests/t_smoke_fx.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

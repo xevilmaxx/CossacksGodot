@@ -1,0 +1,26 @@
+{
+  "ticket": 67,
+  "id": "agentB-dump7-repeat",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans\\scan_7_repeat.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795242455.0358014,
+  "wait": 961.0454330444336,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 120.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000067_agentB-dump7-repeat\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000067_agentB-dump7-repeat\\stderr.txt",
+  "error": "ticket 67 was skipped (serving=68)",
+  "acknowledged": true,
+  "ack_reason": "runner wedge 2026-11-21 (dead ticket 47, no lock); re-submitted or superseded",
+  "ack_at": 1795243461.3316178
+}

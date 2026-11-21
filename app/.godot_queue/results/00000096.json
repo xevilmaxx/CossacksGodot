@@ -1,0 +1,19 @@
+{
+  "ticket": 96,
+  "id": "t-map-variety",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_map_variety.gd"
+  ],
+  "created": 1795243689.2230542,
+  "wait": 276.62999391555786,
+  "run": 0.5108582973480225,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000096_t-map-variety\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000096_t-map-variety\\stderr.txt"
+}

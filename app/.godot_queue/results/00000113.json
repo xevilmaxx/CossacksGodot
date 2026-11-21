@@ -1,0 +1,23 @@
+{
+  "ticket": 113,
+  "id": "t-roster-scotland",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_roster_scotland.gd"
+  ],
+  "created": 1795244012.0717242,
+  "wait": 867.2537064552307,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000113_t-roster-scotland\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000113_t-roster-scotland\\stderr.txt",
+  "error": "ticket 113 was skipped (serving=115)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245442.5351794
+}

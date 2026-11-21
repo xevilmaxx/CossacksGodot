@@ -328,7 +328,7 @@ Sources: unit.script lines 1190-1225 (peasant), 630-692 (pikeman), 735-748 (roun
 
 | building | hp | buildtime | price (wood/stone/gold) | notes |
 |---|---|---|---|---|
-| town center (cen) | 5300 | 500 f = 15.6 s | 700 wood (ukr) | farm 200 (ukr); stores food/wood/stone; trains peasants; capturable |
+| town center (cen) | 5300 | 500 f = 15.6 s | 700 wood (ukr) | farm 200 (donor ukr, unit.script:2387); port uses 100 (data.gd:649); stores food/wood/stone; trains peasants; capturable |
 | house (hou) | 4150 | 100 f = 3.1 s | 120 wood (ukr) | farm 25 |
 | barracks (bar) | 20000 | 300 f = 9.4 s | 150 wood / 150 stone (ukr) | trains pikeman, roundshier, serdiuk, archer, officer; farm 75 |
 | stable (sta) | 10000 | 500 f = 15.6 s | 3200 wood / 850 stone / 850 gold (ukr) | trains cossack, dragoon |
@@ -380,8 +380,10 @@ Sources: unit.script lines 2370-2521 (ukr cases), 2204-2221 (storehouse), 2141-2
 
 ## Match rules (estimated where noted)
 
-- start: town center + 8 peasants (estimated; original default start not in readable files),
-  starting resources 0 food/wood/stone/gold/iron/coal (startingsettings.cfg addresources = 0).
+- start: town center + 8 peasants (donor default estimated; port: data.gd:36 / config.json:48).
+  Donor starts with 0 food/wood/stone/gold/iron/coal (startingsettings.cfg addresources = 0);
+  the port runtime overrides this to 800 food / 800 wood / 400 stone / 200 gold / 150 iron /
+  150 coal (config.json:40-46 -> config.gd:374-378).
 - win: enemy loses when all of their buildings are gone (estimated; skirmish default
   condition not found in readable files).
 - fog of war: on (original has it); vision radius uses each unit's searchradius (estimated mapping).
@@ -644,3 +646,73 @@ Blender CPU-only Cycles (shade-less emission = pixel-identical, no GPU load).
 - Buildings were drawn at true scale but anchored by the ink union: asymmetric art (gatehouse annex, offset towers) shifted whole buildings off their logical tile, and collision/selection still used the old small radius, so units walked through walls visually and clicks on the art missed. Fix: `tools/compute_buildings.py` anchors by the footprint centre (alpha centroid of the bottom 15% ink rows) and records visual half-width `rm`; `world.gd _bld_scale` uses it for art, dirt plates, rings and bars.
 - Impassable boundaries now match the visuals: `game.gd` stores `block_r` (visual `rm` or gameplay radius) at spawn, blocks/unblocks exactly that, and uses it for placement spacing (`can_place`), build/repair slots, garrison unload/exit, rally points, trained-unit exit, attack range, splash/impact checks and unit separation push-out. `input_controller _pick` uses `pick_radius` (visual + margin). Start spawns (peasants/towers/cannons/army rings) and AI `_find_spot` use visual radii; self-test placements seek a valid spot instead of fixed offsets.
 - Verified: self-test 28/28, ui-test 17/17, windowed screenshot (hall centered on its dirt plate, ring at its base).
+
+## Audit 2026-11-21 (documentation accuracy, agentI)
+
+Read-only spot-check of docs against `app/scripts/data.gd`, `app/scripts/game.gd`,
+`app/scripts/config.gd` and `app/config.json`. No Godot run, no `.gd` file edited.
+Counts in `mechanics.json`: **190 → 189 values** (one exact duplicate removed);
+**170 → 189 sourced**; **79 → 76 estimated=true**; unsourced **20 → 0**.
+(`estimated=false` 11 → 14; values with no `estimated` key: 100 → 99.)
+"Estimated" still means *donor provenance unknown* — a port code citation does not
+turn a video-derived donor number into a sourced donor number.
+
+### Values corrected
+- Removed the duplicate `arrow dispersion` (175 px, unit.script:1001) — it appeared twice.
+- `nations without 18th century`: "tur, alg" → **"ukr, tur, alg"** — stale guide text;
+  code flags `no18c` on all three (`data.gd:167-178`) and this doc already said so above.
+- `starting resources`: kept donor 0, added the port override 800/800/400/200/150/150
+  (`config.json:40-46 -> config.gd:374-378`); the MD match-rules row now says the same.
+- `town center farm cap`: kept donor ukr 200, annotated that the **port uses 100**
+  (`data.gd:649`); the MD buildings table and the dwellings row no longer contradict.
+- `map size`: citation replaced with the real runtime source (`config.gd:364-365`,
+  `config.json:37-38` = 320; `data.gd:33-34` fallback = 160), marked not estimated.
+- All 20 previously unsourced entries now carry a `source`: 19 got code citations
+  (victory, starting units, patrol Q, morale rout threshold, officer aura radius,
+  officer/drummer bonuses, priest heal rate/radius/hp, drummer hp, officer18 hp,
+  famine grace/drain, capture time, four upgrades); `hotkey patrol Q` is now
+  sourced (`config.gd:111`).
+- `cannonball flight` stays **estimated**, with reasoning instead of a constant:
+  no explicit flight-time value exists; time is emergent from travel over the
+  550-2160 px cannonball range (`data.gd:316`).
+
+### Spot-check table (doc value vs code constant)
+| value | doc | code (file:line) | result |
+|---|---|---|---|
+| game logic rate | 32 fps | `data.gd:32` FPS=32.0 | match |
+| meters per tile / TILE_M | 2 m | `data.gd:23` TILE_M=2.0 | match |
+| pixels per tile | 53.3333333 | `data.gd:22,23` 1/26.6666666 x2 | match |
+| personal space | 0.35 m | `data.gd:52` PERSONAL_SPACE=0.35 | match |
+| formation spacing | 1.2 m | `data.gd:53` FORMATION_SPACING=1.2 | match |
+| mine income | 1.664/s | `data.gd:54` 13*32/250 | match |
+| upkeep divisor | /625 | `data.gd:56` UPKEEP_DIVISOR=625.0; `game.gd:2468` | match |
+| damage min | 1 hp | `data.gd:835-836` | match |
+| fast-horse bullet bonus | 5 hp | `data.gd:823-825` | match |
+| shield divisor (unfinished) | 3 | `data.gd:829-830` | match |
+| cost escalation | pow(1.5)/pow(3 cen) | `game.gd:2264` | match |
+| musket dmg / cd | 12 / 130 f | `data.gd:268` | match |
+| arrow damage | 15 hp | `data.gd:278` | match |
+| cannonball dmg / cd / range | 1800 / 350 f / 550-2160 px | `data.gd:316` | match |
+| gather hits / carry (food,wood,stone) | 22/45, 14/28, 20/40 | `data.gd:225-229` GATHER_BASE | match |
+| build progress per hit | 0.359 s | `data.gd:49` 10*0.03125*1.15 | match |
+| max builders | 30 | `data.gd:51` | match |
+| delivery radius | 3 tiles | `data.gd:55` 3.0*2.0 m | match |
+| map types / formations | 6 types / 5 shapes | `data.gd:193-200`, `215-221` | match |
+| nations | 20 sids | `data.gd:167-178` | match |
+| squad cap / formation sizes | 195 / 15..400 | `data.gd:222`; `game.gd:1730` | match |
+| garrison cap / heal | 10 / 2 hp/s | `game.gd:1684`, `3533` | match |
+| capture time | 5 + hp/2500 | `game.gd:3562` | match |
+| map size | 320 tiles | `config.gd:364-365` (data.gd fallback 160) | match via config |
+| town center farm cap | 200 (donor) | `data.gd:649` = 100 | **mismatch — port 100, annotated** |
+| starting resources | 0 (donor) | `config.json:40-46` nonzero | **mismatch — port override, annotated** |
+| nations without 18c | tur, alg → ukr, tur, alg | `data.gd:170,173` | **mismatch — corrected** |
+
+### Open questions (not fixed here — `.gd` files are owned by other workers)
+- `data.gd:233` WK maps arrow=5, cannonball=7, but `apply_damage` (`data.gd:831-834`)
+  indexes the 6-slot `prot` array directly: arrows read the cannonball slot and
+  cannonballs (7) are out of range. Possibly an off-by-one vs the documented
+  "weapon kind = protection index" mapping (`data.gd:235`, this doc's damage section).
+- `arrow STRELA 25` (weapon.script, this doc's weapons table) vs archer override
+  `15` (`data.gd:278`, units table) are two different donor tables; both kept.
+- No selftest/uitest run: this was documentation-only, per task scope. Donor numbers
+  were never invented; code-derived values are labelled as port constants.

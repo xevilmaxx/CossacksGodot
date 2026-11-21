@@ -16,9 +16,11 @@ per kind, and writes a JSON scenario next to the project so the Godot port
 can mimic the mission (symmetric starts, army sizes, nation match-ups) with
 its own procedural terrain in the same style.
 
+The default game path comes from $COSSACKS3_DIR (or C:/Games/Cossacks 3).
+
 Usage:
-    python tools/extract_map.py --game "C:\\Games\\Cossacks 3" --out assets/maps
-    python tools/extract_map.py --map "C:\\Games\\Cossacks 3\\data\\maps\\missions\\ausmis1.map" --out assets/maps
+    python tools/extract_map.py --game "C:/Games/Cossacks 3" --out assets/maps
+    python tools/extract_map.py --map "C:/Games/Cossacks 3/data/maps/missions/ausmis1.map" --out assets/maps
 
 Cross-platform: pathlib only, no OS-specific calls. Fast: capped at a few
 seconds per map, bounded memory.
@@ -27,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from collections import Counter
 from pathlib import Path
@@ -34,7 +37,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve()
 APP = HERE.parents[1]
 DEFAULT_OUT = APP / "assets" / "maps"
-DEFAULT_GAME = Path(r"C:\Games\Cossacks 3")
+DEFAULT_GAME = Path(os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")).expanduser()
 
 HEADER_RE = re.compile(rb"OSWMap13\.Map\.Ver\[[^\]]*\]Build\.Ver\[[^\]]*\]Core\.Ver\[[^\]]*\]")
 UID_RE = re.compile(rb"UID(\d+)")

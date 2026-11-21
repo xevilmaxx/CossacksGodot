@@ -11,6 +11,17 @@ var icons_tex: Texture2D
 var units_tex: Texture2D
 var top_panel: PanelContainer
 var res_labels: Array = []
+# Donor-style economy read-outs (RE gap 3 / S11): bracketed worker counts per
+# resource, idle-villager + free mine-slot indicators and a gold deficit flag.
+# All derived from existing game state; no sim-layer changes.
+var eco_label: Label
+var worker_counts: Dictionary = {}
+var idle_count := 0
+var free_slots_count := 0
+var gold_deficit := false
+var eco_t := 0.0
+var res_deficit: Array = [false, false, false, false, false, false]
+var eco_warn := false
 var sel_panel: PanelContainer
 var sel_box: HBoxContainer
 var build_bar: HFlowContainer
@@ -235,6 +246,12 @@ func _build_top() -> void:
 		var l := _mklbl("0", 17, Color(1, 0.97, 0.9))
 		bar.add_child(l)
 		res_labels.append(l)
+	# idle villager + unused mine slots, as in the donor's top strip (S11)
+	var eco_sep := VSeparator.new()
+	bar.add_child(eco_sep)
+	eco_label = _mklbl("idle 0  slots 0", 14, Color(0.8, 0.85, 1))
+	eco_label.tooltip_text = "Idle peasants / free mine worker slots"
+	bar.add_child(eco_label)
 	var sep := VSeparator.new()
 	bar.add_child(sep)
 	status_label = _mklbl("", 15, Color(0.8, 0.85, 1))
@@ -791,6 +808,60 @@ func game_over(winner: int) -> void:
 	game_over_label.text = ("Victory!" if winner == 0 else "Defeat")
 	game_over_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3) if winner == 0 else Color(1, 0.4, 0.3))
 
+# Economy read-outs derived entirely from existing game state (no sim edits):
+#  - bracketed worker count per resource = peasants gathering that resource,
+#    or miners inside a mine (inside_of -> "mine_<res>" building)
+#  - idle peasants + free mine slots = the donor's two top-bar warnings (S11)
+#  - gold upkeep rate vs mine income rate = the donor's red-negative-upkeep
+#    signal, using the sim's own UPKEEP_DIVISOR / MINE_INCOME_PER_S constants.
+func _recompute_eco() -> void:
+	if game == null:
+		return
+	var counts := {}
+	for r in Data.RES_NAMES:
+		counts[str(r)] = 0
+	var idle := 0
+	var slots := 0
+	var gold_upkeep := 0.0
+	var gold_income := 0.0
+	var p: Dictionary = game.players[0]
+	for e in game.live_units:
+		if e.dead or int(e.player) != 0:
+			continue
+		var eat: Dictionary = e.def.get("eat", {})
+		if eat.has("gold"):
+			gold_upkeep += float(eat["gold"]) / Data.UPKEEP_DIVISOR
+		if str(e.sid) != "peasant":
+			continue
+		var o: Dictionary = e.get("order", {})
+		var rname: String = str(o.get("res", ""))
+		var inside: int = int(e.get("inside_of", 0))
+		if inside != 0:
+			var m: Dictionary = game.by_id.get(inside, {})
+			var msid: String = str(m.get("sid", ""))
+			if msid.begins_with("mine_"):
+				rname = msid.substr(5)
+		if counts.has(rname):
+			counts[rname] = int(counts[rname]) + 1
+		elif str(o.get("type", "none")) == "none":
+			idle += 1
+	for b in game.live_blds:
+		if b.dead or int(b.player) != 0:
+			continue
+		var eat2: Dictionary = b.def.get("eat", {})
+		if eat2.has("gold"):
+			gold_upkeep += float(eat2["gold"]) / Data.UPKEEP_DIVISOR
+		var bsid: String = str(b.sid)
+		if bsid.begins_with("mine_") and bool(b.finished):
+			var used: int = int(b.get("workers", 0))
+			slots += maxi(0, int(b.get("slots", b.def.get("slots", 5))) - used)
+			if bsid.substr(5) == "gold":
+				gold_income += float(used) * Data.MINE_INCOME_PER_S * float(p.get("mine_mult", 1.0))
+	worker_counts = counts
+	idle_count = idle
+	free_slots_count = slots
+	gold_deficit = gold_upkeep > gold_income + 0.0001
+
 func _process(dt: float) -> void:
 	if game == null:
 		return
@@ -803,8 +874,28 @@ func _process(dt: float) -> void:
 	if fps_t <= 0.0 and fps_label != null:
 		fps_t = 0.5
 		fps_label.text = "%03d" % int(Performance.get_monitor(Performance.TIME_FPS))
+	eco_t -= dt
+	if eco_t <= 0.0:
+		eco_t = 0.5
+		_recompute_eco()
 	for i in 6:
-		res_labels[i].text = str(int(game.players[0].res[i]))
+		var rname: String = str(Data.RES_NAMES[i])
+		res_labels[i].text = "%d [%d]" % [int(game.players[0].res[i]), int(worker_counts.get(rname, 0))]
+		# donor colours a resource red when upkeep outruns income/stock
+		var deficit := false
+		if i == 0:
+			deficit = bool(game.players[0].famine)
+		elif i == 3:
+			deficit = gold_deficit or float(game.players[0].get("gold_famine_t", 0.0)) > 0.0
+		if deficit != bool(res_deficit[i]):
+			res_deficit[i] = deficit
+			res_labels[i].add_theme_color_override("font_color", Color(1, 0.42, 0.38) if deficit else Color(1, 0.97, 0.9))
+	if eco_label != null:
+		eco_label.text = "idle %d  slots %d" % [idle_count, free_slots_count]
+		var warn: bool = idle_count > 0
+		if warn != eco_warn:
+			eco_warn = warn
+			eco_label.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if warn else Color(0.8, 0.85, 1))
 	var ucount := game.unit_count(0) + game.queue_count(0)
 	# the hint line carries placement text; the status line keeps units/score
 	if hint_label == null or hint_label.text == "":
@@ -1003,4 +1094,9 @@ func hud_report() -> Dictionary:
 		"selection_panel": sel_panel != null and sel_panel.visible,
 		"top_bar": top_panel != null and top_panel.visible,
 		"status_text": status_label.text,
+		"worker_counts": worker_counts.duplicate(true),
+		"idle_peasants": idle_count,
+		"free_mine_slots": free_slots_count,
+		"gold_deficit": gold_deficit,
+		"score": game.players[0].score if game != null else -1,
 	}

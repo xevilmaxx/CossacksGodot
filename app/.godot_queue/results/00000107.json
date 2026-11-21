@@ -1,0 +1,23 @@
+{
+  "ticket": 107,
+  "id": "agentB-selftest-final",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795243963.9916134,
+  "wait": 552.8679006099701,
+  "run": 180.44276189804077,
+  "exit": -9,
+  "timeout": 180.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000107_agentB-selftest-final\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000107_agentB-selftest-final\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245440.0557466
+}

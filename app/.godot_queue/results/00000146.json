@@ -1,0 +1,19 @@
+{
+  "ticket": 146,
+  "id": "t-water3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_water.gd"
+  ],
+  "created": 1795245003.612615,
+  "wait": 184.10440754890442,
+  "run": 9.087400197982788,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000146_t-water3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000146_t-water3\\stderr.txt"
+}

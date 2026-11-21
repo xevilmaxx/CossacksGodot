@@ -1,0 +1,21 @@
+{
+  "ticket": 81,
+  "id": "agentG2-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795243434.0083835,
+  "wait": 347.37407875061035,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 180.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000081_agentG2-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000081_agentG2-selftest\\stderr.txt",
+  "error": "ticket 81 was skipped (serving=86)"
+}

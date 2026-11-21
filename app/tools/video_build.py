@@ -8,10 +8,13 @@ point. Every step is visible in the video, then it exits right after the
 house is finished.
 
 Usage:
-  Terminal 1: godot --path app -- --test-api 8141 --timeout 400
+  Terminal 1: launch Godot through the serialized runner (NEVER call `godot`
+              directly) -- see app/tools/godot_runner.py, e.g.
+              python app\\tools\\godot_runner.py run --id agentS-video-build --timeout 400 -- --path app -- --test-api 8141 --timeout 400
   Terminal 2: python app/tools/video_build.py --port 8141 --out app/shots/build_house
 """
 import argparse, ctypes, json, os, socket, subprocess, sys, time
+from pathlib import Path
 
 user32 = ctypes.windll.user32
 
@@ -253,14 +256,19 @@ def main():
     s.close()
 
     mp4 = os.path.join(os.path.abspath(a.out), "build_house.mp4")
-    cmd = [sys.executable,
-           os.path.abspath("app/tools/seq_to_mp4.py"),
+    # Resolve the helper relative to THIS script, not the current working dir.
+    seq_tool = str(Path(__file__).resolve().parent / "seq_to_mp4.py")
+    cmd = [sys.executable, seq_tool,
            "--dir", os.path.abspath(a.out), "--fps", "8", "--out", mp4]
     print("+", " ".join(cmd), flush=True)
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, shell=False)
     print(r.stdout[-1500:])
     if r.returncode != 0:
         print(r.stderr[-2000:])
+        return 1
+    if not os.path.isfile(mp4):
+        print("no MP4 produced (ffmpeg missing?) - contact sheet kept;",
+              "install ffmpeg and re-run seq_to_mp4.py", flush=True)
         return 1
     print("video:", mp4, os.path.getsize(mp4), "bytes,", len(frames), "frames")
     return 0

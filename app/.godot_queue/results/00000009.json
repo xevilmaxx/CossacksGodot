@@ -1,0 +1,22 @@
+{
+  "ticket": 9,
+  "id": "agentJ-cli",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795241517.454664,
+  "wait": 0.0012714862823486328,
+  "run": 23.442119121551514,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000009_agentJ-cli\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000009_agentJ-cli\\stderr.txt"
+}

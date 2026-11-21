@@ -1,0 +1,19 @@
+{
+  "ticket": 192,
+  "id": "t-anim-metrics",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_anim_metrics.gd"
+  ],
+  "created": 1795246252.1981509,
+  "wait": 0.0007340908050537109,
+  "run": 0.33929443359375,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000192_t-anim-metrics\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000192_t-anim-metrics\\stderr.txt"
+}

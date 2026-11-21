@@ -1,0 +1,24 @@
+{
+  "ticket": 138,
+  "id": "agentA-syntax",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795244930.2846825,
+  "wait": 257.36124658584595,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000138_agentA-syntax\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000138_agentA-syntax\\stderr.txt",
+  "error": "ticket 138 was skipped (serving=139)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245451.2353437
+}

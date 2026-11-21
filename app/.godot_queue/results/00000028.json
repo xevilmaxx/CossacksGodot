@@ -1,0 +1,22 @@
+{
+  "ticket": 28,
+  "id": "agentT-cli30",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "30"
+  ],
+  "created": 1795241811.5962827,
+  "wait": 253.42788887023926,
+  "run": 10.612258195877075,
+  "exit": 0,
+  "timeout": 150.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000028_agentT-cli30\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000028_agentT-cli30\\stderr.txt"
+}

@@ -1,0 +1,24 @@
+{
+  "ticket": 70,
+  "id": "agentO2-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795242620.9855523,
+  "wait": 795.1640365123749,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 180.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000070_agentO2-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000070_agentO2-selftest\\stderr.txt",
+  "error": "ticket 70 was skipped (serving=73)",
+  "acknowledged": true,
+  "ack_reason": "runner wedge 2026-11-21 (dead ticket 47, no lock); re-submitted or superseded",
+  "ack_at": 1795243462.3767607
+}

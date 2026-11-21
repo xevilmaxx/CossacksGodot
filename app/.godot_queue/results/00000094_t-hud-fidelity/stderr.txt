@@ -1,0 +1,6 @@
+SCRIPT ERROR: Parse Error: Could not preload resource script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_hud_fidelity.gd:17)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_hud_fidelity.gd:17)
+ERROR: Failed to load script "res://tests/t_hud_fidelity.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

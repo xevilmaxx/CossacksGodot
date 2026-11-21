@@ -1,0 +1,18 @@
+SCRIPT ERROR: Parse Error: Cannot infer the type of "w" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:78)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "h" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:79)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "p" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:84)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "p" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:91)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "cen" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:95)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "pe" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:102)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "in_bounds" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:149)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "progressed" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_multi_ai.gd:233)
+ERROR: Failed to load script "res://tests/t_multi_ai.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

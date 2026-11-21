@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "bullet damage_mult tiers with >1x = 6 (need >= 3): [\"aca_fire1=1.10\", \"aca_fire2=1.15\", \"aca_fire3=1.20\", \"aca_fire4=1.30\", \"bla_bullet1=1.20\", \"sta_fire1=1.15\"]",
+			"name": "firepower_tiers_depth",
+			"passed": true
+		},
+		{
+			"detail": "effective bullet damage 1.000 -> 1.265 (want 1.265, 2 tiers applied)",
+			"name": "firepower_damage_stacks",
+			"passed": true
+		},
+		{
+			"detail": "cost-reduction effects=[\"bla_flint1\"], rof_mult effects=[\"aca_rof1\", \"aca_rof2\"]",
+			"name": "flintlock_cost_and_rof",
+			"passed": true
+		},
+		{
+			"detail": "bayonet=[\"bla_bayonet1\"] steel=[\"bla_steel1\"] melee_add 0->7 melee_mult 1.00->1.00 sword 1.00->1.25",
+			"name": "bayonet_melee_upgrade",
+			"passed": true
+		},
+		{
+			"detail": "cavalry recruit effects=[\"bla_harness1\"], drill effects=[\"aca_riding1\", \"sta_fence1\", \"sta_fire1\", \"bar_phys1\", \"bar_music1\", \"bar_grenade1\"]",
+			"name": "cavalry_and_drills",
+			"passed": true
+		},
+		{
+			"detail": "sword mult 1.250 -> 1.438 -> 1.438, upgrade recorded 1 times",
+			"name": "no_duplicate_application",
+			"passed": true
+		}
+	],
+	"id": "t_upgrades",
+	"passed": true,
+	"unix_ms": 1795246106393.0
+}

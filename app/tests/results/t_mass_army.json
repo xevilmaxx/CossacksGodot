@@ -1,0 +1,39 @@
+{
+	"checks": [
+		{
+			"detail": "spawned 552 units / 552 distinct ids (want 552 = 400 army + 4 squads x 38)",
+			"name": "mass_spawn_distinct",
+			"passed": true
+		},
+		{
+			"detail": "squads for player 1 = 4 (want 4), formation command applied = true",
+			"name": "squads_formed",
+			"passed": true
+		},
+		{
+			"detail": "sim 0.00s -> 10.00s (+10.00) over 40 ticks, winner=-1",
+			"name": "sim_advances",
+			"passed": true
+		},
+		{
+			"detail": "min centre gap 0.996 m, overlapping pairs 0 among 552 units",
+			"name": "no_unit_overlap",
+			"passed": true
+		},
+		{
+			"detail": "mass sim wall time 27319.21 ms for 552 units / 10.0 sim-seconds",
+			"name": "perf_metric_recorded",
+			"passed": true
+		},
+		{
+			"detail": "corpses 0->1->0, rubble 0->1->0 after 100 sim-s (life 90/20)",
+			"name": "corpses_rubble_age_out",
+			"passed": true
+		}
+	],
+	"id": "t_mass_army",
+	"passed": true,
+	"sim_ms": 27319.208,
+	"units": 552,
+	"unix_ms": 1795245217209.0
+}

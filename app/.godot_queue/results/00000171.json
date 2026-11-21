@@ -1,0 +1,21 @@
+{
+  "ticket": 171,
+  "id": "agentSC-shot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/g4_hud_fidelity.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795245522.5323994,
+  "wait": 504.64187812805176,
+  "run": 35.718024492263794,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000171_agentSC-shot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000171_agentSC-shot\\stderr.txt"
+}

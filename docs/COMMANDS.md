@@ -5,6 +5,60 @@
 > (`--screenshot`, `--self-test`, `--ui-test`, `--cli`, `--seq`, `--timeout`,
 > `--dump-config`) — a bare run opens the game and never exits on its own.
 > Headless runs need no GPU and work on any machine.
+> **Agents/workers:** never launch `godot` directly — submit through the
+> serialized runner (§0) using your own unique `--id` prefix.
+
+## 0. The Godot runner — the ONLY way an agent may launch Godot
+
+If you are an agent/worker in the coordinated swarm, **never** run
+`godot ...` directly from your shell. Always go through
+`app/tools/godot_runner.py` (also documented in `app/tools/AGENT_PROTOCOL.md`).
+Direct launches broke mutual exclusion (two Godot processes fight over
+`app/.godot`, imports, screenshots and test output) and leaked orphaned
+100%-CPU zombies when a script hung — starving every later job.
+
+The runner fixes that with a **FIFO ticket lock**: every job takes an
+increasing ticket and `now_serving` advances strictly in order, so exactly one
+Godot runs at a time and ticket N+1 can never overtake ticket N — no
+starvation. It also enforces a hard `--timeout` (kills the whole process tree
+with `taskkill /T /F`), isolates every job in its own result directory,
+reclaims a dead ticket after 5 minutes (`STALE_SEC`), and records wait/run
+durations in `status.json` so "no starvation" is measurable, not just a claim.
+
+Subcommands:
+
+| Command | What it does |
+|---|---|
+| `run --id <name> --timeout <sec> -- <godot args...>` | Take a FIFO ticket, wait your turn, run Godot under the lock, then write results. Use a unique `<id>` (your agent prefix + purpose). |
+| `status` | Show queue depth, `now_serving`, lock state and wait/run statistics (proof no job waits forever). |
+| `doctor` | Kill orphaned Godot processes that bypassed the runner. |
+| `reset --yes` | Clear queue/lock state (maintenance only; requires `--yes`). |
+
+Where results land: `app\.godot_queue\results\<ticket>_<id>\` holds `stdout.txt`
+and `stderr.txt` for each job; a machine-readable summary is written to
+`app\.godot_queue\results\<ticket>.json`; rolling telemetry (wait/run durations,
+max wait, status counts) accumulates in `app\.godot_queue\status.json`.
+
+Copy-paste examples (from project root):
+
+```
+:: self-test (28 steps) — unique --id prefix per agent
+python app\tools\godot_runner.py run --id agentE-selftest --timeout 180 -- --headless --path app -- --self-test app/selftest.json
+
+:: UI journey test (17 scenes)
+python app\tools\godot_runner.py run --id agentE-uitest --timeout 180 -- --headless --path app -- --ui-test app/uitest.json
+
+:: headless screenshot (CPU map render, never hangs)
+python app\tools\godot_runner.py run --id agentE-shot --timeout 90 -- --headless --path app -- --screenshot app/shots/g4_l1.png --timeout 60
+
+:: inspect queue health / clean up stragglers
+python app\tools\godot_runner.py status
+python app\tools\godot_runner.py doctor
+```
+
+The raw `godot ...` commands elsewhere in this file are the *underlying*
+invocations: agents wrap them as `run --id ... -- <those args>`. Humans
+playing the game may still launch Godot directly.
 
 ## 1. Play the game
 
@@ -196,3 +250,70 @@ boosted config; natural runs are for timelapses.
 - `g2_final.png`-style screenshot: nation buildings, animated units, HUD intact.
 - `mechanics.json` documents every number with `source` (+ `"estimated": true`
   where the port chose the value).
+
+## 10. Review gate template
+
+Copy-paste this table for every ticket at the REVIEW desk (M). Fill one row per
+ticket; every column must be answered before a verdict is recorded.
+
+```
+| Ticket | Owner | Owned files | Owned-only? (Y/N + evidence) | Backup present? (path) | Diff within scope? (file:line evidence) | Shared symbols renamed? (Y/N) | Godot direct-call grep (0 hits?) | Verdict (APPROVE/WARN/BLOCK) | Evidence id (runner log path) |
+|---|---|---|---|---|---|---|---|---|---|
+| <id> | <worker> | <comma-separated files> | <Y/N — file:line or git status> | <path or MISSING> | <Y/N — file:line> | <Y/N> | <0 hits / N hits> | <APPROVE/WARN/BLOCK> | <app\.godot_queue\results\<ticket>_<id>\...> |
+```
+
+Column rules:
+
+- **Owned-only?** — Y only if every changed file is in the board's owned-files
+  cell for that ticket; cite `git status`/diff evidence.
+- **Backup present?** — paste the exact `inbox\backup\<name>.bak-<worker-id>`
+  path for each owned file; see §10b.
+- **Diff within scope?** — cite `file:line` evidence for each hunk; stray
+  "improvements" or unassigned work = WARN/BLOCK (gate 6).
+- **Shared symbols renamed?** — Y = BLOCK. No renaming functions/fields that
+  other scripts call (AGENT_PROTOCOL §3).
+- **Godot direct-call grep** — must be **0 hits** in changed files; any direct
+  `godot` call = BLOCK (§0).
+- **Verdict** — APPROVE (all gates green), WARN (minor, no merge-blocker), or
+  BLOCK (protocol violation / unowned edit / missing backup / direct-call hit).
+
+### 10b. Backup verification
+
+Before a ticket moves REVIEW → QA, verify a backup exists for every owned file:
+
+```
+:: from project root — one check per owned file (PowerShell)
+Test-Path "inbox\backup\<name>.bak-<worker-id>"
+:: example:
+Test-Path "inbox\backup\world.gd.bak-agentD"
+```
+
+**Rule: a missing backup for any owned file BLOCKS merge — there is no
+reversible rollback path for that file.**
+
+## 11. Fidelity screenshot comparison (N-24)
+
+`app/tools/compare_shots.py` is a headless comparator: Pillow opens both PNGs
+as RGB, `--crop x,y,w,h` crops both to the same normalised region (coordinates
+are **reference pixels**, scaled to the shot), differing resolutions are
+resized to a common size, and a similarity in [0, 1] is printed (1.0 =
+identical). It uses scikit-image SSIM when installed and falls back to a
+normalised mean-absolute-difference score otherwise. No Godot, GPU, network
+or donor files are involved. Exit codes: `0` PASS, `1` FAIL, `2` bad
+invocation; `--json` emits one machine-readable result object.
+
+Smoke test only — the two files are unrelated, so the low score is expected
+and is NOT a fidelity claim about the port:
+
+```
+python app/tools/compare_shots.py --shot app/shots/g4_l8_ghost_audit.png --ref app/shots/ref_peasants.png
+```
+
+Self-check: passing the same file as both `--shot` and `--ref` scores `1.0000`
+/ PASS; the example above scores about `0.78` / FAIL at the default `0.80`.
+
+**Do not treat `0.80` as a real fidelity threshold.** Before this becomes a
+red gate for QA O (O-01) / GUIDE4's "compare PNG to reference/videos.md
+stills" acceptance step, calibrate a per-check threshold against the actual
+stills in `reference/videos.md` and record the chosen value with its evidence
+in the review note.

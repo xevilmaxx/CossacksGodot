@@ -1,0 +1,19 @@
+{
+  "ticket": 102,
+  "id": "t-capture",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_capture.gd"
+  ],
+  "created": 1795243766.3531692,
+  "wait": 204.6928071975708,
+  "run": 1.0412805080413818,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000102_t-capture\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000102_t-capture\\stderr.txt"
+}

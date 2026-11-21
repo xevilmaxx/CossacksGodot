@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Headless quality scan for the donor-mask map generator.
 
-Usage: python app/tools/scan_map.py --dir app/scans
-Reads any *_*.json dump that has map_w/map_h/terrain keys (scan_, g4_, atomic_).
+Usage: python app/tools/scan_map.py --dir scans
+Reads any JSON dump that has map_w/map_h/terrain keys (scan_, g4_, atomic_).
 Every dump is produced by `godot --headless --path app -- --dump-map FILE --seed N`.
 
 Targets come from GUIDE4 / the donor itself:
@@ -12,7 +12,9 @@ Targets come from GUIDE4 / the donor itself:
   sand ring - >=90% of the LAND-WATER COASTLINE is covered by sand
       (the old version divided by total water area, which is geometrically
        impossible for seas: a radius-20 lake has only ~10% perimeter tiles)
-  reachability - every start can reach food/wood/stone/gold within 25 tiles
+  reachability - every start can reach food/wood/stone/any-ore within a radius
+      scaled from the 160-tile baseline: 25 tiles at 160, 50 tiles at 320
+      (generator distances scale by s = map_w/160, so the judge must too)
   cliff ring - >80% of rock tiles are impassable (donor collision slope rule)
 Exit 1 if any target red, else 0.
 """
@@ -127,8 +129,16 @@ def tileflow(w, h, terrain, tb):
     return 1.0 - bad / max(1, sum(1 for t in terrain if t == 3))
 
 
-def reachability(w, h, blocked, res, starts):
-    kinds = ("food", "stone", "wood", "gold")
+def reach_radius(map_w):
+    """L6's 25-tile BFS was calibrated on the old 160-tile map. The donor-faithful
+    generator scales mine/stone distances by s = map_w/160 (pattern_gen.gd:47),
+    so the judge must scale by the same factor: 25 tiles at 160, 50 at 320."""
+    return max(1, int(round(25.0 * float(map_w) / 160.0)))
+
+
+def reachability(w, h, blocked, res, starts, radius=25):
+    # L6: food / stone / deposit / grove; a deposit is any of the three ores.
+    kinds = (("food",), ("stone",), ("gold", "iron", "coal"), ("wood",))
     for sx, sy in starts:
         stx, sty = int(sx // 2.0), int(sy // 2.0)
         if not (0 <= stx < w and 0 <= sty < h) or blocked[sty*w+stx] != 0:
@@ -153,7 +163,7 @@ def reachability(w, h, blocked, res, starts):
         while q:
             x, y, d = q.popleft()
             reach.add((x, y))
-            if d >= 25:
+            if d >= radius:
                 continue
             for nx, ny in ((x+1,y),(x-1,y),(x,y+1),(x,y-1)):
                 if 0 <= nx < w and 0 <= ny < h and (nx,ny) not in seen and blocked[ny*w+nx] == 0:
@@ -162,8 +172,8 @@ def reachability(w, h, blocked, res, starts):
         def near_reach(px, py):
             tx, ty = int(px // 2.0), int(py // 2.0)
             return any((tx+dx, ty+dy) in reach for dy in range(-2, 3) for dx in range(-2, 3))
-        for k in kinds:
-            if not any(near_reach(n["x"], n["y"]) for n in res if n["t"] == k):
+        for ks in kinds:
+            if not any(near_reach(n["x"], n["y"]) for n in res if n["t"] in ks):
                 return False
     return True
 
@@ -189,7 +199,8 @@ def scan_one(path):
         "cliff": cliff_ring(w, h, terrain, blocked, height)*100,
         "tileflow": tileflow(w, h, terrain, tb)*100,
         "reach": reachability(w, h, blocked, d.get("res", []),
-                              [(float(s["x"]), float(s["y"])) for s in d.get("starts", [])]),
+                              [(float(s["x"]), float(s["y"])) for s in d.get("starts", [])],
+                              reach_radius(w)),
     }
 
 
@@ -204,10 +215,12 @@ def main():
         p = os.path.join(a.dir, f)
         try:
             with open(p, encoding="utf-8") as fh:
-                # Godot serialises dictionaries with the big base64 blobs first
-                if "map_w" in fh.read():
-                    files.append(p)
-        except OSError:
+                d = json.load(fh)
+            # Parse first: a substring check on the raw text also matches
+            # "map_width_tiles" in config files, then load_scan() KeyErrors.
+            if isinstance(d, dict) and "map_w" in d and "terrain" in d:
+                files.append(p)
+        except (OSError, ValueError):
             pass
     if not files:
         print("no map dumps in", a.dir)

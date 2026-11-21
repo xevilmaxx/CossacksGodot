@@ -1,0 +1,20 @@
+{
+  "ticket": 108,
+  "id": "t-anim-metrics",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_anim_metrics.gd"
+  ],
+  "created": 1795243971.6825626,
+  "wait": 726.1712577342987,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000108_t-anim-metrics\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000108_t-anim-metrics\\stderr.txt",
+  "error": "ticket 108 was skipped (serving=111)"
+}

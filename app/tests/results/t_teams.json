@@ -1,0 +1,32 @@
+{
+	"checks": [
+		{
+			"detail": "players=4, team counts={ 0: 2, 1: 2 }, players with a home building=2 (want 4)",
+			"name": "teams_2v2_start_homes",
+			"passed": false
+		},
+		{
+			"detail": "enemies_in_radius(r=3)=2 (want empty), enemies_preferred=2 (want team-1 player 1)",
+			"name": "allies_not_targetable",
+			"passed": false
+		},
+		{
+			"detail": "cmd_attack(player0 -> player2 ally) left order.type='attack' (want not 'attack')",
+			"name": "allied_attack_rejected",
+			"passed": false
+		},
+		{
+			"detail": "from team 0, enemy-team player 1 target found=1 / preferred=1 (want 1)",
+			"name": "enemy_team_targetable",
+			"passed": true
+		},
+		{
+			"detail": "player0 eliminated but ally player2 still alive: winner=1 (want -1, no team wiped out)",
+			"name": "victory_respects_teams",
+			"passed": false
+		}
+	],
+	"id": "t_teams",
+	"passed": false,
+	"unix_ms": 1795245414924.0
+}

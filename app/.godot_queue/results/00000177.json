@@ -1,0 +1,19 @@
+{
+  "ticket": 177,
+  "id": "t-squads",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_squads.gd"
+  ],
+  "created": 1795245719.3353689,
+  "wait": 375.43621802330017,
+  "run": 5.903303384780884,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000177_t-squads\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000177_t-squads\\stderr.txt"
+}

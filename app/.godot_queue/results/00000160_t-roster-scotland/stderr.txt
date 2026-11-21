@@ -1,0 +1,8 @@
+SCRIPT ERROR: Parse Error: Cannot infer the type of "hall_key" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_roster_scotland.gd:123)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "hall_skin_ok" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_roster_scotland.gd:124)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "peasant_key" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_roster_scotland.gd:132)
+ERROR: Failed to load script "res://tests/t_roster_scotland.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

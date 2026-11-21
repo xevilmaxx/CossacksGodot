@@ -1,0 +1,20 @@
+{
+  "ticket": 13,
+  "id": "agentO-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795241570.9433935,
+  "wait": 48.386770248413086,
+  "run": 36.34436631202698,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000013_agentO-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000013_agentO-selftest\\stderr.txt"
+}

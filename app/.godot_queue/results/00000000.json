@@ -1,0 +1,20 @@
+{
+  "ticket": 0,
+  "id": "selftest_smoke",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795241223.7692938,
+  "wait": 0.0006320476531982422,
+  "run": 17.202719926834106,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000000_selftest_smoke\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000000_selftest_smoke\\stderr.txt"
+}

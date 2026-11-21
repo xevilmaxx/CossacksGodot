@@ -734,13 +734,21 @@ def variant_configs():
 
 
 def _font(size, bold=False):
-    for p in (r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
-              r"C:\Windows\Fonts\segoeui.ttf"):
-        if os.path.exists(p):
-            try:
-                return ImageFont.truetype(p, size)
-            except OSError:
-                pass
+    # Cross-platform candidates first; explicit Windows paths are kept as a
+    # fallback so legacy hosts still get Arial. Final fallback is unchanged.
+    candidates = [
+        "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold
+        else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/Library/Fonts/Arial Bold.ttf" if bold else "/Library/Fonts/Arial.ttf",
+        r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
+        r"C:\Windows\Fonts\segoeui.ttf",
+    ]
+    for p in candidates:
+        try:
+            return ImageFont.truetype(p, size)
+        except OSError:
+            continue
     return ImageFont.load_default()
 
 

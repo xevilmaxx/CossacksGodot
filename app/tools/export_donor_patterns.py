@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export donor pattern masks + generator.cfg family weights for the Godot port.
 
-Reads the installed game (C:\\Games\\Cossacks 3) only; writes a compact JSON
+Reads the installed game ($COSSACKS3_DIR or C:/Games/Cossacks 3) only; writes a compact JSON
 into app/assets/terrain/patterns/donor_patterns.json. The Godot engine
 (scripts/pattern_gen.gd) uses these masks exactly like the donor's
 _misc_CheckStandPattern: footprint test against a global occupancy grid.
@@ -55,7 +55,7 @@ def main():
         patterns[name] = {"w": w, "h": h, "cells": cells}
     out = {
         "version": 1,
-        "source": "C:/Games/Cossacks 3/data/pattern/*.pattern + data/game/var/generator.cfg",
+        "source": dg.GAME.replace("\\", "/") + "/data/pattern/*.pattern + data/game/var/generator.cfg",
         "note": "cells are centred (dx,dy) donor-map-cell offsets; the Godot port scales them by map_tiles/160",
         "donor_units": dg.DONOR_UNITS,
         "families": families,

@@ -1,0 +1,23 @@
+{
+  "ticket": 121,
+  "id": "t-weather-retry",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_weather.gd"
+  ],
+  "created": 1795244277.865607,
+  "wait": 607.0252530574799,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000121_t-weather-retry\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000121_t-weather-retry\\stderr.txt",
+  "error": "ticket 121 was skipped (serving=125)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245445.7633781
+}

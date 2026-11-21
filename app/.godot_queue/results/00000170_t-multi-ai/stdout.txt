@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  FAIL  three_players_two_ai - players=2, is_ai=1 (want 3 / 2)
+  FAIL  each_ai_has_start_and_resources - map_starts=2, AI1 home=(36.0,291.0) purse=1750, AI2 home=none purse=0
+  FAIL  each_ai_issues_orders - AI1 issued=11 active_ticks=120, AI2 issued=0 active_ticks=0
+  FAIL  no_ai_stuck - AI1 late_active=60/60 moved=154.2m units=8, AI2 late_active=0/60 moved=0.0m units=0
+  FAIL  no_chat_spam - messages=6, distinct=1, worst=6x "Not enough resources." (limit 5x)
+  PASS  game_continues_or_ends_cleanly - time_s=30.00 winner=-1 finite_res=true

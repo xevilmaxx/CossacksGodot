@@ -175,6 +175,7 @@ const NATIONS := {
 	"por": {"name": "Portugal"}, "pie": {"name": "Piedmont"},
 	"sax": {"name": "Saxony"}, "bav": {"name": "Bavaria"},
 	"hun": {"name": "Hungary"}, "swi": {"name": "Switzerland"},
+	"sco": {"name": "Scotland"},
 }
 
 # Nation barracks variants: generic train-list sid -> nation unit (all in
@@ -186,6 +187,7 @@ const NATION_UNITS := {
 	"tur": {"serdiuk": "jannisary", "musketeer": "jannisary", "cossack": "sipahi", "dragoon": "sipahi", "priest": "mullah"},
 	"alg": {"serdiuk": "jannisary", "musketeer": "jannisary", "cossack": "mameluke", "dragoon": "spakh", "priest": "mullah"},
 	"swe": {"cossack": "hackapell"},
+	"sco": {"drummer": "bagpiper"},
 }
 
 # Random-map terrain types from data/game/var/generator.cfg TerrainTypes.
@@ -642,6 +644,45 @@ const UNITS_BASE := {
 		"radius": 0.6,
 		"icon": Rect2(138, 230, 46, 46),
 	},
+	# Baked sprite keys from RA G08 that had no sim row. cossackdon/hackapell
+	# were already named by NATION_UNITS, so without these rows those mappings
+	# silently failed callers that check UNITS.has() (e.g. the AI army picker).
+	"cossackdon": {
+		"hp": 220, "speed": 3.6, "score": 32, "aiforce": 20, "cavalry": "fast",
+		"price": {"food": 110, "gold": 25}, "build_time": 400 * 0.03125, "search": 800 * PX_TO_M,
+		"eat": {"food": 55},
+		"weapons": [{"kind": "sword", "dmg": 15, "min": 20 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.0}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.5,
+		"icon": Rect2(92, 276, 46, 46),
+	},
+	"hackapell": {
+		"hp": 210, "speed": 3.6, "score": 34, "aiforce": 20, "cavalry": "fast",
+		"price": {"food": 110, "gold": 30}, "build_time": 400 * 0.03125, "search": 800 * PX_TO_M,
+		"eat": {"food": 55},
+		"weapons": [{"kind": "sword", "dmg": 16, "min": 20 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.0}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.5,
+		"icon": Rect2(92, 276, 46, 46),
+	},
+	"cossackregister": {
+		"hp": 240, "speed": 2.1, "score": 38, "aiforce": 22, "cavalry": "hard",
+		"price": {"food": 120, "gold": 35, "iron": 5}, "build_time": 480 * 0.03125, "search": 850 * PX_TO_M,
+		"eat": {"food": 60},
+		"weapons": [{"kind": "sword", "dmg": 17, "min": 20 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.0}],
+		"prot": [2, 2, 4, 100, 3, 20],
+		"radius": 0.5,
+		"icon": Rect2(92, 276, 46, 46),
+	},
+	"bagpiper": {
+		"hp": 60, "speed": 1.32, "score": 9, "aiforce": 3, "support": true,
+		"price": {"food": 30, "gold": 25}, "build_time": 200 * 0.03125, "search": 6000 * PX_TO_M,
+		"eat": {"food": 20},
+		"weapons": [],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(46, 184, 46, 46),
+	},
 }
 
 # buildings: hp, build_time s, cost, radius (footprint, estimated), trains, stores, farm, score
@@ -778,6 +819,50 @@ const UPGRADES_BASE := {
 	"mine_coal_up5": {"building": "mine_coal", "cost": {"food": 15000, "gold": 20000, "iron": 7000}, "time": 20.0, "effect": {"mine_slots": 12}, "name": "Mine shafts V (+12)"},
 	"mine_coal_up6": {"building": "mine_coal", "cost": {"food": 23000, "gold": 21000, "iron": 9000}, "time": 22.0, "effect": {"mine_slots": 15}, "name": "Mine shafts VI (+15)"},
 	"mine_coal_up7": {"building": "mine_coal", "cost": {"food": 60000, "gold": 26000}, "time": 26.0, "effect": {"mine_slots": 40}, "name": "Mine shafts VII (+40)"},
+	# --- Skirmish combat tree (RB G-02..G-06, G-08). Effects are applied in
+	# game.gd apply_upgrade(); costs/times are estimated like the rows above.
+	"aca_fire1": {"building": "aca", "cost": {"gold": 300, "iron": 200}, "time": 10.0,
+		"effect": {"damage_mult": {"bullet": 1.1, "cannonball": 1.1}}, "name": "Rifled barrels +10%"},
+	"aca_fire2": {"building": "aca", "cost": {"gold": 600, "iron": 400}, "time": 11.0,
+		"effect": {"damage_mult": {"bullet": 1.15, "cannonball": 1.15}}, "name": "Granular powder +15%"},
+	"aca_fire3": {"building": "aca", "cost": {"gold": 1000, "iron": 700}, "time": 12.0,
+		"effect": {"damage_mult": {"bullet": 1.2, "cannonball": 1.2}}, "name": "Purified sulphur +20%"},
+	"aca_fire4": {"building": "aca", "cost": {"gold": 1600, "iron": 1100}, "time": 13.0,
+		"effect": {"damage_mult": {"bullet": 1.3, "cannonball": 1.3}}, "name": "Saltpetre +30%"},
+	"aca_rof1": {"building": "aca", "cost": {"gold": 900, "iron": 500}, "time": 12.0,
+		"effect": {"rof_mult": {"bullet": 0.65}}, "name": "Wheellock (+35% RoF)"},
+	"aca_rof2": {"building": "aca", "cost": {"gold": 1400, "iron": 800}, "time": 13.0,
+		"effect": {"rof_mult": {"bullet": 0.65}}, "name": "Paper cartridge (+35% RoF)"},
+	"bla_flint1": {"building": "bla", "cost": {"gold": 500, "iron": 300}, "time": 10.0,
+		"effect": {"cost_mult": 0.5}, "name": "Flintlock muskets (-50% shot cost)"},
+	"bla_bayonet1": {"building": "bla", "cost": {"wood": 200, "iron": 250}, "time": 10.0,
+		"effect": {"melee_add": 7}, "name": "Bayonets +7 melee"},
+	"bla_steel1": {"building": "bla", "cost": {"iron": 600, "gold": 400}, "time": 12.0, "no18c": true,
+		"effect": {"damage_mult": {"sword": 1.25, "pike": 1.25}}, "name": "Steel grades +25% melee"},
+	"bla_harness1": {"building": "bla", "cost": {"food": 500, "gold": 300}, "time": 10.0,
+		"effect": {"train_speed_mult": 0.5}, "name": "Harnesses (mounted recruit x2)"},
+	"bla_sabre1": {"building": "bla", "cost": {"iron": 450, "gold": 350}, "time": 11.0,
+		"effect": {"cav_dmg_add": 5}, "name": "Broadswords +5 cavalry attack"},
+	"aca_riding1": {"building": "aca", "cost": {"food": 600, "gold": 400}, "time": 11.0,
+		"effect": {"cav_prot_bonus": 2}, "name": "Riding drill +2 cavalry defence"},
+	"sta_fence1": {"building": "sta", "cost": {"food": 400, "iron": 200}, "time": 10.0,
+		"effect": {"damage_mult": {"sword": 1.15}}, "name": "Fencing drill +15% melee"},
+	"sta_fire1": {"building": "sta", "cost": {"food": 400, "gold": 250}, "time": 10.0,
+		"effect": {"damage_mult": {"bullet": 1.15}}, "name": "Firing practice +15% ranged"},
+	"bar_phys1": {"building": "bar", "cost": {"food": 400, "gold": 200}, "time": 10.0,
+		"effect": {"prot_bonus": 2}, "name": "Physical training +2 defence"},
+	"bar_music1": {"building": "bar", "cost": {"food": 300, "gold": 250}, "time": 10.0,
+		"effect": {"prot_bonus": 2}, "name": "Musician drill +2 defence"},
+	"bar_grenade1": {"building": "bar", "cost": {"iron": 400, "gold": 300}, "time": 11.0,
+		"effect": {"damage_mult": {"cannister": 1.25}}, "name": "New grenades +25%"},
+	"aca_med1": {"building": "aca", "cost": {"food": 1200, "gold": 900}, "time": 14.0,
+		"effect": {"heal_all": true}, "name": "Medical science (heal all)"},
+	"art_foundry1": {"building": "art", "cost": {"gold": 800, "iron": 600}, "time": 12.0,
+		"effect": {"art_cost_mult": 0.8}, "name": "Foundry mechanization -20% cost"},
+	"art_metal1": {"building": "art", "cost": {"gold": 1000, "iron": 900}, "time": 13.0,
+		"effect": {"art_build_mult": 0.6}, "name": "Metalworking +40% build speed"},
+	"art_repair1": {"building": "art", "cost": {"gold": 700, "iron": 500}, "time": 12.0,
+		"effect": {"repair_arty": true}, "name": "Artillery repair shops"},
 }
 
 # The live tables. They start as a copy of the original numbers and are then

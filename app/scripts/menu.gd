@@ -12,6 +12,7 @@ extends CanvasLayer
 signal chosen(cfg: Dictionary)
 
 const ConfigScript = preload("res://scripts/config.gd")
+const Data = preload("res://scripts/data.gd")
 
 var data: Dictionary = {}
 var root: PanelContainer
@@ -19,13 +20,15 @@ var title_label: Label
 var body: VBoxContainer
 var nation0 := "rus"
 var nation1 := "bav"
+var opponents := 1
+var teams_mode := "ffa"
 var map_type := "land"
 var start_option := "default"
 var mode := "skirmish"
 var mission_name := ""
 var difficulty := "normal"
 var map_size := 320
-var seed_val := 20261113
+var seed_val := Data.RANDOM_SEED
 var ui_us := 1.0
 var ui_vp := Vector2(1280, 720)
 var menu_scroll: ScrollContainer
@@ -234,6 +237,8 @@ func _show_skirmish() -> void:
 	mode = "skirmish"
 	body.add_child(_opt_row("Your nation", _nations(), nation0, func(id: String): nation0 = id))
 	body.add_child(_opt_row("Enemy nation", _nations(), nation1, func(id: String): nation1 = id))
+	body.add_child(_opt_row("Opponents", [{"id": "1", "name": "1"}, {"id": "2", "name": "2"}, {"id": "3", "name": "3"}], str(opponents), func(id: String): opponents = int(id)))
+	body.add_child(_opt_row("Teams", [{"id": "ffa", "name": "Free for all"}, {"id": "2v1", "name": "2 vs 1"}], teams_mode, func(id: String): teams_mode = id))
 	body.add_child(_opt_row("Map type", _map_types(), map_type, func(id: String): map_type = id))
 	body.add_child(_opt_row("Starting", _starts(), start_option, func(id: String): start_option = id))
 	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
@@ -343,9 +348,54 @@ func _on_load_game() -> void:
 	body.add_child(back)
 	_apply_scale()
 
+# Menu-side seed UI. The value always travels through cfg["seed"] as an int:
+# main.gd applies it with int(cfg.seed), so a literal "random" string cannot be
+# passed through the menu (that would need a main.gd change). The Random button
+# generates a fresh int instead - the same thing main.gd's --seed random does.
+func _random_seed_value() -> int:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return rng.randi_range(0, 99999999)
+
+func _on_seed_text_changed(text: String, field: LineEdit) -> void:
+	var s := text.strip_edges()
+	if s.is_valid_int():
+		seed_val = int(s)
+		Data.RANDOM_SEED = seed_val
+	elif s.to_lower() == "random":
+		seed_val = _random_seed_value()
+		Data.RANDOM_SEED = seed_val
+		field.text = str(seed_val)  # re-enters as a valid int; no loop
+
 func _show_options() -> void:
 	_clear()
 	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id; _save_options()))
+	var shb := HBoxContainer.new()
+	shb.add_theme_constant_override("separation", 10)
+	var sl := Label.new()
+	sl.text = "Map seed"
+	sl.custom_minimum_size = Vector2(150, 0)
+	sl.set_meta("uimw", 150.0)
+	sl.set_meta("uifs", 14)
+	shb.add_child(sl)
+	var seedbox := LineEdit.new()
+	seedbox.text = str(seed_val)
+	seedbox.set_meta("uifs", 14)
+	seedbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var st := ConfigScript.ui_button_styles()
+	seedbox.add_theme_stylebox_override("normal", st["normal"] as StyleBoxFlat)
+	seedbox.text_changed.connect(_on_seed_text_changed.bind(seedbox))
+	shb.add_child(seedbox)
+	var rb := _btn("Random")
+	rb.custom_minimum_size = Vector2(90, 40)
+	rb.size_flags_horizontal = Control.SIZE_SHRINK_END
+	rb.pressed.connect(func():
+		seed_val = _random_seed_value()
+		Data.RANDOM_SEED = seed_val
+		seedbox.text = str(seed_val)
+	)
+	shb.add_child(rb)
+	body.add_child(shb)
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
 	body.add_child(back)
@@ -359,6 +409,7 @@ func _save_options() -> void:
 
 func _emit_start(descr: String) -> void:
 	var cfg := {"mode": mode, "nation0": nation0, "nation1": nation1,
+		"opponents": opponents, "teams": teams_mode,
 		"map_type": map_type, "start_option": start_option,
 		"mission": mission_name, "descr": descr,
 		"difficulty": difficulty, "map_size": map_size, "seed": seed_val}

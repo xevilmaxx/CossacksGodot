@@ -1,0 +1,23 @@
+{
+  "ticket": 90,
+  "id": "t-naval",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_naval.gd"
+  ],
+  "created": 1795243629.375513,
+  "wait": 333.4692893028259,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000090_t-naval\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000090_t-naval\\stderr.txt",
+  "error": "ticket 90 was skipped (serving=94)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245436.9896522
+}

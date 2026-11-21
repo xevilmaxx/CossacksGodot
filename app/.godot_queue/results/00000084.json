@@ -1,0 +1,21 @@
+{
+  "ticket": 84,
+  "id": "agentQ-uitest2",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795243461.8244953,
+  "wait": 319.5067446231842,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 180.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000084_agentQ-uitest2\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000084_agentQ-uitest2\\stderr.txt",
+  "error": "ticket 84 was skipped (serving=86)"
+}

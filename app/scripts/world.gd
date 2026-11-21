@@ -69,6 +69,12 @@ var sprites: Dictionary = {}
 # Animated original-model sheets (tools/bake_sprites.py): key -> {cell, actions}.
 var anim_index := {}
 var anim_tex := {}
+# Windmill sails are a separate moving object, exactly like the peasants'
+# attach tools: tools/bake_mill_rotor.py lifts the donor's eurmilanim.oss rotor
+# out of the tower sheet.  It spins over the finished mill every frame.
+var mill_rotor_tex: Texture2D = null
+const MILL_HUB := Vector2(0.525, 0.21)  # axle centre in the baked tower cell
+const MILL_SPIN := 0.75                 # radians / second
 var ov_shadow: Texture2D
 var ov_ring: Array = []
 var ov_sel: Texture2D
@@ -344,6 +350,27 @@ func _bld_key(e: Dictionary) -> String:
 		if _res_exists("%s/%s.png" % [_anim_dir(), nk]):
 			return nk
 	return e.sid
+
+func _mill_rotor() -> Texture2D:
+	if mill_rotor_tex == null:
+		var path := "%s/mill_rotor.png" % [_anim_dir()]
+		if _res_exists(path):
+			mill_rotor_tex = load(path) as Texture2D
+	return mill_rotor_tex
+
+# Draw the windmill's sail assembly as a separate spinning object (the donor
+# keeps it as an attach, like the peasant tools).  A face-on bake is squashed
+# by the caller's cell scale and rotated around the cap axle, so the four
+# lattice blades sweep across the tower instead of sitting frozen in the art.
+func _draw_mill_rotor(layer: Node2D, tl: Vector2, sz: Vector2, tint: Color) -> void:
+	var tex := _mill_rotor()
+	if tex == null:
+		return
+	var hub := tl + Vector2(sz.x * MILL_HUB.x, sz.y * MILL_HUB.y)
+	var half: Vector2 = sz * 0.25
+	layer.draw_set_transform(hub, anim_t * MILL_SPIN, Vector2.ONE)
+	layer.draw_texture_rect(tex, Rect2(-half.x, -half.y, half.x * 2.0, half.y * 2.0), false, tint)
+	layer.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _bld_anim(key: String) -> Texture2D:
 	# lazy nation-sheet loading (like unit anims): only drawn buildings cost
@@ -813,7 +840,10 @@ func sync(dt: float) -> void:
 	if moved or game.res_dirty != res_dirty:
 		res_dirty = game.res_dirty
 		res_layer.queue_redraw()
-	if moved or game.bld_dirty != bld_dirty:
+	# The rotor's angle comes from anim_t, which advances every frame; with a
+	# rotor present the building layer must redraw even on an idle camera,
+	# otherwise the sails freeze whenever bld_dirty and the view are static.
+	if moved or game.bld_dirty != bld_dirty or mill_rotor_tex != null:
 		bld_dirty = game.bld_dirty
 		bld_layer.queue_redraw()
 	unit_layer.queue_redraw()
@@ -1094,6 +1124,8 @@ func _draw_buildings() -> void:
 				var sz2 := Vector2(cell2, cell2) * float(bsc.sc)
 				var tl2 := p - Vector2(sz2.x * float(bsc.cx), sz2.y * float(bsc.foot))
 				bld_layer.draw_texture_rect(bspr, Rect2(tl2, sz2), false, tint_b)
+				if e.sid == "mil" and e.finished:
+					_draw_mill_rotor(bld_layer, tl2, sz2, tint_b)
 			else:
 				_draw_sprite(bld_layer, bspr, p, _bld_height(e), tint_b)
 			var bw := vwid

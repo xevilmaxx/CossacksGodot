@@ -31,10 +31,14 @@ func bind(w: C3World) -> void:
 	position = Vector2(0, 0)
 
 func clamp_pos() -> void:
+	if world == null:
+		return
 	var half := get_viewport_rect().size / zoom / 2.0
 	var limit := Vector2(world.game.MAP_W, world.game.MAP_H) * Data.TILE_M * world.view_scale
-	position.x = clampf(position.x, half.x, limit.x - half.x)
-	position.y = clampf(position.y, half.y, limit.y - half.y)
+	# If the view is wider/taller than the map, clampf()'s min exceeds its max
+	# and pins the camera past the map edge; centre that axis instead.
+	position.x = limit.x * 0.5 if limit.x <= half.x * 2.0 else clampf(position.x, half.x, limit.x - half.x)
+	position.y = limit.y * 0.5 if limit.y <= half.y * 2.0 else clampf(position.y, half.y, limit.y - half.y)
 
 func _process(dt: float) -> void:
 	var vp := get_viewport().get_visible_rect().size

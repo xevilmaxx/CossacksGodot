@@ -1,0 +1,25 @@
+{
+  "ticket": 106,
+  "id": "agentG2-cli2",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795243892.2134387,
+  "wait": 443.6158149242401,
+  "run": 180.50717091560364,
+  "exit": -9,
+  "timeout": 180.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000106_agentG2-cli2\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000106_agentG2-cli2\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245439.3955853
+}

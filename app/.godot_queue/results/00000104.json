@@ -1,0 +1,23 @@
+{
+  "ticket": 104,
+  "id": "agentA-p23p24-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795243818.53292,
+  "wait": 155.28972220420837,
+  "run": 181.02762842178345,
+  "exit": -9,
+  "timeout": 180.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000104_agentA-p23p24-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000104_agentA-p23p24-selftest\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245438.083713
+}

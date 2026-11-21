@@ -377,7 +377,7 @@
    "group": "buildings",
    "value": 200,
    "unit": "units",
-   "source": "unit.script:2387 ukr"
+   "source": "donor ukr cap 200: unit.script:2387; port uses 100 (app/scripts/data.gd:649 cen.farm=100) - see MECHANICS.md dwellings row"
   },
   {
    "name": "barracks cost",
@@ -540,6 +540,7 @@
    "group": "rules",
    "value": "enemy loses all buildings",
    "unit": "",
+   "source": "port constant app/scripts/data.gd:42 VICTORY=destroy_all (app/config.json:51); donor skirmish default still estimated",
    "estimated": true
   },
   {
@@ -547,6 +548,7 @@
    "group": "rules",
    "value": "town center + 8 peasants",
    "unit": "",
+   "source": "port constants app/scripts/data.gd:36 START_PEASANTS=8 (app/config.json:48); donor default estimated",
    "estimated": true
   },
   {
@@ -554,7 +556,7 @@
    "group": "rules",
    "value": 0,
    "unit": "all six",
-   "source": "data/game/var/startingsettings.cfg addresources = 0"
+   "source": "donor: data/game/var/startingsettings.cfg addresources = 0; port runtime OVERRIDES to food 800 / wood 800 / stone 400 / gold 200 / iron 150 / coal 150 (app/config.json:40-46 -> app/scripts/config.gd:374-378)"
   },
   {
    "name": "hotkey attack",
@@ -596,7 +598,8 @@
    "group": "controls",
    "value": "Q",
    "unit": "",
-   "estimated": true
+   "source": "app/scripts/config.gd:111 hotkeys.patrol=Q (port default from data/game/var/hotkeys.cfg)",
+   "estimated": false
   },
   {
    "name": "morale base",
@@ -611,6 +614,7 @@
    "group": "morale",
    "value": 25.0,
    "unit": "",
+   "source": "port constant app/scripts/data.gd:71 MORALE_ROUT_THRESHOLD=25.0 (donor value estimated)",
    "estimated": true
   },
   {
@@ -618,6 +622,7 @@
    "group": "morale",
    "value": 12.0,
    "unit": "m",
+   "source": "port constant app/scripts/data.gd:72 MORALE_OFFICER_RADIUS=12.0 (donor value estimated)",
    "estimated": true
   },
   {
@@ -625,6 +630,7 @@
    "group": "morale",
    "value": 0.15,
    "unit": "x",
+   "source": "port constant app/scripts/data.gd:78 OFFICER_DAMAGE_BONUS=0.15 (donor value estimated)",
    "estimated": true
   },
   {
@@ -632,6 +638,7 @@
    "group": "morale",
    "value": 0.12,
    "unit": "x",
+   "source": "port constant app/scripts/data.gd:79 DRUMMER_SPEED_BONUS=0.12 (donor value estimated)",
    "estimated": true
   },
   {
@@ -639,6 +646,7 @@
    "group": "support",
    "value": 5.0,
    "unit": "hp/s",
+   "source": "port constant app/scripts/data.gd:81 PRIEST_HEAL_PER_S=5.0 (donor value estimated)",
    "estimated": true
   },
   {
@@ -646,6 +654,7 @@
    "group": "support",
    "value": 8.0,
    "unit": "m",
+   "source": "port constant app/scripts/data.gd:80 PRIEST_HEAL_RADIUS=8.0 (donor value estimated)",
    "estimated": true
   },
   {
@@ -653,6 +662,7 @@
    "group": "units",
    "value": 50,
    "unit": "hp",
+   "source": "port constant app/scripts/data.gd:346 UNITS_BASE.priest.hp=50 (donor value estimated)",
    "estimated": true
   },
   {
@@ -660,6 +670,7 @@
    "group": "units",
    "value": 60,
    "unit": "hp",
+   "source": "port constant app/scripts/data.gd:337 UNITS_BASE.drummer.hp=60 (donor value estimated)",
    "estimated": true
   },
   {
@@ -667,6 +678,7 @@
    "group": "units",
    "value": 140,
    "unit": "hp",
+   "source": "port constant app/scripts/data.gd:328 UNITS_BASE.officer18.hp=140 (donor value estimated)",
    "estimated": true
   },
   {
@@ -676,13 +688,6 @@
    "unit": "s",
    "estimated": true,
    "source": "battle videos: guns unlimber before firing"
-  },
-  {
-   "name": "arrow dispersion",
-   "group": "weapons",
-   "value": 175,
-   "unit": "px",
-   "source": "unit.script:1001"
   },
   {
    "name": "cannon dispersion",
@@ -703,6 +708,7 @@
    "group": "weapons",
    "value": "0.5-1.6",
    "unit": "s by range",
+   "source": "estimated: emergent travel time over the 550-2160 px cannonball range (app/scripts/data.gd:316); no explicit donor or port flight-time constant found",
    "estimated": true
   },
   {
@@ -710,6 +716,7 @@
    "group": "economy",
    "value": 120.0,
    "unit": "s",
+   "source": "port constant app/scripts/data.gd:86 FAMINE_GRACE_S=120.0 (app/config.json:104); donor value estimated",
    "estimated": true
   },
   {
@@ -717,6 +724,7 @@
    "group": "economy",
    "value": 0.3,
    "unit": "hp/s",
+   "source": "port constant app/scripts/data.gd:87 FAMINE_DRAIN_PER_S=0.3 (app/config.json:105); donor value estimated",
    "estimated": true
   },
   {
@@ -732,6 +740,7 @@
    "group": "rules",
    "value": "5 + hp/2500",
    "unit": "s per peasant",
+   "source": "app/scripts/game.gd:3562 need=5.0+e.max_hp/2500.0 (one peasant; code adds 0.25/s at line 3554); donor value estimated",
    "estimated": true
   },
   {
@@ -739,6 +748,7 @@
    "group": "upgrades",
    "value": "+15% sword/pike",
    "unit": "",
+   "source": "port constant app/scripts/data.gd:700 bla_sword1 damage_mult sword/pike=1.15 (donor % estimated)",
    "estimated": true
   },
   {
@@ -746,6 +756,7 @@
    "group": "upgrades",
    "value": "+2 protection",
    "unit": "",
+   "source": "port constant app/scripts/data.gd:702 bla_armor1 prot_bonus=2 (donor value estimated)",
    "estimated": true
   },
   {
@@ -753,6 +764,7 @@
    "group": "upgrades",
    "value": "+20% bullet",
    "unit": "",
+   "source": "port constant app/scripts/data.gd:704 bla_bullet1 damage_mult bullet=1.2 (code also gives cannonball=1.1, not listed here; donor % estimated)",
    "estimated": true
   },
   {
@@ -760,6 +772,7 @@
    "group": "upgrades",
    "value": "+25% food",
    "unit": "",
+   "source": "port constant app/scripts/data.gd:706 aca_bread1 gather_mult food=1.25 (donor % estimated)",
    "estimated": true
   },
   {
@@ -1049,10 +1062,10 @@
   {
    "name": "nations without 18th century",
    "group": "nations",
-   "value": "tur, alg",
+   "value": "ukr, tur, alg",
    "unit": "",
-   "source": "Cossacks 3 nation tier guide (Turkey/Algeria: no 18c, janissaries/sipahi/tatars)",
-   "estimated": true
+   "source": "app/scripts/data.gd:167-178 NATIONS no18c flags on ukr/tur/alg + https://cossacks3.fandom.com/wiki/Ukraine (17c nation); older guide text listed only tur/alg (stale, corrected 2026-11-21)",
+   "estimated": false
   },
   {
    "name": "nation unit variants",
@@ -1154,8 +1167,8 @@
    "group": "rules",
    "value": 320,
    "unit": "tiles",
-   "source": "port default raised from 160 for mass battles",
-   "estimated": true
+   "source": "port runtime app/scripts/config.gd:364-365 (app/config.json:37-38) map_width_tiles/map_height_tiles=320; data.gd:33-34 fallback 160; donor map is 640 (dmscript.global:78-79)",
+   "estimated": false
   },
   {
    "name": "AI scale targets",

@@ -1,0 +1,19 @@
+{
+  "ticket": 186,
+  "id": "t-smoke-fx",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_smoke_fx.gd"
+  ],
+  "created": 1795246118.3192108,
+  "wait": 81.0320348739624,
+  "run": 4.948679208755493,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000186_t-smoke-fx\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000186_t-smoke-fx\\stderr.txt"
+}

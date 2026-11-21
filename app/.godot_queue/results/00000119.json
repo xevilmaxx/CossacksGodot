@@ -1,0 +1,20 @@
+{
+  "ticket": 119,
+  "id": "agentA-check",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795244226.1733809,
+  "wait": 655.6148812770844,
+  "run": 2.631206512451172,
+  "exit": 1,
+  "timeout": 60.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000119_agentA-check\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000119_agentA-check\\stderr.txt"
+}

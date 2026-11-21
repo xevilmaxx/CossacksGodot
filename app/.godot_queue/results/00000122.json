@@ -1,0 +1,24 @@
+{
+  "ticket": 122,
+  "id": "t-smoke-fx-diag",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795244283.4080024,
+  "wait": 601.5471518039703,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000122_t-smoke-fx-diag\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000122_t-smoke-fx-diag\\stderr.txt",
+  "error": "ticket 122 was skipped (serving=125)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245446.4366689
+}

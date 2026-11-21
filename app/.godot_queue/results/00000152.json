@@ -1,0 +1,21 @@
+{
+  "ticket": 152,
+  "id": "agentO5-shot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/g4_qa_gate.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795245212.3579307,
+  "wait": 152.3228678703308,
+  "run": 42.54650378227234,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000152_agentO5-shot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000152_agentO5-shot\\stderr.txt"
+}

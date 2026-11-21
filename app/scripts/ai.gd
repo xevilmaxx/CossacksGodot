@@ -255,7 +255,9 @@ func _find_spot(home: Dictionary, def: Dictionary, sid: String, min_d: float, ma
 		var a := game.rng.randf() * TAU
 		var r := game.rng.randf_range(min_d, max_d)
 		var pos: Vector2 = home.pos + Vector2(cos(a), sin(a)) * r
-		if not game.in_bounds(pos) or game.is_blocked(pos):
+		# Use the same placement rules the human UI uses: is_blocked() alone
+		# misses trees/stone/deposits overlapping the building footprint.
+		if not bool(game.can_place(player, sid, pos).get("ok", false)):
 			continue
 		var vr: float = game.bld_rm(player, sid)
 		var my_r: float = vr if vr > 0.0 else def.radius
@@ -358,7 +360,20 @@ func _form_squads(military: Array) -> void:
 		return
 	for u in military:
 		if str(u.sid) in ["officer", "officer18"] and game.squad_of_unit(u.id).is_empty():
-			game.cmd_form_size(u, 72 if military.size() > 90 else 36)
+			# cmd_form_size() emits "No loose troops near the officer." on every
+			# failed call. Only ask it when there really are loose troops close
+			# enough to form from, so the AI does not spam chat every think tick.
+			var have_loose := false
+			for m in military:
+				if m.id == u.id or str(m.sid) == "peasant" or bool(m.def.get("support", false)):
+					continue
+				if not game.squad_of_unit(m.id).is_empty():
+					continue
+				if m.pos.distance_to(u.pos) <= 12.0:
+					have_loose = true
+					break
+			if have_loose:
+				game.cmd_form_size(u, 72 if military.size() > 90 else 36)
 
 func _repair(peasants: Array, blds: Array) -> void:
 	for b in blds:
@@ -385,6 +400,16 @@ func _defense(military: Array, home: Dictionary) -> bool:
 				game.cmd_attack(m, threat)
 	return true
 
+# Team-aware enemy test. `team` is optional on a player dict; without it every
+# other player is hostile (the original two-player behaviour is unchanged).
+func _is_enemy(other: int) -> bool:
+	if other == player or other < 0 or other >= game.players.size():
+		return false
+	var my_team := int(game.players[player].get("team", -1))
+	if my_team >= 0 and int(game.players[other].get("team", -1)) == my_team:
+		return false
+	return true
+
 # --- cavalry raids on enemy economy (video 1) ---
 func _raids(military: Array, res: Dictionary) -> void:
 	var cav: Array = []
@@ -393,6 +418,16 @@ func _raids(military: Array, res: Dictionary) -> void:
 			cav.append(m)
 	if cav.size() < 6:
 		return
+	# A wiped raid leaves raid_ids pointing only at dead units; without this
+	# cleanup those stale ids are never replaced and fresh cavalry never raids.
+	var any_alive := false
+	for id in raid_ids:
+		var old: Dictionary = game.by_id.get(int(id), {})
+		if not old.is_empty() and not bool(old.get("dead", false)):
+			any_alive = true
+			break
+	if not any_alive:
+		raid_ids.clear()
 	if raid_ids.is_empty():
 		for i in range(0, mini(cav.size(), 12)):
 			raid_ids.append(cav[i].id)
@@ -401,7 +436,7 @@ func _raids(military: Array, res: Dictionary) -> void:
 	for n in game.res_nodes:
 		if n.type == "food" and n.hits > 0:
 			for e in game.entities:
-				if not e.dead and e.player != player and e.kind == "unit" and str(e.sid) == "peasant" and e.pos.distance_to(n.pos) < 8.0:
+				if not e.dead and _is_enemy(int(e.player)) and e.kind == "unit" and str(e.sid) == "peasant" and e.pos.distance_to(n.pos) < 8.0:
 					var d: float = n.pos.distance_to(game.players[player].get("home_pos", Vector2.ZERO))
 					if d < bd:
 						bd = d
@@ -437,11 +472,14 @@ func _waves(military: Array, home: Dictionary, p: Dictionary) -> void:
 		return
 	var enemy_home: Dictionary = {}
 	var bd := 1e9
-	for b in game.buildings_of(1 - player):
-		var d: float = b.pos.distance_to(home.pos)
-		if d < bd:
-			bd = d
-			enemy_home = b
+	for other in game.players.size():
+		if not _is_enemy(other):
+			continue
+		for b in game.buildings_of(other):
+			var d: float = b.pos.distance_to(home.pos)
+			if d < bd:
+				bd = d
+				enemy_home = b
 	if enemy_home.is_empty():
 		return
 	wave += 1

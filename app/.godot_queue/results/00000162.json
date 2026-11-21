@@ -1,0 +1,22 @@
+{
+  "ticket": 162,
+  "id": "deepGEN-redump7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/gen_audit_7.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795245234.308084,
+  "wait": 373.0351405143738,
+  "run": 16.32560968399048,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000162_deepGEN-redump7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000162_deepGEN-redump7\\stderr.txt"
+}

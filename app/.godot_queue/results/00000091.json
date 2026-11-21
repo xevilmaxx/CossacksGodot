@@ -1,0 +1,23 @@
+{
+  "ticket": 91,
+  "id": "t-roster-scotland",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_roster_scotland.gd"
+  ],
+  "created": 1795243636.863219,
+  "wait": 325.92746901512146,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000091_t-roster-scotland\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000091_t-roster-scotland\\stderr.txt",
+  "error": "ticket 91 was skipped (serving=92)",
+  "acknowledged": true,
+  "ack_reason": "parse-failure window 2026-11-21; superseded by O5 fresh run",
+  "ack_at": 1795245435.4016201
+}

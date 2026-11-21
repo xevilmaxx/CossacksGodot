@@ -1,0 +1,22 @@
+{
+  "ticket": 156,
+  "id": "agentG2-cli3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795245218.8715053,
+  "wait": 200.29811787605286,
+  "run": 37.916035413742065,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000156_agentG2-cli3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000156_agentG2-cli3\\stderr.txt"
+}

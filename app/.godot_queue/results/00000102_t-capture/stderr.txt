@@ -1,0 +1,22 @@
+SCRIPT ERROR: Parse Error: Could not preload resource script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_capture.gd:21)
+SCRIPT ERROR: Parse Error: Could not resolve script "res://scripts/game.gd".
+   at: GDScript::reload (res://tests/t_capture.gd:21)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "hall" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:83)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "mine" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:84)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "guarded" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:85)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "barracks" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:86)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "guard" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:96)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "usable" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:110)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "usable_ok" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:111)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "trained" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://tests/t_capture.gd:124)
+ERROR: Failed to load script "res://tests/t_capture.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

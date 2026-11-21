@@ -1,0 +1,20 @@
+{
+  "ticket": 43,
+  "id": "agentA-final-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795242072.8302276,
+  "wait": 381.70972061157227,
+  "run": 38.921871185302734,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000043_agentA-final-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000043_agentA-final-selftest\\stderr.txt"
+}

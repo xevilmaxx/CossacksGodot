@@ -1,0 +1,19 @@
+{
+  "ticket": 38,
+  "id": "agentF3-headless",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/mill_render_test.gd"
+  ],
+  "created": 1795241943.0752819,
+  "wait": 348.2061312198639,
+  "run": 1.9890146255493164,
+  "exit": 0,
+  "timeout": 45.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000038_agentF3-headless\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000038_agentF3-headless\\stderr.txt"
+}

@@ -1,0 +1,20 @@
+{
+  "ticket": 37,
+  "id": "agentF3-windowed",
+  "argv": [
+    "--path",
+    "app",
+    "--script",
+    "res://tests/mill_render_test.gd",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795241942.79681,
+  "wait": 337.22364377975464,
+  "run": 11.149750232696533,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000037_agentF3-windowed\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000037_agentF3-windowed\\stderr.txt"
+}

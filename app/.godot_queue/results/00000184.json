@@ -1,0 +1,19 @@
+{
+  "ticket": 184,
+  "id": "t-roster-scotland",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_roster_scotland.gd"
+  ],
+  "created": 1795246064.9543638,
+  "wait": 126.29382824897766,
+  "run": 0.7438919544219971,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000184_t-roster-scotland\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000184_t-roster-scotland\\stderr.txt"
+}

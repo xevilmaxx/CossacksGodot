@@ -6,7 +6,7 @@ snippets and watch-page titles; mechanics numbers below come from the Cossacks
 wiki (cossacks3.fandom.com), gamepressure.com guide and Steam community guides,
 cross-checked against the donor game's own scripts (see app/MECHANICS.md).
 
-## Videos (14 distinct, incl. the two requested)
+## Videos (17 distinct, incl. the two requested)
 
 1. https://www.youtube.com/watch?v=_2AuBsK1uPI — "THE RAIDING GAME | COSSACKS 3 | GAMEPLAY | 2025" (user-requested). Raiding/cavalry harassment play: fast horse vs ranged, economy raids.
 2. https://www.youtube.com/watch?v=cZW0AEupCaI — "GAMEPLAY [PC/HD]" (used by earlier pass). Singleplayer shell: menu → Skirmish/Historical Battles/Campaigns, nation pick, map options, objectives.

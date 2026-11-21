@@ -1,0 +1,20 @@
+{
+  "ticket": 114,
+  "id": "t-audio-events-rerun",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_audio_events.gd"
+  ],
+  "created": 1795244013.8165185,
+  "wait": 866.5864894390106,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 90.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000114_t-audio-events-rerun\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000114_t-audio-events-rerun\\stderr.txt",
+  "error": "ticket 114 was skipped (serving=115)"
+}

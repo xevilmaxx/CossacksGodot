@@ -1,0 +1,19 @@
+{
+  "ticket": 166,
+  "id": "t-upgrades",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_upgrades.gd"
+  ],
+  "created": 1795245264.5111709,
+  "wait": 399.7819335460663,
+  "run": 6.86841607093811,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000166_t-upgrades\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000166_t-upgrades\\stderr.txt"
+}

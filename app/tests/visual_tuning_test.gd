@@ -137,4 +137,4 @@ func _finish() -> void:
 			ok = false
 	print("visual_tuning_test: %d/%d checks passed" % [
 		checks.filter(func(c): return c.ok).size(), checks.size()])
-	quit(0 if ok else 1)
+	call_deferred("quit", 0 if ok else 1)

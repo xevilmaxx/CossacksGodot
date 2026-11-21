@@ -1,0 +1,32 @@
+{
+	"checks": [
+		{
+			"detail": "seed=7 water(terrain=3)=2391 tiles, BLK_WATER-tagged=2391",
+			"name": "lake_tiles_present",
+			"passed": true
+		},
+		{
+			"detail": "sand(terrain=4) tiles touching water=480 of 1007",
+			"name": "sand_ring_neighbours_water",
+			"passed": true
+		},
+		{
+			"detail": "sampled=64 blocked=64",
+			"name": "water_blocked_for_movement",
+			"passed": true
+		},
+		{
+			"detail": "no non-flat water variants (variants buckets empty) and no sparkle/animated-wave state",
+			"name": "water_nonflat_variants_or_sparkle",
+			"passed": false
+		},
+		{
+			"detail": "advanced 30.00s over 300 ticks, time_finite=true units_finite=true water_blocked=true winner=-1",
+			"name": "sim_no_errors",
+			"passed": true
+		}
+	],
+	"id": "t_water",
+	"passed": false,
+	"unix_ms": 1795245196533.0
+}

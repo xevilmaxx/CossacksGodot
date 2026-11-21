@@ -1,0 +1,21 @@
+{
+  "ticket": 15,
+  "id": "agentH-menu",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/g4_menu_audit.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795241592.3808427,
+  "wait": 93.68132853507996,
+  "run": 24.80858087539673,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000015_agentH-menu\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000015_agentH-menu\\stderr.txt"
+}

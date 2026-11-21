@@ -301,6 +301,7 @@ func _do_shot(path: String) -> void:
 	if f == null:
 		_reply({"ok": false, "error": "cannot write"})
 		return
+	f.close()
 	if img.save_png(p) != OK:
 		_reply({"ok": false, "error": "save failed"})
 		return
