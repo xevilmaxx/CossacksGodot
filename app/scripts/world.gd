@@ -23,8 +23,9 @@ var fog_vis: PackedByteArray = PackedByteArray()
 var fog_counts: PackedInt32Array
 var fog_timer := 0.0
 const CHUNK_T := 32          # tiles per chunk side
-var terrain_chunks: Dictionary = {}   # Vector2i -> Sprite2D
-var terrain_order: Array = []         # LRU keys
+var terrain_chunks: Dictionary = {}   # Vector2i -> Sprite2D (whole map, no eviction)
+var full_chunks: Dictionary = {}      # Vector2i -> true (upgraded to full donor-texture LOD)
+var terrain_order: Array = []         # bake order (no eviction)
 # T3-FIX-WORLD / MAP_NAV_PERF F1: neutral per-chunk fallback so a minimap jump
 # never exposes the background clear colour while bakes catch up. One small
 # cached texture, one Sprite2D per missing in-view key, freed when baked.
@@ -32,7 +33,8 @@ var fallback_chunks: Dictionary = {}  # Vector2i -> Sprite2D
 var fallback_tex: ImageTexture = null
 # QA-1 / N-07: one-shot per-bake timing over the first 120 bakes. The runner
 # harness only accepts an explicit BAKE_BENCH line; nothing here changes draw
-# output or the 2-chunk/frame + LRU-24 amortisation below.
+# output or the 2-chunk/frame bake-rate cap below (T5-RENDER keeps that rate,
+# but the cache now holds every chunk of the map instead of LRU-24).
 var bake_bench_count := 0
 var bake_bench_total_us := 0
 var bake_bench_max_us := 0
@@ -1523,6 +1525,40 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	add_child(sp)
 	return sp
 
+# T5-RENDER: cheap REAL terrain LOD for distant chunks (1 texel per tile).
+# Each texel samples the centre of that tile's donor block, season-tinted, so a
+# minimap jump shows the actual meadow/dirt/rock layout immediately instead of
+# a flat colour or a clear-colour hole. ~3 ms vs ~5 s for a full HIGH bake.
+# Entries are cached in terrain_chunks and never evicted; crossing into view
+# upgrades the chunk to the full donor-texture bake via _build_chunk().
+var low_block_col: Dictionary = {}   # block name -> one sampled donor colour
+
+func _low_block_col(nm: String) -> Color:
+	if low_block_col.has(nm):
+		return low_block_col[nm]
+	var c := Color(0.33, 0.39, 0.21)
+	var bi := _block_img(nm)
+	if bi != null and not bi.is_empty():
+		c = bi.get_pixel(int(bi.get_width() / 2), int(bi.get_height() / 2))
+	low_block_col[nm] = c
+	return c
+
+func _build_chunk_low(cx: int, cy: int) -> Sprite2D:
+	var img := Image.create(CHUNK_T, CHUNK_T, false, Image.FORMAT_RGB8)
+	var st := _season_tint()
+	for ly in CHUNK_T:
+		for lx in CHUNK_T:
+			var x := cx * CHUNK_T + lx
+			var y := cy * CHUNK_T + ly
+			var col := Color(0.33, 0.39, 0.21)
+			if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+				col = _low_block_col(_art_name(game._t(x, y)))
+			if st.a > 0.0:
+				col = Color(col.r, col.g, col.b).lerp(Color(st.r, st.g, st.b), st.a)
+			img.set_pixel(lx, ly, Color(col.r, col.g, col.b, 1.0))
+	var tex := ImageTexture.create_from_image(img)
+	return _make_chunk_sprite(cx, cy, tex, -10, Data.TILE_M * view_scale)
+
 # Neutral low-res fallback chunk (1 px per tile, flat biome colour), built once
 # and shared by every missing-key sprite. Cheap: no bake, no per-frame pixel work.
 func _fallback_texture() -> ImageTexture:
@@ -1565,36 +1601,51 @@ func _sync_terrain_chunks() -> void:
 	var c0y := maxi(0, t0.y / CHUNK_T)
 	var c1x := mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T)
 	var c1y := mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T)
-	# T3-FIX-WORLD / MAP_NAV_PERF F1: collect the in-view set and the missing
-	# keys, then bake centre-out (the point jumped to is correct first). The
-	# no-hole fallback is reconciled AFTER baking + LRU eviction so every in-view
-	# key is covered by a real chunk or a neutral sprite at end of sync.
+	# T5-RENDER: the WHOLE configured map stays resident. ceil(W/CHUNK_T)*
+	# ceil(H/CHUNK_T) = 100 chunks at 320x320. Two LODs, never evicted:
+	#   * in-view chunks get the FULL donor-texture bake (_build_chunk), ordered
+	#     centre-out from the jump target and still capped at 2 per frame;
+	#   * distant chunks get a cheap REAL 1-texel/tile LOD (_build_chunk_low).
+	# A full HIGH bake is ~5 s, so 100 of them is ~8 min and breaks short jobs;
+	# the LOD is ~3 ms/chunk. Either way every key is covered immediately, so a
+	# minimap jump never exposes the clear colour and upgrades over later frames.
+	for k in full_chunks.keys():
+		if not terrain_chunks.has(k):   # e.g. main.gd cleared chunks on quality change
+			full_chunks.erase(k)
+	var ncx: int = int(ceil(float(game.MAP_W) / float(CHUNK_T)))
+	var ncy: int = int(ceil(float(game.MAP_H) / float(CHUNK_T)))
 	var in_view := {}
-	var missing: Array = []
 	var ccx: float = float(c0x + c1x) * 0.5
 	var ccy: float = float(c0y + c1y) * 0.5
+	# 1) Full-quality queue: in-view keys not yet full, centre-out.
+	var full_q: Array = []
 	for cy in range(c0y, c1y + 1):
 		for cx in range(c0x, c1x + 1):
 			var k := _chunk_key(cx, cy)
 			in_view[k] = true
-			if not terrain_chunks.has(k):
+			if not full_chunks.has(k):
 				var dx: float = float(cx) - ccx
 				var dy: float = float(cy) - ccy
-				missing.append({"k": k, "cx": cx, "cy": cy, "d": dx * dx + dy * dy})
-	missing.sort_custom(func(a, b): return float(a["d"]) < float(b["d"]))
+				full_q.append({"k": k, "cx": cx, "cy": cy, "d": dx * dx + dy * dy})
+	full_q.sort_custom(func(a, b): return float(a["d"]) < float(b["d"]))
 	var built := 0
-	for m in missing:
+	for m in full_q:
 		if built >= 2:
-			break  # amortize: big GDScript bake, no multi-second hitch
+			break  # keep the 2-chunks/frame rate cap (frame-time protection)
 		var k: Vector2i = m["k"]
-		if terrain_chunks.has(k):
+		if full_chunks.has(k):
 			continue
 		# QA-1: time the bake itself (not the whole sync). Accumulate
 		# max + mean over the first 120 bakes, then emit exactly one
 		# BAKE_BENCH line; guarded so it never prints per frame again.
+		var old: Sprite2D = terrain_chunks.get(k, null)
 		var bake_t0 := Time.get_ticks_usec()
-		terrain_chunks[k] = _build_chunk(int(m["cx"]), int(m["cy"]))
+		var fresher := _build_chunk(int(m["cx"]), int(m["cy"]))
 		var bake_us := Time.get_ticks_usec() - bake_t0
+		if old != null and is_instance_valid(old):
+			old.queue_free()
+		terrain_chunks[k] = fresher
+		full_chunks[k] = true
 		if not bake_bench_done:
 			bake_bench_count += 1
 			bake_bench_total_us += bake_us
@@ -1604,15 +1655,20 @@ func _sync_terrain_chunks() -> void:
 				_emit_bake_bench()
 		terrain_order.append(k)
 		built += 1
-		while terrain_order.size() > 24:
-			var old: Vector2i = terrain_order.pop_front()
-			var sp2: Sprite2D = terrain_chunks.get(old, null)
-			if sp2 != null:
-				sp2.queue_free()
-			terrain_chunks.erase(old)
-	# Reconcile fallbacks: create for any still-missing in-view key (including
-	# one just evicted by the LRU), free those now baked or out of view. This
-	# makes the no-hole invariant hold at the end of EVERY sync frame.
+	# 2) Distant LOD warm-up: any map chunk with no texture yet. Time-budgeted so
+	#    it adds no frame hitch; entries accumulate and are never evicted.
+	var lod_budget_us := 8000
+	var lod_t0 := Time.get_ticks_usec()
+	for cy in ncy:
+		for cx in ncx:
+			var k := _chunk_key(cx, cy)
+			if terrain_chunks.has(k):
+				continue
+			if Time.get_ticks_usec() - lod_t0 >= lod_budget_us:
+				break
+			terrain_chunks[k] = _build_chunk_low(cx, cy)
+	# 3) Reconcile fallbacks: cover any still-missing in-view key, free those
+	#    now baked or out of view. Keeps the no-hole invariant EVERY frame.
 	for k in in_view.keys():
 		if not terrain_chunks.has(k) and not fallback_chunks.has(k):
 			fallback_chunks[k] = _make_chunk_sprite(k.x, k.y,
@@ -1961,49 +2017,107 @@ func _field_growth(n: Dictionary) -> float:
 	return ratio
 
 func _draw_field(p: Vector2, h: float, g: float) -> void:
-	res_layer.draw_circle(p + Vector2(0, 3), 7.0, Color(0, 0, 0, 0.15))
+	# T5-RENDER: donor fields are dense VERTICAL STALKS in a hard-edged gold
+	# rectangle, with NO flower circles/heads. envfieldd/envfielddw already
+	# bake that stalk texture plus a 477 px near-rectangular alpha footprint
+	# (~12 px ramp), so the decal IS the field base. Growth stages change only
+	# patch size/opacity; g==0 is bare stubble. No procedural bead heads remain.
 	var winter: bool = _season_key() == "winter"
 	var dec: Texture2D = _field_decal(winter)
 	if dec != null and g > 0.0:
-		# The donor decal alpha gives a 477 px footprint with a 12 px ramp:
-		# a rectangular golden patch, never a full-tile olive square.
-		# 2.3 tiles wide, 2:1 ground-plane squash; tint is linear (Godot
-		# modulates in linear space) so the sRGB source (76,68,45) lands on
-		# the field spec's #94762E gold.
-		var w: float = 2.3 * Data.TILE_M * view_scale
+		# 2.3 tiles wide at full growth, 2:1 ground-plane squash. Tint is
+		# linear (Godot modulates in linear space): sRGB donor mean (76,68,45)
+		# under this modulate lands ~#866A2D = H 41 deg, inside the 39-45 deg
+		# field-spec gold band. The alpha ramp is ~12 px in 512 px, i.e. ~2 px
+		# at this on-screen size -> a sharp 2-8 px rectangular edge.
+		var w: float = (1.6 + 0.7 * g) * Data.TILE_M * view_scale
 		var hh: float = w * 0.5
-		var tint: Color = Color(3.3, 2.5, 1.00, clampf(0.42 + 0.28 * g, 0.0, 1.0))
+		var tint: Color = Color(3.3, 2.5, 1.0, clampf(0.42 + 0.28 * g, 0.0, 1.0))
 		if winter:
 			tint = Color(1.0, 1.0, 1.06, 0.78)
 		res_layer.draw_texture_rect(dec,
 			Rect2(p.x - w * 0.5, p.y - hh * 0.5, w, hh), false, tint)
-	if g <= 0.0:
-		# harvested: worked soil + short cut stubble, never ripe wheat
-		for k in 5:
-			var a := h * 6.28 + float(k) * 1.256
-			var tip := p + Vector2(cos(a), sin(a)) * (4.0 + h * 2.0) + Vector2(0, -3.0)
-			res_layer.draw_line(p + Vector2(0, 3), tip, Color(0.44, 0.38, 0.23), 1.2)
-		return
-	var count: int = 5 + int(g * 4.0)
-	var reach := 3.0 + g * 4.0
-	var tall := 4.0 + g * 10.0
-	var stalk := Color(0.42, 0.46, 0.2)
-	var head_col := Color(0.88 + h * 0.08, 0.74, 0.28)
-	var head_r := 1.0 + g * 1.6
-	if g < 0.35:
-		stalk = Color(0.36, 0.55, 0.26)
-		head_col = Color(0.5, 0.66, 0.28)
-		head_r = 0.9
-	elif g < 0.7:
-		stalk = Color(0.45, 0.52, 0.24)
-		head_col = Color(0.72, 0.74, 0.3)
-	for k in count:
-		var a := h * 6.28 + float(k) * (6.28 / float(count))
-		var tip := p + Vector2(cos(a), sin(a)) * (reach + h * 2.0) + Vector2(0, -tall - h * 3.0)
-		res_layer.draw_line(p + Vector2(0, 3), tip, stalk, 1.8)
-		res_layer.draw_circle(tip, head_r, head_col)
-		if g >= 0.7:
-			res_layer.draw_circle(tip + Vector2(0, -2), 1.4, Color(0.95, 0.85, 0.4))
+	if dec == null or g <= 0.0:
+		# Fallback (no decal) / harvested field: short VERTICAL stalk strokes
+		# only, gold-olive, never bright head circles.
+		var span: float = 0.34 * view_scale * (0.6 + 0.4 * g)
+		var tall: float = 2.0 + g * 7.0
+		var stalk := Color(0.42, 0.37, 0.16)
+		if g < 0.35:
+			stalk = Color(0.34, 0.40, 0.20)
+		elif g < 0.7:
+			stalk = Color(0.42, 0.44, 0.20)
+		if g <= 0.0:
+			res_layer.draw_rect(Rect2(p.x - span, p.y - 1.5, span * 2.0, 3.0),
+				Color(0.30, 0.27, 0.17, 0.55))
+			tall = 2.5
+		var count: int = 7 + int(g * 5.0)
+		for k in count:
+			var fx: float = float(k) / float(maxf(1.0, float(count - 1))) - 0.5
+			var x: float = p.x + fx * span * 2.0
+			var lean: float = sin(h * 6.283 + float(k) * 2.1) * (0.6 + 0.8 * g)
+			res_layer.draw_line(Vector2(x, p.y + 1.0),
+				Vector2(x + lean, p.y - tall), stalk, 1.6)
+
+# T5-RENDER / mines_display.md A5: the baked 160px mine PNG carries a large
+# olive-green polygonal ground disc (H 45-95, S>=0.30, V<=0.52) that is a
+# private-use bake artefact, not donor art. Strip it once per ore type and crop
+# to the remaining mound/ore cluster, so the deposit marker has no green oval.
+# The discard band is chosen from the measured sprite pixels: the disc is
+# saturated dark olive, the mound is desaturated brown/grey with gold specks.
+var mine_marker_tex: Dictionary = {}
+
+func _mine_marker_tex(sid: String) -> Texture2D:
+	if mine_marker_tex.has(sid):
+		return mine_marker_tex[sid] as Texture2D
+	var src: Texture2D = _sprite_for(sid, -1)
+	if src == null:
+		return null
+	var im: Image = src.get_image()
+	if im == null or im.is_empty():
+		return null
+	if im.get_format() != Image.FORMAT_RGBA8:
+		im.convert(Image.FORMAT_RGBA8)
+	var w := im.get_width()
+	var h := im.get_height()
+	var out := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var minx := w
+	var miny := h
+	var maxx := -1
+	var maxy := -1
+	for y in h:
+		for x in w:
+			var c: Color = im.get_pixel(x, y)
+			if c.a < 0.16:
+				continue
+			# Manual HSV (this Godot build has no Color HSV helpers): the disc
+			# is H 45-95 / S>=0.30 / V<=0.52, the mound is desaturated brown.
+			var mx: float = maxf(c.r, maxf(c.g, c.b))
+			var mn: float = minf(c.r, minf(c.g, c.b))
+			var dlt: float = mx - mn
+			var hd := 0.0
+			if dlt > 0.0:
+				if is_equal_approx(mx, c.r):
+					hd = fposmod((c.g - c.b) / dlt, 6.0)
+				elif is_equal_approx(mx, c.g):
+					hd = (c.b - c.r) / dlt + 2.0
+				else:
+					hd = (c.r - c.g) / dlt + 4.0
+				hd *= 60.0
+			var sat: float = 0.0 if mx <= 0.0 else dlt / mx
+			if hd >= 45.0 and hd <= 95.0 and sat >= 0.30 and mx <= 0.52:
+				continue  # baked olive ground disc
+			out.set_pixel(x, y, c)
+			minx = mini(minx, x)
+			miny = mini(miny, y)
+			maxx = maxi(maxx, x)
+			maxy = maxi(maxy, y)
+	var tex: Texture2D = null
+	if maxx >= minx:
+		tex = ImageTexture.create_from_image(
+			out.get_region(Rect2i(minx, miny, maxx - minx + 1, maxy - miny + 1)))
+	mine_marker_tex[sid] = tex
+	return tex
 
 func _draw_resources() -> void:
 	dbg_res += 1
@@ -2112,18 +2226,22 @@ func _draw_resources() -> void:
 				# MICRO #15: depleted fields are bare, re-sown ones grow.
 				_draw_field(p, h, _field_growth(n))
 			"gold", "iron", "coal":
-				# T2-BUILD-RENDER / verdict_decor A1/A3/A5/A6: draw the actual
-				# mine_<type> sprite (mine_gold/iron/coal), NOT a generic rock
-				# with three coloured dots. The old wide olive disc/apron was
-				# 43.8% of the component bbox -> removed; only a small contact
-				# shadow remains. Height <= 3.0, jitter 1.0/1.0 (envscales).
+				# T5-RENDER: deposit marker = disc-stripped mine mound whose ink
+				# box spans ~2 tiles (4 m), foot-anchored exactly at n.pos (the
+				# ore node's tile centre) and <= 3.0 m tall. No jitter is applied
+				# (== 1.0, matching donor envscales.cfg mines 1/1). No olive disc.
 				var mine_sid: String = "mine_" + str(n.type)
-				var mine_spr := _sprite_for(mine_sid, -1)
+				var mine_spr := _mine_marker_tex(mine_sid)
 				if mine_spr != null:
-					_blob_rect(res_layer, p + Vector2(0, 2), 0.55 * view_scale,
-						0.28 * view_scale, Color(0, 0, 0, 0.18))
-					_draw_sprite(res_layer, mine_spr, p,
-						_env_sprite_h(2.8, "mine", n.pos), Color(1, 1, 1), false)
+					var wpx: float = 2.0 * Data.TILE_M * view_scale
+					var hpx: float = wpx * float(mine_spr.get_height()) / float(mine_spr.get_width())
+					if hpx > 3.0 * view_scale:
+						hpx = 3.0 * view_scale
+						wpx = hpx * float(mine_spr.get_width()) / float(mine_spr.get_height())
+					_ground_ellipse(res_layer, p + Vector2(0, 1), wpx * 0.42,
+						wpx * 0.20, Color(0, 0, 0, 0.16))  # contact shadow only
+					res_layer.draw_texture_rect(mine_spr,
+						Rect2(p.x - wpx * 0.5, p.y - hpx, wpx, hpx), false, Color(1, 1, 1))
 				else:
 					# tiny deterministic jagged fallback (no baked sprite)
 					var rr := 0.22 * view_scale

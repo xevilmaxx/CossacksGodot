@@ -1,0 +1,100 @@
+{
+  "block_names": [
+    "rock9",
+    "rock8",
+    "rock4",
+    "rock7",
+    "rock1",
+    "rock5",
+    "grass_ground3",
+    "test14",
+    "grass_ground1",
+    "test7",
+    "test12",
+    "test8",
+    "rock3",
+    "test9"
+  ],
+  "camera": {
+    "focal_length": 400.0,
+    "fov_note": "Exact donor FOV UNVERIFIED: donor sensor constant is unknown. 216mm display sensor chosen to frame a 16-tile patch; the canonical 36mm-equivalent assumption yields only ~2.9deg vertical FOV.",
+    "fov_verified": false,
+    "fov_vertical_deg_36mm_sensor": 2.89997958276412,
+    "fov_vertical_deg_display": 17.2716044222336,
+    "ground_dist_m": 64.013381161642,
+    "height_m": 40.0,
+    "position": [
+      0.0,
+      40.0,
+      64.0133819580078
+    ],
+    "projection": "perspective",
+    "rotation_deg": [
+      -31.9999997521163,
+      0.0,
+      0.0
+    ],
+    "sensor_width_mm_display": 216.0,
+    "tilt_deg": -32.0
+  },
+  "dump_window": {
+    "n": 16,
+    "x0": 184,
+    "y0": 154
+  },
+  "height_error_max_m": 0.0,
+  "height_scale": 1.0,
+  "mesh_vertices": 1684,
+  "missing": [
+    "units/buildings/trees/decor",
+    "HUD/minimap/fog of war",
+    "water refraction/screen-space depth",
+    "tonemapping/DOF/fog",
+    "donor sub-atlas UV seams and 25deg oriented face art",
+    "verified donor FOV / sensor constant",
+    "donor tiles.mat art for 'test*' placeholder block names (flat fallback)"
+  ],
+  "reflection": {
+    "status": "deferred to M1 water fidelity",
+    "reason": "Water occupies only thin shoreline slivers (<2% of the M0 frame), so a hint_screen_texture wave-jitter proxy cannot be measured against the >=3-5 px crest-shift gate without changing the M0 scene; Compatibility screen-copy cost is also unverified. Donor decals/cubemap were NOT copied. Donor water reflection is a live projected texture (water.dev.frag), not the cubemap and not the decals."
+  },
+  "performance": {
+    "frames_sampled": 26,
+    "mean_draw_calls": 31.0,
+    "mean_frame_process_ms": 27.4339615384615
+  },
+  "shot": "res://shots/terrain3d_sandbox.png",
+  "shot_size": {
+    "h": 720,
+    "resized": false,
+    "source_h": 720,
+    "source_w": 1280,
+    "w": 1280
+  },
+  "side_quads": 165,
+  "side_vertices": 660,
+  "sun": {
+    "ambient_light": true,
+    "donor_lightvector_zyup": [
+      -0.086,
+      0.0,
+      0.939
+    ],
+    "godot_direction_yup": [
+      -0.086,
+      0.939,
+      0.0
+    ],
+    "light_cfg_position": [
+      -0.3447,
+      0.9387,
+      0.0
+    ],
+    "shadows": true
+  },
+  "surfaces": 15,
+  "tile_m": 2.0,
+  "top_surface_vertices": 1024,
+  "triangles": 842,
+  "water_level_m": -0.25
+}

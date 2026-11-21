@@ -368,18 +368,22 @@ func run() -> Dictionary:
 	game.players[0].res[3] += 1000.0
 	var mill := game.spawn("mil", 0, peasant.pos + Vector2(-20, -20))
 	game._on_building_finished(mill)
+	# Attribute fields to THIS mill by id: the AI may already have sown a ring
+	# for its own mill, and cmd_sow only restores fields whose "mill" equals the
+	# given mill.id. Counting/depleting any mill-flagged field would pick the
+	# AI's field and leave the order with nothing of ours to restore.
 	var fields0 := 0
 	for n in game.res_nodes:
-		if n.has("mill"):
+		if n.has("mill") and int(n.mill) == int(mill.id):
 			fields0 += 1
 	for n in game.res_nodes:
-		if n.has("mill"):
-			n.hits = 0  # deplete one field; Grain Crops must restore it
+		if n.has("mill") and int(n.mill) == int(mill.id):
+			n.hits = 0  # deplete one of our mill's fields; Grain Crops must restore it
 			break
 	var manual := game.cmd_sow(mill)
 	var restored := false
 	for n in game.res_nodes:
-		if n.has("mill") and int(n.hits) > 0:
+		if n.has("mill") and int(n.mill) == int(mill.id) and int(n.hits) > 0:
 			restored = true
 			break
 	mill_ok = fields0 > 0 and manual > 0 and restored

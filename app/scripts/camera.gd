@@ -9,6 +9,10 @@ var edge_margin := 8.0          # cameracontrol.inc cMargin
 var corner_margin := 24.0       # cCornerMargin
 var key_speed := 24.0 * 4.0     # profile keyscrollspeed*4 (default ~24) — estimated default
 var mouse_speed := 16.0 * 4.0   # profile mousescrollspeed*4 — estimated default
+# T5-RENDER: ~2x closer than the old 1.0 default. This is a camera-only change;
+# Data.TILE_M and all world coordinates are untouched. 2.0 sits inside the
+# donor-derived 0.34-2.9 clamp range below, so wheel zoom still works both ways.
+const DEFAULT_ZOOM := 2.0
 var min_zoom := 1.0             # camera height 58
 var max_zoom := 2.9             # camera height 20 (58/20)
 var zoom_step := 1.15
@@ -27,6 +31,7 @@ func bind(w: C3World) -> void:
 	var h_max: float = maxf(h_min, Data.CAMERA_MAX_HEIGHT)
 	min_zoom = h_min / h_max
 	max_zoom = h_max / h_min
+	zoom = Vector2.ONE * clampf(DEFAULT_ZOOM, min_zoom, max_zoom)
 	make_current()
 	position = Vector2(0, 0)
 

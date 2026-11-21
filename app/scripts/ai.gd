@@ -11,6 +11,21 @@ var wave := 0
 var raid_ids: Array = []
 var retreat_t := 0.0
 
+# T5-AI: food-safety snapshot, recomputed once per think tick and shared by the
+# economy allocator, the training gate and the optional soak trace.
+var ai_food_reserve := 0.0
+var ai_food_ok := true
+var ai_starving := false
+
+# Documented local floors, used ONLY when a configured threshold is absent or
+# zero. They mirror data.gd defaults / config.json (AI_FOOD/WOOD/STONE_THRESHOLD)
+# so behaviour is unchanged when the knobs are present (C4 in AI_SURVIVAL_DIAG).
+const AI_FOOD_FLOOR := 260.0
+const AI_WOOD_FLOOR := 260.0
+const AI_STONE_FLOOR := 160.0
+# Seconds of whole-army upkeep kept as a live buffer before new soldiers train.
+const AI_FOOD_HORIZON_S := 45.0
+
 func _init(g: C3Game, p: int) -> void:
 	game = g
 	player = p
@@ -47,6 +62,12 @@ func tick(dt: float) -> void:
 	if home.is_empty():
 		home = blds[0]
 		p["home_id"] = home.id
+	# T5-AI: read the configured prioritarian thresholds once per tick so the
+	# training gate and the economy allocator act on the same food snapshot.
+	var st := _res_state(res, p)
+	ai_starving = bool(st.get("starving", false))
+	ai_food_reserve = _food_reserve(res, peasants, military, st)
+	ai_food_ok = (res.food >= ai_food_reserve) and not ai_starving
 	_build(res, counts, fin, home, p)
 	_resume(peasants)
 	_economy(peasants, res, p, counts, fin)
@@ -54,18 +75,126 @@ func tick(dt: float) -> void:
 	_train(peasants, military, res, counts, fin, p)
 	_form_squads(military)
 	_repair(peasants, blds)
+	_trace(res, p, peasants, military, fin, counts)
 	if _defense(military, home):
 		return
 	_raids(military, res)
 	_waves(military, home, p)
+
+# --- T5-AI helpers: prioritarian thresholds, food reserve, affordable cost ---
+# Reads the configured thresholds read-only. A non-positive/missing value falls
+# back to the documented floor so an absent knob cannot silently disable safety.
+func _res_state(res: Dictionary, p: Dictionary) -> Dictionary:
+	var food_thr := float(Data.AI_FOOD_THRESHOLD) if float(Data.AI_FOOD_THRESHOLD) > 0.0 else AI_FOOD_FLOOR
+	var wood_thr := float(Data.AI_WOOD_THRESHOLD) if float(Data.AI_WOOD_THRESHOLD) > 0.0 else AI_WOOD_FLOOR
+	var stone_thr := float(Data.AI_STONE_THRESHOLD) if float(Data.AI_STONE_THRESHOLD) > 0.0 else AI_STONE_FLOOR
+	var famine := bool(p.get("famine", false))
+	# Explicit priority: food > wood > stone > gold/iron. "starving" suppresses
+	# investment in everything that is not food production.
+	return {
+		"food_thr": food_thr, "wood_thr": wood_thr, "stone_thr": stone_thr,
+		"food_ok": (res.food >= food_thr) and not famine,
+		"wood_ok": res.wood >= wood_thr,
+		"stone_ok": res.stone >= stone_thr,
+		"starving": famine or res.food < food_thr,
+	}
+
+# Exact per-second upkeep, mirroring game.gd:3392-3398 (eat / UPKEEP_DIVISOR).
+func _upkeep_food(peasants: Array, military: Array) -> float:
+	var total := 0.0
+	for u in peasants:
+		var ee: Dictionary = u.def.get("eat", {})
+		total += float(ee.get("food", 0.0))
+	for u in military:
+		var ee2: Dictionary = u.def.get("eat", {})
+		total += float(ee2.get("food", 0.0))
+	return total / float(Data.UPKEEP_DIVISOR)
+
+# Reserve scales with army upkeep (i.e. with unit count) and is floored by the
+# configured food threshold. One pricey unit + slack covers a train tick.
+func _food_reserve(res: Dictionary, peasants: Array, military: Array, st: Dictionary) -> float:
+	var upkeep_s := _upkeep_food(peasants, military)
+	var reserve := upkeep_s * AI_FOOD_HORIZON_S + 130.0 + 100.0
+	return maxf(reserve, float(st.get("food_thr", AI_FOOD_FLOOR)))
+
+# Read the REAL cost from Data.BUILDINGS instead of a drifted hard-coded gate.
+func _can_afford(sid: String, res: Dictionary) -> bool:
+	var def: Dictionary = Data.BUILDINGS.get(sid, {})
+	var cost: Dictionary = def.get("cost", {})
+	if cost.is_empty():
+		return true
+	for k in cost:
+		if float(res.get(k, 0.0)) + 0.001 < float(cost[k]):
+			return false
+	return true
+
+func _count_food_workers(peasants: Array) -> int:
+	var c := 0
+	for pe in peasants:
+		if pe.inside_of != 0:
+			continue
+		if pe.order.type == "gather" and str(pe.order.get("res", "")) == "food":
+			c += 1
+	return c
+
+# nearest_res() skips depleted fields, so the resow path needs its own lookup.
+func _nearest_depleted_field(pos: Vector2) -> Dictionary:
+	var best: Dictionary = {}
+	var bd := 1e9
+	for n in game.res_nodes:
+		if str(n.type) != "food" or int(n.hits) > 0:
+			continue
+		var d: float = n.pos.distance_to(pos)
+		if d < bd:
+			bd = d
+			best = n
+	return best
+
+# Optional per-tick soak trace. Set C3_AI_TRACE=1 in the environment to enable;
+# silent by default so selftest/uitest stdout stays clean.
+func _trace(res: Dictionary, p: Dictionary, peasants: Array, military: Array, fin: Dictionary, counts: Dictionary) -> void:
+	if OS.get_environment("C3_AI_TRACE") == "":
+		return
+	var alive_fields := 0
+	var depleted_fields := 0
+	for n in game.res_nodes:
+		if str(n.type) == "food":
+			if int(n.hits) > 0:
+				alive_fields += 1
+			else:
+				depleted_fields += 1
+	var row := {
+		"p": player, "t": snappedf(game.time_s, 0.1),
+		"food": snappedf(res.food, 1.0), "wood": snappedf(res.wood, 1.0), "stone": snappedf(res.stone, 1.0),
+		"famine": bool(p.get("famine", false)), "famine_t": snappedf(float(p.get("famine_t", 0.0)), 1.0),
+		"peasants": peasants.size(), "military": military.size(),
+		"food_workers": _count_food_workers(peasants),
+		"reserve": snappedf(ai_food_reserve, 1.0), "food_ok": ai_food_ok, "starving": ai_starving,
+		"mills_fin": int(fin.get("mil", 0)), "mills_all": int(counts.get("mil", 0)),
+		"fields": alive_fields, "fields_depleted": depleted_fields,
+	}
+	print("C3AITrace ", JSON.stringify(row))
 
 # --- economy: target quotas instead of threshold ping-pong ---
 func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionary, fin: Dictionary) -> void:
 	var n := peasants.size()
 	if n == 0:
 		return
-	# desired distribution: food 35%, wood 25%, stone 15%, mines 25%
-	var want := {"food": int(n * 0.35), "wood": int(n * 0.25), "stone": int(n * 0.15)}
+	# T5-AI: donor-like food priority. Ceil (never truncate) so small squads do
+	# not starve, and tilt further to food while the configured threshold says
+	# we are starving. Mines only get the leftover after food/wood/stone.
+	var food_share := 0.5
+	var wood_share := 0.25
+	var stone_share := 0.15
+	if ai_starving:
+		food_share = 0.62
+		wood_share = 0.18
+		stone_share = 0.10
+	var want := {
+		"food": maxi(1, ceili(float(n) * food_share)),
+		"wood": maxi(1, int(float(n) * wood_share)),
+		"stone": maxi(1, int(float(n) * stone_share)),
+	}
 	var on := {"food": 0, "wood": 0, "stone": 0, "mine": 0}
 	var by_res := {"food": [], "wood": [], "stone": []}
 	var idle: Array = []
@@ -116,6 +245,13 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 			on[kind] -= 1
 			on["mine"] += 1
 	for pe in idle:
+		# T5-AI: leftover hands go to food first while starving; the old code
+		# sent them to mines, which compounded the foodShortfall.
+		if ai_starving:
+			var fs := game.nearest_res(pe.pos, "food", 120.0)
+			if not fs.is_empty():
+				game.cmd_gather(pe, fs)
+				continue
 		var dep := _mine_for(pe)
 		if dep != "":
 			var node := _deposit_node(dep)
@@ -125,13 +261,24 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 		var f := game.nearest_res(pe.pos, "food", 80.0)
 		if not f.is_empty():
 			game.cmd_gather(pe, f)
-	# famine override: everyone to food
-	if bool(p.get("famine", false)):
+	# T5-AI: food-first safety override. On a real famine every free peasant and
+	# every miner goes to food; on a predictive shortfall (food below the
+	# configured threshold) only miners are recalled, so wood/stone gathering
+	# continues and the mill can still be afforded. cmd_gather() leaves mines.
+	var famine := bool(p.get("famine", false))
+	if ai_starving:
 		for pe in peasants:
-			if pe.inside_of == 0 and pe.order.type != "resow":
-				var f2 := game.nearest_res(pe.pos, "food", 120.0)
-				if not f2.is_empty():
-					game.cmd_gather(pe, f2)
+			if pe.order.type == "resow" or (not famine and pe.inside_of == 0):
+				continue
+			var f2 := game.nearest_res(pe.pos, "food", 120.0)
+			if not f2.is_empty():
+				game.cmd_gather(pe, f2)
+				continue
+			# No live field: resow the nearest depleted one (20 food). A finished
+			# mill then regrows it for free instead of paying to reseed each time.
+			var dead_field := _nearest_depleted_field(pe.pos)
+			if not dead_field.is_empty() and res.food >= 20.0:
+				game.cmd_resow(pe, dead_field)
 
 func _mine_for(pe: Dictionary) -> String:
 	for k in ["gold", "iron", "coal"]:
@@ -159,13 +306,21 @@ func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictiona
 	for b in game.buildings_of(player, false):
 		if not b.finished and not b.dead:
 			unfin += 1
-	if unfin >= 3:
-		# finish what's started before opening new sites (farm exception)
-		if res.wood >= 120 and game.unit_count(player) + game.queue_count(player) + 3 >= int(p.farm_cap):
-			_try_build("hou", home)
-		return
 	if res.wood >= 120 and game.unit_count(player) + game.queue_count(player) + 3 >= int(p.farm_cap):
 		_try_build("hou", home)
+	# T5-AI: mill is the only food-sustainability building in this port (fields
+	# regrow free only with a finished mill). Build it FIRST, before mines and
+	# barracks, at the REAL Data.BUILDINGS cost, and exempt it from the
+	# "finish what you started" guard so the initial batch cannot block it.
+	if int(counts.get("mil", 0)) == 0 and _can_afford("mil", res):
+		_try_build("mil", home)
+	if unfin >= 3:
+		return
+	# T5-AI: guarantee ONE barracks before the mine batch. With a mill (150)
+	# plus three mines (3x100) the 400 starting stone is gone before any
+	# barracks, leaving the AI with 0 military; observed in a 240 s soak.
+	if int(counts.get("bar", 0)) == 0 and res.wood >= 150 and res.stone >= 150:
+		_try_build("bar", home)
 	for k in ["gold", "iron", "coal"]:
 		var sid: String = "mine_" + k
 		if int(counts.get(sid, 0)) == 0 and res.wood >= 100 and res.stone >= 100:
@@ -176,26 +331,30 @@ func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictiona
 		_try_build("sto", home)
 	if int(counts.get("bla", 0)) == 0 and res.wood >= 100 and res.stone >= 30:
 		_try_build("bla", home)
-	if int(counts.get("mil", 0)) == 0 and res.wood >= 200 and res.stone >= 100:
-		_try_build("mil", home)
-	if int(counts.get("mar", 0)) == 0 and res.wood >= 450:
-		_try_build("mar", home)
-	if int(counts.get("aca", 0)) == 0 and res.wood >= 1350 and res.stone >= 1200:
-		_try_build("aca", home)
-	if int(counts.get("sta", 0)) < 2 and res.wood >= 3200 and res.stone >= 850 and res.gold >= 850:
-		_try_build("sta", home)
-	if bool(p.get("has18c", false)) and int(counts.get("bar18", 0)) == 0 and res.wood >= 300 and res.stone >= 300:
-		_try_build("bar18", home)
-	if int(counts.get("dip", 0)) == 0 and res.wood >= 400 and res.gold >= 200:
-		_try_build("dip", home)
-	# expansion: second town hall when booming (cost escalation x3 aware)
-	if int(fin.get("cen", 0)) >= 1 and int(counts.get("cen", 0)) < 2 and res.wood >= 2000 and res.stone >= 1500 and res.gold >= 1000:
-		_try_build("cen", home, 30.0, 60.0)
-	# wall ring: 6 segments max, placed wide so the base stays reachable
-	if int(counts.get("wal", 0)) < 6 and res.stone >= 200 and res.wood >= 60:
-		_try_build("wal", home, 20.0, 30.0)
-	if int(counts.get("tow", 0)) < 2 and res.wood >= 300 and res.stone >= 400 and int(fin.get("bar", 0)) > 0:
-		_try_build("tow", home, 16.0, 24.0)
+	# T5-AI: configured thresholds are the explicit priority switch. Food is
+	# first (starving => no luxury building at all); wood and stone must also
+	# clear their configured buffers before non-food investment. Priority:
+	# food > wood > stone > gold/iron. Essentials above are never deferred.
+	var st := _res_state(res, p)
+	if (not bool(st.get("starving", false))) and bool(st.get("wood_ok", false)) and bool(st.get("stone_ok", false)):
+		if int(counts.get("mar", 0)) == 0 and res.wood >= 450:
+			_try_build("mar", home)
+		if int(counts.get("aca", 0)) == 0 and res.wood >= 1350 and res.stone >= 1200:
+			_try_build("aca", home)
+		if int(counts.get("sta", 0)) < 2 and res.wood >= 3200 and res.stone >= 850 and res.gold >= 850:
+			_try_build("sta", home)
+		if bool(p.get("has18c", false)) and int(counts.get("bar18", 0)) == 0 and res.wood >= 300 and res.stone >= 300:
+			_try_build("bar18", home)
+		if int(counts.get("dip", 0)) == 0 and res.wood >= 400 and res.gold >= 200:
+			_try_build("dip", home)
+		# expansion: second town hall when booming (cost escalation x3 aware)
+		if int(fin.get("cen", 0)) >= 1 and int(counts.get("cen", 0)) < 2 and res.wood >= 2000 and res.stone >= 1500 and res.gold >= 1000:
+			_try_build("cen", home, 30.0, 60.0)
+		# wall ring: 6 segments max, placed wide so the base stays reachable
+		if int(counts.get("wal", 0)) < 6 and res.stone >= 200 and res.wood >= 60:
+			_try_build("wal", home, 20.0, 30.0)
+		if int(counts.get("tow", 0)) < 2 and res.wood >= 300 and res.stone >= 400 and int(fin.get("bar", 0)) > 0:
+			_try_build("tow", home, 16.0, 24.0)
 	for b in game.buildings_of(player):
 		if b.sid == "mar" and b.finished:
 			_market_balance(b)
@@ -232,17 +391,30 @@ func _resume(peasants: Array) -> void:
 			idle.append(pe)
 	if idle.is_empty():
 		return
-	var budget: int = maxi(2, peasants.size() / 3)
+	# T5-AI: prioritise an unfinished mill and give it enough builders to finish
+	# before the mine/barracks batch competes for the same small peasant pool.
+	var sites: Array = []
+	var mill_unfin := false
 	for b in game.buildings_of(player, false):
-		if crew_total >= budget:
-			break
 		if b.finished or b.dead:
 			continue
+		if b.sid == "mil":
+			mill_unfin = true
+			sites.insert(0, b)
+		else:
+			sites.append(b)
+	var budget: int = maxi(2, peasants.size() / 3)
+	if mill_unfin:
+		budget = maxi(3, peasants.size() / 2)
+	for b in sites:
+		if crew_total >= budget:
+			break
 		var crew := 0
 		for pe in peasants:
 			if pe.order.type == "build" and int(pe.order.get("target", 0)) == b.id:
 				crew += 1
-		while crew < 2 and crew_total < budget and not idle.is_empty():
+		var crew_need := 3 if b.sid == "mil" else 2
+		while crew < crew_need and crew_total < budget and not idle.is_empty():
 			var pe2: Dictionary = idle.pop_front()
 			game.cmd_build(pe2, b)
 			crew += 1
@@ -301,7 +473,13 @@ func _research(res: Dictionary, fin: Dictionary) -> void:
 
 # --- production: always fill queues, respect limits (uses train_unit!) ---
 func _train(peasants: Array, military: Array, res: Dictionary, counts: Dictionary, fin: Dictionary, p: Dictionary) -> void:
-	if int(fin.get("cen", 0)) > 0 and peasants.size() < Data.AI_MAX_PEASANTS and res.food >= 100:
+	# T5-AI: one reserve/income margin shared by all training. Peasants pay the
+	# same 100 food up front, so they respect the reserve too (with their cost
+	# on top); soldiers are gated below before ANY queue slot is consumed.
+	var food_workers := _count_food_workers(peasants)
+	var min_food_workers := maxi(1, ceili(float(peasants.size()) * 0.4))
+	var can_train_military := ai_food_ok and not ai_starving and food_workers >= min_food_workers
+	if int(fin.get("cen", 0)) > 0 and peasants.size() < Data.AI_MAX_PEASANTS and res.food >= maxf(ai_food_reserve, 100.0) + 100.0:
 		for b in game.buildings_of(player):
 			if b.sid == "cen" and b.finished and b.queue.size() < 3:
 				game.train_unit(player, b, "peasant")
@@ -323,6 +501,11 @@ func _train(peasants: Array, military: Array, res: Dictionary, counts: Dictionar
 		cls[game._kind_class(m)] = int(cls.get(game._kind_class(m), 0)) + 1
 	for b in game.buildings_of(player):
 		if not b.finished or not b.def.has("trains") or b.queue.size() >= 6:
+			continue
+		# T5-AI: PRIMARY starvation fix — pause military production whenever the
+		# food reserve or the positive-income margin fails. The force cap below
+		# is unchanged, so the AI still attacks once food can pay for it.
+		if not can_train_military:
 			continue
 		if b.sid == "bar" or b.sid == "bar18" or b.sid == "sta" or b.sid == "dip" or b.sid == "art":
 			# support first

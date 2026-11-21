@@ -391,7 +391,135 @@ then small map, then the 4k full-map confrontation PNG.
   reflection/9-octave FBM, and the full-map compositor omits real shader/lighting. Further work needs
   a new wave, starting with the remaining piece-proxy failures and full in-engine comparison.
 
-## T4 QUALITY REGRESSION WAVE (owner rejection, highest priority)
+## R-ARCH WAVE — SYNTHESIZED (owner decision pending)
+
+Final decision doc: `docs/audit/RENDER_ARCH_SYNTHESIS.md`; full CA report with 159 evidence records:
+`docs/audit/RENDER_ARCH_CRAFT_ANYTHING_REPORT.md`. Verdict = donor is 3D OpenGL, perspective camera,
+lit heightfield, live skinned meshes, GLSL shaders; 2D port structurally cannot match. Recommendation:
+keep 2D, add optional `render_mode=2d|3d` with terrain-only M0 sandbox as the FIRST visual gate
+(16×16 tiles, ArrayMesh from height, donor blocks as albedo, Camera3D, DirectionalLight3D, spatial water).
+M1 objects / M2 input-HUD / M3 animated units / M4 mode switch only after M0 is visually accepted.
+**R-ARCH-REFLECT DONE** (`docs/audit/RENDER_ARCH_REFLECTION.md`): decals are NOT reflections;
+`materials/ref` = reference/template. Donor water = live PROJECTED texture (texture2DProj + wave jitter,
+WaterReflection option); objects = static cubemap_c00..05 (128² BMP). Sampler→texture-unit binding still
+in cossacks.exe (UNVERIFIED). Recommendation: M0 water should use hint_screen_texture projected proxy,
+not cubemap; cubemap deferred to licence-reviewed ticket. Follow-up sent to M0-3D.
+**3D BRANCH CLOSED (M0.6 VISUAL FAIL — agent and coordinator agree).** M0.6 restored the −32° tilt,
+padded the mesh to 32 tiles so no border shows, fixed wall normals (cliff-band metric 2921→0, though
+strips remain visibly lighter), ground luminance 80.65, seam gaps 0, 78 draw calls / 16 ms. Yet the
+capture STILL reads as a flat top-down tile mosaic, not the donor's oblique eroded landscape. Root gap
+is fundamental: donor depth comes from organic eroded relief + scene content (trees, shadows, units),
+which a donor-block heightfield cannot supply at this stage. Decision: KEEP THE 2D PATH as shipping
+renderer; 3D sandbox files remain as documented experiment only. No M1–M4.
+
+**M0.5 RESULT (coordinator rejected agent's "visual pass"):** `terrain3d_m05.png` matched donor luminance
+(78.3 vs 76.9) and closed seams 2284→0, but visually it is a FLAT TOP-DOWN tile mosaic with a hard
+rectangular border and horizontal dark cliff bands — not the donor's oblique landscape. The 6× height /
+2.9° FOV flattened the perspective (wrong trade-off). M0.6 assigned: restore −32° oblique tilt, choose
+FOV/distance that keeps it, pad/feather the patch border, fix cliff-band lighting; if it still fails,
+STOP the 3D branch. No further iteration after M0.6.
+
+**M0-3D DONE (mechanism PASS, visual FAIL — honest):** new files only; 16×16 heightfield ArrayMesh
+(1,684 verts / 842 tris / 31 draw calls / 0.0 m height error), perspective Camera3D tilt −32°,
+DirectionalLight3D + shadows, spatial water material; real runner capture `terrain3d_sandbox.png`
+1280×720. Visually DARK, low-contrast, blocky terraced patch with seam gaps, no sky/trees/units —
+NOT closer to the donor still than 2D. FOV assumption UNVERIFIED (216mm sensor → 17.27° vs 36mm → 2.9°).
+Reflection proxy skipped (deferred M1). Next: M0.5 art pass (FOV calibration, exposure/tonemap, close
+seams, sky/background, water) BEFORE any M1 object work; if M0.5 still loses to 2D, stop 3D.
+Process rule: donor-paradigm-first, visual A/B before code, metrics never override visual review.
+
+## R-ARCH WAVE (owner: understand donor rendering paradigm, use Craft Anything, more investigation)
+
+Craft Anything session re-briefed to the 2D-vs-3D-ortho question; hypothesis `hyp_1` recorded
+(donor = low-poly 3D ortho with textured ground/water shaders; 2D port cannot reproduce it);
+6-step plan set; handoff written. Sole CA user R-ARCH-CA; others read donor files directly.
+Eight parallel agents: CA subsystem analysis, camera projection, terrain representation, unit meshes,
+shaders/lighting, pattern placements, port 3D-mode feasibility, and a candid retrospective
+(RENDER_ARCH_WHY_WE_FAILED.md) answering whether the blocker was decompilation, understanding, or scope.
+Outcome feeds an owner decision on adding a selectable 2D/3D render mode before skirmish.
+- R-ARCH-CA RESULT: donor is a low-poly 3D OpenGL renderer (hyp_1 SUPPORTED, fnd_27–33, CA evidence
+  ids). Live renderer = OpenGL 1.x (D3D9 imported but 0 xrefs); decompiled projection switch has
+  glFrustum/glOrtho/gluOrtho2D(HUD); RTTI XCamera/XWorld/XTile/XLightShader/XShadowMap/XWaterShader;
+  109 GLSL shaders (heightfield, Blinn-Phong, TBN normal maps, 9-tap PCF shadows, HDR, SSAO/FXAA/DOF).
+  Unknowns: which projection branch drives the main view (camera cfg points to perspective), D3D9 dead
+  or live, heightfield resolution. Doc docs/audit/RENDER_ARCH_CRAFT_ANYTHING.md.
+- R-ARCH-CAM RESULT: donor camera is TRUE PERSPECTIVE (focal 400, tilt −32°, height 20–58, ccmRTS);
+  no ortho parameters exist. Port is Camera2D; stored −32° pitch is dead config. Switching is a
+  cross-cutting rewrite (picking/minimap/HUD/sprites), not a node swap.
+- R-ARCH-SHADERS RESULT (`docs/audit/RENDER_ARCH_SHADERS.md`): 109 GLSL files (47 vert/58 frag), vertex
+  stages use gl_Vertex/gl_NormalMatrix/gl_LightSource[0]/boneMatrices[16]; fragments Blinn-Phong,
+  shadow2DProj PCF 3/9-tap, TBN normal mapping, textureCube, eye-plane texgen, depth fog; post chain
+  uses depth texture for SSAO/DOF/FXAA. Port = 1 canvas_item shader + CPU Image chunks → shadows,
+  normal maps, reflections, skinning, depth post are structurally impossible. P0–P3 Godot Spatial
+  mapping plan provided.
+- R-ARCH-UNITS RESULT (`docs/audit/RENDER_ARCH_UNITS.md`): donor meshes decoded with exact size closure
+  (yacht.osm 9364v/7731f, enghou.osm 7587v/5339f, trees 2 geometry states), skinned .oss 20 bones /
+  483 frames @30fps, NO pre-rendered entity sprite sheets, yaw = renderer transform. Port bakes 8
+  azimuths (units) and ONE fixed view (buildings) via CPU Cycles ortho 32°; 116 .obj are bind-pose,
+  Z-up, no skinning — animated 3D mode needs a new rig/animation export pass.
+- R-ARCH-PORT3D RESULT (`docs/audit/RENDER_ARCH_PORT_FEASIBILITY.md`): sim/generator/AI/orders/HUD/
+  minimap/save-load reusable verbatim; seams = main.gd bind, input_controller.gd picking, hud.gd camera
+  box, static C3World/C3Camera typing. Proposed `render_mode=2d|3d` menu flag, world3d.gd/camera3d.gd,
+  staged M0–M4 with terrain-only 3D A/B sandbox first. Asset debt: .obj conversions lack normals/anim,
+  Z-up, forced-opaque textures — re-conversion needed for 3D units.
+- R-ARCH-META RESULT (`docs/audit/RENDER_ARCH_WHY_WE_FAILED.md`): owner's H1 "cannot decompile" REFUTED
+  (donor algorithms were plaintext; CA decoded .osm/.oss/.pattern/.map/.aix + RTTI + readable CODE);
+  H3 "asked wrong" MOSTLY REFUTED (D-12/D-22 demanded maximum fidelity). H2 "you cannot understand"
+  dominant but narrow — we understood then substituted approximations and self-certified with metrics.
+  New process rule: donor-paradigm-first, visual A/B gates BEFORE code, metrics never override visual review.
+- R-ARCH-TERRAIN RESULT: donor terrain is 3D heightfield — lit `normal` materials with specular,
+  explicit verticalfront/verticalside faces, ShadersSM20.HeightField with shadows/fog, elevation
+  tile zones, real terrainmesh*.osm. Port composites block PNGs into Image→Sprite2D. Exact match is
+  impossible in 2D. Recommendation: Godot 4 Camera3D (perspective or ortho TBD) + ArrayMesh from
+  game.height_at() + donor blocks as albedo + DirectionalLight3D; stage as 16×16 A/B sandbox first.
+
+## T5 WAVE (owner's next defect list)
+
+- T5-RENDER (`world.gd`, `camera.gd`): remove sunflower-like field heads (use donor envfieldd alpha +
+  vertical stalks), fix mine sprite scale/centring, ~2× larger view, keep ALL chunks in RAM (no lazy
+  load) while preserving no-hole fallback. Must keep grid_peak <0.20 and bench <250 ms.
+- T5-AI-DIAG DONE (`docs/audit/AI_SURVIVAL_DIAG.md`): military training has NO food-reserve gate;
+  mill is 6th in build order with wrong 100 vs 150 stone check; only 35% peasants on food; configured
+  AI_FOOD/WOOD/STONE_THRESHOLD constants are dead; famine/wave wipe triggers unearned human victory
+  (game.gd:4590). No reproduced failure in old logs — code-path diagnosis.
+- T5-AI-FIX DONE (ai.gd, +221/−38, backup T5AI): food-reserve gate before military, mill FIRST with real
+  150-stone cost, food share 35→50/62% with ceil, miner recall + field resow, configured thresholds
+  consumed, explicit food>wood>stone priority. 3× 300 s CLI soaks: **0 famine ticks**, food min 176–243,
+  population 8→17..27, winner -1. uitest 17/17. selftest 23/29 = 5 PRE-EXISTING + 1 fragile resow test
+  (AI mill auto-sows a field; test matches by any mill flag instead of mill.id). Army still 0–11 units,
+  no waves — pre-existing metal economy limiter. Unearned victory NOT fully fixed: game.gd:4590 still
+  uses OR elimination → queued for game.gd owner.
+- T5-TESTFIX DONE (selftest.gd +8/−4, backup T5TEST): resow step now attributes fields by mill.id;
+  `resow` PASS (auto=21 restored=1, was auto=41 restored=0). Selftest 24/29 — remaining 5 pre-existing
+  failures (wall, shell, flee, peasant_capture, farm_cap) reproduced in control with original ai.gd;
+  uitest 17/17. No assertion weakened.
+- T5-GEN DONE (game.gd/pattern_gen.gd/data.gd/hud.gd, backups T5G/T5MOD): donor SetupMines — every start
+  has all 3 ores within 24 tiles, 3–4 quadrants per start, distances 4–116 tiles; richness A/B poor 21
+  vs rich 37 ore nodes. Spawn stagger 19 unique tiles for 20 units, spread 14.9×7.0, 20 arrived/0 stuck
+  after 60 s. Recruit modifiers plain1/Shift5/Ctrl endless/Ctrl+Shift 5∞/Ctrl+Alt 100(capped 10)/RMB
+  cancel. **selftest 29/29 (1016), uitest 17/17 (1022)**, all scan gates green, no new geometry FAILs.
+  Note Ctrl+Alt capped at BUILD_QUEUE_LIMIT=10 vs donor 100 — documented deviation.
+- T5-SIMREQ IN_PROGRESS (game.gd only, backup T5SIM): change elimination at game.gd:4590 from
+  "no buildings OR no units" to AND / grace timer so a famine-wiped army cannot hand an unearned win.
+- T5-SELFTEST-FIX RECHECK DONE: NO test edit needed — T5-GEN's gameplay fixes made all 5 legacy steps
+  green. selftest 29/29 twice (byte-identical, tickets 1023/1025), uitest 17/17 (1024). Backup retained.
+- T5-SELFTEST-FIX rechecking first: T5-GEN's gameplay fixes may have made all 5 legacy steps pass — if
+  selftest/uitest are green, NO test edit will be made.
+- T5-HOTKEY DONE (`docs/audit/DONOR_RECRUIT_MODIFIERS.md`): owner's guess was REVERSED. Donor = plain
+  LMB 1, **Shift+LMB +5**, **Ctrl+LMB endless (-1)**, Ctrl+Shift 5×endless, Ctrl+Alt 100, RMB cancel;
+  shipped toggle swaps plain↔Ctrl (default off). Port: Shift currently cancels+refunds, no Ctrl, queue
+  always pops. Fix appended to T5-GEN, which now also owns hud.gd for the modifier resolver.
+- T5-UNIT-DIAG DONE (`docs/audit/UNIT_RALLY_ARRIVAL.md`): NOT an A* problem — units already use A*.
+  Spawns all share one `sp` + one rally target 3 m away; 1.05 m separation vs 0.15 m arrival radius
+  jams the column; `sp` can land in the blocked door band. `move`/`attackmove` re-assert moving=true
+  every tick and NEVER read stuck_t — no give-up path; blocked rally target not appended to A* path
+  while d_goal still measures it. F1–F4 appended to T5-GEN (game.gd); F5 nav.gd optional, F6 world.gd
+  optional — both skipped unless needed.
+- T5-GEN (`game.gd`, `pattern_gen.gd`, `data.gd`): donor-style SetupMines — guaranteed near-start clusters
+  first, then varied map-wide clusters with random directions/distances/counts, scaled by RICHNESS,
+  deterministic, preserving mine_mask (no test*) + start fairness. Richness A/B + geometry gates.
+
+## T4 QUALITY REGRESSION WAVE (owner rejection, highest priority — now CLOSED, checkerboard fixed)
 
 Owner: current terrain is a "total checkerboard mess", worse than before; either use donor logic or
 revert to last decent version. **All further feature work is on hold.** Full `world.gd.bak-*` chain is
@@ -444,6 +572,34 @@ re-run independently. 0 orphan Godot processes.
   (40–90 at 320²); criterion G scoped to render-only changes; trees/MP relabeled as dump-node diagnostic;
   per-seed variance metrics advisory. Before PASS 12/FAIL 5 → **PASS 13 / FAIL 0 / UNVERIFIED 10**.
   Strict-gate regression test still FAILs a flipped blocked[] byte. py_compile clean.
+
+- T5-RENDER DONE (world.gd +192/−69, camera.gd +5, backups T5R): field sunflowers removed (decal-only
+  vertical stalks, hue 42.9° in 39–45 band); mine marker exactly 2.0 tiles wide, foot-anchored, olive
+  disc stripped; default zoom 1→2 (arch pitch 30→65 px); ALL 100 chunks kept resident via distant
+  low-res LOD (<10 MB) with 2/frame full-res upgrade and no-hole fallback preserved. Gates green in
+  isolation (29/29, 17/17, bench 172.56 ms, grid_peak 0.088/0.137 <0.20). Captures t5render_land/mine.
+  Main-tree selftest transiently red from other workers' concurrent edits — settle in final validation.
+
+**T5-SELFTEST-DIAG IN_PROGRESS** (read-only): diagnose the 5 pre-existing selftest failures
+(wall, shell, flee, peasant_capture, farm_cap) — game bug vs fragile test, minimal fix, risk ranking →
+`docs/audit/SELFTEST_FIVE_FAILURES.md`.
+
+## FINAL VALIDATION — DONE (settled tree, all green)
+
+- Fresh 320² dump ticket 1034 → `app/shots/FINAL_fullmap_v5_20480x20480_tile64.png` (20480², 185.5 MB,
+  tile_px 64, assertions in sidecar).
+- scan_map: forest 45.6%, rock 6.8%, patches 75, mean 622, coast 100, cliff 96, tileflow 100, reach true.
+- geometry verifier: **PASS 13 / FAIL 0 / UNVERIFIED 10**.
+- bake bench (job FINAL-bench/1035): **max_ms 139.64 < 250 PASS**.
+- final capture `app/shots/FINAL_land_v5.png` (job 1036): 2× zoom, no sunflower fields, no checkerboard.
+- selftest 29/29 (twice byte-identical), uitest 17/17 on settled tree (T5-GEN/T5-TESTFIX/T5-SIMREQ).
+
+## FINAL VALIDATION (queued — run after all T5 owners release files)
+
+Once T5-GEN / T5-TESTFIX finish, re-run on the settled tree: selftest 29/29 + uitest 17/17, scan_map,
+geometry verifier, bake_bench, grid_peak on a fresh capture, and regenerate the full-map dump/PNG.
+Main-tree selftests were transiently red only because multiple workers edited game.gd/ai.gd/hud.gd
+concurrently; isolated worktrees were green.
 
 ## Parallel doc lane (owner request, this session)
 

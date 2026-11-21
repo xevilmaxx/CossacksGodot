@@ -1,0 +1,28 @@
+{
+  "job_id": "t5render-bench2",
+  "ticket": 990,
+  "runner_status": "ok",
+  "runner_exit": 0,
+  "runner_wait_s": 131.3038787841797,
+  "runner_run_s": 55.22930884361267,
+  "settings": {
+    "preset": "low",
+    "config": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\perf_low.json",
+    "frames": 120,
+    "chunks_per_frame_cap": 2,
+    "lru_cap": 24
+  },
+  "n07_target_ms": 250.0,
+  "bake": {
+    "raw": "BAKE_BENCH preset=low px=8 chunks=120 max_ms=172.56 mean_ms=172.56",
+    "max_ms": 172.56,
+    "mean_ms": 172.56,
+    "chunks": 120.0,
+    "verdict": "PASS"
+  },
+  "context_perf_mean_total_sync_ms": 6.99,
+  "context_note": "context_perf_mean_total_sync_ms is the MEAN of TOTAL world.sync() over 120 frames, NOT a max and NOT chunk-bake-only. Never use it to pass N-07.",
+  "verdict": "PASS",
+  "caveats": "BAKE_BENCH preset/px/chunks fields are hardcoded by world.gd, not measured; verify preset via --dump-config. Actual bake count is not emitted; max_ms may be a cold-cache first bake.",
+  "blocker": null
+}

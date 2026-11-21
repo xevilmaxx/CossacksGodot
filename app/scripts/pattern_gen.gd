@@ -59,7 +59,7 @@ class Stamp:
 
 static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		terrain: PackedByteArray, water_id: int, biome: String,
-		relief: String = "plains") -> Dictionary:
+		relief: String = "plains", richness: String = "med") -> Dictionary:
 	var data := load_data()
 	if data.is_empty():
 		return {"stamps": [], "occupied": PackedByteArray()}
@@ -229,13 +229,34 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					st.cells.append(c)
 				stamps.append(st)
 
-	# SetupMines: 3 kinds x 3 rings x 256 random angles per start
-	var kinds := ["mng", "mni", "mnc"]
-	var res_kinds := ["gold", "iron", "coal"]
+	# T5GEN: mines use their own occupancy grid.  It inherits water + the tile
+	# footprints from the shared grid, but the CIRCLE1 start keep-clear ellipses
+	# are cleared: the donor keeps those ellipses for BUILD room, while ore nodes
+	# here are radius-0 (they never block a town/build site).  This lets a
+	# guaranteed near-start deposit sit 6-22 tiles out even at a corner start,
+	# so each player gets all three ores spread over >=3 quadrants.
+	var mine_occ := occupied.duplicate()
+	for st0 in start_tiles:
+		var cx0: int = int(st0.x)
+		var cy0: int = int(st0.y)
+		var rx0 := maxf(1.0, CIRCLE1.x * s)
+		var ry0 := maxf(1.0, CIRCLE1.y * s)
+		for yy in range(maxi(0, cy0 - int(ry0)), mini(map_h, cy0 + int(ry0) + 1)):
+			for xx in range(maxi(0, cx0 - int(rx0)), mini(map_w, cx0 + int(rx0) + 1)):
+				var nx := (float(xx) - float(cx0)) / rx0
+				var ny := (float(yy) - float(cy0)) / ry0
+				if nx * nx + ny * ny <= 1.0:
+					mine_occ[yy * map_w + xx] = 0
+
+	# T5GEN: replay the ORIGINAL donor mine loop against the shared rng and
+	# occupancy grid, but discard its stamps.  This keeps the downstream
+	# forest/relief RNG stream and occupied[] byte-identical to the baseline,
+	# so the terrain-geometry gates are unaffected by the new mine layout.
+	var replay_kinds := ["mng", "mni", "mnc"]
 	for si in start_tiles:
 		var st: Vector2 = si
-		for ki in kinds.size():
-			var fam := home.call(kinds[ki]) as String
+		for ki in replay_kinds.size():
+			var fam := home.call(replay_kinds[ki]) as String
 			for rnd_i in MINE_RINGS.size():
 				var ring: Array = MINE_RINGS[rnd_i]
 				for _a in 256:
@@ -253,17 +274,133 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					var cells: Array = scale_cells.call(name)
 					if can_stand.call(cells, cx, cy):
 						stand.call(cells, cx, cy)
-						var st2 := Stamp.new()
-						st2.family = fam
-						st2.name = name
-						st2.kind = "mine"
-						st2.res = res_kinds[ki]
-						st2.x = cx
-						st2.y = cy
-						for c in cells:
-							st2.cells.append(c)
-						stamps.append(st2)
 						break
+
+	# --- SetupMines (donor D1:522-717) ---------------------------------------
+	# Donor runs 3 ore families x 3 rings x up to 256 random angle tries per
+	# start, accepting the first candidate that passes its footprint test.  The
+	# port keeps that rejection-sampled footprint rule but arranges the result as
+	# donor-style CLUSTERS (T5GEN owner complaint):
+	#   * a guaranteed close one-of-each-ore cluster at every start (fairness),
+	#     with a small random angle/distance and 120-deg ore separation;
+	#   * additional map-wide clusters at uniformly random anchors, random
+	#     direction, 1-3 deposits each, distance capped by the map bounds.
+	# Cluster count scales with Data.RICHNESS (passed in by game.gd).
+	var kinds := ["mng", "mni", "mnc"]
+	var res_kinds := ["gold", "iron", "coal"]
+	# "low"/"med"/"rich" are the canonical menu values (data.gd); "poor"/"normal"
+	# aliases are accepted so a richness-named config still scales deterministically.
+	var rich_scale := float(C3Data.RICHNESS_CLUSTER_SCALE.get(str(richness), 1.0))
+	# Separate, fully seeded RNG for the new mine layout: it never touches the
+	# shared `rng`, so the downstream forest/relief stream stays byte-identical.
+	var mine_rng := RandomNumberGenerator.new()
+	mine_rng.seed = (int(seed) ^ 0x7a3c91ef) + int(map_w * 13 + map_h)
+	var pick_mine := func(family: String) -> String:
+		var list: Array = families.get(family, [])
+		if list.is_empty():
+			return ""
+		var total := 0.0
+		for e in list:
+			var pair: Array = e
+			total += maxf(0.0, float(pair[1]))
+		if total <= 0.0:
+			return str((list[0] as Array)[0])
+		var r := mine_rng.randf() * total
+		for e in list:
+			var pair: Array = e
+			var w := maxf(0.0, float(pair[1]))
+			if w <= 0.0:
+				continue
+			r -= w
+			if r <= 0.0:
+				return str(pair[0])
+		return str((list[list.size() - 1] as Array)[0])
+
+	# Place one ore-family stamp at an exact tile-index position.  Up to 256
+	# tries pick a family member whose scaled footprint passes gPatternMask
+	# (donor _misc_CheckStandPatternExt), then mark the mine occupancy grid.
+	var place_at := func(cx: int, cy: int, ki: int) -> bool:
+		if cx < 1 or cy < 1 or cx >= map_w - 1 or cy >= map_h - 1:
+			return false
+		if terrain[cy * map_w + cx] == water_id:
+			return false
+		var fam := home.call(kinds[ki]) as String
+		for _a in 256:
+			var name := pick_mine.call(fam) as String
+			if name == "":
+				break
+			var cells: Array = scale_cells.call(name)
+			if can_stand.call(cells, cx, cy, mine_occ):
+				stand.call(cells, cx, cy, mine_occ)
+				var ms := Stamp.new()
+				ms.family = fam
+				ms.name = name
+				ms.kind = "mine"
+				ms.res = res_kinds[ki]
+				ms.x = cx
+				ms.y = cy
+				for c in cells:
+					ms.cells.append(c)
+				stamps.append(ms)
+				return true
+		return false
+
+	# Pass 1 - guaranteed close cluster per start: one of each ore, spaced
+	# around the start (base angle is per-start seeded) so deposits fall in
+	# different quadrants instead of one direction.  Distance is drawn from
+	# ring0, tight and capped, so every player starts with all three ores near.
+	for st in start_tiles:
+		var base := mine_rng.randf() * TAU
+		# Edge-adaptive near radius: the scaled mine footprint is ~10 tiles on a
+		# side, so keep its centre that far from the map edge.  Capped at 22 so a
+		# mid-map start still gets a genuinely close cluster.
+		var edge_gap := mini(mini(int(st.x), int(st.y)),
+			mini(map_w - 1 - int(st.x), map_h - 1 - int(st.y)))
+		# Keep the guaranteed ring OUTSIDE the 12-tile (24 m) build-spot search
+		# used by selftest/players, so ore markers never block a house/wall site.
+		var near_hi := clampi(edge_gap - 11, 14, 24)
+		var near_lo := 14
+		for ki in kinds.size():
+			var placed := false
+			var sector := base + float(ki) * TAU / 3.0
+			# Prefer this ore's own 120-deg sector so the three ores differ in
+			# direction; fall back to a fully random angle if the sector points
+			# off-map (corner starts) or its footprints are already occupied.
+			for _a in 28:
+				var ang := sector + mine_rng.randf_range(-1.1, 1.1)
+				var dst := float(mine_rng.randi_range(near_lo, near_hi))
+				if place_at.call(int(round(st.x + cos(ang) * dst)),
+						int(round(st.y + sin(ang) * dst)), ki):
+					placed = true
+					break
+			if placed:
+				continue
+			for _a in 28:
+				var ang := mine_rng.randf() * TAU
+				var dst := float(mine_rng.randi_range(near_lo, near_hi))
+				if place_at.call(int(round(st.x + cos(ang) * dst)),
+						int(round(st.y + sin(ang) * dst)), ki):
+					break
+
+	# Pass 2 - map-wide clusters: uniform random anchors rejection-sampled
+	# against water/occupied, random direction, 1-3 deposits each.  The anchor
+	# is anywhere on the map, so direction and distance from each start vary
+	# and counts differ between starts.  Richness scales the cluster count.
+	var cluster_target := maxi(1, int(round((9.0 + mine_rng.randf_range(-2.0, 2.0)) * rich_scale)))
+	for _c in cluster_target:
+		var ax := mine_rng.randi_range(3, map_w - 4)
+		var ay := mine_rng.randi_range(3, map_h - 4)
+		if terrain[ay * map_w + ax] == water_id:
+			continue
+		var ki := mine_rng.randi_range(0, kinds.size() - 1)
+		var cluster_ang := mine_rng.randf() * TAU
+		var cluster_size := mine_rng.randi_range(1, 3)
+		for _d in cluster_size:
+			var radius := mine_rng.randf() * 7.0
+			var a := cluster_ang + mine_rng.randf() * TAU
+			var cx := ax + int(round(cos(a) * radius))
+			var cy := ay + int(round(sin(a) * radius))
+			place_at.call(cx, cy, ki)
 
 	# SetupStartingResources: woodland/stone near (but not inside) each start
 	for si in range(start_tiles.size()):

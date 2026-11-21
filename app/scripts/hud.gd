@@ -470,10 +470,8 @@ func refresh_selection(selected: Array) -> void:
 						continue
 					var tb := _unit_button(units_tex, Data.UNITS[rsid].icon, "%s - %s" % [ConfigScript.unit_name(rsid), _price_text(Data.UNITS[rsid].price)])
 					var q: int = e.queue.filter(func(j): return j.sid == rsid).size()
-					if e.queue.size() > 0:
-						tb.text = str(e.queue.size()) if rsid == e.queue[0].sid else ("+%d" % q if q > 0 else "")
-					elif q > 0:
-						tb.text = str(q)
+					if e.queue.size() > 0 or q > 0:
+						tb.text = _queue_label(e, rsid, q)
 					tb.pressed.connect(_on_train.bind(e, rsid))
 					tb.gui_input.connect(_on_train_gui.bind(e, rsid))
 					train_buttons[rsid] = tb
@@ -594,20 +592,69 @@ func refresh_selection(selected: Array) -> void:
 		build_menu_open = false
 	_apply_scale()
 
-func _on_train(bld: Dictionary, sid: String) -> void:
-	audio_click.play()
-	game.train_unit(0, bld, sid)
+# T5MOD: donor recruitment modifiers (eventunitcontrol.inc:514-533).
+const TRAIN_BATCH := 5
+const TRAIN_BIG_BATCH := 100
+# Donor default (config.res:798/989) is "Repeating unit production with
+# left-click" OFF: plain=1, Ctrl=endless.  The settings toggle is not wired in
+# this port; this flag is the single place to invert the XOR if it is added.
+var repeat_on_left_click: bool = false
+var _train_last_ms: int = -1000
+
+func _queue_label(bld: Dictionary, sid: String, q: int) -> String:
+	if bld.queue.is_empty():
+		return str(q) if q > 0 else ""
+	var front: Dictionary = bld.queue[0]
+	if str(front.get("sid", "")) == sid:
+		if bool(front.get("infinite", false)):
+			return "∞"
+		var c: int = maxi(1, int(front.get("count", 1)))
+		return str(c)
+	return "+%d" % q if q > 0 else ""
+
+func _train_amount(bld: Dictionary, sid: String) -> void:
+	var ctrl := Input.is_key_pressed(KEY_CTRL)
+	var shift := Input.is_key_pressed(KEY_SHIFT)
+	var alt := Input.is_key_pressed(KEY_ALT)
+	if ctrl and alt:
+		game.train_unit(0, bld, sid, TRAIN_BIG_BATCH)            # 100 (AltGr = Ctrl+Alt)
+	elif ctrl and shift:
+		game.train_unit(0, bld, sid, TRAIN_BATCH, true)         # 5x endless
+	elif shift:
+		game.train_unit(0, bld, sid, TRAIN_BATCH)               # 5 units
+	elif ctrl != repeat_on_left_click:
+		game.train_unit(0, bld, sid, 1, true)                   # endless
+	else:
+		game.train_unit(0, bld, sid, 1)                         # plain 1
 	refresh_selection(game.get_selected())
 
+func _on_train(bld: Dictionary, sid: String) -> void:
+	# Keyboard/Device activation.  GUI mouse input handles clicks itself; the
+	# short dedup window prevents a Shift+LMB double-fire across pressed+gui_input.
+	var now := Time.get_ticks_msec()
+	if now - _train_last_ms < 80:
+		return
+	_train_last_ms = now
+	audio_click.play()
+	_train_amount(bld, sid)
+
 func _on_train_gui(ev: InputEvent, bld: Dictionary, sid: String) -> void:
-	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and Input.is_key_pressed(KEY_SHIFT):
-		for i in range(bld.queue.size() - 1, -1, -1):
-			if bld.queue[i].sid == sid:
-				bld.queue.remove_at(i)
-				Data.refund(game.players[0].res, Data.UNITS[sid].price, 1.0)
-				get_viewport().set_input_as_handled()
-				refresh_selection(game.get_selected())
-				return
+	if not (ev is InputEventMouseButton):
+		return
+	var now := Time.get_ticks_msec()
+	if ev.button_index == MOUSE_BUTTON_RIGHT and ev.pressed:
+		_train_last_ms = now
+		game.cancel_train(bld, sid)
+		get_viewport().set_input_as_handled()
+		refresh_selection(game.get_selected())
+		return
+	if ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
+		if now - _train_last_ms < 80:
+			return
+		_train_last_ms = now
+		audio_click.play()
+		_train_amount(bld, sid)
+		get_viewport().set_input_as_handled()
 
 func _on_research(bld: Dictionary, uid: String) -> void:
 	audio_click.play()
@@ -759,7 +806,9 @@ func _selection_summary(mine: Array) -> String:
 		if not first.finished:
 			s += "  under construction"
 		elif first.queue.size() > 0:
-			s += "  training %s (%d)" % [first.queue[0].sid, first.queue.size()]
+			var jf: Dictionary = first.queue[0]
+			var cnt: String = "∞" if bool(jf.get("infinite", false)) else str(maxi(1, int(jf.get("count", 1))))
+			s += "  training %s (%s)" % [jf.sid, cnt]
 		if first.get("research") != null:
 			s += "  researching %s" % first.research.uid
 		if float(first.get("capture_t", 0.0)) > 0.1:
@@ -843,10 +892,8 @@ func _update_dynamic() -> void:
 				b.disabled = true
 				continue
 			var q: int = be2.queue.filter(func(j): return j.sid == d.sid).size()
-			if be2.queue.size() > 0:
-				b.text = str(be2.queue.size()) if d.sid == be2.queue[0].sid else (("+%d" % q) if q > 0 else "")
-			elif q > 0:
-				b.text = str(q)
+			if be2.queue.size() > 0 or q > 0:
+				b.text = _queue_label(be2, d.sid, q)
 			b.disabled = not Data.can_pay(game.players[0].res, Data.UNITS[d.sid].price)
 		elif d.kind == "research":
 			var u: Dictionary = Data.UPGRADES.get(d.uid, {})

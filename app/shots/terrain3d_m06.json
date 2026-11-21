@@ -1,0 +1,130 @@
+{
+  "art_pass": {
+    "albedo_gain": 1.05,
+    "ambient_energy": 1.1,
+    "background": "ProceduralSky + distant grass ground plane",
+    "emission_mult": 1.0,
+    "exposure": 1.45,
+    "sun_energy": 1.7,
+    "tonemap": "LINEAR"
+  },
+  "block_names": [
+    "rock4",
+    "rock8",
+    "rock9",
+    "grass_ground1",
+    "grass_ground3",
+    "test14",
+    "test8",
+    "test6",
+    "grass1",
+    "test12",
+    "test9",
+    "grass2",
+    "rock5",
+    "test7",
+    "rock3",
+    "rock7",
+    "grass8",
+    "rock1",
+    "test13",
+    "rock2",
+    "rock6",
+    "grass_ground2"
+  ],
+  "camera": {
+    "focal_length_mm": 400.0,
+    "fov_horizontal_deg_shipped": 30.2191502446809,
+    "fov_note": "Exact donor FOV UNVERIFIED (donor sensor constant unknown). M0.5's 'physically sane' 36 mm/f-400 derivation gave 2.90 deg V-FOV at 240 m/384 m but flattened depth into a top-down mosaic and was REJECTED on visual review. M0.6 restores the 216 mm display sensor (17.27 deg V-FOV) at 40 m/64 m; visual judgement won over the unverified derivation.",
+    "fov_verified": false,
+    "fov_vertical_deg_shipped": 17.2716044222336,
+    "framing": "32-tile (64 m) mesh padded past every frame edge; camera 40 m high / 64 m dolly looking down an explicit -32 deg tilt",
+    "ground_dist_m": 64.013381161642,
+    "height_m": 40.0,
+    "patch_tiles": 32,
+    "position": [
+      0.0,
+      40.0,
+      64.0133819580078
+    ],
+    "projection": "perspective",
+    "rotation_deg": [
+      -31.9999997521163,
+      0.0,
+      0.0
+    ],
+    "sensor_width_mm_shipped": 216.0,
+    "tilt_deg": -32.0,
+    "tilt_is_explicit_rotation": true,
+    "unverified_fullframe_fov_vertical_deg": 2.89997958276412,
+    "unverified_fullframe_sensor_mm": 36.0
+  },
+  "cliff_wall_quads": 572,
+  "dump_window": {
+    "n": 32,
+    "x0": 176,
+    "y0": 146
+  },
+  "grass_crack_quads": 819,
+  "height_error_max_m": 0.0000000715255739081044,
+  "height_scale": 1.0,
+  "mesh_vertices": 9660,
+  "missing": [
+    "units/buildings/trees/decor",
+    "HUD/minimap/fog of war",
+    "water refraction/screen-space depth",
+    "DOF/fog",
+    "donor sub-atlas UV seams and 25deg oriented face art",
+    "verified donor FOV / sensor constant",
+    "donor tiles.mat art for 'test*' placeholder block names (flat fallback)"
+  ],
+  "performance": {
+    "frames_sampled": 26,
+    "mean_draw_calls": 78.0,
+    "mean_frame_delta_ms": 15.9888333333333,
+    "mean_frame_process_ms": 47.1652692307692
+  },
+  "perimeter_wall_quads": 128,
+  "reflection": {
+    "reason": "Water occupies only thin shoreline slivers (<2% of the M0 frame), so a hint_screen_texture wave-jitter proxy cannot be measured against the >=3-5 px crest-shift gate without changing the M0 scene; Compatibility screen-copy cost is also unverified. Donor decals/cubemap were NOT copied. Donor water reflection is a live projected texture (water.dev.frag), not the cubemap and not the decals.",
+    "status": "deferred to M1 water fidelity"
+  },
+  "seam_mask_mode": false,
+  "seam_policy": "wall on EVERY |dh|>SIDE_EPS + shallow local edge lip (M0.5)",
+  "shot": "res://shots/terrain3d_m06.png",
+  "shot_size": {
+    "h": 720,
+    "resized": false,
+    "source_h": 720,
+    "source_w": 1280,
+    "w": 1280
+  },
+  "side_epsilon_m": 0.0001,
+  "side_quads": 572,
+  "side_vertices": 5564,
+  "skirt_y_m": -3.66399998664856,
+  "sun": {
+    "ambient_light": true,
+    "donor_lightvector_zyup": [
+      -0.086,
+      0.0,
+      0.939
+    ],
+    "godot_direction_yup": [
+      -0.086,
+      0.939,
+      0.0
+    ],
+    "light_cfg_position": [
+      -0.3447,
+      0.9387,
+      0.0
+    ],
+    "shadows": true
+  },
+  "surfaces": 24,
+  "tile_m": 2.0,
+  "top_surface_vertices": 4096,
+  "triangles": 4830,
+  "water_level_m": -0.25
+}

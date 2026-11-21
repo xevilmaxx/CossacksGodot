@@ -184,6 +184,14 @@ static var RICHNESS := "med"            # low / med / rich (donor Minerals)
 static var RELIEF := "plains"           # plains / hills / mountains (donor Terrain Type)
 const RICHNESS_MULT := {"low": 0.5, "med": 1.0, "rich": 1.5}   # per-node ore pool
 const RICHNESS_ORE_DELTA := {"low": -1, "med": 0, "rich": 1}   # ore nodes per start (inferred)
+# T5GEN: donor Minerals also controls how many mine CLUSTERS a map gets.  The
+# canonical menu values are low/med/rich; poor/normal are accepted aliases so a
+# richness-named config scales deterministically.  Consumed by pattern_gen.gd.
+const RICHNESS_CLUSTER_SCALE := {
+	"low": 0.55, "poor": 0.55,
+	"med": 1.0, "normal": 1.0,
+	"rich": 1.55,
+}
 const RELIEF_SCALE := {"plains": 1.0, "hills": 1.5, "mountains": 2.2}
 const RELIEF_DOME_DELTA := {"plains": 0, "hills": 1, "mountains": 2}
 # Season tint exposed for world.gd (separate worker); never stored in map_meta

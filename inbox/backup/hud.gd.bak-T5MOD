@@ -1,0 +1,1206 @@
+# HUD: resource bar, selection panel, build/train menus, minimap, messages.
+extends CanvasLayer
+class_name C3HUD
+
+const Data = preload("res://scripts/data.gd")
+const ConfigScript = preload("res://scripts/config.gd")
+
+var game: C3Game
+var world: C3World
+var icons_tex: Texture2D
+var units_tex: Texture2D
+var top_panel: PanelContainer
+var res_labels: Array = []
+# Donor-style economy read-outs (RE gap 3 / S11): bracketed worker counts per
+# resource, idle-villager + free mine-slot indicators and a gold deficit flag.
+# All derived from existing game state; no sim-layer changes.
+var eco_label: Label
+var worker_counts: Dictionary = {}
+var idle_count := 0
+var free_slots_count := 0
+var gold_deficit := false
+var eco_t := 0.0
+var res_deficit: Array = [false, false, false, false, false, false]
+var eco_warn := false
+var sel_panel: PanelContainer
+var sel_box: HBoxContainer
+var build_bar: HFlowContainer
+var msg_label: Label
+var msg_timer := 0.0
+var status_label: Label
+var settings_label: Label
+var minimap_tex: ImageTexture
+var minimap_img: Image          # clean working image (terrain + blips, no box)
+var minimap_base: Image
+var minimap_view_img: Image     # displayed image (clean + viewport box)
+var _mm_box_last := Vector4i(-1, -1, -1, -1)  # x0,y0,x1,y1 of last drawn box
+var minimap_rect: TextureRect
+var minimap_panel: PanelContainer
+var mm_timer := 0.0
+var fps_label: Label
+var fps_t := 0.0
+var fps_ema := 60.0
+var sel_timer := 0.75
+var build_menu_open := false
+var build_buttons: Dictionary = {}   # sid -> Button
+var train_buttons: Dictionary = {}   # sid -> Button
+var build_ghost_sid := ""
+var game_over_label: Label
+var audio_click: AudioStreamPlayer
+var hint_label: Label
+var speed_cb: Callable
+var menu_cb: Callable
+var speed_buttons: Array = []
+var speed_label: Label
+var obj_panel: PanelContainer
+var obj_box: VBoxContainer
+var trade_amount := 100.0
+# MICRO #9: three distinct market operations over the sim's existing
+# game.trade(player, give, want, amount). Gold is handled by Buy/Sell; the
+# resource pair selectors feed Exchange. Data.MARKET* supplies the rate/floor.
+const MARKET_TRADABLE := ["food", "wood", "stone", "iron", "coal"]
+var market_give_idx := 1   # wood
+var market_want_idx := 3   # iron
+var want_rally := false
+var last_ids: Array = []
+var summary_label: Label
+var prog_entries: Array = []  # {label, e}
+var dyn_buttons: Array = []   # {b, kind, e, sid, uid}
+var cmd_panel: PanelContainer
+var cmd_bar: GridContainer
+var top_center: CenterContainer
+
+func bind(g: C3Game, w: C3World) -> void:
+	game = g
+	world = w
+	ui_us = _calc_us()
+	icons_tex = load("res://assets/ui/icons.bmp")
+	units_tex = load("res://assets/ui/iconsunits.bmp")
+	audio_click = AudioStreamPlayer.new()
+	audio_click.stream = load("res://assets/sounds/btnclick.ogg")
+	add_child(audio_click)
+	_build_top()
+	_build_bottom()
+	_build_minimap()
+	msg_label = _mklbl("", 15, Color(1, 0.95, 0.8))
+	msg_label.position = Vector2(340, 36)
+	add_child(msg_label)
+	hint_label = _mklbl("", 14, Color(1, 0.9, 0.5))
+	hint_label.position = Vector2(340, 58)
+	add_child(hint_label)
+	game_over_label = _mklbl("", 42, Color(1, 1, 1))
+	game_over_label.set_anchors_preset(Control.PRESET_CENTER)
+	game_over_label.visible = false
+	add_child(game_over_label)
+	game.message.connect(_on_message)
+	_apply_scale()
+	if is_instance_valid(get_tree()) and is_instance_valid(get_tree().root) and not get_tree().root.size_changed.is_connected(_on_vp_resize):
+		get_tree().root.size_changed.connect(_on_vp_resize)
+
+func atlas(src: Texture2D, region: Rect2) -> AtlasTexture:
+	var at := AtlasTexture.new()
+	at.atlas = src
+	at.region = region
+	return at
+
+var ui_us := 1.0
+var ui_vp := Vector2(1280, 720)
+
+# UI scale: fonts, paddings and minimum sizes follow the window; the world
+# view is untouched. Widgets opt in via set_meta("uifs"/"uimh"/"uimw") or the
+# _mkbtn/_mklbl constructors; _apply_scale walks the subtree on resize.
+func _calc_us() -> float:
+	var s := Vector2(1280, 720)
+	if is_instance_valid(get_viewport()):
+		s = get_viewport().get_visible_rect().size
+	ui_vp = s
+	return ConfigScript.ui_scale_for(s)
+
+func _fs(base: int) -> int:
+	return maxi(10, int(round(float(base) * ui_us)))
+
+func _ms(base: float) -> float:
+	return base * ui_us
+
+func _mkbtn(text: String, fs := 15, mh := 40, mw := 0) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.set_meta("uifs", fs)
+	b.set_meta("uimh", mh)
+	if mw > 0:
+		b.set_meta("uimw", mw)
+	ConfigScript.ui_style_button(b)
+	return b
+
+func _mklbl(text: String, fs := 14, col := Color(1, 1, 1)) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.set_meta("uifs", fs)
+	l.add_theme_color_override("font_color", col)
+	return l
+
+func _reg(c: Control, fs := 0, mh := 0, mw := 0) -> Control:
+	if fs > 0:
+		c.set_meta("uifs", fs)
+	if mh > 0:
+		c.set_meta("uimh", mh)
+	if mw > 0:
+		c.set_meta("uimw", mw)
+	return c
+
+func _on_vp_resize() -> void:
+	ui_us = _calc_us()
+	_apply_scale()
+
+func _apply_scale() -> void:
+	for n in find_children("*", "Control", true, false):
+		var c := n as Control
+		if c == null:
+			continue
+		if c.has_meta("uifs"):
+			c.add_theme_font_size_override("font_size", _fs(int(c.get_meta("uifs"))))
+		var mw := float(c.get_meta("uimw", 0.0))
+		var mh := float(c.get_meta("uimh", 0.0))
+		if mw > 0.0 or mh > 0.0:
+			var cur: Vector2 = c.custom_minimum_size
+			c.custom_minimum_size = Vector2(_ms(mw) if mw > 0.0 else cur.x, _ms(mh) if mh > 0.0 else cur.y)
+		if c.has_meta("uoffs"):
+			var o: Array = c.get_meta("uoffs")
+			c.offset_left = _ms(float(o[0]))
+			c.offset_right = _ms(float(o[1]))
+			c.offset_top = _ms(float(o[2]))
+			c.offset_bottom = _ms(float(o[3]))
+	# Layout zones (never overlap, at any size):
+	# - top strip: centered bar + corner FPS (bar clips instead of spilling)
+	# - bottom strip, partitioned left->right: minimap | selection | orders
+	if is_instance_valid(top_center):
+		top_center.offset_top = _ms(8.0)
+		top_center.offset_bottom = _ms(8.0) + _ms(64.0)
+	var mm := minf(_ms(200.0), ui_vp.x * 0.20)
+	if is_instance_valid(minimap_rect):
+		minimap_rect.custom_minimum_size = Vector2(mm, mm)
+	# Bottom strip partition (never overlaps): the minimap texture can be
+	# larger than mm (map is 160-320px), so the rect must ignore texture
+	# size and the panel gets explicit bounds: width = mm + style padding
+	# (14+14 margins + 2 border), height = mm + (10+10 + 2). The selection
+	# panel starts at the minimap's right edge plus a gap, by construction.
+	if is_instance_valid(sel_panel) and is_instance_valid(cmd_panel):
+		var cmd_w: float = minf(_ms(332.0), ui_vp.x * 0.34)
+		var mm_pad_w := 30.0
+		var mm_pad_h := 22.0
+		var mm_right: float = _ms(4.0) + mm + mm_pad_w
+		if is_instance_valid(minimap_panel):
+			minimap_panel.offset_left = _ms(4.0)
+			minimap_panel.offset_right = mm_right
+			minimap_panel.offset_top = -(mm + mm_pad_h)
+			minimap_panel.offset_bottom = 0.0
+		var mm_edge: float = mm_right + _ms(8.0)
+		sel_panel.offset_left = mm_edge
+		sel_panel.offset_right = ui_vp.x - cmd_w - _ms(24.0)
+		sel_panel.offset_bottom = 0.0
+		var roomy: bool = build_menu_open or build_bar.get_child_count() > 5
+		sel_panel.offset_top = -_ms(250.0 if roomy else 150.0)
+		cmd_panel.offset_left = -(cmd_w + _ms(8.0))
+		cmd_panel.offset_right = -_ms(8.0)
+		cmd_panel.offset_bottom = 0.0
+		var ncmd := cmd_bar.get_child_count()
+		cmd_panel.visible = ncmd > 0
+		cmd_panel.offset_top = -_ms(320.0 if ncmd > 7 else 200.0)
+	# corner/edge labels keep clear of the bars
+	if is_instance_valid(fps_label):
+		fps_label.offset_left = -_ms(12.0) - _ms(110.0)
+		fps_label.offset_right = -_ms(12.0)
+		fps_label.offset_top = _ms(10.0)
+		fps_label.offset_bottom = _ms(10.0) + _ms(34.0)
+	if is_instance_valid(msg_label):
+		msg_label.anchor_left = 0.5
+		msg_label.anchor_right = 0.5
+		msg_label.offset_left = -_ms(300.0)
+		msg_label.offset_right = _ms(300.0)
+		msg_label.offset_top = _ms(84.0)
+		msg_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if is_instance_valid(hint_label):
+		hint_label.anchor_left = 0.5
+		hint_label.anchor_right = 0.5
+		hint_label.offset_left = -_ms(300.0)
+		hint_label.offset_right = _ms(300.0)
+		hint_label.offset_top = _ms(106.0)
+		hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if is_instance_valid(obj_panel):
+		obj_panel.position = Vector2(_ms(8.0), _ms(84.0))
+
+func _build_top() -> void:
+	# centered bar like the original: a full-width strip that only forwards
+	# clicks to its children, so map orders still work underneath it
+	top_center = CenterContainer.new()
+	top_center.anchor_right = 1.0
+	top_center.offset_top = 8
+	top_center.offset_bottom = 72
+	top_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(top_center)
+	top_panel = PanelContainer.new()
+	top_panel.custom_minimum_size = Vector2(0, 0)
+	top_panel.clip_contents = true
+	var bar := HBoxContainer.new()
+	bar.add_theme_constant_override("separation", 10)
+	top_panel.add_child(bar)
+	top_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	for i in 6:
+		var ic := TextureRect.new()
+		ic.texture = atlas(icons_tex, Data.RES_ICONS[i])
+		ic.custom_minimum_size = Vector2(36, 31)
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		bar.add_child(ic)
+		var l := _mklbl("0", 17, Color(1, 0.97, 0.9))
+		bar.add_child(l)
+		res_labels.append(l)
+	# idle villager + unused mine slots, as in the donor's top strip (S11)
+	var eco_sep := VSeparator.new()
+	bar.add_child(eco_sep)
+	eco_label = _mklbl("idle 0  slots 0", 14, Color(0.8, 0.85, 1))
+	eco_label.tooltip_text = "Idle peasants / free mine worker slots"
+	bar.add_child(eco_label)
+	var sep := VSeparator.new()
+	bar.add_child(sep)
+	status_label = _mklbl("", 15, Color(0.8, 0.85, 1))
+	bar.add_child(status_label)
+	# game speed + menu, like the original's top-right controls
+	var sep2 := VSeparator.new()
+	bar.add_child(sep2)
+	for sp in [["II", 0.0], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0]]:
+		var sb := _mkbtn(sp[0], 14, 30, 40)
+		sb.tooltip_text = "Game speed %s (Space pauses)" % sp[0]
+		sb.pressed.connect(_on_speed.bind(float(sp[1])))
+		bar.add_child(sb)
+		speed_buttons.append(sb)
+	var mb := _mkbtn("Menu", 14, 30, 60)
+	mb.tooltip_text = "Back to the singleplayer menu"
+	mb.pressed.connect(_on_menu)
+	bar.add_child(mb)
+	speed_label = _mklbl("1x", 14, Color(1, 0.9, 0.5))
+	bar.add_child(speed_label)
+	settings_label = _mklbl(_settings_text(), 11, Color(0.65, 0.68, 0.75))
+	settings_label.tooltip_text = "Settings file in use (--dump-config shows all values)"
+	bar.add_child(settings_label)
+	top_center.add_child(top_panel)
+	# FPS: bare 3-digit number, upper right corner (engine fps only — if the
+	# number is high but play feels slow, the cost is sim, not rendering)
+	fps_label = Label.new()
+	fps_label.text = "060"
+	fps_label.set_meta("uifs", 22)
+	fps_label.tooltip_text = "Render fps (engine). High fps + slow game = sim cost: try low quality or fewer units."
+	fps_label.add_theme_color_override("font_color", Color(0.55, 1, 0.55))
+	fps_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	fps_label.add_theme_constant_override("shadow_offset_x", 2)
+	fps_label.add_theme_constant_override("shadow_offset_y", 2)
+	fps_label.anchor_left = 1.0
+	fps_label.anchor_right = 1.0
+	fps_label.anchor_top = 0.0
+	fps_label.anchor_bottom = 0.0
+	fps_label.offset_left = -90
+	fps_label.offset_right = -12
+	fps_label.offset_top = 10
+	fps_label.offset_bottom = 40
+	fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	add_child(fps_label)
+	_build_objectives()
+
+func _build_objectives() -> void:
+	obj_panel = PanelContainer.new()
+	obj_panel.position = Vector2(8, 56)
+	obj_panel.visible = false
+	obj_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	obj_box = VBoxContainer.new()
+	obj_panel.add_child(obj_box)
+	add_child(obj_panel)
+
+func refresh_objectives() -> void:
+	if obj_box == null or game == null:
+		return
+	for c in obj_box.get_children():
+		obj_box.remove_child(c)
+		c.queue_free()
+	if game.objectives.is_empty():
+		obj_panel.visible = false
+		return
+	obj_panel.visible = true
+	var head := _mklbl("Objectives", 14, Color(1, 0.9, 0.5))
+	obj_box.add_child(head)
+	for o in game.objectives:
+		var l := _mklbl(("[x] " if bool(o.get("done", false)) else "[ ] ") + str(o.get("text", "")), 13, Color(0.85, 0.85, 0.8))
+		obj_box.add_child(l)
+
+func refresh_speed(sp: float, paused: bool) -> void:
+	if speed_label != null:
+		speed_label.text = "PAUSED" if paused else "%.0fx" % sp
+
+func _on_speed(sp: float) -> void:
+	audio_click.play()
+	if speed_cb.is_valid():
+		speed_cb.call(sp)
+
+func _on_menu() -> void:
+	audio_click.play()
+	if menu_cb.is_valid():
+		menu_cb.call()
+
+func _settings_text() -> String:
+	var src := "built-in defaults"
+	if ConfigScript.active != null:
+		src = ConfigScript.active.source
+	return "settings: %s" % src.get_file()
+
+func _build_bottom() -> void:
+	sel_panel = PanelContainer.new()
+	sel_panel.anchor_top = 1.0
+	sel_panel.anchor_bottom = 1.0
+	sel_panel.offset_top = -140
+	sel_panel.offset_left = 220
+	sel_panel.offset_right = 780
+	sel_panel.clip_contents = true
+	sel_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	var vb := VBoxContainer.new()
+	sel_panel.add_child(vb)
+	sel_box = HBoxContainer.new()
+	sel_box.add_theme_constant_override("separation", 4)
+	vb.add_child(sel_box)
+	build_bar = HFlowContainer.new()
+	build_bar.add_theme_constant_override("h_separation", 4)
+	build_bar.add_theme_constant_override("v_separation", 4)
+	vb.add_child(build_bar)
+	add_child(sel_panel)
+	cmd_panel = PanelContainer.new()
+	cmd_panel.anchor_left = 1.0
+	cmd_panel.anchor_right = 1.0
+	cmd_panel.anchor_top = 1.0
+	cmd_panel.anchor_bottom = 1.0
+	cmd_panel.offset_left = -320
+	cmd_panel.offset_right = -8
+	cmd_panel.offset_top = -140
+	cmd_panel.clip_contents = true
+	cmd_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	cmd_bar = GridContainer.new()
+	cmd_bar.columns = 3
+	cmd_bar.add_theme_constant_override("h_separation", 4)
+	cmd_bar.add_theme_constant_override("v_separation", 4)
+	cmd_panel.add_child(cmd_bar)
+	add_child(cmd_panel)
+
+func _unit_button(tex: Texture2D, region: Rect2, tip: String) -> Button:
+	var b := Button.new()
+	b.icon = atlas(tex, region)
+	b.set_meta("uimw", 52.0)
+	b.set_meta("uimh", 52.0)
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.expand_icon = true
+	b.tooltip_text = tip
+	ConfigScript.ui_style_button(b)
+	b.pressed.connect(func(): audio_click.play())
+	return b
+
+func _clear_row(row: Container) -> void:
+	for c in row.get_children():
+		row.remove_child(c)
+		c.queue_free()
+
+func refresh_selection(selected: Array) -> void:
+	_clear_row(sel_box)
+	_clear_row(build_bar)
+	_clear_row(cmd_bar)
+	cmd_panel.visible = false
+	train_buttons.clear()
+	build_buttons.clear()
+	summary_label = null
+	prog_entries.clear()
+	dyn_buttons.clear()
+	last_ids = []
+	for e in selected:
+		if not e.dead:
+			last_ids.append(e.id)
+	if selected.is_empty():
+		var hint := _mklbl("Nothing selected. Left-click or drag to select.", 14, Color(0.75, 0.72, 0.65))
+		sel_box.add_child(hint)
+		_apply_scale()
+		return
+	var mine := selected.filter(func(e): return e.player == 0)
+	if mine.is_empty():
+		var l := _mklbl("Enemy %s  HP %d/%d" % [_name_of(selected[0]), maxi(0, selected[0].hp), selected[0].max_hp], 14, Color(1, 0.6, 0.55))
+		sel_box.add_child(l)
+		var atk := _mkbtn("Attack", 14, 40)
+		atk.tooltip_text = "Select your units, then right-click the enemy"
+		atk.pressed.connect(_on_attack_hint)
+		build_bar.add_child(atk)
+		_apply_scale()
+		return
+	# summary line: what is picked, its health and its current order
+	var first: Dictionary = mine[0]
+	summary_label = _mklbl(_selection_summary(mine), 15, Color(1, 0.97, 0.9))
+	summary_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	summary_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sel_box.add_child(summary_label)
+	# unit icons row (max 24)
+	var shown := 0
+	var counts := {}
+	for e in mine:
+		if e.kind == "unit":
+			counts[e.sid] = int(counts.get(e.sid, 0)) + 1
+	for sid in counts:
+		var b := _unit_button(units_tex, Data.UNITS[sid].icon, "%s  ×%d" % [ConfigScript.unit_name(sid), counts[sid]])
+		b.text = "×%d" % counts[sid] if counts[sid] > 1 else ""
+		sel_box.add_child(b)
+		shown += 1
+		if shown >= 8:
+			break
+	for e in mine:
+		if e.kind == "building":
+			var b := _unit_button(icons_tex, Data.BUILDINGS[e.sid].icon, "%s  HP %d/%d" % [ConfigScript.building_name(e.sid), maxi(0, e.hp), e.max_hp])
+			sel_box.add_child(b)
+			if not e.finished:
+				var prog := _mklbl("", 13, Color(0.7, 0.9, 0.7))
+				var kp: float = clampf(e.progress / maxf(1.0, e.def.build_time), 0.0, 1.0)
+				prog.text = "building %d%%" % int(kp * 100.0)
+				sel_box.add_child(prog)
+				prog_entries.append({"label": prog, "e": e})
+			# train buttons
+			if e.finished and e.player == 0:
+				var tnat := str(Data.PLAYER_NATIONS[e.player]) if e.player >= 0 and e.player < Data.PLAYER_NATIONS.size() else ""
+				for sid in e.def.get("trains", []):
+					var rsid := Data.resolve_sid(tnat, sid)
+					if not Data.UNITS.has(rsid):
+						continue
+					var tb := _unit_button(units_tex, Data.UNITS[rsid].icon, "%s - %s" % [ConfigScript.unit_name(rsid), _price_text(Data.UNITS[rsid].price)])
+					var q: int = e.queue.filter(func(j): return j.sid == rsid).size()
+					if e.queue.size() > 0:
+						tb.text = str(e.queue.size()) if rsid == e.queue[0].sid else ("+%d" % q if q > 0 else "")
+					elif q > 0:
+						tb.text = str(q)
+					tb.pressed.connect(_on_train.bind(e, rsid))
+					tb.gui_input.connect(_on_train_gui.bind(e, rsid))
+					train_buttons[rsid] = tb
+					build_bar.add_child(tb)
+					dyn_buttons.append({"b": tb, "kind": "train", "e": e, "sid": rsid, "uid": ""})
+				# research buttons (blacksmith / academy): video shows the
+				# upgrade rows next to the unit queue
+				for uid in Data.UPGRADES:
+					var u: Dictionary = Data.UPGRADES[uid]
+					if u.building != e.sid:
+						continue
+					var done: bool = game.players[0].upgrades.has(uid)
+					var researching: bool = e.get("research") != null and e.research.uid == uid
+					var rb := _mkbtn(("[x] " if done else ("... " if researching else "")) + str(u.name), 13, 50, 120)
+					rb.tooltip_text = "%s - %s%s" % [u.name, _price_text(u.cost), " (researched)" if done else ""]
+					rb.disabled = done or researching
+					rb.pressed.connect(_on_research.bind(e, uid))
+					build_bar.add_child(rb)
+					dyn_buttons.append({"b": rb, "kind": "research", "e": e, "sid": "", "uid": uid})
+				if e.sid == "wal" and e.finished:
+					var gb := _mkbtn("Gate", 14, 50, 56)
+					gb.tooltip_text = "Convert this wall segment into a gate"
+					gb.pressed.connect(_on_make_gate.bind(e))
+					build_bar.add_child(gb)
+				if e.sid == "gat":
+					var ob := _mkbtn("Open" if bool(e.get("closed", false)) else "Close", 14, 50, 56)
+					ob.pressed.connect(_on_gate_toggle.bind(e))
+					build_bar.add_child(ob)
+				if str(e.sid) in ["tow", "cen"] and int(e.get("garrison", 0)) > 0:
+					var ub := _mkbtn("Unload [U]", 14, 50, 80)
+					ub.tooltip_text = "Unload garrison"
+					ub.pressed.connect(_on_unload.bind(e))
+					build_bar.add_child(ub)
+				if str(e.sid) in ["officer", "officer18"] and e.player == 0:
+					for fs in [15, 36, 72, 120, 196, 400]:
+						var fb := _mkbtn(str(fs), 14, 50, 40)
+						fb.tooltip_text = "Form a %d-man formation from nearby troops" % fs
+						fb.pressed.connect(_on_form_size.bind(e, fs))
+						build_bar.add_child(fb)
+				# P-51: donor mill "Grain Crops" production order.
+				if e.sid == "mil" and e.finished and e.player == 0:
+					var gb := _mkbtn("Grain Crops", 14, 50, 88)
+					gb.tooltip_text = "Sow a 7x7 field ring around this mill (5 gold per field)"
+					gb.pressed.connect(_on_grain_crops.bind(e))
+					build_bar.add_child(gb)
+				# MICRO #9: market Buy / Sell / Exchange (three distinct modes)
+				if e.sid == "mar":
+					var give_res: String = str(MARKET_TRADABLE[market_give_idx])
+					var want_res: String = str(MARKET_TRADABLE[market_want_idx])
+					var rate_pct: int = int(float(game.players[0].get("market_rate", Data.MARKET_RATE)) * 100.0)
+					var amt := _mkbtn("%d" % int(trade_amount), 14, 50, 56)
+					amt.tooltip_text = "Trade amount per click (100/500)"
+					amt.pressed.connect(_on_trade_amount)
+					build_bar.add_child(amt)
+					var gb := _mkbtn("Give: %s" % give_res, 14, 50, 92)
+					gb.tooltip_text = "Resource to sell / exchange (click to cycle)"
+					gb.pressed.connect(_on_market_give)
+					build_bar.add_child(gb)
+					var wb := _mkbtn("For: %s" % want_res, 14, 50, 92)
+					wb.tooltip_text = "Resource received by Exchange (click to cycle)"
+					wb.pressed.connect(_on_market_want)
+					build_bar.add_child(wb)
+					var buy := _mkbtn("Buy %s" % give_res, 14, 50, 92)
+					buy.tooltip_text = "Pay %d gold, receive %s (rate %d%%, floor 35%%)" % [int(trade_amount), give_res, rate_pct]
+					buy.pressed.connect(_on_market_buy.bind(e, give_res, trade_amount))
+					build_bar.add_child(buy)
+					var sell := _mkbtn("Sell %s" % give_res, 14, 50, 92)
+					sell.tooltip_text = "Give %d %s, receive gold (rate %d%%, floor 35%%)" % [int(trade_amount), give_res, rate_pct]
+					sell.pressed.connect(_on_market_sell.bind(e, give_res, trade_amount))
+					build_bar.add_child(sell)
+					var ex := _mkbtn("Xchg %s" % want_res, 14, 50, 92)
+					ex.tooltip_text = "Exchange %d %s for %s (rate %d%%)" % [int(trade_amount), give_res, want_res, rate_pct]
+					ex.pressed.connect(_on_trade.bind(e, give_res, want_res))
+					build_bar.add_child(ex)
+				# rally point: one click enters the mode, right-click then sets it
+				if e.def.get("trains", []).size() > 0:
+					var ral := _mkbtn("Rally [R]", 14, 50, 64)
+					ral.tooltip_text = "Set rally point: click, then right-click the map"
+					ral.pressed.connect(_on_rally_mode)
+					build_bar.add_child(ral)
+	# squad panel: officer + soldiers -> Form [F], Line [J], Column [K], Square [L]
+	var offs: Array = mine.filter(func(e): return e.kind == "unit" and (e.sid == "officer" or e.sid == "officer18"))
+	var soldiers: Array = mine.filter(func(e): return e.kind == "unit" and e.sid != "peasant" and not e.def.get("support", false) and e.sid != "officer" and e.sid != "officer18")
+	if not offs.is_empty() and mine.all(func(e): return e.kind == "unit" and e.player == 0):
+		for o in offs:
+			var sq: Dictionary = game.squad_of_unit(o.id)
+			var label := "Form [F]" if sq.is_empty() else "Squad %d (%s)" % [int(sq.squad_id), str(sq.get("formation", "line"))]
+			var fb := _mkbtn(label, 14, 50, 110)
+			fb.tooltip_text = "Form a squad around this officer (F). Soldiers keep formation."
+			fb.pressed.connect(_on_squad_form.bind(mine))
+			build_bar.add_child(fb)
+			if not sq.is_empty():
+				for form in ["line", "column", "square"]:
+					var fob := _mkbtn(form.substr(0, 3).to_upper(), 14, 50, 48)
+					fob.tooltip_text = "%s formation (%s)" % [form, "J" if form == "line" else ("K" if form == "column" else "L")]
+					fob.disabled = str(sq.get("formation", "")) == form
+					fob.pressed.connect(_on_squad_form_set.bind(int(sq.squad_id), form))
+					build_bar.add_child(fob)
+				var db := _mkbtn("Disband", 14, 50, 80)
+				db.tooltip_text = "Disband the squad (Shift+F)"
+				db.pressed.connect(_on_squad_disband.bind(int(sq.squad_id)))
+				build_bar.add_child(db)
+	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.player == 0):
+		for spec in [["Attack-move", "attack_move", "A"], ["Stand", "stand_ground", "S"], ["Hold fire", "hold_fire", "D"], ["Feuer frei", "feuer_frei", "E"], ["Patrol", "patrol", "P"], ["Guard", "guard", "G"], ["Stop", "stop", "Ctrl+S"]]:
+			var cb := _mkbtn("%s\n[%s]" % [spec[0], spec[2]], 12, 56, 96)
+			cb.pressed.connect(_on_cmd_button.bind(str(spec[1])))
+			cmd_bar.add_child(cb)
+		if mine.any(func(e): return str(e.sid) in ["officer", "officer18"]):
+			for form in ["line", "column", "square", "wedge"]:
+				var fb2 := _mkbtn(form.substr(0, 3).to_upper(), 13, 56, 96)
+				fb2.pressed.connect(_on_cmd_form.bind(form))
+				cmd_bar.add_child(fb2)
+		cmd_panel.visible = true
+	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.sid == "peasant"):
+		build_menu_open = true
+		_refresh_build_menu(mine)
+	elif build_menu_open:
+		build_menu_open = false
+	_apply_scale()
+
+func _on_train(bld: Dictionary, sid: String) -> void:
+	audio_click.play()
+	game.train_unit(0, bld, sid)
+	refresh_selection(game.get_selected())
+
+func _on_train_gui(ev: InputEvent, bld: Dictionary, sid: String) -> void:
+	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and Input.is_key_pressed(KEY_SHIFT):
+		for i in range(bld.queue.size() - 1, -1, -1):
+			if bld.queue[i].sid == sid:
+				bld.queue.remove_at(i)
+				Data.refund(game.players[0].res, Data.UNITS[sid].price, 1.0)
+				get_viewport().set_input_as_handled()
+				refresh_selection(game.get_selected())
+				return
+
+func _on_research(bld: Dictionary, uid: String) -> void:
+	audio_click.play()
+	game.research(0, bld, uid)
+	refresh_selection(game.get_selected())
+
+func _on_make_gate(b: Dictionary) -> void:
+	audio_click.play()
+	game.cmd_make_gate(b)
+	refresh_selection(game.get_selected())
+
+func _on_gate_toggle(b: Dictionary) -> void:
+	audio_click.play()
+	game.cmd_gate_toggle(b)
+	refresh_selection([b])
+
+func _on_unload(b: Dictionary) -> void:
+	audio_click.play()
+	game.cmd_unload(b)
+	refresh_selection([b])
+
+func _on_form_size(off: Dictionary, size: int) -> void:
+	audio_click.play()
+	game.cmd_form_size(off, size)
+	refresh_selection([off])
+
+func _on_grain_crops(mill: Dictionary) -> void:
+	audio_click.play()
+	var n: int = game.cmd_sow(mill)
+	if n > 0:
+		show_hint("Sowed %d grain fields (-%d gold)" % [n, n * 5])
+	else:
+		show_hint("No room or not enough gold to sow grain fields")
+	refresh_selection(game.get_selected())
+
+func _on_market_give() -> void:
+	audio_click.play()
+	market_give_idx = (market_give_idx + 1) % MARKET_TRADABLE.size()
+	if market_give_idx == market_want_idx:
+		market_want_idx = (market_want_idx + 1) % MARKET_TRADABLE.size()
+	refresh_selection(game.get_selected())
+
+func _on_market_want() -> void:
+	audio_click.play()
+	market_want_idx = (market_want_idx + 1) % MARKET_TRADABLE.size()
+	if market_want_idx == market_give_idx:
+		market_want_idx = (market_want_idx + 1) % MARKET_TRADABLE.size()
+	refresh_selection(game.get_selected())
+
+func _on_market_buy(bld: Dictionary, give: String, amount: float) -> void:
+	audio_click.play()
+	if game.trade(0, "gold", give, amount):
+		_on_message("Bought %s with gold" % give)
+	refresh_selection(game.get_selected())
+
+func _on_market_sell(bld: Dictionary, give: String, amount: float) -> void:
+	audio_click.play()
+	if game.trade(0, give, "gold", amount):
+		_on_message("Sold %s for gold" % give)
+	refresh_selection(game.get_selected())
+
+func _on_trade(bld: Dictionary, give: String, want: String) -> void:
+	audio_click.play()
+	if game.trade(0, give, want, trade_amount):
+		_on_message("Exchanged %s for %s" % [give, want])
+	refresh_selection(game.get_selected())
+
+func _on_trade_amount() -> void:
+	audio_click.play()
+	trade_amount = 500.0 if trade_amount < 500.0 else 100.0
+	refresh_selection(game.get_selected())
+
+func _on_rally_mode() -> void:
+	audio_click.play()
+	want_rally = true
+	show_hint("Rally: right-click the map to set the gather point")
+
+func _on_squad_form(sel: Array) -> void:
+	audio_click.play()
+	game.squad_form(sel)
+	refresh_selection(game.get_selected())
+
+func _on_squad_form_set(sid: int, form: String) -> void:
+	audio_click.play()
+	game.squad_set_formation(sid, form)
+	refresh_selection(game.get_selected())
+
+func _on_squad_disband(sid: int) -> void:
+	audio_click.play()
+	game.squad_disband(sid)
+	refresh_selection(game.get_selected())
+
+func _on_cmd_button(action: String) -> void:
+	audio_click.play()
+	var ictl = get_tree().get_first_node_in_group("c3_input")
+	if ictl != null:
+		ictl.command_from_hud(action)
+
+func _on_cmd_form(form: String) -> void:
+	audio_click.play()
+	for e in game.get_selected():
+		var sq: Dictionary = game.squad_of_unit(e.id)
+		if not sq.is_empty():
+			game.squad_set_formation(int(sq.squad_id), form)
+			break
+	refresh_selection(game.get_selected())
+
+func _on_attack_hint() -> void:
+	audio_click.play()
+
+func _on_build_pick(sid: String) -> void:
+	audio_click.play()
+	build_ghost_sid = sid
+	build_menu_open = false
+	refresh_selection(game.get_selected())
+
+func _on_cancel_build_menu() -> void:
+	build_menu_open = false
+	refresh_selection(game.get_selected())
+
+func _selection_summary(mine: Array) -> String:
+	var units := 0
+	var blds := 0
+	for e in mine:
+		if e.kind == "unit":
+			units += 1
+		else:
+			blds += 1
+	var first: Dictionary = mine[0]
+	var s := _name_of(first)
+	if mine.size() > 1:
+		s += "  x%d (%d units" % [mine.size(), units]
+		if blds > 0:
+			s += ", %d bldg" % blds
+		s += ")"
+	if first.kind == "unit":
+		s += "  HP %d/%d" % [maxi(0, first.hp), first.max_hp]
+		if not first.def.get("support", false) and first.sid != "peasant":
+			s += "  morale %d" % int(first.get("morale", 70.0))
+			if first.get("routing", false):
+				s += " ROUTING!"
+		var o: String = str(first.order.get("type", "none"))
+		if o != "none":
+			s += "  " + o
+			if first.order.has("res"):
+				s += " " + str(first.order.res)
+	else:
+		s += "  HP %d/%d" % [maxi(0, first.hp), first.max_hp]
+		if not first.finished:
+			s += "  under construction"
+		elif first.queue.size() > 0:
+			s += "  training %s (%d)" % [first.queue[0].sid, first.queue.size()]
+		if first.get("research") != null:
+			s += "  researching %s" % first.research.uid
+		if float(first.get("capture_t", 0.0)) > 0.1:
+			s += "  CAPTURE %.0f%%" % (float(first.capture_t) / 8.0 * 100.0)
+		if game.players[0].get("famine", false):
+			s += "  FAMINE!"
+	return s
+
+func _price_text(cost: Dictionary) -> String:
+	var parts: Array = []
+	for k in Data.RES_NAMES:
+		if cost.get(k, 0) > 0:
+			parts.append("%d %s" % [cost[k], k])
+	return " ".join(parts) if parts.size() > 0 else "free"
+
+# The name of a unit or a building, as the settings file gives it.
+func _name_of(e: Dictionary) -> String:
+	if e.kind == "building":
+		return ConfigScript.building_name(e.sid)
+	return ConfigScript.unit_name(e.sid)
+
+func _refresh_build_menu(peasants: Array) -> void:
+	var order := ["cen", "hou", "wal", "bar", "sta", "bla", "aca", "sto", "mil", "mar", "art", "tow", "mine"]
+	for sid in order:
+		# One generic Mine button: all three mine types share the same icon,
+		# cost and build time, so the gold def is just the display template.
+		# The deposit under the cursor decides which mine actually gets built.
+		var def: Dictionary = Data.BUILDINGS["mine_gold" if sid == "mine" else sid]
+		var b := _unit_button(icons_tex, def.icon, "")
+		var tip := "%s  [%s]  %s  Time: %ds" % [ConfigScript.building_name(sid), _key_text(sid),
+			_price_text(def.cost), int(round(float(def.get("build_time", 0.0))))]
+		if sid == "mine":
+			tip += "  - type follows the ore deposit"
+		b.tooltip_text = tip
+		b.disabled = not Data.can_pay(game.players[0].res, def.cost)
+		b.pressed.connect(_on_build_pick.bind(sid))
+		build_buttons[sid] = b
+		build_bar.add_child(b)
+		dyn_buttons.append({"b": b, "kind": "build", "e": {}, "sid": sid, "uid": ""})
+	var cancel := _mkbtn("Cancel build menu (Esc)", 13, 40)
+	cancel.pressed.connect(_on_cancel_build_menu)
+	build_bar.add_child(cancel)
+
+# The letter the building is built with, as the settings file says.
+func _key_text(sid: String) -> String:
+	var keys: Dictionary = Data.HOTKEYS.get("build", {})
+	if sid == "mine" or sid.begins_with("mine_"):
+		return str(keys.get("mine", "N"))
+	return str(keys.get(sid, "-"))
+
+func _update_dynamic() -> void:
+	# Cheap live pass: texts and affordable states only. Buttons are never
+	# freed here, so a click in flight always lands (full rebuilds happen in
+	# refresh_selection, called on selection and order changes).
+	if game == null or sel_box == null:
+		return
+	var cur := game.get_selected()
+	var ids: Array = []
+	for e in cur:
+		ids.append(e.id)
+	if ids != last_ids:
+		refresh_selection(cur)
+		return
+	if summary_label != null and is_instance_valid(summary_label):
+		var mine0 := cur.filter(func(e): return e.player == 0)
+		if not mine0.is_empty():
+			summary_label.text = _selection_summary(mine0)
+	for p in prog_entries:
+		var l: Label = p.label
+		var be: Dictionary = p.e
+		if is_instance_valid(l) and not be.dead:
+			var kp: float = clampf(be.progress / maxf(1.0, be.def.build_time), 0.0, 1.0)
+			l.text = "building %d%%" % int(kp * 100.0)
+	for d in dyn_buttons:
+		var b: Button = d.b
+		if not is_instance_valid(b):
+			continue
+		var be2: Dictionary = d.e
+		if d.kind == "train":
+			if be2.dead:
+				b.disabled = true
+				continue
+			var q: int = be2.queue.filter(func(j): return j.sid == d.sid).size()
+			if be2.queue.size() > 0:
+				b.text = str(be2.queue.size()) if d.sid == be2.queue[0].sid else (("+%d" % q) if q > 0 else "")
+			elif q > 0:
+				b.text = str(q)
+			b.disabled = not Data.can_pay(game.players[0].res, Data.UNITS[d.sid].price)
+		elif d.kind == "research":
+			var u: Dictionary = Data.UPGRADES.get(d.uid, {})
+			if u.is_empty():
+				continue
+			var done: bool = game.players[0].upgrades.has(d.uid)
+			var researching: bool = false
+			if not be2.is_empty() and not be2.dead:
+				researching = be2.get("research") != null and be2.research.uid == d.uid
+			b.disabled = done or researching
+			b.text = ("[x] " if done else ("... " if researching else "")) + str(u.name)
+		elif d.kind == "build":
+			var def: Dictionary = Data.BUILDINGS.get("mine_gold" if d.sid == "mine" else d.sid, {})
+			if not def.is_empty():
+				b.disabled = not Data.can_pay(game.players[0].res, def.cost)
+
+func show_hint(text: String) -> void:
+	if hint_label != null:
+		hint_label.text = text
+
+func _on_message(text: String) -> void:
+	msg_label.text = text
+	msg_timer = 4.0
+
+func game_over(winner: int) -> void:
+	game_over_label.visible = true
+	game_over_label.text = ("Victory!" if winner == 0 else "Defeat")
+	game_over_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3) if winner == 0 else Color(1, 0.4, 0.3))
+
+# Economy read-outs derived entirely from existing game state (no sim edits):
+#  - bracketed worker count per resource = peasants gathering that resource,
+#    or miners inside a mine (inside_of -> "mine_<res>" building)
+#  - idle peasants + free mine slots = the donor's two top-bar warnings (S11)
+#  - gold upkeep rate vs mine income rate = the donor's red-negative-upkeep
+#    signal, using the sim's own UPKEEP_DIVISOR / MINE_INCOME_PER_S constants.
+func _recompute_eco() -> void:
+	if game == null:
+		return
+	var counts := {}
+	for r in Data.RES_NAMES:
+		counts[str(r)] = 0
+	var idle := 0
+	var slots := 0
+	var gold_upkeep := 0.0
+	var gold_income := 0.0
+	var p: Dictionary = game.players[0]
+	for e in game.live_units:
+		if e.dead or int(e.player) != 0:
+			continue
+		var eat: Dictionary = e.def.get("eat", {})
+		if eat.has("gold"):
+			gold_upkeep += float(eat["gold"]) / Data.UPKEEP_DIVISOR
+		if str(e.sid) != "peasant":
+			continue
+		var o: Dictionary = e.get("order", {})
+		var rname: String = str(o.get("res", ""))
+		var inside: int = int(e.get("inside_of", 0))
+		if inside != 0:
+			var m: Dictionary = game.by_id.get(inside, {})
+			var msid: String = str(m.get("sid", ""))
+			if msid.begins_with("mine_"):
+				rname = msid.substr(5)
+		if counts.has(rname):
+			counts[rname] = int(counts[rname]) + 1
+		elif str(o.get("type", "none")) == "none":
+			idle += 1
+	for b in game.live_blds:
+		if b.dead or int(b.player) != 0:
+			continue
+		var eat2: Dictionary = b.def.get("eat", {})
+		if eat2.has("gold"):
+			gold_upkeep += float(eat2["gold"]) / Data.UPKEEP_DIVISOR
+		var bsid: String = str(b.sid)
+		if bsid.begins_with("mine_") and bool(b.finished):
+			var used: int = int(b.get("workers", 0))
+			slots += maxi(0, int(b.get("slots", b.def.get("slots", 5))) - used)
+			if bsid.substr(5) == "gold":
+				gold_income += float(used) * Data.MINE_INCOME_PER_S * float(p.get("mine_mult", 1.0))
+	worker_counts = counts
+	idle_count = idle
+	free_slots_count = slots
+	gold_deficit = gold_upkeep > gold_income + 0.0001
+
+func _process(dt: float) -> void:
+	if game == null:
+		return
+	# fps readout: engine fps + frame-time EMA + live units. If fps is high
+	# but the game feels slow, the cost is sim/design (ticks, AI, upkeep),
+	# not rendering — check low quality preset next.
+	if dt > 0.0:
+		fps_ema = lerpf(fps_ema, 1.0 / maxf(dt, 0.0001), 0.05)
+	fps_t -= dt
+	if fps_t <= 0.0 and fps_label != null:
+		fps_t = 0.5
+		fps_label.text = "%03d" % int(Performance.get_monitor(Performance.TIME_FPS))
+	eco_t -= dt
+	if eco_t <= 0.0:
+		eco_t = 0.5
+		_recompute_eco()
+	for i in 6:
+		var rname: String = str(Data.RES_NAMES[i])
+		res_labels[i].text = "%d [%d]" % [int(game.players[0].res[i]), int(worker_counts.get(rname, 0))]
+		# donor colours a resource red when upkeep outruns income/stock
+		var deficit := false
+		if i == 0:
+			deficit = bool(game.players[0].famine)
+		elif i == 3:
+			deficit = gold_deficit or float(game.players[0].get("gold_famine_t", 0.0)) > 0.0
+		if deficit != bool(res_deficit[i]):
+			res_deficit[i] = deficit
+			res_labels[i].add_theme_color_override("font_color", Color(1, 0.42, 0.38) if deficit else Color(1, 0.97, 0.9))
+	if eco_label != null:
+		eco_label.text = "idle %d  slots %d" % [idle_count, free_slots_count]
+		var warn: bool = idle_count > 0
+		if warn != eco_warn:
+			eco_warn = warn
+			eco_label.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if warn else Color(0.8, 0.85, 1))
+	var ucount := game.unit_count(0) + game.queue_count(0)
+	# the hint line carries placement text; the status line keeps units/score
+	if hint_label == null or hint_label.text == "":
+		status_label.text = "units %d/%d    score %d    %s" % [ucount, game.players[0].farm_cap,
+			game.players[0].score, ("PAUSED" if game.paused else "")]
+	if msg_timer > 0.0:
+		msg_timer -= dt
+		if msg_timer <= 0.0:
+			msg_label.text = ""
+	mm_timer -= dt
+	if mm_timer <= 0.0:
+		mm_timer = Data.MINIMAP_INTERVAL
+		_update_minimap()
+	# F3: the white viewport box follows the camera every frame, not just on
+	# the (0.25 s / 0.5 s) minimap timer. The draw is change-gated, so this is
+	# O(1) while the camera is still. This also covers arrow/edge scroll + zoom.
+	_draw_minimap_viewport_box()
+	# live refresh: texts and affordable states only (never frees buttons,
+	# so a click in flight always lands). Structural changes rebuild above.
+	sel_timer -= dt
+	if sel_timer <= 0.0:
+		sel_timer = 0.75
+		if build_ghost_sid == "":
+			_update_dynamic()
+
+func _build_minimap() -> void:
+	minimap_base = Image.create(game.MAP_W, game.MAP_H, false, Image.FORMAT_RGBA8)
+	for y in game.MAP_H:
+		for x in game.MAP_W:
+			var i := y * game.MAP_W + x
+			var c := Color(0.29, 0.42, 0.2)
+			match int(game.terrain[i]):
+				1:
+					c = Color(0.45, 0.35, 0.22)
+				2:
+					c = Color(0.22, 0.34, 0.17)
+				3:
+					c = Color(0.16, 0.34, 0.55)
+				4:
+					c = Color(0.72, 0.64, 0.42)
+				5:
+					c = Color(0.45, 0.44, 0.4)
+			minimap_base.set_pixel(x, y, c)
+	minimap_img = minimap_base.duplicate()
+	minimap_view_img = minimap_img.duplicate()
+	minimap_tex = ImageTexture.create_from_image(minimap_view_img)
+	minimap_rect = TextureRect.new()
+	minimap_rect.texture = minimap_tex
+	minimap_rect.custom_minimum_size = Vector2(200, 200)
+	minimap_rect.set_meta("uimw", 200.0)
+	minimap_rect.set_meta("uimh", 200.0)
+	minimap_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	minimap_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	minimap_rect.anchor_left = 0.0
+	minimap_rect.anchor_right = 0.0
+	minimap_rect.anchor_top = 1.0
+	minimap_rect.anchor_bottom = 1.0
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	panel.add_child(minimap_rect)
+	panel.anchor_left = 0.0
+	panel.anchor_right = 0.0
+	panel.anchor_top = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = 4
+	panel.offset_top = -212
+	panel.offset_right = 234
+	panel.offset_bottom = 0
+	minimap_panel = panel
+	add_child(panel)
+	minimap_rect.gui_input.connect(_on_minimap_input)
+
+func _on_minimap_input(ev: InputEvent) -> void:
+	var mp := minimap_rect.get_local_mouse_position() / minimap_rect.size
+	var world_pos := Vector2(mp.x * game.MAP_W, mp.y * game.MAP_H) * Data.TILE_M
+	var cam := get_viewport().get_camera_2d() as C3Camera
+	if ev is InputEventMouseButton and ev.pressed:
+		get_viewport().set_input_as_handled()
+		if ev.button_index == MOUSE_BUTTON_LEFT and cam:
+			cam.global_position = world_pos * world.view_scale
+			cam.clamp_pos()  # F2: no blank border at map corners
+			_draw_minimap_viewport_box()  # F3: box moves on this very frame
+		elif ev.button_index == MOUSE_BUTTON_RIGHT:
+			# right-click on minimap = move/attack-move order for the selection
+			var ictl = get_tree().get_first_node_in_group("c3_input")
+			if ictl != null:
+				ictl.minimap_order(world_pos)
+	elif ev is InputEventMouseMotion and ev.button_mask & MOUSE_BUTTON_MASK_LEFT and cam:
+		cam.global_position = world_pos * world.view_scale
+		cam.clamp_pos()  # F2
+		_draw_minimap_viewport_box()  # F3
+
+# F3: draw the white viewport rectangle into a DISPLAY image and upload it.
+# The box is derived straight from the camera transform, so it reflects a jump
+# on the same input event instead of waiting for world.sync()/MINIMAP_INTERVAL.
+# Keeping it in a separate image avoids leaving ghost rectangles behind when
+# the camera moves between full minimap rebuilds (the clean image never has a
+# box on it, so every redraw starts from a clean slate).
+func _draw_minimap_viewport_box(force: bool = false) -> void:
+	if minimap_img == null or minimap_view_img == null or minimap_tex == null or game == null:
+		return
+	var x0 := 0
+	var y0 := 0
+	var x1 := game.MAP_W - 1
+	var y1 := game.MAP_H - 1
+	var cam := get_viewport().get_camera_2d()
+	if cam != null and world != null:
+		# view_rect is canvas pixels (metres * view_scale); screen = canvas * zoom
+		var pxm: float = Data.TILE_M * world.view_scale
+		var vp: Vector2 = get_viewport().get_visible_rect().size
+		var extent: Vector2 = vp / maxf(cam.zoom.x, 0.0001)
+		var view_pos: Vector2 = cam.global_position - extent * 0.5
+		var view_end: Vector2 = view_pos + extent
+		x0 = clampi(int(view_pos.x / pxm), 0, game.MAP_W - 1)
+		y0 = clampi(int(view_pos.y / pxm), 0, game.MAP_H - 1)
+		x1 = clampi(int(view_end.x / pxm), 0, game.MAP_W - 1)
+		y1 = clampi(int(view_end.y / pxm), 0, game.MAP_H - 1)
+	var box := Vector4i(x0, y0, x1, y1)
+	if not force and box == _mm_box_last:
+		return
+	_mm_box_last = box
+	minimap_view_img = minimap_img.duplicate()
+	var bc := Color(1, 1, 1, 0.9)
+	for x in range(x0, x1 + 1):
+		minimap_view_img.set_pixel(x, y0, bc)
+		minimap_view_img.set_pixel(x, y1, bc)
+	for y in range(y0, y1 + 1):
+		minimap_view_img.set_pixel(x0, y, bc)
+		minimap_view_img.set_pixel(x1, y, bc)
+	minimap_tex.update(minimap_view_img)
+
+func _mm_plot(t: Vector2i, c: Color, big: bool) -> void:
+	# minimap blip with map-bounds guard; deposits and forests draw 2x2 so
+	# they read as landmarks like in the original, units stay 1px dots
+	if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
+		return
+	minimap_img.set_pixel(t.x, t.y, c)
+	if big:
+		if t.x + 1 < game.MAP_W:
+			minimap_img.set_pixel(t.x + 1, t.y, c)
+		if t.y + 1 < game.MAP_H:
+			minimap_img.set_pixel(t.x, t.y + 1, c)
+		if t.x + 1 < game.MAP_W and t.y + 1 < game.MAP_H:
+			minimap_img.set_pixel(t.x + 1, t.y + 1, c)
+
+func _update_minimap() -> void:
+	if world == null:
+		return
+	# terrain base is static: duplicate the cached image (C++ fast) instead
+	# of repainting 100k tiles every update
+	minimap_img = minimap_base.duplicate()
+	for n in game.res_nodes:
+		var t := game.tile_of(n.pos)
+		if n.max_hits == 0 and (n.type == "gold" or n.type == "iron" or n.type == "coal"):
+			# unbuilt ore deposit: a distinct ore-coloured landmark (dark
+			# outline + bright core) so it reads as a mine on the minimap.
+			# Still fogged until a unit has scouted the tile.
+			if not world.tile_explored(n.pos):
+				continue
+			var dc: Color = {"gold": Color(1.0, 0.82, 0.24),
+				"iron": Color(0.9, 0.52, 0.32),
+				"coal": Color(0.36, 0.37, 0.42)}[n.type]
+			for dy in range(-1, 3):
+				for dx in range(-1, 3):
+					var mx := t.x + dx
+					var my := t.y + dy
+					if mx < 0 or my < 0 or mx >= game.MAP_W or my >= game.MAP_H:
+						continue
+					var core := dx >= 0 and dx <= 1 and dy >= 0 and dy <= 1
+					minimap_img.set_pixel(mx, my, dc if core else Color(0.08, 0.07, 0.06))
+			continue
+		if n.hits <= 0:
+			continue
+		match n.type:
+			"wood":
+				_mm_plot(t, Color(0.05, 0.2, 0.05), true)
+			"stone":
+				_mm_plot(t, Color(0.6, 0.6, 0.55), false)
+			"food":
+				_mm_plot(t, Color(0.85, 0.75, 0.3), false)
+			"gold":
+				_mm_plot(t, Color(0.9, 0.75, 0.2), false)
+			"iron":
+				_mm_plot(t, Color(0.7, 0.45, 0.3), false)
+			"coal":
+				_mm_plot(t, Color(0.25, 0.25, 0.28), false)
+	for e in game.entities:
+		if e.dead:
+			continue
+		if e.player != 0:
+			if e.kind == "building":
+				if not world.tile_explored(e.pos):
+					continue
+			else:
+				if not world.tile_visible(e.pos):
+					continue
+		var t := game.tile_of(e.pos)
+		if e.kind == "building":
+			for dy in 2:
+				for dx in 2:
+					var px := mini(game.MAP_W - 1, t.x + dx)
+					var py := mini(game.MAP_H - 1, t.y + dy)
+					minimap_img.set_pixel(px, py, Color(1, 1, 1) if e.player == 0 else Color(1, 0.2, 0.2))
+		else:
+			if t.x >= 0 and t.y >= 0 and t.x < game.MAP_W and t.y < game.MAP_H:
+				if bool(e.get("selected", false)):
+					minimap_img.set_pixel(t.x, t.y, Color(1, 1, 1))
+				else:
+					minimap_img.set_pixel(t.x, t.y, Color(0.4, 0.7, 1) if e.player == 0 else Color(1, 0.3, 0.25))
+	# fog dimming only matters when fog is on (otherwise everything is known)
+	if Data.FOG_OF_WAR:
+		for y in game.MAP_H:
+			for x in game.MAP_W:
+				var i := y * game.MAP_W + x
+				if world.fog_explored[i] == 0:
+					var c: Color = minimap_img.get_pixel(x, y)
+					minimap_img.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
+	# The clean image is rebuilt above; redraw the box into the display image
+	# and upload both together (F3). force=true so a fresh clean image is
+	# always shown even if the camera has not moved since the last rebuild.
+	_draw_minimap_viewport_box(true)
+
+func hud_report() -> Dictionary:
+	# used by --self-test
+	var res_ok := true
+	for l in res_labels:
+		if l.text.strip_edges() == "":
+			res_ok = false
+	return {
+		"resource_labels": res_ok,
+		"minimap": minimap_tex != null and minimap_img != null,
+		"selection_panel": sel_panel != null and sel_panel.visible,
+		"top_bar": top_panel != null and top_panel.visible,
+		"status_text": status_label.text,
+		"worker_counts": worker_counts.duplicate(true),
+		"idle_peasants": idle_count,
+		"free_mine_slots": free_slots_count,
+		"gold_deficit": gold_deficit,
+		"score": game.players[0].score if game != null else -1,
+	}

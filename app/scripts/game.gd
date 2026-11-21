@@ -355,7 +355,10 @@ func complete_objective(i: int) -> void:
 func set_rally(b: Dictionary, pos: Vector2) -> void:
 	if b.is_empty() or b.kind != "building":
 		return
-	b["rally"] = pos
+	# T5GEN F4: a rally on a tree/building/rock tile was stored verbatim, so A*
+	# snapped its path to a free cell while d_goal still measured the blocked
+	# point -> a unit walked forever a metre short.  Store a reachable point.
+	b["rally"] = _snap_free_point(pos, {"def": {}, "order": {}, "player": int(b.get("player", -1))})
 
 # ---------------------------------------------------------------- map gen
 func _t(x: int, y: int) -> int:
@@ -564,7 +567,7 @@ func _gen_patterns() -> void:
 	var result: Dictionary = _pattern_build
 	if result.is_empty():
 		result = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
-			map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF))
+			map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF), str(Data.RICHNESS))
 	pattern_stamps = result.get("stamps", [])
 	# T2GEN density gate telemetry (map_meta is emitted by --dump-map).
 	var _kind_counts := {}
@@ -926,7 +929,7 @@ func _gen_base() -> void:
 	# donor stage 9: stamp relief BEFORE collision.  The build result is cached
 	# so _gen_patterns paints exactly the same footprints (no extra RNG draws).
 	_pattern_build = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
-		map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF))
+		map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF), str(Data.RICHNESS))
 	_shape_stamp_relief()
 	# T2GEN P1-4: the donor encodes relief as ONE height value per cell from the
 	# mask R channel (ceiling +2.964, floor -2.964).  The port's three additive
@@ -2343,6 +2346,10 @@ func cmd_move(e: Dictionary, pos: Vector2) -> void:
 	e.order = {"type": "move", "pos": pos}
 	e.move_target = pos
 	e.moving = true
+	# T5GEN: a fresh order starts a fresh arrival/no-progress window.
+	e["stuck_t"] = 0.0
+	e["no_progress_t"] = 0.0
+	e["last_d_goal"] = 0.0
 	# officer leads: the squad marches in formation behind him
 	_squad_order_members(e.id, pos, false)
 
@@ -3179,7 +3186,7 @@ func _naval_spawn_pos(b: Dictionary) -> Vector2:
 				return p
 	return Vector2(-1.0, -1.0)
 
-func train_unit(player: int, building: Dictionary, sid: String) -> bool:
+func train_unit(player: int, building: Dictionary, sid: String, amount: int = 1, infinite: bool = false) -> bool:
 	if not building.finished:
 		return false
 	var nat := str(players[player].get("nation", "")) if player >= 0 and player < players.size() else ""
@@ -3207,22 +3214,73 @@ func train_unit(player: int, building: Dictionary, sid: String) -> bool:
 			if player == 0:
 				say("Build an academy first (officers need it).")
 			return false
-	if building.queue.size() >= Data.BUILD_QUEUE_LIMIT:
+	# T5MOD: donor carries the batch amount INSIDE one order (D19).  Plain=1,
+	# Shift=5, Ctrl+Alt=100, Ctrl=endless, Ctrl+Shift=5x endless.
+	var free_slots: int = Data.BUILD_QUEUE_LIMIT - building.queue.size()
+	if free_slots <= 0:
 		return false
-	if unit_count(player) + queue_count(player) >= players[player].farm_cap:
-		_say_human(player, "Need more houses â€” unit limit reached.")
+	var price: Dictionary = Data.UNITS[rsid].price
+	var jobs: int = maxi(1, amount)
+	if not infinite:
+		var cap_free: int = int(players[player].farm_cap) - unit_count(player) - queue_count(player)
+		if cap_free <= 0:
+			_say_human(player, "Need more houses â€” unit limit reached.")
+			return false
+		jobs = mini(jobs, mini(free_slots, cap_free))
+		# Charge only the affordable subset; unaffordable units are skipped.
+		var probe: Dictionary = {}
+		var affordable := 0
+		for k in price.keys():
+			probe[k] = 0.0
+		for _n in jobs:
+			for k in price.keys():
+				probe[k] = float(probe[k]) + float(price[k])
+			if not Data.can_pay(players[player].res, probe):
+				break
+			affordable += 1
+		if affordable <= 0:
+			_say_human(player, "Not enough resources for %s." % rsid)
+			return false
+		var paid: Dictionary = {}
+		for k in price.keys():
+			paid[k] = float(price[k]) * float(affordable)
+		Data.pay(players[player].res, paid)
+		building.queue.append({"sid": rsid, "t": Data.UNITS[rsid].build_time,
+			"count": affordable, "infinite": false})
+		return true
+	# Endless: one paid-ahead unit per infinite job.  Each later cycle is
+	# charged on completion; the job is dropped when resources/requirements fail.
+	jobs = mini(jobs, free_slots)
+	if jobs <= 0 or not pay_cost(player, price):
 		return false
-	var cost: Dictionary = Data.UNITS[rsid].price
-	if not pay_cost(player, cost):
-		_say_human(player, "Not enough resources for %s." % rsid)
-		return false
-	building.queue.append({"sid": rsid, "t": Data.UNITS[rsid].build_time})
+	for _j in jobs:
+		building.queue.append({"sid": rsid, "t": Data.UNITS[rsid].build_time,
+			"count": 1, "infinite": true})
 	return true
+
+# T5MOD: RMB on a training icon cancels one queued job of sid and refunds it.
+func cancel_train(building: Dictionary, sid: String) -> bool:
+	if building.is_empty() or building.queue.is_empty():
+		return false
+	for i in range(building.queue.size() - 1, -1, -1):
+		var job: Dictionary = building.queue[i]
+		if str(job.get("sid", "")) != sid:
+			continue
+		var n: int = 1 if bool(job.get("infinite", false)) else maxi(1, int(job.get("count", 1)))
+		var cost: Dictionary = Data.UNITS.get(sid, {}).get("price", {})
+		var refund: Dictionary = {}
+		for k in cost.keys():
+			refund[k] = float(cost[k]) * float(n)
+		Data.refund(players[int(building.player)].res, refund, 1.0)
+		building.queue.remove_at(i)
+		return true
+	return false
 
 func queue_count(player: int) -> int:
 	var n := 0
 	for b in buildings_of(player):
-		n += b.queue.size()
+		for j in b.queue:
+			n += 1 if bool((j as Dictionary).get("infinite", false)) else maxi(1, int((j as Dictionary).get("count", 1)))
 	return n
 
 func _leave_building(e: Dictionary) -> void:
@@ -3612,13 +3670,38 @@ func _nav_repath(e: Dictionary, target: Vector2) -> void:
 	e["nav_ver"] = nav_version
 	e["nav_cd"] = 0.6
 
-func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive := 0.15) -> bool:
+func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive := 0.15, giveup := false) -> bool:
+	# T5GEN F2/F4: a blocked destination is never appended to the A* path, so
+	# d_goal must measure a reachable point, not the raw blocked one.  Snap once
+	# for both path and arrival; crowded orders also get a realistic arrival
+	# band plus a no-progress give-up so nobody marches in place forever.
+	var dest: Vector2 = target
+	if giveup and not _is_naval(e) and _blocked_for(e, target):
+		dest = _snap_free_point(target, e)
+	var arrive_eff: float = arrive
+	if giveup:
+		arrive_eff = maxf(arrive, 0.9)
+		var last_d := float(e.get("last_d_goal", 0.0))
+		var npt := float(e.get("no_progress_t", 0.0))
+		if last_d <= 0.0 or dest.distance_to(e.pos) < last_d - 0.08:
+			npt = 0.0
+		else:
+			npt += dt
+		e["last_d_goal"] = dest.distance_to(e.pos)
+		e["no_progress_t"] = npt
+		if npt > 2.0 and dest.distance_to(e.pos) <= 2.0:
+			e.moving = false
+			e["stuck_t"] = 0.0
+			e["no_progress_t"] = 0.0
+			e["nav_path"] = []
+			e["nav_i"] = 0
+			return true
 	# Walk one step towards the target.  Fixed-destination orders first follow
 	# an A* route around buildings/water/cliffs; the rotated-probe steering
 	# below handles the final approach and all dynamic chases.
 	var use_nav: bool = _nav_wanted(e)
 	var path: Array = []
-	var aim: Vector2 = target
+	var aim: Vector2 = dest
 	if use_nav:
 		var cd: float = maxf(0.0, float(e.get("nav_cd", 0.0)) - dt)
 		e["nav_cd"] = cd
@@ -3627,13 +3710,13 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 		var need := false
 		if int(e.get("nav_ver", -1)) != nav_version:
 			need = true
-		elif not (goal is Vector2) or (goal as Vector2).distance_to(target) > 1.0:
+		elif not (goal is Vector2) or (goal as Vector2).distance_to(dest) > 1.0:
 			need = true
 		elif path.is_empty() or int(e.get("nav_i", 0)) >= path.size():
-			need = e.pos.distance_to(target) > arrive + 1.5
+			need = e.pos.distance_to(dest) > arrive_eff + 1.5
 		if need and cd <= 0.0 and _nav_tick_budget > 0:
 			_nav_tick_budget -= 1
-			_nav_repath(e, target)
+			_nav_repath(e, dest)
 			path = e.get("nav_path", [])
 		var i: int = int(e.get("nav_i", 0))
 		var near: float = maxf(0.45, TILE * 0.3)
@@ -3643,17 +3726,18 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 		if i < path.size():
 			aim = path[i] as Vector2
 
-	var d_goal: float = e.pos.distance_to(target)
-	if d_goal <= arrive:
+	var d_goal: float = e.pos.distance_to(dest)
+	if d_goal <= arrive_eff:
 		e.moving = false
 		e["stuck_t"] = 0.0
+		e["no_progress_t"] = 0.0
 		e["nav_path"] = []
 		e["nav_i"] = 0
 		return true
 	var to: Vector2 = aim - e.pos
 	var d: float = to.length()
 	if d < 0.001:
-		aim = target
+		aim = dest
 		to = aim - e.pos
 		d = to.length()
 	var step: float = minf(speed * dt, d)
@@ -3677,7 +3761,13 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 			e.pos = np
 			e.face = d2.angle()
 			e["stuck_t"] = 0.0
-			return d_goal - step < arrive
+			if giveup and d_goal - step < arrive_eff:
+				e.moving = false
+				e["no_progress_t"] = 0.0
+				e["nav_path"] = []
+				e["nav_i"] = 0
+				return true
+			return d_goal - step < arrive_eff
 	# boxed in on every side: stay put and let the caller give up
 	e.moving = false
 	e["stuck_t"] = e.get("stuck_t", 0.0) + dt
@@ -3697,6 +3787,47 @@ func _work_slot(e: Dictionary, center: Vector2, ring_r: float) -> Vector2:
 	if in_bounds(p2) and not is_blocked(p2):
 		return p2
 	return center
+
+# T5GEN F4: nearest walkable point around p for a probe entity.  Ring scan is
+# deterministic (fixed 16 directions, 1 m steps) and never uses unseeded RNG.
+func _snap_free_point(p: Vector2, probe: Dictionary) -> Vector2:
+	if in_bounds(p) and not _blocked_for(probe, p):
+		return p
+	for ring in range(1, 9):
+		var rr := float(ring) * (TILE * 0.5)
+		for k in 16:
+			var a := TAU * float(k) / 16.0
+			var q := p + Vector2(cos(a), sin(a)) * rr
+			if in_bounds(q) and not _blocked_for(probe, q):
+				return q
+	return p
+
+# T5GEN F1: deterministic, blocked-tile-aware spawn slot around a building's
+# exit edge.  idx rotates the lattice so consecutive units do not share a tile;
+# radial bands start beyond block_r so nobody is born inside the door band.
+func _spawn_slot(e: Dictionary, dir: Vector2, brexit: float, idx: int, naval: bool) -> Vector2:
+	var probe: Dictionary = {"def": {}, "order": {}}
+	if naval:
+		probe["def"] = {"naval": true}
+	var tang := Vector2(-dir.y, dir.x)
+	var radials := [1.8, 3.0, 4.2, 5.4]
+	var laterals := [0.0, 1.2, -1.2, 2.4, -2.4, 3.6, -3.6, 4.8, -4.8]
+	var start := idx % laterals.size()
+	for r in radials:
+		for k in laterals.size():
+			var l: float = float(laterals[(start + k) % laterals.size()])
+			var cand: Vector2 = e.pos + dir * (brexit + float(r)) + tang * l
+			if in_bounds(cand) and not _blocked_for(probe, cand):
+				return cand
+	return e.pos + dir * (brexit + 3.0)
+
+# T5GEN F1: stagger rally targets into a small formation (rows across the exit
+# direction, columns along it) with the player's chosen point as the centre.
+func _rally_slot(center: Vector2, dir: Vector2, idx: int) -> Vector2:
+	var tang := Vector2(-dir.y, dir.x)
+	var row := idx % 5
+	var col := idx / 5
+	return center + tang * (float(row) - 2.0) * 1.2 + dir * float(col) * 1.2
 
 func _tick_unit(e: Dictionary, dt: float) -> void:
 	e.cooldown = maxf(0.0, e.cooldown - dt)
@@ -3725,15 +3856,24 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 	var o: Dictionary = e.order
 	match o.type:
 		"move":
-			e.moving = true
-			_step_move(e, o.pos, effective_speed(e), dt)
-			var sqm: Dictionary = squad_of_unit(e.id)
-			if not sqm.is_empty() and int(sqm.get("officer", 0)) == e.id:
-				sqm["face"] = (o.pos - e.pos).angle()
-			if not e.moving:
+			# T5GEN F3: consume the no-progress timer instead of re-asserting
+			# moving=true forever.  _step_move(giveup=true) owns the arrival flag.
+			if float(e.get("stuck_t", 0.0)) > 2.0:
+				e["stuck_t"] = 0.0
+				e["no_progress_t"] = 0.0
+				e.moving = false
+				e["nav_path"] = []
+				e["nav_i"] = 0
 				e.order = {"type": "none"}
+			else:
+				e.moving = true
+				_step_move(e, o.pos, effective_speed(e), dt, 0.15, true)
+				var sqm: Dictionary = squad_of_unit(e.id)
+				if not sqm.is_empty() and int(sqm.get("officer", 0)) == e.id:
+					sqm["face"] = (o.pos - e.pos).angle()
+				if not e.moving:
+					e.order = {"type": "none"}
 		"attackmove":
-			e.moving = true
 			var en: Dictionary = {}
 			if bool(e.get("acq_now", false)):
 				en = enemies_preferred(e.pos, e.player, float(e.def.search), e)
@@ -3745,9 +3885,18 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 			if not en.is_empty() and not bool(e.get("hold_fire", false)):
 				e.order = {"type": "attack", "target": en.id, "resume": o.pos}
 				return
-			_step_move(e, o.pos, effective_speed(e), dt)
-			if not e.moving:
+			if float(e.get("stuck_t", 0.0)) > 2.0:
+				e["stuck_t"] = 0.0
+				e["no_progress_t"] = 0.0
+				e.moving = false
+				e["nav_path"] = []
+				e["nav_i"] = 0
 				e.order = {"type": "none"}
+			else:
+				e.moving = true
+				_step_move(e, o.pos, effective_speed(e), dt, 0.15, true)
+				if not e.moving:
+					e.order = {"type": "none"}
 		"attack":
 			var t: Dictionary = by_id.get(o.get("target", 0), {})
 			if t.is_empty() or t.dead:
@@ -4425,7 +4574,8 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 		job.t -= dt * tsm
 		e.queue[0] = job
 		if job.t <= 0.0:
-			e.queue.pop_front()
+			# T5MOD: do NOT pop blindly.  Finite jobs carry count; endless jobs
+			# (infinite=true) re-arm until cancelled or resources run out.
 			var brexit: float = float(e.get("block_r", e.def.radius))
 			var exit: Vector2 = e.get("rally", e.pos + Vector2(0, e.def.radius + 2.0))
 			var naval: bool = bool(Data.UNITS.get(job.sid, {}).get("naval", false))
@@ -4433,12 +4583,36 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				var wp := _naval_spawn_pos(e)
 				if wp.x >= 0.0:
 					exit = wp
-			var sp: Vector2 = e.pos + (exit - e.pos).normalized() * (brexit + 0.5)
+			var dir: Vector2 = (exit - e.pos).normalized()
+			if dir.length_squared() < 0.01:
+				dir = Vector2(0.0, 1.0)
+			var slot: int = int(e.get("spawn_n", 0))
+			e["spawn_n"] = slot + 1
+			# T5GEN F1: every unit appears on a different free tile outside the
+			# building's blocked door band (block_r+0.5 could be inside it).
+			var sp: Vector2 = _spawn_slot(e, dir, brexit, slot, naval)
 			if naval and exit.distance_to(e.pos) > brexit:
 				sp = exit  # water tile: never spawn a hull on the dock's land
 			var u := spawn(job.sid, e.player, sp)
-			cmd_move(u, exit + (exit - e.pos).normalized() * 1.5)
+			# T5GEN F1: stagger rally targets into a small formation instead of
+			# one identical point 3 m out, so the column extends as units arrive.
+			cmd_move(u, _rally_slot(exit, dir, slot))
 			post_event("trained", e.pos, job.sid, job.sid)
+			# T5MOD: advance the job instead of always removing it.
+			if bool(job.get("infinite", false)):
+				if pay_cost(e.player, Data.UNITS.get(job.sid, {}).get("price", {})):
+					job.t = float(Data.UNITS.get(job.sid, {}).get("build_time", 1.0))
+					e.queue[0] = job
+				else:
+					e.queue.pop_front()  # endless stops when resources/requirements fail
+			else:
+				var left: int = maxi(1, int(job.get("count", 1))) - 1
+				if left > 0:
+					job["count"] = left
+					job.t = float(Data.UNITS.get(job.sid, {}).get("build_time", 1.0))
+					e.queue[0] = job
+				else:
+					e.queue.pop_front()
 	# research queue (one upgrade at a time per blacksmith/academy)
 	if e.finished and e.get("research") != null:
 		var r: Dictionary = e.research
@@ -4587,7 +4761,12 @@ func _check_victory() -> void:
 	for pi in players.size():
 		if winner != -1:
 			break
-		if not buildings_of(pi).is_empty() and not units_of(pi).is_empty():
+		# T5SIM: a player is alive if they hold EITHER buildings OR units.
+		# The old `and` treated "buildings but no units" (e.g. a famine/wave
+		# wiped army with a working town hall) as eliminated, handing an
+		# unearned instant victory to the opponent. Elimination now requires
+		# BOTH to be empty.
+		if not buildings_of(pi).is_empty() or not units_of(pi).is_empty():
 			continue
 		# A player eliminated while a teammate survives is NOT a team defeat.
 		var team: int = int(players[pi].get("team", -1))
