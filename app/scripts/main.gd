@@ -211,6 +211,7 @@ func _apply_menu_cfg(cfg: Dictionary) -> void:
 	Data.PLAYER_NAMES = [_menu_nation_name(str(cfg.get("nation0", "ukr")), 0),
 		_menu_nation_name(str(cfg.get("nation1", "rus")), 1)]
 	Data.MAP_TYPE = str(cfg.get("map_type", "land"))
+	Data.BIOME = str(cfg.get("biome", "summer"))   # donor season families
 	Data.START_OPTION = str(cfg.get("start_option", "default"))
 	if cfg.has("difficulty"):
 		Data.AI_DIFFICULTY = str(cfg.get("difficulty", "normal"))

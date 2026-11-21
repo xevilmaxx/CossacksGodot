@@ -4,6 +4,14 @@ extends Node
 class_name C3Game
 
 const Data = preload("res://scripts/data.gd")
+const Nav = preload("res://scripts/nav.gd")
+
+# Runtime grid A* (see nav.gd).  `nav_version` is bumped whenever the
+# passability grid changes so every planned route is invalidated.
+var nav = Nav.new()
+var nav_version := 1
+const NAV_PER_TICK := 2          # spread big group orders over several frames
+var _nav_tick_budget := NAV_PER_TICK
 
 const TILE := 2.0
 var MAP_W := 160
@@ -31,6 +39,9 @@ var tbl_idx := {}
 var res_nodes: Array = []
 var map_starts: Array = []  # start positions of the generated map (groves near them are sacred)
 var cluster_zones: Array = []  # claimed {pos, r} so clusters never overlap
+# Donor mechanism: real .pattern footprints stamped through C3PatternGen's
+# gPatternMask (misc.script:3384). Replaces the old per-tile blob placement.
+var pattern_stamps: Array = []
 # Staged-loading state: _generate_map runs in 4 chunks so the loading bar can
 # repaint between them (menu Start -> playing). Sync setup() just calls them
 # back-to-back; the async loader in main.gd awaits a frame between each.
@@ -65,6 +76,14 @@ var ai_cheat_t := 0.0
 func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 	if is_blocked(p):
 		return true
+	# Buildings are solid 2D blocks: the drawn sprite's ink box stays impassable
+	# in every direction, not just the base circle stamped into `blocked`.
+	for b in live_blds:
+		if b.dead:
+			continue
+		var r: Rect2 = b.get("block_rect", Rect2())
+		if r.has_area() and r.has_point(p):
+			return true
 	for g in gates:
 		if g.dead:
 			continue
@@ -166,6 +185,7 @@ func new_player(index: int, name: String, is_ai: bool) -> Dictionary:
 func setup(mode: String) -> void:
 	setup_begin(mode)
 	_gen_base()
+	_gen_patterns()
 	_gen_forests()
 	_gen_resources()
 	_gen_finish()
@@ -185,6 +205,8 @@ func setup_begin(mode: String) -> void:
 		terrain[i] = 0
 		blocked[i] = 0
 		height[i] = 0.0
+	nav.configure(MAP_W, MAP_H, TILE)
+	nav_version += 1
 	# nations come from the menu (Data.PLAYER_NATIONS sids); names follow.
 	var pn := Data.PLAYER_NAMES
 	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else ["ukr", "rus"]
@@ -198,6 +220,7 @@ func setup_begin(mode: String) -> void:
 	res_nodes = []
 	map_starts = []
 	cluster_zones = []
+	pattern_stamps = []
 	hill_list = []
 	_st_budget = Data.mapgen_budget()
 	_st_mscale = clampf(float(MAP_W) / 160.0, 1.0, 2.0)
@@ -249,11 +272,33 @@ func is_blocked(p: Vector2) -> bool:
 func set_blocked_circle(p: Vector2, r_m: float, value: bool) -> void:
 	var t0 := tile_of(p - Vector2(r_m, r_m))
 	var t1 := tile_of(p + Vector2(r_m, r_m))
+	var changed := false
 	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
 		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
 			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
 			if c.distance_to(p) <= r_m:
-				blocked[_t(x, y)] = 1 if value else 0
+				var v: int = 1 if value else 0
+				if blocked[_t(x, y)] != v:
+					blocked[_t(x, y)] = v
+					changed = true
+	if changed:
+		nav_version += 1
+
+# Grid cells covered by a building's drawn rectangle.  Returned to A* as
+# extra obstacles instead of being stamped into `blocked`, so terrain and
+# building-placement checks keep seeing the same grid as before.
+func bld_rect_cells(rect: Rect2) -> Array:
+	var out: Array = []
+	if not rect.has_area():
+		return out
+	var t0 := tile_of(rect.position)
+	var t1 := tile_of(rect.end)
+	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
+		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
+			var tr := Rect2(float(x) * TILE, float(y) * TILE, TILE, TILE)
+			if tr.intersects(rect):
+				out.append(Vector2i(x, y))
+	return out
 
 func _add_res(type: String, pos: Vector2, hits: int, radius: float) -> void:
 	var node := {"id": next_id, "kind": "res", "type": type, "pos": pos, "hits": hits,
@@ -375,8 +420,84 @@ func _claim_cluster(pos: Vector2, r_m: float, margin_m := 4.0) -> bool:
 	cluster_zones.append({"pos": pos, "r": r_m})
 	return true
 
+# Apply the donor's stamped pattern masks. Each stamp already passed the
+# donor _misc_CheckStandPattern footprint test against gPatternMask, so
+# clusters are discrete and never merge; this replaces blob placement.
+func _gen_patterns() -> void:
+	var result: Dictionary = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
+		map_starts, terrain, 3, str(Data.BIOME))
+	pattern_stamps = result.get("stamps", [])
+	var ext := 0.0
+	for s in pattern_stamps:
+		var st: Object = s
+		var kind := str(st.kind)
+		var cx: int = int(st.x)
+		var cy: int = int(st.y)
+		var cells: Array = st.cells
+		var cpos := Vector2((float(cx) + 0.5) * TILE, (float(cy) + 0.5) * TILE)
+		var painted_cells: Array = []
+		var forest_nodes_here := 0
+		for c in cells:
+			var cc: Vector2i = c
+			var tx: int = cx + cc.x
+			var ty: int = cy + cc.y
+			if tx < 0 or ty < 0 or tx >= MAP_W or ty >= MAP_H:
+				continue
+			painted_cells.append([tx, ty])
+			var ii := _t(tx, ty)
+			if terrain[ii] == 3 or terrain[ii] == 4:
+				continue
+			var dc := Vector2(float(tx - cx), float(ty - cy)).length()
+			match kind:
+				"forest":
+					# Only the ground directly under a tree gets sod. Painting
+					# the whole donor footprint made grey/green checker patches.
+					if forest_nodes_here < 10 and rng.randf() < 0.10:
+						terrain[ii] = 2
+						var wp := Vector2((float(tx) + 0.5) * TILE, (float(ty) + 0.5) * TILE)
+						_add_res("wood", wp, 60, 0.7)
+						forest_nodes_here += 1
+				"tile":
+					pass  # donor tls_* are thin decals, not terrain recolour
+				"stone":
+					# small pale quarry scar, never a whole-pattern grey wash
+					if dc <= 3.2:
+						terrain[ii] = 1
+					if dc <= 1.6:
+						terrain[ii] = 5
+				"hill":
+					if dc <= 2.2:
+						terrain[ii] = 5
+					height[ii] += 0.25
+				"decor":
+					if rng.randf() < 0.10:
+						_add_res("bush", Vector2((float(tx) + 0.5) * TILE,
+							(float(ty) + 0.5) * TILE), 0, 0.3)
+		match kind:
+			"stone":
+				# a handful of quarry stones per stamped footprint
+				for _i in rng.randi_range(4, 7):
+					if painted_cells.is_empty():
+						break
+					var pc: Array = painted_cells[rng.randi_range(0, painted_cells.size() - 1)]
+					var pp := Vector2((float(pc[0]) + 0.5) * TILE, (float(pc[1]) + 0.5) * TILE)
+					if not is_blocked(pp):
+						_add_res("stone", pp, 80, 0.9)
+				_clear_trees(cpos, 5.0 * TILE)
+			"mine":
+				if not is_blocked(cpos):
+					_add_res(str(st.res), cpos, 0, 0.0)
+				_paint_terrain(cpos, 2.5 * TILE, 1)
+				_clear_trees(cpos, 6.0 * TILE)
+		for c in cells:
+			var cc: Vector2i = c
+			ext = maxf(ext, float(maxi(abs(cc.x), abs(cc.y))) * TILE)
+		if kind == "forest" or kind == "stone":
+			_claim_cluster(cpos, maxf(4.0 * TILE, ext), 0.0)
+
 func _generate_map() -> void:
 	_gen_base()
+	_gen_patterns()
 	_gen_forests()
 	_gen_resources()
 	_gen_finish()
@@ -447,13 +568,8 @@ func _gen_base() -> void:
 			elif hh < -0.05:
 				t = 4  # donor sandsea collar: Mask B gradient makes a ~2-3 tile band
 			terrain[i] = t
-	for _pb in 7:
-		var pc := Vector2(rng.randf_range(MAP_W * 0.15, MAP_W * 0.85),
-			rng.randf_range(MAP_H * 0.15, MAP_H * 0.85)) * TILE
-		var pr := rng.randf_range(3.0, 6.0) * TILE
-		if not in_bounds(pc) or is_blocked(pc):
-			continue
-		_paint_terrain(pc, pr, 1, 2.5)
+	# No random plain_* dirt blobs: the donor paints worked ground only under
+	# buildings/quarries/mines (stamped patterns), never as free-floating patches.
 	# donor TextureMap paints the wet sandsea* rim ON the water cells that
 	# touch land (orientation = ripple direction).  Port equivalent: turn the
 	# outermost water ring into walkable sand.  This gives every lake/sea a
@@ -531,44 +647,13 @@ func _gen_base() -> void:
 	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
 
 func _gen_forests() -> void:
-	var budget: Dictionary = _st_budget
+	# Global forests are now stamped by _gen_patterns() from the donor's real
+	# forest_* pattern masks. Only the two sacred groves per start remain here
+	# (donor SetupStartingResources keeps firewood inside cCircle2/3).
 	var mscale: float = _st_mscale
-	var forest_field: PackedFloat32Array = _st_forest
 	var starts: Array[Vector2] = []
 	for sv in map_starts:
 		starts.append(sv as Vector2)
-	# forests: the donor places forest_* pattern families globally, but never
-	# in the three elliptical keep-clear zones around a start.  The G channel
-	# of the mask (where present) biases belt centres to natural woodland.
-	var belts: Array = budget.get("belts", [6, 8])
-	var trees: Array = budget.get("trees", [34, 60])
-	var forest_centers: Array = []
-	for _f in rng.randi_range(int(belts[0]), int(belts[1])):
-		var c := Vector2(-1, -1)
-		var best_bias := -1.0
-		for attempt in 14:
-			var cand := Vector2(rng.randf_range(MAP_W * 0.08, MAP_W * 0.92) * TILE,
-				rng.randf_range(MAP_H * 0.08, MAP_H * 0.92) * TILE)
-			var too_close := false
-			for st in starts:
-				if cand.distance_to(st) < 22.0 * TILE:
-					too_close = true
-					break
-			if too_close or not in_bounds(cand) or is_blocked(cand):
-				continue
-			var tt := tile_of(cand)
-			var bias: float = forest_field[_t(tt.x, tt.y)] if forest_field.size() == MAP_W * MAP_H else 0.0
-			if bias > best_bias and _claim_cluster(cand, 7.0 * TILE * mscale):
-				best_bias = bias
-				c = cand
-				if bias > 0.5:
-					break
-		if c.x < 0.0:
-			continue
-		forest_centers.append(c)
-		_paint_terrain(c, 5.5 * TILE * mscale, 2, 3.5)
-		_scatter_forest(c, int(float(rng.randi_range(int(trees[0]), int(trees[1]))) * mscale), 5.0 * TILE * mscale)
-	# two groves per start (donor cCircle1 keep-clear outer ring = firewood).
 	for st in starts:
 		_paint_terrain(st + Vector2(7, -7) * TILE * mscale, 4.5 * TILE * mscale, 2)
 		_scatter_forest(st + Vector2(7, -7) * TILE * mscale, int(26.0 * mscale), 5.0 * TILE * mscale)
@@ -576,44 +661,12 @@ func _gen_forests() -> void:
 		_scatter_forest(st + Vector2(-8, 5) * TILE * mscale, int(18.0 * mscale), 4.0 * TILE * mscale)
 
 func _gen_resources() -> void:
-	var budget: Dictionary = _st_budget
+	# Quarries, mines, hills, forest belts and decor are all stamped from
+	# donor pattern masks in _gen_patterns(). Left here: the donor's own
+	# rectangular seed-wheat strips by each town (SetupStartingResources).
 	var starts: Array[Vector2] = []
 	for sv in map_starts:
 		starts.append(sv as Vector2)
-	# quarries: donor stones/stoneforests patterns, always clear of woodland.
-	for _s in int(budget.get("quarries", 7)):
-		var c := Vector2(-1, -1)
-		for attempt in 8:
-			var cand := Vector2(rng.randf_range(MAP_W * 0.09, MAP_W * 0.91) * TILE,
-				rng.randf_range(MAP_H * 0.09, MAP_H * 0.91) * TILE)
-			if not in_bounds(cand) or is_blocked(cand):
-				continue
-			if _claim_cluster(cand, 7.0 * TILE, 6.0):
-				c = cand
-				break
-		if c.x < 0.0:
-			continue
-		for i in rng.randi_range(5, 8):
-			var p := c + Vector2(rng.randf_range(-4, 4), rng.randf_range(-4, 4)) * TILE
-			if in_bounds(p) and not is_blocked(p):
-				_add_res("stone", p, 80, 0.9)
-		_paint_terrain(c, 6.0 * TILE, 1)
-		_paint_terrain(c, 3.5 * TILE, 5)
-		_clear_trees(c, 7.0 * TILE)
-	# guaranteed stone near each start (SetupStartingResources cCircle2 ring).
-	for st in starts:
-		for attempt in 8:
-			var ang0 := rng.randf() * TAU
-			var cc := st + Vector2(cos(ang0), sin(ang0)) * 16.0 * TILE
-			if in_bounds(cc) and not is_blocked(cc):
-				for i in 3:
-					var p := cc + Vector2(rng.randf_range(-1, 1), rng.randf_range(-1, 1)) * TILE
-					if in_bounds(p) and not is_blocked(p):
-						_add_res("stone", p, 80, 0.9)
-				_paint_terrain(cc, 4.0 * TILE, 1)
-				_paint_terrain(cc, 2.0 * TILE, 5)
-				_clear_trees(cc, 5.0 * TILE)
-				break
 	# seed wheat (donor cSeedWheat): rectangular farm strips by each town.
 	for st in starts:
 		for g in 2:
@@ -636,51 +689,18 @@ func _gen_resources() -> void:
 				if in_bounds(p) and not is_blocked(p):
 					_add_res("food", p, 50, 0.6)
 			break
-	# mines: donor SetupMines distance bands (mng/mni/mnc) + 1/kind guaranteed
-	# per start. Each sits on its own dirt pad, clear of trees.
-	var kinds := ["gold", "iron", "coal"]
-	for k in kinds:
-		for m in 2:
-			var p := Vector2(-1, -1)
-			for attempt in 8:
-				var cand := Vector2(rng.randf_range(MAP_W * 0.15, MAP_W * 0.85),
-					rng.randf_range(MAP_H * 0.15, MAP_H * 0.85)) * TILE + Vector2(1, 1)
-				if not in_bounds(cand) or is_blocked(cand):
-					continue
-				if _claim_cluster(cand, 6.0 * TILE, 8.0):
-					p = cand
-					break
-			if p.x < 0.0:
-				continue
-			_add_res(k, p, 0, 0.0)
-			_paint_terrain(p, 4.0 * TILE, 1)
-			_clear_trees(p, 6.0 * TILE)
-	if bool(budget.get("decor", true)):
-		_scatter_bushes()
 
 func _gen_finish() -> void:
 	var starts: Array[Vector2] = []
 	for sv in map_starts:
 		starts.append(sv as Vector2)
-	var kinds := ["gold", "iron", "coal"]
 	# keep the three elliptical start zones clear (donor gPatternMask).
 	for st in starts:
 		_paint_terrain(st, 5.0 * TILE, 1)
-		_clear_area(st, 9.0 * TILE)
+		_clear_area(st, 14.0 * TILE)   # donor cCircle1/2 keep-clear for building room
 		for n in res_nodes:
 			if n.hits <= 0:
 				set_blocked_circle(n.pos, n.radius, false)
-		for ki in kinds.size():
-			var dist: float = (14.0 + ki * 5.0) * TILE
-			for attempt in 8:
-				var ang := rng.randf() * TAU
-				var dp := st + Vector2(cos(ang), sin(ang)) * dist
-				dp = Vector2(floor(dp.x / TILE) * TILE + 1.0, floor(dp.y / TILE) * TILE + 1.0)
-				if in_bounds(dp) and not is_blocked(dp):
-					_add_res(kinds[ki], dp, 0, 0.0)
-					_paint_terrain(dp, 4.0 * TILE, 1)
-					_clear_trees(dp, 6.0 * TILE)
-					break
 		# re-plant what the keep-clear wiped: wheat + firewood in reach.
 		for g in 2:
 			var origin := st + Vector2(-9 + g * 8.0, 8.5) * TILE
@@ -748,6 +768,46 @@ func bld_block_r(e: Dictionary) -> float:
 	if rm > 0.0:
 		return rm
 	return float(e.def.radius)
+
+func bld_block_rect(e: Dictionary) -> Rect2:
+	return bld_block_rect_for(int(e.get("player", -1)), str(e.get("sid", "")), e.pos)
+
+func bld_block_rect_for(player: int, sid: String, pos: Vector2) -> Rect2:
+	# World-space rectangle covering the drawn building sprite (its ink box),
+	# using the very same ortho/ink/cx/foot data world.gd draws with.  The ink
+	# bottom sits on the ground anchor and the rest rises above it, so this is
+	# the 2D block no unit may pass under or above.  Empty for walls, gates,
+	# mines and procedural fallbacks that have no baked nation sheet.
+	var key := _bld_scale_key(player, sid)
+	if key == "":
+		return Rect2()
+	if bld_scale_idx.is_empty():
+		var j := FileAccess.get_file_as_string("res://assets/models/anim/buildings.json")
+		if j != "":
+			var parsed = JSON.parse_string(j)
+			if parsed is Dictionary:
+				bld_scale_idx = parsed
+	if not bld_scale_idx.has(key):
+		return Rect2()
+	var d: Dictionary = bld_scale_idx[key]
+	var ortho := float(d.get("ortho", 0.0))
+	if ortho <= 0.0:
+		return Rect2()
+	var cell := maxf(8.0, float(d.get("cell", 320.0)))
+	var ink: Array = d.get("ink", [])
+	if ink.size() < 4:
+		return Rect2()
+	var cx := float(d.get("cx", (float(ink[0]) + float(ink[2])) * 0.5 / cell))
+	var foot := float(ink[3]) / cell
+	var p: Vector2 = pos
+	var left := p.x + ortho * (float(ink[0]) / cell - cx)
+	var top := p.y + ortho * (float(ink[1]) / cell - foot)
+	var right := p.x + ortho * (float(ink[2]) / cell - cx)
+	var bottom := p.y + ortho * (float(ink[3]) / cell - foot)
+	return Rect2(left, top, maxf(0.0, right - left), maxf(0.0, bottom - top))
+
+func _unblock_building(e: Dictionary) -> void:
+	set_blocked_circle(e.pos, float(e.get("block_r", e.def.radius)), false)
 
 func pick_radius(e: Dictionary) -> float:
 	# click target size: visual footprint for sprite-drawn buildings (clicking
@@ -1109,7 +1169,10 @@ func _noise2(x: float, y: float) -> float:
 
 func set_blocked_tile(x: int, y: int, value: bool) -> void:
 	if x >= 0 and y >= 0 and x < MAP_W and y < MAP_H:
-		blocked[_t(x, y)] = 1 if value else 0
+		var v: int = 1 if value else 0
+		if blocked[_t(x, y)] != v:
+			blocked[_t(x, y)] = v
+			nav_version += 1
 
 func _draw_road(a: Vector2, b: Vector2) -> void:
 	# Narrow organic cart track (single tile, noisy centre line, feathered rim)
@@ -1212,6 +1275,15 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 		e["block_r"] = br
 		if br > 0.0:
 			set_blocked_circle(pos, br, true)
+		# The base circle covers only the ground footprint; the baked sprite is
+		# a taller 2D block rising above the anchor.  Store that full ink box
+		# as a movement obstacle so units cannot slip under it from any side.
+		# It is NOT stamped into `blocked` (terrain/placement use that grid);
+		# _blocked_for and A* consult it as a dynamic obstacle instead.
+		if sid != "gat":
+			var brect := bld_block_rect(e)
+			if brect.has_area():
+				e["block_rect"] = brect
 		if sid == "gat":
 			gates.append(e)
 		if finished:
@@ -1261,8 +1333,14 @@ func _spawn_starts() -> void:
 		var cr: float = float(cen.get("block_r", cen.def.radius))
 		players[i].res[0] += float(opt.get("food", 0))
 		for k in Data.START_PEASANTS:
-			var a := TAU * k / maxf(1.0, float(Data.START_PEASANTS))
-			var pe := spawn("peasant", i, c + Vector2(cos(a), sin(a)) * (cr + 1.5))
+			# The town hall sprite stands ~13 m tall ABOVE its ground anchor
+			# (buildings.json ortho/foot), while its blocked footprint is only
+			# the small base circle.  A full TAU ring at cr+1.5 therefore puts
+			# the northern arc ON the drawn hall.  Spawn the starting peasants
+			# in the open front (south) fan instead: outside the hall sprite and
+			# on walkable ground (they never have to pass through the hall).
+			var a := PI * (float(k) + 0.5) / maxf(1.0, float(Data.START_PEASANTS))
+			var pe := spawn("peasant", i, _start_free_pos(c, cr, a))
 			pe.order = {"type": "none"}
 		# starting option extras: towers / cannons near the town
 		for t in int(opt.get("towers", 0)):
@@ -1282,6 +1360,24 @@ func _spawn_starts() -> void:
 					var a := TAU * ring / maxf(1.0, float(total))
 					spawn(sid, i, c + Vector2(cos(a), sin(a)) * (cr + 3.0 + (ring % 4) * 1.5))
 					ring += 1
+
+# Pick a free tile for a starting villager in direction `a` (given in the
+# lower/south half of the screen, 0..PI, so the tall town-hall sprite to the
+# north is never overlapped).  Step outward until the tile is on the map and
+# unblocked; if that direction is crowded, try neighbouring south angles.
+func _start_free_pos(c: Vector2, cr: float, a: float) -> Vector2:
+	var r0: float = cr + 2.0
+	for step in 5:
+		var p := c + Vector2(cos(a), sin(a)) * (r0 + float(step) * TILE)
+		if in_bounds(p) and not is_blocked(p):
+			return p
+	for da in [-0.3, 0.3, -0.6, 0.6, -0.9, 0.9]:
+		var aa: float = clampf(a + da, 0.05, PI - 0.05)
+		for step in 4:
+			var p := c + Vector2(cos(aa), sin(aa)) * (r0 + float(step) * TILE)
+			if in_bounds(p) and not is_blocked(p):
+				return p
+	return c + Vector2(0.0, r0)
 
 # ---------------------------------------------------------------- helpers
 func unit_count(player: int) -> int:
@@ -2207,6 +2303,7 @@ func tick(dt: float) -> void:
 		return
 	dt = minf(dt, TICK_MAX)
 	time_s += dt
+	_nav_tick_budget = NAV_PER_TICK
 	ai_cheat_t += dt
 	if ai_cheat_t >= 1.0 and Data.AI_DIFFICULTY == "hard":
 		ai_cheat_t = 0.0
@@ -2305,23 +2402,48 @@ func _separate_units() -> void:
 							var push: Vector2 = delta / d * (want - d) * 0.5
 							var np_e: Vector2 = e.pos - push
 							var np_o: Vector2 = o.pos + push
-							if in_bounds(np_e) and not is_blocked(np_e):
+							if in_bounds(np_e) and not _blocked_for(e, np_e):
 								e.pos = np_e
-							if in_bounds(np_o) and not is_blocked(np_o):
+							if in_bounds(np_o) and not _blocked_for(o, np_o):
 								o.pos = np_o
-		# buildings push units out (cheap: only nearby buildings per unit)
+		# buildings push units out (bounded by the number of buildings)
 		for e in units:
 			if e.dead:
 				continue
-			for b in grid_query(e.pos, 9.0):
+			for b in live_blds:
 				if b.dead or b.kind != "building":
 					continue
+				var r: Rect2 = b.get("block_rect", Rect2())
+				if r.has_area():
+					# A sprite building is a solid 2D block.  If a unit ended
+					# up inside the drawn rectangle (spawned there, or nudged
+					# by neighbours), eject it through the nearest free face.
+					var er := r.grow(e.def.radius + 0.15)
+					if er.has_point(e.pos):
+						var ds := [e.pos.x - er.position.x, er.end.x - e.pos.x,
+							e.pos.y - er.position.y, er.end.y - e.pos.y]
+						for _k in 4:
+							var bi := 0
+							for q in range(1, 4):
+								if float(ds[q]) < float(ds[bi]):
+									bi = q
+							var np: Vector2 = e.pos
+							match bi:
+								0: np.x = er.position.x - 0.05
+								1: np.x = er.end.x + 0.05
+								2: np.y = er.position.y - 0.05
+								_: np.y = er.end.y + 0.05
+							if in_bounds(np) and not _blocked_for(e, np):
+								e.pos = np
+								break
+							ds[bi] = 1e9
+						continue
 				var rr: float = e.def.radius + float(b.get("block_r", b.def.radius)) + 0.15
 				var delta: Vector2 = e.pos - b.pos
 				var d := delta.length()
 				if d < rr and d > 0.001:
 					var np: Vector2 = b.pos + delta / d * rr
-					if in_bounds(np) and not is_blocked(np):
+					if in_bounds(np) and not _blocked_for(e, np):
 						# blocked map says building tiles are blocked; allow the
 						# ring right outside the footprint (unblock-tested below)
 						e.pos = np
@@ -2329,7 +2451,7 @@ func _separate_units() -> void:
 						# try sliding around the footprint
 						var side := Vector2(-delta.y, delta.x).normalized()
 						var alt: Vector2 = e.pos + side * 0.3
-						if in_bounds(alt) and not is_blocked(alt):
+						if in_bounds(alt) and not _blocked_for(e, alt):
 							e.pos = alt
 
 func _tick_upkeep(dt: float) -> void:
@@ -2425,7 +2547,7 @@ func _kill(e: Dictionary, killer = null, loud := true) -> void:
 				hid.append(u)
 		for u in hid:
 			_kill(u, killer, false)
-		set_blocked_circle(e.pos, float(e.get("block_r", e.def.radius)), false)
+		_unblock_building(e)
 		if e.get("workers", 0) > 0:
 			for u in entities:
 				if not u.dead and u.inside_of == e.id:
@@ -2442,7 +2564,7 @@ func _kill(e: Dictionary, killer = null, loud := true) -> void:
 func cmd_make_gate(w: Dictionary) -> void:
 	if w.dead or w.sid != "wal" or not w.finished or w.player < 0:
 		return
-	set_blocked_circle(w.pos, w.def.radius, false)
+	_unblock_building(w)
 	w.sid = "gat"
 	w.def = Data.BUILDINGS["gat"]
 	w["closed"] = false
@@ -2477,18 +2599,134 @@ func cmd_delete(e: Dictionary) -> void:
 	players[e.player].score = sc
 	say("Deleted %s." % e.sid)
 
+# ------------------------------------------------------------- path following
+# Fixed-destination orders use A*; dynamic chases (attack/guard/rout) keep the
+# old local steering so a moving target never forces a repath every tick.
+func _nav_wanted(e: Dictionary) -> bool:
+	if bool(e.get("routing", false)):
+		return false
+	var t: String = str(e.order.get("type", ""))
+	return t in ["move", "attackmove", "patrol", "gather", "resow", "repair", "build", "attackground"]
+
+# Gates and building ink boxes are not part of the static blocked[] grid, so
+# pass their footprints to A* as extra blocked cells.
+func _nav_gate_cells(e: Dictionary) -> Array:
+	var out: Array = []
+	for b in live_blds:
+		if not b.dead:
+			out += bld_rect_cells(b.get("block_rect", Rect2()))
+	for g in gates:
+		if g.dead:
+			continue
+		if bool(g.get("closed", false)) or int(g.player) != int(e.player):
+			var r: float = float(g.def.radius) + 0.4
+			var t0 := tile_of(g.pos - Vector2(r, r))
+			var t1 := tile_of(g.pos + Vector2(r, r))
+			for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
+				for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
+					var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
+					if c.distance_to(g.pos) <= r:
+						out.append(Vector2i(x, y))
+	return out
+
+func _nav_line_clear(e: Dictionary, a: Vector2, b: Vector2) -> bool:
+	var d: float = a.distance_to(b)
+	var steps: int = clampi(ceilf(d / (TILE * 0.5)), 2, 256)
+	var prev: Vector2 = a
+	for i in range(1, steps):
+		var p: Vector2 = a.lerp(b, float(i) / float(steps))
+		if _blocked_for(e, p) or slope_to(prev, p) > 0.55:
+			return false
+		prev = p
+	return true
+
+# String-pulling: replace the tile-by-tile staircase with long straight legs
+# whenever the direct segment is walkable.  Keeps movement looking natural.
+func _nav_smooth(e: Dictionary, pts: Array) -> Array:
+	if pts.size() < 3:
+		return pts
+	var out: Array = [pts[0]]
+	var i := 0
+	while i < pts.size() - 1:
+		var j: int = mini(pts.size() - 1, i + 8)
+		while j > i + 1 and not _nav_line_clear(e, pts[i] as Vector2, pts[j] as Vector2):
+			j -= 1
+		out.append(pts[j])
+		i = j
+	return out
+
+func _nav_repath(e: Dictionary, target: Vector2) -> void:
+	# Most orders need no detour at all - skip A* when the straight line is
+	# already walkable.  This keeps ordinary moves as cheap as before.
+	if _nav_line_clear(e, e.pos, target) and not _blocked_for(e, target):
+		e["nav_path"] = [target]
+		e["nav_i"] = 0
+		e["nav_goal"] = target
+		e["nav_ver"] = nav_version
+		e["nav_cd"] = 0.6
+		return
+	nav.configure(MAP_W, MAP_H, TILE)
+	if nav.version != nav_version:
+		nav.version = nav_version
+	var cells: Array = nav.find_path(e.pos, target, blocked, _nav_gate_cells(e))
+	var pts: Array = []
+	for c in cells:
+		pts.append(nav.cell_center(c as Vector2i))
+	if not pts.is_empty() and not _blocked_for(e, target) \
+		and _nav_line_clear(e, pts[pts.size() - 1] as Vector2, target):
+		pts.append(target)
+	e["nav_path"] = _nav_smooth(e, pts)
+	e["nav_i"] = 0
+	e["nav_goal"] = target
+	e["nav_ver"] = nav_version
+	e["nav_cd"] = 0.6
+
 func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive := 0.15) -> bool:
-	# Walk one step towards the target. When the direct line is blocked we try
-	# progressively rotated directions (15..90 degrees) so units slide around
-	# forests and buildings instead of sticking to their edge.
-	var to: Vector2 = target - e.pos
-	var d: float = to.length()
-	if d <= arrive:
+	# Walk one step towards the target.  Fixed-destination orders first follow
+	# an A* route around buildings/water/cliffs; the rotated-probe steering
+	# below handles the final approach and all dynamic chases.
+	var use_nav: bool = _nav_wanted(e)
+	var path: Array = []
+	var aim: Vector2 = target
+	if use_nav:
+		var cd: float = maxf(0.0, float(e.get("nav_cd", 0.0)) - dt)
+		e["nav_cd"] = cd
+		path = e.get("nav_path", [])
+		var goal: Variant = e.get("nav_goal", null)
+		var need := false
+		if int(e.get("nav_ver", -1)) != nav_version:
+			need = true
+		elif not (goal is Vector2) or (goal as Vector2).distance_to(target) > 1.0:
+			need = true
+		elif path.is_empty() or int(e.get("nav_i", 0)) >= path.size():
+			need = e.pos.distance_to(target) > arrive + 1.5
+		if need and cd <= 0.0 and _nav_tick_budget > 0:
+			_nav_tick_budget -= 1
+			_nav_repath(e, target)
+			path = e.get("nav_path", [])
+		var i: int = int(e.get("nav_i", 0))
+		var near: float = maxf(0.45, TILE * 0.3)
+		while i < path.size() and e.pos.distance_to(path[i] as Vector2) < near:
+			i += 1
+		e["nav_i"] = i
+		if i < path.size():
+			aim = path[i] as Vector2
+
+	var d_goal: float = e.pos.distance_to(target)
+	if d_goal <= arrive:
 		e.moving = false
 		e["stuck_t"] = 0.0
+		e["nav_path"] = []
+		e["nav_i"] = 0
 		return true
+	var to: Vector2 = aim - e.pos
+	var d: float = to.length()
+	if d < 0.001:
+		aim = target
+		to = aim - e.pos
+		d = to.length()
 	var step: float = minf(speed * dt, d)
-	var dir: Vector2 = to / d
+	var dir: Vector2 = to / maxf(d, 0.001)
 	for i in 13:
 		var ang := 0.0
 		if i > 0:
@@ -2508,7 +2746,7 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 			e.pos = np
 			e.face = d2.angle()
 			e["stuck_t"] = 0.0
-			return d - step < arrive
+			return d_goal - step < arrive
 	# boxed in on every side: stay put and let the caller give up
 	e.moving = false
 	e["stuck_t"] = e.get("stuck_t", 0.0) + dt
@@ -2521,11 +2759,11 @@ func _work_slot(e: Dictionary, center: Vector2, ring_r: float) -> Vector2:
 	var ang := float(e.id) * 2.399963 + center.x * 0.13 + center.y * 0.07
 	var rr := ring_r + float(e.id % 3) * 0.35
 	var p := center + Vector2(cos(ang), sin(ang)) * rr
-	if in_bounds(p) and not is_blocked(p):
+	if in_bounds(p) and not _blocked_for(e, p):
 		return p
 	# blocked side of the ring: try the opposite side
 	var p2 := center - Vector2(cos(ang), sin(ang)) * rr
-	if in_bounds(p2) and not is_blocked(p2):
+	if in_bounds(p2) and not _blocked_for(e, p2):
 		return p2
 	return center
 
@@ -3416,6 +3654,8 @@ func deserialize(d: Dictionary) -> bool:
 	MAP_W = int(d.map_w); MAP_H = int(d.map_h)
 	terrain = Marshalls.base64_to_raw(str(d.terrain))
 	blocked = Marshalls.base64_to_raw(str(d.blocked))
+	nav.configure(MAP_W, MAP_H, TILE)
+	nav_version += 1
 	if int(d.get("version", 0)) == 4 and d.has("height"):
 		var raw := Marshalls.base64_to_raw(str(d.height))
 		height.resize(MAP_W * MAP_H)

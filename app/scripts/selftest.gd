@@ -415,6 +415,45 @@ func run() -> Dictionary:
 	var cap2: int = int(game.players[0].farm_cap)
 	steps.append({"step": "farm_cap", "passed": cap1 == cap0 + 25 and cap2 == cap0, "detail": "farm %d -> %d -> %d" % [cap0, cap1, cap2]})
 
+	# ---- pathfinding: ordered past a wall, a unit must route around it
+	var nav_ok := false
+	var nav_detail := "no clear patch on the map"
+	var patch := Vector2i(-1, -1)
+	for py in range(8, game.MAP_H - 18):
+		if patch.x >= 0:
+			break
+		for px in range(8, game.MAP_W - 18):
+			var clear := true
+			for dy in 14:
+				if not clear:
+					break
+				for dx in 14:
+					if game.blocked[game._t(px + dx, py + dy)] != 0:
+						clear = false
+						break
+			if clear:
+				patch = Vector2i(px, py)
+				break
+	if patch.x >= 0:
+		var ns: Vector2 = (Vector2(patch.x + 2, patch.y + 7) + Vector2(0.5, 0.5)) * game.TILE
+		var ng: Vector2 = (Vector2(patch.x + 11, patch.y + 7) + Vector2(0.5, 0.5)) * game.TILE
+		for wy in range(patch.y + 1, patch.y + 13):
+			game.set_blocked_tile(patch.x + 6, wy, true)
+		var walker = game.spawn("peasant", 0, ns, true)
+		game.cmd_move(walker, ng)
+		var cut_through := false
+		for wstep in 120:
+			game.tick(0.25)
+			if game.is_blocked(walker.pos):
+				cut_through = true
+			if walker.pos.distance_to(ng) < 1.2:
+				break
+		nav_ok = not cut_through and walker.pos.distance_to(ng) < 1.2
+		nav_detail = "walked around a 24 m wall: %s (dist %.1f m)" % ["yes" if nav_ok else "no", walker.pos.distance_to(ng)]
+		for wy in range(patch.y + 1, patch.y + 13):
+			game.set_blocked_tile(patch.x + 6, wy, false)
+	steps.append({"step": "nav_detour", "passed": nav_ok, "detail": nav_detail})
+
 	var all_passed := true
 	for s in steps:
 		if not s.passed:

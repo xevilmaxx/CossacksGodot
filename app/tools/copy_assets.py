@@ -80,6 +80,7 @@ def main() -> int:
         + ["sandrock%d" % i for i in range(1, 7)]
         + ["test%d" % i for i in range(26)]
         + ["desert%d" % i for i in range(1, 13)]
+        + ["winter%d" % i for i in range(27)]   # donor winter season tiles
     )
     for _name in _TERRAIN_TEX:
         dds_to_png(game, "data/terrain/tiles/textures/%s.dds" % _name,

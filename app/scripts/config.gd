@@ -29,6 +29,9 @@ const DEFAULT := {
 		"fx_cap": 220,
 		"fog_interval": 0.5,
 		"minimap_interval": 0.25,
+		"unit_scale": 1.25,
+		"show_centroids": false,
+		"units_opaque": true,
 	},
 	"camera": {
 		"pitch_degrees": -32.0,
@@ -341,6 +344,9 @@ func apply() -> void:
 	Data.FX_CAP = int(num("display.fx_cap", Data.FX_CAP))
 	Data.FOG_INTERVAL = num("display.fog_interval", Data.FOG_INTERVAL)
 	Data.MINIMAP_INTERVAL = num("display.minimap_interval", Data.MINIMAP_INTERVAL)
+	Data.UNIT_SCALE = clampf(num("display.unit_scale", 1.25), 0.25, 4.0)
+	Data.SHOW_CENTROIDS = flag("display.show_centroids", false)
+	Data.UNITS_OPAQUE = flag("display.units_opaque", true)
 	Data.CAPTURE_ENABLED = flag("rules.peasant_capture", true)
 
 	var cam := section("camera")

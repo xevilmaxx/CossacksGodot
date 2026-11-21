@@ -1,0 +1,289 @@
+{
+  "map_tiles": 72,
+  "tile_px": 12,
+  "variants": {
+    "A_lakeside": {
+      "seed": 1017,
+      "biome": "summer",
+      "engine": "donor",
+      "label": "A  /  LAKESIDE  - one big lake, forests in belts, hills opposite [summer]",
+      "config": {
+        "name": "A_lakeside",
+        "label": "A  /  LAKESIDE  - one big lake, forests in belts, hills opposite",
+        "seed": 1017,
+        "mask_type": "land",
+        "mask_index": 0,
+        "margin": 2.2,
+        "water": {
+          "kind": "lake",
+          "cx": 0.22,
+          "cy": 0.26,
+          "rx": 0.2,
+          "ry": 0.17
+        },
+        "hills": [
+          {
+            "cx": 0.76,
+            "cy": 0.3,
+            "r": 0.13,
+            "amp": 1.7
+          },
+          {
+            "cx": 0.66,
+            "cy": 0.74,
+            "r": 0.11,
+            "amp": 1.4
+          }
+        ],
+        "forests": 6,
+        "forest_r": [
+          0.085,
+          0.12
+        ],
+        "quarries": [
+          [
+            0.44,
+            0.18
+          ],
+          [
+            0.86,
+            0.62
+          ]
+        ],
+        "mines": {
+          "cx": 0.48,
+          "cy": 0.78,
+          "angles": [
+            2.2,
+            3.9,
+            5.5
+          ],
+          "dist": 0.13
+        },
+        "fields": [
+          [
+            0.2,
+            0.72
+          ],
+          [
+            0.8,
+            0.88
+          ]
+        ],
+        "starts": [
+          [
+            0.09,
+            0.09
+          ],
+          [
+            0.91,
+            0.91
+          ]
+        ]
+      },
+      "stats": {
+        "mask": "4pl_mask_land_0_gauss.png",
+        "water_pct": 2.1,
+        "sand_pct": 0.3,
+        "rock_pct": 0.8,
+        "floor_pct": 13.1,
+        "dirt_pct": 6.7,
+        "trees": 380,
+        "stones": 70,
+        "wheat": 80,
+        "mines": 18,
+        "bushes": 32,
+        "stamped": 47
+      },
+      "file": "variant_A_lakeside.png"
+    },
+    "B_highland": {
+      "seed": 2029,
+      "biome": "summer",
+      "engine": "donor",
+      "label": "B  /  HIGHLAND  - central rocky ridge, small pond, tight forest wedges [summer]",
+      "config": {
+        "name": "B_highland",
+        "label": "B  /  HIGHLAND  - central rocky ridge, small pond, tight forest wedges",
+        "seed": 2029,
+        "mask_type": "land",
+        "mask_index": 6,
+        "margin": 2.2,
+        "water": {
+          "kind": "lake",
+          "cx": 0.8,
+          "cy": 0.82,
+          "rx": 0.13,
+          "ry": 0.12
+        },
+        "hills": [
+          {
+            "cx": 0.5,
+            "cy": 0.42,
+            "r": 0.16,
+            "amp": 2.1
+          },
+          {
+            "cx": 0.3,
+            "cy": 0.66,
+            "r": 0.1,
+            "amp": 1.5
+          }
+        ],
+        "forests": 6,
+        "forest_r": [
+          0.085,
+          0.12
+        ],
+        "quarries": [
+          [
+            0.18,
+            0.28
+          ],
+          [
+            0.7,
+            0.18
+          ]
+        ],
+        "mines": {
+          "cx": 0.78,
+          "cy": 0.48,
+          "angles": [
+            2.6,
+            4.2,
+            5.8
+          ],
+          "dist": 0.12
+        },
+        "fields": [
+          [
+            0.16,
+            0.86
+          ],
+          [
+            0.88,
+            0.2
+          ]
+        ],
+        "starts": [
+          [
+            0.09,
+            0.91
+          ],
+          [
+            0.91,
+            0.09
+          ]
+        ]
+      },
+      "stats": {
+        "mask": "4pl_mask_land_63_gauss.png",
+        "water_pct": 8.7,
+        "sand_pct": 0.8,
+        "rock_pct": 0.9,
+        "floor_pct": 13.4,
+        "dirt_pct": 5.5,
+        "trees": 395,
+        "stones": 57,
+        "wheat": 12,
+        "mines": 18,
+        "bushes": 29,
+        "stamped": 45
+      },
+      "file": "variant_B_highland.png"
+    },
+    "C_river": {
+      "seed": 3041,
+      "biome": "summer",
+      "engine": "donor",
+      "label": "C  /  RIVER VALLEY  - winding river + pool, forest flanks, hills on one bank [summer]",
+      "config": {
+        "name": "C_river",
+        "label": "C  /  RIVER VALLEY  - winding river + pool, forest flanks, hills on one bank",
+        "seed": 3041,
+        "mask_type": "land",
+        "mask_index": 1,
+        "margin": 2.2,
+        "water": {
+          "kind": "river",
+          "amp": 0.12,
+          "width": 0.035
+        },
+        "hills": [
+          {
+            "cx": 0.22,
+            "cy": 0.24,
+            "r": 0.12,
+            "amp": 1.7
+          },
+          {
+            "cx": 0.8,
+            "cy": 0.7,
+            "r": 0.12,
+            "amp": 1.6
+          }
+        ],
+        "forests": 7,
+        "forest_r": [
+          0.08,
+          0.115
+        ],
+        "quarries": [
+          [
+            0.72,
+            0.24
+          ],
+          [
+            0.28,
+            0.78
+          ]
+        ],
+        "mines": {
+          "cx": 0.5,
+          "cy": 0.5,
+          "angles": [
+            0.6,
+            2.4,
+            4.4
+          ],
+          "dist": 0.12
+        },
+        "fields": [
+          [
+            0.14,
+            0.52
+          ],
+          [
+            0.86,
+            0.48
+          ]
+        ],
+        "starts": [
+          [
+            0.08,
+            0.08
+          ],
+          [
+            0.92,
+            0.92
+          ]
+        ]
+      },
+      "stats": {
+        "mask": "4pl_mask_land_125_gauss.png",
+        "water_pct": 10.7,
+        "sand_pct": 0.7,
+        "rock_pct": 1.0,
+        "floor_pct": 10.5,
+        "dirt_pct": 6.0,
+        "trees": 297,
+        "stones": 52,
+        "wheat": 76,
+        "mines": 16,
+        "bushes": 38,
+        "stamped": 43
+      },
+      "file": "variant_C_river.png"
+    }
+  }
+}

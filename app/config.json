@@ -6,7 +6,10 @@
   "Every key is optional - a key you delete keeps the number from the original game.",
   "The units and buildings take their numbers from the original game's own data files",
   "(data/scripts/lib/unit.script, weapon.script); the sources are in MECHANICS.md.",
-  "Start the game with --dump-config to see the settings it is running with."
+  "Start the game with --dump-config to see the settings it is running with.",
+  "display.unit_scale: unit sprite size relative to donor-scale buildings (1.25 default).",
+  "display.show_centroids: flat round anchor disks under buildings and trees (false = hidden).",
+  "display.units_opaque: solid, normally-coloured unit figures (true default)."
  ],
  "display": {
   "window_width": 1280,
@@ -14,7 +17,10 @@
   "fullscreen": false,
   "vsync": true,
   "pixels_per_meter": 16.0,
-  "fog_of_war": false
+  "fog_of_war": false,
+ "unit_scale": 1.25,
+ "show_centroids": false,
+ "units_opaque": true
  },
  "camera": {
   "pitch_degrees": -32.0,

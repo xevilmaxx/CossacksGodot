@@ -103,6 +103,13 @@ static var SPRITE_CELL := 160
 static var FX_CAP := 220
 static var FOG_INTERVAL := 0.5
 static var MINIMAP_INTERVAL := 0.25
+# Visual tuning (config.json / display): unit sprites are scaled by UNIT_SCALE
+# so they read correctly next to donor-scale buildings. SHOW_CENTROIDS draws
+# the flat round anchor disks under buildings/trees (off by default - they
+# read as debug "centroid" markers). UNITS_OPAQUE keeps unit bodies solid.
+static var UNIT_SCALE := 1.25
+static var SHOW_CENTROIDS := false
+static var UNITS_OPAQUE := true
 
 # Donor-mask map build budget, keyed by the SAME quality preset.  The donor
 # scales pattern counts by map size; the port scales them by GPU/CPU budget so
@@ -151,6 +158,7 @@ static var BUILDING_NAMES := {}         # display names, from data/locale/en/gui
 static var PLAYER_NAMES := ["Russia", "Bavaria"]
 static var PLAYER_NATIONS := ["rus", "bav"]  # country.script sids, menu picks these
 static var MAP_TYPE := "land"           # generator.cfg TerrainTypes key
+static var BIOME := "summer"            # donor season: summer / winter / desert
 static var START_OPTION := "default"    # startingsettings.gc_mapsettings_* key
 static var HOTKEYS := {}                # action -> "Ctrl+S" style binding
 

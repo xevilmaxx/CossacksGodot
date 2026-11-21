@@ -51,6 +51,8 @@ var ter_src := {}
 var ter_white: Image
 var ter_black: Image
 var unit_layer: Node2D
+var unit_anim_layer: Node2D   # baked unit sheets only: alpha-solid shader lives here
+var pending_unit_sprites: Array = []
 var bld_layer: Node2D
 var res_layer: Node2D
 var fx_layer: Node2D
@@ -96,6 +98,30 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	unit_layer = Node2D.new()
 	unit_layer.z_index = 3
 	add_child(unit_layer)
+	# Animated/static unit sprites go on their own child layer so the alpha
+	# shader affects only the figures - contact shadows, rings, damage bars
+	# and corpses stay on unit_layer with their intended transparency.
+	unit_anim_layer = Node2D.new()
+	unit_layer.add_child(unit_anim_layer)
+	unit_anim_layer.draw.connect(_draw_unit_sprites)
+	if Data.UNITS_OPAQUE:
+		var sh := Shader.new()
+		sh.code = """
+shader_type canvas_item;
+void fragment() {
+	vec4 c = texture(TEXTURE, UV);
+	float a = smoothstep(0.12, 0.55, c.a);
+	if (a <= 0.001) discard;
+	vec3 rgb = c.rgb;
+	float lum = dot(rgb, vec3(0.299, 0.587, 0.114));
+	rgb = mix(vec3(lum), rgb, 1.18);      // a little more uniform colour
+	rgb = min(rgb * 1.10, vec3(1.0));     // lift the donor's dark bake
+	COLOR = vec4(rgb, a);
+}
+"""
+		var mat := ShaderMaterial.new()
+		mat.shader = sh
+		unit_anim_layer.material = mat
 	fx_layer = Node2D.new()
 	fx_layer.z_index = 4
 	add_child(fx_layer)
@@ -159,6 +185,9 @@ func _load_sprites() -> void:
 				frames.append(null)
 		if has_dir:
 			sprites[key] = frames
+		elif key.begins_with("tree_") and _res_exists("res://assets/models/sprites_hi/%s.png" % key):
+			# 512 px CPU-Cycles rebake of the donor mesh (old sheets were 128 px)
+			sprites[key] = [load("res://assets/models/sprites_hi/%s.png" % key) as Texture2D]
 		elif _res_exists("res://assets/models/sprites/%s.png" % key):
 			sprites[key] = [load("res://assets/models/sprites/%s.png" % key) as Texture2D]
 	print("sprites: %d sets loaded (sids=%d)" % [sprites.size(), sids.size()])
@@ -296,7 +325,13 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 		sc = _unit_height(e) * view_scale / maxf(8.0, float(cell) * fig_h)
 	var sz := Vector2(cell, cell) * sc
 	var tl := p - Vector2(sz.x * cx, sz.y * foot)
-	unit_layer.draw_texture_rect_region(tex, Rect2(tl, sz), src, tint)
+	# UNIT_SCALE keeps figures in step with the donor-scale buildings: the
+	# ortho already gives true world size, this is a uniform visual multiplier
+	# around the sprite's ground anchor (no feet sliding).
+	sc *= Data.UNIT_SCALE
+	sz = Vector2(cell, cell) * sc
+	tl = p - Vector2(sz.x * cx, sz.y * foot)
+	pending_unit_sprites.append({"tex": tex, "dst": Rect2(tl, sz), "src": src, "tint": tint})
 	return true
 
 func _bld_key(e: Dictionary) -> String:
@@ -427,7 +462,7 @@ func _draw_sprite(layer: Node2D, tex: Texture2D, p: Vector2, world_h: float, tin
 	var sc: float = px_h / maxf(1.0, float(tex.get_height()))
 	var sz := Vector2(float(tex.get_width()), float(tex.get_height())) * sc
 	var top_left := p - Vector2(sz.x * 0.5, sz.y * 0.82)
-	if shadow and Data.QUALITY != "low":
+	if shadow and Data.QUALITY != "low" and Data.SHOW_CENTROIDS:
 		layer.draw_circle(p + Vector2(1.0, 2.0), sz.x * 0.22, Color(0, 0, 0, 0.16))
 	layer.draw_texture_rect(tex, Rect2(top_left, sz), false, tint)
 
@@ -562,6 +597,9 @@ func _block_img(nm: String) -> Image:
 	if im.get_format() != Image.FORMAT_RGB8:
 		im.convert(Image.FORMAT_RGB8)
 	im = _mirror_tileable(im, 1024)
+	# donor tiles are deliberately low-contrast; lift the grain once per block
+	# (cheap) instead of per cell (which would reintroduce tile borders).
+	im.adjust_bcs(1.0, 1.12, 1.0)
 	blk_cache[nm] = im
 	blk_order.append(nm)
 	while blk_order.size() > BLK_CACHE:
@@ -573,7 +611,9 @@ func _chunk_key(cx: int, cy: int) -> Vector2i:
 	return Vector2i(cx, cy)
 
 func _bake_px() -> int:
-	return mini(terrain_px * 2, 32)
+	# 64 px per 2 m cell keeps the donor's grass grain at game zoom; 32 px
+	# made the meadow read as a blurry green wash instead of real terrain.
+	return mini(terrain_px * 4, 64)
 
 func _build_masks(px: int) -> Array:
 	# donor organic transition masks (data/terrain/tiles/textures/alpha*.bmp):
@@ -594,9 +634,22 @@ func _build_masks(px: int) -> Array:
 		var im: Image = ftex.get_image()
 		if im == null:
 			continue
+		if im.get_format() != Image.FORMAT_RGBA8:
+			im.convert(Image.FORMAT_RGBA8)
 		if im.get_width() != px or im.get_height() != px:
 			im.resize(px, px, Image.INTERPOLATE_BILINEAR)
-		out.append(im)
+		# donor dmask PNGs are white RGB + organic ALPHA; Godot's mask blend
+		# uses the red channel, so bake (alpha x soft edge ramp) into RGB.
+		# The edge ramp makes a cell fully opaque inside and transparent at
+		# its borders: neighbours of a different block melt into each other.
+		var rgb := Image.create(px, px, false, Image.FORMAT_RGB8)
+		var ramp := maxf(1.0, px * 0.35)
+		for yy in px:
+			for xx in px:
+				var edge := minf(float(mini(xx, px - 1 - xx)), float(mini(yy, px - 1 - yy))) / ramp
+				var v: float = clampf(im.get_pixel(xx, yy).a * clampf(edge, 0.0, 1.0), 0.0, 1.0)
+				rgb.set_pixel(xx, yy, Color(v, v, v))
+		out.append(rgb)
 	if out.is_empty():
 		var m := Image.create(px, px, false, Image.FORMAT_RGBA8)
 		m.fill(Color(1, 1, 1, 1))
@@ -617,104 +670,93 @@ func _build_masks(px: int) -> Array:
 			ter_blueA.set_pixel(xx, yy, Color(1, 1, 1, on))
 	return out
 
+# blend_rect_mask reads the MASK'S ALPHA channel. Build one at tile-grid size
+# with the value in alpha, then upscale bilinearly: smooth, cheap, no noise.
+func _alpha_mask(grid: Image, size: int) -> Image:
+	var m := Image.create(grid.get_width(), grid.get_height(), false, Image.FORMAT_RGBA8)
+	for y in grid.get_height():
+		for x in grid.get_width():
+			var v: float = grid.get_pixel(x, y).r
+			m.set_pixel(x, y, Color(1, 1, 1, v))
+	m.resize(size, size, Image.INTERPOLATE_BILINEAR)
+	return m
+
+
 func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var px := terrain_px
 	var bpx := _bake_px()
 	var S := CHUNK_T * bpx
-	var tile_im := Image.create(bpx, bpx, false, Image.FORMAT_RGB8)
 	var tile_rect := Rect2i(0, 0, bpx, bpx)
+	# ONE continuous grass surface for the whole chunk. Sampling it with a
+	# chunk-aligned offset means the neighbouring chunk continues the exact
+	# same donor pixels -- there is no per-cell texture switch to see through.
 	var img := _wrap_crop(_block_img("grass1"), cx * S, cy * S, S)
-	# smooth brightness field (mottle x continuous height shade), blurred 3x3
-	# so neighbouring tiles share light instead of stamping a quilt grid
-	# (the old per-tile scalar made every dirt pad read as squares).
-	var mot: PackedFloat32Array = PackedFloat32Array()
-	mot.resize(CHUNK_T * CHUNK_T)
-	for ly in CHUNK_T:
-		for lx in CHUNK_T:
-			var wx := float(cx * CHUNK_T + lx)
-			var wy := float(cy * CHUNK_T + ly)
-			mot[ly * CHUNK_T + lx] = 0.94 + 0.12 * (0.5 + 0.5 * _wnoise(wx * 0.05 + 11.0, wy * 0.05 - 7.0))
-	# per-block wrap regions present in this chunk (strict offsets = seamless)
-	var present := {}
-	for ly in CHUNK_T:
-		for lx in CHUNK_T:
-			var x := cx * CHUNK_T + lx
-			var y := cy * CHUNK_T + ly
-			if x >= game.MAP_W or y >= game.MAP_H:
-				continue
-			var bi0: int = game.tileblock[game._t(x, y)]
-			if bi0 != game.BLK_WATER:
-				present[bi0] = true
-	var crops := {}
-	for bi0 in present:
-		var bname0: String = str(game.tbl_names[bi0]) if bi0 < game.tbl_names.size() else "grass1"
-		var coff: int = abs(hash(bname0)) % 256
-		crops[bi0] = _wrap_crop(_block_img(bname0), cx * S + coff, cy * S + coff, S)
-	# water waves region (hard-filled first; shores blend over it)
-	var wavereg := _wrap_crop(ter_water, cx * S + 300, cy * S + 700, S)
-	for ly in CHUNK_T:
-		for lx in CHUNK_T:
-			var x := cx * CHUNK_T + lx
-			var y := cy * CHUNK_T + ly
-			if x >= game.MAP_W or y >= game.MAP_H:
-				continue
-			var bi: int = game.tileblock[game._t(x, y)]
-			var dst := Vector2i(lx * bpx, ly * bpx)
-			var rect := Rect2i(dst.x, dst.y, bpx, bpx)
-			if bi == game.BLK_WATER:
-				tile_im.blit_rect(wavereg, rect, Vector2i(0, 0))
-				tile_im.blend_rect_mask(ter_blue, ter_blueA, tile_rect, Vector2i(0, 0))
-				img.blit_rect(tile_im, tile_rect, dst)
-			else:
-				# Donor pastes ONE tile = ONE texture: only real terrain-type
-				# boundaries get an organic dmask fringe.  Comparing tileblock
-				# indices here would blend every random grass variant and bring
-				# back the checkerboard this pipeline replaced.
-				var f := 0
-				var ti: int = int(game.terrain[game._t(x, y)])
-				for oy in [-1, 0, 1]:
-					for ox in [-1, 0, 1]:
-						if ox == 0 and oy == 0:
-							continue
-						var nx: int = x + ox
-						var ny: int = y + oy
-						var nt := -2
-						if nx >= 0 and ny >= 0 and nx < game.MAP_W and ny < game.MAP_H:
-							nt = int(game.terrain[game._t(nx, ny)])
-						if nt != ti:
-							f += 1
-				tile_im.blit_rect(crops[bi], rect, Vector2i(0, 0))
-				if f == 0:
-					img.blit_rect(tile_im, tile_rect, dst)
-				else:
-					var mi: int = clampi(17 - f * 2 + posmod(x * 5 + y * 11, 5) - 2, 0, 17)
-					img.blend_rect_mask(tile_im, terrain_masks[mi], tile_rect, dst)
-			var hh: float = game.height_at(Vector2((float(x) + 0.5) * Data.TILE_M, (float(y) + 0.5) * Data.TILE_M))
-			# 3x3 mean of the mottle grid: light flows across tiles, no seams.
-			var msum := 0.0
-			var mcnt := 0
-			for oy2 in range(-1, 2):
-				for ox2 in range(-1, 2):
-					var qx := lx + ox2
-					var qy := ly + oy2
-					if qx >= 0 and qy >= 0 and qx < CHUNK_T and qy < CHUNK_T:
-						msum += mot[qy * CHUNK_T + qx]
-						mcnt += 1
-			var bright: float = (msum / maxf(1.0, float(mcnt))) * clampf(1.0 + hh * 0.06, 0.88, 1.12)
-			# donor light is directional: shade slopes from NW so hills and
-			# lake bowls read as relief instead of flat painted patches.
-			if game.height.size() == game.MAP_W * game.MAP_H:
-				var xl: int = maxi(0, x - 1)
-				var xr: int = mini(game.MAP_W - 1, x + 1)
-				var yu: int = maxi(0, y - 1)
-				var yd: int = mini(game.MAP_H - 1, y + 1)
-				var gx: float = game.height[game._t(xl, y)] - game.height[game._t(xr, y)]
-				var gy: float = game.height[game._t(x, yu)] - game.height[game._t(x, yd)]
-				bright *= clampf(1.0 + (gx + gy) * 0.12, 0.86, 1.14)
-			if absf(bright - 1.0) > 0.004:
-				tile_im.blit_rect(img, rect, Vector2i(0, 0))
-				tile_im.adjust_bcs(bright, 1.0, 1.0)
-				img.blit_rect(tile_im, tile_rect, dst)
+	# Smooth continuous blending. A value grid is sampled at tile corners and
+	# bilinearly upscaled to the full chunk: there are NO per-cell blits and no
+	# dmask speckle at cell borders. Equal neighbours are pixel-identical,
+	# differing ones cross-fade over a full tile.
+	# sample the mask grid at 3x tile resolution with a smooth domain warp:
+	# boundaries stop following the tile lattice (the last visible artifact)
+	var SUB := 3
+	var N := CHUNK_T * SUB + 1
+	var full := Rect2i(0, 0, S, S)
+	var origin := Vector2i.ZERO
+	var block_at := func(x: int, y: int) -> String:
+		var bi: int = game.tileblock[game._t(x, y)]
+		return str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+
+	# meadow mottling: donor tile blocks choose the mix of two continuous
+	# donor grass textures, smoothed across tile corners.
+	var mix_grid := Image.create(N, N, false, Image.FORMAT_RGB8)
+	for gy in N:
+		for gx in N:
+			var fx := float(gx) / float(SUB)
+			var fy := float(gy) / float(SUB)
+			var wx := _wnoise(fx * 0.09 + cx * 0.41 + 5.0, fy * 0.09 + cy * 0.37 - 3.0) * 0.22
+			var wy := _wnoise(fx * 0.09 + cx * 0.29 - 11.0, fy * 0.09 + cy * 0.53 + 7.0) * 0.55
+			var x: int = cx * CHUNK_T + int(round(fx + wx))
+			var y: int = cy * CHUNK_T + int(round(fy + wy))
+			var v := 0.19
+			if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+				var bn: String = block_at.call(x, y)
+				v = 0.10 + 0.28 * float(abs(hash(bn)) % 1000) / 1000.0
+			mix_grid.set_pixel(gx, gy, Color(v, v, v))
+	var mix_mask := _alpha_mask(mix_grid, S)
+	var meadow2 := _wrap_crop(_block_img("grass7"), cx * S, cy * S, S)
+	img.blend_rect_mask(meadow2, mix_mask, full, origin)
+
+	# terrain roles: one continuous donor crop each, feathered by a smooth
+	# region mask built from the donor terrain grid (no tile seams, no noise).
+	var role_block := {1: "ground1", 2: "grass_ground2", 4: "grass_sand1", 5: "rock1"}
+	for t in [1, 2, 4, 5, 3]:
+		var grid := Image.create(N, N, false, Image.FORMAT_RGB8)
+		for gy in N:
+			for gx in N:
+				var fx := float(gx) / float(SUB)
+				var fy := float(gy) / float(SUB)
+				var wx := _wnoise(fx * 0.09 + cx * 0.41 + 5.0, fy * 0.09 + cy * 0.37 - 3.0) * 0.22
+				var wy := _wnoise(fx * 0.09 + cx * 0.29 - 11.0, fy * 0.09 + cy * 0.53 + 7.0) * 0.55
+				var x: int = cx * CHUNK_T + int(round(fx + wx))
+				var y: int = cy * CHUNK_T + int(round(fy + wy))
+				var v := 0.0
+				if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+					if int(game.terrain[game._t(x, y)]) == t:
+						v = 1.0
+				grid.set_pixel(gx, gy, Color(v, v, v))
+		var mask := _alpha_mask(grid, S)
+		var overlay: Image
+		if t == 3:
+			overlay = _wrap_crop(ter_water, cx * S + 300, cy * S + 700, S)
+			var blue_big := ter_blue.duplicate() as Image
+			blue_big.resize(S, S, Image.INTERPOLATE_BILINEAR)
+			var blueA_big := ter_blueA.duplicate() as Image
+			blueA_big.resize(S, S, Image.INTERPOLATE_NEAREST)
+			overlay.blend_rect_mask(blue_big, blueA_big, full, origin)
+		else:
+			var nm: String = str(role_block.get(t, "ground1"))
+			var coff: int = abs(hash(nm)) % 512
+			overlay = _wrap_crop(_block_img(nm), cx * S + coff, cy * S + coff, S)
+		img.blend_rect_mask(overlay, mask, full, origin)
 	# supersample resolve: hard organic edges become true soft gradients
 	if bpx != px:
 		img.resize(CHUNK_T * px, CHUNK_T * px, Image.INTERPOLATE_BILINEAR)
@@ -776,6 +818,7 @@ func sync(dt: float) -> void:
 		bld_dirty = game.bld_dirty
 		bld_layer.queue_redraw()
 	unit_layer.queue_redraw()
+	unit_anim_layer.queue_redraw()
 	fx_layer.queue_redraw()
 	for f in fx_items:
 		f.t += dt
@@ -907,12 +950,15 @@ func _draw_resources() -> void:
 			continue
 		match n.type:
 			"wood":
-				var tree := _prop_tex(["tree_fir", "tree_oak", "tree_pine"], n.pos)
+				# taiga mix: mostly fir/pine like the footage, occasional broadleaf
+				var tree := _prop_tex(["tree_fir", "tree_fir", "tree_pine", "tree_oak"], n.pos)
 				if tree != null:
-					# original pines tower over peasants (~6m); the bake is dark,
-					# so lift it slightly and ground it with a wide soft shadow
-					_blob_rect(res_layer, p + Vector2(0, 3), 20.0 + h * 8.0, 10.0 + h * 4.0, Color(0, 0, 0, 0.22))
-					_draw_sprite(res_layer, tree, p, 5.4 + h * 2.0, Color(1.16, 1.16, 1.06))
+					# Cossacks pines tower over peasants and read ~11-14 m tall.
+					# The donor-baked sheet is very dark olive, so lift it hard.
+					_blob_rect(res_layer, p + Vector2(0, 4), 24.0 + h * 10.0,
+						12.0 + h * 5.0, Color(0, 0, 0, 0.16))
+					_draw_sprite(res_layer, tree, p, 11.0 + h * 3.0,
+						Color(1.18, 1.26, 1.06))
 					continue
 				# fallback below (no sprites): tall pines + broad oaks
 				var pine := h > 0.42
@@ -1019,7 +1065,8 @@ func _draw_buildings() -> void:
 				bld_layer.draw_texture_rect(dec, Rect2(p.x - dw / 2, p.y - dw * 0.25 + 3, dw, dw * 0.5), false)
 			else:
 				_blob_rect(bld_layer, p + Vector2(0, 3), vwid * 0.72, vwid * 0.36, Color(0.42, 0.33, 0.21, 0.9))
-			bld_layer.draw_circle(p + Vector2(0, 4), vwid * 0.75, Color(0, 0, 0, 0.22))
+			if Data.SHOW_CENTROIDS:
+				bld_layer.draw_circle(p + Vector2(0, 4), vwid * 0.75, Color(0, 0, 0, 0.22))
 			if bsc.has("sc"):
 				var cell2: float = float(bsc.get("cell", 320.0))
 				var sz2 := Vector2(cell2, cell2) * float(bsc.sc)
@@ -1237,8 +1284,26 @@ func _draw_mine(p: Vector2, e: Dictionary, col: Color) -> void:
 		bld_layer.draw_rect(Rect2(p.x - r, p.y - r - 8, r * 2, 4), Color(0, 0, 0, 0.6))
 		bld_layer.draw_rect(Rect2(p.x - r, p.y - r - 8, r * 2 * k, 4), Color(0.2, 0.9, 0.2))
 
+# Static unit sprite fallback: same anchoring as _draw_sprite, queued onto the
+# alpha-solid layer instead of drawn directly (shaders are per CanvasItem).
+func _queue_unit_sprite(tex: Texture2D, p: Vector2, world_h: float, tint: Color) -> void:
+	var px_h: float = world_h * view_scale
+	var sc: float = px_h / maxf(1.0, float(tex.get_height()))
+	var sz := Vector2(float(tex.get_width()), float(tex.get_height())) * sc
+	var tl := p - Vector2(sz.x * 0.5, sz.y * 0.82)
+	pending_unit_sprites.append({"tex": tex, "dst": Rect2(tl, sz),
+		"src": Rect2(0, 0, tex.get_width(), tex.get_height()), "tint": tint})
+
+func _draw_unit_sprites() -> void:
+	# Runs on unit_anim_layer (child of unit_layer) after all unit shapes are
+	# queued, so the optional ShaderMaterial makes figures opaque and vivid
+	# without touching shadows, selection rings or damage bars.
+	for d in pending_unit_sprites:
+		unit_anim_layer.draw_texture_rect_region(d.tex, d.dst, d.src, d.tint)
+
 func _draw_units() -> void:
 	dbg_unit += 1
+	pending_unit_sprites.clear()
 	_draw_corpses()
 	for e in game.entities:
 		if e.dead or e.kind != "unit":
@@ -1274,7 +1339,7 @@ func _draw_units() -> void:
 			"__anim__":
 				pass
 			"__sprite__":
-				_draw_sprite(unit_layer, spr, pb, _unit_height(e), tint, false)
+				_queue_unit_sprite(spr, pb, _unit_height(e) * Data.UNIT_SCALE, tint)
 			"cossack", "dragoon":
 				var dir := Vector2(cos(e.face), sin(e.face))
 				var side := Vector2(-dir.y, dir.x)
