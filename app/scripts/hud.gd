@@ -697,12 +697,18 @@ func _name_of(e: Dictionary) -> String:
 	return ConfigScript.unit_name(e.sid)
 
 func _refresh_build_menu(peasants: Array) -> void:
-	var order := ["cen", "hou", "wal", "bar", "sta", "bla", "aca", "sto", "mil", "mar", "art", "tow", "mine_gold", "mine_iron", "mine_coal"]
+	var order := ["cen", "hou", "wal", "bar", "sta", "bla", "aca", "sto", "mil", "mar", "art", "tow", "mine"]
 	for sid in order:
-		var def: Dictionary = Data.BUILDINGS[sid]
+		# One generic Mine button: all three mine types share the same icon,
+		# cost and build time, so the gold def is just the display template.
+		# The deposit under the cursor decides which mine actually gets built.
+		var def: Dictionary = Data.BUILDINGS["mine_gold" if sid == "mine" else sid]
 		var b := _unit_button(icons_tex, def.icon, "")
-		b.tooltip_text = "%s  [%s]  %s  Time: %ds" % [ConfigScript.building_name(sid), _key_text(sid),
+		var tip := "%s  [%s]  %s  Time: %ds" % [ConfigScript.building_name(sid), _key_text(sid),
 			_price_text(def.cost), int(round(float(def.get("build_time", 0.0))))]
+		if sid == "mine":
+			tip += "  - type follows the ore deposit"
+		b.tooltip_text = tip
 		b.disabled = not Data.can_pay(game.players[0].res, def.cost)
 		b.pressed.connect(_on_build_pick.bind(sid))
 		build_buttons[sid] = b
@@ -715,7 +721,7 @@ func _refresh_build_menu(peasants: Array) -> void:
 # The letter the building is built with, as the settings file says.
 func _key_text(sid: String) -> String:
 	var keys: Dictionary = Data.HOTKEYS.get("build", {})
-	if sid.begins_with("mine_"):
+	if sid == "mine" or sid.begins_with("mine_"):
 		return str(keys.get("mine", "N"))
 	return str(keys.get(sid, "-"))
 
@@ -768,7 +774,7 @@ func _update_dynamic() -> void:
 			b.disabled = done or researching
 			b.text = ("[x] " if done else ("... " if researching else "")) + str(u.name)
 		elif d.kind == "build":
-			var def: Dictionary = Data.BUILDINGS.get(d.sid, {})
+			var def: Dictionary = Data.BUILDINGS.get("mine_gold" if d.sid == "mine" else d.sid, {})
 			if not def.is_empty():
 				b.disabled = not Data.can_pay(game.players[0].res, def.cost)
 
@@ -905,11 +911,22 @@ func _update_minimap() -> void:
 	for n in game.res_nodes:
 		var t := game.tile_of(n.pos)
 		if n.max_hits == 0 and (n.type == "gold" or n.type == "iron" or n.type == "coal"):
-			# unbuilt ore deposit: landmark quad, only once scouted
+			# unbuilt ore deposit: a distinct ore-coloured landmark (dark
+			# outline + bright core) so it reads as a mine on the minimap.
+			# Still fogged until a unit has scouted the tile.
 			if not world.tile_explored(n.pos):
 				continue
-			var dc: Color = {"gold": Color(0.9, 0.75, 0.2), "iron": Color(0.7, 0.45, 0.3), "coal": Color(0.25, 0.25, 0.28)}[n.type]
-			_mm_plot(t, dc, true)
+			var dc: Color = {"gold": Color(1.0, 0.82, 0.24),
+				"iron": Color(0.9, 0.52, 0.32),
+				"coal": Color(0.36, 0.37, 0.42)}[n.type]
+			for dy in range(-1, 3):
+				for dx in range(-1, 3):
+					var mx := t.x + dx
+					var my := t.y + dy
+					if mx < 0 or my < 0 or mx >= game.MAP_W or my >= game.MAP_H:
+						continue
+					var core := dx >= 0 and dx <= 1 and dy >= 0 and dy <= 1
+					minimap_img.set_pixel(mx, my, dc if core else Color(0.08, 0.07, 0.06))
 			continue
 		if n.hits <= 0:
 			continue

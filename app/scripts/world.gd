@@ -923,7 +923,12 @@ func _prop_tex(names: Array, seed_pos: Vector2) -> Texture2D:
 func _draw_resources() -> void:
 	dbg_res += 1
 	for n in game.res_nodes:
-		if int(n.get("hits", 0)) <= 0 and str(n.get("type", "")) != "stump":
+		# Ore deposits are PERMANENT nodes: they are created with hits == 0 and
+		# max_hits == 0 (game.gd:_add_res), so "hits <= 0" alone used to cull
+		# them and no mine was ever drawn on the map. Only finite nodes that
+		# were really used up (and stumps, which stay as decor) are skipped.
+		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0 \
+				and str(n.get("type", "")) != "stump":
 			continue
 		var p := world_to_px(n.pos)
 		if not view_rect.grow(64).has_point(p):
@@ -1000,20 +1005,38 @@ func _draw_resources() -> void:
 					res_layer.draw_circle(tip, 2.6, Color(0.88 + h * 0.08, 0.74, 0.28))
 					res_layer.draw_circle(tip + Vector2(0, -2), 1.4, Color(0.95, 0.85, 0.4))
 			"gold", "iron", "coal":
-				var col: Color = {"gold": Color(0.9, 0.75, 0.2), "iron": Color(0.7, 0.45, 0.3), "coal": Color(0.28, 0.28, 0.3)}[n.type]
+				# Ore deposit = permanent landmark (the spot where a mine can
+				# be built). Draw a rock outcrop with vivid ore veins and a
+				# faint colour halo so it reads as a mine at normal zoom.
+				var col: Color = {"gold": Color(1.0, 0.82, 0.24),
+					"iron": Color(0.9, 0.52, 0.32),
+					"coal": Color(0.34, 0.35, 0.4)}[n.type]
 				var outcrop := _prop_tex(["rock"], n.pos)
+				_blob_rect(res_layer, p + Vector2(0, 2), 1.3 * view_scale,
+					0.7 * view_scale, Color(0, 0, 0, 0.24))
+				# faint tinted ring on the worked dirt apron under the deposit
+				_ground_ellipse(res_layer, p, 0.95 * view_scale,
+					0.48 * view_scale, Color(col.r, col.g, col.b, 0.18))
 				if outcrop != null:
-					_blob_rect(res_layer, p + Vector2(0, 2), 20.0, 10.0, Color(0, 0, 0, 0.22))
-					_draw_sprite(res_layer, outcrop, p, 2.6)
-					res_layer.draw_circle(p + Vector2(3, -6), 4.5, col)
-					res_layer.draw_circle(p + Vector2(-2, 2), 3.0, col.lightened(0.2))
-					continue
-				# rock outcrop with ore veins (like original mine rocks)
-				res_layer.draw_circle(p + Vector2(0, 2), 8.0, Color(0, 0, 0, 0.22))
-				res_layer.draw_circle(p, 7.0, Color(0.45, 0.43, 0.4))
-				res_layer.draw_circle(p + Vector2(-3, -3), 4.0, Color(0.58, 0.56, 0.52))
-				res_layer.draw_circle(p + Vector2(2, -4), 3.0, col)
-				res_layer.draw_circle(p + Vector2(-1, 1), 2.0, col.lightened(0.2))
+					_draw_sprite(res_layer, outcrop, p, 3.2 + h * 0.7,
+						Color(1.06, 1.02, 0.96), false)
+				else:
+					# jagged fallback rock (no baked sprite on weak-GPU setups)
+					var rr := 0.42 * view_scale
+					res_layer.draw_circle(p + Vector2(0, 2), rr, Color(0, 0, 0, 0.22))
+					res_layer.draw_colored_polygon([
+						p + Vector2(-rr, 0), p + Vector2(-rr * 0.55, -rr * 1.5),
+						p + Vector2(rr * 0.35, -rr * 1.7), p + Vector2(rr, 0),
+						p + Vector2(rr * 0.4, rr * 0.4)], Color(0.44, 0.42, 0.4))
+					res_layer.draw_colored_polygon([
+						p + Vector2(-rr * 0.55, -rr * 1.5),
+						p + Vector2(rr * 0.35, -rr * 1.7),
+						p + Vector2(0, -rr * 0.35)], Color(0.6, 0.58, 0.54))
+				# ore veins on the rock face — the colour is the deposit type
+				var vf := view_scale
+				res_layer.draw_circle(p + Vector2(0.20 * vf, -0.34 * vf), 0.17 * vf, col)
+				res_layer.draw_circle(p + Vector2(-0.16 * vf, -0.20 * vf), 0.12 * vf, col.lightened(0.18))
+				res_layer.draw_circle(p + Vector2(0.05 * vf, -0.62 * vf), 0.09 * vf, col.lightened(0.3))
 
 func _draw_buildings() -> void:
 	dbg_bld += 1
@@ -1531,12 +1554,17 @@ func _draw_ghost() -> void:
 	if game == null or hud == null:
 		return
 	var sid := str(hud.get("build_ghost_sid")) if hud.get("build_ghost_sid") != null else ""
-	if sid == "" or not Data.BUILDINGS.has(sid):
+	if sid == "":
 		return
 	var mp := get_viewport().get_mouse_position()
 	var xform := get_viewport().get_canvas_transform().affine_inverse()
 	var wp: Vector2 = (xform * mp) / maxf(1.0, view_scale)
 	if not game.in_bounds(wp):
+		return
+	# The one "Mine" button previews whichever mine matches the ore deposit
+	# currently under the cursor, so the ghost always shows the right type.
+	sid = game.resolve_mine_sid(sid, wp)
+	if not Data.BUILDINGS.has(sid):
 		return
 	var def: Dictionary = Data.BUILDINGS[sid]
 	var chk: Dictionary = game.can_place(0, sid, wp)
@@ -1555,13 +1583,17 @@ func _draw_ghost() -> void:
 	var ghost_tex: Texture2D = _bld_tex({"player": 0, "sid": sid, "finished": true, "progress": 1.0, "def": def})
 	if ghost_tex != null:
 		var tint := Color(1, 1, 1, 0.45) if ok else Color(1, 0.4, 0.4, 0.45)
+		# _draw_ghost() runs from fx_layer's draw signal, so every draw_* call
+		# must target fx_layer. Drawing onto bld_layer here is rejected by Godot
+		# ("Drawing is only allowed inside this node's _draw()") and the ghost
+		# sprite silently never appears — only the footprint ring did.
 		if gsc.has("sc"):
 			var gcell: float = float(gsc.get("cell", 320.0))
 			var gsz := Vector2(gcell, gcell) * float(gsc.sc)
 			var gtl := p - Vector2(gsz.x * float(gsc.cx), gsz.y * float(gsc.foot))
-			bld_layer.draw_texture_rect(ghost_tex, Rect2(gtl, gsz), false, tint)
+			fx_layer.draw_texture_rect(ghost_tex, Rect2(gtl, gsz), false, tint)
 		else:
-			_draw_sprite(bld_layer, ghost_tex, p, 3.0, tint, false)
+			_draw_sprite(fx_layer, ghost_tex, p, 3.0, tint, false)
 	# placement ring on the ground (original style: glowing footprint ring,
 	# green = buildable, red = blocked)
 	_ground_ellipse(fx_layer, p + Vector2(0, 3), gr * 1.45, gr * 0.72, c, 2.5)

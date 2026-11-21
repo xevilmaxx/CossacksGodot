@@ -2262,3 +2262,35 @@ GRAPHICS PLAN (still open, do not pretend it is done):
     shadows, construction-stage art is baked (s1..s4) but not always shown.
  5. food nodes currently render as glowing yellow dots (flowers). Donor has
     contiguous golden wheat fields: draw a field patch per 5x4 food cluster.
+
+----------------------------------------------------------------------
+BUILD LOG 2026-11-21 — ORE DEPOSITS WERE IN THE DATA BUT NEVER DRAWN
+----------------------------------------------------------------------
+USER REPORT: "map generation is still to improve, still no mines on the
+map / on map and minimap those mines are not drawn with correspondent
+image?".
+
+ROOT CAUSE (measured, not guessed):
+  - `--dump-map --seed 7..18` shows a CORRECT 18 deposits per map
+    (6 gold / 6 iron / 6 coal = 3 of each per player start), stamped by
+    pattern_gen.gd SetupMines from the donor mng/mni/mnc patterns.
+  - game.gd:_add_res() stores an ore deposit as a PERMANENT node:
+    hits = 0 AND max_hits = 0.
+  - world.gd:_draw_resources() culled every node with "hits <= 0" except
+    stumps -> every deposit was skipped. The sim, AI, build menu and
+    headless CPU render (main.gd:_render_headless_image used the correct
+    "hits <= 0 and max_hits > 0" test) all saw the deposits; only the
+    real GPU world render hid them. That is exactly "no mines on map".
+FIXED:
+  - app/scripts/world.gd: skip only FINITE depleted nodes (hits <= 0 and
+    max_hits != 0); stumps and permanent deposits stay. Deposits now get
+    a proper baked-rock outcrop with ore-coloured veins, a tinted apron
+    and a jagged procedural fallback, so each ore reads as a mine site.
+  - app/scripts/hud.gd: minimap deposits now draw a distinct 2x2 bright
+    ore core inside a dark outline (still hidden until scouted when fog
+    is on), instead of a bare quad that vanished against the terrain.
+GATES: `godot --headless --path app -- --self-test` keeps the "mine" and
+  "hud" steps green (deposit found, mine produced 49.9 gold, minimap
+  drawn); windowed screenshot runs cleanly; the parallel unified-mine
+  regression test passes 11/11. No mapgen placement change was needed —
+  the generator was right, the renderer was the whole bug.

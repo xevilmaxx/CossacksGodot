@@ -170,6 +170,7 @@ const DEFAULT := {
 			"art": "Artillery Depot",
 			"tow": "Tower",
 			"wal": "Stone Wall",
+			"mine": "Mine",
 			"mine_gold": "Gold Mine",
 			"mine_iron": "Iron Mine",
 			"mine_coal": "Coal Mine",

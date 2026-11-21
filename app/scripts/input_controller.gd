@@ -423,13 +423,9 @@ func _handle_key(k: InputEventKey) -> void:
 	if hud.build_menu_open:
 		for sid in build_keys:
 			if _matches(k, build_keys[sid]):
-				if sid == "mine":
-					# cycle gold -> iron -> coal on repeated presses
-					var order := ["mine_gold", "mine_iron", "mine_coal"]
-					var cur := order.find(hud.build_ghost_sid)
-					hud.build_ghost_sid = order[(cur + 1) % 3] if cur >= 0 else order[0]
-				else:
-					hud.build_ghost_sid = sid
+				# "mine" is a single button; the deposit under the cursor
+				# picks gold / iron / coal automatically when placing it.
+				hud.build_ghost_sid = sid
 				return
 	# unit orders
 	if _is(k, "attack_move"):

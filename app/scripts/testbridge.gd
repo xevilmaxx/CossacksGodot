@@ -82,6 +82,11 @@ func _handle(line: String) -> void:
 		"click":
 			_click(float(v.get("x", 0.0)), float(v.get("y", 0.0)), str(v.get("button", "left")))
 			_reply({"ok": true})
+		"move":
+			# Motion only: lets a hover preview (build ghost, hover cursor) be
+			# driven without committing a placement.
+			_move(Vector2(float(v.get("x", 0.0)), float(v.get("y", 0.0))))
+			_reply({"ok": true})
 		"key":
 			_key(v)
 			_reply({"ok": true})
@@ -107,6 +112,11 @@ func _handle(line: String) -> void:
 			get_tree().quit(0)
 		_:
 			_reply({"ok": false, "error": "unknown cmd: " + cmd})
+
+func _move(pos: Vector2) -> void:
+	# warp_mouse updates the viewport's mouse position (which hover previews
+	# read) as well as sending a real motion event.
+	Input.warp_mouse(pos)
 
 func _mouse(pos: Vector2, button: int, pressed: bool) -> void:
 	var ev := InputEventMouseButton.new()

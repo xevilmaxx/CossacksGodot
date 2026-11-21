@@ -14,6 +14,9 @@ const NAV_PER_TICK := 2          # spread big group orders over several frames
 var _nav_tick_budget := NAV_PER_TICK
 
 const TILE := 2.0
+# How close to an ore deposit the build cursor must be for a mine to be legal
+# (and for the unified "Mine" button to pick that deposit's type).
+const MINE_SITE_RADIUS := 4.0
 var MAP_W := 160
 var MAP_H := 160
 var TICK_MAX := 0.25  # clamp dt so tests never stall
@@ -1460,6 +1463,29 @@ func nearest_mine(pos: Vector2, res: String, player := -1) -> Dictionary:
 				best = b
 	return best
 
+# The build menu offers one generic "Mine" button. Resolve it to the concrete
+# building (gold / iron / coal) that matches the ore deposit under the cursor,
+# so the ghost and the finished mine always follow the deposit being built on.
+# Left as-is for every other sid; harmless to call more than once.
+func resolve_mine_sid(sid: String, pos: Vector2) -> String:
+	if sid != "mine":
+		return sid
+	var best_type := ""
+	var best_d := MINE_SITE_RADIUS
+	for n in res_nodes:
+		if n.max_hits != 0:
+			continue
+		var t := str(n.type)
+		if t != "gold" and t != "iron" and t != "coal":
+			continue
+		var d: float = n.pos.distance_to(pos)
+		if d < best_d:
+			best_d = d
+			best_type = t
+	# No deposit in range: preview a gold mine; can_place will explain the
+	# problem (the generic reason is shared by all three mine types).
+	return "mine_" + best_type if best_type != "" else "mine_gold"
+
 func _mine_debug(res: String) -> String:
 	var out: Array = []
 	for b in buildings_of(0, false) + buildings_of(1, false):
@@ -2155,17 +2181,23 @@ func effective_damage(player: int, kind: String, pos: Vector2) -> float:
 
 func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 	# Single source of truth for build legality. Returns {ok, reason}.
-	var def: Dictionary = Data.BUILDINGS[sid]
+	# "mine" is a UI-side pseudo sid backed by the shared mine stats.
+	var def: Dictionary = Data.BUILDINGS.get("mine_gold" if sid == "mine" else sid, {})
 	if not in_bounds(pos):
 		return {"ok": false, "reason": "Outside the map."}
-	if sid.begins_with("mine_"):
+	if sid == "mine" or sid.begins_with("mine_"):
+		# The generic "mine" accepts any ore deposit; concrete mines still
+		# require their own type (kept for the AI / older callers).
+		var want: String = "" if sid == "mine" else str(def.mine)
 		var dep := false
 		for n in res_nodes:
-			if n.type == def.mine and n.max_hits == 0 and n.pos.distance_to(pos) < 4.0:
+			if n.max_hits != 0 or n.pos.distance_to(pos) >= MINE_SITE_RADIUS:
+				continue
+			if want == "" or n.type == want:
 				dep = true
 				break
 		if not dep:
-			return {"ok": false, "reason": "Mines must be built on a %s deposit." % def.mine}
+			return {"ok": false, "reason": "Mines must be built on an ore deposit."}
 		return {"ok": true, "reason": ""}
 	var t := tile_of(pos)
 	var terr: int = terrain[_t(t.x, t.y)]
@@ -2204,6 +2236,8 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 	return {"ok": true, "reason": ""}
 
 func place_building(player: int, sid: String, pos: Vector2, send := true, builders: Array = []) -> Dictionary:
+	# A single "Mine" request becomes the mine that matches this deposit.
+	sid = resolve_mine_sid(sid, pos)
 	var def: Dictionary = Data.BUILDINGS[sid]
 	if sid == "bar18" and not bool(players[player].get("has18c", false)):
 		say("Research the 18th century at the Town Hall first.")
@@ -2218,7 +2252,7 @@ func place_building(player: int, sid: String, pos: Vector2, send := true, builde
 		return {}
 	if sid.begins_with("mine_"):
 		for n in res_nodes:
-			if n.type == def.mine and n.max_hits == 0 and n.pos.distance_to(pos) < 4.0:
+			if n.type == def.mine and n.max_hits == 0 and n.pos.distance_to(pos) < MINE_SITE_RADIUS:
 				pos = n.pos
 				break
 	var mult := 1.0
