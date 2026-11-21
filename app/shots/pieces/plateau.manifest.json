@@ -1,0 +1,159 @@
+{
+  "generator": "terrain_piece_render.py",
+  "version": 1,
+  "name": "plateau",
+  "spec": "app/tools/piece_specs/plateau.json",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "render_size_px": [
+    1024,
+    1024
+  ],
+  "mirror_tile_size": 2048,
+  "resample": "bilinear",
+  "final_resample": "lanczos",
+  "grain_lift": 0.0,
+  "output": "app/shots/pieces/plateau.png",
+  "comparison": "app/shots/pieces/plateau_compare.png",
+  "sha256": "878e6aa92391aba8c22f90d377d846ac9b6e6474a2f57f23e601faf0b90c2f23",
+  "layers": [
+    {
+      "name": "grass1",
+      "source": "app/assets/terrain/blocks/grass1.png",
+      "tile": true,
+      "tile_size": [
+        2048,
+        2048
+      ],
+      "offset_px": [
+        0,
+        0
+      ],
+      "contrast": 1.12,
+      "brightness": 1.0,
+      "scale": 1.0,
+      "mask_mode": null,
+      "mask_band": null,
+      "contour": false,
+      "opacity_mask": false,
+      "index": 0,
+      "type": "block",
+      "opacity": 1.0
+    },
+    {
+      "name": "grass_rock1",
+      "source": "app/assets/terrain/blocks/grass_rock1.png",
+      "tile": true,
+      "tile_size": [
+        2048,
+        2048
+      ],
+      "offset_px": [
+        0,
+        0
+      ],
+      "contrast": 1.12,
+      "brightness": 1.0,
+      "scale": 1.0,
+      "mask_mode": null,
+      "mask_band": null,
+      "contour": false,
+      "opacity_mask": false,
+      "index": 1,
+      "type": "block",
+      "opacity": 0.5
+    },
+    {
+      "type": "patches",
+      "patch_px": 40,
+      "grid": [
+        26,
+        26
+      ],
+      "gain": 10.0,
+      "olive_weights": [
+        1.0,
+        0.96,
+        0.68
+      ],
+      "cover": "full",
+      "block": null,
+      "hard_rim": false,
+      "seed": 7,
+      "index": 2,
+      "opacity": 1.0
+    },
+    {
+      "type": "face",
+      "geometry": {
+        "kind": "height",
+        "cells": 9,
+        "threshold": 0.6
+      },
+      "fill": "rock8",
+      "flutes": "rock1",
+      "stretch": 2.0,
+      "rim_px": 3,
+      "lit": [
+        0.424,
+        0.38,
+        0.294
+      ],
+      "shadow": [
+        0.224,
+        0.204,
+        0.141
+      ],
+      "ramp_gain": 22.0,
+      "index": 3,
+      "opacity": 1.0
+    },
+    {
+      "type": "face",
+      "geometry": {
+        "kind": "height",
+        "cells": 9,
+        "threshold": 0.6
+      },
+      "fill": "rock8",
+      "flutes": "rock1",
+      "stretch": 2.0,
+      "rim_px": 3,
+      "lit": [
+        0.424,
+        0.38,
+        0.294
+      ],
+      "shadow": [
+        0.224,
+        0.204,
+        0.141
+      ],
+      "ramp_gain": 22.0,
+      "index": 4,
+      "opacity": 1.0
+    }
+  ],
+  "bands": null,
+  "reference": {
+    "provided": true,
+    "image": "cossacks-3-v1-498085.jpg",
+    "directory": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3",
+    "box": [
+      350,
+      0,
+      850,
+      300
+    ],
+    "available": true,
+    "source_size": [
+      1280,
+      720
+    ],
+    "resolved": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3\\cossacks-3-v1-498085.jpg"
+  },
+  "tool_limits": "Coast foam/wash are diffuse approximations (no time scroll). Sun-linked specular glints still require an in-engine capture. Faces/patches are 2D height proxies: no real height channel, collision or buildability. Winter glaze keeps exact white but readers must verify cool bias themselves."
+}

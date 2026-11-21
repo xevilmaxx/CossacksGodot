@@ -9,6 +9,7 @@
 import argparse
 import os
 import shutil
+import struct
 import sys
 from pathlib import Path
 
@@ -41,7 +42,28 @@ def copy_rel(game: Path, rel: str, dst: Path) -> bool:
     return True
 
 
-def dds_to_png(game: Path, rel: str, dst: Path, max_size=None) -> bool:
+def png_color_type(path: Path) -> int:
+    """Return the PNG IHDR color type (bytes 25; 2=RGB, 6=RGBA)."""
+    with open(path, "rb") as f:
+        head = f.read(29)
+    return struct.unpack(">B", head[25:26])[0]
+
+
+def dds_to_png(game: Path, rel: str, dst: Path, max_size=None,
+               require_alpha: bool = False) -> bool:
+    """Convert a donor DDS to PNG.
+
+    DXT5/DXT3 donor plates carry real alpha.  Historically the committed
+    deco_png files were flattened to RGB (IHDR colorType 2) by some older
+    step, losing the DXT5 coverage mask.  The donor DDS is private-use; this
+    function reads it at bake time and writes only an RGBA PNG into the repo.
+
+    ``.convert("RGBA")`` preserves the donor alpha byte-for-byte (Pillow's
+    DXT5 decoder yields the exact alpha ramp).  When ``require_alpha`` is
+    set we additionally assert the emitted PNG really is colorType 6, so a
+    future accidental ``convert("RGB")`` / post-process flatten can never
+    silently reintroduce the bug.
+    """
     src = game.joinpath(*rel.replace("\\", "/").split("/"))
     if not src.exists():
         print("MISSING", rel)
@@ -54,16 +76,81 @@ def dds_to_png(game: Path, rel: str, dst: Path, max_size=None) -> bool:
     if max_size:
         im = im.resize(max_size, Image.BILINEAR)
     im.save(dst)
+    if require_alpha:
+        ct = png_color_type(dst)
+        if ct != 6:
+            raise RuntimeError(
+                "alpha-preserving conversion failed: %s is colorType %d "
+                "(expected 6 RGBA)" % (dst, ct))
+        if Image.open(dst).getchannel("A").getextrema()[0] == \
+           Image.open(dst).getchannel("A").getextrema()[1] == 255:
+            raise RuntimeError(
+                "alpha-preserving conversion failed: %s has no alpha "
+                "variation (all 255)" % dst)
     return True
+
+
+# The seven alpha-bearing env/pfx decals. Source is always private-use donor;
+# destination is an RGBA PNG in app/assets/terrain/deco_png/.  Kept as one
+# table so the regeneration path and the normal copy loop cannot drift apart.
+DECO_SOURCES = (
+    ("christmastreed", "data/terrain/decals/env/christmastreed.dds"),
+    ("envfieldd", "data/terrain/decals/env/envfieldd.dds"),
+    ("envfielddw", "data/terrain/decals/env/envfielddw.dds"),
+    ("groundexp0", "data/terrain/decals/pfx/groundexp0.dds"),
+    ("groundexp1", "data/terrain/decals/pfx/groundexp1.dds"),
+    ("groundexp2", "data/terrain/decals/pfx/groundexp2.dds"),
+    ("groundexp3", "data/terrain/decals/pfx/groundexp3.dds"),
+)
+
+
+def regen_deco_pngs(game: Path, dst_root: Path) -> int:
+    """Regenerate only the seven deco PNGs, preserving donor DXT5 alpha.
+
+    Verification: each output must be IHDR colorType 6, its alpha array must
+    equal the donor's decoded alpha byte-for-byte, and its RGB must equal the
+    donor's decoded RGB byte-for-byte (the conversion is a pure re-encode).
+    Returns the number of files successfully written.
+    """
+    from PIL import Image  # noqa: F811 (HAS_PIL already checked by caller)
+    import numpy as np
+    done = 0
+    for name, rel in DECO_SOURCES:
+        dst = dst_root / ("terrain/deco_png/%s.png" % name)
+        if not dds_to_png(game, rel, dst, require_alpha=True):
+            continue
+        src = game.joinpath(*rel.replace("\\", "/").split("/"))
+        donor = np.asarray(Image.open(src).convert("RGBA"))
+        port = np.asarray(Image.open(dst).convert("RGBA"))
+        a_ok = np.array_equal(donor[:, :, 3], port[:, :, 3])
+        r_ok = np.array_equal(donor[:, :, :3], port[:, :, :3])
+        if not (a_ok and r_ok):
+            raise RuntimeError(
+                "deco round-trip mismatch for %s: alpha=%s rgb=%s" %
+                (name, a_ok, r_ok))
+        print("regen %-16s colorType=%d alpha%s rgb%s" %
+              (name, png_color_type(dst), "OK" if a_ok else "BAD",
+               "OK" if r_ok else "BAD"))
+        done += 1
+    return done
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default=str(DEFAULT_GAME))
     ap.add_argument("--dst", default=str(DEFAULT_DST))
+    ap.add_argument("--deco-only", action="store_true",
+                    help="regenerate only the 7 alpha-bearing deco_png files")
     args = ap.parse_args()
     game = Path(args.game)
     dst_root = Path(args.dst)
+    if args.deco_only:
+        if not game.exists():
+            print("game folder not found:", game)
+            return 2
+        n = regen_deco_pngs(game, dst_root)
+        print("done: %d deco PNG -> %s" % (n, dst_root / "terrain/deco_png"))
+        return 0 if n == len(DECO_SOURCES) else 1
     if not game.exists():
         print("game folder not found:", game)
         print("set COSSACKS3_DIR or pass --game PATH on Linux/macOS, "
@@ -119,12 +206,11 @@ def main() -> int:
         copy_rel(game, "data/terrain/decals/buildings/%s" % _dds.name,
                  dst_root / "terrain/decals_dds/%s" % _dds.name)
     # --- env + pfx decals (field soil, scorch craters) + water waves ---
-    for _x in ["christmastreed", "envfieldd", "envfielddw"]:
-        dds_to_png(game, "data/terrain/decals/env/%s.dds" % _x,
-                   dst_root / "terrain/deco_png/%s.png" % _x)
-    for _x in ["groundexp0", "groundexp1", "groundexp2", "groundexp3"]:
-        dds_to_png(game, "data/terrain/decals/pfx/%s.dds" % _x,
-                   dst_root / "terrain/deco_png/%s.png" % _x)
+    # Alpha-bearing DXT5 plates: require_alpha=True guarantees colorType 6 and
+    # preserves the donor coverage mask (see dds_to_png / regen_deco_pngs).
+    for _x, _rel in DECO_SOURCES:
+        dds_to_png(game, _rel, dst_root / "terrain/deco_png/%s.png" % _x,
+                   require_alpha=True)
     for _x in ["diffusewaves0", "diffusewaves2"]:
         _src = game / "data" / "water" / "textures" / ("%s.bmp" % _x)
         if _src.exists():

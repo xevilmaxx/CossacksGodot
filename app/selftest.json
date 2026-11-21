@@ -1,14 +1,14 @@
 {
   "passed": true,
   "resources_gathered": {
-    "food": 849,
-    "gold": 329.471999999998,
-    "stone": 160,
+    "food": 453,
+    "gold": 113.983999999999,
+    "stone": 120,
     "trade": 65,
-    "wood": 804
+    "wood": 768
   },
-  "shots_fired": 73,
-  "sim_seconds": 417.4375,
+  "shots_fired": 70,
+  "sim_seconds": 400.6875,
   "steps": [
     {
       "detail": "walked 6.0 m forward (speed 1.5 m/s)",
@@ -16,7 +16,7 @@
       "step": "move"
     },
     {
-      "detail": "gathered 56 wood (carry 14 of 28, order 'gather', node hits 18)",
+      "detail": "gathered 84 wood (carry 0 of 28, order 'gather', node hits 18)",
       "passed": true,
       "step": "act"
     },
@@ -36,7 +36,7 @@
       "step": "train"
     },
     {
-      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 64 m away, order=gather res=gold node=857 dist=2.3)",
+      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 71 m away, order=gather res=gold node=1791 dist=2.6)",
       "passed": true,
       "step": "mine"
     },
@@ -46,7 +46,7 @@
       "step": "hud"
     },
     {
-      "detail": "min gap 0.55 m vs bodies (want >= -0.25 tolerance)",
+      "detail": "min gap 1.33 m vs bodies (want >= -0.25 tolerance)",
       "passed": true,
       "step": "no_overlap"
     },
@@ -126,7 +126,7 @@
       "step": "peasant_capture"
     },
     {
-      "detail": "depleted field re-sown: yes; mill: auto=24 restored=1 gold=3324",
+      "detail": "depleted field re-sown: yes; mill: auto=24 restored=1 gold=3210",
       "passed": true,
       "step": "resow"
     },

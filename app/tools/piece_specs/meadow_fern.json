@@ -1,0 +1,20 @@
+{
+  "name": "meadow_fern",
+  "size_px": [512, 512],
+  "seed": 11,
+  "background": [40, 44, 48],
+  "layers": [
+    {"type": "block", "name": "grass_rock1", "opacity": 1.0, "tile": true,
+     "contrast": 1.1},
+    {"type": "sprite", "name": "fern1", "source": "hi", "pos": [0.28, 0.66],
+     "scale": 0.5, "anchor": "foot", "opacity": 1.0},
+    {"type": "sprite", "name": "bush3", "source": "low", "pos": [0.74, 0.72],
+     "scale": 1.1, "anchor": "foot", "jitter_px": [6, 4], "opacity": 1.0},
+    {"type": "water", "sheet": "diffusewaves0", "mode": "coast", "opacity": 0.35,
+     "rect": [0.0, 0.86, 1.0, 1.0], "feather_px": 10}
+  ],
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [120, 240, 560, 660]
+  }
+}

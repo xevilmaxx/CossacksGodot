@@ -23,16 +23,26 @@ import math
 import os
 import sys
 
-import bpy
-from mathutils import Vector
+import numpy as np
+
+# This is a Blender host script, but the donor-blue postprocess stage is pure
+# numpy+Pillow and may be run headless (system Python) with --postprocess-only.
+# Defer the Blender-only imports so that mode never needs bpy.
+_WANT_POST = "--postprocess-only" in sys.argv
+if not _WANT_POST:
+    import bpy
+    from mathutils import Vector
+else:
+    bpy = None
+    Vector = None
 
 
 def parse_args() -> argparse.Namespace:
     argv = sys.argv
-    rest = argv[argv.index("--") + 1:] if "--" in argv else []
+    rest = argv[argv.index("--") + 1:] if "--" in argv else argv[1:]
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--manifest", required=True)
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--manifest", required=not _WANT_POST)
+    ap.add_argument("--out", required=not _WANT_POST, default="")
     ap.add_argument("--only", default="", help="render only these sids (comma separated)")
     ap.add_argument("--size", type=int, default=256, help="longest sprite side in pixels")
     ap.add_argument("--engine", default="cycles", choices=["cycles", "eevee"],
@@ -40,8 +50,173 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--elevation", type=float, default=32.0, help="camera elevation in degrees")
     ap.add_argument("--start-angle", type=float, default=0.0)
     ap.add_argument("--samples", type=int, default=24)
+    ap.add_argument("--postprocess-only", action="store_true",
+                    help="apply the donor-blue lift to already-baked sprite "
+                         "PNGs with system Python (Pillow); no Blender needed")
+    ap.add_argument("--post-dir", default="",
+                    help="folder of sprite PNGs for --postprocess-only")
+    ap.add_argument("--post-out", default="",
+                    help="output folder (default: edit --post-dir in place)")
     args = ap.parse_args(rest)
     return args
+
+
+# --- Donor-derived blue lift (asset fix for verdict_decor palette FAILs) -----
+# The donor env textures already contain the correct blue in their lit texels
+# (measured from the byte-identical port tex PNGs, top-35%-luminance blue mean):
+#   oak 42.2, fern 47.2, bushes 43.1, plantsatlas 33.9.  Blender's default AgX
+# view transform was crushing that blue (B 42 -> 7); render_to() now sets a
+# neutral Standard/sRGB view, which recovers part of it.  The residual deficit
+# is corrected here by SCALING each pixel's own blue channel toward the donor
+# texel blue floor -- a donor-texture-derived, per-pixel, structure-preserving
+# lift, not an arbitrary flat tint (which is what produced the renderer proxy
+# halos).  Conifers use the donor reference B/G band 0.42-0.55
+# (docs/audit/PIECES/forest_conifer.md); 0.50 is the mid-point, used as a floor
+# so a sprite already at/above donor B/G is never darkened.
+#
+# Family membership is restricted to the decor sprites whose blue/black
+# deficit was measured by verdict_decor; all other sids pass through untouched.
+_DONOR_TEX_LIT_BLUE = {          # donor texture lit-blue floor (8-bit sRGB)
+    "tree_oak": 42.2,            # oak1.dds
+    "fern": 47.2,                # fern.dds
+    "bush": 43.1,                # bushes.dds
+    "plant": 33.9,               # plantsatlas.dds (flower*/plantain*)
+}
+_DONOR_CONIFER_BG = 0.50         # donor reference lit B/G (0.42-0.55)
+
+
+def _decor_group(sid: str):
+    """Return (group, donor_target) for a target decor sid, else None."""
+    if sid == "tree_oak":
+        return ("blue", _DONOR_TEX_LIT_BLUE["tree_oak"])
+    if sid.startswith("tree_spruce") or sid.startswith("tree_pinesmall") \
+       or sid.startswith("tree_firsmall") or sid.startswith("tree_pinedry") \
+       or sid in ("tree_fir", "tree_pine"):
+        return ("ratio", _DONOR_CONIFER_BG)
+    if sid.startswith("fern"):
+        return ("blue", _DONOR_TEX_LIT_BLUE["fern"])
+    if sid.startswith("flower") or sid.startswith("plantain"):
+        return ("blue", _DONOR_TEX_LIT_BLUE["plant"])
+    if sid.startswith("bush"):
+        return ("blue", _DONOR_TEX_LIT_BLUE["bush"])
+    return None
+
+
+def apply_donor_blue_lift(arr_u8: np.ndarray, sid: str) -> np.ndarray:
+    """Lift blue to the donor-derived floor and key pure-black pixels to alpha 0.
+
+    ``arr_u8`` is an (H, W, 4) uint8 RGBA array in sRGB space. Only the blue
+    channel is scaled (multiplicatively, so the donor texture's own structure
+    is retained); R and G are left exactly as baked.  Near-black opaque pixels
+    (R=G=B<=3) are the donor's solid backing rectangles -- verdict_decor C5
+    measured 20.8% of decor ink as pure black -- and are set to alpha 0.
+
+    FOLIAGE-ONLY (tree sids): the donor's woody trunks/stems already carry a
+    real blue component (oak trunk raw B/G~0.78, brown/grey). Scaling every
+    ink pixel pushed them to B/G~1.5 (blue/purple). For ``tree_*`` sids the
+    lift is therefore restricted to foliage pixels: the upper 78% of the alpha
+    ink box whose blue-to-green ratio is < 0.70. Trunk pixels keep their
+    donor-derived brown/grey exactly. The gain is also calibrated from the
+    foliage-lit pixels (not all ink): oak trunks are *brighter* than its
+    canopy, so an all-ink luminance reference was trunk-dominated and
+    under-lifted the canopy. Fern/flower/plantain/bush use the whole ink band
+    as before -- they have no woody trunk and their mean-B gate still passes.
+    """
+    spec = _decor_group(sid)
+    if spec is None:
+        return arr_u8
+    group, target = spec
+    out = arr_u8.copy()
+    rgb = arr_u8[:, :, :3].astype(np.float32)
+    alpha = arr_u8[:, :, 3].copy()
+    ink = alpha > 8
+    if not np.any(ink):
+        return out
+    lum = 0.299 * rgb[:, :, 0] + 0.587 * rgb[:, :, 1] + 0.114 * rgb[:, :, 2]
+
+    # Foliage mask: tree sids only. Geometry (upper 78% of ink box) plus a
+    # blue-poor chroma guard; brown/grey trunk (B/G>=0.7) is excluded even if
+    # it reaches high into the box on a short-stemmed species.
+    if sid.startswith("tree_"):
+        yy = np.indices(ink.shape)[0]
+        ys = np.where(ink)[0]
+        y0 = int(ys.min())
+        h = int(ys.max()) - y0 + 1
+        rel_y = (yy - y0) / max(h, 1)
+        bg = rgb[:, :, 2] / np.maximum(rgb[:, :, 1], 1.0)
+        foliage = ink & (rel_y < 0.78) & (bg < 0.70)
+        ref = foliage if np.any(foliage) else ink
+    else:
+        foliage = ink
+        ref = ink
+
+    thr = np.quantile(lum[ref], 0.65)
+    lit = ref & (lum >= thr)
+    if group == "ratio":
+        cur = rgb[:, :, 2][lit].mean() / max(float(rgb[:, :, 1][lit].mean()), 1.0)
+        gain = max(1.0, target / max(cur, 1e-6))
+    else:
+        cur = float(rgb[:, :, 2][lit].mean())
+        gain = max(1.0, target / max(cur, 1e-6))
+    # Key the donor's solid-black backing to transparent BEFORE recolouring so
+    # no lifted blue leaks into the rectangle that is being removed. Applies
+    # to all ink (trunk backing included); only the blue scaling is masked.
+    black = (rgb[:, :, 0] <= 3) & (rgb[:, :, 1] <= 3) & (rgb[:, :, 2] <= 3)
+    alpha[black] = 0
+    target_px = foliage & (~black)
+    blue = rgb[:, :, 2].copy()
+    blue[target_px] = np.clip(rgb[:, :, 2][target_px] * gain, 0, 255)
+    out[:, :, 2] = blue.astype(np.uint8)
+    out[:, :, 3] = alpha
+    return out
+
+
+def postprocess_bpy_image(path: str, sid: str) -> None:
+    """Apply the lift to a just-rendered PNG inside Blender (no Pillow).
+
+    A PNG loaded with colorspace "sRGB" exposes ``image.pixels`` as
+    display-referred values in 0..1 (i.e. the stored 8-bit byte / 255), so the
+    conversion to bytes is a plain *255 / rint -- no sRGB<->linear transform.
+    """
+    if _decor_group(sid) is None:
+        return
+    img = bpy.data.images.load(path, check_existing=False)
+    w, h = img.size
+    buf = np.empty(w * h * 4, dtype=np.float32)
+    img.pixels.foreach_get(buf)
+    # bpy's pixel buffer is BOTTOM-UP. The foliage mask uses a y threshold in
+    # image space, so flip to top-down before lifting and flip back on write.
+    u8 = np.rint(np.clip(buf.reshape(h, w, 4), 0.0, 1.0) * 255).astype(np.uint8)
+    lifted = apply_donor_blue_lift(u8[::-1], sid)[::-1]
+    img.pixels.foreach_set((lifted.ravel().astype(np.float32) / 255.0))
+    # Without filepath_raw/file_format, Image.save() re-encodes through the
+    # image colourspace and shifts the bytes (measured: canopy B 28.8 -> 25,
+    # trunk B/G 0.78 -> 0.91). Setting them makes save() a byte-exact write.
+    img.filepath_raw = path
+    img.file_format = "PNG"
+    img.update()
+    img.save()
+    bpy.data.images.remove(img)
+
+
+def postprocess_files_pil(src_dir: str, out_dir: str) -> int:
+    """Headless stage: lift blue on every target sprite PNG in a folder."""
+    from PIL import Image
+    os.makedirs(out_dir, exist_ok=True)
+    done = 0
+    for name in sorted(os.listdir(src_dir)):
+        if not name.lower().endswith(".png"):
+            continue
+        sid = name[:-4]
+        if _decor_group(sid) is None:
+            continue
+        src = os.path.join(src_dir, name)
+        dst = os.path.join(out_dir, name)
+        arr = np.asarray(Image.open(src).convert("RGBA"))
+        Image.fromarray(apply_donor_blue_lift(arr, sid), "RGBA").save(dst)
+        done += 1
+        print("  lifted %s -> %s" % (src, dst))
+    return done
 
 
 def clear_scene() -> None:
@@ -177,6 +352,20 @@ def render_to(path: str, samples: int, size: int, engine: str) -> bool:
     scene.render.film_transparent = True
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGBA"
+    # The donor texel colors are already painted with their own shading and
+    # carry the correct blue (e.g. oak lit texels B~42, B/G~0.42). Blender's
+    # default AgX/Filmic view transform gamut-compresses and desaturates the
+    # emission output, crushing the blue channel (B 42 -> 7) into the neon-
+    # olive deficit measured by verdict_decor. A neutral Standard/sRGB path
+    # reproduces the donor texel colors faithfully; no arbitrary tint needed.
+    try:
+        scene.view_settings.view_transform = "Standard"
+        scene.view_settings.look = "None"
+        scene.view_settings.exposure = 0.0
+        scene.view_settings.gamma = 1.0
+        scene.display_settings.display_device = "sRGB"
+    except Exception as exc:
+        print("  color-management setup failed: %s" % exc)
     scene.render.filepath = path
     try:
         bpy.ops.render.render(write_still=True)
@@ -188,6 +377,13 @@ def render_to(path: str, samples: int, size: int, engine: str) -> bool:
 
 def main() -> int:
     args = parse_args()
+    if args.postprocess_only:
+        if not args.post_dir:
+            print("--postprocess-only needs --post-dir")
+            return 2
+        n = postprocess_files_pil(args.post_dir, args.post_out or args.post_dir)
+        print("postprocessed %d decor sprites" % n)
+        return 0
     with open(args.manifest, "r", encoding="utf-8") as f:
         manifest = json.load(f)
     os.makedirs(args.out, exist_ok=True)
@@ -226,6 +422,12 @@ def main() -> int:
                 name = "%s_%03d.png" % (sid, int(round(az)) % 360)
             path = os.path.join(args.out, name)
             if render_to(path, args.samples, args.size, args.engine):
+                # Donor-derived blue lift + black-key on decor sprites only.
+                try:
+                    postprocess_bpy_image(path, sid)
+                except Exception as exc:
+                    print("  postprocess failed on %s: %s" % (name, exc),
+                          flush=True)
                 done += 1
                 print("rendered %s" % name, flush=True)
         # remove the imported objects before the next model

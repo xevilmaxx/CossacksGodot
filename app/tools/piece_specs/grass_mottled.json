@@ -1,0 +1,131 @@
+{
+  "name": "grass_mottled",
+  "size_px": [
+    512,
+    512
+  ],
+  "seed": 7,
+  "background": [
+    40,
+    44,
+    48
+  ],
+  "layers": [
+    {
+      "type": "block",
+      "name": "grass1",
+      "tile": true,
+      "opacity": 1.0,
+      "contrast": 0.8,
+      "brightness": 1.4
+    },
+    {
+      "type": "block",
+      "name": "grass6",
+      "opacity": 0.35,
+      "tile": true,
+      "contrast": 0.8,
+      "brightness": 1.4
+    },
+    {
+      "type": "block",
+      "name": "grass10",
+      "opacity": 0.2,
+      "tile": true,
+      "contrast": 0.8,
+      "brightness": 1.4
+    },
+    {
+      "type": "patches",
+      "seed": 7,
+      "patch_px": [
+        20,
+        80
+      ],
+      "gain": 80,
+      "cover": "full",
+      "olive_weights": [
+        1.0,
+        0.96,
+        0.68
+      ]
+    }
+  ],
+  "reference": {
+    "image": "articolo-787.jpg",
+    "box": [
+      250,
+      220,
+      450,
+      420
+    ],
+    "primary": {
+      "image": "articolo-787.jpg",
+      "crop": [
+        250,
+        220,
+        450,
+        420
+      ],
+      "hex": "#4D4B2A"
+    },
+    "negative_control": {
+      "image": "cossacks-3-v1-498085.jpg",
+      "crop": [
+        560,
+        325,
+        735,
+        500
+      ],
+      "hex": "#606428"
+    },
+    "patch_hexes": {
+      "light": "#6B6732",
+      "mid": "#616727",
+      "dark": "#3E411F"
+    },
+    "patch_scale_px": [
+      20,
+      80
+    ],
+    "source_doc": "docs/audit/PIECES/grass_mottled.md",
+    "recipe_limitation": {
+      "statement": "grass_mottled.md §2.2/§3 states the three named block layers alone do NOT produce mottling; a terrain-driven low-frequency olive gain of roughly +/-25-35 L at 20-80 px is mandatory to reach L std 30-40, >=4 bins and hi-freq 8-12.",
+      "renderer_gap": "RESOLVED by the upgraded renderer: 'patches' is a masked terrain-driven olive gain layer (terrain_piece_render.py:139-155,973-1037) with patch_px 20-80 and ±gain. The ±25-35 L band is now reachable (measured gain 80 to reach the donor's L std 30-40 after the 512² downsample). Still only 3 named block layers, so C7 is unchanged.",
+      "consequence": "std is expected near 7-8 and only ~2 bins >=3% -- the documented 'gain driver dropped -> collapsed into grass_clean' failure signature (§4). Reported honestly; no criterion was weakened."
+    },
+    "acceptance": {
+      "C1_L_std": [
+        30,
+        40
+      ],
+      "C2_bins_ge3": 4,
+      "C2_low_bins_ge3": 3,
+      "C3_hifreq": [
+        8,
+        12
+      ],
+      "C4_patch_px": [
+        20,
+        80
+      ],
+      "C4_subbox_spread_min": 15,
+      "C5_sat": [
+        0.3,
+        0.55
+      ],
+      "C5_val": [
+        0.25,
+        0.45
+      ],
+      "C6_lightdark_ratio": [
+        1.7,
+        2.4
+      ],
+      "C7_block_layers": 3,
+      "C8_hist_L1_max": 25
+    }
+  },
+  "native_render": true,
+  "grain_lift": 0.9
+}

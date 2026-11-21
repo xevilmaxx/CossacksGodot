@@ -7,7 +7,10 @@ Every dump is produced by `godot --headless --path app -- --dump-map FILE --seed
 
 Targets come from GUIDE4 / the donor itself:
   water  - must match the chosen donor mask's B-channel water fraction (+/- 5pp)
-  patches - 8..16 discrete forest belts, mean size 40..120 tiles
+  patches / mean size - DONOR-SCALED, see patch_gates() below. The old 8..16
+      patches / 40..120 mean (a 160-tile-era, non-donor target) silently capped
+      a 320 map at ~12% forest and could never be green at 40-90 patches.
+      At 320 the derived gates are 40..90 patches, mean 170..1228 tiles.
   quarry purity / mine clearance - 100% (no trees in stone/mine clearings)
   sand ring - >=90% of the LAND-WATER COASTLINE is covered by sand
       (the old version divided by total water area, which is geometrically
@@ -22,6 +25,34 @@ import argparse, base64, json, os, sys
 from collections import deque
 
 NB = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1))
+
+# Donor evidence, all at the 320x320 reference map (docs/audit/PIECES/map_density.md):
+#   forest-family stamps: 115 (prob=1) .. 236 (mod*2)   [§3.2 table]
+#   donor-equivalent at 160: 29 .. 59 (one quarter, since needed=floor(W*H*freq))
+#   observed 160 merge: ~29-59 stamps -> 8-14 patches (2-4 stamps per patch)
+#   forest coverage band: 15% (F1/A1 floor) .. 48% (§3.3 inferred donor upper)
+STAMPS_320 = (115.0, 236.0)
+MERGE_PER_PATCH = (2.9, 2.6)   # stamps absorbed by one 4-neighbour patch (lo/hi)
+COVER_BAND = (0.15, 0.48)
+REF_AREA = 320 * 320
+
+
+def patch_gates(w, h):
+    """derive forest patch/count gates for this map size from donor evidence.
+
+    Not a blind doubling: stamp counts follow the donor's area law
+    needed=floor(W*H*freq) (i.e. x4 at 320), merge factors come from the
+    160-tile baseline (29-59 stamps -> 8-14 patches), and the mean-size band
+    is the coverage band divided by the patch-count extremes, so that
+    patches * mean spans exactly the donor 15-48% forest coverage envelope.
+    """
+    area = int(w) * int(h)
+    s_lo, s_hi = (STAMPS_320[0] * area / REF_AREA, STAMPS_320[1] * area / REF_AREA)
+    p_lo = max(1, int(round(s_lo / MERGE_PER_PATCH[0])))
+    p_hi = max(p_lo + 1, int(s_hi / MERGE_PER_PATCH[1]))
+    m_lo = max(1, int(COVER_BAND[0] * area / p_hi))
+    m_hi = int(COVER_BAND[1] * area / p_lo)
+    return p_lo, p_hi, m_lo, m_hi
 
 
 def load_scan(path):
@@ -192,7 +223,7 @@ def scan_one(path):
     patches = count_patches(w, h, terrain)
     meta = d.get("meta", {})
     return {
-        "file": os.path.basename(path), "map_w": w,
+        "file": os.path.basename(path), "map_w": w, "map_h": h,
         "water": water, "sand": sand, "dark": dark, "rock": rock,
         "mask_water": float((meta.get("mask") or {}).get("water", meta.get("mask_water", -1))) * 100,
         "mask": (meta.get("mask") or {}).get("file", "?"),
@@ -230,16 +261,21 @@ def main():
         print("no map dumps in", a.dir)
         return 2
     rows = [scan_one(p) for p in files]
+    p_lo, p_hi, m_lo, m_hi = patch_gates(rows[0]["map_w"], rows[0]["map_h"])
+    area = rows[0]["map_w"] * rows[0]["map_h"]
+    print("gates @%dx%d (s=%.2f, area x%.2f): donor stamps %.0f..%.0f, "
+          "patches %d..%d, mean_sz %d..%d, forest coverage %.0f..%.0f%%"
+          % (rows[0]["map_w"], rows[0]["map_h"], rows[0]["map_w"]/160.0,
+             area/160.0**2, STAMPS_320[0]*area/REF_AREA, STAMPS_320[1]*area/REF_AREA,
+             p_lo, p_hi, m_lo, m_hi, COVER_BAND[0]*100, COVER_BAND[1]*100))
     fails = []
     for r in rows:
         f = []
         if r["mask_water"] >= 0 and abs(r["water"] - r["mask_water"]) > 5:
             f.append("water=%.1f vs mask %.1f" % (r["water"], r["mask_water"]))
-        if not (8 <= r["patches"] <= 16):
+        if not (p_lo <= r["patches"] <= p_hi):
             f.append("patches=%d" % r["patches"])
-        # belt size scales with map AREA (40..120 tiles at the 160-tile baseline)
-        lo, hi = 40 * (r["map_w"]/160.0)**2, 120 * (r["map_w"]/160.0)**2
-        if not (lo*0.6 <= r["mean_sz"] <= hi*1.6):
+        if not (m_lo <= r["mean_sz"] <= m_hi):
             f.append("mean_sz=%.0f" % r["mean_sz"])
         if r["purity"] < 100 or r["clear"] < 100:
             f.append("purity=%.0f clear=%.0f" % (r["purity"], r["clear"]))

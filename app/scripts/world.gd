@@ -25,6 +25,11 @@ var fog_timer := 0.0
 const CHUNK_T := 32          # tiles per chunk side
 var terrain_chunks: Dictionary = {}   # Vector2i -> Sprite2D
 var terrain_order: Array = []         # LRU keys
+# T3-FIX-WORLD / MAP_NAV_PERF F1: neutral per-chunk fallback so a minimap jump
+# never exposes the background clear colour while bakes catch up. One small
+# cached texture, one Sprite2D per missing in-view key, freed when baked.
+var fallback_chunks: Dictionary = {}  # Vector2i -> Sprite2D
+var fallback_tex: ImageTexture = null
 # QA-1 / N-07: one-shot per-bake timing over the first 120 bakes. The runner
 # harness only accepts an explicit BAKE_BENCH line; nothing here changes draw
 # output or the 2-chunk/frame + LRU-24 amortisation below.
@@ -66,6 +71,9 @@ var ter_wave0: Image         # diffusewaves0 (256²)
 var ter_wave1: Image         # diffusewaves1 (256²)
 var ter_blue: Image
 var ter_blueA: Image
+# T2-BUILD-RENDER: pale wash substrate (#C3D1CA) with donor sandsea grain,
+# used under the shallow waterline where the overlay alpha fades to zero.
+var ter_wash: Image
 # One full-map canvas_item overlay: time advances every frame in sync(), so a
 # stationary camera still shows moving water (TDR-4 W-1).
 var water_overlay: Sprite2D = null
@@ -153,6 +161,10 @@ const ENV_JITTER_MAX := 1.15
 func _env_sprite_h(base: float, kind: String, pos: Vector2) -> float:
 	# `base` is the tuned height at jitter=1; native*scale reconstructs it,
 	# then the donor's 0.85-1.15 jitter varies each object without flicker.
+	# T2-BUILD-RENDER: donor envscales.cfg gives mines minscale=maxscale=1,
+	# so a deposit marker never wobbles in size (verdict_decor A6).
+	if kind == "mine":
+		return base
 	var scale: float = float(ENV_SCALE.get(kind, 1.0))
 	var native: float = base / scale
 	return native * scale * lerpf(ENV_JITTER_MIN, ENV_JITTER_MAX, _hash(pos.x, pos.y))
@@ -181,8 +193,7 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	if game != null and game.tileblock.size() > 0:
 		var warm_counts := {}
 		for ti in game.tileblock.size():
-			var bi: int = game.tileblock[ti]
-			var bn: String = str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+			var bn: String = _art_name(ti)
 			warm_counts[bn] = int(warm_counts.get(bn, 0)) + 1
 		var warm_names: Array = warm_counts.keys()
 		warm_names.sort_custom(func(a, b):
@@ -581,20 +592,7 @@ func _bld_scale(key: String) -> Dictionary:
 		"w": (float(ink[2]) - float(ink[0])) * sc}
 
 var decal_tex: Dictionary = {}
-var gain_map: Image = null  # coarse meadow-gain tile, baked once and shared by all chunks
 
-# Meadow gain in tile space (wavelength ~9 tiles like the original patches).
-# Precomputed once into an 80x80 map so chunk bakes stay cheap: per-chunk
-# noise would stall the 2-chunk/frame budget and cost startup FPS.
-func _gain_at(tx: float, ty: float) -> float:
-	if gain_map == null:
-		gain_map = Image.create(80, 80, false, Image.FORMAT_R8)
-		for y in 80:
-			for x in 80:
-				gain_map.set_pixel(x, y, Color(1.0 + 0.085 * _wnoise(float(x) * 0.44, float(y) * 0.44), 0, 0))
-	var gx := clampi(int(tx / 4.0), 0, 79)
-	var gy := clampi(int(ty / 4.0), 0, 79)
-	return gain_map.get_pixel(gx, gy).r
 var blob_tex: Texture2D = null
 
 # Soft round blob (white with radial alpha): one shared texture for all
@@ -823,17 +821,27 @@ func _setup_water_overlay() -> void:
 	water_mat.set_shader_parameter("wave0", ImageTexture.create_from_image(ter_wave0))
 	water_mat.set_shader_parameter("wave1", ImageTexture.create_from_image(ter_wave1))
 	water_mat.set_shader_parameter("wave2", ImageTexture.create_from_image(ter_water))
-	water_mat.set_shader_parameter("foam_tex", ImageTexture.create_from_image(ter_water))
+	# T2-BUILD-WATER: donor nautic() foam reuses waveMap = diffusewaves0, not
+	# the bright fine diffusewaves2 dither (43% clipped) that inflated glints.
+	water_mat.set_shader_parameter("foam_tex", ImageTexture.create_from_image(ter_wave0))
 	water_mat.set_shader_parameter("time", anim_t)
 
 	# R = coverage (type-3 grid), G = depth/1.07, B = depth/0.57, A = 1.
-	# LINEAR filtering on the sprite feathers the shoreline over one tile.
-	var mask := Image.create(game.MAP_W, game.MAP_H, false, Image.FORMAT_RGBA8)
-	for y in game.MAP_H:
-		for x in game.MAP_W:
-			var i: int = game._t(x, y)
+	# T2-BUILD-WATER: bake depth at SUB-TILE resolution (4 samples/tile) so the
+	# 0.57 m foam/alpha ramp spans ~8 px at 16 px/m instead of one 32-px tile
+	# step. Coverage stays tile-granular but LINEAR filtering now feathers it
+	# over a quarter tile (verdict_water G4/G6, WATER_DEEP D7/M9). This runs
+	# once at setup; the 2-chunk/frame cap and LRU 24 are untouched (N-07).
+	var sub := 4
+	var mask := Image.create(game.MAP_W * sub, game.MAP_H * sub, false, Image.FORMAT_RGBA8)
+	for y in game.MAP_H * sub:
+		for x in game.MAP_W * sub:
+			var tx: int = mini(int(floor(float(x) / float(sub))), game.MAP_W - 1)
+			var ty: int = mini(int(floor(float(y) / float(sub))), game.MAP_H - 1)
+			var i: int = game._t(tx, ty)
 			var wet: float = 1.0 if int(game.terrain[i]) == 3 else 0.0
-			var dep: float = maxf(0.0, WATER_LEVEL - game.height_at(Vector2(float(x) * Data.TILE_M, float(y) * Data.TILE_M)))
+			var wp := Vector2(float(x) / float(sub) * Data.TILE_M, float(y) / float(sub) * Data.TILE_M)
+			var dep: float = maxf(0.0, WATER_LEVEL - game.height_at(wp))
 			mask.set_pixel(x, y, Color(wet, clampf(dep / 1.07, 0.0, 1.0), clampf(dep / 0.57, 0.0, 1.0), 1.0))
 	var mask_tex := ImageTexture.create_from_image(mask)
 
@@ -841,7 +849,8 @@ func _setup_water_overlay() -> void:
 	water_overlay.texture = mask_tex
 	water_overlay.centered = false
 	water_overlay.position = Vector2.ZERO
-	water_overlay.scale = Vector2(Data.TILE_M * view_scale, Data.TILE_M * view_scale)
+	# Sub-tile mask has 4 samples per tile: each mask pixel spans 1/4 tile.
+	water_overlay.scale = Vector2(Data.TILE_M * view_scale / float(sub), Data.TILE_M * view_scale / float(sub))
 	water_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	water_overlay.material = water_mat
 	water_overlay.z_index = -9   # above baked terrain (-10), below resources (1)
@@ -893,6 +902,21 @@ func _build_masks(px: int) -> Array:
 	ter_black.fill(Color(0, 0, 0))
 	ter_blue = Image.create(px, px, false, Image.FORMAT_RGB8)
 	ter_blue.fill(Color(0.16, 0.36, 0.44))
+	# T2-BUILD-RENDER / shore band gap #3: the water shader's alpha -> 0 at
+	# depth 0, so the *baked bed* must be pale wash there, not flat teal.
+	# Build the pale end once from the donor sandsea6 grain, lifted to the
+	# coordinator's #C3D1CA hard gate (verdict_shore / SWARM_BOARD).
+	ter_wash = Image.create(px, px, false, Image.FORMAT_RGB8)
+	var wash_src: Image = _block_img(_winter_art("sandsea6"))
+	for yy in px:
+		for xx in px:
+			var sx: int = (xx * wash_src.get_width() / maxi(1, px)) % wash_src.get_width()
+			var sy: int = (yy * wash_src.get_height() / maxi(1, px)) % wash_src.get_height()
+			var g: float = wash_src.get_pixel(sx, sy).r - 0.5
+			ter_wash.set_pixel(xx, yy, Color(
+				clampf(0.765 + g * 0.16, 0.0, 1.0),
+				clampf(0.820 + g * 0.15, 0.0, 1.0),
+				clampf(0.792 + g * 0.14, 0.0, 1.0)))
 	# blend_rect_mask reads the mask's ALPHA channel: dither the uniform alpha
 	# (bayer 60% density) so the downsample resolve reads it as a true 60%
 	# blue glaze over the waves (resolved before the final chunk resize)
@@ -943,12 +967,56 @@ func _season_tint() -> Color:
 	var tint := Data.terrain_tint(season)
 	# terrain_tint is a multiplicative RGB tint with alpha 1; use its distance
 	# from white as the glaze strength, so summer (1,1,1) is a no-op.
-	var strength: float = 0.34 if (tint.r < 0.999 or tint.g < 0.999 or tint.b < 0.999) else 0.0
+	# T3-FIX-WORLD: winter now draws real winter*.png art, so its tint is only a
+	# light cool multiplier (0.10) instead of the old 0.34 blue wash.
+	var strength: float = 0.0
+	if tint.r < 0.999 or tint.g < 0.999 or tint.b < 0.999:
+		strength = 0.10 if season == "winter" else 0.34
 	var im := Image.create(2, 2, false, Image.FORMAT_RGBA8)
 	im.fill(Color(tint.r, tint.g, tint.b, strength))
 	_season_tint_key = season
 	_season_tint_img = im
 	return Color(tint.r, tint.g, tint.b, strength)
+
+# T3-FIX-WORLD: consume the winter tile art exposed by T2-BUILD-GEN
+# (game.winter_tile_names[] / game.winter_block_for()). Summer maps return the
+# unchanged summer name, so their render path is byte-identical.
+var _winter_map_game = null
+var _winter_name_map: Dictionary = {}
+
+func _winter_on() -> bool:
+	return game != null and _season_key() == "winter"
+
+func _ensure_winter_map() -> void:
+	if _winter_map_game == game and not _winter_name_map.is_empty():
+		return
+	_winter_name_map.clear()
+	_winter_map_game = game
+	if game == null or int(game.tbl_names.size()) <= 0:
+		return
+	for i in game.tbl_names.size():
+		var w: String = game.winter_block_for(i)
+		if w != "":
+			_winter_name_map[str(game.tbl_names[i])] = w
+
+# Per-cell art name from a TILE index: winter names on winter maps (media
+# winter_tile_names[]), summer names otherwise. Byte-identical on summer maps.
+func _art_name(ti: int) -> String:
+	var bi: int = game.tileblock[ti] if ti >= 0 and ti < int(game.tileblock.size()) else 0
+	if _winter_on():
+		if ti >= 0 and ti < int(game.winter_tile_names.size()):
+			var w := str(game.winter_tile_names[ti])
+			if w != "":
+				return w
+		return game.winter_block_for(bi)
+	return str(game.tbl_names[bi]) if bi >= 0 and bi < int(game.tbl_names.size()) else "grass1"
+
+# Named art (role passes / face collar) on winter maps.
+func _winter_art(nm: String) -> String:
+	if not _winter_on():
+		return nm
+	_ensure_winter_map()
+	return str(_winter_name_map.get(nm, nm))
 
 # TB-B1a/B1b helpers ---------------------------------------------------------
 # Frequency-rank the distinct donor block names present in a chunk (name is a
@@ -976,8 +1044,7 @@ func _role_block_names(cx: int, cy: int, role: int, already: Array) -> Array:
 			if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
 				var i: int = game._t(x, y)
 				if int(game.terrain[i]) == role:
-					var bi: int = game.tileblock[i]
-					var bn: String = str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+					var bn: String = _art_name(i)
 					counts[bn] = int(counts.get(bn, 0)) + 1
 	var out: Array = []
 	for n in _rank_blocks(counts, BLOCKS_PER_ROLE + already.size()):
@@ -1024,8 +1091,7 @@ func _composite_blocks(img: Image, cx: int, cy: int, S: int, N: int, names: Arra
 					if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
 						var i: int = game._t(x, y)
 						if role_filter < 0 or int(game.terrain[i]) == role_filter:
-							var bi: int = game.tileblock[i]
-							var bn: String = str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+							var bn: String = _art_name(i)
 							var idx: int = int(name_idx.get(bn, -1))
 							if idx >= 0:
 								sums[idx] += 1.0
@@ -1045,6 +1111,290 @@ func _composite_blocks(img: Image, cx: int, cy: int, S: int, N: int, names: Arra
 		var crop := _wrap_crop(_block_img(nm_s), cx * S + coff, cy * S + coff, S)
 		img.blend_rect_mask(crop, mask, full, origin)
 
+# T2-BUILD-RENDER / shore band gap #3 -----------------------------------------
+# The GPU overlay's resalpha = coastfade2 goes to ZERO at the waterline, so
+# the only thing the eye can see there is the baked water bed. The old bed
+# was a flat Color(0.16,0.36,0.44) tile -> a flat blue-teal ring (40,82,97).
+# Bake a shore-distance-keyed bed instead: pale wash (#BDBDA9..#C3D1CA with
+# sandsea grain) only on shallow water cells within ~1 tile of the shore,
+# deep blue-teal offshore and muted ground on land (no inland glow).
+# All sampling is done from a
+# precomputed tile grid with inlined bilinear interpolation: the first version
+# called height_at() per sub-node (83k GDScript calls/chunk) and blew the
+# N-07 bake gate; this version does ~2.5k array reads instead.
+# This does NOT touch the water overlay shader, its uniforms or its mask.
+const FIELD_GW := CHUNK_T + 3
+
+func _chunk_fields(cx: int, cy: int, wash_src: Image) -> Array:
+	var gw: int = FIELD_GW
+	var hs := PackedFloat32Array()
+	var ts := PackedByteArray()
+	var gr := PackedFloat32Array()
+	hs.resize(gw * gw)
+	ts.resize(gw * gw)
+	gr.resize(gw * gw)
+	for j in gw:
+		for i in gw:
+			var tx: int = clampi(cx * CHUNK_T + i - 1, 0, game.MAP_W - 1)
+			var ty: int = clampi(cy * CHUNK_T + j - 1, 0, game.MAP_H - 1)
+			var ti: int = game._t(tx, ty)
+			var k: int = j * gw + i
+			hs[k] = float(game.height[ti])
+			ts[k] = game.terrain[ti]
+			if wash_src != null:
+				var sx: int = posmod(tx * wash_src.get_width() / 2, wash_src.get_width())
+				var sy: int = posmod(ty * wash_src.get_height() / 2, wash_src.get_height())
+				gr[k] = wash_src.get_pixel(sx, sy).r - 0.5
+	var dhx := PackedFloat32Array()
+	var dhy := PackedFloat32Array()
+	dhx.resize(gw * gw)
+	dhy.resize(gw * gw)
+	for j in gw:
+		for i in gw:
+			var il: int = maxi(0, i - 1)
+			var ir: int = mini(gw - 1, i + 1)
+			var jd: int = maxi(0, j - 1)
+			var ju: int = mini(gw - 1, j + 1)
+			var k: int = j * gw + i
+			dhx[k] = (hs[j * gw + ir] - hs[j * gw + il]) / float(ir - il)
+			dhy[k] = (hs[ju * gw + i] - hs[jd * gw + i]) / float(ju - jd)
+	return [hs, dhx, dhy, ts, gr, gw]
+
+# APPEND fix: the first pass keyed the pale bed off DEPTH, so on a gently
+# sloping lake bed the pale zone stretched 80-120 px inland and, mixed with
+# the overlay's already-bright shallow body, read as a white halo. The wash is
+# now keyed off SHORE DISTANCE in tiles (1 tile = 32 px @720p): only water
+# cells within ~1 tile of a non-water cell get pale art, and only while the
+# bed is genuinely shallow. Everything else stays deep teal; land cells get a
+# muted ground colour so the role mask's 25% edge bleed cannot glow.
+const SHORE_WASH_TILES := 1.0
+const SHORE_WASH_DEPTH := 0.35
+const SHORE_PALE := Color(0.741, 0.741, 0.663)   # #BDBDA9 pale wash
+const SHORE_SHALLOW := Color(0.765, 0.820, 0.792) # #C3D1CA shallow
+const SHORE_DEEP := Color(0.16, 0.36, 0.44)
+const SHORE_GROUND := Color(0.58, 0.57, 0.50)
+
+func _shore_substrate(cx: int, cy: int, S: int) -> Image:
+	# 2 samples/tile is enough for a 1-tile (32 px) wash band; 4 cost ~40 ms
+	# more in the 2-chunk/frame bake budget (N-07).
+	var sub := 2
+	var n: int = CHUNK_T * sub + 1
+	var bed := Image.create(n, n, false, Image.FORMAT_RGB8)
+	var wash_src: Image = _block_img(_winter_art("sandsea6"))
+	var f: Array = _chunk_fields(cx, cy, wash_src)
+	var hs: PackedFloat32Array = f[0]
+	var ts: PackedByteArray = f[3]
+	var gr: PackedFloat32Array = f[4]
+	var gw: int = int(f[5])
+	# Early-out: no water tile in this chunk -> a flat cached bed is enough.
+	var has_water := false
+	for k in gw * gw:
+		if ts[k] == 3:
+			has_water = true
+			break
+	if not has_water:
+		var flat: Image = ter_blue.duplicate() as Image
+		flat.resize(S, S, Image.INTERPOLATE_NEAREST)
+		return flat
+	# Distance (tiles) from each water cell to the nearest non-water cell,
+	# 3 relaxation passes over the 35x35 tile grid (cheap; one per water chunk).
+	var dist := PackedFloat32Array()
+	dist.resize(gw * gw)
+	for k in gw * gw:
+		dist[k] = 0.0 if ts[k] == 3 else 9.0
+	for _pass in 3:
+		for j in range(1, gw - 1):
+			for i in range(1, gw - 1):
+				var k: int = j * gw + i
+				if ts[k] != 3:
+					continue
+				var dmin: float = minf(dist[k - 1], dist[k + 1])
+				dmin = minf(dmin, dist[k - gw])
+				dmin = minf(dmin, dist[k + gw])
+				dist[k] = minf(dist[k], dmin + 1.0)
+	# Hoist the colour lerp out of the 16k sub-node loop; nearest sampling of
+	# the tile fields is enough for a 1-tile band and keeps N-07 under 250 ms.
+	var pale: Color = SHORE_PALE.lerp(SHORE_SHALLOW, 0.25)
+	for gy in n:
+		for gx in n:
+			var gxf: float = float(gx) / float(sub) + 1.0
+			var gyf: float = float(gy) / float(sub) + 1.0
+			var i0: int = mini(int(floor(gxf)), gw - 1)
+			var j0: int = mini(int(floor(gyf)), gw - 1)
+			var k00: int = j0 * gw + i0
+			var dep: float = maxf(0.0, WATER_LEVEL - hs[k00])
+			var dv: float = dist[k00]
+			var c := SHORE_DEEP
+			if ts[k00] != 3:
+				# Land: no pale bed at all -- kills the inland halo.
+				c = SHORE_GROUND
+			elif dv <= SHORE_WASH_TILES and dep <= SHORE_WASH_DEPTH:
+				# Hard contour at the wash outer edge, softened only over the
+				# last 0.5 tile so it reads as a band, not a glow.
+				var w: float = clampf((SHORE_WASH_TILES + 0.15 - dv) / 0.15, 0.0, 1.0)
+				var grain: float = gr[k00]
+				c = Color(clampf(pale.r + grain * 0.10, 0.0, 1.0),
+					clampf(pale.g + grain * 0.10, 0.0, 1.0),
+					clampf(pale.b + grain * 0.09, 0.0, 1.0))
+				c = SHORE_DEEP.lerp(c, w)
+			bed.set_pixel(gx, gy, c)
+	bed.resize(S, S, Image.INTERPOLATE_BILINEAR)
+	return bed
+
+# T2-BUILD-RENDER / ravine_face render-only face-collar ----------------------
+# Donor rock is 17.3-17.9% of frame vs port 2.3-3.7%, but making more cells
+# terrain=5 would set blocked[] and shrink buildable land. This pass paints a
+# VISUAL face on land cells beside a height step above a visual threshold of
+# 0.25 (deliberately BELOW the 0.5 collision threshold). terrain[], blocked[],
+# game.gd and the sim RNG are untouched. rock8 is the donor's high-face fill;
+# rock1 (VSI 4.29, rock_striation_arbitration) supplies stretched flutes.
+const FACE_VIS_THRESHOLD := 0.25
+const FACE_LIT := Color(108.0 / 255.0, 97.0 / 255.0, 75.0 / 255.0)   # #6C614B
+const FACE_SHADOW := Color(57.0 / 255.0, 52.0 / 255.0, 36.0 / 255.0) # #393424
+
+func _face_collar(img: Image, cx: int, cy: int, S: int) -> void:
+	var sub := 4
+	var n: int = CHUNK_T * sub + 1
+	var fgrid := Image.create(n, n, false, Image.FORMAT_RGB8)   # R = face alpha
+	var ramp := Image.create(n, n, false, Image.FORMAT_RGBA8)  # lit/shadow tint
+	var flute := Image.create(n, n, false, Image.FORMAT_RGB8)  # interior flutes
+	# T3-FIX-WORLD: cache the coarse gradient magnitudes + land flags so the grass
+	# rim can be subdivided to <=3 px WITHOUT any per-pixel height_at() calls.
+	var mag_grid := PackedFloat32Array()
+	mag_grid.resize(n * n)
+	var land_grid := PackedByteArray()
+	land_grid.resize(n * n)
+	var edge_cells: Array = []  # coarse sub-cells straddling the face boundary
+	var f: Array = _chunk_fields(cx, cy, null)
+	var dhx: PackedFloat32Array = f[1]
+	var dhy: PackedFloat32Array = f[2]
+	var ts: PackedByteArray = f[3]
+	var gw: int = int(f[5])
+	# Early-out: scan the 35x35 tile grid first. A flat chunk never enters the
+	# 16k sub-node loop, which is the difference between PASS and FAIL on N-07.
+	var has_face := false
+	for j in gw:
+		for i in gw:
+			var k: int = j * gw + i
+			var t: int = int(ts[k])
+			if t != 3 and t != 4 and t != 5:
+				var mx: float = dhx[k]
+				var my: float = dhy[k]
+				if mx * mx + my * my > FACE_VIS_THRESHOLD * FACE_VIS_THRESHOLD:
+					has_face = true
+					break
+		if has_face:
+			break
+	if not has_face:
+		return
+	var sunx := -0.287
+	var suny := -0.958
+	for gy in n:
+		for gx in n:
+			var gxf: float = float(gx) / float(sub) + 1.0
+			var gyf: float = float(gy) / float(sub) + 1.0
+			var i0: int = mini(int(floor(gxf)), gw - 1)
+			var j0: int = mini(int(floor(gyf)), gw - 1)
+			var i1: int = mini(i0 + 1, gw - 1)
+			var j1: int = mini(j0 + 1, gw - 1)
+			var fx: float = gxf - float(i0)
+			var fy: float = gyf - float(j0)
+			var k00: int = j0 * gw + i0
+			var k10: int = j0 * gw + i1
+			var k01: int = j1 * gw + i0
+			var k11: int = j1 * gw + i1
+			var gxv: float = dhx[k00] + (dhx[k10] - dhx[k00]) * fx \
+				+ (dhx[k01] - dhx[k00]) * fy \
+				+ (dhx[k00] - dhx[k10] - dhx[k01] + dhx[k11]) * fx * fy
+			var gyv: float = dhy[k00] + (dhy[k10] - dhy[k00]) * fx \
+				+ (dhy[k01] - dhy[k00]) * fy \
+				+ (dhy[k00] - dhy[k10] - dhy[k01] + dhy[k11]) * fx * fy
+			var mag: float = sqrt(gxv * gxv + gyv * gyv)
+			var ter: int = int(ts[k00])
+			var land: bool = (ter != 3 and ter != 4 and ter != 5)
+			mag_grid[gy * n + gx] = mag
+			land_grid[gy * n + gx] = 1 if land else 0
+			if land and mag > FACE_VIS_THRESHOLD - 0.20 and mag < FACE_VIS_THRESHOLD + 0.35:
+				edge_cells.append(gy * n + gx)
+			var a := 0.0
+			if land and mag > FACE_VIS_THRESHOLD:
+				a = clampf((mag - FACE_VIS_THRESHOLD) / 0.55, 0.18, 0.92)
+				var inv: float = 1.0 / maxf(mag, 0.0001)
+				var litf: float = clampf(0.5 + 0.5 * (gxv * sunx + gyv * suny) * inv, 0.0, 1.0)
+				var rc: Color = FACE_SHADOW.lerp(FACE_LIT, litf)
+				ramp.set_pixel(gx, gy, Color(rc.r, rc.g, rc.b, a))
+				flute.set_pixel(gx, gy, Color(a * 0.45, a * 0.45, a * 0.45))
+			fgrid.set_pixel(gx, gy, Color(a, a, a))
+	if not _has_any(fgrid):
+		return
+	var full := Rect2i(0, 0, S, S)
+	# rock8 face fill, per-segment crop offset so the repeat is not obvious
+	var rock8n: String = _winter_art("rock8")
+	var coff: int = abs(hash(rock8n)) % 512
+	var face_img: Image = _wrap_crop(_block_img(rock8n),
+		cx * S + coff + abs(hash(cx)) % 97, cy * S + coff + abs(hash(cy)) % 97, S)
+	if face_img.get_format() != Image.FORMAT_RGBA8:
+		face_img.convert(Image.FORMAT_RGBA8)
+	# lit/shadow ramp (olive weights) over the face fill
+	var ramp_big: Image = ramp.duplicate() as Image
+	ramp_big.resize(S, S, Image.INTERPOLATE_BILINEAR)
+	face_img.blend_rect(ramp_big, full, Vector2i.ZERO)
+	# rock1 flutes stretched 2x vertically, masked to the face interior
+	var rock1n: String = _winter_art("rock1")
+	var coff1: int = abs(hash(rock1n)) % 512
+	var flu: Image = _wrap_crop(_block_img(rock1n),
+		cx * S + coff1 + abs(hash(cx + 3)) % 89, cy * S + coff1 + abs(hash(cy + 5)) % 89, S)
+	var half_h: int = maxi(1, S / 2)
+	flu = flu.get_region(Rect2i(0, 0, S, half_h))
+	flu.resize(S, S, Image.INTERPOLATE_BILINEAR)
+	if flu.get_format() != Image.FORMAT_RGBA8:
+		flu.convert(Image.FORMAT_RGBA8)
+	face_img.blend_rect_mask(flu, _alpha_mask(flute, S), full, Vector2i.ZERO)
+	# T3-FIX-WORLD: fine grass rim, <= 3 px @720p. Subdivide ONLY the coarse
+	# cells straddling the face boundary (edge_cells), bilinear-interpolating the
+	# cached mag grid -- no height_at() calls, no per-pixel per-frame work. 12
+	# samples/tile => 2.7 px per fine cell; a narrow 0.10-mag band => <= 3 px.
+	var F := 3
+	var nf: int = n * F
+	var rim_fine := Image.create(nf, nf, false, Image.FORMAT_RGBA8)
+	for idx in edge_cells:
+		var cgx: int = idx % n
+		var cgy: int = idx / n
+		for fy in F:
+			for fx in F:
+				var sx: float = float(cgx) + float(fx) / float(F)
+				var sy: float = float(cgy) + float(fy) / float(F)
+				var x0i: int = int(floor(sx))
+				var y0i: int = int(floor(sy))
+				var x1i: int = mini(x0i + 1, n - 1)
+				var y1i: int = mini(y0i + 1, n - 1)
+				var tx: float = sx - float(x0i)
+				var ty: float = sy - float(y0i)
+				var m00: float = mag_grid[y0i * n + x0i]
+				var m10: float = mag_grid[y0i * n + x1i]
+				var m01: float = mag_grid[y1i * n + x0i]
+				var m11: float = mag_grid[y1i * n + x1i]
+				var m: float = m00 + (m10 - m00) * tx + (m01 - m00) * ty \
+					+ (m00 - m10 - m01 + m11) * tx * ty
+				if land_grid[y0i * n + x0i] == 1 and m > FACE_VIS_THRESHOLD \
+						and m < FACE_VIS_THRESHOLD + 0.10:
+					rim_fine.set_pixel(cgx * F + fx, cgy * F + fy, Color(1, 1, 1, 1))
+	rim_fine.resize(S, S, Image.INTERPOLATE_NEAREST)
+	var rim_src: Image = _wrap_crop(_block_img(_winter_art("grass1")), cx * S + 211, cy * S + 211, S)
+	if rim_src.get_format() != Image.FORMAT_RGBA8:
+		rim_src.convert(Image.FORMAT_RGBA8)
+	face_img.blend_rect_mask(rim_src, rim_fine, full, Vector2i.ZERO)
+	img.blend_rect_mask(face_img, _alpha_mask(fgrid, S), full, Vector2i.ZERO)
+
+func _has_any(grid: Image) -> bool:
+	# Cheap early-out: skip the face overlays on chunks with no visual step.
+	var step: int = maxi(1, grid.get_width() / 16)
+	for y in range(0, grid.get_height(), step):
+		for x in range(0, grid.get_width(), step):
+			if grid.get_pixel(x, y).r > 0.0:
+				return true
+	return false
+
 func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var px := terrain_px
 	var bpx := _bake_px()
@@ -1061,13 +1411,12 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	# The block name is no longer discarded as a scalar weight: sand / rock /
 	# sandsea cells now draw their real art.  The distinct set is capped so the
 	# per-chunk bake cost stays bounded.
-	var img := _wrap_crop(_block_img("grass1"), cx * S, cy * S, S)
+	var img := _wrap_crop(_block_img(_winter_art("grass1")), cx * S, cy * S, S)
 	var N := CHUNK_T + 1
 	var full := Rect2i(0, 0, S, S)
 	var origin := Vector2i.ZERO
 	var block_at := func(x: int, y: int) -> String:
-		var bi: int = game.tileblock[game._t(x, y)]
-		return str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+		return _art_name(game._t(x, y))
 
 	var counts := {}
 	for ly in CHUNK_T:
@@ -1091,7 +1440,7 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	# feathered by a smooth region mask built from the donor terrain grid.
 	# Sand (4) and rock/cliff (5) instead use the per-cell oriented block names
 	# (TB-B1b); water (3) keeps the scrolling wave sheet with its blue glaze.
-	var role_block := {1: "ground1", 2: "grass_ground2"}
+	var role_block := {1: _winter_art("ground1"), 2: _winter_art("grass_ground2")}
 	for t in [1, 2, 4, 5, 3]:
 		if t == 4 or t == 5:
 			# game.tileblock already encodes sandsea1/5/6 and rock4/7/8
@@ -1123,16 +1472,24 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 		var mask := _alpha_mask(grid, S)
 		var overlay: Image
 		if t == 3:
-			# TB-B1c: wave animation moved to shaders/water_overlay.gdshader.
-			# Bake only a calm deep-blue substrate so shallow-water translucency
-			# never reveals the old harsh blue/white striped wave crop.
-			overlay = ter_blue.duplicate() as Image
-			overlay.resize(S, S, Image.INTERPOLATE_NEAREST)
+			# T2-BUILD-RENDER: wave animation stays in the GPU shader (untouched),
+			# but the BAKED bed is now a pale #C3D1CA sandsea wash at the
+			# waterline -> deep teal offshore. Fixes the flat teal ring exposed
+			# where the overlay alpha fades to zero (shore band gap #3).
+			overlay = _shore_substrate(cx, cy, S)
 		else:
 			var nm: String = str(role_block.get(t, "ground1"))
 			var coff: int = abs(hash(nm)) % 512
 			overlay = _wrap_crop(_block_img(nm), cx * S + coff, cy * S + coff, S)
 		img.blend_rect_mask(overlay, mask, full, origin)
+
+	# T2-BUILD-RENDER: terrain-driven ±L olive gain (20-80 px mirror-symmetric
+	# patch grid) and the render-only ravine face collar. Both are baked per
+	# chunk from deterministic world-space hashes / the existing height field;
+	# neither writes terrain[], blocked[] or any sim state.
+	if img.get_format() != Image.FORMAT_RGBA8:
+		img.convert(Image.FORMAT_RGBA8)
+	_face_collar(img, cx, cy, S)
 
 	# Season tint + relief shading. Godot's blend_rect_mask is unreliable with
 	# mixed image formats here (a 0.34-alpha mask blended at full strength),
@@ -1158,7 +1515,7 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 					var wy := float(cy * CHUNK_T + gy) * Data.TILE_M
 					var hh := game.height_at(Vector2(wx, wy))
 					# subtle: valleys ~8-20% darker, not a black wash
-					var shade: float = clampf(0.10 - hh * 0.04 * rscale, 0.0, 0.20)
+					var shade: float = clampf(0.10 - hh * 0.04 * rscale, 0.0, 0.14)
 					hgrid.set_pixel(gx, gy, Color(0.05, 0.04, 0.03, shade))
 			var shade_big := hgrid.duplicate() as Image
 			shade_big.resize(S, S, Image.INTERPOLATE_BILINEAR)
@@ -1179,6 +1536,38 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	add_child(sp)
 	return sp
 
+# Neutral low-res fallback chunk (1 px per tile, flat biome colour), built once
+# and shared by every missing-key sprite. Cheap: no bake, no per-frame pixel work.
+func _fallback_texture() -> ImageTexture:
+	if fallback_tex != null:
+		return fallback_tex
+	var im := Image.create(CHUNK_T, CHUNK_T, false, Image.FORMAT_RGB8)
+	var season := _season_key()
+	var base := Color(0.33, 0.39, 0.21)          # summer meadow
+	if season == "winter":
+		base = Color(0.87, 0.88, 0.91)             # snow
+	elif season == "desert":
+		base = Color(0.62, 0.55, 0.39)             # sand
+	im.fill(base)
+	fallback_tex = ImageTexture.create_from_image(im)
+	return fallback_tex
+
+func _make_chunk_sprite(cx: int, cy: int, tex: Texture2D, z: int, scale: float) -> Sprite2D:
+	var sp := Sprite2D.new()
+	sp.texture = tex
+	sp.centered = false
+	sp.position = Vector2(cx * CHUNK_T * Data.TILE_M * view_scale,
+		cy * CHUNK_T * Data.TILE_M * view_scale)
+	sp.scale = Vector2(scale, scale)
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	sp.z_index = z
+	add_child(sp)
+	return sp
+
+# True when an in-view chunk key is covered by a baked chunk OR a fallback.
+func has_chunk_or_fallback(k: Vector2i) -> bool:
+	return terrain_chunks.has(k) or fallback_chunks.has(k)
+
 func _sync_terrain_chunks() -> void:
 	# view_rect is canvas pixels (meters x view_scale); tile_of wants meters
 	var m0 := view_rect.position / view_scale
@@ -1189,34 +1578,64 @@ func _sync_terrain_chunks() -> void:
 	var c0y := maxi(0, t0.y / CHUNK_T)
 	var c1x := mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T)
 	var c1y := mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T)
-	var built := 0
+	# T3-FIX-WORLD / MAP_NAV_PERF F1: collect the in-view set and the missing
+	# keys, then bake centre-out (the point jumped to is correct first). The
+	# no-hole fallback is reconciled AFTER baking + LRU eviction so every in-view
+	# key is covered by a real chunk or a neutral sprite at end of sync.
+	var in_view := {}
+	var missing: Array = []
+	var ccx: float = float(c0x + c1x) * 0.5
+	var ccy: float = float(c0y + c1y) * 0.5
 	for cy in range(c0y, c1y + 1):
 		for cx in range(c0x, c1x + 1):
 			var k := _chunk_key(cx, cy)
+			in_view[k] = true
 			if not terrain_chunks.has(k):
-				if built >= 2:
-					return  # amortize: big GDScript bake, no multi-second hitch
-				# QA-1: time the bake itself (not the whole sync). Accumulate
-				# max + mean over the first 120 bakes, then emit exactly one
-				# BAKE_BENCH line; guarded so it never prints per frame again.
-				var bake_t0 := Time.get_ticks_usec()
-				terrain_chunks[k] = _build_chunk(cx, cy)
-				var bake_us := Time.get_ticks_usec() - bake_t0
-				if not bake_bench_done:
-					bake_bench_count += 1
-					bake_bench_total_us += bake_us
-					if bake_us > bake_bench_max_us:
-						bake_bench_max_us = bake_us
-					if bake_bench_count >= 120:
-						_emit_bake_bench()
-				terrain_order.append(k)
-				built += 1
-				while terrain_order.size() > 24:
-					var old: Vector2i = terrain_order.pop_front()
-					var sp2: Sprite2D = terrain_chunks.get(old, null)
-					if sp2 != null:
-						sp2.queue_free()
-					terrain_chunks.erase(old)
+				var dx: float = float(cx) - ccx
+				var dy: float = float(cy) - ccy
+				missing.append({"k": k, "cx": cx, "cy": cy, "d": dx * dx + dy * dy})
+	missing.sort_custom(func(a, b): return float(a["d"]) < float(b["d"]))
+	var built := 0
+	for m in missing:
+		if built >= 2:
+			break  # amortize: big GDScript bake, no multi-second hitch
+		var k: Vector2i = m["k"]
+		if terrain_chunks.has(k):
+			continue
+		# QA-1: time the bake itself (not the whole sync). Accumulate
+		# max + mean over the first 120 bakes, then emit exactly one
+		# BAKE_BENCH line; guarded so it never prints per frame again.
+		var bake_t0 := Time.get_ticks_usec()
+		terrain_chunks[k] = _build_chunk(int(m["cx"]), int(m["cy"]))
+		var bake_us := Time.get_ticks_usec() - bake_t0
+		if not bake_bench_done:
+			bake_bench_count += 1
+			bake_bench_total_us += bake_us
+			if bake_us > bake_bench_max_us:
+				bake_bench_max_us = bake_us
+			if bake_bench_count >= 120:
+				_emit_bake_bench()
+		terrain_order.append(k)
+		built += 1
+		while terrain_order.size() > 24:
+			var old: Vector2i = terrain_order.pop_front()
+			var sp2: Sprite2D = terrain_chunks.get(old, null)
+			if sp2 != null:
+				sp2.queue_free()
+			terrain_chunks.erase(old)
+	# Reconcile fallbacks: create for any still-missing in-view key (including
+	# one just evicted by the LRU), free those now baked or out of view. This
+	# makes the no-hole invariant hold at the end of EVERY sync frame.
+	for k in in_view.keys():
+		if not terrain_chunks.has(k) and not fallback_chunks.has(k):
+			fallback_chunks[k] = _make_chunk_sprite(k.x, k.y,
+				_fallback_texture(), -11, Data.TILE_M * view_scale)
+	for k in fallback_chunks.keys():
+		if terrain_chunks.has(k) or not in_view.has(k):
+			var fs: Sprite2D = fallback_chunks[k]
+			if fs != null and is_instance_valid(fs):
+				fs.queue_free()
+			fallback_chunks.erase(k)
 
 func sync(dt: float) -> void:
 	# visible WORLD rect (not screen pixels): cull in the same space the
@@ -1354,6 +1773,11 @@ const ROCK_POOL := ["rock", "stone", "rock_stones1", "rock_stones2", "rock_stone
 	"rock_stones4", "rock_stones5", "rock_stones6", "rock_smallstones1",
 	"rock_smallstones2", "rock_landstone1", "rock_landstone2"]
 const TREE_SIZE_BUCKETS := [0.9, 1.0, 1.12]
+# T2-BUILD-RENDER / verdict_decor: the per-cell forest detail was 1-3 trees
+# (mean 2 => 1953 trees/MP, 2-3x donor). Thin to ~1/cell (650-1000/MP) while
+# T2-BUILD-GEN adds forest coverage. The three height buckets stay separable.
+const FOREST_COUNT_ZERO := 0.10
+const FOREST_COUNT_TWO := 0.08
 
 # TB-B1g: donor texturemap.inc forest detail pass. Small trees are placed per
 # terrain-2 cell (not by the pattern generator), so a forest reads as a clump
@@ -1373,7 +1797,9 @@ const FOREST_UNDERSTORY_POOL := ["bush1", "bush2", "bush3", "bush4",
 	"fern1", "fern2", "fern3", "fern4", "bush1", "bush2", "bush3", "bush4",
 	"plantain1", "plantain2", "flower1", "flower2", "flower3"]
 # Visible heights at 720p: small 15-30 px, medium 40-60 px, large 70-100 px.
-const FOREST_TREE_H := [1.6, 4.0, 6.8]
+# (1.4/3.2/5.4 m x 16 px/m = 22/51/86 px; the old 1.6/4.0/6.8 overshot
+# 96-122 px on the large bucket, verdict_decor conifer #4.)
+const FOREST_TREE_H := [1.4, 3.2, 5.4]
 
 func _prop_tex(names: Array, seed_pos: Vector2) -> Texture2D:
 	# stable variant per spot (pine/oak/fir), like the original forest mix
@@ -1407,21 +1833,24 @@ func _draw_forest_tree(fp: Vector2, margin: Rect2, edge := false) -> void:
 	if not margin.has_point(p):
 		return
 	var h := _hash(fp.x, fp.y)
-	var pool: Array = FOREST_BROAD_POOL if h > 0.86 else FOREST_CONIFER_POOL
+	# 38% broadleaf (was 14%) to reach the donor's 30-50% species mix.
+	var pool: Array = FOREST_BROAD_POOL if h > 0.62 else FOREST_CONIFER_POOL
 	var tex := _prop_tex(pool, fp)
 	if tex == null:
 		return
-	var bucket := _prop_bucket(fp, 17.0, 10)
+	var bucket := _prop_bucket(fp, 17.0, 100)
 	var hh: float = FOREST_TREE_H[0]
-	if bucket >= 9:
+	if bucket >= 88:
 		hh = FOREST_TREE_H[2]
-	elif bucket >= 7:
+	elif bucket >= 60:
 		hh = FOREST_TREE_H[1]
 	if edge:
 		hh *= 0.8
 	var size_var := 0.88 + 0.24 * _hash(fp.x + 29.0, fp.y - 19.0)
-	_blob_rect(res_layer, p + Vector2(0, 2), 7.0 + hh * 1.6,
-		3.5 + hh * 0.8, Color(0, 0, 0, 0.14))
+	# Sun-linked lower-left contact shadow (was foot-centred), with a higher
+	# luma ratio so the canopy reads as lifted off the ground.
+	_blob_rect(res_layer, p + Vector2(-hh * 0.55, 2.5),
+		6.0 + hh * 1.8, 2.8 + hh * 0.6, Color(0, 0, 0, 0.22))
 	_draw_prop(res_layer, tex, p, hh * size_var, Color(1.12, 1.2, 1.02),
 		(_hash(fp.x - 31.0, fp.y + 13.0) - 0.5) * 0.26,
 		_prop_bucket(fp, 7.0, 2) == 0)
@@ -1469,14 +1898,21 @@ func _draw_forest_detail() -> void:
 		for x in range(x0, x1 + 1):
 			if int(game.terrain[game._t(x, y)]) != 2:
 				continue
-			var count := 1 + _prop_bucket(Vector2(float(x), float(y)), 11.0, 3)
+			# T2-BUILD-RENDER: ~1 tree/cell (≈950/MP) instead of 1-3
+			# (≈1953/MP). Both gates are independent position hashes, so the
+			# survivors keep species/size variety and never form axis rows.
+			var count := 1
+			if _hash(float(x) * 5.3 + 7.0, float(y) * 7.1 - 3.0) < FOREST_COUNT_ZERO:
+				count = 0
+			elif _hash(float(x) * 3.7 - 11.0, float(y) * 5.9 + 17.0) > 1.0 - FOREST_COUNT_TWO:
+				count = 2
 			for k in count:
 				var fx := lerpf(0.12, 0.88, _hash(float(x) * 7.3 + float(k) * 13.7,
 					float(y) * 3.1 + float(k) * 5.9))
 				var fy := lerpf(0.12, 0.88, _hash(float(x) * 2.7 + float(k) * 17.3,
 					float(y) * 11.9 + float(k) * 7.1))
 				_draw_forest_tree(Vector2(float(x) + fx, float(y) + fy), margin)
-			if _hash(float(x) + 53.0, float(y) - 31.0) > 0.5:
+			if _hash(float(x) + 53.0, float(y) - 31.0) > 0.62:
 				# Cross-mix x into both offsets and widen the range: a row of
 				# adjacent cells no longer lands at the same in-cell fraction.
 				var ux := float(x) + lerpf(0.05, 0.95, _hash(
@@ -1500,10 +1936,28 @@ func _draw_forest_detail() -> void:
 					if edge_seen.has(ek):
 						continue
 					edge_seen[ek] = true
-					if _hash(float(nx) + 71.0, float(ny) - 43.0) > 0.62:
+					if _hash(float(nx) + 71.0, float(ny) - 43.0) > 0.78:
 						var ex := float(nx) + lerpf(0.2, 0.8, _hash(float(nx), float(ny)))
 						var ey := float(ny) + lerpf(0.2, 0.8, _hash(float(ny), float(nx)))
 						_draw_forest_tree(Vector2(ex, ey), margin, true)
+
+# T2-BUILD-RENDER / verdict_decor C1/C2/C4/C6: envfieldd/envfielddw were
+# regenerated with their donor DXT5 alpha (bbox 17,19-494,494) by T2-BUILD-ASSET.
+# Draw the real decal (sRGB gold tint #94762E) for ripe fields; the procedural
+# stalks below stay as the fallback / detail pass when no decal is available.
+var field_decal_tex: Dictionary = {}
+
+func _field_decal(winter: bool) -> Texture2D:
+	var key: String = "w" if winter else "s"
+	if field_decal_tex.has(key):
+		return field_decal_tex[key] as Texture2D
+	var path: String = "res://assets/terrain/deco_png/envfielddw.png" if winter \
+		else "res://assets/terrain/deco_png/envfieldd.png"
+	var tex: Texture2D = null
+	if _res_exists(path):
+		tex = _load_env_tex(path)
+	field_decal_tex[key] = tex
+	return tex
 
 # MICRO #15: field state is a visual read of the existing sim numbers. A
 # depleted food node has hits==0 (no ripe wheat); a mill-sown full field
@@ -1521,6 +1975,21 @@ func _field_growth(n: Dictionary) -> float:
 
 func _draw_field(p: Vector2, h: float, g: float) -> void:
 	res_layer.draw_circle(p + Vector2(0, 3), 7.0, Color(0, 0, 0, 0.15))
+	var winter: bool = _season_key() == "winter"
+	var dec: Texture2D = _field_decal(winter)
+	if dec != null and g > 0.0:
+		# The donor decal alpha gives a 477 px footprint with a 12 px ramp:
+		# a rectangular golden patch, never a full-tile olive square.
+		# 2.3 tiles wide, 2:1 ground-plane squash; tint is linear (Godot
+		# modulates in linear space) so the sRGB source (76,68,45) lands on
+		# the field spec's #94762E gold.
+		var w: float = 2.3 * Data.TILE_M * view_scale
+		var hh: float = w * 0.5
+		var tint: Color = Color(3.3, 2.5, 1.00, clampf(0.42 + 0.28 * g, 0.0, 1.0))
+		if winter:
+			tint = Color(1.0, 1.0, 1.06, 0.78)
+		res_layer.draw_texture_rect(dec,
+			Rect2(p.x - w * 0.5, p.y - hh * 0.5, w, hh), false, tint)
 	if g <= 0.0:
 		# harvested: worked soil + short cut stubble, never ripe wheat
 		for k in 5:
@@ -1610,7 +2079,9 @@ func _draw_resources() -> void:
 					# Cossacks pines tower over peasants and read ~11-14 m tall.
 					# The donor-baked sheet is very dark olive, so lift it hard.
 					var bucket := float(TREE_SIZE_BUCKETS[_prop_bucket(n.pos, 17.0, 3)])
-					var base_h := 7.5 if small else 12.5
+					# verdict_decor conifer #4: the old 7.5/12.5 m bases put the
+					# large bucket at 96-122 px; 4.4/6.2 m lands at ~70-110 px.
+					var base_h := 4.4 if small else 6.2
 					_blob_rect(res_layer, p + Vector2(0, 4), 24.0 + h * 10.0,
 						12.0 + h * 5.0, Color(0, 0, 0, 0.16))
 					_draw_prop(res_layer, tree, p,
@@ -1654,38 +2125,26 @@ func _draw_resources() -> void:
 				# MICRO #15: depleted fields are bare, re-sown ones grow.
 				_draw_field(p, h, _field_growth(n))
 			"gold", "iron", "coal":
-				# Ore deposit = permanent landmark (the spot where a mine can
-				# be built). Draw a rock outcrop with vivid ore veins and a
-				# faint colour halo so it reads as a mine at normal zoom.
-				var col: Color = {"gold": Color(1.0, 0.82, 0.24),
-					"iron": Color(0.9, 0.52, 0.32),
-					"coal": Color(0.34, 0.35, 0.4)}[n.type]
-				var outcrop := _prop_tex(["rock"], n.pos)
-				_blob_rect(res_layer, p + Vector2(0, 2), 1.3 * view_scale,
-					0.7 * view_scale, Color(0, 0, 0, 0.24))
-				# faint tinted ring on the worked dirt apron under the deposit
-				_ground_ellipse(res_layer, p, 0.95 * view_scale,
-					0.48 * view_scale, Color(col.r, col.g, col.b, 0.18))
-				if outcrop != null:
-					_draw_sprite(res_layer, outcrop, p, _env_sprite_h(3.5, "mine", n.pos),
-						Color(1.06, 1.02, 0.96), false)
+				# T2-BUILD-RENDER / verdict_decor A1/A3/A5/A6: draw the actual
+				# mine_<type> sprite (mine_gold/iron/coal), NOT a generic rock
+				# with three coloured dots. The old wide olive disc/apron was
+				# 43.8% of the component bbox -> removed; only a small contact
+				# shadow remains. Height <= 3.0, jitter 1.0/1.0 (envscales).
+				var mine_sid: String = "mine_" + str(n.type)
+				var mine_spr := _sprite_for(mine_sid, -1)
+				if mine_spr != null:
+					_blob_rect(res_layer, p + Vector2(0, 2), 0.55 * view_scale,
+						0.28 * view_scale, Color(0, 0, 0, 0.18))
+					_draw_sprite(res_layer, mine_spr, p,
+						_env_sprite_h(2.8, "mine", n.pos), Color(1, 1, 1), false)
 				else:
-					# jagged fallback rock (no baked sprite on weak-GPU setups)
-					var rr := 0.42 * view_scale
-					res_layer.draw_circle(p + Vector2(0, 2), rr, Color(0, 0, 0, 0.22))
+					# tiny deterministic jagged fallback (no baked sprite)
+					var rr := 0.22 * view_scale
+					res_layer.draw_circle(p + Vector2(0, 1), rr * 0.7, Color(0, 0, 0, 0.18))
 					res_layer.draw_colored_polygon([
-						p + Vector2(-rr, 0), p + Vector2(-rr * 0.55, -rr * 1.5),
-						p + Vector2(rr * 0.35, -rr * 1.7), p + Vector2(rr, 0),
-						p + Vector2(rr * 0.4, rr * 0.4)], Color(0.44, 0.42, 0.4))
-					res_layer.draw_colored_polygon([
-						p + Vector2(-rr * 0.55, -rr * 1.5),
-						p + Vector2(rr * 0.35, -rr * 1.7),
-						p + Vector2(0, -rr * 0.35)], Color(0.6, 0.58, 0.54))
-				# ore veins on the rock face — the colour is the deposit type
-				var vf := view_scale
-				res_layer.draw_circle(p + Vector2(0.20 * vf, -0.34 * vf), 0.17 * vf, col)
-				res_layer.draw_circle(p + Vector2(-0.16 * vf, -0.20 * vf), 0.12 * vf, col.lightened(0.18))
-				res_layer.draw_circle(p + Vector2(0.05 * vf, -0.62 * vf), 0.09 * vf, col.lightened(0.3))
+						p + Vector2(-rr, 0), p + Vector2(-rr * 0.5, -rr * 1.4),
+						p + Vector2(rr * 0.4, -rr * 1.6), p + Vector2(rr, 0)],
+						Color(0.44, 0.42, 0.4))
 
 func _draw_buildings() -> void:
 	dbg_bld += 1

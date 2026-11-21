@@ -1,0 +1,132 @@
+{
+  "name": "water_shallow",
+  "size_px": [512, 512],
+  "seed": 7,
+  "background": [168, 158, 127],
+  "bands": {
+    "seed": 7,
+    "direction": "down",
+    "origin": 0.45,
+    "jitter_px": 10,
+    "step_px": 6,
+    "sand": [26, 51],
+    "wash": [30, 50]
+  },
+  "layers": [
+    {
+      "type": "block",
+      "name": "sandsea3",
+      "mask": "band",
+      "band": "sand",
+      "contour": true,
+      "opacity": 1.0,
+      "hex": "#A89E7F"
+    },
+    {
+      "type": "water",
+      "sheet": "diffusewaves0",
+      "mode": "wash",
+      "band": "wash",
+      "opacity": 0.9,
+      "opacity_mask": {"type": "gradient", "direction": "down"},
+      "hex": "#BDBDA9 -> #C3D1CA"
+    },
+    {
+      "type": "water",
+      "sheet": "diffusewaves0",
+      "mode": "foam",
+      "band": "wash",
+      "intensity": 0.15,
+      "speck_scale": 1.0,
+      "opacity": 0.35,
+      "note": "weak/absent in reference; donor .dev particle_amount=30, piece recipe 0"
+    },
+    {
+      "type": "water",
+      "sheet": "diffusewaves0",
+      "mode": "shallow",
+      "band": "water",
+      "opacity": 0.35,
+      "feather_px": 4,
+      "clean_hex": "#C3D1CA",
+      "rippled_hex": "#C2CDC3",
+      "anchor_hex": "#696B65"
+    }
+  ],
+  "depth": {
+    "water_level_source": "water.dev.frag:167 gl_TexCoord[1].z (alternate build: 1.5)",
+    "coast2water_fadedepth_m": 0.57,
+    "deepwater_fadedepth_m": 1.07,
+    "piece_depth_range_m": [0.0, 0.57],
+    "coastfade": "clamp(depth / 0.57, 0, 1)",
+    "coastfade2": "clamp(depth / 1.07, 0, 1)",
+    "shallow_color_lin": [0.10, 0.24, 0.24],
+    "deep_color_lin": [0.00, 0.025, 0.05],
+    "shallow_gain": 2.2,
+    "shallow_alpha": 0.35,
+    "tex_scale_s": 0.1,
+    "tex_scale_t": 0.01
+  },
+  "foam": {
+    "donor_particle_amount": 30,
+    "piece_particle_amount": 0,
+    "nautic_octaves": 3,
+    "nautic_scale": 18,
+    "nautic_power": 5,
+    "particle_octaves": 3,
+    "particle_scale": 200,
+    "particle_power": 7,
+    "piece_nautic_gain": 0.15,
+    "band_peak_depth_m": 0.35
+  },
+  "ripple": {
+    "source_spacing_px": [2, 8],
+    "source_median_px": 4,
+    "piece_nominal_px": 6,
+    "acceptance_px": [3, 12],
+    "crest_luma": 220,
+    "trough_luma": 187,
+    "contrast_levels": 33,
+    "center_px": [430, 470],
+    "falloff_px": 320,
+    "note": "radial_sine term is NOT implemented by terrain_piece_render.py - genuine port defect, needs water_overlay.gdshader:35-43 fix"
+  },
+  "palette_gate_conflict": {
+    "clean_shallow": "#C3D1CA",
+    "clean_shallow_rippled": "#C2CDC3",
+    "inherited_ticket_anchor": "#696B65",
+    "status": "NOT RESOLVED - both gates kept; #696B65 crop (410,190,457,237) is minimap-contaminated (Lstd 70.8 vs 11.6-15.5 clean), documented in verdict_water.md §2.2"
+  },
+  "verification_notes": {
+    "new_keys_used": ["bands", "mask:band", "band", "contour", "opacity_mask", "mode:wash", "mode:foam", "intensity", "speck_scale"],
+    "former_tool_limitations_now_expressible": ["3-band sand/wash/water geometry with measured widths", "coast-band-confined foam specks", "pale wash palette", "hard contour on the sand rim"],
+    "genuine_port_defects_remaining": ["water_overlay.gdshader:27 dark teal shallow tint", ":35-43 no radial arcs", ":81-85 foam too strong", "world.gd:829-838 tile-resolution depth"]
+  },
+  "reference": {
+    "image": "maxresdefault_1.jpg",
+    "box": [300, 150, 512, 288],
+    "donor_shader": "C:/Games/Cossacks 3/data/shaders/water/water.dev.frag:37,106-126,167-230",
+    "donor_lib": "C:/Games/Cossacks 3/data/water/water.lib",
+    "images": [
+      {"file": "maxresdefault_1.jpg", "src_px": [300,150,512,288],
+       "sand_box": [340,210,380,250], "wash_box": [372,196,396,224],
+       "water_box": [398,182,420,212], "profile_y": 204, "profile_x": [330,422]},
+      {"file": "articolo-787.jpg", "src_px": [600,0,960,160], "dark_box": [750,0,900,25]}
+    ],
+    "palette": {
+      "sand_lit": "#A89E7F",
+      "wash_lit": "#BDBDA9",
+      "water_shallow_clean_lit": "#C3D1CA",
+      "water_shallow_rippled_lit": "#C2CDC3",
+      "water_ripple_trough": "#AFBBB4",
+      "water_ripple_crest": "#D8E6DE",
+      "water_shallow_ticket_anchor": "#696B65",
+      "water_dark_lit": "#3A4246"
+    },
+    "prior": [
+      "docs/audit/TERRAIN_DONOR_WATER.md:2-4,7",
+      "docs/audit/TERRAIN_REFERENCE_IMAGES.md:3.4,5",
+      "docs/audit/PIECES/shore_sand.md:1.3,3"
+    ]
+  }
+}

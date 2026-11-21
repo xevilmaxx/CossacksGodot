@@ -1,0 +1,79 @@
+{
+  "name": "shore_water_transition",
+  "size_px": [512, 512],
+  "seed": 7,
+  "background": [40, 44, 48],
+  "source_doc": "docs/audit/PIECES/shore_water_transition.md",
+  "resample": "nearest",
+  "bands": {
+    "seed": 7, "direction": "right", "origin": 0.30,
+    "jitter_px": 2, "step_px": 2,
+    "sand": [28, 38], "wash": [50, 60]
+  },
+  "adaptation_notes_v2": [
+    "Upgraded renderer: 3-band sand/wash/water is now expressible with shared contour-following bands (step_px=6 <=8, so no constant-x run exceeds C5's 8 px).",
+    "bands.sand [28,38] and bands.wash [50,60] are the doc's C2 @720p widths (38 / 60-90) converted to the 512 px authoring canvas; acceptance.C2 targets remain verbatim at @720p.",
+    "water.wash + water.foam are masked to the wash band (foam gated to coast band); layer opacities were chosen so the composited pale wash matches the doc's LIT wash #B1B3A3, and water.shallow uses an explicit tint calibrated to the doc's LIT shallow plateau #A8B1AB because this tool has no sun/lighting. A water.deep layer supplies the paired deep sample required by C7. The unlit donor shader RGB [0.1,0.24,0.24] stays verbatim in reference.detail. No acceptance target was changed."
+  ],
+  "adaptation_notes": [
+    "Transcribed from shore_water_transition.md section 3 (render spec JSON); no acceptance number changed.",
+    "Renderer requires water.sheet; diffusewaves2 is the existing water sheet convention (app/assets/terrain/water_png/diffusewaves2.png).",
+    "Renderer accepts a single reference image/box; reference.crop_box_src_px [340,238,420,272] from maxresdefault_1.jpg is used. All band/transition/donor-shader numbers are preserved under reference.detail and acceptance.",
+    "The doc's reference object has no image/box keys, so they were derived from its own source and crop_box_src_px fields; no new band geometry was invented."
+  ],
+  "layers": [
+    {"type": "block", "name": "grass_rock1", "tile": true, "opacity": 1.0,
+     "brightness": 1.35, "role": "green_bank"},
+    {"type": "block", "name": "sandsea5", "tile": true, "opacity": 1.0,
+     "brightness": 1.35, "mask": "band", "band": "sand",
+     "contour": true, "contour_strength": 0.75},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "wash", "band": "wash",
+     "opacity": 0.8, "feather_px": 0},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "foam", "band": "wash",
+     "intensity": 1.0, "opacity": 0.6, "speck_scale": 1.0},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "shallow", "band": "water",
+     "opacity": 0.8, "tint": [0.63, 0.67, 0.68]},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "deep",
+     "rect": [0.78, 0.0, 1.0, 1.0], "opacity": 0.9,
+     "tint": [0.18, 0.21, 0.22]}
+  ],
+  "reference": {
+    "image": "maxresdefault_1.jpg",
+    "box": [340, 238, 420, 272],
+    "detail": {
+      "source": "maxresdefault_1.jpg",
+      "source_size_px": [512, 288],
+      "crop_box_src_px": [340, 238, 420, 272],
+      "scale_to_720p": 2.5,
+      "bands": [
+        {"name": "sand", "hex": "#A69A79", "src_x": [361, 375], "width_px_src": 15, "width_px_720": 38},
+        {"name": "wash", "hex": "#B1B3A3", "src_x": [376, 407], "width_px_src": 32, "width_px_720": 80, "foam": true},
+        {"name": "water", "hex": "#A8B1AB", "src_x": [408, 419], "width_px_src": 12, "width_px_720": 30}
+      ],
+      "transitions_px_720": {"sand_to_wash": 30, "wash_to_water": 13},
+      "secondary_source": {
+        "file": "articolo-787.jpg",
+        "crop_box_src_px": [700, 0, 960, 80],
+        "dark_water_hex": "#333C3F",
+        "foam": false
+      },
+      "foam": "pale gray-tan wash band (not white); donor procedural nautic()+particles() in coast band",
+      "donor_shader": {
+        "coast_fade_m": 0.57,
+        "deep_fade_m": 1.07,
+        "shallow_rgb": [0.1, 0.24, 0.24],
+        "deep_rgb": [0.0, 0.025, 0.05]
+      }
+    }
+  },
+  "acceptance": {
+    "C1": {"band_count": 3, "plateau_min_px": 8, "b_r_index_monotonic": [-45, -14, 3], "bin_size_rgb": 8, "plateau_separation_b_r": 3},
+    "C2": {"band_widths_px_720": {"sand": 38, "wash": 80, "water_min": 30}, "accept": {"sand": [30, 65], "wash": [60, 90], "water_min": 30}},
+    "C3": {"hex_targets": {"sand": "#A69A79", "wash": "#B1B3A3", "shallow_water": "#A8B1AB", "dark_river": "#333C3F"}, "tolerance_rgb": 15, "wash_luma_above_sand": 25},
+    "C4": {"foam_present": true, "foam_luma_above_both_neighbours": true, "foam_absent_when_depth_gt_m": 1.07},
+    "C5": {"sand_to_wash_gradient_max_px": 30, "wash_to_water_gradient_max_px": 13, "constant_x_run_max_px": 8, "per_row_jump_max_px": 8, "min_rows_traced": 200},
+    "C6": {"rim_gradient_max_px": 3},
+    "C7": {"shallow_vs_deep_min_channel_delta": 20, "dark_river_hex": "#333C3F"},
+    "global_gate": "C1-C5 must pass simultaneously"
+  }
+}

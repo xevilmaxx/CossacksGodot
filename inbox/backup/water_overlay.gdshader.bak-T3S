@@ -1,0 +1,140 @@
+shader_type canvas_item;
+render_mode blend_mix;
+
+// T2-BUILD-WATER: per-frame GPU water for the Compatibility renderer, ported
+// from the donor water.dev.frag composite (docs/audit/WATER_REPORT.md §3.4).
+// The Sprite2D's TEXTURE is the per-tile mask baked in world.gd:
+//   R = water coverage (type-3 grid; LINEAR filter feathers the shoreline)
+//   G = clamp(depth / 1.07, 0, 1)   (deepwater_fadedepth = 0.50 + 0.57)
+//   B = clamp(depth / 0.57, 0, 1)   (coast2water_fadedepth)
+// Only one full-map quad is drawn: no screen texture, no compute, no 3D effects.
+
+// Wave sheets (bound in world.gd:_setup_water_overlay):
+//   wave0    = diffusewaves0.png  (256² cellular/noise map; donor waveMap)
+//   wave1    = diffusewaves1.png  (256², crossing octave)
+//   wave2    = diffusewaves2.png  (512² bright fine dither; LOW-WEIGHT detail only)
+//   foam_tex = diffusewaves0.png  (donor reuses waveMap for nautic() foam)
+// All are mirror-tileable and wrapped with fract().
+
+uniform sampler2D wave0 : repeat_enable, filter_linear;
+uniform sampler2D wave1 : repeat_enable, filter_linear;
+uniform sampler2D wave2 : repeat_enable, filter_linear;
+uniform sampler2D foam_tex : repeat_enable, filter_linear;
+
+uniform float time;        // advanced EVERY frame from world.gd:sync
+uniform vec2  sun_dir;     // mapped light direction (light.cfg Position /4, /1)
+uniform vec2  map_size;    // (MAP_W, MAP_H) in tiles
+uniform float tile_m;      // meters per tile
+
+// Tints are LINEAR pre-output values: the Compatibility renderer encodes
+// COLOR to sRGB, so these land on #C3D1CA (pale shallow) / #2B3536 (deep
+// slate) after the donor's 2.2 gain and corona divisor (water_deep.md §1.1,
+// verdict_water.md §2.2). WATER_SPECCOLOR stays the donor literal (0.4).
+const vec3  WATERCOLOR      = vec3(0.56, 0.65, 0.60);
+const vec3  WATERCOLOR2     = vec3(0.16, 0.15, 0.145);
+const vec3  WATER_SPECCOLOR = vec3(0.40, 0.40, 0.40);
+const float COAST_FADE      = 0.57;
+const float DEEP_FADE       = 1.07;   // 0.50 + 0.57
+
+// Donor scroll directions (water.dev.frag:88-89: +4:3 and -1.46:1), slowed
+// into port p-space. Direction is donor-faithful; magnitude is tuned so a
+// crest crosses one tile in 3-5 s (WATER_DEEP §1.4).
+const vec2 S1 = vec2( 0.010,  0.0075);
+const vec2 S2 = vec2( 0.011, -0.0080);
+
+// D1 anti-aliasing: the sheets are white noise with mipmaps disabled in their
+// .import files (not owned by this lane). A four-tap cross average in sheet
+// UV low-passes each fetch BEFORE the normal derivatives are taken -- the
+// same net effect as the donor's miLinearMipmapLinear. Combined with the
+// reduced fetch rates below this keeps the footprint <=1.2 texels/pixel and
+// lifts ACF lag1 from 0.27-0.47 toward 0.73-0.80 (WATER_PORT_FIX P1).
+const float BLUR = 0.0015;   // ~1.5 texels of the 1024² mirror-tiled sheet
+
+float field(vec2 p) {
+    vec2 u0 = fract(p / 28.0 + S1 * time);
+    vec2 u1 = fract(p / 44.0 + S2 * time);
+    vec2 u2 = fract(p / 68.0 + S2 * time * 0.5);
+    float a = 0.25 * (
+        texture(wave0, u0 + vec2( BLUR, 0.0)).r +
+        texture(wave0, u0 + vec2(-BLUR, 0.0)).r +
+        texture(wave0, u0 + vec2(0.0,  BLUR)).r +
+        texture(wave0, u0 + vec2(0.0, -BLUR)).r);
+    float b = 0.25 * (
+        texture(wave1, u1 + vec2( BLUR, 0.0)).r +
+        texture(wave1, u1 + vec2(-BLUR, 0.0)).r +
+        texture(wave1, u1 + vec2(0.0,  BLUR)).r +
+        texture(wave1, u1 + vec2(0.0, -BLUR)).r);
+    // waves2 (bright fine dither) is deliberately a LOW-weight detail only:
+    // the donor's glints come from the cellular diffusewaves0 sheet, not from
+    // the 43%-clipped fine sheet the old port used as both wave2 and foam.
+    float c = 0.25 * (
+        texture(wave2, u2 + vec2( BLUR, 0.0)).r +
+        texture(wave2, u2 + vec2(-BLUR, 0.0)).r +
+        texture(wave2, u2 + vec2(0.0,  BLUR)).r +
+        texture(wave2, u2 + vec2(0.0, -BLUR)).r);
+    return a * 0.52 + b * 0.40 + c * 0.08;
+}
+
+void fragment() {
+    vec4 m = texture(TEXTURE, UV);
+    float coverage = m.r;
+    if (coverage < 0.004) discard;   // dry land: no overlay work at all
+
+    // depth proxies baked once per tile into the mask's G/B channels
+    float coastfade  = clamp(m.b, 0.0, 1.0);   // depth / 0.57
+    float coastfade2 = clamp(m.g, 0.0, 1.0);   // depth / 1.07
+
+    vec2 p = UV * map_size * tile_m;           // map position in meters
+    float h  = field(p);
+    float hx = field(p + vec2(0.35, 0.0));
+    float hy = field(p + vec2(0.0, 0.35));
+    // Slope gain/z chosen so the SMOOTHED field (much smaller gradients than
+    // the old aliased one) still produces donor-like, non-uniform glints:
+    // grad≈1 only at rare coherent crests, not at every 1-px flat spot.
+    vec3 n = normalize(vec3(vec2(hx - h, hy - h) * 3.0, 0.05));
+
+    // Depth-driven shallow -> deep colour (donor mix + smoothstep). The
+    // donor's 2.2 + watershade body gain is applied here; no shadow sampler
+    // exists in this port so watershade = 0. A small 0.88+0.18*h swell term
+    // keeps coherent body shading (D3) without restoring pixel speckle.
+    vec3 col = mix(WATERCOLOR, WATERCOLOR2, smoothstep(0.0, 1.0, coastfade2));
+    float watershade = 0.0;
+    col *= (2.2 + watershade) * (0.88 + 0.18 * h);
+
+    // Shallow radial-sine ripple arcs (verdict_water G2/M6/M7): faint,
+    // coherent crest/trough lines, ~6 px at 16 px/m, confined to the band.
+    float band = coastfade * (1.0 - coastfade2);
+    vec2 arc_centre = vec2(map_size.x, map_size.y) * tile_m * 0.5;
+    float r = length(p - arc_centre);
+    float arc = sin(r * 16.0 - time * 2.0);
+    col += vec3(0.04, 0.045, 0.04) * arc * band;
+
+    // Sun-linked glints: donor water.dev.frag:215-226. r0 is a per-pixel
+    // surface point (small XY scale keeps rd near the mapped sun, avoiding a
+    // hard vignette); rd = normalize(sun - r0) varies across the surface.
+    vec3 sun = normalize(vec3(sun_dir.x, 0.0, sun_dir.y));
+    vec3 r0  = vec3((UV - 0.5) * 0.5, 0.0);
+    vec3 rd  = normalize(sun - r0);
+    float grad = dot(n, rd);                    // no max() clamp (donor :217)
+    float spec  = pow(grad, 170.0);             // no x8 boost (donor :218)
+    float spec2 = pow(grad, 120.0);             // no x4 boost (donor :219)
+    float gradpos = dot(vec3(0.0, 0.0, 1.0), rd);
+    float corona  = smoothstep(0.0, 1.0, pow(gradpos, 5.0));  // from rd (:220-221)
+    // Soft term damped by 0.25; corona DIVIDES (darkens) not multiplies;
+    // glossy add capped at 0.4 linear by WATER_SPECCOLOR. Broad sheen deleted.
+    col += (0.2 + 0.8 * watershade) * ((grad - 1.0) * 0.5 + spec) * 0.25;
+    col /= (1.0 + corona * 1.25);
+    col += WATER_SPECCOLOR * spec2;
+
+    // Procedural foam (donor nautic()/particles(), water.dev.frag:109-126).
+    // particle_amount = 0 (deep-water glint/foam must be absent); nautic is
+    // reduced and strictly gated by band = coastfade*(1-coastfade2).
+    float f1 = texture(foam_tex, fract(p * 0.03 + vec2(0.05, 0.03) * time)).r;
+    float nautic = pow(1.0 - f1, 5.0);
+    col += band * vec3(0.5, 0.6, 0.7) * nautic * 0.15;
+
+    // donor resalpha = coastfade2: alpha 0 at the waterline, 1 at 1.07 m.
+    // No 0.35 floor -> the flat teal ring is gone.
+    float alpha = coverage * coastfade2;
+    COLOR = vec4(col, alpha);
+}

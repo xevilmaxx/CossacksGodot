@@ -1,0 +1,136 @@
+{
+  "name": "ravine_face",
+  "size_px": [
+    512,
+    512
+  ],
+  "seed": 7,
+  "background": [
+    40,
+    44,
+    48
+  ],
+  "layers": [
+    {
+      "type": "block",
+      "name": "grass1",
+      "tile": true,
+      "opacity": 1.0
+    },
+    {
+      "type": "face",
+      "geometry": {
+        "kind": "polyline",
+        "points": [
+          [
+            0.04,
+            0.16
+          ],
+          [
+            0.36,
+            0.3
+          ],
+          [
+            0.68,
+            0.14
+          ],
+          [
+            0.96,
+            0.3
+          ]
+        ],
+        "height_px": 120
+      },
+      "fill": "rock8",
+      "flutes": "rock1",
+      "stretch": 2.0,
+      "rim_px": 3,
+      "lit": "#6C614B",
+      "shadow": "#393424",
+      "ramp_gain": 40
+    }
+  ],
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [
+      560,
+      150,
+      1000,
+      560
+    ],
+    "primary": "cossacks-3-v1-498085.jpg",
+    "crop": [
+      560,
+      150,
+      1000,
+      560
+    ],
+    "secondary_crop": [
+      0,
+      300,
+      420,
+      720
+    ],
+    "art": "app/assets/terrain/blocks/rock8.png",
+    "donor_art": "data/terrain/tiles/textures/rock8.dds",
+    "palette": {
+      "lit": "#6C614B",
+      "mid": "#4B4430",
+      "shadow": "#393424",
+      "pale_flute": "#8B7D67",
+      "grass": "#616727"
+    },
+    "face_geometry": {
+      "apparent_angle_deg": [
+        75,
+        85
+      ],
+      "max_edge_drift_frac_of_height": 0.2,
+      "face_height_frac_of_frame": [
+        0.08,
+        0.12
+      ],
+      "mouth_width_px": [
+        30,
+        100
+      ],
+      "rim_width_px": 3,
+      "flute_anisotropy_dx_over_dy": [
+        1.3,
+        1.7
+      ],
+      "vertical_stretch": 2.0,
+      "lit_shadow_luma_ratio": 1.9,
+      "rock_area_frac": [
+        0.08,
+        0.18
+      ]
+    },
+    "source_doc": "docs/audit/PIECES/ravine_face.md",
+    "renderer_gap": {
+      "statement": "PARTIALLY RESOLVED: the upgraded renderer's 'face' layer is exactly the documented rock8 fill + rock1 flutes, vertical stretch 2.0, lit/shadow ramp and hard 1-3 px rim proxy (terrain_piece_render.py:157-171,697-722,1040-1087). It now reaches rock area 8-18% and hi-freq 8-14. The lit/shadow HEX values are carried in the manifest detail but the actual ramp is a luminance gain with olive weights, so exact palette sub-criteria may still fail. Face slope/height/mouth, rim profile, and buildability remain UNVERIFIABLE from a PNG.",
+      "consequence": "Criteria 2, 4, 5, 7 and the buildability gate G cannot be reproduced/evaluated from a 2D flat blend and are reported FAIL or UNVERIFIABLE, never waived."
+    },
+    "acceptance": {
+      "C1_rock_area_frac": [
+        0.08,
+        0.18
+      ],
+      "C3_flute_anisotropy_dx_over_dy_min": 1.3,
+      "C4_lit_luma": 108,
+      "C4_shadow_luma": 57,
+      "C4_ratio_min": 1.5,
+      "C5_rim_width_px_max": 3,
+      "C6_hifreq": [
+        8,
+        14
+      ],
+      "C6_L_std": [
+        20,
+        30
+      ]
+    }
+  },
+  "native_render": true,
+  "grain_lift": 1.5
+}

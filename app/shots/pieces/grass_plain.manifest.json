@@ -1,0 +1,129 @@
+{
+  "generator": "terrain_piece_render.py",
+  "version": 1,
+  "name": "grass_plain",
+  "spec": "app/tools/piece_specs/grass_plain.json",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "render_size_px": [
+    1024,
+    1024
+  ],
+  "mirror_tile_size": 2048,
+  "resample": "bilinear",
+  "final_resample": "lanczos",
+  "grain_lift": 0.15,
+  "output": "app/shots/pieces/grass_plain.png",
+  "comparison": "app/shots/pieces/grass_plain_compare.png",
+  "sha256": "75e587b0d4362d04e3fba2e510d969ba42d811d5ef2020d9ec5149ee38badd79",
+  "layers": [
+    {
+      "name": "grass1",
+      "source": "app/assets/terrain/blocks/grass1.png",
+      "tile": true,
+      "tile_size": [
+        2048,
+        2048
+      ],
+      "offset_px": [
+        0,
+        0
+      ],
+      "contrast": 0.95,
+      "brightness": 1.22,
+      "scale": 1.0,
+      "mask_mode": null,
+      "mask_band": null,
+      "contour": false,
+      "opacity_mask": false,
+      "index": 0,
+      "type": "block",
+      "opacity": 1.0
+    },
+    {
+      "name": "grass9",
+      "source": "app/assets/terrain/blocks/grass9.png",
+      "tile": true,
+      "tile_size": [
+        2048,
+        2048
+      ],
+      "offset_px": [
+        0,
+        0
+      ],
+      "contrast": 0.95,
+      "brightness": 1.22,
+      "scale": 1.0,
+      "mask_mode": null,
+      "mask_band": null,
+      "contour": false,
+      "opacity_mask": false,
+      "index": 1,
+      "type": "block",
+      "opacity": 0.3
+    },
+    {
+      "type": "patches",
+      "patch_px": 40,
+      "grid": [
+        26,
+        26
+      ],
+      "gain": 34.0,
+      "olive_weights": [
+        1.0,
+        0.96,
+        0.68
+      ],
+      "cover": "full",
+      "block": null,
+      "hard_rim": false,
+      "seed": 7,
+      "index": 2,
+      "opacity": 1.0
+    },
+    {
+      "type": "patches",
+      "patch_px": 36,
+      "grid": [
+        29,
+        29
+      ],
+      "gain": 22.0,
+      "olive_weights": [
+        0.85,
+        0.82,
+        0.6
+      ],
+      "cover": "full",
+      "block": null,
+      "hard_rim": false,
+      "seed": 13,
+      "index": 3,
+      "opacity": 1.0
+    }
+  ],
+  "bands": null,
+  "reference": {
+    "provided": true,
+    "image": "523480776.jpg",
+    "directory": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3",
+    "box": [
+      200,
+      320,
+      340,
+      400
+    ],
+    "available": true,
+    "source_size": [
+      720,
+      405
+    ],
+    "resolved": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3\\523480776.jpg"
+  },
+  "tool_limits": "Coast foam/wash are diffuse approximations (no time scroll). Sun-linked specular glints still require an in-engine capture. Faces/patches are 2D height proxies: no real height channel, collision or buildability. Winter glaze keeps exact white but readers must verify cool bias themselves."
+}

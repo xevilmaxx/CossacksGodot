@@ -30,8 +30,10 @@ var msg_timer := 0.0
 var status_label: Label
 var settings_label: Label
 var minimap_tex: ImageTexture
-var minimap_img: Image
+var minimap_img: Image          # clean working image (terrain + blips, no box)
 var minimap_base: Image
+var minimap_view_img: Image     # displayed image (clean + viewport box)
+var _mm_box_last := Vector4i(-1, -1, -1, -1)  # x0,y0,x1,y1 of last drawn box
 var minimap_rect: TextureRect
 var minimap_panel: PanelContainer
 var mm_timer := 0.0
@@ -975,6 +977,10 @@ func _process(dt: float) -> void:
 	if mm_timer <= 0.0:
 		mm_timer = Data.MINIMAP_INTERVAL
 		_update_minimap()
+	# F3: the white viewport box follows the camera every frame, not just on
+	# the (0.25 s / 0.5 s) minimap timer. The draw is change-gated, so this is
+	# O(1) while the camera is still. This also covers arrow/edge scroll + zoom.
+	_draw_minimap_viewport_box()
 	# live refresh: texts and affordable states only (never frees buttons,
 	# so a click in flight always lands). Structural changes rebuild above.
 	sel_timer -= dt
@@ -1002,7 +1008,8 @@ func _build_minimap() -> void:
 					c = Color(0.45, 0.44, 0.4)
 			minimap_base.set_pixel(x, y, c)
 	minimap_img = minimap_base.duplicate()
-	minimap_tex = ImageTexture.create_from_image(minimap_img)
+	minimap_view_img = minimap_img.duplicate()
+	minimap_tex = ImageTexture.create_from_image(minimap_view_img)
 	minimap_rect = TextureRect.new()
 	minimap_rect.texture = minimap_tex
 	minimap_rect.custom_minimum_size = Vector2(200, 200)
@@ -1032,11 +1039,13 @@ func _build_minimap() -> void:
 func _on_minimap_input(ev: InputEvent) -> void:
 	var mp := minimap_rect.get_local_mouse_position() / minimap_rect.size
 	var world_pos := Vector2(mp.x * game.MAP_W, mp.y * game.MAP_H) * Data.TILE_M
-	var cam := get_viewport().get_camera_2d()
+	var cam := get_viewport().get_camera_2d() as C3Camera
 	if ev is InputEventMouseButton and ev.pressed:
 		get_viewport().set_input_as_handled()
 		if ev.button_index == MOUSE_BUTTON_LEFT and cam:
 			cam.global_position = world_pos * world.view_scale
+			cam.clamp_pos()  # F2: no blank border at map corners
+			_draw_minimap_viewport_box()  # F3: box moves on this very frame
 		elif ev.button_index == MOUSE_BUTTON_RIGHT:
 			# right-click on minimap = move/attack-move order for the selection
 			var ictl = get_tree().get_first_node_in_group("c3_input")
@@ -1044,6 +1053,47 @@ func _on_minimap_input(ev: InputEvent) -> void:
 				ictl.minimap_order(world_pos)
 	elif ev is InputEventMouseMotion and ev.button_mask & MOUSE_BUTTON_MASK_LEFT and cam:
 		cam.global_position = world_pos * world.view_scale
+		cam.clamp_pos()  # F2
+		_draw_minimap_viewport_box()  # F3
+
+# F3: draw the white viewport rectangle into a DISPLAY image and upload it.
+# The box is derived straight from the camera transform, so it reflects a jump
+# on the same input event instead of waiting for world.sync()/MINIMAP_INTERVAL.
+# Keeping it in a separate image avoids leaving ghost rectangles behind when
+# the camera moves between full minimap rebuilds (the clean image never has a
+# box on it, so every redraw starts from a clean slate).
+func _draw_minimap_viewport_box(force: bool = false) -> void:
+	if minimap_img == null or minimap_view_img == null or minimap_tex == null or game == null:
+		return
+	var x0 := 0
+	var y0 := 0
+	var x1 := game.MAP_W - 1
+	var y1 := game.MAP_H - 1
+	var cam := get_viewport().get_camera_2d()
+	if cam != null and world != null:
+		# view_rect is canvas pixels (metres * view_scale); screen = canvas * zoom
+		var pxm: float = Data.TILE_M * world.view_scale
+		var vp: Vector2 = get_viewport().get_visible_rect().size
+		var extent: Vector2 = vp / maxf(cam.zoom.x, 0.0001)
+		var view_pos: Vector2 = cam.global_position - extent * 0.5
+		var view_end: Vector2 = view_pos + extent
+		x0 = clampi(int(view_pos.x / pxm), 0, game.MAP_W - 1)
+		y0 = clampi(int(view_pos.y / pxm), 0, game.MAP_H - 1)
+		x1 = clampi(int(view_end.x / pxm), 0, game.MAP_W - 1)
+		y1 = clampi(int(view_end.y / pxm), 0, game.MAP_H - 1)
+	var box := Vector4i(x0, y0, x1, y1)
+	if not force and box == _mm_box_last:
+		return
+	_mm_box_last = box
+	minimap_view_img = minimap_img.duplicate()
+	var bc := Color(1, 1, 1, 0.9)
+	for x in range(x0, x1 + 1):
+		minimap_view_img.set_pixel(x, y0, bc)
+		minimap_view_img.set_pixel(x, y1, bc)
+	for y in range(y0, y1 + 1):
+		minimap_view_img.set_pixel(x0, y, bc)
+		minimap_view_img.set_pixel(x1, y, bc)
+	minimap_tex.update(minimap_view_img)
 
 func _mm_plot(t: Vector2i, c: Color, big: bool) -> void:
 	# minimap blip with map-bounds guard; deposits and forests draw 2x2 so
@@ -1131,22 +1181,10 @@ func _update_minimap() -> void:
 				if world.fog_explored[i] == 0:
 					var c: Color = minimap_img.get_pixel(x, y)
 					minimap_img.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
-	var cam := get_viewport().get_camera_2d()
-	if cam != null and world != null:
-		# view_rect is canvas pixels; tiles are meters / TILE_M
-		var pxm: float = Data.TILE_M * world.view_scale
-		var vr: Rect2 = world.view_rect
-		var x0 := clampi(int(vr.position.x / pxm), 0, game.MAP_W - 1)
-		var y0 := clampi(int(vr.position.y / pxm), 0, game.MAP_H - 1)
-		var x1 := clampi(int(vr.end.x / pxm), 0, game.MAP_W - 1)
-		var y1 := clampi(int(vr.end.y / pxm), 0, game.MAP_H - 1)
-		for x in range(x0, x1 + 1):
-			minimap_img.set_pixel(x, y0, Color(1, 1, 1, 0.9))
-			minimap_img.set_pixel(x, y1, Color(1, 1, 1, 0.9))
-		for y in range(y0, y1 + 1):
-			minimap_img.set_pixel(x0, y, Color(1, 1, 1, 0.9))
-			minimap_img.set_pixel(x1, y, Color(1, 1, 1, 0.9))
-	minimap_tex.update(minimap_img)
+	# The clean image is rebuilt above; redraw the box into the display image
+	# and upload both together (F3). force=true so a fresh clean image is
+	# always shown even if the camera has not moved since the last rebuild.
+	_draw_minimap_viewport_box(true)
 
 func hud_report() -> Dictionary:
 	# used by --self-test

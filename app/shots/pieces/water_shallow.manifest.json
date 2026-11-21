@@ -1,0 +1,170 @@
+{
+  "generator": "terrain_piece_render.py",
+  "version": 1,
+  "name": "water_shallow",
+  "spec": "app/tools/piece_specs/water_shallow.json",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "render_size_px": [
+    512,
+    512
+  ],
+  "mirror_tile_size": 1024,
+  "resample": "bilinear",
+  "final_resample": null,
+  "grain_lift": 0.0,
+  "output": "app/shots/pieces/water_shallow.png",
+  "comparison": "app/shots/pieces/water_shallow_compare.png",
+  "sha256": "ad03566ce445e0f48d75ae547cbbe70ecc4a3ecc42799e81d8e22177518d9e9f",
+  "layers": [
+    {
+      "name": "sandsea3",
+      "source": "app/assets/terrain/blocks/sandsea3.png",
+      "tile": true,
+      "tile_size": [
+        1024,
+        1024
+      ],
+      "offset_px": [
+        0,
+        0
+      ],
+      "contrast": 1.12,
+      "brightness": 1.0,
+      "scale": 1.0,
+      "mask_mode": "band",
+      "mask_band": "sand",
+      "contour": true,
+      "opacity_mask": false,
+      "index": 0,
+      "type": "block",
+      "opacity": 1.0
+    },
+    {
+      "sheet": "diffusewaves0",
+      "source": "app/assets/terrain/water_png/diffusewaves0.png",
+      "mode": "wash",
+      "tint": [
+        0.7412,
+        0.7412,
+        0.6627
+      ],
+      "rect_norm": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "rect_px": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "feather_px": 0.0,
+      "offset_px": [
+        0,
+        0
+      ],
+      "scale": 1.0,
+      "mask_band": "wash",
+      "index": 1,
+      "type": "water",
+      "opacity": 0.9
+    },
+    {
+      "sheet": "diffusewaves0",
+      "source": "app/assets/terrain/water_png/diffusewaves0.png",
+      "mode": "foam",
+      "tint": [
+        0.92,
+        0.96,
+        1.0
+      ],
+      "rect_norm": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "rect_px": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "feather_px": 0.0,
+      "offset_px": [
+        0,
+        0
+      ],
+      "scale": 1.0,
+      "mask_band": "wash",
+      "intensity": 0.15,
+      "speck_scale": 1.0,
+      "index": 2,
+      "type": "water",
+      "opacity": 0.35
+    },
+    {
+      "sheet": "diffusewaves0",
+      "source": "app/assets/terrain/water_png/diffusewaves0.png",
+      "mode": "shallow",
+      "tint": [
+        0.1,
+        0.24,
+        0.24
+      ],
+      "rect_norm": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "rect_px": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "feather_px": 4.0,
+      "offset_px": [
+        0,
+        0
+      ],
+      "scale": 1.0,
+      "mask_band": "water",
+      "index": 3,
+      "type": "water",
+      "opacity": 0.35
+    }
+  ],
+  "bands": {
+    "seed": 7,
+    "direction": "down",
+    "step_px": 6,
+    "sand_w": 36,
+    "wash_w": 34
+  },
+  "reference": {
+    "provided": true,
+    "image": "maxresdefault_1.jpg",
+    "directory": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3",
+    "box": [
+      300,
+      150,
+      512,
+      288
+    ],
+    "available": true,
+    "source_size": [
+      512,
+      288
+    ],
+    "resolved": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3\\maxresdefault_1.jpg"
+  },
+  "tool_limits": "Coast foam/wash are diffuse approximations (no time scroll). Sun-linked specular glints still require an in-engine capture. Faces/patches are 2D height proxies: no real height channel, collision or buildability. Winter glaze keeps exact white but readers must verify cool bias themselves."
+}

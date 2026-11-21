@@ -1,0 +1,162 @@
+{
+  "generator": "terrain_piece_render.py",
+  "version": 1,
+  "name": "forest_conifer",
+  "spec": "app/tools/piece_specs/forest_conifer.json",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "render_size_px": [
+    512,
+    512
+  ],
+  "mirror_tile_size": 1024,
+  "resample": "bilinear",
+  "final_resample": null,
+  "grain_lift": 0.0,
+  "output": "app/shots/pieces/forest_conifer.png",
+  "comparison": "app/shots/pieces/forest_conifer_compare.png",
+  "sha256": "7f51c09687d773b4c60dff171f7360545181b4d3d5179679b2f042093a891755",
+  "layers": [
+    {
+      "name": "grass_ground2",
+      "source": "app/assets/terrain/blocks/grass_ground2.png",
+      "tile": true,
+      "tile_size": [
+        1024,
+        1024
+      ],
+      "offset_px": [
+        0,
+        0
+      ],
+      "contrast": 1.12,
+      "brightness": 1.0,
+      "scale": 1.0,
+      "mask_mode": null,
+      "mask_band": null,
+      "contour": false,
+      "opacity_mask": false,
+      "index": 0,
+      "type": "block",
+      "opacity": 1.0
+    },
+    {
+      "name": "tree_spruce2",
+      "source": "app/assets/models/sprites_hi/tree_spruce2.png",
+      "source_dir": "hi",
+      "pos_norm": [
+        0.3,
+        0.6
+      ],
+      "pos_px": [
+        154,
+        307
+      ],
+      "anchor": "foot",
+      "foot_px": [
+        106,
+        222
+      ],
+      "scale": 0.1875,
+      "sprite_size_px": [
+        96,
+        96
+      ],
+      "stretch": null,
+      "tile": false,
+      "index": 1,
+      "type": "sprite",
+      "opacity": 1.0
+    },
+    {
+      "name": "tree_pinesmall1",
+      "source": "app/assets/models/sprites_hi/tree_pinesmall1.png",
+      "source_dir": "hi",
+      "pos_norm": [
+        0.6,
+        0.4
+      ],
+      "pos_px": [
+        307,
+        205
+      ],
+      "anchor": "foot",
+      "foot_px": [
+        274,
+        145
+      ],
+      "scale": 0.13125,
+      "sprite_size_px": [
+        67,
+        67
+      ],
+      "stretch": null,
+      "tile": false,
+      "index": 2,
+      "type": "sprite",
+      "opacity": 1.0
+    },
+    {
+      "type": "patches",
+      "patch_px": 40,
+      "grid": [
+        13,
+        13
+      ],
+      "gain": 12.0,
+      "olive_weights": [
+        0.0,
+        0.5,
+        0.8
+      ],
+      "cover": "positive",
+      "block": null,
+      "hard_rim": false,
+      "seed": 7,
+      "index": 3,
+      "opacity": 1.0
+    },
+    {
+      "type": "patches",
+      "patch_px": 40,
+      "grid": [
+        13,
+        13
+      ],
+      "gain": 7.0,
+      "olive_weights": [
+        0.0,
+        0.0,
+        0.8
+      ],
+      "cover": "positive",
+      "block": null,
+      "hard_rim": false,
+      "seed": 7,
+      "index": 4,
+      "opacity": 1.0
+    }
+  ],
+  "bands": null,
+  "reference": {
+    "provided": true,
+    "image": "large_1.webp",
+    "directory": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3",
+    "box": [
+      150,
+      20,
+      638,
+      377
+    ],
+    "available": true,
+    "source_size": [
+      788,
+      377
+    ],
+    "resolved": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3\\large_1.webp"
+  },
+  "tool_limits": "Coast foam/wash are diffuse approximations (no time scroll). Sun-linked specular glints still require an in-engine capture. Faces/patches are 2D height proxies: no real height channel, collision or buildability. Winter glaze keeps exact white but readers must verify cool bias themselves."
+}

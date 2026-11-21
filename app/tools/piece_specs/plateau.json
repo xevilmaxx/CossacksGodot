@@ -1,0 +1,192 @@
+{
+  "name": "plateau",
+  "size_px": [
+    512,
+    512
+  ],
+  "seed": 7,
+  "background": [
+    40,
+    44,
+    48
+  ],
+  "layers": [
+    {
+      "type": "block",
+      "name": "grass1",
+      "tile": true,
+      "opacity": 1.0
+    },
+    {
+      "type": "block",
+      "name": "grass_rock1",
+      "opacity": 0.5,
+      "tile": true
+    },
+    {
+      "type": "patches",
+      "seed": 7,
+      "patch_px": [
+        20,
+        80
+      ],
+      "gain": 10,
+      "cover": "full"
+    },
+    {
+      "type": "face",
+      "geometry": {
+        "kind": "height",
+        "cells": 9,
+        "threshold": 0.6
+      },
+      "fill": "rock8",
+      "flutes": "rock1",
+      "stretch": 2.0,
+      "rim_px": 3,
+      "lit": "#6C614B",
+      "shadow": "#393424",
+      "ramp_gain": 22,
+      "rect": [
+        0,
+        0,
+        1,
+        0.3
+      ]
+    },
+    {
+      "type": "face",
+      "geometry": {
+        "kind": "height",
+        "cells": 9,
+        "threshold": 0.6
+      },
+      "fill": "rock8",
+      "flutes": "rock1",
+      "stretch": 2.0,
+      "rim_px": 3,
+      "lit": "#6C614B",
+      "shadow": "#393424",
+      "ramp_gain": 22,
+      "rect": [
+        0,
+        0.7,
+        1,
+        1
+      ]
+    }
+  ],
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [
+      350,
+      0,
+      850,
+      300
+    ],
+    "secondary": {
+      "image": "articolo-787.jpg",
+      "box": [
+        0,
+        0,
+        960,
+        540
+      ]
+    },
+    "crop_boxes": {
+      "plateau_grass_C": [
+        350,
+        0,
+        850,
+        300
+      ],
+      "plateau_top_clean": [
+        375,
+        20,
+        440,
+        85
+      ],
+      "boundary_zoom": [
+        0,
+        600,
+        210,
+        720
+      ],
+      "rock_wall_zoom": [
+        560,
+        150,
+        1000,
+        560
+      ]
+    },
+    "donor": {
+      "cPlateauHeight": 2.964,
+      "R_code": 255,
+      "height_formula": "hterrain = cPlateauHeight * fr (generatemap.inc:570)",
+      "flat_top": {
+        "height": 2.964,
+        "surface": "grass",
+        "luma_std": 8.1,
+        "grass_nearest_pct": 84.4
+      },
+      "edge": {
+        "type": "near_vertical_earthen_rock_wall",
+        "grass_to_rock_rim_px": [
+          1,
+          3
+        ],
+        "face_height_pct_of_frame": [
+          8,
+          12
+        ],
+        "striations": "vertical_wavy"
+      }
+    },
+    "port": {
+      "amp": 2.964,
+      "edge_param": 0.97,
+      "rim_tiles": 8.0,
+      "flat_top_fraction_of_stamp": 0.58,
+      "edge_ramp_gradient_per_tile": 0.37,
+      "collision_gate": 0.5,
+      "additive_unclamped": true,
+      "start_protection": "CIRCLE2 * map_scale * 1.5"
+    },
+    "source_doc": "docs/audit/PIECES/plateau.md",
+    "renderer_gap": {
+      "statement": "PARTIALLY RESOLVED: the upgraded 'face' layer (terrain_piece_render.py:157-171,1040-1087) is a 2D height-step VISUAL proxy with rock8 fill, rock1 flutes, lit/shadow ramp and a hard 1-3 px rim. It raises visible rock area into the 8-18% band (measured 8.55%) and keeps the flat-top crop std <=10. It is NOT a real height channel: flat-top area %, within-stamp flat fraction, edge ramp, amplitude ceiling, footprint anisotropy and start keep-clear remain UNVERIFIABLE from a PNG.",
+      "measurable_here": [
+        "criterion 4 rock fraction",
+        "criterion 5 flatness/palette"
+      ]
+    },
+    "targets": {
+      "flat_top_area_pct_of_land": [
+        19,
+        21
+      ],
+      "flat_top_within_stamp_pct": [
+        55,
+        65
+      ],
+      "edge_gradient_width_tiles": [
+        1,
+        8
+      ],
+      "donor_rim_px": [
+        1,
+        3
+      ],
+      "rock_fraction_pct_donor_visual": [
+        8,
+        18
+      ],
+      "rock_fraction_pct_port_measured": [
+        2.3,
+        3.7
+      ],
+      "flat_top_luma_std_max": 10
+    }
+  },
+  "native_render": true
+}

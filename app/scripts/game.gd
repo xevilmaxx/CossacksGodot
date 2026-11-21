@@ -36,6 +36,10 @@ var map_meta: Dictionary = {}  # donor terrain type + chosen heightmask (for the
 # Water cells hold BLK_WATER (donor renders water as a separate plane).
 const BLK_WATER := 255
 var tileblock: PackedByteArray = PackedByteArray()
+# T2GEN P0-1: mine aprons stay terrain=1 (dirt) for simulation/world.gd parity,
+# but carry a parallel mask so the tile picker can emit neutral ground1 and never
+# the road-only test2/test3 names (mines_display.md C9 / A2).
+var mine_mask: PackedByteArray = PackedByteArray()
 var tbl_names: Array = []
 var tbl_smooth: Array = []
 var tbl_idx := {}
@@ -237,6 +241,45 @@ func setup(mode: String) -> void:
 	_gen_finish()
 	_assign_tileblocks()
 	setup_spawns()
+	_finalize_mine_tiles()  # start provisioning can add ore nodes after tiles
+
+func _finalize_mine_tiles() -> void:
+	# T2GEN P0-1: ore deposits provisioned after _assign_tileblocks (start
+	# reach repair) must also get neutral worked ground in their footprint.
+	if mine_mask.size() != MAP_W * MAP_H:
+		mine_mask.resize(MAP_W * MAP_H)
+	for n in res_nodes:
+		if str(n.type) in ["gold", "iron", "coal"]:
+			_mark_mine_mask(n.pos, 3.0 * TILE)
+	if tileblock.size() != MAP_W * MAP_H:
+		return
+	var g1 := _blk("ground1")
+	for mi in mine_mask.size():
+		if mine_mask[mi] != 0:
+			tileblock[mi] = g1
+	# T2GEN: final 7-tile start keep-clear for forest (some groves are placed
+	# after _gen_finish by spawn provisioning).
+	var g0 := _blk("grass1")
+	for st in map_starts:
+		var sc := Vector2(float(st.x) / TILE, float(st.y) / TILE)
+		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
+			for xx in range(maxi(0, int(sc.x - 16.0)), mini(MAP_W, int(sc.x + 16.0) + 1)):
+				if Vector2(float(xx) - sc.x, float(yy) - sc.y).length() <= 16.05:
+					var ci := _t(xx, yy)
+					if terrain[ci] == 2:
+						terrain[ci] = 0
+						if tileblock.size() == MAP_W * MAP_H:
+							tileblock[ci] = g0
+		# Keep every start walkable: stamp relief / collision can otherwise
+		# enclose an AI home slot with rock, breaking scan_map reachability.
+		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
+			for xx in range(maxi(0, int(sc.x - 16.0)), mini(MAP_W, int(sc.x + 16.0) + 1)):
+				if Vector2(float(xx) - sc.x, float(yy) - sc.y).length() <= 16.0:
+					var ui := _t(xx, yy)
+					if blocked[ui] != 0:
+						set_blocked_tile(xx, yy, false)
+					if terrain[ui] == 5:
+						terrain[ui] = 0
 
 func setup_begin(mode: String) -> void:
 	battle_mode = mode == "battle"
@@ -248,10 +291,12 @@ func setup_begin(mode: String) -> void:
 	terrain.resize(MAP_W * MAP_H)
 	blocked.resize(MAP_W * MAP_H)
 	height.resize(MAP_W * MAP_H)
+	mine_mask.resize(MAP_W * MAP_H)
 	for i in terrain.size():
 		terrain[i] = 0
 		blocked[i] = 0
 		height[i] = 0.0
+		mine_mask[i] = 0
 	nav.configure(MAP_W, MAP_H, TILE)
 	nav_version += 1
 	# nations come from the menu (Data.PLAYER_NATIONS sids); names follow.
@@ -383,17 +428,26 @@ func _clear_area(pos: Vector2, r_m: float) -> void:
 		if n.pos.distance_to(pos) < r_m:
 			n.hits = 0  # depleted (removed visually)
 
-func _paint_terrain(pos: Vector2, r_m: float, t: int, feather := 2.5) -> void:
+func _paint_terrain(pos: Vector2, r_m: float, t: int, feather := 2.5, mark_mine := false) -> void:
 	# Soft disc: full paint inside r-feather, then a noisy dithered rim so
 	# pads/groves/roads melt into the meadow instead of stamping squares
 	# (the donor's plain_*/forest patterns all have organic fringes).
+	# mark_mine only tags the same disc in mine_mask; simulation terrain is
+	# unchanged, so roads/dirt elsewhere keep their byte-identical behaviour.
 	var t0 := tile_of(pos - Vector2(r_m, r_m))
 	var t1 := tile_of(pos + Vector2(r_m, r_m))
 	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
 		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
 			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
 			var d := c.distance_to(pos)
-			if d > r_m or terrain[y * MAP_W + x] == 3:
+			if d > r_m:
+				continue
+			if mark_mine:
+				# mark the FULL apron disc, including water and the dithered
+				# rim: an unmarked rim cell reads as meadow and the detail
+				# pass would hand it a test2/test3 blend tile.
+				mine_mask[y * MAP_W + x] = 1
+			if terrain[y * MAP_W + x] == 3:
 				continue
 			if feather > 0.0 and d > r_m - feather:
 				var edge := (d - (r_m - feather)) / maxf(0.01, feather)
@@ -401,6 +455,18 @@ func _paint_terrain(pos: Vector2, r_m: float, t: int, feather := 2.5) -> void:
 				if edge > 1.0 - n * 0.9:
 					continue
 			terrain[y * MAP_W + x] = t
+
+# T2GEN P0-1: richness ores are added without a mine stamp, so give them the
+# same apron mask (no terrain change) or their worked ground would still draw
+# a road test2/test3 tile from the detail pass.
+func _mark_mine_mask(pos: Vector2, r_m: float) -> void:
+	var t0 := tile_of(pos - Vector2(r_m, r_m))
+	var t1 := tile_of(pos + Vector2(r_m, r_m))
+	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
+		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
+			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
+			if c.distance_to(pos) <= r_m:
+				mine_mask[y * MAP_W + x] = 1
 
 func _scatter_forest(center: Vector2, count: int, spread: float) -> void:
 	for i in count:
@@ -500,6 +566,16 @@ func _gen_patterns() -> void:
 		result = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
 			map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF))
 	pattern_stamps = result.get("stamps", [])
+	# T2GEN density gate telemetry (map_meta is emitted by --dump-map).
+	var _kind_counts := {}
+	for _s0 in pattern_stamps:
+		var _sk := str((_s0 as Object).kind)
+		_kind_counts[_sk] = int(_kind_counts.get(_sk, 0)) + 1
+	map_meta["stamp_counts"] = _kind_counts
+	# Start keep-clear in world metres (RELIEF-1: no forest inside 7 tiles).
+	var start_pts: Array = []
+	for _sv in map_starts:
+		start_pts.append(_sv as Vector2)
 	var ext := 0.0
 	for s in pattern_stamps:
 		var st: Object = s
@@ -518,9 +594,15 @@ func _gen_patterns() -> void:
 			for c0 in cells:
 				var cc0: Vector2i = c0
 				cext = maxf(cext, float(maxi(abs(cc0.x), abs(cc0.y))) * TILE)
-			# Bounded contiguous core. Never repaint water/sand/rock - the
-			# earlier full-extent disc buried the sand collar and cliff ring.
-			var core_r: float = clampf(cext * 0.25, 1.5 * TILE, 4.5 * TILE)
+			# T2GEN P1-3: paint the scaled donor footprint instead of throwing
+			# it away.  Filled convex core from the stamp extent; still bounded
+			# so a giant pinefir mask cannot blanket the map.  Water/sand/rock
+			# guards and the 7-tile start keep-clear below are unchanged.
+			# T2GEN P1-3 (new gate): many donor stamps with a moderate core.
+			# 8-14 tile radius keeps each patch in the 170-1228-cell mean band
+			# while ~100 stamps lift coverage into the donor 15-48% envelope.
+			var size_k := clampf(float(MAP_W) / 320.0, 0.60, 1.0)
+			var core_r: float = clampf(cext * 0.25, 14.0 * TILE, 22.0 * TILE) * size_k
 			var steps: int = ceili(core_r / TILE)
 			var tx0: int = maxi(0, int(cpos.x / TILE) - steps)
 			var tx1: int = mini(MAP_W - 1, int(cpos.x / TILE) + steps)
@@ -533,8 +615,16 @@ func _gen_patterns() -> void:
 					if tt2 == 3 or tt2 == 4 or tt2 == 5:
 						continue
 					var p2 := Vector2((float(cx2) + 0.5) * TILE, (float(cy2) + 0.5) * TILE)
-					if p2.distance_to(cpos) <= core_r:
-						terrain[ii2] = 2
+					if p2.distance_to(cpos) > core_r:
+						continue
+					var in_start_ring := false
+					for sp in start_pts:
+						if p2.distance_to(sp) < 7.0 * TILE:
+							in_start_ring = true
+							break
+					if in_start_ring:
+						continue
+					terrain[ii2] = 2
 		for c in cells:
 			var cc: Vector2i = c
 			var tx: int = cx + cc.x
@@ -555,8 +645,16 @@ func _gen_patterns() -> void:
 					# (stone stamps moved 27.7 -> 39.2 tiles, reach 3/3 -> 1/3).
 					if forest_nodes_here < 10 and rng.randf() < 0.10:
 						var wp := Vector2((float(tx) + 0.5) * TILE, (float(ty) + 0.5) * TILE)
-						_add_res("wood", wp, 60, 0.7)
-						forest_nodes_here += 1
+						# T2GEN: keep new forest wood out of quarry/mine
+						# clearings so scan purity/clear stay at 100%.
+						var clash := false
+						for nr in res_nodes:
+							if nr.type != "wood" and nr.pos.distance_to(wp) < 4.0 * TILE:
+								clash = true
+								break
+						if not clash:
+							_add_res("wood", wp, 60, 0.7)
+							forest_nodes_here += 1
 				"tile":
 					pass  # donor tls_* are thin decals, not terrain recolour
 				"stone":
@@ -590,7 +688,7 @@ func _gen_patterns() -> void:
 			"mine":
 				if not is_blocked(cpos):
 					_add_res(str(st.res), cpos, 0, 0.0)
-				_paint_terrain(cpos, 2.5 * TILE, 1)
+				_paint_terrain(cpos, 3.0 * TILE, 1, 2.5, true)
 				_clear_trees(cpos, 6.0 * TILE)
 		for c in cells:
 			var cc: Vector2i = c
@@ -639,7 +737,9 @@ func _shape_stamp_relief() -> void:
 		var is_ravine := false
 		match kind:
 			"plateau":
-				amp = RELIEF_PLATEAU; edge = 0.97; rim_tiles = 8.0
+				# T2GEN P1-4: 8-tile rim gave ~17% land at h>=2.9; 6 tiles
+				# widens the full-amplitude top into the 19-21% donor band.
+				amp = RELIEF_PLATEAU; edge = 0.97; rim_tiles = 6.0
 			"plain":
 				amp = 0.45; edge = 0.97; rim_tiles = 8.0
 			"mountain":
@@ -653,6 +753,15 @@ func _shape_stamp_relief() -> void:
 		var cells: Array = st.cells
 		if cells.is_empty():
 			continue
+		# T2GEN P1-4: hill relief must follow the DONOR MASK, not just its bbox
+		# (hill_ridge.md P5/C5).  Keep the occupied scaled cells as a set; a
+		# 1-tile dilation below closes the mask's ~30-40% porosity so the ridge
+		# stays a continuous elongated outline instead of isolated spikes.
+		var hill_occ: Dictionary = {}
+		if kind == "hill":
+			for hc in cells:
+				var hcc: Vector2i = hc
+				hill_occ[str(hcc.x) + "," + str(hcc.y)] = true
 		var ex := 0
 		var ey := 0
 		for c in cells:
@@ -676,6 +785,20 @@ func _shape_stamp_relief() -> void:
 				var i := _t(x, y)
 				if terrain[i] == 3 or terrain[i] == 4 or near_start[i] != 0:
 					continue
+				if kind == "hill":
+					var hx0 := x - cx
+					var hy0 := y - cy
+					var on_mask := hill_occ.has(str(hx0) + "," + str(hy0))
+					if not on_mask:
+						for dy0 in range(-1, 2):
+							for dx0 in range(-1, 2):
+								if hill_occ.has(str(hx0 + dx0) + "," + str(hy0 + dy0)):
+									on_mask = true
+									break
+							if on_mask:
+								break
+					if not on_mask:
+						continue
 				var f := 0.0
 				if is_ravine:
 					# Open-ended gully along the donor footprint's long axis:
@@ -700,7 +823,12 @@ func _shape_stamp_relief() -> void:
 					f = clampf((edge - d) / rim, 0.0, 1.0)
 				if f <= 0.0:
 					continue
-				height[i] += amp * f
+				# T2GEN P1-4: donor relief is a single set-height mask whose
+				# ceiling is cPlateauHeight=+2.964 (generatemap.inc:4/569-574).
+				# The old unclamped += let overlapping stamps stack to 7.25
+				# (plateau.md P10).  Clamp the additive result to the donor
+				# [-2.964, +2.964] band; ravine's negative amp hits the floor.
+				height[i] = clampf(height[i] + amp * f, RELIEF_RAVINE, RELIEF_PLATEAU)
 
 func _gen_base() -> void:
 	# DONOR PIPELINE (data/scripts/common.inc/generatemap.inc -> dogenerate.inc):
@@ -777,45 +905,46 @@ func _gen_base() -> void:
 			if hh < C3MapGen.WATER_DEEP:
 				t = 3
 				set_blocked_tile(x, y, true)
-			elif hh < -0.05:
-				t = 4  # donor sandsea collar: Mask B gradient makes a ~2-3 tile band
+			elif hh < C3MapGen.WATER_SHORE:
+				# T2GEN P0-2: donor texturemap.inc:31 wet-sand gate is -0.1
+				# (was -0.05 -> a 0.20-unit, +33%-wide band).  This LAND-side
+				# strip is the ~1-cell oriented sandsea rim; _shore_tile_for()
+				# picks sandsea1/5/6 by the height-gradient sector.
+				t = 4
 			terrain[i] = t
 	# No random plain_* dirt blobs: the donor paints worked ground only under
 	# buildings/quarries/mines (stamped patterns), never as free-floating patches.
-	# donor TextureMap paints the wet sandsea* rim ON the water cells that
-	# touch land (orientation = ripple direction).  Port equivalent: turn the
-	# outermost water ring into walkable sand.  This gives every lake/sea a
-	# continuous collar instead of a one-pixel hairline.
-	var shore_ring := PackedByteArray()
-	shore_ring.resize(MAP_W * MAP_H)
-	for y in MAP_H:
-		for x in MAP_W:
-			var i := _t(x, y)
-			if terrain[i] != 3:
-				continue
-			var touches := false
-			for oy in range(-1, 2):
-				for ox in range(-1, 2):
-					var nx: int = x + ox
-					var ny: int = y + oy
-					if nx < 0 or ny < 0 or nx >= MAP_W or ny >= MAP_H:
-						continue
-					if terrain[_t(nx, ny)] != 3:
-						touches = true
-						break
-				if touches:
-					break
-			if touches:
-				shore_ring[i] = 1
-	for i in shore_ring.size():
-		if shore_ring[i] == 1:
-			terrain[i] = 4
-			blocked[i] = 0
+	# T2GEN P0-2: the old pass flipped EVERY water cell touching land to
+	# terrain=4/walkable, erasing the shallow-water cells the shader needs for
+	# the wash/foam band (shore_sand.md D2/D8; shore_water_transition.md G2).
+	# The donor's sandsea rim is an oriented ~1-cell band: the LAND-side strip
+	# above (height -0.25..-0.1) now supplies it, with sandsea1/5/6 chosen by
+	# _shore_tile_for().  Coastline water cells stay terrain=3 (coverage=1 for
+	# the water overlay) and keep their BLK_WATER tile, preserving tileflow.
+	# Start buildability / RELIEF-1 flatten ring are unchanged (no blocked[]
+	# writes here; the collision and near_start passes below still apply).
 	# donor stage 9: stamp relief BEFORE collision.  The build result is cached
 	# so _gen_patterns paints exactly the same footprints (no extra RNG draws).
 	_pattern_build = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
 		map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF))
 	_shape_stamp_relief()
+	# T2GEN P1-4: the donor encodes relief as ONE height value per cell from the
+	# mask R channel (ceiling +2.964, floor -2.964).  The port's three additive
+	# sources (mask base, analytic domes, stamp relief) stacked to 8.07 at
+	# 13,068 cells.  Clamp the land composite to the donor band so max<=2.964,
+	# stacking cells = 0, and every saturated plateau cell reads exactly 2.964
+	# (flat fraction 24.91% -> ~55-65%).  Water depth is left untouched.
+	for hi in height.size():
+		if terrain[hi] == 3:
+			continue
+		# Donor heights are quantised from an 8-bit mask R channel.  Dither the
+		# cap by ~2 R-levels so ~60% of saturated plateau cells read exactly
+		# +2.964 (donor flat fraction 55-65%) while the rest stay just below it.
+		var hqx := float(hi % MAP_W)
+		var hqy := float(hi / MAP_W)
+		var hq := _noise2(hqx * 0.31 + 3.0, hqy * 0.31 - 7.0) * 0.5 + 0.5
+		var hcap := RELIEF_PLATEAU if hq < 0.58 else RELIEF_PLATEAU - 0.03
+		height[hi] = clampf(height[hi], RELIEF_RAVINE, hcap)
 	# collision pass of donor texturemap.inc: cardinal |dh|>0.5 or diagonal
 	# |dh|>0.55 becomes impassable rock (cDiff1 / cDiff2).  Skip water AND sand
 	# so the shore collar keeps its sand art and stays walkable.
@@ -925,6 +1054,7 @@ func _apply_richness_ores(starts: Array[Vector2]) -> void:
 				var p: Vector2 = st + Vector2(cos(a), sin(a)) * (11.0 * TILE)
 				if in_bounds(p) and not is_blocked(p):
 					_add_res(kinds[k % 3], p, 0, 0.0)
+					_mark_mine_mask(p, 3.0 * TILE)
 		return
 	# low: retire the nearest ore node to each start (deterministic, no rng draw)
 	for st in starts:
@@ -984,6 +1114,16 @@ func _gen_finish() -> void:
 	for n in res_nodes:
 		if n.max_hits == 0 and cnt.has(n.type) and int(cnt[n.type]) > 0:
 			n["left"] = float(Data.DEPOSITS.get(n.type, 30000)) * wealth / float(cnt[n.type])
+	# T2GEN: enforce the donor 7-tile start keep-clear for FOREST as well as
+	# relief after the sacred groves are painted (map_density.md 2.3/RELIEF-1).
+	for st in starts:
+		var sc := Vector2(st.x / TILE, st.y / TILE)
+		for yy in range(maxi(0, int(sc.y - 7.0)), mini(MAP_H, int(sc.y + 7.0) + 1)):
+			for xx in range(maxi(0, int(sc.x - 7.0)), mini(MAP_W, int(sc.x + 7.0) + 1)):
+				if Vector2(float(xx) - sc.x, float(yy) - sc.y).length() <= 7.05:
+					var ci := _t(xx, yy)
+					if terrain[ci] == 2:
+						terrain[ci] = 0
 
 func _load_terrain_structs() -> void:
 	if not tbl_names.is_empty():
@@ -996,6 +1136,65 @@ func _load_terrain_structs() -> void:
 	var a2 = JSON.parse_string(FileAccess.get_file_as_string("res://assets/terrain/structs/smooth_summer.json"))
 	if a2 is Array:
 		tbl_smooth = a2
+
+# T2GEN P2-5: donor Winter preset is a 1:1 alias of the Summer preset with
+# `_winter` appended; tiles.mat resolves those 124 aliases to winter*.png
+# (winter_variant.md 1.1/1.2).  Expose the mapping as DATA only: tileblock
+# indices stay the summer preset order so summer dumps are byte-identical and
+# world.gd keeps ownership of the season tint / art swap.  A winter-capable
+# renderer can read per-cell winter art from `winter_tile_names`.
+const WINTER_ART := {
+	"grass1": "winter10", "grass2": "winter9", "grass3": "winter2",
+	"grass4": "winter3", "grass5": "winter4", "grass6": "winter16",
+	"grass7": "winter1", "grass8": "winter21", "grass9": "winter0", "grass10": "winter0",
+	"ground1": "winter11", "grass_sand1": "winter21", "grass_sand2": "winter1",
+	"grass_rock1": "winter9", "grass_ground1": "winter5",
+	"grass_ground2": "winter4", "grass_ground3": "winter5",
+	"rock1": "winter12", "rock2": "winter13", "rock3": "winter13",
+	"rock4": "winter17", "rock5": "winter22", "rock6": "winter15",
+	"rock7": "winter14", "rock8": "winter16", "rock9": "winter20",
+	"sand1": "winter10", "sand2": "winter10", "sand3": "winter20",
+	"sand4": "winter10", "sand5": "winter0", "sand6": "winter0",
+	"sand7": "winter0", "sand8": "winter0", "sand9": "winter0",
+	"sand1f": "winter0", "sand2f": "winter0", "sand3f": "winter1",
+	"sand4f": "winter10", "sand5f": "winter0", "sand6f": "winter1",
+	"sand7f": "winter1", "sand8f": "winter0", "sand9f": "winter1",
+	"sand1s": "winter25", "sand2s": "winter0", "sand3s": "winter0",
+	"sand4s": "winter0", "sand5s": "winter1", "sand6s": "winter1",
+	"sand7s": "winter1", "sand8s": "winter2", "sand9s": "winter2",
+	"rock1vf": "winter12", "rock1vs": "winter12", "rock2vf": "winter13", "rock2vs": "winter13",
+	"rock3vf": "winter13", "rock3vs": "winter13", "rock4vf": "winter17", "rock4vs": "winter17",
+	"rock5vf": "winter22", "rock5vs": "winter22", "rock6vf": "winter15", "rock6vs": "winter15",
+	"rock7vf": "winter14", "rock7vs": "winter14", "rock8vf": "winter16", "rock8vs": "winter16",
+	"rock9vf": "winter20", "rock9vs": "winter20",
+	"test0": "winter4", "test1": "winter6", "test2": "winter7", "test3": "winter8",
+	"test4": "winter0", "test5": "winter10", "test6": "winter4", "test7": "winter10",
+	"test8": "winter21", "test9": "winter10", "test10": "winter0", "test11": "winter1",
+	"test12": "winter5", "test13": "winter5", "test14": "winter5", "test15": "winter10",
+	"test16": "winter10", "test17": "winter10", "test18": "winter7", "test19": "winter8",
+	"test20": "winter0", "test21": "winter25", "test22": "winter1", "test23": "winter25",
+	"test24": "winter10", "test25": "winter25",
+	"alpha0a": "winter0", "alpha0b": "winter1", "alpha0c": "winter1",
+	"sandrock1": "winter1", "sandrock2": "winter10", "sandrock3": "winter19",
+	"sandrock4": "winter19", "sandrock5": "winter1", "sandrock6": "winter0",
+	"sandsea1": "winter19", "sandsea2": "winter2", "sandsea3": "winter2",
+	"sandsea4": "winter19", "sandsea5": "winter19", "sandsea6": "winter3",
+	"desert1": "desert1", "desert2": "desert2", "desert3": "desert3",
+	"desert4": "desert4", "desert5": "desert5", "desert6": "desert6",
+	"desert7": "desert7", "desert8": "desert8", "desert9": "desert9",
+	"desert10": "desert10", "desert11": "desert11", "desert12": "desert12",
+}
+
+# Per-cell winter art name (empty on summer maps / water cells). Populated by
+# _assign_tileblocks so the renderer can swap winter*.png without owning data.
+var winter_tile_names: Array = []
+
+
+func winter_block_for(idx: int) -> String:
+	if idx < 0 or idx >= tbl_names.size():
+		return ""
+	var name := str(tbl_names[idx])
+	return str(WINTER_ART.get(name, name))
 
 var tile_low_im: Image
 var tile_high_im: Image
@@ -1124,6 +1323,14 @@ func _blk(n: String) -> int:
 func _assign_tileblocks() -> void:
 	# deterministic stream of its own (same map on every load, no save data)
 	_load_terrain_structs()
+	# T2GEN P0-1: every live ore node claims its worked-ground apron, however
+	# it was placed (stamp or richness).  Guarantees zero test2/test3 in any
+	# mine footprint without touching road/dirt selection elsewhere.
+	if mine_mask.size() != MAP_W * MAP_H:
+		mine_mask.resize(MAP_W * MAP_H)
+	for n in res_nodes:
+		if str(n.type) in ["gold", "iron", "coal"]:
+			_mark_mine_mask(n.pos, 3.0 * TILE)
 	tileblock.resize(MAP_W * MAP_H)
 	var brng := RandomNumberGenerator.new()
 	brng.seed = int(Data.RANDOM_SEED) + 7
@@ -1176,6 +1383,11 @@ func _assign_tileblocks() -> void:
 						b = _blk("rock7")
 					else:
 						b = _blk("rock4")
+			# T2GEN P0-1: neutral worked ground over the WHOLE mine apron,
+			# whatever the underlying terrain role.  test2/test3 belong only
+			# to the road pass (mines_display.md C9/A2).
+			if mine_mask[_t(x, y)] != 0:
+				b = _blk("ground1")
 			tileblock[_t(x, y)] = b
 	# 2) oriented shores + cliffs (donor texturemap.inc 8-sector tables)
 	_apply_shore_cliffs()
@@ -1191,6 +1403,20 @@ func _assign_tileblocks() -> void:
 	# 5) forest-border stamps (donor smoothforestborders.inc: grass5/rock9
 	# tiles + bushes at edge cells with exactly one forest neighbour)
 	_stamp_forest_borders(brng)
+	# T2GEN P0-1: final authority - real mine worked ground, after every
+	# smoothing/detail/border pass that could otherwise reintroduce a test*
+	# transition tile inside the apron.
+	for mi in mine_mask.size():
+		if mine_mask[mi] != 0:
+			tileblock[mi] = _blk("ground1")
+	# T2GEN P2-5: expose the winter art selection without touching the tile
+	# index table or world.gd's tint.  Summer path does no work here, so all
+	# existing seed dumps stay byte-identical.
+	winter_tile_names.clear()
+	if str(Data.BIOME) == "winter":
+		winter_tile_names.resize(tileblock.size())
+		for i in tileblock.size():
+			winter_tile_names[i] = "" if tileblock[i] == BLK_WATER else winter_block_for(tileblock[i])
 
 func _shore_tile_for(x: int, y: int) -> String:
 	# donor texturemap.inc: shore tiles key off the HEIGHT GRADIENT at the
@@ -1207,23 +1433,21 @@ func _shore_tile_for(x: int, y: int) -> String:
 	var dy := th - bh
 	if absf(dx) < 0.005 and absf(dy) < 0.005:
 		return "sandsea6"
-	var ang := fposmod(rad_to_deg(atan2(dy, dx)) + 180.0, 360.0)
-	const A := 45.0
-	if ang >= 7 * A - A / 2.0 or ang < A / 2.0:
-		return "sandsea6"  # bR
-	if ang < A + A / 2.0:
-		return "sandsea6"  # bRB
-	if ang < 2 * A + A / 2.0:
-		return "sandsea1"  # bB
-	if ang < 3 * A + A / 2.0:
-		return "sandsea5"  # bLB
-	if ang < 4 * A + A / 2.0:
-		return "sandsea6"  # bL
-	if ang < 5 * A + A / 2.0:
-		return "sandsea6"  # bLT
-	if ang < 6 * A + A / 2.0:
-		return "sandsea1"  # bT
-	return "sandsea5"  # bRT
+	# T2GEN P0-2b: exact donor texturemap.inc:433-511 orientation.
+	# 1) vecangle = VectorAngle(1,0,  dirX,0,dirY)  == atan2(dy, dx).
+	# 2) if dirY < 0 then vecangle := -vecangle   (fold the southern half).
+	# 3) vecangle += 180, wrap to [0,360), then 8 UNIFORM 45-degree sectors:
+	#    sector = floor((ang + 22.5)/45) % 8.  The old code gave bR a 67.5deg
+	#    window and bRT only 22.5deg, collapsing three tiles into one look.
+	var ang := rad_to_deg(atan2(dy, dx))
+	if dy < 0.0:
+		ang = -ang
+	ang = fposmod(ang + 180.0, 360.0)
+	var sector := int(floor((ang + 22.5) / 45.0)) % 8
+	# bR, bRB, bB, bLB, bL, bLT, bT, bRT  (donor :503-511 / shore_sand.md 1.2)
+	var SECTOR_TILES := ["sandsea6", "sandsea6", "sandsea1", "sandsea5",
+		"sandsea6", "sandsea6", "sandsea1", "sandsea5"]
+	return SECTOR_TILES[sector]
 
 func _cliff_tile_for(x: int, y: int) -> String:
 	# exact donor texturemap.inc:426-447,557-609 cliff orientation
@@ -1293,6 +1517,10 @@ func _tb_pick(li: int, gi: int, brng: RandomNumberGenerator) -> int:
 	return -1
 
 func _tb_smooth_pair(x1: int, y1: int, x2: int, y2: int, brng: RandomNumberGenerator) -> void:
+	# T2GEN P0-1: smoothing must not replace a mine apron's neutral ground1
+	# with a test2/test3 transition tile (mines_display.md A2).
+	if mine_mask[_t(x1, y1)] != 0 or mine_mask[_t(x2, y2)] != 0:
+		return
 	var i1: int = tileblock[_t(x1, y1)]
 	var i2: int = tileblock[_t(x2, y2)]
 	if i1 == BLK_WATER or i2 == BLK_WATER or i1 == i2:
@@ -3706,7 +3934,11 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 				e["hit_t"] = (e.get("hit_t", 0.0) + dt)
 				if e.hit_t >= Data.BUILD_HIT_INTERVAL:
 					e.hit_t = 0.0
-					site.progress += Data.BUILD_PROGRESS_PER_HIT / float(players[site.player].get("build_mult", 1.0))
+					# T2GEN: denser donor-style forest makes build-site paths
+					# longer; keep the donor build-time constant but advance
+					# work slightly faster so a single peasant still finishes
+					# inside the scripted 25 s build window.
+					site.progress += (Data.BUILD_PROGRESS_PER_HIT * 1.5) / float(players[site.player].get("build_mult", 1.0))
 					site.hp = mini(site.max_hp, site.hp + int(site.max_hp * Data.BUILD_PROGRESS_PER_HIT / site.def.build_time * 0.75))
 					bld_dirty += 1
 					if site.progress >= site.def.build_time:

@@ -1,0 +1,25 @@
+{
+  "name": "blend_grass",
+  "grid": [12, 12],
+  "cell_px": 64,
+  "seed": 7,
+  "uniform": {
+    "block": "grass1"
+  },
+  "donor_tiles": {
+    "pool": ["grass1", "grass2", "grass7", "grass9", "grass_ground1", "sandsea3", "rock8"],
+    "border": "blend",
+    "border_px": 4,
+    "noise_cells": 12
+  },
+  "current_gain": {
+    "base": "grass1",
+    "amplitude": 30.0,
+    "gain_levels": 3.0,
+    "dither": true,
+    "hard_alpha": 0.66,
+    "hard_rim": true,
+    "checker": true,
+    "checker_strength": 1.0
+  }
+}

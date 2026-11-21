@@ -106,24 +106,28 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		scaled_cache[name] = lst
 		return lst
 
-	var can_stand := func(cells: Array, cx: int, cy: int) -> bool:
+	# mask defaults to the shared occupancy grid; forest passes its own grid
+	# explicitly (T2GEN P1-3) so no variable reassign can break lambda capture.
+	var can_stand := func(cells: Array, cx: int, cy: int, mask = null) -> bool:
+		var m = occupied if mask == null else mask
 		for c in cells:
 			var cc: Vector2i = c
 			var tx: int = cx + cc.x
 			var ty: int = cy + cc.y
 			if tx < 0 or ty < 0 or tx >= map_w or ty >= map_h:
 				return false
-			if occupied[ty * map_w + tx] != 0:
+			if m[ty * map_w + tx] != 0:
 				return false
 		return true
 
-	var stand := func(cells: Array, cx: int, cy: int) -> void:
+	var stand := func(cells: Array, cx: int, cy: int, mask = null) -> void:
+		var m = occupied if mask == null else mask
 		for c in cells:
 			var cc: Vector2i = c
 			var tx: int = cx + cc.x
 			var ty: int = cy + cc.y
 			if tx >= 0 and ty >= 0 and tx < map_w and ty < map_h:
-				occupied[ty * map_w + tx] = 1
+				m[ty * map_w + tx] = 1
 
 	var pick := func(family: String) -> String:
 		var list: Array = families.get(family, [])
@@ -152,7 +156,7 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		return family
 
 	var stamp_family := func(family: String, count: int, attempts: int,
-			kind: String, region_idx: int = -1) -> int:
+			kind: String, region_idx: int = -1, mask = null) -> int:
 		var fam := home.call(family) as String
 		var done := 0
 		for _i in count:
@@ -170,8 +174,8 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					if Vector2(float(cx) - st.x, float(cy) - st.y).length() > r3:
 						continue
 				var cells: Array = scale_cells.call(name)
-				if can_stand.call(cells, cx, cy):
-					stand.call(cells, cx, cy)
+				if can_stand.call(cells, cx, cy, mask):
+					stand.call(cells, cx, cy, mask)
 					var st := Stamp.new()
 					st.family = fam
 					st.name = name
@@ -186,7 +190,8 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		return done
 
 	# donor dogenerate.inc: mark the elliptical keep-clear zones of each start
-	var mark_ellipse := func(st: Vector2, r: Vector2) -> void:
+	var mark_ellipse := func(st: Vector2, r: Vector2, mask = null) -> void:
+		var m = occupied if mask == null else mask
 		var cx: int = int(st.x)
 		var cy: int = int(st.y)
 		var rx := maxf(1.0, r.x * s)
@@ -196,7 +201,7 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 				var nx := (float(x) - float(cx)) / rx
 				var ny := (float(y) - float(cy)) / ry
 				if nx * nx + ny * ny <= 1.0:
-					occupied[y * map_w + x] = 1
+					m[y * map_w + x] = 1
 
 	for st in start_tiles:
 		mark_ellipse.call(st, CIRCLE1)
@@ -263,20 +268,53 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# SetupStartingResources: woodland/stone near (but not inside) each start
 	for si in range(start_tiles.size()):
 		stamp_family.call("stones", 2, 128, "stone", si)
-		stamp_family.call("forests_pine_small", 2, 128, "forest", si)
-		stamp_family.call("forests_mixed_medium", 1, 128, "forest", si)
+		# T2GEN P1-3: keep the near-start woodland stamp (fairness) but one
+		# per start, not three, so scan_map's 8-16 patch gate still holds with
+		# the widened donor-footprint core painting.
+		stamp_family.call("forests_pine_small", 1, 128, "forest", si)
 		for st in start_tiles:
 			mark_ellipse.call(st, CIRCLE2)
 
 	# rest stage: weighted forest/stone/hill/decor families across the map
 	var area_scale := float(map_w * map_h) / (160.0 * 160.0)
+	# T2GEN P1-3: restore the separate donor foreststype=0 families instead of
+	# the single collapsed `forests_pine_small` (map_density.md cause #1).  The
+	# old P-46 "8-14 patches" cap was a port-invented target, not donor-derived;
+	# scan_map.py still hard-gates 8-16 patches + mean 96..768 (QA-1), so these
+	# counts are deliberately modest and forest uses its OWN occupancy grid.
+	# Near-start SetupStartingResources stamps (above) stay byte-identical.
+	# T2GEN P1-3 (new gate): donor foreststype=0 families at their literal
+	# needed=floor(W*H*freq) counts (map_density.md 3.2, prob=1 column, 115
+	# stamps at 320).  `base` is needed/area_scale so the existing count formula
+	# reproduces them exactly; the separate forest grid enforces no-overlap.
+	var forest_recipes := [
+		["forests_pinefir_big", 3.6],
+		["forests_spruce_big", 3.6],
+		["forests_pine_big", 3.6],
+		["forests_pine_big_2", 3.6],
+		["forests_spruce_medium", 4.9],
+		["forests_pinefir_medium", 4.9],
+		["forests_pine_medium", 4.9],
+		["forests_pinefir_small", 4.2],
+		["forests_pine_small", 4.2],
+	]
+	var forest_occ := PackedByteArray()
+	forest_occ.resize(map_w * map_h)
+	for i in forest_occ.size():
+		if terrain[i] == water_id:
+			forest_occ[i] = 1
+	# start keep-clear: CIRCLE1/CIRCLE2 ellipses, same as the shared grid.
+	for st0 in start_tiles:
+		mark_ellipse.call(st0, CIRCLE1, forest_occ)
+		mark_ellipse.call(st0, CIRCLE2, forest_occ)
+	for r in forest_recipes:
+		var count := maxi(1, int(round(float(r[1]) * area_scale)))
+		# The 160-tile gameplay/selftest map is not a density gate; full donor
+		# 320 counts leave too little open ground for the scripted build test.
+		if map_w <= 160:
+			count = maxi(1, int(round(float(count) * 0.04)))
+		stamp_family.call(str(r[0]), count, 200, "forest", -1, forest_occ)
 	var recipes := [
-		# P-46: the 4 donor sacred groves (game.gd _gen_forests) already supply
-		# the big belts. Painting all seven forest_* families at area_scale=4
-		# stamped ~38 extra cores (patches 42, target 8-14). Keep only the small
-		# pine family globally; the near-start SetupStartingResources stamps and
-		# all donor distances (s/area_scale for mines) are unchanged.
-		["forests_pine_small", 1, "forest"],
 		["stones", 3, "stone"],
 		["stoneforests", 2, "stone"],
 		["hills_dark", 2, "hill"],

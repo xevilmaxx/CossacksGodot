@@ -1,0 +1,38 @@
+{
+  "name": "water_glints",
+  "size_px": [512, 512],
+  "seed": 7,
+  "background": [0, 6, 13],
+  "native_render": true,
+  "resample": "nearest",
+  "final_resample": "lanczos",
+  "grain_lift": 0.1,
+  "layers": [
+    {
+      "type": "water",
+      "sheet": "diffusewaves2",
+      "mode": "deep",
+      "tint": [0.0, 0.025, 0.05],
+      "opacity": 1.0,
+      "glints": true
+    }
+  ],
+  "reference": {
+    "image": "articolo-787.jpg",
+    "box": [890, 12, 960, 30],
+    "glint_fraction_pct": 0.0,
+    "glint_fraction_measured_in": "articolo-787.jpg river (890,12,960,30) + maxresdefault_1.jpg surf, isolated components only",
+    "isolated_glint_cap_pct": 0.3,
+    "glint_exponents": [170, 120],
+    "specular_color": [0.4, 0.4, 0.4],
+    "sun_dir_mapped": [-0.08618, 0.0, 0.9387],
+    "reference_max_glint_size_px": 12,
+    "reference_luminance_variance": 153.3
+  },
+  "verification_notes": {
+    "bands_foam_intentionally_absent": "A1-A3 gate the WHOLE crop with the water mask forced to deep (water_glints.md §5). Adding a sand/wash/foam band would inject bright-neutral pixels and manufacture a false A1 pass; the renderer still has no sun vector, so specular glints remain untestable in-engine.",
+    "new_keys_used": ["native_render", "resample", "final_resample", "grain_lift"],
+    "former_tool_limitation": "none applicable - deep-water tile needs no shore geometry",
+    "genuine_port_defect": "water_overlay.gdshader:69-75 (x8/x4, constant L, inverted corona, broad sheen) - requires in-engine shader fix"
+  }
+}

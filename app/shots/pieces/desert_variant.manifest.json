@@ -1,0 +1,127 @@
+{
+  "generator": "terrain_piece_render.py",
+  "version": 1,
+  "name": "desert_variant",
+  "spec": "app/tools/piece_specs/desert_variant.json",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "render_size_px": [
+    512,
+    512
+  ],
+  "mirror_tile_size": 1024,
+  "resample": "bilinear",
+  "final_resample": null,
+  "grain_lift": 0.0,
+  "output": "app/shots/pieces/desert_variant.png",
+  "comparison": "app/shots/pieces/desert_variant_compare.png",
+  "sha256": "f1c674aa371642ce9700918df248da2a2b41e820a9a54b5541012e1dcddcfcf4",
+  "layers": [
+    {
+      "name": "desert6",
+      "source": "app/assets/terrain/blocks/desert6.png",
+      "tile": true,
+      "tile_size": [
+        1024,
+        1024
+      ],
+      "offset_px": [
+        0,
+        0
+      ],
+      "contrast": 1.12,
+      "brightness": 1.09,
+      "scale": 1.0,
+      "mask_mode": null,
+      "mask_band": null,
+      "contour": false,
+      "opacity_mask": false,
+      "index": 0,
+      "type": "block",
+      "opacity": 1.0
+    },
+    {
+      "name": "rock_sea1",
+      "source": "app/assets/models/sprites_hi/rock_sea1.png",
+      "source_dir": "hi",
+      "pos_norm": [
+        0.6,
+        0.5
+      ],
+      "pos_px": [
+        307,
+        256
+      ],
+      "anchor": "foot",
+      "foot_px": [
+        51,
+        -194
+      ],
+      "scale": 1.0,
+      "sprite_size_px": [
+        512,
+        512
+      ],
+      "stretch": null,
+      "tile": false,
+      "index": 1,
+      "type": "sprite",
+      "opacity": 1.0
+    },
+    {
+      "type": "patches",
+      "patch_px": 63,
+      "grid": [
+        9,
+        9
+      ],
+      "gain": 0.0,
+      "olive_weights": [
+        1.0,
+        0.96,
+        0.68
+      ],
+      "cover": "positive",
+      "block": "desert2",
+      "hard_rim": false,
+      "seed": 19,
+      "index": 2,
+      "opacity": 0.85
+    },
+    {
+      "type": "glaze",
+      "tint": [
+        1.04,
+        1.0,
+        0.97
+      ],
+      "white_floor": 256,
+      "strength": 0.45,
+      "exact_white_pct": 0.0,
+      "index": 3,
+      "opacity": 1.0
+    }
+  ],
+  "bands": null,
+  "reference": {
+    "provided": true,
+    "image": "MADVBuilding1.JPG",
+    "directory": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3",
+    "box": [
+      5,
+      5,
+      470,
+      38
+    ],
+    "available": true,
+    "source_size": [
+      485,
+      486
+    ],
+    "resolved": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3\\MADVBuilding1.JPG"
+  },
+  "tool_limits": "Coast foam/wash are diffuse approximations (no time scroll). Sun-linked specular glints still require an in-engine capture. Faces/patches are 2D height proxies: no real height channel, collision or buildability. Winter glaze keeps exact white but readers must verify cool bias themselves."
+}

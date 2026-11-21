@@ -220,6 +220,229 @@ the separate relief sample). Full-map work beyond TB-B5 remains gated on these v
   `data\`). Shore look = `sandsea1..6` tiles + water shader + DLC5 coastal/lakes/rivers masks.
   TDR-4's procedural foam proposal is a *port-authored* approximation, not a donor port.
 
+## T2 PIECE-LANE WAVE (owner directive, this session — new strategy)
+
+Owner verdict: full/small-map terrain graphics are still FAR from the donor. New bottom-up order:
+1. Render **single pieces** headlessly (water, shore, shore+water, plain grass, grass with trees,
+   grass with stones, ravine face, etc.) — invent all useful combos.
+2. Verify each piece's textures/sprites against donor truth BEFORE composing anything.
+3. Only when pieces are right → small map → then FULL map saved as a whole-map PNG for direct
+   confrontation. **FINAL OWNER RULE:** map_w/map_h are CELL counts; each cell is a terrain tile
+   rendered at tile texture size (owner example 64×64 px). Therefore PNG = `map_w*tile_px` ×
+   `map_h*tile_px` (e.g. 320×64 = 20480×20480 at tile_px 64). `--tile-px 1` is only a compact
+   diagnostic. 4k was an example; one-pixel-per-cell was my misreading, both corrected.
+4. Prefer headless/Python rendering; interactive Godot is not required for piece tests.
+5. Water effects are explicitly NOT acceptable yet — dedicated deep investigation + re-port lane.
+6. Also investigate the reported minimap left-click jump slowness + first-seconds graphical glitches.
+
+Lane T2-INFRA (harness/tools), T2-PIECE (one spec per piece, disjoint docs), T2-WATER (water re-port),
+T2-NAV (minimap perf) all run in parallel. Also added on owner report: **mine display** (mines render
+wrongly and `test*` placeholder tiles appear on terrain) → `docs/audit/PIECES/mines_display.md`.
+Each agent owns exactly one output path; see triage addendum `docs/audit/TERRAIN_BEAUTY_TRIAGE.md`.
+
+**T2-INFRA-2 DONE:** `app/tools/full_map_shot.py` produces the canonical whole-map PNG at
+`map_w*tile_px × map_h*tile_px` (default tile_px 64 → 20480×20480, 152.8 MiB, streamed row-band
+writer). `--tile-px 1` gives a compact 320×320 diagnostic. Runner job t2full-dump/732 ok.
+CAVEAT: diagnostic compositor from real port blocks/tileblock placement, NOT the exact in-game shader/lighting.
+
+**T2-WATER-2 result (done):** `docs/audit/WATER_PORT_FIX.md` — root cause D1 texture aliasing
+(1024² wave sheets sampled at 3.8–35 texels/pixel, `filter_linear` + mipmaps off) → port ACF lag1
+0.27–0.47 vs donor 0.73–0.80; D2 glint ×8/×4 with corona as multiplier; D4 α floor 0.35 exposing
+flat teal ring; D5 cyan colour. 11 concrete parameter changes with measured targets.
+
+**T2-WATER-1 result (done):** `docs/audit/WATER_REPORT.md` — full donor equation transcription,
+18-row gap table, replacement shader plan. Corrected: `.dev` shader pair ships; `heightmapwaves0.tga`
+has constant alpha 255 so is NOT the height source (engine supplies it); `reflectionMap` is
+projected/screen, not the static cubemap. Build agent to be assigned after WATER-2 measurements land.
+
+**T2-WATER-3 result (done):** recommends keeping/hardening approach A (canvas_item overlay) with
+bind-time baked proxies; rejects screen-texture reflection, cubemap, and pure procedural fBm. Its
+645 ms perf figure is the OLD baseline — current gate is **50.06 ms PASS** (job 656). It corrected a
+prior assumption: `hint_depth_texture` IS supported in Compatibility, just irrelevant to a 2D scene.
+
+**T2-NAV result (done):** minimap left-click is O(1) and the camera jumps in one frame; the slowness
+and first-seconds blank quadrants come from `_build_chunk` amortization (2 chunks/frame, no fallback),
+not hit-testing or stale fog. Fix proposals: centre-out bake queue, no-hole fallback, camera clamp on
+jump, per-frame minimap box. NOTE: its cited 645 ms perf number is the OLD baseline; current gate is
+**50.06 ms PASS** (job 656) after RENDER-1 optimisation — the mechanism still stands, at lower cost.
+
+**T2 rock conflict RESOLVED (quality-first rule 2):** `rock_striation_arbitration.md` — all 9 port
+PNGs are byte-exact RGB copies of donor DDS; the two docs measured different frequency bands.
+VSI (vertical striation index): rock1 4.29 strongest; rock8 1.66 fine flutes on coarse olive fill.
+Verdict: layer **rock8 face fill + rock1 flutes/shading**; rock2/3/5/6/7/9 unsuitable.
+
+**T2-DECALS DONE:** `docs/audit/PIECES/donor_decals_and_masks.md` — 469 donor DDS (all DXT5/RGBA,
+readable); DXT5 alpha = coverage/opacity, NOT a data ramp; envfieldd/w share one alpha; 226 winter
+`dw` plates unwired; U1–U6 proposed uses + explicit non-uses. **Alpha conflict RESOLVED:** `decal_alpha_arbitration.md` — all 7 deco_png are colorType 2 RGB
+(no alpha at all); donor envfieldd/w alpha footprint exactly (17,19,494,494); port RGB is
+byte-identical to donor RGB, only alpha dropped. `field_crops.md` was wrong on file format but right
+on footprint loss. Fix = regenerate 7 PNGs via `copy_assets.py:44-57/121-127` (colorType 6).
+
+**T2 piece-spec results so far:** `grass_plain` (grass1 donor-exact; mandated grass6+grass9 stack is
+20–40 L too dark — corrected recipe in doc), `grass_mottled` (terrain-driven ±25–35 L gain mandatory),
+`shore_sand` (sand threshold -0.05→-0.1; whole outer water ring wrongly converted to sand; dry sand
+base; wrong sector windows; stair-step edge), `ravine_face` (donor 17.3–17.9% rock vs port 3.7%; rock8
+art already correct; render-only visual face-collar at height step ~0.25 proposed, no buildability
+change), `mines_display` (ROOT CAUSE: game.gd:593 mine apron→terrain=1 → test2/test3 ~50% of footprint;
+world.gd:1663 draws generic rock not mine sprite; test*.dds are real soil textures, not placeholders),
+`desert_variant` (12 donor palettes; port flat tint; rock_landstone1 is green mossy, needs dry grade),
+`shore_rock` (rock1/rock4/rock8 aspect table; striation conflict → T2-ARB-ROCK), `hill_ridge` (donor
+g_hil1 aspect 1.69; port relief uses bbox only, ignores mask occupancy, and slope 0.165 < 0.5 cliff
+threshold → green flanks, 0.09% rock disc). `plateau` (stamps stack to h=7.25 vs donor 2.964; 8-tile walkable ramp, no rock face),
+`shore_water_transition` (donor foam DOES exist; clean shallow #A8B1AB not #696B65; port has ZERO
+wash band — collar wet=0 + shader discard), `forest_broadleaf` (tree_oak is saturated chartreuse
+sat 0.97 vs muted olive-lime; only 14% broadleaf). These become build tickets after the piece renderer lands.
+
+**T2-INFRA-1 DONE (upgraded):** `app/tools/terrain_piece_render.py` — deterministic headless Pillow
+renderer, now with `patches` (terrain-driven ±L olive gain), `face` (rock8 fill + rock1 flutes, hard
+rim, lit/shadow ramp), `glaze` (luminance-masked cool tint), shore `bands`/foam/contour, `opacity_mask`,
+`brightness`, `native_render`/grain preservation. All previous piece hashes unchanged (backward compat).
+Honest limits: face is a 2D visual proxy (geometry criteria stay UNVERIFIABLE); no true specular/sun.
+
+**T2 re-verification wave:** all four verify agents re-render pieces on the upgraded renderer.
+- WATER DONE: shallow 2→3 PASS (bands now correct: sand 36 px, wash 34 px); glints unchanged (no
+  headless sun vector). Remaining fixes are in-engine → T2-BUILD-WATER.
+  **Coordinator palette decision:** `#C3D1CA` is the hard gate (clean crop); `#696B65` was from a
+  minimap-border-contaminated crop and is retained only as a flagged legacy design anchor.
+
+**T2-BUILD-WATER DONE:** exact donor shader re-port — deep colour within 1.6 levels/channel,
+ACF lag1 0.04→0.67, glints 0% (matches donor), perf 48–71 ms PASS, 29/29 + 17/17. Fixed a 4× mask
+scale bug. Remaining: shoreline band flat teal = chunk-bake substrate (→ RENDER owner).
+
+**BUILD WAVE:**
+- ASSET DONE: decal alpha restored (7 PNGs colorType 6, byte-exact donor alpha); 33 decor sprites
+  blue-lifted after root cause = Blender AgX crushing blue to B≈7 → Standard/sRGB + donor-derived lift;
+  all 66 colour measurements pass, 73 PNGs regenerated, no donor binaries added. py_compile clean.
+  Follow-up: blue trunk artifact fixed — foliage-only lift; oak trunk B/G 1.53→0.78 (donor 0.74),
+  canopy lit B 44.3 retained, all 33 sids × 2 sizes PASS. 38 tree PNGs regenerated.
+- GEN IN_PROGRESS (game.gd/pattern_gen.gd): mines, sand+sector fold, density, relief clamp, winter.
+- RENDER DONE (world.gd non-water, +415/−66, backup T2RENDER): shore collar RGB (104,94,65)→(155,166,151)
+  flat teal gone; grass std 24→31.1 (target 30–40); forest 1,953→949 trees/MP (target 650–1000);
+  field decal wired with donor alpha; ravine face-collar 0.25 threshold. Gates 29/29+17/17, bench
+  219.47 ms PASS (tight headroom). Gaps: rim 8px not ≤3px, mine marker needs focused shot. Captures
+  t2render_land/relief/shore2.png. Report docs/audit/T2RENDER_REPORT.md.
+  Shore tone-down DONE: near-white halo gone; wash 21–39 px (3/4 transects in 30–50 band), RGB
+  138–164; bench 220.6 ms PASS; t2render_shore3.png. NOTE: current selftest 28/29 `build` failure is
+  attributed to concurrent GEN game.gd edits — GEN must restore 29/29 before wave closure.
+  **Visual review (coordinator):** striated ravine walls + grass tonal variation are real gains, but
+  shore is now an over-bright white glow (needs narrower/darker 3-band) and tree trunks look blue
+  (blue-lift hit non-canopy pixels). Follow-ups assigned to RENDER and ASSET owners.
+- GEN DONE (game.gd/pattern_gen.gd, backups T2GEN): mine test2/test3 in footprints 190/48→**0/0/0**;
+  sand threshold -0.1 + donor 8×45° sector fold + 3 sandsea tiles (rim 2803→1277); forest coverage
+  0.94→5.7% (capped by scan_map 8–16 patch gate → T2QA recalibration assigned); relief clamp max h
+  8.07→2.964, stacking 13068→0, flat 24.9→62%, PCA aspect 1.49→2.45–3.18, ravine 0.65→2–4.8%,
+  start keep-clear 0. Gates 29/29+17/17, scan all green, bench 202.08 ms, dumps byte-identical.
+  `--check-only` jobs HUNG in this environment (even on untouched data.gd); parse validity proven by
+  selftest loading all scripts. Winter alias data exposed for world.gd owner.
+
+**T2QA scan recalibration DONE:** `scan_map.py` patch gate 40–90 / mean 170–1228 at 320², derived
+from donor stamp counts (115–236) and area scaling (`SCAN_CALIBRATION.md`). Degenerate maps rejected.
+GEN dumps now correctly RED (patches 9–16, coverage 5.1–5.7% vs 15–48%) — a real generator gap, not
+calibration. GEN sent back to raise coverage to ≥15% with 40–90 patches.
+
+**T2-VERIFY-GEO DONE:** `app/tools/terrain_geometry_verify.py` — dump-based CLI with --baseline
+before/after and per-metric PASS/FAIL/UNVERIFIED. Measured 320² dump: plateau max h **8.07** vs donor
+ceiling 2.964, 13,068 stacking cells, flat fraction 24.91% vs 55–65%, ridge aspect 1.08 vs 1.5,
+forest 0.94% vs 17–48%, start keep-clear 0 (PASS). Numbers fed to T2-BUILD-GEN as targets.
+
+**T2 verification wave:** T2-VERIFY-SHORE / -RELIEF / -DECOR / -WATER convert accepted specs into
+JSON, render real piece PNGs, measure criteria and write `verdict_<group>.md`.
+- SHORE v2 DONE: 1/20 → **20 PASS / 1 FAIL** after renderer upgrade (bands 47/73/268 px @720p,
+  foam 1,266 specks, rock anisotropy 3.75, rim 2 px, lit/shadow 1.82). Sole remaining named fail =
+  donor 8-sector fold / 3 distinct sandsea1/5/6 tiles → appended to T2-BUILD-GEN (game.gd:1210-1226).
+- WATER DONE: glints 0% in tool (tool limit) + shallow 8 FAIL/2 PASS; exact shader fixes in verdict doc.
+- DECOR v2 DONE: 18/30 → **29 PASS / 19 FAIL** after renderer upgrade (desert 7/1, field 4/2,
+  bushes 6/1, conifer 3/5, broadleaf 2/6, mines 3/4, stones 4/0). Genuine remaining: sprite blue-lift
+  REBAKE (proxy tints leave halos), field alpha restore at conversion + wire, 4 mine fixes, density.
+- RELIEF v2 DONE: 12/24/10 → **22 PASS / 15 FAIL / 9 UNVERIFIABLE** after renderer upgrade
+  (grass_plain 10/0, grass_mottled 4/4, plateau 1/1/6, hill 2/5, ravine 2/3/3, winter 3/2).
+  Genuine remaining: mottled gain overshoot, ravine flute anisotropy, hill cap/flank inversion,
+  winter wiring, and a HEIGHT/DUMP VERIFIER for geometry criteria (still UNVERIFIABLE from PNG).
+
+**T2-DENSITY DONE:** `docs/audit/PIECES/map_density.md` — port forest covers only **0.94%** of the
+map (10 components) vs donor 17–48% — an 18–50× COVERAGE gap. But per-cell detail is 1,953 trees/MP
+(2–3× donor) — so fixes must ADD forest cells/clumps and THIN per-cell density, not add trees to
+existing cells. Root cause: pattern_gen.gd:279 collapsed 7 families to base=1; game.gd:523 caps each
+stamp to a ≤4.5-tile disc, discarding donor footprints. Also ≥14× per-start resource asymmetry.
+F1–F6 proposals with gates (≥100 stamps, ≥15% coverage, ≥40 patches, 650–1000 trees/MP).
+
+**Wave size:** 25 research/infra micro-agents in the T2 batch, 4 verification agents, 1 density audit,
+1 decal-alpha arbitration, 1 rock arbitration, plus the water build and renderer upgrade now.
+They report asynchronously; later waves will convert accepted specs into rendered pieces, then combos,
+then small map, then the 4k full-map confrontation PNG.
+
+## T2 WAVE CLOSE — final validation (coordinator)
+
+- Fresh 320² dump (`final_fullmap_dump.json`, runner 876) → canonical PNG
+  `app/shots/final_fullmap_20480x20480_tile64.png` (20480² RGB, 185.1 MB, streamed, sidecar with
+  assertions). Diagnostic compositor caveat applies (no Godot shader/lighting/sprites).
+- `scan_map.py` on final dump: **ALL GREEN** — dark 45.6%, rock 6.8%, patches 75, mean 622,
+  coast 100, cliff 96, tileflow 100, reach true.
+- Geometry verifier: PASS 12 / FAIL 5 / UNVERIFIED 6 — the 5 FAILs are stale/misaligned rows
+  (patch target still 8–16 vs authoritative 40–90; `blocked[]` byte-identity no longer applies because
+  GEN legitimately changed relief; trees/MP counts dump nodes, not rendered per-cell detail).
+- Gates across build wave: selftest 29/29, uitest 17/17, bake bench 196–221 ms (<250), determinism
+  byte-identical, 0 orphan Godot processes. `--check-only` jobs hung environment-wide; parse validity
+  proven by selftest loading all scripts.
+- Final sample captures: `terrain_land.png` (trees/brown trunks/fields/ravine), `t2render_relief.png`,
+  `t2render_shore3.png`, `water_t2.png`, plus 17 piece PNGs under `app/shots/pieces/`.
+- HONEST STATUS: measurable fidelity improved substantially, but still NOT donor-equal — grass gain
+  is coarse blotchy, shore water still has cellular veins, ravine rim 8 px not ≤3 px, water lacks
+  reflection/9-octave FBM, and the full-map compositor omits real shader/lighting. Further work needs
+  a new wave, starting with the remaining piece-proxy failures and full in-engine comparison.
+
+## T4 QUALITY REGRESSION WAVE (owner rejection, highest priority)
+
+Owner: current terrain is a "total checkerboard mess", worse than before; either use donor logic or
+revert to last decent version. **All further feature work is on hold.** Full `world.gd.bak-*` chain is
+available in `inbox/backup/` (agentAB → T3W, 11 backups).
+- T4-REGRESSION (read-only): identify exact change that introduced checkerboard + minimal revert target
+  preserving water/mine/field/winter fixes → `docs/audit/TERRAIN_CHECKERBOARD_TRIAGE.md`.
+- T4-DONOR-BLEND DONE (`docs/audit/TERRAIN_BLEND_DONOR_PLAN.md`): donor fact = discrete 124-slot TileBlock
+  per cell + 3-pass probability-weighted SmoothTileMap (22 chains in tilesmooth_scripts.cfg; port
+  smooth_summer.json faithfully copies the 10 Summer chains). Generator is faithful (game.gd:1323-1589);
+  renderer is NOT: caps distinct names 3/2, fractional coverage washes rare names to ~25% alpha,
+  global grass1 base, fixed role textures, synthetic gain path. Fix = world.gd-only, exact per-cell
+  coverage, chunk-dominant base, ≤3 composites, delete gain path. Also 39 preset names have no PNG.
+- T4-TEST DONE (`app/tools/terrain_blend_test.py`): terrain-only (no objects) A/B harness with FFT 2D
+  autocorrelation grid-peak metric. Measured: uniform **0.113**, donor_tiles **0.064**, current_gain
+  **0.651** — checkerboard is now objectively measurable. PNGs blend_uniform/donor_tiles/current_gain.
+- T4-FIX-GROUND DONE (world.gd, backup T4G, 113 deletions/0 additions): removed entire synthetic gain
+  path (595–701, 1036–1037, 1601–1604), kept mine/field/winter/no-hole/water/face-collar. REAL capture
+  grid_peak **0.0964 → 0.0228** (target <0.20); visual = smooth olive meadow, lattice gone. Gates
+  29/29 + 17/17, bench 143.46 ms PASS. Captures t4ground_land/relief.png. Clean state saved as
+  `world.gd.bak-T4CLEAN`.
+- T4-BLEND IN_PROGRESS (world.gd only): SAFE subset of donor tile fidelity — 6/3 distinct donor blocks
+  per chunk with exact per-cell coverage, NO gain/patch/hard-rim. Rollback to bak-T4CLEAN if grid_peak
+  ≥0.20, visual worsens, or any gate fails.
+
+## T3 FIX WAVE — CLOSED (but visually rejected by owner — metrics alone were not sufficient)
+
+Four parallel owners on disjoint files, backups + gates required:
+- T3-FIX-WORLD DONE (`world.gd`, +265/−69, backup T3W): grass std 30.9→32.6, hi-freq 6.9→8.8 (both
+  in donor bands); ravine rim ~8→≈3 px via cached boundary subdivision; 21 winter*.png loaded (0→21);
+  no-hole coverage 0→100% with centre-out bake, 2-chunks/frame + LRU 24 kept. Bench 125.05 ms PASS.
+  Gates 29/29 + 17/17. Captures t3world_land/relief/winter.png.
+
+**FINAL independent verification (coordinator):** fresh dump (ticket 925) →
+`app/shots/FINAL_fullmap_20480x20480_tile64.png` (20480² RGB, 185 MB, sidecar assertions); scan_map
+ALL GREEN (forest 45.6%, rock 6.8%, patches 75, mean 622, coast 100, cliff 96, tileflow 100, reach true);
+geometry verifier PASS 13 / FAIL 0 / UNVERIFIED 10; selftest 29/29 (ticket 926) + uitest 17/17 (927)
+re-run independently. 0 orphan Godot processes.
+- T3-FIX-SHADER DONE (`water_overlay.gdshader`, backup T3S): root cause = diffusewaves0 1–3px cell walls
+  sampled nearly unblurred (BLUR 0.0015 ≈0.4 texel) → 8-tap ring BLUR 0.0060, octave weights
+  0.92/0.06/0.02, gentle swell. Vein proxy 2.96→1.44 (−51%), L σ 11.73→8.12 (donor 8.9), RGB
+  (45,55,57) vs (44,53,54), glints 0%, gates 29/29+17/17. Capture t3shader_water.png.
+- T3-FIX-NAV DONE (`hud.gd` only — camera.gd needed no edit, clamp already public): camera.clamp_pos()
+  + box draw in click AND drag branches; box redraw each frame change-gated; old timer box removed.
+  Gates 29/29 + 17/17. REAL windowed minimap click driven via testbridge RPC (t3nav-shot-battle/897):
+  camera clamped to Y=3736px, no blank border, viewport box relocated → F2/F3 VERIFIED. F4 deferred
+  (would rewrite minimap; fog already guarded).
+- T3-FIX-GEO DONE (`terrain_geometry_verify.py`, backup T3G): imports authoritative `patch_gates()`
+  (40–90 at 320²); criterion G scoped to render-only changes; trees/MP relabeled as dump-node diagnostic;
+  per-seed variance metrics advisory. Before PASS 12/FAIL 5 → **PASS 13 / FAIL 0 / UNVERIFIED 10**.
+  Strict-gate regression test still FAILs a flipped blocked[] byte. py_compile clean.
+
 ## Parallel doc lane (owner request, this session)
 
 | ID | Ticket | Owner | Owned files | State | Note |

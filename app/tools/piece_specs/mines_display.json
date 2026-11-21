@@ -1,0 +1,47 @@
+{
+  "name": "mines_display",
+  "size_px": [512, 512],
+  "seed": 7,
+  "background": [40, 44, 48],
+  "layers": [
+    {"type": "block", "name": "ground1", "tile": true, "contrast": 1.12},
+    {"type": "sprite", "name": "mine_gold", "source": "low", "pos": [0.5, 0.5],
+     "scale": 1.0, "anchor": "foot", "opacity": 1.0}
+  ],
+  "sprite_adaptation": {
+    "mandated": "mine_gold",
+    "used": "mine_gold",
+    "source": "low",
+    "reason": "mine_gold is the correct sprite (doc §2.1.6/§6.2; the port defect is that the ore deposit draws rock.png). Adapted with source=low because no sprites_hi/mine_gold.png exists - only the 160px sprites/ set. The baked olive ground disc in that PNG is retained and measured as criterion A5."
+  },
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [880, 130, 1180, 330],
+    "status": "UNVERIFIED",
+    "reference_role": "ground/rock proxy for the renderer comparison tile ONLY; no donor screenshot in docs/audit/TERRAIN_REFERENCE_IMAGES.md shows a clear mine. Anchors are donor asset geometry, not this crop.",
+    "reason": "No donor screenshot shows a clear mine; geometry anchors are used instead.",
+    "geometry_source": {
+      "prop": "data/objects/env/minegold.prop",
+      "mesh": "data/actors/env/minegold.osm",
+      "scale": 0.3152,
+      "jitter_min": 1.0,
+      "jitter_max": 1.0,
+      "converted_obj": "app/assets/models/obj/mine_gold.obj",
+      "raw_bounds": {"x": 15.026, "y": 15.822, "z": 1.913},
+      "scaled_size_units": {"x": 4.736, "y": 4.987, "z": 0.603},
+      "port_tile_m": 2.0,
+      "footprint_tiles": {"x": 2.37, "y": 2.49},
+      "sprite": "app/assets/models/sprites/mine_gold.png",
+      "sprite_px": [160, 160],
+      "shared_mesh_sha256_prefix": "A2A6380C7521B941"
+    },
+    "donor_placement": {
+      "families": {"gold": "mng", "iron": "mni", "coal": "mnc"},
+      "setup": "data/scripts/common.inc/dogenerate.inc:522-717 SetupMines",
+      "attempts_per_ring": 256,
+      "pattern_sample": {"name": "mng_1", "w": 8, "h": 10, "occupied": 32, "records": 63},
+      "footprint_test": "_misc_CheckStandPatternExt"
+    },
+    "forbidden_in_footprint": ["test0", "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10", "test11", "test12", "test13", "test14", "test15", "test16", "test17", "test18", "test19", "test20", "test21", "test22", "test23", "test24", "test25"]
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "name": "hill_ridge",
+  "size_px": [
+    512,
+    512
+  ],
+  "seed": 7,
+  "background": [
+    40,
+    44,
+    48
+  ],
+  "layers": [
+    {
+      "type": "block",
+      "name": "grass1",
+      "tile": true,
+      "opacity": 1.0
+    },
+    {
+      "type": "block",
+      "name": "grass_rock1",
+      "opacity": 0.4,
+      "tile": true
+    },
+    {
+      "type": "face",
+      "geometry": {
+        "kind": "polyline",
+        "points": [
+          [
+            0.4,
+            0.08
+          ],
+          [
+            0.6,
+            0.35
+          ],
+          [
+            0.4,
+            0.65
+          ],
+          [
+            0.6,
+            0.92
+          ]
+        ],
+        "height_px": 90
+      },
+      "fill": "rock8",
+      "flutes": "rock1",
+      "stretch": 2.0,
+      "rim_px": 3,
+      "lit": "#6C614B",
+      "shadow": "#393424",
+      "ramp_gain": 35
+    },
+    {
+      "type": "sprite",
+      "name": "tree_spruce1",
+      "source": "hi",
+      "pos": [
+        0.4,
+        0.5
+      ],
+      "stretch": [
+        0.14,
+        0.2
+      ],
+      "anchor": "foot",
+      "opacity": 1.0
+    }
+  ],
+  "reference": {
+    "image": "articolo-787.jpg",
+    "box": [
+      300,
+      210,
+      470,
+      330
+    ],
+    "primary": {
+      "image": "articolo-787.jpg",
+      "box": [
+        300,
+        210,
+        470,
+        330
+      ],
+      "note": "elongated grass-capped ridge, striated dark flank"
+    },
+    "tonal": {
+      "image": "articolo-787.jpg",
+      "grass_box": [
+        655,
+        110,
+        755,
+        132
+      ],
+      "rock_box": [
+        585,
+        122,
+        655,
+        160
+      ]
+    },
+    "distant": {
+      "image": "images.jpg",
+      "box": [
+        250,
+        20,
+        500,
+        60
+      ],
+      "note": "hazy desaturated rolling hills"
+    },
+    "donor_mask": {
+      "pattern": "g_hil1.pattern",
+      "box_cells": [
+        -16,
+        -28,
+        15,
+        25
+      ],
+      "occupied": 725,
+      "aspect": 1.69
+    },
+    "source_doc": "docs/audit/PIECES/hill_ridge.md",
+    "geometry": {
+      "footprint_box_px": [
+        128,
+        40,
+        384,
+        472
+      ],
+      "footprint_aspect": 1.69,
+      "raised_relief_box_px": [
+        154,
+        77,
+        358,
+        435
+      ],
+      "flat_crest_box_px": [
+        186,
+        133,
+        327,
+        379
+      ],
+      "short_flank_px": 32,
+      "long_flank_px": 56,
+      "crest_amplitude": 1.317
+    },
+    "renderer_gap": {
+      "statement": "PARTIALLY RESOLVED: the new 'face' layer (polyline extrusion, rock1 flutes, lit/shadow ramp, hard rim) produces an elongated N-S ridge with rock concentrated on one side; sprite 'stretch' brings tree height into the 40-100 px M8 band (scale 1.2 previously gave 255 px). Geometry M1/M2/M5 are still segmented from a 2D proxy, not from a real height field."
+    },
+    "acceptance": {
+      "M1_bbox_aspect": 1.4,
+      "M1_pca_ratio": 1.9,
+      "M2_crest_aspect": 1.4,
+      "M2_crest_area_pct": [
+        30,
+        45
+      ],
+      "M3_crest_minus_flank_L": 12,
+      "M3_ratio": [
+        1.25,
+        1.8
+      ],
+      "M4_ridge_rock_pct": [
+        5,
+        15
+      ],
+      "M4_whole_piece_rock_pct": [
+        2,
+        7
+      ],
+      "M5_rock_offset_x_frac": 0.15,
+      "M6_hue_deg": [
+        45,
+        75
+      ],
+      "M6_sat": [
+        0.4,
+        0.55
+      ],
+      "M8_tree_centroid": [
+        0.4,
+        0.5
+      ],
+      "M8_tree_height_px": [
+        40,
+        100
+      ]
+    }
+  },
+  "native_render": true
+}
