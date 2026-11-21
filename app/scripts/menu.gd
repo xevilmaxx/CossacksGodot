@@ -29,9 +29,17 @@ var mission_name := ""
 var difficulty := "normal"
 var map_size := 320
 var seed_val := Data.RANDOM_SEED
+# Donor skirmish map options (RC_TERRAIN §2.1 / GUIDE4 App.B02). Map Size and
+# Teams already have rows below; these four complete the donor's six-option set.
+var terrain_type := "land"   # donor Map Shape; enum Data.MAP_TYPES (generator.cfg TerrainTypes)
+var richness := "med"        # donor Minerals/Richness: low / med / rich
+var season := "summer"       # donor Season; enum Data.BIOME = summer / winter / desert
+var relief := "plains"       # donor Terrain Type (Relief): plains / hills / mountains
 var ui_us := 1.0
 var ui_vp := Vector2(1280, 720)
 var menu_scroll: ScrollContainer
+var action_bar: HBoxContainer
+var main_menu_active := true
 
 func _ready() -> void:
 	layer = 20
@@ -40,6 +48,23 @@ func _ready() -> void:
 	_apply_scale()
 	if is_instance_valid(get_tree()) and is_instance_valid(get_tree().root) and not get_tree().root.size_changed.is_connected(_on_vp_resize):
 		get_tree().root.size_changed.connect(_on_vp_resize)
+
+# Donor main-menu mnemonics (DE_AUDIO_UI fnd_20; hotkeys.cfg ev_cf45b67… /
+# ev_7d1a569…): C Campaign / R Random map / S Settings / E Editor / L Load /
+# X Exit / M Multiplayer, fired on key-up. E (editor) and M (network) have no
+# port screen and are out of scope by owner charter, so they are deferred.
+func _unhandled_input(event: InputEvent) -> void:
+	if not main_menu_active or not (event is InputEventKey):
+		return
+	var k := event as InputEventKey
+	if k.echo or k.pressed or k.ctrl_pressed or k.alt_pressed or k.meta_pressed:
+		return
+	match k.keycode:
+		KEY_C: _show_campaigns()
+		KEY_R: _show_skirmish()
+		KEY_S: _show_options()
+		KEY_L: _on_load_game()
+		KEY_X: get_tree().quit()
 
 func _on_vp_resize() -> void:
 	ui_us = _calc_us()
@@ -110,10 +135,13 @@ func _nations() -> Array:
 		return data.nations
 	return [{"id": "ukr", "name": "Ukraine"}, {"id": "rus", "name": "Russia"}]
 
-func _map_types() -> Array:
-	if data.has("map_types"):
-		return data.map_types
-	return [{"id": "land", "name": "Land", "descr": ""}]
+# Donor Map Shape ids come from the read-only Data.MAP_TYPES enum
+# (generator.cfg TerrainTypes), not from a new parallel table here.
+func _terrain_types() -> Array:
+	var out := []
+	for k in Data.MAP_TYPES:
+		out.append({"id": str(k), "name": str(Data.MAP_TYPES[k].get("name", k))})
+	return out
 
 func _starts() -> Array:
 	if data.has("start_options"):
@@ -159,11 +187,21 @@ func _build() -> void:
 	body.add_theme_constant_override("separation", 8)
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	menu_scroll.add_child(body)
+	# Pinned action row: a sibling of the scroll area, never inside it, so
+	# Start/Back stay clickable even when the option rows need scrolling.
+	action_bar = HBoxContainer.new()
+	action_bar.add_theme_constant_override("separation", 8)
+	action_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vb.add_child(action_bar)
 	_show_main()
 
 func _clear() -> void:
+	main_menu_active = false
 	for c in body.get_children():
 		body.remove_child(c)
+		c.queue_free()
+	for c in action_bar.get_children():
+		action_bar.remove_child(c)
 		c.queue_free()
 
 func _btn(text: String) -> Button:
@@ -186,6 +224,7 @@ func _lbl(text: String, fs := 13, col := Color(0.75, 0.72, 0.65)) -> Label:
 
 func _show_main() -> void:
 	_clear()
+	main_menu_active = true
 	var b1 := _btn("Skirmish - random map")
 	b1.pressed.connect(_show_skirmish)
 	body.add_child(b1)
@@ -239,7 +278,15 @@ func _show_skirmish() -> void:
 	body.add_child(_opt_row("Enemy nation", _nations(), nation1, func(id: String): nation1 = id))
 	body.add_child(_opt_row("Opponents", [{"id": "1", "name": "1"}, {"id": "2", "name": "2"}, {"id": "3", "name": "3"}], str(opponents), func(id: String): opponents = int(id)))
 	body.add_child(_opt_row("Teams", [{"id": "ffa", "name": "Free for all"}, {"id": "2v1", "name": "2 vs 1"}], teams_mode, func(id: String): teams_mode = id))
-	body.add_child(_opt_row("Map type", _map_types(), map_type, func(id: String): map_type = id))
+	# Donor's remaining four lobby options (RC_TERRAIN §2.1; values per §2.1 table):
+	# Map Shape = land/med/pen/islands/continents, Minerals = low/med/rich,
+	# Season = summer/desert/winter, Relief = plains/hills/mountains.
+	# Canonical donor Map Shape row: feeds both the new terrain_type key and the
+	# legacy map_type key (PORT-SIM aliased them; main.gd:238 prefers the former).
+	body.add_child(_opt_row("Terrain / shape", _terrain_types(), terrain_type, func(id: String): terrain_type = id; map_type = id))
+	body.add_child(_opt_row("Minerals", [{"id": "low", "name": "Poor"}, {"id": "med", "name": "Normal"}, {"id": "rich", "name": "Rich"}], richness, func(id: String): richness = id))
+	body.add_child(_opt_row("Season", [{"id": "summer", "name": "Summer"}, {"id": "desert", "name": "Desert"}, {"id": "winter", "name": "Winter"}], season, func(id: String): season = id))
+	body.add_child(_opt_row("Relief", [{"id": "plains", "name": "Plains"}, {"id": "hills", "name": "Hills"}, {"id": "mountains", "name": "Mountains"}], relief, func(id: String): relief = id))
 	body.add_child(_opt_row("Starting", _starts(), start_option, func(id: String): start_option = id))
 	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
 	body.add_child(_opt_row("Map size", [{"id": "240", "name": "240"}, {"id": "320", "name": "320"}, {"id": "400", "name": "400"}], str(map_size), func(id: String): map_size = int(id)))
@@ -262,10 +309,10 @@ func _show_skirmish() -> void:
 	body.add_child(shb)
 	var go := _btn("Start skirmish")
 	go.pressed.connect(func(): _emit_start("Skirmish"))
-	body.add_child(go)
+	action_bar.add_child(go)
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
-	body.add_child(back)
+	action_bar.add_child(back)
 	_apply_scale()
 
 func _show_battles() -> void:
@@ -278,7 +325,7 @@ func _show_battles() -> void:
 		body.add_child(bb)
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
-	body.add_child(back)
+	action_bar.add_child(back)
 	_apply_scale()
 
 func _on_battle(bd: Dictionary) -> void:
@@ -310,7 +357,7 @@ func _show_campaigns() -> void:
 			body.add_child(mb)
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
-	body.add_child(back)
+	action_bar.add_child(back)
 	_apply_scale()
 
 func _on_mission(cd: Dictionary, mid: String) -> void:
@@ -345,7 +392,7 @@ func _on_load_game() -> void:
 			body.add_child(b)
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
-	body.add_child(back)
+	action_bar.add_child(back)
 	_apply_scale()
 
 # Menu-side seed UI. The value always travels through cfg["seed"] as an int:
@@ -398,7 +445,7 @@ func _show_options() -> void:
 	body.add_child(shb)
 	var back := _btn("Back")
 	back.pressed.connect(_show_main)
-	body.add_child(back)
+	action_bar.add_child(back)
 	_apply_scale()
 
 func _save_options() -> void:
@@ -410,7 +457,9 @@ func _save_options() -> void:
 func _emit_start(descr: String) -> void:
 	var cfg := {"mode": mode, "nation0": nation0, "nation1": nation1,
 		"opponents": opponents, "teams": teams_mode,
-		"map_type": map_type, "start_option": start_option,
+		"map_type": map_type, "terrain_type": terrain_type,
+		"richness": richness, "season": season, "relief": relief,
+		"start_option": start_option,
 		"mission": mission_name, "descr": descr,
 		"difficulty": difficulty, "map_size": map_size, "seed": seed_val}
 	chosen.emit(cfg)

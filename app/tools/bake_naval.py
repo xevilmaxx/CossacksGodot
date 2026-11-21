@@ -16,7 +16,11 @@ land under --out.
 
 index.json uses the exact same schema as anim/index.json:
   {key: {"cell": N, "actions": {action: {"frames", "duration", "loop",
-         "ortho", "center", "ax", "ay", "tool"}}}}
+         "ortho", "center", "ax", "ay", "tool",
+         "bbox", "fig_h", "foot", "cx"}}}}
+The four metric fields are measured from the final PNG's alpha channel
+(alpha > 8, union over every dir x frame cell) before index.json is written,
+so a re-bake cannot silently drop them again (P-45).
 """
 import argparse, json, math, os, struct, sys, tempfile
 from pathlib import Path
@@ -123,6 +127,36 @@ def projected_ortho(frames, skinned, center):
                 y0, y1 = min(y0, py), max(y1, py)
         worst = max(worst, 2.0 * max(abs(x0), abs(x1), abs(y0), abs(y1)))
     return worst * 1.12
+
+
+def measure_sheet(path, cell):
+    """Cell-local alpha>8 union bbox over every cell of an 8-dir sprite sheet.
+
+    Mirrors sheet_metrics.py's measurement but uses a strict alpha>8 cut, so
+    single-pixel near-transparent fringe does not inflate the ink box. The
+    world anchors (ax/ay) remain authoritative in world.gd; these four fields
+    are fallback/audit data required by the shared action schema.
+    """
+    im = bs.Image.open(path).convert("RGBA")
+    cols, rows = im.width // cell, im.height // cell
+    x0 = y0 = cell
+    x1 = y1 = 0
+    for r in range(rows):
+        for c in range(cols):
+            crop = im.crop((c * cell, r * cell, (c + 1) * cell, (r + 1) * cell))
+            bb = crop.getchannel("A").point(lambda v: 255 if v > 8 else 0).getbbox()
+            if bb is None:
+                continue
+            x0, y0 = min(x0, bb[0]), min(y0, bb[1])
+            x1, y1 = max(x1, bb[2]), max(y1, bb[3])
+    if x1 <= x0 or y1 <= y0:
+        return {}
+    return {
+        "bbox": [x0, y0, x1, y1],
+        "fig_h": round((y1 - y0) / float(cell), 4),
+        "foot": round(y1 / float(cell), 4),
+        "cx": round((x0 + x1) / 2.0 / float(cell), 4),
+    }
 
 
 def bake_naval_unit(game, out, key, base, size, aaf_override, action,
@@ -250,7 +284,9 @@ def bake_naval_hull(game, out, key, base, size, tmp):
     print("naval sheet %s %dx%d" % (sheet_path, sheet.width, sheet.height),
           flush=True)
     return {"cell": size, "actions": {"hull": {
-        "frames": 1, "duration": 0.0, "loop": False,
+        # Static 8-view portrait: one frame, but a finite duration so generic
+        # action-player code never divides by / advances on a zero duration.
+        "frames": 1, "duration": 1.0, "loop": False,
         "ortho": round(ortho, 3),
         "center": [round(center.x, 3), round(center.y, 3), round(center.z, 3)],
         "ax": ax, "ay": ay, "tool": None}}}
@@ -291,6 +327,10 @@ def main():
                     else:
                         entry = hull
             if entry:
+                for act, ad in entry["actions"].items():
+                    sheet = os.path.join(a.out, "%s_%s.png" % (key, act))
+                    if os.path.exists(sheet):
+                        ad.update(measure_sheet(sheet, a.size))
                 idx[key] = entry
                 json.dump(idx, open(idx_path, "w", encoding="utf-8"), indent=1)
                 print("naval OK %s" % key, flush=True)

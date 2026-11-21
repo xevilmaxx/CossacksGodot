@@ -1,0 +1,741 @@
+{
+  "generated": 1795257666.237379,
+  "count": 19,
+  "passed": 19,
+  "failed": 0,
+  "results": [
+    {
+      "checks": [
+        {
+          "detail": "anchor (41.0, 49.0) block y 36.5..49.0",
+          "name": "rect_above_anchor",
+          "passed": true
+        },
+        {
+          "detail": "all 4 probes inside the drawn block reject movement",
+          "name": "block_impassable",
+          "passed": true
+        },
+        {
+          "detail": "north strip is outside the base circle in blocked[] (dynamic obstacle only)",
+          "name": "static_grid_unchanged",
+          "passed": true
+        },
+        {
+          "detail": "unit never entered the drawn block",
+          "name": "no_crossing",
+          "passed": true
+        },
+        {
+          "detail": "unit went around it and reached the north side",
+          "name": "routes_around",
+          "passed": true
+        },
+        {
+          "detail": "north strip walkable again after demolition",
+          "name": "unblock_on_destroy",
+          "passed": true
+        }
+      ],
+      "id": "t_build_flow",
+      "passed": true,
+      "unix_ms": 1795257561162.0,
+      "runner_exit": 0,
+      "wall": 6.92
+    },
+    {
+      "checks": [
+        {
+          "detail": "carry=3 order=gather node=207 moving=false pos=(283.4153, 40.34478) slot=(282.3501, 40.96848) field=(281.0, 42.0016) hits=25 stuck=0.0 nav=[(282.3501, 40.96848)]",
+          "name": "no_mill_holds_load",
+          "passed": true
+        },
+        {
+          "detail": "mill stores food",
+          "name": "mill_is_drop",
+          "passed": true
+        },
+        {
+          "detail": "food 36.9 -> 149.9, gathered 45.0 -> 204.0",
+          "name": "food_reaches_mill",
+          "passed": true
+        },
+        {
+          "detail": "hits 0 -> 0 -> 25",
+          "name": "resow_restores_field",
+          "passed": true
+        }
+      ],
+      "id": "t_mill_logic",
+      "passed": true,
+      "unix_ms": 1795257568284.0,
+      "runner_exit": 0,
+      "wall": 7.13
+    },
+    {
+      "checks": [
+        {
+          "detail": "resolve_mine_sid('hou') == 'hou'",
+          "name": "other_sids_untouched",
+          "passed": true
+        },
+        {
+          "detail": "cursor over gold -> mine_gold",
+          "name": "preview_gold",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "legal_gold",
+          "passed": true
+        },
+        {
+          "detail": "placed gold -> mine_gold",
+          "name": "build_gold",
+          "passed": true
+        },
+        {
+          "detail": "cursor over iron -> mine_iron",
+          "name": "preview_iron",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "legal_iron",
+          "passed": true
+        },
+        {
+          "detail": "placed iron -> mine_iron",
+          "name": "build_iron",
+          "passed": true
+        },
+        {
+          "detail": "cursor over coal -> mine_coal",
+          "name": "preview_coal",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "legal_coal",
+          "passed": true
+        },
+        {
+          "detail": "placed coal -> mine_coal",
+          "name": "build_coal",
+          "passed": true
+        },
+        {
+          "detail": "Mines must be built on an ore deposit.",
+          "name": "no_deposit_rejected",
+          "passed": true
+        },
+        {
+          "detail": "mine buttons in build menu: [\"mine\"]",
+          "name": "one_mine_button",
+          "passed": true
+        },
+        {
+          "detail": "Mine  [N]  100 wood 100 stone  Time: 9s  - type follows the ore deposit",
+          "name": "mine_button_name",
+          "passed": true
+        }
+      ],
+      "id": "t_mine_unified",
+      "passed": true,
+      "unix_ms": 1795257573744.0,
+      "runner_exit": 0,
+      "wall": 5.49
+    },
+    {
+      "checks": [
+        {
+          "detail": "unit_scale=1.25 show_centroids=false units_opaque=true",
+          "name": "config.defaults",
+          "passed": true
+        },
+        {
+          "detail": "Data UNIT_SCALE=2.0 SHOW_CENTROIDS=true UNITS_OPAQUE=true",
+          "name": "config.apply",
+          "passed": true
+        },
+        {
+          "detail": "low=0.25 high=4.0",
+          "name": "config.clamp",
+          "passed": true
+        },
+        {
+          "detail": "unit_anim_layer.material=():<ShaderMaterial#-9223372000817314238>",
+          "name": "shader.attached",
+          "passed": true
+        },
+        {
+          "detail": "rect size=(87.44, 87.44)",
+          "name": "anim.draw_queued",
+          "passed": true
+        },
+        {
+          "detail": "1.0=(87.44, 87.44)  2.0=(174.88, 174.88)",
+          "name": "unit_scale.doubles",
+          "passed": true
+        },
+        {
+          "detail": "foot y at scale 2.0=298.97, 1.0=299.48",
+          "name": "unit_scale.anchored",
+          "passed": true
+        },
+        {
+          "detail": "material=<Object#null>",
+          "name": "shader.disabled",
+          "passed": true
+        },
+        {
+          "detail": "false=false true=true (gates both the prop and building disk draws)",
+          "name": "centroids.toggle",
+          "passed": true
+        }
+      ],
+      "id": "t_visual_tuning",
+      "passed": true,
+      "unix_ms": 1795257580840.0,
+      "runner_exit": 0,
+      "wall": 7.06
+    },
+    {
+      "checks": [
+        {
+          "detail": "root viewport texture acquired",
+          "name": "viewport_texture",
+          "passed": true
+        },
+        {
+          "detail": "res://shots/mill_rotor_check.png (1280, 720) (save error=0)",
+          "name": "png_saved",
+          "passed": true
+        }
+      ],
+      "id": "t_mill_rotor",
+      "passed": true,
+      "unix_ms": 1795257599226.0,
+      "runner_exit": 0,
+      "wall": 18.58
+    },
+    {
+      "checks": [
+        {
+          "detail": "bullet damage_mult tiers with >1x = 6 (need >= 3): [\"aca_fire1=1.10\", \"aca_fire2=1.15\", \"aca_fire3=1.20\", \"aca_fire4=1.30\", \"bla_bullet1=1.20\", \"sta_fire1=1.15\"]",
+          "name": "firepower_tiers_depth",
+          "passed": true
+        },
+        {
+          "detail": "effective bullet damage 1.000 -> 1.265 (want 1.265, 2 tiers applied)",
+          "name": "firepower_damage_stacks",
+          "passed": true
+        },
+        {
+          "detail": "cost-reduction effects=[\"bla_flint1\"], rof_mult effects=[\"aca_rof1\", \"aca_rof2\"]",
+          "name": "flintlock_cost_and_rof",
+          "passed": true
+        },
+        {
+          "detail": "bayonet=[\"bla_bayonet1\"] steel=[\"bla_steel1\"] melee_add 0->7 melee_mult 1.00->1.00 sword 1.00->1.25",
+          "name": "bayonet_melee_upgrade",
+          "passed": true
+        },
+        {
+          "detail": "cavalry recruit effects=[\"bla_harness1\"], drill effects=[\"aca_riding1\", \"sta_fence1\", \"sta_fire1\", \"bar_phys1\", \"bar_music1\", \"bar_grenade1\"]",
+          "name": "cavalry_and_drills",
+          "passed": true
+        },
+        {
+          "detail": "sword mult 1.250 -> 1.438 -> 1.438, upgrade recorded 1 times",
+          "name": "no_duplicate_application",
+          "passed": true
+        }
+      ],
+      "id": "t_upgrades",
+      "passed": true,
+      "unix_ms": 1795257613535.0,
+      "runner_exit": 0,
+      "wall": 14.13
+    },
+    {
+      "checks": [
+        {
+          "detail": "Data.NATIONS has sco=true, name='Scotland', nations=21 (want sco/Scotland)",
+          "name": "sco_nation_registered",
+          "passed": true
+        },
+        {
+          "detail": "NATION_UNITS has sco=true, sco train sids resolved=[\"sco_highlandersword\", \"bagpiper\"]",
+          "name": "sco_nation_units_wired",
+          "passed": true
+        },
+        {
+          "detail": "sco-specific Data.UNITS keys=3 (want >= 3): [\"bagpiper\", \"highlander\", \"sco_highlandersword\"]",
+          "name": "sco_unique_units_in_roster",
+          "passed": true
+        },
+        {
+          "detail": "_bld_key(player=sco, cen)='sco_cen', sprite loadable=true (want sco_* skin)",
+          "name": "sco_building_skin",
+          "passed": true
+        },
+        {
+          "detail": "_anim_key(peasant, sco)='sco_peasant', in index=true, actions=[\"walk\", \"idle\", \"attack\", \"workwood\", \"workfood\", \"workstone\", \"construct\", \"walkwood\", \"walkfood\", \"walkstone\", \"idlewood\", \"idlefood\", \"idlestone\", \"death\"]",
+          "name": "sco_peasant_sheet_reachable",
+          "passed": true
+        },
+        {
+          "detail": "spawned 'sco_highlandersword' (player 0), order=none, walked 6.0 m (want >= 3.0)",
+          "name": "sco_unit_spawn_and_move",
+          "passed": true
+        }
+      ],
+      "id": "t_roster_scotland",
+      "passed": true,
+      "unix_ms": 1795257619707.0,
+      "runner_exit": 0,
+      "wall": 6.21
+    },
+    {
+      "checks": [
+        {
+          "detail": "members/label per donor size 15->15/15, 36->36/36, 72->72/72, 120->120/120, 196->196/196, 400->400/400; no-officer form: rejected",
+          "name": "squad_size_ladder_with_officer",
+          "passed": true
+        },
+        {
+          "detail": "line=line, column=column, square=square (bogus ignored); target layouts line/col/sq=15/15/15 for 15 men",
+          "name": "formation_switch_line_column_square",
+          "passed": true
+        },
+        {
+          "detail": "cmd_replenish=5, loose absorbed=5, members 20->20, far/wrong-type left loose",
+          "name": "replenish_at_officer",
+          "passed": true
+        },
+        {
+          "detail": "atk/def move=2/2 hold=7/7 no-drummer=0/0",
+          "name": "formation_bonuses_2_2_hold_7",
+          "passed": true
+        },
+        {
+          "detail": "squad 7 erased; officer/member squad_of_unit empty and 'squad' keys removed",
+          "name": "disband_clears_squad",
+          "passed": true
+        }
+      ],
+      "id": "t_squads",
+      "passed": true,
+      "unix_ms": 1795257624329.0,
+      "runner_exit": 0,
+      "wall": 4.56
+    },
+    {
+      "checks": [
+        {
+          "detail": "players=3, is_ai=2 (want 3 / 2)",
+          "name": "three_players_two_ai",
+          "passed": true
+        },
+        {
+          "detail": "map_starts=4, AI1 home=(36.0,291.0) purse=1750, AI2 home=(40.0,40.0) purse=1750",
+          "name": "each_ai_has_start_and_resources",
+          "passed": true
+        },
+        {
+          "detail": "AI1 issued=11 active_ticks=120, AI2 issued=11 active_ticks=120",
+          "name": "each_ai_issues_orders",
+          "passed": true
+        },
+        {
+          "detail": "AI1 late_active=60/60 moved=141.3m units=8, AI2 late_active=60/60 moved=79.9m units=8",
+          "name": "no_ai_stuck",
+          "passed": true
+        },
+        {
+          "detail": "messages=0, distinct=0, worst=0x \"\" (limit 5x)",
+          "name": "no_chat_spam",
+          "passed": true
+        },
+        {
+          "detail": "time_s=30.00 winner=-1 finite_res=true",
+          "name": "game_continues_or_ends_cleanly",
+          "passed": true
+        }
+      ],
+      "id": "t_multi_ai",
+      "passed": true,
+      "unix_ms": 1795257627024.0,
+      "runner_exit": 0,
+      "wall": 2.68
+    },
+    {
+      "checks": [
+        {
+          "detail": "players=4, team counts={ 0: 2, 1: 2 }, players with a home building=4 (want 4)",
+          "name": "teams_2v2_start_homes",
+          "passed": true
+        },
+        {
+          "detail": "enemies_in_radius(r=3)=-1 (want empty), enemies_preferred=1 (want team-1 player 1)",
+          "name": "allies_not_targetable",
+          "passed": true
+        },
+        {
+          "detail": "cmd_attack(player0 -> player2 ally) left order.type='none' (want not 'attack')",
+          "name": "allied_attack_rejected",
+          "passed": true
+        },
+        {
+          "detail": "from team 0, enemy-team player 1 target found=1 / preferred=1 (want 1)",
+          "name": "enemy_team_targetable",
+          "passed": true
+        },
+        {
+          "detail": "player0 eliminated but ally player2 still alive: winner=-1 (want -1, no team wiped out)",
+          "name": "victory_respects_teams",
+          "passed": true
+        }
+      ],
+      "id": "t_teams",
+      "passed": true,
+      "unix_ms": 1795257629523.0,
+      "runner_exit": 0,
+      "wall": 2.6
+    },
+    {
+      "checks": [
+        {
+          "detail": "shots +2, fx 0->4, events=[\"shot\", \"smoke\", \"shot\", \"smoke\"], fx_layer z=4, near-shooter=true",
+          "name": "volley_fx_on_layer",
+          "passed": true
+        },
+        {
+          "detail": "shot life=0.35s, smoke life=1.60s (flash must be shorter than the puff)",
+          "name": "muzzle_flash_short_lived",
+          "passed": true
+        },
+        {
+          "detail": "life=1.60s, alive after 0.5s=true (t=0.50), gone after 2.5s=true",
+          "name": "smoke_persists_then_expires",
+          "passed": true
+        },
+        {
+          "detail": "arrow shots +1, in-flight arrow=true, trail evidence=true (baseline has no trail FX \u2014 FAIL is correct)",
+          "name": "arrow_trail",
+          "passed": true
+        },
+        {
+          "detail": "cannon shots +3, explode events +1, explode/crater fx=true",
+          "name": "artillery_explosion_fx",
+          "passed": true
+        },
+        {
+          "detail": "FX_CAP=220, before=7, after 280 adds=220 (oldest items evicted)",
+          "name": "fx_cap_respected",
+          "passed": true
+        }
+      ],
+      "id": "t_smoke_fx",
+      "passed": true,
+      "unix_ms": 1795257633237.0,
+      "runner_exit": 0,
+      "wall": 3.69
+    },
+    {
+      "checks": [
+        {
+          "detail": "seed=7 water(terrain=3)=2391 tiles, BLK_WATER-tagged=2391",
+          "name": "lake_tiles_present",
+          "passed": true
+        },
+        {
+          "detail": "sand(terrain=4) tiles touching water=480 of 1007",
+          "name": "sand_ring_neighbours_water",
+          "passed": true
+        },
+        {
+          "detail": "sampled=64 blocked=64",
+          "name": "water_blocked_for_movement",
+          "passed": true
+        },
+        {
+          "detail": "variants[3]=4",
+          "name": "water_nonflat_variants_or_sparkle",
+          "passed": true
+        },
+        {
+          "detail": "advanced 30.00s over 300 ticks, time_finite=true units_finite=true water_blocked=true winner=-1",
+          "name": "sim_no_errors",
+          "passed": true
+        }
+      ],
+      "id": "t_water",
+      "passed": true,
+      "unix_ms": 1795257637299.0,
+      "runner_exit": 0,
+      "wall": 4.05
+    },
+    {
+      "checks": [
+        {
+          "detail": "res_labels=6 texts=[\"0 [0]\", \"0 [1]\", \"0 [0]\", \"0 [0]\", \"0 [0]\", \"0 [0]\"] hud_report.resource_labels=true",
+          "name": "six_resource_labels",
+          "passed": true
+        },
+        {
+          "detail": "wood_workers=1 wood_line='0 [1]' all_bracketed=true worker_counts={ \"food\": 0, \"wood\": 1, \"stone\": 0, \"gold\": 0, \"iron\": 0, \"coal\": 0 }",
+          "name": "worker_counts_brackets",
+          "passed": true
+        },
+        {
+          "detail": "idle_count=7 eco_label='idle 7  slots 0'",
+          "name": "idle_warning_text",
+          "passed": true
+        },
+        {
+          "detail": "idle=7 eco_label font_color=(1.0, 0.45, 0.4, 1.0)",
+          "name": "idle_warning_colour",
+          "passed": true
+        },
+        {
+          "detail": "food_red=true gold_red=true res_deficit=[true, false, false, true, false, false]",
+          "name": "red_deficit_colouring",
+          "passed": true
+        },
+        {
+          "detail": "status='units 8/100    score 1160    ' score=1160",
+          "name": "score_text",
+          "passed": true
+        }
+      ],
+      "id": "t_hud_fidelity",
+      "passed": true,
+      "unix_ms": 1795257639737.0,
+      "runner_exit": 0,
+      "wall": 2.38
+    },
+    {
+      "checks": [
+        {
+          "detail": "parsed=true, unit keys=54 (expect 54)",
+          "name": "main_index_54_units",
+          "passed": true
+        },
+        {
+          "detail": "actions=299, out-of-spec=0 (duration>0, frames>=2 except donor-static siege idle, loop bool): []",
+          "name": "action_structure",
+          "passed": true
+        },
+        {
+          "detail": "out-of-range actions=0 (fig_h 0.30..0.95, foot 0.66..0.96 measured pose band, cx 0.40..0.60): []",
+          "name": "metric_ranges",
+          "passed": true
+        },
+        {
+          "detail": "walks checked=54, donor-class cadence bands, out-of-band=0: []",
+          "name": "walk_stride",
+          "passed": true
+        },
+        {
+          "detail": "naval units=1, schema deviations=0: []",
+          "name": "naval_schema",
+          "passed": true
+        }
+      ],
+      "id": "t_anim_metrics",
+      "passed": true,
+      "unix_ms": 1795257640238.0,
+      "runner_exit": 0,
+      "wall": 0.52
+    },
+    {
+      "checks": [
+        {
+          "detail": "index.json parsed=true, owner 'yacht' present=true, actions=[\"walk\", \"hull\"]",
+          "name": "index_parses_with_walk_hull",
+          "passed": true
+        },
+        {
+          "detail": "yacht_walk.png dims=1280x1920 (want 1280x1920)",
+          "name": "walk_sheet_1280x1920",
+          "passed": true
+        },
+        {
+          "detail": "width=1280, cell=160.0, width/cell=8.000 (want 8, cell 160)",
+          "name": "walk_eight_columns",
+          "passed": true
+        },
+        {
+          "detail": "yacht_hull.png exists=true, dims=1280x160 (want 1280x160)",
+          "name": "hull_sheet_exists",
+          "passed": true
+        },
+        {
+          "detail": "cell=160.0, cols=8 -> yacht_walk.png:1280x1920(want 1280x1920), yacht_hull.png:1280x160(want 1280x160)",
+          "name": "metrics_cell_consistent",
+          "passed": true
+        },
+        {
+          "detail": "actions=2, missing=none",
+          "name": "no_missing_referenced_png",
+          "passed": true
+        }
+      ],
+      "id": "t_naval",
+      "passed": true,
+      "unix_ms": 1795257640772.0,
+      "runner_exit": 0,
+      "wall": 0.52
+    },
+    {
+      "checks": [
+        {
+          "detail": "spawned 552 units / 552 distinct ids (want 552 = 400 army + 4 squads x 38)",
+          "name": "mass_spawn_distinct",
+          "passed": true
+        },
+        {
+          "detail": "squads for player 1 = 4 (want 4), formation command applied = true",
+          "name": "squads_formed",
+          "passed": true
+        },
+        {
+          "detail": "sim 0.00s -> 10.00s (+10.00) over 40 ticks, winner=-1",
+          "name": "sim_advances",
+          "passed": true
+        },
+        {
+          "detail": "min centre gap 0.996 m, overlapping pairs 0 among 552 units",
+          "name": "no_unit_overlap",
+          "passed": true
+        },
+        {
+          "detail": "mass sim wall time 9695.91 ms for 552 units / 10.0 sim-seconds",
+          "name": "perf_metric_recorded",
+          "passed": true
+        },
+        {
+          "detail": "corpses 0->1->0, rubble 0->1->0 after 100 sim-s (life 90/20)",
+          "name": "corpses_rubble_age_out",
+          "passed": true
+        }
+      ],
+      "id": "t_mass_army",
+      "passed": true,
+      "sim_ms": 9695.906,
+      "units": 552,
+      "unix_ms": 1795257651531.0,
+      "runner_exit": 0,
+      "wall": 10.79
+    },
+    {
+      "checks": [
+        {
+          "detail": "seed 11111 vs 98765: terrain differs=true, layout summary differs=true (126011 vs 120659 bytes)",
+          "name": "different_seeds_different_layout",
+          "passed": true
+        },
+        {
+          "detail": "seed 11111 generated twice: byte-identical summary=true (126011 vs 126011 bytes)",
+          "name": "same_seed_byte_identical",
+          "passed": true
+        },
+        {
+          "detail": "same seed nowater2 water=0.0% vs islands water=70.1% (need >+10pt and >15%)",
+          "name": "map_type_changes_water",
+          "passed": true
+        },
+        {
+          "detail": "requested 110x90: got 110x90, terrain=9900 blocked=9900 tileblock=9900 (want 9900)",
+          "name": "map_size_option_respected",
+          "passed": true
+        },
+        {
+          "detail": "BFS<=25 tiles from each start: P0(food=true,stone=true,wood=true), P1(food=true,stone=true,wood=true), P2(food=true,stone=true,wood=true), P3(food=true,stone=true,wood=true)",
+          "name": "starts_have_reachable_resources",
+          "passed": true
+        }
+      ],
+      "id": "t_map_variety",
+      "passed": true,
+      "unix_ms": 1795257661736.0,
+      "runner_exit": 0,
+      "wall": 10.24
+    },
+    {
+      "checks": [
+        {
+          "detail": "enemy tur town hall owner after 8 s with 4 peasants = 0 (want 0), flag=true",
+          "name": "town_hall_capturable_by_peasants",
+          "passed": true
+        },
+        {
+          "detail": "mine capture flag=true, owner=0, deposit 6667->6667, nearest_mine(p0)=id=466",
+          "name": "mine_deposit_captured_with_mine",
+          "passed": true
+        },
+        {
+          "detail": "captured tur hall; train_unit(0,'serdiuk') queued 'jannisary', want 'jannisary' (baseline rus 'strelet')",
+          "name": "foreign_town_hall_unlocks_nation",
+          "passed": true
+        },
+        {
+          "detail": "guarded enemy hall owner after assault = 1 (want 1), guard order=guard, attackers=4",
+          "name": "capture_precondition_guard_blocks",
+          "passed": true
+        },
+        {
+          "detail": "economy sids without capture:true = []",
+          "name": "economy_buildings_capturable",
+          "passed": true
+        },
+        {
+          "detail": "military sids with capture:true = []",
+          "name": "military_buildings_not_capturable",
+          "passed": true
+        }
+      ],
+      "id": "t_capture",
+      "passed": true,
+      "unix_ms": 1795257664100.0,
+      "runner_exit": 0,
+      "wall": 2.37
+    },
+    {
+      "checks": [
+        {
+          "detail": "20/20 prefixes backed by .ogg; missing: none (of 325 files)",
+          "name": "event_prefix_files_exist",
+          "passed": true
+        },
+        {
+          "detail": "names_for() unresolved: none",
+          "name": "audio_names_for_resolves_events",
+          "passed": true
+        },
+        {
+          "detail": "unresolved walk sids: none",
+          "name": "walk_sound_prefixes_resolve",
+          "passed": true
+        },
+        {
+          "detail": "main.gd chop -> [\"workwood\"]; names_for=[\"workwood1\", \"workwood2\", \"workwood3\", \"workwood4\", \"workwood5\", \"workwood6\", \"workwood7\", \"workwood8\", \"workwood9\"]",
+          "name": "chop_event_maps_to_sound",
+          "passed": true
+        },
+        {
+          "detail": "21 nations, 21 themed, fallback=true; missing: []",
+          "name": "nation_theme_files_or_fallback",
+          "passed": true
+        }
+      ],
+      "id": "t_audio_events",
+      "passed": true,
+      "unix_ms": 1795257666082.0,
+      "runner_exit": 0,
+      "wall": 1.94
+    }
+  ]
+}

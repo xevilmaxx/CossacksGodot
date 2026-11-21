@@ -1,0 +1,19 @@
+{
+  "ticket": 337,
+  "id": "t-squads-donor",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_squads.gd"
+  ],
+  "created": 1795251921.3510923,
+  "wait": 0.0008525848388671875,
+  "run": 2.2819528579711914,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000337_t-squads-donor\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000337_t-squads-donor\\stderr.txt"
+}

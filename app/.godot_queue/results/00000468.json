@@ -1,0 +1,20 @@
+{
+  "ticket": 468,
+  "id": "PORT-CONTROL-step1-shot2",
+  "argv": [
+    "--path",
+    "app",
+    "--test-api",
+    "8153",
+    "--timeout",
+    "120"
+  ],
+  "created": 1795254361.5559835,
+  "wait": 303.1452383995056,
+  "run": 23.81145977973938,
+  "exit": 0,
+  "timeout": 150.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000468_PORT-CONTROL-step1-shot2\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000468_PORT-CONTROL-step1-shot2\\stderr.txt"
+}

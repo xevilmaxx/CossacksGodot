@@ -1,0 +1,19 @@
+{
+  "ticket": 437,
+  "id": "manifest-t_teams",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_teams.gd"
+  ],
+  "created": 1795253087.2767296,
+  "wait": 0.0007135868072509766,
+  "run": 2.192009210586548,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000437_manifest-t_teams\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000437_manifest-t_teams\\stderr.txt"
+}

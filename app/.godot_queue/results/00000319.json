@@ -1,0 +1,20 @@
+{
+  "ticket": 319,
+  "id": "implsim-selftest-reach7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795251205.5825396,
+  "wait": 0.0007157325744628906,
+  "run": 21.36208200454712,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000319_implsim-selftest-reach7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000319_implsim-selftest-reach7\\stderr.txt"
+}

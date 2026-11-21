@@ -247,13 +247,12 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# rest stage: weighted forest/stone/hill/decor families across the map
 	var area_scale := float(map_w * map_h) / (160.0 * 160.0)
 	var recipes := [
-		["forests_pinefir_big", 2, "forest"],
-		["forests_pine_medium", 2, "forest"],
-		["forests_spruce_big", 1, "forest"],
-		["forests_leaf_medium", 1, "forest"],
-		["forests_mixed_big", 1, "forest"],
-		["forests_pine_small", 2, "forest"],
-		["forests_leaf_small", 1, "forest"],
+		# P-46: the 4 donor sacred groves (game.gd _gen_forests) already supply
+		# the big belts. Painting all seven forest_* families at area_scale=4
+		# stamped ~38 extra cores (patches 42, target 8-14). Keep only the small
+		# pine family globally; the near-start SetupStartingResources stamps and
+		# all donor distances (s/area_scale for mines) are unchanged.
+		["forests_pine_small", 1, "forest"],
 		["stones", 3, "stone"],
 		["stoneforests", 2, "stone"],
 		["hills_dark", 2, "hill"],

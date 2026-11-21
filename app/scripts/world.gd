@@ -35,7 +35,10 @@ var dbg_fx := 0
 var last_view_pos := Vector2.INF
 var last_view_end := Vector2.INF
 var terrain_hlv: Array = []
-var terrain_masks: Array = []  # feather mask + shade tiles, rebuilt per terrain_px
+# Legacy slot: main.gd still assigns _build_masks()'s return here on quality
+# changes, but no draw code reads it. The operative anti-seam path is
+# _alpha_mask() inside _build_chunk(); _build_masks() now returns [].
+var terrain_masks: Array = []
 # ---- continuous terrain texturing (no per-tile crops: those checker) ----
 # Each type owns one large mirror-tileable source (2048px, built once from the
 # donor PNGs). Every chunk samples strictly wrap-continuous regions, so
@@ -69,12 +72,29 @@ var sprites: Dictionary = {}
 # Animated original-model sheets (tools/bake_sprites.py): key -> {cell, actions}.
 var anim_index := {}
 var anim_tex := {}
+# PORT-SIM P-10: yacht crew + static hull live in a separate naval index/sheet
+# folder, like the nation-unique sheets. data.gd's EXTRA_ANIM_INDEX only loads
+# sco_units.json, so world.gd reads the naval index itself (read-only).
+var naval_index := {}
+
+func _naval_info(key: String) -> Dictionary:
+	if naval_index.is_empty():
+		var path := "res://assets/models/anim/naval/index.json"
+		if _res_exists(path):
+			var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
+			if parsed is Dictionary:
+				naval_index = parsed
+	return naval_index.get(key, {})
 # Windmill sails are a separate moving object, exactly like the peasants'
 # attach tools: tools/bake_mill_rotor.py lifts the donor's eurmilanim.oss rotor
 # out of the tower sheet.  It spins over the finished mill every frame.
 var mill_rotor_tex: Texture2D = null
 const MILL_HUB := Vector2(0.525, 0.21)  # axle centre in the baked tower cell
 const MILL_SPIN := 0.75                 # radians / second
+# mill_rotor.json: the sail cell is 320 px at ortho 6.352 m.  The tower cell is
+# also 320 px but at ortho 6.627 m (buildings.json) and is drawn at ortho*view_scale,
+# so the rotor's true on-screen span is 6.352/6.627 of the tower cell, NOT half.
+const MILL_ROTOR_ORTHO := 6.352
 var ov_shadow: Texture2D
 var ov_ring: Array = []
 var ov_sel: Texture2D
@@ -82,6 +102,22 @@ const SPRITE_ALIAS := {"musk18": "serdiuk", "grenadier": "roundshier",
 	"officer18": "officer", "drummer": "officer", "priest": "officer",
 	"howitzer": "cannon", "mortar": "cannon"}
 const SPRITE_TINT := {"priest": Color(0.25, 0.25, 0.3), "drummer": Color(1, 1, 1)}
+# Donor data/game/var/envscales.cfg (DB fnd_26, evidence ev_2c4d3cf4…):
+# minegold/mineiron/minecoal scale 0.3152, stones 0.329, fir 0.5; every entry
+# carries minscale 0.85 / maxscale 1.15. The port's baked sprites are already
+# authored at donor on-screen size, so the donor scale is the per-resource
+# identity and its jitter band is applied deterministically (hash of world
+# position) to the sprite height. Sim radii / collision are untouched.
+const ENV_SCALE := {"mine": 0.3152, "stone": 0.329, "tree": 0.5}
+const ENV_JITTER_MIN := 0.85
+const ENV_JITTER_MAX := 1.15
+
+func _env_sprite_h(base: float, kind: String, pos: Vector2) -> float:
+	# `base` is the tuned height at jitter=1; native*scale reconstructs it,
+	# then the donor's 0.85-1.15 jitter varies each object without flicker.
+	var scale: float = float(ENV_SCALE.get(kind, 1.0))
+	var native: float = base / scale
+	return native * scale * lerpf(ENV_JITTER_MIN, ENV_JITTER_MAX, _hash(pos.x, pos.y))
 
 func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	game = g
@@ -89,7 +125,9 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	view_scale = Data.PIXELS_PER_METER
 	terrain_px = Data.TERRAIN_PX
 	terrain_hlv = _prep_variants()
-	terrain_masks = _build_masks(_bake_px())
+	# _build_masks() still builds the side-effect images _build_chunk() needs;
+	# its returned array was dead and is no longer assigned here.
+	_build_masks(_bake_px())
 	# pre-warm the block LRU with the common meadow set so first paint
 	# doesn't hitch on disk loads (one-time bind cost, not per-frame)
 	for bn in ["grass1", "grass2", "ground1", "test7", "test8", "test9",
@@ -144,6 +182,10 @@ void fragment() {
 		var parsed = JSON.parse_string(j)
 		if parsed is Dictionary:
 			anim_index = parsed
+	# P-41: nation-unique sheets (sco_highlandersword) live in a separate index,
+	# loaded by game.gd setup. Call the idempotent loader here too so a world
+	# bound standalone resolves the same sheets. The main 54-key index is untouched.
+	Data.load_extra_anim_index()
 	fog_explored.resize(game.MAP_W * game.MAP_H)
 	fog_vis.resize(game.MAP_W * game.MAP_H)
 	fog_counts.resize(game.MAP_W * game.MAP_H)
@@ -207,7 +249,7 @@ func _unit_height(e: Dictionary) -> float:
 
 func _sprite_frames(sid: String) -> Array:
 	# a baked animated sheet replaces the old static-sprite alias
-	if anim_index.has(sid):
+	if not _anim_info(sid).is_empty():
 		return sprites.get(sid, [])
 	return sprites.get(SPRITE_ALIAS.get(sid, sid), [])
 
@@ -221,14 +263,25 @@ func _sprite_for(sid: String, face: float) -> Texture2D:
 	var idx := int(fposmod(roundf(face / (PI / 4.0)), 8.0)) % 8
 	return frames[idx]
 
+# Single lookup for main (54-key) and nation-unique (sco_units.json) sheets.
+# The extra index is a superset lookup only: it never overwrites anim_index.
+func _anim_info(key: String) -> Dictionary:
+	if anim_index.has(key):
+		return anim_index[key]
+	if Data.EXTRA_ANIM_INDEX.has(key):
+		return Data.EXTRA_ANIM_INDEX[key]
+	return _naval_info(key)
+
 func _anim_key(sid: String, player: int) -> String:
-	# nation-peasant visuals resolve first (ukr_peasant etc.), then the sid
+	# nation-peasant visuals resolve first (ukr_peasant etc.), then the sid.
+	# Consult both indexes so a nation-unique sheet (sco_highlandersword) is
+	# found exactly like a main-index sheet; the extra index is checked last.
 	var nat := ""
 	if player >= 0 and player < Data.PLAYER_NATIONS.size():
 		nat = str(Data.PLAYER_NATIONS[player])
 	if nat != "":
 		var nk := "%s_%s" % [nat, sid]
-		if anim_index.has(nk):
+		if anim_index.has(nk) or Data.EXTRA_ANIM_INDEX.has(nk):
 			return nk
 	return sid
 
@@ -270,12 +323,27 @@ func _anim_dir() -> String:
 			return d
 	return "res://assets/models/anim"
 
+# Sheet path for a resolved anim key. Nation-unique sheets in EXTRA_ANIM_INDEX
+# ship at cell 160 in the main anim dir, so a quality preset that selects a
+# smaller SPRITE_CELL still falls back there (mirrors the separate naval index).
+func _anim_sheet(key: String, act: String) -> String:
+	var path := "%s/%s_%s.png" % [_anim_dir(), key, act]
+	if not _res_exists(path) and Data.EXTRA_ANIM_INDEX.has(key):
+		return "res://assets/models/anim/%s_%s.png" % [key, act]
+	if not _res_exists(path) and not _naval_info(key).is_empty():
+		return "res://assets/models/anim/naval/%s_%s.png" % [key, act]
+	return path
+
 func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	var key := _anim_key(e.sid, int(e.player))
-	var info: Dictionary = anim_index.get(key, {})
+	var info: Dictionary = _anim_info(key)
 	if info.is_empty():
 		return false
 	var act := _anim_action(e)
+	# Naval yachts ship only a walk clip (naval/index.json): a resting ship
+	# still draws that sheet instead of falling through to an absent idle.
+	if not info.actions.has(act) and info.actions.has("walk") and bool(e.get("def", {}).get("naval", false)):
+		act = "walk"
 	# Fallback chain for sheets a unit does not have: carry walks fall back
 	# to plain walk, carry idles to plain idle, work/construct to the attack
 	# clip and finally idle (old sheets without carry clips keep working).
@@ -291,7 +359,7 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 		return false
 	var tk := key + "_" + act
 	if not anim_tex.has(tk):
-		var path := "%s/%s.png" % [_anim_dir(), tk]
+		var path := _anim_sheet(key, act)
 		if not _res_exists(path):
 			return false
 		anim_tex[tk] = load(path)
@@ -366,8 +434,14 @@ func _draw_mill_rotor(layer: Node2D, tl: Vector2, sz: Vector2, tint: Color) -> v
 	var tex := _mill_rotor()
 	if tex == null:
 		return
+	# sz is the tower cell drawn at true donor scale (sz = tower_ortho * view_scale).
+	# Both sheets are 320 px cells, so the sail cell must span rotor_ortho * view_scale
+	# px.  The old sz*0.5 rect was ~half that: the reported undersized sail that
+	# read as buried in the roof.  The texture's own alpha bbox (8,22,312,283) is
+	# centred, so drawing the cell rect about the axle puts the blades on the hub.
+	var span := MILL_ROTOR_ORTHO * view_scale
+	var half := Vector2(span, span) * 0.5
 	var hub := tl + Vector2(sz.x * MILL_HUB.x, sz.y * MILL_HUB.y)
-	var half: Vector2 = sz * 0.25
 	layer.draw_set_transform(hub, anim_t * MILL_SPIN, Vector2.ONE)
 	layer.draw_texture_rect(tex, Rect2(-half.x, -half.y, half.x * 2.0, half.y * 2.0), false, tint)
 	layer.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -607,6 +681,14 @@ func _prep_variants() -> Array:
 		ter_water = Image.create(64, 64, false, Image.FORMAT_RGB8)
 		ter_water.fill(Color(0.2, 0.35, 0.5))
 	variants = [[], [], [], [], [], []]
+	# P-21 / RE gap 6: the donor's water is an animated wave surface, not the
+	# single fixed-offset still this renderer used.  Keep four phase-shifted
+	# crops of the tileable wave sheet as the terrain-3 variant frames; the
+	# chunk baker scrolls the wave phase with anim_t (see _build_chunk) so a
+	# re-baked water chunk catches a different frame.
+	if ter_water != null and ter_water.get_width() >= 256:
+		for i in 4:
+			variants[3].append(_wrap_crop(ter_water, i * 256, 0, 256))
 	terrain_hlv = []
 	return []
 
@@ -643,59 +725,29 @@ func _bake_px() -> int:
 	return mini(terrain_px * 4, 64)
 
 func _build_masks(px: int) -> Array:
-	# donor organic transition masks (data/terrain/tiles/textures/alpha*.bmp):
-	# cloudy noise blobs, intensity = alpha. blend_rect_mask is binary, so the
-	# bake runs at 2x and downsamples: hard organic edges become true soft
-	# gradients, exactly the original's modulate-transparency look.
-	var out: Array = []
-	var files: Array = []
-	var dp := "res://assets/terrain/dmask/d_%02d.png"
-	for i in range(6, 24):
-		files.append(dp % i)
-	for f in files:
-		if not _res_exists(f):
-			continue
-		var ftex: Texture2D = ResourceLoader.load(f) as Texture2D
-		if ftex == null:
-			continue
-		var im: Image = ftex.get_image()
-		if im == null:
-			continue
-		if im.get_format() != Image.FORMAT_RGBA8:
-			im.convert(Image.FORMAT_RGBA8)
-		if im.get_width() != px or im.get_height() != px:
-			im.resize(px, px, Image.INTERPOLATE_BILINEAR)
-		# donor dmask PNGs are white RGB + organic ALPHA; Godot's mask blend
-		# uses the red channel, so bake (alpha x soft edge ramp) into RGB.
-		# The edge ramp makes a cell fully opaque inside and transparent at
-		# its borders: neighbours of a different block melt into each other.
-		var rgb := Image.create(px, px, false, Image.FORMAT_RGB8)
-		var ramp := maxf(1.0, px * 0.35)
-		for yy in px:
-			for xx in px:
-				var edge := minf(float(mini(xx, px - 1 - xx)), float(mini(yy, px - 1 - yy))) / ramp
-				var v: float = clampf(im.get_pixel(xx, yy).a * clampf(edge, 0.0, 1.0), 0.0, 1.0)
-				rgb.set_pixel(xx, yy, Color(v, v, v))
-		out.append(rgb)
-	if out.is_empty():
-		var m := Image.create(px, px, false, Image.FORMAT_RGBA8)
-		m.fill(Color(1, 1, 1, 1))
-		out.append(m)
+	# The dmask ramp array this function used to return was assigned to
+	# `terrain_masks` (world.gd bind / main.gd quality change) but no draw
+	# code ever read it. The operative seam defence is _alpha_mask() in
+	# _build_chunk: it writes coverage into the mask's ALPHA channel, which
+	# is what Godot's blend_rect_mask actually samples (NOT the red channel).
+	# Keep only the side-effect images _build_chunk still consumes and return
+	# an empty legacy array so main.gd's assignment stays harmless.
 	ter_white = Image.create(px, px, false, Image.FORMAT_RGB8)
 	ter_white.fill(Color(1, 1, 1))
 	ter_black = Image.create(px, px, false, Image.FORMAT_RGB8)
 	ter_black.fill(Color(0, 0, 0))
 	ter_blue = Image.create(px, px, false, Image.FORMAT_RGB8)
 	ter_blue.fill(Color(0.16, 0.36, 0.44))
-	# blend_rect_mask is binary: dither the uniform alpha (bayer 60% density)
-	# so the downsample resolve reads it as a true 60% blue glaze over waves
+	# blend_rect_mask reads the mask's ALPHA channel: dither the uniform alpha
+	# (bayer 60% density) so the downsample resolve reads it as a true 60%
+	# blue glaze over the waves (resolved before the final chunk resize)
 	ter_blueA = Image.create(px, px, false, Image.FORMAT_RGBA8)
 	var bayer := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 	for yy in px:
 		for xx in px:
 			var on: float = 1.0 if float(bayer[(yy % 4) * 4 + (xx % 4)]) / 16.0 < 0.6 else 0.0
 			ter_blueA.set_pixel(xx, yy, Color(1, 1, 1, on))
-	return out
+	return []
 
 # blend_rect_mask reads the MASK'S ALPHA channel. Build one at tile-grid size
 # with the value in alpha, then upscale bilinearly: smooth, cheap, no noise.
@@ -708,6 +760,40 @@ func _alpha_mask(grid: Image, size: int) -> Image:
 	m.resize(size, size, Image.INTERPOLATE_BILINEAR)
 	return m
 
+# Season / relief response (RC_TERRAIN G2/G3, donor dogenerate.inc step 11:
+# winter uses colour table index 6 / PHDR 1, desert index 7). PORT-SIM exposes
+# exactly three statics read here: Data.BIOME ("summer"/"winter"/"desert"),
+# Data.RELIEF ("plains"/"hills"/"mountains") and Data.terrain_tint(biome)
+# (data.gd:175,180,192). A per-map "season"/"relief" key set by the sim on
+# `game` takes precedence when present.
+var _season_tint_key := ""
+var _season_tint_img: Image = null
+
+func _season_key() -> String:
+	var dyn = game.get("season") if game != null else null
+	if dyn != null and str(dyn) != "":
+		return str(dyn)
+	return str(Data.BIOME)
+
+func _relief_key() -> String:
+	var dyn = game.get("relief") if game != null else null
+	if dyn != null and str(dyn) != "":
+		return str(dyn)
+	return str(Data.RELIEF)
+
+func _season_tint() -> Color:
+	var season := _season_key()
+	if season == _season_tint_key and _season_tint_img != null:
+		return _season_tint_img.get_pixel(0, 0)
+	var tint := Data.terrain_tint(season)
+	# terrain_tint is a multiplicative RGB tint with alpha 1; use its distance
+	# from white as the glaze strength, so summer (1,1,1) is a no-op.
+	var strength: float = 0.34 if (tint.r < 0.999 or tint.g < 0.999 or tint.b < 0.999) else 0.0
+	var im := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+	im.fill(Color(tint.r, tint.g, tint.b, strength))
+	_season_tint_key = season
+	_season_tint_img = im
+	return Color(tint.r, tint.g, tint.b, strength)
 
 func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var px := terrain_px
@@ -772,7 +858,11 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 		var mask := _alpha_mask(grid, S)
 		var overlay: Image
 		if t == 3:
-			overlay = _wrap_crop(ter_water, cx * S + 300, cy * S + 700, S)
+			# P-21: scroll the tileable wave sheet with the ambient clock.  A
+			# chunk is baked once and cached, so each re-bake catches a different
+			# wave phase — a cheap time-based shimmer with no GPU dependency.
+			var phase: int = int(anim_t * 12.0) % 1024
+			overlay = _wrap_crop(ter_water, cx * S + 300 + phase, cy * S + 700, S)
 			var blue_big := ter_blue.duplicate() as Image
 			blue_big.resize(S, S, Image.INTERPOLATE_BILINEAR)
 			var blueA_big := ter_blueA.duplicate() as Image
@@ -783,6 +873,36 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 			var coff: int = abs(hash(nm)) % 512
 			overlay = _wrap_crop(_block_img(nm), cx * S + coff, cy * S + coff, S)
 		img.blend_rect_mask(overlay, mask, full, origin)
+	# Season tint + relief shading. Godot's blend_rect_mask is unreliable with
+	# mixed image formats here (a 0.34-alpha mask blended at full strength),
+	# so both layers are plain RGBA8 overlays alpha-blended with blend_rect
+	# after a temporary in-place convert; no per-pixel GDScript loop.
+	var season_col := _season_tint()
+	var relief := _relief_key()
+	var relief_on := relief != "" and relief != "plain" and relief != "plains" and game != null
+	if season_col.a > 0.0 or relief_on:
+		img.convert(Image.FORMAT_RGBA8)
+		if season_col.a > 0.0:
+			var tint := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+			tint.fill(Color(season_col.r, season_col.g, season_col.b, season_col.a))
+			var tint_big := tint.duplicate() as Image
+			tint_big.resize(S, S, Image.INTERPOLATE_NEAREST)
+			img.blend_rect(tint_big, full, origin)
+		if relief_on:
+			var rscale := float(Data.RELIEF_SCALE.get(relief, 1.0))
+			var hgrid := Image.create(N, N, false, Image.FORMAT_RGBA8)
+			for gy in N:
+				for gx in N:
+					var wx := float(cx * CHUNK_T + gx) * Data.TILE_M
+					var wy := float(cy * CHUNK_T + gy) * Data.TILE_M
+					var hh := game.height_at(Vector2(wx, wy))
+					# subtle: valleys ~8-20% darker, not a black wash
+					var shade: float = clampf(0.10 - hh * 0.04 * rscale, 0.0, 0.20)
+					hgrid.set_pixel(gx, gy, Color(0.05, 0.04, 0.03, shade))
+			var shade_big := hgrid.duplicate() as Image
+			shade_big.resize(S, S, Image.INTERPOLATE_BILINEAR)
+			img.blend_rect(shade_big, full, origin)
+		img.convert(Image.FORMAT_RGB8)
 	# supersample resolve: hard organic edges become true soft gradients
 	if bpx != px:
 		img.resize(CHUNK_T * px, CHUNK_T * px, Image.INTERPOLATE_BILINEAR)
@@ -950,6 +1070,50 @@ func _prop_tex(names: Array, seed_pos: Vector2) -> Texture2D:
 		return null
 	return frames[0]
 
+# MICRO #15: field state is a visual read of the existing sim numbers. A
+# depleted food node has hits==0 (no ripe wheat); a mill-sown full field
+# regrows across the donor's ~60 s seed cycle, whose timer is game.sow_t
+# (game.gd:79, 2769-2772). No crop-stage sprite exists in app/assets (only
+# field.png, an unlit black sheaf), so the stages are drawn procedurally.
+func _field_growth(n: Dictionary) -> float:
+	var mh := maxf(1.0, float(n.get("max_hits", 50)))
+	var ratio: float = clampf(float(n.get("hits", 0)) / mh, 0.0, 1.0)
+	if ratio <= 0.0:
+		return 0.0
+	if ratio >= 1.0 and n.has("mill"):
+		return clampf(float(game.sow_t) / 60.0, 0.05, 1.0)
+	return ratio
+
+func _draw_field(p: Vector2, h: float, g: float) -> void:
+	res_layer.draw_circle(p + Vector2(0, 3), 7.0, Color(0, 0, 0, 0.15))
+	if g <= 0.0:
+		# harvested: worked soil + short cut stubble, never ripe wheat
+		for k in 5:
+			var a := h * 6.28 + float(k) * 1.256
+			var tip := p + Vector2(cos(a), sin(a)) * (4.0 + h * 2.0) + Vector2(0, -3.0)
+			res_layer.draw_line(p + Vector2(0, 3), tip, Color(0.44, 0.38, 0.23), 1.2)
+		return
+	var count: int = 5 + int(g * 4.0)
+	var reach := 3.0 + g * 4.0
+	var tall := 4.0 + g * 10.0
+	var stalk := Color(0.42, 0.46, 0.2)
+	var head_col := Color(0.88 + h * 0.08, 0.74, 0.28)
+	var head_r := 1.0 + g * 1.6
+	if g < 0.35:
+		stalk = Color(0.36, 0.55, 0.26)
+		head_col = Color(0.5, 0.66, 0.28)
+		head_r = 0.9
+	elif g < 0.7:
+		stalk = Color(0.45, 0.52, 0.24)
+		head_col = Color(0.72, 0.74, 0.3)
+	for k in count:
+		var a := h * 6.28 + float(k) * (6.28 / float(count))
+		var tip := p + Vector2(cos(a), sin(a)) * (reach + h * 2.0) + Vector2(0, -tall - h * 3.0)
+		res_layer.draw_line(p + Vector2(0, 3), tip, stalk, 1.8)
+		res_layer.draw_circle(tip, head_r, head_col)
+		if g >= 0.7:
+			res_layer.draw_circle(tip + Vector2(0, -2), 1.4, Color(0.95, 0.85, 0.4))
+
 func _draw_resources() -> void:
 	dbg_res += 1
 	for n in game.res_nodes:
@@ -958,7 +1122,9 @@ func _draw_resources() -> void:
 		# them and no mine was ever drawn on the map. Only finite nodes that
 		# were really used up (and stumps, which stay as decor) are skipped.
 		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0 \
-				and str(n.get("type", "")) != "stump":
+				and str(n.get("type", "")) != "stump" and str(n.get("type", "")) != "food":
+			# MICRO #15: a depleted field stays visible as bare stubble;
+			# only depleted wood/stone/ore nodes are culled.
 			continue
 		var p := world_to_px(n.pos)
 		if not view_rect.grow(64).has_point(p):
@@ -991,7 +1157,7 @@ func _draw_resources() -> void:
 					# The donor-baked sheet is very dark olive, so lift it hard.
 					_blob_rect(res_layer, p + Vector2(0, 4), 24.0 + h * 10.0,
 						12.0 + h * 5.0, Color(0, 0, 0, 0.16))
-					_draw_sprite(res_layer, tree, p, 11.0 + h * 3.0,
+					_draw_sprite(res_layer, tree, p, _env_sprite_h(12.5, "tree", n.pos),
 						Color(1.18, 1.26, 1.06))
 					continue
 				# fallback below (no sprites): tall pines + broad oaks
@@ -1016,7 +1182,7 @@ func _draw_resources() -> void:
 				var rock := _prop_tex(["rock", "stone"], n.pos)
 				if rock != null:
 					_blob_rect(res_layer, p + Vector2(0, 2), 14.0 + h * 6.0, 7.0 + h * 3.0, Color(0, 0, 0, 0.2))
-					_draw_sprite(res_layer, rock, p, 2.2 + h * 1.2)
+					_draw_sprite(res_layer, rock, p, _env_sprite_h(2.8, "stone", n.pos))
 					continue
 				res_layer.draw_circle(p + Vector2(0, 2), 7.0, Color(0, 0, 0, 0.2))
 				res_layer.draw_circle(p, 5.5, Color(0.5, 0.5, 0.49))
@@ -1024,16 +1190,8 @@ func _draw_resources() -> void:
 				res_layer.draw_circle(p + Vector2(3, 1), 2.4, Color(0.6, 0.6, 0.58))
 				res_layer.draw_circle(p + Vector2(0.5, -1), 1.2, Color(0.8, 0.8, 0.78))
 			"food":
-				# baked field.png came out unlit (black stalks), so wheat is
-				# procedural: tall golden sheaf like the original farm plots
-				res_layer.draw_circle(p + Vector2(0, 3), 7.0, Color(0, 0, 0, 0.15))
-				for k in 9:
-					var a := h * 6.28 + k * 0.698
-					var sway := 5.0 + h * 4.0
-					var tip := p + Vector2(cos(a), sin(a)) * sway + Vector2(0, -11 - h * 5.0)
-					res_layer.draw_line(p + Vector2(0, 3), tip, Color(0.42, 0.46, 0.2), 1.8)
-					res_layer.draw_circle(tip, 2.6, Color(0.88 + h * 0.08, 0.74, 0.28))
-					res_layer.draw_circle(tip + Vector2(0, -2), 1.4, Color(0.95, 0.85, 0.4))
+				# MICRO #15: depleted fields are bare, re-sown ones grow.
+				_draw_field(p, h, _field_growth(n))
 			"gold", "iron", "coal":
 				# Ore deposit = permanent landmark (the spot where a mine can
 				# be built). Draw a rock outcrop with vivid ore veins and a
@@ -1048,7 +1206,7 @@ func _draw_resources() -> void:
 				_ground_ellipse(res_layer, p, 0.95 * view_scale,
 					0.48 * view_scale, Color(col.r, col.g, col.b, 0.18))
 				if outcrop != null:
-					_draw_sprite(res_layer, outcrop, p, 3.2 + h * 0.7,
+					_draw_sprite(res_layer, outcrop, p, _env_sprite_h(3.5, "mine", n.pos),
 						Color(1.06, 1.02, 0.96), false)
 				else:
 					# jagged fallback rock (no baked sprite on weak-GPU setups)
@@ -1314,7 +1472,7 @@ func _draw_mine(p: Vector2, e: Dictionary, col: Color) -> void:
 		var tint_m := Color(0.55, 0.55, 0.6) if not e.finished else Color(1, 1, 1)
 		_blob_rect(bld_layer, p + Vector2(0, 3), r * 2.2, r * 1.1, Color(0.4, 0.32, 0.22, 0.9))
 		bld_layer.draw_circle(p + Vector2(0, 4), r * 1.5, Color(0, 0, 0, 0.22))
-		_draw_sprite(bld_layer, mspr, p, 3.0, tint_m)
+		_draw_sprite(bld_layer, mspr, p, _env_sprite_h(3.0, "mine", e.pos), tint_m)
 		if not e.finished:
 			bld_layer.draw_rect(Rect2(p.x - r - 3, p.y - r - 3, r * 2 + 6, r * 2 + 6), Color(0.4, 0.28, 0.15, 0.7), false, 1.5)
 		elif e.hp < e.max_hp:
@@ -1347,6 +1505,39 @@ func _queue_unit_sprite(tex: Texture2D, p: Vector2, world_h: float, tint: Color)
 	var tl := p - Vector2(sz.x * 0.5, sz.y * 0.82)
 	pending_unit_sprites.append({"tex": tex, "dst": Rect2(tl, sz),
 		"src": Rect2(0, 0, tex.get_width(), tex.get_height()), "tint": tint})
+
+var _yacht_hull_tex: Texture2D = null
+func _yacht_hull() -> Texture2D:
+	if _yacht_hull_tex == null:
+		var path := "res://assets/models/anim/naval/yacht_hull.png"
+		if _res_exists(path):
+			_yacht_hull_tex = load(path) as Texture2D
+	return _yacht_hull_tex
+
+# PORT-SIM P-10: yachts are naval entities (game._is_naval / Data.UNITS.yacht)
+# whose baked crew sheet is drawn by _draw_anim. The static 8-facing hull goes
+# underneath, drawn on unit_layer while the crew is queued onto unit_anim_layer
+# (a child that draws after its parent). Deck anchor: the crew's logical point
+# is p, and the hull cell is offset by its own ax/ay so the crew stands on the
+# deck; the facing uses the exact same (face + 4) convention as _draw_anim.
+func _draw_naval_hull(e: Dictionary, p: Vector2) -> void:
+	var tex := _yacht_hull()
+	if tex == null:
+		return
+	var info := _naval_info("yacht")
+	if info.is_empty():
+		return
+	var hull: Dictionary = info.get("actions", {}).get("hull", {})
+	if hull.is_empty():
+		return
+	var cell: float = maxf(8.0, float(info.get("cell", 160)))
+	var sc: float = float(hull.get("ortho", 11.355)) * view_scale / cell
+	var sz := Vector2(cell, cell) * sc
+	var tl := p - Vector2(sz.x * float(hull.get("ax", 0.5)),
+			sz.y * float(hull.get("ay", 0.93)))
+	var dir := posmod(int(fposmod(roundf(float(e.get("face", 0.0)) / (PI / 4.0)), 8.0)) + 4, 8)
+	unit_layer.draw_texture_rect_region(tex, Rect2(tl, sz),
+			Rect2(dir * cell, 0, cell, cell), Color(1, 1, 1))
 
 func _draw_unit_sprites() -> void:
 	# Runs on unit_anim_layer (child of unit_layer) after all unit shapes are
@@ -1384,6 +1575,10 @@ func _draw_units() -> void:
 		if bool(e.get("selected", false)) and ov_ring.size() > int(e.player):
 			var rw := vr * 2.9
 			unit_layer.draw_texture_rect(ov_ring[int(e.player)], Rect2(p.x - rw / 2, p.y - rw * 0.25, rw, rw * 0.5), false)
+		# PORT-SIM naval: static hull first (under the crew sheet, which
+		# _draw_anim queues onto the later-drawn unit_anim_layer child).
+		if game._is_naval(e):
+			_draw_naval_hull(e, pb)
 		# animated original-model sheets (tools/bake_sprites.py) first,
 		# static sprite, procedural body below stays as the fallback
 		var tint: Color = SPRITE_TINT.get(e.sid, Color(1, 1, 1))
@@ -1523,15 +1718,15 @@ func _draw_corpses() -> void:
 		var a := clampf(1.0 - c.t / c.life, 0.0, 1.0) * 0.55
 		# death sheet (tools/bake_sprites.py): last falls linger, then fade
 		var ckey := str(c.sid)
-		var cinfo: Dictionary = anim_index.get(ckey, {})
+		var cinfo: Dictionary = _anim_info(ckey)
 		if not cinfo.is_empty() and (cinfo.actions as Dictionary).has("death"):
 			var dact: Dictionary = cinfo.actions.death
 			var dn: int = int(dact.frames)
 			var dd: float = maxf(0.05, float(dact.duration))
 			var dcell: int = int(cinfo.cell)
 			var dtk := ckey + "_death"
-			if not anim_tex.has(dtk) and _res_exists("%s/%s.png" % [_anim_dir(), dtk]):
-				anim_tex[dtk] = load("%s/%s.png" % [_anim_dir(), dtk])
+			if not anim_tex.has(dtk) and _res_exists(_anim_sheet(ckey, "death")):
+				anim_tex[dtk] = load(_anim_sheet(ckey, "death"))
 			if anim_tex.has(dtk):
 				var dtex: Texture2D = anim_tex[dtk]
 				if dtex == null:
@@ -1636,6 +1831,28 @@ func _draw_ghost() -> void:
 		if hud != null and hud.has_method("show_hint") and reason != "":
 			hud.show_hint(reason)
 
+# P-20 / RE gap 1c: an arrow in flight leaves a short fading streak.  The
+# event -> add_fx call arrives in the same tick the projectile is spawned, so
+# this is where the world can pick up in-flight arrows without touching game.gd.
+# One trail item per live arrow, reusing the existing fx-item schema and cap.
+func _emit_arrow_trails() -> void:
+	if game == null:
+		return
+	for pr in game.projectiles:
+		if str(pr.get("kind", "")) not in ["arrow", "firearrow"]:
+			continue
+		var seen := false
+		for f in fx_items:
+			if str(f.get("kind", "")) == "trail" and f.get("pr") == pr:
+				seen = true
+				break
+		if seen:
+			continue
+		fx_items.append({"kind": "trail", "pos": world_to_px(pr.pos), "t": 0.0,
+			"life": 0.22, "pr": pr})
+		if fx_items.size() > Data.FX_CAP:
+			fx_items.pop_front()
+
 func add_fx(kind: String, pos: Vector2) -> void:
 	var life := 0.35
 	match kind:
@@ -1652,6 +1869,7 @@ func add_fx(kind: String, pos: Vector2) -> void:
 	fx_items.append({"kind": kind, "pos": world_to_px(pos), "t": 0.0, "life": life})
 	if fx_items.size() > Data.FX_CAP:
 		fx_items.pop_front()
+	_emit_arrow_trails()
 
 func _draw_fx() -> void:
 	dbg_fx += 1
@@ -1733,3 +1951,13 @@ func _draw_fx() -> void:
 				fx_layer.draw_line(f.pos + Vector2(-5, -12), f.pos + Vector2(5, -16), Color(1, 0.3, 0.2, 1.0 - k), 2.0)
 			"chop":
 				fx_layer.draw_circle(f.pos + Vector2(0, -6), 2.0 + k * 3.0, Color(0.7, 0.6, 0.3, 1.0 - k))
+			"trail":
+				# fading streak behind an in-flight arrow (CPU draw only, no sprite)
+				var pr: Dictionary = f.get("pr", {})
+				if not pr.is_empty():
+					var head := world_to_px(pr.target.lerp(pr.pos, 1.0 - pr.t / maxf(0.01, pr.total)))
+					var dir: Vector2 = (pr.target - pr.pos).normalized()
+					if dir.length_squared() < 0.01:
+						dir = Vector2.RIGHT
+					fx_layer.draw_line(head - dir * (8.0 + k * 5.0), head,
+						Color(1.0, 0.88, 0.62, 0.7 * (1.0 - k)), 1.5)

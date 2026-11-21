@@ -33,6 +33,16 @@ static var FPS := 32.0                       # game logic rate, dmscript.global:
 static var MAP_W := 160                     # tiles (the port map; original is 640)
 static var MAP_H := 160
 static var RANDOM_SEED := 20261113
+# P-31: donor generator-version gates. Read-only from
+# data/scripts/common.inc/initmapgen.inc (:78,:84,:103,:109,:121,:273,:280) and
+# dogenerate.inc (:559,:573,:584,:606,:617,:628,:660,:735,:774,:1093,:1175,:1547).
+# The port records the newest version (91), so every "<" gate is false and the
+# legacy single-stream seeds/dumps stay byte-identical. The donor also has a <90
+# gate at dogenerate.inc:660 (not in the DB_SCRIPTS summary).
+static var GENERATOR_VERSION := 91
+const GENERATOR_VERSION_GATES := [53, 61, 63, 68, 70, 75, 77, 80, 89, 90, 91]
+static func generator_gate(v: int) -> bool:
+	return int(GENERATOR_VERSION) < v
 static var START_PEASANTS := 8               # estimated, the original default was not in readable files
 static var START_RESOURCES := {}             # food, wood, stone, gold, iron, coal
 static var DEPOSITS := {}                    # how much gold/iron/coal lies in the ground
@@ -87,6 +97,10 @@ static var FAMINE_GRACE_S := 120.0        # no deaths before this long starving
 static var FAMINE_DRAIN_PER_S := 0.3      # hp/s per unit after the grace
 static var MARKET_RATE := 0.65            # 100 of one res buys 65 of another
 static var MARKET_DRIFT := 0.02          # rate slips this much per 100 traded
+# PORT-CONTROL hand-off: post-trade rate recovery. INFERRED - no donor cadence
+# was found in the readable scripts; tunable, and small enough not to disturb
+# the existing market tests.
+static var MARKET_RECOVERY_PER_S := 0.002
 
 static var AUDIO_ENABLED := true
 static var MASTER_VOLUME_DB := 0.0
@@ -155,10 +169,32 @@ static var CAMERA_ZOOM_STEP := 1.15
 
 static var UNIT_NAMES := {}             # display names, from data/locale/en/units.txt
 static var BUILDING_NAMES := {}         # display names, from data/locale/en/gui.txt
-static var PLAYER_NAMES := ["Russia", "Bavaria"]
-static var PLAYER_NATIONS := ["rus", "bav"]  # country.script sids, menu picks these
+static var PLAYER_NAMES := ["Russia", "Bavaria", "Poland", "Sweden"]
+static var PLAYER_NATIONS := ["rus", "bav", "pol", "swe"]  # country.script sids, menu picks these
+# P-42 sim contract. main.gd writes these through Object.set(); keep the exact
+# names/types. Defaults stay 2 players / free-for-all so existing tests hold.
+static var PLAYER_COUNT := 2
+static var TEAMS: Array = []
 static var MAP_TYPE := "land"           # generator.cfg TerrainTypes key
 static var BIOME := "summer"            # donor season: summer / winter / desert
+# P-19/P-14: PORT-MENU emits terrain_type/richness/season/relief (menu.gd:34-37,
+# :435). These defaults are EXACTLY the emitted defaults, so legacy dumps hold.
+# terrain_type is deliberately ALIASED onto MAP_TYPE (same 6 donor values).
+static var RICHNESS := "med"            # low / med / rich (donor Minerals)
+static var RELIEF := "plains"           # plains / hills / mountains (donor Terrain Type)
+const RICHNESS_MULT := {"low": 0.5, "med": 1.0, "rich": 1.5}   # per-node ore pool
+const RICHNESS_ORE_DELTA := {"low": -1, "med": 0, "rich": 1}   # ore nodes per start (inferred)
+const RELIEF_SCALE := {"plains": 1.0, "hills": 1.5, "mountains": 2.2}
+const RELIEF_DOME_DELTA := {"plains": 0, "hills": 1, "mountains": 2}
+# Season tint exposed for world.gd (separate worker); never stored in map_meta
+# because map_meta is serialised into every --dump-map file.
+const TERRAIN_TINT := {
+	"summer": Color(1.0, 1.0, 1.0, 1.0),
+	"winter": Color(0.86, 0.91, 1.0, 1.0),
+	"desert": Color(1.0, 0.90, 0.70, 1.0),
+}
+static func terrain_tint(biome: String = "") -> Color:
+	return TERRAIN_TINT.get(biome if biome != "" else str(BIOME), TERRAIN_TINT["summer"])
 static var START_OPTION := "default"    # startingsettings.gc_mapsettings_* key
 static var HOTKEYS := {}                # action -> "Ctrl+S" style binding
 
@@ -187,8 +223,26 @@ const NATION_UNITS := {
 	"tur": {"serdiuk": "jannisary", "musketeer": "jannisary", "cossack": "sipahi", "dragoon": "sipahi", "priest": "mullah"},
 	"alg": {"serdiuk": "jannisary", "musketeer": "jannisary", "cossack": "mameluke", "dragoon": "spakh", "priest": "mullah"},
 	"swe": {"cossack": "hackapell"},
-	"sco": {"drummer": "bagpiper"},
+	# Scotland: bagpipers plus the baked unique infantry (P-41). The baked
+	# sco_units.json walk clip is DONOR-exact 0.8 s / 12 frames (swordsmansco);
+	# the port's 1.08 s = n*0.09 convention is an estimate, so fidelity wins.
+	"sco": {"drummer": "bagpiper", "musketeer": "sco_highlandersword", "serdiuk": "sco_highlandersword"},
 }
+
+# Nation-unique animation sheets live in a SEPARATE index (as naval/index.json
+# does) so the 54-key main index and t_anim_metrics stay untouched.
+static var EXTRA_ANIM_INDEX := {}
+static func load_extra_anim_index() -> void:
+	if not EXTRA_ANIM_INDEX.is_empty():
+		return
+	var path := "res://assets/models/anim/sco_units.json"
+	if not FileAccess.file_exists(path):
+		return
+	var raw := FileAccess.get_file_as_string(path)
+	var parsed = JSON.parse_string(raw)
+	if parsed is Dictionary:
+		for k in parsed:
+			EXTRA_ANIM_INDEX[k] = parsed[k]
 
 # Random-map terrain types from data/game/var/generator.cfg TerrainTypes.
 # water_frac drives how many lakes the port paints (Land ~ none, Islands ~ many).
@@ -212,8 +266,9 @@ const START_OPTIONS := {
 	"cannons": {"army_mult": 0.3, "food": 500, "towers": 0, "cannons": 3},
 }
 
-# Squad formations from data/game/var/formations.cfg (bonusdamage 0 there;
-# the port keeps the masks as shapes: line = wide, column = deep, square = ring).
+# Squad formations from data/game/var/formations.cfg. The port keeps the
+# masks as shapes: line = wide, column = deep, square = ring. The donor's
+# exact per-formation bonus tuples are imported below as FORMATION_BONUSES.
 const FORMATIONS := {
 	"none": {"cols_mult": 1.0, "rows_mult": 1.0},
 	"line": {"cols_mult": 1.8, "rows_mult": 0.6},
@@ -221,7 +276,181 @@ const FORMATIONS := {
 	"square": {"cols_mult": 1.0, "rows_mult": 1.0, "hollow": true},
 	"wedge": {"cols_mult": 0.5, "rows_mult": 1.4},
 }
-const SQUAD_MAX := 195  # garrison/squad cap seen across squad.script-era games (estimated)
+
+# Exact donor bonus tuples, keyed by formations.cfg id. Each value is
+# [bonusdamage, bonusshield, bonusdamagehold, bonusshieldhold] read from
+# C:\Games\Cossacks 3\data\game\var\formations.cfg (149 records, 46 nonzero:
+# 15x(2,2,7,7), 22x(1,1,1,1), 3x(3,3,7,7), plus legacy _OLD outliers).
+const FORMATION_BONUSES := {
+	"none": [0, 0, 0, 0],
+	"LINE3": [0, 0, 0, 0],
+	"LINE4": [0, 0, 0, 0],
+	"LINE5": [0, 0, 0, 0],
+	"LINE6": [0, 0, 0, 0],
+	"LINE7": [0, 0, 0, 0],
+	"LINE8": [0, 0, 0, 0],
+	"LINE9": [0, 0, 0, 0],
+	"LINE10": [0, 0, 0, 0],
+	"LINE3PUS": [0, 0, 0, 0],
+	"LINE4PUS": [0, 0, 0, 0],
+	"LINE5PUS": [0, 0, 0, 0],
+	"LINE6PUS": [0, 0, 0, 0],
+	"LINE7PUS": [0, 0, 0, 0],
+	"LINE8PUS": [0, 0, 0, 0],
+	"LINE9PUS": [0, 0, 0, 0],
+	"LINE10PUS": [0, 0, 0, 0],
+	"LINE11PUS": [0, 0, 0, 0],
+	"LINE12PUS": [0, 0, 0, 0],
+	"LINE13PUS": [0, 0, 0, 0],
+	"LINE14PUS": [0, 0, 0, 0],
+	"LINE15PUS": [0, 0, 0, 0],
+	"LINE16PUS": [0, 0, 0, 0],
+	"LINE17PUS": [0, 0, 0, 0],
+	"LINE18PUS": [0, 0, 0, 0],
+	"LINE19PUS": [0, 0, 0, 0],
+	"LINE20PUS": [0, 0, 0, 0],
+	"LINE21PUS": [0, 0, 0, 0],
+	"LINE22PUS": [0, 0, 0, 0],
+	"LINE23PUS": [0, 0, 0, 0],
+	"LINE24PUS": [0, 0, 0, 0],
+	"LINE25PUS": [0, 0, 0, 0],
+	"LINE26PUS": [0, 0, 0, 0],
+	"LINE27PUS": [0, 0, 0, 0],
+	"LINE28PUS": [0, 0, 0, 0],
+	"LINE29PUS": [0, 0, 0, 0],
+	"LINE30PUS": [0, 0, 0, 0],
+	"LINE31PUS": [0, 0, 0, 0],
+	"LINE32PUS": [0, 0, 0, 0],
+	"LINE33PUS": [0, 0, 0, 0],
+	"LINE34PUS": [0, 0, 0, 0],
+	"LINE35PUS": [0, 0, 0, 0],
+	"LINE36PUS": [0, 0, 0, 0],
+	"LINE37PUS": [0, 0, 0, 0],
+	"LINE38PUS": [0, 0, 0, 0],
+	"LINE39PUS": [0, 0, 0, 0],
+	"LINE40PUS": [0, 0, 0, 0],
+	"LINE100PUS": [0, 0, 0, 0],
+	"LINEMORB5": [0, 0, 0, 0],
+	"LINEMORB6": [0, 0, 0, 0],
+	"LINEMORB7": [0, 0, 0, 0],
+	"LINEMORB8": [0, 0, 0, 0],
+	"LINEMORB9": [0, 0, 0, 0],
+	"LINEMORB10": [0, 0, 0, 0],
+	"LINEMORB11": [0, 0, 0, 0],
+	"LINEMORB12": [0, 0, 0, 0],
+	"LINEMORB13": [0, 0, 0, 0],
+	"LINEMORB14": [0, 0, 0, 0],
+	"LINEMORB15": [0, 0, 0, 0],
+	"LINEMORB16": [0, 0, 0, 0],
+	"LINEMORB17": [0, 0, 0, 0],
+	"LINEMORB18": [0, 0, 0, 0],
+	"LINEMORB19": [0, 0, 0, 0],
+	"LINEMORB20": [0, 0, 0, 0],
+	"LINE15": [2, 2, 7, 7],
+	"LINE36": [2, 2, 7, 7],
+	"LINE72": [2, 2, 7, 7],
+	"LINE120": [2, 2, 7, 7],
+	"LINE196": [2, 2, 7, 7],
+	"SQUARE36": [2, 2, 7, 7],
+	"SQUARE72": [2, 2, 7, 7],
+	"SQUARE120": [2, 2, 7, 7],
+	"SQUARE196": [2, 2, 7, 7],
+	"KARE36": [2, 2, 7, 7],
+	"KARE72": [2, 2, 7, 7],
+	"KARE120": [2, 2, 7, 7],
+	"KARE196": [2, 2, 7, 7],
+	"ALONE": [0, 0, 0, 0],
+	"ODIN": [0, 0, 0, 0],
+	"SHIPS12": [0, 0, 0, 0],
+	"SHIPS5": [0, 0, 0, 0],
+	"SHIPSN5": [0, 0, 0, 0],
+	"SHIPS8": [0, 0, 0, 0],
+	"SHIPS3": [0, 0, 0, 0],
+	"PACK20": [0, 0, 0, 0],
+	"TRI_OLD": [-10, 9, 95, -19],
+	"TRI2_OLD": [0, 0, 0, 0],
+	"TRI3_OLD": [0, 0, 0, 0],
+	"PRUS_OLD": [5, -5, -27, 80],
+	"PRUS2_OLD": [0, 0, 0, 0],
+	"PRUS3_OLD": [0, 0, 0, 0],
+	"SHER_OLD": [2, 1, 2, 1],
+	"SHER2_OLD": [1, 1, 1, 1],
+	"SHER3_OLD": [0, 1, 1, 0],
+	"PRUS0_OLD": [1, 1, 1, 1],
+	"TRI0_OLD": [1, 1, 1, 1],
+	"PRUS02_OLD": [0, 0, 0, 0],
+	"PRUS03_OLD": [0, 0, 0, 0],
+	"SHER0_OLD": [2, 1, 2, 1],
+	"SHER02_OLD": [1, 1, 1, 1],
+	"SHER03_OLD": [0, 1, 1, 0],
+	"TRI02_OLD": [0, 0, 0, 0],
+	"TRI03_OLD": [0, 0, 0, 0],
+	"SQUARE15": [2, 2, 7, 7],
+	"KARE15": [2, 2, 7, 7],
+	"TRI": [1, 1, 1, 1],
+	"TRI2": [1, 1, 1, 1],
+	"TRI3": [1, 1, 1, 1],
+	"PRUS": [1, 1, 1, 1],
+	"PRUS2": [1, 1, 1, 1],
+	"PRUS3": [1, 1, 1, 1],
+	"SHER": [1, 1, 1, 1],
+	"SHER2": [1, 1, 1, 1],
+	"SHER3": [1, 1, 1, 1],
+	"TRI0": [1, 1, 1, 1],
+	"TRI02": [1, 1, 1, 1],
+	"TRI03": [1, 1, 1, 1],
+	"PRUS0": [1, 1, 1, 1],
+	"PRUS02": [1, 1, 1, 1],
+	"PRUS03": [1, 1, 1, 1],
+	"SHER0": [1, 1, 1, 1],
+	"SHER02": [1, 1, 1, 1],
+	"SHER03": [1, 1, 1, 1],
+	"LINE2": [0, 0, 0, 0],
+	"LINE2PUS": [0, 0, 0, 0],
+	"LINEMORB2": [0, 0, 0, 0],
+	"LINEMORB3": [0, 0, 0, 0],
+	"LINEMORB4": [0, 0, 0, 0],
+	"LINE400": [3, 3, 7, 7],
+	"SQUARE400": [3, 3, 7, 7],
+	"KARE400": [3, 3, 7, 7],
+	"LINE15NB": [0, 0, 0, 0],
+	"LINE36NB": [0, 0, 0, 0],
+	"LINE72NB": [0, 0, 0, 0],
+	"LINE120NB": [0, 0, 0, 0],
+	"LINE196NB": [0, 0, 0, 0],
+	"LINE400NB": [0, 0, 0, 0],
+	"SQUARE15NB": [0, 0, 0, 0],
+	"SQUARE36NB": [0, 0, 0, 0],
+	"SQUARE72NB": [0, 0, 0, 0],
+	"SQUARE120NB": [0, 0, 0, 0],
+	"SQUARE196NB": [0, 0, 0, 0],
+	"SQUARE400NB": [0, 0, 0, 0],
+	"KARE15NB": [0, 0, 0, 0],
+	"KARE36NB": [0, 0, 0, 0],
+	"KARE72NB": [0, 0, 0, 0],
+	"KARE120NB": [0, 0, 0, 0],
+	"KARE196NB": [0, 0, 0, 0],
+	"KARE400NB": [0, 0, 0, 0],
+}
+
+# Return [bonusdamage, bonusshield, bonusdamagehold, bonusshieldhold] for a
+# donor formations.cfg id; unknown ids get the all-zero tuple.
+static func formation_bonuses(fid: String) -> Array:
+	return FORMATION_BONUSES.get(fid, [0, 0, 0, 0])
+
+# RB G-13: surviving squads harden with kills. XP accumulates on the squad dict
+# for the whole match and adds at most SQUAD_XP_CAP points to EACH donor tuple
+# field (bounded - no runaway scaling). 2 kills per point by default.
+static var SQUAD_XP_PER_KILL := 1.0
+static var SQUAD_XP_PER_BONUS := 2.0
+static var SQUAD_XP_CAP := 3
+
+# Donor formation ladder tops out at 400 soldiers (formations.cfg LINE400 /
+# SQUARE400 / KARE400, imported in FORMATION_BONUSES above). squad_form()
+# counts the officer + drummer in this cap, so 400 soldiers need 402 slots and
+# the check at game.gd `total >= SQUAD_MAX` breaks *before* the next add —
+# hence 403 (derived), not 400.
+const SQUAD_MAX := 403
 
 # resource gathering: hits per carried load, carried amount, source dmscript.global 799-806
 const GATHER_BASE := {
@@ -230,9 +459,23 @@ const GATHER_BASE := {
 	"stone": {"hits": 20, "carry": 40, "interval": 1.25},
 }
 static var GATHER := {}
+# G-13 / donor dmscript.global:222-225 gc_gameplay_resource_maxattackers_*:
+# food 3, wood 2, stone 3 (none 4). Max simultaneous gatherers per resource node.
+const RESOURCE_WORKERS := {"food": 3, "wood": 2, "stone": 3}
 
-# weapon kinds
+# weapon kinds — donor dmscript.global:279-286 (gc_obj_weapon_kind_*).
 const WK := {"none": 0, "pike": 1, "sword": 2, "bullet": 3, "cannister": 4, "arrow": 5, "firearrow": 6, "cannonball": 7}
+
+# Weapon kind -> slot in the port's 6-element `prot` array below.
+# Donor `_misc_DoDamage` (miscext2.script:380,434) subtracts
+# `protection[weapkind]` directly, i.e. it indexes by the 0..7 kind value.
+# The port compresses those 8 kinds into 6 slots ordered
+# [pike, sword, bullet, cannister, arrow, cannonball] (no `none`, no `firearrow`).
+# -1 means "no protection slot" (kind `none`, or an unknown kind defaulting to 0).
+# INFERENCE (documented): firearrow(6) has its own donor slot protection[6], but
+# the port's 6-slot data cannot represent it, so it is clamped to the last valid
+# slot (cannonball). This is a port-representation clamp, not donor behaviour.
+const PROT_SLOT := [-1, 0, 1, 2, 3, 4, 5, 5]
 
 # protection order: [pike, sword, bullet, cannister, arrow, cannonball]
 const UNITS_BASE := {
@@ -665,6 +908,18 @@ const UNITS_BASE := {
 		"radius": 0.5,
 		"icon": Rect2(92, 276, 46, 46),
 	},
+	"sco_highlandersword": {
+		# Scottish unique infantry (donor swordsmansco). Sprites/metrics come
+		# from sco_units.json; stats estimated against strelet/pikeman18 until
+		# a donor unit-stat read exists (quality-first: UNVERIFIED).
+		"hp": 100, "speed": 1.2, "score": 14, "aiforce": 6,
+		"price": {"food": 60, "gold": 12, "iron": 8}, "build_time": 380 * 0.03125,
+		"search": 700 * PX_TO_M, "eat": {"food": 32},
+		"weapons": [{"kind": "sword", "dmg": 16, "min": 10 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.1}],
+		"prot": [2, 2, 4, 100, 3, 20],
+		"radius": 0.35,
+		"icon": Rect2(0, 46, 46, 46),
+	},
 	"cossackregister": {
 		"hp": 240, "speed": 2.1, "score": 38, "aiforce": 22, "cavalry": "hard",
 		"price": {"food": 120, "gold": 35, "iron": 5}, "build_time": 480 * 0.03125, "search": 850 * PX_TO_M,
@@ -682,6 +937,19 @@ const UNITS_BASE := {
 		"prot": [0, 0, 0, 0, 0, 0],
 		"radius": 0.35,
 		"icon": Rect2(46, 184, 46, 46),
+	},
+	# P-10 naval: static hull + crew sheets baked in app/assets/models/anim/naval/
+	# (index.json: hull ortho 11.355, crew ortho 6.047). Movement/shape flags are
+	# donor-evidenced; hp/speed/dmg/price are ESTIMATED (NAVAL_PORT_PLAN §5 Q2).
+	"yacht": {
+		"hp": 900, "speed": 2.8, "score": 60, "aiforce": 12, "naval": true,
+		"price": {"wood": 220, "gold": 120, "iron": 60}, "build_time": 1600 * 0.03125, "search": 1200 * PX_TO_M,
+		"eat": {"gold": 40},
+		"weapons": [{"kind": "cannonball", "dmg": 220, "min": 400 * PX_TO_M, "max": 1200 * PX_TO_M,
+			"cd": 180 * 0.03125, "cost": {"iron": 2, "coal": 3}, "splash": 12 * PX_TO_M}],
+		"prot": [2, 2, 4, 60, 6, 45],
+		"radius": 1.8,
+		"icon": Rect2(322, 368, 46, 46),
 	},
 }
 
@@ -707,12 +975,15 @@ const BUILDINGS_BASE := {
 		"score": 500, "icon": Rect2(92, 46, 46, 46)},
 	"aca": {"hp": 65000, "build_time": 150 * 0.03125, "cost": {"wood": 1350, "stone": 1200}, "radius": 2.5,
 		"score": 500, "icon": Rect2(230, 46, 46, 46)},
+	# G-01: the capturable set (town hall, market, mines, storehouse) is
+	# wiki-sourced (RB_MECHANICS S3/S5/S6/S7), not donor-byte verified - INFERENCE.
+	# Military buildings below deliberately stay uncapturable.
 	"sto": {"hp": 10000, "build_time": 100 * 0.03125, "cost": {"wood": 50, "stone": 20}, "radius": 1.5,
-		"stores": ["wood", "stone"], "score": 30, "drop": true, "icon": Rect2(92, 0, 46, 46)},
+		"stores": ["wood", "stone"], "score": 30, "drop": true, "capture": true, "icon": Rect2(92, 0, 46, 46)},
 	"mil": {"hp": 20000, "build_time": 300 * 0.03125, "cost": {"wood": 30, "stone": 150}, "radius": 2.0,
 		"stores": ["food"], "score": 20, "drop": true, "icon": Rect2(46, 0, 46, 46)},
 	"mar": {"hp": 4000, "build_time": 750 * 0.03125, "cost": {"wood": 450}, "radius": 2.0, "score": 500,
-		"icon": Rect2(0, 46, 46, 46)},
+		"capture": true, "icon": Rect2(0, 46, 46, 46)},
 	"art": {"hp": 40000, "build_time": 787 * 0.03125, "cost": {"wood": 100, "stone": 1000, "coal": 1400}, "radius": 2.5,
 		"trains": ["cannon", "howitzer", "mortar", "multicannon"], "score": 500, "icon": Rect2(184, 46, 46, 46)},
 	# Stone wall segment (data/game/var/wallcustom.cfg BuilderPoints ±0.9 m).
@@ -722,15 +993,20 @@ const BUILDINGS_BASE := {
 	"gat": {"hp": 3000, "build_time": 60 * 0.03125, "cost": {"wood": 10, "stone": 60}, "radius": 1.0,
 		"score": 20, "wall": true, "gate": true, "icon": Rect2(414, 0, 46, 46)},
 	"mine_gold": {"hp": 2500, "build_time": 300 * 0.03125, "cost": {"wood": 100, "stone": 100}, "radius": 1.6,
-		"mine": "gold", "slots": 5, "produce": 13, "score": 500, "icon": Rect2(138, 0, 46, 46)},
+		"mine": "gold", "slots": 5, "produce": 13, "score": 500, "capture": true, "icon": Rect2(138, 0, 46, 46)},
 	"mine_iron": {"hp": 2500, "build_time": 300 * 0.03125, "cost": {"wood": 100, "stone": 100}, "radius": 1.6,
-		"mine": "iron", "slots": 5, "produce": 13, "score": 500, "icon": Rect2(138, 0, 46, 46)},
+		"mine": "iron", "slots": 5, "produce": 13, "score": 500, "capture": true, "icon": Rect2(138, 0, 46, 46)},
 	"mine_coal": {"hp": 2500, "build_time": 300 * 0.03125, "cost": {"wood": 100, "stone": 100}, "radius": 1.6,
-		"mine": "coal", "slots": 5, "produce": 13, "score": 500, "icon": Rect2(138, 0, 46, 46)},
+		"mine": "coal", "slots": 5, "produce": 13, "score": 500, "capture": true, "icon": Rect2(138, 0, 46, 46)},
 	"tow": {"hp": 20000, "build_time": 3937 * 0.03125, "cost": {"wood": 100, "stone": 100, "gold": 150}, "radius": 1.6,
 		"weapons": [{"kind": "cannonball", "dmg": 1000, "min": 550 * PX_TO_M, "max": 1500 * PX_TO_M, "cd": 400 * 0.03125,
 			"cost": {"iron": 10, "coal": 30}, "splash": 35 * PX_TO_M}],
 		"eat": {"gold": 500}, "score": 500, "icon": Rect2(414, 0, 46, 46)},
+	# P-10: donor Shipyard (hotkey P) has no readable stats; hp/cost are
+	# ESTIMATED. train_unit() gates strictly on `trains`, so this is the only
+	# training hook needed for the yacht.
+	"dock": {"hp": 12000, "build_time": 900 * 0.03125, "cost": {"wood": 600, "stone": 200, "gold": 150}, "radius": 3.0,
+		"trains": ["yacht"], "score": 500, "icon": Rect2(414, 46, 46, 46)},
 }
 
 # Upgrades researched at blacksmith (bla) and academy (aca).
@@ -755,16 +1031,20 @@ const UPGRADES_BASE := {
 		"effect": {"damage_mult": {"cannonball": 1.15}}, "name": "Heavy caliber +15%"},
 	"mil_food1": {"building": "mil", "cost": {"food": 750, "gold": 250}, "time": 10.0,
 		"effect": {"gather_mult": {"food": 2.4}}, "name": "Grain treatment +140%"},
+	# Donor locale/en/upgrades.txt:144 = "storage +180" -> multiplier 2.8,
+	# not the previous estimated +250% (deep-MICRO §2.2).
 	"mil_food2": {"building": "mil", "cost": {"food": 25600, "gold": 3350, "iron": 2000}, "time": 20.0,
-		"effect": {"gather_mult": {"food": 3.5}}, "name": "Grain storage +250%"},
+		"effect": {"gather_mult": {"food": 2.8}}, "name": "Grain storage +180%"},
 	"aca_field1": {"building": "aca", "cost": {"food": 2000, "gold": 500}, "time": 12.0,
 		"effect": {"field_cap": 3.0}, "name": "Field melioration +200%"},
 	"bla_field1": {"building": "bla", "cost": {"food": 1000, "iron": 200}, "time": 10.0,
 		"effect": {"field_cap": 2.0}, "name": "Agricultural equipment +100%"},
 	"aca_wheat1": {"building": "aca", "cost": {"food": 1500, "gold": 300}, "time": 10.0,
 		"effect": {"gather_mult": {"food": 1.4}}, "name": "New wheat +40%"},
+	# Donor locale/en/upgrades.txt:4 = "rye +50" -> multiplier 1.5,
+	# not the previous estimated +40% (deep-MICRO §2.2).
 	"aca_rye1": {"building": "aca", "cost": {"food": 2500, "gold": 500}, "time": 12.0,
-		"effect": {"gather_mult": {"food": 1.4}}, "name": "New rye +40%"},
+		"effect": {"gather_mult": {"food": 1.5}}, "name": "New rye +50%"},
 	"aca_wood1b": {"building": "aca", "cost": {"wood": 2000, "gold": 400}, "time": 12.0,
 		"effect": {"gather_mult": {"wood": 2.0}}, "name": "Woodworking tools +100%"},
 	"aca_stone1": {"building": "aca", "cost": {"stone": 2000, "gold": 400}, "time": 12.0,
@@ -914,9 +1194,11 @@ static func apply_damage(dmg: float, weap_kind: String, target: Dictionary) -> i
 	else:
 		d -= int(shield / 3.0)
 	var prot: Array = target.get("prot", [0, 0, 0, 0, 0, 0])
-	var pi: int = WK.get(weap_kind, 0)
-	if pi >= 0 and pi < prot.size():
-		d -= prot[pi]
+	var wk: int = WK.get(weap_kind, 0)
+	if wk >= 0 and wk < PROT_SLOT.size():
+		var slot: int = PROT_SLOT[wk]
+		if slot >= 0 and slot < prot.size():
+			d -= int(prot[slot])
 	if d < 1:
 		d = 1
 	return d

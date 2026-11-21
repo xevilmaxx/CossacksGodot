@@ -1,0 +1,19 @@
+{
+  "ticket": 410,
+  "id": "manifest-t_naval",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_naval.gd"
+  ],
+  "created": 1795252903.2570746,
+  "wait": 2.253568649291992,
+  "run": 0.33818960189819336,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000410_manifest-t_naval\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000410_manifest-t_naval\\stderr.txt"
+}

@@ -1,0 +1,19 @@
+{
+  "ticket": 363,
+  "id": "impllegacy-mill_logic_test",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/mill_logic_test.gd"
+  ],
+  "created": 1795252298.092183,
+  "wait": 0.001049041748046875,
+  "run": 3.3071205615997314,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000363_impllegacy-mill_logic_test\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000363_impllegacy-mill_logic_test\\stderr.txt"
+}

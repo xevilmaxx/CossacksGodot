@@ -1,0 +1,19 @@
+{
+  "ticket": 412,
+  "id": "manifest-t_mass_army",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_mass_army.gd"
+  ],
+  "created": 1795252906.0688128,
+  "wait": 2.764799118041992,
+  "run": 1.18070387840271,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000412_manifest-t_mass_army\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000412_manifest-t_mass_army\\stderr.txt"
+}

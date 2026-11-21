@@ -1,0 +1,20 @@
+{
+  "ticket": 328,
+  "id": "implsim-uitest-reach9",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795251565.1061945,
+  "wait": 0.0007791519165039062,
+  "run": 19.69330382347107,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000328_implsim-uitest-reach9\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000328_implsim-uitest-reach9\\stderr.txt"
+}

@@ -1,0 +1,24 @@
+{
+  "ticket": 510,
+  "id": "portsim-opt-islands",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\portsim_opt_islands.json",
+    "--dump-map",
+    "scans/portsim_opt_islands.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795255791.8278415,
+  "wait": 38.62592601776123,
+  "run": 6.04475212097168,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000510_portsim-opt-islands\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000510_portsim-opt-islands\\stderr.txt"
+}

@@ -14,11 +14,20 @@
     ],
     "ax": 0.5,
     "ay": 0.8693,
-    "tool": null
+    "tool": null,
+    "bbox": [
+     9,
+     31,
+     151,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.5
    },
    "hull": {
     "frames": 1,
-    "duration": 0.0,
+    "duration": 1.0,
     "loop": false,
     "ortho": 11.355,
     "center": [
@@ -28,7 +37,16 @@
     ],
     "ax": 0.5709,
     "ay": 0.9267,
-    "tool": null
+    "tool": null,
+    "bbox": [
+     23,
+     33,
+     137,
+     152
+    ],
+    "fig_h": 0.7438,
+    "foot": 0.95,
+    "cx": 0.5
    }
   }
  }

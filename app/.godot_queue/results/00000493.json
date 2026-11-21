@@ -1,0 +1,20 @@
+{
+  "ticket": 493,
+  "id": "portvis-uitest-c",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795255463.8635228,
+  "wait": 57.30656361579895,
+  "run": 24.34623074531555,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000493_portvis-uitest-c\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000493_portvis-uitest-c\\stderr.txt"
+}

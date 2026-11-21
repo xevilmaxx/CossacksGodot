@@ -1,0 +1,7 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  PASS  main_index_54_units - parsed=true, unit keys=54 (expect 54)
+  PASS  action_structure - actions=299, out-of-spec=0 (duration>0, frames>=2 except donor-static siege idle, loop bool): []
+  PASS  metric_ranges - out-of-range actions=0 (fig_h 0.30..0.95, foot 0.66..0.96 measured pose band, cx 0.40..0.60): []
+  PASS  walk_stride - walks checked=54, donor-class cadence bands, out-of-band=0: []
+  PASS  naval_schema - naval units=1, schema deviations=0: []

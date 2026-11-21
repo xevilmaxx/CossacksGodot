@@ -1,0 +1,439 @@
+# Singleplayer shell: the menu the original opens with.
+# Skirmish (random map: nation / map type / start option), Historical Battles
+# (battle1..8 from data/game/var/battles.cfg) and Campaigns (from
+# data/game/var/campaigns.cfg) - all read from assets/missions.json built by
+# tools/build_missions.py. A mission pick only changes the setup (nations,
+# map type, starting army, objectives): maps themselves are generated, like
+# the port's skirmish map, because the .map heightmap has no public spec.
+# NOTE: no class_name here on purpose - main.gd loads this via preload so
+# headless test runs never depend on the editor's global class cache.
+extends CanvasLayer
+
+signal chosen(cfg: Dictionary)
+
+const ConfigScript = preload("res://scripts/config.gd")
+const Data = preload("res://scripts/data.gd")
+
+var data: Dictionary = {}
+var root: PanelContainer
+var title_label: Label
+var body: VBoxContainer
+var nation0 := "rus"
+var nation1 := "bav"
+var opponents := 1
+var teams_mode := "ffa"
+var map_type := "land"
+var start_option := "default"
+var mode := "skirmish"
+var mission_name := ""
+var difficulty := "normal"
+var map_size := 320
+var seed_val := Data.RANDOM_SEED
+# Donor skirmish map options (RC_TERRAIN §2.1 / GUIDE4 App.B02). Map Size and
+# Teams already have rows below; these four complete the donor's six-option set.
+var terrain_type := "land"   # donor Map Shape; enum Data.MAP_TYPES (generator.cfg TerrainTypes)
+var richness := "med"        # donor Minerals/Richness: low / med / rich
+var season := "summer"       # donor Season; enum Data.BIOME = summer / winter / desert
+var relief := "plains"       # donor Terrain Type (Relief): plains / hills / mountains
+var ui_us := 1.0
+var ui_vp := Vector2(1280, 720)
+var menu_scroll: ScrollContainer
+
+func _ready() -> void:
+	layer = 20
+	_load_data()
+	_build()
+	_apply_scale()
+	if is_instance_valid(get_tree()) and is_instance_valid(get_tree().root) and not get_tree().root.size_changed.is_connected(_on_vp_resize):
+		get_tree().root.size_changed.connect(_on_vp_resize)
+
+func _on_vp_resize() -> void:
+	ui_us = _calc_us()
+	_apply_scale()
+
+func _calc_us() -> float:
+	var s := Vector2(1280, 720)
+	if is_instance_valid(get_viewport()):
+		s = get_viewport().get_visible_rect().size
+	ui_vp = s
+	return ConfigScript.ui_scale_for(s)
+
+func _fs(base: int) -> int:
+	return maxi(10, int(round(float(base) * ui_us)))
+
+func _mh(base: float) -> float:
+	return base * ui_us
+
+# Walk the whole menu tree and apply the current scale to every widget that
+# opted in via set_meta("uifs"/"uimh"/"uimw"...). Static chrome is
+# tagged at build time; dynamic rows re-tag on creation. The card itself is
+# bounded to the viewport (width + content-aware scroll height) so content
+# can never clip, at any window size.
+func _apply_scale() -> void:
+	for n in find_children("*", "Control", true, false):
+		var c := n as Control
+		if c == null:
+			continue
+		if c.has_meta("uifs"):
+			c.add_theme_font_size_override("font_size", _fs(int(c.get_meta("uifs"))))
+		var mw := float(c.get_meta("uimw", 0.0))
+		var mh := float(c.get_meta("uimh", 0.0))
+		if mw > 0.0 or mh > 0.0:
+			var cur: Vector2 = c.custom_minimum_size
+			c.custom_minimum_size = Vector2(_mh(mw) if mw > 0.0 else cur.x, _mh(mh) if mh > 0.0 else cur.y)
+	if is_instance_valid(root) and is_instance_valid(menu_scroll) and is_instance_valid(body):
+		root.custom_minimum_size.x = minf(560.0 * ui_us, ui_vp.x * 0.94)
+		# Deterministic content height from row types (buttons 40, option /
+		# seed rows 38, labels 40 + separations): measuring combined minimums
+		# is unreliable because autowrapped labels report per-character-wrap
+		# heights when unconstrained (blew the card up to 2.5k px).
+		var want := 0.0
+		for ch in body.get_children():
+			if ch is BaseButton:
+				want += 40.0 * ui_us
+			elif ch is HBoxContainer:
+				want += 34.0 * ui_us
+			elif ch is Label:
+				want += 32.0 * ui_us
+			want += 8.0 * ui_us
+		var avail: float = maxf(120.0, ui_vp.y * 0.86 - 150.0 * ui_us)
+		menu_scroll.custom_minimum_size.y = minf(want, avail)
+
+func _load_data() -> void:
+	var paths := ["res://assets/missions.json", "user://missions.json"]
+	for p in paths:
+		if FileAccess.file_exists(p):
+			var f := FileAccess.open(p, FileAccess.READ)
+			if f:
+				var v: Variant = JSON.parse_string(f.get_as_text())
+				f.close()
+				if v is Dictionary:
+					data = v
+					return
+
+func _nations() -> Array:
+	if data.has("nations"):
+		return data.nations
+	return [{"id": "ukr", "name": "Ukraine"}, {"id": "rus", "name": "Russia"}]
+
+func _map_types() -> Array:
+	if data.has("map_types"):
+		return data.map_types
+	return [{"id": "land", "name": "Land", "descr": ""}]
+
+# Donor Map Shape ids come from the read-only Data.MAP_TYPES enum
+# (generator.cfg TerrainTypes), not from a new parallel table here.
+func _terrain_types() -> Array:
+	var out := []
+	for k in Data.MAP_TYPES:
+		out.append({"id": str(k), "name": str(Data.MAP_TYPES[k].get("name", k))})
+	return out
+
+func _starts() -> Array:
+	if data.has("start_options"):
+		return data.start_options
+	return [{"id": "default", "name": "Town + peasants", "descr": ""}]
+
+func _campaigns() -> Array:
+	return data.get("campaigns", [])
+
+func _battles() -> Array:
+	return data.get("battles", [])
+
+func _build() -> void:
+	ui_us = _calc_us()
+	# Full-rect centering + a card that can never outgrow the window: the
+	# body scrolls instead of clipping, at any window size or aspect.
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
+	root = PanelContainer.new()
+	root.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	center.add_child(root)
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 10)
+	root.add_child(vb)
+	title_label = Label.new()
+	title_label.text = "CossacksGodot — singleplayer"
+	title_label.set_meta("uifs", 30)
+	title_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vb.add_child(title_label)
+	var sub := Label.new()
+	sub.text = "Skirmish · historical battles · campaigns"
+	sub.set_meta("uifs", 14)
+	sub.add_theme_color_override("font_color", Color(0.8, 0.78, 0.7))
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vb.add_child(sub)
+	menu_scroll = ScrollContainer.new()
+	menu_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vb.add_child(menu_scroll)
+	body = VBoxContainer.new()
+	body.add_theme_constant_override("separation", 8)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	menu_scroll.add_child(body)
+	_show_main()
+
+func _clear() -> void:
+	for c in body.get_children():
+		body.remove_child(c)
+		c.queue_free()
+
+func _btn(text: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(0, 40)
+	b.set_meta("uimh", 40.0)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.set_meta("uifs", 15)
+	ConfigScript.ui_style_button(b)
+	return b
+
+func _lbl(text: String, fs := 13, col := Color(0.75, 0.72, 0.65)) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.set_meta("uifs", fs)
+	l.add_theme_color_override("font_color", col)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	return l
+
+func _show_main() -> void:
+	_clear()
+	var b1 := _btn("Skirmish - random map")
+	b1.pressed.connect(_show_skirmish)
+	body.add_child(b1)
+	var b2 := _btn("Historical battles (%d)" % _battles().size())
+	b2.pressed.connect(_show_battles)
+	body.add_child(b2)
+	var b3 := _btn("Campaigns (%d)" % _campaigns().size())
+	b3.pressed.connect(_show_campaigns)
+	body.add_child(b3)
+	var lb := _btn("Load game")
+	lb.pressed.connect(_on_load_game)
+	body.add_child(lb)
+	var ob := _btn("Options")
+	ob.pressed.connect(_show_options)
+	body.add_child(ob)
+	var qb := _btn("Quit")
+	qb.pressed.connect(func(): get_tree().quit())
+	body.add_child(qb)
+	var hint := _lbl("Maps are generated in the original's style (open plains, forest belts, hills, lakes). Picks change nations, armies and objectives.", 12, Color(0.7, 0.7, 0.65))
+	body.add_child(hint)
+	_apply_scale()
+
+func _opt_row(label_text: String, items: Array, current: String, on_pick: Callable) -> HBoxContainer:
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 10)
+	var l := Label.new()
+	l.text = label_text
+	l.custom_minimum_size = Vector2(150, 0)
+	l.set_meta("uimw", 150.0)
+	l.set_meta("uifs", 14)
+	hb.add_child(l)
+	var ob := OptionButton.new()
+	ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ConfigScript.ui_style_button(ob)
+	ob.set_meta("uifs", 14)
+	var sel := 0
+	for i in items.size():
+		var it: Dictionary = items[i]
+		ob.add_item(str(it.get("name", it.get("id", "?"))), i)
+		if str(it.get("id", "")) == current:
+			sel = i
+	ob.selected = sel
+	ob.item_selected.connect(func(i: int): on_pick.call(str(items[i].get("id", ""))))
+	hb.add_child(ob)
+	return hb
+
+func _show_skirmish() -> void:
+	_clear()
+	mode = "skirmish"
+	body.add_child(_opt_row("Your nation", _nations(), nation0, func(id: String): nation0 = id))
+	body.add_child(_opt_row("Enemy nation", _nations(), nation1, func(id: String): nation1 = id))
+	body.add_child(_opt_row("Opponents", [{"id": "1", "name": "1"}, {"id": "2", "name": "2"}, {"id": "3", "name": "3"}], str(opponents), func(id: String): opponents = int(id)))
+	body.add_child(_opt_row("Teams", [{"id": "ffa", "name": "Free for all"}, {"id": "2v1", "name": "2 vs 1"}], teams_mode, func(id: String): teams_mode = id))
+	body.add_child(_opt_row("Map type", _map_types(), map_type, func(id: String): map_type = id))
+	# Donor's remaining four lobby options (RC_TERRAIN §2.1; values per §2.1 table):
+	# Map Shape = land/med/pen/islands/continents, Minerals = low/med/rich,
+	# Season = summer/desert/winter, Relief = plains/hills/mountains.
+	body.add_child(_opt_row("Terrain / shape", _terrain_types(), terrain_type, func(id: String): terrain_type = id))
+	body.add_child(_opt_row("Minerals", [{"id": "low", "name": "Poor"}, {"id": "med", "name": "Normal"}, {"id": "rich", "name": "Rich"}], richness, func(id: String): richness = id))
+	body.add_child(_opt_row("Season", [{"id": "summer", "name": "Summer"}, {"id": "desert", "name": "Desert"}, {"id": "winter", "name": "Winter"}], season, func(id: String): season = id))
+	body.add_child(_opt_row("Relief", [{"id": "plains", "name": "Plains"}, {"id": "hills", "name": "Hills"}, {"id": "mountains", "name": "Mountains"}], relief, func(id: String): relief = id))
+	body.add_child(_opt_row("Starting", _starts(), start_option, func(id: String): start_option = id))
+	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
+	body.add_child(_opt_row("Map size", [{"id": "240", "name": "240"}, {"id": "320", "name": "320"}, {"id": "400", "name": "400"}], str(map_size), func(id: String): map_size = int(id)))
+	var shb := HBoxContainer.new()
+	shb.add_theme_constant_override("separation", 10)
+	var sl := Label.new()
+	sl.text = "Seed"
+	sl.custom_minimum_size = Vector2(150, 0)
+	sl.set_meta("uimw", 150.0)
+	sl.set_meta("uifs", 14)
+	shb.add_child(sl)
+	var seedbox := SpinBox.new()
+	seedbox.min_value = 0
+	seedbox.max_value = 99999999
+	seedbox.value = seed_val
+	seedbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	seedbox.set_meta("uifs", 14)
+	seedbox.value_changed.connect(func(v: float): seed_val = int(v))
+	shb.add_child(seedbox)
+	body.add_child(shb)
+	var go := _btn("Start skirmish")
+	go.pressed.connect(func(): _emit_start("Skirmish"))
+	body.add_child(go)
+	var back := _btn("Back")
+	back.pressed.connect(_show_main)
+	body.add_child(back)
+	_apply_scale()
+
+func _show_battles() -> void:
+	_clear()
+	for b in _battles():
+		var bd: Dictionary = b
+		var bb := _btn("Battle %s" % str(bd.get("id", "?")).replace("battle", ""))
+		bb.tooltip_text = str(bd.get("name", ""))
+		bb.pressed.connect(_on_battle.bind(bd))
+		body.add_child(bb)
+	var back := _btn("Back")
+	back.pressed.connect(_show_main)
+	body.add_child(back)
+	_apply_scale()
+
+func _on_battle(bd: Dictionary) -> void:
+	mode = "battle"
+	mission_name = str(bd.get("id", "battle1"))
+	start_option = "armylarge"
+	_emit_start("Historical battle %s" % mission_name)
+
+func _show_campaigns() -> void:
+	_clear()
+	var prog := {}
+	if FileAccess.file_exists("user://campaign_progress.json"):
+		var v = JSON.parse_string(FileAccess.get_file_as_string("user://campaign_progress.json"))
+		if v is Dictionary:
+			prog = v
+	for c in _campaigns():
+		var cd: Dictionary = c
+		var missions: Array = cd.get("missions", [])
+		for mi in missions.size():
+			var mid := str(missions[mi])
+			var mb := _btn("%s - %s" % [str(cd.get("id", "?")), mid])
+			var locked := mi > 0 and not bool(prog.get(str(missions[mi - 1]), false))
+			mb.disabled = locked
+			if locked:
+				mb.tooltip_text = "Win the previous mission to unlock"
+			else:
+				mb.tooltip_text = mid
+			mb.pressed.connect(_on_mission.bind(cd, mid))
+			body.add_child(mb)
+	var back := _btn("Back")
+	back.pressed.connect(_show_main)
+	body.add_child(back)
+	_apply_scale()
+
+func _on_mission(cd: Dictionary, mid: String) -> void:
+	mode = "campaign"
+	mission_name = mid
+	start_option = "default"
+	_emit_start("Campaign %s - %s" % [str(cd.get("id", "")), mission_name])
+
+func _on_campaign(cd: Dictionary) -> void:
+	var missions: Array = cd.get("missions", [])
+	mode = "skirmish" if missions.is_empty() else "campaign"
+	mission_name = str(missions[0]) if not missions.is_empty() else str(cd.get("id", ""))
+	start_option = "default"
+	_emit_start("Campaign %s - %s" % [str(cd.get("id", "")), mission_name])
+
+func _on_load_game() -> void:
+	_clear()
+	var found: Array = []
+	if FileAccess.file_exists("user://quicksave.json"):
+		found.append("user://quicksave.json")
+	for i in 5:
+		var p := "user://save_%d.json" % i
+		if FileAccess.file_exists(p):
+			found.append(p)
+	if found.is_empty():
+		var l := _lbl("No saves found")
+		body.add_child(l)
+	else:
+		for p in found:
+			var b := _btn(p.get_file())
+			b.pressed.connect(func(): chosen.emit({"mode": mode, "nation0": nation0, "nation1": nation1, "map_type": map_type, "start_option": start_option, "mission": mission_name, "descr": "loaded", "load_save": p, "difficulty": difficulty, "map_size": map_size, "seed": seed_val}))
+			body.add_child(b)
+	var back := _btn("Back")
+	back.pressed.connect(_show_main)
+	body.add_child(back)
+	_apply_scale()
+
+# Menu-side seed UI. The value always travels through cfg["seed"] as an int:
+# main.gd applies it with int(cfg.seed), so a literal "random" string cannot be
+# passed through the menu (that would need a main.gd change). The Random button
+# generates a fresh int instead - the same thing main.gd's --seed random does.
+func _random_seed_value() -> int:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	return rng.randi_range(0, 99999999)
+
+func _on_seed_text_changed(text: String, field: LineEdit) -> void:
+	var s := text.strip_edges()
+	if s.is_valid_int():
+		seed_val = int(s)
+		Data.RANDOM_SEED = seed_val
+	elif s.to_lower() == "random":
+		seed_val = _random_seed_value()
+		Data.RANDOM_SEED = seed_val
+		field.text = str(seed_val)  # re-enters as a valid int; no loop
+
+func _show_options() -> void:
+	_clear()
+	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id; _save_options()))
+	var shb := HBoxContainer.new()
+	shb.add_theme_constant_override("separation", 10)
+	var sl := Label.new()
+	sl.text = "Map seed"
+	sl.custom_minimum_size = Vector2(150, 0)
+	sl.set_meta("uimw", 150.0)
+	sl.set_meta("uifs", 14)
+	shb.add_child(sl)
+	var seedbox := LineEdit.new()
+	seedbox.text = str(seed_val)
+	seedbox.set_meta("uifs", 14)
+	seedbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var st := ConfigScript.ui_button_styles()
+	seedbox.add_theme_stylebox_override("normal", st["normal"] as StyleBoxFlat)
+	seedbox.text_changed.connect(_on_seed_text_changed.bind(seedbox))
+	shb.add_child(seedbox)
+	var rb := _btn("Random")
+	rb.custom_minimum_size = Vector2(90, 40)
+	rb.size_flags_horizontal = Control.SIZE_SHRINK_END
+	rb.pressed.connect(func():
+		seed_val = _random_seed_value()
+		Data.RANDOM_SEED = seed_val
+		seedbox.text = str(seed_val)
+	)
+	shb.add_child(rb)
+	body.add_child(shb)
+	var back := _btn("Back")
+	back.pressed.connect(_show_main)
+	body.add_child(back)
+	_apply_scale()
+
+func _save_options() -> void:
+	var f := FileAccess.open("user://options.json", FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"ai": {"difficulty": difficulty}}))
+		f.close()
+
+func _emit_start(descr: String) -> void:
+	var cfg := {"mode": mode, "nation0": nation0, "nation1": nation1,
+		"opponents": opponents, "teams": teams_mode,
+		"map_type": map_type, "terrain_type": terrain_type,
+		"richness": richness, "season": season, "relief": relief,
+		"start_option": start_option,
+		"mission": mission_name, "descr": descr,
+		"difficulty": difficulty, "map_size": map_size, "seed": seed_val}
+	chosen.emit(cfg)

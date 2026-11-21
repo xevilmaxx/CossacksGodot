@@ -1,0 +1,20 @@
+{
+  "ticket": 535,
+  "id": "PORT-MENU-uitest3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795256506.1174335,
+  "wait": 29.245688915252686,
+  "run": 24.03496026992798,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000535_PORT-MENU-uitest3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000535_PORT-MENU-uitest3\\stderr.txt"
+}

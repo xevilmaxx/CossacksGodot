@@ -1,0 +1,20 @@
+{
+  "ticket": 481,
+  "id": "portsim-uitest-p31",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795254899.4059832,
+  "wait": 95.91382241249084,
+  "run": 23.180704593658447,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000481_portsim-uitest-p31\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000481_portsim-uitest-p31\\stderr.txt"
+}

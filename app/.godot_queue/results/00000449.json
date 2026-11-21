@@ -1,0 +1,21 @@
+{
+  "ticket": 449,
+  "id": "PORT-MENU-shot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--test-api",
+    "8123",
+    "--timeout",
+    "170"
+  ],
+  "created": 1795253875.4776227,
+  "wait": 0.0008122920989990234,
+  "run": 148.6101257801056,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000449_PORT-MENU-shot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000449_PORT-MENU-shot\\stderr.txt"
+}

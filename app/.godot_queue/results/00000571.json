@@ -1,0 +1,20 @@
+{
+  "ticket": 571,
+  "id": "agentO8-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795257438.9009826,
+  "wait": 18.021147966384888,
+  "run": 30.63829755783081,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000571_agentO8-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000571_agentO8-uitest\\stderr.txt"
+}

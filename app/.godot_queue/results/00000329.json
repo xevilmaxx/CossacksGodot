@@ -1,0 +1,19 @@
+{
+  "ticket": 329,
+  "id": "implsim-tmap-reach9",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_map_variety.gd"
+  ],
+  "created": 1795251593.1042697,
+  "wait": 0.0008645057678222656,
+  "run": 10.432837963104248,
+  "exit": 0,
+  "timeout": 150.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000329_implsim-tmap-reach9\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000329_implsim-tmap-reach9\\stderr.txt"
+}

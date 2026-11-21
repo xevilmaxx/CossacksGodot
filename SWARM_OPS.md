@@ -145,6 +145,30 @@ acceptance gates, evidence, and a "How to resume" section. `docs/RESUME.md` is
 the master index. An area doc must be readable cold by a human or a fresh agent
 with no prior context.
 
+## 5d. Worker liveness protocol (owner directive 2026-11-21)
+
+The owner asked for PERIODIC checks so a slow or stuck worker is found and
+unblocked instead of silently consuming time. Apply this on every notification
+and at least every few minutes while a wave is running:
+
+1. **Check** `python app\tools\worker_health.py --stall-min 10`. It reports, per
+   board owner: last owned-file edit, last runner result, pending tickets, and
+   a `STALLED` flag when all are quiet.
+2. **Interpret** before acting: a quiet worker may be reading donor files or
+   reasoning. `pending_jobs > 0` means it is in the FIFO, not stuck.
+3. **Ping** any `STALLED` worker with a short status request (what are you
+   doing, what are you blocked on, do you need an API/file-ownership grant).
+4. **Unblock**, don't take over: fix shared-state problems (parse errors, dead
+   lock, stale `now_serving`, missing declared static, file-ownership clash),
+   grant a specific file if needed, or re-submit a lost job. Never silently
+   duplicate or revert another worker's in-progress edit.
+5. **Watch for cross-worker breakage**: one worker's unparseable file makes
+   everyone's gates fail with `Failed to compile depended scripts`. Attribute
+   the failure to the OWNER OF THE PARSE ERROR, not to the unlucky tester, and
+   tell the tester not to revert correct work.
+6. **Escalate** if a worker is quiet > 20 min with no pending job and no reply:
+   re-assign its remaining ticket to a fresh worker with disjoint files.
+
 ## 6. Why the queue works this way
 
 Godot is a single shared resource, so the runner serializes it with a FIFO

@@ -1,0 +1,20 @@
+{
+  "ticket": 374,
+  "id": "manifest-t_mill_rotor",
+  "argv": [
+    "--path",
+    "app",
+    "--script",
+    "res://tests/mill_render_test.gd",
+    "--timeout",
+    "90.0"
+  ],
+  "created": 1795252363.5274086,
+  "wait": 2.561753749847412,
+  "run": 7.349226951599121,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000374_manifest-t_mill_rotor\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000374_manifest-t_mill_rotor\\stderr.txt"
+}

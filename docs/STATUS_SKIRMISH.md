@@ -22,6 +22,7 @@ status: amber
 ![selftest](https://img.shields.io/badge/selftest-29%2F29-brightgreen)
 ![uitest](https://img.shields.io/badge/uitest-17%2F17-brightgreen)
 ![clean](https://img.shields.io/badge/clean--gate-CLEAN-brightgreen)
+![release](https://img.shields.io/badge/release--gate-PASS-brightgreen)
 
 ## 🎯 TL;DR
 
@@ -29,15 +30,14 @@ This is the singleplayer random-skirmish port of **Cossacks 3** into **Godot 4.7
 (`README.md` §What this is). The core simulation and the entire round-4 landscape
 programme (L1–L8: terrain roles, seamless tiles, resource clusters, walkable
 stumps, heightmap, seed + headless scan, unit anims, transparent building ghost)
-are implemented and the file-level gates are green: selftest **29/29**, uitest
-**17/17**, clean-exit gate **CLEAN** (`app/selftest.json`, `app/uitest.json`,
-`QA_REPORT.md` final gate; `app/tools/CLEAN_GATE.md`). The single most important
-fact: **green gates do not mean release-ready** — the owner's skirmish-first
-charter (multiple AI opponents/teams, option parity, donor fidelity, mass-army
-scale; **D-12**) is still an open P0/P1 tranche (`SWARM_BOARD.md` P-18…P-25,
-P-30…P-33; `docs/research/FORECAST.md` §0), and QA's final independent re-run was
-blocked by a runner deadlock, not signed (`QA_REPORT.md` FINAL GATE RE-RUN; the
-runner is deliberately single-door per **D-03**).
+are implemented and **all four file-level gates are green**: selftest **29/29**,
+uitest **17/17**, clean-exit gate **CLEAN**, and the QA release gate **PASS**
+(fresh `agentO5-*` jobs #149–152; **D-23**, `QA_REPORT.md` "FINAL VERDICT — O5
+fresh re-run"). The single most important fact: **a signed gate does not mean the
+charter is delivered** — the owner's skirmish-first charter (multiple AI
+opponents/teams, option parity, donor fidelity, mass-army scale; **D-12**) is
+still an open P0/P1 tranche (`SWARM_BOARD.md` P-18…P-25, P-30…P-49;
+`docs/research/FORECAST.md` §0). The runner remains single-door per **D-03**.
 
 ```mermaid
 flowchart LR
@@ -45,7 +45,7 @@ flowchart LR
   B --> C["Next: P-31 reseed + P-18 multi-AI"]
   C --> D["P-19 options parity + RB G-01 economy capture"]
   D --> E["Fidelity: P-20 smoke · P-21 water/weather · P-22 mass army"]
-  E --> F["Re-run acceptance gates → QA sign"]
+  E --> F["All four gates PASS<br/>QA sign D-23 → charter tranche still open"]
 ```
 
 ## 📊 At a glance
@@ -54,14 +54,15 @@ flowchart LR
 |---|---|---|
 | Sim self-test | `29/29 PASS` (`"passed": true`) | `app/selftest.json`; `QA_REPORT.md` final re-run, runner #70 / ticket 43 |
 | UI journey test | `17/17 PASS` (`"passed": true`) | `app/uitest.json`; `QA_REPORT.md` gate table, runner #19 |
-| Clean-exit gate | `CLEAN` (0 orphans, lock free, no timeout/error/skipped jobs) | `python app\tools\assert_clean.py --json`; `QA_REPORT.md` final gate; `app/tools/CLEAN_GATE.md` §Exit codes |
+| Clean-exit gate | `CLEAN` (0 orphans, lock free, no timeout/error/skipped jobs) | `python app\tools\assert_clean.py --json`; `QA_REPORT.md` O5; `app/tools/CLEAN_GATE.md` §Exit codes |
+| QA release gate | `PASS` — fresh `agentO5-*` selftest/uitest/CLI/shot, all `ok` | `QA_REPORT.md` "FINAL VERDICT — O5" (#149–152); **D-23** |
 | Nations in `NATIONS` | `20` (no `sco`) | `docs/research/RA_ROSTER.md` §4; `app/scripts/data.gd` |
 | Unit sprite keys | `54` | `docs/research/RA_ROSTER.md` §4 (`anim/index.json`) |
 | Building sprite keys | `1506` (13 families × nations) | `docs/research/RA_ROSTER.md` §4 (`anim/buildings.json`) |
 | Sim building types | `18` | `docs/research/RA_ROSTER.md` §4 (`BUILDINGS_BASE`) |
-| Map size | `160 × 160` tiles (donor 640) | `app/scripts/data.gd:33-34` |
+| Map size | `320 × 320` tiles — the working size, not 160 | `config.gd:46-47`, `main.gd:222-223`, `game.gd:213-214`; **D-24**; `docs/audit/GEN.md` |
 | Landscape programme | `L1–L8` implemented | `docs/guides/GUIDE4.md` §L1–L8; `README.md` project map |
-| Small-test registry | `20` tests (`5 ready`, `15 pending`) | `app/tests/manifest.json` |
+| Small-test verdicts | `8 green / 6 red / 1 pending (08:55 snapshot; live churn)` of 15 (14 result JSONs; `t_weather` has none) | `app/tests/results/*.json`; `docs/reviews/REV_TESTS.md`; **D-15** |
 | Donor mechanics fully implemented | `28 / 57` | `docs/research/RB_MECHANICS.md` §2 status line |
 | Open P0 tranche | `P-18, P-19, P-23, P-31` + `RB G-01` | `SWARM_BOARD.md`; `docs/research/RB_MECHANICS.md` §3 |
 
@@ -84,12 +85,14 @@ scale or fidelity work.
 - [x] **L3 discrete resource clusters** (forests/quarries/mines/fields, guaranteed ring + re-plant) — `docs/guides/GUIDE4.md` §L3.
 - [x] **L4 trees + walkable stumps** (live trees block, felled become passable stumps) — `docs/guides/GUIDE4.md` §L4.
 - [x] **L5 heightmap** (low swells walkable, steep cliffs block) — `docs/guides/GUIDE4.md` §L5.
-- [x] **L6 seed + scan pipeline** (`--seed` wired, `scan_map.py` headless quality metrics, 20-seed loop) — `docs/guides/GUIDE4.md` §L6; `SWARM_BOARD.md` B-01 (verification still IN_PROGRESS).
+- [x] **L6 seed + scan pipeline** (`--seed` wired, `scan_map.py` headless quality metrics) — `docs/guides/GUIDE4.md` §L6; `SWARM_BOARD.md` B-01 (determinism PROVEN byte-identical seed-7/8/9 dumps; 20-seed sweep omitted in runner churn). Reach scale fix and mine-clearance boundary fix landed; `docs/audit/GEN.md`.
 - [x] **L7 unit anims + metrics sweep** — `docs/guides/GUIDE4.md` §L7; `SWARM_BOARD.md` C-01 (QA) and P-26 (DONE): 8 scalar fixes, national peasant walks `0.667 → 1.08 s`, selftest 29/29, no rebake.
-- [x] **L8 transparent building ghost + `can_place` block rules** — `docs/guides/GUIDE4.md` §L8; `SWARM_BOARD.md` ticket D-01 (audit IN_PROGRESS; implementation landed).
+- [x] **L8 transparent building ghost + `can_place` block rules** — `docs/guides/GUIDE4.md` §L8; `SWARM_BOARD.md` ticket **BOARD D-01** (audit IN_PROGRESS; implementation landed).
 - [x] **Selftest 29/29 and uitest 17/17** — `app/selftest.json`, `app/uitest.json`; `QA_REPORT.md` final re-run, runner #70 / ticket 43.
 - [x] **Clean-exit gate CLEAN** — `python app\tools\assert_clean.py --json`; `QA_REPORT.md` final gate; historical timeout #20 acknowledged under D-14 (`app/tools/CLEAN_GATE.md` §Resolved historical failures).
-- [x] **Roster scale**: 20 nations / 54 unit keys / 1506 building keys / 160×160 maps — `docs/research/RA_ROSTER.md` §4; `app/scripts/data.gd:33-34`.
+- [x] **Roster scale**: 20 nations / 54 unit keys / 1506 building keys / 320×320 working maps — `docs/research/RA_ROSTER.md` §4; **D-24**; `docs/audit/GEN.md`.
+- [x] **QA release gate PASS** — 4 fresh O5 jobs (#149 selftest 29/29, #150 uitest 17/17, #151 CLI 60 s clean, #152 non-blank shot), all mtimes advanced, clean gate CLEAN, 0 orphans — `QA_REPORT.md` "FINAL VERDICT — O5"; **D-23**.
+- [x] **Deep-GEN scan calibrations (P-48 / P-49)** — reach radius scaled 25→50 at 320 (`scan_map.py:132-136`) and mine-clearance boundary made inclusive (`scan_map.py:76`); re-scan of seeds 7/8/9 shows `clear 94% → 100%`, reach 6/6, remaining REDs are patches/mean and seed-9 cliff (P-46/P-47). Stale "160x160" note in `MAPGEN_STATUS.md:71` corrected to 320 (D-24). Evidence: `docs/audit/GEN.md` §1/§5; pure-Python `scan_map.py --dir scans`.
 - [x] **AI opponent** expands, techs, forms squads, attacks in waves — `README.md` "Computer opponent"; `docs/research/RB_MECHANICS.md` §2 (`ai.gd` waves/`_raids`); `SWARM_BOARD.md` G-01 (audit in flight).
 - [x] **Formations, squads, morale, routs** — sizes 15–400, +2/+3 and hold +9/+9 bonuses; `README.md` "Line warfare"; `docs/research/RB_MECHANICS.md` §2; selftest steps `formation`, `formation_bonus`, `morale`, `flee`, `squad`, `replenish` (`app/selftest.json`).
 - [x] **Economy + mine ladder** — 1.664/s mine income, ÷625 upkeep, mine upgrades II→VII to 95 workers; `docs/research/RB_MECHANICS.md` §2 (`data.gd:54,56,763-780`); `README.md` controls; selftest `mine`.
@@ -99,7 +102,7 @@ scale or fidelity work.
 
 > [!NOTE]
 > Only items with a passing gate or a cited report are listed above.
-> Claimed-but-unverified work (e.g. L6 verification B-01, L8 audit ticket D-01,
+> Claimed-but-unverified work (e.g. L6 verification B-01, L8 audit ticket **BOARD D-01**,
 > AI audit G-01) is noted inline and stays open in §4 / §10.
 
 ## 🚧 LEFT — by criticality
@@ -128,12 +131,24 @@ scale or fidelity work.
 | 🟡 P2 | AI does not deny mines by demolition before capture (RB G-11) | RB G-11 (new) | unassigned | G owns `ai.gd` | 1 ticket (`RB_MECHANICS.md` §3) |
 | ⚪ P3 | Doc drift: unit capture "NOT implemented", worker caps 2 vs 3, patrol Q vs P (RB G-10) | RB G-10 | I | — | 1 doc-only ticket (owner I, IN_PROGRESS) |
 | ⚪ P3 | Build-time/rate unit mismatch (market 286 s, tower 1500 s) — UNVERIFIABLE (RB G-14) | RB G-14 | unassigned | — | 1 research/doc ticket |
+| 🟠 P1 | Forest flecks: paint contiguous footprint cores instead of ≤10 scattered tiles (`game.gd:468-475`, ×4 by `area_scale`) — ~300 one-tile flecks/seed | P-46 (deep-GEN A-1) | unassigned | A owns `game.gd` | 1 dump+scan iteration |
+| 🟠 P1 | Seed-9 cliff 0%: post-collision `height += 0.25` at `game.gd:487` after collision pass `:621-642` | P-47 (deep-GEN A-2) | unassigned | A owns `game.gd` | predicted 0%→100% |
+| 🔴 P0 | Sim-layer support for N players/teams (`game.gd:229` hard-locks 2 players; `new_player()` writes no `team` key) | P-42 | A / coordinator | blocks P-18/P-19 | `inbox/handoff-P18-agentG.md` |
+| 🟠 P1 | Generator emits one start per participant (currently 2; third AI uses fallback) | P-43 | unassigned | `game.gd`, `pattern_gen.gd` (Q) | t_multi_ai FAIL check 2 |
+| 🟡 P2 | Guard AI-facing `say()` with `if player == 0:` (7 sites; 12× "Not enough resources." in t_multi_ai) | P-44 | unassigned | `game.gd` (A) | 7 one-line edits |
+| 🟠 P1 | Bake Scottish building sheets + unique-unit sprites (`buildings.json` has zero `sco_*` keys — P-24 correction) | P-41 | unassigned | anim assets, bake tools | P-24 follow-up |
+| 🟡 P2 | Adjudicate anim-metric thresholds vs measured outliers (4 siege idles, 68 foot, 45 walks; do NOT bulk-edit) | P-45 | unassigned | anim index, test | `docs/audit/RENDER.md` |
+| 🟡 P2 | Squad cap: `Data.SQUAD_MAX = 195` caps at 193; donor ladder 15/36/72/120/196/400 | P-40 | unassigned | `data.gd`, `game.gd` (A) | t_squads FAIL check 1 |
+| 🟡 P2 | Correct false `bonusdamage 0` claims (`GUIDE4.md:1131`, `data.gd:215`) — comments only | P-37 | unassigned | doc/comment | deep-DECOMP |
+| 🟡 P2 | Land uncommitted/untracked fixes so a clean checkout keeps them (`main.gd` chop→workwood, `bake_naval.py`) | P-38 | unassigned | owner staging decision | deep-DECOMP |
 
 Priority key: 🔴 P0 = blocks a good playable skirmish or the test/release gate;
 🟠 P1 = visible fidelity or core feature; 🟡 P2 = polish; ⚪ P3 = nice-to-have.
-Sources: `SWARM_BOARD.md` P-14, P-18…P-25, P-30…P-34 (P-18…P-25 created by the
-skirmish-only decision, **D-12**); `docs/research/RB_MECHANICS.md` §3;
-`docs/research/RA_ROSTER.md` §5; `docs/research/FORECAST.md` §0.
+Sources: `SWARM_BOARD.md` P-14, P-18…P-25, P-30…P-49 (P-18…P-25 created by the
+skirmish-only decision, **D-12**; P-46/P-47/P-48/P-49 from deep-GEN,
+`docs/audit/GEN.md`; P-37/P-38 from deep-DECOMP, `docs/audit/DECOMP.md`);
+`docs/research/RB_MECHANICS.md` §3; `docs/research/RA_ROSTER.md` §5;
+`docs/research/FORECAST.md` §0.
 
 ```mermaid
 gantt
@@ -180,8 +195,8 @@ gantt
 | `game.gd`, `selftest.gd` | A | A-01 IN_PROGRESS; many P0 tickets need `game.gd` but are unassigned (`SWARM_BOARD.md`) |
 | `data.gd` | A | Contested: AC needs entries for P-10 naval (D-11); RB gaps target `data.gd` |
 | `main.gd`, `scan_map.py`, `scans/**` | B | B-01 IN_PROGRESS; P-11/P-12/P-15 blocked on B |
-| `world.gd`, `input_controller.gd` | D | board ticket D-01 (ghost audit); `world.gd` contested with AB (P-09 mill rotor, D-10) |
-| `hud.gd` | D + SC | board ticket D-01 lists `hud.gd`; P-25 assigns `hud.gd` to SC — coordinator arbitration needed |
+| `world.gd`, `input_controller.gd` | D | **BOARD D-01** (ghost audit); `world.gd` contested with AB (P-09 mill rotor, D-10) |
+| `hud.gd` | D + SC | **BOARD D-01** lists `hud.gd`; P-25 assigns `hud.gd` to SC — coordinator arbitration needed |
 | `ai.gd` | G | G-01 audit IN_PROGRESS (60 s CLI soak) |
 | `menu.gd`, `scenes/**` | H | H-01 IN_PROGRESS; P-18/P-19 need menu options |
 | `mechanics.json`, `MECHANICS.md` | I | I-01 IN_PROGRESS; RB G-10 doc fixes |
@@ -239,7 +254,8 @@ Pass criteria (`QA_REPORT.md` gate table; `app/tools/CLEAN_GATE.md` §Exit codes
 - `docs/research/RA_ROSTER.md` §4/§5 — roster counts (20/54/1506), baked-but-unwired sprites, gap list G01–G17.
 - `docs/research/RB_MECHANICS.md` §2/§3 — 57-row mechanics checklist (28 IMPLEMENTED), gaps G-01…G-14.
 - `docs/research/FORECAST.md` §0/§1/§3 — re-scope (D-12), report totals, decompilation findings and capacity model.
-- `SWARM_BOARD.md` — tickets A-01, B-01, C-01, D-01, F-01, G-01, P-03, P-04, P-06, P-07, P-08, P-09, P-10…P-15, P-16, P-17, P-18…P-25, P-30…P-34.
+- `SWARM_BOARD.md` — tickets A-01, B-01, C-01, **BOARD D-01**, F-01, G-01, P-03, P-04, P-06, P-07…P-15, P-16, P-17, P-18…P-25, P-30…P-49 (incl. P-46/P-47 deep-GEN generator fixes, P-48 scan clearance, P-49 map-size note).
+- Deep-audit: `docs/audit/GEN.md` (generator metrics, D-22), `docs/audit/SIM.md`, `docs/audit/RENDER.md`, `docs/audit/DECOMP.md`, `docs/audit/CONFIG_VERIFY.md`; release gate `QA_REPORT.md` O5 (**D-23**); map size **D-24**.
 - `README.md` — product summary, controls, project map.
 - Runner results: `app/.godot_queue/results/<ticket>_<id>/` (`stdout.txt` / `stderr.txt`); queue state via `python app\tools\godot_runner.py status`.
 - Craft Anything evidence ids: DB fnd_22 (formations), fnd_23 (hotkeys), fnd_24 (reseeding), fnd_26 (envscales); DC fnd_7 (`.osm` reader bug refuted); DE (20 nation tracks, `chop`, hotkeys); DD (`.aix` portable, `.map` grid closed); investigation opened by D-07.
@@ -252,15 +268,23 @@ decision); full rationale in [docs/DECISION_LOG.md](DECISION_LOG.md).
 | Decision | What it fixes in this area | Where it shows up here |
 |---|---|---|
 | **D-12** (Owner, 07:20) | Skirmish-only charter: random encounters, max fidelity, AI ≥ donor, multiple enemies, squads; missions/campaigns/network deferred | TL;DR, §4 P-18…P-25, §5 Deferred |
-| **D-03** (Coordinator, 05:56) | All Godot via `godot_runner.py` (FIFO lock + timeout); no direct `godot` — prevents the orphan-process failure of D-01 | TL;DR (runner deadlock), §7 gates |
+| **D-03** (Coordinator, 05:56) | All Godot via `godot_runner.py` (FIFO lock + timeout); no direct `godot` — prevents the orphan-process failure of decision D-01 | TL;DR (single door), §7 gates |
 | **D-05 / D-06** (Owner, 06:00 / 06:10) | AAA scale: 100-ticket roster → 1000, WIP 20 build lane, parallel research/decompilation lanes | §7 gates note (why the build lane is throttled) |
 | **D-11** (Coordinator, 07:05) | Naval waiver withdrawn — readable meshes make it an active port (P-10), not a deferral | §2 scope note, §4 P-10, §6 ownership |
-| **D-15** (Coordinator, 07:35) | One feature per test file + `manifest.json`/`test_all.py` + 15 test authors, so tests parallelise | §2 registry row, §7 gates, §6 `app/tests/**` |
+| **D-15** (Coordinator, 07:35) | One feature per test file + `manifest.json`/`test_all.py` + 15 test authors, so tests parallelise | §2 test-verdict row, §7 gates, §6 `app/tests/**` |
+| **D-22** (Owner, 08:10) | Quality-first deep analysis; separate observed/derived/inferred, evidence before edits | Inline audit verdicts; P-46/P-47/P-48 from `docs/audit/GEN.md` |
+| **D-23** (QA desk O, 08:17) | Release gate **PASS** on the parsing tree — fresh O5 jobs #149–152 (selftest 29/29, uitest 17/17, CLI 60 s clean, screenshot non-blank) supersede the earlier FAIL/stale-artifact window | TL;DR, §2 gate rows, §3 DONE, §7 gates |
+| **D-24** (Coordinator, 08:30) | **320 tiles is the working map size; QA thresholds scale with it** (`s=2`, `area_scale=4`, `mscale=2`). Reach 0/3 was a stale 25-tile judge; scaled radius gives 6/6 — do NOT detune a correct generator | §2 map-size row, §3 DONE (P-48), `docs/audit/GEN.md` |
 
 Supporting ids cited above: **D-04** (disjoint ownership), **D-09** (donor assets
 as-is), **D-10** (mill rotor), **D-13** / **D-14** (clean-gate `failed` exclusion
 and `ack`), **D-16** (runner starvation fixes), **D-17** / **D-18** / **D-19**
-(documentation lane, modern markdown, decision trace), **D-02** (L1–L8 backlog).
+(documentation lane, modern markdown, decision trace), **D-02** (L1–L8 backlog),
+**D-20** (`.osm` bug refuted), **D-21** (29/29 gate prose reconciliation).
+> [!NOTE]
+> Ticket ids and decision ids are different namespaces. Board ticket D-01 (L8
+> ghost audit) is written **BOARD D-01** throughout to avoid collision with
+> decision **D-01** (kill 6 leaked Godot processes).
 
 ## 🔄 How to resume (cold start)
 
@@ -272,15 +296,17 @@ and `ack`), **D-16** (runner starvation fixes), **D-17** / **D-18** / **D-19**
 
 ## ❓ Open questions
 
-- [ ] **Runner deadlock** — QA's final re-run (O2) was never served: `now_serving = 47` pinned, pending job #47 owner PID 7444 dead, no lock so the stale-reclaim branch never fires (`QA_REPORT.md` FINAL GATE RE-RUN). Earlier starvation fixes exist (D-16), but this missing-lock case may be distinct. Coordinator/QA: is it fixed, and can an independent full re-run be signed? This is why status is `amber`, not `green`.
+- [x] **Runner deadlock — RESOLVED (D-23).** The O2 wedge (#47) was cleared; QA's fresh O5 re-run (#149–152) passed all four gates on the parsing tree. Status remains `amber` only because the **charter tranche** (P-18…P-25, P-30…P-49) is open, not because of the release gate.
 - [ ] **Stale board P-04** — board still marks `farm_cap` BLOCKED, but `app/selftest.json` now shows `farm 500 -> 525 -> 500` PASS and `QA_REPORT.md` final re-run is 29/29. Coordinator: reconcile the board.
 - [ ] **A-01 scope** — board still lists A-01 IN_PROGRESS on `build`, yet the `build` step passes and selftest is green (`QA_REPORT.md` round 1 §Selftest step failure). Coordinator: close or re-scope.
-- [ ] **Contested files** — `hud.gd` (board D-01 vs SC/P-25), `world.gd` (board D-01 vs AB/P-09, D-10), `data.gd` (A vs AC/P-10, D-11). Coordinator: arbitrate before assigning P0 work.
+- [ ] **Contested files** — `hud.gd` (**BOARD D-01** vs SC/P-25), `world.gd` (**BOARD D-01** vs AB/P-09, D-10), `data.gd` (A vs AC/P-10, D-11). Coordinator: arbitrate before assigning P0 work.
 - [ ] **Patrol hotkey P vs Q** — RB G-12 / P-33: wiki says P, port uses Q (`config.gd:111`). Donor `hotkeys.cfg` is authoritative and was not re-read — who verifies? (`docs/research/RB_MECHANICS.md` §3/§4).
 - [ ] **Scotland denominator** — 21 nations in current game-data extraction vs 20 in the Steam guide; port matches 20 (`docs/research/RA_ROSTER.md` §6). Decide target roster size for P-24.
 - [ ] **Exit-time resource leaks** — selftest (9 ObjectDB instances, 2 resources) and screenshot (GLES3 texture/RID, `RenderingServer::get_singleton()` null) are non-fatal but unassigned (`QA_REPORT.md` round 1 §Screenshot exit-time errors).
-- [ ] **Map scale** — port map is 160×160 tiles vs donor 640 (`app/scripts/data.gd:33-34`). Is this adequate for the P-22 mass-army goal? Owner decision needed.
+- [x] **Map scale — SETTLED (D-24).** 320×320 is the working size; donor 320 cells = 160 units (`docs/audit/GEN.md` §1–3). QA thresholds must scale with it (`s=2`, `area_scale=4`, `mscale=2`). The remaining generator REDs are P-46 (forest flecks) and P-47 (cliff ordering), not the map size.
+- [ ] **P-48 method discrepancy** — the board/audit HAND-OFF B-2 prescribed `scan_map.py` radius **5→6**, but the distance table (seed-8 iron at exactly 10.0 m; 15/18 deposits beyond 12 m) shows that raises the threshold to 12 m and **regresses clear 94%→83%**. IMPL-DOCS applied the inclusive-boundary fix (`>`→`>=`) instead, which yields the predicted 94%→100%. Coordinator: confirm and update board P-48 / `docs/audit/GEN.md` §6.2 accordingly.
+- [ ] **Test-verdict count is churning** — at pass start the 14 JSONs read 4 green / 10 red / 1 pending; by 08:55 concurrent re-runs moved them to **8 green / 6 red / 1 pending**; the task brief said 5/9/1. `t_weather` is the only stable PENDING (compile bug). Source of truth is `app/tests/results/*.json` at read time — coordinator: confirm the figure to publish.
 
 ---
 
-**Related:** [docs/RESUME.md](RESUME.md) (master index — to be created per `SWARM_OPS.md` §5c) · [SWARM_BOARD.md](../SWARM_BOARD.md) · [SWARM_OPS.md](../SWARM_OPS.md) · [docs/research/FORECAST.md](research/FORECAST.md)
+**Related:** [docs/RESUME.md](RESUME.md) (master index) · [SWARM_BOARD.md](../SWARM_BOARD.md) · [SWARM_OPS.md](../SWARM_OPS.md) · [docs/DECISION_LOG.md](DECISION_LOG.md) · [docs/audit/GEN.md](audit/GEN.md) · [docs/research/FORECAST.md](research/FORECAST.md)

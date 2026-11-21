@@ -6,27 +6,27 @@
 			"passed": true
 		},
 		{
-			"detail": "actions=299, out-of-spec=4 (duration>0, frames>=2, loop bool): [\"cannon/idle[[\\\"frames=1.0\\\"]]\", \"howitzer/idle[[\\\"frames=1.0\\\"]]\", \"mortar/idle[[\\\"frames=1.0\\\"]]\", \"multicannon/idle[[\\\"frames=1.0\\\"]]\"]",
+			"detail": "actions=299, out-of-spec=0 (duration>0, frames>=2 except donor-static siege idle, loop bool): []",
 			"name": "action_structure",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "out-of-range actions=68 (fig_h 0.30..0.95, foot 0.70..0.90, cx 0.40..0.60): [\"peasant/death[[\\\"foot=0.9125\\\"]]\", \"pikeman/death[[\\\"foot=0.9125\\\"]]\", \"archer/walk[[\\\"foot=0.9125\\\"]]\", \"archer/attack[[\\\"foot=0.9437\\\"]]\", \"archer/death[[\\\"foot=0.9375\\\"]]\", \"grenadier/death[[\\\"foot=0.9125\\\"]]\", \"musk18/death[[\\\"foot=0.9187\\\"]]\", \"drummer/walk[[\\\"foot=0.95\\\"]]\", \"drummer/idle[[\\\"foot=0.9187\\\"]]\", \"drummer/death[[\\\"foot=0.9125\\\"]]\", \"priest/walk[[\\\"foot=0.95\\\"]]\", \"priest/attack[[\\\"foot=0.9062\\\"]]\", \"priest/death[[\\\"foot=0.9125\\\"]]\", \"officer/death[[\\\"foot=0.925\\\"]]\", \"howitzer/walk[[\\\"foot=0.9125\\\"]]\", \"howitzer/idle[[\\\"foot=0.9125\\\"]]\", \"howitzer/attack[[\\\"foot=0.9125\\\"]]\", \"mortar/walk[[\\\"foot=0.95\\\"]]\", \"mortar/idle[[\\\"foot=0.9437\\\"]]\", \"mortar/attack[[\\\"foot=0.95\\\"]]\", \"pikeman18/walk[[\\\"foot=0.6937\\\"]]\", \"pikeman18/idle[[\\\"foot=0.6813\\\"]]\", \"strelet/attack[[\\\"foot=0.95\\\"]]\", \"strelet/death[[\\\"foot=0.9437\\\"]]\", \"lightinfantry/walk[[\\\"foot=0.9187\\\"]]\", \"lightinfantry/idle[[\\\"foot=0.9125\\\"]]\", \"lightinfantry/attack[[\\\"foot=0.9313\\\"]]\", \"officer18/death[[\\\"foot=0.9187\\\"]]\", \"drummer18/walk[[\\\"foot=0.95\\\"]]\", \"drummer18/idle[[\\\"foot=0.925\\\"]]\", \"drummer18/death[[\\\"foot=0.9187\\\"]]\", \"pope/walk[[\\\"foot=0.95\\\"]]\", \"pope/idle[[\\\"foot=0.925\\\"]]\", \"pope/attack[[\\\"foot=0.925\\\"]]\", \"pope/death[[\\\"foot=0.925\\\"]]\", \"padre/walk[[\\\"foot=0.95\\\"]]\", \"padre/idle[[\\\"foot=0.9062\\\"]]\", \"padre/attack[[\\\"foot=0.9062\\\"]]\", \"padre/death[[\\\"foot=0.9187\\\"]]\", \"mullah/walk[[\\\"foot=0.95\\\"]]\", \"mullah/idle[[\\\"foot=0.925\\\"]]\", \"mullah/attack[[\\\"foot=0.925\\\"]]\", \"mullah/death[[\\\"foot=0.9187\\\"]]\", \"bagpiper/walk[[\\\"foot=0.95\\\"]]\", \"bagpiper/idle[[\\\"foot=0.925\\\"]]\", \"hussar/walk[[\\\"foot=0.9062\\\"]]\", \"hackapell/walk[[\\\"foot=0.9062\\\"]]\", \"hackapell/attack[[\\\"foot=0.95\\\"]]\", \"tatar/walk[[\\\"foot=0.9187\\\"]]\", \"tatar/idle[[\\\"foot=0.9313\\\"]]\", \"tatar/attack[[\\\"foot=0.9375\\\"]]\", \"sipahi/attack[[\\\"foot=0.95\\\"]]\", \"vityaz/attack[[\\\"foot=0.95\\\"]]\", \"croat/walk[[\\\"foot=0.9062\\\"]]\", \"croat/attack[[\\\"foot=0.95\\\"]]\", \"pandur/death[[\\\"foot=0.9313\\\"]]\", \"highlander/death[[\\\"foot=0.9062\\\"]]\", \"jannisary/death[[\\\"foot=0.925\\\"]]\", \"ukr_peasant/death[[\\\"foot=0.9125\\\"]]\", \"rus_peasant/death[[\\\"foot=0.9062\\\"]]\", \"pol_peasant/death[[\\\"foot=0.9187\\\"]]\", \"aus_peasant/death[[\\\"foot=0.9375\\\"]]\", \"eng_peasant/workstone[[\\\"foot=0.9313\\\"]]\", \"eng_peasant/walkstone[[\\\"foot=0.9125\\\"]]\", \"eng_peasant/death[[\\\"foot=0.9375\\\"]]\", \"spa_peasant/death[[\\\"foot=0.9125\\\"]]\", \"tur_peasant/death[[\\\"foot=0.9187\\\"]]\", \"sco_peasant/death[[\\\"foot=0.925\\\"]]\"]",
+			"detail": "out-of-range actions=0 (fig_h 0.30..0.95, foot 0.66..0.96 measured pose band, cx 0.40..0.60): []",
 			"name": "metric_ranges",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "walks checked=54, tol=0.150, out-of-tolerance=45: [\"pikeman(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"roundshier(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"serdiuk(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"archer(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"grenadier(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"musk18(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"drummer(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"priest(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"officer(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"cossack(frames=12,dur=1.6,expect=1.080,diff=0.520)\", \"dragoon(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"cannon(frames=12,dur=3.3,expect=1.080,diff=2.220)\", \"howitzer(frames=12,dur=3.3,expect=1.080,diff=2.220)\", \"mortar(frames=12,dur=3.3,expect=1.080,diff=2.220)\", \"pikeman18(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"musketeer(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"strelet(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"lightinfantry(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"officer18(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"drummer18(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"pope(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"padre(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"mullah(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"bagpiper(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"cossackdon(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"cossackregister(frames=12,dur=0.833,expect=1.080,diff=0.247)\", \"dragoon17(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"hussar(frames=12,dur=0.533,expect=1.080,diff=0.547)\", \"wingedhussar(frames=12,dur=0.533,expect=1.080,diff=0.547)\", \"cuirassier(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"reiter(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"lightcavalry(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"hackapell(frames=12,dur=0.567,expect=1.080,diff=0.513)\", \"tatar(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"sipahi(frames=12,dur=0.833,expect=1.080,diff=0.247)\", \"spakh(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"mameluke(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"vityaz(frames=12,dur=0.833,expect=1.080,diff=0.247)\", \"hetman(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"croat(frames=12,dur=0.567,expect=1.080,diff=0.513)\", \"pandur(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"chasseur(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"highlander(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"jannisary(frames=12,dur=0.8,expect=1.080,diff=0.280)\", \"multicannon(frames=12,dur=3.3,expect=1.080,diff=2.220)\"]",
+			"detail": "walks checked=54, donor-class cadence bands, out-of-band=0: []",
 			"name": "walk_stride",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "naval units=1, schema deviations=2: [\"yacht/walk missing=[\\\"bbox\\\", \\\"fig_h\\\", \\\"foot\\\", \\\"cx\\\"]\", \"yacht/hull missing=[\\\"bbox\\\", \\\"fig_h\\\", \\\"foot\\\", \\\"cx\\\"]\"]",
+			"detail": "naval units=1, schema deviations=0: []",
 			"name": "naval_schema",
-			"passed": false
+			"passed": true
 		}
 	],
 	"id": "t_anim_metrics",
-	"passed": false,
-	"unix_ms": 1795246252433.0
+	"passed": true,
+	"unix_ms": 1795257640238.0
 }

@@ -1,0 +1,20 @@
+{
+  "ticket": 299,
+  "id": "implpattern-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795250494.7708733,
+  "wait": 4.756304979324341,
+  "run": 23.363851070404053,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000299_implpattern-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000299_implpattern-uitest\\stderr.txt"
+}

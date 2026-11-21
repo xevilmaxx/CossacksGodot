@@ -1,0 +1,20 @@
+{
+  "ticket": 203,
+  "id": "impshell-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795247064.0793967,
+  "wait": 236.18187046051025,
+  "run": 122.18890738487244,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000203_impshell-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000203_impshell-selftest\\stderr.txt"
+}

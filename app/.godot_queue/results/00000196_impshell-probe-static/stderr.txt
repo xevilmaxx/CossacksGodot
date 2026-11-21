@@ -1,0 +1,8 @@
+SCRIPT ERROR: Parse Error: Cannot call non-static function "get()" on the class "C3Data" directly. Make an instance instead.
+   at: GDScript::reload (res://scripts/_impshell_probe.gd:6)
+SCRIPT ERROR: Parse Error: Cannot call non-static function "set()" on the class "C3Data" directly. Make an instance instead.
+   at: GDScript::reload (res://scripts/_impshell_probe.gd:7)
+SCRIPT ERROR: Parse Error: Cannot call non-static function "get()" on the class "C3Data" directly. Make an instance instead.
+   at: GDScript::reload (res://scripts/_impshell_probe.gd:8)
+ERROR: Failed to load script "res://scripts/_impshell_probe.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

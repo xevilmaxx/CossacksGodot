@@ -1,0 +1,21 @@
+{
+  "ticket": 529,
+  "id": "portvis-shot-c7",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/portvis-winter-relief.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795256322.9387183,
+  "wait": 2.599304437637329,
+  "run": 21.168763399124146,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000529_portvis-shot-c7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000529_portvis-shot-c7\\stderr.txt"
+}

@@ -1,0 +1,20 @@
+{
+  "ticket": 207,
+  "id": "implrender-check",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/world.gd"
+  ],
+  "created": 1795247348.4454327,
+  "wait": 148.53968977928162,
+  "run": 1.3167071342468262,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000207_implrender-check\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000207_implrender-check\\stderr.txt"
+}

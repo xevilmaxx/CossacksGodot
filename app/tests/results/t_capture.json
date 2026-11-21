@@ -6,24 +6,24 @@
 			"passed": true
 		},
 		{
-			"detail": "mine capture flag=false, owner=1, deposit 6667->6667, nearest_mine(p0)=none",
+			"detail": "mine capture flag=true, owner=0, deposit 6667->6667, nearest_mine(p0)=id=466",
 			"name": "mine_deposit_captured_with_mine",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "captured tur hall; train_unit(0,'serdiuk') queued 'strelet', want 'jannisary' (baseline rus 'strelet')",
+			"detail": "captured tur hall; train_unit(0,'serdiuk') queued 'jannisary', want 'jannisary' (baseline rus 'strelet')",
 			"name": "foreign_town_hall_unlocks_nation",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "guarded enemy hall owner after assault = 0 (want 1), guard order=guard, attackers=4",
+			"detail": "guarded enemy hall owner after assault = 1 (want 1), guard order=guard, attackers=4",
 			"name": "capture_precondition_guard_blocks",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "economy sids without capture:true = [\"mar\", \"sto\", \"mine_gold\", \"mine_iron\", \"mine_coal\"]",
+			"detail": "economy sids without capture:true = []",
 			"name": "economy_buildings_capturable",
-			"passed": false
+			"passed": true
 		},
 		{
 			"detail": "military sids with capture:true = []",
@@ -32,6 +32,6 @@
 		}
 	],
 	"id": "t_capture",
-	"passed": false,
-	"unix_ms": 1795245663910.0
+	"passed": true,
+	"unix_ms": 1795257664100.0
 }

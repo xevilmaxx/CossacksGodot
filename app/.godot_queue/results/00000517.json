@@ -1,0 +1,20 @@
+{
+  "ticket": 517,
+  "id": "portsim-selftest-g13",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795255967.5213614,
+  "wait": 0.0011053085327148438,
+  "run": 28.025386333465576,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000517_portsim-selftest-g13\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000517_portsim-selftest-g13\\stderr.txt"
+}

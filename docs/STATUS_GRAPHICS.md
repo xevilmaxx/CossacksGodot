@@ -32,7 +32,7 @@ terrain tiles with `_alpha_mask` alpha blending (not the dead dmask path, P-36) 
 fog, and the GUIDE4 L1–L8 visual ladder implemented at code level through L8 — the
 first chosen backlog (D-02) under the maximum-fidelity skirmish charter (D-12)
 (L8 visual proof is pending P-35) (`README.md` as cited by `docs/research/RE_VISUAL.md` L2;
-`docs/ASSET_AUDIT.md`; `app/scripts/world.gd:28,521,652`; `docs/guides/GUIDE4.md`
+`ASSET_AUDIT.md`; `app/scripts/world.gd:28,521,652`; `docs/guides/GUIDE4.md`
 §L1–L8). The single most important fact: **it is not yet donor-faithful in motion** —
 the signature effects (volley smoke, muzzle flash, arrow trails), weather/seasons,
 animated water, shadows and mass-army scale are still open as P0/P1 tickets
@@ -48,8 +48,8 @@ flowchart LR
   W --> F["fog ImageTexture"]
   W --> S["app/shots PNGs"]
   S --> C["compare_shots.py vs reference stills"]
-  C --> G["Gates: selftest 29/29, uitest 17/17"]
-  G --> R["Review M + QA O sign-off"]
+  C --> G["Gates: selftest 29/29 · uitest 17/17<br/>QA release gate PASS (D-23)"]
+  G --> R["Review M + QA O sign-off (D-23)"]
 ```
 
 ## 📊 At a glance
@@ -57,8 +57,10 @@ flowchart LR
 | Fact | Value | Evidence |
 |---|---|---|
 | Selftest | `29/29 PASS` | `app/selftest.json` (29 `step` entries); runner `79 agentSE-selftest` in `docs/UNIT_BAKING_FIX.md` §11 |
-| Unit sprite sheets | `54` keys / `299` action sheets, `0` missing, `0` orphan | `docs/ASSET_AUDIT.md` summary; `docs/research/RE_VISUAL.md` L2 |
-| Building sheets | `215` nation sheets; `buildings.json` `1506` keys, `0` missing | `docs/research/RE_VISUAL.md` L2; `docs/ASSET_AUDIT.md` summary |
+| QA release gate | `PASS` — fresh O5 jobs #149–152, all `ok` | `QA_REPORT.md` "FINAL VERDICT — O5"; **D-23** |
+| Small-test verdicts | `8 green / 6 red / 1 pending (08:55 snapshot; live churn)` of 15 (14 JSONs; `t_weather` none) | `app/tests/results/*.json`; `docs/reviews/REV_TESTS.md` |
+| Unit sprite sheets | `54` keys / `299` action sheets, `0` missing, `0` orphan | `ASSET_AUDIT.md` summary; `docs/research/RE_VISUAL.md` L2 |
+| Building sheets | `215` nation sheets; `buildings.json` `1506` keys, `0` missing | `docs/research/RE_VISUAL.md` L2; `ASSET_AUDIT.md` summary |
 | Sprite metrics | real, not defaults — `0` `fig_h=1.0` outliers across 299 actions | `docs/UNIT_BAKING_FIX.md` §11.1 |
 | Terrain tiles | `16 px/tile`, chunked; operative seam defence = `_alpha_mask` in `_build_chunk`, not the dead `terrain_masks` dmask array | `app/scripts/world.gd:700-709,712-798`; `docs/audit/RENDER.md` §B.2 (claim 3 PARTIAL); board P-36 |
 | Fog | per-tile `fog_explored`/`fog_vis` alpha `ImageTexture`, `Data.FOG_OF_WAR` | `app/scripts/world.gd:18-24,147-162` |
@@ -94,6 +96,8 @@ implementation, **not** donor visual parity.
 | **D-12** | Owner: skirmish-only charter with **maximum graphics fidelity** (`docs/DECISION_LOG.md`; `SWARM_OPS.md` §0) | Opens the fidelity tranche P-18…P-25; parks DLC/mission visuals and cinematics. |
 | **D-16** | Coordinator: fixed runner starvation bugs (`docs/DECISION_LOG.md`) | Makes selftest `29/29` and other gates trustworthy, including the C-01/P-26 animation metric fixes. |
 | **D-18** | Owner: docs must be modern GitHub-flavored markdown (`docs/DECISION_LOG.md`) | This file's YAML front matter, badges, alerts, two Mermaid diagrams, task lists and `<details>` block. |
+| **D-23** | QA desk O: release gate **PASS** on the parsing tree — fresh O5 jobs #149–152 (`QA_REPORT.md`) | Supersedes the earlier FAIL/stale-artifact window; all four acceptance gates green. |
+| **D-24** | Coordinator: **320 tiles is the working map size**; QA thresholds scale with `s=2`, `area_scale=4`, `mscale=2` (`docs/audit/GEN.md`) | Forest-fleck/cliff visual REDs (P-46/P-47) are measured at 320, not a 160-tile baseline. |
 
 Also cited below: **D-02** (L1–L8 chosen backlog), **D-03** (single runner door),
 **D-09** (raw donor assets left as-is), **D-15** (test-per-file), **D-17**
@@ -111,6 +115,7 @@ claims where they disagree:
 | **7** — `g4_l8_ghost_audit.png` proves the L8 transparent ghost | DONE (shot cited as proof) | **CONTRADICTED visually** — only a footprint ring, cursor line and "Not enough resources."; no translucent building, no red X (`docs/audit/RENDER.md` §C.2) | L8 is **code-confirmed** (`world.gd:1614-1637`) but **visually UNVERIFIED**; shot likely predates the `fx_layer` fix. Moved out of DONE; re-capture under **P-35**. |
 | **3/4** — "dmask anti-seam masks" are the live seam defence | DONE (L2) | **PARTIAL** — `_alpha_mask` + coherent grid confirmed in `_build_chunk`; the returned `terrain_masks` dmask array is never read by draw code (`docs/audit/RENDER.md` §B.2) | Operative path is `_alpha_mask` (`world.gd:700-709`, used `:751,785`); dmask array assigned at `world.gd:92`/`main.gd:850` is dead. Comments at `world.gd:647,668-669,690` wrongly say red channel / "binary" — **P-36**. |
 | **1** — `index.json` sprite metrics are real measurements | DONE | **CONFIRMED 3/3** by independent Pillow re-measurement (`docs/audit/RENDER.md` §A) | None — claim retained; the weaker "donor-accurate" visual claim stays UNVERIFIED (claim 2). |
+| **GEN B/C** — forest belts and cliff ring are visually correct | implied DONE at L3/L5 | **CONTRADICTED at 320 tiles** (`docs/audit/GEN.md` §3 B/C): 4 grove discs + ~300 one-tile flecks (target 8–16 belts); seed-9 cliff 0% from a post-collision `height += 0.25` | New build tickets **P-46** (contiguous footprint cores) and **P-47** (re-run collision after stamps). Reach/mine-clearance scan calibration landed (P-48); map size settled 320 (**D-24**). |
 
 ## ✅ DONE — verified
 
@@ -121,7 +126,7 @@ claims where they disagree:
 - [x] **L5 heightmap** — per-tile `height[]`, `height_at()`, slope/cliff rule, combat height-aware (`docs/guides/GUIDE4.md` §L5/§0642–0713).
 - [x] **Peasant stride fixes** — base `peasant` `walk.duration` `0.667 → 1.08 s` (agentC2) plus the 8 national variants (P-26/SE); 8 scalar `index.json` values only, no rebake (`docs/UNIT_BAKING_FIX.md` §10/§11.2; `SWARM_BOARD.md` C-01, P-26).
 - [x] **Roster-wide metric audit** — all 54 keys / 299 actions audited; `fig_h`, `foot`, `cx`, `bbox` present on every action; selftest `29/29` (`docs/UNIT_BAKING_FIX.md` §11.1/§11; runner `79 agentSE-selftest`).
-- [x] **Asset integrity clean** — 32/32 literal targets, 299 action sheets and 1506 building keys all resolve, 0 orphan `.import` files (`docs/ASSET_AUDIT.md` summary). Raw donor assets retained by D-09; licence-exposure items remain (§10 open questions).
+- [x] **Asset integrity clean** — 32/32 literal targets, 299 action sheets and 1506 building keys all resolve, 0 orphan `.import` files (`ASSET_AUDIT.md` summary). Raw donor assets retained by D-09; licence-exposure items remain (§10 open questions).
 - [x] **Naval yacht bake** — `yacht` key present in `app/assets/models/anim/naval/index.json`; donor `.oss`/`.osm` readers verified byte-identical (`docs/UNIT_BAKING_FIX.md` §11.3; `NAVAL_EVIDENCE.md` §2; `docs/decomp/DC_FORMATS.md` §3/fnd_7). Naval is a port, not a waiver (D-11).
 
 > [!NOTE]
@@ -146,6 +151,7 @@ claims where they disagree:
 | 🟠 P1 | Attack frame timing + remaining animation metric outliers | P-34 (+ P-26 follow-ups) | unassigned (P-26/SE DONE) | `anim/index.json`, `game.gd` (A) | `3` tickets — RE gap 10; `50` short attacks, `9` walk + `68` foot outliers (`docs/UNIT_BAKING_FIX.md` §11.4) |
 | 🟠 P1 | RC map-size scaling, seasons, relief/terrain type | P-19 / RC G1,G3,G2 | unassigned | `data.gd`/`game.gd` (A), `world.gd` (AB) | `6+5+4=15` RC tickets |
 | 🟠 P1 | Full naval layer beyond the yacht bake (ships, shipyard, naval AI, shore) | P-10 / RE gap 5 | AC (P-10 IN_PROGRESS) | naval assets + `game.gd` (A) | `7` tickets — RE gap 5 |
+| 🟠 P1 | Forest flecks + cliff ordering at 320 tiles (deep-GEN A-1/A-2): contiguous footprint cores instead of ≤10 scattered tiles; re-run collision after `height += 0.25` | P-46 / P-47 | unassigned | `game.gd` (A) | 1 dump+scan iteration each — `docs/audit/GEN.md` §3/§6 |
 | 🟡 P2 | `envscales.cfg` import (mines/stones scale + jitter) | P-32 | unassigned | `data.gd` (A), `world.gd` (AB) | `4–6 h` — DB fnd_26 |
 | 🟡 P2 | Re-capture genuine L8 ghost shot (translucent nation sheet + red X), replace `g4_l8_ghost_audit.png` citation | P-35 | unassigned | `world.gd` held by AB until P-09 closes; needs a windowed build | `1` ticket — audit claim 7 CONTRADICTED (`docs/audit/RENDER.md` §C.2) |
 | 🟡 P2 | Remove/gate dead `terrain_masks` dmask build; fix alpha/red-channel comments at `world.gd:647,668-669,690` | P-36 | unassigned | `world.gd` (AB), `main.gd:850` (A) | `1` ticket — audit claim 3/4 PARTIAL (`docs/audit/RENDER.md` §B.2) |
@@ -226,7 +232,7 @@ python app\tools\compare_shots.py --shot app/shots/p35_ghost_recheck.png --ref a
 ```
 
 Pass criteria: selftest `29/29` (`app/selftest.json`), uitest `17/17`, clean-gate exit
-`0`, small tests green in `app/tests/results/summary.json` (`docs/COMMANDS.md`; runner
+`0`, small tests green in `app/tests/results/summary.json` (**generated at runtime** by `test_all.py`, not committed; 14 per-test JSONs currently on disk — 8 green / 6 red / 1 pending (08:55 snapshot; live churn)) (`docs/COMMANDS.md`; runner
 protocol `SWARM_OPS.md` §3.1/§3.4). Visual acceptance also needs a **windowed** capture
 and a human eyeball against `app/shots/final_nations.png`, `app/shots/g2_final.png`,
 `app/shots/g4_final_land.png`, `app/shots/ours_musk_sprite.png` and
@@ -247,7 +253,8 @@ is NOT acceptable proof (`docs/audit/RENDER.md` §C.2; `SWARM_BOARD.md` P-35). H
 - Craft Anything evidence ids (decomp): `ev_392885a6…` (`.oss`), `ev_0bbb20c1…` (`.osm`), `ev_6a6b0380…` (`.aaf`), `ev_f83c1680…` (`.pfx` particle source, relevant to P-20), `fnd_7` (OSM offset bug refuted) — `docs/decomp/DC_FORMATS.md` §1/§3.
 - Craft Anything evidence ids (audio/UI): `ev_bd4dc176…` (audio inventory), `ev_90e0959…` (`en/gui.txt`), `ev_75d79f6…` (`menu.cfg`), `fnd_17`–`fnd_21` — `docs/decomp/DE_AUDIO_UI.md`.
 - Board: `SWARM_BOARD.md` (P-09, P-10, P-19/20/21/22/25/26/32/34/35/36, C-01, B-01; **BOARD D-01** = worker D's L8 ghost audit — a ticket id, not a decision id).
-- Decisions: `docs/DECISION_LOG.md` — D-01 (kill 6 leaked Godot processes), D-02, D-03, D-09, D-10, D-11, D-12, D-15, D-16, D-17, D-18, D-19, D-22 (quality-first deep audit), with rationale and evidence.
+- Decisions: `docs/DECISION_LOG.md` — D-01 (kill 6 leaked Godot processes), D-02, D-03, D-09, D-10, D-11, D-12, D-15, D-16, D-17, D-18, D-19, D-22 (quality-first deep audit), **D-23** (release gate PASS), **D-24** (320 map size), with rationale and evidence.
+- Deep-audit: `docs/audit/GEN.md` (forest/cliff/clearance at 320, P-46/P-47/P-48), `docs/audit/CONFIG_VERIFY.md` (independent config re-verification), `docs/audit/RENDER.md`, `docs/audit/SIM.md`, `docs/audit/DECOMP.md`.
 
 ## 🔄 How to resume (cold start)
 
@@ -273,4 +280,4 @@ is NOT acceptable proof (`docs/audit/RENDER.md` §C.2; `SWARM_BOARD.md` P-35). H
 
 ---
 
-**Related:** `docs/RESUME.md` · `docs/DECISION_LOG.md` · `docs/audit/RENDER.md` · `SWARM_BOARD.md` · `SWARM_OPS.md` · `docs/STATUS_TEMPLATE.md` · `docs/research/FORECAST.md` · `docs/research/RE_VISUAL.md` · `docs/research/RC_TERRAIN.md`
+**Related:** `docs/RESUME.md` · `docs/DECISION_LOG.md` · `docs/audit/GEN.md` · `docs/audit/RENDER.md` · `docs/audit/CONFIG_VERIFY.md` · `SWARM_BOARD.md` · `SWARM_OPS.md` · `docs/STATUS_TEMPLATE.md` · `docs/research/FORECAST.md` · `docs/research/RE_VISUAL.md` · `docs/research/RC_TERRAIN.md` · `ASSET_AUDIT.md`

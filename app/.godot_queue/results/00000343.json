@@ -1,0 +1,21 @@
+{
+  "ticket": 343,
+  "id": "agentO6-shot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/g4_qa_gate.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795251971.704773,
+  "wait": 63.35084104537964,
+  "run": 19.9890456199646,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000343_agentO6-shot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000343_agentO6-shot\\stderr.txt"
+}

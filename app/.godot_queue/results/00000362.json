@@ -1,0 +1,19 @@
+{
+  "ticket": 362,
+  "id": "impllegacy-building_block_test",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/building_block_test.gd"
+  ],
+  "created": 1795252295.3936014,
+  "wait": 0.0007796287536621094,
+  "run": 2.489849090576172,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000362_impllegacy-building_block_test\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000362_impllegacy-building_block_test\\stderr.txt"
+}

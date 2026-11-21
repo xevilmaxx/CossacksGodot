@@ -1,0 +1,19 @@
+{
+  "ticket": 465,
+  "id": "PORT-AUDIO-t-audio-events",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_audio_events.gd"
+  ],
+  "created": 1795254208.1559877,
+  "wait": 243.87550830841064,
+  "run": 3.0312156677246094,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000465_PORT-AUDIO-t-audio-events\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000465_PORT-AUDIO-t-audio-events\\stderr.txt"
+}

@@ -1,0 +1,22 @@
+{
+  "ticket": 485,
+  "id": "portsim-p31-dump8",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/portsim_p31_8.json",
+    "--seed",
+    "8"
+  ],
+  "created": 1795255063.8798375,
+  "wait": 0.0006678104400634766,
+  "run": 4.814096450805664,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000485_portsim-p31-dump8\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000485_portsim-p31-dump8\\stderr.txt"
+}

@@ -1,0 +1,19 @@
+{
+  "ticket": 199,
+  "id": "impshell-probe-static3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://scripts/_impshell_probe.gd"
+  ],
+  "created": 1795246936.476748,
+  "wait": 0.0008103847503662109,
+  "run": 0.4471015930175781,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000199_impshell-probe-static3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000199_impshell-probe-static3\\stderr.txt"
+}

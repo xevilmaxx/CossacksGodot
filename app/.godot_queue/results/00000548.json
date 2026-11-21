@@ -1,0 +1,22 @@
+{
+  "ticket": 548,
+  "id": "portsim-final-dump8",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/portsim_final_8.json",
+    "--seed",
+    "8"
+  ],
+  "created": 1795256874.674601,
+  "wait": 0.0007598400115966797,
+  "run": 4.8806610107421875,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000548_portsim-final-dump8\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000548_portsim-final-dump8\\stderr.txt"
+}

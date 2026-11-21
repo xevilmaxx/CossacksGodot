@@ -68,7 +68,12 @@ No L3 defect found inside these two files that warrants a code change.
 - Hardcoded TILE=2.0 in `pattern_gen.gd:58` (`svv.x / 2.0`) matches
   `Data.TILE_M := 2.0`; if TILE_M ever changes this line must follow.
 - `stamp_family()` uses `rng.randi_range(2, map_w - 3)`; on a tiny map
-  (map_w < 6) this is an inverted range. Current maps are 160x160, so safe.
+  (map_w < 6) this is an inverted range. **The working map size is 320x320, not
+  160x160** (`config.gd:46-47`, `main.gd:222-223`, `game.gd:213-214`; decision
+  **D-24**, `docs/DECISION_LOG.md`), so the range is still valid — but note the
+  scale coupling: `s = map_w/160 = 2` (`pattern_gen.gd:47`), `area_scale = 4`
+  (`:248`) and `mscale = 2` (`game.gd:242`). QA thresholds must scale with the
+  same factor (`scan_map.py`, `docs/audit/GEN.md`).
 
 ## Verification (runner jobs)
 

@@ -1,0 +1,19 @@
+{
+  "ticket": 364,
+  "id": "impllegacy-unified_mine_test",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/unified_mine_test.gd"
+  ],
+  "created": 1795252301.6151922,
+  "wait": 0.0007722377777099609,
+  "run": 4.887967586517334,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000364_impllegacy-unified_mine_test\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000364_impllegacy-unified_mine_test\\stderr.txt"
+}

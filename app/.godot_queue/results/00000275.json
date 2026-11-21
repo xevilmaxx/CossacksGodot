@@ -1,0 +1,20 @@
+{
+  "ticket": 275,
+  "id": "implsim-syntax-p50b",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795249891.7338367,
+  "wait": 0.000823974609375,
+  "run": 0.612229585647583,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000275_implsim-syntax-p50b\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000275_implsim-syntax-p50b\\stderr.txt"
+}

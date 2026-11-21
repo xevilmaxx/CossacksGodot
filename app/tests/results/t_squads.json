@@ -1,9 +1,9 @@
 {
 	"checks": [
 		{
-			"detail": "members/label per donor size 15->15/15, 36->36/36, 72->72/72, 120->120/120, 196->193/120, 400->193/120; no-officer form: rejected",
+			"detail": "members/label per donor size 15->15/15, 36->36/36, 72->72/72, 120->120/120, 196->196/196, 400->400/400; no-officer form: rejected",
 			"name": "squad_size_ladder_with_officer",
-			"passed": false
+			"passed": true
 		},
 		{
 			"detail": "line=line, column=column, square=square (bogus ignored); target layouts line/col/sq=15/15/15 for 15 men",
@@ -16,8 +16,8 @@
 			"passed": true
 		},
 		{
-			"detail": "atk/def move=2/3 hold=9/9 no-drummer=0/0",
-			"name": "formation_bonuses_2_3_hold_9",
+			"detail": "atk/def move=2/2 hold=7/7 no-drummer=0/0",
+			"name": "formation_bonuses_2_2_hold_7",
 			"passed": true
 		},
 		{
@@ -27,6 +27,6 @@
 		}
 	],
 	"id": "t_squads",
-	"passed": false,
-	"unix_ms": 1795246100507.0
+	"passed": true,
+	"unix_ms": 1795257624329.0
 }

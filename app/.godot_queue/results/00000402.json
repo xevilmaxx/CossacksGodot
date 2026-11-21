@@ -1,0 +1,19 @@
+{
+  "ticket": 402,
+  "id": "manifest-t_smoke_fx",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_smoke_fx.gd"
+  ],
+  "created": 1795252872.9874842,
+  "wait": 6.942837238311768,
+  "run": 3.6936049461364746,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000402_manifest-t_smoke_fx\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000402_manifest-t_smoke_fx\\stderr.txt"
+}

@@ -1,0 +1,19 @@
+{
+  "ticket": 330,
+  "id": "implsim-tmulti-reach9",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_multi_ai.gd"
+  ],
+  "created": 1795251612.1238294,
+  "wait": 0.0007236003875732422,
+  "run": 2.6573657989501953,
+  "exit": 0,
+  "timeout": 150.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000330_implsim-tmulti-reach9\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000330_implsim-tmulti-reach9\\stderr.txt"
+}

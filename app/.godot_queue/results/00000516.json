@@ -1,0 +1,20 @@
+{
+  "ticket": 516,
+  "id": "portsim-syntax-g13",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795255939.1862047,
+  "wait": 27.173216581344604,
+  "run": 0.8528475761413574,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000516_portsim-syntax-g13\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000516_portsim-syntax-g13\\stderr.txt"
+}

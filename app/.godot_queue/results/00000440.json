@@ -1,0 +1,19 @@
+{
+  "ticket": 440,
+  "id": "manifest-t_hud_fidelity",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_hud_fidelity.gd"
+  ],
+  "created": 1795253097.454166,
+  "wait": 0.0008385181427001953,
+  "run": 2.3810603618621826,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000440_manifest-t_hud_fidelity\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000440_manifest-t_hud_fidelity\\stderr.txt"
+}

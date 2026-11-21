@@ -1,0 +1,21 @@
+{
+  "ticket": 537,
+  "id": "PORT-MENU-hotkeys",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--test-api",
+    "8314",
+    "--timeout",
+    "170"
+  ],
+  "created": 1795256579.2419589,
+  "wait": 1.320798635482788,
+  "run": 15.3314950466156,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000537_PORT-MENU-hotkeys\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000537_PORT-MENU-hotkeys\\stderr.txt"
+}

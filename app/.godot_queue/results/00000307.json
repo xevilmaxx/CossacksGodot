@@ -1,0 +1,22 @@
+{
+  "ticket": 307,
+  "id": "implsim-dump7-fix",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/implsim_fix_7.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795250754.896394,
+  "wait": 0.000732421875,
+  "run": 5.3657450675964355,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000307_implsim-dump7-fix\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000307_implsim-dump7-fix\\stderr.txt"
+}

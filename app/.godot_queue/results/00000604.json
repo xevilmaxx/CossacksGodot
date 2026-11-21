@@ -1,0 +1,19 @@
+{
+  "ticket": 604,
+  "id": "manifest-t_audio_events",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_audio_events.gd"
+  ],
+  "created": 1795257664.4501529,
+  "wait": 0.0007061958312988281,
+  "run": 1.735987901687622,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000604_manifest-t_audio_events\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000604_manifest-t_audio_events\\stderr.txt"
+}

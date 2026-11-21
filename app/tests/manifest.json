@@ -3,25 +3,161 @@
   "version": 1,
   "result_dir": "app/tests/results",
   "tests": [
-    {"id": "t_build_flow", "path": "res://tests/building_block_test.gd", "feature": "building placement/blocking", "status": "ready", "timeout": 60},
-    {"id": "t_mill_logic", "path": "res://tests/mill_logic_test.gd", "feature": "windmill production", "status": "ready", "timeout": 60},
-    {"id": "t_mine_unified", "path": "res://tests/unified_mine_test.gd", "feature": "mine income/upgrades", "status": "ready", "timeout": 60},
-    {"id": "t_visual_tuning", "path": "res://tests/visual_tuning_test.gd", "feature": "visual metrics", "status": "ready", "timeout": 60},
-    {"id": "t_mill_rotor", "path": "res://tests/mill_render_test.gd", "feature": "windmill rotor render", "status": "ready", "timeout": 90, "windowed": true},
-    {"id": "t_upgrades", "path": "res://tests/t_upgrades.gd", "feature": "skirmish upgrade tree depth", "status": "pending", "owner": "test-T1", "timeout": 60},
-    {"id": "t_roster_scotland", "path": "res://tests/t_roster_scotland.gd", "feature": "Scotland + nation-unique units", "status": "pending", "owner": "test-T2", "timeout": 60},
-    {"id": "t_squads", "path": "res://tests/t_squads.gd", "feature": "squad formation/replenish/disband", "status": "pending", "owner": "test-T3", "timeout": 60},
-    {"id": "t_multi_ai", "path": "res://tests/t_multi_ai.gd", "feature": "2+ AI opponents on one map", "status": "pending", "owner": "test-T4", "timeout": 90},
-    {"id": "t_teams", "path": "res://tests/t_teams.gd", "feature": "teams/diplomacy on random map", "status": "pending", "owner": "test-T5", "timeout": 90},
-    {"id": "t_smoke_fx", "path": "res://tests/t_smoke_fx.gd", "feature": "volley smoke/muzzle flash/arrow trails", "status": "pending", "owner": "test-T6", "timeout": 60},
-    {"id": "t_water", "path": "res://tests/t_water.gd", "feature": "animated water/shoreline", "status": "pending", "owner": "test-T7", "timeout": 60},
-    {"id": "t_weather", "path": "res://tests/t_weather.gd", "feature": "seasons/weather/day-night", "status": "pending", "owner": "test-T8", "timeout": 60},
-    {"id": "t_hud_fidelity", "path": "res://tests/t_hud_fidelity.gd", "feature": "HUD information fidelity", "status": "pending", "owner": "test-T9", "timeout": 60},
-    {"id": "t_anim_metrics", "path": "res://tests/t_anim_metrics.gd", "feature": "animation duration/metrics across roster", "status": "pending", "owner": "test-T10", "timeout": 60},
-    {"id": "t_naval", "path": "res://tests/t_naval.gd", "feature": "naval yacht sprite + hull composite", "status": "pending", "owner": "test-T11", "timeout": 60},
-    {"id": "t_mass_army", "path": "res://tests/t_mass_army.gd", "feature": "large army performance/corpses", "status": "pending", "owner": "test-T12", "timeout": 90},
-    {"id": "t_map_variety", "path": "res://tests/t_map_variety.gd", "feature": "seed variety + skirmish options", "status": "pending", "owner": "test-T13", "timeout": 90},
-    {"id": "t_capture", "path": "res://tests/t_capture.gd", "feature": "building/unit capture rules", "status": "pending", "owner": "test-T14", "timeout": 60},
-    {"id": "t_audio_events", "path": "res://tests/t_audio_events.gd", "feature": "audio event-to-file mapping", "status": "pending", "owner": "test-T15", "timeout": 60}
+    {
+      "id": "t_build_flow",
+      "path": "res://tests/building_block_test.gd",
+      "feature": "building placement/blocking",
+      "status": "ready",
+      "timeout": 60
+    },
+    {
+      "id": "t_mill_logic",
+      "path": "res://tests/mill_logic_test.gd",
+      "feature": "windmill production",
+      "status": "ready",
+      "timeout": 60
+    },
+    {
+      "id": "t_mine_unified",
+      "path": "res://tests/unified_mine_test.gd",
+      "feature": "mine income/upgrades",
+      "status": "ready",
+      "timeout": 60
+    },
+    {
+      "id": "t_visual_tuning",
+      "path": "res://tests/visual_tuning_test.gd",
+      "feature": "visual metrics",
+      "status": "ready",
+      "timeout": 60
+    },
+    {
+      "id": "t_mill_rotor",
+      "path": "res://tests/mill_render_test.gd",
+      "feature": "windmill rotor render",
+      "status": "ready",
+      "timeout": 90,
+      "windowed": true
+    },
+    {
+      "id": "t_upgrades",
+      "path": "res://tests/t_upgrades.gd",
+      "feature": "skirmish upgrade tree depth",
+      "status": "ready",
+      "owner": "test-T1",
+      "timeout": 60
+    },
+    {
+      "id": "t_roster_scotland",
+      "path": "res://tests/t_roster_scotland.gd",
+      "feature": "Scotland + nation-unique units",
+      "status": "ready",
+      "owner": "test-T2",
+      "timeout": 60
+    },
+    {
+      "id": "t_squads",
+      "path": "res://tests/t_squads.gd",
+      "feature": "squad formation/replenish/disband",
+      "status": "ready",
+      "owner": "test-T3",
+      "timeout": 60
+    },
+    {
+      "id": "t_multi_ai",
+      "path": "res://tests/t_multi_ai.gd",
+      "feature": "2+ AI opponents on one map",
+      "status": "ready",
+      "owner": "test-T4",
+      "timeout": 90
+    },
+    {
+      "id": "t_teams",
+      "path": "res://tests/t_teams.gd",
+      "feature": "teams/diplomacy on random map",
+      "status": "ready",
+      "owner": "test-T5",
+      "timeout": 90
+    },
+    {
+      "id": "t_smoke_fx",
+      "path": "res://tests/t_smoke_fx.gd",
+      "feature": "volley smoke/muzzle flash/arrow trails",
+      "status": "ready",
+      "owner": "test-T6",
+      "timeout": 60
+    },
+    {
+      "id": "t_water",
+      "path": "res://tests/t_water.gd",
+      "feature": "animated water/shoreline",
+      "status": "ready",
+      "owner": "test-T7",
+      "timeout": 60
+    },
+    {
+      "id": "t_weather",
+      "path": "res://tests/t_weather.gd",
+      "feature": "seasons/weather/day-night",
+      "status": "pending",
+      "owner": "test-T8",
+      "timeout": 60
+    },
+    {
+      "id": "t_hud_fidelity",
+      "path": "res://tests/t_hud_fidelity.gd",
+      "feature": "HUD information fidelity",
+      "status": "ready",
+      "owner": "test-T9",
+      "timeout": 60
+    },
+    {
+      "id": "t_anim_metrics",
+      "path": "res://tests/t_anim_metrics.gd",
+      "feature": "animation duration/metrics across roster",
+      "status": "ready",
+      "owner": "test-T10",
+      "timeout": 60
+    },
+    {
+      "id": "t_naval",
+      "path": "res://tests/t_naval.gd",
+      "feature": "naval yacht sprite + hull composite",
+      "status": "ready",
+      "owner": "test-T11",
+      "timeout": 60
+    },
+    {
+      "id": "t_mass_army",
+      "path": "res://tests/t_mass_army.gd",
+      "feature": "large army performance/corpses",
+      "status": "ready",
+      "owner": "test-T12",
+      "timeout": 90
+    },
+    {
+      "id": "t_map_variety",
+      "path": "res://tests/t_map_variety.gd",
+      "feature": "seed variety + skirmish options",
+      "status": "ready",
+      "owner": "test-T13",
+      "timeout": 90
+    },
+    {
+      "id": "t_capture",
+      "path": "res://tests/t_capture.gd",
+      "feature": "building/unit capture rules",
+      "status": "ready",
+      "owner": "test-T14",
+      "timeout": 60
+    },
+    {
+      "id": "t_audio_events",
+      "path": "res://tests/t_audio_events.gd",
+      "feature": "audio event-to-file mapping",
+      "status": "ready",
+      "owner": "test-T15",
+      "timeout": 60
+    }
   ]
 }

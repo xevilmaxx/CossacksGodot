@@ -332,3 +332,122 @@ Verification: runner ticket `79 agentSE-selftest` (waited 139.6 s, ran 41.4 s),
 `app/selftest.json` `passed: true`, **29/29 steps** (no failures). No PNG rebake,
 no `.gd` edits. Backups: `inbox/backup/index.json.bak-agentSE`,
 `inbox/backup/UNIT_BAKING_FIX.md.bak-agentSE`.
+
+## 12. Scottish sheets + naval metric gap (IMPL-ASSETS, 2026-11-21; P-41 / P-45)
+
+Quality-first: every number below was measured from the produced PNGs or read
+from the donor install **read-only**; no donor file was copied into `res://`,
+no `.gd` file was edited, and no bulk JSON change was made to satisfy a test.
+Scratch (`cossacks_scottish_*` / `cossacks_naval_*`) lived in `%TEMP%`.
+
+### 12.1 Donor evidence (observed, read-only)
+
+`buildings.json` genuinely had **zero** `sco_*` keys (1506 keys / 20 prefixes)
+— A-01's "14 already baked" claim was wrong. The donor does ship complete
+Scottish building geometry and materials:
+
+| Port key | Donor mesh (under `data\actors\buildings\sco\`) | Donor texture |
+|---|---|---|
+| `sco_cen` | `scocen.osm` (also `scocen1..4`, `scocen_death1/2`) | `data\materials\buildings\sco\scocen.dds` |
+| `sco_hou` | `scohou.osm` (+ stages, rubble) | `...\scohou.dds` |
+| `sco_bar` | `scobar.osm` (+ stages, rubble) | `...\scobar.dds` |
+
+Scottish units are also present: `data\actors\units\swordsmansco.oss` (k=198,
+fps=30, 22 bones, 786 verts, 1181 faces, 965 UVs; 177,064 B),
+`data\animations\aaf\swordsmansco.aaf` (`walk 1..24`, `idle 28..77`,
+`death 80..127`, `attack0 185..197`) and
+`data\materials\units\swordsmansco.dds`. `highlander.oss` already feeds the
+54-key main index, so this bake uses the Scotland-unique `swordsmansco` under
+a new key to avoid a collision.
+
+### 12.2 Real bake (not fabricated)
+
+New tool `app/tools/bake_scottish.py` — thin wrapper over the portable
+`bake_sprites.py` primitives (`bake_building`, `bake_unit`), Blender 5.2.3 LTS,
+**CPU Cycles, 4 samples**, exit 0 in ~37 s:
+
+```
+blender --background --factory-startup --python app/tools/bake_scottish.py -- \
+    --game "C:\Games\Cossacks 3" --anim app/assets/models/anim \
+    --size 160 --samples 4 --engine cycles
+```
+
+Produced (all PNGs have ≥47 % ink on the finished building sheets and 12/12,
+6/6, 12/12, 8/8 distinct frames per unit action; visually confirmed as a
+stone Scottish town hall and a tartan swordsman with sword + targe):
+
+| Sheets | Dimensions | Count |
+|---|---|---|
+| `sco_cen.png`, `sco_cen_s1..s4.png`, `sco_cen_dead.png` | 320×320 | 6 |
+| `sco_hou.png`, `sco_hou_s1..s4.png`, `sco_hou_dead.png` | 320×320 | 6 |
+| `sco_bar.png`, `sco_bar_s1..s4.png`, `sco_bar_dead.png` | 320×320 | 6 |
+| `sco_highlandersword_{walk,attack}.png` | 1280×1920 | 2 |
+| `sco_highlandersword_idle.png` | 1280×960 | 1 |
+| `sco_highlandersword_death.png` | 1280×1280 | 1 |
+
+Donor `.osm` bounds → ortho: cen 11.861 (10.34×10.59×9.15 m), hou 5.824
+(5.20×4.91×4.70 m), bar 9.055 (8.09×7.81×6.75 m).
+
+JSON added:
+- `buildings.json`: **18** `sco_*` rows (1506→1524), same 5-field schema
+  `{ortho, cell, ink, cx, rm}`; all 1506 pre-existing rows byte-identical,
+  CRLF preserved. `sco_bar` ink touches y=0 — a minor top-edge clip shared
+  with `fra_bar`; left as-is because the shared baker's framing was not
+  changed (no guessed adjustment).
+- New scoped `sco_units.json`: `{"sco_highlandersword": {cell:160,
+  actions:{walk,idle,attack,death}}}` with the full 12-field action schema.
+  **Integration note for IMPL-SIM:** load this as a *separate* index (mirroring
+  `NAVAL_PORT_PLAN.md` §4); do **not** merge into `anim/index.json` —
+  `t_anim_metrics` asserts exactly 54 keys. Sheets resolve as
+  `res://assets/models/anim/sco_highlandersword_<action>.png`, same 8-dir /
+  `+4` facing and `ax/ay` anchoring as other units. Its donor walk is
+  `1..24 / 30 fps = 0.8 s` over 12 sampled frames; the port convention for
+  other 12-frame walks is 1.08 s — choose one when wiring, do not guess here.
+- 22 lossless `.import` sidecars (`compress/mode=0`) were added for the new
+  sheets: every other anim PNG has one, and Godot's default would otherwise
+  import them as lossy S3TC (§8 trap).
+
+### 12.3 Naval metric gap (P-45, scoped to `naval/index.json`)
+
+`t_anim_metrics` reported `yacht/walk` and `yacht/hull` missing
+`bbox/fig_h/foot/cx`, with `hull.duration = 0.0`. Measured the final PNGs with
+Pillow (`alpha > 8`, union of cell-local bboxes over all 8 dirs × frames);
+the method was validated against `NAVAL_PORT_PLAN.md`'s whole-sheet bboxes
+(walk (9,32)–(1217,1882), hull (23,33)–(1242,152)) and reproduced them exactly.
+
+| action | bbox (cell-local) | fig_h | foot | cx |
+|---|---|---|---|---|
+| `yacht/walk` | [9,31,151,149] | 0.7375 | 0.9313 | 0.5 |
+| `yacht/hull` | [23,33,137,152] | 0.7438 | 0.95 | 0.5 |
+
+Added those four fields to both actions; `hull.duration` 0.0→**1.0** (frames
+still 1). Fixed the root cause in `bake_naval.py` too: `bake_naval_hull()` now
+emits 1.0, and `main()` measures every action sheet before writing
+`index.json`, so a re-bake cannot drop the four fields again. `naval/index.json`
+still has one key (`yacht`) and the same PNGs. `ax/ay` remain authoritative in
+`world.gd`; the measured `foot` values exceed the land-only 0.90 test band but
+the test only range-checks the main roster, and these are real measurements.
+
+### 12.4 Verification and open items
+
+- Pure-Python gate (temp, not in repo): **ALL PASS** — naval stored metrics
+  equal re-measured pixels; main index still 54 keys; buildings old rows
+  unchanged; every new sheet exists with matching ink bbox; no raw donor
+  formats under owned `anim/` paths.
+- `python app\tools\test_all.py --only t_anim_metrics t_naval` → **`no tests
+  selected`, exit 1** — both ids are `pending` in `app/tests/manifest.json`,
+  so the exact command selects nothing. With `--include-pending`:
+  **`t_naval` PASS** (38.4 s, all 6 checks, including `naval_schema` deviations
+  = 0); **`t_anim_metrics` FAIL** (269.04 s) on three *pre-existing* checks —
+  `action_structure` (4 single-frame siege idles), `metric_ranges` (68 land
+  feet), `walk_stride` (45 land walks). `main_index_54_units` and
+  `naval_schema` both PASS. These belong to the separate P-45 adjudication;
+  no bulk fix was attempted.
+- Backups: `inbox/backup/bake_naval.py.bak-IMPL-ASSETS`,
+  `naval_index.json.bak-IMPL-ASSETS`, `buildings.json.bak-IMPL-ASSETS`,
+  `UNIT_BAKING_FIX.md.bak-IMPL-ASSETS`.
+- Open: (a) naval `.import` sidecars were created by another worker during the
+  test run (`git status` shows `naval/yacht_*.png.import`); this worker did not
+  touch them — check their `compress/mode` in QA; (b) `sco_bar` top-edge clip;
+  (c) `sco_highlandersword` walk duration convention; (d) the 14 other
+  Scottish buildings/units were not baked (small, real set only).

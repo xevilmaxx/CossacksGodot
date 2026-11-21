@@ -62,3 +62,72 @@ gaps · **BLOCK** = structural failure or misleading claim that would change a c
   4. Confirm the fixes to `RESUME.md:326` (D-05/D-06 → D-04) and `RESUME.md:362` (remove D-06 from coordinator list).
   5. Who refreshes RESUME's area-doc index now that `STATUS_DECOMP.md` has landed?
   6. Should `D-01` be renamed/re-scoped in `DECISION_LOG.md` to remove the collision at source, rather than relying on `BOARD D-01` discipline forever?
+
+---
+
+## Reconciliation 2026-11-21 (IMPL-DOCS)
+
+Docs worker **IMPL-DOCS** re-read `SWARM_OPS.md` §0/§5b-QUALITY,
+`AGENT_PROTOCOL.md`, `SWARM_BOARD.md`, `DECISION_LOG.md`, `docs/audit/GEN.md`,
+`docs/audit/CONFIG_VERIFY.md`, `docs/research/FORECAST.md` and
+`STATUS_TEMPLATE.md`, then reconciled the owned status docs against the current
+board, the 15 per-feature test verdicts and the deep-audit corrections. No Godot
+runs, no `.gd` edits, no edits to `SWARM_BOARD.md` / `DECISION_LOG.md` /
+`STATUS_TEMPLATE.md`. Every owned file was backed up to
+`inbox/backup/<name>.bak-IMPL-DOCS` before editing.
+
+### Findings fixed
+
+| Review finding | Fix applied | Where |
+|---|---|---|
+| **D-01 collision** (systemic #1; SKIRMISH ×6, GRAPHICS, AI) | Board-ticket references now written **BOARD D-01**; decision D-01 (kill 6 leaked Godot processes) kept distinct and a collision note added to each doc's decision trace | `STATUS_SKIRMISH.md`, `STATUS_GRAPHICS.md`, `STATUS_AI.md`, `RESUME.md` |
+| **Uneven decision tracing** (systemic #2; D-19 mandate) | Real `D-xx` traces added; every status doc now cites **D-23** (release gate PASS) and **D-24** (320 map size); D-07/D-12/D-17/D-18/D-19/D-20/D-22 also cited | all five `STATUS_*.md`, `RESUME.md` |
+| **`docs/ASSET_AUDIT.md` broken path** (systemic #3) | Repointed to repo-root `ASSET_AUDIT.md` | `STATUS_GRAPHICS.md` (4 sites), `RESUME.md` |
+| **`summary.json` presented as present** (systemic #3) | Labelled "generated at runtime by `test_all.py`"; 14 per-test JSONs cited instead | `STATUS_TESTS.md`, `STATUS_GRAPHICS.md`, `RESUME.md` |
+| **`STATUS_TESTS.md` absent from index** (systemic #3, open Q1) | Document landed and linked directly; index note refreshed | `RESUME.md` §5 |
+| **RESUME L326 misattribution** (systemic #4) | Ownership rule now cites **D-04 only** (D-05/D-06 are scale decisions) | `RESUME.md` §8 |
+| **RESUME L362 internal contradiction** (systemic #4) | D-06 removed from coordinator list; D-22 moved to Owner list; D-23 added to Desk list | `RESUME.md` §9 |
+| **Stale release gate (FAIL / "runner deadlock" / "UNSIGNED")** | Updated to **PASS (D-23)** — fresh O5 jobs #149–152 — across every doc; older FAIL sections marked superseded history | all five `STATUS_*.md`, `RESUME.md`, `FORECAST.md` |
+| **Stale map size "160x160"** (P-49, deep-GEN Q) | Set to **320 working size (D-24)** with the `s`/`area_scale`/`mscale` coupling documented | `app/scripts/MAPGEN_STATUS.md:71`, `STATUS_SKIRMISH.md`, `RESUME.md`, `FORECAST.md` |
+| **Deep-audit corrections not reflected** | Added GEN forest-fleck/cliff branches (P-46/P-47), CONFIG_VERIFY ignored-teams confirmation (P-42), DECOMP formation correction (P-30/P-37/P-38) | `STATUS_SKIRMISH.md`, `STATUS_GRAPHICS.md`, `STATUS_AI.md`, `STATUS_DECOMP.md` |
+| **Test verdicts missing/stale** | 14 result JSONs summarised as **8 green / 6 red / 1 pending (08:55 snapshot; live churn)** (`t_weather`); area-level green/red named | all five `STATUS_*.md`, `RESUME.md` |
+| **Board drift** | P-40…P-49, P-42 BLOCKED and DONE/partial states folded into DONE/LEFT tables; `FORECAST.md` gained §1b board snapshot (~60 open of 72 rows) | `STATUS_SKIRMISH.md`, `STATUS_AI.md`, `RESUME.md`, `FORECAST.md` |
+
+### Remain open
+
+1. **D-01 rename at source** — `DECISION_LOG.md` still names the decision D-01;
+   the `BOARD D-01` discipline is documented in four docs but the collision is not
+   removed at source. Coordinator-owned file — intentionally not edited.
+2. **`summary.json` still uncommitted** — now correctly labelled "generated";
+   14 `<id>.json` files are on disk; `summary.json` appeared mid-pass as a partial
+   (`count: 1`) generated aggregate. Whether to commit a full aggregate is an
+   owner decision.
+3. **Test-verdict figure is a moving target** — at pass start the 14 JSONs read
+   **4 green / 10 red / 1 pending**; by 08:55 concurrent re-runs (IMPLSIM /
+   IMPSHELL / IMPRENDER) moved them to **8 green / 6 red / 1 pending**; the task
+   brief said **5/9/1**. `t_weather` is the only stable PENDING. All docs now
+   carry a dated snapshot plus a pointer to `app/tests/results/*.json` as the live
+   source of truth. Also note `summary.json` appeared mid-pass with `count: 1`
+   (a partial `t_audio_events` run), so it is not an aggregate of all 15.
+4. **`t_weather` pending** — genuine compile bug (`PackedByteArray.hash()` at
+   `app/tests/t_weather.gd:145,149,156`, REV-2 BLOCK). No result JSON.
+5. **P-48 method discrepancy** — board/audit HAND-OFF B-2 prescribed scan radius
+   **5→6**, but the seed-8 distance table (iron at exactly 10.0 m; only 15/18
+   deposits beyond 12 m) shows that change **regresses clear 94%→83%**. IMPL-DOCS
+   applied the inclusive-boundary fix (`>`→`>=`) in `scan_map.py:76`, achieving the
+   predicted **94%→100%**. Board P-48 and `docs/audit/GEN.md` §6.2 need updating.
+6. **Board/DECISION_LOG/TEMPLATE untouched** — per ownership; P-04 still reads
+   BLOCKED on the board although selftest is 29/29 (D-21/D-23 reconcile the docs).
+7. **Concurrency drift** — checks are a 2026-11-21 snapshot; live board state may
+   have moved during this pass.
+
+### Report
+
+- **Owned files backed up and edited:** `app/tools/scan_map.py`,
+  `app/scripts/MAPGEN_STATUS.md`, `docs/STATUS_SKIRMISH.md`,
+  `docs/STATUS_GRAPHICS.md`, `docs/STATUS_AI.md`, `docs/STATUS_TESTS.md`,
+  `docs/STATUS_DECOMP.md`, `docs/RESUME.md`, `docs/research/FORECAST.md`,
+  plus this append to `docs/reviews/REV_DOCS.md`.
+- **Verification:** `python app/tools/scan_map.py --dir scans` (pure Python; no
+  Godot) before/after — seed-8 `clear 94` RED removed, reach 6/6, remaining REDs
+  are patches/mean and seed-9 cliff (P-46/P-47). No runner jobs used.

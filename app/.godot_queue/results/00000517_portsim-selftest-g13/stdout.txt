@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+sprites: 29 sets loaded (sids=70)
+PORTVIS season_tint called season=summer key=
+PORTVIS season_tint called season=summer key=summer
+PORTVIS season_tint called season=summer key=summer
+PORTVIS season_tint called season=summer key=summer
+self-test report: C:/Users/Maxym.Oboyshev/Documents/Craft Anything/cossacks-3-3/app/selftest.json

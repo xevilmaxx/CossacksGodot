@@ -1,0 +1,24 @@
+{
+  "ticket": 507,
+  "id": "portsim-opt-rich",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\portsim_opt_rich.json",
+    "--dump-map",
+    "scans/portsim_opt_rich.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795255783.5704947,
+  "wait": 0.0007905960083007812,
+  "run": 8.034132242202759,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000507_portsim-opt-rich\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000507_portsim-opt-rich\\stderr.txt"
+}

@@ -1,0 +1,20 @@
+{
+  "ticket": 555,
+  "id": "PORT-WIRING-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795257103.9065742,
+  "wait": 0.0010440349578857422,
+  "run": 21.789167881011963,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000555_PORT-WIRING-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000555_PORT-WIRING-uitest\\stderr.txt"
+}

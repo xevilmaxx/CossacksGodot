@@ -1,0 +1,21 @@
+{
+  "ticket": 536,
+  "id": "portvis-shot-c11",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/portvis-tint-only.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795256540.6848185,
+  "wait": 18.97470784187317,
+  "run": 20.804925203323364,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000536_portvis-shot-c11\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000536_portvis-shot-c11\\stderr.txt"
+}

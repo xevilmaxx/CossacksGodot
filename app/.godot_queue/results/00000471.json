@@ -1,0 +1,21 @@
+{
+  "ticket": 471,
+  "id": "portvis-shot-a",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/portvis-envscale.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795254514.9089832,
+  "wait": 195.21002531051636,
+  "run": 23.076382637023926,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000471_portvis-shot-a\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000471_portvis-shot-a\\stderr.txt"
+}

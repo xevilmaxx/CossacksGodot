@@ -203,3 +203,143 @@ None of the four O5 jobs timed out, errored or was skipped. All `passed`/`sim_se
 ## Sign-off
 
 Release gate is **GREEN**: 29/29 selftest, 17/17 uitest, 60 s clean CLI soak, non-blank screenshot, all from fresh O5 runs; clean machine state; zero orphans. The coordinator may sign the release. Only `QA_REPORT.md` was edited; no code, board, or other docs touched; Godot was never invoked directly.
+
+---
+
+# DEFINITIVE FINAL — SETTLED-TREE GATE (O6)
+
+**DEFINITIVE VERDICT: PASS.** Implementation wave fully landed; tree stable since 10:05 local. Queue was idle before submission (pending 0, lock free, `now_serving=338`). All four gates re-run with fresh `agentO6-*` ids, all returned `ok`/exit 0 with **verified fresh mtimes**, no timeouts/skips, clean gate CLEAN, zero orphans. This supersedes all earlier sections (kept below as history).
+
+## Gate table — O6 definitive run
+
+| Gate | Command | Job id (ticket) | Result | File mtime: baseline → fresh | Evidence |
+|---|---|---|---|---|---|
+| Selftest | `run --id agentO6-selftest --timeout 180 --max-wait 5400 -- --headless --path app -- --self-test app/selftest.json` | `agentO6-selftest` (#342) | **PASS** | `app/selftest.json` 10:01:33 → **10:07:14** | exit 0, `ok`; wait 34.43 s, run 28.80 s. `passed=true`, **29/29 steps, 0 failures**. |
+| Uitest | `run --id agentO6-uitest --timeout 180 --max-wait 5400 -- --headless --path app -- --ui-test app/uitest.json` | `agentO6-uitest` (#341) | **PASS** | `app/uitest.json` 10:02:08 → **10:06:45** | exit 0, `ok`; wait 4.22 s, run 30.17 s. `passed=true`, **17/17 steps, 0 failures**. |
+| CLI soak | `run --id agentO6-cli --timeout 180 --max-wait 5400 -- --headless --path app -- --cli app/cli.json --cli-seconds 60` | `agentO6-cli` (#344) | **PASS** | `app/cli.json` 08:17:36 → **10:07:47** | exit 0, `ok`; wait 83.23 s, run 12.07 s. `sim_seconds: 60.0`, `kills: 0`; grep `stuck`/`ERROR`/`SCRIPT ERROR` = **0 hits**; stderr empty. |
+| Screenshot | `run --id agentO6-shot --timeout 90 --max-wait 5400 -- --path app -- --screenshot app/shots/g4_qa_gate.png --timeout 60` | `agentO6-shot` (#343) | **PASS** | `app/shots/g4_qa_gate.png` 08:16:46 → **10:07:34** | exit 0, `ok`; wait 63.35 s, run 19.99 s. PNG 1280×720, **74,939 distinct colours**, RGB extrema (0–255) — non-blank. |
+
+No O6 job timed out, errored or was skipped; waits were 4.22 / 34.43 / 63.35 / 83.23 s — all far below the 5400 s ceiling. All four report files were rewritten during this gate run, so none of the results are stale.
+
+## Per-feature test baseline (`app/tests/results/*.json`)
+
+Confirmed green at the expected counts:
+
+| Test | Result |
+|---|---|
+| t_multi_ai | 6/6 PASS |
+| t_squads (donor tuple) | 5/5 PASS |
+| t_map_variety | 5/5 PASS |
+| t_water | 5/5 PASS |
+| t_smoke_fx | 6/6 PASS |
+| t_audio_events | 5/5 PASS |
+| t_roster_scotland | 6/6 PASS |
+| t_naval | 6/6 PASS |
+| t_hud_fidelity | 6/6 PASS |
+| t_upgrades | 6/6 PASS |
+| t_mass_army | 6/6 PASS |
+
+**Still red (expected / out of release scope):**
+- `t_teams` — 1/5 (`passed=false`)
+- `t_capture` — 2/6 (`passed=false`)
+- `t_anim_metrics` — 2/5 (`passed=false`)
+
+These three match the coordinator's expected-red list exactly; no unexpected reds.
+
+## Infra acknowledgements / clean gate / telemetry
+
+- Remaining implementation-window infra entries acknowledged with reason `implementation-wave churn, superseded by O6 fresh run`: tickets **176** (`t-anim-metrics`, skipped after 400.50 s wait), **201** (`implsim-selftest-2`, timed-out), **202** (`manifest-t_smoke_fx`, timed-out). Total acknowledged across all windows: 33.
+- **Clean-gate verdict: CLEAN** — `assert_clean.py --json`: `processes {clean:true, count:0}`, `lock {state:"free"}` (no lock at all), `history {total:262, acknowledged:33, failures:[]}`.
+- **Max queue wait: 881.60 s** (mean 130.81 s, max run 181.31 s) from `godot_runner.py status` — a historical high-water mark from the earlier churn window, not from O6. Final state: `now_serving=360`, `next_ticket=360`, `pending=0`, lock free.
+- **Orphan Godot processes: 0** — clean-gate snapshot shows 0 live Godot processes with the lock free.
+- Status breakdown: `ok 164`, `failed 65`, `skipped 24`, `timed-out 9` (all 24 skips + 9 timeouts acknowledged; `failed` is excluded from the clean gate by coordinator ruling).
+
+## Sign-off
+
+**PASS.** Fresh 29/29 selftest, 17/17 uitest, 60 s clean CLI soak, non-blank screenshot, all 11 expected per-feature baselines green, clean machine state (0 processes, lock free, 0 failures), zero orphans, idle queue. Coordinator may sign the settled-tree release. Only `QA_REPORT.md` was edited; no code, board, or other docs touched; Godot was never invoked directly.
+
+---
+
+# ABSOLUTE FINAL — O7 gate (definitive; supersedes all sections above)
+
+**ABSOLUTE FINAL VERDICT: FAIL.** The four release gates are green and the machine is clean, **but the full registered suite is 18/19, not the expected 19/19.** `t_mass_army` is red with a deterministic `corpses_rubble_age_out` failure. Release cannot be signed until that test is fixed or formally waived by the coordinator.
+
+## Gate table — O7 fresh run
+
+| Gate | Command | Job id (ticket) | Result | File mtime: baseline → fresh | Evidence |
+|---|---|---|---|---|---|
+| Selftest | `run --id agentO7-selftest --timeout 180 --max-wait 5400 -- --headless --path app -- --self-test app/selftest.json` | `agentO7-selftest` (#390) | **PASS** | `app/selftest.json` 10:17:32 → **10:20:32** | exit 0, `ok`; wait 64.97 s, run 24.10 s. `passed=true`, **29/29 steps, 0 failures**. |
+| Uitest | `run --id agentO7-uitest --timeout 180 --max-wait 5400 -- --headless --path app -- --ui-test app/uitest.json` | `agentO7-uitest` (#388) | **PASS** | `app/uitest.json` 10:17:59 → **10:19:55** | exit 0, `ok`; wait 25.85 s, run 26.60 s. `passed=true`, **17/17 steps, 0 failures**. |
+| CLI soak | `run --id agentO7-cli --timeout 180 --max-wait 5400 -- --headless --path app -- --cli app/cli.json --cli-seconds 60` | `agentO7-cli` (#389) | **PASS** | `app/cli.json` 10:07:47 → **10:20:08** | exit 0, `ok`; wait 52.38 s, run 12.65 s. `sim_seconds: 60.0`, `kills: 0`; grep `stuck`/`ERROR`/`SCRIPT ERROR` = **0 hits**; stderr empty. |
+| Screenshot | `run --id agentO7-shot --timeout 90 --max-wait 5400 -- --path app -- --screenshot app/shots/g4_qa_gate.png --timeout 60` | `agentO7-shot` (#387) | **PASS** | `app/shots/g4_qa_gate.png` 10:07:34 → **10:19:28** | exit 0, `ok`; wait 1.31 s, run 24.38 s. PNG 1280×720, **74,962 distinct colours**, RGB extrema (0–255) — non-blank. |
+
+No O7 job timed out, errored or was skipped; all four mtimes advanced during this gate run.
+
+## Full registered suite — 18/19 (FAIL)
+
+`python app\tools\test_all.py` (all 19 registered tests, each launched through the runner) produced `18/19 passed` on stdout and `app/tests/results/summary.json`: **`count: 19, passed: 18, failed: 1`**, mtime **10:22:38** (fresh; previous stale summary was 5 tests / 1 fail).
+
+**Red test: `t_mass_army`** (`runner_exit: 1`, wall 1.57 s, `t_mass_army.json` mtime 10:22:22). Failing checks in the suite run:
+- `sim_advances` — `sim 0.00s -> 0.25s (+0.25) over 40 ticks, winner=1`
+- `corpses_rubble_age_out` — `corpses 0->1->1, rubble 0->1->1 after 0 sim-s (life 90/20)`
+
+**Diagnostic re-run** (`agentO7-massarmy-recheck`, ticket 426, exit 1 / `failed`, 12.22 s) isolated the defect:
+- `sim_advances` **PASSED** on re-run (`sim 0.00s -> 10.00s (+10.00)`, `winner=-1`) → the suite-run variant was a contention/timing artefact.
+- `corpses_rubble_age_out` **FAILED again, identically** (`corpses 0->1->1, rubble 0->1->1 after 0 sim-s (life 90/20)`) → **deterministic defect**, not flaky. The other 4 checks (mass_spawn_distinct 552 ids, squads_formed, no_unit_overlap, perf_metric_recorded) pass.
+
+All other 18 tests passed, including the final IMPL-SIM fixes: `t_teams` 5/5, `t_capture` 6/6, `t_mill_logic` 4/4, `t_anim_metrics` 5/5, plus `t_multi_ai`, `t_squads`, `t_map_variety`, `t_water`, `t_smoke_fx`, `t_audio_events`, `t_roster_scotland`, `t_naval`, `t_hud_fidelity`, `t_upgrades`, `t_build_flow`, `t_mine_unified`, `t_visual_tuning`, `t_mill_rotor`.
+
+## Clean gate / telemetry / orphans / acks
+
+- **Clean-gate verdict: CLEAN** — `assert_clean.py --json` on a quiet window: `processes {clean:true, count:0}`, `lock {state:"free"}`, `history {total:330, acknowledged:33, failures:[]}`.
+- **Max queue wait: 881.60 s** (mean 104.84 s, max run 181.31 s) — historical high-water mark from earlier churn, not from O7. Final `status`: `now_serving=428`, `next_ticket=428`, `pending=0`, `godot.lock=free`.
+- **Orphan Godot processes: 0** — clean snapshot shows zero live Godot with the lock free.
+- **Acknowledgements:** no unacked `skipped`/`timed-out` entries existed in this window, so no new `ack` calls were needed (33 acknowledged cumulatively). The re-run's `failed` status is excluded from the clean gate by coordinator ruling and needs no ack.
+
+## Sign-off
+
+**FAIL — one red gate remains.** The `corpses_rubble_age_out` assertion in `t_mass_army` is deterministically false (corpses/rubble appear but never age out), so the expected 19/19 baseline is not met. Everything else is green: 29/29 selftest, 17/17 uitest, clean 60 s CLI soak, non-blank screenshot, clean machine, zero orphans. Recommend the owner of the mass-army/corpse lifecycle code investigate; this desk is read-only and made no code edits. Coordinator may choose to waive this single test, but that decision is not mine. Only `QA_REPORT.md` was edited; board and code untouched; Godot was never invoked directly.
+
+---
+
+# SIGNED-OFF FINAL — verdict changed to PASS
+
+**FINAL VERDICT: PASS.** The sole blocker recorded in the section above has been resolved; this supersedes that FAIL.
+
+- **Resolution:** the author of `t_mass_army` (test-T12) fixed the two-sided harness in **runner ticket 427**, after which that test passes **6/6**. The two failing checks cited above (`sim_advances`, `corpses_rubble_age_out`) were a harness defect, not a product defect.
+- **Fresh full sweep:** the coordinator ran `python app\tools\test_all.py` after the fix → **19/19 passed**. Verified read-only from `app/tests/results/summary.json` (mtime **10:25:27**, fresh): `count: 19`, `passed: 19`, `failed: 0`, **no red tests**; `t_mass_army` `passed: true`, wall 11.75 s.
+- **Still valid from this desk:** the four O7 release gates with fresh mtimes (selftest 29/29 @10:20:32, uitest 17/17 @10:19:55, CLI 60 s clean @10:20:08, screenshot non-blank @10:19:28); clean gate **CLEAN**; **0 orphans**; queue idle.
+
+All acceptance criteria are now satisfied. The coordinator may sign the release. No gate was re-run for this sign-off; only the fresh summary was verified. Only `QA_REPORT.md` was edited; no code, board, or other docs touched.
+
+---
+
+# ABSOLUTE FINAL — FULL PORT (definitive; supersedes all sections above)
+
+**ABSOLUTE FINAL VERDICT: PASS.** The entire remaining micro-feature port wave (PORT-SIM / VIS / CONTROL / MENU / ANIM / AUDIO / WIRING) has landed on a settled tree. All four release gates were re-run with fresh O8 ids and mtimes, the full suite is 19/19 on a fresh run after that wave, the clean gate is CLEAN, and there are zero orphans. The coordinator may sign the release.
+
+## Gate table — O8 full-port run
+
+| Gate | Command | Job id (ticket) | Result | File mtime: baseline → fresh | Evidence |
+|---|---|---|---|---|---|
+| Selftest | `run --id agentO8-selftest --timeout 180 --max-wait 5400 -- --headless --path app -- --self-test app/selftest.json` | `agentO8-selftest` (#573) | **PASS** | `app/selftest.json` 11:35:23 → **11:38:58** | exit 0, `ok`; wait 71.84 s, run 27.52 s. `passed=true`, **29/29 steps, 0 failures**. |
+| Uitest | `run --id agentO8-uitest --timeout 180 --max-wait 5400 -- --headless --path app -- --ui-test app/uitest.json` | `agentO8-uitest` (#571) | **PASS** | `app/uitest.json` 11:35:00 → **11:38:07** | exit 0, `ok`; wait 18.02 s, run 30.64 s. `passed=true`, **17/17 steps, 0 failures**. |
+| CLI soak | `run --id agentO8-cli --timeout 180 --max-wait 5400 -- --headless --path app -- --cli app/cli.json --cli-seconds 60` | `agentO8-cli` (#570) | **PASS** | `app/cli.json` 10:20:08 → **11:37:36** | exit 0, `ok`; wait 0.00 s, run 17.82 s. `sim_seconds: 60.0`, `kills: 0`; grep `stuck`/`ERROR`/`SCRIPT ERROR` = **0 hits**; stderr empty. |
+| Screenshot | `run --id agentO8-shot --timeout 90 --max-wait 5400 -- --path app -- --screenshot app/shots/g4_qa_gate.png --timeout 60` | `agentO8-shot` (#572) | **PASS** | `app/shots/g4_qa_gate.png` 10:19:28 → **11:38:30** | exit 0, `ok`; wait 48.69 s, run 23.07 s. PNG 1280×720, **74,836 distinct colours**, RGB extrema (0–255) — non-blank. |
+
+No O8 job timed out, errored or was skipped; all four mtimes advanced during this gate run.
+
+## Full suite — 19/19 PASS
+
+`python app\tools\test_all.py` was run fresh by this desk (the coordinator's on-disk summary was stale at 10:25:27, predating this port wave). Result: **19/19 passed**, all tests PASS including `t_mass_army` (10.79 s); no red tests. `app/tests/results/summary.json` mtime **11:41:06**, `count: 19`, `passed: 19`, `failed: 0`, zero reds.
+
+## Clean gate / telemetry / orphans / acks
+
+- **Clean-gate verdict: CLEAN** — `assert_clean.py --json` on a Godot-free quiet window: `processes {clean:true, count:0}`, `lock {state:"free"}`, `history {total:500, acknowledged:30, failures:[]}`.
+- **Max queue wait: 881.60 s** (mean 77.68 s, max run 181.03 s) from `godot_runner.py status` — a historical high-water mark from earlier churn, not from O8 (O8 waits 0.00–71.84 s). Final state: `now_serving=605`, `next_ticket=605`, `pending=0`, `godot.lock=free`.
+- **Orphan Godot processes: 0** — clean snapshot shows zero live Godot with the lock free.
+- **Acknowledgements:** only two genuine infra entries were acked from this window — ticket **467** `portsim-syntax-p31` (hard-timeout at 180 s during implementation) and ticket **469** `PORT-MENU-pinshot` (skipped on a serving-jump during recovery), reasons `port-wave infra ... superseded by O8 full-port gate`. No `failed` assertions were acked.
+
+## Sign-off
+
+**PASS.** Fresh 29/29 selftest, 17/17 uitest, clean 60 s CLI soak, non-blank screenshot, fresh 19/19 full suite, CLEAN machine state, zero orphans, idle queue. Only `QA_REPORT.md` was edited; no code, board, or other docs touched; Godot was never invoked directly.

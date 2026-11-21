@@ -22,7 +22,8 @@ status: amber
 ![selftest](https://img.shields.io/badge/selftest-29%2F29-brightgreen)
 ![uitest](https://img.shields.io/badge/uitest-17%2F17-brightgreen)
 ![clean%20gate](https://img.shields.io/badge/clean%20gate-CLEAN-brightgreen)
-![release%20signoff](https://img.shields.io/badge/release%20signoff-open-red)
+![release%20signoff](https://img.shields.io/badge/release%20signoff-PASS-brightgreen)
+![test%20verdicts](https://img.shields.io/badge/per--feature%20tests-4G%20%2F%2010R%20%2F%201P-orange)
 
 ## 🎯 TL;DR
 
@@ -34,16 +35,18 @@ works: mutual exclusion, hard timeout with process-tree kill, telemetry, a
 read-only clean gate, and a documented `ack`/`unwedge` recovery path, with
 selftest **29/29**, uitest **17/17** and the clean gate **CLEAN** after 9
 historical failures were acknowledged (`QA_REPORT.md:110,112,117`). The single
-most important fact: the **QA desk's final verdict is still FAIL on file**
-because the runner wedged on dead ticket 47 during its independent re-run and
-that desk never re-issued a signed report (`QA_REPORT.md:84,124-126`) — so the
-release is blocked on a desk re-run, not on product data.
+most important fact: the **QA release gate is PASS** — after the `game.gd` parse
+blocker was cleared, desk O re-ran all four gates with fresh `agentO5-*` ids
+(#149–152), all `ok`/exit 0 with advanced mtimes and a CLEAN clean gate
+(`QA_REPORT.md` "FINAL VERDICT — O5"; **D-23**). The earlier #47 wedge is a
+resolved historical incident, not a current release blocker. What remains open is
+the **feature backlog** (P-18…P-49) and 6 red / 1 pending per-feature tests (08:55 snapshot).
 
 ```mermaid
 flowchart LR
-  A["Where we are:<br/>FIFO runner + 20 registered tests"] --> B["Biggest risk:<br/>QA sign-off still FAIL on file"]
-  B --> C["Next action:<br/>re-run full suite on quiet queue"]
-  C --> D["Gate to pass:<br/>3 consecutive CLEAN batches"]
+  A["Where we are:<br/>FIFO runner + 20 registered tests<br/>QA gate PASS (D-23)"] --> B["Biggest risk:<br/>feature backlog + 6 red / 1 pending tests"]
+  B --> C["Next action:<br/>land P0 features, re-run t_* gates"]
+  C --> D["Gate to pass:<br/>T1-T15 green + 3 consecutive CLEAN batches"]
 ```
 
 ## 📊 At a glance
@@ -63,13 +66,13 @@ flowchart LR
 | CLI 60 s soak / screenshot | PASS: jobs #29/#76 (CLI), #44/#75 (shot) | `QA_REPORT.md:12,13,95` |
 | Clean gate | CLEAN on a quiet queue after acks: 0 processes, lock free, no failures | `QA_REPORT.md:112,117`; `CLEAN_GATE.md:40-47` (D-13) |
 | Small-test registry | **20** tests in `manifest.json`: 5 `ready` + 15 `pending` (T1–T15) | `app/tests/manifest.json:5-26` (D-15) |
-| Per-test result JSONs | none written yet (`app/tests/results/` absent at doc time) | read-only check of `app/tests/`; `test_all.py:50-64` |
-| QA final gate state | desk verdict **FAIL** on file (wedge), product artifacts green | `QA_REPORT.md:84,106-126` |
+| Per-test result JSONs | **14 written**: `8 green / 6 red / 1 pending (08:55 snapshot; live churn)` (`t_weather` has no JSON); `summary.json` is generated at runtime | `app/tests/results/*.json`; `docs/reviews/REV_TESTS.md` |
+| QA final gate state | **PASS** — fresh O5 jobs #149–152, all `ok`, CLEAN gate, 0 orphans | `QA_REPORT.md` "FINAL VERDICT — O5"; **D-23** |
 
-Overall progress: `█████░░░ 63%` — measures **release-gate readiness, 5 of 8
+Overall progress: `██████░░ 75%` — measures **release-gate readiness, 6 of 8
 subsystems green**: runner FIFO/timeout ✅, selftest ✅, uitest ✅, CLI+shot ✅,
-clean gate ✅; QA desk re-sign ❌, small-test suite green ❌, fidelity threshold
-calibrated ❌. Sources: rows above + §4 below.
+clean gate ✅, QA desk re-sign ✅ (**D-23**); small-test suite green ❌ (4/15),
+fidelity threshold calibrated ❌. Sources: rows above + §4 below.
 
 <details>
 <summary>How the FIFO runner enforces "never hangs" (click to expand)</summary>
@@ -159,28 +162,40 @@ sequenceDiagram
   D-15.
 - [x] **`test_all.py` aggregator shipped** — `--list`, `--only`,
   `--include-pending`; every launch delegated to the runner with `manifest-<id>`
-  job ids; writes `app/tests/results/summary.json`; exit 1 on any failure.
-  Evidence: `app/tools/test_all.py:37-109`; `app/tests/README.md:88-99`.
+  job ids; writes `app/tests/results/summary.json` (generated at runtime); exit 1
+  on any failure. Evidence: `app/tools/test_all.py:37-109`; `app/tests/README.md:88-99`.
+- [x] **QA release gate PASS (D-23)** — the #47 wedge and the `game.gd` parse
+  blocker were cleared; desk O re-ran all four gates fresh: #149 selftest 29/29,
+  #150 uitest 17/17, #151 CLI 60 s clean (0 errors), #152 screenshot non-blank.
+  All `ok`, all mtimes advanced, clean gate CLEAN, 0 orphans. Evidence:
+  `QA_REPORT.md` "FINAL VERDICT — O5"; `docs/DECISION_LOG.md` D-23.
+- [x] **Per-feature result JSONs landed** — 14 of 15 written; at the 08:55
+  snapshot: 8 green (`t_audio_events`, `t_hud_fidelity`, `t_mass_army`, `t_naval`,
+  `t_smoke_fx`, `t_squads`, `t_upgrades`, `t_water`), 6 red (`t_anim_metrics`,
+  `t_capture`, `t_map_variety`, `t_multi_ai`, `t_roster_scotland`, `t_teams`),
+  1 pending (`t_weather`, compile bug). Live re-runs are still moving these —
+  `app/tests/results/*.json` is the source of truth. Evidence:
+  `docs/reviews/REV_TESTS.md`.
 
 > [!NOTE]
 > Only items with a passing gate or a cited report appear above. The QA desk's
- *final* sign-off is deliberately *not* listed here because no signed report
- exists — see §4.
+ *final* sign-off **is** listed now: **D-23** (fresh O5 re-run). Earlier FAIL
+ verdicts in `QA_REPORT.md` are superseded sections retained as history.
 
 ## 🚧 LEFT — by criticality
 
 | Priority | Item | Ticket / test | Owner | Blocked by | Est. |
 |---|---|---|---|---|---|
 | 🔴 P0 | **Calibrate `compare_shots.py` threshold** — default `0.80` is explicitly *not* a fidelity threshold; the smoke pair scores ~0.78/FAIL. Must calibrate per-check against `reference/videos.md` stills and record evidence before QA can use it as a red gate. | N-24 acceptance / GUIDE4 stills step | coordinator + QA O | owner ruling + reference stills | small (calibration pass) |
-| 🔴 P0 | **QA final sign-off not issued** — desk verdict FAIL on file: the 4 `agentO2-*` jobs never got a slot during the wedge; later #74/#75/#76 did run `ok`, but the desk never re-issued a report and #70 `agentO2-selftest` was skipped. | O-01 / `QA_REPORT.md:84,124-126` | O (QA desk) | a full, quiet-queue re-run | one gate batch |
-| 🔴 P0 | **Get T1–T15 per-feature tests green** — all 15 are `status:"pending"`; their green JSONs are the acceptance gates for P-18…P-24 / P-10. | `t_upgrades`…`t_audio_events` | test-T1…test-T15 | features landing + runner slots | per-test, 1 job each |
+| ✅ DONE | **QA final sign-off — DONE (D-23).** Desk O's fresh O5 re-run (#149–152) is PASS on all four gates; the earlier FAIL/wedge sections in `QA_REPORT.md` are superseded history. | O-01 / `QA_REPORT.md` "FINAL VERDICT — O5" | O (QA desk) | — | — |
+| 🔴 P0 | **Get T1–T15 per-feature tests green** — 14 result JSONs exist: **8 green**, **6 red**, **1 pending** (`t_weather`) at 08:55; see §3 DONE for the split. Green JSONs are the acceptance gates for P-18…P-24 / P-10. | `t_upgrades`…`t_audio_events` | test-T1…test-T15 | features landing + runner slots | per-test, 1 job each |
 | 🔴 P0 | **Prove the runner fix with repetition** — CLEAN_GATE.md §N-20 asks for 3× selftest/uitest/CLI/shot batches, asserting clean after each and bounded `max wait`; not yet recorded post-fix. | Z-01 / N-20 | Z + O | quiet queue | 3 batches |
 | 🟠 P1 | **Queue latency watch** — healthy peak was 431.81 s (mean 170.06 s) at 24 pending; the wedge produced 1199.33 s waits at `--max-wait 3600`. With WIP 20, keep `max wait` bounded and treat a pinned `now_serving` as the P0 signature. | SWARM_OPS §5 / `status.json` telemetry | coordinator | monitoring | ongoing |
 | 🟠 P1 | **`app/.godot_queue/status.json` is malformed** (trailing `}}` at line 1298) — `assert_clean.py` silently falls back to an empty history (`total:0`), so the history signal is blind. Observed read-only during this doc pass; confirm with the spool owner. | runner spool / Z-01 | coordinator + Z | verify not a live-write artifact | quick |
 | 🟠 P1 | **Exit-time resource leaks** — selftest logged 9 leaked ObjectDB instances + 2 resources in use; screenshot logged GLES3 texture/RID leak and null `RenderingServer::get_singleton()`. Non-fatal but unfiled. | QA_REPORT defects 2 (`QA_REPORT.md:76`) | L / J / F + asset lifecycle | owner arbitration | unestimated |
 | 🟠 P1 | **Fresh AI CLI soak** — #82 `agentG2-cli` was SKIPPED in the wedge; existing clean soaks #12/#24/#29 pre-date the fix. | G-01 (`STATUS_AI.md:30,187-189`) | G | runner slot | 1 job |
-| ⚪ P2 | **Per-test result directory does not exist yet** — `app/tests/results/summary.json` and `<id>.json` files are produced only when `test_all.py` runs; harness is wired but unexercised. | `test_all.py` acceptance | test authors + O | T-tests landing | 1 aggregate run |
-| ⚪ P2 | **`docs/RESUME.md` index** referenced by the template/related footer is not present yet. | D-17/D-19 doc lane | coordinator / DOC desk | index creation | trivial |
+| ⚪ P2 | **`summary.json` is a runtime artifact** — 14 `<id>.json` files exist; the aggregate `app/tests/results/summary.json` is generated only by `test_all.py` and is not committed. Docs now label it "generated", not present. | `test_all.py` acceptance | test authors + O | aggregate run | trivial |
+| ✅ DONE | **`docs/RESUME.md` master index exists** — the template/related-footer reference resolves (`docs/RESUME.md`, DOC-6). | D-17/D-19 doc lane | coordinator / DOC desk | — | — |
 
 P0 = blocks a good playable skirmish or the test/release gate; P1 = visible
 fidelity or core feature; P2 = polish; P3 = nice-to-have (`STATUS_TEMPLATE.md:60-61`).
@@ -198,6 +213,22 @@ gantt
   status.json repair :a5, 2026-11-21, 1d
   Exit-leak triage :a6, after a4, 2d
 ```
+
+### 🧭 Decision trace
+
+> [!IMPORTANT]
+> Per **D-19**, status docs cite the decisions that explain *why*. Full rationale
+> in `docs/DECISION_LOG.md`.
+
+| Decision | What it fixes in this area | Where it shows up here |
+|---|---|---|
+| **D-03** (Coordinator, 05:56) | Single FIFO runner door — no direct `godot` | TL;DR, §3 runner mechanics, §7 gates |
+| **D-13 / D-14** (Coordinator) | Clean gate excludes `failed` (test-red); `ack` for resolved historical infra failures | §2 ack row, §7 recovery commands |
+| **D-15** (Coordinator, 07:35) | One feature per test file + `manifest.json`/`test_all.py` + 15 authors | §2 registry/result rows, §6 ownership |
+| **D-16** (Coordinator, 07:40) | Runner starvation fixes (PID-liveness reclaim + `unwedge`) | §3 wedge root-cause/fix, §7 recovery |
+| **D-22** (Owner, 08:10) | Quality-first deep audit supersedes "good enough"; `docs/audit/*.md` claim tables | §8 evidence index |
+| **D-23** (QA desk O, 08:17) | Release gate **PASS** — fresh O5 jobs #149–152 supersede the FAIL/stale-artifact window | TL;DR, §2, §3 DONE, §4, §7 |
+| **D-24** (Coordinator, 08:30) | 320 tiles is the working map size; QA thresholds scale (`scan_map.py`, `docs/audit/GEN.md`) | §7 `scan_map.py` gate; P-48/P-49 |
 
 ## 🗃️ Deferred (owner charter §0)
 
@@ -325,18 +356,21 @@ directly (D-03).
 
 ## ❓ Open questions
 
-- [ ] **Who re-issues the QA verdict?** Desk O's final report still says FAIL;
-  #74/#75/#76 later ran `ok` and #70 was skipped. Is ticket-43 + CLEAN enough
-  to sign, or is a fresh full batch required? — **O + coordinator**; blocking
-  release (`QA_REPORT.md:84,122-126`).
+- [x] **QA verdict re-issued — D-23 (resolve).** Desk O's fresh O5 re-run
+  (#149–152) is PASS on all four gates with advanced mtimes; the earlier FAIL
+  sections are superseded history. Release is **signed**, not blocked.
 - [ ] **Who calibrates the fidelity threshold?** The `0.80` smoke value is not a
   gate; need a per-check value + evidence note. — **E + O**, blocks GUIDE4/N-24
   acceptance (`COMMANDS.md:315-319`).
 - [ ] **Is the malformed `status.json` (trailing `}}`, line 1298) a live-write
   artifact or a real corruption?** It makes `assert_clean.py` skip the history
   check. — **Z / coordinator**, P1 (`assert_clean.py:167-186`).
-- [ ] **Do the 15 pending T-tests actually pass?** `app/tests/results/` has no
-  JSONs yet; jobs #89/#92/#97/#98 are queued with no results. — **test-T1…T15 + O**.
+- [x] **Per-feature test results landed (partly).** 14 of 15 JSONs exist:
+  **8 green / 6 red / 1 pending (08:55 snapshot)** (`t_weather`). Green = the
+  eight named in §3; red = `t_anim_metrics`, `t_capture`, `t_map_variety`,
+  `t_multi_ai`, `t_roster_scotland`, `t_teams`. — **test-T1…T15 + O**. The figure
+  moved 4/10/1 → 8/6/1 during this pass as other workers re-ran tests; the brief
+  said 5/9/1. Coordinator to confirm the published figure.
 - [ ] **Was the wedge fix validated under WIP-20 load?** No 3× clean-batch
   record post-D-16; `max wait` target after fix is undefined. — **Z + O**.
 - [ ] **Are the exit-time leaks filed?** ObjectDB/resources (selftest) and GLES3
@@ -349,6 +383,6 @@ directly (D-03).
 ---
 
 **Related:** `docs/STATUS_TEMPLATE.md` · `docs/STATUS_AI.md` ·
-`docs/DECISION_LOG.md` · `docs/RESUME.md` (not yet created) ·
-`SWARM_BOARD.md` · `SWARM_OPS.md` · `QA_REPORT.md` · `app/tests/README.md` ·
-`app/tools/CLEAN_GATE.md`
+`docs/DECISION_LOG.md` · `docs/RESUME.md` · `docs/audit/GEN.md` ·
+`docs/reviews/REV_TESTS.md` · `SWARM_BOARD.md` · `SWARM_OPS.md` ·
+`QA_REPORT.md` · `app/tests/README.md` · `app/tools/CLEAN_GATE.md`

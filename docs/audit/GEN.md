@@ -358,9 +358,13 @@ live in three different places, two of which are in A's owned file:
   post-collision `height[ii] += 0.25`, **or** re-run the steep-tile /
   rock-paint / blocked pass after `_gen_patterns()` so newly steepened tiles
   are blocked. Predicted: seed 9 cliff 0 % → 100 %.
-- **`HAND-OFF B-2` (owner B, `scan_map.py:74`):** change clearance radius
-  5 → 6 tiles (the knob GUIDE4 already records at `:1168`) so the exact
-  10.0 m boundary passes. Predicted: seed 8 clear 94 % → 100 %.
+- **`HAND-OFF B-2` (owner B, `scan_map.py:74`):** ~~change clearance radius
+  5 → 6 tiles~~ **CORRECTED 2026-11-21 by IMPL-DOCS:** radius 5→6 (10 m→12 m)
+  was verified to REGRESS clearance to **83 %** — it excludes 3 of 18 deposits,
+  not just the 10.0 m boundary case. The correct fix is the **inclusive `>=`
+  boundary** at 10 m, which yields **94 % → 100 %** on all six dumps. The
+  diagnosis in §Branch D (strict `>`) was right; the proposed knob was wrong.
+  Board P-48 reflects the corrected method.
 - **`HAND-OFF Q` (owner Q, `app/scripts/MAPGEN_STATUS.md:71`):** the note
   "Current maps are 160x160, so safe" is stale — the configured size is 320.
   Document the `s`/`area_scale`/`mscale` coupling; no code change requested.

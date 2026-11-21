@@ -1,0 +1,19 @@
+{
+  "ticket": 294,
+  "id": "implrender-sco-verify",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_roster_scotland.gd"
+  ],
+  "created": 1795250425.9446,
+  "wait": 0.5537796020507812,
+  "run": 3.71551251411438,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000294_implrender-sco-verify\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000294_implrender-sco-verify\\stderr.txt"
+}

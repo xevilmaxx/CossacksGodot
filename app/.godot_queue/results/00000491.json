@@ -1,0 +1,20 @@
+{
+  "ticket": 491,
+  "id": "PORT-CONTROL-step2b-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795255402.5675457,
+  "wait": 62.32397270202637,
+  "run": 30.28036642074585,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000491_PORT-CONTROL-step2b-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000491_PORT-CONTROL-step2b-uitest\\stderr.txt"
+}

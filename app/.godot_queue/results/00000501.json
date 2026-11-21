@@ -1,0 +1,22 @@
+{
+  "ticket": 501,
+  "id": "portsim-p19-dump9",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/portsim_p19_9.json",
+    "--seed",
+    "9"
+  ],
+  "created": 1795255656.0182693,
+  "wait": 0.0007510185241699219,
+  "run": 6.347776889801025,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000501_portsim-p19-dump9\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000501_portsim-p19-dump9\\stderr.txt"
+}

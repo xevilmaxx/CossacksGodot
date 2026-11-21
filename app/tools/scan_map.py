@@ -72,8 +72,12 @@ def mine_clearance(res):
     woods = [(n["x"], n["y"]) for n in res if n["t"] == "wood" and n["hits"] > 0]
     if not deps:
         return 1.0
+    # P-48 / docs/audit/GEN.md branch D / GUIDE4.md:1168 (C08 "clear 5->6"):
+    # seed-8 iron sits at exactly 10.0 m (= 5 tiles) from wood; strict ">" fails
+    # that boundary. Make the 5-tile clearance inclusive. Raising the radius to
+    # 6 would instead EXCLUDE deposits at 10-12 m and regress clear 94% -> 83%.
     return sum(1 for m in deps
-               if all((m["x"]-wx)**2 + (m["y"]-wy)**2 > (5*2.0)**2 for wx, wy in woods)) / len(deps)
+               if all((m["x"]-wx)**2 + (m["y"]-wy)**2 >= (5*2.0)**2 for wx, wy in woods)) / len(deps)
 
 
 def sand_ring(w, h, terrain):

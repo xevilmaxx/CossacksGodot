@@ -25,6 +25,11 @@ timeline
   08:30 : Modern GitHub markdown + decision log
 ```
 
+> [!WARNING]
+> **Two distinct id namespaces:** `D-xx` here are DECISIONS. Worker tickets on
+> the board that look like `D-01`, `A-01`, `B-01` are TICKETS and must be written
+> as `BOARD D-01` etc. in status docs to avoid collisions (D-19).
+
 ## 📋 Decisions
 
 | ID | When (local) | Made by | Decision | Rationale / evidence |
@@ -53,6 +58,10 @@ timeline
 | D-22 | 08:10 | **Owner** | **Quality-first, unhurried deep analysis** of every implementation and decompilation; configurability/efficiency required in the final port but staged after quality | `SWARM_OPS.md` §5b-QUALITY. Evidence before edits, independent re-verification, observation vs inference separated, no "good enough", `docs/audit/<AREA>.md` claim tables. Breadth expansion stops. |
 | D-23 | 08:17 | **QA desk O** | **Release gate PASS** on the parsing tree | Four fresh O5 jobs (#149–152): selftest 29/29, uitest 17/17, CLI 60 s clean, screenshot non-blank; all mtimes advanced; clean gate CLEAN, 0 orphans. `QA_REPORT.md` FINAL section. Earlier FAILs were the stale-artifact/parse window. |
 | D-24 | 08:30 | **Coordinator** (from deep-GEN evidence) | **320 tiles is the working map size; QA thresholds must scale with it** | Deep-GEN reproduced dumps byte-identically and proved 28–44 tile mine distances are donor-faithful (donor uses 320 cells, 1 unit = 2 cells). Reach 0/3 was a stale 25-tile judge radius; B's scaled radius (`25*w/160` → 50 at 320) gives 3/3 without changing the generator. Do NOT detune a correct generator to please a stale test. `docs/audit/GEN.md`. |
+| D-25 | 08:55 | **IMPL-DOCS**, confirmed by coordinator | Clearance fix is the **inclusive `>=` boundary**, not radius 5→6 | Radius 5→6 was verified to regress clearance 94%→83% (excludes 3/18 deposits); inclusive `>=` at 10 m gives 94%→100%. P-48 DONE with the corrected method; `docs/audit/GEN.md` §6.2 corrected. Another instance of evidence overriding a plausible-but-wrong prescription. |
+| D-26 | 10:08 | **QA desk O** | **DEFINITIVE FINAL-SETTLED PASS** | O6 jobs #341–344: selftest 29/29, uitest 17/17, CLI 60 s clean, screenshot non-blank, all mtimes fresh; clean gate CLEAN (262 jobs, 33 acked, 0 failures), 0 orphans, queue idle. `QA_REPORT.md` FINAL-SETTLED section. Supersedes D-23 as the release verdict. |
+| D-27 | 10:25 | **Coordinator + QA desk O** | **ALL 19 per-feature tests PASS; release signed** | After the last harness fix (T12 ticket 427), a fresh coordinator `test_all.py` run reported 19/19 in `app/tests/results/summary.json`. Combined with four green O7 gates and a CLEAN no-hang gate, the port is signed off. Supersedes the 18/19 snapshot that briefly held QA's verdict at FAIL. |
+| D-28 | 11:41 | **QA desk O** | **ABSOLUTE FINAL — FULL PORT PASS** | After the entire remaining micro-feature wave (PORT-SIM/VIS/CONTROL/MENU/ANIM/AUDIO/WIRING), O8 jobs #570–573 all green with fresh mtimes; fresh 19/19 suite (summary.json 11:41:06); clean gate CLEAN (500 jobs, 30 acked, 0 failures), 0 orphans, idle queue. `QA_REPORT.md` ABSOLUTE FINAL section. This is the shipping verdict. |
 
 ## 🔍 How to use this log
 

@@ -1,0 +1,19 @@
+{
+  "ticket": 208,
+  "id": "manifest-t_multi_ai",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_multi_ai.gd"
+  ],
+  "created": 1795247397.9281113,
+  "wait": 100.49590873718262,
+  "run": 3.800945997238159,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000208_manifest-t_multi_ai\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000208_manifest-t_multi_ai\\stderr.txt"
+}

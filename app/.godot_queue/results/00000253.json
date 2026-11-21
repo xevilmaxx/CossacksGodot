@@ -1,0 +1,22 @@
+{
+  "ticket": 253,
+  "id": "implsim-dump9c",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/implsim_9.json",
+    "--seed",
+    "9"
+  ],
+  "created": 1795248930.0563364,
+  "wait": 0.000732421875,
+  "run": 5.150382041931152,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000253_implsim-dump9c\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000253_implsim-dump9c\\stderr.txt"
+}

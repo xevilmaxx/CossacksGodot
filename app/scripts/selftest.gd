@@ -290,7 +290,8 @@ func run() -> Dictionary:
 		f_men[0]["hold"] = true
 		fhold = game._formation_atk(f_men[0], "pike")
 		f_men[0]["hold"] = false
-	var bonus_ok := not fsq.is_empty() and fbonus == 2 and fhold == 9 and lone_bonus == 0
+	# Donor formations.cfg LINE15 = [2,2,7,7] (not the wiki +9 hold).
+	var bonus_ok := not fsq.is_empty() and fbonus == 2 and fhold == 7 and lone_bonus == 0
 	steps.append({"step": "formation_bonus", "passed": bonus_ok,
 		"detail": "formed bonus +%d (hold +%d), lone +%d" % [fbonus, fhold, lone_bonus]})
 	var repl_ok := false
@@ -360,7 +361,31 @@ func run() -> Dictionary:
 		game.cmd_resow(rp, fnode)
 		_sim(30.0)
 		resow_ok = int(fnode.hits) > 0
-	steps.append({"step": "resow", "passed": resow_ok, "detail": "depleted field re-sown: %s" % ("yes" if resow_ok else "no")})
+	# P-50/P-51: a finished mill auto-sows a field ring and the "Grain Crops"
+	# order sows more. Folded into this step so the suite stays at 29 steps.
+	var mill_ok := false
+	var mill_detail := "no mill"
+	game.players[0].res[3] += 1000.0
+	var mill := game.spawn("mil", 0, peasant.pos + Vector2(-20, -20))
+	game._on_building_finished(mill)
+	var fields0 := 0
+	for n in game.res_nodes:
+		if n.has("mill"):
+			fields0 += 1
+	for n in game.res_nodes:
+		if n.has("mill"):
+			n.hits = 0  # deplete one field; Grain Crops must restore it
+			break
+	var manual := game.cmd_sow(mill)
+	var restored := false
+	for n in game.res_nodes:
+		if n.has("mill") and int(n.hits) > 0:
+			restored = true
+			break
+	mill_ok = fields0 > 0 and manual > 0 and restored
+	mill_detail = "auto=%d restored=%d gold=%.0f" % [fields0, manual, game.players[0].res[3]]
+	steps.append({"step": "resow", "passed": resow_ok and mill_ok,
+		"detail": "depleted field re-sown: %s; mill: %s" % ["yes" if resow_ok else "no", mill_detail]})
 
 	# ---- G15: attack-ground
 	var can := game.spawn("cannon", 0, peasant.pos + Vector2(34, 0))

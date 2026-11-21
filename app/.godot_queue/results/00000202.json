@@ -1,0 +1,22 @@
+{
+  "ticket": 202,
+  "id": "manifest-t_smoke_fx",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_smoke_fx.gd"
+  ],
+  "created": 1795247044.1207893,
+  "wait": 165.60969853401184,
+  "run": 90.31571841239929,
+  "exit": -9,
+  "timeout": 90.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000202_manifest-t_smoke_fx\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000202_manifest-t_smoke_fx\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "implementation-wave churn, superseded by O6 fresh run",
+  "ack_at": 1795252091.0461442
+}

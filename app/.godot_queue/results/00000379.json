@@ -1,0 +1,19 @@
+{
+  "ticket": 379,
+  "id": "implsim-mill-probe",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/mill_logic_test.gd"
+  ],
+  "created": 1795252549.6428347,
+  "wait": 0.001088857650756836,
+  "run": 3.3003900051116943,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000379_implsim-mill-probe\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000379_implsim-mill-probe\\stderr.txt"
+}

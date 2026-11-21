@@ -1,0 +1,20 @@
+{
+  "ticket": 305,
+  "id": "implsim-syntax-reach4",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795250713.4496477,
+  "wait": 0.0007157325744628906,
+  "run": 0.7339837551116943,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000305_implsim-syntax-reach4\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000305_implsim-syntax-reach4\\stderr.txt"
+}

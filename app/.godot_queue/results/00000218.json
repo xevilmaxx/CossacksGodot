@@ -1,0 +1,19 @@
+{
+  "ticket": 218,
+  "id": "implsim-tsquads-3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_squads.gd"
+  ],
+  "created": 1795247628.3860285,
+  "wait": 23.959019422531128,
+  "run": 4.636026382446289,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000218_implsim-tsquads-3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000218_implsim-tsquads-3\\stderr.txt"
+}

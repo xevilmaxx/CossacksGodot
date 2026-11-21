@@ -1,0 +1,19 @@
+{
+  "ticket": 431,
+  "id": "manifest-t_visual_tuning",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/visual_tuning_test.gd"
+  ],
+  "created": 1795253063.9303424,
+  "wait": 0.000986337661743164,
+  "run": 6.460026979446411,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000431_manifest-t_visual_tuning\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000431_manifest-t_visual_tuning\\stderr.txt"
+}

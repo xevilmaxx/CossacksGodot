@@ -16,22 +16,22 @@
 			"passed": true
 		},
 		{
-			"detail": "arrow shots +8, in-flight arrow=true, trail evidence=false (baseline has no trail FX — FAIL is correct)",
+			"detail": "arrow shots +1, in-flight arrow=true, trail evidence=true (baseline has no trail FX — FAIL is correct)",
 			"name": "arrow_trail",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "cannon shots +1, explode events +1, explode/crater fx=true",
+			"detail": "cannon shots +3, explode events +1, explode/crater fx=true",
 			"name": "artillery_explosion_fx",
 			"passed": true
 		},
 		{
-			"detail": "FX_CAP=220, before=2, after 280 adds=220 (oldest items evicted)",
+			"detail": "FX_CAP=220, before=7, after 280 adds=220 (oldest items evicted)",
 			"name": "fx_cap_respected",
 			"passed": true
 		}
 	],
 	"id": "t_smoke_fx",
-	"passed": false,
-	"unix_ms": 1795246204195.0
+	"passed": true,
+	"unix_ms": 1795257633237.0
 }

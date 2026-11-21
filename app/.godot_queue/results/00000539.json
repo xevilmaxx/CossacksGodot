@@ -1,0 +1,20 @@
+{
+  "ticket": 539,
+  "id": "portsim-syntax-all",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795256614.0010555,
+  "wait": 2.3869028091430664,
+  "run": 0.9932281970977783,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000539_portsim-syntax-all\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000539_portsim-syntax-all\\stderr.txt"
+}

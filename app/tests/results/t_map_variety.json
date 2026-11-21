@@ -1,12 +1,12 @@
 {
 	"checks": [
 		{
-			"detail": "seed 11111 vs 98765: terrain differs=true, layout summary differs=true (127771 vs 122173 bytes)",
+			"detail": "seed 11111 vs 98765: terrain differs=true, layout summary differs=true (126011 vs 120659 bytes)",
 			"name": "different_seeds_different_layout",
 			"passed": true
 		},
 		{
-			"detail": "seed 11111 generated twice: byte-identical summary=true (127771 vs 127771 bytes)",
+			"detail": "seed 11111 generated twice: byte-identical summary=true (126011 vs 126011 bytes)",
 			"name": "same_seed_byte_identical",
 			"passed": true
 		},
@@ -21,12 +21,12 @@
 			"passed": true
 		},
 		{
-			"detail": "BFS<=25 tiles from each start: P0(food=true,stone=true,wood=true), P1(food=true,stone=false,wood=true)",
+			"detail": "BFS<=25 tiles from each start: P0(food=true,stone=true,wood=true), P1(food=true,stone=true,wood=true), P2(food=true,stone=true,wood=true), P3(food=true,stone=true,wood=true)",
 			"name": "starts_have_reachable_resources",
-			"passed": false
+			"passed": true
 		}
 	],
 	"id": "t_map_variety",
-	"passed": false,
-	"unix_ms": 1795245657085.0
+	"passed": true,
+	"unix_ms": 1795257661736.0
 }

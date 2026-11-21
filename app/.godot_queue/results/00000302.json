@@ -1,0 +1,20 @@
+{
+  "ticket": 302,
+  "id": "implrender-sco-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795250556.9935892,
+  "wait": 0.0008034706115722656,
+  "run": 23.366387128829956,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000302_implrender-sco-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000302_implrender-sco-uitest\\stderr.txt"
+}

@@ -1,0 +1,19 @@
+{
+  "ticket": 404,
+  "id": "manifest-t_water",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_water.gd"
+  ],
+  "created": 1795252883.8664308,
+  "wait": 5.687757968902588,
+  "run": 4.194470405578613,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000404_manifest-t_water\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000404_manifest-t_water\\stderr.txt"
+}

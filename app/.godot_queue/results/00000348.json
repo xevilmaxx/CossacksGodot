@@ -1,0 +1,19 @@
+{
+  "ticket": 348,
+  "id": "manifest-t_squads",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_squads.gd"
+  ],
+  "created": 1795252079.5669982,
+  "wait": 0.0013222694396972656,
+  "run": 2.5776772499084473,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000348_manifest-t_squads\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000348_manifest-t_squads\\stderr.txt"
+}

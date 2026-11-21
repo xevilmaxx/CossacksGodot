@@ -1,0 +1,20 @@
+{
+  "ticket": 560,
+  "id": "PORT-MENU-selftest4",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795257267.8922966,
+  "wait": 32.87086844444275,
+  "run": 23.465944528579712,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000560_PORT-MENU-selftest4\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000560_PORT-MENU-selftest4\\stderr.txt"
+}

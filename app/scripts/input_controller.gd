@@ -24,6 +24,13 @@ var attack_ground_mode := false
 var groups: Dictionary = {}
 var last_click_t := 0.0
 var last_click_sid := ""
+# MICRO #6 / P-33: P waits for two route clicks; G waits for a friendly
+# building. The route overlay is a child of world.fx_layer (no world.gd edit).
+var patrol_mode := false
+var patrol_a := Vector2.INF
+var patrol_b := Vector2.INF
+var guard_mode := false
+var route_node: Node2D = null
 
 func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 	game = g
@@ -36,6 +43,13 @@ func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 		if FileAccess.file_exists(p):
 			cursor_tex[cn] = load(p)
 	_set_cursor("default")
+	# Draw the patrol route on the existing fx layer; a child node keeps this
+	# feature entirely inside input_controller.gd (world.gd is not owned here).
+	if world != null and world.fx_layer != null and route_node == null:
+		route_node = Node2D.new()
+		route_node.z_index = 5
+		world.fx_layer.add_child(route_node)
+		route_node.draw.connect(_draw_patrol_route)
 	add_to_group("c3_input")
 
 # The bindings come from the global settings file (config.json); the ones in
@@ -123,15 +137,91 @@ func command_from_hud(action: String) -> void:
 			for e in sel:
 				game.cmd_hold_fire(e, false)
 		"patrol":
-			for e in sel:
-				if e.player == 0 and e.kind == "unit":
-					game.cmd_patrol(e, e.pos + Vector2(-6, 0), e.pos + Vector2(6, 0))
+			begin_patrol_waypoints()
 		"guard":
-			for e in sel:
-				game.cmd_stand_ground(e)
+			begin_guard()
 		"stop":
 			for e in sel:
 				game.cmd_stop(e)
+
+# --- Micro #6: patrol waypoints and guard target ----------------------------
+func _clear_pending_modes() -> void:
+	attack_move_mode = false
+	attack_ground_mode = false
+	rally_mode = false
+	if hud != null:
+		hud.build_ghost_sid = ""
+
+func begin_patrol_waypoints() -> void:
+	patrol_mode = true
+	patrol_a = Vector2.INF
+	patrol_b = Vector2.INF
+	_clear_pending_modes()
+	if route_node != null:
+		route_node.queue_redraw()
+	if hud != null:
+		hud.show_hint("Patrol: click the first waypoint")
+
+# A missing second click falls back to the port's old +/-6 m segment.
+func _finish_patrol(b: Vector2) -> void:
+	var ordered := 0
+	for e in get_selected():
+		if e.player != 0 or e.kind != "unit":
+			continue
+		if patrol_a != Vector2.INF and b != Vector2.INF:
+			game.cmd_patrol(e, patrol_a, b)
+		else:
+			game.cmd_patrol(e, e.pos + Vector2(-6, 0), e.pos + Vector2(6, 0))
+		ordered += 1
+	patrol_mode = false
+	patrol_a = Vector2.INF
+	patrol_b = Vector2.INF
+	if route_node != null:
+		route_node.queue_redraw()
+	if hud != null:
+		# hint_label is cleared every frame once the mode ends; use the
+		# timed message line for the confirmation instead.
+		hud._on_message("Patrol order given to %d unit(s)" % ordered if ordered > 0 else "Patrol: no units selected")
+
+# Donor hotkeys.cfg binds G to BOTH guard and cancelguard. The sim now owns
+# cmd_cancel_guard (game.gd:2090); fall back to cmd_stop on an older build.
+func begin_guard() -> void:
+	var had_guard := false
+	for e in get_selected():
+		if e.player == 0 and e.kind == "unit" and str(e.order.get("type", "")) == "guard":
+			if game.has_method("cmd_cancel_guard"):
+				game.cmd_cancel_guard(e)
+			else:
+				game.cmd_stop(e)
+			had_guard = true
+	if guard_mode:
+		guard_mode = false
+		if hud != null:
+			hud.show_hint("")
+		return
+	if had_guard:
+		if hud != null:
+			hud._on_message("Guard cancelled")
+		return
+	guard_mode = true
+	_clear_pending_modes()
+	if hud != null:
+		hud.show_hint("Guard: click a friendly building to protect")
+
+func _draw_patrol_route() -> void:
+	if world == null or route_node == null or patrol_a == Vector2.INF:
+		return
+	var a := world.world_to_px(patrol_a)
+	var end_world := patrol_b
+	if end_world == Vector2.INF:
+		end_world = _screen_to_world(get_viewport().get_mouse_position())
+	var b := world.world_to_px(end_world)
+	route_node.draw_line(a, b, Color(1.0, 0.86, 0.30, 0.95), 2.0)
+	for p in [a, b]:
+		route_node.draw_line(p, p + Vector2(0, -15), Color(0.96, 0.90, 0.70, 0.95), 1.5)
+		route_node.draw_colored_polygon([p + Vector2(0, -15), p + Vector2(11, -12), p + Vector2(0, -9)],
+			Color(1.0, 0.82, 0.22, 0.95))
+		route_node.draw_circle(p, 3.0, Color(1, 1, 1, 0.85))
 
 func _screen_to_world(p: Vector2) -> Vector2:
 	# Screen pixels -> map meters through the camera (position + zoom),
@@ -171,6 +261,28 @@ func _unhandled_input(event: InputEvent) -> void:
 		var pw := _screen_to_world(mb.position)
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
+				if patrol_mode:
+					if patrol_a == Vector2.INF:
+						patrol_a = pw
+						if hud != null:
+							hud.show_hint("Patrol: click the second waypoint")
+					else:
+						_finish_patrol(pw)
+					if route_node != null:
+						route_node.queue_redraw()
+					return
+				if guard_mode:
+					var gtarget := _pick(pw, true)
+					if not gtarget.is_empty() and gtarget.player == 0 and gtarget.kind == "building":
+						for gu in get_selected():
+							if gu.player == 0 and gu.kind == "unit":
+								game.cmd_guard(gu, gtarget)
+						guard_mode = false
+						if hud != null:
+							hud._on_message("Guarding %s" % ConfigScript.building_name(str(gtarget.sid)))
+					elif hud != null:
+						hud.show_hint("Guard: click a friendly building to protect")
+					return
 				if hud.build_ghost_sid != "":
 					var pos := pw
 					var sel_peasants: Array = []
@@ -237,6 +349,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		_handle_key(event as InputEventKey)
 
 func _right_order(pw: Vector2) -> void:
+	if patrol_mode:
+		_finish_patrol(Vector2.INF)
+		return
+	if guard_mode:
+		guard_mode = false
+		if hud != null:
+			hud.show_hint("")
+		return
 	if hud.build_ghost_sid != "":
 		hud.build_ghost_sid = ""
 		return
@@ -358,6 +478,50 @@ func _sel_formation(sel: Array) -> String:
 func _formation_targets(sel: Array, center: Vector2) -> Array:
 	return game.formation_targets(sel, center, _sel_formation(sel))
 
+# --- P-33: donor hotkeys.cfg parity ----------------------------------------
+# PORT-SIM owns config.gd/config.json, so the donor-only combos below cannot be
+# added to Data.HOTKEYS here. If a matching action is added there later it
+# wins; otherwise the literal donor binding from hotkeys.cfg is used.
+func _donor_combo(k: InputEventKey, action: String, fallbacks: Array) -> bool:
+	if hotkeys.has(action) and _matches(k, hotkeys[action]):
+		return true
+	for spec in fallbacks:
+		if _matches(k, ConfigScript.parse_hotkey(str(spec))):
+			return true
+	return false
+
+func _select_military() -> void:
+	var arr: Array = []
+	for u in game.units_of(0):
+		if u.sid != "peasant":
+			arr.append(u)
+	_set_selection(arr)
+	if hud != null:
+		hud._on_message("Selected %d military units" % arr.size())
+
+func _select_ships() -> void:
+	var arr: Array = []
+	for u in game.units_of(0):
+		if u.def.get("ship", false) or str(u.sid).contains("ship") or str(u.sid) in ["yacht", "galley", "cog", "frigate"]:
+			arr.append(u)
+	_set_selection(arr)
+	if hud != null:
+		hud._on_message("Selected %d ships" % arr.size() if not arr.is_empty() else "No naval units in this skirmish")
+
+func _all_same_type(add: bool) -> void:
+	var cur: Array = get_selected() if add else []
+	if cur.is_empty():
+		if hud != null:
+			hud.show_hint("Select a unit first")
+		return
+	var sid: String = str(cur[0].sid)
+	for u in game.units_of(0):
+		if u.sid == sid and not cur.has(u):
+			cur.append(u)
+	_set_selection(cur)
+	if hud != null:
+		hud._on_message("Selected %d %s" % [cur.size(), sid])
+
 func _handle_key(k: InputEventKey) -> void:
 	if k.keycode >= KEY_1 and k.keycode <= KEY_9:
 		var gi: int = k.keycode - KEY_1 + 1
@@ -378,6 +542,32 @@ func _handle_key(k: InputEventKey) -> void:
 				if k.shift_pressed and camera != null:
 					camera.global_position = arr[0].pos * world.view_scale
 		return
+	# Donor select family (hotkeys.cfg): Ctrl+Alt+A / Ctrl+Shift+A military,
+	# Ctrl+Q ships, Ctrl+Z / Ctrl+Shift+Z all-of-same-type, backtick idle
+	# peasants. None of these actions exists in Data.HOTKEYS yet (P-33).
+	if _donor_combo(k, "select_military_units", ["Ctrl+Alt+A", "Ctrl+Shift+A"]):
+		_select_military()
+		return
+	if _donor_combo(k, "select_all_ships", ["Ctrl+Q"]):
+		_select_ships()
+		return
+	if _donor_combo(k, "select_all_same_type", ["Ctrl+Z"]):
+		_all_same_type(false)
+		return
+	if _donor_combo(k, "add_all_same_type", ["Ctrl+Shift+Z"]):
+		_all_same_type(true)
+		return
+	# Godot 4.7 names the backtick key KEY_QUOTELEFT (96); donor alternative
+	# for select|idlepeasants. Ctrl+` (all peasants) is handled below.
+	if k.keycode == KEY_QUOTELEFT and not k.ctrl_pressed and not k.shift_pressed and not k.alt_pressed:
+		var idle: Array = []
+		for iu in game.units_of(0):
+			if iu.sid == "peasant" and iu.order.type == "none" and iu.inside_of == 0:
+				idle.append(iu)
+		_set_selection(idle)
+		if hud != null:
+			hud._on_message("Selected %d idle peasants" % idle.size())
+		return
 	if k.keycode == KEY_F5:
 		var m = get_tree().get_first_node_in_group("c3_main")
 		if m != null:
@@ -388,7 +578,20 @@ func _handle_key(k: InputEventKey) -> void:
 		if m2 != null:
 			m2.game_load()
 		return
+	# P starts a two-click patrol route (Q stays the instant +/-6 m patrol).
+	# Neither config.gd nor config.json binds P today, so there is no clash.
+	if k.keycode == KEY_P and not k.ctrl_pressed and not k.shift_pressed and not k.alt_pressed:
+		begin_patrol_waypoints()
+		return
 	if k.keycode == KEY_ESCAPE:
+		if patrol_mode:
+			_finish_patrol(Vector2.INF)
+			return
+		if guard_mode:
+			guard_mode = false
+			if hud != null:
+				hud.show_hint("")
+			return
 		if hud.build_ghost_sid != "" or hud.build_menu_open:
 			hud.build_ghost_sid = ""
 			hud.build_menu_open = false
@@ -487,6 +690,14 @@ func _handle_key(k: InputEventKey) -> void:
 		for e in get_selected():
 			if e.player == 0 and e.kind == "building":
 				game.cmd_unload(e)
+	elif _is(k, "sow_fields"):
+		# P-51: same "Grain Crops" order as the mill button; right-click resow
+		# of depleted fields is unchanged (cmd_resow).
+		for e in get_selected():
+			if e.player == 0 and e.kind == "building" and e.sid == "mil" and e.finished:
+				var n: int = game.cmd_sow(e)
+				hud.show_hint("Sowed %d grain fields" % n if n > 0 else "No room or gold to sow fields")
+				break
 	elif _is(k, "select_all_peasants"):
 		var arrp: Array = []
 		for e in game.units_of(0):
@@ -512,6 +723,7 @@ func _handle_key(k: InputEventKey) -> void:
 		if hud != null and hud.minimap_rect != null:
 			hud.minimap_rect.get_parent().visible = not hud.minimap_rect.get_parent().visible
 	elif _is(k, "patrol"):
+		# Q is the donor-style instant patrol; P asks for player waypoints.
 		for e in get_selected():
 			if e.player == 0 and e.kind == "unit":
 				game.cmd_patrol(e, e.pos + Vector2(-6, 0), e.pos + Vector2(6, 0))
@@ -522,8 +734,7 @@ func _handle_key(k: InputEventKey) -> void:
 		for e in get_selected():
 			game.cmd_no_stand_ground(e)
 	elif _is(k, "guard"):
-		for e in get_selected():
-			game.cmd_stand_ground(e)
+		begin_guard()
 	elif _is(k, "stop"):
 		for e in get_selected():
 			game.cmd_stop(e)
@@ -568,9 +779,16 @@ func _process(_dt: float) -> void:
 			world.sel_active = true
 		else:
 			world.sel_active = false
+	if patrol_mode and patrol_a != Vector2.INF and route_node != null:
+		route_node.queue_redraw()
 	# build ghost hint uses the message line, not the units/score label
 	if hud != null and hud.build_ghost_sid != "" and hud.has_method("show_hint"):
 		hud.show_hint("Placing %s - left-click to build, right-click to cancel" % hud.build_ghost_sid)
+	elif hud != null and patrol_mode and hud.has_method("show_hint"):
+		hud.show_hint("Patrol: click the first waypoint" if patrol_a == Vector2.INF else "Patrol: click the second waypoint")
+	elif hud != null and guard_mode and hud.has_method("show_hint"):
+		# keep the guard prompt set by begin_guard()
+		pass
 	elif hud != null and hud.has_method("show_hint"):
 		hud.show_hint("")
 	_update_cursor()

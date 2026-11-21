@@ -16,9 +16,9 @@
 			"passed": true
 		},
 		{
-			"detail": "no non-flat water variants (variants buckets empty) and no sparkle/animated-wave state",
+			"detail": "variants[3]=4",
 			"name": "water_nonflat_variants_or_sparkle",
-			"passed": false
+			"passed": true
 		},
 		{
 			"detail": "advanced 30.00s over 300 ticks, time_finite=true units_finite=true water_blocked=true winner=-1",
@@ -27,6 +27,6 @@
 		}
 	],
 	"id": "t_water",
-	"passed": false,
-	"unix_ms": 1795245196533.0
+	"passed": true,
+	"unix_ms": 1795257637299.0
 }

@@ -1,0 +1,27 @@
+{
+	"checks": [
+		{
+			"detail": "carry=3 order=gather node=207 moving=false pos=(283.4153, 40.34478) slot=(282.3501, 40.96848) field=(281.0, 42.0016) hits=25 stuck=0.0 nav=[(282.3501, 40.96848)]",
+			"name": "no_mill_holds_load",
+			"passed": true
+		},
+		{
+			"detail": "mill stores food",
+			"name": "mill_is_drop",
+			"passed": true
+		},
+		{
+			"detail": "food 36.9 -> 149.9, gathered 45.0 -> 204.0",
+			"name": "food_reaches_mill",
+			"passed": true
+		},
+		{
+			"detail": "hits 0 -> 0 -> 25",
+			"name": "resow_restores_field",
+			"passed": true
+		}
+	],
+	"id": "t_mill_logic",
+	"passed": true,
+	"unix_ms": 1795257568284.0
+}

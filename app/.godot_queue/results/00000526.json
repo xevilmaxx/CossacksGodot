@@ -1,0 +1,20 @@
+{
+  "ticket": 526,
+  "id": "PORT-CONTROL-step3-shot7",
+  "argv": [
+    "--path",
+    "app",
+    "--test-api",
+    "8163",
+    "--timeout",
+    "180"
+  ],
+  "created": 1795256271.0137691,
+  "wait": 4.869234323501587,
+  "run": 25.245667219161987,
+  "exit": 0,
+  "timeout": 200.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000526_PORT-CONTROL-step3-shot7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000526_PORT-CONTROL-step3-shot7\\stderr.txt"
+}

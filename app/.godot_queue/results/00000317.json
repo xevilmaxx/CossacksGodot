@@ -1,0 +1,22 @@
+{
+  "ticket": 317,
+  "id": "implsim-probe-reach",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/implsim_probe_8.json",
+    "--seed",
+    "8"
+  ],
+  "created": 1795251113.016129,
+  "wait": 0.0008392333984375,
+  "run": 4.9882283210754395,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000317_implsim-probe-reach\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000317_implsim-probe-reach\\stderr.txt"
+}

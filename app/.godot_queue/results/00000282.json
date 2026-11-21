@@ -1,0 +1,19 @@
+{
+  "ticket": 282,
+  "id": "implsim-tanim-final",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_anim_metrics.gd"
+  ],
+  "created": 1795250074.890673,
+  "wait": 0.0007529258728027344,
+  "run": 0.3380911350250244,
+  "exit": 1,
+  "timeout": 120.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000282_implsim-tanim-final\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000282_implsim-tanim-final\\stderr.txt"
+}

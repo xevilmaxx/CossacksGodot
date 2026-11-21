@@ -1,0 +1,20 @@
+{
+  "ticket": 296,
+  "id": "implpattern-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795250446.5412698,
+  "wait": 17.55769371986389,
+  "run": 24.840816497802734,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000296_implpattern-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000296_implpattern-selftest\\stderr.txt"
+}

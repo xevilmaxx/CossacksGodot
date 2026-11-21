@@ -1,0 +1,25 @@
+{
+  "ticket": 469,
+  "id": "PORT-MENU-pinshot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--test-api",
+    "8123",
+    "--timeout",
+    "170"
+  ],
+  "created": 1795254426.4674635,
+  "wait": 262.3780241012573,
+  "run": 0.0,
+  "exit": null,
+  "timeout": 180.0,
+  "status": "skipped",
+  "stdout": "app\\.godot_queue\\results\\00000469_PORT-MENU-pinshot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000469_PORT-MENU-pinshot\\stderr.txt",
+  "error": "ticket 469 was skipped (serving=470)",
+  "acknowledged": true,
+  "ack_reason": "port-wave infra: serving-jump skip during recovery, superseded by O8 full-port gate",
+  "ack_at": 1795257680.2160175
+}

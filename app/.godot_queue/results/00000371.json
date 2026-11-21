@@ -1,0 +1,19 @@
+{
+  "ticket": 371,
+  "id": "manifest-t_mine_unified",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/unified_mine_test.gd"
+  ],
+  "created": 1795252350.7831469,
+  "wait": 0.001443624496459961,
+  "run": 5.182152032852173,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000371_manifest-t_mine_unified\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000371_manifest-t_mine_unified\\stderr.txt"
+}

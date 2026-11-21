@@ -1,0 +1,20 @@
+{
+  "ticket": 214,
+  "id": "implrender-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795247566.6558373,
+  "wait": 0.0007250308990478516,
+  "run": 27.878976345062256,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000214_implrender-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000214_implrender-selftest\\stderr.txt"
+}

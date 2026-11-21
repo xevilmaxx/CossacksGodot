@@ -71,6 +71,11 @@ func _initialize() -> void:
 	var center := Vector2(game.MAP_W * game.TILE * 0.40, game.MAP_H * game.TILE * 0.50)
 	game.players[0].res[0] = 1.0e6
 	game.players[1].res[0] = 1.0e6
+	# Victory now requires a side to hold BOTH a building and a unit. Without
+	# these anchors the corrected team-aware victory logic ends the sim at
+	# the first tick even though both armies are still standing.
+	game.spawn("cen", 0, center + Vector2(-70.0, 0.0))
+	game.spawn("cen", 1, center + Vector2(140.0, -60.0))
 
 	# --- the 400-strong infantry formation ---------------------------------
 	var spots: Array = _formation_spots(center, ARMY_N, "none")
@@ -161,8 +166,12 @@ func _initialize() -> void:
 	g2.players[1].res[0] = 1.0e6
 	var victim = g2.spawn("pikeman", 0, Vector2(60.0, 60.0))
 	var hall = g2.spawn("cen", 0, Vector2(80.0, 60.0))
-	g2.spawn("pikeman", 0, Vector2(64.0, 64.0))  # survivor: no premature victory
+	# Survivors for both sides (a unit AND a building each) so the aging
+	# phase keeps ticking past the 90 s corpse lifetime.
+	g2.spawn("pikeman", 0, Vector2(64.0, 64.0))
+	g2.spawn("cen", 0, Vector2(100.0, 60.0))
 	g2.spawn("pikeman", 1, Vector2(120.0, 60.0))
+	g2.spawn("cen", 1, Vector2(140.0, 60.0))
 	var c0: int = g2.corpses.size()
 	var r0: int = g2.rubble.size()
 	g2.cmd_delete(victim)

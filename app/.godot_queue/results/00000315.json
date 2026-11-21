@@ -1,0 +1,22 @@
+{
+  "ticket": 315,
+  "id": "implsim-dump8-final",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/implsim_final_8.json",
+    "--seed",
+    "8"
+  ],
+  "created": 1795250996.9182525,
+  "wait": 0.0007891654968261719,
+  "run": 4.697793483734131,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000315_implsim-dump8-final\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000315_implsim-dump8-final\\stderr.txt"
+}

@@ -1,0 +1,21 @@
+{
+  "ticket": 562,
+  "id": "PORT-MENU-dedupshot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--test-api",
+    "8315",
+    "--timeout",
+    "170"
+  ],
+  "created": 1795257341.764165,
+  "wait": 2.6117565631866455,
+  "run": 5.682817697525024,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000562_PORT-MENU-dedupshot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000562_PORT-MENU-dedupshot\\stderr.txt"
+}

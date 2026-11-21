@@ -1,0 +1,22 @@
+{
+  "ticket": 287,
+  "id": "implsim-dump8-reach",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/implsim_8.json",
+    "--seed",
+    "8"
+  ],
+  "created": 1795250355.3792365,
+  "wait": 0.0007276535034179688,
+  "run": 5.628455400466919,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000287_implsim-dump8-reach\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000287_implsim-dump8-reach\\stderr.txt"
+}

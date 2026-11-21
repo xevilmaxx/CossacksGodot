@@ -1,0 +1,19 @@
+{
+  "ticket": 591,
+  "id": "manifest-t_roster_scotland",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_roster_scotland.gd"
+  ],
+  "created": 1795257613.8570685,
+  "wait": 2.319634199142456,
+  "run": 3.678380012512207,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000591_manifest-t_roster_scotland\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000591_manifest-t_roster_scotland\\stderr.txt"
+}

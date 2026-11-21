@@ -1,0 +1,19 @@
+{
+  "ticket": 281,
+  "id": "implsim-tmulti-final",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_multi_ai.gd"
+  ],
+  "created": 1795250053.0698807,
+  "wait": 0.0009312629699707031,
+  "run": 2.7514657974243164,
+  "exit": 0,
+  "timeout": 150.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000281_implsim-tmulti-final\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000281_implsim-tmulti-final\\stderr.txt"
+}

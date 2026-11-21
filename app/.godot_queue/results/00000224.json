@@ -1,0 +1,20 @@
+{
+  "ticket": 224,
+  "id": "implrender-ghost-api",
+  "argv": [
+    "--path",
+    "app",
+    "--test-api",
+    "8147",
+    "--timeout",
+    "600"
+  ],
+  "created": 1795247828.2711377,
+  "wait": 0.0011029243469238281,
+  "run": 23.532785415649414,
+  "exit": 0,
+  "timeout": 600.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000224_implrender-ghost-api\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000224_implrender-ghost-api\\stderr.txt"
+}

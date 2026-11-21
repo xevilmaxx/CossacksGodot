@@ -1,0 +1,19 @@
+{
+  "ticket": 385,
+  "id": "manifest-t_mill_logic",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/mill_logic_test.gd"
+  ],
+  "created": 1795252734.452982,
+  "wait": 0.0010554790496826172,
+  "run": 3.4905407428741455,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000385_manifest-t_mill_logic\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000385_manifest-t_mill_logic\\stderr.txt"
+}

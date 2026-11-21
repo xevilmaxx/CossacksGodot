@@ -1,0 +1,19 @@
+{
+  "ticket": 568,
+  "id": "manifest-t_upgrades",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_upgrades.gd"
+  ],
+  "created": 1795257430.606716,
+  "wait": 0.0013709068298339844,
+  "run": 2.1891069412231445,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000568_manifest-t_upgrades\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000568_manifest-t_upgrades\\stderr.txt"
+}

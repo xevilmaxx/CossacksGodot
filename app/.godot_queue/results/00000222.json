@@ -1,0 +1,20 @@
+{
+  "ticket": 222,
+  "id": "implsim-selftest-3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795247670.8103964,
+  "wait": 36.81671977043152,
+  "run": 32.41078972816467,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000222_implsim-selftest-3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000222_implsim-selftest-3\\stderr.txt"
+}

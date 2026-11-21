@@ -46,8 +46,7 @@ var world: C3World
 var camera: C3Camera
 var hud: C3HUD
 var input_ctl: C3Input
-var ai: C3AI
-var cli_ai0: C3AI
+var ais: Array[C3AI] = []   # one AI brain per participating AI player
 var acc := 0.0
 var speed := 1.0
 var frame := 0
@@ -210,11 +209,36 @@ func _on_menu_chosen(cfg: Dictionary) -> void:
 	_do_async_load(cfg)
 
 func _apply_menu_cfg(cfg: Dictionary) -> void:
-	Data.PLAYER_NATIONS = [str(cfg.get("nation0", "ukr")), str(cfg.get("nation1", "rus"))]
-	Data.PLAYER_NAMES = [_menu_nation_name(str(cfg.get("nation0", "ukr")), 0),
-		_menu_nation_name(str(cfg.get("nation1", "rus")), 1)]
-	Data.MAP_TYPE = str(cfg.get("map_type", "land"))
-	Data.BIOME = str(cfg.get("biome", "summer"))   # donor season families
+	var n0 := str(cfg.get("nation0", "ukr"))
+	var n1 := str(cfg.get("nation1", "rus"))
+	# The sim layer adds PLAYER_COUNT/TEAMS as Data statics. Route through an
+	# Object reference so this shell keeps parsing while that API lands; once
+	# declared, Object.set() writes the real static (verified in Godot 4.7).
+	# Defaults stay 1 opponent / ffa, so existing 2-player paths are unchanged.
+	var sim: Object = Data
+	var opponents := clampi(int(cfg.get("opponents", 1)), 1, 3)
+	sim.set("PLAYER_COUNT", opponents + 1)
+	sim.set("TEAMS", [0, 0, 1] if str(cfg.get("teams", "ffa")) == "2v1" else [])
+	# Menu picks the first two nations; extra opponents get unused donor nations.
+	# With the default one opponent the list is exactly [n0, n1] as before.
+	var nations := [n0, n1]
+	if opponents > 1:
+		for code in Data.NATIONS.keys():
+			if nations.size() >= opponents + 1:
+				break
+			var sid := str(code)
+			if not nations.has(sid):
+				nations.append(sid)
+	Data.PLAYER_NATIONS = nations
+	Data.PLAYER_NAMES = [_menu_nation_name(nations[0], 0), _menu_nation_name(nations[1], 1)]
+	for i in range(2, nations.size()):
+		Data.PLAYER_NAMES.append(_menu_nation_name(nations[i], i))
+	# PORT-SIM FP-1 hand-off: the menu emits terrain_type/season/richness/relief.
+	# Legacy keys stay as fallbacks so old callers (uitest/selftest) are byte-stable.
+	Data.MAP_TYPE = str(cfg.get("terrain_type", cfg.get("map_type", "land")))
+	Data.BIOME = str(cfg.get("season", cfg.get("biome", "summer")))
+	Data.RICHNESS = str(cfg.get("richness", "med"))
+	Data.RELIEF = str(cfg.get("relief", "plains"))
 	Data.START_OPTION = str(cfg.get("start_option", "default"))
 	if cfg.has("difficulty"):
 		Data.AI_DIFFICULTY = str(cfg.get("difficulty", "normal"))
@@ -405,9 +429,7 @@ func _do_async_load(cfg: Dictionary) -> void:
 	var homes2 := game.buildings_of(0)
 	if not homes2.is_empty():
 		input_ctl._set_selection([homes2[0]])
-	ai = C3AIScript.new(game, 1)
-	if journey_mode:
-		cli_ai0 = C3AIScript.new(game, 0)
+	_create_ai_brains(journey_mode)
 	audio = C3AudioScript.new()
 	add_child(audio)
 	var can_play := not is_headless
@@ -456,13 +478,27 @@ func set_speed(s: float) -> void:
 	if hud != null and hud.has_method("refresh_speed"):
 		hud.refresh_speed(speed, game.paused if game != null else false)
 
+# One brain per AI player. CLI and journey modes also drive player 0, which the
+# sim always creates as a human slot, so those modes opt the first slot in too.
+func _create_ai_brains(include_player0: bool) -> void:
+	ais.clear()
+	if game == null:
+		return
+	for p in game.players:
+		var idx := int(p.get("index", -1))
+		if idx < 0:
+			continue
+		var drive_human := include_player0 and idx == 0
+		if not drive_human and not bool(p.get("is_ai", false)):
+			continue
+		ais.append(C3AIScript.new(game, idx))
+
 func _setup_cli_only() -> void:
 	# Fast headless match: simulation only, no rendering, no audio, no window.
 	game = C3Game.new()
 	add_child(game)
 	game.setup(start_mode)
-	ai = C3AIScript.new(game, 1)
-	cli_ai0 = C3AIScript.new(game, 0)
+	_create_ai_brains(true)
 	cli_ticks_left = int(cli_seconds * Data.FPS)
 	cli_t = 0.0
 	cli_done = false
@@ -550,12 +586,9 @@ func _setup_full_game() -> void:
 	if not homes2.is_empty():
 		input_ctl._set_selection([homes2[0]])
 
-	ai = C3AIScript.new(game, 1)
-
-	if journey_mode:
-		# journey mode: the computer plays BOTH sides while frames record,
-		# so a full match plays itself like a gameplay video
-		cli_ai0 = C3AIScript.new(game, 0)
+	# In journey mode the computer plays the human slot too, so the match
+	# plays itself like a gameplay video.
+	_create_ai_brains(journey_mode)
 
 	audio = C3AudioScript.new()
 	add_child(audio)
@@ -893,7 +926,7 @@ func _process(dt: float) -> void:
 		return
 	if test_bridge != null:
 		test_bridge.poll()
-	if game == null or ai == null:
+	if game == null or ais.is_empty():
 		return
 	if cli_mode:
 		_run_cli_incremental()
@@ -919,10 +952,9 @@ func _process(dt: float) -> void:
 		bench_sim_ms += float(Time.get_ticks_usec() - t0) / 1000.0
 		t_tick += float(Time.get_ticks_usec() - t0) / 1000.0
 		t0 = Time.get_ticks_usec()
-		ai.tick(step)
+		for brain in ais:
+			brain.tick(step)
 		t_ai += float(Time.get_ticks_usec() - t0) / 1000.0
-		if journey_mode and cli_ai0 != null:
-			cli_ai0.tick(step)
 		# Never block inside the loop: bail out if the frame budget is spent.
 		if steps % 16 == 0 and Time.get_ticks_msec() >= deadline_ms - 500 and deadline_ms > 0:
 			break
@@ -1358,10 +1390,8 @@ func _run_cli_incremental() -> void:
 	var ticks_this_frame := 0
 	while cli_ticks_left > 0 and game.winner == -1 and ticks_this_frame < 1500:
 		game.tick(step)
-		if ai != null:
-			ai.tick(step)
-		if cli_ai0 != null:
-			cli_ai0.tick(step)
+		for brain in ais:
+			brain.tick(step)
 		cli_t += step
 		cli_ticks_left -= 1
 		ticks_this_frame += 1

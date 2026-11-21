@@ -16,5 +16,8 @@
   "status": "skipped",
   "stdout": "app\\.godot_queue\\results\\00000176_t-anim-metrics\\stdout.txt",
   "stderr": "app\\.godot_queue\\results\\00000176_t-anim-metrics\\stderr.txt",
-  "error": "ticket 176 waited > 400s for its turn"
+  "error": "ticket 176 waited > 400s for its turn",
+  "acknowledged": true,
+  "ack_reason": "implementation-wave churn, superseded by O6 fresh run",
+  "ack_at": 1795252090.6206176
 }

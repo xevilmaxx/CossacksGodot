@@ -1,0 +1,22 @@
+{
+  "ticket": 290,
+  "id": "implpattern-dump8",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/implpattern_8.json",
+    "--seed",
+    "8"
+  ],
+  "created": 1795250395.4335048,
+  "wait": 0.0006852149963378906,
+  "run": 5.151231527328491,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000290_implpattern-dump8\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000290_implpattern-dump8\\stderr.txt"
+}

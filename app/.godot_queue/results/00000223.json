@@ -1,0 +1,20 @@
+{
+  "ticket": 223,
+  "id": "implsim-uitest-3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795247753.2811809,
+  "wait": 0.0007548332214355469,
+  "run": 26.077719926834106,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000223_implsim-uitest-3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000223_implsim-uitest-3\\stderr.txt"
+}

@@ -1,0 +1,22 @@
+{
+  "ticket": 389,
+  "id": "agentO7-cli",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795252743.8329482,
+  "wait": 52.376564741134644,
+  "run": 12.647787094116211,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000389_agentO7-cli\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000389_agentO7-cli\\stderr.txt"
+}

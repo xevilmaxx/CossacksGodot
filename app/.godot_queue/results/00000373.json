@@ -1,0 +1,19 @@
+{
+  "ticket": 373,
+  "id": "implsim-capture-fix",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_capture.gd"
+  ],
+  "created": 1795252357.2904255,
+  "wait": 6.186015844345093,
+  "run": 2.487569808959961,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000373_implsim-capture-fix\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000373_implsim-capture-fix\\stderr.txt"
+}

@@ -1,0 +1,6 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 571.96 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce MX130
+
+sprites: 29 sets loaded (sids=70)
+screenshot saved: C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\port_audio_runtime.png
+ERROR: 1 RID allocations of type 'N5GLES37TextureE' were leaked at exit.

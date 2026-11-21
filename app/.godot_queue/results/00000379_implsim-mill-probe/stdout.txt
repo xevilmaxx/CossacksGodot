@@ -1,0 +1,26 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+DEBUG start pos=(283.0, 42.0016) slot=(282.3501, 40.96848) food=0.0 gathered={  }
+DEBUG drop={ "id": 446, "kind": "building", "player": 0, "sid": "cen", "def": { "hp": 5300, "build_time": 15.625, "cost": { "wood": 700 }, "radius": 3.0, "farm": 100, "stores": ["food", "wood", "stone"], "trains": ["peasant"], "score": 1000, "capture": true, "drop": true, "icon": [P: (92.0, 92.0), S: (46.0, 46.0)] }, "pos": (301.0, 22.0016), "hp": 5300, "max_hp": 5300, "dead": false, "order": { "type": "none" }, "cooldown": 0.0, "carry": 0, "carry_type": "", "inside_of": 0, "moving": false, "finished": true, "progress": 15.625, "queue": [], "workers": 0, "capture_t": 0.0, "hold": false, "hold_fire": false, "face": 0.0, "morale": 70.0, "routing": false, "deploy_t": 0.0, "stuck_t": 0.0, "hit_t": 0.0, "death_t": -1.0, "fire_t": -1.0, "acq_t": 0.0, "aur_off": false, "aur_dru": false, "shield": 0, "block_r": 6.578, "block_rect": [P: (291.9895, 9.530619), S: (13.1562, 12.47098)], "rally": (301.0, 30.5796) }
+DEBUG t=0.3 pos=(283.0, 42.0016) carry=0 order=gather deliv=false food=0.0 gathered={  }
+DEBUG t=0.5 pos=(283.0, 42.0016) carry=0 order=gather deliv=false food=0.0 gathered={  }
+DEBUG t=1.3 pos=(283.0, 42.0016) carry=1 order=gather deliv=false food=0.0 gathered={  }
+DEBUG t=5.3 pos=(288.6756, 42.69979) carry=1 order=gather deliv=true food=0.0 gathered={  }
+[DELIVER] p=0 res=food amt=2 store=cen before=0.0
+DEBUG t=25.3 pos=(288.9167, 37.12375) carry=0 order=gather deliv=false food=0.0 gathered={ "food": 2 }
+[DELIVER] p=0 res=food amt=2 store=cen before=0.0
+DEBUG t=60.0 pos=(288.0337, 37.16895) carry=1 order=gather deliv=true food=0.0 gathered={ "food": 4 }
+DEBUG self=0.00 slot=0.00 slope=0.00 hself=0.00 hslot=0.00 blockedFor=false
+  PASS  no_mill_holds_load - carry=1 order=gather node=207 moving=true pos=(288.0337, 37.16895) slot=(282.3501, 40.96848) field=(281.0, 42.0016) hits=47 stuck=0.0 nav=[(285.0, 39.0), (301.0, 29.0)]
+  PASS  mill_is_drop - mill stores food
+[DELIVER] p=0 res=food amt=2 store=mil before=0.0
+  FAIL  food_reaches_mill - food 0.0 -> 0.0, gathered 4.0 -> 6.0
+[DELIVER] p=0 res=food amt=2 store=mil before=476.288
+[DELIVER] p=0 res=food amt=2 store=mil before=475.856000000001
+[DELIVER] p=0 res=food amt=2 store=mil before=475.168000000001
+[DELIVER] p=0 res=food amt=2 store=mil before=474.608000000001
+[DELIVER] p=0 res=food amt=2 store=mil before=474.176000000002
+[DELIVER] p=0 res=food amt=2 store=mil before=473.488000000002
+[DELIVER] p=0 res=food amt=2 store=mil before=472.928000000002
+  PASS  resow_restores_field - hits 0 -> 0 -> 43
+mill_logic_test: 3/4 checks passed

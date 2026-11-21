@@ -1,0 +1,20 @@
+{
+  "ticket": 390,
+  "id": "agentO7-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795252744.0199094,
+  "wait": 64.97296738624573,
+  "run": 24.104809045791626,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000390_agentO7-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000390_agentO7-selftest\\stderr.txt"
+}

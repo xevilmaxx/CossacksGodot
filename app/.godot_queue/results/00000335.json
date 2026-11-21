@@ -1,0 +1,19 @@
+{
+  "ticket": 335,
+  "id": "implsim-tmap-final",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_map_variety.gd"
+  ],
+  "created": 1795251756.0547354,
+  "wait": 0.0007548332214355469,
+  "run": 10.241742610931396,
+  "exit": 0,
+  "timeout": 150.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000335_implsim-tmap-final\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000335_implsim-tmap-final\\stderr.txt"
+}

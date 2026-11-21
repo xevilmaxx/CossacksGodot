@@ -1,0 +1,22 @@
+{
+  "ticket": 344,
+  "id": "agentO6-cli",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "app/cli.json",
+    "--cli-seconds",
+    "60"
+  ],
+  "created": 1795251971.8516033,
+  "wait": 83.23391819000244,
+  "run": 12.070424318313599,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000344_agentO6-cli\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000344_agentO6-cli\\stderr.txt"
+}

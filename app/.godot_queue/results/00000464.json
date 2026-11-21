@@ -1,0 +1,21 @@
+{
+  "ticket": 464,
+  "id": "PORT-AUDIO-cli20",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--cli",
+    "--cli-seconds",
+    "20"
+  ],
+  "created": 1795254208.1443841,
+  "wait": 231.8294358253479,
+  "run": 11.977485418319702,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000464_PORT-AUDIO-cli20\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000464_PORT-AUDIO-cli20\\stderr.txt"
+}

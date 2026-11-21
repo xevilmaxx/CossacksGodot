@@ -1,0 +1,22 @@
+{
+  "ticket": 484,
+  "id": "portsim-p31-dump7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/portsim_p31_7.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795255027.5399458,
+  "wait": 29.66766667366028,
+  "run": 6.468445062637329,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000484_portsim-p31-dump7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000484_portsim-p31-dump7\\stderr.txt"
+}

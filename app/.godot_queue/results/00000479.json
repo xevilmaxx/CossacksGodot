@@ -1,0 +1,20 @@
+{
+  "ticket": 479,
+  "id": "PORT-CONTROL-step1b-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795254887.4480941,
+  "wait": 55.52166390419006,
+  "run": 28.991950511932373,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000479_PORT-CONTROL-step1b-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000479_PORT-CONTROL-step1b-selftest\\stderr.txt"
+}

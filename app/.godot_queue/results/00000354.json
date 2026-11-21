@@ -1,0 +1,19 @@
+{
+  "ticket": 354,
+  "id": "manifest-t_anim_metrics",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_anim_metrics.gd"
+  ],
+  "created": 1795252099.2045727,
+  "wait": 0.0007522106170654297,
+  "run": 0.3358767032623291,
+  "exit": 1,
+  "timeout": 90.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000354_manifest-t_anim_metrics\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000354_manifest-t_anim_metrics\\stderr.txt"
+}

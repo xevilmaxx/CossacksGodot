@@ -1,0 +1,20 @@
+{
+  "ticket": 204,
+  "id": "impshell-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795247064.1271465,
+  "wait": 358.4229028224945,
+  "run": 41.19311332702637,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000204_impshell-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000204_impshell-uitest\\stderr.txt"
+}

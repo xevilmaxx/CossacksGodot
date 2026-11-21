@@ -1,0 +1,21 @@
+{
+  "ticket": 482,
+  "id": "portvis-shot-b",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--screenshot",
+    "app/shots/portvis-fields.png",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795254984.5508485,
+  "wait": 33.97915530204773,
+  "run": 20.356234550476074,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000482_portvis-shot-b\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000482_portvis-shot-b\\stderr.txt"
+}

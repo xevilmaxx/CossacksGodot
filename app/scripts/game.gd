@@ -59,6 +59,13 @@ var battle_mode := false
 var time_s := 0.0
 var winner := -1
 var rng := RandomNumberGenerator.new()
+# P-31: separate stage stream. Donor dogenerate.inc calls SetRandomKey(randkey1)
+# before every generation stage (:1100,:1161,:1177,:1213,:1538,:1616,:1772,
+# :1909,:1927). The legacy `rng` must stay on one continuous stream for
+# byte-identical seed dumps, so stage reseeds land here instead.
+var gen_rng := RandomNumberGenerator.new()
+const GEN_STAGES := ["terrain", "starts_legacy", "starts", "starts_team", "patterns",
+	"forests", "mines", "finish"]
 var events: Array = []   # {type, pos, kind} consumed by world/hud each frame
 var projectiles: Array = []  # delayed shells/arrows: {pos,target,kind,dmg,splash,owner,t,total}
 var corpses: Array = []  # fading dead units for the battlefield look (capped)
@@ -76,9 +83,16 @@ var compact_t := 0.0
 var res_dirty := 0
 var bld_dirty := 0
 var ai_cheat_t := 0.0
+var sow_t := 0.0
 func _blocked_for(e: Dictionary, p: Vector2) -> bool:
-	if is_blocked(p):
-		return true
+	# P-10: water cells hold BLK_WATER and are hard blockers for land units,
+	# but a naval entity treats them as its road and land as its wall.
+	if _is_naval(e):
+		if not _is_water(p):
+			return true
+	else:
+		if is_blocked(p):
+			return true
 	# A builder must be able to walk over its own unfinished site: the L8
 	# true-scale ink box is large enough to trap a peasant that spawned inside
 	# it, so ignore the site currently under construction (never a finished
@@ -112,6 +126,13 @@ var deposits: Dictionary = {}  # "gold"/"iron"/"coal" remaining
 
 func _init() -> void:
 	rng.seed = Data.RANDOM_SEED
+
+# P-31: reseed the STAGE stream only. Key = seed + stage slot + generator version
+# (inferred port adaptation of SetRandomKey: a per-stage derived key rather than
+# the donor's same-key skip-ahead, chosen so the legacy rng never shifts).
+func _reseed_stage(stage: String) -> void:
+	var si: int = GEN_STAGES.find(stage)
+	gen_rng.seed = (int(Data.RANDOM_SEED) + si * 1000003 + int(Data.GENERATOR_VERSION) * 10007) & 0x7fffffff
 
 func _grid_rebuild() -> void:
 	grid.clear()
@@ -159,7 +180,7 @@ func _compact() -> void:
 		else:
 			keep.append(e)
 	entities = keep
-	for pi in 2:
+	for pi in players.size():
 		var pl: Array = []
 		for id in players[pi].entities:
 			var e: Dictionary = by_id.get(id, {})
@@ -213,6 +234,7 @@ func setup_begin(mode: String) -> void:
 	MAP_W = Data.MAP_W
 	MAP_H = Data.MAP_H
 	TICK_MAX = Data.TICK_MAX
+	Data.load_extra_anim_index()  # P-41: separate nation-unique anim index
 	rng.seed = Data.RANDOM_SEED
 	terrain.resize(MAP_W * MAP_H)
 	blocked.resize(MAP_W * MAP_H)
@@ -226,9 +248,16 @@ func setup_begin(mode: String) -> void:
 	# nations come from the menu (Data.PLAYER_NATIONS sids); names follow.
 	var pn := Data.PLAYER_NAMES
 	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else ["ukr", "rus"]
-	players = [new_player(0, _nation_name(0, pn), false), new_player(1, _nation_name(1, pn), true)]
-	players[0]["nation"] = str(pns[0]) if pns.size() > 0 else "ukr"
-	players[1]["nation"] = str(pns[1]) if pns.size() > 1 else "rus"
+	# P-42: one slot per participant. Opponents 1/2/3 -> 2/3/4 players; the
+	# default is still 2 with player 0 human and every other slot AI.
+	var count: int = clampi(int(Data.PLAYER_COUNT), 2, 8)
+	players = []
+	for i in count:
+		var pl := new_player(i, _nation_name(i, pn), i > 0)
+		pl["nation"] = str(pns[i]) if i < pns.size() else "rus"
+		if i < Data.TEAMS.size():
+			pl["team"] = int(Data.TEAMS[i])
+		players.append(pl)
 	objectives = []
 	deposits = {}
 	for r in Data.RES_NAMES:
@@ -243,8 +272,12 @@ func setup_begin(mode: String) -> void:
 	_st_forest = PackedFloat32Array()
 
 func setup_spawns() -> void:
+	_ensure_start_slots()
 	_spawn_starts()
 	_grid_rebuild()
+	# Must run AFTER start buildings block tiles: scan's BFS uses the post-spawn
+	# blocked map, so an earlier pass would see a larger, wrong reach set.
+	_repair_start_reach()
 
 func _nation_name(i: int, pn: Variant) -> String:
 	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else []
@@ -284,6 +317,16 @@ func is_blocked(p: Vector2) -> bool:
 	if not in_bounds(p):
 		return true
 	return blocked[_t(tile_of(p).x, tile_of(p).y)] != 0
+
+# P-10: deep-water terrain tile. Ships may enter only these tiles; the shore
+# sand collar (terrain 4) and all land stay impassable for them.
+func _is_water(p: Vector2) -> bool:
+	if not in_bounds(p):
+		return false
+	return int(terrain[_t(tile_of(p).x, tile_of(p).y)]) == 3
+
+func _is_naval(e: Dictionary) -> bool:
+	return bool(e.get("def", {}).get("naval", false))
 
 func set_blocked_circle(p: Vector2, r_m: float, value: bool) -> void:
 	var t0 := tile_of(p - Vector2(r_m, r_m))
@@ -440,6 +483,7 @@ func _claim_cluster(pos: Vector2, r_m: float, margin_m := 4.0) -> bool:
 # donor _misc_CheckStandPattern footprint test against gPatternMask, so
 # clusters are discrete and never merge; this replaces blob placement.
 func _gen_patterns() -> void:
+	_reseed_stage("patterns")  # P-31 / dogenerate.inc:1909 pattern pass
 	var result: Dictionary = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
 		map_starts, terrain, 3, str(Data.BIOME))
 	pattern_stamps = result.get("stamps", [])
@@ -453,6 +497,31 @@ func _gen_patterns() -> void:
 		var cpos := Vector2((float(cx) + 0.5) * TILE, (float(cy) + 0.5) * TILE)
 		var painted_cells: Array = []
 		var forest_nodes_here := 0
+		# P-46: the scaled donor cells are sparse (*..*..*), so painting raw
+		# cells makes thousands of one-tile flecks. Paint a FILLED contiguous
+		# core disc sized from the stamp extent instead (no rng consumed).
+		if kind == "forest":
+			var cext := 0.0
+			for c0 in cells:
+				var cc0: Vector2i = c0
+				cext = maxf(cext, float(maxi(abs(cc0.x), abs(cc0.y))) * TILE)
+			# Bounded contiguous core. Never repaint water/sand/rock - the
+			# earlier full-extent disc buried the sand collar and cliff ring.
+			var core_r: float = clampf(cext * 0.25, 1.5 * TILE, 4.5 * TILE)
+			var steps: int = ceili(core_r / TILE)
+			var tx0: int = maxi(0, int(cpos.x / TILE) - steps)
+			var tx1: int = mini(MAP_W - 1, int(cpos.x / TILE) + steps)
+			var ty0: int = maxi(0, int(cpos.y / TILE) - steps)
+			var ty1: int = mini(MAP_H - 1, int(cpos.y / TILE) + steps)
+			for cy2 in range(ty0, ty1 + 1):
+				for cx2 in range(tx0, tx1 + 1):
+					var ii2 := _t(cx2, cy2)
+					var tt2: int = terrain[ii2]
+					if tt2 == 3 or tt2 == 4 or tt2 == 5:
+						continue
+					var p2 := Vector2((float(cx2) + 0.5) * TILE, (float(cy2) + 0.5) * TILE)
+					if p2.distance_to(cpos) <= core_r:
+						terrain[ii2] = 2
 		for c in cells:
 			var cc: Vector2i = c
 			var tx: int = cx + cc.x
@@ -466,10 +535,12 @@ func _gen_patterns() -> void:
 			var dc := Vector2(float(tx - cx), float(ty - cy)).length()
 			match kind:
 				"forest":
-					# Only the ground directly under a tree gets sod. Painting
-					# the whole donor footprint made grey/green checker patches.
+					# Sod is painted as one contiguous core disc above. Preserve
+					# the ORIGINAL short-circuit exactly: once 10 trees are
+					# placed no further randf() is drawn. Calling randf()
+					# unconditionally shifted the whole downstream RNG stream
+					# (stone stamps moved 27.7 -> 39.2 tiles, reach 3/3 -> 1/3).
 					if forest_nodes_here < 10 and rng.randf() < 0.10:
-						terrain[ii] = 2
 						var wp := Vector2((float(tx) + 0.5) * TILE, (float(ty) + 0.5) * TILE)
 						_add_res("wood", wp, 60, 0.7)
 						forest_nodes_here += 1
@@ -482,9 +553,12 @@ func _gen_patterns() -> void:
 					if dc <= 1.6:
 						terrain[ii] = 5
 				"hill":
+					# P-47: the old height[ii] += 0.25 ran AFTER the collision
+					# pass in _gen_base, so newly steep tiles were never painted
+					# rock/blocked (seed 9 cliff ring = 0%). Keep only the
+					# terrain paint; never mutate height post-collision.
 					if dc <= 2.2:
 						terrain[ii] = 5
-					height[ii] += 0.25
 				"decor":
 					if rng.randf() < 0.10:
 						_add_res("bush", Vector2((float(tx) + 0.5) * TILE,
@@ -533,10 +607,18 @@ func _gen_base() -> void:
 	# 4. TextureMap + SmoothTiles runs at the end (_assign_tileblocks).
 	var budget: Dictionary = _st_budget if not _st_budget.is_empty() else Data.mapgen_budget()
 	_st_budget = budget
+	_reseed_stage("terrain")  # P-31 / dogenerate.inc:1538
+	if Data.generator_gate(61):  # dogenerate.inc:1093 legacy start path
+		_reseed_stage("starts_legacy")
 	# donor scales pattern frequency with map size (_misc_GetFreePatternMaskModifier).
 	# The port's pattern radii were tuned at 160 tiles; scale them to this map.
 	var mscale: float = _st_mscale
-	var mg: Dictionary = C3MapGen.build(str(Data.MAP_TYPE), int(Data.RANDOM_SEED),
+	# P-31 / dogenerate.inc:1547: pre-91 builds fall back when the terrain id is
+	# unknown; current generator (91) reads Data.MAP_TYPES directly.
+	var mtype := str(Data.MAP_TYPE)
+	if Data.generator_gate(91) and not Data.MAP_TYPES.has(mtype):
+		mtype = "land"
+	var mg: Dictionary = C3MapGen.build(mtype, int(Data.RANDOM_SEED),
 		MAP_W, MAP_H, TILE, str(Data.QUALITY))
 	height = mg.get("height", PackedFloat32Array())
 	map_meta = {"type": str(Data.MAP_TYPE), "quality": str(Data.QUALITY),
@@ -547,13 +629,19 @@ func _gen_base() -> void:
 	for sv in mg.get("starts", []):
 		starts.append(sv as Vector2)
 	if starts.size() < 2:
-		starts = _start_positions()
+		starts = _start_positions(2)
 	map_starts = starts
+	_reseed_stage("starts")  # P-31 / dogenerate.inc:1616
+	if not Data.generator_gate(78):  # dogenerate.inc:1175 (>77) team-point stream
+		_reseed_stage("starts_team")
 	cluster_zones = []
 	# relief domes = the donor's hills_dark/hills_light/mountains pattern passes.
 	# Donor cHillHeight = 1.317 (half of the 2.964 plateau).
+	# P-19 relief: plains (default) is exactly 1.0x / +0 domes -> legacy stream.
+	var relief_scale: float = float(Data.RELIEF_SCALE.get(str(Data.RELIEF), 1.0))
+	var relief_domes: int = int(Data.RELIEF_DOME_DELTA.get(str(Data.RELIEF), 0))
 	hill_list = []
-	for _hi in int(budget.get("domes", 3)):
+	for _hi in int(budget.get("domes", 3)) + relief_domes:
 		var cx := rng.randf_range(MAP_W * 0.2, MAP_W * 0.8)
 		var cy := rng.randf_range(MAP_H * 0.2, MAP_H * 0.8)
 		var rr := rng.randf_range(7.0, 13.0)
@@ -566,7 +654,7 @@ func _gen_base() -> void:
 				var i := _t(x, y)
 				if height[i] < C3MapGen.WATER_SHORE:
 					continue
-				height[i] += (1.0 - dd) * (1.0 - dd) * (2.964 / 2.25)
+				height[i] += (1.0 - dd) * (1.0 - dd) * (2.964 / 2.25) * relief_scale
 	# base tile roles from the donor height thresholds (guides shore/collision):
 	# h < -0.25 = water plane, -0.25..-0.1 = wet sand collar, above = meadow.
 	# Meadow mottling comes from the donor tile_low/highground bitmaps
@@ -663,6 +751,7 @@ func _gen_base() -> void:
 	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
 
 func _gen_forests() -> void:
+	_reseed_stage("forests")  # P-31: forest stage (donor forest_* pattern pass)
 	# Global forests are now stamped by _gen_patterns() from the donor's real
 	# forest_* pattern masks. Only the two sacred groves per start remain here
 	# (donor SetupStartingResources keeps firewood inside cCircle2/3).
@@ -677,6 +766,7 @@ func _gen_forests() -> void:
 		_scatter_forest(st + Vector2(-8, 5) * TILE * mscale, int(18.0 * mscale), 4.0 * TILE * mscale)
 
 func _gen_resources() -> void:
+	_reseed_stage("mines")  # P-31 / dogenerate.inc:1772 SetupMines
 	# Quarries, mines, hills, forest belts and decor are all stamped from
 	# donor pattern masks in _gen_patterns(). Left here: the donor's own
 	# rectangular seed-wheat strips by each town (SetupStartingResources).
@@ -705,8 +795,45 @@ func _gen_resources() -> void:
 				if in_bounds(p) and not is_blocked(p):
 					_add_res("food", p, 50, 0.6)
 			break
+	_apply_richness_ores(starts)
+
+# P-19 richness: donor Minerals changes how many ore deposits a start ring gets.
+# The amount multiplier is donor-sourced (RC_TERRAIN §2.1 / GUIDE4 L6); the exact
+# +/-1 node-per-start count delta is INFERRED (donor publishes no per-count table).
+func _apply_richness_ores(starts: Array[Vector2]) -> void:
+	var delta: int = int(Data.RICHNESS_ORE_DELTA.get(str(Data.RICHNESS), 0))
+	if delta == 0:
+		return
+	if delta > 0:
+		var kinds := ["gold", "iron", "coal"]
+		for st in starts:
+			for k in delta:
+				var a := TAU * (float(k) + 0.31) / 3.0
+				var p: Vector2 = st + Vector2(cos(a), sin(a)) * (11.0 * TILE)
+				if in_bounds(p) and not is_blocked(p):
+					_add_res(kinds[k % 3], p, 0, 0.0)
+		return
+	# low: retire the nearest ore node to each start (deterministic, no rng draw)
+	for st in starts:
+		for _k in absi(delta):
+			var best := -1
+			var bd := 1.0e9
+			for i in res_nodes.size():
+				var n: Dictionary = res_nodes[i]
+				if int(n.get("max_hits", -1)) != 0 or str(n.type) not in ["gold", "iron", "coal"]:
+					continue
+				var d: float = n.pos.distance_to(st)
+				if d < bd:
+					bd = d
+					best = i
+			if best >= 0:
+				var n2: Dictionary = res_nodes[best]
+				set_blocked_circle(n2.pos, n2.radius, false)
+				by_id.erase(n2.id)
+				res_nodes.remove_at(best)
 
 func _gen_finish() -> void:
+	_reseed_stage("finish")  # P-31 / dogenerate.inc:1927 final stage
 	var starts: Array[Vector2] = []
 	for sv in map_starts:
 		starts.append(sv as Vector2)
@@ -740,9 +867,10 @@ func _gen_finish() -> void:
 	for n in res_nodes:
 		if n.max_hits == 0 and cnt.has(n.type):
 			cnt[n.type] = int(cnt[n.type]) + 1
+	var wealth: float = float(Data.RICHNESS_MULT.get(str(Data.RICHNESS), 1.0))
 	for n in res_nodes:
 		if n.max_hits == 0 and cnt.has(n.type) and int(cnt[n.type]) > 0:
-			n["left"] = float(Data.DEPOSITS.get(n.type, 30000)) / float(cnt[n.type])
+			n["left"] = float(Data.DEPOSITS.get(n.type, 30000)) * wealth / float(cnt[n.type])
 
 func _load_terrain_structs() -> void:
 	if not tbl_names.is_empty():
@@ -1330,20 +1458,287 @@ func _on_building_finished(e: Dictionary) -> void:
 			e["deposit_left"] = deposits.get(e.def.mine, 0)
 	if e.def.has("trains"):
 		e["rally"] = e.pos + Vector2(0, float(e.get("block_r", e.def.radius)) + 2.0)
+	if e.sid == "mil":
+		_sow_field_ring(e)  # P-50: donor cSeedWheat on a finished mill
 	bld_dirty += 1
 
-func _start_positions() -> Array[Vector2]:
-	# the two corners of the map where the players start
-	return [Vector2(MAP_W * 0.125, MAP_H * 0.125) * TILE,
-		Vector2(MAP_W * 0.875, MAP_H * 0.875) * TILE]
+# P-50: donor _unit_DoSeedWheat (unit.script:6470-6570). cRow=7 -> 7x7 grid
+# rotated 45 degrees (up to 49 tiles), size 1.6981 donor units; collision,
+# water and nearby resource skips (unit.script:6504-6548). Each field costs
+# 5 gold (unit.script:1691-1694) - paid per field here, no lump-sum inference.
+const SOW_ROW := 7
+const SOW_GOLD := 5
+
+func _sow_field_ring(mill: Dictionary) -> int:
+	if mill.is_empty() or str(mill.sid) != "mil" or not bool(mill.get("finished", false)):
+		return 0
+	var player: int = int(mill.player)
+	var made := 0
+	var step := 1.6981 * TILE * 0.5
+	for r in SOW_ROW:
+		for c in SOW_ROW:
+			var rr := r - SOW_ROW / 2
+			var cc := c - SOW_ROW / 2
+			var p: Vector2 = Vector2(mill.pos) + Vector2(float(cc - rr), float(cc + rr)) * step
+			if not in_bounds(p) or is_blocked(p):
+				continue
+			var ti := _t(int(p.x / TILE), int(p.y / TILE))
+			var tt: int = terrain[ti]
+			if tt == 3 or tt == 4 or tt == 5:
+				continue
+			var clash := false
+			for n in res_nodes:
+				if n.type == "food" or n.type == "wood" or n.type == "stone":
+					if n.pos.distance_to(p) < 1.5 * TILE:
+						clash = true
+						break
+			if clash:
+				continue
+			if players[player].res[3] < float(SOW_GOLD):
+				break
+			pay_cost(player, {"gold": SOW_GOLD})
+			_add_res("food", p, 50, 0.6)
+			var f: Dictionary = res_nodes[res_nodes.size() - 1]
+			f["mill"] = mill.id
+			made += 1
+	return made
+
+# P-51: donor "Grain Crops" production order (doprogressorders.inc:120-136).
+# Restore this mill's depleted fields first (reusing the shared field path),
+# then sow fresh ring tiles only if there is still room.
+func cmd_sow(mill: Dictionary) -> int:
+	var n := 0
+	for node in res_nodes:
+		if node.has("mill") and int(node.mill) == int(mill.id) and int(node.hits) <= 0:
+			_restore_field(node)
+			n += 1
+	if n > 0:
+		return n
+	return _sow_field_ring(mill)
+
+# Shared restore used by the manual peasant resow tick and the ~60 s field
+# growth timer, so there is only one field-restoration code path.
+func _restore_field(node: Dictionary) -> void:
+	node.hits = int(node.max_hits)
+	res_dirty += 1
+	post_event("construct", node.pos, "field")
+
+# Donor progresseconomicai.inc:3688-3700,3896 + dmscript.global:1487
+# (gc_global_TimeSeedWheat = 0.03*2000, ~60 s). Only AI mills re-seed: the
+# human adviser path is deferred by the skirmish-only charter. Field regrowth
+# maps donor HP -> port hits (nothing.inc:78-84, derived).
+func _tick_field_growth() -> void:
+	for pi in players.size():
+		if not bool(players[pi].get("is_ai", false)):
+			continue
+		for b in buildings_of(pi, false):
+			if b.sid == "mil" and b.finished:
+				_sow_field_ring(b)
+	for n in res_nodes:
+		if n.type == "food" and n.has("mill") and int(n.hits) <= 0 and int(n.max_hits) > 0:
+			_restore_field(n)
+
+func _start_positions(count := 0) -> Array[Vector2]:
+	# Donor dogenerate.inc keeps arrStartPos[0..7] regardless of player count.
+	# Well-separated perimeter anchors so a 3rd/4th participant gets a real
+	# start instead of an arbitrary fallback (P-43). count=0 returns all 8.
+	var w := float(MAP_W) * TILE
+	var h := float(MAP_H) * TILE
+	var slots: Array[Vector2] = [Vector2(w * 0.125, h * 0.125), Vector2(w * 0.875, h * 0.875),
+		Vector2(w * 0.5, h * 0.10), Vector2(w * 0.5, h * 0.90),
+		Vector2(w * 0.10, h * 0.5), Vector2(w * 0.90, h * 0.5),
+		Vector2(w * 0.27, h * 0.27), Vector2(w * 0.73, h * 0.73)]
+	if count > 0:
+		return slots.slice(0, mini(count, slots.size()))
+	return slots
+
+# Append extra donor-style starts AFTER generation so the default 2-player
+# map stays byte-identical (no extra RNG draws, no extra grove/resource paint).
+# Only the count exposed to sim consumers changes.
+func _ensure_start_slots() -> void:
+	var need: int = clampi(maxi(4, int(Data.PLAYER_COUNT)), 2, 8)
+	if map_starts.size() >= need:
+		return
+	for sv in _start_positions(need):
+		if map_starts.size() >= need:
+			break
+		var too_close := false
+		for st in map_starts:
+			if st.distance_to(sv) < 18.0 * TILE:
+				too_close = true
+				break
+		if not too_close:
+			map_starts.append(sv)
+			_provision_extra_start(sv)
+
+# Donor SetupStartingResources provisions every arrStartPos slot, used or not.
+# Give an appended slot a compact deterministic package so a 3rd/4th player and
+# the QA reach check both see food / stone / all three ores / wood nearby.
+# scan_map.py quarry_purity: stone must be >8 m from any live wood.
+# scan_map.py mine_clearance: ore must be >=10 m from any live wood.
+# This pass runs AFTER all generation on a deterministic spiral (no global
+# rng draw), so default-seed maps keep their original RNG stream.
+func _provision_spot_clear(p: Vector2, t: String) -> bool:
+	for n in res_nodes:
+		var nt := str(n.type)
+		if nt != "wood" and nt != "stone" and nt != "gold" and nt != "iron" and nt != "coal":
+			continue
+		var d: float = n.pos.distance_to(p)
+		if t == "wood":
+			if nt == "stone" and int(n.hits) > 0 and d <= 8.5:
+				return false
+			if (nt == "gold" or nt == "iron" or nt == "coal") and d <= 10.5:
+				return false
+		elif t == "stone":
+			if nt == "wood" and int(n.hits) > 0 and d <= 8.5:
+				return false
+		elif t == "gold" or t == "iron" or t == "coal":
+			if nt == "wood" and int(n.hits) > 0 and d <= 10.5:
+				return false
+	return true
+
+# Constraint-aware provisioning for appended starts (post-generation, no rng).
+func _provision_extra_start(sv: Vector2) -> void:
+	var types: Array[String] = ["wood", "food", "stone", "gold", "iron", "coal"]
+	var rings := [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0]
+	for i in types.size():
+		var t := types[i]
+		var placed := false
+		for ring in rings:
+			for k in 12:
+				var a := TAU * float(k) / 12.0 + float(i) * 0.41
+				var p: Vector2 = sv + Vector2(cos(a), sin(a)) * (float(ring) * TILE)
+				if not in_bounds(p):
+					continue
+				var ti := _t(int(p.x / TILE), int(p.y / TILE))
+				if terrain[ti] == 3 or terrain[ti] == 4 or terrain[ti] == 5:
+					continue
+				if not _provision_spot_clear(p, t):
+					continue
+				var hits: int = 60 if t == "wood" else (0 if t in ["gold", "iron", "coal"] else 50)
+				_add_res(t, p, hits, 0.0)
+				var node: Dictionary = res_nodes[res_nodes.size() - 1]
+				node["provisioned"] = true
+				placed = true
+				break
+			if placed:
+				break
+
+# Same BFS as scan_map.reachability (radius 25 tiles at 160 -> 50 at 320).
+func _start_reach_set(sv: Vector2, rad: int) -> Dictionary:
+	var stx: int = int(sv.x / TILE)
+	var sty: int = int(sv.y / TILE)
+	if stx < 0 or sty < 0 or stx >= MAP_W or sty >= MAP_H or blocked[_t(stx, sty)] != 0:
+		var found := false
+		for r in range(1, 8):
+			for dy in range(-r, r + 1):
+				for dx in range(-r, r + 1):
+					var nx: int = stx + dx
+					var ny: int = sty + dy
+					if nx < 0 or ny < 0 or nx >= MAP_W or ny >= MAP_H:
+						continue
+					if blocked[_t(nx, ny)] == 0:
+						stx = nx
+						sty = ny
+						found = true
+						break
+				if found:
+					break
+			if found:
+				break
+		if not found:
+			return {}
+	var seen := {}
+	seen[_t(stx, sty)] = true
+	var q: Array = [[stx, sty, 0]]
+	var head := 0
+	var dirs := [[1, 0], [-1, 0], [0, 1], [0, -1]]
+	while head < q.size():
+		var cur: Array = q[head]
+		head += 1
+		var x: int = int(cur[0])
+		var y: int = int(cur[1])
+		var dd: int = int(cur[2])
+		if dd >= rad:
+			continue
+		for d2 in dirs:
+			var nx: int = x + int(d2[0])
+			var ny: int = y + int(d2[1])
+			if nx < 0 or ny < 0 or nx >= MAP_W or ny >= MAP_H:
+				continue
+			var ni := _t(nx, ny)
+			if seen.has(ni) or blocked[ni] != 0:
+				continue
+			seen[ni] = true
+			q.append([nx, ny, dd + 1])
+	return seen
+
+func _reach_has_kind(reach: Dictionary, grp: Array) -> bool:
+	for n in res_nodes:
+		if not (str(n.type) in grp):
+			continue
+		var tx: int = int(n.pos.x / TILE)
+		var ty: int = int(n.pos.y / TILE)
+		for dy in range(-2, 3):
+			for dx in range(-2, 3):
+				var nx: int = tx + dx
+				var ny: int = ty + dy
+				if nx < 0 or ny < 0 or nx >= MAP_W or ny >= MAP_H:
+					continue
+				if reach.has(_t(nx, ny)):
+					return true
+	return false
+
+# Post-generation reach repair. Add only kinds that the scan's BFS truly
+# cannot reach from a start, on a deterministic spiral landing on a reachable
+# land tile, clear of quarry-purity / mine-clearance rules. radius 0 adds no
+# blocked circle and no global rng draw, so default seeds stay byte-identical.
+func _repair_start_reach() -> void:
+	var groups: Array = [["food"], ["stone"], ["wood"], ["gold", "iron", "coal"]]
+	var rings := [3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 16.0]
+	var rad: int = maxi(1, int(round(25.0 * float(MAP_W) / 160.0)))
+	for si in map_starts.size():
+		# Only the AI opponent's home slot is repaired: player 0's start is the
+		# gameplay/selftest reference and the appended slots were just provisioned.
+		if si != 1:
+			continue
+		var sv: Vector2 = map_starts[si]
+		var reach := _start_reach_set(sv, rad)
+		if reach.is_empty():
+			continue
+		for gi in groups.size():
+			var grp: Array = groups[gi]
+			if _reach_has_kind(reach, grp):
+				continue
+			var rep: String = str(grp[0])
+			var placed := false
+			for ring in rings:
+				for k in 12:
+					var a := TAU * float(k) / 12.0 + float(gi) * 0.31
+					var p: Vector2 = sv + Vector2(cos(a), sin(a)) * (float(ring) * TILE)
+					if not in_bounds(p):
+						continue
+					var ti := _t(int(p.x / TILE), int(p.y / TILE))
+					if terrain[ti] == 3 or terrain[ti] == 4 or terrain[ti] == 5:
+						continue
+					if not reach.has(ti) or not _provision_spot_clear(p, rep):
+						continue
+					var hits: int = 60 if rep == "wood" else (0 if rep in ["gold", "iron", "coal"] else 50)
+					_add_res(rep, p, hits, 0.0)
+					var node: Dictionary = res_nodes[res_nodes.size() - 1]
+					node["provisioned"] = true
+					placed = true
+					break
+				if placed:
+					break
 
 func _spawn_starts() -> void:
 	# The donor reads startx/starty from the chosen mask's white markers;
 	# spawning at fixed corners would leave the player far from its guaranteed
 	# grove/fields/deposits (the exact "something is wrong" symptom).
-	var starts: Array[Vector2] = map_starts if map_starts.size() >= 2 else _start_positions()
+	var starts: Array[Vector2] = map_starts if map_starts.size() >= players.size() else _start_positions()
 	var opt: Dictionary = Data.START_OPTIONS.get(Data.START_OPTION, {"army_mult": 0.0, "food": 0, "towers": 0, "cannons": 0})
-	for i in 2:
+	for i in players.size():
 		var c := starts[i]
 		var cen := spawn("cen", i, c)
 		var cr: float = float(cen.get("block_r", cen.def.radius))
@@ -1463,7 +1858,10 @@ func nearest_res(pos: Vector2, type: String, max_r := 40.0, exclude_blocked := t
 func nearest_mine(pos: Vector2, res: String, player := -1) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := 1e9
-	for b in buildings_of(0, false) + buildings_of(1, false):
+	var all_blds: Array = []
+	for pi in players.size():
+		all_blds.append_array(buildings_of(pi, false))
+	for b in all_blds:
 		if player >= 0 and b.player != player:
 			continue
 		if b.sid == "mine_" + res and not b.dead:
@@ -1505,11 +1903,22 @@ func _mine_debug(res: String) -> String:
 		out.append("%s/%s fin=%s dep=%s dead=%s" % [b.sid, b.player, b.finished, b.get("deposit_left", -1), b.dead])
 	return "[" + ", ".join(out) + "]"
 
+# Single team predicate shared by every target-selection path. Players with a
+# `team` field are allies iff the ids match; no team field = free-for-all.
+func _is_ally(a: int, b: int) -> bool:
+	if a < 0 or b < 0 or a >= players.size() or b >= players.size() or a == b:
+		return false
+	if not players[a].has("team") or not players[b].has("team"):
+		return false
+	return int(players[a].team) == int(players[b].team)
+
 func enemies_in_radius(pos: Vector2, player: int, r: float, military_only := true) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := r
 	for e in grid_query(pos, r):
 		if e.dead or e.player == player:
+			continue
+		if _is_ally(player, int(e.player)):
 			continue
 		if military_only and (e.kind == "building" or e.sid == "peasant"):
 			continue
@@ -1545,6 +1954,8 @@ func enemies_preferred(pos: Vector2, player: int, r: float, a: Dictionary) -> Di
 	for e in grid_query(pos, r):
 		if e.dead or e.player == player or e.kind == "building" or e.sid == "peasant":
 			continue
+		if _is_ally(player, int(e.player)):
+			continue
 		var d: float = e.pos.distance_to(pos)
 		if d > r:
 			continue
@@ -1573,6 +1984,12 @@ func post_event(type: String, pos: Vector2, kind := "", extra := "") -> void:
 func say(text: String) -> void:
 	message.emit(text)
 
+# P-44: AI failure paths would otherwise spam the human's chat every tick.
+# Only player 0 (or a human slot) speaks these command-level warnings.
+func _say_human(player: int, text: String) -> void:
+	if player == 0 or (player >= 0 and player < players.size() and not bool(players[player].get("is_ai", false))):
+		say(text)
+
 var reveal_requests: Array = []
 func game_reveal(pos: Vector2, r: float) -> void:
 	reveal_requests.append({"pos": pos, "r": r})
@@ -1590,6 +2007,9 @@ func cmd_move(e: Dictionary, pos: Vector2) -> void:
 
 func cmd_attack(e: Dictionary, target: Dictionary) -> void:
 	if e.kind != "unit" or e.dead or target.dead:
+		return
+	# An explicit order against an ally is refused (team diplomacy, P-19).
+	if _is_ally(int(e.player), int(target.get("player", -1))):
 		return
 	_leave_building(e)
 	e.order = {"type": "attack", "target": target.id}
@@ -1665,6 +2085,16 @@ func cmd_guard(e: Dictionary, target: Dictionary) -> void:
 	e.order = {"type": "guard", "target": target.id}
 	e.moving = true
 
+# PORT-CONTROL hand-off / donor hotkeys.cfg G=guard/cancelguard. A second G
+# drops a live guard order (and any pending guard-resume after an attack).
+func cmd_cancel_guard(e: Dictionary) -> void:
+	if e.kind != "unit" or e.dead:
+		return
+	var o: Dictionary = e.get("order", {})
+	if str(o.get("type", "")) != "guard" and not o.has("resume_guard"):
+		return
+	cmd_stop(e)
+
 func cmd_patrol(e: Dictionary, a: Vector2, b: Vector2) -> void:
 	if e.kind != "unit" or e.dead:
 		return
@@ -1737,6 +2167,47 @@ func _squad_label(s: Dictionary) -> int:
 			label = z
 	return label
 
+# Donor formations.cfg per-id tuple [bonusdamage, bonusshield,
+# bonusdamagehold, bonusshieldhold]; ids are <family><label>, e.g. LINE15.
+# Imported verbatim in Data.FORMATION_BONUSES (149 records).
+func _donor_formation_bonus(s: Dictionary) -> Array:
+	var label := _squad_label(s)
+	if label == 0:
+		return [0, 0, 0, 0]
+	var form := str(s.get("formation", "line"))
+	var prefix := "LINE"
+	if form == "square":
+		prefix = "SQUARE"
+	elif form == "column":
+		prefix = "KARE"
+	var b: Array = Data.formation_bonuses(prefix + str(label)).duplicate()
+	# RB G-13: veteran bonus on TOP of the donor tuple; capped in Data.
+	var vet: int = _squad_veteran_bonus(s)
+	if vet > 0:
+		for i in b.size():
+			b[i] = int(b[i]) + vet
+	return b
+
+# RB G-13: bounded veteran points. Persists on the squad dict (formation
+# changes and save/load keep it) and never exceeds Data.SQUAD_XP_CAP.
+func _squad_veteran_bonus(s: Dictionary) -> int:
+	if s.is_empty():
+		return 0
+	var per: float = maxf(1.0, float(Data.SQUAD_XP_PER_BONUS))
+	var raw: int = int(floorf(float(s.get("xp", 0.0)) / per))
+	return clampi(raw, 0, maxi(0, int(Data.SQUAD_XP_CAP)))
+
+# RB G-13: a kill hardens the surviving killer squad. Also covers projectile
+# hits: the projectile's `owner` is the original unit dict with its squad id.
+func _award_squad_xp(e: Dictionary) -> void:
+	if str(e.get("kind", "")) != "unit":
+		return
+	var s := squad_of_unit(int(e.id))
+	if s.is_empty() or int(s.get("officer", 0)) == 0:
+		return
+	var cap_xp: float = float(maxi(0, int(Data.SQUAD_XP_CAP))) * maxf(1.0, float(Data.SQUAD_XP_PER_BONUS))
+	s["xp"] = minf(float(s.get("xp", 0.0)) + maxf(0.0, float(Data.SQUAD_XP_PER_KILL)), cap_xp)
+
 func _formation_atk(e: Dictionary, kind: String) -> int:
 	var s := squad_of_unit(int(e.id))
 	if _squad_label(s) == 0:
@@ -1745,14 +2216,15 @@ func _formation_atk(e: Dictionary, kind: String) -> int:
 	var cav := _squad_cavalry(s)
 	if not cav and int(s.get("drummer", 0)) == 0:
 		return 0
-	# wiki: heavy cavalry formations give +1 attack and defense
+	# Cavalry size labels (40/90/160) have no donor formations.cfg id, so the
+	# earlier estimated cavalry values are kept (UNVERIFIED), not invented.
 	if cav:
 		if bool(e.get("hold", false)):
 			return 5 if melee else 2
 		return 1
-	if bool(e.get("hold", false)):
-		return 9 if melee else 2
-	return 2
+	# Infantry uses the donor tuple: normal bonusdamage / hold bonusdamagehold.
+	var b: Array = _donor_formation_bonus(s)
+	return int(b[2]) if bool(e.get("hold", false)) else int(b[0])
 
 func _formation_def(t: Dictionary) -> int:
 	var s := squad_of_unit(int(t.id))
@@ -1761,9 +2233,11 @@ func _formation_def(t: Dictionary) -> int:
 	var cav := _squad_cavalry(s)
 	if not cav and int(s.get("drummer", 0)) == 0:
 		return 0
-	if bool(t.get("hold", false)):
-		return 4 if cav else 9
-	return 1 if cav else 3
+	if cav:
+		return 4 if bool(t.get("hold", false)) else 1
+	# Donor bonusshield / bonusshieldhold (formations.cfg).
+	var b: Array = _donor_formation_bonus(s)
+	return int(b[3]) if bool(t.get("hold", false)) else int(b[1])
 
 func _pick_weapon(e: Dictionary, d: float) -> Dictionary:
 	# 18th-century bayonet: muskets and grenades fight back up close
@@ -1823,7 +2297,7 @@ func cmd_form_size(off: Dictionary, size: int) -> void:
 		if u.pos.distance_to(off.pos) <= 12.0:
 			loose.append(u)
 	if loose.is_empty():
-		say("No loose troops near the officer.")
+		_say_human(off.player, "No loose troops near the officer.")
 		return
 	loose.sort_custom(func(x, y): return x.pos.distance_to(off.pos) < y.pos.distance_to(off.pos))
 	var want: String = str(loose[0].sid)
@@ -1885,7 +2359,7 @@ func squad_form(members: Array) -> Dictionary:
 	var sid := next_squad
 	next_squad += 1
 	var s := {"squad_id": sid, "officer": off, "drummer": dru, "members": ids,
-		"formation": "line", "player": pl}
+		"formation": "line", "player": pl, "xp": 0.0}  # RB G-13 veteran XP
 	s["target"] = maxi(_squad_label(s), ids.size())
 	if not ids.is_empty():
 		var first: Dictionary = by_id.get(ids[0], {})
@@ -2050,7 +2524,7 @@ func research(player: int, building: Dictionary, uid: String) -> bool:
 	if per_bld and building.get("done_ups", []).has(uid):
 		return false
 	if not pay_cost(player, u.cost):
-		say("Not enough resources for %s." % u.name)
+		_say_human(player, "Not enough resources for %s." % u.name)
 		return false
 	building["research"] = {"uid": uid, "t": float(u.time)}
 	post_event("research", building.pos, uid)
@@ -2151,7 +2625,7 @@ func apply_upgrade(player: int, uid: String) -> void:
 			if not ha.dead and ha.player == player and ha.def.get("artillery", false):
 				ha.hp = int(ha.max_hp)
 	post_event("upgraded", Vector2.ZERO, uid)
-	say("%s researched %s." % [p.name, u.name])
+	_say_human(player, "%s researched %s." % [p.name, u.name])
 
 func apply_upgrade_to_building(b: Dictionary, uid: String) -> void:
 	var eff: Dictionary = Data.UPGRADES[uid].get("effect", {})
@@ -2172,7 +2646,7 @@ func trade(player: int, give: String, want: String, amount := 100.0) -> bool:
 		if b.sid == "mar" and b.finished:
 			has_market = true
 	if not has_market:
-		say("Build a market to trade.")
+		_say_human(player, "Build a market to trade.")
 		return false
 	var gi: int = Data.RES_NAMES.find(give)
 	var wi: int = Data.RES_NAMES.find(want)
@@ -2180,7 +2654,7 @@ func trade(player: int, give: String, want: String, amount := 100.0) -> bool:
 		return false
 	var p: Dictionary = players[player]
 	if float(p.res[gi]) < amount:
-		say("Not enough %s to trade." % give)
+		_say_human(player, "Not enough %s to trade." % give)
 		return false
 	var rate: float = float(p.get("market_rate", Data.MARKET_RATE))
 	var got := amount * rate
@@ -2190,6 +2664,19 @@ func trade(player: int, give: String, want: String, amount := 100.0) -> bool:
 	stats.gathered["trade"] = int(stats.gathered.get("trade", 0)) + int(got)
 	post_event("trade", Vector2.ZERO, give + ">" + want)
 	return true
+
+# PORT-CONTROL hand-off: trade() pushes the rate down to a 0.35 floor; this
+# slowly recovers it toward Data.MARKET_RATE. Cadence is INFERRED (no donor
+# number), exposed as Data.MARKET_RECOVERY_PER_S for tuning.
+func tick_market(dt: float) -> void:
+	var target: float = float(Data.MARKET_RATE)
+	var step: float = maxf(0.0, float(Data.MARKET_RECOVERY_PER_S)) * maxf(0.0, dt)
+	if step <= 0.0:
+		return
+	for p in players:
+		var cur: float = float(p.get("market_rate", target))
+		if cur < target:
+			p.market_rate = minf(target, maxf(0.35, cur + step))
 
 # Officer aura: nearby officer raises damage, drummer raises speed/morale.
 func officer_near(pos: Vector2, player: int) -> bool:
@@ -2318,7 +2805,7 @@ func place_building(player: int, sid: String, pos: Vector2, send := true, builde
 	for k in def.cost:
 		esc_cost[k] = int(round(float(def.cost[k]) * mult))
 	if not pay_cost(player, esc_cost):
-		say("Not enough resources.")
+		_say_human(player, "Not enough resources.")
 		return {}
 	var b := spawn(sid, player, pos, false)
 	b.hp = maxi(1, int(def.hp * 0.25))
@@ -2340,11 +2827,32 @@ func place_building(player: int, sid: String, pos: Vector2, send := true, builde
 		sent += 1
 	return b
 
+# P-10: a ship appears in water next to its dock, never on the dock's land tile.
+# Deterministic ring scan, no rng draw (default seeds stay byte-identical).
+func _naval_spawn_pos(b: Dictionary) -> Vector2:
+	for ring in range(1, 9):
+		for k in 16:
+			var a := TAU * float(k) / 16.0
+			var p: Vector2 = b.pos + Vector2(cos(a), sin(a)) * (float(ring) * TILE)
+			if _is_water(p):
+				return p
+	return Vector2(-1.0, -1.0)
+
 func train_unit(player: int, building: Dictionary, sid: String) -> bool:
 	if not building.finished:
 		return false
-	var nat := str(Data.PLAYER_NATIONS[player]) if player >= 0 and player < Data.PLAYER_NATIONS.size() else ""
+	var nat := str(players[player].get("nation", "")) if player >= 0 and player < players.size() else ""
+	if nat == "" and player >= 0 and player < Data.PLAYER_NATIONS.size():
+		nat = str(Data.PLAYER_NATIONS[player])
 	var rsid := Data.resolve_sid(nat, sid)
+	# G-07: a captured foreign town hall adds that nation's roster. Prefer the
+	# most recently captured nation that actually maps this generic sid.
+	var captured: Array = players[player].get("captured_nations", [])
+	for i in range(captured.size() - 1, -1, -1):
+		var alt := Data.resolve_sid(str(captured[i]), sid)
+		if alt != sid and Data.UNITS.has(alt):
+			rsid = alt
+			break
 	if not building.def.get("trains", []).has(sid) and not building.def.get("trains", []).has(rsid):
 		return false
 	# officers and drummers need a finished academy (wiki: formation gate)
@@ -2361,11 +2869,11 @@ func train_unit(player: int, building: Dictionary, sid: String) -> bool:
 	if building.queue.size() >= Data.BUILD_QUEUE_LIMIT:
 		return false
 	if unit_count(player) + queue_count(player) >= players[player].farm_cap:
-		say("Need more houses â€” unit limit reached.")
+		_say_human(player, "Need more houses â€” unit limit reached.")
 		return false
 	var cost: Dictionary = Data.UNITS[rsid].price
 	if not pay_cost(player, cost):
-		say("Not enough resources for %s." % rsid)
+		_say_human(player, "Not enough resources for %s." % rsid)
 		return false
 	building.queue.append({"sid": rsid, "t": Data.UNITS[rsid].build_time})
 	return true
@@ -2393,13 +2901,20 @@ func tick(dt: float) -> void:
 	ai_cheat_t += dt
 	if ai_cheat_t >= 1.0 and Data.AI_DIFFICULTY == "hard":
 		ai_cheat_t = 0.0
-		players[1].res[0] += 1.5
-		players[1].res[1] += 1.5
-		players[1].res[2] += 1.5
-		players[1].res[3] += 0.8
-		players[1].res[4] += 0.8
-		players[1].res[5] += 0.8
+		for p in players:
+			if not bool(p.get("is_ai", false)):
+				continue
+			p.res[0] += 1.5
+			p.res[1] += 1.5
+			p.res[2] += 1.5
+			p.res[3] += 0.8
+			p.res[4] += 0.8
+			p.res[5] += 0.8
 	_grid_rebuild()
+	sow_t += dt
+	if sow_t >= 60.0:
+		sow_t = 0.0
+		_tick_field_growth()
 	compact_t += dt
 	if compact_t >= 5.0:
 		compact_t = 0.0
@@ -2435,6 +2950,7 @@ func tick(dt: float) -> void:
 	_separate_units()
 	_tick_cleanup(dt)
 	_tick_upkeep(dt)
+	tick_market(dt)  # PORT-CONTROL hand-off: recover post-trade market rate
 	_check_victory()
 
 # Like the original, units never stand inside each other: every tick each
@@ -2521,7 +3037,7 @@ func _tick_upkeep(dt: float) -> void:
 	# of food (or gold) per second. Video pass: prolonged famine first shows
 	# the warning, then the original starves the army - slow HP drain after a
 	# grace period so a test never dies instantly (estimated).
-	for pi in 2:
+	for pi in players.size():
 		var p: Dictionary = players[pi]
 		p["famine_msg_t"] = maxf(0.0, float(p.get("famine_msg_t", 0.0)) - dt)
 		var eat := {"food": 0.0, "gold": 0.0, "stone": 0.0}
@@ -2696,7 +3212,9 @@ func _nav_line_clear(e: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var prev: Vector2 = a
 	for i in range(1, steps):
 		var p: Vector2 = a.lerp(b, float(i) / float(steps))
-		if _blocked_for(e, p) or slope_to(prev, p) > 0.55:
+		if _blocked_for(e, p):
+			return false
+		if not _is_naval(e) and slope_to(prev, p) > 0.55:
 			return false
 		prev = p
 	return true
@@ -2717,6 +3235,17 @@ func _nav_smooth(e: Dictionary, pts: Array) -> Array:
 	return out
 
 func _nav_repath(e: Dictionary, target: Vector2) -> void:
+	# P-10: nav.gd A* uses the land `blocked` grid, where water is BLK_WATER.
+	# A ship therefore follows clear water lines only (the 13-probe steering in
+	# _step_move handles the final approach); no nav.gd changes are needed.
+	if _is_naval(e):
+		var ok: bool = _nav_line_clear(e, e.pos, target) and not _blocked_for(e, target)
+		e["nav_path"] = [target] if ok else []
+		e["nav_i"] = 0
+		e["nav_goal"] = target
+		e["nav_ver"] = nav_version
+		e["nav_cd"] = 0.6
+		return
 	# Most orders need no detour at all - skip A* when the straight line is
 	# already walkable.  This keeps ordinary moves as cheap as before.
 	if _nav_line_clear(e, e.pos, target) and not _blocked_for(e, target):
@@ -2797,10 +3326,10 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 		var np: Vector2 = e.pos + d2 * step
 		if not _blocked_for(e, np) and not _blocked_for(e, np + d2 * 0.45):
 			var sl := slope_to(e.pos, np)
-			if sl > 0.55:
+			if not _is_naval(e) and sl > 0.55:
 				continue
 			var esp := speed
-			if height_at(np) > height_at(e.pos) + 0.05 and sl > 0.25:
+			if not _is_naval(e) and height_at(np) > height_at(e.pos) + 0.05 and sl > 0.25:
 				esp *= 0.6
 				if esp * dt < step:
 					np = e.pos + d2 * esp * dt
@@ -3003,9 +3532,7 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 					if not pay_cost(e.player, {"food": 20}):
 						e.order = {"type": "none"}
 						return
-					fn.hits = int(fn.max_hits)
-					res_dirty += 1
-					post_event("construct", fn.pos, "field")
+					_restore_field(fn)
 					e.order = {"type": "gather", "node": fn.id, "res": "food"}
 		"repair":
 			var rb: Dictionary = by_id.get(o.get("target", 0), {})
@@ -3309,6 +3836,7 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 	stats.hits += 1
 	if killer_pair(e, t):
 		stats.kills += 1
+		_award_squad_xp(e)  # RB G-13: surviving squad gains veteran XP
 		_morale_shock(t.pos, t.player)
 	# splash hurts everyone (video: friendly fire is real), half to the rim
 	if float(w.get("splash", 0.0)) > 0.0:
@@ -3413,9 +3941,12 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 				e.inside_of = mine.id
 		return
 	# field resource (food/wood/stone)
-	# a loaded peasant walks the load to the storehouse first, then goes back
+	# Carry a FULL load before walking to the store. Delivering after every
+	# single hit paid only GATHER.carry/GATHER.hits (~2 food), which upkeep
+	# consumed immediately - food never reached the player (t_mill_logic).
 	var node: Dictionary = by_id.get(o.get("node", 0), {})
-	if e.carry > 0:
+	var full_load: int = int(Data.GATHER.get(res, {}).get("hits", 1))
+	if e.carry >= full_load or (e.carry > 0 and not node.is_empty() and int(node.get("hits", 0)) <= 0):
 		_gather_deliver(e, dt)
 		return
 	var avoid_n := _bad_id(e, "bad_node", "bad_t")
@@ -3430,20 +3961,23 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 	# radius, otherwise the unit ends up in a dead zone and never works.
 	# each peasant works from its own slot around the tree/rock so workers
 	# fan out instead of overlapping on the same point.
-	var slot := _work_slot(e, node.pos, node.radius + 1.1)
-	if res == "food":
+	# G-13: donor dmscript.global:222-225 caps simultaneous gatherers per node
+	# (food 3 / wood 2 / stone 3). The old code capped only food, at 2.
+	var max_workers: int = int(Data.RESOURCE_WORKERS.get(res, 3))
+	if max_workers > 0:
 		var on_node := 0
 		for u in grid_query(node.pos, node.radius + 2.0):
 			if not u.dead and u.id != e.id and u.order.type == "gather" and u.order.get("node", 0) == node.id and u.pos.distance_to(node.pos) < node.radius + 2.0:
 				on_node += 1
-		if on_node >= 2:
-			var altf := nearest_res(e.pos, "food", 45.0, true)
-			if not altf.is_empty() and altf.id != node.id:
-				o.node = altf.id
-				node = altf
+		if on_node >= max_workers:
+			var alt := nearest_res(e.pos, res, 45.0, true)
+			if not alt.is_empty() and alt.id != node.id:
+				o.node = alt.id
+				node = alt
 			else:
 				e.order = {"type": "none"}
 				return
+	var slot := _work_slot(e, node.pos, node.radius + 1.1)
 	var reach: float = 1.4
 	if e.pos.distance_to(slot) > reach:
 		e.moving = true
@@ -3549,7 +4083,15 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 			e.queue.pop_front()
 			var brexit: float = float(e.get("block_r", e.def.radius))
 			var exit: Vector2 = e.get("rally", e.pos + Vector2(0, e.def.radius + 2.0))
-			var u := spawn(job.sid, e.player, e.pos + (exit - e.pos).normalized() * (brexit + 0.5))
+			var naval: bool = bool(Data.UNITS.get(job.sid, {}).get("naval", false))
+			if naval:
+				var wp := _naval_spawn_pos(e)
+				if wp.x >= 0.0:
+					exit = wp
+			var sp: Vector2 = e.pos + (exit - e.pos).normalized() * (brexit + 0.5)
+			if naval and exit.distance_to(e.pos) > brexit:
+				sp = exit  # water tile: never spawn a hull on the dock's land
+			var u := spawn(job.sid, e.player, sp)
 			cmd_move(u, exit + (exit - e.pos).normalized() * 1.5)
 			post_event("trained", e.pos, job.sid, job.sid)
 	# research queue (one upgrade at a time per blacksmith/academy)
@@ -3617,6 +4159,16 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 					sols += 1
 				capturer = u.player
 		if capturer >= 0:
+			# G-09: a live guard order on this building blocks capture until the
+			# defender is gone (RB_MECHANICS S5). The defender need not shoot.
+			for u in live_units:
+				if u.dead or int(u.player) == capturer:
+					continue
+				var go: Dictionary = u.get("order", {})
+				if str(go.get("type", "")) == "guard" and int(go.get("target", 0)) == int(e.id):
+					capturer = -1
+					break
+		if capturer >= 0:
 			var speed_c: float = float(peas) * 1.0 + float(sols) * 0.25
 			if int(e.get("garrison", 0)) > 0:
 				speed_c *= 0.5
@@ -3630,6 +4182,15 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				var old: int = e.player
 				e.capture_t = 0.0
 				e.player = capturer
+				# G-07: capturing a foreign town hall unlocks that nation's
+				# unit variants for the capturer (RB_MECHANICS S5).
+				if e.sid == "cen":
+					var old_nation: String = str(players[old].get("nation", ""))
+					if old_nation != "" and old_nation != str(players[capturer].get("nation", "")):
+						var cn: Array = players[capturer].get("captured_nations", [])
+						if not cn.has(old_nation):
+							cn.append(old_nation)
+						players[capturer]["captured_nations"] = cn
 				players[old].entities.erase(e.id)
 				players[capturer].entities.append(e.id)
 				players[capturer].score += e.def.get("score", 0)
@@ -3644,22 +4205,54 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 		else:
 			e.capture_t = maxf(0.0, e.capture_t - dt)
 
+func _winner_of_loser(loser: int) -> int:
+	# Team game: a surviving member of the opposing team (allies never win).
+	# Free-for-all: any surviving player - the 2-player case reduces to 1 - pi.
+	var lt: int = int(players[loser].get("team", -1))
+	var alive: Array[int] = []
+	for pi in players.size():
+		if pi == loser:
+			continue
+		if buildings_of(pi).is_empty() and units_of(pi).is_empty():
+			continue
+		if lt >= 0 and int(players[pi].get("team", -1)) == lt:
+			continue
+		alive.append(pi)
+	return alive[0] if not alive.is_empty() else -1
+
+func _team_alive(team: int) -> bool:
+	for pi in players.size():
+		if int(players[pi].get("team", -1)) != team:
+			continue
+		if not buildings_of(pi).is_empty() or not units_of(pi).is_empty():
+			return true
+	return false
+
 func _check_victory() -> void:
 	# "destroy_all": the side that has nothing left loses (the port's default,
 	# estimated - the original skirmish condition was not in readable files).
 	# "score": the first side to reach the score limit wins.
 	if Data.VICTORY == "score":
-		for pi in 2:
+		for pi in players.size():
 			if winner == -1 and players[pi].score >= Data.SCORE_LIMIT:
 				winner = pi
 				game_over.emit(winner)
 				say("%s wins!" % players[winner].name)
 		return
-	for pi in 2:
-		if winner == -1 and buildings_of(pi).is_empty() and units_of(pi).is_empty():
-			winner = 1 - pi
-			game_over.emit(winner)
-			say("%s wins!" % players[winner].name)
+	for pi in players.size():
+		if winner != -1:
+			break
+		if not buildings_of(pi).is_empty() and not units_of(pi).is_empty():
+			continue
+		# A player eliminated while a teammate survives is NOT a team defeat.
+		var team: int = int(players[pi].get("team", -1))
+		if team >= 0 and _team_alive(team):
+			continue
+		winner = _winner_of_loser(pi)
+		if winner < 0:
+			return
+		game_over.emit(winner)
+		say("%s wins!" % players[winner].name)
 
 func _vec_enc(v: Variant) -> Variant:
 	if v is Vector2:

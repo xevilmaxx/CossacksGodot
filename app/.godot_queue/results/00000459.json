@@ -1,0 +1,22 @@
+{
+  "ticket": 459,
+  "id": "portsim-base-dump9",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/portsim_base_9.json",
+    "--seed",
+    "9"
+  ],
+  "created": 1795254157.2854633,
+  "wait": 75.0249502658844,
+  "run": 10.4681236743927,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000459_portsim-base-dump9\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000459_portsim-base-dump9\\stderr.txt"
+}

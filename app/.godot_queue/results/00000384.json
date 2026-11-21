@@ -1,0 +1,19 @@
+{
+  "ticket": 384,
+  "id": "manifest-t_build_flow",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/building_block_test.gd"
+  ],
+  "created": 1795252731.550751,
+  "wait": 0.0010738372802734375,
+  "run": 2.6871955394744873,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000384_manifest-t_build_flow\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000384_manifest-t_build_flow\\stderr.txt"
+}

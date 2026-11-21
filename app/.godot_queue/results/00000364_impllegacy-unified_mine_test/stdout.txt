@@ -1,0 +1,18 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+  PASS  other_sids_untouched - resolve_mine_sid('hou') == 'hou'
+  PASS  preview_gold - cursor over gold -> mine_gold
+  PASS  legal_gold - 
+  PASS  build_gold - placed gold -> mine_gold
+  PASS  preview_iron - cursor over iron -> mine_iron
+  PASS  legal_iron - 
+  PASS  build_iron - placed iron -> mine_iron
+  PASS  preview_coal - cursor over coal -> mine_coal
+  PASS  legal_coal - 
+  PASS  build_coal - placed coal -> mine_coal
+  PASS  no_deposit_rejected - Mines must be built on an ore deposit.
+  PASS  one_mine_button - mine buttons in build menu: ["mine"]
+  PASS  mine_button_name - Mine  [N]  100 wood 100 stone  Time: 9s  - type follows the ore deposit
+unified_mine_test: 13/13 checks passed
+ERROR: 28 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.

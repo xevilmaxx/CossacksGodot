@@ -6,24 +6,24 @@
 			"passed": true
 		},
 		{
-			"detail": "map_starts=2, AI1 home=(36.0,291.0) purse=1750, AI2 home=(160.0,38.4) purse=1750",
+			"detail": "map_starts=4, AI1 home=(36.0,291.0) purse=1750, AI2 home=(40.0,40.0) purse=1750",
 			"name": "each_ai_has_start_and_resources",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "AI1 issued=11 active_ticks=120, AI2 issued=7 active_ticks=120",
+			"detail": "AI1 issued=11 active_ticks=120, AI2 issued=11 active_ticks=120",
 			"name": "each_ai_issues_orders",
 			"passed": true
 		},
 		{
-			"detail": "AI1 late_active=60/60 moved=153.4m units=8, AI2 late_active=60/60 moved=129.5m units=8",
+			"detail": "AI1 late_active=60/60 moved=141.3m units=8, AI2 late_active=60/60 moved=79.9m units=8",
 			"name": "no_ai_stuck",
 			"passed": true
 		},
 		{
-			"detail": "messages=12, distinct=1, worst=12x \"Not enough resources.\" (limit 5x)",
+			"detail": "messages=0, distinct=0, worst=0x \"\" (limit 5x)",
 			"name": "no_chat_spam",
-			"passed": false
+			"passed": true
 		},
 		{
 			"detail": "time_s=30.00 winner=-1 finite_res=true",
@@ -32,6 +32,6 @@
 		}
 	],
 	"id": "t_multi_ai",
-	"passed": false,
-	"unix_ms": 1795246190445.0
+	"passed": true,
+	"unix_ms": 1795257627024.0
 }

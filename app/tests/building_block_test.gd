@@ -8,12 +8,14 @@ extends SceneTree
 
 const Data = preload("res://scripts/data.gd")
 const C3Game = preload("res://scripts/game.gd")
+const OUT_DIR := "res://tests/results"
 
+var _id := "t_build_flow"
 var game
 var checks: Array = []
 
 func _check(name: String, ok: bool, detail: String) -> void:
-	checks.append({"name": name, "ok": ok, "detail": detail})
+	checks.append({"name": name, "passed": ok, "detail": detail})
 	print(("  PASS  " if ok else "  FAIL  ") + name + " - " + detail)
 
 func _find_clear_patch() -> Vector2i:
@@ -95,8 +97,25 @@ func _initialize() -> void:
 func _finish() -> void:
 	var ok := true
 	for c in checks:
-		if not c.ok:
+		if not c.passed:
 			ok = false
 	print("building_block_test: %d/%d checks passed" % [
-		checks.filter(func(c): return c.ok).size(), checks.size()])
+		checks.filter(func(c): return c.passed).size(), checks.size()])
+	_write_result(ok)
 	call_deferred("quit", 0 if ok else 1)
+
+func _write_result(ok: bool) -> void:
+	var abs_dir := ProjectSettings.globalize_path(OUT_DIR)
+	DirAccess.make_dir_recursive_absolute(abs_dir)
+	var path := "%s/%s.json" % [abs_dir, _id]
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		push_error("cannot write test result: " + path)
+		return
+	f.store_string(JSON.stringify({
+		"id": _id,
+		"passed": ok,
+		"checks": checks,
+		"unix_ms": Time.get_unix_time_from_system() * 1000.0,
+	}, "\t"))
+	f.close()

@@ -1,0 +1,19 @@
+{
+  "ticket": 414,
+  "id": "manifest-t_map_variety",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_map_variety.gd"
+  ],
+  "created": 1795252910.2271414,
+  "wait": 2.491887092590332,
+  "run": 11.08807373046875,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000414_manifest-t_map_variety\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000414_manifest-t_map_variety\\stderr.txt"
+}

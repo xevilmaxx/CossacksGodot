@@ -1,0 +1,24 @@
+{
+  "ticket": 467,
+  "id": "portsim-syntax-p31",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--check-only",
+    "--script",
+    "res://scripts/game.gd"
+  ],
+  "created": 1795254354.338659,
+  "wait": 129.89512133598328,
+  "run": 180.22981715202332,
+  "exit": -9,
+  "timeout": 180.0,
+  "status": "timed-out",
+  "stdout": "app\\.godot_queue\\results\\00000467_portsim-syntax-p31\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000467_portsim-syntax-p31\\stderr.txt",
+  "acknowledged": true,
+  "ack_reason": "port-wave infra: hard-timeout during implementation, superseded by O8 full-port gate",
+  "ack_at": 1795257679.971051
+}

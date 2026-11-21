@@ -1,0 +1,20 @@
+{
+  "ticket": 225,
+  "id": "implrender-ghost-multi",
+  "argv": [
+    "--path",
+    "app",
+    "--test-api",
+    "8148",
+    "--timeout",
+    "600"
+  ],
+  "created": 1795247909.0989802,
+  "wait": 0.0007815361022949219,
+  "run": 30.43668270111084,
+  "exit": 0,
+  "timeout": 600.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000225_implrender-ghost-multi\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000225_implrender-ghost-multi\\stderr.txt"
+}

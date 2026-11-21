@@ -3,10 +3,10 @@
 # Asserts the INTENDED donor behaviour of squads: the full infantry size ladder
 # 15/36/72/120/196/400 with an officer, switchable line/column/square layout,
 # replenishment from loose troops at the officer, clean disband, and the
-# +2 attack / +3 defence (+9/+9 when holding) formation bonuses.
-# The port currently caps squads at Data.SQUAD_MAX=195, so the 196/400 ladder
-# steps fail on baseline. That is a real gap, not a test bug: do not weaken
-# the assertion to match the partial implementation.
+# donor +2 attack / +2 defence (+7/+7 when holding) formation bonuses from
+# Data.FORMATION_BONUSES (formations.cfg LINE/SQUARE/KARE tuples, P-30).
+# Assertions track donor values, not the earlier wiki estimates; do not weaken
+# them to match a partial implementation.
 #
 # Run with:
 #   python app\tools\godot_runner.py run --id t-squads --timeout 90 -- \
@@ -140,8 +140,8 @@ func _initialize() -> void:
 			and not far.has("squad") and not other.has("squad"),
 		"cmd_replenish=%d, loose absorbed=%d, members %d->20, far/wrong-type left loose" % [got, absorbed, int(s.members.size())])
 
-	# 4. Formation bonuses: infantry melee +2 atk / +3 def, +9/+9 on hold,
-	# and no bonus at all without the drummer (donor formation requirement).
+	# 4. Formation bonuses: donor LINE15 tuple bonusdamage/bonusshield = 2/2,
+	# bonusdamagehold/bonusshieldhold = 7/7; no bonus without the drummer.
 	var pike = game.by_id[int(s.members[0])]
 	pike.hold = false
 	var atk = game._formation_atk(pike, "pike")
@@ -155,8 +155,8 @@ func _initialize() -> void:
 	var atk_no_drum = game._formation_atk(pike, "pike")
 	var def_no_drum = game._formation_def(pike)
 	s["drummer"] = drummer_id
-	check("formation_bonuses_2_3_hold_9",
-		atk == 2 and def == 3 and atk_hold == 9 and def_hold == 9 and atk_no_drum == 0 and def_no_drum == 0,
+	check("formation_bonuses_2_2_hold_7",
+		atk == 2 and def == 2 and atk_hold == 7 and def_hold == 7 and atk_no_drum == 0 and def_no_drum == 0,
 		"atk/def move=%d/%d hold=%d/%d no-drummer=%d/%d" % [atk, def, atk_hold, def_hold, atk_no_drum, def_no_drum])
 
 	# 5. Disband: the squad is removed and every member loses its back-link.

@@ -1,0 +1,19 @@
+{
+  "ticket": 445,
+  "id": "manifest-t_capture",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--script",
+    "res://tests/t_capture.gd"
+  ],
+  "created": 1795253123.484291,
+  "wait": 0.0009074211120605469,
+  "run": 2.189802408218384,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000445_manifest-t_capture\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000445_manifest-t_capture\\stderr.txt"
+}

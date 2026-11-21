@@ -1,0 +1,20 @@
+{
+  "ticket": 483,
+  "id": "PORT-CONTROL-step1b-guardshot",
+  "argv": [
+    "--path",
+    "app",
+    "--test-api",
+    "8155",
+    "--timeout",
+    "120"
+  ],
+  "created": 1795255011.486015,
+  "wait": 27.589863538742065,
+  "run": 18.026015996932983,
+  "exit": 0,
+  "timeout": 150.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000483_PORT-CONTROL-step1b-guardshot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000483_PORT-CONTROL-step1b-guardshot\\stderr.txt"
+}

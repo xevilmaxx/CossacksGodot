@@ -49,6 +49,11 @@ const DEFAULT := {
 		"nation0": "ukr",
 		"nation1": "rus",
 		"map_type": "land",
+		# P-19/P-14: exact PORT-MENU keys/defaults (menu.gd:34-37, :435).
+		"terrain_type": "land",
+		"richness": "med",
+		"season": "summer",
+		"relief": "plains",
 		"start_option": "default",
 		"start_resources": {"food": 800, "wood": 800, "stone": 400, "gold": 200, "iron": 150, "coal": 150},
 		"start_peasants": 8,
@@ -123,9 +128,17 @@ const DEFAULT := {
 			"squad_square": "L",
 			"attack_ground": "R",
 			"unload": "U",
+			"sow_fields": "Y",
 			"select_all_peasants": "Ctrl+`",
 			"select_idle_mines": "Ctrl+M",
 			"add_same_type": "Shift+Z",
+			# PORT-CONTROL hand-off / donor hotkeys.cfg: militaryunits, allships,
+			# same-type select variants (Ctrl+Z / Ctrl+Shift+Z), donation patrol P.
+			"select_military_units": "Ctrl+Alt+A",
+			"select_all_ships": "Ctrl+Q",
+			"select_all_same_type": "Ctrl+Z",
+			"add_all_same_type": "Ctrl+Shift+Z",
+			"patrol_waypoints": "P",
 			"minimap_toggle": "Alt+M",
 			"build": {
 				"cen": "C", "hou": "H", "bla": "L", "bar": "B", "aca": "E", "sta": "S",
@@ -385,11 +398,18 @@ func apply() -> void:
 	Data.DEPOSITS = deps
 	var army: Variant = section("gameplay").get("battle_army", {})
 	Data.BATTLE_ARMY = army if army is Dictionary else {}
-	Data.MAP_TYPE = text("gameplay.map_type", "land")
+	Data.MAP_TYPE = text("gameplay.terrain_type", text("gameplay.map_type", "land"))
+	Data.BIOME = text("gameplay.season", text("gameplay.biome", "summer"))
+	Data.RICHNESS = text("gameplay.richness", "med")
+	Data.RELIEF = text("gameplay.relief", "plains")
 	Data.START_OPTION = text("gameplay.start_option", "default")
 	var n0 := text("gameplay.nation0", "ukr")
 	var n1 := text("gameplay.nation1", "rus")
 	Data.PLAYER_NATIONS = [n0, n1]
+	# P-42: menu/shell may override these later; apply the JSON defaults here.
+	Data.PLAYER_COUNT = clampi(maxi(2, int(num("gameplay.players", 2))), 2, 8)
+	var tm: Variant = section("gameplay").get("teams", [])
+	Data.TEAMS = tm.duplicate() if tm is Array else []
 	Data.PLAYER_NAMES = [_nation_display(n0, 0), _nation_display(n1, 1)]
 
 	var ec := section("economy")

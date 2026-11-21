@@ -1,0 +1,20 @@
+{
+  "ticket": 341,
+  "id": "agentO6-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795251971.6790247,
+  "wait": 4.21610951423645,
+  "run": 30.171527862548828,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000341_agentO6-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000341_agentO6-uitest\\stderr.txt"
+}

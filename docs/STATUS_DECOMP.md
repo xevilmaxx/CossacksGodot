@@ -55,8 +55,8 @@ flowchart LR
 | Recovered RTTI class names | `111 X*` + `474 T*` | `DA_PE.md` §3; `ev_238c801…`, `ev_d9c6e28…` |
 | Donor files inventoried | `17,237` files / `17,258` entries | `DC_FORMATS.md` §1; `ev_79424d3a…`; `DE_AUDIO_UI.md` `ev_bd4dc176…` |
 | Mesh formats size-closed | `.oss` (335), `.osm` (3,897), `.aaf` (246) | `DC_FORMATS.md` §2; `ev_392885a6…`, `ev_0bbb20c1…`, `ev_6a6b0380…` |
-| `.osm` offset bug | **REFUTED** — readers byte-identical | `DC_FORMATS.md` §3; `fnd_7`; board **P-06b CLOSED** |
-| Open downstream tickets from decomp | `6` (P-12, P-13, P-30…P-33) | `SWARM_BOARD.md`; `STATUS_AI.md` §4 |
+| `.osm` offset bug | **REFUTED** — readers byte-identical; recorded as decision **D-20** | `DC_FORMATS.md` §3; `fnd_7`; board **P-06b CLOSED**; `docs/DECISION_LOG.md` D-20 |
+| Open downstream tickets from decomp | `6` board tickets (P-12, P-13, P-30…P-33) + `2` research lines (DC sweep, DA RTTI/config) + P-37/P-38 doc fixes | `SWARM_BOARD.md`; `STATUS_AI.md` §4; `docs/audit/DECOMP.md` |
 | Lane-opening / filter decisions | **D-07**, **D-12** | `docs/DECISION_LOG.md`; `ev_e000f15b…` |
 
 **Knowledge-lane progress:** `██████████ 100%` — all five decomp reports written
@@ -109,8 +109,14 @@ build-lane workers, not this lane (board `SWARM_BOARD.md`).
 
 > [!NOTE]
 > Only items with a cited report are listed here. The `.osm` refutation has no
-> `D-xx` in `docs/DECISION_LOG.md` — it is recorded as finding `fnd_7` and
+> `D-xx` in `docs/DECISION_LOG.md` — this gap is now closed: the refutation was
+> recorded as decision **D-20** (Coordinator, 08:00), with finding `fnd_7` and
 > board **P-06b CLOSED**; the related naval-mesh readability decision is **D-11**.
+> The independent deep audit `docs/audit/DECOMP.md` (D-22) corrected two further
+> claims: formations are **149** entries (46 with nonzero bonuses, only **15**
+> with the (2,2,7,7) pattern — not "43 / all 2-2-7-7"), and `bonusdamage 0` in
+> `GUIDE4.md:1131`/`data.gd:215` is wrong (board **P-37**). Two fixes also exist
+> only in the working tree (board **P-38**).
 
 ### What could and could not be recovered
 
@@ -131,7 +137,9 @@ skirmish or the gate · 🟠 P1 = visible fidelity / core feature · 🟡 P2 = p
 |---|---|---|---|---|---|---|
 | 🔴 P0 | Wire `chop` → `workwood` (files exist; silent event) | **P-12** / DE T-DE-01 | unassigned | `main.gd` owner B | 0.25 d | `DE_AUDIO_UI.md` §"Chop"; `fnd_18`; board P-12 |
 | 🔴 P0 | Port 20 missing nation music tracks + fallback theme (`bav` default silent) | **P-13** / DE T-DE-02 | unassigned | audio asset owner | 1 d | `DE_AUDIO_UI.md` §"Nation music"; `fnd_19`; `ev_bd4dc176…` |
-| 🟠 P1 | Import donor formation bonuses (43 entries: damage/shield 2, hold 7); fix `GUIDE4.md` A04 | **P-30** / DB-01 | unassigned (game.gd/data.gd = A) | owner arbitration | 6–8 h | `DB_SCRIPTS.md` §3 G1; `fnd_22`; `ev_2f2f15d9…`, `ev_24a1cc1a…` |
+| 🟠 P1 | Import donor formation bonuses — **corrected count: 149 entries, 46 with nonzero bonuses, only 15 with (2,2,7,7)**; import the per-ID 4-field table, not a flat default | **P-30** / DB-01 | unassigned (game.gd/data.gd = A) | owner arbitration | 6–8 h | `DB_SCRIPTS.md` §3 G1; `fnd_22`; `docs/audit/DECOMP.md`; `ev_2f2f15d9…`, `ev_24a1cc1a…` |
+| 🟡 P2 | Correct false `bonusdamage 0` claims (`GUIDE4.md:1131`, `data.gd:215`) — comments only, no behaviour | **P-37** | unassigned | doc owner | trivial | `docs/audit/DECOMP.md` |
+| 🟡 P2 | Land uncommitted/untracked fixes so a clean checkout keeps them (`main.gd` chop→workwood, `bake_naval.py`) | **P-38** | unassigned | owner staging decision | trivial | `docs/audit/DECOMP.md` |
 | 🟠 P1 | Stage-level reseeding + generator version gates (9 reseed points, versions 53–91) — **critical path** | **P-31** / DB-03 | unassigned (game.gd/data.gd = A) | owner arbitration; replay fixture | 16–24 h | `DB_SCRIPTS.md` §3 G3; `fnd_24`; `ev_c7d983f3…`, `ev_f7f8bad9…` |
 | 🟡 P2 | Hotkey parity from `hotkeys.cfg` (243 bindings vs `Data.HOTKEYS={}`) | **P-33** / DB-02, DE T-DE-03 | unassigned (config.gd / input_controller.gd) | confirm donor authoritative over wiki | 8–12 h | `DB_SCRIPTS.md` §3 G2; `fnd_23`, `fnd_20`; `ev_e350e534…` |
 | 🟡 P2 | Format validation sweep — run OSS/OSM/AAF readers over all 335/3,897/246 files + `.pattern`, TGA/DDS audit | DC T-1…T-6 | unassigned (tool owner) | none | **~5 worker-days** | `DC_FORMATS.md` §4; `fnd_6`–`fnd_9` |
@@ -140,7 +148,7 @@ skirmish or the gate · 🟠 P1 = visible fidelity / core feature · 🟡 P2 = p
 
 - [ ] P-12 — one-line fix + sound-fires smoke test.
 - [ ] P-13 — 20 assets + alias/fallback + smoke test.
-- [ ] P-30 — import 149 IDs + masks, replace `_formation_atk/_def`, selftest 43 cases.
+- [ ] P-30 — import 149 IDs + masks, replace `_formation_atk/_def`, selftest the **46** nonzero-bonus cases (not 43).
 - [ ] P-31 — reseed before each stage, version gates, replay fixture.
 - [ ] P-33 — parse `hotkeys.cfg`, wire `InputEventKey`, preserve ctrl/alt/shift.
 - [ ] DC T-1…T-6 — validation sweep; `.map` full decode explicitly NOT included.
@@ -209,6 +217,10 @@ timeline
   07:45 : D-17 documentation lane created<br/>cold-readable status docs
   07:50 : D-18 modern GitHub markdown required<br/>this file's format
   07:55 : D-19 decisions must be traced<br/>D-07 / D-12 cited here
+  08:00 : D-20 .osm reader bug CLOSED as REFUTED<br/>fnd_7 + P-06b
+  08:10 : D-22 quality-first deep audit<br/>docs/audit/DECOMP.md corrections
+  08:17 : D-23 QA release gate PASS<br/>fresh O5 jobs 149-152
+  08:30 : D-24 320 tiles is the working map size
 ```
 
 | Decision | Made by | How it shaped this lane | Evidence |
@@ -216,6 +228,10 @@ timeline
 | **D-07** (06:30) | Coordinator | Opened the read-only Craft Anything investigation on the installed donor; no donor execution, no copying into repo — the constraint every report in §DONE obeys | `docs/DECISION_LOG.md` D-07; `ev_e000f15b…` |
 | **D-12** (07:20) | **Owner** | Skirmish-only charter: mission-map RE, `.aix` campaigns and packed-EXE function anchoring are deferred; generator/gameplay scripts, rosters and formats kept — the filter applied in §Deferred | `docs/DECISION_LOG.md` D-12; `SWARM_OPS.md` §0 |
 | D-17 / D-18 / D-19 (07:45–07:55) | Coordinator / Owner | Documentation lane, modern GitHub markdown and decision tracing — why this file has YAML, badges, Mermaid and a decision trace | `docs/DECISION_LOG.md`; `docs/STATUS_TEMPLATE.md` |
+| **D-20** (08:00) | Coordinator | Closed the `.osm` reader "bug" as **REFUTED** — the audit trail id the earlier note said was missing | `docs/DECISION_LOG.md` D-20; `fnd_7`; board P-06b CLOSED |
+| **D-22** (08:10) | **Owner** | Quality-first deep audit; `docs/audit/DECOMP.md` corrected the formation counts and the `bonusdamage 0` claim (P-37/P-38) | `docs/DECISION_LOG.md` D-22; `docs/audit/DECOMP.md` |
+| **D-23** (08:17) | QA desk O | Release gate **PASS** on fresh O5 jobs #149–152 — downstream tickets now inherit a signed baseline | `QA_REPORT.md` "FINAL VERDICT — O5" |
+| **D-24** (08:30) | Coordinator | 320 tiles is the working map size; generator-decoded stage truth (`dogenerate.inc`) applies at 320-scale (`docs/audit/GEN.md`) | `docs/DECISION_LOG.md` D-24; `docs/audit/GEN.md` |
 
 ## 👥 Ownership map
 
@@ -244,7 +260,7 @@ python app\tools\assert_clean.py --json
 ```
 
 Pass criteria: selftest `29/29`, uitest `17/17`, clean gate exit `0`. Specific
-gates: P-12/P-13 sound-fires smoke test; P-30 selftest of 43 nonzero formation
+gates: P-12/P-13 sound-fires smoke test; P-30 selftest of 46 nonzero formation
 bonuses; P-31 replay fixture (same seed → same map); P-33 preserves ctrl/alt/shift
 combos; DC sweep produces a bounded failure list. (Basis: `STATUS_AI.md` §7;
 `DB_SCRIPTS.md` §4; `DE_AUDIO_UI.md` §worker-ticket estimate.)
@@ -309,15 +325,17 @@ text · `fnd_12` generator text · `fnd_13`–`fnd_16` PE triage/RTTI/config ·
 
 ## ❓ Open questions
 
-- [ ] **No `D-xx` for the `.osm` refutation.** Recorded as `fnd_7` + board
-  P-06b CLOSED only; should the coordinator add a decision id for the audit trail
-  (D-19)? Related: D-11 (naval meshes readable).
+- [x] **`.osm` refutation now has a decision id — D-20.** Coordinator closed it
+  at 08:00 (D-19 audit-trail requirement satisfied); `fnd_7`, board P-06b CLOSED,
+  D-11 (naval meshes readable) all cross-referenced.
 - [ ] **Who owns the 6 downstream tickets?** P-12/P-13/P-30…P-33 are
   INTAKE/unassigned. P-12 blocked on B (`main.gd`); P-30/P-31 need A; P-33 needs
   a config/input owner. Coordinator must grant disjoint ownership (§3.2).
-- [ ] **Formation numbers:** port wiki (+2/+3, hold +9/+9) vs donor
-  `formations.cfg` (+2/+2, hold +7/+7, +3/+3 at 400). Confirm before P-30;
-  `GUIDE4.md` A04 ("bonusdamage 0") is known wrong (DB G1; STATUS_AI open Q).
+- [x] **Formation numbers resolved by deep audit — P-30 corrected.** Donor has
+  **149 formations, 46 with nonzero bonuses, only 15 with (2,2,7,7), 22 with
+  (1,1,1,1), 3 with (3,3,7,7)** — refuting the earlier "43 / all 2-2-7-7" claim.
+  Import the per-ID 4-field table; `GUIDE4.md:1131`/`data.gd:215` `bonusdamage 0`
+  is wrong (**P-37**). Evidence: `docs/audit/DECOMP.md`; `docs/DECISION_LOG.md` D-22.
 - [ ] **Hotkey authority:** wiki patrol P vs port `config.gd` Q; donor
   `hotkeys.cfg` (fnd_23) is authoritative. Resolve before P-33.
 - [ ] **Packer / absent literals:** 0 matches for `morale`/`AStar`/`Regiment` and
@@ -333,6 +351,8 @@ text · `fnd_12` generator text · `fnd_13`–`fnd_16` PE triage/RTTI/config ·
 ---
 
 **Related:** `docs/RESUME.md` · `docs/STATUS_AI.md` · `docs/STATUS_TEMPLATE.md` ·
-`SWARM_BOARD.md` · `SWARM_OPS.md` (§0, §5a, §5c) · `docs/DECISION_LOG.md` (D-07, D-12) ·
+`SWARM_BOARD.md` · `SWARM_OPS.md` (§0, §5a, §5c) ·
+`docs/DECISION_LOG.md` (D-07, D-12, D-20, D-22, D-23, D-24) ·
+`docs/audit/DECOMP.md` · `docs/audit/CONFIG_VERIFY.md` · `docs/audit/GEN.md` ·
 `docs/decomp/DA_PE.md` · `docs/decomp/DB_SCRIPTS.md` · `docs/decomp/DC_FORMATS.md` ·
 `docs/decomp/DD_MAPS.md` · `docs/decomp/DE_AUDIO_UI.md` · `docs/research/RC_TERRAIN.md`

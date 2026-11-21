@@ -1,0 +1,19 @@
+{
+  "ticket": 215,
+  "id": "impshell-import-nations",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--editor",
+    "--import"
+  ],
+  "created": 1795247600.9682214,
+  "wait": 0.0007588863372802734,
+  "run": 19.13623881340027,
+  "exit": 0,
+  "timeout": 600.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000215_impshell-import-nations\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000215_impshell-import-nations\\stderr.txt"
+}

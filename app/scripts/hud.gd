@@ -53,6 +53,12 @@ var speed_label: Label
 var obj_panel: PanelContainer
 var obj_box: VBoxContainer
 var trade_amount := 100.0
+# MICRO #9: three distinct market operations over the sim's existing
+# game.trade(player, give, want, amount). Gold is handled by Buy/Sell; the
+# resource pair selectors feed Exchange. Data.MARKET* supplies the rate/floor.
+const MARKET_TRADABLE := ["food", "wood", "stone", "iron", "coal"]
+var market_give_idx := 1   # wood
+var market_want_idx := 3   # iron
 var want_rally := false
 var last_ids: Array = []
 var summary_label: Label
@@ -505,17 +511,41 @@ func refresh_selection(selected: Array) -> void:
 						fb.tooltip_text = "Form a %d-man formation from nearby troops" % fs
 						fb.pressed.connect(_on_form_size.bind(e, fs))
 						build_bar.add_child(fb)
-				# market barter (video: the exchange sliders in the market)
+				# P-51: donor mill "Grain Crops" production order.
+				if e.sid == "mil" and e.finished and e.player == 0:
+					var gb := _mkbtn("Grain Crops", 14, 50, 88)
+					gb.tooltip_text = "Sow a 7x7 field ring around this mill (5 gold per field)"
+					gb.pressed.connect(_on_grain_crops.bind(e))
+					build_bar.add_child(gb)
+				# MICRO #9: market Buy / Sell / Exchange (three distinct modes)
 				if e.sid == "mar":
+					var give_res: String = str(MARKET_TRADABLE[market_give_idx])
+					var want_res: String = str(MARKET_TRADABLE[market_want_idx])
+					var rate_pct: int = int(float(game.players[0].get("market_rate", Data.MARKET_RATE)) * 100.0)
 					var amt := _mkbtn("%d" % int(trade_amount), 14, 50, 56)
 					amt.tooltip_text = "Trade amount per click (100/500)"
 					amt.pressed.connect(_on_trade_amount)
 					build_bar.add_child(amt)
-					for pair in [["wood", "gold"], ["food", "iron"], ["stone", "coal"], ["gold", "food"]]:
-						var mb := _mkbtn("%s>%s" % [pair[0].substr(0, 1).to_upper(), pair[1].substr(0, 1).to_upper()], 14, 50, 56)
-						mb.tooltip_text = "Trade %d %s for %s (rate %d%%)" % [int(trade_amount), pair[0], pair[1], int(game.players[0].market_rate * 100.0)]
-						mb.pressed.connect(_on_trade.bind(e, pair[0], pair[1]))
-						build_bar.add_child(mb)
+					var gb := _mkbtn("Give: %s" % give_res, 14, 50, 92)
+					gb.tooltip_text = "Resource to sell / exchange (click to cycle)"
+					gb.pressed.connect(_on_market_give)
+					build_bar.add_child(gb)
+					var wb := _mkbtn("For: %s" % want_res, 14, 50, 92)
+					wb.tooltip_text = "Resource received by Exchange (click to cycle)"
+					wb.pressed.connect(_on_market_want)
+					build_bar.add_child(wb)
+					var buy := _mkbtn("Buy %s" % give_res, 14, 50, 92)
+					buy.tooltip_text = "Pay %d gold, receive %s (rate %d%%, floor 35%%)" % [int(trade_amount), give_res, rate_pct]
+					buy.pressed.connect(_on_market_buy.bind(e, give_res, trade_amount))
+					build_bar.add_child(buy)
+					var sell := _mkbtn("Sell %s" % give_res, 14, 50, 92)
+					sell.tooltip_text = "Give %d %s, receive gold (rate %d%%, floor 35%%)" % [int(trade_amount), give_res, rate_pct]
+					sell.pressed.connect(_on_market_sell.bind(e, give_res, trade_amount))
+					build_bar.add_child(sell)
+					var ex := _mkbtn("Xchg %s" % want_res, 14, 50, 92)
+					ex.tooltip_text = "Exchange %d %s for %s (rate %d%%)" % [int(trade_amount), give_res, want_res, rate_pct]
+					ex.pressed.connect(_on_trade.bind(e, give_res, want_res))
+					build_bar.add_child(ex)
 				# rally point: one click enters the mode, right-click then sets it
 				if e.def.get("trains", []).size() > 0:
 					var ral := _mkbtn("Rally [R]", 14, 50, 64)
@@ -545,7 +575,7 @@ func refresh_selection(selected: Array) -> void:
 				db.pressed.connect(_on_squad_disband.bind(int(sq.squad_id)))
 				build_bar.add_child(db)
 	if mine.size() > 0 and mine.all(func(e): return e.kind == "unit" and e.player == 0):
-		for spec in [["Attack-move", "attack_move", "A"], ["Stand", "stand_ground", "S"], ["Hold fire", "hold_fire", "D"], ["Feuer frei", "feuer_frei", "E"], ["Patrol", "patrol", "Q"], ["Guard", "guard", "G"], ["Stop", "stop", "Ctrl+S"]]:
+		for spec in [["Attack-move", "attack_move", "A"], ["Stand", "stand_ground", "S"], ["Hold fire", "hold_fire", "D"], ["Feuer frei", "feuer_frei", "E"], ["Patrol", "patrol", "P"], ["Guard", "guard", "G"], ["Stop", "stop", "Ctrl+S"]]:
 			var cb := _mkbtn("%s\n[%s]" % [spec[0], spec[2]], 12, 56, 96)
 			cb.pressed.connect(_on_cmd_button.bind(str(spec[1])))
 			cmd_bar.add_child(cb)
@@ -602,9 +632,45 @@ func _on_form_size(off: Dictionary, size: int) -> void:
 	game.cmd_form_size(off, size)
 	refresh_selection([off])
 
+func _on_grain_crops(mill: Dictionary) -> void:
+	audio_click.play()
+	var n: int = game.cmd_sow(mill)
+	if n > 0:
+		show_hint("Sowed %d grain fields (-%d gold)" % [n, n * 5])
+	else:
+		show_hint("No room or not enough gold to sow grain fields")
+	refresh_selection(game.get_selected())
+
+func _on_market_give() -> void:
+	audio_click.play()
+	market_give_idx = (market_give_idx + 1) % MARKET_TRADABLE.size()
+	if market_give_idx == market_want_idx:
+		market_want_idx = (market_want_idx + 1) % MARKET_TRADABLE.size()
+	refresh_selection(game.get_selected())
+
+func _on_market_want() -> void:
+	audio_click.play()
+	market_want_idx = (market_want_idx + 1) % MARKET_TRADABLE.size()
+	if market_want_idx == market_give_idx:
+		market_want_idx = (market_want_idx + 1) % MARKET_TRADABLE.size()
+	refresh_selection(game.get_selected())
+
+func _on_market_buy(bld: Dictionary, give: String, amount: float) -> void:
+	audio_click.play()
+	if game.trade(0, "gold", give, amount):
+		_on_message("Bought %s with gold" % give)
+	refresh_selection(game.get_selected())
+
+func _on_market_sell(bld: Dictionary, give: String, amount: float) -> void:
+	audio_click.play()
+	if game.trade(0, give, "gold", amount):
+		_on_message("Sold %s for gold" % give)
+	refresh_selection(game.get_selected())
+
 func _on_trade(bld: Dictionary, give: String, want: String) -> void:
 	audio_click.play()
-	game.trade(0, give, want, trade_amount)
+	if game.trade(0, give, want, trade_amount):
+		_on_message("Exchanged %s for %s" % [give, want])
 	refresh_selection(game.get_selected())
 
 func _on_trade_amount() -> void:
