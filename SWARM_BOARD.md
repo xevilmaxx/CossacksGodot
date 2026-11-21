@@ -4,6 +4,14 @@ States: INTAKE · TRIAGED · ASSIGNED · IN_PROGRESS · REVIEW · QA · DONE · 
 Only the coordinator edits the State column. See `SWARM_OPS.md` for gates.
 
 > [!IMPORTANT]
+> **RED GATE RESOLVED (terrain wave):** RELIEF-1 root-caused the 28/29 `build`
+> failure to steep positive-rim tiles blocking build spots; fixed with 8-tile
+> walkable rims + a start-flatten ring. Jobs 712/713 selftest 29/29, 714 uitest
+> 17/17; `scan_map.py` cliff 99/99/98, tileflow 100/100/100, reach 3/3;
+> re-dumps byte-identical. Rock coverage 2.3–3.7% remains below the 8–18%
+> reference target (deferred, walkability trade-off).
+
+> [!IMPORTANT]
 > **QUALITY-FIRST (D-22): all build tickets are effectively BLOCKED until
 > `game.gd` parses again.** QA's final gate FAILED (runner #105) on
 > `Could not parse global class "C3Game"`; `app/selftest.json` showing 29/29 is
@@ -120,6 +128,106 @@ Only the coordinator edits the State column. See `SWARM_OPS.md` for gates.
 **Capacity:** roster 100 tickets · WIP limit 20 · currently 20 live workers.
 Triage backlog holds 25 additional small tickets (6 P0, 7 P1, 8 P2, 4 P3)
 ready to pull as slots free.
+
+## TERRAIN-BEAUTY WAVE (owner directive 2026-11-21 — opened this session)
+
+Owner asked: apply the established swarm logics to **terrain generation** — deep-dive both
+the donor implementation and our own terrain recreation (trees, bushes, water, ground assets),
+split the work across many micro subagents, parallelise, and improve hills / water / overall
+beauty. Quality-first protocol (`SWARM_OPS.md` §5b-QUALITY) stays in force: evidence before
+edits, independent re-verification, `observed`/`derived`/`inferred` labels, no "good enough".
+
+**Lane 1 — research / audit (parallel, no runner, read-only on code + assets; each owns ONE doc):**
+
+| ID | Ticket | Owner | Owned files (output docs) | State | Note |
+|---|---|---|---|---|---|
+| TB-R1 | Donor generator pipeline deep-dive (inc/scripts + generator.cfg) | TDR-1 | docs/audit/TERRAIN_DONOR_PIPELINE.md | DONE | CONFIRMED formula/thresholds; SIGN ERROR in mapgen.gd relief() smooth R=88 (+0.511 vs donor −1.023); R1–R6 UNVERIFIED (no such donor constants) |
+| TB-R2 | Donor `.pattern` format decode + full family taxonomy (710 files) | TDR-2 | docs/audit/TERRAIN_DONOR_PATTERNS.md | DONE | int32 w,h + w*h footprint (all 710); no mesh/texture paths embedded; 36 prefix families; 23 donor_patterns.json entries point to missing files |
+| TB-R3 | Donor terrain texture + mask asset inventory | TDR-3 | docs/audit/TERRAIN_DONOR_ASSETS.md | DONE | 4,466 donor masks vs 56 port; MAJOR: shipped masks' R/G binary (255 only at starts) → port relief() always 0; winter/desert/deco unwired; no donor foam texture |
+| TB-R4 | Donor water rendering deep-dive (water.lib/.mat/textures/shaders) | TDR-4 | docs/audit/TERRAIN_DONOR_WATER.md | DONE | shader-per-frame 9-octave fBm + depth colour + reflection/glints/foam vs port's baked-on-chunk-only; W-1..W-7 proposals |
+| TB-A1 | Port terrain render audit (world.gd) | TPA-1 | docs/audit/TERRAIN_PORT_RENDER.md | DONE | BLOCKER: game.gd's donor block map is discarded — world.gd blends only grass1/grass7; shore/cliff oriented art never rendered; water macro-frozen |
+| TB-A2 | Port terrain asset coverage (wired / unwired / missing) | TPA-2 | docs/audit/TERRAIN_PORT_ASSETS.md | DONE | 27 winter blocks unwired (tint-only); 7/8 water sheets unused; deco_png preview-only; 20/37 pattern families unwired; all 691 PNG have .import |
+| TB-A3 | Port hill / height generation audit | TPA-3 | docs/audit/TERRAIN_PORT_HILLS.md | DONE | height formula + smoothing faithful; shape is the problem — 4 round paraboloids vs donor ridges/ravines/plateaus; height shading OFF for default plains |
+| TB-A4 | Port trees / bushes / decor audit | TPA-4 | docs/audit/TERRAIN_PORT_DECOR.md | DONE | trees = 3 unrotated billboards, no sway (redraw-gated); no bush/stump sprites (rock fallback); only 2/15 forest families reachable |
+
+**Lane 1b — mini-map sample / visual evaluation (owner directive, same session):**
+Owner wants a small deterministic terrain sample so we do not regenerate the full 320×320
+map on every iteration. All needed objects (hills/rock faces, water/shore, trees, bushes,
+rocks, decor) are placed there, and screenshots/videos are compared visually against the
+donor reference images in `C:\Users\Maxym.Oboyshev\Downloads\c3\` (units ignored). Target:
+similar visual quality. Reference analysis and harness design run in parallel with Lane 1.
+
+| ID | Ticket | Owner | Owned files (output docs) | State | Note |
+|---|---|---|---|---|---|
+| TB-V1 | Donor reference-image visual target spec (all 12 c3 images, units ignored) | TS-1 | docs/audit/TERRAIN_REFERENCE_IMAGES.md | DONE | measured: ravine rock 8–18% area, olive grass ≥4 tonal patches/200², ≥3 crown colors × ≥3 size buckets; primary target cossacks-3-v1-498085.jpg |
+| TB-V2 | Mini-map sample harness design (reuse real renderer, fixed seed/contents, capture + compare) | TS-2 | docs/audit/TERRAIN_SANDBOX_PLAN.md | DONE | approach (c): new app/shots/terrain_sample.json → 64×64 med/hills/fixed seed via windowed --screenshot; ZERO existing code changes, runner-safe |
+
+**Lane 2 — build (opens after Lane 1 lands; no speculative edits). Staged by owner directive:**
+
+1. **Stage 1 — mini-map first.** First build ticket is the harness itself (TB-B0, from the
+   TB-V2 plan), then iterate visual fidelity on the *sample only* — rock-walled hills/ravines,
+   water + shore, varied trees/bushes, ground texture, shading — until it meets the TB-V1
+   reference acceptance criteria. No full-map generator edits in this stage.
+2. **Stage 2 — keep it permanently.** The sample is a committed, fast regression / quick-test
+   tool: a fixed runner command produces a PNG + side-by-side comparison sheet. Every later
+   terrain change must re-capture it. It is never deleted or demoted to scratch.
+3. **Stage 3 — full map generation.** Coordinator decision (this session): the narrow stamped-relief
+   ticket is opened EARLY because the sample cannot pass the ravine criterion without generator
+   work. All other full-map edits remain gated on the sample's visual pass. `scan_map.py` gates
+   apply to the early ticket as normal.
+
+Coordinator triages into small, independently assignable tickets with **disjoint file
+ownership** (candidate owners: `world.gd` → one render builder; `game.gd` → one sim builder;
+`pattern_gen.gd` / `mapgen.gd` → one generator builder; `data.gd` → options; `scan_map.py` →
+QA). Builders back up before edit, run every Godot job through `godot_runner.py` with unique
+ids, and pass 29/29 + 17/17 before REVIEW. Build tickets TB-B0/TB-B1… are added below on
+triage — no file is assigned to two active tickets.
+
+**Coordinator handoff / full triage:** `docs/audit/TERRAIN_BEAUTY_TRIAGE.md` — consolidates all
+10 Lane-1 reports into ranked root causes, a strict disjoint-ownership map, and staged tickets
+TB-B0…TB-B10. Read it before picking up any terrain ticket.
+
+### Lane 2 — build tickets (Stage 1)
+
+| ID | Ticket | Owner | Owned files | State | Note |
+|---|---|---|---|---|---|
+| TB-B0 | Mini-map sample harness: 64×64 config + capture/compare tools, capture real PNG | BUILDER-CAPTURE | app/shots/terrain_sample.json (new), app/tools/terrain_sample_shot.py (new), app/tools/terrain_compare.py (new), generated shots | DONE | runner tbb0-605..609 all ok, 0 orphans; REAL 1280×720 GPU capture (NVIDIA path); seed 9 chosen but gate 6 FAILED (rock 1.51%<3%, forest 4.71%<5%); smoke scores invalid (crops not feature-aligned, building vs ravine) |
+| TB-B0b | Clean terrain-only screenshot frame (hide HUD, no town-hall preselect, map-centred camera) — screenshot-mode gated only | BUILDER-MAIN | app/scripts/main.gd (+ backup) | DONE | jobs bmain-610/611/612 ok, 29/29 + 17/17; `terrain_sample_clean.png` 1280×720 real GPU, HUD gone, right-band near-black 0.02% (was 0.09%); non-screenshot modes unchanged |
+| TB-B0c | Re-capture clean sample + feature-aligned comparison | BUILDER-CAPTURE | owned harness files + generated shots | DONE (final) | permanent samples: `terrain_land.png` (start/trees), `terrain_relief.png` (ravine), `terrain_sample_128.png` (water), + 3 contact sheets. Feature-aligned smoke scores ~0.85–0.89, NOT fidelity gates |
+| TB-B0d | Frame large samples on start/town-hall + `gameplay.screenshot_focus=relief` | BUILDER-MAIN | app/scripts/main.gd (+ backups) | DONE | small maps map-centre; ≥96 town-hall; relief mode scans `game.height` for deepest 7×7 window, skips water, clamps camera. Jobs 676–728; 29/29 + 17/17 |
+
+### Stage-1 verdict (coordinator, final captures 729/730)
+
+**PARTIAL PASS.** Achieved: mixed conifer/broadleaf canopy with size/yaw variety + understory
+(trees absent → visible); donor tile-block atlas + oriented shore/cliff art; animated GPU water
+with depth colour/glints/foam; stamped plateau/ravine relief (rock 2.3–3.7%, anisotropy 1.4–1.6);
+perf gate green (50.06 ms max vs 250 ms); 29/29 + 17/17; byte-identical dumps.
+**Still below donor reference:** rock area 2.3–3.7% vs 8–18% target; blocky stair-step tile edges;
+repeating rock texture; water glints too dense/uniform; ravines not in the start-framed view (hence
+the separate relief sample). Full-map work beyond TB-B5 remains gated on these visual residuals.
+
+### Cross-agent reconciliation (quality-first rule 2 — independent verification)
+
+- **TDR-1 vs TDR-3 on mask relief:** TDR-1 read `generatemap.inc` decoding R=255/96/48 relief codes;
+  TDR-3 measured all 1,331 shipped `_gauss` masks and found R/G binary, 255 **only** at white
+  start markers (R255==G255==white count), with port PNGs pixel-identical to donor TGA.
+  **Reconciled:** the donor *script* supports relief classes, but shipped random masks carry no
+  relief codes, so `mapgen.gd.relief()` returns 0 on real maps. Donor hills therefore come from
+  **stamped hill/ravine patterns**, not mask R. TDR-1's exact relief mapping is still a correct
+  script-faithfulness fix but has **no visual effect on shipped masks** — do not spend a Stage-1
+  slot on it. Where the donor's relief values live is `UNVERIFIED` (TDR-3 open question 1).
+- **Foam:** TDR-3 refuted the assumed shore-foam texture family (0 matches across all donor
+  `data\`). Shore look = `sandsea1..6` tiles + water shader + DLC5 coastal/lakes/rivers masks.
+  TDR-4's procedural foam proposal is a *port-authored* approximation, not a donor port.
+
+## Parallel doc lane (owner request, this session)
+
+| ID | Ticket | Owner | Owned files | State | Note |
+|---|---|---|---|---|---|
+| DOC-R1 | Modernise root README layout + hero image (existing repo screenshot only, no donor assets) | DOC-README | README.md (+ backup) | DONE | hero `app/shots/portvis-final.png`; layout modernised, all claims/links preserved, backup README.md.bak-DOC-README |
+| QA-P1 | Measure 120-frame low-preset chunk-bake hitch and record PASS/FAIL vs 250 ms | QA-1 | app/shots/perf.md, app/tools/bake_bench.py (new), app/shots/perf_low.json (new) | **PASS (after remediation)** | final `max_ms=50.06 mean_ms=43.59` (job render1-bench-opt/656) vs 250 ms target; baseline 645 ms |
+| QA-P2 | Regenerate Godot `.ctex` import cache for 87 new env sprites | QA-1 | app/.godot/imported/** (generated) | DONE | job qa1-import/638 ok; 385/385 .import entries now have matching .ctex (was 87 missing); exported builds no longer need dev-only fallback |
+| QA-P3 | Optimise `_build_chunk` to bring max bake < 250 ms while keeping ≥3 block families | RENDER-1 | app/scripts/world.gd (+ backup) | DONE | JOB render1-bench-opt/656 PASS 50.06 ms; levers: 6→3 / 4→2 composites, bind-time atlas pre-warm, single-pass coverage grids, composite at final res on LOW; 29/29 + 17/17 |
 
 ## Unowned pre-existing changes (do not touch)
 

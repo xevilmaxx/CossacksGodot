@@ -1,0 +1,20 @@
+{
+  "ticket": 618,
+  "id": "render1-water-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795259799.9825659,
+  "wait": 0.0010530948638916016,
+  "run": 43.950275897979736,
+  "exit": 0,
+  "timeout": 240.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000618_render1-water-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000618_render1-water-uitest\\stderr.txt"
+}

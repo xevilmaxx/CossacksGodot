@@ -1,0 +1,20 @@
+{
+  "ticket": 691,
+  "id": "relief1-build-repro2",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795262891.2027225,
+  "wait": 0.0008082389831542969,
+  "run": 38.67251372337341,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000691_relief1-build-repro2\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000691_relief1-build-repro2\\stderr.txt"
+}

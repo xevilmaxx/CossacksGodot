@@ -1,0 +1,5 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+sprites: 116 sets loaded (sids=159)
+PERF tick_ms=1.04 ai_ms=0.52 sync_ms=59.79 steps_per_frame=0.3 redraws r/b/u/f=5/5/120/120
+screenshot saved (headless map render): C:\Users\MAXYM~1.OBO\AppData\Local\Temp\qa1_bake_bench.png

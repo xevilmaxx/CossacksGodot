@@ -1,0 +1,20 @@
+{
+  "ticket": 669,
+  "id": "render1-forest-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795262044.5649152,
+  "wait": 29.512185096740723,
+  "run": 23.80525803565979,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000669_render1-forest-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000669_render1-forest-selftest\\stderr.txt"
+}

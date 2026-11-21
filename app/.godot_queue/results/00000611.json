@@ -1,0 +1,20 @@
+{
+  "ticket": 611,
+  "id": "bmain-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795259126.8646824,
+  "wait": 0.0012886524200439453,
+  "run": 26.053235292434692,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000611_bmain-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000611_bmain-uitest\\stderr.txt"
+}

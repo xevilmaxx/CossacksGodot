@@ -53,6 +53,7 @@ var frame := 0
 var screenshot_path := ""
 var screenshot_frames := 120
 var screenshot_done := false
+var screenshot_focus := "start"   # gameplay.screenshot_focus: start | relief
 var test_api_port := 0
 var test_bridge: C3TestBridge = null
 var selftest_path := ""
@@ -129,6 +130,7 @@ func _ready() -> void:
 	cfg = C3ConfigScript.new()
 	cfg.load_all(config_path)
 	cfg.apply()
+	screenshot_focus = cfg.text("gameplay.screenshot_focus", "start")
 	if seed_random:
 		Data.RANDOM_SEED = int(randi())
 	elif seed_arg >= 0:
@@ -556,7 +558,15 @@ func _setup_full_game() -> void:
 	add_child(camera)
 	camera.bind(world)
 	var homes := game.buildings_of(0)
-	if not homes.is_empty():
+	# Small samples need the map centre to avoid an off-screen void; larger maps
+	# frame the first town hall (where starts/resources cluster), as in normal play.
+	# An explicit "relief" focus overrides both in screenshot mode only.
+	if screenshot_path != "" and screenshot_focus == "relief":
+		camera.position = _relief_focus_position()
+		camera.clamp_pos()
+	elif screenshot_path != "" and game.MAP_W < 96:
+		camera.position = Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M * world.view_scale
+	elif not homes.is_empty():
 		camera.position = homes[0].pos * world.view_scale
 	else:
 		camera.position = Vector2(20, 20) * Data.TILE_M * world.view_scale
@@ -576,15 +586,18 @@ func _setup_full_game() -> void:
 		get_tree().reload_current_scene()
 	hud.refresh_selection([])
 	hud.refresh_objectives()
+	if screenshot_path != "":
+		hud.visible = false
 
 	input_ctl = C3InputScript.new()
 	add_child(input_ctl)
 	input_ctl.bind(game, world, hud, camera)
 	# start framed on the town hall with it selected, like the original
 	# battle view: the bottom panel shows the building instead of empty black
-	var homes2 := game.buildings_of(0)
-	if not homes2.is_empty():
-		input_ctl._set_selection([homes2[0]])
+	if screenshot_path == "":
+		var homes2 := game.buildings_of(0)
+		if not homes2.is_empty():
+			input_ctl._set_selection([homes2[0]])
 
 	# In journey mode the computer plays the human slot too, so the match
 	# plays itself like a gameplay video.
@@ -596,6 +609,40 @@ func _setup_full_game() -> void:
 	if can_play:
 		audio.start_music(str(game.players[0].get("nation", "ukr")))
 	audio.set_meta("can_play", can_play)
+
+# Screenshot-only: frame the deepest relief window (a ravine cut) instead of
+# the start. Scans game.height with the generator's y*MAP_W+x indexing; water
+# is skipped so an ocean floor is never mistaken for a land ravine. The tile
+# is converted exactly like the town-hall position, then camera.clamp_pos()
+# keeps the view inside the map.
+func _relief_focus_position() -> Vector2:
+	var r := 3
+	var best := Vector2i(game.MAP_W >> 1, game.MAP_H >> 1)
+	var best_mean := INF
+	for y in range(game.MAP_H):
+		for x in range(game.MAP_W):
+			var sum := 0.0
+			var n := 0
+			for dy in range(-r, r + 1):
+				var yy := y + dy
+				if yy < 0 or yy >= game.MAP_H:
+					continue
+				for dx in range(-r, r + 1):
+					var xx := x + dx
+					if xx < 0 or xx >= game.MAP_W:
+						continue
+					var idx := yy * game.MAP_W + xx
+					if game.terrain[idx] == 3:
+						continue
+					sum += game.height[idx]
+					n += 1
+			if n == 0:
+				continue
+			var mean := sum / float(n)
+			if mean < best_mean:
+				best_mean = mean
+				best = Vector2i(x, y)
+	return Vector2(best.x, best.y) * Data.TILE_M * world.view_scale
 
 func _setup_screenshot_window() -> void:
 	if is_headless:

@@ -224,6 +224,13 @@ def building_models(game: str) -> list:
 def env_models(game: str) -> list:
     actors = os.path.join(game, "data", "actors", "env")
     mats = os.path.join(game, "data", "materials", "env")
+    # port sid -> (actor base name, texture base name)
+    # The texture base is taken from each mesh's `data/objects/env/<base>.prop`
+    # `DefaultMaterialName` (many meshes share one atlas, e.g. stones -> stones,
+    # flowers -> plantsatlas, reed -> plantswateratlas). Only meshes that both
+    # parse as IDP2 .osm and have a matching .dds are listed; `main()` skips any
+    # leftover missing file, so a partial donor install cannot break the run.
+    # Keep the original six sids first (world.gd already loads those by name).
     table = {
         "tree_fir": ("fir1", "fir1"),
         "tree_oak": ("oak1", "oak1"),
@@ -232,6 +239,64 @@ def env_models(game: str) -> list:
         "stone": ("stones1", "stones"),
         "field": ("field1", "field1"),
     }
+    # (a) conifer / forest variety ------------------------------------------
+    table.update({
+        "tree_spruce1": ("spruce1", "spruce1"),
+        "tree_spruce2": ("spruce2", "spruce2"),
+        "tree_spruce3": ("spruce3", "spruce3"),
+        "tree_spruce4": ("spruce4", "spruce1"),
+        "tree_pinedry1": ("pinedry1", "pinedry1"),
+        "tree_pinedry2": ("pinedry2", "pinedry1"),
+        "tree_pinedry3": ("pinedry3", "pinedry1"),
+        "tree_pinedry4": ("pinedry4", "pinedry1"),
+        "tree_pinesmall1": ("pinesmall1", "pinesmall1"),
+        "tree_pinesmall2": ("pinesmall2", "pinesmall2"),
+        "tree_pinesmall3": ("pinesmall3", "pinesmall3"),
+        "tree_pinesmall4": ("pinesmall4", "pinesmall1"),
+        "tree_firsmall1": ("firsmall1", "firsmall1"),
+        "tree_firsmall2": ("firsmall2", "firsmall2"),
+        "tree_firsmall3": ("firsmall3", "firsmall3"),
+        "tree_firsmall4": ("firsmall4", "firsmall1"),
+        "tree_stump1": ("pinestump1", "pinestump"),
+        "tree_stump2": ("pinestump2", "pinestump"),
+        "tree_stump3": ("pinestump3", "pinestump"),
+        "tree_stump4": ("pinestump4", "pinestump"),
+    })
+    # (b) rock / stone variety ---------------------------------------------
+    for i in range(1, 11):
+        table["rock_stones%d" % i] = ("stones%d" % i, "stones")
+    for i in range(1, 7):
+        table["rock_smallstones%d" % i] = ("smallstones%d" % i, "smallstones")
+    for i in range(1, 5):
+        table["rock_landstone%d" % i] = ("landstone%d" % i, "landstone")
+    table.update({
+        "rock_sea1": ("rocksea1", "rocksea1"),
+        "rock_sea2": ("rocksea2", "rocksea2"),
+        "rock_sea3": ("rocksea3", "rocksea3"),
+        "rock_sea4": ("rocksea4", "rocksea1"),
+        "rock_sea5": ("rocksea5", "rocksea1"),
+        "rock_sea6": ("rocksea6", "rocksea1"),
+    })
+    for i in range(1, 7):
+        table["rock_smallstonesea%d" % i] = ("smallstonessea%d" % i, "smallstonessea")
+    for i in range(1, 11):
+        table["rock_stonessea%d" % i] = ("stonessea%d" % i, "stonessea")
+    # (c) ground decor ------------------------------------------------------
+    for i in range(1, 5):
+        table["bush%d" % i] = ("bushes%d" % i, "bushes")
+    for i in range(1, 4):
+        table["flower%d" % i] = ("flowers%d" % i, "plantsatlas")
+        table["plantain%d" % i] = ("plantain%d" % i, "plantsatlas")
+        table["reed%d" % i] = ("reed%d" % i, "plantswateratlas")
+    for i in range(1, 5):
+        table["fern%d" % i] = ("fern%d" % i, "fern")
+    # (d) festive -----------------------------------------------------------
+    table.update({
+        "christmastree": ("christmastree", "christmastree"),
+        "christmastreea": ("christmastreea", "christmastreea"),
+    })
+    for i in range(1, 7):
+        table["gift%d" % i] = ("gift%d" % i, "gift")
     out = []
     for sid, (ab, tb) in table.items():
         out.append({

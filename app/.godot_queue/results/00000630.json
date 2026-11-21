@@ -1,0 +1,20 @@
+{
+  "ticket": 630,
+  "id": "render1-decor-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795260507.4118128,
+  "wait": 26.380167484283447,
+  "run": 23.509740114212036,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000630_render1-decor-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000630_render1-decor-uitest\\stderr.txt"
+}

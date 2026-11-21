@@ -1,0 +1,267 @@
+{
+  "candidates": [
+    9,
+    7,
+    20261113,
+    20261114
+  ],
+  "chosen_reason": "highest forest count with rock>0 and land centre cell (centre_code=0, forest=280, rock=37)",
+  "chosen_seed": 20261113,
+  "gates": {
+    "forest": {
+      "minimum_pct": 4.0,
+      "terrain_code": 2
+    },
+    "rock": {
+      "minimum_pct": 1.0,
+      "terrain_code": 5
+    },
+    "water": {
+      "minimum_pct": 5.0,
+      "terrain_code": 3
+    }
+  },
+  "note": "Smoke measurement harness only; no beauty claim is made here. SAMPLE-ONLY Stage-1 thresholds (water>=5%, forest>=4%, rock>=1%) - these pick a readable 128x128 frame; they are NOT the full-map TS-1 acceptance criteria (ravine rock morphology 8-18% is a Stage-3 gate).",
+  "records": [
+    {
+      "cells": 16384,
+      "centre_code": 0,
+      "centre_xy": [
+        64,
+        64
+      ],
+      "counts": {
+        "forest": 230,
+        "rock": 24,
+        "water": 0
+      },
+      "dump_path": "app\\shots\\terrain_land_seedscan_9.json",
+      "gates": {
+        "forest": {
+          "actual_pct": 1.404,
+          "met": false,
+          "minimum_pct": 4.0
+        },
+        "rock": {
+          "actual_pct": 0.146,
+          "met": false,
+          "minimum_pct": 1.0
+        },
+        "water": {
+          "actual_pct": 0.0,
+          "met": false,
+          "minimum_pct": 5.0
+        }
+      },
+      "job": {
+        "error": null,
+        "exit": 0,
+        "id": "tbb0-land-128-seed-9",
+        "result_json": "app\\.godot_queue\\results\\00000649.json",
+        "run": 2.4805803298950195,
+        "status": "ok",
+        "stderr_file": "app\\.godot_queue\\results\\00000649_tbb0-land-128-seed-9\\stderr.txt",
+        "stdout_file": "app\\.godot_queue\\results\\00000649_tbb0-land-128-seed-9\\stdout.txt",
+        "stdout_lines": [
+          "[runner] ticket 649 'tbb0-land-128-seed-9' START (waited 0.00s)",
+          "[runner] ticket 649 'tbb0-land-128-seed-9' END ok (run 2.48s)"
+        ],
+        "ticket": 649,
+        "wait": 0.0009360313415527344
+      },
+      "map_h": 128,
+      "map_w": 128,
+      "mask_file": "nowater2/6pl_mask_nowater_6_gauss.png",
+      "mask_water": 0.0,
+      "meta_type": "nowater2",
+      "passes": false,
+      "percentages": {
+        "forest": 1.404,
+        "rock": 0.146,
+        "water": 0.0
+      },
+      "seed": 9,
+      "seed_reported": 9
+    },
+    {
+      "cells": 16384,
+      "centre_code": 1,
+      "centre_xy": [
+        64,
+        64
+      ],
+      "counts": {
+        "forest": 276,
+        "rock": 24,
+        "water": 0
+      },
+      "dump_path": "app\\shots\\terrain_land_seedscan_7.json",
+      "gates": {
+        "forest": {
+          "actual_pct": 1.685,
+          "met": false,
+          "minimum_pct": 4.0
+        },
+        "rock": {
+          "actual_pct": 0.146,
+          "met": false,
+          "minimum_pct": 1.0
+        },
+        "water": {
+          "actual_pct": 0.0,
+          "met": false,
+          "minimum_pct": 5.0
+        }
+      },
+      "job": {
+        "error": null,
+        "exit": 0,
+        "id": "tbb0-land-128-seed-7",
+        "result_json": "app\\.godot_queue\\results\\00000650.json",
+        "run": 2.8382065296173096,
+        "status": "ok",
+        "stderr_file": "app\\.godot_queue\\results\\00000650_tbb0-land-128-seed-7\\stderr.txt",
+        "stdout_file": "app\\.godot_queue\\results\\00000650_tbb0-land-128-seed-7\\stdout.txt",
+        "stdout_lines": [
+          "[runner] ticket 650 'tbb0-land-128-seed-7' START (waited 0.00s)",
+          "[runner] ticket 650 'tbb0-land-128-seed-7' END ok (run 2.84s)"
+        ],
+        "ticket": 650,
+        "wait": 0.0013666152954101562
+      },
+      "map_h": 128,
+      "map_w": 128,
+      "mask_file": "nowater2/4pl_mask_nowater_174_gauss.png",
+      "mask_water": 0.0,
+      "meta_type": "nowater2",
+      "passes": false,
+      "percentages": {
+        "forest": 1.685,
+        "rock": 0.146,
+        "water": 0.0
+      },
+      "seed": 7,
+      "seed_reported": 7
+    },
+    {
+      "cells": 16384,
+      "centre_code": 0,
+      "centre_xy": [
+        64,
+        64
+      ],
+      "counts": {
+        "forest": 280,
+        "rock": 37,
+        "water": 0
+      },
+      "dump_path": "app\\shots\\terrain_land_seedscan_20261113.json",
+      "gates": {
+        "forest": {
+          "actual_pct": 1.709,
+          "met": false,
+          "minimum_pct": 4.0
+        },
+        "rock": {
+          "actual_pct": 0.226,
+          "met": false,
+          "minimum_pct": 1.0
+        },
+        "water": {
+          "actual_pct": 0.0,
+          "met": false,
+          "minimum_pct": 5.0
+        }
+      },
+      "job": {
+        "error": null,
+        "exit": 0,
+        "id": "tbb0-land-128-seed-20261113",
+        "result_json": "app\\.godot_queue\\results\\00000651.json",
+        "run": 2.563729763031006,
+        "status": "ok",
+        "stderr_file": "app\\.godot_queue\\results\\00000651_tbb0-land-128-seed-20261113\\stderr.txt",
+        "stdout_file": "app\\.godot_queue\\results\\00000651_tbb0-land-128-seed-20261113\\stdout.txt",
+        "stdout_lines": [
+          "[runner] ticket 651 'tbb0-land-128-seed-20261113' START (waited 0.00s)",
+          "[runner] ticket 651 'tbb0-land-128-seed-20261113' END ok (run 2.56s)"
+        ],
+        "ticket": 651,
+        "wait": 0.0009655952453613281
+      },
+      "map_h": 128,
+      "map_w": 128,
+      "mask_file": "nowater2/4pl_mask_nowater_170_gauss.png",
+      "mask_water": 0.0,
+      "meta_type": "nowater2",
+      "passes": false,
+      "percentages": {
+        "forest": 1.709,
+        "rock": 0.226,
+        "water": 0.0
+      },
+      "seed": 20261113,
+      "seed_reported": 20261113
+    },
+    {
+      "cells": 16384,
+      "centre_code": 1,
+      "centre_xy": [
+        64,
+        64
+      ],
+      "counts": {
+        "forest": 277,
+        "rock": 40,
+        "water": 0
+      },
+      "dump_path": "app\\shots\\terrain_land_seedscan_20261114.json",
+      "gates": {
+        "forest": {
+          "actual_pct": 1.691,
+          "met": false,
+          "minimum_pct": 4.0
+        },
+        "rock": {
+          "actual_pct": 0.244,
+          "met": false,
+          "minimum_pct": 1.0
+        },
+        "water": {
+          "actual_pct": 0.0,
+          "met": false,
+          "minimum_pct": 5.0
+        }
+      },
+      "job": {
+        "error": null,
+        "exit": 0,
+        "id": "tbb0-land-128-seed-20261114",
+        "result_json": "app\\.godot_queue\\results\\00000652.json",
+        "run": 2.8527655601501465,
+        "status": "ok",
+        "stderr_file": "app\\.godot_queue\\results\\00000652_tbb0-land-128-seed-20261114\\stderr.txt",
+        "stdout_file": "app\\.godot_queue\\results\\00000652_tbb0-land-128-seed-20261114\\stdout.txt",
+        "stdout_lines": [
+          "[runner] ticket 652 'tbb0-land-128-seed-20261114' START (waited 0.00s)",
+          "[runner] ticket 652 'tbb0-land-128-seed-20261114' END ok (run 2.85s)"
+        ],
+        "ticket": 652,
+        "wait": 0.0009245872497558594
+      },
+      "map_h": 128,
+      "map_w": 128,
+      "mask_file": "nowater2/4pl_mask_nowater_170_gauss.png",
+      "mask_water": 0.0,
+      "meta_type": "nowater2",
+      "passes": false,
+      "percentages": {
+        "forest": 1.691,
+        "rock": 0.244,
+        "water": 0.0
+      },
+      "seed": 20261114,
+      "seed_reported": 20261114
+    }
+  ]
+}

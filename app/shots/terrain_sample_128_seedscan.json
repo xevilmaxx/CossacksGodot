@@ -1,0 +1,176 @@
+{
+  "candidates": [
+    9,
+    7,
+    20261113
+  ],
+  "chosen_reason": "no candidate met all gates; chose best tree signal (forest=254, rock=63 cells; trees prioritized)",
+  "chosen_seed": 20261113,
+  "gates": {
+    "forest": {
+      "minimum_pct": 4.0,
+      "terrain_code": 2
+    },
+    "rock": {
+      "minimum_pct": 1.0,
+      "terrain_code": 5
+    },
+    "water": {
+      "minimum_pct": 5.0,
+      "terrain_code": 3
+    }
+  },
+  "note": "Smoke measurement harness only; no beauty claim is made here. SAMPLE-ONLY Stage-1 thresholds (water>=5%, forest>=4%, rock>=1%) - these pick a readable 128x128 frame; they are NOT the full-map TS-1 acceptance criteria (ravine rock morphology 8-18% is a Stage-3 gate).",
+  "records": [
+    {
+      "cells": 16384,
+      "counts": {
+        "forest": 246,
+        "rock": 31,
+        "water": 1377
+      },
+      "dump_path": "app\\shots\\terrain_sample_128_seedscan_9.json",
+      "gates": {
+        "forest": {
+          "actual_pct": 1.501,
+          "met": false,
+          "minimum_pct": 4.0
+        },
+        "rock": {
+          "actual_pct": 0.189,
+          "met": false,
+          "minimum_pct": 1.0
+        },
+        "water": {
+          "actual_pct": 8.405,
+          "met": true,
+          "minimum_pct": 5.0
+        }
+      },
+      "job": {
+        "exit": 0,
+        "id": "tbb0-128-seed-9",
+        "note": "reused existing dump; no new Godot run",
+        "run": null,
+        "status": "ok",
+        "stdout_lines": [
+          "dump reused from runner ticket 640"
+        ],
+        "ticket": 640
+      },
+      "map_h": 128,
+      "map_w": 128,
+      "mask_file": "mediterranean/7pl_mask_mediterranean_10_gauss.png",
+      "mask_water": 0.09674072265625,
+      "meta_type": "mediterranean",
+      "passes": false,
+      "percentages": {
+        "forest": 1.501,
+        "rock": 0.189,
+        "water": 8.405
+      },
+      "seed": 9,
+      "seed_reported": 9
+    },
+    {
+      "cells": 16384,
+      "counts": {
+        "forest": 240,
+        "rock": 57,
+        "water": 1377
+      },
+      "dump_path": "app\\shots\\terrain_sample_128_seedscan_7.json",
+      "gates": {
+        "forest": {
+          "actual_pct": 1.465,
+          "met": false,
+          "minimum_pct": 4.0
+        },
+        "rock": {
+          "actual_pct": 0.348,
+          "met": false,
+          "minimum_pct": 1.0
+        },
+        "water": {
+          "actual_pct": 8.405,
+          "met": true,
+          "minimum_pct": 5.0
+        }
+      },
+      "job": {
+        "exit": 0,
+        "id": "tbb0-128-seed-7",
+        "note": "reused existing dump; no new Godot run",
+        "run": null,
+        "status": "ok",
+        "stdout_lines": [
+          "dump reused from runner ticket 641"
+        ],
+        "ticket": 641
+      },
+      "map_h": 128,
+      "map_w": 128,
+      "mask_file": "mediterranean/7pl_mask_mediterranean_10_gauss.png",
+      "mask_water": 0.09674072265625,
+      "meta_type": "mediterranean",
+      "passes": false,
+      "percentages": {
+        "forest": 1.465,
+        "rock": 0.348,
+        "water": 8.405
+      },
+      "seed": 7,
+      "seed_reported": 7
+    },
+    {
+      "cells": 16384,
+      "counts": {
+        "forest": 254,
+        "rock": 63,
+        "water": 1377
+      },
+      "dump_path": "app\\shots\\terrain_sample_128_seedscan_20261113.json",
+      "gates": {
+        "forest": {
+          "actual_pct": 1.55,
+          "met": false,
+          "minimum_pct": 4.0
+        },
+        "rock": {
+          "actual_pct": 0.385,
+          "met": false,
+          "minimum_pct": 1.0
+        },
+        "water": {
+          "actual_pct": 8.405,
+          "met": true,
+          "minimum_pct": 5.0
+        }
+      },
+      "job": {
+        "exit": 0,
+        "id": "tbb0-128-seed-20261113",
+        "note": "reused existing dump; no new Godot run",
+        "run": null,
+        "status": "ok",
+        "stdout_lines": [
+          "dump reused from runner ticket 642"
+        ],
+        "ticket": 642
+      },
+      "map_h": 128,
+      "map_w": 128,
+      "mask_file": "mediterranean/7pl_mask_mediterranean_10_gauss.png",
+      "mask_water": 0.09674072265625,
+      "meta_type": "mediterranean",
+      "passes": false,
+      "percentages": {
+        "forest": 1.55,
+        "rock": 0.385,
+        "water": 8.405
+      },
+      "seed": 20261113,
+      "seed_reported": 20261113
+    }
+  ]
+}

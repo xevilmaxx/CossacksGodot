@@ -1,0 +1,20 @@
+{
+  "ticket": 676,
+  "id": "bmain-frame2-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795262280.4682212,
+  "wait": 0.0010099411010742188,
+  "run": 40.82724952697754,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000676_bmain-frame2-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000676_bmain-frame2-selftest\\stderr.txt"
+}

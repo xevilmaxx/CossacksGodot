@@ -1,0 +1,27 @@
+{
+  "ticket": 730,
+  "id": "coord-relief-final",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "shots/terrain_relief_probe.json",
+    "--seed",
+    "20261113",
+    "--screenshot",
+    "shots/terrain_relief.png",
+    "--screenshot-frames",
+    "120",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795264585.5853145,
+  "wait": 0.0008132457733154297,
+  "run": 18.133982181549072,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000730_coord-relief-final\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000730_coord-relief-final\\stderr.txt"
+}

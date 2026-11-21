@@ -1,0 +1,20 @@
+{
+  "ticket": 617,
+  "id": "render1-water-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795259763.0549061,
+  "wait": 0.0015668869018554688,
+  "run": 26.760101318359375,
+  "exit": 0,
+  "timeout": 240.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000617_render1-water-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000617_render1-water-selftest\\stderr.txt"
+}

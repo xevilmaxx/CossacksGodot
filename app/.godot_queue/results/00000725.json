@@ -1,0 +1,20 @@
+{
+  "ticket": 725,
+  "id": "render1-understory-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795264327.3340693,
+  "wait": 32.8979058265686,
+  "run": 27.239014625549316,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000725_render1-understory-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000725_render1-understory-selftest\\stderr.txt"
+}

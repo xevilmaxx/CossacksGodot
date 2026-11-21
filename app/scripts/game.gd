@@ -45,6 +45,15 @@ var cluster_zones: Array = []  # claimed {pos, r} so clusters never overlap
 # Donor mechanism: real .pattern footprints stamped through C3PatternGen's
 # gPatternMask (misc.script:3384). Replaces the old per-tile blob placement.
 var pattern_stamps: Array = []
+# C3PatternGen.build result is computed once in _gen_base (relief stamps must
+# shape height BEFORE the collision pass) and reused by _gen_patterns.  Caching
+# keeps the two passes identical without consuming any extra `rng` draws.
+var _pattern_build: Dictionary = {}
+# Donor height constants (generatemap.inc:4-6).  Profile shape is port-authored
+# because the donor's per-cell height records are UNVERIFIED (TDR-2 §2.2).
+const RELIEF_PLATEAU := 2.964
+const RELIEF_HILL := 2.964 / 2.25
+const RELIEF_RAVINE := -2.964
 # Staged-loading state: _generate_map runs in 4 chunks so the loading bar can
 # repaint between them (menu Start -> playing). Sync setup() just calls them
 # back-to-back; the async loader in main.gd awaits a frame between each.
@@ -484,8 +493,12 @@ func _claim_cluster(pos: Vector2, r_m: float, margin_m := 4.0) -> bool:
 # clusters are discrete and never merge; this replaces blob placement.
 func _gen_patterns() -> void:
 	_reseed_stage("patterns")  # P-31 / dogenerate.inc:1909 pattern pass
-	var result: Dictionary = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
-		map_starts, terrain, 3, str(Data.BIOME))
+	# _gen_base already built this (relief stamps must shape height before the
+	# collision pass).  Fall back only for a direct _gen_patterns call.
+	var result: Dictionary = _pattern_build
+	if result.is_empty():
+		result = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
+			map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF))
 	pattern_stamps = result.get("stamps", [])
 	var ext := 0.0
 	for s in pattern_stamps:
@@ -593,6 +606,101 @@ func _generate_map() -> void:
 	_gen_finish()
 	# donor TextureMap -> SmoothTiles -> SmoothForestBorders.
 	_assign_tileblocks()
+
+func _shape_stamp_relief() -> void:
+	# Donor relief is STAMPED multi-cell patterns (dogenerate.inc stage 9), not
+	# analytic domes.  The footprints are the real donor .pattern masks exported
+	# into donor_patterns.json; no shape is invented here.  Only the height
+	# profile is a port adaptation (the donor's per-cell height fields are
+	# undecoded).  Called strictly BEFORE the collision/cliff pass so every
+	# newly steep tile becomes rock + blocked (closes the P-47 ordering defect).
+	# Buildable ring: a stamp CENTRE may sit outside the pattern-gen keep-clear
+	# while its 48-100-tile footprint still reaches a town.  Flatten that ring
+	# here (before collision) so no start/town/build spot is ever steepened or
+	# blocked by relief - this is the donor's C1/C2/C3 keep-clear contract.
+	var map_scale := float(MAP_W) / C3PatternGen.DONOR_UNITS
+	var protect := maxf(C3PatternGen.CIRCLE2.x, C3PatternGen.CIRCLE2.y) * map_scale * 1.5
+	var near_start := PackedByteArray()
+	near_start.resize(MAP_W * MAP_H)
+	for sv0 in map_starts:
+		var v0: Vector2 = sv0
+		var sx0 := v0.x / TILE
+		var sy0 := v0.y / TILE
+		for y0 in range(maxi(0, int(sy0 - protect)), mini(MAP_H, int(sy0 + protect) + 1)):
+			for x0 in range(maxi(0, int(sx0 - protect)), mini(MAP_W, int(sx0 + protect) + 1)):
+				if Vector2(float(x0) - sx0, float(y0) - sy0).length() <= protect:
+					near_start[y0 * MAP_W + x0] = 1
+	for sv in (_pattern_build.get("stamps", []) as Array):
+		var st: Object = sv
+		var kind := str(st.kind)
+		var amp := 0.0
+		var edge := 0.0
+		var rim_tiles := 3.0
+		var is_ravine := false
+		match kind:
+			"plateau":
+				amp = RELIEF_PLATEAU; edge = 0.97; rim_tiles = 8.0
+			"plain":
+				amp = 0.45; edge = 0.97; rim_tiles = 8.0
+			"mountain":
+				amp = RELIEF_PLATEAU; edge = 0.78; rim_tiles = 8.0
+			"hill":
+				amp = RELIEF_HILL; edge = 0.80; rim_tiles = 8.0
+			"ravine":
+				amp = RELIEF_RAVINE; is_ravine = true; rim_tiles = 3.0
+			_:
+				continue
+		var cells: Array = st.cells
+		if cells.is_empty():
+			continue
+		var ex := 0
+		var ey := 0
+		for c in cells:
+			var cc: Vector2i = c
+			ex = maxi(ex, absi(cc.x))
+			ey = maxi(ey, absi(cc.y))
+		var cx: int = int(st.x)
+		var cy: int = int(st.y)
+		var hx := maxf(1.0, float(ex))
+		var hy := maxf(1.0, float(ey))
+		var half_long := maxf(hx, hy)
+		var half_short := minf(hx, hy)
+		var rim := rim_tiles / half_short
+		var x_long := hx >= hy
+		var x0 := maxi(0, cx - ex - 1)
+		var x1 := mini(MAP_W - 1, cx + ex + 1)
+		var y0 := maxi(0, cy - ey - 1)
+		var y1 := mini(MAP_H - 1, cy + ey + 1)
+		for y in range(y0, y1 + 1):
+			for x in range(x0, x1 + 1):
+				var i := _t(x, y)
+				if terrain[i] == 3 or terrain[i] == 4 or near_start[i] != 0:
+					continue
+				var f := 0.0
+				if is_ravine:
+					# Open-ended gully along the donor footprint's long axis:
+					# flat cut bottom, 3-tile near-vertical walls, tapered ends
+					# so the negative relief never encloses a start.
+					var u := (float(x - cx) / half_long) if x_long else (float(y - cy) / half_long)
+					var v := (float(y - cy) / half_short) if x_long else (float(x - cx) / half_short)
+					if absf(u) > 1.0 or absf(v) > 1.0:
+						continue
+					var wall := clampf((0.30 + rim - absf(v)) / rim, 0.0, 1.0)
+					var ends := clampf((1.0 - absf(u)) / rim, 0.0, 1.0)
+					f = wall * ends
+				else:
+					var nx := float(x - cx) / hx
+					var ny := float(y - cy) / hy
+					var d := sqrt(nx * nx + ny * ny)
+					if d > 1.0:
+						continue
+					# Plateau/plain have a wide flat top (edge~0.97); hills and
+					# mountains have a broad elongated crest (8-tile rim: smooth
+					# enough to stay walkable, unlike the ravine's cut walls).
+					f = clampf((edge - d) / rim, 0.0, 1.0)
+				if f <= 0.0:
+					continue
+				height[i] += amp * f
 
 func _gen_base() -> void:
 	# DONOR PIPELINE (data/scripts/common.inc/generatemap.inc -> dogenerate.inc):
@@ -703,6 +811,11 @@ func _gen_base() -> void:
 		if shore_ring[i] == 1:
 			terrain[i] = 4
 			blocked[i] = 0
+	# donor stage 9: stamp relief BEFORE collision.  The build result is cached
+	# so _gen_patterns paints exactly the same footprints (no extra RNG draws).
+	_pattern_build = C3PatternGen.build(MAP_W, MAP_H, int(Data.RANDOM_SEED),
+		map_starts, terrain, 3, str(Data.BIOME), str(Data.RELIEF))
+	_shape_stamp_relief()
 	# collision pass of donor texturemap.inc: cardinal |dh|>0.5 or diagonal
 	# |dh|>0.55 becomes impassable rock (cDiff1 / cDiff2).  Skip water AND sand
 	# so the shore collar keeps its sand art and stays walkable.

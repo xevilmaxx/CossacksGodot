@@ -6,11 +6,18 @@
 
 *Mass armies · animated sprites baked from the original 3D meshes · 20 nations · formations, morale and volley fire*
 
-![skirmish](app/shots/final_nations.png)
+![Cossacks 3 skirmish in Godot](app/shots/portvis-final.png)
 
 </div>
 
 ---
+
+## At a glance
+
+| | | | |
+|:---:|:---:|:---:|:---:|
+| 🎮 **Godot 4.7** | 🌍 **20 nations** | 🎞️ **54 unit sheets** | 🏛️ **215 building sheets** |
+| 📏 **182 documented values** | 🧪 **28-step sim test** | 🧭 **17-step UI test** | ⚡ **No GPU required** |
 
 ## What this is
 
@@ -23,6 +30,8 @@ Everything visual and numeric comes from the installed game itself
 (`C:\Games\Cossacks 3`, yours — never redistributed): meshes, textures,
 sounds, damage formulas, gathering rates, upkeep, formation sizes.
 
+## Feature highlights
+
 | | |
 |---|---|
 | 🎞️ **Animated original units** | 54 sprite sheets (8 directions × walk / idle / attack / death), skinned on CPU from the donor `.oss` skeletons, rendered with Blender CPU Cycles |
@@ -32,7 +41,9 @@ sounds, damage formulas, gathering rates, upkeep, formation sizes.
 | 🤖 **Computer opponent** | Expands, techs, forms squads, combined-arms waves; officer-led batteries |
 | 🧪 **Never hangs, always tested** | 28-step sim self-test, 17-step UI user-journey test, AI-vs-AI CLI matches, frame-sequence capture → MP4 |
 
-![animated battle](app/shots/g2_final.png)
+*In-game skirmish — original nation architecture, animated units and the full HUD intact.*
+
+![Animated in-game skirmish](app/shots/g2_final.png)
 
 ## Quick start
 
@@ -121,6 +132,11 @@ inbox/backup/  safety copies of every edited script
   used; **for private use by the game owner only, never redistribute**
 
 ---
+
+> ⚖️ **License & use:** This build contains original-game donor files and is
+> **for private use by the game owner only, on their own machine — never share,
+> publish or redistribute it.** See [app/CREDITS.md](app/CREDITS.md) for what is
+> original and what is a placeholder.
 
 <div align="center">
 

@@ -1,0 +1,22 @@
+{
+  "ticket": 666,
+  "id": "render1-forest-probe",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--config",
+    "app/shots/terrain_sample.json",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795261914.8772397,
+  "wait": 0.000843048095703125,
+  "run": 27.516228914260864,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000666_render1-forest-probe\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000666_render1-forest-probe\\stderr.txt"
+}

@@ -1,0 +1,20 @@
+{
+  "ticket": 661,
+  "id": "render1-forest-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795261772.3368983,
+  "wait": 0.0011401176452636719,
+  "run": 26.924256324768066,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000661_render1-forest-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000661_render1-forest-uitest\\stderr.txt"
+}

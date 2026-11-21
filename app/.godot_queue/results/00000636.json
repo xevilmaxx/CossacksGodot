@@ -1,0 +1,21 @@
+{
+  "ticket": 636,
+  "id": "qa1-bench3-config",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\perf_low.json",
+    "--dump-config"
+  ],
+  "created": 1795260913.2564914,
+  "wait": 0.0010657310485839844,
+  "run": 1.2945599555969238,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000636_qa1-bench3-config\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000636_qa1-bench3-config\\stderr.txt"
+}

@@ -1,0 +1,22 @@
+{
+  "ticket": 678,
+  "id": "relief1-repeat-8",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/relief1_repeat/scan_8.json",
+    "--seed",
+    "8"
+  ],
+  "created": 1795262336.277295,
+  "wait": 0.0007181167602539062,
+  "run": 13.962651252746582,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000678_relief1-repeat-8\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000678_relief1-repeat-8\\stderr.txt"
+}

@@ -1,0 +1,20 @@
+{
+  "ticket": 704,
+  "id": "relief1-final-check-pattern",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/pattern_gen.gd"
+  ],
+  "created": 1795263486.2116978,
+  "wait": 0.0009386539459228516,
+  "run": 0.3407626152038574,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000704_relief1-final-check-pattern\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000704_relief1-final-check-pattern\\stderr.txt"
+}

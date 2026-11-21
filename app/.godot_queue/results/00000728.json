@@ -1,0 +1,27 @@
+{
+  "ticket": 728,
+  "id": "bmain-reliefcam-shot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "shots/terrain_relief_probe.json",
+    "--seed",
+    "20261113",
+    "--screenshot",
+    "shots/terrain_relief_probe.png",
+    "--screenshot-frames",
+    "120",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795264471.85245,
+  "wait": 0.0007736682891845703,
+  "run": 19.264817714691162,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000728_bmain-reliefcam-shot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000728_bmain-reliefcam-shot\\stderr.txt"
+}

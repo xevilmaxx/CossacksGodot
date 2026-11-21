@@ -1,0 +1,27 @@
+{
+  "ticket": 685,
+  "id": "bmain-frame2-shot",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "shots/terrain_land.json",
+    "--seed",
+    "20261113",
+    "--screenshot",
+    "shots/terrain_land_frame2.png",
+    "--screenshot-frames",
+    "120",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795262630.858449,
+  "wait": 39.74457883834839,
+  "run": 20.552398204803467,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000685_bmain-frame2-shot\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000685_bmain-frame2-shot\\stderr.txt"
+}

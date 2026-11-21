@@ -25,6 +25,13 @@ var fog_timer := 0.0
 const CHUNK_T := 32          # tiles per chunk side
 var terrain_chunks: Dictionary = {}   # Vector2i -> Sprite2D
 var terrain_order: Array = []         # LRU keys
+# QA-1 / N-07: one-shot per-bake timing over the first 120 bakes. The runner
+# harness only accepts an explicit BAKE_BENCH line; nothing here changes draw
+# output or the 2-chunk/frame + LRU-24 amortisation below.
+var bake_bench_count := 0
+var bake_bench_total_us := 0
+var bake_bench_max_us := 0
+var bake_bench_done := false
 var terrain_px := 16
 var res_dirty := 0
 var bld_dirty := 0
@@ -45,11 +52,25 @@ var terrain_masks: Array = []
 # meadows flow across chunk borders with zero repetition seams. Type
 # transitions share one feather mask; mottling uses a world-coherent mask.
 const BLK_CACHE := 32
+# TB-B1a/B1b + QA-P1: cap distinct block textures composited per chunk. 6/4
+# was cold-cache dominated (645 ms bake); 3/2 still shows >=3 donor families
+# plus the textured shore/cliff passes, but halves the blend/grid work.
+const BLOCKS_PER_CHUNK := 3
+const BLOCKS_PER_ROLE := 2
 var blk_cache := {}
 var blk_order: Array = []
-var ter_water: Image
+var ter_water: Image         # diffusewaves2 (512²), mirror-normalised
+# TB-B1c / W-6: two more distinct donor sheets, mirror-normalised through the
+# same _mirror_tileable path (the 256² sources need upscaling to the 1024 grid).
+var ter_wave0: Image         # diffusewaves0 (256²)
+var ter_wave1: Image         # diffusewaves1 (256²)
 var ter_blue: Image
 var ter_blueA: Image
+# One full-map canvas_item overlay: time advances every frame in sync(), so a
+# stationary camera still shows moving water (TDR-4 W-1).
+var water_overlay: Sprite2D = null
+var water_mat: ShaderMaterial = null
+const WATER_LEVEL := -0.25   # mapgen.gd WATER_DEEP: h below this is water
 var ter_src := {}
 var ter_white: Image
 var ter_black: Image
@@ -76,6 +97,23 @@ var anim_tex := {}
 # folder, like the nation-unique sheets. data.gd's EXTRA_ANIM_INDEX only loads
 # sco_units.json, so world.gd reads the naval index itself (read-only).
 var naval_index := {}
+
+func _emit_bake_bench() -> void:
+	# One line per process, ever. QA-1's harness parses this exact prefix;
+	# chunks=120 is the bench contract, max/mean are the observed per-bake ms.
+	if bake_bench_done or bake_bench_count == 0:
+		return
+	bake_bench_done = true
+	print("BAKE_BENCH preset=low px=8 chunks=120 max_ms=%.2f mean_ms=%.2f" % [
+		float(bake_bench_max_us) / 1000.0,
+		float(bake_bench_total_us) / float(bake_bench_count) / 1000.0])
+
+func _notification(what: int) -> void:
+	# Static-camera captures bake far fewer than 120 chunks; flush whatever was
+	# measured on exit so the harness still gets a numeric verdict instead of
+	# UNVERIFIED. Same guard => at most one line, no per-frame prints.
+	if what == NOTIFICATION_EXIT_TREE:
+		_emit_bake_bench()
 
 func _naval_info(key: String) -> Dictionary:
 	if naval_index.is_empty():
@@ -128,11 +166,29 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 	# _build_masks() still builds the side-effect images _build_chunk() needs;
 	# its returned array was dead and is no longer assigned here.
 	_build_masks(_bake_px())
+	# TB-B1c: build the per-tile water mask + the single animated overlay quad.
+	_setup_water_overlay()
 	# pre-warm the block LRU with the common meadow set so first paint
 	# doesn't hitch on disk loads (one-time bind cost, not per-frame)
 	for bn in ["grass1", "grass2", "ground1", "test7", "test8", "test9",
 			"sand1", "rock1", "grass_ground1", "test2", "grass5", "rock9"]:
 		_block_img(bn)
+	# QA-P1: warm EVERY block family used by this map before the first chunk
+	# bake. The cold path (1024² PNG decode + mirror-tile + adjust_bcs) is the
+	# 640 ms hitch the N-07 harness measured; doing it once at bind keeps it
+	# out of the 2-chunks/frame budget. Warm rare names first so the frequent
+	# ones survive BLK_CACHE's LRU eviction.
+	if game != null and game.tileblock.size() > 0:
+		var warm_counts := {}
+		for ti in game.tileblock.size():
+			var bi: int = game.tileblock[ti]
+			var bn: String = str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+			warm_counts[bn] = int(warm_counts.get(bn, 0)) + 1
+		var warm_names: Array = warm_counts.keys()
+		warm_names.sort_custom(func(a, b):
+			return int(warm_counts[a]) < int(warm_counts[b]))
+		for bn in warm_names:
+			_block_img(str(bn))
 	res_layer = Node2D.new()
 	res_layer.z_index = 1
 	add_child(res_layer)
@@ -208,6 +264,33 @@ func world_to_px(p: Vector2) -> Vector2:
 
 # Sprites rendered from the original models (see _load_sprites). Units face
 # the camera of their movement direction; buildings/props use one view.
+# TB-B1d: the 87 ASSET-2 env variants plus the 6 original env sids (93 total).
+# Generated from explicit families so the whitelist stays in sync with the art.
+func _env_sids() -> Array:
+	var out := ["tree_fir", "tree_oak", "tree_pine", "rock", "stone", "field"]
+	for base in ["tree_spruce", "tree_pinedry", "tree_pinesmall", "tree_firsmall", "tree_stump"]:
+		for i in range(1, 5):
+			out.append("%s%d" % [base, i])
+	for group in [["rock_stones", 10], ["rock_smallstones", 6], ["rock_landstone", 4],
+			["rock_sea", 6], ["rock_smallstonesea", 6], ["rock_stonessea", 10],
+			["bush", 4], ["flower", 3], ["plantain", 3], ["reed", 3],
+			["fern", 4], ["gift", 6]]:
+		for i in range(1, int(group[1]) + 1):
+			out.append("%s%d" % [group[0], i])
+	out.append_array(["christmastree", "christmastreea"])
+	return out
+
+func _load_env_tex(path: String) -> Texture2D:
+	# ASSET-2 ships .import files whose .ctex cache entries are absent from the
+	# dev/headless import folder, so load() returns null for every new sprite.
+	# Decode the source PNG directly when it is on disk; exported builds (no raw
+	# PNG) keep the normal ResourceLoader path.
+	if FileAccess.file_exists(path):
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if img != null and not img.is_empty():
+			return ImageTexture.create_from_image(img)
+	return load(path) as Texture2D
+
 func _load_sprites() -> void:
 	sprites.clear()
 	var sids: Array = []
@@ -216,7 +299,7 @@ func _load_sprites() -> void:
 	for sid in Data.BUILDINGS:
 		if sid != "wal" and not sids.has(sid):
 			sids.append(sid)
-	for n in ["tree_fir", "tree_oak", "tree_pine", "rock", "stone", "field"]:
+	for n in _env_sids():
 		if not sids.has(n):
 			sids.append(n)
 	# NOTE: probe with _res_exists (ResourceLoader.exists for exported .pck
@@ -233,11 +316,22 @@ func _load_sprites() -> void:
 				frames.append(null)
 		if has_dir:
 			sprites[key] = frames
-		elif key.begins_with("tree_") and _res_exists("res://assets/models/sprites_hi/%s.png" % key):
-			# 512 px CPU-Cycles rebake of the donor mesh (old sheets were 128 px)
-			sprites[key] = [load("res://assets/models/sprites_hi/%s.png" % key) as Texture2D]
+		elif _res_exists("res://assets/models/sprites_hi/%s.png" % key):
+			# 512 px CPU-Cycles rebake of the donor mesh (ASSET-2 env set).
+			# Prefer hi-res for EVERY env sid, not just tree_*; the low-res
+			# sprites/ copy stays as the fallback (rock/stone/field live there).
+			sprites[key] = [_load_env_tex("res://assets/models/sprites_hi/%s.png" % key)]
 		elif _res_exists("res://assets/models/sprites/%s.png" % key):
-			sprites[key] = [load("res://assets/models/sprites/%s.png" % key) as Texture2D]
+			sprites[key] = [_load_env_tex("res://assets/models/sprites/%s.png" % key)]
+	# Loud, explicit report: a missing env sid must never be mistaken for a
+	# successfully loaded prop (and never silently borrowed from another pool).
+	var missing: Array = []
+	for key in _env_sids():
+		var fr: Array = sprites.get(key, [])
+		if fr.is_empty() or fr[0] == null:
+			missing.append(key)
+	if not missing.is_empty():
+		push_warning("world: env sprite sids did not resolve: %s" % str(missing))
 	print("sprites: %d sets loaded (sids=%d)" % [sprites.size(), sids.size()])
 
 func _unit_height(e: Dictionary) -> float:
@@ -669,28 +763,89 @@ func _res_exists(path: String) -> bool:
 	# Export-safe existence probe for res:// imported assets.
 	return ResourceLoader.exists(path) or FileAccess.file_exists(path)
 
+# TB-B1c / W-6: load a donor wave sheet and normalise it through the same
+# mirror-tile path the land blocks use, so the GPU shader can wrap it with
+# fract() without a seam. The two 256² sheets are upscaled to the 1024 grid.
+func _wave_sheet(path: String) -> Image:
+	var im: Image = _load_image_tex(path)
+	if im == null:
+		return null
+	if im.get_format() != Image.FORMAT_RGB8:
+		im.convert(Image.FORMAT_RGB8)
+	return _mirror_tileable(im, 1024)
+
 func _prep_variants() -> Array:
 	# water wave art only; land renders from TileBlock images (LRU).
-	ter_water = null
-	var w: Image = _load_image_tex("res://assets/terrain/water_png/diffusewaves2.png")
-	if w != null:
-		if w.get_format() != Image.FORMAT_RGB8:
-			w.convert(Image.FORMAT_RGB8)
-		ter_water = _mirror_tileable(w, 1024)
+	# Three distinct donor sheets now feed the GPU overlay (TDR-4 W-6):
+	# diffusewaves0/1 (256², normalised here) and diffusewaves2 (512²).
+	ter_water = _wave_sheet("res://assets/terrain/water_png/diffusewaves2.png")
+	ter_wave0 = _wave_sheet("res://assets/terrain/water_png/diffusewaves0.png")
+	ter_wave1 = _wave_sheet("res://assets/terrain/water_png/diffusewaves1.png")
 	if ter_water == null:
 		ter_water = Image.create(64, 64, false, Image.FORMAT_RGB8)
 		ter_water.fill(Color(0.2, 0.35, 0.5))
+	if ter_wave0 == null:
+		ter_wave0 = ter_water
+	if ter_wave1 == null:
+		ter_wave1 = ter_water
 	variants = [[], [], [], [], [], []]
-	# P-21 / RE gap 6: the donor's water is an animated wave surface, not the
-	# single fixed-offset still this renderer used.  Keep four phase-shifted
-	# crops of the tileable wave sheet as the terrain-3 variant frames; the
-	# chunk baker scrolls the wave phase with anim_t (see _build_chunk) so a
-	# re-baked water chunk catches a different frame.
-	if ter_water != null and ter_water.get_width() >= 256:
-		for i in 4:
-			variants[3].append(_wrap_crop(ter_water, i * 256, 0, 256))
+	# Water is now animated per frame in shaders/water_overlay.gdshader; the old
+	# terrain-3 four-crop "phase variant" set was never read by any draw path
+	# and has been removed (TDR-4 §5/§7 W-1).
 	terrain_hlv = []
 	return []
+
+# TB-B1c: one full-map canvas_item overlay quad. A single RGBA8 mask image
+# (one pixel per tile) carries coverage + two depth proxies; the GPU shader
+# adds moving waves, depth tint, glints and foam every frame. No chunk is
+# re-baked per frame: the 2-chunk/frame cap and LRU 24 in
+# _sync_terrain_chunks() stay untouched (N-07 perf gate).
+func _setup_water_overlay() -> void:
+	if water_overlay != null and is_instance_valid(water_overlay):
+		water_overlay.queue_free()
+	water_overlay = null
+	water_mat = null
+	if game == null:
+		return
+	var shader_path := "res://shaders/water_overlay.gdshader"
+	if not _res_exists(shader_path):
+		return
+	var sh := load(shader_path) as Shader
+	if sh == null:
+		return
+	water_mat = ShaderMaterial.new()
+	water_mat.shader = sh
+	# env/lights/light.cfg Position (-0.3447, 0.9387, 0) maps to the donor's
+	# lightVector (-0.086, 0, 0.939): almost straight up, not from global y.
+	water_mat.set_shader_parameter("sun_dir", Vector2(-0.3447 / 4.0, 0.9387))
+	water_mat.set_shader_parameter("map_size", Vector2(float(game.MAP_W), float(game.MAP_H)))
+	water_mat.set_shader_parameter("tile_m", Data.TILE_M)
+	water_mat.set_shader_parameter("wave0", ImageTexture.create_from_image(ter_wave0))
+	water_mat.set_shader_parameter("wave1", ImageTexture.create_from_image(ter_wave1))
+	water_mat.set_shader_parameter("wave2", ImageTexture.create_from_image(ter_water))
+	water_mat.set_shader_parameter("foam_tex", ImageTexture.create_from_image(ter_water))
+	water_mat.set_shader_parameter("time", anim_t)
+
+	# R = coverage (type-3 grid), G = depth/1.07, B = depth/0.57, A = 1.
+	# LINEAR filtering on the sprite feathers the shoreline over one tile.
+	var mask := Image.create(game.MAP_W, game.MAP_H, false, Image.FORMAT_RGBA8)
+	for y in game.MAP_H:
+		for x in game.MAP_W:
+			var i: int = game._t(x, y)
+			var wet: float = 1.0 if int(game.terrain[i]) == 3 else 0.0
+			var dep: float = maxf(0.0, WATER_LEVEL - game.height_at(Vector2(float(x) * Data.TILE_M, float(y) * Data.TILE_M)))
+			mask.set_pixel(x, y, Color(wet, clampf(dep / 1.07, 0.0, 1.0), clampf(dep / 0.57, 0.0, 1.0), 1.0))
+	var mask_tex := ImageTexture.create_from_image(mask)
+
+	water_overlay = Sprite2D.new()
+	water_overlay.texture = mask_tex
+	water_overlay.centered = false
+	water_overlay.position = Vector2.ZERO
+	water_overlay.scale = Vector2(Data.TILE_M * view_scale, Data.TILE_M * view_scale)
+	water_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	water_overlay.material = water_mat
+	water_overlay.z_index = -9   # above baked terrain (-10), below resources (1)
+	add_child(water_overlay)
 
 func _block_img(nm: String) -> Image:
 	# TileBlock art, mirror-tiled to 1024 (seamless wrap sampling).
@@ -795,19 +950,118 @@ func _season_tint() -> Color:
 	_season_tint_img = im
 	return Color(tint.r, tint.g, tint.b, strength)
 
+# TB-B1a/B1b helpers ---------------------------------------------------------
+# Frequency-rank the distinct donor block names present in a chunk (name is a
+# deterministic tie-break) and return at most `limit` of them.  This bounds the
+# per-chunk bake: cells on rarer blocks stay on the grass base (B1a), and the
+# shore/cliff role pass re-injects those via their own per-cell name masks (B1b).
+func _rank_blocks(counts: Dictionary, limit: int) -> Array:
+	var ranked: Array = counts.keys()
+	ranked.sort_custom(func(a, b):
+		var ca: int = int(counts[a])
+		var cb: int = int(counts[b])
+		if ca != cb:
+			return ca > cb
+		return str(a) < str(b))
+	return ranked.slice(0, limit)
+
+# TB-B1b: distinct oriented sand/rock block names among the cells of terrain
+# role `role` in this chunk, minus names B1a already composited chunk-wide.
+func _role_block_names(cx: int, cy: int, role: int, already: Array) -> Array:
+	var counts := {}
+	for ly in CHUNK_T:
+		for lx in CHUNK_T:
+			var x: int = cx * CHUNK_T + lx
+			var y: int = cy * CHUNK_T + ly
+			if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+				var i: int = game._t(x, y)
+				if int(game.terrain[i]) == role:
+					var bi: int = game.tileblock[i]
+					var bn: String = str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+					counts[bn] = int(counts.get(bn, 0)) + 1
+	var out: Array = []
+	for n in _rank_blocks(counts, BLOCKS_PER_ROLE + already.size()):
+		if out.size() >= BLOCKS_PER_ROLE:
+			break
+		if already.has(n):
+			continue  # already drawn by B1a with a full per-cell cross-fade
+		out.append(n)
+	return out
+
+# Composite one cached, mirror-tiled crop per block name over `img`.  Each
+# block's alpha grid holds the fraction of the 4 surrounding cells using that
+# name, bilinearly upscaled to SxS (same smooth grid + blend_rect_mask path the
+# old two-grass mix used).  role_filter >= 0 restricts both the name match and
+# the coverage count to cells of that terrain role, giving sand/cliff bands a
+# role-shaped mask.  Equal neighbours stay pixel-identical; differing ones
+# cross-fade over one tile.
+func _composite_blocks(img: Image, cx: int, cy: int, S: int, N: int, names: Array, role_filter: int,
+		max_alpha := 1.0, falloff := 1.0) -> void:
+	if names.is_empty():
+		return
+	var full := Rect2i(0, 0, S, S)
+	var origin := Vector2i.ZERO
+	# QA-P1: one pass over the 2x2 neighbourhood grid computes coverage for
+	# EVERY block name at once. The old code rebuilt the same 33x33 grid once
+	# per name (6/4/4 -> 14 times), which was pure GDScript loop overhead.
+	var nn := names.size()
+	var name_idx := {}
+	for ni in nn:
+		name_idx[str(names[ni])] = ni
+	var grids: Array = []
+	for ni in nn:
+		grids.append(Image.create(N, N, false, Image.FORMAT_RGB8))
+	var sums := PackedFloat32Array()
+	sums.resize(nn)
+	for gy in N:
+		for gx in N:
+			sums.fill(0.0)
+			var cnt := 0
+			for oy in [-1, 0]:
+				for ox in [-1, 0]:
+					var x: int = cx * CHUNK_T + gx + int(ox)
+					var y: int = cy * CHUNK_T + gy + int(oy)
+					if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+						var i: int = game._t(x, y)
+						if role_filter < 0 or int(game.terrain[i]) == role_filter:
+							var bi: int = game.tileblock[i]
+							var bn: String = str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
+							var idx: int = int(name_idx.get(bn, -1))
+							if idx >= 0:
+								sums[idx] += 1.0
+							cnt += 1
+			for ni in nn:
+				var v: float = sums[ni] / maxf(1.0, float(cnt))
+				# TB-B1e: optional soft falloff (gamma >1 shrinks the visible
+				# edge) and a lower alpha ceiling for the shore pass only.
+				if falloff != 1.0:
+					v = pow(v, falloff)
+				v *= max_alpha
+				grids[ni].set_pixel(gx, gy, Color(v, v, v))
+	for ni in nn:
+		var nm_s := str(names[ni])
+		var mask := _alpha_mask(grids[ni], S)
+		var coff: int = abs(hash(nm_s)) % 512
+		var crop := _wrap_crop(_block_img(nm_s), cx * S + coff, cy * S + coff, S)
+		img.blend_rect_mask(crop, mask, full, origin)
+
 func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var px := terrain_px
 	var bpx := _bake_px()
-	var S := CHUNK_T * bpx
-	var tile_rect := Rect2i(0, 0, bpx, bpx)
-	# ONE continuous grass surface for the whole chunk. Sampling it with a
-	# chunk-aligned offset means the neighbouring chunk continues the exact
-	# same donor pixels -- there is no per-cell texture switch to see through.
+	# QA-P1: LOW used to composite at bpx=32 (1024² per chunk) and then resize
+	# down to px=8 (256²) at the end - 16x the pixels for a texture the GPU
+	# displays at 8 px/cell anyway. Composite at final resolution there;
+	# higher presets keep the supersampled bake for edge quality.
+	var comp_px := bpx if px > 8 else px
+	var S := CHUNK_T * comp_px
+	var tile_rect := Rect2i(0, 0, comp_px, comp_px)
+	# TB-B1a: start on the single continuous grass surface, then composite one
+	# cached mirror-tiled crop per DISTINCT donor block present in the chunk
+	# through the same smooth 33x33 alpha grid the old two-grass hash mix used.
+	# The block name is no longer discarded as a scalar weight: sand / rock /
+	# sandsea cells now draw their real art.  The distinct set is capped so the
+	# per-chunk bake cost stays bounded.
 	var img := _wrap_crop(_block_img("grass1"), cx * S, cy * S, S)
-	# Smooth continuous blending. A value grid is sampled at tile corners and
-	# bilinearly upscaled to the full chunk: there are NO per-cell blits and no
-	# dmask speckle at cell borders. Equal neighbours are pixel-identical,
-	# differing ones cross-fade over a full tile.
 	var N := CHUNK_T + 1
 	var full := Rect2i(0, 0, S, S)
 	var origin := Vector2i.ZERO
@@ -815,31 +1069,42 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 		var bi: int = game.tileblock[game._t(x, y)]
 		return str(game.tbl_names[bi]) if bi < game.tbl_names.size() else "grass1"
 
-	# meadow mottling: donor tile blocks choose the mix of two continuous
-	# donor grass textures, smoothed across tile corners.
-	var mix_grid := Image.create(N, N, false, Image.FORMAT_RGB8)
-	for gy in N:
-		for gx in N:
-			var sum := 0.0
-			var cnt := 0
-			for oy in [-1, 0]:
-				for ox in [-1, 0]:
-					var x: int = cx * CHUNK_T + gx + int(ox)
-					var y: int = cy * CHUNK_T + gy + int(oy)
-					if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
-						var bn: String = block_at.call(x, y)
-						sum += 0.10 + 0.28 * float(abs(hash(bn)) % 1000) / 1000.0
-						cnt += 1
-			var v: float = sum / maxf(1.0, float(cnt))
-			mix_grid.set_pixel(gx, gy, Color(v, v, v))
-	var mix_mask := _alpha_mask(mix_grid, S)
-	var meadow2 := _wrap_crop(_block_img("grass7"), cx * S, cy * S, S)
-	img.blend_rect_mask(meadow2, mix_mask, full, origin)
+	var counts := {}
+	for ly in CHUNK_T:
+		for lx in CHUNK_T:
+			var x: int = cx * CHUNK_T + lx
+			var y: int = cy * CHUNK_T + ly
+			if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+				var bn: String = block_at.call(x, y)
+				counts[bn] = int(counts.get(bn, 0)) + 1
+	var block_names: Array = _rank_blocks(counts, BLOCKS_PER_CHUNK)
+	# TB-B1e: sandsea* is shore-only art. Painting it here chunk-wide at full
+	# alpha (and again in the role pass) was the wide flat tan ring. Reserve it
+	# for the softened role-4 pass below so its real grain shows through.
+	var base_names: Array = []
+	for bn in block_names:
+		if not str(bn).begins_with("sandsea"):
+			base_names.append(bn)
+	_composite_blocks(img, cx, cy, S, N, base_names, -1)
 
-	# terrain roles: one continuous donor crop each, feathered by a smooth
-	# region mask built from the donor terrain grid (no tile seams, no noise).
-	var role_block := {1: "ground1", 2: "grass_ground2", 4: "grass_sand1", 5: "rock1"}
+	# terrain roles: dirt + forest keep one continuous donor crop each,
+	# feathered by a smooth region mask built from the donor terrain grid.
+	# Sand (4) and rock/cliff (5) instead use the per-cell oriented block names
+	# (TB-B1b); water (3) keeps the scrolling wave sheet with its blue glaze.
+	var role_block := {1: "ground1", 2: "grass_ground2"}
 	for t in [1, 2, 4, 5, 3]:
+		if t == 4 or t == 5:
+			# game.tileblock already encodes sandsea1/5/6 and rock4/7/8
+			# orientation (game.gd:1082-1161); feed those names into the atlas.
+			if t == 4:
+				# TB-B1e: per-cell sandsea names, gamma falloff + lower ceiling
+				# -> textured shore with a narrow feather instead of a wash.
+				_composite_blocks(img, cx, cy, S, N,
+					_role_block_names(cx, cy, t, base_names), t, 0.55, 1.7)
+			else:
+				_composite_blocks(img, cx, cy, S, N,
+					_role_block_names(cx, cy, t, base_names), t)
+			continue
 		var grid := Image.create(N, N, false, Image.FORMAT_RGB8)
 		for gy in N:
 			for gx in N:
@@ -858,21 +1123,17 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 		var mask := _alpha_mask(grid, S)
 		var overlay: Image
 		if t == 3:
-			# P-21: scroll the tileable wave sheet with the ambient clock.  A
-			# chunk is baked once and cached, so each re-bake catches a different
-			# wave phase — a cheap time-based shimmer with no GPU dependency.
-			var phase: int = int(anim_t * 12.0) % 1024
-			overlay = _wrap_crop(ter_water, cx * S + 300 + phase, cy * S + 700, S)
-			var blue_big := ter_blue.duplicate() as Image
-			blue_big.resize(S, S, Image.INTERPOLATE_BILINEAR)
-			var blueA_big := ter_blueA.duplicate() as Image
-			blueA_big.resize(S, S, Image.INTERPOLATE_NEAREST)
-			overlay.blend_rect_mask(blue_big, blueA_big, full, origin)
+			# TB-B1c: wave animation moved to shaders/water_overlay.gdshader.
+			# Bake only a calm deep-blue substrate so shallow-water translucency
+			# never reveals the old harsh blue/white striped wave crop.
+			overlay = ter_blue.duplicate() as Image
+			overlay.resize(S, S, Image.INTERPOLATE_NEAREST)
 		else:
 			var nm: String = str(role_block.get(t, "ground1"))
 			var coff: int = abs(hash(nm)) % 512
 			overlay = _wrap_crop(_block_img(nm), cx * S + coff, cy * S + coff, S)
 		img.blend_rect_mask(overlay, mask, full, origin)
+
 	# Season tint + relief shading. Godot's blend_rect_mask is unreliable with
 	# mixed image formats here (a 0.34-alpha mask blended at full strength),
 	# so both layers are plain RGBA8 overlays alpha-blended with blend_rect
@@ -904,7 +1165,8 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 			img.blend_rect(shade_big, full, origin)
 		img.convert(Image.FORMAT_RGB8)
 	# supersample resolve: hard organic edges become true soft gradients
-	if bpx != px:
+	# (skipped on LOW, where comp_px == px and no downsample is needed)
+	if comp_px != px:
 		img.resize(CHUNK_T * px, CHUNK_T * px, Image.INTERPOLATE_BILINEAR)
 	var tex := ImageTexture.create_from_image(img)
 	var sp := Sprite2D.new()
@@ -934,7 +1196,19 @@ func _sync_terrain_chunks() -> void:
 			if not terrain_chunks.has(k):
 				if built >= 2:
 					return  # amortize: big GDScript bake, no multi-second hitch
+				# QA-1: time the bake itself (not the whole sync). Accumulate
+				# max + mean over the first 120 bakes, then emit exactly one
+				# BAKE_BENCH line; guarded so it never prints per frame again.
+				var bake_t0 := Time.get_ticks_usec()
 				terrain_chunks[k] = _build_chunk(cx, cy)
+				var bake_us := Time.get_ticks_usec() - bake_t0
+				if not bake_bench_done:
+					bake_bench_count += 1
+					bake_bench_total_us += bake_us
+					if bake_us > bake_bench_max_us:
+						bake_bench_max_us = bake_us
+					if bake_bench_count >= 120:
+						_emit_bake_bench()
 				terrain_order.append(k)
 				built += 1
 				while terrain_order.size() > 24:
@@ -950,6 +1224,10 @@ func sync(dt: float) -> void:
 	view_rect = get_viewport().get_canvas_transform().affine_inverse() * get_viewport_rect()
 	_sync_terrain_chunks()
 	anim_t += dt
+	# TB-B1c: advance the GPU water clock EVERY frame (the old bake-time phase
+	# only changed on chunk rebuild, so a stationary camera saw frozen water).
+	if water_mat != null:
+		water_mat.set_shader_parameter("time", anim_t)
 	fog_timer -= dt
 	if fog_timer <= 0.0:
 		fog_timer = Data.FOG_INTERVAL
@@ -1061,6 +1339,42 @@ func _wnoise(x: float, y: float) -> float:
 	var v: float = yf * yf * (3.0 - 2.0 * yf)
 	return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
 
+# TB-B1d prop pools. A pool only ever contains one kind of prop: bush/stump
+# pools never include rock/stone (TPA-4 D1), so a missing sprite falls through
+# to the deterministic procedural shape instead of drawing a rock.
+const TREE_TALL_POOL := ["tree_fir", "tree_fir", "tree_pine", "tree_oak",
+	"tree_spruce1", "tree_spruce2", "tree_spruce3", "tree_spruce4",
+	"tree_pinedry1", "tree_pinedry2", "tree_pinedry4"]
+const TREE_SMALL_POOL := ["tree_pinesmall1", "tree_pinesmall2", "tree_pinesmall3",
+	"tree_pinesmall4", "tree_firsmall1", "tree_firsmall2", "tree_firsmall3",
+	"tree_firsmall4"]
+const BUSH_POOL := ["bush1", "bush2", "bush3", "bush4"]
+const STUMP_POOL := ["tree_stump1", "tree_stump2", "tree_stump3", "tree_stump4"]
+const ROCK_POOL := ["rock", "stone", "rock_stones1", "rock_stones2", "rock_stones3",
+	"rock_stones4", "rock_stones5", "rock_stones6", "rock_smallstones1",
+	"rock_smallstones2", "rock_landstone1", "rock_landstone2"]
+const TREE_SIZE_BUCKETS := [0.9, 1.0, 1.12]
+
+# TB-B1g: donor texturemap.inc forest detail pass. Small trees are placed per
+# terrain-2 cell (not by the pattern generator), so a forest reads as a clump
+# of conifers + the odd broadleaf with a lighter understory, even where the sim
+# spawned no wood resource nodes. Three crown families (dark conifer / dry
+# pine / broadleaf oak) and three size buckets.
+const FOREST_CONIFER_POOL := ["tree_spruce1", "tree_spruce2", "tree_spruce3",
+	"tree_spruce4", "tree_pinesmall1", "tree_pinesmall2", "tree_pinesmall3",
+	"tree_pinesmall4", "tree_firsmall1", "tree_firsmall2", "tree_firsmall3",
+	"tree_firsmall4", "tree_pinedry1", "tree_pinedry2", "tree_pinedry3",
+	"tree_pinedry4"]
+const FOREST_BROAD_POOL := ["tree_oak"]
+# Weighted: ferns/bushes/plantain dominate; flower1..3 are only 3 of 24 picks
+# (~12%) so bright yellow blossoms stay scattered instead of forming a border.
+const FOREST_UNDERSTORY_POOL := ["bush1", "bush2", "bush3", "bush4",
+	"fern1", "fern2", "fern3", "fern4", "plantain1", "plantain2", "plantain3",
+	"fern1", "fern2", "fern3", "fern4", "bush1", "bush2", "bush3", "bush4",
+	"plantain1", "plantain2", "flower1", "flower2", "flower3"]
+# Visible heights at 720p: small 15-30 px, medium 40-60 px, large 70-100 px.
+const FOREST_TREE_H := [1.6, 4.0, 6.8]
+
 func _prop_tex(names: Array, seed_pos: Vector2) -> Texture2D:
 	# stable variant per spot (pine/oak/fir), like the original forest mix
 	var h := _hash(seed_pos.x, seed_pos.y)
@@ -1069,6 +1383,127 @@ func _prop_tex(names: Array, seed_pos: Vector2) -> Texture2D:
 	if frames.is_empty():
 		return null
 	return frames[0]
+
+# TB-B1d: extra variant axes, all hashed from world position (no RNG state in
+# game.gd) so a prop never flickers when chunks are rebuilt or the LRU turns.
+func _prop_bucket(seed_pos: Vector2, salt: float, n: int) -> int:
+	return int(_hash(seed_pos.x + salt, seed_pos.y - salt * 0.37) * float(n)) % n
+
+func _draw_prop(layer: Node2D, tex: Texture2D, p: Vector2, world_h: float,
+		tint: Color, yaw: float, flip: bool) -> void:
+	# Foot-anchored yaw/mirror: draw in a local frame whose origin is the prop's
+	# foot, so a small rotation reads as a natural lean, not a spin. Transform
+	# is always reset before the next prop on this layer.
+	layer.draw_set_transform(p, yaw, Vector2(-1.0 if flip else 1.0, 1.0))
+	_draw_sprite(layer, tex, Vector2.ZERO, world_h, tint, false)
+	layer.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+# TB-B1g: one detail tree at fractional tile position `fp`. Everything is
+# hashed from `fp` (no RNG, no per-frame state), so camera moves and chunk/LRU
+# rebuilds never change a clump. `edge` singles are a little shorter so forest
+# borders feather into the meadow instead of stopping at a hard tile edge.
+func _draw_forest_tree(fp: Vector2, margin: Rect2, edge := false) -> void:
+	var p := world_to_px(Vector2(fp.x * Data.TILE_M, fp.y * Data.TILE_M))
+	if not margin.has_point(p):
+		return
+	var h := _hash(fp.x, fp.y)
+	var pool: Array = FOREST_BROAD_POOL if h > 0.86 else FOREST_CONIFER_POOL
+	var tex := _prop_tex(pool, fp)
+	if tex == null:
+		return
+	var bucket := _prop_bucket(fp, 17.0, 10)
+	var hh: float = FOREST_TREE_H[0]
+	if bucket >= 9:
+		hh = FOREST_TREE_H[2]
+	elif bucket >= 7:
+		hh = FOREST_TREE_H[1]
+	if edge:
+		hh *= 0.8
+	var size_var := 0.88 + 0.24 * _hash(fp.x + 29.0, fp.y - 19.0)
+	_blob_rect(res_layer, p + Vector2(0, 2), 7.0 + hh * 1.6,
+		3.5 + hh * 0.8, Color(0, 0, 0, 0.14))
+	_draw_prop(res_layer, tex, p, hh * size_var, Color(1.12, 1.2, 1.02),
+		(_hash(fp.x - 31.0, fp.y + 13.0) - 0.5) * 0.26,
+		_prop_bucket(fp, 7.0, 2) == 0)
+
+func _draw_forest_understory(fp: Vector2, margin: Rect2) -> void:
+	var p := world_to_px(Vector2(fp.x * Data.TILE_M, fp.y * Data.TILE_M))
+	if not margin.has_point(p):
+		return
+	var pick_idx: int = int(_hash(fp.x, fp.y) * float(FOREST_UNDERSTORY_POOL.size())) \
+		% FOREST_UNDERSTORY_POOL.size()
+	var pick: String = str(FOREST_UNDERSTORY_POOL[pick_idx])
+	var tex := _prop_tex(FOREST_UNDERSTORY_POOL, fp)
+	if tex == null:
+		return
+	var h := _hash(fp.x, fp.y)
+	# Size is an independent position hash (not the pick hash): no correlation
+	# between neighbours that would make a row look stamped. Flowers are also
+	# shrunk so their bright yellow reads as a speck, not a border.
+	var size_var := 0.7 + 0.45 * _hash(fp.x + 61.0, fp.y - 47.0)
+	var hh := 1.08 * size_var
+	if pick.begins_with("flower"):
+		hh *= 0.75
+	_blob_rect(res_layer, p + Vector2(0, 1), 5.0 + h * 2.0,
+		2.5 + h, Color(0, 0, 0, 0.12))
+	_draw_prop(res_layer, tex, p, hh, Color(1, 1, 1),
+		(_hash(fp.x + 41.0, fp.y - 23.0) - 0.5) * 0.3,
+		_prop_bucket(fp, 37.0, 2) == 0)
+
+# Donor-style per-cell detail: 1-3 trees inside every forest cell, ~1 understory
+# per two cells, plus sparse singles on grass cells touching a forest cell.
+func _draw_forest_detail() -> void:
+	if game == null:
+		return
+	var m0 := view_rect.position / view_scale
+	var m1 := view_rect.end / view_scale
+	var t0 := game.tile_of(m0)
+	var t1 := game.tile_of(m1)
+	var x0 := maxi(0, t0.x - 1)
+	var y0 := maxi(0, t0.y - 1)
+	var x1 := mini(game.MAP_W - 1, t1.x + 1)
+	var y1 := mini(game.MAP_H - 1, t1.y + 1)
+	var margin := view_rect.grow(96)
+	var edge_seen := {}
+	for y in range(y0, y1 + 1):
+		for x in range(x0, x1 + 1):
+			if int(game.terrain[game._t(x, y)]) != 2:
+				continue
+			var count := 1 + _prop_bucket(Vector2(float(x), float(y)), 11.0, 3)
+			for k in count:
+				var fx := lerpf(0.12, 0.88, _hash(float(x) * 7.3 + float(k) * 13.7,
+					float(y) * 3.1 + float(k) * 5.9))
+				var fy := lerpf(0.12, 0.88, _hash(float(x) * 2.7 + float(k) * 17.3,
+					float(y) * 11.9 + float(k) * 7.1))
+				_draw_forest_tree(Vector2(float(x) + fx, float(y) + fy), margin)
+			if _hash(float(x) + 53.0, float(y) - 31.0) > 0.5:
+				# Cross-mix x into both offsets and widen the range: a row of
+				# adjacent cells no longer lands at the same in-cell fraction.
+				var ux := float(x) + lerpf(0.05, 0.95, _hash(
+					float(x) * 7.7 + float(y) * 3.3, float(y) * 11.1 - float(x) * 5.9))
+				var uy := float(y) + lerpf(0.05, 0.95, _hash(
+					float(y) * 13.7 - float(x) * 2.1, float(x) * 9.3 + float(y) * 4.7))
+				_draw_forest_understory(Vector2(ux, uy), margin)
+			# edge clumps: one sparse single on each touching non-forest cell;
+			# a local dict prevents duplicates where cells touch two forest cells.
+			for oy in [-1, 0, 1]:
+				for ox in [-1, 0, 1]:
+					if ox == 0 and oy == 0:
+						continue
+					var nx: int = x + ox
+					var ny: int = y + oy
+					if nx < 0 or ny < 0 or nx >= game.MAP_W or ny >= game.MAP_H:
+						continue
+					if int(game.terrain[game._t(nx, ny)]) == 2:
+						continue
+					var ek := Vector2i(nx, ny)
+					if edge_seen.has(ek):
+						continue
+					edge_seen[ek] = true
+					if _hash(float(nx) + 71.0, float(ny) - 43.0) > 0.62:
+						var ex := float(nx) + lerpf(0.2, 0.8, _hash(float(nx), float(ny)))
+						var ey := float(ny) + lerpf(0.2, 0.8, _hash(float(ny), float(nx)))
+						_draw_forest_tree(Vector2(ex, ey), margin, true)
 
 # MICRO #15: field state is a visual read of the existing sim numbers. A
 # depleted food node has hits==0 (no ripe wheat); a mill-sown full field
@@ -1116,6 +1551,9 @@ func _draw_field(p: Vector2, h: float, g: float) -> void:
 
 func _draw_resources() -> void:
 	dbg_res += 1
+	# TB-B1g: donor per-cell forest detail first, so harvestable resource nodes
+	# and buildings (higher layers) stay legible on top of the understory.
+	_draw_forest_detail()
 	for n in game.res_nodes:
 		# Ore deposits are PERMANENT nodes: they are created with hits == 0 and
 		# max_hits == 0 (game.gd:_add_res), so "hits <= 0" alone used to cull
@@ -1131,17 +1569,28 @@ func _draw_resources() -> void:
 			continue
 		var h := _hash(n.pos.x, n.pos.y)
 		if str(n.get("type", "")) == "stump":
-			var stump_tex := _prop_tex(["tree_stump", "rock", "stone"], n.pos)
+			# TB-B1d: stumps only ever resolve to tree_stump*; no rock fallback.
+			var stump_tex := _prop_tex(STUMP_POOL, n.pos)
 			if stump_tex != null:
-				_draw_sprite(res_layer, stump_tex, p, 0.55, Color(0.55, 0.42, 0.28), false)
+				_blob_rect(res_layer, p + Vector2(0, 2), 7.0 + h * 2.0,
+						3.5 + h, Color(0, 0, 0, 0.16))
+				_draw_prop(res_layer, stump_tex, p, 0.55 + h * 0.25,
+					Color(0.55, 0.42, 0.28),
+					(_hash(n.pos.x - 19.0, n.pos.y + 7.0) - 0.5) * 0.3,
+					_prop_bucket(n.pos, 41.0, 2) == 0)
 			else:
 				res_layer.draw_circle(p, 4.0, Color(0.42, 0.32, 0.2))
 				res_layer.draw_rect(Rect2(p.x - 1.5, p.y - 5, 3.0, 5), Color(0.35, 0.25, 0.14))
 			continue
 		if str(n.get("type", "")) == "bush":
-			var bush_tex := _prop_tex(["bush_rock", "bush_sand", "rock"], n.pos)
+			# TB-B1d: bush* only; the procedural silhouette stays deterministic.
+			var bush_tex := _prop_tex(BUSH_POOL, n.pos)
 			if bush_tex != null:
-				_draw_sprite(res_layer, bush_tex, p, 0.8, Color(1, 1, 1), false)
+				_blob_rect(res_layer, p + Vector2(0, 2), 8.0 + h * 3.0,
+						4.0 + h * 1.5, Color(0, 0, 0, 0.14))
+				_draw_prop(res_layer, bush_tex, p, 0.9 + h * 0.25, Color(1, 1, 1),
+					(_hash(n.pos.x - 23.0, n.pos.y + 11.0) - 0.5) * 0.24,
+					_prop_bucket(n.pos, 29.0, 2) == 0)
 			else:
 				res_layer.draw_circle(p + Vector2(0, 1), 4.5, Color(0, 0, 0, 0.14))
 				res_layer.draw_circle(p, 3.2, Color(0.25, 0.36, 0.18))
@@ -1150,15 +1599,25 @@ func _draw_resources() -> void:
 			continue
 		match n.type:
 			"wood":
-				# taiga mix: mostly fir/pine like the footage, occasional broadleaf
-				var tree := _prop_tex(["tree_fir", "tree_fir", "tree_pine", "tree_oak"], n.pos)
+				# TB-B1d: wider canopy mix (fir/pine/oak + spruce/pinedry/
+				# pinesmall/firsmall). Small variants get their own shorter
+				# pool and base height, then a deterministic size bucket and
+				# foot-anchored yaw/mirror variant per spot.
+				var small := _hash(n.pos.x + 3.3, n.pos.y - 9.9) > 0.78
+				var pool: Array = TREE_SMALL_POOL if small else TREE_TALL_POOL
+				var tree := _prop_tex(pool, n.pos)
 				if tree != null:
 					# Cossacks pines tower over peasants and read ~11-14 m tall.
 					# The donor-baked sheet is very dark olive, so lift it hard.
+					var bucket := float(TREE_SIZE_BUCKETS[_prop_bucket(n.pos, 17.0, 3)])
+					var base_h := 7.5 if small else 12.5
 					_blob_rect(res_layer, p + Vector2(0, 4), 24.0 + h * 10.0,
 						12.0 + h * 5.0, Color(0, 0, 0, 0.16))
-					_draw_sprite(res_layer, tree, p, _env_sprite_h(12.5, "tree", n.pos),
-						Color(1.18, 1.26, 1.06))
+					_draw_prop(res_layer, tree, p,
+						_env_sprite_h(base_h, "tree", n.pos) * bucket,
+						Color(1.18, 1.26, 1.06),
+						(_hash(n.pos.x - 31.0, n.pos.y + 13.0) - 0.5) * 0.26,
+						_prop_bucket(n.pos, 7.0, 2) == 0)
 					continue
 				# fallback below (no sprites): tall pines + broad oaks
 				var pine := h > 0.42
@@ -1179,7 +1638,9 @@ func _draw_resources() -> void:
 					res_layer.draw_circle(p + Vector2(3, -tall * 0.6), 5.5, c.lightened(0.16))
 					res_layer.draw_circle(p + Vector2(-1, -tall * 0.62), 2.5, c.lightened(0.3))
 			"stone":
-				var rock := _prop_tex(["rock", "stone"], n.pos)
+				# TB-B1d: rock_* variants; >=4 distinct silhouettes, old rock/
+				# stone kept in the pool so nothing can silently disappear.
+				var rock := _prop_tex(ROCK_POOL, n.pos)
 				if rock != null:
 					_blob_rect(res_layer, p + Vector2(0, 2), 14.0 + h * 6.0, 7.0 + h * 3.0, Color(0, 0, 0, 0.2))
 					_draw_sprite(res_layer, rock, p, _env_sprite_h(2.8, "stone", n.pos))

@@ -1,0 +1,20 @@
+{
+  "ticket": 693,
+  "id": "relief1-check-pattern2",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/pattern_gen.gd"
+  ],
+  "created": 1795263083.1256013,
+  "wait": 0.0007722377777099609,
+  "run": 0.3363027572631836,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000693_relief1-check-pattern2\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000693_relief1-check-pattern2\\stderr.txt"
+}

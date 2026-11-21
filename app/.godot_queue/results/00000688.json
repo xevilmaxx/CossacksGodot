@@ -1,0 +1,24 @@
+{
+  "ticket": 688,
+  "id": "relief1-debug-hills2",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/relief1_hills/debug2.json",
+    "--seed",
+    "9",
+    "--config",
+    "shots/terrain_land.json"
+  ],
+  "created": 1795262808.2416642,
+  "wait": 0.000888824462890625,
+  "run": 3.3050537109375,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000688_relief1-debug-hills2\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000688_relief1-debug-hills2\\stderr.txt"
+}

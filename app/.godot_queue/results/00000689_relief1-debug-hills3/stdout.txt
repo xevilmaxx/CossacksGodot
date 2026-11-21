@@ -1,0 +1,4 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+RELIEF1_DEBUG hills 128x128 { "mountain": 1, "plateau": 2, "plain": 1, "ravine": 0, "hill": 1 }
+map dump: C:/Users/Maxym.Oboyshev/Documents/Craft Anything/cossacks-3-3/scans/relief1_hills/debug3.json

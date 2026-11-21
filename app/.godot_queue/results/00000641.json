@@ -1,0 +1,26 @@
+{
+  "ticket": 641,
+  "id": "tbb0-128-seed-7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "shots/terrain_sample.json",
+    "--seed",
+    "7",
+    "--dump-map",
+    "shots/terrain_sample_128_seedscan_7.json",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795261052.6956494,
+  "wait": 0.0009357929229736328,
+  "run": 3.081291437149048,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000641_tbb0-128-seed-7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000641_tbb0-128-seed-7\\stderr.txt"
+}

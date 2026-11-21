@@ -1,0 +1,26 @@
+{
+  "ticket": 652,
+  "id": "tbb0-land-128-seed-20261114",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "shots/terrain_land.json",
+    "--seed",
+    "20261114",
+    "--dump-map",
+    "shots/terrain_land_seedscan_20261114.json",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795261391.1462383,
+  "wait": 0.0009245872497558594,
+  "run": 2.8527655601501465,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000652_tbb0-land-128-seed-20261114\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000652_tbb0-land-128-seed-20261114\\stderr.txt"
+}

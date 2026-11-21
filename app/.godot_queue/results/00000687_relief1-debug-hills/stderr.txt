@@ -1,0 +1,24 @@
+SCRIPT ERROR: Parse Error: The variable type is being inferred from a Variant value, so it will be typed as Variant. (Warning treated as error.)
+   at: GDScript::reload (res://scripts/pattern_gen.gd:365)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/game.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/world.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://scripts/main.gd:0)
+ERROR: Failed to load script "res://scripts/main.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Invalid call. Nonexistent function 'build' in base 'GDScript'.
+   at: C3Game._gen_base (res://scripts/game.gd:799)
+   GDScript backtrace (most recent call first):
+       [0] _gen_base (res://scripts/game.gd:799)
+       [1] setup (res://scripts/game.gd:233)
+       [2] _dump_map (res://scripts/main.gd:510)
+       [3] _ready (res://scripts/main.gd:167)
+SCRIPT ERROR: Invalid call. Nonexistent function 'build' in base 'GDScript'.
+   at: C3Game._gen_patterns (res://scripts/game.gd:500)
+   GDScript backtrace (most recent call first):
+       [0] _gen_patterns (res://scripts/game.gd:500)
+       [1] setup (res://scripts/game.gd:234)
+       [2] _dump_map (res://scripts/main.gd:510)
+       [3] _ready (res://scripts/main.gd:167)

@@ -1,0 +1,10 @@
+{
+  "display": {
+    "quality": "low",
+    "terrain_px": 8,
+    "sprite_cell": 64,
+    "fx_cap": 60,
+    "fog_interval": 1.0,
+    "minimap_interval": 0.5
+  }
+}

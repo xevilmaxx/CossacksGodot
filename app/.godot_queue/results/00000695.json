@@ -1,0 +1,22 @@
+{
+  "ticket": 695,
+  "id": "relief1-build-fix-selftest7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795263137.5153012,
+  "wait": 0.0014934539794921875,
+  "run": 36.26197838783264,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000695_relief1-build-fix-selftest7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000695_relief1-build-fix-selftest7\\stderr.txt"
+}

@@ -1,0 +1,20 @@
+{
+  "ticket": 616,
+  "id": "render1-water-check",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/world.gd"
+  ],
+  "created": 1795259754.5918267,
+  "wait": 0.0012209415435791016,
+  "run": 1.1358001232147217,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000616_render1-water-check\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000616_render1-water-check\\stderr.txt"
+}

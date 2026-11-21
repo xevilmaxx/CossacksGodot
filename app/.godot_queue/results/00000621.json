@@ -1,0 +1,21 @@
+{
+  "ticket": 621,
+  "id": "qa1-bench-config",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "app/shots/perf_low.json",
+    "--dump-config"
+  ],
+  "created": 1795260249.7299764,
+  "wait": 0.0007538795471191406,
+  "run": 1.384009838104248,
+  "exit": 0,
+  "timeout": 90.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000621_qa1-bench-config\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000621_qa1-bench-config\\stderr.txt"
+}

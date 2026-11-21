@@ -1,0 +1,20 @@
+{
+  "ticket": 658,
+  "id": "render1-opt-selftest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json"
+  ],
+  "created": 1795261551.8031259,
+  "wait": 43.872681617736816,
+  "run": 31.62282705307007,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000658_render1-opt-selftest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000658_render1-opt-selftest\\stderr.txt"
+}

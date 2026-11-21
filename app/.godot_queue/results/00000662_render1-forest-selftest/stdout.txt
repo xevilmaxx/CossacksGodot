@@ -1,0 +1,5 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+sprites: 116 sets loaded (sids=159)
+self-test report: C:/Users/Maxym.Oboyshev/Documents/Craft Anything/cossacks-3-3/app/selftest.json
+BAKE_BENCH preset=low px=8 chunks=120 max_ms=1397.42 mean_ms=1201.17

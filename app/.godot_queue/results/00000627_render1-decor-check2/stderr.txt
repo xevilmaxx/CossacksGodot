@@ -1,0 +1,10 @@
+SCRIPT ERROR: Parse Error: Cannot call non-static function "load()" on the class "Image" directly. Make an instance instead.
+   at: GDScript::reload (res://scripts/world.gd:248)
+SCRIPT ERROR: Parse Error: Cannot call function on enum value.
+   at: GDScript::reload (res://scripts/world.gd:249)
+SCRIPT ERROR: Parse Error: Cannot get property from enum value.
+   at: GDScript::reload (res://scripts/world.gd:249)
+SCRIPT ERROR: Parse Error: Invalid argument for "create_from_image()" function: argument 1 should be "Image" but is "Error".
+   at: GDScript::reload (res://scripts/world.gd:250)
+ERROR: Failed to load script "res://scripts/world.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

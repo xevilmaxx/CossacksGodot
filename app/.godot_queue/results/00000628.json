@@ -1,0 +1,20 @@
+{
+  "ticket": 628,
+  "id": "render1-decor-check3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--check-only",
+    "--script",
+    "res://scripts/world.gd"
+  ],
+  "created": 1795260499.1617568,
+  "wait": 0.001390218734741211,
+  "run": 0.8082137107849121,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000628_render1-decor-check3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000628_render1-decor-check3\\stderr.txt"
+}

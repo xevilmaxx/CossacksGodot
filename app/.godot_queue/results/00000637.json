@@ -1,0 +1,26 @@
+{
+  "ticket": 637,
+  "id": "qa1-bench-3",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\perf_low.json",
+    "--screenshot",
+    "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\qa1_bake_bench.png",
+    "--screenshot-frames",
+    "120",
+    "--timeout",
+    "210.0"
+  ],
+  "created": 1795260930.130795,
+  "wait": 0.0008132457733154297,
+  "run": 12.110612392425537,
+  "exit": 0,
+  "timeout": 240.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000637_qa1-bench-3\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000637_qa1-bench-3\\stderr.txt"
+}

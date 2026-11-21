@@ -1,0 +1,20 @@
+{
+  "ticket": 714,
+  "id": "relief1-v2-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795263860.6546507,
+  "wait": 0.0008256435394287109,
+  "run": 27.478179931640625,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000714_relief1-v2-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000714_relief1-v2-uitest\\stderr.txt"
+}

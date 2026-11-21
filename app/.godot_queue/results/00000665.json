@@ -1,0 +1,22 @@
+{
+  "ticket": 665,
+  "id": "relief1-base-9",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--dump-map",
+    "scans/relief1_base/scan_9.json",
+    "--seed",
+    "9"
+  ],
+  "created": 1795261888.4299066,
+  "wait": 0.0008285045623779297,
+  "run": 6.471402883529663,
+  "exit": 0,
+  "timeout": 120.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000665_relief1-base-9\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000665_relief1-base-9\\stderr.txt"
+}

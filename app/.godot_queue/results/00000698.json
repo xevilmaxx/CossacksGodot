@@ -1,0 +1,22 @@
+{
+  "ticket": 698,
+  "id": "relief1-diag-ridge7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795263355.827372,
+  "wait": 0.0007281303405761719,
+  "run": 33.60271620750427,
+  "exit": 1,
+  "timeout": 180.0,
+  "status": "failed",
+  "stdout": "app\\.godot_queue\\results\\00000698_relief1-diag-ridge7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000698_relief1-diag-ridge7\\stderr.txt"
+}

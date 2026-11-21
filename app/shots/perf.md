@@ -128,3 +128,154 @@ project root (no direct `godot` invocation). "Wall (Godot)" is the runner's
   `com.cossacksgodot.singleplayer`; no new target or SDK was introduced.
   Actual export still requires the matching export templates installed on the
   exporting OS (external dependency, not changed here).
+
+## Swarm QA-1 — TR-6 chunk-bake hitch (N-07) — 2026-11-21
+
+**Verdict: UNVERIFIED. No max single-frame chunk-bake number exists to record.**
+The N-07 target (`SWARM_BACKLOG.md:44`, `TERRAIN_PORT_RENDER.md:72,114,132,154-157`)
+is **max single-frame chunk-bake time < 250 ms on the LOW preset over 120 frames,
+with `built >= 2` chunks/frame and LRU 24**. Rows :92-93 above stay `not
+measured`; there is no honest number to replace them with yet.
+
+### Exact blocker (all four are source-verified)
+
+1. **No bake-timing instrumentation exists.** `world.gd::_build_chunk`
+   (`world.gd:950-1061`) and `_sync_terrain_chunks` (`world.gd:1063-1088`) contain
+   no `Time.get_ticks_*` or `print` call. Repo-wide grep of every `.gd` file finds
+   no per-bake timing emitter; the only print in `world.gd` is the one-time
+   `sprites: N sets loaded` at `:256`. No runner log in
+   `app/.godot_queue/results/` contains a chunk-bake time.
+2. **QA-1 cannot add the instrumentation.** All `.gd` files are read-only for this
+   worker; `world.gd` is owned by RENDER-1, `main.gd` by BUILDER-MAIN
+   (`AGENT_PROTOCOL.md §0`). TR-1's acceptance (`TERRAIN_PORT_RENDER.md:132`)
+   already assigns "instrument `_build_chunk`" to world.gd's owner.
+3. **`--bench` cannot observe bakes.** `main.gd:1000` explicitly skips
+   `world.sync()` when `bench_mode and is_headless`, so headless `--bench` never
+   calls `_sync_terrain_chunks`. Its report (`main.gd:989`) carries only
+   `fps`/`sim_ms_per_tick`, not bake time.
+4. **The only emitted timing is not the metric.** `main.gd:971-973` prints
+   `PERF ... sync_ms=X` — the **mean of TOTAL `world.sync()` over 120 frames**
+   (all entity/decor/fog drawing, not just bakes), not a per-frame maximum. It
+   is logged below as **context only** and is never used to pass N-07.
+
+### What was run (all through `app/tools/godot_runner.py run`; no direct `godot`)
+
+| purpose | runner job id | ticket | result | note |
+|---|---|---|---|---|
+| LOW-preset 120-frame bench | `qa1-bench-2` | 626 | `ok`, exit 0; run 12.96 s, queue wait 35.66 s | clean run: 0 stderr errors, 116 sprite sets loaded |
+| confirm effective settings | `qa1-bench-config2` | 623 | `ok`, exit 0; run 1.59 s | `--dump-config` output confirms low preset (below) |
+| failed setup (discarded) | `qa1-bench-1` / `qa1-bench-config` | 620 / 621 | `ok` but **wrong preset** | relative `--config app/shots/perf_low.json` was not resolved by `config.gd::_candidate_paths`; stderr: `settings: extra settings file not found: app/shots/perf_low.json`. It ran on `quality: high` — **do not use its 59.79 ms figure**. Fixed by passing an absolute config path. |
+
+Harness: `app/tools/bake_bench.py` (new, owned by QA-1) drives the runner and
+parses stdout. Overlay: `app/shots/perf_low.json` (new, owned by QA-1). Command
+for the valid run, from the project root:
+
+```
+python app/tools/bake_bench.py --id qa1-bench-2 --timeout 240 --max-wait 3600 --frames 120
+# wraps: python app\tools\godot_runner.py run --id qa1-bench-2 --timeout 240 --max-wait 3600 -- \
+#   --headless --path app -- --config <abs>/app/shots/perf_low.json \
+#   --screenshot <temp>/qa1_bake_bench.png --screenshot-frames 120 --timeout 210
+```
+
+### Settings in force during `qa1-bench-2` (verified, not assumed)
+
+- Overlay `app/shots/perf_low.json` passed by **absolute path** (a relative path
+  silently fails — see failed setup row). `--dump-config` (ticket 623) reports
+  `quality: low`, `terrain_px: 8`, `sprite_cell: 64`, `fx_cap: 60`,
+  `fog_interval: 1`, `minimap_interval: 0.5`.
+- 2-chunks/frame cap — `world.gd:1078-1079` (`if built >= 2: return`).
+- LRU 24 — `world.gd:1083-1088` (`while terrain_order.size() > 24`).
+- `TERRAIN_PX = 8` (low preset). Source-read by QA-1; **no `.gd` file was edited**.
+
+### Observed context (NOT the gate metric)
+
+- `qa1-bench-2` stdout: `PERF tick_ms=1.23 ai_ms=0.55 sync_ms=17.37
+  steps_per_frame=0.3 redraws r/b/u/f=5/5/120/120`.
+- `sync_ms=17.37` is the **mean of total headless `world.sync()`** across 120
+  frames on the low preset. It is neither a maximum nor bake-only, and a
+  headless CPU-render run says nothing about GPU/windowed FPS. **It is not a
+  PASS of N-07 and must not be quoted as one.**
+
+### How to close TR-6
+
+1. RENDER-1 (world.gd owner) adds instrumentation inside
+   `_sync_terrain_chunks`/`_build_chunk`: time each bake with
+   `Time.get_ticks_usec()`, keep the max over the first 120 frames, and print a
+   single parseable line, e.g.
+   `BAKE_BENCH preset=low px=8 chunks=120 max_ms=<n> mean_ms=<m>`.
+2. Re-run `python app/tools/bake_bench.py --id qa1-bench-3 ...` (same overlay and
+   absolute path). The tool parses `BAKE_BENCH ... max_ms=` and emits
+   **PASS** if `< 250`, **FAIL** otherwise; with no such line it stays
+   **UNVERIFIED** and never invents a value.
+3. Replace this section's verdict with the measured number and job id.
+
+**Scope:** headless, CPU-only, sim + `world.sync()`. No general FPS or GPU claim
+is made from these runs.
+
+### Result update (2026-11-21, follow-up) — instrumentation now present — **FAIL**
+
+The UNVERIFIED verdict above is **superseded**: RENDER-1 added a one-shot
+`BAKE_BENCH` print to `world.gd::_sync_terrain_chunks` (`:100-108`, `:1162-1174`,
+`:110-115` exit flush). A real number was recorded.
+
+| measure | runner job id | ticket | `max_ms` | `mean_ms` | vs 250 ms |
+|---|---|---|---|---|---|
+| perf gate, AFTER import-cache fix (final) | `qa1-bench-4` | 639 | **645.24** | 526.63 | **FAIL** (2.58× over) |
+| perf gate, BEFORE import-cache fix | `qa1-bench-3` | 637 | 629.17 | 565.32 | FAIL (2.52× over) |
+| effective preset verification | `qa1-bench3-config` | 636 | — | — | low confirmed |
+
+**Gate verdict: FAIL.** Measured max single-frame chunk-bake time on the LOW
+preset is **645.24 ms**, above the N-07 target of < 250 ms. This is a measured
+engine-emitted value, not an inference from `sync_ms`. Both runs agree, and
+regenerating the import cache did not change the outcome, so the cost is in
+`_build_chunk` itself rather than the missing-`.ctex` raw-PNG fallback.
+
+Contract and settings actually in force for the final run:
+- 120 frames (`--screenshot-frames 120`); low preset overlay by **absolute path**;
+  `--dump-config` in ticket 636 confirmed `quality: low`, `terrain_px: 8`,
+  `sprite_cell: 64`, `fx_cap: 60`, `fog_interval: 1`, `minimap_interval: 0.5`.
+- 2-chunks/frame cap (`world.gd:1160-1161`) and LRU 24 (`world.gd:1177-1182`),
+  unchanged by QA-1.
+- Engine line: `BAKE_BENCH preset=low px=8 chunks=120 max_ms=645.24 mean_ms=526.63`.
+
+**Explicit caveats (required for an honest reading):**
+- The `preset=low`, `px=8` and `chunks=120` fields are **hardcoded contract labels**
+  in `world.gd`, not measurements. The preset was verified independently (ticket
+  636); the *actual bake count is not emitted*. With a 12.45 s process run and a
+  526.63 ms mean, only ~12-20 bakes occurred — the line was flushed at exit,
+  **not** on the 120th bake. `chunks=120` refers to the 120-frame bench contract.
+- The max is **cold-cache dominated**: a static camera bakes only the first few
+  chunks, so one-time image/cache warm-up is included. It is a real single-frame
+  bake time, but not a steady-state figure. Per the task instruction this is
+  stated explicitly and **no pass is claimed** — and the measured verdict is
+  FAIL in any case.
+- `qa1-bench-4` stdout: `PERF tick_ms=0.80 ai_ms=0.56 sync_ms=17.59
+  steps_per_frame=0.3 redraws r/b/u/f=5/5/120/120`; 0 stderr errors;
+  `sprites: 116 sets loaded`. `sync_ms=17.59` remains context only.
+
+**Remaining blocker for N-07:** the gate is red. `_build_chunk` in `world.gd`
+(RENDER-1's file) needs optimisation, or the 250 ms target needs revisiting with
+the owner. QA-1 cannot edit `.gd` files, so no fix was attempted here.
+
+### Import-cache blocker resolved (runner job `qa1-import`, ticket 638)
+
+- Command (never direct `godot`):
+  `python app\tools\godot_runner.py run --id qa1-import --timeout 240 --max-wait 3600 -- --headless --path app --editor --import`
+- Result: `ok`, exit 0, run 34.08 s, **0 stderr lines** (1235 stdout lines).
+- Verification (read-only Python, no `.import` or `.gd` file edited):
+  - `bush1.png-8a8cdc339a9d4240673a4e01414c48e4.ctex` — 130,622 B
+  - `tree_spruce1.png-ca46988f8ef4241e7498364e2378246e.ctex` — 73,216 B
+  - `rock_stones1.png-0d0b8decf034aff0721ff0be30b5d84f.ctex` — 108,062 B
+  - Each hash equals `md5("res://assets/models/sprites_hi/<name>.png")`, i.e. the
+    exact filename referenced by that sprite's `.import` `[remap] path=`.
+  - All **385** `.import` files under `assets/models/sprites`,
+    `assets/models/sprites_hi` and `assets/models/tex` now have their referenced
+    `.ctex` under `app/.godot/imported/` — **0 missing** (was 87 missing).
+- Conclusion: the normal Godot `load()` remap path now resolves these sprites;
+  exported builds no longer depend on the dev-only `Image.load_from_file`
+  fallback. Verification method was `.ctex` existence + matching MD5 path hashes
+  (no temporary `.gd` script was added, per the no-`.gd`-edit constraint).
+
+**Files changed this follow-up:** `app/shots/perf.md`, `app/tools/bake_bench.py`
+(updated honesty caveats), regenerated `app/.godot/imported/**` cache files.
+No `.gd` or `.import` file was edited.

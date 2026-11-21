@@ -1,0 +1,27 @@
+{
+  "ticket": 722,
+  "id": "tbb0-land-128-capture",
+  "argv": [
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "shots/terrain_land.json",
+    "--seed",
+    "20261113",
+    "--screenshot",
+    "shots/terrain_land.png",
+    "--screenshot-frames",
+    "120",
+    "--timeout",
+    "60"
+  ],
+  "created": 1795264184.4005866,
+  "wait": 0.0009713172912597656,
+  "run": 16.112176418304443,
+  "exit": 0,
+  "timeout": 300.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000722_tbb0-land-128-capture\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000722_tbb0-land-128-capture\\stderr.txt"
+}

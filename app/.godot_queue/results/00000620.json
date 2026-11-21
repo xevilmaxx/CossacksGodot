@@ -1,0 +1,26 @@
+{
+  "ticket": 620,
+  "id": "qa1-bench-1",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--config",
+    "app/shots/perf_low.json",
+    "--screenshot",
+    "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\qa1_bake_bench.png",
+    "--screenshot-frames",
+    "120",
+    "--timeout",
+    "210.0"
+  ],
+  "created": 1795260200.7665582,
+  "wait": 0.0014209747314453125,
+  "run": 17.883546829223633,
+  "exit": 0,
+  "timeout": 240.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000620_qa1-bench-1\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000620_qa1-bench-1\\stderr.txt"
+}

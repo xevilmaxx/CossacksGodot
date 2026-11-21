@@ -1,0 +1,15 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+sprites: 116 sets loaded (sids=159)
+DBGCOMP names=3 grid=7 blend=10 misses=31
+DBGCOMP names=1 grid=7 blend=2 misses=31
+DBGBAKE base=24 comp=40 roles=0 finish=0 total=65
+DBGCOMP names=3 grid=7 blend=9 misses=31
+DBGBAKE base=20 comp=20 roles=0 finish=0 total=40
+DBGCOMP names=3 grid=8 blend=8 misses=31
+DBGBAKE base=21 comp=22 roles=0 finish=0 total=43
+DBGCOMP names=3 grid=8 blend=8 misses=31
+DBGCOMP names=1 grid=4 blend=2 misses=31
+PERF tick_ms=0.75 ai_ms=0.55 sync_ms=1.74 steps_per_frame=0.3 redraws r/b/u/f=5/5/120/120
+screenshot saved (headless map render): C:\Users\MAXYM~1.OBO\AppData\Local\Temp\qa1_bake_bench.png
+BAKE_BENCH preset=low px=8 chunks=120 max_ms=66.93 mean_ms=51.27

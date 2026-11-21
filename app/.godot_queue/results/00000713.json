@@ -1,0 +1,22 @@
+{
+  "ticket": 713,
+  "id": "relief1-v2-selftest7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795263825.879407,
+  "wait": 0.000797271728515625,
+  "run": 27.283275842666626,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000713_relief1-v2-selftest7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000713_relief1-v2-selftest7\\stderr.txt"
+}

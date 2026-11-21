@@ -1,0 +1,20 @@
+{
+  "ticket": 657,
+  "id": "render1-opt-uitest",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--ui-test",
+    "app/uitest.json"
+  ],
+  "created": 1795261551.771478,
+  "wait": 0.0009472370147705078,
+  "run": 43.68540143966675,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000657_render1-opt-uitest\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000657_render1-opt-uitest\\stderr.txt"
+}

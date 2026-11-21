@@ -1,0 +1,22 @@
+{
+  "ticket": 696,
+  "id": "relief1-diag-noheight7",
+  "argv": [
+    "--headless",
+    "--path",
+    "app",
+    "--",
+    "--self-test",
+    "app/selftest.json",
+    "--seed",
+    "7"
+  ],
+  "created": 1795263235.0913916,
+  "wait": 0.0006823539733886719,
+  "run": 24.70703625679016,
+  "exit": 0,
+  "timeout": 180.0,
+  "status": "ok",
+  "stdout": "app\\.godot_queue\\results\\00000696_relief1-diag-noheight7\\stdout.txt",
+  "stderr": "app\\.godot_queue\\results\\00000696_relief1-diag-noheight7\\stderr.txt"
+}
