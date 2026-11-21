@@ -339,13 +339,13 @@ func _scatter_forest(center: Vector2, count: int, spread: float) -> void:
 		var p := center + Vector2(rng.randf_range(-spread, spread), rng.randf_range(-spread, spread))
 		if not in_bounds(p) or is_blocked(p):
 			continue
-		# trees grow on grass/meadow/dirt only — never on rock, sand or water
+		# trees grow on grass/meadow/dirt only â€” never on rock, sand or water
 		# (covers hills and lake shores whatever the placement order)
 		var tt: int = terrain[_t(int(p.x / TILE), int(p.y / TILE))]
 		if tt != 0 and tt != 1 and tt != 2:
 			continue
 		# never plant into quarries, mine sites or fields: clusters stay pure
-		# (the managed park around starts is exempt — groves belong there)
+		# (the managed park around starts is exempt â€” groves belong there)
 		var clash := false
 		var near_home := false
 		for st in map_starts:
@@ -873,7 +873,7 @@ func _assign_tileblocks() -> void:
 	# 1) base blocks from the donor pipeline: every land cell starts as the
 	# default TileBlock (grass1 = presets Summer index 0, like donor
 	# SetTileIndex(x,y,0) in generatemap.inc).  Meadow variety does NOT come
-	# from random speckles here — the donor paints detail later from the
+	# from random speckles here â€” the donor paints detail later from the
 	# tile_low/highground bitmaps (_apply_detail_pass below), then blends
 	# neighbours with 3 SmoothTileMap passes.  Random per-tile test7/8/9
 	# speckles (the old port) checkerboarded because those blocks are
@@ -2275,7 +2275,7 @@ func train_unit(player: int, building: Dictionary, sid: String) -> bool:
 	if building.queue.size() >= Data.BUILD_QUEUE_LIMIT:
 		return false
 	if unit_count(player) + queue_count(player) >= players[player].farm_cap:
-		say("Need more houses — unit limit reached.")
+		say("Need more houses â€” unit limit reached.")
 		return false
 	var cost: Dictionary = Data.UNITS[rsid].price
 	if not pay_cost(player, cost):
@@ -2402,48 +2402,23 @@ func _separate_units() -> void:
 							var push: Vector2 = delta / d * (want - d) * 0.5
 							var np_e: Vector2 = e.pos - push
 							var np_o: Vector2 = o.pos + push
-							if in_bounds(np_e) and not _blocked_for(e, np_e):
+							if in_bounds(np_e) and not is_blocked(np_e):
 								e.pos = np_e
-							if in_bounds(np_o) and not _blocked_for(o, np_o):
+							if in_bounds(np_o) and not is_blocked(np_o):
 								o.pos = np_o
-		# buildings push units out (bounded by the number of buildings)
+		# buildings push units out (cheap: only nearby buildings per unit)
 		for e in units:
 			if e.dead:
 				continue
-			for b in live_blds:
+			for b in grid_query(e.pos, 9.0):
 				if b.dead or b.kind != "building":
 					continue
-				var r: Rect2 = b.get("block_rect", Rect2())
-				if r.has_area():
-					# A sprite building is a solid 2D block.  If a unit ended
-					# up inside the drawn rectangle (spawned there, or nudged
-					# by neighbours), eject it through the nearest free face.
-					var er := r.grow(e.def.radius + 0.15)
-					if er.has_point(e.pos):
-						var ds := [e.pos.x - er.position.x, er.end.x - e.pos.x,
-							e.pos.y - er.position.y, er.end.y - e.pos.y]
-						for _k in 4:
-							var bi := 0
-							for q in range(1, 4):
-								if float(ds[q]) < float(ds[bi]):
-									bi = q
-							var np: Vector2 = e.pos
-							match bi:
-								0: np.x = er.position.x - 0.05
-								1: np.x = er.end.x + 0.05
-								2: np.y = er.position.y - 0.05
-								_: np.y = er.end.y + 0.05
-							if in_bounds(np) and not _blocked_for(e, np):
-								e.pos = np
-								break
-							ds[bi] = 1e9
-						continue
 				var rr: float = e.def.radius + float(b.get("block_r", b.def.radius)) + 0.15
 				var delta: Vector2 = e.pos - b.pos
 				var d := delta.length()
 				if d < rr and d > 0.001:
 					var np: Vector2 = b.pos + delta / d * rr
-					if in_bounds(np) and not _blocked_for(e, np):
+					if in_bounds(np) and not is_blocked(np):
 						# blocked map says building tiles are blocked; allow the
 						# ring right outside the footprint (unblock-tested below)
 						e.pos = np
@@ -2451,7 +2426,7 @@ func _separate_units() -> void:
 						# try sliding around the footprint
 						var side := Vector2(-delta.y, delta.x).normalized()
 						var alt: Vector2 = e.pos + side * 0.3
-						if in_bounds(alt) and not _blocked_for(e, alt):
+						if in_bounds(alt) and not is_blocked(alt):
 							e.pos = alt
 
 func _tick_upkeep(dt: float) -> void:
@@ -2759,11 +2734,11 @@ func _work_slot(e: Dictionary, center: Vector2, ring_r: float) -> Vector2:
 	var ang := float(e.id) * 2.399963 + center.x * 0.13 + center.y * 0.07
 	var rr := ring_r + float(e.id % 3) * 0.35
 	var p := center + Vector2(cos(ang), sin(ang)) * rr
-	if in_bounds(p) and not _blocked_for(e, p):
+	if in_bounds(p) and not is_blocked(p):
 		return p
 	# blocked side of the ring: try the opposite side
 	var p2 := center - Vector2(cos(ang), sin(ang)) * rr
-	if in_bounds(p2) and not _blocked_for(e, p2):
+	if in_bounds(p2) and not is_blocked(p2):
 		return p2
 	return center
 
@@ -3692,7 +3667,7 @@ func deserialize(d: Dictionary) -> bool:
 		if e.kind == "building" and str(e.sid) == "gat":
 			gates.append(e)
 	_grid_rebuild()
-	# tile art uses its own deterministic stream — restore the seed first so a
+	# tile art uses its own deterministic stream â€” restore the seed first so a
 	# quicksave made with seed A reloads with seed A's shore/smooth/variant art.
 	if d.has("seed"):
 		Data.RANDOM_SEED = int(d.seed)

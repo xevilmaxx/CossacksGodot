@@ -18,9 +18,9 @@
   "vsync": true,
   "pixels_per_meter": 16.0,
   "fog_of_war": false,
- "unit_scale": 1.25,
- "show_centroids": false,
- "units_opaque": true
+  "unit_scale": 1.25,
+  "show_centroids": false,
+  "units_opaque": true
  },
  "camera": {
   "pitch_degrees": -32.0,

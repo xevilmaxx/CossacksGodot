@@ -695,10 +695,7 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	# bilinearly upscaled to the full chunk: there are NO per-cell blits and no
 	# dmask speckle at cell borders. Equal neighbours are pixel-identical,
 	# differing ones cross-fade over a full tile.
-	# sample the mask grid at 3x tile resolution with a smooth domain warp:
-	# boundaries stop following the tile lattice (the last visible artifact)
-	var SUB := 3
-	var N := CHUNK_T * SUB + 1
+	var N := CHUNK_T + 1
 	var full := Rect2i(0, 0, S, S)
 	var origin := Vector2i.ZERO
 	var block_at := func(x: int, y: int) -> String:
@@ -710,16 +707,17 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 	var mix_grid := Image.create(N, N, false, Image.FORMAT_RGB8)
 	for gy in N:
 		for gx in N:
-			var fx := float(gx) / float(SUB)
-			var fy := float(gy) / float(SUB)
-			var wx := _wnoise(fx * 0.09 + cx * 0.41 + 5.0, fy * 0.09 + cy * 0.37 - 3.0) * 0.22
-			var wy := _wnoise(fx * 0.09 + cx * 0.29 - 11.0, fy * 0.09 + cy * 0.53 + 7.0) * 0.55
-			var x: int = cx * CHUNK_T + int(round(fx + wx))
-			var y: int = cy * CHUNK_T + int(round(fy + wy))
-			var v := 0.19
-			if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
-				var bn: String = block_at.call(x, y)
-				v = 0.10 + 0.28 * float(abs(hash(bn)) % 1000) / 1000.0
+			var sum := 0.0
+			var cnt := 0
+			for oy in [-1, 0]:
+				for ox in [-1, 0]:
+					var x: int = cx * CHUNK_T + gx + int(ox)
+					var y: int = cy * CHUNK_T + gy + int(oy)
+					if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+						var bn: String = block_at.call(x, y)
+						sum += 0.10 + 0.28 * float(abs(hash(bn)) % 1000) / 1000.0
+						cnt += 1
+			var v: float = sum / maxf(1.0, float(cnt))
 			mix_grid.set_pixel(gx, gy, Color(v, v, v))
 	var mix_mask := _alpha_mask(mix_grid, S)
 	var meadow2 := _wrap_crop(_block_img("grass7"), cx * S, cy * S, S)
@@ -732,16 +730,17 @@ func _build_chunk(cx: int, cy: int) -> Sprite2D:
 		var grid := Image.create(N, N, false, Image.FORMAT_RGB8)
 		for gy in N:
 			for gx in N:
-				var fx := float(gx) / float(SUB)
-				var fy := float(gy) / float(SUB)
-				var wx := _wnoise(fx * 0.09 + cx * 0.41 + 5.0, fy * 0.09 + cy * 0.37 - 3.0) * 0.22
-				var wy := _wnoise(fx * 0.09 + cx * 0.29 - 11.0, fy * 0.09 + cy * 0.53 + 7.0) * 0.55
-				var x: int = cx * CHUNK_T + int(round(fx + wx))
-				var y: int = cy * CHUNK_T + int(round(fy + wy))
-				var v := 0.0
-				if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
-					if int(game.terrain[game._t(x, y)]) == t:
-						v = 1.0
+				var sum := 0.0
+				var cnt := 0
+				for oy in [-1, 0]:
+					for ox in [-1, 0]:
+						var x: int = cx * CHUNK_T + gx + int(ox)
+						var y: int = cy * CHUNK_T + gy + int(oy)
+						if x >= 0 and y >= 0 and x < game.MAP_W and y < game.MAP_H:
+							if int(game.terrain[game._t(x, y)]) == t:
+								sum += 1.0
+							cnt += 1
+				var v: float = sum / maxf(1.0, float(cnt))
 				grid.set_pixel(gx, gy, Color(v, v, v))
 		var mask := _alpha_mask(grid, S)
 		var overlay: Image
@@ -1319,7 +1318,7 @@ func _draw_units() -> void:
 		var coat := col.darkened(0.08)
 		var coat_lt := col.lightened(0.22)
 		var coat_dk := col.darkened(0.38)
-		var r: float = e.def.radius * view_scale
+		var r: float = e.def.radius * view_scale * Data.UNIT_SCALE
 		var vr: float = r * 1.7 + 2.0
 		# soft contact shadow (two alpha layers) + idle/march bob
 		var bob := sin(anim_t * 5.0 + float(e.id) * 1.7) * (1.4 if e.moving else 0.5)

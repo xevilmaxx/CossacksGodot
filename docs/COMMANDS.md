@@ -22,6 +22,10 @@ historical-battle quick mode. See `app/README.md` for controls.
 :: heal, morale, upgrade, market, capture, squad/formation/bonus/replenish/flee
 godot --headless --path app -- --self-test app/selftest.json
 
+:: 9-check visual-tuning test: unit scale / centroid disks / opaque units
+::   (standalone - does not depend on the gameplay self-test)
+godot --headless --path app --script res://tests/visual_tuning_test.gd
+
 :: 17-scene UI user-journey test (menu, select, keys, build, train, squads,
 :: rally, market, research, delete, speed) — drives the real input/HUD code
 godot --headless --path app -- --ui-test app/uitest.json
