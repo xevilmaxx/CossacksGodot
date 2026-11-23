@@ -1,0 +1,194 @@
+{
+  "task": "T-NATION-PLAN (REVISED - nation-first hierarchy)",
+  "status": "plan-only: no PNG/.import moves and no source edits performed by this task",
+  "created_local": "2026-11-23",
+  "redirect_note": "Supersedes the category-first draft. Owner chose nation-first: anim/<nation>/{buildings,units,naval} plus anim/common/{buildings,units,naval}.",
+  "source_root": "app/assets/models/anim",
+  "nations": ["aus", "eng", "pol", "rus", "spa", "tur", "ukr", "bav", "den", "fra", "hun", "net", "pie", "por", "pru", "sax", "swe", "swi", "ven", "alg", "sco"],
+  "classification": {
+    "rule": "nation = stem[0:3].lower() IF len(stem) >= 4 AND stem[3] == '_' AND prefix in nations; ELSE 'common'. The underscore requirement is mandatory (see ambiguous_names).",
+    "source_to_kind": {
+      "buildings": "buildings",
+      "land_units": "units",
+      "naval_units": "naval"
+    },
+    "target_path_template": "app/assets/models/anim/<nation|common>/<kind>/<filename>"
+  },
+  "current_counts": {
+    "buildings": 1525,
+    "land_units": 312,
+    "naval_units": 12,
+    "total_png": 1849,
+    "import_files_one_per_png": 1849
+  },
+  "counts_per_target_folder": {
+    "buildings": {
+      "alg/buildings": 36,
+      "aus/buildings": 78,
+      "bav/buildings": 78,
+      "den/buildings": 78,
+      "eng/buildings": 78,
+      "fra/buildings": 78,
+      "hun/buildings": 78,
+      "net/buildings": 78,
+      "pie/buildings": 78,
+      "pol/buildings": 78,
+      "por/buildings": 78,
+      "pru/buildings": 78,
+      "rus/buildings": 78,
+      "sax/buildings": 78,
+      "sco/buildings": 18,
+      "spa/buildings": 78,
+      "swe/buildings": 78,
+      "swi/buildings": 78,
+      "tur/buildings": 72,
+      "ukr/buildings": 72,
+      "ven/buildings": 78,
+      "common/buildings": 1,
+      "TOTAL": 1525
+    },
+    "units": {
+      "aus/units": 14,
+      "eng/units": 14,
+      "pol/units": 14,
+      "rus/units": 14,
+      "sco/units": 18,
+      "spa/units": 14,
+      "tur/units": 14,
+      "ukr/units": 14,
+      "common/units": 196,
+      "TOTAL": 312
+    },
+    "naval": {
+      "common/naval": 12,
+      "TOTAL": 12
+    },
+    "empty_or_absent_targets": {
+      "<nation>/naval": "no nation has ship sprites in the current data - do not create empty nation naval dirs",
+      "common/buildings": "exactly 1 file: mill_rotor.png",
+      "grand_total": 1849
+    }
+  },
+  "ambiguous_names": [
+    {
+      "files": ["spakh_attack.png", "spakh_death.png", "spakh_idle.png", "spakh_walk.png"],
+      "source": "land_units",
+      "prefix_like": "spa",
+      "target": "common/units",
+      "why": "first 3 chars are a valid nation code but there is NO underscore before the rest of the name. A naive first-3-chars resolver would misroute these to spa/units. nation_of() must require stem[3] == '_'."
+    },
+    {
+      "files": ["mill_rotor.png"],
+      "source": "buildings",
+      "prefix_like": null,
+      "target": "common/buildings",
+      "why": "only non-nation-prefixed building sheet; metadata sibling mill_rotor.json stays in buildings/."
+    },
+    {
+      "files": ["rus_sta_s4.png.import~RF139ced6.TMP", "rus_sto_dead.png.import401825162.tmp"],
+      "source": "buildings",
+      "target": "DO NOT MOVE",
+      "why": "stale editor/migration temp files, not valid .import files. Leave in place or let the owner delete them; exclude from the manifest."
+    }
+  ],
+  "json_metadata_stays_put": [
+    "app/assets/models/anim/buildings/buildings.json",
+    "app/assets/models/anim/buildings/mill_rotor.json",
+    "app/assets/models/anim/land_units/index.json",
+    "app/assets/models/anim/land_units/sco_units.json",
+    "app/assets/models/anim/naval_units/index.json"
+  ],
+  "resolver_design": {
+    "approach": "Call-site-specific candidate dirs. world.gd already knows the category at each call, so no filesystem sniffing is needed. Keep _sheet() byte-for-byte; add NATIONS + nation_of() + _nation_sheet() and swap each call site.",
+    "gdscript": "const NATIONS := [\"aus\", \"eng\", \"pol\", \"rus\", \"spa\", \"tur\", \"ukr\", \"bav\", \"den\", \"fra\", \"hun\", \"net\", \"pie\", \"por\", \"pru\", \"sax\", \"swe\", \"swi\", \"ven\", \"alg\", \"sco\"]\n\nfunc nation_of(name: String) -> String:\n    # Accepts \"rus_peasant_walk.png\" or \"rus_peasant_walk\".\n    # The '_' guard keeps generic \"spakh_*\" in common, not Spain.\n    var stem := name.trim_suffix(\".png\")\n    if stem.length() < 4 or stem[3] != \"_\":\n        return \"\"\n    var p := stem.substr(0, 3).to_lower()\n    return p if NATIONS.has(p) else \"\"\n\n# UNCHANGED: probe the given dirs in order, then the legacy base path.\nfunc _sheet(base: String, name: String, dirs: Array) -> String:\n    for d in dirs:\n        var p := \"%s/%s\" % [d, name]\n        if _res_exists(p):\n            return p\n    return \"%s/%s\" % [base, name]\n\nfunc _nation_sheet(base: String, name: String, kind: String, legacy: Array) -> String:\n    # kind = \"units\" | \"buildings\" | \"naval\".\n    # Canonical root first (all baked art lives there), then 'base' if a\n    # quality preset redirected _anim_dir(). Legacy chain appended verbatim.\n    var nat := nation_of(name)\n    var roots := [\"res://assets/models/anim\"]\n    if base != \"\" and base != roots[0]:\n        roots.append(base)\n    var dirs: Array = []\n    for root in roots:\n        if nat != \"\":\n            dirs.append(\"%s/%s/%s\" % [root, nat, kind])\n        dirs.append(\"%s/common/%s\" % [root, kind])\n    dirs.append_array(legacy)\n    return _sheet(base, name, dirs)\n\n# --- call sites in app/scripts/world.gd ---\n\n# ~L473 _anim_sheet() - unit / crew sheets\nreturn _nation_sheet(anim_dir, name, \"units\", [\n    anim_dir + \"/land_units\",\n    anim_dir + \"/naval_units\",\n    anim_dir + \"/buildings\",\n    \"res://assets/models/anim\",\n    \"res://assets/models/anim/naval_units\",\n])\n\n# ~L562 _bld_key() - nation skin existence probe\nif _res_exists(_nation_sheet(_anim_dir(), nk + \".png\", \"buildings\", [\n        _anim_dir() + \"/buildings\", \"res://assets/models/anim/buildings\"])):\n    return nk\n\n# ~L568 _mill_rotor()\nvar path := _nation_sheet(_anim_dir(), \"mill_rotor.png\", \"buildings\", [\n    _anim_dir() + \"/buildings\", \"res://assets/models/anim/buildings\"])\n\n# ~L601 _bld_anim()\nvar path := _nation_sheet(_anim_dir(), key + \".png\", \"buildings\", [\n    _anim_dir() + \"/buildings\", \"res://assets/models/anim/buildings\"])\n\n# ~L2740-2744 _hull_tex() - base becomes the anim ROOT, not naval_units/\nvar base := \"res://assets/models/anim\"\nvar legacy := [_anim_dir() + \"/naval_units\", \"res://assets/models/anim/naval_units\"]\nvar path := _nation_sheet(base, key + \"_hull.png\", \"naval\", legacy)\nif not _res_exists(path) and key != \"yacht\":\n    path = _nation_sheet(base, \"yacht_hull.png\", \"naval\", legacy)",
+    "call_site_summary": [
+      "L473 _anim_sheet -> units",
+      "L562 _bld_key -> buildings",
+      "L568 _mill_rotor -> buildings",
+      "L601 _bld_anim -> buildings",
+      "L2742 _hull_tex(key) -> naval",
+      "L2744 _hull_tex(yacht fallback) -> naval"
+    ],
+    "invariants": [
+      "_sheet retains legacy root fallback: return \"<base>/<name>\" when no candidate exists.",
+      "anim_tex / hull_tex_cache keys are unchanged (still filename-derived), so no redraw changes.",
+      "Nation-unique sco sheets resolve: sco_peasant_* and sco_highlandersword_* -> sco/units/; sco_* buildings -> sco/buildings/.",
+      "Generic sheets resolve: archer_walk -> common/units/; spakh_walk -> common/units/; mill_rotor -> common/buildings/; yacht_hull -> common/naval/.",
+      "If a quality preset points _anim_dir() at an anim<cell> folder, canonical res://assets/models/anim candidates are still probed first."
+    ]
+  },
+  "import_rewrite": {
+    "applies_to": "all 1849 <name>.png.import siblings (one per moved PNG)",
+    "move": "move <name>.png.import beside <name>.png into the same <nation|common>/<kind>/ dir; keep the filename",
+    "three_fields_to_rewrite": [
+      "[deps] source_file=\"res://assets/models/anim/<nation|common>/<kind>/<name>.png\"",
+      "[remap] path=\"res://.godot/imported/<stem>-<NEW_MD5>.ctex\"",
+      "[deps] dest_files=[\"res://.godot/imported/<stem>-<NEW_MD5>.ctex\"]"
+    ],
+    "md5_formula": "NEW_MD5 = hashlib.md5(new_source_file.encode('utf-8')).hexdigest()",
+    "md5_evidence": "Verified against inbox/anim_migration_undo.json: root path res://assets/models/anim/archer_attack.png -> b04767927ab727ea452909b3c38a54fc; nested res://assets/models/anim/land_units/archer_attack.png -> 188c7166bc50b8c9cc12ca651050165c, both exact md5 of the full res:// path. The hash changes again on this move.",
+    "leave_unchanged": ["uid", "type", "importer", "metadata", "all [params] keys"],
+    "godot_cache": "Stale .godot/imported/<stem>-<OLD_MD5>.ctex files are regenerated by Godot on next import; do not hand-delete them as part of the move."
+  },
+  "rollback_manifest": {
+    "produced_by": "the migration executor (NOT by this plan task)",
+    "path": "inbox/anim_nation_undo.json",
+    "schema": {
+      "task": "T-NATION executor undo log",
+      "manifest": "inbox/anim_nation_manifest.json",
+      "source_root": "app/assets/models/anim",
+      "count": 1849,
+      "operations": [
+        {
+          "png": "<name>.png",
+          "import": "<name>.png.import",
+          "source_kind_dir": "buildings | land_units | naval_units",
+          "target_dir": "<nation|common>/<kind>",
+          "reverse_replacements": [
+            {"field": "deps/source_file", "from": "<new res:// path>", "to": "<old res:// path>"},
+            {"field": "remap/path", "from": "<new .ctex path>", "to": "<old .ctex path>"},
+            {"field": "deps/dest_files[0]", "from": "<new .ctex path>", "to": "<old .ctex path>"}
+          ],
+          "original_import_sha256": "<sha256 of original .import bytes>",
+          "original_import_b64": "<base64 of original .import bytes>"
+        }
+      ],
+      "created_dirs": ["list of new dirs created, so rollback can rmdir them once empty"]
+    },
+    "rollback_order": "restore each original .import byte-for-byte from base64 at its source path; move PNG+import back to <source_kind_dir>; remove created dirs only if empty; never touch the five JSON metadata files."
+  },
+  "files_to_update": {
+    "runtime_required": [
+      "app/scripts/world.gd (const NATIONS + nation_of() + _nation_sheet(); 6 call sites listed above)"
+    ],
+    "tests": [
+      "app/tests/mill_visual_test.gd L22-29: its _resolve_anim_png() mirror must probe <anim>/common/buildings/mill_rotor.png, then <anim>/buildings/, then legacy root; update the L23/L33 comments too.",
+      "app/tests/t_naval.gd L19/L52-53: split NAVAL_DIR - index.json stays in naval_units/ but PNG lookups (_png_path for yacht_*/*.png) must use res://assets/models/anim/common/naval.",
+      "app/tests/t_roster_scotland.gd: NO path edit (no hardcoded PNG path). Keep as the key regression check that sco sheets still load after the move.",
+      "app/tests/t_anim_metrics.gd: NO edit (index.json paths only; JSONs stay)."
+    ],
+    "tools_rebake_and_readers": [
+      "app/tools/compute_buildings.py L17,L24,L26-38: ANIM_SUBDIRS/resolve_anim_png needs nation/common probes. Note its NATIONS list omits 'sco' (pre-existing) - add it while touching this file.",
+      "app/tools/sheet_metrics.py L14-25: same ANIM_SUBDIRS resolver update.",
+      "app/tools/bake_sprites.py L62-64,L553-566,L591,L609-610: write PNGs to out/<nation>/{units,buildings} and out/common/units; index.json stays at out/land_units/.",
+      "app/tools/bake_naval.py L7 docstring + write target: PNGs to common/naval/, index.json stays in naval_units/.",
+      "app/tools/bake_mill_rotor.py L37-47: default out_rotor -> out/common/buildings; --legacy-flat still writes the anim root.",
+      "app/tools/bake_scottish.py L160-187: read baked sheets from <anim>/sco/buildings/ and <anim>/sco/units/ (L167,L184); sco_units.json stays at <anim>/land_units/.",
+      "app/tools/migrate_anim_layout.py: first-migration executor, use as the schema/template for the new executor; do not run or edit."
+    ],
+    "no_edit_needed": [
+      "app/scripts/data.gd L246 (land_units/sco_units.json stays)",
+      "app/scripts/game.gd L1246-1279 (buildings/buildings.json stays)",
+      "app/scripts/world.gd L155 (naval_units/index.json stays)",
+      "docs/** and MECHANICS.md (stale anim/buildings.json references are pre-existing; optional cleanup only)"
+    ],
+    "bulk": "all 1849 .png.import files: move + 3-field rewrite + md5 recompute"
+  },
+  "verification": [
+    "counts: 1849 PNG + 1849 .import moved; 5 JSON files untouched at their current paths",
+    "no leftover PNGs in buildings/, land_units/, naval_units/ (only JSON + the 2 known .TMP files)",
+    "resolver smoke: _bld_anim('rus_cen'), _mill_rotor(), _hull_tex('yacht'), _anim_sheet('sco_peasant','idle'), _anim_sheet('spakh','walk'), _anim_sheet('archer','walk')",
+    "godot tests: t_naval, mill_visual_test, t_roster_scotland, t_anim_metrics",
+    "git status: only world.gd, the listed tests/tools, moved PNG+.import pairs, and the new undo manifest"
+  ]
+}

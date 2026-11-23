@@ -1,0 +1,257 @@
+{
+ "yacht": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969
+   },
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 11.355,
+    "center": [
+     0.0,
+     -0.805,
+     3.214
+    ],
+    "ax": 0.5709,
+    "ay": 0.9267,
+    "tool": null,
+    "bbox": [
+     23,
+     33,
+     137,
+     151
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9437,
+    "cx": 0.5
+   }
+  }
+ },
+ "yachttur": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969
+   },
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 11.355,
+    "center": [
+     0.0,
+     -0.805,
+     3.214
+    ],
+    "ax": 0.5709,
+    "ay": 0.9267,
+    "tool": null,
+    "bbox": [
+     8,
+     20,
+     151,
+     143
+    ],
+    "fig_h": 0.7688,
+    "foot": 0.8938,
+    "cx": 0.4969
+   }
+  }
+ },
+ "fishboat": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969
+   },
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 11.355,
+    "center": [
+     0.0,
+     -0.805,
+     3.214
+    ],
+    "ax": 0.5709,
+    "ay": 0.9267,
+    "tool": null,
+    "bbox": [
+     22,
+     18,
+     138,
+     152
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.95,
+    "cx": 0.5
+   }
+  }
+ },
+ "frigate": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969
+   },
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 11.355,
+    "center": [
+     0.0,
+     -0.805,
+     3.214
+    ],
+    "ax": 0.5709,
+    "ay": 0.9267,
+    "tool": null,
+    "bbox": [
+     24,
+     31,
+     136,
+     151
+    ],
+    "fig_h": 0.75,
+    "foot": 0.9437,
+    "cx": 0.5
+   }
+  }
+ },
+ "galley": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969
+   },
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 11.355,
+    "center": [
+     0.0,
+     -0.805,
+     3.214
+    ],
+    "ax": 0.5709,
+    "ay": 0.9267,
+    "tool": null,
+    "bbox": [
+     8,
+     30,
+     151,
+     148
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.925,
+    "cx": 0.4969
+   }
+  }
+ }
+}

@@ -1,0 +1,270 @@
+{
+  "task": "T-ALPHA-NORM dry-run (read-only; no PNG modified)",
+  "created_local": "2026-11-23T15:37:11",
+  "source_root": "app/assets/models/anim",
+  "note": "new_size/new_md5 are the exact bytes Pillow would write when RGB is zeroed strictly where alpha==0; semi-transparent and opaque pixel values are preserved.",
+  "file_count": 8,
+  "old_bytes_total": 768153,
+  "new_bytes_total": 523265,
+  "saving_bytes_total": 244888,
+  "saving_mb": 0.23354339599609375,
+  "saving_pct": 31.880107218223454,
+  "total_hidden_noise_pixels": 51866,
+  "total_semi_transparent_pixels": 10172,
+  "files_with_hidden_noise": 8,
+  "files_with_semi_transparent_pixels": 8,
+  "cache_missing_files": 0,
+  "cache_source_md5_mismatches": 0,
+  "top_20_by_saving": [
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen.png",
+      "old_size": 104489,
+      "new_size": 68751,
+      "saving": 35738,
+      "hidden_noise_pixels": 6398,
+      "alpha0_pixels": 77681
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s4.png",
+      "old_size": 104041,
+      "new_size": 68859,
+      "saving": 35182,
+      "hidden_noise_pixels": 6449,
+      "alpha0_pixels": 78279
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s3.png",
+      "old_size": 96834,
+      "new_size": 61995,
+      "saving": 34839,
+      "hidden_noise_pixels": 6627,
+      "alpha0_pixels": 80235
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s1.png",
+      "old_size": 62460,
+      "new_size": 32032,
+      "saving": 30428,
+      "hidden_noise_pixels": 7708,
+      "alpha0_pixels": 93618
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s2.png",
+      "old_size": 72327,
+      "new_size": 42423,
+      "saving": 29904,
+      "hidden_noise_pixels": 7152,
+      "alpha0_pixels": 86526
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_dead.png",
+      "old_size": 74409,
+      "new_size": 45464,
+      "saving": 28945,
+      "hidden_noise_pixels": 7161,
+      "alpha0_pixels": 86375
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_hou_dead.png",
+      "old_size": 115715,
+      "new_size": 90372,
+      "saving": 25343,
+      "hidden_noise_pixels": 5578,
+      "alpha0_pixels": 68234
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_hou.png",
+      "old_size": 137878,
+      "new_size": 113369,
+      "saving": 24509,
+      "hidden_noise_pixels": 4793,
+      "alpha0_pixels": 59024
+    }
+  ],
+  "files": [
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen.png",
+      "rel": "alg/buildings/alg_cen.png",
+      "md5_cache": "app/.godot/imported/alg_cen.png-0e89fb4707113120dd7a603a9ca2b27d.md5",
+      "cache_exists": true,
+      "cache_source_md5": "18424b18e4eb3f5c9334bc37c3c2d2a6",
+      "cache_dest_md5": "185e7dad95ecf16643ca3c1a405a3335",
+      "cache_matches_png": true,
+      "old_size": 104489,
+      "new_size": 68751,
+      "saving": 35738,
+      "old_md5": "18424b18e4eb3f5c9334bc37c3c2d2a6",
+      "new_md5": "840fd11824b01daa559790553f172ec0",
+      "alpha0_pixels": 77681,
+      "semi_transparent_pixels": 666,
+      "opaque_pixels": 24053,
+      "hidden_noise_pixels": 6398,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_dead.png",
+      "rel": "alg/buildings/alg_cen_dead.png",
+      "md5_cache": "app/.godot/imported/alg_cen_dead.png-853ff0c05519d735695c4a30eb3d56a1.md5",
+      "cache_exists": true,
+      "cache_source_md5": "4d057676770831cb953469920ebb1415",
+      "cache_dest_md5": "52eefab7753d07c9d855a5797b4c6f09",
+      "cache_matches_png": true,
+      "old_size": 74409,
+      "new_size": 45464,
+      "saving": 28945,
+      "old_md5": "4d057676770831cb953469920ebb1415",
+      "new_md5": "01b20937cc342af898d4bc211be3e871",
+      "alpha0_pixels": 86375,
+      "semi_transparent_pixels": 1323,
+      "opaque_pixels": 14702,
+      "hidden_noise_pixels": 7161,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s1.png",
+      "rel": "alg/buildings/alg_cen_s1.png",
+      "md5_cache": "app/.godot/imported/alg_cen_s1.png-b48687f18c80be05eeee716b5ae4c34c.md5",
+      "cache_exists": true,
+      "cache_source_md5": "a4fc44a5c4c0f2d88f47e3042601ee1a",
+      "cache_dest_md5": "ac106a9a33c9d4ae3da4a18246a9c58e",
+      "cache_matches_png": true,
+      "old_size": 62460,
+      "new_size": 32032,
+      "saving": 30428,
+      "old_md5": "a4fc44a5c4c0f2d88f47e3042601ee1a",
+      "new_md5": "73e907e69cdc2cbeecfb0da45f5dc2f0",
+      "alpha0_pixels": 93618,
+      "semi_transparent_pixels": 2087,
+      "opaque_pixels": 6695,
+      "hidden_noise_pixels": 7708,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s2.png",
+      "rel": "alg/buildings/alg_cen_s2.png",
+      "md5_cache": "app/.godot/imported/alg_cen_s2.png-ba885ca10be05c69b40d643087c68efe.md5",
+      "cache_exists": true,
+      "cache_source_md5": "8f9333dbbd86598b95cb6d257cddfe0c",
+      "cache_dest_md5": "b0a8a9cce1e4121637467874f077a305",
+      "cache_matches_png": true,
+      "old_size": 72327,
+      "new_size": 42423,
+      "saving": 29904,
+      "old_md5": "8f9333dbbd86598b95cb6d257cddfe0c",
+      "new_md5": "ee48ed14d85437bf9b5d9c2b5701a2e9",
+      "alpha0_pixels": 86526,
+      "semi_transparent_pixels": 636,
+      "opaque_pixels": 15238,
+      "hidden_noise_pixels": 7152,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s3.png",
+      "rel": "alg/buildings/alg_cen_s3.png",
+      "md5_cache": "app/.godot/imported/alg_cen_s3.png-459ac4b43a86ca18c52f11ae9ec61281.md5",
+      "cache_exists": true,
+      "cache_source_md5": "f72838f1657735570b4ff73082c99be0",
+      "cache_dest_md5": "25ee96d6f8604205ec6ff6a209afe903",
+      "cache_matches_png": true,
+      "old_size": 96834,
+      "new_size": 61995,
+      "saving": 34839,
+      "old_md5": "f72838f1657735570b4ff73082c99be0",
+      "new_md5": "0a65bc17c903608cb70a538df55ad3e8",
+      "alpha0_pixels": 80235,
+      "semi_transparent_pixels": 1048,
+      "opaque_pixels": 21117,
+      "hidden_noise_pixels": 6627,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_cen_s4.png",
+      "rel": "alg/buildings/alg_cen_s4.png",
+      "md5_cache": "app/.godot/imported/alg_cen_s4.png-6e56ab9176b9c24949b93f194b07a554.md5",
+      "cache_exists": true,
+      "cache_source_md5": "83dfb64424c18b2b2f6c7d330ad0899d",
+      "cache_dest_md5": "412d9795e2311d9b8447b96d9c8323e9",
+      "cache_matches_png": true,
+      "old_size": 104041,
+      "new_size": 68859,
+      "saving": 35182,
+      "old_md5": "83dfb64424c18b2b2f6c7d330ad0899d",
+      "new_md5": "3e71264e78b8c8d33f62cf0cbb26c329",
+      "alpha0_pixels": 78279,
+      "semi_transparent_pixels": 1083,
+      "opaque_pixels": 23038,
+      "hidden_noise_pixels": 6449,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_hou.png",
+      "rel": "alg/buildings/alg_hou.png",
+      "md5_cache": "app/.godot/imported/alg_hou.png-2cc89fb38dc4554215a3014738fcf2fb.md5",
+      "cache_exists": true,
+      "cache_source_md5": "334d913a5e76d59db22fd467a045d22e",
+      "cache_dest_md5": "ca01a829db000a170d44ab3636794eed",
+      "cache_matches_png": true,
+      "old_size": 137878,
+      "new_size": 113369,
+      "saving": 24509,
+      "old_md5": "334d913a5e76d59db22fd467a045d22e",
+      "new_md5": "6ec355145861eae8543bdd001052cde4",
+      "alpha0_pixels": 59024,
+      "semi_transparent_pixels": 1276,
+      "opaque_pixels": 42100,
+      "hidden_noise_pixels": 4793,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    },
+    {
+      "png": "app/assets/models/anim/alg/buildings/alg_hou_dead.png",
+      "rel": "alg/buildings/alg_hou_dead.png",
+      "md5_cache": "app/.godot/imported/alg_hou_dead.png-c970b4298b2606295eee4a9261f34115.md5",
+      "cache_exists": true,
+      "cache_source_md5": "025a93ebbb27fa79367ade9775fc4263",
+      "cache_dest_md5": "8645593070135b11b33cbd136a67994c",
+      "cache_matches_png": true,
+      "old_size": 115715,
+      "new_size": 90372,
+      "saving": 25343,
+      "old_md5": "025a93ebbb27fa79367ade9775fc4263",
+      "new_md5": "661334a5691a951488adb51d2ee177e1",
+      "alpha0_pixels": 68234,
+      "semi_transparent_pixels": 2053,
+      "opaque_pixels": 32113,
+      "hidden_noise_pixels": 5578,
+      "mode": "RGBA",
+      "dimensions": [
+        320,
+        320
+      ]
+    }
+  ]
+}

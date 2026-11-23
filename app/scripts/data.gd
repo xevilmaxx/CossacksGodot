@@ -243,7 +243,9 @@ static var EXTRA_ANIM_INDEX := {}
 static func load_extra_anim_index() -> void:
 	if not EXTRA_ANIM_INDEX.is_empty():
 		return
-	var path := "res://assets/models/anim/sco_units.json"
+	var path := "res://assets/models/anim/land_units/sco_units.json"
+	if not FileAccess.file_exists(path):
+		path = "res://assets/models/anim/sco_units.json"  # legacy flat fallback
 	if not FileAccess.file_exists(path):
 		return
 	var raw := FileAccess.get_file_as_string(path)
@@ -946,7 +948,7 @@ const UNITS_BASE := {
 		"radius": 0.35,
 		"icon": Rect2(46, 184, 46, 46),
 	},
-	# P-10 naval: static hull + crew sheets baked in app/assets/models/anim/naval/
+	# P-10 naval: static hull + crew sheets baked in app/assets/models/anim/naval_units/
 	# (index.json: hull ortho 11.355, crew ortho 6.047). Movement/shape flags are
 	# donor-evidenced; hp/speed/dmg/price are ESTIMATED (NAVAL_PORT_PLAN §5 Q2).
 	"yacht": {

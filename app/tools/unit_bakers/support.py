@@ -70,7 +70,7 @@ KEYS = {
 
 DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 DEFAULT_OUT = str(APP / "shots" / "unit_pieces" / "support")
-DEFAULT_IDX = str(APP / "assets" / "models" / "anim" / "index.json")
+DEFAULT_IDX = str(APP / "assets" / "models" / "anim" / "land_units" / "index.json")
 
 # The donor AAF clips the family actually resolves to, in baker priority
 # order (bake_sprites.bake_unit plan). Kept here for the truth dump only.

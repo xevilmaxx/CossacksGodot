@@ -14,7 +14,7 @@ from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1]
 DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
-DEFAULT_IDX = APP / "assets" / "models" / "anim" / "index.json"
+DEFAULT_IDX = APP / "assets" / "models" / "anim" / "land_units" / "index.json"
 
 def parse_args():
     ap = argparse.ArgumentParser(description=__doc__)

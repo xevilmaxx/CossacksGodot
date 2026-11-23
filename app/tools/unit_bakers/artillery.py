@@ -78,7 +78,7 @@ KEYS = {
 
 DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 DEFAULT_OUT = str(APP / "shots" / "unit_pieces" / "artillery")
-DEFAULT_IDX = str(APP / "assets" / "models" / "anim" / "index.json")
+DEFAULT_IDX = str(APP / "assets" / "models" / "anim" / "land_units" / "index.json")
 
 # Alive-mesh AAF clips in baker priority order. (action, candidate names,
 # sampled-frame cap, loop). Sample caps match the reference baker exactly.

@@ -4,7 +4,7 @@
 Run under Blender (donor is PRIVATE USE ONLY - never redistribute raw files):
 
   blender --background --factory-startup --python app/tools/bake_naval.py -- \
-      --game "C:\\Games\\Cossacks 3" --out app/assets/models/anim/naval \
+      --game "C:\\Games\\Cossacks 3" --out app/assets/models/anim \
       --only yacht --size 160 --samples 4 --engine cycles
 
 This is intentionally a THIN wrapper: all format reading, skinning, sampling,
@@ -12,7 +12,8 @@ framing, material and render helpers come from bake_sprites.py (K-01). Only the
 action plan and the ship-specific bake loop live here. Every donor-derived
 scratch file (converted .dds -> .png, per-cell render) is written to a fresh
 tempfile.mkdtemp() directory OUTSIDE res://; only final sheets + index.json
-land under --out.
+land under --out. --out is the anim root: sheets go to common/naval/ and
+index.json stays in naval_units/ (same metadata path as before).
 
 index.json uses the exact same schema as anim/index.json:
   {key: {"cell": N, "actions": {action: {"frames", "duration", "loop",
@@ -59,7 +60,9 @@ def parse_args():
     ap.add_argument("--game", default=DEFAULT_GAME,
                     help="installed donor folder (default: $COSSACKS3_DIR or "
                          "C:\\Games\\Cossacks 3)")
-    ap.add_argument("--out", required=True)
+    ap.add_argument("--out", required=True,
+                    help="anim assets root: sheets -> common/naval/, "
+                         "index.json -> naval_units/")
     ap.add_argument("--only", default="yacht", help="comma-separated unit keys")
     ap.add_argument("--size", type=int, default=160)
     ap.add_argument("--samples", type=int, default=4)
@@ -207,24 +210,26 @@ def bake_naval_unit(game, out, key, base, size, aaf_override, action,
     ob = bs.build_mesh(m, mat)
     me = ob.data
 
-    # Ground anchor from the stand camera, for schema parity with anim/index.
-    cam = bs.camera(center, 0.0, ortho)
+    # T-BAKE-OPT: ONE camera for the whole naval unit bake (anchor + all 8
+    # views of every frame). camera_set() retargets it with the exact same rig
+    # (azimuth d*45, elevation 32 deg, same ortho) so pixels are unchanged.
+    cam = bs.camera_create()
+    bs.camera_set(cam, center, 0.0, ortho)
     ax, ay = bs.ground_anchor_ay(cam, size)
-    bs.bpy.data.objects.remove(cam, do_unlink=True)
 
     sheet = bs.Image.new("RGBA", (size * 8, size * len(frs)), (0, 0, 0, 0))
     for ri, fr in enumerate(frs):
         me.vertices.foreach_set("co", [c for v in skinned[fr] for c in v])
         me.update()
         for d in range(8):
-            cam = bs.camera(center, d * 45.0, ortho)
+            bs.camera_set(cam, center, d * 45.0, ortho)
             cell = os.path.join(tmp, "cell.png")
             bs.render_cell(cell, size)
             img = bs.Image.open(cell).convert("RGBA")
             sheet.paste(img, (d * size, ri * size), img)
-            bs.bpy.data.objects.remove(cam, do_unlink=True)
     sheet_path = os.path.join(out, "%s_%s.png" % (key, action))
     sheet.save(sheet_path)
+    bs.bpy.data.objects.remove(cam, do_unlink=True)
     bs.bpy.data.objects.remove(ob, do_unlink=True)
     print("naval sheet %s %dx%d" % (sheet_path, sheet.width, sheet.height),
           flush=True)
@@ -266,20 +271,21 @@ def bake_naval_hull(game, out, key, base, size, tmp):
     bs.setup_scene()
     mat = bs.make_mat(png)
     ob = bs.build_mesh(m, mat)
-    cam = bs.camera(center, 0.0, ortho)
+    # T-BAKE-OPT: one reused camera for the static hull's 8 views as well.
+    cam = bs.camera_create()
+    bs.camera_set(cam, center, 0.0, ortho)
     ax, ay = bs.ground_anchor_ay(cam, size)
-    bs.bpy.data.objects.remove(cam, do_unlink=True)
 
     sheet = bs.Image.new("RGBA", (size * 8, size), (0, 0, 0, 0))
     for d in range(8):
-        cam = bs.camera(center, d * 45.0, ortho)
+        bs.camera_set(cam, center, d * 45.0, ortho)
         cell = os.path.join(tmp, "hull_cell.png")
         bs.render_cell(cell, size)
         img = bs.Image.open(cell).convert("RGBA")
         sheet.paste(img, (d * size, 0), img)
-        bs.bpy.data.objects.remove(cam, do_unlink=True)
     sheet_path = os.path.join(out, "%s_hull.png" % key)
     sheet.save(sheet_path)
+    bs.bpy.data.objects.remove(cam, do_unlink=True)
     bs.bpy.data.objects.remove(ob, do_unlink=True)
     print("naval sheet %s %dx%d" % (sheet_path, sheet.width, sheet.height),
           flush=True)
@@ -299,17 +305,25 @@ def main():
         return 0
     a.game = str(Path(a.game).expanduser().resolve())
     a.out = str(Path(a.out).expanduser().resolve())
+    # Accept the legacy --out .../naval_units by stepping up to the anim root.
+    if os.path.basename(a.out) == "naval_units":
+        a.out = os.path.dirname(a.out)
     if bs is None:
         raise RuntimeError("bake_sprites.py could not be imported")
     bs._ENGINE = a.engine
     bs._SAMPLES = a.samples
-    os.makedirs(a.out, exist_ok=True)
+    # Nation-first tree: shared hull/crew sheets in common/naval/, metadata in
+    # the unchanged naval_units/ folder.
+    sheets_dir = os.path.join(a.out, "common", "naval")
+    idx_dir = os.path.join(a.out, "naval_units")
+    os.makedirs(sheets_dir, exist_ok=True)
+    os.makedirs(idx_dir, exist_ok=True)
 
     # Fresh scratch dir per run, strictly outside res://.
     tmp = tempfile.mkdtemp(prefix="cossacks_naval_")
     print("naval scratch: %s" % tmp, flush=True)
 
-    idx_path = os.path.join(a.out, "index.json")
+    idx_path = os.path.join(idx_dir, "index.json")
     idx = json.load(open(idx_path, encoding="utf-8")) if os.path.exists(idx_path) else {}
     only = set(x for x in a.only.split(",") if x)
     for key, base in NAVAL.items():
@@ -317,10 +331,10 @@ def main():
             continue
         try:
             entry = None if a.hull_only else bake_naval_unit(
-                a.game, a.out, key, base, a.size,
+                a.game, sheets_dir, key, base, a.size,
                 a.aaf, a.action, a.action_frames, tmp)
             if (entry or a.hull_only) and not a.no_hull:
-                hull = bake_naval_hull(a.game, a.out, key, base, a.size, tmp)
+                hull = bake_naval_hull(a.game, sheets_dir, key, base, a.size, tmp)
                 if hull:
                     if entry:
                         entry["actions"].update(hull["actions"])
@@ -328,7 +342,7 @@ def main():
                         entry = hull
             if entry:
                 for act, ad in entry["actions"].items():
-                    sheet = os.path.join(a.out, "%s_%s.png" % (key, act))
+                    sheet = os.path.join(sheets_dir, "%s_%s.png" % (key, act))
                     if os.path.exists(sheet):
                         ad.update(measure_sheet(sheet, a.size))
                 idx[key] = entry

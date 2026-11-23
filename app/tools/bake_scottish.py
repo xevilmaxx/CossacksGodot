@@ -24,6 +24,8 @@ Run under Blender (Blender 5.2.3 LTS; CPU Cycles, low samples):
 Uses the existing portable primitives in bake_sprites.py (K-01): bake_building
 for the single-view 320 px building sheets and bake_unit for the 8-direction
 unit sheets. The metric fields use bake_naval.measure_sheet (alpha > 8).
+Sheets land in <anim>/sco/buildings/ and <anim>/sco/units/; buildings.json and
+land_units/sco_units.json keep their existing paths.
 """
 import argparse, json, os, struct, sys, tempfile
 from pathlib import Path
@@ -109,8 +111,11 @@ def building_metrics(png_path, ortho):
 
 
 def register_buildings(game, anim, new_keys):
-    """Append sco_* rows to buildings.json, preserving every existing byte."""
-    path = os.path.join(anim, "buildings.json")
+    """Append sco_* rows to buildings/buildings.json, preserving bytes."""
+    path = os.path.join(anim, "buildings", "buildings.json")
+    legacy = os.path.join(anim, "buildings.json")
+    if not os.path.exists(path) and os.path.exists(legacy):
+        path = legacy  # legacy flat fallback
     raw = open(path, "rb").read().decode("utf-8")
     idx = json.loads(raw)
     # Round-trip guard: abort rather than rewrite 1506 existing rows on a
@@ -122,6 +127,8 @@ def register_buildings(game, anim, new_keys):
         idx[key] = m
         added.append(key)
     out = json.dumps(idx, indent=1).replace("\n", "\r\n")
+    path = os.path.join(anim, "buildings", "buildings.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, "wb").write(out.encode("utf-8"))
     print("sco buildings.json +%d keys (total %d)" % (len(added), len(idx)),
           flush=True)
@@ -139,6 +146,9 @@ def main():
     bs._ENGINE = a.engine
     bs._SAMPLES = a.samples
     os.makedirs(a.anim, exist_ok=True)
+    # Nation-first sheet tree; JSON metadata keeps its old paths below.
+    bld_dir = os.path.join(a.anim, "sco", "buildings")
+    unit_dir = os.path.join(a.anim, "sco", "units")
     tmp = tempfile.mkdtemp(prefix="cossacks_scottish_")
     print("sco scratch: %s" % tmp, flush=True)
 
@@ -152,14 +162,15 @@ def main():
                 continue
             dx, dy, dz = osm_bounds(osm)
             ortho = round(max(dx, dy, dz) * 1.12, 3)
-            ok = bs.bake_building(a.game, a.anim, "sco", bld, BLDG_CELL, tmp, sid)
+            ok = bs.bake_building(a.game, a.anim, "sco", bld, BLDG_CELL, tmp, sid,
+                                  out_dir=bld_dir)
             print("sco building %s bbox=(%.2f,%.2f,%.2f) ortho=%.3f baked=%s"
                   % (sid, dx, dy, dz, ortho, ok), flush=True)
             if not ok:
                 continue
             for suffix in ("", "_s1", "_s2", "_s3", "_s4", "_dead"):
                 key = "sco_%s%s" % (sid, suffix)
-                png = os.path.join(a.anim, key + ".png")
+                png = os.path.join(bld_dir, key + ".png")
                 if not os.path.exists(png):
                     continue
                 m = building_metrics(png, ortho)
@@ -173,13 +184,14 @@ def main():
 
     if not a.skip_unit:
         entry = bs.bake_unit(a.game, a.anim, UNIT_KEY, UNIT_BASE, a.size,
-                             a.samples, tmp)
+                             a.samples, tmp, out_dir=unit_dir)
         if entry:
             for act, ad in entry["actions"].items():
-                sheet = os.path.join(a.anim, "%s_%s.png" % (UNIT_KEY, act))
+                sheet = os.path.join(unit_dir, "%s_%s.png" % (UNIT_KEY, act))
                 if os.path.exists(sheet):
                     ad.update(measure_sheet(sheet, a.size))
-            path = os.path.join(a.anim, "sco_units.json")
+            path = os.path.join(a.anim, "land_units", "sco_units.json")
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             json.dump({UNIT_KEY: entry}, open(path, "w", encoding="utf-8"),
                       indent=1)
             print("sco unit %s (%s): actions=%s -> %s" % (

@@ -13,11 +13,32 @@ func _check(name: String, ok: bool, detail: String) -> void:
 	checks.append({"name": name, "ok": ok, "detail": detail})
 	print(("  PASS  " if ok else "  FAIL  ") + name + " - " + detail)
 
+const ANIM_DIR := "res://assets/models/anim"
+
+func _res_exists(path: String) -> bool:
+	# Export-safe existence probe, same as world.gd `_res_exists`.
+	return ResourceLoader.exists(path) or FileAccess.file_exists(path)
+
+func _resolve_anim_png(name: String) -> String:
+	# Mirror world.gd `_nation_sheet` for the rotor. It has no nation prefix,
+	# so only the shared common/buildings/ candidate applies; then the legacy
+	# category folder and finally the anim root. This returns the same path the
+	# renderer loads, so the lazy texture / cache key stays identical.
+	var shared := "%s/common/buildings/%s" % [ANIM_DIR, name]
+	if _res_exists(shared):
+		return shared
+	var nested := "%s/buildings/%s" % [ANIM_DIR, name]
+	if _res_exists(nested):
+		return nested
+	return "%s/%s" % [ANIM_DIR, name]
+
 func _initialize() -> void:
 	# The rotor is a separate asset, baked from the donor's eurmilanim.oss.
-	var rotor_path := "res://assets/models/anim/mill_rotor.png"
-	_check("rotor.asset", ResourceLoader.exists(rotor_path),
-		"mill_rotor.png imported: %s" % str(ResourceLoader.exists(rotor_path)))
+	# Probe common/buildings/ then buildings/ then the legacy root, exactly
+	# like world.gd `_nation_sheet`.
+	var rotor_path := _resolve_anim_png("mill_rotor.png")
+	_check("rotor.asset", _res_exists(rotor_path),
+		"mill_rotor.png imported: %s (%s)" % [str(_res_exists(rotor_path)), rotor_path])
 
 	var game = C3Game.new()
 	root.add_child(game)

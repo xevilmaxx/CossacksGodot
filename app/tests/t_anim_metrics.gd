@@ -14,8 +14,8 @@
 extends SceneTree
 
 const OUT_DIR := "res://tests/results"
-const MAIN_PATH := "res://assets/models/anim/index.json"
-const NAVAL_PATH := "res://assets/models/anim/naval/index.json"
+const MAIN_PATH := "res://assets/models/anim/land_units/index.json"
+const NAVAL_PATH := "res://assets/models/anim/naval_units/index.json"
 
 # ADJ-P45 / P-45: the single `duration = frames*0.09` rule came from GUIDE4
 # DO-L7.06, but DO-L7.08 assigns DIFFERENT cadences to cavalry and artillery,

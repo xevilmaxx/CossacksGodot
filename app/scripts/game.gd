@@ -1243,7 +1243,10 @@ func bld_rm(player: int, sid: String) -> float:
 	# visual half-width in meters for sprite-drawn nation buildings (0 = none:
 	# walls, gates, mines, procedural fallbacks keep their gameplay radius).
 	if bld_scale_idx.is_empty():
-		var j := FileAccess.get_file_as_string("res://assets/models/anim/buildings.json")
+		var bp := "res://assets/models/anim/buildings/buildings.json"
+		if not FileAccess.file_exists(bp):
+			bp = "res://assets/models/anim/buildings.json"  # legacy flat fallback
+		var j := FileAccess.get_file_as_string(bp)
 		if j != "":
 			var parsed = JSON.parse_string(j)
 			if parsed is Dictionary:
@@ -1271,7 +1274,10 @@ func bld_block_rect_for(player: int, sid: String, pos: Vector2) -> Rect2:
 	if key == "":
 		return Rect2()
 	if bld_scale_idx.is_empty():
-		var j := FileAccess.get_file_as_string("res://assets/models/anim/buildings.json")
+		var bp := "res://assets/models/anim/buildings/buildings.json"
+		if not FileAccess.file_exists(bp):
+			bp = "res://assets/models/anim/buildings.json"  # legacy flat fallback
+		var j := FileAccess.get_file_as_string(bp)
 		if j != "":
 			var parsed = JSON.parse_string(j)
 			if parsed is Dictionary:

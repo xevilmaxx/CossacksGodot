@@ -11,6 +11,12 @@ class_name C3World
 
 const Data = preload("res://scripts/data.gd")
 
+# Nation-first anim layout: every nation code that owns a `<nat>/{units,buildings}`
+# sheet tree. Anything without a recognised 3-letter prefix stays in `common`.
+const NATIONS := ["aus", "eng", "pol", "rus", "spa", "tur", "ukr", "bav",
+	"den", "fra", "hun", "net", "pie", "por", "pru", "sax", "swe", "swi",
+	"ven", "alg", "sco"]
+
 var game: C3Game
 var hud: CanvasLayer
 var view_scale := 16.0  # screen px per meter
@@ -152,7 +158,7 @@ func _notification(what: int) -> void:
 
 func _naval_info(key: String) -> Dictionary:
 	if naval_index.is_empty():
-		var path := "res://assets/models/anim/naval/index.json"
+		var path := "res://assets/models/anim/naval_units/index.json"
 		if _res_exists(path):
 			var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
 			if parsed is Dictionary:
@@ -271,7 +277,10 @@ void fragment() {
 	ov_shadow = load("res://assets/ui/overlays/shadow.png")
 	ov_ring = [load("res://assets/ui/overlays/ring_p0.png"), load("res://assets/ui/overlays/ring_p1.png")]
 	ov_sel = load("res://assets/ui/overlays/ring_sel.png")
-	var j := FileAccess.get_file_as_string(_anim_dir() + "/index.json")
+	var idx_path := _anim_dir() + "/land_units/index.json"
+	if not FileAccess.file_exists(idx_path):
+		idx_path = _anim_dir() + "/index.json"  # legacy flat fallback
+	var j := FileAccess.get_file_as_string(idx_path)
 	if j != "":
 		var parsed = JSON.parse_string(j)
 		if parsed is Dictionary:
@@ -453,7 +462,7 @@ func _anim_dir() -> String:
 		var d := "res://assets/models/anim%d" % Data.SPRITE_CELL
 		if DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(d)):
 			return d
-		if FileAccess.file_exists(d + "/index.json"):
+		if FileAccess.file_exists(d + "/land_units/index.json") or FileAccess.file_exists(d + "/index.json"):
 			return d
 	return "res://assets/models/anim"
 
@@ -463,16 +472,20 @@ func _anim_dir() -> String:
 func _anim_sheet(key: String, act: String) -> String:
 	var anim_dir := _anim_dir()
 	var name := "%s_%s.png" % [key, act]
-	# New per-kind subfolders first; the last two candidates are the original
-	# legacy fallbacks (root for nation-unique sheets, naval for ships), so
-	# the filename + nation/naval fallback semantics are preserved. The base
-	# fallback is anim_dir/name, i.e. the old primary path.
-	return _sheet(anim_dir, name, [
+	# Nation-first units/ first (canonical anim root, then a redirected
+	# anim_dir), followed by the old category folders as legacy fallbacks so
+	# the filename + nation/naval fallback semantics are preserved. Naval crew
+	# sheets are baked as `naval` but drawn through this same unit path, so
+	# common/naval is included as a candidate too. The base fallback stays
+	# anim_dir/name, i.e. the old primary path.
+	return _nation_sheet(anim_dir, name, "units", [
+		anim_dir + "/common/naval",
+		"res://assets/models/anim/common/naval",
 		anim_dir + "/land_units",
-		anim_dir + "/naval",
+		anim_dir + "/naval_units",
 		anim_dir + "/buildings",
 		"res://assets/models/anim",
-		"res://assets/models/anim/naval",
+		"res://assets/models/anim/naval_units",
 	])
 
 func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
@@ -556,13 +569,15 @@ func _bld_key(e: Dictionary) -> String:
 		nat = str(Data.PLAYER_NATIONS[int(e.player)])
 	if nat != "":
 		var nk := "%s_%s" % [nat, e.sid]
-		if _res_exists(_sheet(_anim_dir(), nk + ".png", [_anim_dir() + "/buildings"])):
+		if _res_exists(_nation_sheet(_anim_dir(), nk + ".png", "buildings", [
+				_anim_dir() + "/buildings", "res://assets/models/anim/buildings"])):
 			return nk
 	return e.sid
 
 func _mill_rotor() -> Texture2D:
 	if mill_rotor_tex == null:
-		var path := _sheet(_anim_dir(), "mill_rotor.png", [_anim_dir() + "/buildings"])
+		var path := _nation_sheet(_anim_dir(), "mill_rotor.png", "buildings", [
+			_anim_dir() + "/buildings", "res://assets/models/anim/buildings"])
 		if _res_exists(path):
 			mill_rotor_tex = load(path) as Texture2D
 	return mill_rotor_tex
@@ -595,7 +610,8 @@ func _bld_anim(key: String) -> Texture2D:
 			anim_tex.erase(key)
 			return null
 		return t
-	var path := _sheet(_anim_dir(), key + ".png", [_anim_dir() + "/buildings"])
+	var path := _nation_sheet(_anim_dir(), key + ".png", "buildings", [
+		_anim_dir() + "/buildings", "res://assets/models/anim/buildings"])
 	if not _res_exists(path):
 		return null
 	anim_tex[key] = load(path)
@@ -610,7 +626,10 @@ func _bld_scale(key: String) -> Dictionary:
 	# true-scale drawing data (tools/compute_buildings.py): ortho + ink box
 	# of the baked sheet -> screen pixels per sheet pixel + anchor fractions.
 	if bld_scale_idx.is_empty():
-		var j := FileAccess.get_file_as_string(_anim_dir() + "/buildings.json")
+		var bld_path := _anim_dir() + "/buildings/buildings.json"
+		if not FileAccess.file_exists(bld_path):
+			bld_path = _anim_dir() + "/buildings.json"  # legacy flat fallback
+		var j := FileAccess.get_file_as_string(bld_path)
 		if j != "":
 			var parsed = JSON.parse_string(j)
 			if parsed is Dictionary:
@@ -796,6 +815,33 @@ func _load_image_tex(path: String) -> Image:
 func _res_exists(path: String) -> bool:
 	# Export-safe existence probe for res:// imported assets.
 	return ResourceLoader.exists(path) or FileAccess.file_exists(path)
+
+# Nation of a baked sheet, or "" for shared art. Accepts both
+# "rus_peasant_walk.png" and "rus_peasant_walk". The `_` guard is mandatory:
+# generic "spakh_*" starts with a valid nation code but must stay in common.
+func nation_of(name: String) -> String:
+	var stem := name.trim_suffix(".png")
+	if stem.length() < 4 or stem[3] != "_":
+		return ""
+	var p := stem.substr(0, 3).to_lower()
+	return p if NATIONS.has(p) else ""
+
+# Nation-first sheet resolver. `kind` is "units" | "buildings" | "naval".
+# Canonical root first (all baked art lives there), then `base` when a quality
+# preset redirected _anim_dir(). The legacy chain is appended verbatim so old
+# flat/category paths still win over the final base fallback.
+func _nation_sheet(base: String, name: String, kind: String, legacy: Array) -> String:
+	var nat := nation_of(name)
+	var roots := ["res://assets/models/anim"]
+	if base != "" and base != roots[0]:
+		roots.append(base)
+	var dirs: Array = []
+	for root in roots:
+		if nat != "":
+			dirs.append("%s/%s/%s" % [root, nat, kind])
+		dirs.append("%s/common/%s" % [root, kind])
+	dirs.append_array(legacy)
+	return _sheet(base, name, dirs)
 
 # Subfolder-aware sheet resolver: check candidate dirs in order (new locations
 # first), return the first existing path, else the legacy base path. Callers
@@ -2724,25 +2770,46 @@ func _queue_unit_sprite(tex: Texture2D, p: Vector2, world_h: float, tint: Color)
 	pending_unit_sprites.append({"tex": tex, "dst": Rect2(tl, sz),
 		"src": Rect2(0, 0, tex.get_width(), tex.get_height()), "tint": tint})
 
-var _yacht_hull_tex: Texture2D = null
-func _yacht_hull() -> Texture2D:
-	if _yacht_hull_tex == null:
-		var path := _sheet("res://assets/models/anim/naval", "yacht_hull.png", [_anim_dir() + "/naval"])
-		if _res_exists(path):
-			_yacht_hull_tex = load(path) as Texture2D
-	return _yacht_hull_tex
+var hull_tex_cache := {}
 
-# PORT-SIM P-10: yachts are naval entities (game._is_naval / Data.UNITS.yacht)
-# whose baked crew sheet is drawn by _draw_anim. The static 8-facing hull goes
+# Static hull sheet for a naval family. The yacht path still goes through the
+# nation-first resolver (all hulls are shared -> common/naval); a family
+# without its own baked hull falls back to yacht's. Cache keys stay filename-
+# derived, so no redraw changes are needed.
+func _hull_tex(key: String) -> Texture2D:
+	if hull_tex_cache.has(key):
+		return hull_tex_cache[key]
+	var base := "res://assets/models/anim"
+	var legacy := [_anim_dir() + "/naval_units", "res://assets/models/anim/naval_units"]
+	var path := _nation_sheet(base, key + "_hull.png", "naval", legacy)
+	if not _res_exists(path) and key != "yacht":
+		path = _nation_sheet(base, "yacht_hull.png", "naval", legacy)
+	var tex: Texture2D = null
+	if _res_exists(path):
+		tex = load(path) as Texture2D
+	hull_tex_cache[key] = tex
+	return tex
+
+# PORT-SIM P-10: naval entities (game._is_naval / Data.UNITS.<family>) have
+# their baked crew sheet drawn by _draw_anim. The static 8-facing hull goes
 # underneath, drawn on unit_layer while the crew is queued onto unit_anim_layer
 # (a child that draws after its parent). Deck anchor: the crew's logical point
 # is p, and the hull cell is offset by its own ax/ay so the crew stands on the
 # deck; the facing uses the exact same (face + 4) convention as _draw_anim.
 func _draw_naval_hull(e: Dictionary, p: Vector2) -> void:
-	var tex := _yacht_hull()
+	# game.spawn() stores the trained sid in e.sid, which is the naval family
+	# key (yacht / yachttur / fishboat / frigate / galley). Unknown/legacy
+	# navals fall back to yacht so they still draw as before.
+	var key := str(e.get("sid", ""))
+	if key.is_empty():
+		key = "yacht"
+	var info := _naval_info(key)
+	if info.is_empty() and key != "yacht":
+		key = "yacht"
+		info = _naval_info(key)
+	var tex := _hull_tex(key)
 	if tex == null:
 		return
-	var info := _naval_info("yacht")
 	if info.is_empty():
 		return
 	var hull: Dictionary = info.get("actions", {}).get("hull", {})

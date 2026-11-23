@@ -84,7 +84,7 @@ APP = TOOLS.parent
 
 DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 DEFAULT_OUT = APP / "shots" / "unit_pieces" / "naval"
-DEFAULT_IDX = APP / "assets" / "models" / "anim" / "naval" / "index.json"
+DEFAULT_IDX = APP / "assets" / "models" / "anim" / "naval_units" / "index.json"
 STAGING_ROOT = (APP / "shots" / "unit_pieces" / "naval").resolve()
 
 # Key -> donor base. yacht is the live key; the rest are NEW scoped keys with

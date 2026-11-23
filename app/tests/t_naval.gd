@@ -1,7 +1,8 @@
 # Small asset test: baked naval yacht sprite + hull composite (board P-10, AC).
 #
-# Verifies the baked assets under res://assets/models/anim/naval/:
-#   * index.json parses and exposes walk + hull actions with a cell size
+# Verifies the baked assets under res://assets/models/anim/:
+#   * index.json (naval_units/) parses and exposes walk + hull actions + cell
+#   * baked PNG sheets live in common/naval/
 #   * yacht_walk.png is 1280x1920 -> 8 columns of 160px cells, 12 frame rows
 #   * yacht_hull.png exists and is 1280x160 -> 8 columns, 1 frame row
 #   * each action's sheet dimensions agree with cell * columns / frames
@@ -16,7 +17,10 @@
 extends SceneTree
 
 const OUT_DIR := "res://tests/results"
-const NAVAL_DIR := "res://assets/models/anim/naval"
+# Metadata stays in naval_units/; the baked hull/crew sheets moved to the
+# shared nation-first tree. Keep the two locations separate.
+const NAVAL_DIR := "res://assets/models/anim/naval_units"      # index.json
+const NAVAL_PNG_DIR := "res://assets/models/anim/common/naval"  # yacht_*.png
 const OWNER := "yacht"           # top-level key in index.json
 const COLUMNS := 8               # baked sheets use 8 facing columns
 
@@ -49,8 +53,11 @@ func _write_result() -> void:
 	}, "\t"))
 	f.close()
 
-func _png_path(basename: String) -> String:
+func _index_path(basename: String) -> String:
 	return NAVAL_DIR + "/" + basename
+
+func _png_path(basename: String) -> String:
+	return NAVAL_PNG_DIR + "/" + basename
 
 func _load_png(basename: String) -> Image:
 	# Read the raw PNG from disk; works headless and for un-imported files.
@@ -72,7 +79,7 @@ func _dims(basename: String) -> String:
 
 func _initialize() -> void:
 	# --- load + parse index.json -------------------------------------------
-	var idx_path := _png_path("index.json")
+	var idx_path := _index_path("index.json")
 	var raw := FileAccess.get_file_as_string(idx_path)
 	var idx = JSON.parse_string(raw) if raw != "" else null
 	check("index_parses_with_walk_hull", idx is Dictionary \

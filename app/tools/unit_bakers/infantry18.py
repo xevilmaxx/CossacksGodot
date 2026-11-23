@@ -76,7 +76,7 @@ KEYS = {
 
 DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 DEFAULT_OUT = str(APP / "shots" / "unit_pieces" / "infantry18")
-DEFAULT_IDX = str(APP / "assets" / "models" / "anim" / "index.json")
+DEFAULT_IDX = str(APP / "assets" / "models" / "anim" / "land_units" / "index.json")
 
 # The clips this family resolves to, in the read-only reference's plan order.
 PLAN_TRUTH = (

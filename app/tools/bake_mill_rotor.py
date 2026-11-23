@@ -14,6 +14,11 @@ view - a separate moving object, not a baked-in still.
 Run:
   blender.exe --background --factory-startup --python tools/bake_mill_rotor.py -- \
       --game "C:\\Games\\Cossacks 3" --out assets/models/anim [--size 320]
+
+By default the rotor sheet is written to <out>/common/buildings/ (the shared
+nation-first tree), where world.gd's `_nation_sheet()` resolver looks first.
+Its metadata sibling mill_rotor.json stays in <out>/buildings/. Pass
+--legacy-flat to write both at the anim root instead.
 """
 import argparse, json, os, shutil, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -30,11 +35,21 @@ def main():
     ap.add_argument("--size", type=int, default=320)
     ap.add_argument("--samples", type=int, default=4)
     ap.add_argument("--engine", default="cycles", choices=["cycles", "eevee", "workbench"])
+    ap.add_argument("--legacy-flat", action="store_true",
+                    help="write mill_rotor.{png,json} at the anim root instead of "
+                         "common/buildings/ + buildings/")
     a = ap.parse_args(rest)
 
     bs._ENGINE = a.engine; bs._SAMPLES = a.samples
     game = os.path.abspath(a.game); out = os.path.abspath(a.out)
     os.makedirs(out, exist_ok=True)
+    # Nation-first layout writes the PNG to common/buildings/ and keeps its
+    # JSON metadata in buildings/. --legacy-flat puts both at the anim root.
+    out_rotor = out if a.legacy_flat else os.path.join(out, "common", "buildings")
+    out_meta = out if a.legacy_flat else os.path.join(out, "buildings")
+    os.makedirs(out_rotor, exist_ok=True)
+    if out_meta != out_rotor:
+        os.makedirs(out_meta, exist_ok=True)
     # Donor-derived intermediates must never land inside res://: keep them in
     # a throwaway system-temp dir and remove it even when a step fails.
     tmp = tempfile.mkdtemp(prefix="mill_rotor_")
@@ -61,13 +76,13 @@ def main():
         ob = bs.build_mesh(mm, mat)
         # +Y camera: the rotor's lattice blades read face-on.
         cam = bs.camera(Vector((0, 0, 0)), 90.0, ortho)
-        bs.render_cell(os.path.join(out, "mill_rotor.png"), a.size)
+        bs.render_cell(os.path.join(out_rotor, "mill_rotor.png"), a.size)
         bpy.data.objects.remove(ob, do_unlink=True)
         bpy.data.objects.remove(cam, do_unlink=True)
 
         json.dump({"cell": a.size, "ortho": round(ortho, 3),
                    "note": "face-on 4-blade sail rotor, squash in X and spin in Godot"},
-                  open(os.path.join(out, "mill_rotor.json"), "w"), indent=1)
+                  open(os.path.join(out_meta, "mill_rotor.json"), "w"), indent=1)
         print("mill rotor: cell=%d ortho=%.3f" % (a.size, ortho), flush=True)
         return 0
     finally:

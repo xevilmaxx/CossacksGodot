@@ -8,7 +8,7 @@ per-action (lunges/crouches plant correctly). Idempotent."""
 import json
 from pathlib import Path
 
-IDX = Path(__file__).resolve().parents[1] / "assets" / "models" / "anim" / "index.json"
+IDX = Path(__file__).resolve().parents[1] / "assets" / "models" / "anim" / "land_units" / "index.json"
 idx = json.load(open(IDX, encoding="utf-8"))
 n = 0
 for key, info in idx.items():

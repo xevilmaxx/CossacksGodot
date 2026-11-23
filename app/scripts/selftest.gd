@@ -380,20 +380,12 @@ func run() -> Dictionary:
 			mill_fields.append(n)
 	var fnode: Dictionary = mill_fields[0] if not mill_fields.is_empty() else {}
 	var resow_ok := false
-	# T-FOOD-1 DIAG (temporary): trace why phase-1 resow may fail in-suite.
-	print("TFOOD1 peasant_dead=%s peasant_pos=%s mill_pos=%s fields=%d fnode_pos=%s p0food=%.1f" % [
-		str(bool(peasant.get("dead", false))), str(peasant.pos), str(mill.pos),
-		mill_fields.size(), str(fnode.pos if not fnode.is_empty() else Vector2.INF), game.players[0].res[0]])
 	if not fnode.is_empty():
 		fnode.hits = 0
 		var rp := game.spawn("peasant", 0, fnode.pos + Vector2(1, 0))
 		game.players[0].res[0] += 500.0
 		game.cmd_resow(rp, fnode)
-		for si in 6:
-			_sim(5.0)
-			print("TFOOD1 t+%ds rp_order=%s rp_dead=%s fnode_hits=%d p0food=%.1f" % [
-				(si + 1) * 5, str(rp.order.get("type", "")), str(bool(rp.get("dead", false))),
-				int(fnode.hits), game.players[0].res[0]])
+		_sim(30.0)
 		resow_ok = int(fnode.hits) > 0
 	var mill_ok := false
 	var mill_detail := "no mill fields"

@@ -14,8 +14,48 @@ from PIL import Image
 # default; ANIM is derived from this file so no username is baked in.
 GAME = Path(os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")).expanduser()
 ANIM = Path(__file__).resolve().parents[1] / "assets" / "models" / "anim"
-NATIONS = ["ukr","rus","pol","aus","fra","eng","spa","swe","pru","ven","tur","alg","net","den","por","pie","sax","bav","hun","swi"]
+NATIONS = ["ukr","rus","pol","aus","fra","eng","spa","swe","pru","ven","tur","alg","net","den","por","pie","sax","bav","hun","swi","sco"]
 BLDS = [("cen","cen"),("hou","hou"),("bar","bar"),("sta","sta"),("bla","bla"),("aca","aca"),("art","art"),("sto","sto"),("mil","mil"),("mar","mar"),("tow","tow"),("ba2","bar18"),("dip","dip")]
+
+# Nation-first layout: sheets live under <nation>/<kind> or common/<kind>,
+# with the old category folders and the flat anim root as fallbacks.
+# Index/metadata (buildings.json, index.json) ALWAYS stays at its old path.
+ANIM_KINDS = ("buildings", "units", "naval")
+LEGACY_ANIM_SUBDIRS = ("buildings", "land_units", "naval")
+
+def nation_of(name):
+    """Nation prefix of a baked sheet name, or "" for shared art.
+
+    The underscore at index 3 is mandatory: "spakh_walk.png" is generic,
+    not Spanish. Mirrors world.gd's nation_of().
+    """
+    stem = name[:-4] if name.endswith(".png") else name
+    if len(stem) < 4 or stem[3] != "_":
+        return ""
+    p = stem[:3].lower()
+    return p if p in NATIONS else ""
+
+def resolve_anim_png(name, base=None):
+    """First existing path for one anim PNG name.
+
+    Probes nation-first dirs (<nat>/<kind>, common/<kind>) for every kind,
+    then the legacy category folders and the flat anim root. `base` is the
+    anim root and defaults to this script's ANIM.
+    """
+    root = Path(base) if base is not None else ANIM
+    nat = nation_of(name)
+    dirs = []
+    for kind in ANIM_KINDS:
+        if nat:
+            dirs.append(root / nat / kind)
+        dirs.append(root / "common" / kind)
+    for sub in LEGACY_ANIM_SUBDIRS:
+        dirs.append(root / sub)
+    for d in dirs:
+        p = d / name
+        if p.is_file():
+            return str(p)
+    return str(root / name)
 
 def read_osm_bounds(path):
     with open(path,"rb") as f:
@@ -40,7 +80,7 @@ for nat in NATIONS:
         ortho=round(max(dx,dy,dz)*1.12,3)
         for suffix in [""]+["s%d"%i for i in range(1,5)]+["dead"]:
             key="%s_%s%s"%(nat,sid,"" if suffix=="" else "_"+suffix)
-            png=os.path.join(ANIM,key+".png")
+            png=resolve_anim_png(key+".png")
             if not os.path.exists(png): continue
             im=Image.open(png).convert("RGBA")
             bb=im.getbbox()
@@ -63,7 +103,9 @@ for nat in NATIONS:
             rm=((x1-x0)/im.width*ortho)*0.5
             out[key]={"ortho":ortho,"cell":im.width,"ink":[x0,y0,x1,y1],
                       "cx":round(cx,4),"rm":round(rm,3)}
-json.dump(out,open(os.path.join(ANIM,"buildings.json"),"w"),indent=1)
+bld_dir = os.path.join(ANIM, "buildings")
+os.makedirs(bld_dir, exist_ok=True)
+json.dump(out,open(os.path.join(bld_dir,"buildings.json"),"w"),indent=1)
 print("buildings:",len(out))
 # sanity: print a few true heights
 for k in ["ukr_cen","ukr_hou","rus_tow","ukr_bar"]:

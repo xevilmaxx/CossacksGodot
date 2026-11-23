@@ -7,7 +7,48 @@ in CELL-LOCAL pixels, plus ["fig_h"]=(y1-y0)/cell and ["foot"]=y1/cell and
 ["cx"]=(x0+x1)/2/cell. Idempotent; skips sheets already measured unless --force.
 """
 import argparse, json, os
+from pathlib import Path
 from PIL import Image
+
+# Nation-first layout: sheets live under <nation>/<kind> or common/<kind>,
+# with the old category folders and the flat anim root as fallbacks. index.json
+# is always read/written at its old path under --dir.
+NATIONS = ("aus", "eng", "pol", "rus", "spa", "tur", "ukr", "bav", "den",
+           "fra", "hun", "net", "pie", "por", "pru", "sax", "swe", "swi",
+           "ven", "alg", "sco")
+ANIM_KINDS = ("buildings", "units", "naval")
+LEGACY_ANIM_SUBDIRS = ("buildings", "land_units", "naval")
+ANIM = Path(__file__).resolve().parents[1] / "assets" / "models" / "anim"
+
+def nation_of(name):
+    """Nation prefix of a baked sheet name, or "" for shared art.
+
+    Mirrors world.gd: the `_` at index 3 keeps "spakh_*" in common.
+    """
+    stem = name[:-4] if name.endswith(".png") else name
+    if len(stem) < 4 or stem[3] != "_":
+        return ""
+    p = stem[:3].lower()
+    return p if p in NATIONS else ""
+
+def resolve_anim_png(name, base=None):
+    """First existing path for one anim PNG; nation-first dirs before root.
+    `base` is the anim root (--dir); defaults to the path derived from __file__.
+    """
+    root = Path(base) if base is not None else ANIM
+    nat = nation_of(name)
+    dirs = []
+    for kind in ANIM_KINDS:
+        if nat:
+            dirs.append(root / nat / kind)
+        dirs.append(root / "common" / kind)
+    for sub in LEGACY_ANIM_SUBDIRS:
+        dirs.append(root / sub)
+    for d in dirs:
+        p = d / name
+        if p.is_file():
+            return str(p)
+    return str(root / name)
 
 def main():
     ap = argparse.ArgumentParser()
@@ -16,7 +57,16 @@ def main():
     ap.add_argument("--normalize", action="store_true",
                     help="use the idle action's body metrics for every action")
     a = ap.parse_args()
-    ip = os.path.join(a.dir, "index.json")
+    # Index moved to land_units/. Prefer the new path; an explicit --dir at a
+    # different index root (e.g. naval_units/) still resolves via the legacy
+    # candidate, and the new path is the default when neither file exists yet.
+    ip = os.path.join(a.dir, "land_units", "index.json")
+    if not os.path.isfile(ip):
+        legacy_ip = os.path.join(a.dir, "index.json")
+        if os.path.isfile(legacy_ip):
+            ip = legacy_ip
+    if os.path.dirname(ip):
+        os.makedirs(os.path.dirname(ip), exist_ok=True)
     idx = json.load(open(ip, encoding="utf-8"))
     changed = 0
     for key, info in idx.items():
@@ -27,7 +77,7 @@ def main():
             # remain as fallback info for old clients and clip detection.
             if "bbox" in ad and not a.force:
                 continue
-            p = os.path.join(a.dir, "%s_%s.png" % (key, act))
+            p = resolve_anim_png("%s_%s.png" % (key, act), a.dir)
             if not os.path.exists(p):
                 continue
             im = Image.open(p).convert("RGBA")

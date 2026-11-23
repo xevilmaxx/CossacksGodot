@@ -930,7 +930,10 @@ func _show_options(parent: VBoxContainer) -> void:
 		world.terrain_masks = world._build_masks(world._bake_px())
 		world.anim_tex.clear()
 		world.anim_index = {}
-		var j := FileAccess.get_file_as_string(world._anim_dir() + "/index.json")
+		var idx_path := world._anim_dir() + "/land_units/index.json"
+		if not FileAccess.file_exists(idx_path):
+			idx_path = world._anim_dir() + "/index.json"  # legacy flat fallback
+		var j := FileAccess.get_file_as_string(idx_path)
 		if j != "":
 			var parsed = JSON.parse_string(j)
 			if parsed is Dictionary:

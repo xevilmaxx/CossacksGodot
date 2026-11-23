@@ -6,13 +6,15 @@ Run: blender --background --factory-startup --python tools/bake_sprites.py -- \
   Linux/macOS set COSSACKS3_DIR or pass --game; --game defaults to
   $COSSACKS3_DIR (or C:\\Games\\Cossacks 3). Donor is private — never redistribute.
 Sheets: <key>_<action>.png, cols=8 dirs (0,45..315), rows=sampled frames.
+Default --layout nation writes sheets to <out>/<nation|common>/<units|buildings>/;
+--layout flat keeps the legacy anim root. index.json stays in <out>/land_units/.
 index.json: {key: {"cell": N, "actions": {action: {"frames": n, "duration": s, "loop": bool}}}}
 GUIDE1.md (docs/guides) Step 1. Minimal syntax fixes vs plan draft:
 - attack names ("attack0","attack") -> ("attack0","attack1","attack") (missing comma in draft = implicit concat)
 - bake_building cands inner tuples missing comma fixed
 - bake_building center Vector missing commas fixed
 """
-import argparse, json, math, os, struct, sys
+import argparse, copy, json, math, os, struct, sys
 from pathlib import Path
 
 # Pure-python `--help` must parse without Blender installed, so defer the
@@ -38,6 +40,32 @@ DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 _ENGINE = "cycles"
 _SAMPLES = 4
 
+# T-BAKE-OPT: duplicate-key alias map. Both `peasant` and `ukr_peasant` resolve
+# to donor base `peaukr` (see the table in main()), so their 14 action sheets
+# are byte-identical. Bake/write the canonical once; other keys get a full
+# metadata copy plus an `alias_of` marker in index.json instead of duplicate
+# PNGs. Pass --no-alias to restore the old bake-every-key behaviour.
+ALIAS_OF = {"peasant": "ukr_peasant"}
+
+# Nation-first output layout. Every baked sheet is written under
+# <nation>/<kind> or common/<kind>; index/metadata keep their old paths.
+NATIONS = ("aus", "eng", "pol", "rus", "spa", "tur", "ukr", "bav", "den",
+           "fra", "hun", "net", "pie", "por", "pru", "sax", "swe", "swi",
+           "ven", "alg", "sco")
+
+def nation_of(name):
+    """Nation prefix of a sheet name, or "" for shared art (mirrors world.gd)."""
+    stem = name[:-4] if name.endswith(".png") else name
+    if len(stem) < 4 or stem[3] != "_":
+        return ""
+    p = stem[:3].lower()
+    return p if p in NATIONS else ""
+
+def sheet_out_dir(out, name, kind):
+    """Nation-first target dir for one baked sheet."""
+    nat = nation_of(name)
+    return os.path.join(out, nat if nat else "common", kind)
+
 def parse_args():
     # Under Blender the real arguments follow `--`; under plain
     # `python tools/bake_sprites.py ...` they are sys.argv[1:] (so --help works).
@@ -51,7 +79,13 @@ def parse_args():
     ap.add_argument("--samples", type=int, default=4)
     ap.add_argument("--engine", default="cycles", choices=["cycles", "eevee", "workbench"])
     ap.add_argument("--buildings", action="store_true")
-    ap.add_argument("--nations", default="ukr,rus,pol,aus,fra,eng,spa,swe,pru,ven,tur,alg,net,den,por,pie,sax,bav,hun,swi")
+    ap.add_argument("--nations", default="ukr,rus,pol,aus,fra,eng,spa,swe,pru,ven,tur,alg,net,den,por,pie,sax,bav,hun,swi,sco")
+    ap.add_argument("--layout", choices=["flat", "nested", "nation"], default="nation",
+                    help="sheet layout: nation (default, out/<nation|common>/<kind>) "
+                         "or flat (legacy out root); index.json stays in out/land_units/")
+    ap.add_argument("--no-alias", action="store_true",
+                    help="disable duplicate-sheet aliases (bake every key, "
+                         "including `peasant`, as before)")
     return ap.parse_args(rest)
 
 def read_oss(path):
@@ -176,15 +210,39 @@ def build_mesh(m, mat, m2=None, mat2=None):
             poly.material_index=0 if i < len(m["faces"]) else 1
     return ob
 
-def camera(center, az, ortho):
-    cd=bpy.data.cameras.new("cam"); cd.type="ORTHO"; cd.ortho_scale=ortho
+def camera_create():
+    """T-BAKE-OPT: create the single ortho camera reused by an entire bake.
+
+    The old loop created and destroyed a camera for every one of the 8 views
+    of every frame. One camera per bake_unit()/bake_naval_unit() is retargeted
+    with camera_set() instead; the rig (ortho, azimuth d*45 deg, elevation
+    32 deg, 50 m distance) is identical, so pixels are unchanged.
+    """
+    cd=bpy.data.cameras.new("cam"); cd.type="ORTHO"; cd.ortho_scale=1.0
     cam=bpy.data.objects.new("cam",cd); bpy.context.collection.objects.link(cam)
     bpy.context.scene.camera=cam
+    return cam
+
+def camera_set(cam, center, az, ortho):
+    """T-BAKE-OPT: retarget an existing camera to one donor view.
+
+    Exact same maths as the old per-view camera() (8 azimuths d*45 deg,
+    elevation 32 deg, same ortho_scale and 50 m offset), so the rendered
+    pixels are byte-for-byte identical. view_layer.update() makes the new
+    transform/depsgraph state visible to the renderer before render_cell().
+    """
+    cam.data.ortho_scale=ortho
     el=math.radians(32.0); azr=math.radians(az)
     pos=center+Vector((math.cos(azr)*math.cos(el),math.sin(azr)*math.cos(el),math.sin(el)))*50
     cam.location=pos
     cam.rotation_euler=(center-pos).normalized().to_track_quat("-Z","Y").to_euler()
+    bpy.context.scene.camera=cam
+    bpy.context.view_layer.update()
     return cam
+
+def camera(center, az, ortho):
+    """Create a fresh camera for one view (kept for single-view callers)."""
+    return camera_set(camera_create(), center, az, ortho)
 
 def ground_anchor_ay(cam, size):
     """Project the world origin (entity feet) into the cell.
@@ -217,7 +275,11 @@ def dds_to_png(src,dst,opaque):
     img=img.convert("RGB") if opaque else img.convert("RGBA")
     img.save(dst,"PNG"); return dst
 
-def bake_unit(game,out,key,base,size,samples,tmp):
+def bake_unit(game,out,key,base,size,samples,tmp,out_dir=None):
+    # out_dir lets the caller place sheets in a nation-first tree. Other
+    # staging bakers omit it and keep writing flat into `out`.
+    dest = out_dir if out_dir is not None else out
+    os.makedirs(dest,exist_ok=True)
     m=read_oss(os.path.join(game,"data","actors","units",base+".oss"))
     acts=read_aaf(os.path.join(game,"data","animations","aaf",base+".aaf"))
     # Donor clips, in priority order. attack1 is the musket volley (musketeer,
@@ -435,15 +497,17 @@ def bake_unit(game,out,key,base,size,samples,tmp):
         tpng=dds_to_png(os.path.join(game,"data","materials","units","peaaustools.dds"),os.path.join(tmp,"tools.png"),True)
     setup_scene(); mat=make_mat(png)
     tmat=make_mat(tpng) if tpng else None
+    # T-BAKE-OPT: ONE camera for the whole unit bake (anchors + every view of
+    # every frame); it is only retargeted via camera_set(), never recreated.
+    cam=camera_create()
     ob=None; me=None; cur_tool=object()
     # Ground anchor: project the world origin once per group. Identical for
     # every action/dir in the group, so switching walk->attack->construct
     # cannot shift the feet (the old per-action ink-union cx/foot did).
     anchors={}
     for g,(center,ortho) in groups.items():
-        cam=camera(center,0.0,ortho)
+        camera_set(cam,center,0.0,ortho)
         ax,ay=ground_anchor_ay(cam,size)
-        bpy.data.objects.remove(cam,do_unlink=True)
         anchors[g]=(ax,ay)
     entry={"cell":size,"actions":{}}
     for action,frs,loop,dur in plan:
@@ -468,17 +532,19 @@ def bake_unit(game,out,key,base,size,samples,tmp):
                 verts=verts+skinned_tool[(fr,_t)]
             me.vertices.foreach_set("co",[c for v in verts for c in v]); me.update()
             for d in range(8):
-                cam=camera(center,d*45.0,ortho)
+                # T-BAKE-OPT: retarget the reused camera; same d*45 azimuths,
+                # elevation and ortho as before => identical pixel output.
+                camera_set(cam,center,d*45.0,ortho)
                 cell=os.path.join(tmp,"cell.png"); render_cell(cell,size)
                 img=Image.open(cell).convert("RGBA")
                 sheet.paste(img,(d*size,ri*size),img)
-                bpy.data.objects.remove(cam,do_unlink=True)
-        sheet.save(os.path.join(out,"%s_%s.png"%(key,action)))
+        sheet.save(os.path.join(dest,"%s_%s.png"%(key,action)))
         entry["actions"][action]={"frames":len(frs),"duration":round(dur,3),"loop":loop,
             "ortho":round(ortho,3),
             "center":[round(center.x,3),round(center.y,3),round(center.z,3)],
             "ax":ax,"ay":ay,
             "tool":_t}
+    bpy.data.objects.remove(cam,do_unlink=True)
     bpy.data.objects.remove(ob,do_unlink=True)
     return entry
 
@@ -493,7 +559,11 @@ def read_osm_first(path):
         verts=[struct.unpack("<3fI",f.read(16))[:3] for _ in range(h["nv"])]
     return dict(verts=verts,faces=tris,uvs=uvs,uvf=tuv)
 
-def bake_building(game,out,nat,bld,size,tmp,out_sid=""):
+def bake_building(game,out,nat,bld,size,tmp,out_sid="",out_dir=None):
+    # out_dir lets the caller place sheets in a nation-first tree. Other
+    # staging bakers omit it and keep writing flat into `out`.
+    dest = out_dir if out_dir is not None else out
+    os.makedirs(dest,exist_ok=True)
     cands=[(nat,nat+bld),("commoneur","eur"+bld),("commontur","tur"+bld)]
     pick=None
     for folder,base in cands:
@@ -509,24 +579,51 @@ def bake_building(game,out,nat,bld,size,tmp,out_sid=""):
     ortho=max(max(xs)-min(xs),max(ys)-min(ys),max(zs)-min(zs))*1.12
     setup_scene(); mat=make_mat(png); ob=build_mesh(m,mat)
     cam=camera(center,0.0,ortho)
-    render_cell(os.path.join(out,"%s_%s.png"%(nat,sid_name)),size)
+    render_cell(os.path.join(dest,"%s_%s.png"%(nat,sid_name)),size)
     ob.hide_render = True  # stages/rubble render alone, not inside the finished mesh
     for s in range(1,5):
         p=os.path.join(game,"data","actors","buildings",folder,"%s%d.osm"%(base,s))
         if os.path.exists(p):
             ms=read_osm_first(p)
             mo=build_mesh(ms,mat)
-            render_cell(os.path.join(out,"%s_%s_s%d.png"%(nat,sid_name,s)),size)
+            render_cell(os.path.join(dest,"%s_%s_s%d.png"%(nat,sid_name,s)),size)
             bpy.data.objects.remove(mo,do_unlink=True)
     p=os.path.join(game,"data","actors","buildings",folder,base+"_death2.osm")
     if os.path.exists(p):
         ms=read_osm_first(p)
         mo=build_mesh(ms,mat)
-        render_cell(os.path.join(out,"%s_%s_dead.png"%(nat,sid_name)),size)
+        render_cell(os.path.join(dest,"%s_%s_dead.png"%(nat,sid_name)),size)
         bpy.data.objects.remove(mo,do_unlink=True)
     ob.hide_render = False
     bpy.data.objects.remove(cam,do_unlink=True); bpy.data.objects.remove(ob,do_unlink=True)
     return True
+
+def make_alias_entries(idx, aliases, only, out_units, flat=False):
+    """T-BAKE-OPT: add index.json records for duplicate-sheet keys.
+
+    Returns (made, saved_bytes, saved_sheets). All metadata is deep-copied
+    from the canonical entry so `_anim_info(alias)` still sees identical
+    cell/actions/ortho/ax/ay; `alias_of` points at the real sheet (key level
+    and per action) for a runtime redirect. No duplicate PNG is written.
+    """
+    saved_bytes=0; saved_sheets=0; made=[]
+    for alias,canon in aliases.items():
+        if only and alias not in only: continue
+        ce=idx.get(canon)
+        if not ce:
+            print("WARN alias %s: canonical %s not baked, keeping old behaviour" % (alias,canon),flush=True)
+            continue
+        ae=copy.deepcopy(ce)
+        ae["alias_of"]=canon
+        for act,ad in ae.get("actions",{}).items():
+            ad["alias_of"]="%s_%s" % (canon,act)
+            canon_dir = out_units if flat else sheet_out_dir(out_units, canon, "units")
+            sp=os.path.join(canon_dir,"%s_%s.png" % (canon,act))
+            if os.path.exists(sp):
+                saved_bytes+=os.path.getsize(sp); saved_sheets+=1
+        idx[alias]=ae
+        made.append("%s -> %s" % (alias,canon))
+    return made,saved_bytes,saved_sheets
 
 def main():
     global _ENGINE, _SAMPLES
@@ -535,18 +632,33 @@ def main():
     a.out=str(Path(a.out).expanduser().resolve())
     _ENGINE=a.engine; _SAMPLES=a.samples
     os.makedirs(a.out,exist_ok=True)
+    # --layout nation (default) writes sheets to out/<nation|common>/<kind>;
+    # --layout flat keeps the legacy anim root. index.json stays in
+    # out/land_units/ either way. Existing PNGs are never moved or deleted.
+    nation_layout = a.layout != "flat"
+    out_units = a.out
+    out_buildings = a.out
     # Scratch renders + converted textures live OUTSIDE res:// (system temp):
     # keeping 800+ MB of intermediate PNGs inside the project made Godot
     # import them all (thousands of .import entries, gigabytes of .godot).
     import tempfile
     tmp=os.path.join(tempfile.gettempdir(),"cossacks_bake",os.path.basename(a.out)); os.makedirs(tmp,exist_ok=True)
-    idx_path=os.path.join(a.out,"index.json")
+    # Index moved to land_units/. Prefer the new path; an explicit --out at a
+    # different index root (e.g. naval_units/) still resolves via the legacy
+    # candidate, and the new path is the default when neither exists yet.
+    idx_path=os.path.join(a.out,"land_units","index.json")
+    if not os.path.exists(idx_path) and os.path.exists(os.path.join(a.out,"index.json")):
+        idx_path=os.path.join(a.out,"index.json")
+    if os.path.dirname(idx_path):
+        os.makedirs(os.path.dirname(idx_path),exist_ok=True)
     idx=json.load(open(idx_path)) if os.path.exists(idx_path) else {}
     if a.buildings:
         for nat in a.nations.split(","):
             for bld,sid_name in (("cen","cen"),("hou","hou"),("bar","bar"),("sta","sta"),("bla","bla"),("aca","aca"),("art","art"),("sto","sto"),("mil","mil"),("mar","mar"),("tow","tow"),("ba2","bar18"),("dip","dip")):
+                key = "%s_%s" % (nat, sid_name)
+                bdir = sheet_out_dir(out_buildings, key, "buildings") if nation_layout else out_buildings
                 try:
-                    if bake_building(a.game,a.out,nat,bld,320,tmp,sid_name): print("bld",nat,sid_name,flush=True)
+                    if bake_building(a.game,out_buildings,nat,bld,320,tmp,sid_name,out_dir=bdir): print("bld",nat,sid_name,flush=True)
                 except Exception as e: print("FAIL bld",nat,bld,e,flush=True)
         return 0
     table={"peasant":"peaukr","pikeman":"pikeman","pikeman18":"pikeman18",
@@ -564,12 +676,27 @@ def main():
                      ("eng","peaeng"),("spa","peaspa"),("tur","peatur"),("sco","peasco")):
         table[nat+"_peasant"]=base
     only=set(x for x in a.only.split(",") if x)
-    for key,base in table.items():
-        if only and key not in only: continue
+    # T-BAKE-OPT: aliases reuse the canonical's already-baked sheets. If only
+    # an alias was requested, make sure its canonical is baked too so the
+    # alias record has metadata (and source PNGs) to point at.
+    aliases={} if a.no_alias else {k:v for k,v in ALIAS_OF.items() if k in table and v in table}
+    bake_keys=[k for k in table if (not only or k in only) and k not in aliases]
+    for alias,canon in aliases.items():
+        if (not only or alias in only) and canon not in bake_keys:
+            bake_keys.append(canon)
+    for key in bake_keys:
+        base=table[key]
+        udir = sheet_out_dir(out_units, key, "units") if nation_layout else out_units
         try:
-            e=bake_unit(a.game,a.out,key,base,a.size,a.samples,tmp)
+            e=bake_unit(a.game,out_units,key,base,a.size,a.samples,tmp,out_dir=udir)
             if e: idx[key]=e; json.dump(idx,open(idx_path,"w"),indent=1); print("unit",key,flush=True)
         except Exception as ex: print("FAIL unit",key,ex,flush=True)
+    # Write alias entries AFTER the canonical entries (--no-alias skips this).
+    made,saved_bytes,saved_sheets=make_alias_entries(idx,aliases,only,out_units,flat=not nation_layout)
+    if made:
+        json.dump(idx,open(idx_path,"w"),indent=1)
+        print("T-BAKE-OPT alias summary: %s; %d sheets, %d bytes saved (duplicate PNGs not baked/written)"
+              % (", ".join(made),saved_sheets,saved_bytes),flush=True)
     return 0
 
 if __name__ == "__main__":
