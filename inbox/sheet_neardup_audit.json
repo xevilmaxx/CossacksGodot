@@ -25,7 +25,7 @@
       "near_static": 38,
       "subtle_motion": 1655
     },
-    "empty_padding_pairs": 12,
+    "empty_padding_pairs": 0,
     "by_action": {
       "attack": {
         "sheets": 46,
@@ -931,7 +931,7 @@
       "Only 129 near-static pairs across 33 sheets are even candidates, and even these show nonzero differences that may be intentional sub-pixel jitter or antialiasing.",
       "Walk and attack dominate the raw near-dup counts, which is expected for smooth animation and is precisely where collapsing would be most damaging."
     ],
-    "conservative_action": "Treat the 1119 MB 'all-drop' figure as an Unsafe upper bound, not realizable savings. If any action is taken, restrict it to a small, visually-verified subset of near_static idle/attack hold groups (e.g. chasseur_attack, highlander_attack, howitzer_attack, jannisary_attack, mortar_attack, musketeer_attack, pandur_attack) and only after frame-by-frame human review. Theoretical best case from these near-static groups is ~88.28125 MB raw (uncompressed RGBA); actual PNG file savings will be smaller and must account for the playback-map overhead."
+    "conservative_action": "Treat the 1323 MB 'all-drop' figure as an Unsafe upper bound, not realizable savings. If any action is taken, restrict it to a small, visually-verified subset of near_static idle/attack hold groups (e.g. chasseur_attack, highlander_attack, howitzer_attack, jannisary_attack, mortar_attack, musketeer_attack, pandur_attack) and only after frame-by-frame human review. Theoretical best case from these near-static groups is ~88.28125 MB raw (uncompressed RGBA); actual PNG file savings will be smaller and must account for the playback-map overhead."
   },
   "sheets": [
     {
@@ -15342,7 +15342,7 @@
           "changed_frac": 0.014629,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 1,
@@ -15352,7 +15352,7 @@
           "changed_frac": 0.018364,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 2,
@@ -15362,7 +15362,7 @@
           "changed_frac": 0.014351,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 3,
@@ -15372,7 +15372,7 @@
           "changed_frac": 0.022383,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 4,
@@ -15382,7 +15382,7 @@
           "changed_frac": 0.022183,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 5,
@@ -15392,7 +15392,7 @@
           "changed_frac": 0.014282,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 6,
@@ -15402,7 +15402,7 @@
           "changed_frac": 0.014678,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         }
       ],
       "near_dup_pair_count": 7,
@@ -49789,7 +49789,7 @@
           "changed_frac": 0.01627,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 5,
@@ -50276,7 +50276,7 @@
           "changed_frac": 0.014033,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 5,
@@ -50286,7 +50286,7 @@
           "changed_frac": 0.015293,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 6,
@@ -50326,7 +50326,7 @@
           "changed_frac": 0.012212,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         },
         {
           "row_a": 10,
@@ -50336,7 +50336,7 @@
           "changed_frac": 0.013647,
           "exact": false,
           "class": "subtle_motion",
-          "empty_pair": true
+          "empty_pair": false
         }
       ],
       "near_dup_pair_count": 11,

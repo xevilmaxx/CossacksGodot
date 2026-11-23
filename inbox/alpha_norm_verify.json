@@ -1,0 +1,15 @@
+{
+  "task": "T-ALPHA-NORM verify report",
+  "created_local": "2026-11-23T15:44:08",
+  "files_checked": 1849,
+  "ok": true,
+  "files_with_residual_alpha0_noise": 0,
+  "residual_noise_pixels": 0,
+  "semi_transparent_mismatches": 0,
+  "cache_source_md5_mismatches": 0,
+  "cache_missing": 0,
+  "mode_mismatches": 0,
+  "achieved_saving_bytes": 52990076,
+  "achieved_saving_mb": 50.535274505615234,
+  "problems": []
+}

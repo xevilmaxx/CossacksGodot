@@ -28,6 +28,14 @@ Outputs (all under inbox/ except the backup tree, which lives in %TEMP%):
 
 Only Python stdlib + Pillow are used. No Godot jobs are spawned.
 
+Note on the audit's ~17 MB projection: inbox/alpha_noise_audit.json scaled a
+60-file sample to the whole tree. That sample under-weighted the 1524 building
+sheets (which save ~13.7%) and over-weighted nation units (~1.2%), so its
+5.3% / ~17 MB figure is a low extrapolation. This tool measures all 1849 files
+exactly and reports the true full-tree saving (~50.5 MB / 16.4%). Its PNG
+encoding was verified byte-identical to the audit's numpy method across all
+strata.
+
 Godot cache naming (verified against the tree):
     rel = path of PNG relative to app/, with forward slashes
     h   = md5(("res://" + rel).encode("utf-8")).hexdigest()
