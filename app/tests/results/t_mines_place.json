@@ -1,0 +1,22 @@
+{
+	"checks": [
+		{
+			"detail": "worst_nearest_tiles=15.5 failures=[]",
+			"name": "all_starts_served_across_6_seeds",
+			"passed": true
+		},
+		{
+			"detail": "ores=19 sig_match=true",
+			"name": "same_seed_same_ore_layout",
+			"passed": true
+		},
+		{
+			"detail": "before=19 stripped=5 after=19 nearest_tiles={ \"gold\": 17.7542381286621, \"iron\": 16.0745315551758, \"coal\": 18.5610237121582 }",
+			"name": "fallback_restores_cluster_without_adding_ores",
+			"passed": true
+		}
+	],
+	"id": "t_mines_place",
+	"passed": true,
+	"unix_ms": 1795446207028.0
+}

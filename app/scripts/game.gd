@@ -17,6 +17,15 @@ const TILE := 2.0
 # How close to an ore deposit the build cursor must be for a mine to be legal
 # (and for the unified "Mine" button to pick that deposit's type).
 const MINE_SITE_RADIUS := 4.0
+# T-MINES-PLACE: discoverability ring for the per-start ore guarantee (TILES).
+# The donor publishes no near-start deposit count/ring table (mines come from
+# stamped pattern masks), so these radii are a PORT INFERENCE made to stop
+# "on normal richness I cannot find the mines". 30 tiles is a generous cap;
+# the 16-24 tile placement band sits outside the 14-tile start keep-clear
+# (MINE_SITE_RADIUS is 4 m = 2 tiles, so the deposits stay buildable-adjacent).
+const MINE_DISCOVER_R := 30.0   # tiles: a start is "served" if ore is this close
+const MINE_NEAR_LO := 16.0      # tiles: outside the 14-tile start zone
+const MINE_NEAR_HI := 24.0      # tiles: still a short walk from town
 var MAP_W := 160
 var MAP_H := 160
 var TICK_MAX := 0.25  # clamp dt so tests never stall
@@ -523,6 +532,20 @@ func _mark_mine_mask(pos: Vector2, r_m: float) -> void:
 			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
 			if c.distance_to(pos) <= r_m:
 				mine_mask[y * MAP_W + x] = 1
+
+# T-MINES-PLACE: clear the worked-ground apron of a deposit that is relocated
+# by _ensure_start_ore_clusters(), so an abandoned mine site stops drawing as a
+# fresh dirt pad. Paired with _mark_mine_mask() at the destination.
+func _clear_mine_mask(pos: Vector2, r_m: float) -> void:
+	if mine_mask.size() != MAP_W * MAP_H:
+		return
+	var t0 := tile_of(pos - Vector2(r_m, r_m))
+	var t1 := tile_of(pos + Vector2(r_m, r_m))
+	for y in range(maxi(0, t0.y), mini(MAP_H, t1.y + 1)):
+		for x in range(maxi(0, t0.x), mini(MAP_W, t1.x + 1)):
+			var c := Vector2((x + 0.5) * TILE, (y + 0.5) * TILE)
+			if c.distance_to(pos) <= r_m:
+				mine_mask[y * MAP_W + x] = 0
 
 func _scatter_forest(center: Vector2, count: int, spread: float) -> void:
 	for i in count:
@@ -1076,6 +1099,8 @@ func _gen_resources() -> void:
 	for sv in map_starts:
 		starts.append(sv as Vector2)
 	_apply_richness_ores(starts)
+	# T-MINES-PLACE: count-preserving near-start ore guarantee (med/normal only).
+	_ensure_start_ore_clusters(starts)
 
 # P-19 richness: donor Minerals changes how many ore deposits a start ring gets.
 # The amount multiplier is donor-sourced (RC_TERRAIN §2.1 / GUIDE4 L6); the exact
@@ -1112,6 +1137,102 @@ func _apply_richness_ores(starts: Array[Vector2]) -> void:
 				set_blocked_circle(n2.pos, n2.radius, false)
 				by_id.erase(n2.id)
 				res_nodes.remove_at(best)
+
+# T-MINES-PLACE: per-start ore discoverability guarantee, NORMAL richness only.
+# Donor mines are stamped from pattern masks (C3PatternGen.SetupMines) and the
+# donor publishes no per-start deposit count/ring table; the existing near-start
+# cluster (C3PatternGen "Pass 1") is a port inference, not donor data. This pass
+# is a second, game.gd-owned safety net: it only RELOCATES an existing deposit
+# when a start has no ore of that kind inside MINE_DISCOVER_R, so the total ore
+# count per richness is unchanged and no infinite resource is ever created.
+# Low/high richness are deliberately skipped so RICHNESS_ORE_DELTA keeps its
+# existing behaviour byte-for-byte. A dedicated seeded RNG leaves the shared
+# stage stream (`rng`, already reseeded to "mines" in _gen_resources) untouched.
+func _ensure_start_ore_clusters(starts: Array[Vector2]) -> void:
+	var rkey := str(Data.RICHNESS)
+	if rkey != "med" and rkey != "normal":
+		return
+	if starts.is_empty():
+		return
+	var r := RandomNumberGenerator.new()
+	r.seed = (int(Data.RANDOM_SEED) ^ 0x4d494e45) + 104729
+	var kinds := ["gold", "iron", "coal"]
+	var claimed: Array = []  # node ids already assigned to an earlier start
+	for si in starts.size():
+		var st: Vector2 = starts[si]
+		var base := r.randf() * TAU
+		for ki in kinds.size():
+			var k: String = kinds[ki]
+			# Already discoverable? Keep the stamped donor position as-is.
+			var served := false
+			for n in res_nodes:
+				if str(n.type) != k or int(n.max_hits) != 0 or claimed.has(int(n.id)):
+					continue
+				if n.pos.distance_to(st) / TILE <= MINE_DISCOVER_R:
+					served = true
+					break
+			if served:
+				continue
+			# Pick the nearest unclaimed deposit of this kind and move it in.
+			var pick_idx := -1
+			var pick_d := 1.0e9
+			for n_i in res_nodes.size():
+				var cand: Dictionary = res_nodes[n_i]
+				if str(cand.type) != k or int(cand.max_hits) != 0:
+					continue
+				if claimed.has(int(cand.id)):
+					continue
+				var cd: float = cand.pos.distance_to(st)
+				if cd < pick_d:
+					pick_d = cd
+					pick_idx = n_i
+			if pick_idx < 0:
+				continue  # no such deposit on the map: never invent one
+			var node: Dictionary = res_nodes[pick_idx]
+			var old_pos: Vector2 = node.pos
+			# Open ground in this ore's 120-deg sector, outside the start zone.
+			# If the sector points off-map (corner start), retry at any angle.
+			var sector := base + float(ki) * TAU / 3.0
+			var dest: Vector2 = Vector2.ZERO
+			var found := false
+			for pass_i in 2:
+				for _a in 48:
+					var ang := sector + r.randf_range(-0.9, 0.9)
+					if pass_i == 1:
+						ang = r.randf() * TAU
+					var dst := r.randf_range(MINE_NEAR_LO, MINE_NEAR_HI)
+					var p := st + Vector2(cos(ang), sin(ang)) * dst * TILE
+					if not in_bounds(p) or is_blocked(p):
+						continue
+					if int(terrain[_t(tile_of(p).x, tile_of(p).y)]) == 3:
+						continue
+					var clear := true
+					for other in res_nodes:
+						if int(other.id) == int(node.id):
+							continue
+						if other.pos.distance_to(p) < 3.0 * TILE:
+							clear = false
+							break
+					if not clear:
+						continue
+					dest = p
+					found = true
+					break
+				if found:
+					break
+			if not found:
+				continue
+			# Move the SAME node (by_id shares this Dictionary) and repaint its
+			# worked ground. Count, wealth share (assigned in _gen_finish) and
+			# node id are all preserved.
+			_clear_mine_mask(old_pos, 3.0 * TILE)
+			set_blocked_circle(old_pos, float(node.radius), false)
+			node["pos"] = dest
+			set_blocked_circle(dest, float(node.radius), true)
+			_paint_terrain(dest, 3.0 * TILE, 1, 2.5, true)
+			_mark_mine_mask(dest, 3.0 * TILE)
+			claimed.append(int(node.id))
+			res_dirty += 1
 
 func _gen_finish() -> void:
 	_reseed_stage("finish")  # P-31 / dogenerate.inc:1927 final stage

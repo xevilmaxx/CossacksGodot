@@ -1258,7 +1258,9 @@ func _chunk_fields(cx: int, cy: int, wash_src: Image) -> Array:
 # bed is genuinely shallow. Everything else stays deep teal; land cells get a
 # muted ground colour so the role mask's 25% edge bleed cannot glow.
 const SHORE_WASH_TILES := 1.0
-const SHORE_WASH_DEPTH := 0.35
+# T-SHORE-BED: let the pale bed reach slightly deeper nearshore cells instead
+# of cutting off abruptly at 0.35; graded wash reads less like a flat band.
+const SHORE_WASH_DEPTH := 0.48
 const SHORE_PALE := Color(0.741, 0.741, 0.663)   # #BDBDA9 pale wash
 const SHORE_SHALLOW := Color(0.765, 0.820, 0.792) # #C3D1CA shallow
 const SHORE_DEEP := Color(0.16, 0.36, 0.44)
@@ -1304,7 +1306,8 @@ func _shore_substrate(cx: int, cy: int, S: int) -> Image:
 				dist[k] = minf(dist[k], dmin + 1.0)
 	# Hoist the colour lerp out of the 16k sub-node loop; nearest sampling of
 	# the tile fields is enough for a 1-tile band and keeps N-07 under 250 ms.
-	var pale: Color = SHORE_PALE.lerp(SHORE_SHALLOW, 0.25)
+	# T-SHORE-BED: push the pale end further toward #C3D1CA (0.25 -> 0.40).
+	var pale: Color = SHORE_PALE.lerp(SHORE_SHALLOW, 0.40)
 	for gy in n:
 		for gx in n:
 			var gxf: float = float(gx) / float(sub) + 1.0
@@ -1319,13 +1322,14 @@ func _shore_substrate(cx: int, cy: int, S: int) -> Image:
 				# Land: no pale bed at all -- kills the inland halo.
 				c = SHORE_GROUND
 			elif dv <= SHORE_WASH_TILES and dep <= SHORE_WASH_DEPTH:
-				# Hard contour at the wash outer edge, softened only over the
-				# last 0.5 tile so it reads as a band, not a glow.
-				var w: float = clampf((SHORE_WASH_TILES + 0.15 - dv) / 0.15, 0.0, 1.0)
+				# T-SHORE-BED: wider outer feather (0.15 -> 0.35 tile) plus
+				# stronger sandsea grain (±0.10 -> ±0.15) -> graded, blotchy
+				# sand->wash instead of a flat khaki band + uniform gray wash.
+				var w: float = clampf((SHORE_WASH_TILES + 0.35 - dv) / 0.35, 0.0, 1.0)
 				var grain: float = gr[k00]
-				c = Color(clampf(pale.r + grain * 0.10, 0.0, 1.0),
-					clampf(pale.g + grain * 0.10, 0.0, 1.0),
-					clampf(pale.b + grain * 0.09, 0.0, 1.0))
+				c = Color(clampf(pale.r + grain * 0.15, 0.0, 1.0),
+					clampf(pale.g + grain * 0.15, 0.0, 1.0),
+					clampf(pale.b + grain * 0.14, 0.0, 1.0))
 				c = SHORE_DEEP.lerp(c, w)
 			bed.set_pixel(gx, gy, c)
 	bed.resize(S, S, Image.INTERPOLATE_BILINEAR)

@@ -41,6 +41,32 @@ var mm_timer := 0.0
 # only rebuilds when world.fog_revision moves; blips still repaint every tick.
 var minimap_fog_base: Image = null
 var minimap_fog_rev := -1
+# T-MINIMAP: mine/quarry marker centres + colours. res_nodes are mostly static,
+# so the list is rebuilt only when game.res_dirty moves (never per frame/tick).
+var _mm_mine_centers: Array[Vector2i] = []
+var _mm_mine_colors: Array[Color] = []
+var _mm_mine_ver := -1
+# T-MINIMAP-EXTRA: entity blip layers. Buildings are immutable until bld_dirty;
+# unit dots are refreshed once per MINIMAP_INTERVAL (their movement source).
+# All buffers are reused across ticks — no per-frame/per-tick allocations.
+var _mm_bld_centers: Array[Vector2i] = []
+var _mm_bld_colors: Array[Color] = []
+var _mm_bld_enemy: Array[bool] = []
+var _mm_bld_ver := -1
+var _mm_unit_tiles: Array[Vector2i] = []
+var _mm_unit_colors: Array[Color] = []
+var _mm_unit_players: Array[int] = []
+var _mm_unit_enemy: Array[bool] = []
+var _mm_unit_dots: Array[int] = []
+var _mm_unit_counts := PackedInt32Array()
+var _mm_cluster_map: Dictionary = {}
+var _mm_cluster_sx: Array[int] = []
+var _mm_cluster_sy: Array[int] = []
+var _mm_cluster_cnt: Array[int] = []
+var _mm_cluster_colors: Array[Color] = []
+var _mm_cluster_enemy: Array[bool] = []
+var _mm_cluster_cols := 0
+var _mm_cluster_rows := 0
 # T-PERF-RENDER: last pushed texts — Label.text assignment costs a relayout
 # even when the string is identical, so every per-frame label is dirty-flagged.
 var _last_res_text: Array = []
@@ -68,6 +94,26 @@ var trade_amount := 100.0
 # game.trade(player, give, want, amount). Gold is handled by Buy/Sell; the
 # resource pair selectors feed Exchange. Data.MARKET* supplies the rate/floor.
 const MARKET_TRADABLE := ["food", "wood", "stone", "iron", "coal"]
+# T-MINIMAP: bright amber-family marker per mine/quarry ore (distinct hues,
+# all readable on the dimmed terrain); the dark rim keeps them crisp.
+const MINE_MARKER_COLORS := {
+	"gold": Color(1.0, 0.86, 0.18),
+	"iron": Color(1.0, 0.58, 0.18),
+	"coal": Color(0.98, 0.78, 0.40),
+	"stone": Color(0.94, 0.89, 0.62),
+}
+const MINE_MARKER_RIM := Color(0.05, 0.04, 0.03)
+# T-MINIMAP-EXTRA: player tints (0 = local player, blue; 1 = red). Static
+# constants, so no player-colour revision is needed for the caches.
+const MM_PLAYER_COLORS := [
+	Color(0.30, 0.62, 1.00), Color(1.00, 0.32, 0.26),
+	Color(1.00, 0.78, 0.22), Color(0.42, 0.85, 0.42),
+	Color(0.70, 0.45, 1.00), Color(0.25, 0.85, 0.85),
+	Color(1.00, 0.55, 0.72), Color(0.85, 0.85, 0.85),
+]
+const MM_ENEMY_RIM := Color(0.34, 0.02, 0.02)  # dark red ring on enemy blips
+const MM_CLUSTER_THRESHOLD := 16   # per player: above this, group into blips
+const MM_CLUSTER_CELL := 4         # tiles per cluster bucket
 var market_give_idx := 1   # wood
 var market_want_idx := 3   # iron
 var want_rally := false
@@ -1069,6 +1115,21 @@ func _process(dt: float) -> void:
 			_update_dynamic()
 
 func _build_minimap() -> void:
+	# T-MINIMAP: new game -> new res_nodes, so drop the cached marker list and
+	# any stale viewport box before the first rebuild.
+	_mm_mine_centers.clear()
+	_mm_mine_colors.clear()
+	_mm_mine_ver = -1
+	_mm_box_last = Vector4i(-1, -1, -1, -1)
+	# T-MINIMAP-EXTRA: drop entity caches from the previous game too.
+	_mm_bld_centers.clear()
+	_mm_bld_colors.clear()
+	_mm_bld_enemy.clear()
+	_mm_bld_ver = -1
+	_mm_unit_counts = PackedInt32Array()
+	_mm_unit_counts.resize(maxi(MM_PLAYER_COLORS.size(), game.players.size()))
+	_mm_cluster_cols = int(ceili(float(game.MAP_W) / float(MM_CLUSTER_CELL))) + 1
+	_mm_cluster_rows = int(ceili(float(game.MAP_H) / float(MM_CLUSTER_CELL))) + 1
 	minimap_base = Image.create(game.MAP_W, game.MAP_H, false, Image.FORMAT_RGBA8)
 	for y in game.MAP_H:
 		for x in game.MAP_W:
@@ -1138,9 +1199,9 @@ func _on_minimap_input(ev: InputEvent) -> void:
 # F3: draw the white viewport rectangle into a DISPLAY image and upload it.
 # The box is derived straight from the camera transform, so it reflects a jump
 # on the same input event instead of waiting for world.sync()/MINIMAP_INTERVAL.
-# Keeping it in a separate image avoids leaving ghost rectangles behind when
-# the camera moves between full minimap rebuilds (the clean image never has a
-# box on it, so every redraw starts from a clean slate).
+# T-PERF-RENDER: instead of duplicating the whole ~100k-pixel image whenever
+# the camera scrolls, only the previous/new 1px borders are rewritten. The
+# clean image is the restore source, so no ghost rectangles can be left behind.
 func _draw_minimap_viewport_box(force: bool = false) -> void:
 	if minimap_img == null or minimap_view_img == null or minimap_tex == null or game == null:
 		return
@@ -1163,16 +1224,24 @@ func _draw_minimap_viewport_box(force: bool = false) -> void:
 	var box := Vector4i(x0, y0, x1, y1)
 	if not force and box == _mm_box_last:
 		return
+	# restore the old border from the clean image, then paint the new one
+	if _mm_box_last.x >= 0:
+		_mm_paint_box(_mm_box_last, true)
 	_mm_box_last = box
-	minimap_view_img = minimap_img.duplicate()
-	var bc := Color(1, 1, 1, 0.9)
-	for x in range(x0, x1 + 1):
-		minimap_view_img.set_pixel(x, y0, bc)
-		minimap_view_img.set_pixel(x, y1, bc)
-	for y in range(y0, y1 + 1):
-		minimap_view_img.set_pixel(x0, y, bc)
-		minimap_view_img.set_pixel(x1, y, bc)
+	_mm_paint_box(box, false)
 	minimap_tex.update(minimap_view_img)
+
+func _mm_paint_box(b: Vector4i, restore: bool) -> void:
+	# b = x0,y0,x1,y1. restore=true copies the clean pixel back (no ghost).
+	var bc := Color(1, 1, 1, 0.9)
+	for xi in b.z - b.x + 1:
+		var x := b.x + xi
+		minimap_view_img.set_pixel(x, b.y, minimap_img.get_pixel(x, b.y) if restore else bc)
+		minimap_view_img.set_pixel(x, b.w, minimap_img.get_pixel(x, b.w) if restore else bc)
+	for yi in b.w - b.y - 1:
+		var y := b.y + 1 + yi
+		minimap_view_img.set_pixel(b.x, y, minimap_img.get_pixel(b.x, y) if restore else bc)
+		minimap_view_img.set_pixel(b.z, y, minimap_img.get_pixel(b.z, y) if restore else bc)
 
 func _mm_plot(t: Vector2i, c: Color, big: bool) -> void:
 	# minimap blip with map-bounds guard; deposits and forests draw 2x2 so
@@ -1187,6 +1256,215 @@ func _mm_plot(t: Vector2i, c: Color, big: bool) -> void:
 			minimap_img.set_pixel(t.x, t.y + 1, c)
 		if t.x + 1 < game.MAP_W and t.y + 1 < game.MAP_H:
 			minimap_img.set_pixel(t.x + 1, t.y + 1, c)
+
+func _rebuild_mine_markers() -> void:
+	# Called only when game.res_dirty moves (or on a new game), never per frame.
+	# Ore deposits are inexhaustible mine sites (max_hits == 0, hits == 0);
+	# live ore/stone quarry nodes still have hits. Spent finite nodes are
+	# dropped from res_nodes by the sim, so none can linger as false markers.
+	_mm_mine_centers.clear()
+	_mm_mine_colors.clear()
+	for n in game.res_nodes:
+		var ty := str(n.get("type", ""))
+		if not MINE_MARKER_COLORS.has(ty):
+			continue
+		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0:
+			continue
+		var t := game.tile_of(n.pos)
+		if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
+			continue
+		_mm_mine_centers.append(t)
+		_mm_mine_colors.append(MINE_MARKER_COLORS[ty])
+	_mm_mine_ver = game.res_dirty
+
+func _draw_mine_markers() -> void:
+	# One pass over the cached centres. Unexplored tiles are skipped so the
+	# markers never reveal fog; explored-but-not-visible tiles keep theirs.
+	# 7x7 diamond: bright ore core (Manhattan <= 2) + 1px dark rim (== 3).
+	var has_fog := Data.FOG_OF_WAR
+	var fog: PackedByteArray = world.fog_explored
+	var mw := game.MAP_W
+	var mh := game.MAP_H
+	for i in _mm_mine_centers.size():
+		var t: Vector2i = _mm_mine_centers[i]
+		if has_fog and fog[t.y * mw + t.x] == 0:
+			continue
+		var c: Color = _mm_mine_colors[i]
+		for dyi in 7:
+			var py := t.y + dyi - 3
+			if py < 0 or py >= mh:
+				continue
+			for dxi in 7:
+				var px := t.x + dxi - 3
+				if px < 0 or px >= mw:
+					continue
+				var d := absi(dxi - 3) + absi(dyi - 3)
+				if d > 3:
+					continue
+				minimap_img.set_pixel(px, py, MINE_MARKER_RIM if d == 3 else c)
+
+func _mm_player_color(p: int) -> Color:
+	if p < 0 or p >= MM_PLAYER_COLORS.size():
+		return Color(0.85, 0.85, 0.85)
+	var c: Color = MM_PLAYER_COLORS[p]
+	return c
+
+func _mm_enemy_visible(t: Vector2i) -> bool:
+	# T-MINIMAP-EXTRA: an enemy needs BOTH explored history and current
+	# player-0 sight (fog_vis). With fog off everything is visible upstream.
+	if not Data.FOG_OF_WAR:
+		return true
+	if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
+		return false
+	var i := t.y * game.MAP_W + t.x
+	return world.fog_explored[i] != 0 and world.fog_vis[i] != 0
+
+func _rebuild_bld_blips() -> void:
+	# T-MINIMAP-EXTRA: buildings never move, so rebuild only when bld_dirty
+	# moves (spawn/finish/destroy). Fog is applied at stamp time, not cached.
+	_mm_bld_centers.clear()
+	_mm_bld_colors.clear()
+	_mm_bld_enemy.clear()
+	for e in game.live_blds:
+		if e.dead:
+			continue
+		var t := game.tile_of(e.pos)
+		if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
+			continue
+		var p := clampi(int(e.player), 0, MM_PLAYER_COLORS.size() - 1)
+		_mm_bld_centers.append(t)
+		_mm_bld_colors.append(_mm_player_color(p))
+		_mm_bld_enemy.append(int(e.player) != 0)
+	_mm_bld_ver = game.bld_dirty
+
+func _draw_bld_blips() -> void:
+	# T-MINIMAP-EXTRA: own = 2x2 player tint; enemy = 3x3 dark-red rim with a
+	# bright player-tint core. Enemy buildings need current visibility too.
+	var mw := game.MAP_W
+	var mh := game.MAP_H
+	for i in _mm_bld_centers.size():
+		var t: Vector2i = _mm_bld_centers[i]
+		var enemy := _mm_bld_enemy[i]
+		if enemy and not _mm_enemy_visible(t):
+			continue
+		var c: Color = _mm_bld_colors[i]
+		if enemy:
+			for dxi in 3:
+				for dyi in 3:
+					var px := t.x + dxi - 1
+					var py := t.y + dyi - 1
+					if px < 0 or py < 0 or px >= mw or py >= mh:
+						continue
+					minimap_img.set_pixel(px, py, c if dxi == 1 and dyi == 1 else MM_ENEMY_RIM)
+		else:
+			for dxi in 2:
+				for dyi in 2:
+					minimap_img.set_pixel(mini(mw - 1, t.x + dxi), mini(mh - 1, t.y + dyi), c)
+
+func _rebuild_unit_blips() -> void:
+	# T-MINIMAP-EXTRA: one scan of live_units per minimap tick (movement is the
+	# only reason these positions change). Small armies get 1px dots; above
+	# MM_CLUSTER_THRESHOLD per player they collapse into coarse cluster blips,
+	# so a 1000-unit army costs a handful of set_pixel calls, not 1000.
+	_mm_unit_tiles.clear()
+	_mm_unit_colors.clear()
+	_mm_unit_players.clear()
+	_mm_unit_enemy.clear()
+	_mm_unit_dots.clear()
+	_mm_cluster_map.clear()
+	_mm_cluster_sx.clear()
+	_mm_cluster_sy.clear()
+	_mm_cluster_cnt.clear()
+	_mm_cluster_colors.clear()
+	_mm_cluster_enemy.clear()
+	_mm_unit_counts.fill(0)
+	var mw := game.MAP_W
+	var mh := game.MAP_H
+	for e in game.live_units:
+		if e.dead:
+			continue
+		var p := int(e.player)
+		var pi := clampi(p, 0, MM_PLAYER_COLORS.size() - 1)
+		var own := p == 0
+		var t := game.tile_of(e.pos)
+		if t.x < 0 or t.y < 0 or t.x >= mw or t.y >= mh:
+			continue
+		if not own and not _mm_enemy_visible(t):
+			continue
+		var c := _mm_player_color(pi)
+		if own and bool(e.get("selected", false)):
+			c = Color(1, 1, 1)
+		_mm_unit_counts[pi] += 1
+		_mm_unit_tiles.append(t)
+		_mm_unit_colors.append(c)
+		_mm_unit_players.append(pi)
+		_mm_unit_enemy.append(not own)
+	for i in _mm_unit_tiles.size():
+		var pi: int = _mm_unit_players[i]
+		if _mm_unit_counts[pi] <= MM_CLUSTER_THRESHOLD:
+			_mm_unit_dots.append(i)
+			continue
+		var t: Vector2i = _mm_unit_tiles[i]
+		# player is part of the key so a cluster never mixes two owners' colours
+		var key := (pi * _mm_cluster_rows + int(t.y / MM_CLUSTER_CELL)) * _mm_cluster_cols + int(t.x / MM_CLUSTER_CELL)
+		var ci: int = _mm_cluster_map.get(key, -1)
+		if ci < 0:
+			ci = _mm_cluster_sx.size()
+			_mm_cluster_map[key] = ci
+			_mm_cluster_sx.append(0)
+			_mm_cluster_sy.append(0)
+			_mm_cluster_cnt.append(0)
+			_mm_cluster_colors.append(_mm_unit_colors[i])
+			_mm_cluster_enemy.append(_mm_unit_enemy[i])
+		_mm_cluster_sx[ci] += t.x
+		_mm_cluster_sy[ci] += t.y
+		_mm_cluster_cnt[ci] += 1
+
+func _draw_unit_blips() -> void:
+	# T-MINIMAP-EXTRA: layering (last wins) = mines < buildings < unit dots <
+	# clusters. Enemy blips get a dark-red rim and are stamped last so they
+	# stay legible even on top of friendly or marker pixels.
+	var mw := game.MAP_W
+	var mh := game.MAP_H
+	for i in _mm_unit_dots.size():
+		var ui: int = _mm_unit_dots[i]
+		var t: Vector2i = _mm_unit_tiles[ui]
+		if t.x < 0 or t.y < 0 or t.x >= mw or t.y >= mh:
+			continue
+		var c: Color = _mm_unit_colors[ui]
+		minimap_img.set_pixel(t.x, t.y, c)
+		if _mm_unit_enemy[ui]:
+			if t.x > 0:
+				minimap_img.set_pixel(t.x - 1, t.y, MM_ENEMY_RIM)
+			if t.x + 1 < mw:
+				minimap_img.set_pixel(t.x + 1, t.y, MM_ENEMY_RIM)
+			if t.y > 0:
+				minimap_img.set_pixel(t.x, t.y - 1, MM_ENEMY_RIM)
+			if t.y + 1 < mh:
+				minimap_img.set_pixel(t.x, t.y + 1, MM_ENEMY_RIM)
+	for ci in _mm_cluster_sx.size():
+		var n := maxi(1, _mm_cluster_cnt[ci])
+		var cx := clampi(int(_mm_cluster_sx[ci] / n), 0, mw - 1)
+		var cy := clampi(int(_mm_cluster_sy[ci] / n), 0, mh - 1)
+		var c: Color = _mm_cluster_colors[ci]
+		if _mm_cluster_enemy[ci]:
+			for dxi in 3:
+				for dyi in 3:
+					var px := cx + dxi - 1
+					var py := cy + dyi - 1
+					if px < 0 or py < 0 or px >= mw or py >= mh:
+						continue
+					minimap_img.set_pixel(px, py, c if dxi == 1 and dyi == 1 else MM_ENEMY_RIM)
+		else:
+			minimap_img.set_pixel(cx, cy, c)
+			if cx > 0:
+				minimap_img.set_pixel(cx - 1, cy, c)
+			if cx + 1 < mw:
+				minimap_img.set_pixel(cx + 1, cy, c)
+			if cy > 0:
+				minimap_img.set_pixel(cx, cy - 1, c)
+			if cy + 1 < mh:
+				minimap_img.set_pixel(cx, cy + 1, c)
 
 func _update_minimap() -> void:
 	if world == null:
@@ -1210,41 +1488,30 @@ func _update_minimap() -> void:
 		minimap_img = minimap_fog_base.duplicate()
 	else:
 		minimap_img = minimap_base.duplicate()
+	# T-MINIMAP: mine/quarry blips come from a cached centre list, rebuilt only
+	# when res_dirty changes. One small fog-gated pass per minimap tick.
+	if game.res_dirty != _mm_mine_ver:
+		_rebuild_mine_markers()
+	_draw_mine_markers()
 	for n in game.res_nodes:
-		var t := game.tile_of(n.pos)
-		if n.max_hits == 0 and (n.type == "gold" or n.type == "iron" or n.type == "coal"):
-			# unbuilt ore deposit: a distinct ore-coloured landmark (dark
-			# outline + bright core) so it reads as a mine on the minimap.
-			# Still fogged until a unit has scouted the tile.
-			if not world.tile_explored(n.pos):
-				continue
-			var dc: Color = {"gold": Color(1.0, 0.82, 0.24),
-				"iron": Color(0.9, 0.52, 0.32),
-				"coal": Color(0.36, 0.37, 0.42)}[n.type]
-			for dy in range(-1, 3):
-				for dx in range(-1, 3):
-					var mx := t.x + dx
-					var my := t.y + dy
-					if mx < 0 or my < 0 or mx >= game.MAP_W or my >= game.MAP_H:
-						continue
-					var core := dx >= 0 and dx <= 1 and dy >= 0 and dy <= 1
-					minimap_img.set_pixel(mx, my, dc if core else Color(0.08, 0.07, 0.06))
+		var ty := str(n.get("type", ""))
+		# ore deposits + stone quarries are already handled by the marker pass
+		if ty == "gold" or ty == "iron" or ty == "coal" or ty == "stone":
 			continue
+		var t := game.tile_of(n.pos)
 		if n.hits <= 0:
 			# T-FIELDS-GFX: depleted fields stay on the minimap (brown
 			# stubble); regrowing ones read olive. Other spent nodes vanish.
-			if str(n.get("type", "")) == "food" and int(n.get("max_hits", 0)) > 0:
+			if ty == "food" and int(n.get("max_hits", 0)) > 0:
 				var fst := str(game.field_state(n)) if game.has_method("field_state") else "depleted"
 				if fst == "regrowing":
 					_mm_plot(t, Color(0.55, 0.58, 0.25), false)
 				else:
 					_mm_plot(t, Color(0.32, 0.26, 0.17), false)
 			continue
-		match n.type:
+		match ty:
 			"wood":
 				_mm_plot(t, Color(0.05, 0.2, 0.05), true)
-			"stone":
-				_mm_plot(t, Color(0.6, 0.6, 0.55), false)
 			"food":
 				# T-FIELDS-GFX: ripe = gold, growing = green.
 				var fst2 := str(game.field_state(n)) if game.has_method("field_state") else "ripe"
@@ -1252,40 +1519,20 @@ func _update_minimap() -> void:
 					_mm_plot(t, Color(0.35, 0.62, 0.22), false)
 				else:
 					_mm_plot(t, Color(0.85, 0.75, 0.3), false)
-			"gold":
-				_mm_plot(t, Color(0.9, 0.75, 0.2), false)
-			"iron":
-				_mm_plot(t, Color(0.7, 0.45, 0.3), false)
-			"coal":
-				_mm_plot(t, Color(0.25, 0.25, 0.28), false)
-	for e in game.entities:
-		if e.dead:
-			continue
-		if e.player != 0:
-			if e.kind == "building":
-				if not world.tile_explored(e.pos):
-					continue
-			else:
-				if not world.tile_visible(e.pos):
-					continue
-		var t := game.tile_of(e.pos)
-		if e.kind == "building":
-			for dy in 2:
-				for dx in 2:
-					var px := mini(game.MAP_W - 1, t.x + dx)
-					var py := mini(game.MAP_H - 1, t.y + dy)
-					minimap_img.set_pixel(px, py, Color(1, 1, 1) if e.player == 0 else Color(1, 0.2, 0.2))
-		else:
-			if t.x >= 0 and t.y >= 0 and t.x < game.MAP_W and t.y < game.MAP_H:
-				if bool(e.get("selected", false)):
-					minimap_img.set_pixel(t.x, t.y, Color(1, 1, 1))
-				else:
-					minimap_img.set_pixel(t.x, t.y, Color(0.4, 0.7, 1) if e.player == 0 else Color(1, 0.3, 0.25))
+	# T-MINIMAP-EXTRA: entity blips layered above terrain/resource markers.
+	# Buildings cache on bld_dirty; unit dots refresh once per MINIMAP_INTERVAL
+	# tick (that cadence is what shows movement). Enemy pixels are stamped last.
+	if game.bld_dirty != _mm_bld_ver:
+		_rebuild_bld_blips()
+	_draw_bld_blips()
+	_rebuild_unit_blips()
+	_draw_unit_blips()
 	# T-PERF-RENDER: fog dimming now lives in the cached minimap_fog_base, so
-	# no full-map pass is needed here.
-	# The clean image is rebuilt above; redraw the box into the display image
-	# and upload both together (F3). force=true so a fresh clean image is
-	# always shown even if the camera has not moved since the last rebuild.
+	# no full-map pass is needed here. Refresh the display image from the
+	# freshly rebuilt clean image ONCE per tick; camera scrolling afterwards
+	# only repaints the thin box borders (no per-frame full-image duplicate).
+	minimap_view_img = minimap_img.duplicate()
+	_mm_box_last = Vector4i(-1, -1, -1, -1)
 	_draw_minimap_viewport_box(true)
 
 func hud_report() -> Dictionary:

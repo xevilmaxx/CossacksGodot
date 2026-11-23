@@ -12,6 +12,17 @@ render_mode blend_mix;
 // miLinearMipmapLinear). wave1/wave2/foam_tex were REMOVED: the donor has a
 // single waveMap and foam is purely procedural (W01 §2.7; no foam asset).
 // NO reflection in this grant (D3 excluded — W03 governs the future grant).
+//
+// T-SHORE-SHADER — shore/wash visual pass (water_overlay.gdshader only).
+//   * Adds a BAND-GATED low-frequency turbidity/mottle to the shallow wash,
+//     sampled from the EXISTING wave_noise via noise() on juv (no new sampler/
+//     uniform). Gated by band = coastfade*(1-coastfade2) so deep water is
+//     untouched and the donor depth/alpha equations stay verbatim.
+//   * Reuses that same low-freq term to spatially modulate FOAM_GAIN, breaking
+//     up the uniform-width scalloped edge; foam remains fully procedural.
+//   * D-43 deviation is PRESERVED: the calibrated shallow tint is NOT forced
+//     to #C3D1CA, and BODY_SWELL_AMP/BODY_SPAN are left untouched.
+//   * Public interface, all uniforms, and alpha = coverage*coastfade2 unchanged.
 
 uniform sampler2D wave_noise : repeat_enable, filter_linear;
 
@@ -183,12 +194,26 @@ void fragment() {
     vec2 wavejitter = n.xy * TEX_SCALE_T * depth_m;
     vec2 juv = UV + wavejitter;
 
+    // T-SHORE-SHADER: low-frequency turbidity field for the shallow wash only.
+    // Two broad taps of the EXISTING wave_noise (rotated by M) give an organic,
+    // blotchy mottle at ~1/5 the foam's spatial rate; no new sampler/uniform.
+    // band = coastfade*(1-coastfade2) is zero in deep water, so it is gated.
+    float band = coastfade * (1.0 - coastfade2);       // zero beyond 1.07 m
+    vec2  turb_uv = juv * 50.0;
+    float turb  = 0.62 * noise(turb_uv) + 0.38 * noise(M * turb_uv + vec2(11.3, 4.7));
+    float mottle = (turb - 0.5) * 2.0;                 // -1..1, centred blotchy field
+
     // ---- depth colour (donor frag:198-201, 223-227) ----
     // Calibrated equivalent of mix(watercolor*intensity, watercolor2,
     // smoothstep(0,1,coastfade2)) followed by *= (2.2+watershade).
     vec3 deep_cal = DONOR_DEEP + DEEP_BED_SUB;           // (0.16,0.15,0.145)
     vec3 col = mix(SHALLOW_LIN, deep_cal, smoothstep(0.0, 1.0, coastfade2));
     col *= (2.2 + WATERSHADE) * (0.92 + 0.16 * body_h);
+    // T-SHORE-SHADER: band-gated turbidity -> graded, blotchy sand/wash tone.
+    // Multiplicative + slight greenish tint keeps it a wash variation, not a
+    // brightness-only ripple; deep water (band=0) and alpha are unaffected.
+    col *= 1.0 + band * (0.12 * mottle);
+    col += band * mottle * vec3(0.03, 0.04, 0.02);
     // Soft coherent body shading only: the donor's large-scale tone structure
     // is carried by the fBm field above. NO radial sines (W02 FIX-2).
 
@@ -209,12 +234,15 @@ void fragment() {
     col += spec2 * SPEC_COL;                         // :226
 
     // ---- foam (donor frag:227; nautic()/particles() on wave_noise) ----
-    float band = coastfade * (1.0 - coastfade2);     // zero beyond 1.07 m
+    // T-SHORE-SHADER: spatially vary FOAM_GAIN with the same low-freq term so
+    // the scalloped edge breaks up instead of reading as uniform-width. Foam
+    // stays purely procedural (nautic()/particles()); no texture added.
+    float foam_gain = FOAM_GAIN * (0.7 + 0.6 * (0.5 + 0.5 * mottle)); // 0.7..1.3x
     vec2 fp = juv * 230.0;                            // W02 P_SPAN analogue
     float foam_n = nautic(fp);
     float foam_p = particles(fp);
     col += band * (vec3(0.5, 0.6, 0.7) * foam_n + foam_p * 0.02)
-         * FOAM_GAIN * 8.0;
+         * foam_gain * 8.0;
 
     // donor resalpha = coastfade2 (:230). Alpha 0 at the waterline, 1 at 1.07 m;
     // no 0.35 floor. coverage gate keeps dry land out. This IS the soft

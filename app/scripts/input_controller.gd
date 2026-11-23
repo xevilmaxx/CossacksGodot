@@ -35,6 +35,12 @@ var patrol_a := Vector2.INF
 var patrol_b := Vector2.INF
 var guard_mode := false
 var route_node: Node2D = null
+# T-NAV-RESPONSIVE: minimap geometry is cached. It only changes when the
+# viewport resizes or hud.gd resizes/rebuilds its TextureRect — never on mouse
+# events — so the per-event path does no Control/layout math or allocations.
+var _mm_rect := Rect2()
+var _mm_rect_dirty := true
+var _mm_dragging := false
 
 func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 	game = g
@@ -55,6 +61,12 @@ func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 		world.fx_layer.add_child(route_node)
 		route_node.draw.connect(_draw_patrol_route)
 	add_to_group("c3_input")
+	# T-NAV-RESPONSIVE: invalidate the cached minimap rect only on real layout
+	# changes, not on every mouse-motion event.
+	if get_viewport() != null:
+		get_viewport().size_changed.connect(_invalidate_minimap_rect)
+	if hud != null and hud.minimap_rect != null and is_instance_valid(hud.minimap_rect):
+		hud.minimap_rect.resized.connect(_invalidate_minimap_rect)
 
 # The bindings come from the global settings file (config.json); the ones in
 # the original data/game/var/hotkeys.cfg are the values it starts with.
@@ -109,6 +121,46 @@ func _set_selection(arr: Array) -> void:
 		e["selected"] = true
 	game.bld_dirty += 1
 	hud.refresh_selection(get_selected())
+
+# --- T-NAV-RESPONSIVE: minimap navigation ------------------------------------
+func _invalidate_minimap_rect() -> void:
+	_mm_rect_dirty = true
+
+# Cached screen-space rect of the minimap texture. hud.gd owns the live node;
+# we only read its global rect when a resize signal says it changed.
+func _minimap_screen_rect() -> Rect2:
+	if _mm_rect_dirty:
+		_mm_rect_dirty = false
+		_mm_rect = Rect2()
+		if hud != null and hud.minimap_rect != null and is_instance_valid(hud.minimap_rect) \
+				and hud.minimap_rect.is_visible_in_tree():
+			_mm_rect = hud.minimap_rect.get_global_rect()
+	return _mm_rect
+
+# Screen point -> map metres, using the same rect math as hud.gd. UVs are
+# clamped so a drag that slips off the minimap cannot keep pulling the camera.
+func _minimap_world(screen_pos: Vector2) -> Vector2:
+	var mm := _minimap_screen_rect()
+	if mm.size.x <= 0.0 or mm.size.y <= 0.0 or game == null:
+		return Vector2.INF
+	var u := clampf((screen_pos.x - mm.position.x) / mm.size.x, 0.0, 1.0)
+	var v := clampf((screen_pos.y - mm.position.y) / mm.size.y, 0.0, 1.0)
+	return Vector2(u * game.MAP_W, v * game.MAP_H) * Data.TILE_M
+
+# Instant click/drag reposition: one direct camera write + explicit dirty
+# hop, then camera.process_priority puts the move in front of world.sync() on
+# this very frame (no sim tick / MINIMAP_INTERVAL wait).
+func _minimap_reposition(screen_pos: Vector2) -> void:
+	var wp := _minimap_world(screen_pos)
+	if wp == Vector2.INF or camera == null or world == null:
+		return
+	if camera.has_method("jump_to_world"):
+		camera.jump_to_world(wp, world.view_scale)
+	else:
+		camera.global_position = wp * world.view_scale
+		camera.clamp_pos()
+		if camera.has_method("mark_dirty"):
+			camera.mark_dirty()
 
 func minimap_order(pos: Vector2) -> void:
 	var sel := get_selected().filter(func(e): return e.player == 0 and e.kind == "unit")
@@ -264,6 +316,24 @@ func _pick(pw: Vector2, players_only := true) -> Dictionary:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
+		var mm := _minimap_screen_rect()
+		# T-NAV-RESPONSIVE: hud.gd's gui_input normally consumes minimap button
+		# presses first. These branches are the same-path fallback so minimap
+		# click = instant jump, left drag = continuous follow and right click =
+		# order, all confined to the cached rect. _screen_to_world() is now
+		# lazy: it is only paid for world-map events, not minimap events.
+		if mb.button_index == MOUSE_BUTTON_LEFT and mm.has_point(mb.position):
+			_mm_dragging = mb.pressed
+			_minimap_reposition(mb.position)
+			return
+		if mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed and mm.has_point(mb.position):
+			var mw := _minimap_world(mb.position)
+			if mw != Vector2.INF:
+				minimap_order(mw)
+			return
+		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and _mm_dragging:
+			_mm_dragging = false
+			return
 		var pw := _screen_to_world(mb.position)
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			if mb.pressed:
@@ -349,6 +419,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
 			_right_order(pw)
 	elif event is InputEventMouseMotion:
+		var mm := _minimap_screen_rect()
+		# T-NAV-RESPONSIVE: continuous minimap drag. While the left button is
+		# held the camera follows the pointer every frame; the rect test also
+		# ends an active drag when the pointer leaves the minimap, so it can
+		# never leak into the world selection-drag logic below.
+		if _mm_dragging or ((event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0 and mm.has_point(event.position)):
+			if mm.has_point(event.position):
+				_minimap_reposition(event.position)
+			else:
+				_mm_dragging = false
+			return
 		if drag_start != Vector2.INF and (event.position - drag_start).length() > 6.0:
 			dragging = true
 	elif event is InputEventKey and event.pressed and not event.echo:
