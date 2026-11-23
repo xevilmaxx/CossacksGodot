@@ -95,4 +95,4 @@ person who owns the game, on their own computer. Must not be shared.
 - data/gui/minimap.cfg (240px bottom-left, frustum)
 \
 
-See ../WAIVERS.md (project root) for the two donor-asset waivers and the private-use compliance statement.
+See ../docs/WAIVERS.md for the two donor-asset waivers and the private-use compliance statement.

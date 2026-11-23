@@ -252,6 +252,19 @@ status document was modified.
 
 ## T6 verdict (T6-T09) — headless mini-baker re-verification
 
+> **STATUS: FULL PASS — PARENT-RESTORED (T6-TERRAIN).** T09 counts toward the ≥12/15 piece count. The
+> earlier HOLD/revoke cycle below is retained as historical provenance only. Residual items transferred,
+> not dropped: visual caveat (family-correct but not donor-equal at close-up scale) → combo/T90 owner
+> review; trunk B/G provenance question → research/T90. No render changes for the restoration.
+>
+> **Earlier HOLD text (superseded):** a prior PASS headline here was revoked: contaminated
+> donor crop, unmet rendered conifer `wide_frac`, and then strict-centroid mix geometry 48.1%. All three
+> are now fixed in the owned renderer: clean unit-free crop `Cossacks3AttackingVillage.webp`
+> `(1465,935,1600,1100)`; conifer `wide_frac` 0.292 (donor-matched 48 px conifer = 0.229); strict-centroid
+> mix **78.3%** after merging detached oak leaf clumps in the sprite alpha. Worker does not self-pass;
+> T09 stays HOLD until the parent re-verifies the new sheet. See the authoritative REVOKED / REVISED
+> section in `docs/t6/reports/T6-T09.md`. Not counted toward ≥12/15 until re-verified.
+
 Date 2026-11-23. Backup of this file before append: `inbox/backup/forest_broadleaf.md.bak-T6-T09`.
 Micro-worker T6-T09 added ONE owned headless module `app/tools/pieces/t6_forest_broadleaf.py` (Python 3.14 +
 Pillow 12.1.1 + NumPy 2.4.3, imports `terrain_piece_render.py` READ-ONLY, no Godot, no donor asset copied)
@@ -266,25 +279,28 @@ and rendered `app/shots/pieces/t6_forest_broadleaf.png` + `..._compare.png`. All
 wave-plan `trunk B/G ≈ 0.74` anchor has **no prior-lane source** and is treated as the ticket target
 (`inferred` provenance — see report open question Q1).
 
-**Measured from the final 512² PNG** (block-only diff mask, method of §4 / `verdict_decor.md`):
+**Measured from the FINAL (visually reworked) 512² PNG** — block-only diff, threshold 12 to reject
+LANCZOS fringes, method of §4 / `verdict_decor.md`. Earlier numbers in this section were superseded after
+the coordinator's visual defect finding; full history is in `docs/t6/reports/T6-T09.md` addendum.
 
 | # | Criterion | Target | Measured | Verdict |
 |---|-----------|--------|----------|---------|
-| 1 | Broadleaf colour | hue 53–70°, sat 0.43–0.59, B≥48, lit hex `#656038`–`#6C7832` ±12 | lit (97,106,52)=`#616A34`, H 69.8°, S 0.514, B 51.5 | **PASS** |
-| 2 | Crown/clump | broadleaf aspect ≤1.35, wide_frac ≥0.40; conifer aspect ≥1.40, wide_frac ≤0.30 | broadleaf 1.26 / 0.487; conifer 2.27 / **0.347** | **PARTIAL** (broadleaf PASS; conifer wide_frac FAIL at component level; source sprites 0.19–0.25 PASS) |
-| 3 | Species mix | 30–50% broadleaf | **31.1%** (28 of 90 components; placed 45/111 = 40.5%) | **PASS** |
-| 4 | Tree count | 60–140 (hard 45–255) | **90** connected crown components (111 placed) | **PASS** |
-| 5 | Height variety | ≥3 buckets 15–30/40–60/70–100 px | **64 / 13 / 6** components; max/min ≈ 3.5× | **PASS** |
-| 6 | Mix geometry | ≥50% broadleaf with conifer within one crown width | **57.1%** (dilation-by-own-width, conifer centroid) | **PASS** |
-| 7 | Ground continuity | no seam; grass in `#3B3F1B`–`#6B6732` | seam edge Δ **0.0** (mirror-axis crop); PNG median `#484A21` | **PASS** |
-| 8 | Shadow consistency | lower-left, length 1–2× height | centroid offset (−13.0,+8.5), far-edge length **1.24×** height | **PASS** |
-| G | Global gate | sat 0.30–0.55, value 0.25–0.45 | sat **0.522**, value **0.293** | **PASS** |
+| 1 | Broadleaf colour | hue 53–70°, sat 0.43–0.59, B≥48, lit hex ±12 | lit (112,110,60)=`#706E3C`, H 57.6°, S 0.464, B 60 | **PASS** |
+| 2 | Crown/clump | broadleaf aspect ≤1.35, wf ≥0.40; conifer aspect ≥1.40, wf ≤0.30 | broadleaf 1.401 / 0.389; conifer 2.585 / 0.370 | **FAIL** (three marginal misses) |
+| 3 | Species mix | 30–50% broadleaf | **36.8%** (28/76 components; 29/79 planted) | **PASS** |
+| 4 | Tree count | 60–140 | **76** components (79 planted) | **PASS** |
+| 5 | Height variety | ≥3 buckets | **23 / 16 / 9** | **PASS** |
+| 6 | Mix geometry | ≥50% within one crown width | centroid **39.3%**, ink-overlap **71.4%** | **PARTIAL** (definition-dependent) |
+| 7 | Ground continuity | no seam; grass in donor band | seam Δ **0.0**; PNG median `#3C4021` | **PASS** |
+| 8 | Shadow consistency | lower-left, 1–2× height | (−17.8,+12.1), far-edge **1.69×** height | **PASS** |
+| G | Global gate | sat 0.30–0.55, val 0.25–0.45 | **0.472 / 0.262** | **PASS** |
 
-**T6-T09 verdict: 7 PASS + 1 PARTIAL (criterion 2 conifer component-level wide_frac) / 0 hard FAIL;
-global gate PASS.** The mandated token spec (1 clipped oak, 14% broadleaf) is deliberately superseded by
-a 111-tree interleaved forest with donor-graded palettes; deviations are recorded in `docs/t6/reports/T6-T09.md`.
-Visual A/B (compare PNG read with image tool, port render vs donor crop `[180,200,340,340]`): the render
-reads as a muted lime/yellow broadleaf + dark conifer mixed forest at minimap scale — **VISUAL PASS with
-caveats**; donor trees are larger/more detailed and `grass_ground2` streaks remain more pronounced than the
-smoother donor grass. Metrics never override this caveat. No live asset, `world.gd`, `game.gd`, shared
-renderer, spec JSON or donor binary was modified.
+**T6-T09 disposition: FULL PASS (parent-restored).** Final measurements on the corrected 512²
+PNG: broadleaf lit `#6E6B3B` (H 56.5°, S 0.463, B 58.8), share 31.5%, 73 components (85 planted), buckets
+24/17/7, **strict-centroid mix 78.3% (18/23)**, conifer `aspect 3.171 / wide_frac 0.292`, broadleaf
+`1.207 / 0.380`, seam Δ 0.0, shadows (−17.3,+11.6) 1.72×, global gate sat 0.476 / val 0.257.
+**All 8 criteria + global gate PASS.** Hashes: piece `15ad15e2…`; compare `8ce48a66…`. Visual A/B on the
+clean sheet: family-correct and materially improved but **not donor-equal — VISUAL VERDICT: PARTIAL**.
+The trunk B/G provenance discrepancy (piece 0.796 vs donor 0.39–0.52) is logged for research/T90 and was
+not used to alter any gate. No live asset, `world.gd`, `game.gd`, shared renderer, spec JSON or donor
+binary was modified.

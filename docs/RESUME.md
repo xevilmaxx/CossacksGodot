@@ -98,8 +98,8 @@ flowchart LR
 
 ## 3. 🐝 Swarm org — who owns what
 
-Full live state, ownership and ticket ids: **[SWARM_BOARD.md](../SWARM_BOARD.md)**.
-Roles, gates and capacity policy: **[SWARM_OPS.md](../SWARM_OPS.md)** §1, §5.
+Full live state, ownership and ticket ids: **[SWARM_BOARD.md(SWARM_BOARD.md)**.
+Roles, gates and capacity policy: **[SWARM_OPS.md(SWARM_OPS.md)** §1, §5.
 
 ```mermaid
 flowchart TB
@@ -203,8 +203,8 @@ python app\tools\assert_clean.py --json
 
 | Doc | What it is |
 |---|---|
-| **[SWARM_OPS.md](../SWARM_OPS.md)** | Org, charter (§0), ticket lifecycle, non-negotiable gates, capacity |
-| **[SWARM_BOARD.md](../SWARM_BOARD.md)** | Live ticket state, ownership, WIP slots, queue telemetry |
+| **[SWARM_OPS.md(SWARM_OPS.md)** | Org, charter (§0), ticket lifecycle, non-negotiable gates, capacity |
+| **[SWARM_BOARD.md(SWARM_BOARD.md)** | Live ticket state, ownership, WIP slots, queue telemetry |
 | **[DECISION_LOG.md](DECISION_LOG.md)** | D-xx audit trail — who decided what, when, why (D-19) |
 | **[STATUS_TEMPLATE.md](STATUS_TEMPLATE.md)** | Required format for every `STATUS_<AREA>.md` (D-18) |
 | **[COMMANDS.md](COMMANDS.md)** | Full manual: every Godot flag, Python tool, troubleshooting |
@@ -297,7 +297,7 @@ python app\tools\assert_clean.py --json
 
 ## 7. 🔥 Top critical items right now
 
-From **[SWARM_BOARD.md](../SWARM_BOARD.md)** skirmish-first tranche — P-18…P-25,
+From **[SWARM_BOARD.md(SWARM_BOARD.md)** skirmish-first tranche — P-18…P-25,
 P-30…P-49. States are as on the board; the release gate itself is **PASS (D-23)**
 and the working map size is **320 (D-24)**. The master trace is **D-12** (owner's
 skirmish charter); P-30…P-33 additionally trace to **D-07** (Craft Anything
@@ -404,7 +404,7 @@ flowchart LR
 
 ---
 
-**Related:** [SWARM_BOARD.md](../SWARM_BOARD.md) · [SWARM_OPS.md](../SWARM_OPS.md) ·
+**Related:** [SWARM_BOARD.md(SWARM_BOARD.md) · [SWARM_OPS.md(SWARM_OPS.md) ·
 [DECISION_LOG.md](DECISION_LOG.md) · [FORECAST.md](research/FORECAST.md) ·
 [STATUS_SKIRMISH.md](STATUS_SKIRMISH.md) · [STATUS_TEMPLATE.md](STATUS_TEMPLATE.md) ·
 [docs/audit/GEN.md](audit/GEN.md) · [docs/reviews/REV_DOCS.md](reviews/REV_DOCS.md) ·

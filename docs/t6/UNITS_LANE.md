@@ -26,9 +26,10 @@ the coordinator). Donor `C:\Games\Cossacks 3` is PRIVATE USE — never redistrib
 
 | Slot | Holder | State | Notes |
 |---|---|---|---|
-| A | T6-U02 (17c infantry) | GRANTED 2026-11-23 (after U01 release) | U01 reported "BAKE DONE — slot A free"; grant delivered for pikeman-first family bake; cossack/croat EXCLUDED (HOLD) |
-| B | T6-U04 (cavalry) | GRANTED 2026-11-23 (after U05 release) | U05 reported "BAKE DONE — slot B free"; dragoon-first full-mount composite + rider-only A/B control |
-| queue | T6-U07 | WAITING (phase 1 read-only in progress) | spawned child must finish truth + naval.py + report, then request a grant |
+| A | — | FREE | U07 naval DONE (7/7 PASS, 12 sheets) |
+| B | — | FREE | U04 cavalry DONE (18/18 keys + control PASS); M2/M3 scoped mounts appended |
+| queue | — | EMPTY | **ALL LANE BAKES COMPLETE** — no Blender work remains; T6-U90 grant deferred to coordinator |
+| released | T6-U02 (17c infantry) | DONE 2026-11-23 | 9/9 authorised keys PASS (7 checks each + visual); cossack/croat HOLD — NOT BAKED, never counted PASS |
 | released | T6-U05 (artillery) | DONE 2026-11-23 | 4/4 keys PASS, 17 sheets (incl. new scoped `death` + `multicannon.next`), 0 clips, 8/8 dirs, wheel composites correct |
 | released | T6-U01 (peasants) | DONE 2026-11-23 | 9/9 keys PASS, 126 sheets, 153/153 checks, 0 clips, all 9 walk durations 1.08 s |
 | released | T6-U06 (support cast) | DONE 2026-11-23 | 9/9 keys PASS, 33/33 sheets SHA-256 byte-identical to live (parent independently checked 2) |
@@ -68,11 +69,150 @@ as by child reports.
 | — | U06 | **DONE — 9/9 PASS, slot B released** | `officer` | 33/33 sheets SHA-256-identical to live; GROUP_OK, zero CLIP, 8/8 dirs, no attach props (Bug 5 N/A) |
 | 1 | U03 | **DONE — 5/5 PASS** | `musketeer` | 20 sheets, 0 CLIP, 8/8 dirs, GROUP_OK, live-index MATCH; pikeman18 9f/0.300s attack preserved; 3D foot-centroid 2.1 m = pike-geometry contamination, rendered body moved 11 px |
 | 2 | U05 | PASS | `cannon` | artillery actors are COMPOSITE (body + 2 wheel .oss) with SEPARATE death .oss/.aaf — needs custom baker, not a `bake_unit` wrapper; wheels static; death ortho ≫ stand needs visual check |
-| 3 | U02 | PASS (with HOLDs) | `pikeman` | 11 keys; pikeman drift 0.076 m, geometry gates match compute_ortho to 3 dp; **cossack FAIL 1.0306 m** and croat 0.4874 m HOLD for HOME diagnosis; horse-mount truth relayed to U04 |
-| 4 | U04 | phase 1 in progress | `dragoon` | read-only LIVE-sheet crops done; notified about `cossacksich_horse.oss` / `croat_horse.oss` mount scope |
-| 5 | U07 | **PHASE 1 PASS — on STANDBY** | `yacht` | k=311/fps=30 quats |q|=1, bone-0 drift needs de-travel; AAF 4 actions all 1..280 (9.333 s); hull .osm offsets 12/13/14 refuted 10/11/12 bug; derived framing == live index 0.000 delta; 24 build-stage files (sail/flags/dock) never hand-prop composites; live-path guard refuses exit 1 |
+| 3 | U02 | **DONE — 9/9 authorised PASS, 2 HOLD** | `pikeman` | 9 keys baked (7 checks each + visual); pikeman drift 0.076 m, geometry gates match compute_ortho to 3 dp; **cossack FAIL 1.0306 m / croat 0.4874 m stayed HOLD — NOT BAKED**; mount truth relayed to U04; U90 renderer foot-pin check flagged |
+| 4 | U04 | **DONE — 18/18 + control PASS, slot B released** | `dragoon` | 76 sheets / 19-unit manifest; 16 family keys mounted + cossack/croat scoped mounts; all 7 checks OK, zero CLIP, ≥0.97 distinct; rider-only control matches LIVE byte-for-metric |
+| 5 | U07 | **DONE — 7/7 PASS, slot A released** | `yacht` | 12 sheets: yacht/yachttur/fishboat/frigate/galley (hull+walk) + battleship/xebec (hull-only, no crew fabricated); all 8 dirs, 0 CLIP, GROUP_OK, own donor truth; main anim index still 54 keys, live naval index still ['yacht'] |
 
 Parent rulings issued: (a) cossack/croat horse mounts belong to U04 cavalry, NOT U02 — U02 bakes riders only; (b) keep donor-exact durations (do not apply GUIDE4 `n*0.09`) and flag to T6-U90; (c) cossack/croat HOME wander stays HOLD pending measurement, no guessed fix.
+
+## T6-U90 INTEGRATION REQUEST (parent → coordinator — DO NOT SELF-EXECUTE)
+
+The UNITS lane has completed all seven family scopes with verified staging
+output. **No live asset was written.** One coordinator-granted integration
+owner must copy only the verified sheets below into `app/assets/models/anim/**`
+and update index files behind the normal gates.
+
+### Verified staging inventory (evidence: per-family manifests + reports)
+
+| Ticket | Family | Staging dir | Verified keys | Sheets | Verdict |
+|---|---|---|---|---|---|
+| U01 | peasants | `app/shots/unit_pieces/peasants/` | 9 (peasant + 8 national) | 126 (+ crops) | 9/9 PASS, 153/153 checks, 0 clips; walk 1.08 s all 9 |
+| U06 | support | `app/shots/unit_pieces/support/` | 9 | 33 | 9/9 PASS; **33/33 byte-identical to live → NO-OP** |
+| U03 | 18c infantry | `app/shots/unit_pieces/infantry18/` | 5 | 20 | 5/5 PASS; live-index metadata MATCH → NO-OP |
+| U05 | artillery | `app/shots/unit_pieces/artillery/` | 4 | 17 | 4/4 PASS; new scoped `death` + `multicannon.next` |
+| U02 | 17c infantry | `app/shots/unit_pieces/infantry17/` | 9 authorised | 36 | 9/9 PASS; cossack/croat HOLD — NOT BAKED |
+| U04 | cavalry | `app/shots/unit_pieces/cavalry/` | 16 + rider control | 68 | 16/16 + control PASS; M2/M3 mounts in progress |
+| U07 | naval | `app/shots/unit_pieces/naval/` | 7 | 12 | 7/7 PASS; live naval index still `['yacht']` |
+
+### Proposed index.json metric updates (integration owner to apply, not the lane parent)
+
+1. **U01**: keep `duration=1.08` on all 9 walk actions (`donor_duration=0.667`
+   is provenance only — S05 R1 hard guard). Stand group is prop-inclusive
+   ortho **5.465** / anchor **(0.5, 0.8037)**; the 4.136 / (0.5, 0.8569)
+   figure is the body-only sub-group, not a regression.
+2. **U05**: adopt the **wheel-inclusive** shared stand/death camera groups and
+   anchors from `artillery/staging_manifest.json` — old live centre/anchor
+   values are rider-only and will misplace the composite guns. Add new scoped
+   actions `death` (separate donor `.oss`/`.aaf`) and `multicannon.next`
+   (0.8 s), each with its own donor-derived metrics. Do not re-time the
+   donor-exact 3.3 s artillery walk.
+3. **U04**: decide whether live keys switch from rider-only to the verified
+   mounted sheets. Mounted dragoon stand ortho **4.200** / anchor
+   **(0.5, 0.9922)**, death ortho 9.413; the rider-only A/B control reproduces
+   live metrics byte-for-metric, so the mount is the only delta. If mounted
+   sheets are adopted, use the staging manifests' group anchors. M2/M3
+   (cossack/croat mounts) to be appended when their scoped bake reports PASS.
+4. **U02**: cossack/croat stay HOLD with **no live sheet change**. Before any
+   donor-faithful claim, verify renderer-side foot-pin handling in
+   `game.gd`/`world.gd` (S05 directive + U02 HOME-invariance proof:
+   1.0306 m / 0.4874 m drift is rider-clip bone motion, not fixable by HOME).
+5. **U07 naval**: main `anim/index.json` MUST stay at 54 keys. New vessel keys
+   are staging-only and need a load path — either teach `_anim_dir()` to
+   resolve `anim/naval/`, or ship a separate scoped index (per
+   `NAVAL_PORT_PLAN.md` §4). Naval action schema lacks `bbox/fig_h/foot/cx`;
+   add them or a naval-specific `fig_h` fallback. `yacht.walk.duration=9.333`
+   is donor-intentional; `hull.duration=1.0` is now emitted by the baker.
+   Sails/flags/dock stages are separate build-stage entities from their
+   `.actor` mount truth — never composited as hand props.
+6. **U06/U03**: already byte-identical / metric-identical to live — **do not
+   re-copy**; record as verified-no-change.
+
+### Flagged items NOT fixed by this lane (integration or separate tickets)
+
+- Shared `build_mesh` UV-offset bug (mount UV indexed by body VERTEX count;
+  donor verts≠uvs) — U04 worked around it locally in `build_mesh_two`;
+  a separate ticket must fix the read-only reference for peasant tools.
+- S05 unbaked donor actions (4/14/5/1/4 per sampled family) — runtime
+  state→action binding is **UNVERIFIED**; add only as new scoped actions with
+  own AAF truth, never substitute existing sheets.
+- Godot `.import` sidecars with `compress/mode=0` for any newly copied PNG
+  (UNIT_BAKING_FIX §8 lossy-VRAM trap).
+- Gates for the integration owner: selftest 29/29, uitest 17/17,
+  `t_anim_metrics`/`t_naval` check status, owner visual review.
+
+### M2/M3 APPEND — FINAL OUTSTANDING BAKE COMPLETE (2026-11-23)
+
+U04 reports the scoped cossack/croat mount sub-task COMPLETE, both keys
+**PASS** (bake + re-verify, all 7 checks OK, 8/8 dirs, zero CLIP, exactly two
+group signatures, donor-exact frames/durations, `tool: null`, foot-pin band N/A
+per the standing ruling). This was the last bake in the lane; both slots are
+free and no Blender process remains.
+
+| Key | Mount | De-travel | Residual drift | Glue (diagnostic) | Stand / death ortho | Anchor | Verdict |
+|---|---|---|---|---|---|---|---|
+| `cossack` | `cossacksich_horse.oss` | NONE (best of 3) | 0.2444 m (vs rider 0.9904 / horse 1.6734) | 0.4643 m | 5.214 / 5.430 | (0.5, 1.0193) | **PASS** |
+| `croat` | `croat_horse.oss` | HORSE-ROOT (best of 3) | 0.1888 m (vs none 0.2501 / rider 0.6038) | 0.3118 m | 4.847 / 5.985 | (0.5, 1.0048) | **PASS** |
+
+Both 8-direction strips visually viewed: riders correctly seated on donor
+horses, no clipping. Cossack walk 1..48 = 1.6 s, croat 1..17 = 0.567 s (both
+donor-exact). No live anim/index/.gd write; U02's HOLD sheets untouched.
+`cavalry.py` gained `--mount-keys` + per-key `DETRAVEL` (rider/none/horse),
+`py_compile` clean. Cavalry staging is now **76 sheets / manifest 19 units**
+(16 family × 4 + 4 rider-only control + 4 cossack + 4 croat).
+
+**Integration note for the U90 builder:** M2/M3 now meet D-42 pre-ruling (a)'s
+PASS condition. Use the staging manifest's per-key stand/death ortho and
+anchors above; keep foot-pin band N/A and document residual drift — do not
+claim a clean pin. U02's rider-only cossack/croat HOLD sheets remain
+unchanged and are NOT to be overwritten by these mounted sheets unless the
+coordinator explicitly rules that swap (D-42 (d) keeps HOLD / separate game-
+code ticket).
+
+### COORDINATOR D-42 — GRANT DEFERRED, PRE-RULINGS (acknowledged 2026-11-23)
+
+Coordinator received the request and **deferred** (not denied) the U90 builder
+grant until U04's M2/M3 scoped-mount verdict is appended — my own stated
+completion condition. I keep U04 supervised to that verdict. Pre-rulings now
+binding on the future integration owner (zero open questions at builder start):
+
+- **(a)** U04 adopts the verified **MOUNTED** sheets for the 16 keys; M2/M3
+  stay excluded until their own PASS. **M2/M3 PASSED 2026-11-23 and are
+  appended below — the exclusion condition is now satisfied.**
+- **(b)** Naval stays in `anim/naval/` + the naval index; main `index.json`
+  FROZEN at 54 keys. `_anim_dir()` load-path is **DEFERRED** (world.gd
+  contention: W04 scoped lines, TERRAIN T90 next) and belongs to open P-10.
+- **(c)** U06/U03: SHA-verify and skip identical sheets — no re-copy churn.
+- **(d)** cossack/croat remain HOLD; renderer foot-pin is a separate
+  game-code ticket the coordinator will triage, NOT U90 scope.
+- **(e)** `build_mesh` UV-offset bug: separate ticket.
+- **(f)** Unbaked actions: new scoped only, never substitute.
+- **(g)** Lossless `.import` sidecars (`compress/mode=0`) for every newly
+  copied PNG.
+- **(h)** U05 wheel-inclusive anchors + scoped `death`/`next` adopted;
+  3.3 s walk untouched.
+- **(i)** U01 1.08 s walk guard preserved.
+- **(j)** Revert = pre-change SHA manifest + git HEAD.
+- Frigate raw-center adjudication **endorsed** (fix-the-check, gate untouched)
+  — same class as T15/T07.
+- 2026-11-23: **M2/M3 APPENDED — LANE BAKES COMPLETE.** cossack (NONE
+  de-travel, 0.2444 m residual) and croat (HORSE-ROOT, 0.1888 m residual)
+  scoped mounts both PASS with 7/7 checks, zero CLIP, 8/8 dirs, donor-exact
+  durations; documented glue/drift with foot-pin band N/A. Cavalry staging
+  76 sheets / 19 units. Both slots free, no Blender process. Integration
+  request is now complete; T6-U90 builder grant is the coordinator's next
+  action per D-42. Parent stops here — no live asset writes.
+- 2026-11-23: **D-42 acknowledged** in the integration request above; pre-rulings
+  (a)–(j) are now binding on the future U90 builder. Grant stays deferred until
+  the M2/M3 verdict appends. Verified via U04's live session log that the
+  scoped sub-task is actually running: `cavalry.py --mount-keys cossack`
+  launched after py_compile=0 and a pure-Python scoped check confirming
+  cossack NONE drift 0.2444 m / croat HORSE-ROOT 0.1888 m, both mount
+  closures and UV bounds OK. No escalation needed.
+- Builder gates: selftest 29/29, uitest 17/17, `t_anim_metrics`/`t_naval`
+  status, owner visual review.
+
+These pre-rulings supersede the corresponding "decide whether" phrasing in my
+proposals above. I do not spawn, grant, or execute U90 myself.
 
 ## Supervision log
 
@@ -200,6 +340,46 @@ Parent rulings issued: (a) cossack/croat horse mounts belong to U04 cavalry, NOT
   written; framing reproduced live index with 0.000 delta; guard test
   refusing `app/assets/models/anim/naval` passed. Requested a slot; put on
   STANDBY (A=U02, B=U04 both busy), next after U04 in queue.
+- 2026-11-23: **U02 DONE** — 9/9 authorised 17c infantry keys PASS (7 checks
+  each + visual sheet inspection); cossack/croat stayed HOLD — NOT BAKED and
+  never counted PASS. Slot A released → granted to U07 (yacht-first). All 7
+  families have now had a bake slot; only U04 (cavalry) and U07 (naval) are
+  still baking. Queue empty.
+- 2026-11-23: **U07 yacht PASS** — Blender exit 0 (~53 s), `--verify` ALL PASS:
+  crew walk 12f/9.333 s, hull 1f/1.0 s, 8/8 dirs, zero CLIP, GROUP_OK,
+  anchors identical to live, 0.000000 framing delta; build stages never
+  composited; live naval assets/index/.gd untouched. Slot A released, then
+  CONTINUATION GRANTED for other scoped vessels (yachttur, fishboat, frigate,
+  galley, static-hull battleship/xebec) — one new key at a time with own
+  donor truth, no sheet substitution, main index stays 54 keys, all U90 flags
+  recorded not fixed.
+- 2026-11-23: **U07 continuation — first FAIL adjudicated.** yachttur and
+  fishboat PASS (own donor files); frigate STOPPED at a verifier-only ortho
+  delta 0.002 (19.435 baked vs 19.437 derived) — child correctly made no fix.
+  Parent ruling: derivation artefact, NOT a sheet defect — `donor_truth()`
+  projected a 3-decimal-rounded center (19.436550) while `bake_hull()` used
+  the raw center (0.0, 0.0641665, 5.4675090 → 19.435420). Adjudication: align
+  the truth derivation to the raw-center projection in U07's OWN naval.py;
+  do NOT touch the 0.002 tolerance or any shared file. Re-verify all 4 staged
+  keys; if clean, continue galley → battleship → xebec. Recorded as a
+  methodological correction, not a gate weakening.
+- 2026-11-23: **U07 DONE** — full naval family 7/7 PASS after the ruling:
+  frigate PASS with raw-center-derived 19.435 (old rounded-centre 19.437),
+  all 4 previously staged keys re-verified with no regression, galley +
+  battleship + xebec added (hull-only keys fabricate no crew action). Final
+  report has per-key verdict table, derivation-ruling evidence and U90 flags.
+  12 PNG sheets, 7-key staging manifest; main anim index still 54 keys,
+  live naval index still ['yacht']. Slot A released. Only U04 remains.
+- 2026-11-23: **U04 16/16 PASS + rider-only A/B CONTROL PASS** — 68 sheets,
+  all 6 checks OK on every key, zero CLIP, distinct ≥0.97, donor-exact
+  frames/durations, one shared stand + one death group, ax=0.5. Dragoon
+  mounted stand ortho 4.200 / anchor (0.5,0.9922) matched Phase-1 prediction;
+  rider-only control reproduced LIVE metrics byte-for-metric (mount is the
+  only delta). Local `build_mesh_two` UV fix verified visually on all 16
+  horses (correct UV mapping, riders glued, fall together in death). Slot B
+  released, then RE-GRANTED (with an explicit confirmation after a message
+  crossing) for the final M2/M3 cossack/croat scoped mount sub-task — foot-pin
+  band N/A, documented de-travel/drift, U02 HOLD untouched.
 
 ## Required child evidence (method)
 

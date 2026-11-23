@@ -1,0 +1,386 @@
+# PIECES/plateau.md — flat-topped plateau piece: donor visual truth + port recipe
+
+Research lane T2-PIECE-PLATEAU, 2026-11-21. **RESEARCH only — read-only lane.**
+
+> [!IMPORTANT]
+> This is the **only file written** by this agent. No project code, `app/` asset, Godot
+> scene, or other doc was created or modified. No Godot process was started. The donor
+> (`C:\Games\Cossacks 3`) was opened **read-only**; no donor binary / `.pattern` / texture
+> was copied into the repo. Pillow crops were written **only** to
+> `C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\` (never into the repo).
+
+Evidence labels (as in `TERRAIN_DONOR_PATTERNS.md` / `TERRAIN_DONOR_PIPELINE.md`):
+**observed** = read directly from bytes/pixels/file this session; **derived** = computed
+deterministically from observed data; **inferred** = best reading of conventions;
+**UNVERIFIED** = not confirmed — do not treat as fact.
+
+Scope: one piece — a flat-topped raised plateau, donor height `+2.964`, flat grass top,
+edge drop to grass through a near-vertical earthen/rock wall, stamped from the donor
+`plateau` / `plateau_small` / `plateau_big` pattern families. Grounding docs:
+`TERRAIN_DONOR_PATTERNS.md` §3 (taxonomy, `plt*/d_plt*/f_plt*` = MISSING→encoded),
+`TERRAIN_DONOR_PIPELINE.md` §3.5 (relief frequency table) and §5.7 (TB-B5),
+`TERRAIN_REFERENCE_IMAGES.md` (TS-1 visual spec), `TERRAIN_BEAUTY_TRIAGE.md:77`.
+
+---
+
+## 1. Donor evidence + crop boxes
+
+### 1.1 Donor plaintext constants — **observed**
+
+All paths under `C:\Games\Cossacks 3`, read as text via Python, no modification.
+
+| Fact | Value | Donor source |
+|---|---|---|
+| Plateau relief amplitude | `cPlateauHeight = 2.964` | `data/scripts/common.inc/generatemap.inc:4` |
+| Hill amplitude (for contrast) | `cHillHeight = cPlateauHeight/2.25 = 1.31733…` | `generatemap.inc:5` |
+| Ravine amplitude (for contrast) | `cRavineHeight = -2.964` | `generatemap.inc:6` |
+| Plateau R code | `cRColorPlateau = 255` | `generatemap.inc:21` |
+| Height decode | `cRPlateau: hterrain := cPlateauHeight*fr` then `SetHeightData(hwater+hterrain)` | `generatemap.inc:569-574` |
+| Start pixels | skipped when `(bRandomMap) and (fr=1) and (fb=1)` | `generatemap.inc:565-566` |
+
+**Read (derived):** in the donor, plateau *height* is baked into the terrain mask's R
+channel — a single near-planar surface whose ceiling is `+2.964` at `R=255`. The
+`plt*.pattern` files are **object/footprint clumps** placed on top of that surface by
+stage 9 (`dogenerate.inc`); the plaintext scripts never add height from a stamp. The
+per-cell height fields inside `.pattern` are undecoded (`TERRAIN_DONOR_PATTERNS.md` §2.2),
+so this lane cannot claim the donor stamps sculpt height — only that they mark footprint.
+
+### 1.2 Donor generator.cfg plateau families — **observed**
+
+`data/game/var/generator.cfg`, literal blocks:
+
+| Family | cfg lines | Members | `Freq` | Sum |
+|---|---|---|---|---|
+| `plateau` | :581-603 | `plt1, plt2, plt3, plt4_fixed, plt5` | 1 each | 5 |
+| `plateau_small` | :606-632 | `d_plt1 … d_plt6` | 1 each | 6 |
+| `plateau_big` | :635-657 | `f_plt_big_1/2/3` = 3; `f_plt_mid_1/2` = 2 | 3/3/3/2/2 | 13 |
+
+Relief placement frequencies (`TERRAIN_DONOR_PIPELINE.md` §3.5, `dogenerate.inc:1758,
+1762-1763`): `plateau_big = plt/3`, `plateau = plt/3`, `plateau_small = plt/3`, with
+`plt ∈ {0.000010 (plains), 0.000020, 0.000075, 0.000055, 0.000090}` by `relieftype`
+0..4. All three plateau families are therefore **equal-weight siblings** of the same
+frequency pool; `plateau_big` differs only in which large patterns it draws.
+
+### 1.3 Donor pattern footprints — **observed** (read-only `struct` header + mask)
+
+`w,h` = first two little-endian `int32`; `occ` = nonzero bytes in `w*h` mask
+(`TERRAIN_DONOR_PATTERNS.md` §2.1). Every plateau pattern's occupied bbox spans the full
+`w×h` grid — the footprint for stamping is effectively the whole rectangle.
+
+| Pattern | w×h cells | Mask occupancy | Family |
+|---|---:|---:|---|
+| `plt1` | 38×53 | 652/2014 = 0.324 | plateau |
+| `plt2` | 42×55 | 733/2310 = 0.317 | plateau |
+| `plt3` | 58×63 | 1086/3654 = 0.297 | plateau |
+| `plt4_fixed` | 41×56 | 779/2296 = 0.339 | plateau |
+| `plt5` | 41×59 | 915/2419 = 0.378 | plateau |
+| `d_plt1` … `d_plt6` | 51×63 … 59×57 | 0.357–0.440 | plateau_small |
+| `f_plt_big_1/2/3` | 81×93 / 66×68 / 70×86 | 0.297–0.359 | plateau_big |
+| `f_plt_mid_1/2` | 49×51 / 45×53 | 0.264 / 0.363 | plateau_big |
+
+**Derived:** plateau / plateau_small half-extents ≈ 19–33 donor cells; plateau_big
+≈ 33–47. Porosity ~0.26–0.44 sits in the donor's normal clump band (mean 0.393).
+At the port scale `s = MAP_W/160` (=2 at 320), these become ~38–93 tile radii — matching
+the "footprints 48–100 tiles" note in `TERRAIN_BEAUTY_TRIAGE.md:21`.
+
+### 1.4 Reference-image visual truth — **observed** (Pillow, temp crops)
+
+**Primary #8 `cossacks-3-v1-498085.jpg` (1280×720).** The plateau is a broad,
+**near-planar grass top** cut by a branching network of **near-vertical earthen/rock
+walls** that drop to lower grass. Faces carry fine vertical/wavy erosion striations;
+**grass meets rock abruptly (1–3 px rim)** with tufts overhanging; trees cluster on rims
+and flats. This is a *grass-topped* plateau, not a bare-rock mesa — the wall is the only
+rock. (Confirms TS-1 §3.1 and corrects the "mountain map" inference, TS-1 claim #8.)
+
+**Secondary #6 `articolo-787.jpg` (960×540).** Overview confirms the same morphology:
+wide flat green plateaus separated by dark winding near-vertical gullies; dark river
+band across the top ~5–8%.
+
+Crop boxes actually written to temp this session (source-image pixels):
+
+| Crop | Box (x0,y0,x1,y1) | Content | Use |
+|---|---|---|---|
+| `c8_C_plateau_grass` | `(350,0,850,300)` | grass top + rock wall + tree line | primary plateau piece (TS-1 crop C) |
+| `c8_plateau_top_clean` | `(375,20,440,85)` | flat unobstructed plateau top | flatness/flat-top area |
+| `c8_boundary_zoom` | `(0,600,210,720)` | grass→rock rim, tuft overhang | edge-gradient width |
+| `c8_A_ravine_center` | `(560,150,1000,560)` | wall + plateau + trees + tower | morphology (TS-1 crop A) |
+| `c8_B_gully_left` | `(0,300,420,720)` | gullies + tree species | context (TS-1 crop B) |
+| `c6_overview` | `(0,0,960,540)` | overview plateau/gully field | secondary |
+| `c6_water_topright` | `(600,0,960,160)` | water band | not part of plateau piece |
+
+Pillow measurements (derived, temp only):
+
+- Flat top `c8_plateau_top_clean`: **84.4% grass-nearest** pixels; luminance **mean
+  96.4, std 8.1** — a low-variance, near-planar grassy surface (TS-1 reports hi-freq
+  energy 2.96 on clean plateau grass).
+- Crop C `(350,0,850,300)`: 50.5% rock-nearest / 49.5% grass-nearest — but crop C is a
+  **morphology crop deliberately centred on a wall**; this is *not* a terrain-wide rock
+  fraction.
+- Nearest-palette classification of the full #8 frame gives ~52% "rock-nearest", which
+  **conflates dark gully shadow with rock** and is rejected as a rock-fraction estimate —
+  consistent with TS-1's own caveat ("threshold classifier too crude to confirm"). The
+  defensible donor figure is TS-1's manual visual estimate: **rock faces ≈ 8–18% of #8
+  terrain, precision UNVERIFIED**.
+- Edge gradient width: grass→rock rim **≤3 px** in the reference (TS-1 criterion 6;
+  observed in `c8_boundary_zoom`, src x≈350–480). Face height ≈ 60–90 px of 720 px image
+  (8–12% of frame), near-vertical (side drift ≤10–20% of height).
+
+---
+
+## 2. Port state
+
+### 2.1 Where plateau height is written — **observed**
+
+`app/scripts/game.gd`:
+
+- `RELIEF_PLATEAU := 2.964`, `RELIEF_HILL := 2.964/2.25`, `RELIEF_RAVINE := -2.964`
+  (`:54-56`) — donor constants mirrored literally.
+- `_shape_stamp_relief()` (`:610-703`), called once at `:818` from `_gen_base()`,
+  **after** `C3PatternGen.build()` (`:816-817`) and **before** the collision/cliff pass
+  (`:822+`). This ordering closes the P-47 defect (height changes are rock/blocked-painted
+  in the same pass).
+- Plateau branch (`:641-642`): `amp = RELIEF_PLATEAU` (2.964), `edge = 0.97`,
+  `rim_tiles = 8.0`. (Mountain `:646` shares amp 2.964 but `edge=0.78`.)
+- Shape (`:692-703`): `nx,ny` normalised by footprint half-extents `hx,hy`; `d=sqrt(nx²+ny²)`;
+  skip `d>1`; `rim = rim_tiles / half_short` (`half_short = min(hx,hy)`);
+  `f = clampf((edge - d)/rim, 0, 1)`; **`height[i] += amp * f`**.
+- Guard rails: water/sand cells (`terrain==3|4`) skipped (`:677`); start-protection mask
+  `near_start` from `CIRCLE2 * map_scale * 1.5` (`:622-632`) keeps C1/C2 clear of steepening.
+- Comment at `:611-616` states the height profile is a **port adaptation** — the donor's
+  per-cell height fields are undecoded. **Inferred / port-authored**, not donor-faithful.
+
+**Derived flat-top geometry:** `f = 1` for `d ≤ edge - rim = 0.97 - 8/half_short`. For a
+typical plateau footprint `half_short ≥ 38` tiles → `rim ≤ 0.21` → the full-height disk
+radius is `≥ 0.76` of the footprint, i.e. **≈58% of the elliptical footprint is at full
+amplitude**, with an **~8-tile-wide edge ramp** occupying `d ∈ [0.76, 0.97]`. The ramp
+gradient is `2.964 / 8 ≈ 0.37 per tile`, **below** the donor collision gate `cDiff1 = 0.5`
+(`game.gd:829-836`) → **no rock is painted on the plateau rim**: port plateau edges are
+walkable grass ramps, not the donor's near-vertical rock faces. TB-B5 explicitly defers
+the rock-% shortfall "for walkability" (`TERRAIN_BEAUTY_TRIAGE.md:77`).
+
+**Derived divergence:** `height[i] +=` is additive with no clamp, so overlapping plateau
+stamps stack. A radial profile through the largest plateau blob in
+`scans/relief1_v2/scan_7.json` (decoded height) rises in steps to **7.25** — well above the
+donor's `+2.964` ceiling — confirming multiple overlapping stamps. The port flat top is
+therefore a *variable-height composite*, not the donor's single `+2.964` plane.
+
+### 2.2 Which families produce plateau stamps — **observed**
+
+`app/scripts/pattern_gen.gd`:
+
+- `RELIEF_PRESETS` (`:19-23`): `plt` = 0.000010 (plains) / 0.000020 (hills) /
+  0.000055 (mountains).
+- `RELIEF_RECIPES` (`:27-36`): `plateau_big = plt/3`, `plateau = plt/3`,
+  `plateau_small = plt/3` all emit `kind = "plateau"`; `plain_huge = plt/12` emits
+  `kind = "plain"` (amp 0.45). `ravine_big = plt/1.5`.
+- `donor_patterns.json` families (post TB-B2, 239 patterns): `plateau`=`plt1..plt5`,
+  `plateau_small`=`d_plt1..d_plt6`, `plateau_big`=`f_plt_big_1/2/3` (w 3) +
+  `f_plt_mid_1/2` (w 2) — matches generator.cfg.
+- Debug dumps: seed 7, 320×320, plains → `{plateau:3, mountain:2, plain:1, hill:6,
+  ravine:0-1}` (`.godot_queue/results/00000690*,00000691*`) — one stamp per plateau
+  family, as the `freq>0 → at least one` rule requires.
+
+### 2.3 Measured plateau metrics from port dumps — **derived**
+
+Decoded `height` (float32 base64) + `terrain` from `scans/relief1_v2/*` and
+`scans/relief1_final/*`, 320×320, seeds 7/8/9; land = cells with `terrain ∉ {3,4}`:
+
+| Snapshot | plateau `h≥+2.9` (% land) | plateau `h≥+2.5` | ravine `h≤-2.5` | rock (`terrain==5`, % map) |
+|---|---:|---:|---:|---:|
+| `relief1_base` (pre-stamp) | 0.0 | 0.0 | 0.0 | 0.0 |
+| `relief1_final` s7/s8/s9 | 21.3 / 19.1 / 21.3 | 24.0 / 22.6 / 24.1 | 0.0 / 2.2 / 3.8 | 1.9 / 3.0 / 3.2 |
+| `relief1_v2` s7/s8/s9 | 19.1 / 20.8 / 20.0 | 21.3 / 23.5 / 22.2 | 0.9 / 1.7 / 2.0 | 3.7 / 2.3 / 2.8 |
+
+This **directly corroborates the "~20% of land" plateau metric** asserted in
+`TERRAIN_BEAUTY_TRIAGE.md:77` (plateau ≈19–21% at the +2.9 threshold) and the reported
+rock band 2.3–3.7%. Basin floor: the current port has no near-vertical rock-wall plateau
+rim (rock fraction far below the donor 8–18% visual target), by design for walkability.
+
+---
+
+## 3. JSON piece spec (proposed, not written to disk)
+
+Schema matches `app/tools/piece_specs/meadow_fern.json` / `shore_sand.json`. The two
+layers are the requested base grass tile plus a half-opacity grass-with-rock block for
+the rim texture; flat-top and edge parameters are carried in `reference` (no code/Godot
+run — this is a spec only).
+
+```json
+{
+  "name": "plateau",
+  "size_px": [512, 512],
+  "seed": 7,
+  "background": [40, 44, 48],
+  "layers": [
+    {"type": "block", "name": "grass1", "tile": true},
+    {"type": "block", "name": "grass_rock1", "opacity": 0.5}
+  ],
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [350, 0, 850, 300],
+    "secondary": {"image": "articolo-787.jpg", "box": [0, 0, 960, 540]},
+    "crop_boxes": {
+      "plateau_grass_C": [350, 0, 850, 300],
+      "plateau_top_clean": [375, 20, 440, 85],
+      "boundary_zoom": [0, 600, 210, 720],
+      "rock_wall_zoom": [560, 150, 1000, 560]
+    },
+    "donor": {
+      "cPlateauHeight": 2.964,
+      "R_code": 255,
+      "height_formula": "hterrain = cPlateauHeight * fr (generatemap.inc:570)",
+      "families": {
+        "plateau":       {"patterns": ["plt1","plt2","plt3","plt4_fixed","plt5"], "freq": 1, "footprint_cells": [[38,53],[42,55],[58,63],[41,56],[41,59]]},
+        "plateau_small": {"patterns": ["d_plt1","d_plt2","d_plt3","d_plt4","d_plt5","d_plt6"], "freq": 1, "footprint_cells": "51x63..59x57"},
+        "plateau_big":   {"patterns": ["f_plt_big_1","f_plt_big_2","f_plt_big_3","f_plt_mid_1","f_plt_mid_2"], "freq": [3,3,3,2,2], "footprint_cells": "45x51..81x93"}
+      },
+      "flat_top": {"height": 2.964, "surface": "grass", "luma_std": 8.1, "grass_nearest_pct": 84.4},
+      "edge": {"type": "near_vertical_earthen_rock_wall", "grass_to_rock_rim_px": [1,3], "face_height_pct_of_frame": [8,12], "striations": "vertical_wavy"}
+    },
+    "port": {
+      "amp": 2.964, "edge_param": 0.97, "rim_tiles": 8.0,
+      "flat_top_fraction_of_stamp": 0.58,
+      "edge_ramp_gradient_per_tile": 0.37,
+      "collision_gate": 0.5,
+      "additive_unclamped": true,
+      "start_protection": "CIRCLE2 * map_scale * 1.5"
+    },
+    "targets": {
+      "flat_top_area_pct_of_land": [19, 21],
+      "flat_top_within_stamp_pct": [55, 65],
+      "edge_gradient_width_tiles": [1, 8],
+      "donor_rim_px": [1, 3],
+      "rock_fraction_pct_donor_visual": [8, 18],
+      "rock_fraction_pct_port_measured": [2.3, 3.7]
+    }
+  }
+}
+```
+
+---
+
+## 4. Measurable criteria (from a rendered PNG or a map dump)
+
+| # | Criterion | Target | How to measure |
+|---|---|---|---|
+| 1 | Flat-top area (% of land) | **19–21%** of land tiles at `h ≥ +2.9` (donor ceiling 2.964); report `h≥+2.5` band too (21–24%) | Decode `scan_*.json` height; `count(h≥2.9 and terrain∉{3,4}) / land_count` for seeds 7/8/9 |
+| 2 | Flat-top within one stamp | **≥55–65%** of the footprint at full amplitude (derived from `f=1` for `d≤0.76`) | From `_shape_stamp_relief()` geometry, or segment one isolated blob and count `f==1` cells / ellipse area |
+| 3 | Edge gradient width | Port ramp **≤8 tiles** (gradient 0.37/tile); donor-equivalent rim **≤3 px** in reference | Sample a height profile across a rim; count tiles from 95%→5% of amp; on the PNG sample a 1-px line perpendicular to the grass→rock rim |
+| 4 | Rock fraction | Donor visual target **8–18%** of terrain (TS-1 rank 1, UNVERIFIED precision); port currently **2.3–3.7%** — below target, deferred for walkability | `count(terrain==5)/total` on dump; on PNG, hand-labeled rock mask over crop C (threshold classifier alone is too crude) |
+| 5 | Flatness / palette | Plateau-top box luminance **std ≤10** (measured 8.1), ≥4 olive tonal patches per 200×200 crop, hi-freq energy ~3 | Pillow L-std + 5px-blur difference on `c8_plateau_top_clean`-equivalent crop |
+| 6 | Amplitude ceiling | Donor single `+2.964` plane; port overlap may stack (measured max 7.25) — record max as a divergence metric | `max(height)` over plateau cells; flag values `>2.964` as stacking |
+| 7 | Footprint scale | plateau/plateau_small 38–65 donor cells, plateau_big 45–93; ≥2 seeds show contiguous `h>0.5` regions with length/width ≥1.5 (TB-B5) | Connected components on `h>0.5` land mask; bbox anisotropy |
+| 8 | Start keep-clear | 0 plateau-stamp cells inside C1/C2 around any start | Check stamp mask against `near_start` region (game.gd:622-632) |
+
+---
+
+## 5. Claim table
+
+Verdicts: **observed** (literal), **derived** (arithmetic/code-path), **inferred**,
+**UNVERIFIED**, **CORRECTED/REFUTED** (assertion contradicted).
+
+| # | Claim | Evidence | Method | Verdict | Correction / caveat |
+|---|---|---|---|---|---|
+| P1 | Donor plateau height ceiling is `+2.964`, from mask R=255 | `generatemap.inc:4,21,569-574` | Direct text read | **observed** | Height is baked into the mask, not added by stamps |
+| P2 | `plateau`, `plateau_small`, `plateau_big` are three equal-weight siblings (`plt/3` each) | `generator.cfg:581-657`; `TERRAIN_DONOR_PIPELINE.md` §3.5 | cfg read + prior doc | **observed** | `plateau_big` differs only in pattern set (larger footprints, Freq 3/2) |
+| P3 | Plateau footprints are 38–93 cells, ~26–44% porous | donor `.pattern` headers/masks (§1.3) | read-only `struct` | **observed** | Bbox fills full `w×h`; port scales by `s=MAP_W/160` |
+| P4 | Donor plateau top is a flat, near-planar **grass** surface; rock is confined to near-vertical rim walls | #8 crops C + clean-top; Pillow luma std 8.1, 84.4% grass-nearest | crop + Pillow | **observed** | Rock faces 8–18% only as manual visual estimate (UNVERIFIED precision) |
+| P5 | Grass→rock rim is ≤3 px, faces 8–12% of frame height, near-vertical with vertical striations | #8 `c8_boundary_zoom`, `c8_rockwall_zoom`; TS-1 §3.1 | visual + crop | **observed** | Apparent 2.5D slope, not a true 3D angle |
+| P6 | Port mirrors donor constants and uses real donor footprints, but authors its own height profile | `game.gd:54-56,611-616`; `pattern_gen.gd:19-36` | code read | **observed** | Per-cell donor height fields undecoded → profile is port-authored (inferred) |
+| P7 | Port plateau is a flat-topped disk with an 8-tile grass ramp, not a rock-faced cliff | `game.gd:641-642,692-703`; gradient 0.37 < cDiff1 0.5 | derived from formula | **derived** | No rock painted on rim; deliberate walkability divergence (TB-B5) |
+| P8 | ~20% of land is plateau in the current port | decoded dumps: 19.1–21.3% at `h≥2.9` (v2/final, s7/8/9) | decode base64 height | **derived / CONFIRMED** | Confirms `TERRAIN_BEAUTY_TRIAGE.md:77` "plateau ~20%" |
+| P9 | Port rock fraction (2.3–3.7%) is far below the donor 8–18% visual target | decoded dumps; TS-1 rank 1 | decode + compare | **derived** | Deferred for walkability — do not "fix" by steepening without a collision re-review |
+| P10 | Overlapping plateau stamps stack above +2.964 (additive, unclamped) | `game.gd:703` `height[i]+=amp*f`; profile max 7.25 in `relief1_v2` s7 | code + dump | **derived** | Donor is a single set-height plane; this is a port divergence |
+| P11 | Plateau height is written before collision so new steep tiles become rock/blocked | `game.gd:818` vs `:822+` | call-site order | **observed** | Closes P-47 cliff-ordering defect |
+| P12 | Plateau relief comes from `plt*.pattern` stamps in the donor | `plt*` are object clumps; height is mask-R based | donor read | **CORRECTED** | Stamps mark footprint/props; height is from the mask R channel |
+| P13 | A threshold classifier can confirm the donor rock-fraction number | nearest-palette on full #8 ≈52% "rock" | Pillow | **REFUTED** | Conflates dark gully shadow with rock; use manual mask (TS-1 open question 3) |
+| P14 | The plateau piece can be authored from the given JSON layers alone | spec §3 uses `grass1` + `grass_rock1@0.5` | schema match | **UNVERIFIED** | Requires a render tool run to confirm the flat-top/edge read; no Godot run in this lane |
+
+---
+
+## 6. Open questions
+
+1. **Donor stamp height semantics** — are there per-cell height deltas in `.pattern`
+   beyond the mask (TDR-2 §2.2, record fields UNVERIFIED)? If so, the donor plateau top
+   may not be perfectly planar at stamp scale. Need a donor correlated probe (TDR-2 T3).
+2. **Rock-fraction ground truth** — hand-labeled mask over crop A/C needed to firm up the
+   8–18% estimate (TS-1 Q3); my classifier is explicitly rejected (P13).
+3. **Stacking limit** — should port clamp `height[i]` at `+2.964` on plateau overlap to
+   match the donor ceiling? This is a build decision; this lane only measures (P10).
+4. **Footprint scale** — port scaling `s=MAP_W/160` is `derived` (`TERRAIN_DONOR_PIPELINE.md`
+   open question 6); it doubles plateau radii at 320, which may over-enlarge plateaus
+   relative to the donor's 320-cell map. UNVERIFIED against a donor render.
+
+---
+
+*End of document. No donor asset copied; no code/Godot/donor binary modified; all Pillow
+output confined to the temp directory. Only `docs/audit/PIECES/plateau.md` was written.*
+
+---
+
+## 7. T6-T07 append — mini-baker verdict (2026-11-23)
+
+> [!IMPORTANT]
+> **SUPERSEDED — parent hold 2026-11-23.** The "PASS (cautious)" status at the
+> end of §7 is withdrawn. T07 is **CONDITIONAL / HOLD PENDING ADJUDICATION**,
+> excluded from the T90 count. See `docs/t6/reports/T6-T07.md` §8 for the
+> revoked/revised verdict and the formal P-45 adjudication request.
+
+Owner: micro-worker T6-T07 (LANE TERRAIN). This section is the only change to
+this research doc. Backup before edit: `inbox\backup\plateau.md.bak-T6-T07`
+(sha256 `db381812fcbd…` of the pre-append file). No Godot job; no donor asset
+copied into the repo; no engine/spec/renderer file edited.
+
+**Renderer:** `app/tools/pieces/t6_plateau.py` (new, deterministic seed 7,
+Pillow + NumPy, `terrain_piece_render.py` imported READ-ONLY for tiling/
+comparison). **Outputs:** `app/shots/pieces/t6_plateau.png`,
+`t6_plateau_compare.png` (3 panels: port | donor crop C | donor rim zoom),
+`t6_plateau.manifest.json`. Full report: `docs/t6/reports/T6-T07.md`.
+
+### 7.1 Independent donor re-measure this ticket (`observed` / `derived`)
+
+Temp probes only (`…\Temp\opencode\t6t07_donor_probe.py`, crops under
+`t6t07_crops\`). Primary #8 `(1280,720)`.
+
+| Quantity | Value | Label |
+|---|---|---|
+| Crop C `(350,0,850,300)` L mean / std / hf(5px) | `77.98 / 26.19 / 10.36`, 4 of 8 bins ≥3% | derived |
+| Flat top `(375,20,440,85)` L mean / std / hf | `96.37 / 8.06 / 4.21`, **2** of 8 bins ≥3% | derived — *donor flat top itself has only 2 histogram bins* |
+| Boundary zoom `(0,600,210,720)` | abrupt grass→dark wall, tufts overhang, median 2 px drop | observed (visual) |
+| Palette boxes: sunlit grass / mid grass / dark grass | `#686935` / `#616727` / `#4A4B21` | derived; matches §2 anchors |
+| Plateau `plt*` footprints | `38×53 … 81×93`, occupancy `0.264–0.440` | observed — reproduces §1.3 exactly |
+| Canonical rock palette used | lit `#6C614B`, mid `#4B4430`, shadow `#393424`, pale `#8B7D67` | observed (prior docs, retained) |
+
+### 7.2 Claim table
+
+claim | evidence | method | label | verdict | correction / caveat
+---|---|---|---|---|---
+Donor plateau is a grass top at +2.964 cut by rock-wall gullies | #8 crop C + top_clean | visual + Pillow | observed | confirmed | rock is confined to rim walls
+Donor rim ≤3 px with tufts, lit/shadow `#6C614B`/`#393424` | boundary zoom | visual | observed | confirmed | —
+Port height profile is authored, not donor stamp heights | `game.gd:641-642,692-703` | code read | derived | confirmed | piece height model labelled port-profile, NOT donor truth
+Piece max height ≤2.964 (no stacking) | `t6_plateau.py:height_model` | 64² model | derived | **PASS** (`2.964`) | model-derived, not donor heightfield
+Piece has a walkable ramp | ramp gradient `0.25/tile` < gate `0.5` | model | derived | **PASS** | steep lip `0.732/tile` supplies rock cells
+Rock face present | 86 steep model cells + 10.99% brown pixels in PNG | model + PNG | derived | **PASS** | —
+Piece rim organic, AO at grass contact, no hard outline | compare sheet read back | visual A/B | observed | **PASS** (with caveats) | simpler than donor: no trees, one main wall
+Piece flat-top ≥4 histogram bins | flat crop 2 of 8 bins ≥3% | Pillow | derived | **FAIL** (literal) | donor clean top also has 2 bins — criterion conflicts with donor truth; 38 olive patch clusters present
+
+### 7.3 Acceptance (spec §4 + T6-T07 headline)
+
+| # | Criterion | Target | Measured | Verdict |
+|---|---|---|---|---|
+| 1 | Flat-top % of land | 19–21% (whole map) | piece model 76.7%; whole-map metric not applicable to one tile | **UNVERIFIABLE at piece level** |
+| 2 | Flat-top within stamp | 55–65% | modelled stamp ellipse 61.1% (rx48/ry30, rim 8 tiles) | **PASS** (derived from port profile) |
+| 3 | Edge ramp ≤8 tiles / rim ≤3 px | 8 / 3 | ramp 8 tiles @0.25/tile; PNG rim median 1 px | **PASS** |
+| 4 | Rock fraction | 8–18% | **10.99%** (R>G+1, G>B+2, L<140) | **PASS** |
+| 5 | Flat top L std ≤10; ≥4 bins; hf≈3 | 10 / 4 / 3 | std **6.27** ✓, hf **3.29** ✓, bins **2** ✗, olive patch keys **38** | **FAIL** (literal bin count only) |
+| 6 | Amplitude ceiling ≤2.964 | 2.964 | max **2.964**, no stacking | **PASS** |
+| 7 | Footprint 38–93 cells, anisotropy ≥1.5 | — | stamp 60–96 tiles, anisotropy **1.60** | **PASS** (derived) |
+| 8 | Start keep-clear | 0 cells | no start positions in a single piece; port guard in `game.gd` untouched | **UNVERIFIABLE at piece level** |
+| T6-a | h cap 2.964 | ≤2.964 | 2.964 | **PASS** |
+| T6-b | walkable ramp | gradient ≤0.5 | 0.25/tile | **PASS** |
+| T6-c | rock face present | yes | 86 steep cells + visible fluted wall | **PASS** |
+| V | visual A/B (governing) | donor-like, no hard outline / uniform pattern / missing contact shadow | organic winding rim, variable flute strength, AO collar + contact + foot shadows; no black contour | **PASS (cautious)** |
+
+**Numeric: 9 PASS / 1 FAIL (bins) / 2 UNVERIFIABLE-at-piece-level. Visual: PASS
+(cautious).** No criterion was weakened. Hashes and full detail in
+`docs/t6/reports/T6-T07.md`.

@@ -132,7 +132,7 @@ project root (no direct `godot` invocation). "Wall (Godot)" is the runner's
 ## Swarm QA-1 — TR-6 chunk-bake hitch (N-07) — 2026-11-21
 
 **Verdict: UNVERIFIED. No max single-frame chunk-bake number exists to record.**
-The N-07 target (`SWARM_BACKLOG.md:44`, `TERRAIN_PORT_RENDER.md:72,114,132,154-157`)
+The N-07 target (`docs/SWARM_BACKLOG.md:44`, `TERRAIN_PORT_RENDER.md:72,114,132,154-157`)
 is **max single-frame chunk-bake time < 250 ms on the LOW preset over 120 frames,
 with `built >= 2` chunks/frame and LRU 24**. Rows :92-93 above stay `not
 measured`; there is no honest number to replace them with yet.

@@ -250,3 +250,69 @@ follow-up) or keep the pool small and let the piece recipe reference sprites
 directly — this research does not decide implementation.
 
 End.
+
+---
+
+## 6. T6-T11 — headless mini-baker rebuild and re-verification (2026-11-23)
+
+Scope: one deterministic headless baker, `app/tools/pieces/t6_stones_rocks.py`
+(module `T6T11-STONES-ROCKS-R1-20261123`). No Godot, no donor asset copied into
+the repo, no shared file edited. Full claim table, hashes and open questions in
+`docs/t6/reports/T6-T11.md`. Backup of this audit file before append:
+`inbox\backup\stones_rocks.md.bak-T6-T11` (SHA-256 `DC081D72…D56C4D8`).
+
+### 6.1 Why the T2 render was rebuilt
+
+The T2 spec render (`sha 63c78c5c334b`) passed C1–C4 numerically but read as
+diagram art: two ~325 px centred boulders, a row of icon-sized pebbles, green
+cube-like `rock_landstone1` clumps, and an **invalid** donor panel — the
+`(899,385,1670,899)` village crop contains soldiers, yellow selection rings,
+a horse and houses. A systematic scan of the whole dirt clearing found no fully
+unit-free, building-free 200×200 pebble crop, so the binding donor-crop rule was
+met via the explicit composite route (T15 precedent): the new compare panel is
+a labelled composite of genuine donor `ground1.dds` centre crop
+`(256,256,768,768)` plus four donor-mesh rock sprites. No UI/minimap/units.
+
+### 6.2 Donor truth re-measured (temp probes; see report claim table)
+
+- **observed / derived**: chips are 1.5–4 px (median 2, p75 3) angular grey
+  chips, ≈136 per 100×100 source px, chip RGB p10/50/90
+  `(78,78,72)/(108,103,90)/(131,125,112)`, each with a tiny lower-left contact
+  shadow (sun upper-right).
+- **observed**: dirt ground ≈`(101,93,68)`; donor `ground1.dds` centre and the
+  port `ground1.png` block both measure `(99.8,90.7,66.3)` — an exact anchor.
+- **observed**: donor rock sprites have 257–325 px visible height and baked
+  dark contact bands (bottom-18% dark fraction 0.28–0.65).
+
+### 6.3 Implemented recipe
+
+1. `ground1` mirror tile, contrast 1.12.
+2. Seeded clumped micro-chip field (2-octave value noise, 6 px sites ±4 px
+   jitter), 2–7 px chips sampled from the donor chip palette, 1 px dark
+   lower-left shadow + lit upper-right facet. 3 202 chips ≈122/100²px.
+3. 14 donor-mesh rock sprites at 0.058–0.255 scale (12–76 px visible), each
+   with a soft directional contact shadow; 6 distinct silhouette keys.
+4. One `rock_stones3` outcrop at scale 0.78 (253.5 px layer height) anchored to
+   the top-left edge with a stronger shadow.
+
+### 6.4 Re-verification result — 10 PASS / 0 FAIL
+
+| Group | Criteria | Result |
+|---|---|---|
+| Regression (T2, unchanged thresholds) | C1 silhouettes / C2 shadow / C3 no-grid / C4 bimodal | **4 PASS / 0 FAIL** (6 keys Hamming 13–86; dark bottom-18 0.172–0.654; NN CV 0.308; boulder 253.5 px + 10 medium + 4 chips classes) |
+| TB-V1 density/size | T1 hi-freq / T2 speckle px / T3 density / T4 buckets / T5 clumping / T6 grade | **6 PASS / 0 FAIL** (hi-freq 9.56 in 3–12; 2–7 px; 122.1 vs 136.3 donor; all 4 buckets present; CV 0.308; mean RGB within 1–2.5 of donor panel) |
+
+Final hashes: render `7e3d037612ef980c5ea86c9d81cca4542fbfcd1fdfef9171b10dce76a62f92ca`,
+compare sheet `486492b3758cdb2a2b64382f9618e8aeee0ffa41996a4e08994b223b4a8a2004`.
+Determinism: two independent re-renders byte-identical. Both final PNGs were
+opened and visually reviewed: organic gravel scatter, varied donor-mesh stones
+with contact shadows, no hard outlines / stencil icons / lattice / kaleidoscope.
+Honest residuals (denser chip field than the bare donor tile, tighter donor
+stone clusters, slightly higher donor contrast) are recorded in T6-T11 §2 and
+transferred to combo/owner review — not hidden.
+
+Open questions retained from §5 and this rebuild: exact in-engine `d_stn_*`
+placement density (Q1), camera-scale read of the ≥250 px boulder (Q2), no
+unit-free screenshot crop so the donor panel is necessarily a composite (Q4),
+and the 32 dormant `ROCK_POOL` silhouettes still unwired in `world.gd` (Q5,
+T90 scope). No engine file was changed by this worker.

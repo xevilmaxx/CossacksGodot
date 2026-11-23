@@ -114,6 +114,31 @@ integrations pass gates, nobody is silently stuck.
 - 2026-11-23: **Q03 sweep 4 completed via the 900 s timer** — full cycle exit
   0, CLEAN, no wedge; board now marks QA `DONE (reactivatable)`; worker_health
   correctly drops DONE owners (not a lost worker). Consolidated in §health.
+- 2026-11-23: **COORDINATOR T90 sign-off request** — Q02 desk re-confirmed
+  tickets 1074–1080 all `ok`/exit 0 from result jsons + status history; selftest
+  29 / uitest 17 with matching mtimes; bench 107.18 ms; dumps byte-identical,
+  scan_map ALL GREEN and geometry verifier keep-clear 0 (both re-run by QA);
+  scope isolated against the T90 backup = two pool constants only, tools
+  unchanged, stump keying pre/post SHAs verified. `grid_peak` independently
+  measured **0.1815** via the project's own T01 function (report says 0.160;
+  both < 0.20 — numeric reconciliation logged). Ruling **PASS** subject to
+  owner visual review + stone A/B decision + named residuals. ZERO Godot jobs.
+- 2026-11-23: **COORDINATOR W04 sign-off request** — Q02 desk re-confirmed
+  runner tickets 1068–1073 all `ok`/exit 0 from result jsons + status history;
+  `selftest.json` 29 steps / `uitest.json` 17 steps with mtimes matching the
+  jobs; bench 109.33 ms; dumps byte-identical and scan_map ALL GREEN
+  (independently re-run); scope = 2 modified + 2 `.bak-T6W04` backups, zero
+  reflection tokens; D-43 adjudicates all three deviations. Ruling **PASS**
+  (subject to owner visual review + D3/T90 residuals), in §W04 above. Logged
+  one documentation caveat: the report does not literally cite D-43. ZERO
+  Godot jobs; no re-run because evidence was fresh and no conflict existed.
+- 2026-11-23: **COORDINATOR U90 sign-off request** — Q02 desk re-confirmed
+  runner tickets 1062/1063/1064/1066 all `ok` (exit 0) from both result jsons
+  and `status.json` history; scope = 88 modified + 38 new under `anim/**` only;
+  main index 54 keys, naval 1 (`yacht`), 0 vessel keys leaked; 19/19 new PNG
+  sidecars lossless. Ruling **PASS**, written in §U90 above. ZERO Godot jobs —
+  W04 held the runner (ticket 1068 pending, lock held), builder evidence was
+  sufficient, so no confirmation gate was duplicated.
 - 2026-11-23: **COORDINATOR re-review request (T6-T15 C5)** — TERRAIN's v4
   claims v3's FAIL was a 512²-vs-200² sampling artefact. QA parent performed
   the independent re-measurement directly (no child re-measured its own work).
@@ -321,6 +346,16 @@ parent runs it at supervision milestones and records the run + row counts here.
   `tickets=44 reports=31 manifests=26 rows=50 unmatched_reports=4
   anomalies=42`; dashboard `Generated: 2026-11-23T10:33:27Z`; backup refreshed.
   State changes noted in "Piece-verdict watch" above.
+- **2026-11-23 refresh at U90 sign-off (`observed`):** registry exit 0,
+  `tickets=44 reports=42 manifests=27 rows=50 unmatched_reports=4
+  anomalies=42→52`; dashboard `Generated: 2026-11-23T11:38:40Z`; backup
+  refreshed. Unmatched count still 4 (all `T6-R05-*`).
+- **2026-11-23 refresh at W04 sign-off (`observed`):** registry exit 0,
+  `tickets=44 reports=43 manifests=27 rows=50 unmatched_reports=4
+  anomalies=53`; dashboard `Generated: 2026-11-23T11:47:01Z`; backup refreshed.
+- **2026-11-23 refresh at T90 sign-off (`observed`):** registry exit 0,
+  `tickets=44 reports=44 manifests=27 rows=50 unmatched_reports=4
+  anomalies=54`; dashboard `Generated: 2026-11-23T12:24:54Z`; backup refreshed.
 
 ### Piece-verdict watch (parent reads dashboard at each refresh)
 
@@ -374,6 +409,260 @@ parent runs it at supervision milestones and records the run + row counts here.
    not arbitrate another lane's piece identity; both are shown verbatim.
 4. **FAIL path untested** — accepted limitation until a FAIL report exists;
    the rule (any FAIL → FAIL) is documented in the dashboard honesty contract.
+
+## T6-T90 final sign-off — Q02 gate desk (coordinator request, 2026-11-23)
+
+**RULING: PASS — sign T6-T90, subject to owner visual review, the owner's
+stone A/B decision, and the named residuals in report §4.** No red gate item
+found. QA did not edit `world.gd`, any asset, or the builder's report. No gate
+was re-run (§5).
+
+### 1. Builder report read (`observed`)
+
+`docs/t6/reports/T6-T90.md` (211 lines): 14-claim table; six change groups
+§2.1–2.6; gate table §3 with job ids 1074–1080; seven honest residuals §4.
+
+### 2. Runner history independently re-confirmed (`observed`)
+
+| Ticket | Id | status / exit | Evidence |
+|---|---|---|---|
+| 1074 | `t6t90-selftest` | **ok / 0** | created 12:04:51Z + 52.7 s run ⇒ `selftest.json` mtime 13:05:43, `passed:true`, **29** steps |
+| 1075 | `t6t90-uitest` | **ok / 0** | created 12:06:01Z + 74.5 s run ⇒ `uitest.json` mtime 13:07:15, `passed:true`, **17** steps |
+| 1076 | `t6t90-bench` | **ok / 0** | stdout `BAKE_BENCH … max_ms=107.18 mean_ms=107.18` — **< 250 ms PASS** |
+| 1077/1078 | `t6t90-dump-a/b` | **ok / 0** | `--seed 20261113 --dump-map app/shots/t6t90_dumps/dump_20261113_{a,b}.json` |
+| 1079 | `t6t90-engine-shot` | **ok / 0** | produced `app/shots/t6t90_engine_128.png` |
+| 1080 | `t6t90-w04-water` | **ok / 0** | produced `app/shots/t6t90/t6t90_w04_water.png` |
+
+`status.json` history carries all seven rows (`ok`, exit 0) — independent
+corroboration. Runner status after: `now_serving=next_ticket=1081`, 0 pending,
+lock free — no conflict.
+
+### 3. Scope check (`observed`, isolated against the T90 backup)
+
+- Comparing **`inbox/backup/world.gd.bak-T6T90` (SHA `9b397dd2…`) → current
+  world.gd (SHA `50909cc3…`)** — both match report §5 — the diff is **exactly
+  two constants**: `ROCK_POOL` (+32 dormant silhouettes, 44 keys total) and
+  `FOREST_UNDERSTORY_POOL` (+`tree_stump2/3/4`, 24→27 picks). **No function body
+  changed.** (A raw `git diff` also shows the earlier uncommitted W04 hunks at
+  820–860; those are pre-existing, untouched by T90 — confirmed absent from the
+  T90-backup comparison.)
+- `copy_assets.py` and `terrain_geometry_verify.py`: **no diff** (empty
+  `git diff --stat`); both `.bak-T6T90` backups exist untracked as attested.
+- `tree_stump2.png` keying: git-HEAD SHA `1f91ca69…`/`9da22823…` → current
+  `4bee576e…`/`3c660ffe…` in **both** sprite dirs, exactly the report's
+  pre/post values. Current images have **0** opaque pixels with RGB≤3 (all
+  black backing keyed to alpha 0); alpha-0 counts 21070 (160²) / 222160
+  (512²), consistent with 1335/11544 keyed pixels from ~22.8%/22.4% black.
+- Groups 2–5 no-op spot checks (`observed`): `_field_decal` at world.gd:2021
+  and `_draw_field` at :2047; `_face_collar` at :1254; `_winter_art` at :1026
+  with `game.winter_block_for()` used at :1009/:1022; **12** `desert*.png`
+  blocks present. All cited live paths exist with no T90 edit.
+
+### 4. Anti-checkerboard / anti-regression gates (`observed`)
+
+- Fresh dumps A/B SHA-256 both `5b006c81…577951` — **byte-identical determinism**.
+- `python app\tools\scan_map.py --dir app\shots\t6t90_dumps` re-run by QA:
+  exit 0, **ALL GREEN** @320 (patches 75, mean 622, forest 45.6%, coast 100,
+  cliff 95.6, tile 100, reach 2/2).
+- `python app\tools\terrain_geometry_verify.py --dump dump_20261113_a.json
+  --json`: exit 0; `start_relief_cells_max = 0` **PASS**;
+  `plateau_flat_top_pct_land = 14.8447` **UNVERIFIED / INFO** as the tool itself
+  classifies (report's 14.84% residual, not manufactured into a pass).
+- `grid_peak`: QA re-implemented the T01 high-pass ACF metric and also called
+  the project's own `t6_grass_mottled.grid_peak()`: both give **0.1815** (lag
+  9 px) on `app/shots/t6t90_engine_128.png` — **< 0.20 PASS**. The report's
+  0.160 is close but **not exactly reproduced**; both agree on the verdict.
+  (`derived`) Likely a differing crop/downsample convention; flagged as a
+  numeric reconciliation, not a red item. Reported honestly rather than
+  adopted.
+- W04 in-engine water job 1080 `ok`; clean gate `assert_clean.py --json` exit
+  0, **CLEAN**, 0 processes.
+
+### 5. No re-run (`derived` from `observed`)
+
+Evidence is fresh (jobs 1074–1080 completed minutes ago), internally
+corroborated (jsons + status history + independent hashes/scan/geometry/metric
+re-measurement), and the runner is idle. No stale evidence and no scope doubt;
+duplicating green gates would be blind. QA submitted **ZERO Godot jobs**;
+`scan_map`, geometry verifier and Pillow checks are pure Python.
+
+### 6. Observations, not blockers
+
+- (`observed`) Context `BAKE_BENCH` lines in 1074/1075/1079/1080 (1491/1508/
+  2852/3149 ms) are exit-flush cold-cache values per `bake_bench.py`'s honesty
+  contract; the actual bench gate is ticket 1076 = **107.18 ms**.
+- (`observed`) 1079/1080 stderr carry a 1-RID GLES3 texture leak at exit —
+  known non-fatal leak class from `STATUS_TESTS.md`, not filed by this ruling.
+- Owner visual review on `app/shots/t6t90/` (combo sheets, stone A/B, 20480²
+  confrontation + preview) and the **owner stone A/B decision** remain the
+  coordinator's gates; named residuals (flat-top 14.84%, grid_peak above donor
+  calibration, no new visual systems, T03 flutes, W04 D-43 items) transfer to
+  T90/owner review as the report states.
+
+---
+
+## T6-W04 final sign-off — Q02 gate desk (coordinator request, 2026-11-23)
+
+**RULING: PASS — sign T6-W04, subject to the coordinator's owner visual review
+and the D3/T90 residuals named in D-43.** No red gate item found. QA did not
+edit the shader, `world.gd`, or the builder's report. No gate was re-run (§5).
+
+### 1. Builder report read (`observed`)
+
+`docs/t6/reports/T6-W04.md` (164 lines): 14-claim table with observed/derived/
+inferred labels; 8 change groups; D1/D2 implemented, D3 excluded; file hashes;
+in-engine deep-water metrics + glint exponent A/B; six gate ids; three named
+deviations in §7. Report status itself says "PENDING OWNER VISUAL REVIEW".
+
+### 2. Runner history independently re-confirmed (`observed`)
+
+| Ticket | Id | status / exit | Evidence |
+|---|---|---|---|
+| 1068 | `t6w04-selftest-final` | **ok / 0** | `--self-test app/selftest.json`; created 11:36:15Z + 83.6 s run ⇒ `selftest.json` mtime 12:37:38 local, `passed:true`, **29** steps |
+| 1069 | `t6w04-uitest-final` | **ok / 0** | `--ui-test app/uitest.json`; created 11:37:39Z + 100.0 s run ⇒ `uitest.json` mtime 12:39:18 local, `passed:true`, **17** steps |
+| 1070 | `t6w04-bench` | **ok / 0** | stdout: engine `BAKE_BENCH preset=low px=8 chunks=120 max_ms=109.33 mean_ms=109.33` — **< 250 ms PASS** |
+| 1071 | `t6w04-dumpA` | **ok / 0** | `--dump-map …t6w04_dumpA.json --seed 20261113` |
+| 1072 | `t6w04-dumpB` | **ok / 0** | same, dump B |
+| 1073 | `t6w04-final-capture` | **ok / 0** | `--screenshot app/shots/t6w04_final.png --screenshot-frames 120` |
+
+`status.json` history carries the same six rows (`ok`, exit 0) — independent
+corroboration. All four artifact hashes in report §4 were re-hashed and match
+exactly (shader `089f6973…`, world.gd `9b397dd2…`, final `c9aac1b3…`, A/B sheet
+`04ba2cea…`).
+
+Independent re-measurement (pure Python, no Godot):
+- Dumps A and B SHA-256 both `5B006C81…577951` — **byte-identical determinism**.
+- `python app\tools\scan_map.py --dir <fresh dump dir>` exit 0, **ALL GREEN**
+  @320 (water 0.0, patches 75, mean 622, coast 100, cliff 95.6, tile 100,
+  reach 2/2).
+- Deep-water crop `t6w04_final.png[450:750,450:700]` = mean RGB
+  **(42.54, 52.06, 54.27)**, G−R 9.51, B−R 11.72, B−G 2.21, L std 5.71 —
+  reproduces report §5 (std 5.76 differs only by grayscale convention).
+
+### 3. Scope check (`observed`)
+
+- Scoped `git status -- app/shaders/water_overlay.gdshader app/scripts/world.gd
+  inbox/backup/*T6W04` = **2 modified + 2 new backups, nothing else**. Both
+  `.bak-T6W04` files exist and are non-empty.
+- `git diff -- app/scripts/world.gd` hunks are at 820–827, 841–858 — all inside
+  `_setup_water_overlay()`: sampler rebinding (`wave0/1/2/foam_tex` → single
+  `wave_noise`), `water_level` uniform, and the continuous
+  `smoothstep(-0.10,0.15,signed_waterline_distance)` coverage ramp with the
+  dry-high-ground guard. **No other `world.gd` function touched.**
+- Reflection-token scan: **no** `SubViewport`, `ViewportTexture`,
+  `hint_screen_texture` or `SCREEN_TEXTURE` in either file; the only four
+  "reflection" hits in the shader are **comments explicitly excluding D3**.
+  Zero reflection implementation (`observed` → `derived`: D3 honoured).
+
+### 4. Adjudication conformance (confirm only; not re-litigated)
+
+D-43 exists at `docs/DECISION_LOG.md:79` and adjudicates all three:
+1. **Shallow `#C3D1CA` miss** — ACCEPTED deviation; residual to D3 reflection +
+   T90; forcing the hex without reflection would fake the number.
+2. **Glint band-A floor** (in-engine 0.064 % < 0.30 %) — floor N/A as a hard
+   gate; donor stills show ~zero isolated glints; ceiling remains the gate;
+   donor 170/120 exponents kept, amount re-tuned at D3/T90.
+3. **1-tile staircase** — named engine limitation, transferred to T90
+   higher-res height source.
+The builder report records all three with evidence (C12, §5 glint table, C13)
+and does not claim any of them as PASS. `D-GA-max` 2 px ≤ 12 px is recorded as
+the piece FAIL resolved by in-engine evidence.
+**Documentation caveat (`observed`):** the report cites D-40/D-41 but contains
+**no `D-43` string**; it still frames the three items as awaiting adjudication
+(§7). D-43 itself supplies the ruling. This is a **citation gap, not a red
+gate**; I did not manufacture a citation. Request: coordinator have the WATER
+parent/builder append the D-43 reference to the report for cold readability.
+
+### 5. No re-run (`derived` from `observed`)
+
+Evidence is fresh and internally corroborated (runner jsons + status history +
+independent hashes/scan/crop). `godot_runner.py status` shows `now_serving =
+next_ticket = 1074`, `pending=0`, lock free — **no runner conflict**, but also
+**no stated reason** to duplicate green gates (no stale evidence, no scope
+doubt). QA submitted **ZERO Godot jobs**; `scan_map.py`/hashing/Pillow are
+pure-Python.
+
+### 6. Caveats (not W04 blockers)
+
+- (`observed`) 1068/1069 stdout carry context `BAKE_BENCH max_ms=1606/2176`;
+  per `bake_bench.py` honesty contract these are exit-flush cold-cache values.
+  The actual bench gate is ticket 1070 = **109.33 ms**. Not a FAIL.
+- Owner visual review on `t6w04_final.png` + `t6w04_final_ab.png` remains the
+  coordinator's gate; residual shallow/glint/staircase items stay with D3/T90.
+
+---
+
+## T6-U90 final sign-off — Q02 gate desk (coordinator request, 2026-11-23)
+
+**RULING: PASS — sign the T6-U90 release.** No red item found in the granted
+scope. No new gate was run (see "No re-run" below). QA edited no anim asset and
+did not touch the builder's report.
+
+### 1. Builder report read (`observed`)
+
+`docs/t6/reports/T6-U90.md` (131 lines): claim table with observed/derived/
+inferred labels; per-family SHA record (U01 126 copied byte-no-op, U02 36, U05
+17, U04 76, U07 12, U06 33 no-op SKIP, U03 20 no-op SKIP); 267/267 staging-to-
+live SHA matches; 250-file pre-change SHA manifest at `temp/t6u90_prechange_sha256.json`;
+index diff summary; 19 lossless sidecars; four runner gate ids; visual captures.
+
+### 2. Runner history independently re-confirmed (`observed`)
+
+| Ticket | Id | Result json | status | exit | stdout evidence |
+|---|---|---|---|---|---|
+| 1062 | `t6u90-animmetrics` | `00001062_*` | **ok** | 0 | 5/5 PASS: `main_index_54_units` (54 keys), `action_structure` (304 actions, 0 out-of-spec), `metric_ranges` (0), `walk_stride` (54 walks, 0 out-of-band), `naval_schema` (1 naval unit, 0 deviations) |
+| 1063 | `t6u90-selftest` | `00001063_*` | **ok** | 0 | `app/selftest.json` `passed:true`, **29** steps; mtime 12:30:54 matches job start 12:29:20 + 89.6 s run |
+| 1064 | `t6u90-uitest` | `00001064_*` | **ok** | 0 | `app/uitest.json` `passed:true`, **17** steps; mtime 12:32:30 matches job start 12:29:20 + 94.9 s wait + 95.9 s run |
+| 1066 | `t6u90-naval` | `00001066_*` | **ok** | 0 | 6/6 PASS: index parses, walk 1280×1920, 8 columns, hull 1280×160, cell consistency, no missing PNG |
+
+`app/.godot_queue/status.json` history carries the same four rows (`ok`, exit 0)
+— independent corroboration (`observed`).
+
+### 3. Scope check (`observed`, my own script `temp/t6_qa_u90_scope.py`)
+
+- `git status --short -- app/assets/models/anim`: **126 entries = 88 ` M` +
+  38 `??`**, no other status codes — exactly the builder's attested scope.
+- The 38 new entries are **19 PNG + 19 `.import`**, nothing else; **0** new PNG
+  lacks its sidecar; **0** new sidecar lacks `compress/mode=0`; across **1849**
+  anim sidecars, **0** contain `compress/mode=2`.
+- Main `index.json`: **54** keys; naval `index.json`: **1** key (`yacht`).
+  **0** vessel-like keys in the main index and **0** naval keys other than
+  `yacht` — new vessels remain on disk only (`derived` from the key lists).
+- Foot-pin N/A for the mounted cossack/croat is **documented** in
+  `docs/t6/UNITS_LANE.md:147,153–154,165,270`, `T6-U02.md`, `T6-U04.md:101–102,234–235`
+  and `T6-U90.md:38,124`, with residual drift 0.2444 m / 0.1888 m. Per the
+  coordinator's instruction this adjudicated drift was **not re-litigated**.
+- (`observed`, read tool) Spot-checked `cmp_cavalry_dragoon_walk.png` (8 dirs ×
+  3 frames): rider pose matches the live strip; the horse is the only added
+  element, fully rendered with no visible edge clips.
+  `cmp_naval_yacht_hull.png`: staged yacht retains hull + masts/rigging, no
+  fabricated flags/sails/dock props.
+
+### 4. No confirmation re-run (`derived` from `observed`)
+
+Builder evidence was sufficient on every requested item, so no red gate was
+duplicated. Independently checked `godot_runner.py status`:
+`now_serving=1068`, `pending=1 [1068]`, `godot.lock=HELD` — W04 holds the
+runner. Adding a confirmation job would have contended for a serialized
+resource with no stated reason (no stale evidence, no scope doubt). **QA
+submitted ZERO Godot jobs.**
+
+### 5. Caveats / out-of-scope observations (not U90 blockers)
+
+- (`observed`) 1063/1064 stdout contain engine `BAKE_BENCH … max_ms=2126.51 /
+  1686.53`. Per `bake_bench.py`'s honesty contract these are exit-flush,
+  cold-cache values and CONTEXT ONLY; the 250 ms bench is a **T6-T90**
+  integration gate, not in U90's four-gate table. Flagged for T90, not a FAIL.
+- (`observed`) The owner visual review and the deferred D-42 items (renderer
+  foot-pin, naval `_anim_dir()` load path / P-10, shared `build_mesh` UV offset)
+  remain separate gates/tickets; this ruling does not close them.
+
+Evidence: report + four runner result jsons + `status.json` history + scope
+script + two visual captures (all paths above). Labels: `observed` = read from
+a file/tool/image; `derived` = conclusion from those observations; no
+`inferred` claim is used as a gate.
+
+---
 
 ## T6-Q04 — independent C5 re-review (coordinator request, 2026-11-23)
 

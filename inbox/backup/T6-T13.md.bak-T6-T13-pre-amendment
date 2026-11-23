@@ -1,0 +1,162 @@
+# T6-T13 — `field_crops` mini-baker verdict
+
+Parent: T6-TERRAIN (LANE TERRAIN). Worker: T6-T13. Date: 2026-11-23.
+Scope: **ONE piece** — `field_crops`. Headless Python 3.14.3 + Pillow 12.1.1 +
+NumPy 2.4.3. **Zero Godot jobs, zero Blender jobs, no whole-map test.** No
+helper subagents. Donor assets are READ by path and never copied into the repo;
+only the two visually verified reference-screenshot crops are embedded in the
+labelled comparison sheet. All probes/candidate crops live in
+`C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\`.
+
+**Verdict: PASS (render proxy), 6 PASS on donor-anchored criteria + 1 FAIL that
+is strictly the still-open in-engine wiring ticket.** This is a *piece proxy*:
+it proves the correct decal would read right; it does not close the T2 build
+gap (`world.gd` alpha restore, gold tint, decal wiring).
+
+## Owned outputs and hashes (SHA-256)
+
+| Artifact | Path | SHA-256 |
+|---|---|---|
+| Mini-baker module (new, final) | `app/tools/pieces/t6_field_crops.py` | `ee84646fd171cae54db5799f3f4ab41362bb8c62511d52ff4029465ffff305ac` |
+| Main render | `app/shots/pieces/t6_field_crops.png` | `99b774708ad7737c5e9e6dd36e5656d824d08f41a9748f7ec96cf3fc9aa0d839` |
+| Compare sheet (valid donor panels) | `app/shots/pieces/t6_field_crops_compare.png` | `a243dda46f9347c582bf5cc1f082a6277c9ad86307beda4d7a9a7936395e54c8` |
+| Winter state | `app/shots/pieces/t6_field_crops_winter.png` | `cd5805ca1f0bd3698d58b5db6435c61c521a9d9e9e22a9e0e4b299998d2b3b40` |
+| Depleted state | `app/shots/pieces/t6_field_crops_depleted.png` | `5abb91bbfe8fbae1de17aeba969b39bd81ecae6ff35d5c0f35309813f39eef0c` |
+| Stalk zoom (3× nearest, visual probe) | `app/shots/pieces/t6_field_crops_stalkzoom.png` | `8e6b0b5c3bd247c0e958634ee56fbb3b60dbf70903eaaf1f84eab9725806aa7b` |
+| Footprint mask (diagnostic) | `app/shots/pieces/t6_field_crops_footprint.png` | `e000d24ba2a6d4fbc2f3dff446e2904dc7755f2f1fd13c2dec0894cd7623b109` |
+| Manifest | `app/shots/pieces/t6_field_crops.manifest.json` | `930d0e3716572f09009067a9755e69cb5c2d995aa177d7c46614acb0758f1c93` |
+| Audit doc appended | `docs/audit/PIECES/field_crops.md` | appended T6-T13 section; backup `inbox/backup/field_crops.md.bak-T6-T13` = `f07afe608c0777af769924f70f0402bab63eb457bd6e3706370ce6db6985bbbf` (pre-append copy) |
+
+Determinism: two consecutive CLI runs produced the identical render SHA
+`99b774708ad7…`; `python -m py_compile` clean. Pre-existing T2 `field_crops*.png`
+outputs were NOT touched.
+
+## Donor anchors (measured before edits)
+
+All numbers re-measured in temp probe `t6_t13_donor_probe.py`; labels follow
+`docs/audit/README.md` (observed / derived / inferred).
+
+| Anchor | Value | Label | Evidence |
+|---|---|---|---|
+| `envfieldd.dds` / `envfielddw.dds` | DXT5, 512², Pillow RGBA, alpha mean 148.12 | observed | DDS header + decode |
+| Alpha bbox a>8 | **(17,19,494,494)** = 477×475 (both files byte-identical alpha) | observed / derived | NumPy threshold; reproduces field_crops.md §1.1 and decal_alpha_arbitration §3 |
+| bbox a>250 | (22,33,487,480) | derived | same |
+| a==255 / interior / a==0 | 25.85% / 58.59% / 15.56% | derived | same |
+| Left side 10–90% ramp at y=256 | 12 px (x 21→33) — atlas feather, not the gameplay edge | derived | same |
+| Summer opaque mean | `#4D442E` (77.2,68.4,46.1) | observed | a>250 RGB mean |
+| Winter opaque mean | `#756F61` (116.7,111.1,97.1) | observed | same |
+| Donor decal interior anisotropy | ~1.03 summer / ~1.01 winter; column period ~11–12 px at 512² | derived | \|dI/dx\|/\|dI/dy\| + autocorr |
+| Port `envfieldd.png` | RGB mean (75.57,67.52,45.24) = donor full-image mean; alpha absent (colorType 2 per arbitration) | observed / derived | Pillow + probe |
+| Reference #2 wheat hue | 41.93–42.26° (tight / big box), S 0.72, V 0.54–0.55, `#8B6E2A`–`#8C6F2A` | derived | `523480776.jpg` boxes `(240,20,560,220)`, `(200,0,720,300)` |
+| Reference #4 wheat hue | 41.47–41.51°, S 0.76, V 0.55–0.58, `#8C6C23`–`#937125` | derived | `Cossacks3AttackingVillage.webp` boxes `(1300,0,2355,600)`, `(1400,60,1900,430)` |
+| Reference interior anisotropy | 1.27–1.34 (both images) | derived | gradient ratio on wheat interiors |
+| Gold comes from a render-time tint, not donor DDS bytes | donor opaque olive/gray vs reference gold | inferred | cross-comparison; no shader inspected |
+
+### Binding donor-crop rule — compliance
+
+I generated and **visually read** seven candidate crops before choosing.
+Rejected: #2 `(200,0,720,300)` (top UI bar, mill, tower, peasants, letterbox
+minimaps in the full frame) and #4 `(1300,0,2355,600)` / `(1200,0,2100,700)`
+(top resource bar, units, house). **Shipped panels (both genuinely feature-
+containing, clean, square, no stretch):**
+
+| Panel | Image | Box (source px) | Visual content |
+|---|---|---|---|
+| 2 | `523480776.jpg` | (520,25,700,205) | golden wheat on dark grass, hard field edge, dense stalks; no UI/units |
+| 3 | `Cossacks3AttackingVillage.webp` | (1580,180,1930,530) | sharp gold stalks + hard diagonal field edge over dirt; no UI/units |
+
+I re-read the finished `t6_field_crops_compare.png` after shipping; both donor
+panels are valid. No measurement was taken against an invalid crop.
+
+## Adaptations (all disclosed, spec JSON untouched)
+
+| ID | T2 spec / doc | Used | Reason |
+|---|---|---|---|
+| A1 | sprite `"field"` / `envfieldd`, `source:deco` | `envfieldd` port PNG RGB + donor DDS alpha | port PNG is byte-identical donor RGB with no alpha; donor DDS alpha read by path to restore footprint |
+| A2 | literal donor alpha (12 px ramp, interior holes) | per-column top/bottom envelope, interior filled, 2–3 px hard side ramp | interior cutouts read as green holes; criterion C1 wants a hard 2–8 px gameplay edge, not the atlas feather |
+| A3 | `anchor:"center"`, full-tile decal | solid footprint inside a `grass1` base | gives a field *on grass* matching donor #2, not an olive square |
+| A4 | no gold in donor bytes | seeded render-time gold tint (H 41.7°, S/V in band) | donor is olive; gold is a render-time multiplier per T2 inference |
+| A5 | 5–9 procedural bead sticks | seeded fine vertical stalk field (~25–33/100 px, anisotropy 1.8) + short kernel dashes | 25–50 stalks/100 px target; no round heads (sunflowers), no lattice |
+| A6 | single summer state | + winter and depleted variants (same footprint) | criterion C5 needs neutral winter and olive stubble states |
+| A7 | `mirror_tileable` block | modular `wrap_crop` only | mirror tiling produces kaleidoscope artefacts the coordinator banned |
+
+## Claim table
+
+| Claim | Evidence | Method | Label | Verdict / caveat |
+|---|---|---|---|---|
+| Donor alpha footprint is 477×475 at (17,19,494,494) | donor DDS + temp probe | Pillow RGBA + NumPy threshold | observed / derived | confirmed; matches both prior docs |
+| Donor decal is olive (summer) / gray (winter), not gold | opaque means `#4D442E`/`#756F61` | Pillow mean | observed | confirmed |
+| Reference wheat is gold H≈41–42°, S≈0.72–0.76 | two crops per image | HSV on gold mask | derived | confirmed; all inside 39–45° |
+| Reference wheat has hard rectangular edges | visual + gradient profiles | visual A/B | observed | confirmed; hard edge, not gradient |
+| Decal alpha is absent from port PNG (colorType 2) | arbitration doc §2 + probe | IHDR / Pillow mode | observed | confirmed; "alpha=255" in the old doc was a mis-description |
+| Gold is a render-time tint | donor vs reference cross-comparison | inference | inferred | no shader inspected; this is why the proxy tints |
+| My render restores the donor footprint exactly | mask meta bbox (17,19,494,494), 477×475 | NumPy bbox | derived | confirmed; 2 px hard ramp |
+| My render's gold is H 41.69°, S 0.719, V 0.573, `#927229` | manifest metrics | HSV on rendered PNG | derived | confirmed; inside all band targets |
+| My render has ~25–33 stalks/100 px, anisotropy 1.81 | manifest metrics | column autocorr + 1D FFT + gradient ratio | derived | confirmed; AC is the method field_crops.md §4 C3 prescribes |
+| No sunflower heads / black outlines / mirror artefacts | visual read of render + 3× zoom | visual review | observed | confirmed; short 1–2 px kernel dashes, no discs |
+| Winter/depleted variants match donor decal means | `#767061` / `#514830` vs donor `#756F61` / `#4D442E` | Pillow mean | derived | confirmed within 1–4 RGB |
+| In-engine decal wiring is fixed | `world.gd` grep still shows preview-only consumer | source read | observed | **FAIL** — genuinely still open, not a proxy claim |
+| True lighting/specular and height are reproduced | — | — | inferred | **UNVERIFIED** — in-engine only, out of piece scope |
+
+## Acceptance criteria — measured vs target
+
+Traces: `app/shots/pieces/t6_field_crops.manifest.json` (`metrics`, `footprint`,
+`tint` blocks), temp `t6_t13_donor_probe.py` / `t6_t13_proto.py`.
+
+| # | Criterion | Target | Measured from shipped PNG | Verdict |
+|---|---|---|---|---|
+| **T6-T13a** | Donor alpha footprint | bbox (17,19,494,494), 477×475, hard edge | exact bbox, 477×475, 2 px ramp, ragged tips | **PASS** |
+| **T6-T13b** | Vertical stalks hue | 39–45° | H 41.69° (sd 0.68) | **PASS** |
+| **T6-T13c** | No sunflower heads | no round dark-centred discs | only 2–5 px × 1 px kernel dashes; visually none | **PASS** |
+| C1 | Edge gradient width | 2–8 px, <20, rectangular | mask ramp 2 px; rectangular with ragged tips | **PASS (proxy)** |
+| C2 | Gold hue / sat / value / hex | H 39–45, S 0.65–0.80, V 0.50–0.65, hex in `#8E6F29`–`#B18A33` | H 41.69°, S 0.719, V 0.573, `#927229` | **PASS (proxy)** |
+| C3 | Stalk density + anisotropy | 25–50/100 px, ratio ≥1.2 | AC 25.0/100, 1D-FFT 32.7/100, ratio 1.809 | **PASS (proxy)** |
+| C4 | Footprint continuity | one golden rectangle, 0 clumps | solid gold bbox 471×473, 0 clumps, no holes | **PASS (proxy)** |
+| C5 | Growth / season states | ripe / depleted / winter | summer `#927229`, depleted `#514830`, winter `#767061` | **PASS (proxy)** |
+| C6 | Decal wiring (engine) | alpha restored + consumed by `world.gd` draw path | render proxy passes; **engine still unwired** | **FAIL (engine, out of scope)** |
+
+**Summary: 9 PASS (3 named + 6 verdict criteria, all as render proxies),
+1 FAIL (engine wiring — the T2 build ticket, not this piece).**
+
+## Honest visual judgement (metrics never override this)
+
+I read the shipped `t6_field_crops.png`, the 3× `t6_field_crops_stalkzoom.png`,
+the winter/depleted variants and the full `t6_field_crops_compare.png`.
+
+- **Matches the donor read:** a hard-edged golden rectangle sitting on green
+  grass; dense vertical stalk texture; ragged top/bottom tips; a subtle dark
+  contact ring at the edge; solid interior (no grass holes); no black outlines,
+  no sunflower/round heads, no mirror-tiling or repeated-stamp lattice. Both
+  compare panels are clean and genuinely show the feature.
+- **Gaps I will not hide:** the donor ears are visibly chunkier and carry
+  brighter per-kernel glints; my field is finer-grained and flatter
+  (interior hi-freq ≈10.3 vs donor #4 ≈11.5 at matched scale) and slightly more
+  uniform in tone. The edge is a straight rectangular footprint with ragged
+  tips, whereas the donor's in-game field is a rotated rectangle/parallelogram
+  with a dirt clearing hole for the mill (not reproducible in a single 512²
+  decal tile). The base is green grass, so it resembles donor #2 more than
+  donor #4's dirt surround. These are fidelity gaps, not criterion failures.
+- **Conclusion:** the proxy reads as real terrain, not diagram art. It earns a
+  piece-level **PASS**; it is not an in-engine fix and must not be used to
+  close the T2 `world.gd` wiring ticket.
+
+## Open questions
+
+1. Should QA accept `AC` (the method field_crops.md §4 C3 prescribes) as the
+   stalk-density metric, or re-measure with the verdict_decor FFT convention?
+   Both readings pass here (25.0 and 32.7 per 100 px); a full-spectrum 2D FFT
+   is contaminated by low-frequency texture and is not used.
+2. The in-engine fix still needs an owner: restore donor DXT5 alpha at
+   conversion (`copy_assets.py:44-57,121-127`), emit colorType 6, and wire the
+   decal + gold tint in `world.gd:1522-1550,1653-1655`. Who takes that
+   integration ticket?
+3. Should the rotated-rectangle / mill-clearing geometry be a separate
+   whole-map task (out of a single-tile piece scope)?
+4. Are the three state variants (summer/winter/depleted) wanted as separate
+   art assets at integration, or is the growth-stage sim (`_field_growth`) the
+   only state driver the engine will support?
+5. The donor compare panel from #2 is a 180 px crop upscaled to 512 (soft);
+   should T6-RESEARCH locate a higher-resolution clean wheat-on-grass capture
+   for the final owner visual review?
+
+End.

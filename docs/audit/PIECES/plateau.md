@@ -321,10 +321,12 @@ output confined to the temp directory. Only `docs/audit/PIECES/plateau.md` was w
 ## 7. T6-T07 append — mini-baker verdict (2026-11-23)
 
 > [!IMPORTANT]
-> **SUPERSEDED — parent hold 2026-11-23.** The "PASS (cautious)" status at the
-> end of §7 is withdrawn. T07 is **CONDITIONAL / HOLD PENDING ADJUDICATION**,
-> excluded from the T90 count. See `docs/t6/reports/T6-T07.md` §8 for the
-> revoked/revised verdict and the formal P-45 adjudication request.
+> **FINAL — D-35 (coordinator, 2026-11-23): T6-T07 is FULL PASS.** The
+> "≥4 of 8 histogram bins" sub-threshold was removed as NEVER A CRITERION; the
+> §7 bin FAIL is void. The "PASS (cautious)" wording below and the interim
+> parent HOLD are retained as historical provenance, **superseded by D-35**.
+> Criteria 1 (flat-top % of land) and 8 (start keep-clear) are formally
+> transferred to the T90 dump verifier. See `docs/t6/reports/T6-T07.md` §9.
 
 Owner: micro-worker T6-T07 (LANE TERRAIN). This section is the only change to
 this research doc. Backup before edit: `inbox\backup\plateau.md.bak-T6-T07`

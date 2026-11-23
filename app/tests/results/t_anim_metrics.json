@@ -6,7 +6,7 @@
 			"passed": true
 		},
 		{
-			"detail": "actions=299, out-of-spec=0 (duration>0, frames>=2 except donor-static siege idle, loop bool): []",
+			"detail": "actions=304, out-of-spec=0 (duration>0, frames>=2 except donor-static siege idle, loop bool): []",
 			"name": "action_structure",
 			"passed": true
 		},
@@ -28,5 +28,5 @@
 	],
 	"id": "t_anim_metrics",
 	"passed": true,
-	"unix_ms": 1795257640238.0
+	"unix_ms": 1795433365151.0
 }

@@ -39,9 +39,9 @@ else:
 
 DEFAULT_GAME = os.environ.get("COSSACKS3_DIR", r"C:\Games\Cossacks 3")
 
-# Naval families present in the donor (NAVAL_EVIDENCE.md 2.1). Battleship and
+# Naval families present in the donor (docs/NAVAL_EVIDENCE.md 2.1). Battleship and
 # xebec have NO animated .oss - they need the static .osm path (see
-# NAVAL_PORT_PLAN.md); the wrapper skips them with a clear message.
+# docs/NAVAL_PORT_PLAN.md); the wrapper skips them with a clear message.
 NAVAL = {
     "yacht": "yacht",
     "yachttur": "yachttur",

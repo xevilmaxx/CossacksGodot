@@ -146,9 +146,28 @@ def build_footprint(size: int = SIZE) -> tuple[np.ndarray, dict]:
     """
     dds = DONOR_DECALS / "envfieldd.dds"
     if dds.is_file():
-        a = np.asarray(Image.open(dds).convert("RGBA"))[..., 3].astype(np.float64)
-        m = np.clip((a - ALPHA_LO) * 255.0 / (ALPHA_HI - ALPHA_LO), 0, 255)
-        src = "donor envfieldd.dds alpha (read-only)"
+        a = np.asarray(Image.open(dds).convert("RGBA"))[..., 3]
+        x0, y0, x1, y1 = FOOT_BBOX
+        solid = np.zeros((size, size), dtype=np.uint8)
+        for x in range(x0, x1):
+            ys = np.where(a[:, x] > 8)[0]
+            if len(ys):
+                # per-column ragged top/bottom envelope; interior cutouts filled
+                solid[ys.min():ys.max() + 1, x] = 255
+        soft = np.asarray(Image.fromarray(solid, "L").filter(
+            ImageFilter.GaussianBlur(0.8)), dtype=np.float64)
+        # hard 3 px side ramp (donor's 12 px atlas feather is not the
+        # in-game field edge); keep >8 at the exact bbox columns
+        side = np.ones(size, dtype=np.float64)
+        for x, val in ((x0, 0.10), (x0 + 1, 0.35), (x0 + 2, 0.70),
+                       (x1 - 3, 0.70), (x1 - 2, 0.35), (x1 - 1, 0.10)):
+            side[x] = val
+        m = np.clip(soft * side[None, :], 0, 255)
+        # hard clip to the exact donor a>8 bbox after the softening blur
+        keep = np.zeros((size, size), dtype=bool)
+        keep[y0:y1, x0:x1] = True
+        m = np.where(keep, m, 0)
+        src = "donor envfieldd.dds alpha envelope (read-only, interior holes filled)"
     else:
         rng = np.random.default_rng(SEED)
         yy, xx = np.mgrid[0:size, 0:size]
@@ -245,14 +264,14 @@ def build_field(season: str = "summer", size: int = SIZE, seed: int = SEED):
 
     if season == "winter":
         # donor winter decal opaque mean #756F61: neutral gray, not gold
-        H = np.full_like(t_v, 40.0)
-        S = 0.10 + 0.03 * t_v + 0.01 * stalk
-        V = 0.455 + 0.07 * t_v + 0.030 * stalk + 0.012 * mottle
+        H = np.full_like(t_v, 42.0)
+        S = 0.155 + 0.03 * t_v + 0.01 * stalk
+        V = 0.425 + 0.07 * t_v + 0.030 * stalk + 0.012 * mottle
     elif season == "depleted":
         # donor summer decal opaque mean #4D442E: bare olive stubble
-        H = np.full_like(t_v, 44.0)
-        S = 0.24 + 0.04 * t_v + 0.01 * stalk
-        V = 0.32 + 0.09 * t_v + 0.022 * stalk + 0.012 * mottle
+        H = np.full_like(t_v, 43.0)
+        S = 0.38 + 0.04 * t_v + 0.01 * stalk
+        V = 0.275 + 0.09 * t_v + 0.022 * stalk + 0.012 * mottle
     else:
         H = GOLD_H + (t_v - 0.5) * 1.8 + np.clip(stalk, -1.2, 1.2) * 0.5
         S = GOLD_S_BASE + 0.045 * t_v + 0.012 * stalk + 0.008 * mottle
@@ -311,7 +330,8 @@ def measure(render: np.ndarray, mask: np.ndarray) -> dict:
         out["gold_hex"] = "#%02X%02X%02X" % tuple(int(round(x)) for x in mean)
 
     gl = render.astype(float).mean(2)
-    inner = gl[60:450, 60:450]
+    # clean interior box (avoid the ragged footprint boundary / side ramp)
+    inner = gl[100:412, 100:412]
     gx = float(np.abs(np.diff(inner, axis=1)).mean())
     gy = float(np.abs(np.diff(inner, axis=0)).mean())
     out["anisotropy_dx_dy"] = round(gx / max(gy, 1e-9), 3)
@@ -388,7 +408,7 @@ def build_compare(render: Image.Image, size: int = SIZE) -> Image.Image:
            font=small, fill=(190, 195, 205))
     d.text((pad, top + size + 39),
            "Rendered field: hard 477x475 footprint (17,19,494,494), "
-           "vertical gold stalks ~33/100px, no round heads / black outlines.",
+           "vertical gold stalks ~25-33/100px, no round heads / black outlines.",
            font=small, fill=(190, 195, 205))
     return sheet
 

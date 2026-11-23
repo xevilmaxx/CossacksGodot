@@ -201,5 +201,46 @@ Global gate (from `TERRAIN_REFERENCE_IMAGES.md:182`): mean HSV sat 0.30–0.55, 
 
 ---
 
-*End.* No donor binary was copied into the repository; no Godot process was run; no code
+*End of T2 research section.* No donor binary was copied into the repository; no Godot process was run; no code
 or asset was edited. All crop PNGs are in `C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\`.
+
+---
+
+## 6. T6-T06 render addendum (micro-worker T6-T06, 2026-11-23)
+
+**Scope.** Append-only. Backup `inbox\backup\hill_ridge.md.bak-T6-T06` (sha256
+`dafc7b0306de…`, identical to this file before the append). The single piece was rendered by
+the NEW owned file `app/tools/pieces/t6_hill_ridge.py` (headless Python 3.14 / Pillow / NumPy,
+seed 7; `terrain_piece_render.py` imported READ-ONLY). No spec JSON, generator, `world.gd`,
+`game.gd` or shared tool was edited; no Godot job; no donor binary copied. Full claim table,
+hash table and open questions are in `docs/t6/reports/T6-T06.md`.
+
+**Donor truth re-measured (observed/derived).** From `articolo-787.jpg`: mound1 grass cap
+`(66.6,65.7,49.7)` L64.7 vs face `(50.8,47.6,30.4)` L47.0 (ratio 1.38); mound2 cap
+`(63.7,58.4,30.9)` L57.5 vs face `(62.8,59.2,40.8)` L58.6; open-plain control
+`(78.4,75.7,39.8)` L73.7. The donor face is a **low-contrast, curved-striated dark earth
+mass**, not a striped diagram. `g_hil1.pattern`: 32×56, 725 occupied (0.405), bbox 32×54 →
+aspect 1.688, eig 2.215, long axis Y — independently re-decoded here.
+
+**Render outcome (derived).** `app/shots/pieces/t6_hill_ridge.png` 512×512 RGB, sha256
+`73195aebfebf…`; compare sheet `t6_hill_ridge_compare.png`. Geometry: footprint
+`[113,41,379,471]` = 266×431 px, aspect **1.62** (headline target ≈1.69). Flank L 59.16 vs
+crest L 73.41 → Δ **14.26**, ratio **1.24** (M3 PASS). Grass hue **62.3°**, sat **0.420**
+(M6 PASS). Main-tree centroid **(0.399,0.501)**, height **76 px** (M8 PASS) measured by exact
+difference against a no-tree render. Global gate sat 0.426 / val 0.319 (PASS). M1/M2-area,
+M4, M5 remain FAIL under the legacy thresholds (details in report §3); M7 advisory unmet
+(1.69× vs ≥2×).
+
+**Honest visual verdict: FAIL.** Reading the compare sheet, the port side is a clean, smooth
+dark loaf with a thin bright rim and six small conifers on uniform grass. The donor shows a
+broad, deeply and irregularly striated escarpment with dense clustered trees, dark recesses
+and organic grass contact. The piece has contact shadow and no uniform pattern, but its flank
+texture is too subtle and its rim too clean to read as an eroded 3D landscape. Metrics do not
+override this visual judgement (`SWARM_OPS.md` §7.6 / R-ARCH process rule).
+
+The renderer was iterated from (a) an S-shaped ribbon with straight uniform striations and a
+hard outline, through (b) a regular striped panel, to (c) the current rounded loaf with
+warped irregular banding, AO collar and cast shadow; each stage was read back from its PNG.
+Two consecutive renders are byte-identical.
+
+*End T6-T06 addendum.*

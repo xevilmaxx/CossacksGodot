@@ -200,3 +200,86 @@ All analysis artifacts (Pillow scripts, viewing crops, converted DDS previews) w
 modified or copied into the repository. The only repository file written is this document.
 
 End.
+
+---
+
+# T6-T13 — mini-baker update (2026-11-23, append-only)
+
+Worker T6-T13 (LANE TERRAIN) added ONE render-proxy module,
+`app/tools/pieces/t6_field_crops.py`, and deterministic outputs under
+`app/shots/pieces/t6_field_crops*`. This section **appends** to the T2 research
+above; it does not revoke its diagnosis. The in-engine gap (alpha lost in the
+`deco_png` conversion, gold applied only at render time, decal unwired in
+`world.gd`) stands — this is a *piece proxy*, not a build ticket.
+
+## New donor measurements (the T2 numbers were re-verified, not changed)
+
+| Measurement | Value | Label | Source / probe |
+|---|---|---|---|
+| `envfieldd.dds` alpha bbox a>8 | **(17,19,494,494)** = 477×475 | observed (reproduced) | donor DXT5 decoded by Pillow; temp `t6_t13_donor_probe.py` |
+| bbox a>250 / a==255 | (22,33,487,480) / 25.85% | derived | same probe; matches decal_alpha_arbitration §3 |
+| left side 10–90% alpha ramp at y=256 | 12 px (x 21→33) | derived | same; atlas feather, not the gameplay edge |
+| summer opaque mean | `#4D442E` (77.2,68.4,46.1) | observed | a>250 mean of donor RGB |
+| winter opaque mean | `#756F61` (116.7,111.1,97.1) | observed | same |
+| donor decal interior anisotropy | ~1.03 (summer), ~1.01 (winter) | derived | \|dI/dx\|/\|dI/dy\|; decal stalk period ~11–12 px at 512² |
+| reference #2 `523480776.jpg` crop `(520,25,700,205)` | gold H **42.1°**, S 0.72, V 0.55 | derived | clean wheat-on-grass crop; verified visually, no UI/units |
+| reference #4 `Cossacks3AttackingVillage.webp` crop `(1580,180,1930,530)` | sharp gold stalks + hard diagonal edge | observed | verified visually, no UI/units/minimap |
+| reference gold hue, two boxes each | #2 **41.9–42.3°**, #4 **41.5°** | derived | all inside the 39–45° acceptance band |
+| reference gold hex (means) | #2 `#8C6F2A`, #4 `#8C6C23`/`#937125` | derived | donor reference family, ~2–5 RGB below the prior doc's `#94762E` |
+
+The two compare-sheet donor panels are **clean screenshot crops**, chosen after
+visually rejecting `(200,0,720,300)` of #2 (UI bar + mill + units) and
+`(1300,0,2355,600)` of #4 (top resource bar + units + house). No minimap, UI
+text, unit or degenerate stretched strip is present in the shipped panels.
+
+## Proxy recipe (all adaptations disclosed)
+
+1. **Footprint** — donor a>8 per-column top/bottom envelope → solid field with
+   ragged stalk tips; interior alpha cutouts filled (they otherwise read as
+   green holes); hard 2–3 px side ramp; hard-clipped to the exact donor bbox.
+2. **Ground** — `grass1` at contrast 1.12, modular wrap crop (NO mirror tiling),
+   plus a 3 px softened contact-shadow ring outside the field (no black outline).
+3. **Gold tint** — donor RGB luminance drives a seeded gold field (H 41.7°,
+   S/V in band); short broken vertical streaks + 2–5 px kernel dashes give
+   ~25–33 stalks/100 px; no round heads, no lattice.
+4. **States** — `summer` (gold), `winter` (neutral `#756F61`-class), `depleted`
+   (olive stubble `#4D442E`-class) share the same footprint.
+
+## Measured result (from the shipped 512² PNG)
+
+| # | Criterion | Target | Measured | Verdict |
+|---|---|---|---|---|
+| C1 | Hard edge 2–8 px, <20 px, rectangular | mask bbox (17,19,494,494) | bbox exact, 477×475, 2 px ramp, ragged tips | **PASS (proxy)** |
+| C2 | H 39–45°, S 0.65–0.80, V 0.50–0.65, hex in `#8E6F29`–`#B18A33` | — | H 41.69°, S 0.719, V 0.573, `#927229` | **PASS (proxy)** |
+| C3 | 25–50 stalks/100 px, anisotropy ≥1.2 | — | AC 25.0/100, 1D-FFT 32.7/100, anisotropy 1.809 | **PASS (proxy)** |
+| C4 | One contiguous golden rectangle, 0 clumps | 477×475 | gold bbox 471×473, solid interior, 0 clumps | **PASS (proxy)** |
+| C5 | Ripe / depleted / winter states | gold / `#4D442E` / `#756F61` | summer `#927229`, depleted `#514830`, winter `#767061` | **PASS (proxy)** |
+| C6 | No full-tile olive square | footprint restored | footprint restored in render; PNG still unwired in engine | **PASS (render) / FAIL (engine)** |
+
+**Verdict: 6 PASS (proxy/render) + 1 engine-wiring FAIL.** All donor-anchored
+criteria pass in the 2D proxy; the real build gap recorded by T2 remains open.
+
+## Honest visual judgement (metrics never override this)
+
+Against the two clean donor panels the port reads as a real wheat field: a
+hard-edged gold rectangle over grass, dense vertical stalk texture, ragged
+tips, subtle contact shadow, no sunflower heads, no black outlines, no mirror
+symmetry and no repeated-stamp lattice. **Remaining fidelity gap, stated
+plainly:** the donor ears are chunkier and carry brighter per-kernel glints;
+the proxy's stalk texture is finer and flatter (interior hi-freq ~10 vs donor
+#4 ~11.5 at matched scale). This is a stylistic fidelity gap, not a criterion
+failure. The proxy is not a lighting/height/decal-alpha restore.
+
+## Files
+
+Module `app/tools/pieces/t6_field_crops.py`; PNGs
+`app/shots/pieces/t6_field_crops.png`, `t6_field_crops_compare.png`,
+`t6_field_crops_winter.png`, `t6_field_crops_depleted.png`,
+`t6_field_crops_stalkzoom.png`, `t6_field_crops_footprint.png`;
+`app/shots/pieces/t6_field_crops.manifest.json`. Full report:
+`docs/t6/reports/T6-T13.md`. Backup of this doc before append:
+`inbox/backup/field_crops.md.bak-T6-T13`. Probes only in
+`C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\`. Donor assets read by
+path, never copied into the repo. Zero Godot / Blender jobs.
+
+End of T6-T13 append.

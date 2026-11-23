@@ -283,3 +283,11 @@ main PNG `8ff5ea2378af8999869bdff3b4f43bc636ce5087f740e5eb61cd6962ede18532`, com
 arcs are depicted is **withdrawn**; donor ripples remain an in-engine task. Status: **QUALIFIED,
 not full PASS**, pending the parent's re-verification of the new PNG and acceptance of the probe
 route for C7.
+
+### 6.7 FINAL decision D-33 — FULL PASS (supersedes §6.6 QUALIFIED status)
+
+Coordinator decision **D-33 (FINAL)** rules T6-T04 **FULL PASS**; this piece counts toward T90.
+C7 is **N/A — transferred to T90**; the dark probe file is illustrative evidence only, not a pass
+vehicle. No dark band was reintroduced and no threshold or render was changed — the §6.6 hashes
+remain current. The QUALIFIED status in §6.6 is superseded. Full ruling and amended §8.3 table:
+`docs/t6/reports/T6-T04.md` §9.

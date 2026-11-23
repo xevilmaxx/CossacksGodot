@@ -15,7 +15,7 @@
     "donor DXT5 alpha footprint sharpened to 7 px hard edge"
   ],
   "footprint": {
-    "source": "donor envfieldd.dds alpha (read-only)",
+    "source": "donor envfieldd.dds alpha envelope (read-only, interior holes filled)",
     "bbox_a8": [
       17,
       19,
@@ -24,60 +24,60 @@
     ],
     "width": 477,
     "height": 475,
-    "edge_10_90_px": 7,
-    "opaque_pct": 63.53
+    "edge_10_90_px": 2,
+    "opaque_pct": 79.86
   },
   "tint": {
     "season": "summer",
     "stem": "envfieldd",
-    "H_mean": 41.64,
-    "S_mean": 0.71,
-    "V_mean": 0.562
+    "H_mean": 41.68,
+    "S_mean": 0.717,
+    "V_mean": 0.575
   },
   "states": {
     "winter": {
       "season": "winter",
       "stem": "envfielddw",
-      "H_mean": 40.0,
-      "S_mean": 0.115,
-      "V_mean": 0.483,
-      "sha256": "fea17f10ca0d135e37504cb75ab70d30d91ce5064a56217a02f12a8ab392576b"
+      "H_mean": 42.0,
+      "S_mean": 0.171,
+      "V_mean": 0.464,
+      "sha256": "cd5805ca1f0bd3698d58b5db6435c61c521a9d9e9e22a9e0e4b299998d2b3b40"
     },
     "depleted": {
       "season": "depleted",
       "stem": "envfieldd",
-      "H_mean": 44.0,
-      "S_mean": 0.259,
-      "V_mean": 0.355,
-      "sha256": "6c1873e399148a9f3b65a91af04bda80d655149142a8d287baf02a59265035f8"
+      "H_mean": 43.0,
+      "S_mean": 0.4,
+      "V_mean": 0.32,
+      "sha256": "5abb91bbfe8fbae1de17aeba969b39bd81ecae6ff35d5c0f35309813f39eef0c"
     }
   },
   "metrics": {
     "gold_frac_of_footprint_pct": 100.0,
-    "gold_H_deg": 41.71,
-    "gold_H_sd": 0.75,
-    "gold_S": 0.713,
-    "gold_V": 0.558,
+    "gold_H_deg": 41.69,
+    "gold_H_sd": 0.68,
+    "gold_S": 0.719,
+    "gold_V": 0.573,
     "gold_mean_rgb": [
-      142.3,
-      111.4,
-      40.6
+      146.1,
+      114.0,
+      40.7
     ],
-    "gold_hex": "#8E6F29",
-    "anisotropy_dx_dy": 1.939,
+    "gold_hex": "#927229",
+    "anisotropy_dx_dy": 1.809,
     "stalk_ac_lag_px": 4,
     "stalk_per_100px_ac": 25.0,
-    "stalk_per_100px_fft1d": 17.9,
+    "stalk_per_100px_fft1d": 32.7,
     "gold_bbox": [
-      21,
-      21,
-      492,
-      491
+      20,
+      20,
+      491,
+      493
     ]
   },
   "output": "app/shots/pieces/t6_field_crops.png",
   "comparison": "app/shots/pieces/t6_field_crops_compare.png",
-  "sha256": "7574636710c4ebd43fe470756a1e836981d5dfed4e24bc016a63f08e6582c38d",
+  "sha256": "99b774708ad7737c5e9e6dd36e5656d824d08f41a9748f7ec96cf3fc9aa0d839",
   "donor_crops": [
     {
       "image": "523480776.jpg",

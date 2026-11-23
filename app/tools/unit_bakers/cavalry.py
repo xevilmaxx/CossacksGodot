@@ -83,6 +83,21 @@ KEYS = {
     "cossackdon": "cossackdon", "cossackregister": "cossackregister",
 }
 
+# SCOPED MOUNT SUB-TASK (parent final ruling, U90 items M2/M3). These two keys
+# are infantry-owned (T6-U02 rider-only HOLD); we bake NEW scoped COMPOSITE
+# sheets in OUR staging dir under the SAME key names — never touching U02's
+# infantry17 staging, its sheets, or any shared/live file. Donor base mapping
+# from the U02 handoff (T6-U02 §7.3) and our own read-only probe (C15).
+SCOPED_MOUNT_KEYS = {"cossack": "cossacksich", "croat": "croat"}
+BAKABLE_KEYS = dict(KEYS, **SCOPED_MOUNT_KEYS)
+
+# Best-supported shared de-travel rule per key (read-only probe C9/C15).
+#   16 cavalry keys: rider bone 0 (0.0758 m horse-body drift vs 0.6108 m horse-root).
+#   cossack (cossacksich): NONE 0.244 m (rider-root 0.990, horse-root 1.673).
+#   croat: HORSE-ROOT 0.189 m (none 0.250, rider-root 0.604).
+DETRAVEL = {k: "rider" for k in KEYS}
+DETRAVEL.update({"cossack": "none", "croat": "horse"})
+
 # Cavalry .aaf files expose walk/idle/attack/death only — no work/carry clips.
 # Donor-truth probe confirms this for all 16 keys (see report claim C3).
 PLAN_SPEC = (
@@ -130,6 +145,11 @@ def parse_args():
                     help="rider-only control bake (independent of mount piece)")
     ap.add_argument("--horse-tex", default=DEFAULT_HORSE_TEX,
                     help="donor horse skin filename under data/materials/units")
+    ap.add_argument("--mount-keys", default="",
+                    help="SCOPED sub-task: comma-separated keys from "
+                         "SCOPED_MOUNT_KEYS (cossack,croat). Bakes NEW composite "
+                         "sheets with per-key best-supported de-travel; never "
+                         "touches infantry-owned files")
     return ap.parse_args(rest)
 
 
@@ -161,9 +181,9 @@ def read_aaf_lines(path):
 
 
 def donor_truth(game):
-    """Observed table for all 16 keys (read-only, no Blender)."""
+    """Observed table for all 16 cavalry keys + 2 scoped mount keys (read-only)."""
     out = {}
-    for key, base in KEYS.items():
+    for key, base in BAKABLE_KEYS.items():
         op = os.path.join(game, "data", "actors", "units", base + ".oss")
         ap = os.path.join(game, "data", "animations", "aaf", base + ".aaf")
         mp = os.path.join(game, "data", "actors", "units", "attach",
@@ -253,16 +273,17 @@ def root_refs(m, hm, truth, root=0):
     return rr, hr, rider_home, horse_home
 
 
-def foot_pin_probe(m, hm, truth, mounted):
-    """Geometry-level Bug 2/3 probe. The SHARED de-travel is the rider's bone 0
-    in BOTH modes (see module header) — one global idle HOME, per-clip ref for
-    death.
+def foot_pin_probe(m, hm, truth, mounted, detravel="rider"):
+    """Geometry-level Bug 2/3 probe. `detravel` selects the SHARED displacement
+    applied to BOTH skeletons: "rider" (16 cavalry keys; module header),
+    "none" (cossack), "horse" (croat) — see DETRAVEL / C9 / C15.
 
     Rider-only: low-z (boot) centroid drift across all standing frames.
     Mounted: the low-z centroid follows the galloping hooves (large, EXPECTED
-   articulation), so the tile-pin proxy is the whole-MOUNT body centroid, which
-    is stationary in donor world space; plus a rider-vs-mount glue check."""
-    rr, _hr, rider_home, horse_home = root_refs(m, hm, truth)
+    articulation), so the tile-pin proxy is the whole-MOUNT body centroid;
+    plus a rider-vs-mount glue check. For the two scoped keys the foot-pin
+    band is N/A (parent ruling); the numbers are reported honestly, not gated."""
+    rr, hr, rider_home, horse_home = root_refs(m, hm, truth)
     idle = next(p for p in truth["plan"] if p["action"] == "idle")
     standing = [f for p in truth["plan"] if p["action"] != "death"
                 for f in p["sampled_frames"]]
@@ -279,8 +300,14 @@ def foot_pin_probe(m, hm, truth, mounted):
 
     rider_pts, horse_pts = {}, {}
     for fr in standing:
-        dx = m["anim"][0][fr][0] - rr[fr][0]
-        dy = m["anim"][0][fr][1] - rr[fr][1]
+        if detravel == "none":
+            dx, dy = 0.0, 0.0
+        elif detravel == "horse":
+            dx = hm["anim"][0][fr][0] - hr[fr][0]
+            dy = hm["anim"][0][fr][1] - hr[fr][1]
+        else:
+            dx = m["anim"][0][fr][0] - rr[fr][0]
+            dy = m["anim"][0][fr][1] - rr[fr][1]
         rider_pts[fr] = [(x - dx, y - dy, z) for x, y, z in ref.skin(m, fr)]
         if hm:
             horse_pts[fr] = [(x - dx, y - dy, z)
@@ -302,6 +329,7 @@ def foot_pin_probe(m, hm, truth, mounted):
         glue = None
     return dict(
         mode="mounted" if mounted else "rider_only",
+        detravel=detravel,
         pin_metric=("mount_body_centroid" if mounted else "rider_low_z_centroid"),
         rider_home=[round(rider_home[0], 4), round(rider_home[1], 4)],
         horse_home=[round(horse_home[0], 4), round(horse_home[1], 4)] if horse_home else None,
@@ -366,7 +394,7 @@ def save_crops(out, key, action, frames, size, no_mount):
 
 
 def bake_one(game, out, key, truth, size, samples, engine, tmp,
-             horse_tex, no_mount, metrics=True):
+             horse_tex, no_mount, metrics=True, detravel="rider"):
     """One unit, all five bug fixes, staged output only."""
     base = truth["base"]
     m = ref.read_oss(os.path.join(game, "data", "actors", "units", base + ".oss"))
@@ -376,18 +404,25 @@ def bake_one(game, out, key, truth, size, samples, engine, tmp,
                                        "attach", base + MOUNT_SUFFIX + ".oss"))
     plan = truth["plan"]
     root = 0  # BUG 2: always bone 0, never the max-weight bone/head
-    rr, _hr, _rider_home, _horse_home = root_refs(m, hm, truth)
+    rr, hr, _rider_home, _horse_home = root_refs(m, hm, truth)
 
-    # BUG 1 (qmat transposed) + BUG 2 (bone-0 de-travel). ONE SHARED rider-root
-    # displacement (global idle HOME; per-clip ref for death) is applied to
-    # BOTH skeletons — keeps the mount glued and on one tile (module header).
+    # BUG 1 (qmat transposed) + BUG 2 (bone-0 de-travel). ONE SHARED displacement
+    # is applied to BOTH skeletons — keeps the mount glued (module header).
+    # "rider" = rider bone 0 to idle HOME (16 cavalry keys); scoped sub-task
+    # overrides: "none" (cossack) / "horse" (croat), per probe C15.
     skinned, skinned_mount = {}, {}
     for p in plan:
         for fr in p["sampled_frames"]:
             if fr in skinned:
                 continue
-            dx = m["anim"][root][fr][0] - rr[fr][0]
-            dy = m["anim"][root][fr][1] - rr[fr][1]
+            if detravel == "none":
+                dx, dy = 0.0, 0.0
+            elif detravel == "horse":
+                dx = hm["anim"][0][fr][0] - hr[fr][0]
+                dy = hm["anim"][0][fr][1] - hr[fr][1]
+            else:
+                dx = m["anim"][root][fr][0] - rr[fr][0]
+                dy = m["anim"][root][fr][1] - rr[fr][1]
             skinned[fr] = [(x - dx, y - dy, z)
                            for x, y, z in ref.skin(m, fr)]
             if hm:
@@ -472,7 +507,8 @@ def bake_one(game, out, key, truth, size, samples, engine, tmp,
         raise ValueError("donor UV index out of range for combined mesh: " + base)
     ob = (build_mesh_two(m, mat, hm, hmat) if hm else ref.build_mesh(m, mat))
     entry = dict(cell=size, actions={}, mounted=bool(hm),
-                 horse_tex=(horse_tex if hm else None))
+                 horse_tex=(horse_tex if hm else None), detravel=detravel,
+                 scope=("scoped_mount" if key in SCOPED_MOUNT_KEYS else "family"))
     for p in plan:
         a = p["action"]
         g = "death" if a == "death" else "stand"
@@ -634,11 +670,19 @@ def main():
     if a.truth:
         print(json.dumps(truth, indent=1))
         return 0
-    keys = [k for k in a.only.split(",") if k]
-    bad = [k for k in keys if k not in KEYS]
-    if bad:
-        print("unknown keys", bad, "known", sorted(KEYS), file=sys.stderr)
-        return 2
+    if a.mount_keys:
+        keys = [k for k in a.mount_keys.split(",") if k]
+        bad = [k for k in keys if k not in SCOPED_MOUNT_KEYS]
+        if bad:
+            print("unknown scoped mount keys", bad, "known",
+                  sorted(SCOPED_MOUNT_KEYS), file=sys.stderr)
+            return 2
+    else:
+        keys = [k for k in a.only.split(",") if k]
+        bad = [k for k in keys if k not in KEYS]
+        if bad:
+            print("unknown keys", bad, "known", sorted(KEYS), file=sys.stderr)
+            return 2
     os.makedirs(a.out, exist_ok=True)
     mpath = os.path.join(a.out, "manifest.json")
     manifest = json.load(open(mpath, encoding="utf-8")) if os.path.exists(mpath) else {}
@@ -662,7 +706,7 @@ def main():
                 p = os.path.join(a.out, sheet_name(key, action, a.no_mount))
                 if os.path.exists(p):
                     ad.update(measure_sheet(p, a.size, key, action))
-            res = check_unit(key, truth, entry,
+            res = check_unit(key, truth[key], entry,
                              rec.get("foot_pin", {"ok": False}), a.out, a.no_mount)
             print("VERIFY", ukey, res["verdict"],
                   json.dumps(res["checks"], indent=1))
@@ -680,17 +724,21 @@ def main():
         if not a.no_mount and t["mount"]:
             hm = ref.read_oss(os.path.join(a.game, "data", "actors", "units",
                                            "attach", t["base"] + MOUNT_SUFFIX + ".oss"))
-        foot = foot_pin_probe(m, hm, t, mounted=not a.no_mount)
+        detravel = DETRAVEL.get(key, "rider")
+        foot = foot_pin_probe(m, hm, t, mounted=not a.no_mount,
+                              detravel=detravel)
         print("BAKE", key, "base", t["base"], "mount", bool(hm),
+              "detravel", detravel,
               "foot_pin", foot["max_stand_drift_m"], "m",
               "glue", foot["max_glue_drift_m"], flush=True)
         t0 = time.time()
         entry = bake_one(a.game, a.out, key, t, a.size, a.samples, a.engine,
-                         tmp, a.horse_tex, a.no_mount)
+                         tmp, a.horse_tex, a.no_mount, detravel=detravel)
         res = check_unit(key, t, entry, foot, a.out, a.no_mount)
         ukey = key + variant_suffix(a.no_mount)
         manifest["units"][ukey] = dict(
-            base=t["base"], mount=t["mount"],
+            base=t["base"], mount=t["mount"], detravel=detravel,
+            scope=entry["scope"],
             donor=dict(oss=t["oss"], oss_bytes=t["oss_bytes"], aaf=t["aaf"],
                        aaf_count=t["aaf_count"], attach=t["attach"]),
             foot_pin=foot, entry=entry, verification=res,

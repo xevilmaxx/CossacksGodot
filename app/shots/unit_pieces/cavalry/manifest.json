@@ -101,6 +101,1752 @@
      "cx": 0.5
     }
    }
+  },
+  "dragoon_rideronly": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.898,
+     "center": [
+      0.0,
+      0.0,
+      1.811
+     ],
+     "ax": 0.5,
+     "ay": 1.2005,
+     "tool": null,
+     "bbox": [
+      31,
+      34,
+      129,
+      131
+     ],
+     "fig_h": 0.6062,
+     "foot": 0.8187,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 3.898,
+     "center": [
+      0.0,
+      0.0,
+      1.811
+     ],
+     "ax": 0.5,
+     "ay": 1.2005,
+     "tool": null,
+     "bbox": [
+      30,
+      38,
+      130,
+      132
+     ],
+     "fig_h": 0.5875,
+     "foot": 0.825,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.433,
+     "loop": false,
+     "ortho": 3.898,
+     "center": [
+      0.0,
+      0.0,
+      1.811
+     ],
+     "ax": 0.5,
+     "ay": 1.2005,
+     "tool": null,
+     "bbox": [
+      8,
+      23,
+      152,
+      132
+     ],
+     "fig_h": 0.6813,
+     "foot": 0.825,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.413,
+     "center": [
+      0.0,
+      0.0,
+      1.37
+     ],
+     "ax": 0.5,
+     "ay": 0.7194,
+     "tool": null,
+     "bbox": [
+      8,
+      48,
+      152,
+      138
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8625,
+     "cx": 0.5
+    }
+   }
+  },
+  "dragoon17": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 4.354,
+     "center": [
+      0.0,
+      0.0,
+      1.348
+     ],
+     "ax": 0.5,
+     "ay": 0.9667,
+     "tool": "dragoon_horse",
+     "bbox": [
+      13,
+      26,
+      147,
+      148
+     ],
+     "fig_h": 0.7625,
+     "foot": 0.925,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.354,
+     "center": [
+      0.0,
+      0.0,
+      1.348
+     ],
+     "ax": 0.5,
+     "ay": 0.9667,
+     "tool": "dragoon_horse",
+     "bbox": [
+      14,
+      27,
+      146,
+      143
+     ],
+     "fig_h": 0.725,
+     "foot": 0.8938,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 1.133,
+     "loop": false,
+     "ortho": 4.354,
+     "center": [
+      0.0,
+      0.0,
+      1.348
+     ],
+     "ax": 0.5,
+     "ay": 0.9667,
+     "tool": "dragoon_horse",
+     "bbox": [
+      8,
+      14,
+      152,
+      144
+     ],
+     "fig_h": 0.8125,
+     "foot": 0.9,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.844,
+     "center": [
+      0.0,
+      0.0,
+      1.39
+     ],
+     "ax": 0.5,
+     "ay": 0.7128,
+     "tool": "dragoon_horse",
+     "bbox": [
+      8,
+      49,
+      152,
+      139
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  },
+  "hussar": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.533,
+     "loop": true,
+     "ortho": 4.865,
+     "center": [
+      0.0,
+      0.0,
+      1.691
+     ],
+     "ax": 0.5,
+     "ay": 1.0239,
+     "tool": "hussar_horse",
+     "bbox": [
+      19,
+      28,
+      141,
+      152
+     ],
+     "fig_h": 0.775,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.865,
+     "center": [
+      0.0,
+      0.0,
+      1.691
+     ],
+     "ax": 0.5,
+     "ay": 1.0239,
+     "tool": "hussar_horse",
+     "bbox": [
+      22,
+      38,
+      138,
+      145
+     ],
+     "fig_h": 0.6687,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 4.865,
+     "center": [
+      0.0,
+      0.0,
+      1.691
+     ],
+     "ax": 0.5,
+     "ay": 1.0239,
+     "tool": "hussar_horse",
+     "bbox": [
+      21,
+      13,
+      139,
+      145
+     ],
+     "fig_h": 0.825,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 10.071,
+     "center": [
+      0.0,
+      0.0,
+      1.422
+     ],
+     "ax": 0.5,
+     "ay": 0.7129,
+     "tool": "hussar_horse",
+     "bbox": [
+      8,
+      50,
+      152,
+      138
+     ],
+     "fig_h": 0.55,
+     "foot": 0.8625,
+     "cx": 0.5
+    }
+   }
+  },
+  "wingedhussar": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.533,
+     "loop": true,
+     "ortho": 7.951,
+     "center": [
+      0.0,
+      0.0,
+      1.758
+     ],
+     "ax": 0.5,
+     "ay": 0.8334,
+     "tool": "wingedhussar_horse",
+     "bbox": [
+      20,
+      41,
+      141,
+      126
+     ],
+     "fig_h": 0.5312,
+     "foot": 0.7875,
+     "cx": 0.5031
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 7.951,
+     "center": [
+      0.0,
+      0.0,
+      1.758
+     ],
+     "ax": 0.5,
+     "ay": 0.8334,
+     "tool": "wingedhussar_horse",
+     "bbox": [
+      19,
+      43,
+      141,
+      122
+     ],
+     "fig_h": 0.4938,
+     "foot": 0.7625,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.4,
+     "loop": false,
+     "ortho": 7.951,
+     "center": [
+      0.0,
+      0.0,
+      1.758
+     ],
+     "ax": 0.5,
+     "ay": 0.8334,
+     "tool": "wingedhussar_horse",
+     "bbox": [
+      9,
+      41,
+      152,
+      125
+     ],
+     "fig_h": 0.525,
+     "foot": 0.7812,
+     "cx": 0.5031
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 10.774,
+     "center": [
+      0.0,
+      0.0,
+      1.661
+     ],
+     "ax": 0.5,
+     "ay": 0.7325,
+     "tool": "wingedhussar_horse",
+     "bbox": [
+      8,
+      52,
+      152,
+      140
+     ],
+     "fig_h": 0.55,
+     "foot": 0.875,
+     "cx": 0.5
+    }
+   }
+  },
+  "cuirassier": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 4.428,
+     "center": [
+      0.0,
+      0.0,
+      1.497
+     ],
+     "ax": 0.5,
+     "ay": 1.0096,
+     "tool": "cuirassier_horse",
+     "bbox": [
+      12,
+      28,
+      148,
+      152
+     ],
+     "fig_h": 0.775,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.428,
+     "center": [
+      0.0,
+      0.0,
+      1.497
+     ],
+     "ax": 0.5,
+     "ay": 1.0096,
+     "tool": "cuirassier_horse",
+     "bbox": [
+      16,
+      32,
+      144,
+      145
+     ],
+     "fig_h": 0.7063,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 4.428,
+     "center": [
+      0.0,
+      0.0,
+      1.497
+     ],
+     "ax": 0.5,
+     "ay": 1.0096,
+     "tool": "cuirassier_horse",
+     "bbox": [
+      16,
+      20,
+      144,
+      145
+     ],
+     "fig_h": 0.7812,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.41,
+     "center": [
+      0.0,
+      0.0,
+      1.39
+     ],
+     "ax": 0.5,
+     "ay": 0.7227,
+     "tool": "cuirassier_horse",
+     "bbox": [
+      8,
+      49,
+      152,
+      139
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  },
+  "reiter": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 4.995,
+     "center": [
+      0.0,
+      0.0,
+      1.479
+     ],
+     "ax": 0.5,
+     "ay": 0.9463,
+     "tool": "reiter_horse",
+     "bbox": [
+      20,
+      33,
+      140,
+      143
+     ],
+     "fig_h": 0.6875,
+     "foot": 0.8938,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.995,
+     "center": [
+      0.0,
+      0.0,
+      1.479
+     ],
+     "ax": 0.5,
+     "ay": 0.9463,
+     "tool": "reiter_horse",
+     "bbox": [
+      23,
+      36,
+      137,
+      138
+     ],
+     "fig_h": 0.6375,
+     "foot": 0.8625,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 4.995,
+     "center": [
+      0.0,
+      0.0,
+      1.479
+     ],
+     "ax": 0.5,
+     "ay": 0.9463,
+     "tool": "reiter_horse",
+     "bbox": [
+      8,
+      27,
+      152,
+      146
+     ],
+     "fig_h": 0.7438,
+     "foot": 0.9125,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.984,
+     "center": [
+      0.0,
+      0.0,
+      1.423
+     ],
+     "ax": 0.5,
+     "ay": 0.715,
+     "tool": "reiter_horse",
+     "bbox": [
+      8,
+      50,
+      152,
+      139
+     ],
+     "fig_h": 0.5563,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  },
+  "lightcavalry": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 4.253,
+     "center": [
+      0.0,
+      0.0,
+      1.402
+     ],
+     "ax": 0.5,
+     "ay": 0.9972,
+     "tool": "lightcavalry_horse",
+     "bbox": [
+      9,
+      22,
+      151,
+      152
+     ],
+     "fig_h": 0.8125,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.253,
+     "center": [
+      0.0,
+      0.0,
+      1.402
+     ],
+     "ax": 0.5,
+     "ay": 0.9972,
+     "tool": "lightcavalry_horse",
+     "bbox": [
+      13,
+      26,
+      147,
+      145
+     ],
+     "fig_h": 0.7438,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.433,
+     "loop": false,
+     "ortho": 4.253,
+     "center": [
+      0.0,
+      0.0,
+      1.402
+     ],
+     "ax": 0.5,
+     "ay": 0.9972,
+     "tool": "lightcavalry_horse",
+     "bbox": [
+      12,
+      15,
+      148,
+      146
+     ],
+     "fig_h": 0.8187,
+     "foot": 0.9125,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.535,
+     "center": [
+      0.0,
+      0.0,
+      1.452
+     ],
+     "ax": 0.5,
+     "ay": 0.7295,
+     "tool": "lightcavalry_horse",
+     "bbox": [
+      8,
+      49,
+      152,
+      139
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  },
+  "hackapell": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.567,
+     "loop": true,
+     "ortho": 5.0,
+     "center": [
+      0.0,
+      0.0,
+      1.537
+     ],
+     "ax": 0.5,
+     "ay": 0.9634,
+     "tool": "hackapell_horse",
+     "bbox": [
+      19,
+      28,
+      141,
+      146
+     ],
+     "fig_h": 0.7375,
+     "foot": 0.9125,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 5.0,
+     "center": [
+      0.0,
+      0.0,
+      1.537
+     ],
+     "ax": 0.5,
+     "ay": 0.9634,
+     "tool": "hackapell_horse",
+     "bbox": [
+      23,
+      39,
+      137,
+      139
+     ],
+     "fig_h": 0.625,
+     "foot": 0.8688,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 5.0,
+     "center": [
+      0.0,
+      0.0,
+      1.537
+     ],
+     "ax": 0.5,
+     "ay": 0.9634,
+     "tool": "hackapell_horse",
+     "bbox": [
+      8,
+      29,
+      152,
+      147
+     ],
+     "fig_h": 0.7375,
+     "foot": 0.9187,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.646,
+     "center": [
+      0.0,
+      0.0,
+      1.438
+     ],
+     "ax": 0.5,
+     "ay": 0.7247,
+     "tool": "hackapell_horse",
+     "bbox": [
+      8,
+      51,
+      152,
+      139
+     ],
+     "fig_h": 0.55,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  },
+  "tatar": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 4.372,
+     "center": [
+      0.0,
+      0.0,
+      1.463
+     ],
+     "ax": 0.5,
+     "ay": 1.0045,
+     "tool": "tatar_horse",
+     "bbox": [
+      11,
+      27,
+      149,
+      152
+     ],
+     "fig_h": 0.7812,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.372,
+     "center": [
+      0.0,
+      0.0,
+      1.463
+     ],
+     "ax": 0.5,
+     "ay": 1.0045,
+     "tool": "tatar_horse",
+     "bbox": [
+      15,
+      31,
+      145,
+      145
+     ],
+     "fig_h": 0.7125,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.967,
+     "loop": false,
+     "ortho": 4.372,
+     "center": [
+      0.0,
+      0.0,
+      1.463
+     ],
+     "ax": 0.5,
+     "ay": 1.0045,
+     "tool": "tatar_horse",
+     "bbox": [
+      12,
+      15,
+      148,
+      147
+     ],
+     "fig_h": 0.825,
+     "foot": 0.9187,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.673,
+     "center": [
+      0.0,
+      0.0,
+      1.367
+     ],
+     "ax": 0.5,
+     "ay": 0.7131,
+     "tool": "tatar_horse",
+     "bbox": [
+      8,
+      48,
+      152,
+      138
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8625,
+     "cx": 0.5
+    }
+   }
+  },
+  "sipahi": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.833,
+     "loop": true,
+     "ortho": 4.997,
+     "center": [
+      0.0,
+      0.0,
+      1.64
+     ],
+     "ax": 0.5,
+     "ay": 0.9949,
+     "tool": "sipahi_horse",
+     "bbox": [
+      20,
+      35,
+      140,
+      148
+     ],
+     "fig_h": 0.7063,
+     "foot": 0.925,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.997,
+     "center": [
+      0.0,
+      0.0,
+      1.64
+     ],
+     "ax": 0.5,
+     "ay": 0.9949,
+     "tool": "sipahi_horse",
+     "bbox": [
+      23,
+      38,
+      137,
+      142
+     ],
+     "fig_h": 0.65,
+     "foot": 0.8875,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.4,
+     "loop": false,
+     "ortho": 4.997,
+     "center": [
+      0.0,
+      0.0,
+      1.64
+     ],
+     "ax": 0.5,
+     "ay": 0.9949,
+     "tool": "sipahi_horse",
+     "bbox": [
+      8,
+      23,
+      152,
+      150
+     ],
+     "fig_h": 0.7937,
+     "foot": 0.9375,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.857,
+     "center": [
+      0.0,
+      0.0,
+      1.472
+     ],
+     "ax": 0.5,
+     "ay": 0.7252,
+     "tool": "sipahi_horse",
+     "bbox": [
+      8,
+      50,
+      152,
+      139
+     ],
+     "fig_h": 0.5563,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  },
+  "spakh": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 7.405,
+     "center": [
+      0.0,
+      0.0,
+      1.486
+     ],
+     "ax": 0.5,
+     "ay": 0.8026,
+     "tool": "spakh_horse",
+     "bbox": [
+      20,
+      38,
+      140,
+      122
+     ],
+     "fig_h": 0.525,
+     "foot": 0.7625,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 7.405,
+     "center": [
+      0.0,
+      0.0,
+      1.486
+     ],
+     "ax": 0.5,
+     "ay": 0.8026,
+     "tool": "spakh_horse",
+     "bbox": [
+      20,
+      42,
+      139,
+      119
+     ],
+     "fig_h": 0.4813,
+     "foot": 0.7438,
+     "cx": 0.4969
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 7.405,
+     "center": [
+      0.0,
+      0.0,
+      1.486
+     ],
+     "ax": 0.5,
+     "ay": 0.8026,
+     "tool": "spakh_horse",
+     "bbox": [
+      9,
+      36,
+      152,
+      119
+     ],
+     "fig_h": 0.5188,
+     "foot": 0.7438,
+     "cx": 0.5031
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.68,
+     "center": [
+      0.0,
+      0.0,
+      1.333
+     ],
+     "ax": 0.5,
+     "ay": 0.7076,
+     "tool": "spakh_horse",
+     "bbox": [
+      9,
+      49,
+      152,
+      138
+     ],
+     "fig_h": 0.5563,
+     "foot": 0.8625,
+     "cx": 0.5031
+    }
+   }
+  },
+  "mameluke": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 7.3,
+     "center": [
+      0.0,
+      0.0,
+      1.569
+     ],
+     "ax": 0.5,
+     "ay": 0.824,
+     "tool": "mameluke_horse",
+     "bbox": [
+      22,
+      40,
+      138,
+      125
+     ],
+     "fig_h": 0.5312,
+     "foot": 0.7812,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 7.3,
+     "center": [
+      0.0,
+      0.0,
+      1.569
+     ],
+     "ax": 0.5,
+     "ay": 0.824,
+     "tool": "mameluke_horse",
+     "bbox": [
+      22,
+      44,
+      138,
+      121
+     ],
+     "fig_h": 0.4813,
+     "foot": 0.7562,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 7.3,
+     "center": [
+      0.0,
+      0.0,
+      1.569
+     ],
+     "ax": 0.5,
+     "ay": 0.824,
+     "tool": "mameluke_horse",
+     "bbox": [
+      9,
+      38,
+      152,
+      122
+     ],
+     "fig_h": 0.525,
+     "foot": 0.7625,
+     "cx": 0.5031
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 10.0,
+     "center": [
+      0.0,
+      0.0,
+      1.425
+     ],
+     "ax": 0.5,
+     "ay": 0.7148,
+     "tool": "mameluke_horse",
+     "bbox": [
+      8,
+      52,
+      152,
+      140
+     ],
+     "fig_h": 0.55,
+     "foot": 0.875,
+     "cx": 0.5
+    }
+   }
+  },
+  "vityaz": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.833,
+     "loop": true,
+     "ortho": 4.997,
+     "center": [
+      0.0,
+      0.0,
+      1.564
+     ],
+     "ax": 0.5,
+     "ay": 0.972,
+     "tool": "vityaz_horse",
+     "bbox": [
+      20,
+      37,
+      140,
+      146
+     ],
+     "fig_h": 0.6813,
+     "foot": 0.9125,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.997,
+     "center": [
+      0.0,
+      0.0,
+      1.564
+     ],
+     "ax": 0.5,
+     "ay": 0.972,
+     "tool": "vityaz_horse",
+     "bbox": [
+      23,
+      40,
+      137,
+      140
+     ],
+     "fig_h": 0.625,
+     "foot": 0.875,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.4,
+     "loop": false,
+     "ortho": 4.997,
+     "center": [
+      0.0,
+      0.0,
+      1.564
+     ],
+     "ax": 0.5,
+     "ay": 0.972,
+     "tool": "vityaz_horse",
+     "bbox": [
+      8,
+      23,
+      152,
+      148
+     ],
+     "fig_h": 0.7812,
+     "foot": 0.925,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.614,
+     "center": [
+      0.0,
+      0.0,
+      1.409
+     ],
+     "ax": 0.5,
+     "ay": 0.721,
+     "tool": "vityaz_horse",
+     "bbox": [
+      8,
+      49,
+      151,
+      137
+     ],
+     "fig_h": 0.55,
+     "foot": 0.8562,
+     "cx": 0.4969
+    }
+   }
+  },
+  "hetman": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 5.158,
+     "center": [
+      0.0,
+      0.0,
+      1.853
+     ],
+     "ax": 0.5,
+     "ay": 1.0416,
+     "tool": "hetman_horse",
+     "bbox": [
+      21,
+      38,
+      139,
+      152
+     ],
+     "fig_h": 0.7125,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 5.158,
+     "center": [
+      0.0,
+      0.0,
+      1.853
+     ],
+     "ax": 0.5,
+     "ay": 1.0416,
+     "tool": "hetman_horse",
+     "bbox": [
+      24,
+      40,
+      136,
+      146
+     ],
+     "fig_h": 0.6625,
+     "foot": 0.9125,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.5,
+     "loop": false,
+     "ortho": 5.158,
+     "center": [
+      0.0,
+      0.0,
+      1.853
+     ],
+     "ax": 0.5,
+     "ay": 1.0416,
+     "tool": "hetman_horse",
+     "bbox": [
+      17,
+      15,
+      143,
+      146
+     ],
+     "fig_h": 0.8187,
+     "foot": 0.9125,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 10.138,
+     "center": [
+      0.0,
+      0.0,
+      1.401
+     ],
+     "ax": 0.5,
+     "ay": 0.7084,
+     "tool": "hetman_horse",
+     "bbox": [
+      8,
+      50,
+      152,
+      136
+     ],
+     "fig_h": 0.5375,
+     "foot": 0.85,
+     "cx": 0.5
+    }
+   }
+  },
+  "cossackdon": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 6.343,
+     "center": [
+      0.0,
+      0.0,
+      1.449
+     ],
+     "ax": 0.5,
+     "ay": 0.8443,
+     "tool": "cossackdon_horse",
+     "bbox": [
+      24,
+      34,
+      137,
+      129
+     ],
+     "fig_h": 0.5938,
+     "foot": 0.8063,
+     "cx": 0.5031
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 6.343,
+     "center": [
+      0.0,
+      0.0,
+      1.449
+     ],
+     "ax": 0.5,
+     "ay": 0.8443,
+     "tool": "cossackdon_horse",
+     "bbox": [
+      26,
+      38,
+      135,
+      125
+     ],
+     "fig_h": 0.5437,
+     "foot": 0.7812,
+     "cx": 0.5031
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 6.343,
+     "center": [
+      0.0,
+      0.0,
+      1.449
+     ],
+     "ax": 0.5,
+     "ay": 0.8443,
+     "tool": "cossackdon_horse",
+     "bbox": [
+      9,
+      35,
+      151,
+      127
+     ],
+     "fig_h": 0.575,
+     "foot": 0.7937,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.69,
+     "center": [
+      0.0,
+      0.0,
+      1.416
+     ],
+     "ax": 0.5,
+     "ay": 0.7203,
+     "tool": "cossackdon_horse",
+     "bbox": [
+      8,
+      48,
+      152,
+      137
+     ],
+     "fig_h": 0.5563,
+     "foot": 0.8562,
+     "cx": 0.5
+    }
+   }
+  },
+  "cossackregister": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.833,
+     "loop": true,
+     "ortho": 6.137,
+     "center": [
+      0.0,
+      0.0,
+      1.439
+     ],
+     "ax": 0.5,
+     "ay": 0.8534,
+     "tool": "cossackregister_horse",
+     "bbox": [
+      23,
+      36,
+      136,
+      131
+     ],
+     "fig_h": 0.5938,
+     "foot": 0.8187,
+     "cx": 0.4969
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 6.137,
+     "center": [
+      0.0,
+      0.0,
+      1.439
+     ],
+     "ax": 0.5,
+     "ay": 0.8534,
+     "tool": "cossackregister_horse",
+     "bbox": [
+      23,
+      34,
+      137,
+      126
+     ],
+     "fig_h": 0.575,
+     "foot": 0.7875,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 6.137,
+     "center": [
+      0.0,
+      0.0,
+      1.439
+     ],
+     "ax": 0.5,
+     "ay": 0.8534,
+     "tool": "cossackregister_horse",
+     "bbox": [
+      9,
+      32,
+      151,
+      127
+     ],
+     "fig_h": 0.5938,
+     "foot": 0.7937,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.772,
+     "center": [
+      0.0,
+      0.0,
+      1.394
+     ],
+     "ax": 0.5,
+     "ay": 0.7151,
+     "tool": "cossackregister_horse",
+     "bbox": [
+      8,
+      49,
+      152,
+      137
+     ],
+     "fig_h": 0.55,
+     "foot": 0.8562,
+     "cx": 0.5
+    }
+   }
+  },
+  "cossack": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 1.6,
+     "loop": true,
+     "ortho": 5.214,
+     "center": [
+      0.0,
+      0.0,
+      1.796
+     ],
+     "ax": 0.5,
+     "ay": 1.0193,
+     "tool": "cossacksich_horse",
+     "bbox": [
+      21,
+      24,
+      139,
+      152
+     ],
+     "fig_h": 0.8,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 5.214,
+     "center": [
+      0.0,
+      0.0,
+      1.796
+     ],
+     "ax": 0.5,
+     "ay": 1.0193,
+     "tool": "cossacksich_horse",
+     "bbox": [
+      25,
+      47,
+      135,
+      143
+     ],
+     "fig_h": 0.6,
+     "foot": 0.8938,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.433,
+     "loop": false,
+     "ortho": 5.214,
+     "center": [
+      0.0,
+      0.0,
+      1.796
+     ],
+     "ax": 0.5,
+     "ay": 1.0193,
+     "tool": "cossacksich_horse",
+     "bbox": [
+      20,
+      16,
+      140,
+      143
+     ],
+     "fig_h": 0.7937,
+     "foot": 0.8938,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.333,
+     "loop": false,
+     "ortho": 5.43,
+     "center": [
+      0.0,
+      0.0,
+      1.394
+     ],
+     "ax": 0.5,
+     "ay": 0.8871,
+     "tool": "cossacksich_horse",
+     "bbox": [
+      8,
+      29,
+      152,
+      152
+     ],
+     "fig_h": 0.7688,
+     "foot": 0.95,
+     "cx": 0.5
+    }
+   }
+  },
+  "croat": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.567,
+     "loop": true,
+     "ortho": 4.847,
+     "center": [
+      0.0,
+      0.0,
+      1.623
+     ],
+     "ax": 0.5,
+     "ay": 1.0048,
+     "tool": "croat_horse",
+     "bbox": [
+      18,
+      35,
+      142,
+      152
+     ],
+     "fig_h": 0.7312,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.847,
+     "center": [
+      0.0,
+      0.0,
+      1.623
+     ],
+     "ax": 0.5,
+     "ay": 1.0048,
+     "tool": "croat_horse",
+     "bbox": [
+      21,
+      40,
+      139,
+      144
+     ],
+     "fig_h": 0.65,
+     "foot": 0.9,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.467,
+     "loop": false,
+     "ortho": 4.847,
+     "center": [
+      0.0,
+      0.0,
+      1.623
+     ],
+     "ax": 0.5,
+     "ay": 1.0048,
+     "tool": "croat_horse",
+     "bbox": [
+      21,
+      23,
+      139,
+      144
+     ],
+     "fig_h": 0.7562,
+     "foot": 0.9,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 5.985,
+     "center": [
+      0.0,
+      0.0,
+      1.448
+     ],
+     "ax": 0.5,
+     "ay": 0.8649,
+     "tool": "croat_horse",
+     "bbox": [
+      8,
+      36,
+      152,
+      152
+     ],
+     "fig_h": 0.725,
+     "foot": 0.95,
+     "cx": 0.5
+    }
+   }
   }
  },
  "units": {
@@ -579,6 +2325,8538 @@
     "verdict": "PASS"
    },
    "bake_seconds": 49.01
+  },
+  "dragoon_rideronly": {
+   "base": "dragoon18",
+   "mount": {
+    "file": "dragoon18_horse.oss",
+    "header": {
+     "k": 639,
+     "fps": 30,
+     "bones": 24,
+     "verts": 807,
+     "faces": 1146,
+     "uvs": 1086,
+     "size": 484992
+    },
+    "bytes": 484992,
+    "closure": 484992,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\dragoon18.aaf\n   ActorList.Items[0].Name = dragoon18_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\dragoon18_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0022,
+     -0.1534,
+     -0.0697
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "592": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.765
+      ],
+      "horse": [
+       0.043,
+       -0.491,
+       -0.003
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 639,
+     "fps": 30,
+     "bones": 16,
+     "verts": 814,
+     "faces": 1124,
+     "uvs": 1039
+    },
+    "oss_bytes": 341144,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 418,
+      "last": 502,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 592,
+      "last": 604,
+      "count": 13,
+      "duration": 0.433
+     },
+     "prepare0": {
+      "first": 214,
+      "last": 227,
+      "count": 14,
+      "duration": 0.467
+     },
+     "unprepare0": {
+      "first": 200,
+      "last": 213,
+      "count": 14,
+      "duration": 0.467
+     },
+     "death0": {
+      "first": 124,
+      "last": 195,
+      "count": 72,
+      "duration": 2.4
+     }
+    },
+    "aaf_count": 9,
+    "attach": [
+     "dragoon18_horse.actor",
+     "dragoon18_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "rider_only",
+    "pin_metric": "rider_low_z_centroid",
+    "rider_home": [
+     -2.0029,
+     -0.3641
+    ],
+    "horse_home": null,
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0104,
+     -0.4606
+    ],
+    "max_stand_drift_m": 0.0186,
+    "max_glue_drift_m": null,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.898,
+      "center": [
+       0.0,
+       0.0,
+       1.811
+      ],
+      "ax": 0.5,
+      "ay": 1.2005,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": false,
+      "bbox": [
+       31,
+       34,
+       129,
+       131
+      ],
+      "fig_h": 0.6062,
+      "foot": 0.8187,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 3.898,
+      "center": [
+       0.0,
+       0.0,
+       1.811
+      ],
+      "ax": 0.5,
+      "ay": 1.2005,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": false,
+      "bbox": [
+       30,
+       38,
+       130,
+       132
+      ],
+      "fig_h": 0.5875,
+      "foot": 0.825,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.433,
+      "loop": false,
+      "ortho": 3.898,
+      "center": [
+       0.0,
+       0.0,
+       1.811
+      ],
+      "ax": 0.5,
+      "ay": 1.2005,
+      "tool": null,
+      "donor_name": "attack0",
+      "donor_range": [
+       592,
+       604
+      ],
+      "donor_count": 13,
+      "fps": 30,
+      "sampled_frames": [
+       592,
+       593,
+       594,
+       595,
+       596,
+       597,
+       599,
+       600,
+       601,
+       602,
+       603,
+       604
+      ],
+      "group": "stand",
+      "mounted": false,
+      "bbox": [
+       8,
+       23,
+       152,
+       132
+      ],
+      "fig_h": 0.6813,
+      "foot": 0.825,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.413,
+      "center": [
+       0.0,
+       0.0,
+       1.37
+      ],
+      "ax": 0.5,
+      "ay": 0.7194,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": false,
+      "bbox": [
+       8,
+       48,
+       152,
+       138
+      ],
+      "fig_h": 0.5625,
+      "foot": 0.8625,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": false,
+    "horse_tex": null
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 341144,
+      "expected": 341144
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        592,
+        604,
+        0.433
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       3.898,
+       [
+        0.0,
+        0.0,
+        1.811
+       ],
+       0.5,
+       1.2005
+      ],
+      "death_sig": [
+       9.413,
+       [
+        0.0,
+        0.0,
+        1.37
+       ],
+       0.5,
+       0.7194
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "rider_only",
+      "pin_metric": "rider_low_z_centroid",
+      "rider_home": [
+       -2.0029,
+       -0.3641
+      ],
+      "horse_home": null,
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0104,
+       -0.4606
+      ],
+      "max_stand_drift_m": 0.0186,
+      "max_glue_drift_m": null,
+      "band": 0.5,
+      "ok": true,
+      "gating": true,
+      "note": "gating: rider-only foot band"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": null,
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_mount": "dragoon18_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 71.22
+  },
+  "dragoon17": {
+   "base": "dragoon",
+   "mount": {
+    "file": "dragoon_horse.oss",
+    "header": {
+     "k": 725,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 759,
+     "size": 530824
+    },
+    "bytes": 530824,
+    "closure": 530824,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\dragoon.aaf\n   ActorList.Items[0].Name = dragoon_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\dragoon_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2082,
+     -0.0496
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.168,
+       -0.379,
+       0.694
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.168,
+       -0.379,
+       0.694
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "592": {
+      "rider": [
+       -2.168,
+       -0.379,
+       0.694
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "626": {
+      "rider": [
+       -2.166,
+       -0.455,
+       0.714
+      ],
+      "horse": [
+       0.006,
+       -0.456,
+       -0.018
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 725,
+     "fps": 30,
+     "bones": 16,
+     "verts": 726,
+     "faces": 996,
+     "uvs": 913
+    },
+    "oss_bytes": 373480,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 418,
+      "last": 502,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 654,
+      "last": 723,
+      "count": 70,
+      "duration": 2.333
+     },
+     "walk": {
+      "first": 626,
+      "last": 649,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "death0": {
+      "first": 185,
+      "last": 256,
+      "count": 72,
+      "duration": 2.4
+     },
+     "attack0": {
+      "first": 592,
+      "last": 625,
+      "count": 34,
+      "duration": 1.133
+     },
+     "prepare0": {
+      "first": 165,
+      "last": 178,
+      "count": 14,
+      "duration": 0.467
+     },
+     "unprepare0": {
+      "first": 150,
+      "last": 164,
+      "count": 15,
+      "duration": 0.5
+     }
+    },
+    "aaf_count": 9,
+    "attach": [
+     "dragoon_horse.actor",
+     "dragoon_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.1681,
+     -0.379
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2082
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     -0.0004,
+     -0.4796
+    ],
+    "max_stand_drift_m": 0.0258,
+    "max_glue_drift_m": 0.1403,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 4.354,
+      "center": [
+       0.0,
+       0.0,
+       1.348
+      ],
+      "ax": 0.5,
+      "ay": 0.9667,
+      "tool": "dragoon_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       626,
+       649
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       626,
+       628,
+       630,
+       632,
+       634,
+       636,
+       639,
+       641,
+       643,
+       645,
+       647,
+       649
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       13,
+       26,
+       147,
+       148
+      ],
+      "fig_h": 0.7625,
+      "foot": 0.925,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.354,
+      "center": [
+       0.0,
+       0.0,
+       1.348
+      ],
+      "ax": 0.5,
+      "ay": 0.9667,
+      "tool": "dragoon_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       14,
+       27,
+       146,
+       143
+      ],
+      "fig_h": 0.725,
+      "foot": 0.8938,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 1.133,
+      "loop": false,
+      "ortho": 4.354,
+      "center": [
+       0.0,
+       0.0,
+       1.348
+      ],
+      "ax": 0.5,
+      "ay": 0.9667,
+      "tool": "dragoon_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       592,
+       625
+      ],
+      "donor_count": 34,
+      "fps": 30,
+      "sampled_frames": [
+       592,
+       595,
+       598,
+       601,
+       604,
+       607,
+       610,
+       613,
+       616,
+       619,
+       622,
+       625
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       8,
+       14,
+       152,
+       144
+      ],
+      "fig_h": 0.8125,
+      "foot": 0.9,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.844,
+      "center": [
+       0.0,
+       0.0,
+       1.39
+      ],
+      "ax": 0.5,
+      "ay": 0.7128,
+      "tool": "dragoon_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       49,
+       152,
+       139
+      ],
+      "fig_h": 0.5625,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 373480,
+      "expected": 373480
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        626,
+        649,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        592,
+        625,
+        1.133
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.354,
+       [
+        0.0,
+        0.0,
+        1.348
+       ],
+       0.5,
+       0.9667
+      ],
+      "death_sig": [
+       9.844,
+       [
+        0.0,
+        0.0,
+        1.39
+       ],
+       0.5,
+       0.7128
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.1681,
+       -0.379
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2082
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       -0.0004,
+       -0.4796
+      ],
+      "max_stand_drift_m": 0.0258,
+      "max_glue_drift_m": 0.1403,
+      "band": 0.5,
+      "ok": true,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "dragoon_horse",
+      "observed": [
+       "dragoon_horse",
+       "dragoon_horse",
+       "dragoon_horse",
+       "dragoon_horse"
+      ],
+      "donor_mount": "dragoon_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 42.69
+  },
+  "hussar": {
+   "base": "hussar",
+   "mount": {
+    "file": "hussar_horse.oss",
+    "header": {
+     "k": 607,
+     "fps": 30,
+     "bones": 24,
+     "verts": 807,
+     "faces": 1146,
+     "uvs": 1086,
+     "size": 463488
+    },
+    "bytes": 463488,
+    "closure": 463488,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\hussar.aaf\n   ActorList.Items[0].Name = hussar_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\hussar_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2805,
+     -0.0252
+    ],
+    "root_static": false,
+    "root_probe": {
+     "1": {
+      "rider": [
+       -2.168,
+       -0.516,
+       0.66
+      ],
+      "horse": [
+       0.011,
+       -0.085,
+       -0.097
+      ]
+     },
+     "49": {
+      "rider": [
+       -2.168,
+       -0.419,
+       0.748
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.168,
+       -0.419,
+       0.748
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     },
+     "592": {
+      "rider": [
+       -2.168,
+       -0.419,
+       0.748
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 607,
+     "fps": 30,
+     "bones": 21,
+     "verts": 684,
+     "faces": 994,
+     "uvs": 821
+    },
+    "oss_bytes": 403796,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "walk": {
+      "first": 1,
+      "last": 16,
+      "count": 16,
+      "duration": 0.533
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 592,
+      "last": 605,
+      "count": 14,
+      "duration": 0.467
+     },
+     "prepare0": {
+      "first": 335,
+      "last": 336,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 335,
+      "last": 336,
+      "count": 2,
+      "duration": 0.067
+     }
+    },
+    "aaf_count": 7,
+    "attach": [
+     "hussar_horse.actor",
+     "hussar_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.1681,
+     -0.4193
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2805
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0072,
+     -0.4729
+    ],
+    "max_stand_drift_m": 0.255,
+    "max_glue_drift_m": 0.2052,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.533,
+      "loop": true,
+      "ortho": 4.865,
+      "center": [
+       0.0,
+       0.0,
+       1.691
+      ],
+      "ax": 0.5,
+      "ay": 1.0239,
+      "tool": "hussar_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       16
+      ],
+      "donor_count": 16,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       2,
+       4,
+       5,
+       6,
+       8,
+       9,
+       11,
+       12,
+       13,
+       15,
+       16
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       19,
+       28,
+       141,
+       152
+      ],
+      "fig_h": 0.775,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.865,
+      "center": [
+       0.0,
+       0.0,
+       1.691
+      ],
+      "ax": 0.5,
+      "ay": 1.0239,
+      "tool": "hussar_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       22,
+       38,
+       138,
+       145
+      ],
+      "fig_h": 0.6687,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 4.865,
+      "center": [
+       0.0,
+       0.0,
+       1.691
+      ],
+      "ax": 0.5,
+      "ay": 1.0239,
+      "tool": "hussar_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       592,
+       605
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       592,
+       593,
+       594,
+       596,
+       597,
+       598,
+       599,
+       600,
+       601,
+       603,
+       604,
+       605
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       21,
+       13,
+       139,
+       145
+      ],
+      "fig_h": 0.825,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 10.071,
+      "center": [
+       0.0,
+       0.0,
+       1.422
+      ],
+      "ax": 0.5,
+      "ay": 0.7129,
+      "tool": "hussar_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       50,
+       152,
+       138
+      ],
+      "fig_h": 0.55,
+      "foot": 0.8625,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 403796,
+      "expected": 403796
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        16,
+        0.533
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        592,
+        605,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.865,
+       [
+        0.0,
+        0.0,
+        1.691
+       ],
+       0.5,
+       1.0239
+      ],
+      "death_sig": [
+       10.071,
+       [
+        0.0,
+        0.0,
+        1.422
+       ],
+       0.5,
+       0.7129
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.1681,
+       -0.4193
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2805
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0072,
+       -0.4729
+      ],
+      "max_stand_drift_m": 0.255,
+      "max_glue_drift_m": 0.2052,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "hussar_horse",
+      "observed": [
+       "hussar_horse",
+       "hussar_horse",
+       "hussar_horse",
+       "hussar_horse"
+      ],
+      "donor_mount": "hussar_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 32.33
+  },
+  "wingedhussar": {
+   "base": "wingedhussar",
+   "mount": {
+    "file": "wingedhussar_horse.oss",
+    "header": {
+     "k": 669,
+     "fps": 30,
+     "bones": 24,
+     "verts": 781,
+     "faces": 1150,
+     "uvs": 935,
+     "size": 503480
+    },
+    "bytes": 503480,
+    "closure": 503480,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\wingedhussar.aaf\n   ActorList.Items[0].Name = wingedhussar_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\wingedhussar_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0019,
+     0.1328,
+     -0.0465
+    ],
+    "root_static": false,
+    "root_probe": {
+     "1": {
+      "rider": [
+       -1.997,
+       -0.434,
+       0.711
+      ],
+      "horse": [
+       0.028,
+       1.002,
+       0.087
+      ]
+     },
+     "49": {
+      "rider": [
+       -1.997,
+       -0.332,
+       0.788
+      ],
+      "horse": [
+       -0.002,
+       0.133,
+       -0.047
+      ]
+     },
+     "505": {
+      "rider": [
+       -1.997,
+       -0.332,
+       0.788
+      ],
+      "horse": [
+       -0.002,
+       0.133,
+       -0.047
+      ]
+     },
+     "656": {
+      "rider": [
+       -1.997,
+       -0.332,
+       0.788
+      ],
+      "horse": [
+       -0.002,
+       0.133,
+       -0.047
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 669,
+     "fps": 30,
+     "bones": 21,
+     "verts": 881,
+     "faces": 1199,
+     "uvs": 1950
+    },
+    "oss_bytes": 458916,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 16,
+      "count": 16,
+      "duration": 0.533
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 656,
+      "last": 667,
+      "count": 12,
+      "duration": 0.4
+     },
+     "prepare0": {
+      "first": 505,
+      "last": 506,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 505,
+      "last": 506,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "wingedhussar_horse.actor",
+     "wingedhussar_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -1.997,
+     -0.3316
+    ],
+    "horse_home": [
+     -0.0019,
+     0.1328
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0001,
+     -0.4148
+    ],
+    "max_stand_drift_m": 0.2837,
+    "max_glue_drift_m": 0.2782,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.533,
+      "loop": true,
+      "ortho": 7.951,
+      "center": [
+       0.0,
+       0.0,
+       1.758
+      ],
+      "ax": 0.5,
+      "ay": 0.8334,
+      "tool": "wingedhussar_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       16
+      ],
+      "donor_count": 16,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       2,
+       4,
+       5,
+       6,
+       8,
+       9,
+       11,
+       12,
+       13,
+       15,
+       16
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       20,
+       41,
+       141,
+       126
+      ],
+      "fig_h": 0.5312,
+      "foot": 0.7875,
+      "cx": 0.5031,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 7.951,
+      "center": [
+       0.0,
+       0.0,
+       1.758
+      ],
+      "ax": 0.5,
+      "ay": 0.8334,
+      "tool": "wingedhussar_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       19,
+       43,
+       141,
+       122
+      ],
+      "fig_h": 0.4938,
+      "foot": 0.7625,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.4,
+      "loop": false,
+      "ortho": 7.951,
+      "center": [
+       0.0,
+       0.0,
+       1.758
+      ],
+      "ax": 0.5,
+      "ay": 0.8334,
+      "tool": "wingedhussar_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       656,
+       667
+      ],
+      "donor_count": 12,
+      "fps": 30,
+      "sampled_frames": [
+       656,
+       657,
+       658,
+       659,
+       660,
+       661,
+       662,
+       663,
+       664,
+       665,
+       666,
+       667
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       9,
+       41,
+       152,
+       125
+      ],
+      "fig_h": 0.525,
+      "foot": 0.7812,
+      "cx": 0.5031,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 10.774,
+      "center": [
+       0.0,
+       0.0,
+       1.661
+      ],
+      "ax": 0.5,
+      "ay": 0.7325,
+      "tool": "wingedhussar_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       52,
+       152,
+       140
+      ],
+      "fig_h": 0.55,
+      "foot": 0.875,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 458916,
+      "expected": 458916
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        16,
+        0.533
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        656,
+        667,
+        0.4
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       7.951,
+       [
+        0.0,
+        0.0,
+        1.758
+       ],
+       0.5,
+       0.8334
+      ],
+      "death_sig": [
+       10.774,
+       [
+        0.0,
+        0.0,
+        1.661
+       ],
+       0.5,
+       0.7325
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -1.997,
+       -0.3316
+      ],
+      "horse_home": [
+       -0.0019,
+       0.1328
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0001,
+       -0.4148
+      ],
+      "max_stand_drift_m": 0.2837,
+      "max_glue_drift_m": 0.2782,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "wingedhussar_horse",
+      "observed": [
+       "wingedhussar_horse",
+       "wingedhussar_horse",
+       "wingedhussar_horse",
+       "wingedhussar_horse"
+      ],
+      "donor_mount": "wingedhussar_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 24.14
+  },
+  "cuirassier": {
+   "base": "cuirassier",
+   "mount": {
+    "file": "cuirassier_horse.oss",
+    "header": {
+     "k": 655,
+     "fps": 30,
+     "bones": 24,
+     "verts": 807,
+     "faces": 1146,
+     "uvs": 1086,
+     "size": 495744
+    },
+    "bytes": 495744,
+    "closure": 495744,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\cuirassier.aaf\n   ActorList.Items[0].Name = cuirassier_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\cuirassier_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2082,
+     -0.0495
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       0.0,
+       -0.456,
+       -0.018
+      ]
+     },
+     "640": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 655,
+     "fps": 30,
+     "bones": 16,
+     "verts": 833,
+     "faces": 1144,
+     "uvs": 1123
+    },
+    "oss_bytes": 353016,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 640,
+      "last": 653,
+      "count": 14,
+      "duration": 0.467
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "cuirassier_horse.actor",
+     "cuirassier_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0105,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2082
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0038,
+     -0.6317
+    ],
+    "max_stand_drift_m": 0.1005,
+    "max_glue_drift_m": 0.2243,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 4.428,
+      "center": [
+       0.0,
+       0.0,
+       1.497
+      ],
+      "ax": 0.5,
+      "ay": 1.0096,
+      "tool": "cuirassier_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       12,
+       28,
+       148,
+       152
+      ],
+      "fig_h": 0.775,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.428,
+      "center": [
+       0.0,
+       0.0,
+       1.497
+      ],
+      "ax": 0.5,
+      "ay": 1.0096,
+      "tool": "cuirassier_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       16,
+       32,
+       144,
+       145
+      ],
+      "fig_h": 0.7063,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 4.428,
+      "center": [
+       0.0,
+       0.0,
+       1.497
+      ],
+      "ax": 0.5,
+      "ay": 1.0096,
+      "tool": "cuirassier_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       640,
+       653
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       640,
+       641,
+       642,
+       644,
+       645,
+       646,
+       647,
+       648,
+       649,
+       651,
+       652,
+       653
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       16,
+       20,
+       144,
+       145
+      ],
+      "fig_h": 0.7812,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.41,
+      "center": [
+       0.0,
+       0.0,
+       1.39
+      ],
+      "ax": 0.5,
+      "ay": 0.7227,
+      "tool": "cuirassier_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       49,
+       152,
+       139
+      ],
+      "fig_h": 0.5625,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 353016,
+      "expected": 353016
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        640,
+        653,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.428,
+       [
+        0.0,
+        0.0,
+        1.497
+       ],
+       0.5,
+       1.0096
+      ],
+      "death_sig": [
+       9.41,
+       [
+        0.0,
+        0.0,
+        1.39
+       ],
+       0.5,
+       0.7227
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0105,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2082
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0038,
+       -0.6317
+      ],
+      "max_stand_drift_m": 0.1005,
+      "max_glue_drift_m": 0.2243,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "cuirassier_horse",
+      "observed": [
+       "cuirassier_horse",
+       "cuirassier_horse",
+       "cuirassier_horse",
+       "cuirassier_horse"
+      ],
+      "donor_mount": "cuirassier_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 29.83
+  },
+  "reiter": {
+   "base": "reiter",
+   "mount": {
+    "file": "reiter_horse.oss",
+    "header": {
+     "k": 655,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 483592
+    },
+    "bytes": 483592,
+    "closure": 483592,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\reiter.aaf\n   ActorList.Items[0].Name = reiter_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\reiter_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0022,
+     -0.1534,
+     -0.0696
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.014,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       0.043,
+       -0.491,
+       -0.003
+      ]
+     },
+     "640": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 655,
+     "fps": 30,
+     "bones": 17,
+     "verts": 762,
+     "faces": 1111,
+     "uvs": 914
+    },
+    "oss_bytes": 364068,
+    "aaf": {
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack0": {
+      "first": 640,
+      "last": 653,
+      "count": 14,
+      "duration": 0.467
+     }
+    },
+    "aaf_count": 7,
+    "attach": [
+     "reiter_horse.actor",
+     "reiter_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0105,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0022,
+     -0.1534
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0067,
+     -0.5431
+    ],
+    "max_stand_drift_m": 0.4141,
+    "max_glue_drift_m": 0.2718,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 4.995,
+      "center": [
+       0.0,
+       0.0,
+       1.479
+      ],
+      "ax": 0.5,
+      "ay": 0.9463,
+      "tool": "reiter_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       20,
+       33,
+       140,
+       143
+      ],
+      "fig_h": 0.6875,
+      "foot": 0.8938,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.995,
+      "center": [
+       0.0,
+       0.0,
+       1.479
+      ],
+      "ax": 0.5,
+      "ay": 0.9463,
+      "tool": "reiter_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       23,
+       36,
+       137,
+       138
+      ],
+      "fig_h": 0.6375,
+      "foot": 0.8625,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 4.995,
+      "center": [
+       0.0,
+       0.0,
+       1.479
+      ],
+      "ax": 0.5,
+      "ay": 0.9463,
+      "tool": "reiter_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       640,
+       653
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       640,
+       641,
+       642,
+       644,
+       645,
+       646,
+       647,
+       648,
+       649,
+       651,
+       652,
+       653
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       8,
+       27,
+       152,
+       146
+      ],
+      "fig_h": 0.7438,
+      "foot": 0.9125,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.984,
+      "center": [
+       0.0,
+       0.0,
+       1.423
+      ],
+      "ax": 0.5,
+      "ay": 0.715,
+      "tool": "reiter_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       50,
+       152,
+       139
+      ],
+      "fig_h": 0.5563,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 364068,
+      "expected": 364068
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        640,
+        653,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.995,
+       [
+        0.0,
+        0.0,
+        1.479
+       ],
+       0.5,
+       0.9463
+      ],
+      "death_sig": [
+       9.984,
+       [
+        0.0,
+        0.0,
+        1.423
+       ],
+       0.5,
+       0.715
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0105,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0022,
+       -0.1534
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0067,
+       -0.5431
+      ],
+      "max_stand_drift_m": 0.4141,
+      "max_glue_drift_m": 0.2718,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "reiter_horse",
+      "observed": [
+       "reiter_horse",
+       "reiter_horse",
+       "reiter_horse",
+       "reiter_horse"
+      ],
+      "donor_mount": "reiter_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 31.48
+  },
+  "lightcavalry": {
+   "base": "lightcavalry",
+   "mount": {
+    "file": "lightcavalry_horse.oss",
+    "header": {
+     "k": 639,
+     "fps": 30,
+     "bones": 24,
+     "verts": 807,
+     "faces": 1146,
+     "uvs": 1086,
+     "size": 484992
+    },
+    "bytes": 484992,
+    "closure": 484992,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\lightcavalry.aaf\n   ActorList.Items[0].Name = lightcavalry_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\lightcavalry_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0022,
+     -0.1534,
+     -0.0697
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "592": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.765
+      ],
+      "horse": [
+       0.043,
+       -0.491,
+       -0.003
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 639,
+     "fps": 30,
+     "bones": 16,
+     "verts": 650,
+     "faces": 1013,
+     "uvs": 822
+    },
+    "oss_bytes": 332792,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 418,
+      "last": 502,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 592,
+      "last": 604,
+      "count": 13,
+      "duration": 0.433
+     },
+     "prepare0": {
+      "first": 214,
+      "last": 227,
+      "count": 14,
+      "duration": 0.467
+     },
+     "unprepare0": {
+      "first": 200,
+      "last": 213,
+      "count": 14,
+      "duration": 0.467
+     },
+     "death0": {
+      "first": 124,
+      "last": 195,
+      "count": 72,
+      "duration": 2.4
+     }
+    },
+    "aaf_count": 9,
+    "attach": [
+     "lightcavalry_horse.actor",
+     "lightcavalry_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0029,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0022,
+     -0.1534
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0037,
+     -0.6323
+    ],
+    "max_stand_drift_m": 0.0991,
+    "max_glue_drift_m": 0.1465,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 4.253,
+      "center": [
+       0.0,
+       0.0,
+       1.402
+      ],
+      "ax": 0.5,
+      "ay": 0.9972,
+      "tool": "lightcavalry_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       9,
+       22,
+       151,
+       152
+      ],
+      "fig_h": 0.8125,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.253,
+      "center": [
+       0.0,
+       0.0,
+       1.402
+      ],
+      "ax": 0.5,
+      "ay": 0.9972,
+      "tool": "lightcavalry_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       13,
+       26,
+       147,
+       145
+      ],
+      "fig_h": 0.7438,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.433,
+      "loop": false,
+      "ortho": 4.253,
+      "center": [
+       0.0,
+       0.0,
+       1.402
+      ],
+      "ax": 0.5,
+      "ay": 0.9972,
+      "tool": "lightcavalry_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       592,
+       604
+      ],
+      "donor_count": 13,
+      "fps": 30,
+      "sampled_frames": [
+       592,
+       593,
+       594,
+       595,
+       596,
+       597,
+       599,
+       600,
+       601,
+       602,
+       603,
+       604
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       12,
+       15,
+       148,
+       146
+      ],
+      "fig_h": 0.8187,
+      "foot": 0.9125,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.535,
+      "center": [
+       0.0,
+       0.0,
+       1.452
+      ],
+      "ax": 0.5,
+      "ay": 0.7295,
+      "tool": "lightcavalry_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       49,
+       152,
+       139
+      ],
+      "fig_h": 0.5625,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 332792,
+      "expected": 332792
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        592,
+        604,
+        0.433
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.253,
+       [
+        0.0,
+        0.0,
+        1.402
+       ],
+       0.5,
+       0.9972
+      ],
+      "death_sig": [
+       9.535,
+       [
+        0.0,
+        0.0,
+        1.452
+       ],
+       0.5,
+       0.7295
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0029,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0022,
+       -0.1534
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0037,
+       -0.6323
+      ],
+      "max_stand_drift_m": 0.0991,
+      "max_glue_drift_m": 0.1465,
+      "band": 0.5,
+      "ok": true,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "lightcavalry_horse",
+      "observed": [
+       "lightcavalry_horse",
+       "lightcavalry_horse",
+       "lightcavalry_horse",
+       "lightcavalry_horse"
+      ],
+      "donor_mount": "lightcavalry_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 23.92
+  },
+  "hackapell": {
+   "base": "hackapell",
+   "mount": {
+    "file": "hackapell_horse.oss",
+    "header": {
+     "k": 655,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 483576
+    },
+    "bytes": 483576,
+    "closure": 483576,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\hackapell.aaf\n   ActorList.Items[0].Name = hackapell_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\hackapell_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2082,
+     -0.0496
+    ],
+    "root_static": false,
+    "root_probe": {
+     "1": {
+      "rider": [
+       -1.988,
+       -0.452,
+       0.651
+      ],
+      "horse": [
+       0.03,
+       -0.192,
+       -0.073
+      ]
+     },
+     "49": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "640": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 655,
+     "fps": 30,
+     "bones": 16,
+     "verts": 531,
+     "faces": 810,
+     "uvs": 715
+    },
+    "oss_bytes": 331504,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "walk": {
+      "first": 1,
+      "last": 17,
+      "count": 17,
+      "duration": 0.567
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 640,
+      "last": 653,
+      "count": 14,
+      "duration": 0.467
+     },
+     "prepare0": {
+      "first": 505,
+      "last": 506,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 505,
+      "last": 506,
+      "count": 2,
+      "duration": 0.067
+     }
+    },
+    "aaf_count": 7,
+    "attach": [
+     "hackapell_horse.actor",
+     "hackapell_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0105,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2082
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     -0.0115,
+     -0.3532
+    ],
+    "max_stand_drift_m": 0.6038,
+    "max_glue_drift_m": 0.3224,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.567,
+      "loop": true,
+      "ortho": 5.0,
+      "center": [
+       0.0,
+       0.0,
+       1.537
+      ],
+      "ax": 0.5,
+      "ay": 0.9634,
+      "tool": "hackapell_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       17
+      ],
+      "donor_count": 17,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       2,
+       4,
+       5,
+       7,
+       8,
+       10,
+       11,
+       13,
+       14,
+       16,
+       17
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       19,
+       28,
+       141,
+       146
+      ],
+      "fig_h": 0.7375,
+      "foot": 0.9125,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 5.0,
+      "center": [
+       0.0,
+       0.0,
+       1.537
+      ],
+      "ax": 0.5,
+      "ay": 0.9634,
+      "tool": "hackapell_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       23,
+       39,
+       137,
+       139
+      ],
+      "fig_h": 0.625,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 5.0,
+      "center": [
+       0.0,
+       0.0,
+       1.537
+      ],
+      "ax": 0.5,
+      "ay": 0.9634,
+      "tool": "hackapell_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       640,
+       653
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       640,
+       641,
+       642,
+       644,
+       645,
+       646,
+       647,
+       648,
+       649,
+       651,
+       652,
+       653
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       8,
+       29,
+       152,
+       147
+      ],
+      "fig_h": 0.7375,
+      "foot": 0.9187,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.646,
+      "center": [
+       0.0,
+       0.0,
+       1.438
+      ],
+      "ax": 0.5,
+      "ay": 0.7247,
+      "tool": "hackapell_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       51,
+       152,
+       139
+      ],
+      "fig_h": 0.55,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 331504,
+      "expected": 331504
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        17,
+        0.567
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        640,
+        653,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       5.0,
+       [
+        0.0,
+        0.0,
+        1.537
+       ],
+       0.5,
+       0.9634
+      ],
+      "death_sig": [
+       9.646,
+       [
+        0.0,
+        0.0,
+        1.438
+       ],
+       0.5,
+       0.7247
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0105,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2082
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       -0.0115,
+       -0.3532
+      ],
+      "max_stand_drift_m": 0.6038,
+      "max_glue_drift_m": 0.3224,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "hackapell_horse",
+      "observed": [
+       "hackapell_horse",
+       "hackapell_horse",
+       "hackapell_horse",
+       "hackapell_horse"
+      ],
+      "donor_mount": "hackapell_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 22.9
+  },
+  "tatar": {
+   "base": "tatar",
+   "mount": {
+    "file": "tatar_horse.oss",
+    "header": {
+     "k": 671,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 494344
+    },
+    "bytes": 494344,
+    "closure": 494344,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\tatar.aaf\n   ActorList.Items[0].Name = tatar_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\tatar_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2805,
+     -0.0252
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     },
+     "404": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.781
+      ],
+      "horse": [
+       -0.003,
+       -0.24,
+       -0.102
+      ]
+     },
+     "642": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 671,
+     "fps": 30,
+     "bones": 18,
+     "verts": 720,
+     "faces": 1059,
+     "uvs": 893
+    },
+    "oss_bytes": 388072,
+    "aaf": {
+     "idle": {
+      "first": 404,
+      "last": 488,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 125,
+      "last": 192,
+      "count": 68,
+      "duration": 2.267
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "idle1": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle1_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "death0": {
+      "first": 196,
+      "last": 267,
+      "count": 72,
+      "duration": 2.4
+     },
+     "death1": {
+      "first": 196,
+      "last": 267,
+      "count": 72,
+      "duration": 2.4
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "prepare1": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare1": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "trans01": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "trans10": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "attack0": {
+      "first": 642,
+      "last": 670,
+      "count": 29,
+      "duration": 0.967
+     },
+     "attack1": {
+      "first": 642,
+      "last": 670,
+      "count": 29,
+      "duration": 0.967
+     },
+     "attack0before": {
+      "first": 642,
+      "last": 653,
+      "count": 12,
+      "duration": 0.4
+     },
+     "attack0after": {
+      "first": 654,
+      "last": 670,
+      "count": 17,
+      "duration": 0.567
+     },
+     "attack1before": {
+      "first": 642,
+      "last": 653,
+      "count": 12,
+      "duration": 0.4
+     },
+     "attack1after": {
+      "first": 654,
+      "last": 670,
+      "count": 17,
+      "duration": 0.567
+     }
+    },
+    "aaf_count": 22,
+    "attach": [
+     "tatar_horse.actor",
+     "tatar_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0105,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2805
+    ],
+    "idle_ref_frame": 404,
+    "foot_xy": [
+     0.0039,
+     -0.5458
+    ],
+    "max_stand_drift_m": 0.0664,
+    "max_glue_drift_m": 0.1318,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 4.372,
+      "center": [
+       0.0,
+       0.0,
+       1.463
+      ],
+      "ax": 0.5,
+      "ay": 1.0045,
+      "tool": "tatar_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       11,
+       27,
+       149,
+       152
+      ],
+      "fig_h": 0.7812,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.372,
+      "center": [
+       0.0,
+       0.0,
+       1.463
+      ],
+      "ax": 0.5,
+      "ay": 1.0045,
+      "tool": "tatar_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       404,
+       488
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       404,
+       421,
+       438,
+       454,
+       471,
+       488
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       15,
+       31,
+       145,
+       145
+      ],
+      "fig_h": 0.7125,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.967,
+      "loop": false,
+      "ortho": 4.372,
+      "center": [
+       0.0,
+       0.0,
+       1.463
+      ],
+      "ax": 0.5,
+      "ay": 1.0045,
+      "tool": "tatar_horse",
+      "donor_name": "attack1",
+      "donor_range": [
+       642,
+       670
+      ],
+      "donor_count": 29,
+      "fps": 30,
+      "sampled_frames": [
+       642,
+       645,
+       647,
+       650,
+       652,
+       655,
+       657,
+       660,
+       662,
+       665,
+       667,
+       670
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       12,
+       15,
+       148,
+       147
+      ],
+      "fig_h": 0.825,
+      "foot": 0.9187,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.673,
+      "center": [
+       0.0,
+       0.0,
+       1.367
+      ],
+      "ax": 0.5,
+      "ay": 0.7131,
+      "tool": "tatar_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       48,
+       152,
+       138
+      ],
+      "fig_h": 0.5625,
+      "foot": 0.8625,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 388072,
+      "expected": 388072
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        404,
+        488,
+        2.833
+       ],
+       [
+        "attack1",
+        642,
+        670,
+        0.967
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.372,
+       [
+        0.0,
+        0.0,
+        1.463
+       ],
+       0.5,
+       1.0045
+      ],
+      "death_sig": [
+       9.673,
+       [
+        0.0,
+        0.0,
+        1.367
+       ],
+       0.5,
+       0.7131
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0105,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2805
+      ],
+      "idle_ref_frame": 404,
+      "foot_xy": [
+       0.0039,
+       -0.5458
+      ],
+      "max_stand_drift_m": 0.0664,
+      "max_glue_drift_m": 0.1318,
+      "band": 0.5,
+      "ok": true,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "tatar_horse",
+      "observed": [
+       "tatar_horse",
+       "tatar_horse",
+       "tatar_horse",
+       "tatar_horse"
+      ],
+      "donor_mount": "tatar_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 23.23
+  },
+  "sipahi": {
+   "base": "sipahi",
+   "mount": {
+    "file": "sipahi_horse.oss",
+    "header": {
+     "k": 653,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 482248
+    },
+    "bytes": 482248,
+    "closure": 482248,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\sipahi.aaf\n   ActorList.Items[0].Name = sipahi_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\sipahi_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0015,
+     -0.1618,
+     -0.0667
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.162,
+       -0.067
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.162,
+       -0.067
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       0.044,
+       -0.491,
+       -0.003
+      ]
+     },
+     "640": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.162,
+       -0.067
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 653,
+     "fps": 30,
+     "bones": 18,
+     "verts": 773,
+     "faces": 1145,
+     "uvs": 1079
+    },
+    "oss_bytes": 383800,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 638,
+      "count": 25,
+      "duration": 0.833
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 640,
+      "last": 651,
+      "count": 12,
+      "duration": 0.4
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "sipahi_horse.actor",
+     "sipahi_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0105,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0015,
+     -0.1618
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0044,
+     -0.5439
+    ],
+    "max_stand_drift_m": 0.4043,
+    "max_glue_drift_m": 0.325,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.833,
+      "loop": true,
+      "ortho": 4.997,
+      "center": [
+       0.0,
+       0.0,
+       1.64
+      ],
+      "ax": 0.5,
+      "ay": 0.9949,
+      "tool": "sipahi_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       638
+      ],
+      "donor_count": 25,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       621,
+       623,
+       625,
+       627,
+       629,
+       631,
+       634,
+       636,
+       638
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       20,
+       35,
+       140,
+       148
+      ],
+      "fig_h": 0.7063,
+      "foot": 0.925,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 94,
+      "distinct_frac": 0.9792,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.997,
+      "center": [
+       0.0,
+       0.0,
+       1.64
+      ],
+      "ax": 0.5,
+      "ay": 0.9949,
+      "tool": "sipahi_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       23,
+       38,
+       137,
+       142
+      ],
+      "fig_h": 0.65,
+      "foot": 0.8875,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.4,
+      "loop": false,
+      "ortho": 4.997,
+      "center": [
+       0.0,
+       0.0,
+       1.64
+      ],
+      "ax": 0.5,
+      "ay": 0.9949,
+      "tool": "sipahi_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       640,
+       651
+      ],
+      "donor_count": 12,
+      "fps": 30,
+      "sampled_frames": [
+       640,
+       641,
+       642,
+       643,
+       644,
+       645,
+       646,
+       647,
+       648,
+       649,
+       650,
+       651
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       8,
+       23,
+       152,
+       150
+      ],
+      "fig_h": 0.7937,
+      "foot": 0.9375,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.857,
+      "center": [
+       0.0,
+       0.0,
+       1.472
+      ],
+      "ax": 0.5,
+      "ay": 0.7252,
+      "tool": "sipahi_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       50,
+       152,
+       139
+      ],
+      "fig_h": 0.5563,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 383800,
+      "expected": 383800
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        638,
+        0.833
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        640,
+        651,
+        0.4
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.997,
+       [
+        0.0,
+        0.0,
+        1.64
+       ],
+       0.5,
+       0.9949
+      ],
+      "death_sig": [
+       9.857,
+       [
+        0.0,
+        0.0,
+        1.472
+       ],
+       0.5,
+       0.7252
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0105,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0015,
+       -0.1618
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0044,
+       -0.5439
+      ],
+      "max_stand_drift_m": 0.4043,
+      "max_glue_drift_m": 0.325,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "sipahi_horse",
+      "observed": [
+       "sipahi_horse",
+       "sipahi_horse",
+       "sipahi_horse",
+       "sipahi_horse"
+      ],
+      "donor_mount": "sipahi_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 26.63
+  },
+  "spakh": {
+   "base": "spakh",
+   "mount": {
+    "file": "spakh_horse.oss",
+    "header": {
+     "k": 671,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 494336
+    },
+    "bytes": 494336,
+    "closure": 494336,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\spakh.aaf\n   ActorList.Items[0].Name = spakh_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\spakh_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2082,
+     -0.0496
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.064,
+       -0.317,
+       0.755
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.064,
+       -0.317,
+       0.755
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "626": {
+      "rider": [
+       -2.064,
+       -0.404,
+       0.853
+      ],
+      "horse": [
+       0.0,
+       -0.456,
+       -0.019
+      ]
+     },
+     "656": {
+      "rider": [
+       -2.064,
+       -0.317,
+       0.755
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 671,
+     "fps": 30,
+     "bones": 17,
+     "verts": 718,
+     "faces": 1058,
+     "uvs": 1020
+    },
+    "oss_bytes": 370228,
+    "aaf": {
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "walk": {
+      "first": 626,
+      "last": 649,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack0": {
+      "first": 656,
+      "last": 669,
+      "count": 14,
+      "duration": 0.467
+     }
+    },
+    "aaf_count": 7,
+    "attach": [
+     "spakh_horse.actor",
+     "spakh_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0639,
+     -0.3171
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2082
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0052,
+     -0.4586
+    ],
+    "max_stand_drift_m": 0.032,
+    "max_glue_drift_m": 0.186,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 7.405,
+      "center": [
+       0.0,
+       0.0,
+       1.486
+      ],
+      "ax": 0.5,
+      "ay": 0.8026,
+      "tool": "spakh_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       626,
+       649
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       626,
+       628,
+       630,
+       632,
+       634,
+       636,
+       639,
+       641,
+       643,
+       645,
+       647,
+       649
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       20,
+       38,
+       140,
+       122
+      ],
+      "fig_h": 0.525,
+      "foot": 0.7625,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 7.405,
+      "center": [
+       0.0,
+       0.0,
+       1.486
+      ],
+      "ax": 0.5,
+      "ay": 0.8026,
+      "tool": "spakh_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       20,
+       42,
+       139,
+       119
+      ],
+      "fig_h": 0.4813,
+      "foot": 0.7438,
+      "cx": 0.4969,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 7.405,
+      "center": [
+       0.0,
+       0.0,
+       1.486
+      ],
+      "ax": 0.5,
+      "ay": 0.8026,
+      "tool": "spakh_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       656,
+       669
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       656,
+       657,
+       658,
+       660,
+       661,
+       662,
+       663,
+       664,
+       665,
+       667,
+       668,
+       669
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       9,
+       36,
+       152,
+       119
+      ],
+      "fig_h": 0.5188,
+      "foot": 0.7438,
+      "cx": 0.5031,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.68,
+      "center": [
+       0.0,
+       0.0,
+       1.333
+      ],
+      "ax": 0.5,
+      "ay": 0.7076,
+      "tool": "spakh_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       9,
+       49,
+       152,
+       138
+      ],
+      "fig_h": 0.5563,
+      "foot": 0.8625,
+      "cx": 0.5031,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 370228,
+      "expected": 370228
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        626,
+        649,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        656,
+        669,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       7.405,
+       [
+        0.0,
+        0.0,
+        1.486
+       ],
+       0.5,
+       0.8026
+      ],
+      "death_sig": [
+       9.68,
+       [
+        0.0,
+        0.0,
+        1.333
+       ],
+       0.5,
+       0.7076
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0639,
+       -0.3171
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2082
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0052,
+       -0.4586
+      ],
+      "max_stand_drift_m": 0.032,
+      "max_glue_drift_m": 0.186,
+      "band": 0.5,
+      "ok": true,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "spakh_horse",
+      "observed": [
+       "spakh_horse",
+       "spakh_horse",
+       "spakh_horse",
+       "spakh_horse"
+      ],
+      "donor_mount": "spakh_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 21.9
+  },
+  "mameluke": {
+   "base": "mameluke",
+   "mount": {
+    "file": "mameluke_horse.oss",
+    "header": {
+     "k": 671,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 494328
+    },
+    "bytes": 494328,
+    "closure": 494328,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\mameluke.aaf\n   ActorList.Items[0].Name = mameluke_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\mameluke_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2083,
+     -0.0496
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.064,
+       -0.317,
+       0.755
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.064,
+       -0.317,
+       0.755
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.064,
+       -0.374,
+       0.801
+      ],
+      "horse": [
+       0.0,
+       -0.456,
+       -0.018
+      ]
+     },
+     "656": {
+      "rider": [
+       -2.064,
+       -0.317,
+       0.755
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 671,
+     "fps": 30,
+     "bones": 17,
+     "verts": 630,
+     "faces": 996,
+     "uvs": 850
+    },
+    "oss_bytes": 365244,
+    "aaf": {
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     },
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack0": {
+      "first": 656,
+      "last": 669,
+      "count": 14,
+      "duration": 0.467
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     }
+    },
+    "aaf_count": 7,
+    "attach": [
+     "mameluke_horse.actor",
+     "mameluke_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0639,
+     -0.3171
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2083
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0037,
+     -0.4873
+    ],
+    "max_stand_drift_m": 0.0388,
+    "max_glue_drift_m": 0.1924,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 7.3,
+      "center": [
+       0.0,
+       0.0,
+       1.569
+      ],
+      "ax": 0.5,
+      "ay": 0.824,
+      "tool": "mameluke_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       22,
+       40,
+       138,
+       125
+      ],
+      "fig_h": 0.5312,
+      "foot": 0.7812,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 7.3,
+      "center": [
+       0.0,
+       0.0,
+       1.569
+      ],
+      "ax": 0.5,
+      "ay": 0.824,
+      "tool": "mameluke_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       22,
+       44,
+       138,
+       121
+      ],
+      "fig_h": 0.4813,
+      "foot": 0.7562,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 7.3,
+      "center": [
+       0.0,
+       0.0,
+       1.569
+      ],
+      "ax": 0.5,
+      "ay": 0.824,
+      "tool": "mameluke_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       656,
+       669
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       656,
+       657,
+       658,
+       660,
+       661,
+       662,
+       663,
+       664,
+       665,
+       667,
+       668,
+       669
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       9,
+       38,
+       152,
+       122
+      ],
+      "fig_h": 0.525,
+      "foot": 0.7625,
+      "cx": 0.5031,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 10.0,
+      "center": [
+       0.0,
+       0.0,
+       1.425
+      ],
+      "ax": 0.5,
+      "ay": 0.7148,
+      "tool": "mameluke_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       52,
+       152,
+       140
+      ],
+      "fig_h": 0.55,
+      "foot": 0.875,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 365244,
+      "expected": 365244
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        656,
+        669,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       7.3,
+       [
+        0.0,
+        0.0,
+        1.569
+       ],
+       0.5,
+       0.824
+      ],
+      "death_sig": [
+       10.0,
+       [
+        0.0,
+        0.0,
+        1.425
+       ],
+       0.5,
+       0.7148
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0639,
+       -0.3171
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2083
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0037,
+       -0.4873
+      ],
+      "max_stand_drift_m": 0.0388,
+      "max_glue_drift_m": 0.1924,
+      "band": 0.5,
+      "ok": true,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "mameluke_horse",
+      "observed": [
+       "mameluke_horse",
+       "mameluke_horse",
+       "mameluke_horse",
+       "mameluke_horse"
+      ],
+      "donor_mount": "mameluke_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 18.64
+  },
+  "vityaz": {
+   "base": "vityaz",
+   "mount": {
+    "file": "vityaz_horse.oss",
+    "header": {
+     "k": 653,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 482248
+    },
+    "bytes": 482248,
+    "closure": 482248,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\vityaz.aaf\n   ActorList.Items[0].Name = vityaz_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\vityaz_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0015,
+     -0.1618,
+     -0.0667
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.162,
+       -0.067
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.162,
+       -0.067
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       0.044,
+       -0.491,
+       -0.003
+      ]
+     },
+     "640": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.162,
+       -0.067
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 653,
+     "fps": 30,
+     "bones": 17,
+     "verts": 726,
+     "faces": 1020,
+     "uvs": 925
+    },
+    "oss_bytes": 360172,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 638,
+      "count": 25,
+      "duration": 0.833
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 640,
+      "last": 651,
+      "count": 12,
+      "duration": 0.4
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "vityaz_horse.actor",
+     "vityaz_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0105,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0015,
+     -0.1618
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0044,
+     -0.5439
+    ],
+    "max_stand_drift_m": 0.4043,
+    "max_glue_drift_m": 0.3587,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.833,
+      "loop": true,
+      "ortho": 4.997,
+      "center": [
+       0.0,
+       0.0,
+       1.564
+      ],
+      "ax": 0.5,
+      "ay": 0.972,
+      "tool": "vityaz_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       638
+      ],
+      "donor_count": 25,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       621,
+       623,
+       625,
+       627,
+       629,
+       631,
+       634,
+       636,
+       638
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       20,
+       37,
+       140,
+       146
+      ],
+      "fig_h": 0.6813,
+      "foot": 0.9125,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 93,
+      "distinct_frac": 0.9688,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.997,
+      "center": [
+       0.0,
+       0.0,
+       1.564
+      ],
+      "ax": 0.5,
+      "ay": 0.972,
+      "tool": "vityaz_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       23,
+       40,
+       137,
+       140
+      ],
+      "fig_h": 0.625,
+      "foot": 0.875,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.4,
+      "loop": false,
+      "ortho": 4.997,
+      "center": [
+       0.0,
+       0.0,
+       1.564
+      ],
+      "ax": 0.5,
+      "ay": 0.972,
+      "tool": "vityaz_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       640,
+       651
+      ],
+      "donor_count": 12,
+      "fps": 30,
+      "sampled_frames": [
+       640,
+       641,
+       642,
+       643,
+       644,
+       645,
+       646,
+       647,
+       648,
+       649,
+       650,
+       651
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       8,
+       23,
+       152,
+       148
+      ],
+      "fig_h": 0.7812,
+      "foot": 0.925,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.614,
+      "center": [
+       0.0,
+       0.0,
+       1.409
+      ],
+      "ax": 0.5,
+      "ay": 0.721,
+      "tool": "vityaz_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       49,
+       151,
+       137
+      ],
+      "fig_h": 0.55,
+      "foot": 0.8562,
+      "cx": 0.4969,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 360172,
+      "expected": 360172
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        638,
+        0.833
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        640,
+        651,
+        0.4
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.997,
+       [
+        0.0,
+        0.0,
+        1.564
+       ],
+       0.5,
+       0.972
+      ],
+      "death_sig": [
+       9.614,
+       [
+        0.0,
+        0.0,
+        1.409
+       ],
+       0.5,
+       0.721
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0105,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0015,
+       -0.1618
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0044,
+       -0.5439
+      ],
+      "max_stand_drift_m": 0.4043,
+      "max_glue_drift_m": 0.3587,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "vityaz_horse",
+      "observed": [
+       "vityaz_horse",
+       "vityaz_horse",
+       "vityaz_horse",
+       "vityaz_horse"
+      ],
+      "donor_mount": "vityaz_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 21.15
+  },
+  "hetman": {
+   "base": "hetman",
+   "mount": {
+    "file": "hetman_horse.oss",
+    "header": {
+     "k": 656,
+     "fps": 30,
+     "bones": 24,
+     "verts": 807,
+     "faces": 1146,
+     "uvs": 1156,
+     "size": 497000
+    },
+    "bytes": 497000,
+    "closure": 497000,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\hetman.aaf\n   ActorList.Items[0].Name = hetman_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\hetman_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2082,
+     -0.0496
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.165,
+       -0.392,
+       0.84
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.165,
+       -0.392,
+       0.84
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.165,
+       -0.393,
+       0.831
+      ],
+      "horse": [
+       0.0,
+       -0.456,
+       0.005
+      ]
+     },
+     "640": {
+      "rider": [
+       -2.165,
+       -0.392,
+       0.84
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 656,
+     "fps": 30,
+     "bones": 20,
+     "verts": 756,
+     "faces": 1124,
+     "uvs": 921
+    },
+    "oss_bytes": 419888,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 640,
+      "last": 654,
+      "count": 15,
+      "duration": 0.5
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "hetman_horse.actor",
+     "hetman_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.1645,
+     -0.392
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2082
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0039,
+     -0.637
+    ],
+    "max_stand_drift_m": 0.2062,
+    "max_glue_drift_m": 0.3121,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 5.158,
+      "center": [
+       0.0,
+       0.0,
+       1.853
+      ],
+      "ax": 0.5,
+      "ay": 1.0416,
+      "tool": "hetman_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       21,
+       38,
+       139,
+       152
+      ],
+      "fig_h": 0.7125,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 5.158,
+      "center": [
+       0.0,
+       0.0,
+       1.853
+      ],
+      "ax": 0.5,
+      "ay": 1.0416,
+      "tool": "hetman_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       24,
+       40,
+       136,
+       146
+      ],
+      "fig_h": 0.6625,
+      "foot": 0.9125,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.5,
+      "loop": false,
+      "ortho": 5.158,
+      "center": [
+       0.0,
+       0.0,
+       1.853
+      ],
+      "ax": 0.5,
+      "ay": 1.0416,
+      "tool": "hetman_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       640,
+       654
+      ],
+      "donor_count": 15,
+      "fps": 30,
+      "sampled_frames": [
+       640,
+       641,
+       643,
+       644,
+       645,
+       646,
+       648,
+       649,
+       650,
+       651,
+       653,
+       654
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       17,
+       15,
+       143,
+       146
+      ],
+      "fig_h": 0.8187,
+      "foot": 0.9125,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 10.138,
+      "center": [
+       0.0,
+       0.0,
+       1.401
+      ],
+      "ax": 0.5,
+      "ay": 0.7084,
+      "tool": "hetman_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       50,
+       152,
+       136
+      ],
+      "fig_h": 0.5375,
+      "foot": 0.85,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 419888,
+      "expected": 419888
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        640,
+        654,
+        0.5
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       5.158,
+       [
+        0.0,
+        0.0,
+        1.853
+       ],
+       0.5,
+       1.0416
+      ],
+      "death_sig": [
+       10.138,
+       [
+        0.0,
+        0.0,
+        1.401
+       ],
+       0.5,
+       0.7084
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.1645,
+       -0.392
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2082
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0039,
+       -0.637
+      ],
+      "max_stand_drift_m": 0.2062,
+      "max_glue_drift_m": 0.3121,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "hetman_horse",
+      "observed": [
+       "hetman_horse",
+       "hetman_horse",
+       "hetman_horse",
+       "hetman_horse"
+      ],
+      "donor_mount": "hetman_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 21.11
+  },
+  "cossackdon": {
+   "base": "cossackdon",
+   "mount": {
+    "file": "cossackdon_horse.oss",
+    "header": {
+     "k": 671,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 494344
+    },
+    "bytes": 494344,
+    "closure": 494344,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\cossackdon.aaf\n   ActorList.Items[0].Name = cossackdon_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\cossackdon_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2145,
+     -0.0496
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.019,
+       0.231,
+       0.752
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.019,
+       0.231,
+       0.752
+      ],
+      "horse": [
+       -0.0,
+       -0.215,
+       -0.05
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.064,
+       0.186,
+       0.817
+      ],
+      "horse": [
+       0.0,
+       -0.462,
+       -0.017
+      ]
+     },
+     "656": {
+      "rider": [
+       -2.019,
+       0.231,
+       0.752
+      ],
+      "horse": [
+       -0.0,
+       -0.215,
+       -0.05
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 671,
+     "fps": 30,
+     "bones": 16,
+     "verts": 612,
+     "faces": 986,
+     "uvs": 844
+    },
+    "oss_bytes": 345736,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 656,
+      "last": 669,
+      "count": 14,
+      "duration": 0.467
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "cossackdon_horse.actor",
+     "cossackdon_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0186,
+     0.2314
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2145
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0526,
+     -0.5034
+    ],
+    "max_stand_drift_m": 0.1315,
+    "max_glue_drift_m": 0.1382,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 6.343,
+      "center": [
+       0.0,
+       0.0,
+       1.449
+      ],
+      "ax": 0.5,
+      "ay": 0.8443,
+      "tool": "cossackdon_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       24,
+       34,
+       137,
+       129
+      ],
+      "fig_h": 0.5938,
+      "foot": 0.8063,
+      "cx": 0.5031,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 6.343,
+      "center": [
+       0.0,
+       0.0,
+       1.449
+      ],
+      "ax": 0.5,
+      "ay": 0.8443,
+      "tool": "cossackdon_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       26,
+       38,
+       135,
+       125
+      ],
+      "fig_h": 0.5437,
+      "foot": 0.7812,
+      "cx": 0.5031,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 6.343,
+      "center": [
+       0.0,
+       0.0,
+       1.449
+      ],
+      "ax": 0.5,
+      "ay": 0.8443,
+      "tool": "cossackdon_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       656,
+       669
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       656,
+       657,
+       658,
+       660,
+       661,
+       662,
+       663,
+       664,
+       665,
+       667,
+       668,
+       669
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       9,
+       35,
+       151,
+       127
+      ],
+      "fig_h": 0.575,
+      "foot": 0.7937,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.69,
+      "center": [
+       0.0,
+       0.0,
+       1.416
+      ],
+      "ax": 0.5,
+      "ay": 0.7203,
+      "tool": "cossackdon_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       48,
+       152,
+       137
+      ],
+      "fig_h": 0.5563,
+      "foot": 0.8562,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 345736,
+      "expected": 345736
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        656,
+        669,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       6.343,
+       [
+        0.0,
+        0.0,
+        1.449
+       ],
+       0.5,
+       0.8443
+      ],
+      "death_sig": [
+       9.69,
+       [
+        0.0,
+        0.0,
+        1.416
+       ],
+       0.5,
+       0.7203
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0186,
+       0.2314
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2145
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0526,
+       -0.5034
+      ],
+      "max_stand_drift_m": 0.1315,
+      "max_glue_drift_m": 0.1382,
+      "band": 0.5,
+      "ok": true,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "cossackdon_horse",
+      "observed": [
+       "cossackdon_horse",
+       "cossackdon_horse",
+       "cossackdon_horse",
+       "cossackdon_horse"
+      ],
+      "donor_mount": "cossackdon_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 24.2
+  },
+  "cossackregister": {
+   "base": "cossackregister",
+   "mount": {
+    "file": "cossackregister_horse.oss",
+    "header": {
+     "k": 671,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 494344
+    },
+    "bytes": 494344,
+    "closure": 494344,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\cossackregister.aaf\n   ActorList.Items[0].Name = cossackregister_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\cossackregister_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2805,
+     -0.0252
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.165,
+       -0.392,
+       0.84
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.165,
+       -0.392,
+       0.84
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.165,
+       -0.392,
+       0.813
+      ],
+      "horse": [
+       -0.003,
+       -0.24,
+       -0.104
+      ]
+     },
+     "656": {
+      "rider": [
+       -2.165,
+       -0.392,
+       0.84
+      ],
+      "horse": [
+       -0.0,
+       -0.281,
+       -0.025
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 671,
+     "fps": 30,
+     "bones": 16,
+     "verts": 800,
+     "faces": 1147,
+     "uvs": 1466
+    },
+    "oss_bytes": 359192,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "walk": {
+      "first": 614,
+      "last": 638,
+      "count": 25,
+      "duration": 0.833
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 656,
+      "last": 669,
+      "count": 14,
+      "duration": 0.467
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 417,
+      "count": 83,
+      "duration": 2.767
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "cossackregister_horse.actor",
+     "cossackregister_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.1645,
+     -0.392
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2805
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0037,
+     -0.5438
+    ],
+    "max_stand_drift_m": 0.1039,
+    "max_glue_drift_m": 0.21,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.833,
+      "loop": true,
+      "ortho": 6.137,
+      "center": [
+       0.0,
+       0.0,
+       1.439
+      ],
+      "ax": 0.5,
+      "ay": 0.8534,
+      "tool": "cossackregister_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       638
+      ],
+      "donor_count": 25,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       621,
+       623,
+       625,
+       627,
+       629,
+       631,
+       634,
+       636,
+       638
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       23,
+       36,
+       136,
+       131
+      ],
+      "fig_h": 0.5938,
+      "foot": 0.8187,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 6.137,
+      "center": [
+       0.0,
+       0.0,
+       1.439
+      ],
+      "ax": 0.5,
+      "ay": 0.8534,
+      "tool": "cossackregister_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       23,
+       34,
+       137,
+       126
+      ],
+      "fig_h": 0.575,
+      "foot": 0.7875,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 6.137,
+      "center": [
+       0.0,
+       0.0,
+       1.439
+      ],
+      "ax": 0.5,
+      "ay": 0.8534,
+      "tool": "cossackregister_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       656,
+       669
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       656,
+       657,
+       658,
+       660,
+       661,
+       662,
+       663,
+       664,
+       665,
+       667,
+       668,
+       669
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       9,
+       32,
+       151,
+       127
+      ],
+      "fig_h": 0.5938,
+      "foot": 0.7937,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.772,
+      "center": [
+       0.0,
+       0.0,
+       1.394
+      ],
+      "ax": 0.5,
+      "ay": 0.7151,
+      "tool": "cossackregister_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       49,
+       152,
+       137
+      ],
+      "fig_h": 0.55,
+      "foot": 0.8562,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 359192,
+      "expected": 359192
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        638,
+        0.833
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        656,
+        669,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       6.137,
+       [
+        0.0,
+        0.0,
+        1.439
+       ],
+       0.5,
+       0.8534
+      ],
+      "death_sig": [
+       9.772,
+       [
+        0.0,
+        0.0,
+        1.394
+       ],
+       0.5,
+       0.7151
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.1645,
+       -0.392
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2805
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0037,
+       -0.5438
+      ],
+      "max_stand_drift_m": 0.1039,
+      "max_glue_drift_m": 0.21,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "cossackregister_horse",
+      "observed": [
+       "cossackregister_horse",
+       "cossackregister_horse",
+       "cossackregister_horse",
+       "cossackregister_horse"
+      ],
+      "donor_mount": "cossackregister_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 19.11
+  },
+  "cossack": {
+   "base": "cossacksich",
+   "mount": {
+    "file": "cossacksich_horse.oss",
+    "header": {
+     "k": 605,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 449976
+    },
+    "bytes": 449976,
+    "closure": 449976,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\cossacksich.aaf\n   ActorList.Items[0].Name = cossacksich_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\cossacksich_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     0.0006,
+     -0.1537,
+     -0.0698
+    ],
+    "root_static": false,
+    "root_probe": {
+     "1": {
+      "rider": [
+       -2.057,
+       0.039,
+       0.579
+      ],
+      "horse": [
+       0.017,
+       0.757,
+       -0.098
+      ]
+     },
+     "50": {
+      "rider": [
+       -2.057,
+       0.17,
+       0.602
+      ],
+      "horse": [
+       0.001,
+       -0.154,
+       -0.07
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.057,
+       0.17,
+       0.602
+      ],
+      "horse": [
+       0.001,
+       -0.154,
+       -0.07
+      ]
+     },
+     "592": {
+      "rider": [
+       -2.057,
+       0.17,
+       0.602
+      ],
+      "horse": [
+       0.001,
+       -0.154,
+       -0.07
+      ]
+     }
+    }
+   },
+   "detravel": "none",
+   "scope": "scoped_mount",
+   "donor": {
+    "oss": {
+     "k": 605,
+     "fps": 30,
+     "bones": 19,
+     "verts": 692,
+     "faces": 1031,
+     "uvs": 825
+    },
+    "oss_bytes": 369868,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "walk": {
+      "first": 1,
+      "last": 48,
+      "count": 48,
+      "duration": 1.6
+     },
+     "death": {
+      "first": 50,
+      "last": 119,
+      "count": 70,
+      "duration": 2.333
+     },
+     "attack0": {
+      "first": 592,
+      "last": 604,
+      "count": 13,
+      "duration": 0.433
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     }
+    },
+    "aaf_count": 8,
+    "attach": [
+     "cossacksich_horse.actor",
+     "cossacksich_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "detravel": "none",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.057,
+     0.1696
+    ],
+    "horse_home": [
+     0.0006,
+     -0.1537
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     -0.0003,
+     -0.4475
+    ],
+    "max_stand_drift_m": 0.2444,
+    "max_glue_drift_m": 0.4643,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 1.6,
+      "loop": true,
+      "ortho": 5.214,
+      "center": [
+       0.0,
+       0.0,
+       1.796
+      ],
+      "ax": 0.5,
+      "ay": 1.0193,
+      "tool": "cossacksich_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       48
+      ],
+      "donor_count": 48,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       5,
+       10,
+       14,
+       18,
+       22,
+       27,
+       31,
+       35,
+       39,
+       44,
+       48
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       21,
+       24,
+       139,
+       152
+      ],
+      "fig_h": 0.8,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 5.214,
+      "center": [
+       0.0,
+       0.0,
+       1.796
+      ],
+      "ax": 0.5,
+      "ay": 1.0193,
+      "tool": "cossacksich_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       25,
+       47,
+       135,
+       143
+      ],
+      "fig_h": 0.6,
+      "foot": 0.8938,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.433,
+      "loop": false,
+      "ortho": 5.214,
+      "center": [
+       0.0,
+       0.0,
+       1.796
+      ],
+      "ax": 0.5,
+      "ay": 1.0193,
+      "tool": "cossacksich_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       592,
+       604
+      ],
+      "donor_count": 13,
+      "fps": 30,
+      "sampled_frames": [
+       592,
+       593,
+       594,
+       595,
+       596,
+       597,
+       599,
+       600,
+       601,
+       602,
+       603,
+       604
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       20,
+       16,
+       140,
+       143
+      ],
+      "fig_h": 0.7937,
+      "foot": 0.8938,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.333,
+      "loop": false,
+      "ortho": 5.43,
+      "center": [
+       0.0,
+       0.0,
+       1.394
+      ],
+      "ax": 0.5,
+      "ay": 0.8871,
+      "tool": "cossacksich_horse",
+      "donor_name": "death",
+      "donor_range": [
+       50,
+       119
+      ],
+      "donor_count": 70,
+      "fps": 30,
+      "sampled_frames": [
+       50,
+       60,
+       70,
+       80,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       29,
+       152,
+       152
+      ],
+      "fig_h": 0.7688,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds",
+    "detravel": "none",
+    "scope": "scoped_mount"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 369868,
+      "expected": 369868
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        48,
+        1.6
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        592,
+        604,
+        0.433
+       ],
+       [
+        "death",
+        50,
+        119,
+        2.333
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       5.214,
+       [
+        0.0,
+        0.0,
+        1.796
+       ],
+       0.5,
+       1.0193
+      ],
+      "death_sig": [
+       5.43,
+       [
+        0.0,
+        0.0,
+        1.394
+       ],
+       0.5,
+       0.8871
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "detravel": "none",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.057,
+       0.1696
+      ],
+      "horse_home": [
+       0.0006,
+       -0.1537
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       -0.0003,
+       -0.4475
+      ],
+      "max_stand_drift_m": 0.2444,
+      "max_glue_drift_m": 0.4643,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "cossacksich_horse",
+      "observed": [
+       "cossacksich_horse",
+       "cossacksich_horse",
+       "cossacksich_horse",
+       "cossacksich_horse"
+      ],
+      "donor_mount": "cossacksich_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 19.43
+  },
+  "croat": {
+   "base": "croat",
+   "mount": {
+    "file": "croat_horse.oss",
+    "header": {
+     "k": 655,
+     "fps": 30,
+     "bones": 24,
+     "verts": 599,
+     "faces": 964,
+     "uvs": 735,
+     "size": 483576
+    },
+    "bytes": 483576,
+    "closure": 483576,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\croat.aaf\n   ActorList.Items[0].Name = croat_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\croat_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0,
+     -0.2082,
+     -0.0496
+    ],
+    "root_static": false,
+    "root_probe": {
+     "1": {
+      "rider": [
+       -1.988,
+       -0.452,
+       0.651
+      ],
+      "horse": [
+       0.03,
+       -0.192,
+       -0.073
+      ]
+     },
+     "49": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     },
+     "640": {
+      "rider": [
+       -2.01,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.0,
+       -0.208,
+       -0.05
+      ]
+     }
+    }
+   },
+   "detravel": "horse",
+   "scope": "scoped_mount",
+   "donor": {
+    "oss": {
+     "k": 655,
+     "fps": 30,
+     "bones": 22,
+     "verts": 653,
+     "faces": 1013,
+     "uvs": 829
+    },
+    "oss_bytes": 450144,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 17,
+      "count": 17,
+      "duration": 0.567
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 402,
+      "count": 68,
+      "duration": 2.267
+     },
+     "prepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 504,
+      "last": 505,
+      "count": 2,
+      "duration": 0.067
+     },
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "attack0": {
+      "first": 640,
+      "last": 653,
+      "count": 14,
+      "duration": 0.467
+     }
+    },
+    "aaf_count": 7,
+    "attach": [
+     "croat_horse.actor",
+     "croat_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "detravel": "horse",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0105,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0,
+     -0.2082
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     -0.019,
+     -0.4579
+    ],
+    "max_stand_drift_m": 0.1888,
+    "max_glue_drift_m": 0.3118,
+    "band": 0.5,
+    "ok": false
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.567,
+      "loop": true,
+      "ortho": 4.847,
+      "center": [
+       0.0,
+       0.0,
+       1.623
+      ],
+      "ax": 0.5,
+      "ay": 1.0048,
+      "tool": "croat_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       17
+      ],
+      "donor_count": 17,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       2,
+       4,
+       5,
+       7,
+       8,
+       10,
+       11,
+       13,
+       14,
+       16,
+       17
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       18,
+       35,
+       142,
+       152
+      ],
+      "fig_h": 0.7312,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.847,
+      "center": [
+       0.0,
+       0.0,
+       1.623
+      ],
+      "ax": 0.5,
+      "ay": 1.0048,
+      "tool": "croat_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       21,
+       40,
+       139,
+       144
+      ],
+      "fig_h": 0.65,
+      "foot": 0.9,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.467,
+      "loop": false,
+      "ortho": 4.847,
+      "center": [
+       0.0,
+       0.0,
+       1.623
+      ],
+      "ax": 0.5,
+      "ay": 1.0048,
+      "tool": "croat_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       640,
+       653
+      ],
+      "donor_count": 14,
+      "fps": 30,
+      "sampled_frames": [
+       640,
+       641,
+       642,
+       644,
+       645,
+       646,
+       647,
+       648,
+       649,
+       651,
+       652,
+       653
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       21,
+       23,
+       139,
+       144
+      ],
+      "fig_h": 0.7562,
+      "foot": 0.9,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 5.985,
+      "center": [
+       0.0,
+       0.0,
+       1.448
+      ],
+      "ax": 0.5,
+      "ay": 0.8649,
+      "tool": "croat_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       36,
+       152,
+       152
+      ],
+      "fig_h": 0.725,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds",
+    "detravel": "horse",
+    "scope": "scoped_mount"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 450144,
+      "expected": 450144
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        17,
+        0.567
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        640,
+        653,
+        0.467
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.847,
+       [
+        0.0,
+        0.0,
+        1.623
+       ],
+       0.5,
+       1.0048
+      ],
+      "death_sig": [
+       5.985,
+       [
+        0.0,
+        0.0,
+        1.448
+       ],
+       0.5,
+       0.8649
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "detravel": "horse",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0105,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0,
+       -0.2082
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       -0.019,
+       -0.4579
+      ],
+      "max_stand_drift_m": 0.1888,
+      "max_glue_drift_m": 0.3118,
+      "band": 0.5,
+      "ok": false,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "croat_horse",
+      "observed": [
+       "croat_horse",
+       "croat_horse",
+       "croat_horse",
+       "croat_horse"
+      ],
+      "donor_mount": "croat_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 21.93
   }
  }
 }

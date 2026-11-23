@@ -2,7 +2,7 @@
 """T6-U07 -- NAVAL family mini-baker (continue P-10).
 
 Donor truth target: ``yacht`` (the only live naval key). Additional readable
-naval meshes from NAVAL_EVIDENCE.md are supported as NEW scoped keys, each with
+naval meshes from docs/NAVAL_EVIDENCE.md are supported as NEW scoped keys, each with
 its OWN donor truth -- yacht's sheets are never substituted for another vessel.
 
 DESIGN -- thin wrapper, reference NEVER edited
@@ -358,8 +358,13 @@ def donor_truth(game, keys):
             ref = (m["anim"][0][frs[0]][0], m["anim"][0][frs[0]][1])
             skinned = {fr: skin(m, fr, ref) for fr in frs}
             lo, hi = _bbox([p for fr in frs for p in skinned[fr]])
-            center = (0.0, 0.0, round((lo[2] + hi[2]) * 0.5, 3))
-            ortho = projected_ortho(frs, skinned, center)
+            # T6-UNITS ruling: project with the SAME RAW center the baker uses
+            # (bake_crew builds an unrounded mathutils.Vector and rounds only
+            # for storage). Rounding before projecting is an apples-to-oranges
+            # comparison and produced a spurious ortho delta. Round AFTER.
+            center_raw = (0.0, 0.0, (lo[2] + hi[2]) * 0.5)
+            ortho = projected_ortho(frs, skinned, center_raw)
+            center = tuple(round(c, 3) for c in center_raw)
             dur = round((acts[CREW_ACTION][1] - acts[CREW_ACTION][0] + 1)
                         / max(1, hdr["fps"]), 3) if CREW_ACTION in acts else 0.0
             d["parts"]["crew"] = {
@@ -388,8 +393,11 @@ def donor_truth(game, keys):
             hm = read_osm_first(osm)
             hh = hm["header"]
             lo, hi = _bbox(hm["verts"])
-            center = tuple(round((lo[i] + hi[i]) * 0.5, 3) for i in range(3))
-            ortho = projected_ortho([0], {0: hm["verts"]}, center)
+            # See crew note: align with bake_hull(), which projects with the
+            # raw bbox midpoint and rounds center/ortho only when writing JSON.
+            center_raw = tuple((lo[i] + hi[i]) * 0.5 for i in range(3))
+            ortho = projected_ortho([0], {0: hm["verts"]}, center_raw)
+            center = tuple(round(c, 3) for c in center_raw)
             d["parts"]["hull"] = {
                 "osm": "data/actors/units/%s.osm" % base,
                 "verts": hh["nv"], "faces": hh["nt"], "uvs": hh["nu"],
@@ -714,7 +722,21 @@ def bake(a, out, game):
     print("naval scratch:", tmp, flush=True)
 
     truth = donor_truth(game, keys)
-    with open(os.path.join(out, "donor_truth.json"), "w", encoding="utf-8") as f:
+    # ACCUMULATE truth across one-key-at-a-time invocations, mirroring the
+    # staging manifest. A later vessel must not erase the already-verified
+    # yacht truth artifact.
+    truth_path = os.path.join(out, "donor_truth.json")
+    if os.path.exists(truth_path):
+        try:
+            prev = json.load(open(truth_path, encoding="utf-8"))
+            merged = dict(prev)
+            merged["keys"] = dict(prev.get("keys", {}))
+            merged["keys"].update(truth["keys"])
+            merged["generated_utc"] = truth["generated_utc"]
+            truth = merged
+        except Exception:
+            pass
+    with open(truth_path, "w", encoding="utf-8") as f:
         json.dump(truth, f, indent=1)
 
     mf_path = os.path.join(out, "staging_manifest.json")
@@ -843,11 +865,17 @@ def verify(a, out, game):
                 acts[CREW_ACTION]["frames"], ep["frames"],
                 "PASS" if fr_ok else "FAIL"))
             allpass &= fr_ok
-        # 5. build-stage truth: no tool compositing into crew
-        ctool = acts.get(CREW_ACTION, {}).get("tool", "missing")
-        cok = ctool is None
-        print("  BUILD_STAGE crew tool=%s (sail/flag separate, never composited) -> %s"
-              % (ctool, "PASS" if cok else "FAIL"))
+        # 5. build-stage truth: no tool compositing into crew. A hull-only key
+        # (battleship/xebec have no .oss) has no crew action, so the check is
+        # vacuously satisfied -- never FAIL a static-hull key for this.
+        if CREW_ACTION in acts:
+            ctool = acts[CREW_ACTION].get("tool", "missing")
+            cok = ctool is None
+            print("  BUILD_STAGE crew tool=%s (sail/flag separate, never composited) -> %s"
+                  % (ctool, "PASS" if cok else "FAIL"))
+        else:
+            cok = True
+            print("  BUILD_STAGE no crew action (static-hull-only key) -> PASS (N/A)")
         allpass &= cok
         # 6. sheet integrity: 8 distinct dirs per row, zero CLIP
         for action, ad in acts.items():

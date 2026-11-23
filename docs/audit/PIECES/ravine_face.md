@@ -378,8 +378,10 @@ parent spot-check and defect guidance.
 ---
 
 ## 7. REVOKED / REVISED (T6-T05, coordinator intervention — binding)
+**SUPERSEDED by decision D-34 (FINAL): FULL PASS.** This section is retained as
+historical provenance only; the REVOKED status below is no longer in force.
 
-All verdicts in §6 are **stale and REVOKED**. The coordinator re-opened the then
+**Historical:** all verdicts in §6 became stale and were REVOKED. The coordinator re-opened the then
 current compare PNG and found all four named defects unchanged. Investigation
 showed this was a **false claim**, not a pipeline bug: the updated code did
 execute (27.5% of pixels differed), but the "black contour FIXED" and "flat
@@ -394,8 +396,9 @@ pixels differ from the previous render. Measured: rock 14.76%, aniso 1.580, lit
 `#685D49`/shadow `#2F2B1E` ratio 2.198, rim 3 px, hi-freq 11.25, L std 24.80 —
 all numeric bands pass, and the four named defects are visibly addressed.
 
-**Status: REVOKED pending the coordinator's personal re-verification of the new
-PNG.** See `docs/t6/reports/T6-T05.md` §7 for the full claim/evidence table,
-pixel-diff proof, hashes and visual judgement.
+**Historical status at the time: REVOKED pending re-verification — cleared by
+decision D-34 (FULL PASS), which is the governing verdict.** The single-gully /
+no-tufts simplification is transferred as a non-blocking combo / T90 residual.
+See `docs/t6/reports/T6-T05.md` for the D-34 headline and full evidence.
 
 **End T6-T05 REVOKED/REVISED.**

@@ -309,4 +309,4 @@ and `ack`), **D-16** (runner starvation fixes), **D-17** / **D-18** / **D-19**
 
 ---
 
-**Related:** [docs/RESUME.md](RESUME.md) (master index) · [SWARM_BOARD.md](../SWARM_BOARD.md) · [SWARM_OPS.md](../SWARM_OPS.md) · [docs/DECISION_LOG.md](DECISION_LOG.md) · [docs/audit/GEN.md](audit/GEN.md) · [docs/research/FORECAST.md](research/FORECAST.md)
+**Related:** [docs/RESUME.md](RESUME.md) (master index) · [SWARM_BOARD.md](SWARM_BOARD.md) · [SWARM_OPS.md](SWARM_OPS.md) · [docs/DECISION_LOG.md](DECISION_LOG.md) · [docs/audit/GEN.md](audit/GEN.md) · [docs/research/FORECAST.md](research/FORECAST.md)

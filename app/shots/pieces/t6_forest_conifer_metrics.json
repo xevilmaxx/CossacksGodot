@@ -115,5 +115,93 @@
     "ground_mean_hex": "#39401B",
     "global_sat_mean": 0.551,
     "global_val_mean": 0.207
-  }
+  },
+  "gate_proof": {
+    "method": "crop source px -> resize 512^2 BILINEAR -> RGB/255 -> colorsys.rgb_to_hsv on pixels [::37] -> arithmetic mean S,V",
+    "gate": {
+      "sat": [
+        0.3,
+        0.55
+      ],
+      "val": [
+        0.25,
+        0.45
+      ]
+    },
+    "donor_dense_clean_11": {
+      "image": "large_1.webp",
+      "box_src_px": [
+        560,
+        20,
+        788,
+        200
+      ],
+      "crop_size": [
+        228,
+        180
+      ],
+      "sat": 0.543,
+      "val": 0.215,
+      "mean_luma_8bit": 50.3,
+      "in_gate": false
+    },
+    "donor_primary_clean_8": {
+      "image": "cossacks-3-v1-498085.jpg",
+      "box_src_px": [
+        0,
+        560,
+        260,
+        720
+      ],
+      "crop_size": [
+        260,
+        160
+      ],
+      "sat": 0.465,
+      "val": 0.253,
+      "mean_luma_8bit": 58.5,
+      "in_gate": true
+    },
+    "donor_floor_ref7_documented": {
+      "image": "cossacks-3-guardians-of-the-highlands-pc-gioco-steam-wallpaper-3.jpg",
+      "box_src_px": [
+        350,
+        480,
+        470,
+        570
+      ],
+      "crop_size": [
+        120,
+        90
+      ],
+      "sat": 0.304,
+      "val": 0.274,
+      "mean_luma_8bit": 64.1,
+      "in_gate": true
+    },
+    "donor_darkcrown_11_documented": {
+      "image": "large_1.webp",
+      "box_src_px": [
+        455,
+        55,
+        510,
+        105
+      ],
+      "crop_size": [
+        55,
+        50
+      ],
+      "sat": 0.526,
+      "val": 0.193,
+      "mean_luma_8bit": 45.3,
+      "in_gate": false
+    },
+    "port_render": {
+      "sat": 0.551,
+      "val": 0.207,
+      "mean_luma_8bit": 47.9,
+      "in_gate": false
+    }
+  },
+  "donor_panels": "CLEAN conifer crops; no units, minimap or UI"
 }

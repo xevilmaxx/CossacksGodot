@@ -98,23 +98,14 @@ SWELL_AMP_SCALE = 0.35   # INFERRED shore-body swell amplitude attenuation
 BODY_SWELL_FREQ = 1.0    # SUPERSEDED experiment (kept for provenance):
 #   donor-verbatim swell frequency was tried for the deep body; any amplitude
 #   strong enough to make the 6-14px ACF peak rendered as diagonal striping
-#   (parent re-check A). The body now uses swell_amp=0.0 + K2_GAIN instead.
-BODY_SWELL_AMP = 0.35    # INFERRED deep-body swell amplitude (measured grid
-#   probe6: with the 0.90 large-scale flattening, the weakest amplitude that
-#   still yields an interior 6-14px ACF local max, lag 12). Trade-off recorded
-#   openly: the numeric peak gate needs this energy while the visual gate
-#   caps it (parent re-check A).
+#   (parent re-check A). The deep body now uses swell_amp=0.0 (see render_deep).
+BODY_SWELL_AMP = 0.0     # SUPERSEDED value (was 0.35/0.375/0.45 in rejected
+#   variants); the deep-body call passes swell_amp=0.0 directly. The peak-vs-
+#   stripes trade-off is documented in the report (mechanism conflict).
 K2_GAIN = 1.0        # SUPERSEDED experiment (kept for provenance): a
 #   body-only k2-octave emphasis (x2.2, x4.0 tried) does NOT produce a 6-14px
-#   ACF peak (measured: monotonic decay both times) -- the peak needs the
-#   directional swell harmonic. Donor gain 1.0 restored (no body deviation).
-#   (12.9px cellular at P_SPAN; donor gain 1.0 recorded in water_map).
-#   The donor fBm's k2 octave carries too little variance to form the measured
-#   6-14px ACF peak on its own (measured: peak-less decay), while any 5-11px
-#   directional swell strong enough to peak renders as diagonal striping
-#   (parent re-check A). Emphasizing the NON-DIRECTIONAL cellular octave in
-#   the body only (normals keep donor gains, so glints are unaffected) gives
-#   the coherent texture scale without moire. Port-art decision, documented.
+#   ACF peak (measured: monotonic decay both times). Donor gain 1.0 restored
+#   (no body deviation).
 DIF = 0.01              # frag:186
 NORM_Z = 0.15           # frag:192
 LIGHT_VEC = np.array([-0.08618, 0.0, 0.93870])  # DERIVED light.cfg via vert:22

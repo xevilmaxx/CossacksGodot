@@ -12,7 +12,7 @@ Inputs (all read-only):
 Output (generated):
   docs/t6/DASHBOARD.md          one row per known ticket + one per manifest
 
-Honesty rules (SWARM_OPS.md 5b-QUALITY):
+Honesty rules (docs/SWARM_OPS.md 5b-QUALITY):
   * a missing report is NOT_RUN / UNVERIFIED, never PASS;
   * an ambiguous criterion verdict is UNVERIFIED;
   * evidence paths are copied from the source files, never guessed;

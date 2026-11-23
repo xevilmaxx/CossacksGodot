@@ -25,7 +25,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-BOARD = ROOT / "SWARM_BOARD.md"
+BOARD = ROOT / "docs" / "SWARM_BOARD.md"
 RESULTS = ROOT / "app" / ".godot_queue" / "results"
 JOBS = ROOT / "app" / ".godot_queue" / "jobs"
 

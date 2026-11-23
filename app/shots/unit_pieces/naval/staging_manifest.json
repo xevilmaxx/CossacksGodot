@@ -1,0 +1,337 @@
+{
+ "yacht": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 11.355,
+    "center": [
+     0.0,
+     -0.805,
+     3.214
+    ],
+    "ax": 0.5709,
+    "ay": 0.9267,
+    "tool": null,
+    "camera_group": "hull",
+    "bbox": [
+     23,
+     33,
+     137,
+     151
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9437,
+    "cx": 0.5,
+    "clip": false
+   },
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "camera_group": "stand",
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "yachttur": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 10.775,
+    "center": [
+     0.0,
+     -0.391,
+     2.651
+    ],
+    "ax": 0.5363,
+    "ay": 0.8709,
+    "tool": null,
+    "camera_group": "hull",
+    "bbox": [
+     8,
+     20,
+     151,
+     143
+    ],
+    "fig_h": 0.7688,
+    "foot": 0.8938,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "camera_group": "stand",
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "fishboat": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 4.6,
+    "center": [
+     -0.0,
+     0.019,
+     1.197
+    ],
+    "ax": 0.4958,
+    "ay": 0.8926,
+    "tool": null,
+    "camera_group": "hull",
+    "bbox": [
+     22,
+     18,
+     138,
+     152
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.95,
+    "cx": 0.5,
+    "clip": false
+   },
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "camera_group": "stand",
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "frigate": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 19.435,
+    "center": [
+     0.0,
+     0.064,
+     5.468
+    ],
+    "ax": 0.4967,
+    "ay": 0.9241,
+    "tool": null,
+    "camera_group": "hull",
+    "bbox": [
+     24,
+     31,
+     136,
+     151
+    ],
+    "fig_h": 0.75,
+    "foot": 0.9437,
+    "cx": 0.5,
+    "clip": false
+   },
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "camera_group": "stand",
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "galley": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 14.825,
+    "center": [
+     0.019,
+     0.346,
+     3.534
+    ],
+    "ax": 0.4767,
+    "ay": 0.8582,
+    "tool": null,
+    "camera_group": "hull",
+    "bbox": [
+     8,
+     30,
+     151,
+     148
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.925,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "walk": {
+    "frames": 12,
+    "duration": 9.333,
+    "loop": true,
+    "ortho": 6.047,
+    "center": [
+     0.0,
+     0.0,
+     1.481
+    ],
+    "ax": 0.5,
+    "ay": 0.8693,
+    "tool": null,
+    "camera_group": "stand",
+    "bbox": [
+     9,
+     31,
+     150,
+     149
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.9313,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "battleship": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 19.311,
+    "center": [
+     -0.008,
+     -0.261,
+     4.985
+    ],
+    "ax": 0.5135,
+    "ay": 0.8896,
+    "tool": null,
+    "camera_group": "hull",
+    "bbox": [
+     16,
+     28,
+     144,
+     152
+    ],
+    "fig_h": 0.775,
+    "foot": 0.95,
+    "cx": 0.5,
+    "clip": false
+   }
+  }
+ },
+ "xebec": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 15.52,
+    "center": [
+     -0.116,
+     -0.76,
+     5.062
+    ],
+    "ax": 0.5489,
+    "ay": 0.9988,
+    "tool": null,
+    "camera_group": "hull",
+    "bbox": [
+     8,
+     14,
+     151,
+     149
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9313,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ }
+}

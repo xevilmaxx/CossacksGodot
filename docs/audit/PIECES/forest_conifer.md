@@ -291,3 +291,39 @@ Visual A/B: reads as a dark clumped conifer forest with organic layered
 spruces, lit tips and soft directional shadows — not stencil icons on a flat
 tile; no hard black outlines (near-black 0.006 %). Still a 2D proxy: no true
 branch-level AO/height channel. Open questions and caveats: `docs/t6/reports/T6-T08.md`.
+
+### 6.4 REVOKED / REVISED — parent HOLD (2026-11-23, historical)
+
+> **SUPERSEDED by §6.5 — D-38 FINAL FULL PASS.** This section is retained as
+> historical provenance only; do not parse it as the current status.
+
+At the time, parent T6-TERRAIN put T08 on **CONDITIONAL / HOLD**:
+
+- The two first compare panels were revoked for donor contamination
+  (`large_1.webp [150,20,638,377]` had a minimap + troop formations;
+  `cossacks-3-v1-498085.jpg [0,180,560,560]` had troop formations). They were
+  replaced by verified clean crops `large_1.webp [560,20,788,200]` and
+  `cossacks-3-v1-498085.jpg [0,560,260,720]`; both final sheets were re-opened
+  and confirmed free of units/minimap/UI.
+- The supporting global HSV gate remains unmet (port sat 0.551 / val 0.207).
+  An identical-method donor measurement shows the donor's clean dense-conifer
+  crop at 0.543 / 0.215 and its dark-crown box at 0.526 / 0.193 — both outside
+  the 0.25 value floor. Formal proof is submitted for the parent's P-45-class
+  ruling; the gate was **not** self-waived.
+
+Revised hashes: renderer `29CD0C4DF525E11E`, piece PNG `28E5B06053CA5BB5`
+(unchanged), `_compare.png` `A0286D8AF226179D`,
+`_compare_primary.png` `85A195FDE4253C23`, metrics `EC701D4ECA8C4609`.
+Full revocation record and adjudication evidence:
+`docs/t6/reports/T6-T08.md` §10.
+
+### 6.5 D-38 FINAL — FULL PASS (2026-11-23)
+
+**Coordinator decision D-38 (final): T6-T08 is FULL PASS**, restored by parent
+T6-TERRAIN after personally re-opening both new clean donor sheets. Ranked
+criteria #1–#8 govern and all pass; the "8/8 ranked criteria PASS" line in §6 is
+final. The supporting global HSV gate is ruled **N/A for pure dense-forest
+close-up pieces** as a **scope clarification, NOT a waiver** — it **remains in
+force for mixed-scene / combo checks at T90**. No render change: piece PNG stays
+`28E5B06053CA5BB5`. T08 counts as a PASS piece toward the ≥12/15 gate.
+Full ruling: `docs/t6/reports/T6-T08.md` §11.

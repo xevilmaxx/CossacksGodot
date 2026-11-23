@@ -820,20 +820,25 @@ func _setup_water_overlay() -> void:
 	water_mat.set_shader_parameter("sun_dir", Vector2(-0.3447 / 4.0, 0.9387))
 	water_mat.set_shader_parameter("map_size", Vector2(float(game.MAP_W), float(game.MAP_H)))
 	water_mat.set_shader_parameter("tile_m", Data.TILE_M)
-	water_mat.set_shader_parameter("wave0", ImageTexture.create_from_image(ter_wave0))
-	water_mat.set_shader_parameter("wave1", ImageTexture.create_from_image(ter_wave1))
-	water_mat.set_shader_parameter("wave2", ImageTexture.create_from_image(ter_water))
-	# T2-BUILD-WATER: donor nautic() foam reuses waveMap = diffusewaves0, not
-	# the bright fine diffusewaves2 dither (43% clipped) that inflated glints.
-	water_mat.set_shader_parameter("foam_tex", ImageTexture.create_from_image(ter_wave0))
+	# T6-W04: donor water-plane Y feeds waveheight = clamp(WL*3-1.5,0,1)
+	# (water.dev.frag:174). 1.0 is a mid-range port choice inside the donor's
+	# 0..2 range; the port's -0.25 terrain-classification threshold is NOT it.
+	water_mat.set_shader_parameter("water_level", 1.0)
+	# T6-W04: ONE wave sampler (donor waveMap = diffusewaves0). The wave1,
+	# wave2 and foam_tex uniforms were removed from water_overlay.gdshader;
+	# their set_shader_parameter calls are removed in the same pass (D2).
+	water_mat.set_shader_parameter("wave_noise", ImageTexture.create_from_image(ter_wave0))
 	water_mat.set_shader_parameter("time", anim_t)
 
-	# R = coverage (type-3 grid), G = depth/1.07, B = depth/0.57, A = 1.
-	# T2-BUILD-WATER: bake depth at SUB-TILE resolution (4 samples/tile) so the
-	# 0.57 m foam/alpha ramp spans ~8 px at 16 px/m instead of one 32-px tile
-	# step. Coverage stays tile-granular but LINEAR filtering now feathers it
-	# over a quarter tile (verdict_water G4/G6, WATER_DEEP D7/M9). This runs
-	# once at setup; the 2-chunk/frame cap and LRU 24 are untouched (N-07).
+	# R = coverage, G = depth/1.07, B = depth/0.57, A = 1.
+	# T6-W04 D1: depth is baked at SUB-TILE resolution (4 samples/tile, 0.5 m
+	# per texel) so the 0.57/1.07 m coast ramps carry a 30-50 px wash.
+	# Coverage used to be a hard type-3 tile flag, which rendered the shore as
+	# a 1-tile staircase. It is now a continuous ramp of the SIGNED waterline
+	# distance from game.height_at() (bilinear): the 3-band sand -> wash ->
+	# water edge follows the height contour, not the tile grid. No black gap
+	# (R never leaves a zero strip inside the ramp) and no sawtooth. Runs once
+	# at setup; the 2-chunk/frame cap and LRU 24 are untouched (N-07).
 	var sub := 4
 	var mask := Image.create(game.MAP_W * sub, game.MAP_H * sub, false, Image.FORMAT_RGBA8)
 	for y in game.MAP_H * sub:
@@ -841,9 +846,13 @@ func _setup_water_overlay() -> void:
 			var tx: int = mini(int(floor(float(x) / float(sub))), game.MAP_W - 1)
 			var ty: int = mini(int(floor(float(y) / float(sub))), game.MAP_H - 1)
 			var i: int = game._t(tx, ty)
-			var wet: float = 1.0 if int(game.terrain[i]) == 3 else 0.0
 			var wp := Vector2(float(x) / float(sub) * Data.TILE_M, float(y) / float(sub) * Data.TILE_M)
-			var dep: float = maxf(0.0, WATER_LEVEL - game.height_at(wp))
+			var sdep: float = WATER_LEVEL - game.height_at(wp)
+			var dep: float = maxf(0.0, sdep)
+			var wet: float = smoothstep(-0.10, 0.15, sdep)
+			# Keep dry high ground dry even if its interpolated height dips.
+			if int(game.terrain[i]) != 3 and sdep <= 0.0:
+				wet = 0.0
 			mask.set_pixel(x, y, Color(wet, clampf(dep / 1.07, 0.0, 1.0), clampf(dep / 0.57, 0.0, 1.0), 1.0))
 	var mask_tex := ImageTexture.create_from_image(mask)
 
@@ -1812,9 +1821,24 @@ const TREE_SMALL_POOL := ["tree_pinesmall1", "tree_pinesmall2", "tree_pinesmall3
 	"tree_firsmall4"]
 const BUSH_POOL := ["bush1", "bush2", "bush3", "bush4"]
 const STUMP_POOL := ["tree_stump1", "tree_stump2", "tree_stump3", "tree_stump4"]
+# T6-T90 / T11: all 42 donor-mesh rock silhouettes are now wired. The 32 that
+# used to stay dormant (stones_rocks.md §5 Q5) are appended after the original
+# 10 hi-res + 2 legacy keys: rock_stones7..10 (4), rock_smallstones3..6 (4),
+# rock_landstone3..4 (2), rock_smallstonesea1..6 (6), rock_sea1..6 (6),
+# rock_stonessea1..10 (10). No new visual system: this only widens the pool the
+# existing `_draw_resources()` "stone" branch samples with `_prop_tex()`.
 const ROCK_POOL := ["rock", "stone", "rock_stones1", "rock_stones2", "rock_stones3",
 	"rock_stones4", "rock_stones5", "rock_stones6", "rock_smallstones1",
-	"rock_smallstones2", "rock_landstone1", "rock_landstone2"]
+	"rock_smallstones2", "rock_landstone1", "rock_landstone2",
+	"rock_stones7", "rock_stones8", "rock_stones9", "rock_stones10",
+	"rock_smallstones3", "rock_smallstones4", "rock_smallstones5", "rock_smallstones6",
+	"rock_landstone3", "rock_landstone4",
+	"rock_smallstonesea1", "rock_smallstonesea2", "rock_smallstonesea3",
+	"rock_smallstonesea4", "rock_smallstonesea5", "rock_smallstonesea6",
+	"rock_sea1", "rock_sea2", "rock_sea3", "rock_sea4", "rock_sea5", "rock_sea6",
+	"rock_stonessea1", "rock_stonessea2", "rock_stonessea3", "rock_stonessea4",
+	"rock_stonessea5", "rock_stonessea6", "rock_stonessea7", "rock_stonessea8",
+	"rock_stonessea9", "rock_stonessea10"]
 const TREE_SIZE_BUCKETS := [0.9, 1.0, 1.12]
 # T2-BUILD-RENDER / verdict_decor: the per-cell forest detail was 1-3 trees
 # (mean 2 => 1953 trees/MP, 2-3x donor). Thin to ~1/cell (650-1000/MP) while
@@ -1833,12 +1857,16 @@ const FOREST_CONIFER_POOL := ["tree_spruce1", "tree_spruce2", "tree_spruce3",
 	"tree_firsmall4", "tree_pinedry1", "tree_pinedry2", "tree_pinedry3",
 	"tree_pinedry4"]
 const FOREST_BROAD_POOL := ["tree_oak"]
-# Weighted: ferns/bushes/plantain dominate; flower1..3 are only 3 of 24 picks
-# (~12%) so bright yellow blossoms stay scattered instead of forming a border.
+# Weighted: ferns/bushes/plantain dominate; flower1..3 are only 3 of 27 picks
+# (~11%) so bright yellow blossoms stay scattered instead of forming a border.
+# T6-T90 / T10: the fallen-wood/stump piles from the verified understory piece
+# are wired into the live pool (tree_stump2's pure-black backing is keyed out at
+# asset level). They reuse the existing `_draw_forest_understory()` draw path.
 const FOREST_UNDERSTORY_POOL := ["bush1", "bush2", "bush3", "bush4",
 	"fern1", "fern2", "fern3", "fern4", "plantain1", "plantain2", "plantain3",
 	"fern1", "fern2", "fern3", "fern4", "bush1", "bush2", "bush3", "bush4",
-	"plantain1", "plantain2", "flower1", "flower2", "flower3"]
+	"plantain1", "plantain2", "flower1", "flower2", "flower3",
+	"tree_stump2", "tree_stump3", "tree_stump4"]
 # Visible heights at 720p: small 15-30 px, medium 40-60 px, large 70-100 px.
 # (1.4/3.2/5.4 m x 16 px/m = 22/51/86 px; the old 1.6/4.0/6.8 overshot
 # 96-122 px on the large bucket, verdict_decor conifer #4.)
