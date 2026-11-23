@@ -23,6 +23,18 @@ render_mode blend_mix;
 //   * D-43 deviation is PRESERVED: the calibrated shallow tint is NOT forced
 //     to #C3D1CA, and BODY_SWELL_AMP/BODY_SPAN are left untouched.
 //   * Public interface, all uniforms, and alpha = coverage*coastfade2 unchanged.
+//
+// T-WATER-FAST — fetch optimization only; NO VISUAL CHANGE INTENDED.
+//   * water_map()'s fixed 9-octave loop breaks as soon as g==0. With
+//     BODY_TAPER=0.17 the body call has g=0 for i>=6, and amp*g*|sin(..)| is
+//     then exactly 0: -3 noise fetches per water pixel. The four normal taps
+//     and the level tap pass octave_taper=0 (g==1 throughout), so they never
+//     break and stay bit-identical.
+//   * turbidity/mottle and foam nautic()/particles() are wrapped in
+//     if (band > 0.0) with zero defaults (band = coastfade*(1-coastfade2) is
+//     exactly 0 for depth >= 1.07 m). Every one of those terms is already
+//     band-multiplied, so deep-water output is algebraically unchanged:
+//     -2 -3 -3 = -8 fetches on deep water. Total deep-water saving -11.
 
 uniform sampler2D wave_noise : repeat_enable, filter_linear;
 
@@ -117,6 +129,9 @@ float water_map(vec2 p, float height, float swell_amp, float octave_taper) {
         // octave_taper=0 keeps the donor loops verbatim (normals/level).
         // BODY_TAPER>0 emulates mipmap attenuation of the high octaves.
         float g = clamp(1.0 - octave_taper * float(i), 0.0, 1.0);
+        // T-WATER-FAST: when g==0 the octave contributes exactly 0; break
+        // before its noise fetch (loop bound stays the constant 9).
+        if (g <= 0.0) break;
         f -= amp * g * abs(sin((noise(p + shift1 * s) - 0.5) * 2.0));
         amp *= 0.59;                         // :101
         s  *= -1.329;                        // :101
@@ -199,9 +214,14 @@ void fragment() {
     // blotchy mottle at ~1/5 the foam's spatial rate; no new sampler/uniform.
     // band = coastfade*(1-coastfade2) is zero in deep water, so it is gated.
     float band = coastfade * (1.0 - coastfade2);       // zero beyond 1.07 m
-    vec2  turb_uv = juv * 50.0;
-    float turb  = 0.62 * noise(turb_uv) + 0.38 * noise(M * turb_uv + vec2(11.3, 4.7));
-    float mottle = (turb - 0.5) * 2.0;                 // -1..1, centred blotchy field
+    // T-WATER-FAST: mottle is consumed only through band-multiplied terms;
+    // with band==0 the two noise taps can be skipped with identical output.
+    float mottle = 0.0;
+    if (band > 0.0) {
+        vec2  turb_uv = juv * 50.0;
+        float turb  = 0.62 * noise(turb_uv) + 0.38 * noise(M * turb_uv + vec2(11.3, 4.7));
+        mottle = (turb - 0.5) * 2.0;                 // -1..1, centred blotchy field
+    }
 
     // ---- depth colour (donor frag:198-201, 223-227) ----
     // Calibrated equivalent of mix(watercolor*intensity, watercolor2,
@@ -238,9 +258,15 @@ void fragment() {
     // the scalloped edge breaks up instead of reading as uniform-width. Foam
     // stays purely procedural (nautic()/particles()); no texture added.
     float foam_gain = FOAM_GAIN * (0.7 + 0.6 * (0.5 + 0.5 * mottle)); // 0.7..1.3x
-    vec2 fp = juv * 230.0;                            // W02 P_SPAN analogue
-    float foam_n = nautic(fp);
-    float foam_p = particles(fp);
+    // T-WATER-FAST: nautic()/particles() are 6 more noise taps that feed only
+    // the band-multiplied foam add; deep water skips them, output unchanged.
+    float foam_n = 0.0;
+    float foam_p = 0.0;
+    if (band > 0.0) {
+        vec2 fp = juv * 230.0;                        // W02 P_SPAN analogue
+        foam_n = nautic(fp);
+        foam_p = particles(fp);
+    }
     col += band * (vec3(0.5, 0.6, 0.7) * foam_n + foam_p * 0.02)
          * foam_gain * 8.0;
 

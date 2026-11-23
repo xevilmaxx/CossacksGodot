@@ -95,6 +95,25 @@ var unit_anim_layer: Node2D   # baked unit sheets only: alpha-solid shader lives
 var pending_unit_sprites: Array = []
 var bld_layer: Node2D
 var res_layer: Node2D
+# T-FOREST-BAKE: static forest detail (the 600-4000 prop quads/frame that used
+# to be rebuilt inside res_layer.draw on every camera move) is baked once per
+# chunk into cached ImageTextures on a dedicated layer directly BELOW res_layer.
+# res_layer then draws only dynamic harvestable nodes (dozens of quads).
+const FOREST_BAKE_PXM := 8.0  # half-res cache: 8 px per world metre (screen is 16)
+const FOREST_BAKE_MARGIN := 128  # full-res screen px of canopy/lean bleed per side
+const FOREST_CHUNK_CACHE := 20   # LRU cap (16-24); ~1.6 MB image + ~1.6 MB GPU each => ~64 MB
+const FOREST_BAKE_PER_FRAME := 2 # centre-out cap, mirrors terrain's 2/frame
+var forest_layer: Node2D = null
+var forest_chunks: Dictionary = {}  # Vector2i -> Sprite2D (baked forest detail)
+var forest_order: Array = []        # LRU order, least-recently-used first
+var forest_view: SubViewport = null # single reusable render target
+var forest_canvas: Node2D = null    # canvas inside forest_view; draw-callback target
+var forest_bake_enabled := true     # false => _draw_resources keeps the live fallback
+var _forest_bake_key := ""          # invalidation signature (map/quality/season/scale)
+var _forest_bake_gen := 0           # bumps on invalidate; discards in-flight bakes
+var _forest_bake_busy := false      # serialises the async viewport readbacks
+var _forest_bake_cx := 0
+var _forest_bake_cy := 0
 var fx_layer: Node2D
 var variants: Array = []  # per terrain type: Array of Image (16x16)
 var fx_items: Array = []  # transient visual effects
@@ -233,6 +252,15 @@ func bind(g: C3Game, h: CanvasLayer = null) -> void:
 			return int(warm_counts[a]) < int(warm_counts[b]))
 		for bn in warm_names:
 			_block_img(str(bn))
+	# T-FOREST-BAKE: forest_layer shares z=1 with res_layer but is added FIRST,
+	# so the dynamic harvestable/building nodes still draw on top of the baked
+	# understory. Fog (z=10) and water (z=-9) are untouched: never merge forest
+	# into terrain chunks, or the water shader would tint the tree canopies.
+	forest_layer = Node2D.new()
+	forest_layer.z_index = 1
+	add_child(forest_layer)
+	_setup_forest_view()
+	invalidate_forest_bake()
 	res_layer = Node2D.new()
 	res_layer.z_index = 1
 	add_child(res_layer)
@@ -1784,11 +1812,229 @@ func _sync_terrain_chunks() -> void:
 				fs.queue_free()
 			fallback_chunks.erase(k)
 
+# ---------------------------------------------------------------------------
+# T-FOREST-BAKE: static forest-detail chunk cache.
+#
+# The old path redrew every forest tree, shrub and contact shadow from
+# res_layer.draw on EVERY camera move (600-4000 canvas_item commands/frame).
+# The same deterministic props are now rasterised once per 32x32-tile chunk
+# into one transparent ImageTexture and held on `forest_layer` (z=1, added
+# before res_layer, so live resource/building nodes stay on top). Panning then
+# only repositions/reuses a handful of cached sprites -> ~6-20 quads/frame.
+#
+# Invalidation is keyed by map seed/dims + terrain px + view scale + season +
+# relief; res_dirty / fields_anim are deliberately NOT in the key (forest
+# decor is independent of harvest nodes). Call invalidate_forest_bake() from a
+# new bind or a quality change; _sync_forest_chunks() also auto-detects key
+# changes so a season switch never shows stale canopies.
+# ---------------------------------------------------------------------------
+
+func _forest_bake_signature() -> String:
+	if game == null:
+		return ""
+	return "%s|%dx%d|%d|%.2f|%s|%s|%s" % [
+		str(Data.RANDOM_SEED), game.MAP_W, game.MAP_H, terrain_px, view_scale,
+		_season_key(), _relief_key(), str(Data.GENERATOR_VERSION)]
+
+func invalidate_forest_bake() -> void:
+	for sp in forest_chunks.values():
+		if sp != null and is_instance_valid(sp):
+			sp.queue_free()
+	forest_chunks.clear()
+	forest_order.clear()
+	# Do NOT clear _forest_bake_busy here: an in-flight coroutine may still be
+	# awaiting frame_post_draw and using the shared viewport. Its generation
+	# check below discards the stale texture and then releases the lock.
+	_forest_bake_gen += 1
+	_forest_bake_key = _forest_bake_signature()
+
+func _setup_forest_view() -> void:
+	if forest_view != null and is_instance_valid(forest_view):
+		return
+	var side := int(CHUNK_T * Data.TILE_M * view_scale) + 2 * FOREST_BAKE_MARGIN
+	forest_view = SubViewport.new()
+	forest_view.transparent_bg = true
+	forest_view.disable_3d = true
+	forest_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	forest_view.size = Vector2i(side, side)
+	add_child(forest_view)
+	forest_canvas = Node2D.new()
+	forest_view.add_child(forest_canvas)
+	forest_canvas.draw.connect(_draw_forest_chunk_canvas)
+
+func _forest_touch(k: Vector2i) -> void:
+	var i := forest_order.find(k)
+	if i >= 0:
+		forest_order.remove_at(i)
+	forest_order.append(k)
+	while forest_order.size() > FOREST_CHUNK_CACHE:
+		var old: Vector2i = forest_order.pop_front()
+		var sp: Sprite2D = forest_chunks.get(old, null)
+		if sp != null and is_instance_valid(sp):
+			sp.queue_free()
+		forest_chunks.erase(old)
+
+func _register_forest_chunk(k: Vector2i, tex: Texture2D, cx: int, cy: int) -> void:
+	if forest_layer == null:
+		return
+	var old: Sprite2D = forest_chunks.get(k, null)
+	if old != null and is_instance_valid(old):
+		old.queue_free()
+	var sp := Sprite2D.new()
+	sp.texture = tex
+	sp.centered = false
+	# The cache texture includes FOREST_BAKE_MARGIN of bleed on every side.
+	# Undo that margin (and the half-res downsample) when placing the sprite so
+	# the chunk's real top-left lands exactly on its world position.
+	var cs := float(CHUNK_T) * Data.TILE_M * view_scale
+	var inv := view_scale / FOREST_BAKE_PXM
+	sp.position = Vector2(float(cx) * cs, float(cy) * cs) \
+		- Vector2(FOREST_BAKE_MARGIN, FOREST_BAKE_MARGIN) * inv
+	sp.scale = Vector2(inv, inv)
+	sp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	forest_layer.add_child(sp)
+	forest_chunks[k] = sp
+	_forest_touch(k)
+
+func _bake_forest_chunk(cx: int, cy: int) -> void:
+	var k := _chunk_key(cx, cy)
+	var gen := _forest_bake_gen
+	_forest_bake_busy = true
+	var bake_side := int(float(CHUNK_T) * Data.TILE_M * FOREST_BAKE_PXM)
+	var bm := int(float(FOREST_BAKE_MARGIN) * FOREST_BAKE_PXM / view_scale)
+	# Headless has no rasteriser (frame_post_draw never resolves). Register a
+	# transparent placeholder so cache/LRU/sync paths still run in short tests;
+	# there is nothing to see in a headless viewport anyway.
+	if DisplayServer.get_name() == "headless":
+		var blank := Image.create(bake_side + 2 * bm, bake_side + 2 * bm,
+			true, Image.FORMAT_RGBA8)
+		blank.fill(Color(0, 0, 0, 0))
+		_register_forest_chunk(k, ImageTexture.create_from_image(blank), cx, cy)
+		_forest_bake_busy = false
+		return
+	if forest_view == null or forest_canvas == null:
+		forest_bake_enabled = false  # correctness: keep the live fallback
+		_forest_bake_busy = false
+		return
+	_forest_bake_cx = cx
+	_forest_bake_cy = cy
+	forest_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	forest_canvas.queue_redraw()
+	await RenderingServer.frame_post_draw
+	# A quality/season/map change may have invalidated the cache while we were
+	# suspended; that texture belongs to the old map, so drop it.
+	if gen != _forest_bake_gen:
+		_forest_bake_busy = false
+		return
+	if not is_instance_valid(forest_view) or not is_instance_valid(forest_canvas):
+		_forest_bake_busy = false
+		return
+	var src: Texture2D = forest_view.get_texture()
+	if src == null:
+		forest_bake_enabled = false
+		_forest_bake_busy = false
+		return
+	var img: Image = src.get_image()
+	if img == null or img.is_empty():
+		forest_bake_enabled = false
+		_forest_bake_busy = false
+		return
+	var full := int(CHUNK_T * Data.TILE_M * view_scale) + 2 * FOREST_BAKE_MARGIN
+	if img.get_width() != full or img.get_height() != full:
+		forest_bake_enabled = false
+		_forest_bake_busy = false
+		return
+	# Downsample after the GPU pass: draw code stays byte-identical (full screen
+	# px), only the cached copy is half-res. Bilinear keeps blob shadows soft.
+	img.resize(bake_side + 2 * bm, bake_side + 2 * bm, Image.INTERPOLATE_BILINEAR)
+	_register_forest_chunk(k, ImageTexture.create_from_image(img), cx, cy)
+	_forest_bake_busy = false
+
+func _sync_forest_chunks() -> void:
+	if game == null or forest_layer == null:
+		return
+	var sig := _forest_bake_signature()
+	if sig != _forest_bake_key:
+		invalidate_forest_bake()
+		_forest_bake_key = sig
+	if not forest_bake_enabled or _forest_bake_busy:
+		return
+	# Same view -> tile -> chunk derivation as _sync_terrain_chunks().
+	var m0 := view_rect.position / view_scale
+	var m1 := view_rect.end / view_scale
+	var t0 := game.tile_of(m0)
+	var t1 := game.tile_of(m1)
+	var c0x := maxi(0, t0.x / CHUNK_T)
+	var c0y := maxi(0, t0.y / CHUNK_T)
+	var c1x := mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T)
+	var c1y := mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T)
+	var ccx := float(c0x + c1x) * 0.5
+	var ccy := float(c0y + c1y) * 0.5
+	var q: Array = []
+	for cy in range(c0y, c1y + 1):
+		for cx in range(c0x, c1x + 1):
+			var k := _chunk_key(cx, cy)
+			if forest_chunks.has(k):
+				continue
+			var dx := float(cx) - ccx
+			var dy := float(cy) - ccy
+			q.append({"k": k, "cx": cx, "cy": cy, "d": dx * dx + dy * dy})
+	q.sort_custom(func(a, b): return float(a["d"]) < float(b["d"]))
+	var built := 0
+	for m in q:
+		if built >= FOREST_BAKE_PER_FRAME or _forest_bake_busy:
+			break
+		# Fire-and-forget: sync() must not become a coroutine (main.gd calls it
+		# every _process). The bake serialises itself via _forest_bake_busy.
+		_bake_forest_chunk(int(m["cx"]), int(m["cy"]))
+		built += 1
+
+# Canvas draw callback inside the reusable SubViewport. It reproduces the
+# _draw_forest_detail gates but only over cells OWNED by this chunk; each tree
+# (including edge singles) is drawn exactly once, in the chunk of the cell it
+# sits on. Canopy/lean bleed into neighbours comes from the margin baked into
+# every neighbouring chunk's sprite.
+func _draw_forest_chunk_canvas() -> void:
+	if game == null or forest_canvas == null:
+		return
+	var x0 := _forest_bake_cx * CHUNK_T
+	var y0 := _forest_bake_cy * CHUNK_T
+	var x1 := mini(x0 + CHUNK_T - 1, game.MAP_W - 1)
+	var y1 := mini(y0 + CHUNK_T - 1, game.MAP_H - 1)
+	var full := int(CHUNK_T * Data.TILE_M * view_scale) + 2 * FOREST_BAKE_MARGIN
+	var margin := Rect2(0, 0, full, full)
+	var origin := Vector2(float(x0) * Data.TILE_M * view_scale,
+		float(y0) * Data.TILE_M * view_scale) \
+		- Vector2(FOREST_BAKE_MARGIN, FOREST_BAKE_MARGIN)
+	for y in range(y0, y1 + 1):
+		for x in range(x0, x1 + 1):
+			if int(game.terrain[game._t(x, y)]) == 2:
+				_draw_forest_cell_trees(x, y, forest_canvas, origin, margin)
+			else:
+				# Sparse single on a non-forest cell touching a forest cell.
+				var touches := false
+				for oy in [-1, 0, 1]:
+					for ox in [-1, 0, 1]:
+						if ox == 0 and oy == 0:
+							continue
+						var nx: int = x + ox
+						var ny: int = y + oy
+						if nx < 0 or ny < 0 or nx >= game.MAP_W or ny >= game.MAP_H:
+							continue
+						if int(game.terrain[game._t(nx, ny)]) == 2:
+							touches = true
+							break
+					if touches:
+						break
+				if touches:
+					_draw_forest_cell_edge(x, y, forest_canvas, origin, margin)
+
 func sync(dt: float) -> void:
 	# visible WORLD rect (not screen pixels): cull in the same space the
 	# entities are drawn in, otherwise big maps hide everything
 	view_rect = get_viewport().get_canvas_transform().affine_inverse() * get_viewport_rect()
 	_sync_terrain_chunks()
+	_sync_forest_chunks()  # T-FOREST-BAKE: bake at most 1-2 missing chunks/frame
 	anim_t += dt
 	# TB-B1c: advance the GPU water clock EVERY frame (the old bake-time phase
 	# only changed on chunk rebuild, so a stationary camera saw frozen water).
@@ -2092,8 +2338,13 @@ func _draw_prop(layer: Node2D, tex: Texture2D, p: Vector2, world_h: float,
 # hashed from `fp` (no RNG, no per-frame state), so camera moves and chunk/LRU
 # rebuilds never change a clump. `edge` singles are a little shorter so forest
 # borders feather into the meadow instead of stopping at a hard tile edge.
-func _draw_forest_tree(fp: Vector2, margin: Rect2, edge := false) -> void:
-	var p := world_to_px(Vector2(fp.x * Data.TILE_M, fp.y * Data.TILE_M))
+# T-FOREST-BAKE: optional `layer`/`origin` let the exact same draw code emit
+# into the reusable bake viewport (origin = chunk top-left in screen px). The
+# defaults keep the live fallback path byte-for-byte identical.
+func _draw_forest_tree(fp: Vector2, margin: Rect2, edge := false,
+		layer: Node2D = null, origin := Vector2.ZERO) -> void:
+	var dst := layer if layer != null else res_layer
+	var p := world_to_px(Vector2(fp.x * Data.TILE_M, fp.y * Data.TILE_M)) - origin
 	if not margin.has_point(p):
 		return
 	var h := _hash(fp.x, fp.y)
@@ -2113,14 +2364,17 @@ func _draw_forest_tree(fp: Vector2, margin: Rect2, edge := false) -> void:
 	var size_var := 0.88 + 0.24 * _hash(fp.x + 29.0, fp.y - 19.0)
 	# Sun-linked lower-left contact shadow (was foot-centred), with a higher
 	# luma ratio so the canopy reads as lifted off the ground.
-	_blob_rect(res_layer, p + Vector2(-hh * 0.55, 2.5),
+	_blob_rect(dst, p + Vector2(-hh * 0.55, 2.5),
 		6.0 + hh * 1.8, 2.8 + hh * 0.6, Color(0, 0, 0, 0.22))
-	_draw_prop(res_layer, tex, p, hh * size_var, Color(1.12, 1.2, 1.02),
+	_draw_prop(dst, tex, p, hh * size_var, Color(1.12, 1.2, 1.02),
 		(_hash(fp.x - 31.0, fp.y + 13.0) - 0.5) * 0.26,
 		_prop_bucket(fp, 7.0, 2) == 0)
 
-func _draw_forest_understory(fp: Vector2, margin: Rect2) -> void:
-	var p := world_to_px(Vector2(fp.x * Data.TILE_M, fp.y * Data.TILE_M))
+# T-FOREST-BAKE: same refactor as _draw_forest_tree above.
+func _draw_forest_understory(fp: Vector2, margin: Rect2,
+		layer: Node2D = null, origin := Vector2.ZERO) -> void:
+	var dst := layer if layer != null else res_layer
+	var p := world_to_px(Vector2(fp.x * Data.TILE_M, fp.y * Data.TILE_M)) - origin
 	if not margin.has_point(p):
 		return
 	var pick_idx: int = int(_hash(fp.x, fp.y) * float(FOREST_UNDERSTORY_POOL.size())) \
@@ -2137,14 +2391,52 @@ func _draw_forest_understory(fp: Vector2, margin: Rect2) -> void:
 	var hh := 1.08 * size_var
 	if pick.begins_with("flower"):
 		hh *= 0.75
-	_blob_rect(res_layer, p + Vector2(0, 1), 5.0 + h * 2.0,
+	_blob_rect(dst, p + Vector2(0, 1), 5.0 + h * 2.0,
 		2.5 + h, Color(0, 0, 0, 0.12))
-	_draw_prop(res_layer, tex, p, hh, Color(1, 1, 1),
+	_draw_prop(dst, tex, p, hh, Color(1, 1, 1),
 		(_hash(fp.x + 41.0, fp.y - 23.0) - 0.5) * 0.3,
 		_prop_bucket(fp, 37.0, 2) == 0)
 
+# T-FOREST-BAKE: one forest cell's own trees + understory. Extracted verbatim
+# from _draw_forest_detail so the live fallback and the chunk baker share the
+# same position hashes (no RNG, no visual drift between cached and live paths).
+func _draw_forest_cell_trees(x: int, y: int, dst: Node2D, origin: Vector2,
+		margin: Rect2) -> void:
+	# T2-BUILD-RENDER: ~1 tree/cell (≈950/MP) instead of 1-3
+	# (≈1953/MP). Both gates are independent position hashes, so the
+	# survivors keep species/size variety and never form axis rows.
+	var count := 1
+	if _hash(float(x) * 5.3 + 7.0, float(y) * 7.1 - 3.0) < FOREST_COUNT_ZERO:
+		count = 0
+	elif _hash(float(x) * 3.7 - 11.0, float(y) * 5.9 + 17.0) > 1.0 - FOREST_COUNT_TWO:
+		count = 2
+	for k in count:
+		var fx := lerpf(0.12, 0.88, _hash(float(x) * 7.3 + float(k) * 13.7,
+			float(y) * 3.1 + float(k) * 5.9))
+		var fy := lerpf(0.12, 0.88, _hash(float(x) * 2.7 + float(k) * 17.3,
+			float(y) * 11.9 + float(k) * 7.1))
+		_draw_forest_tree(Vector2(float(x) + fx, float(y) + fy), margin,
+			false, dst, origin)
+	if _hash(float(x) + 53.0, float(y) - 31.0) > 0.62:
+		# Cross-mix x into both offsets and widen the range: a row of
+		# adjacent cells no longer lands at the same in-cell fraction.
+		var ux := float(x) + lerpf(0.05, 0.95, _hash(
+			float(x) * 7.7 + float(y) * 3.3, float(y) * 11.1 - float(x) * 5.9))
+		var uy := float(y) + lerpf(0.05, 0.95, _hash(
+			float(y) * 13.7 - float(x) * 2.1, float(x) * 9.3 + float(y) * 4.7))
+		_draw_forest_understory(Vector2(ux, uy), margin, dst, origin)
+
+# T-FOREST-BAKE: the sparse single belonging to non-forest cell (nx,ny).
+func _draw_forest_cell_edge(nx: int, ny: int, dst: Node2D, origin: Vector2,
+		margin: Rect2) -> void:
+	if _hash(float(nx) + 71.0, float(ny) - 43.0) > 0.78:
+		var ex := float(nx) + lerpf(0.2, 0.8, _hash(float(nx), float(ny)))
+		var ey := float(ny) + lerpf(0.2, 0.8, _hash(float(ny), float(nx)))
+		_draw_forest_tree(Vector2(ex, ey), margin, true, dst, origin)
+
 # Donor-style per-cell detail: 1-3 trees inside every forest cell, ~1 understory
 # per two cells, plus sparse singles on grass cells touching a forest cell.
+# Kept as the fallback path when chunk baking is disabled/unavailable.
 func _draw_forest_detail() -> void:
 	if game == null:
 		return
@@ -2162,28 +2454,7 @@ func _draw_forest_detail() -> void:
 		for x in range(x0, x1 + 1):
 			if int(game.terrain[game._t(x, y)]) != 2:
 				continue
-			# T2-BUILD-RENDER: ~1 tree/cell (≈950/MP) instead of 1-3
-			# (≈1953/MP). Both gates are independent position hashes, so the
-			# survivors keep species/size variety and never form axis rows.
-			var count := 1
-			if _hash(float(x) * 5.3 + 7.0, float(y) * 7.1 - 3.0) < FOREST_COUNT_ZERO:
-				count = 0
-			elif _hash(float(x) * 3.7 - 11.0, float(y) * 5.9 + 17.0) > 1.0 - FOREST_COUNT_TWO:
-				count = 2
-			for k in count:
-				var fx := lerpf(0.12, 0.88, _hash(float(x) * 7.3 + float(k) * 13.7,
-					float(y) * 3.1 + float(k) * 5.9))
-				var fy := lerpf(0.12, 0.88, _hash(float(x) * 2.7 + float(k) * 17.3,
-					float(y) * 11.9 + float(k) * 7.1))
-				_draw_forest_tree(Vector2(float(x) + fx, float(y) + fy), margin)
-			if _hash(float(x) + 53.0, float(y) - 31.0) > 0.62:
-				# Cross-mix x into both offsets and widen the range: a row of
-				# adjacent cells no longer lands at the same in-cell fraction.
-				var ux := float(x) + lerpf(0.05, 0.95, _hash(
-					float(x) * 7.7 + float(y) * 3.3, float(y) * 11.1 - float(x) * 5.9))
-				var uy := float(y) + lerpf(0.05, 0.95, _hash(
-					float(y) * 13.7 - float(x) * 2.1, float(x) * 9.3 + float(y) * 4.7))
-				_draw_forest_understory(Vector2(ux, uy), margin)
+			_draw_forest_cell_trees(x, y, res_layer, Vector2.ZERO, margin)
 			# edge clumps: one sparse single on each touching non-forest cell;
 			# a local dict prevents duplicates where cells touch two forest cells.
 			for oy in [-1, 0, 1]:
@@ -2200,10 +2471,7 @@ func _draw_forest_detail() -> void:
 					if edge_seen.has(ek):
 						continue
 					edge_seen[ek] = true
-					if _hash(float(nx) + 71.0, float(ny) - 43.0) > 0.78:
-						var ex := float(nx) + lerpf(0.2, 0.8, _hash(float(nx), float(ny)))
-						var ey := float(ny) + lerpf(0.2, 0.8, _hash(float(ny), float(nx)))
-						_draw_forest_tree(Vector2(ex, ey), margin, true)
+					_draw_forest_cell_edge(nx, ny, res_layer, Vector2.ZERO, margin)
 
 # T2-BUILD-RENDER / verdict_decor C1/C2/C4/C6: envfieldd/envfielddw were
 # regenerated with their donor DXT5 alpha (bbox 17,19-494,494) by T2-BUILD-ASSET.
@@ -2379,9 +2647,12 @@ func _mine_marker_tex(sid: String) -> Texture2D:
 
 func _draw_resources() -> void:
 	dbg_res += 1
-	# TB-B1g: donor per-cell forest detail first, so harvestable resource nodes
-	# and buildings (higher layers) stay legible on top of the understory.
-	_draw_forest_detail()
+	# T-FOREST-BAKE: forest detail now lives on forest_layer (z=1, drawn before
+	# res_layer) as 1 cached sprite per chunk. Only call the old live path when
+	# baking is disabled/unavailable (no viewport, failed readback, etc.).
+	# Doing both would double-draw the trees; doing neither would drop them.
+	if not forest_bake_enabled:
+		_draw_forest_detail()
 	for n in game.res_nodes:
 		# Ore deposits are PERMANENT nodes: they are created with hits == 0 and
 		# max_hits == 0 (game.gd:_add_res), so "hits <= 0" alone used to cull

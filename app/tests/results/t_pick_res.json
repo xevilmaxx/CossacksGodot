@@ -1,0 +1,47 @@
+{
+	"checks": [
+		{
+			"detail": "res_nodes=317",
+			"name": "live tree exists",
+			"passed": true
+		},
+		{
+			"detail": "ver=-1",
+			"name": "grid not built before first pick",
+			"passed": true
+		},
+		{
+			"detail": "got=15 want=15",
+			"name": "pick returns known tree",
+			"passed": true
+		},
+		{
+			"detail": "ver=317 dirty=317 size=317",
+			"name": "grid built lazily",
+			"passed": true
+		},
+		{
+			"detail": "got=<null>",
+			"name": "far pick returns null",
+			"passed": true
+		},
+		{
+			"detail": "got=<null>",
+			"name": "depleted stump skipped",
+			"passed": true
+		},
+		{
+			"detail": "ver_before=317 ver_after=318 dirty=318",
+			"name": "grid invalidated on res_dirty",
+			"passed": true
+		},
+		{
+			"detail": "size=0 got=<null>",
+			"name": "size change rebuilds empty grid",
+			"passed": true
+		}
+	],
+	"id": "t_pick_res",
+	"passed": true,
+	"unix_ms": 1795452408043.0
+}

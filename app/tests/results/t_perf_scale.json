@@ -1,0 +1,31 @@
+{
+	"id": "t_perf_scale",
+	"move_on": true,
+	"rows": [
+		{
+			"move_ms": 487.72,
+			"n": 300,
+			"reps": 3,
+			"squad_ms": 0.791,
+			"ticks": 5,
+			"units": 314
+		},
+		{
+			"move_ms": 1943.931,
+			"n": 1000,
+			"reps": 3,
+			"squad_ms": 2.436,
+			"ticks": 5,
+			"units": 1004
+		},
+		{
+			"move_ms": 10387.284,
+			"n": 3000,
+			"reps": 3,
+			"squad_ms": 7.754,
+			"ticks": 5,
+			"units": 3000
+		}
+	],
+	"squad_on": true
+}

@@ -538,22 +538,61 @@ func _deposit_near(mine: Dictionary) -> Dictionary:
 			return n
 	return {}
 
+# T-PICK-RES: cached spatial hash over game.res_nodes. Right-click harvest used
+# to scan all ~530 resource nodes per click; the hash touches only the cells a
+# click's reach can span. Built lazily (first pick after a change) and invalidated
+# on game.res_dirty / array-size change, so there is no per-frame work. Every
+# node is inserted with NO filtering, which keeps the _pick_res filters and the
+# strict nearest rule byte-for-byte identical to the old brute-force scan.
+# (game's own _res_grid is private and skips depleted nodes, so it cannot be
+# reused without changing behaviour — notably for depleted food nodes.)
+const _PICK_RES_GRID_M := 16.0
+var _pick_res_grid: Dictionary = {}       # Vector2i cell -> Array of res node dicts
+var _pick_res_ver := -1                   # game.res_dirty value this grid was built at
+var _pick_res_size := -1                  # res_nodes size at build time
+var _pick_res_max_reach := 2.5            # widest 2.5 + radius over all nodes
+
+func _pick_res_grid_ensure() -> void:
+	if _pick_res_ver == game.res_dirty and _pick_res_size == game.res_nodes.size():
+		return
+	_pick_res_grid.clear()
+	_pick_res_max_reach = 2.5
+	for n in game.res_nodes:
+		_pick_res_max_reach = maxf(_pick_res_max_reach, 2.5 + float(n.radius))
+		var c := Vector2i(int(n.pos.x / _PICK_RES_GRID_M), int(n.pos.y / _PICK_RES_GRID_M))
+		if not _pick_res_grid.has(c):
+			_pick_res_grid[c] = []
+		(_pick_res_grid[c] as Array).append(n)
+	_pick_res_ver = game.res_dirty
+	_pick_res_size = game.res_nodes.size()
+
 # Resource spots (trees, rocks, fields, mine deposits) live outside the entity
 # list, so right-click harvest needs its own lookup. Deposits (max_hits == 0)
 # count too: cmd_gather routes them to a finished mine on the spot.
 func _pick_res(pw: Vector2) -> Dictionary:
+	_pick_res_grid_ensure()
 	var best: Dictionary = {}
 	var best_d := 2.5
-	for n in game.res_nodes:
-		if str(n.get("type", "")) in ["stump", "bush"]:
-			continue
-		if n.max_hits > 0 and n.hits <= 0 and n.type != "food":
-			continue
-		var d: float = n.pos.distance_to(pw)
-		var reach: float = 2.5 + n.radius
-		if d < reach and d < best_d:
-			best_d = d
-			best = n
+	var r := _pick_res_max_reach
+	var c0 := Vector2i(int((pw.x - r) / _PICK_RES_GRID_M), int((pw.y - r) / _PICK_RES_GRID_M))
+	var c1 := Vector2i(int((pw.x + r) / _PICK_RES_GRID_M), int((pw.y + r) / _PICK_RES_GRID_M))
+	for cy in range(c0.y, c1.y + 1):
+		for cx in range(c0.x, c1.x + 1):
+			for n in (_pick_res_grid.get(Vector2i(cx, cy), []) as Array):
+				if str(n.get("type", "")) in ["stump", "bush"]:
+					continue
+				if n.max_hits > 0 and n.hits <= 0 and n.type != "food":
+					continue
+				var d: float = n.pos.distance_to(pw)
+				var reach: float = 2.5 + n.radius
+				# Strict `<` as before. res_nodes is append-only (id grows with
+				# index), so an exact-distance tie still resolves to the same
+				# first node the old full-array order would have chosen.
+				var closer: bool = d < reach and d < best_d
+				var tie_first: bool = (d < reach and not best.is_empty() and d == best_d and int(n.id) < int(best.id))
+				if closer or tie_first:
+					best_d = d
+					best = n
 	return best
 
 # Box/line/column/square layout around a point, via the game (squad-aware).

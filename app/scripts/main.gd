@@ -1053,6 +1053,7 @@ func _show_options(parent: VBoxContainer) -> void:
 		world.terrain_chunks.clear()
 		world.terrain_order.clear()
 		world.terrain_px = Data.TERRAIN_PX
+		world.invalidate_forest_bake()  # T-FOREST-BAKE: quality change rebuilds cached forest chunks
 		world.terrain_masks = world._build_masks(world._bake_px())
 		world.anim_tex.clear()
 		world.anim_index = {}

@@ -1,0 +1,119 @@
+{
+	"build_time": 9.375,
+	"checks": [
+		{
+			"detail": "",
+			"name": "can_place_mine",
+			"passed": true
+		},
+		{
+			"detail": "site=(287.0, 29.0) dep=(287.0, 29.0) dist=0.000",
+			"name": "snapped_to_deposit",
+			"passed": true
+		},
+		{
+			"detail": "order={ \"type\": \"build\", \"target\": 429 }",
+			"name": "builder_ordered",
+			"passed": true
+		},
+		{
+			"detail": "finished=false progress=0.000/9.375",
+			"name": "build_started_unfinished",
+			"passed": true
+		},
+		{
+			"detail": "max_progress=1.000 final=9.375/9.375 dead=false msgs=[]",
+			"name": "mine_finished",
+			"passed": true
+		},
+		{
+			"detail": "progress at interrupt=7.547 order_after=build final=9.375/9.375 finished=true msgs=[]",
+			"name": "B_gather_interrupt_did_not_stall_build",
+			"passed": true
+		},
+		{
+			"detail": "rerouted interrupt to cmd_build -> final=9.375/9.375 finished=true",
+			"name": "B2_proposed_fix_completes_build",
+			"passed": true
+		},
+		{
+			"detail": "dist=15.7 progress=9.375/9.375 dead=false order=none",
+			"name": "C_far_builder_finishes",
+			"passed": true
+		}
+	],
+	"final_progress": 9.375,
+	"id": "t_mine_build",
+	"max_progress": 1.0,
+	"messages": [],
+	"passed": true,
+	"site_dead": false,
+	"site_finished": true,
+	"site_pos": "(287.0, 29.0)",
+	"trajectory": [
+		{
+			"finished": false,
+			"peasant_blocked": false,
+			"peasant_dist_to_slot": 6.46,
+			"peasant_order": "build",
+			"prog": 0.0,
+			"step": 0,
+			"t": 0.0
+		},
+		{
+			"finished": false,
+			"peasant_blocked": false,
+			"peasant_dist_to_slot": 0.46,
+			"peasant_order": "build",
+			"prog": 0.0,
+			"step": 20,
+			"t": 5.0
+		},
+		{
+			"finished": false,
+			"peasant_blocked": false,
+			"peasant_dist_to_slot": 0.46,
+			"peasant_order": "build",
+			"prog": 0.23,
+			"step": 40,
+			"t": 10.0
+		},
+		{
+			"finished": false,
+			"peasant_blocked": false,
+			"peasant_dist_to_slot": 0.46,
+			"peasant_order": "build",
+			"prog": 0.46,
+			"step": 60,
+			"t": 15.0
+		},
+		{
+			"finished": false,
+			"peasant_blocked": false,
+			"peasant_dist_to_slot": 0.46,
+			"peasant_order": "build",
+			"prog": 0.69,
+			"step": 80,
+			"t": 20.0
+		},
+		{
+			"finished": false,
+			"peasant_blocked": false,
+			"peasant_dist_to_slot": 0.46,
+			"peasant_order": "build",
+			"prog": 0.92,
+			"step": 100,
+			"t": 25.0
+		},
+		{
+			"finished": true,
+			"peasant_blocked": false,
+			"peasant_dist_to_slot": 0.46,
+			"peasant_order": "none",
+			"prog": 1.0,
+			"step": 106,
+			"t": 26.5
+		}
+	],
+	"unix_ms": 1795453049023.0
+}

@@ -426,6 +426,12 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# needed=floor(W*H*freq) counts (map_density.md 3.2, prob=1 column, 115
 	# stamps at 320).  `base` is needed/area_scale so the existing count formula
 	# reproduces them exactly; the separate forest grid enforces no-overlap.
+	# T-FOREST-DENSE: stamp COUNT/locations stay byte-identical here. The owner
+	# "packed groves" request is handled at realisation time in game.gd
+	# (_gen_patterns forest fill 0.10->0.30, cap 10->14, scatter spread 5/4->3.5/3).
+	# Measured on 320x320: live wood x1.59, mean nearest-neighbour -32%, share
+	# within 6 m +22 pp, no stamp reduction needed (total stays <2x baseline).
+	# Keep these counts untouched so donor terrain/patch gates are unaffected.
 	var forest_recipes := [
 		["forests_pinefir_big", 3.6],
 		["forests_spruce_big", 3.6],

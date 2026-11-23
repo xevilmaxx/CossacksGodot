@@ -1,0 +1,21 @@
+{
+	"checks": [
+		{
+			"detail": "first forest tile=(28,0)",
+			"name": "forest_cell_found",
+			"passed": true
+		},
+		{
+			"detail": "baked chunks=2 (busy=false)",
+			"name": "real_chunks_baked",
+			"passed": true
+		},
+		{
+			"detail": "opaque samples=268 / 12800 from 2 chunk textures",
+			"name": "baked_detail_pixels",
+			"passed": true
+		}
+	],
+	"id": "t_forest_bake_render",
+	"passed": true
+}

@@ -158,6 +158,39 @@
       "status": "ready",
       "owner": "test-T15",
       "timeout": 60
+    },
+    {
+      "id": "t_pick_res",
+      "path": "res://tests/t_pick_res.gd",
+      "feature": "_pick_res spatial-hash harvest lookup",
+      "status": "ready",
+      "owner": "T-PICK-RES",
+      "timeout": 90
+    },
+    {
+      "id": "t_forest_dense",
+      "path": "res://tests/t_forest_dense.gd",
+      "feature": "packed forest groves (per-stamp fill + tightened scatter)",
+      "status": "ready",
+      "owner": "T-FOREST-DENSE",
+      "timeout": 100
+    },
+    {
+      "id": "t_forest_bake",
+      "path": "res://tests/t_forest_bake.gd",
+      "feature": "static forest-detail chunk baking (draw-call reduction)",
+      "status": "ready",
+      "owner": "T-FOREST-BAKE",
+      "timeout": 100
+    },
+    {
+      "id": "t_forest_bake_render",
+      "path": "res://tests/t_forest_bake_render.gd",
+      "feature": "forest bake GPU viewport readback (windowed)",
+      "status": "ready",
+      "owner": "T-FOREST-BAKE",
+      "timeout": 90,
+      "windowed": true
     }
   ]
 }

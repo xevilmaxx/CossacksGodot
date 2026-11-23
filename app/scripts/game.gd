@@ -114,16 +114,28 @@ var _res_grid_ver := -1
 # which covers every mutation of the set (buildings never move).
 var _block_rects: Array = []
 var _block_rects_ver := -1
+# T-SIM-HOTSPOTS: the same [Rect2, id] pairs bucketed by tile, so a unit only
+# tests the handful of rects overlapping its own tile instead of every building
+# footprint on the map. Key = x + y*MAP_W (same flat index as _t).
+var _block_rects_by_cell: Dictionary = {}
 func _block_rects_ensure() -> void:
 	if _block_rects_ver == bld_dirty:
 		return
 	_block_rects.clear()
+	_block_rects_by_cell.clear()
 	for b in live_blds:
 		if b.dead:
 			continue
 		var r: Rect2 = b.get("block_rect", Rect2())
 		if r.has_area():
-			_block_rects.append([r, int(b.id)])
+			var entry := [r, int(b.id)]
+			_block_rects.append(entry)
+			for c in bld_rect_cells(r):
+				var cell: Vector2i = c
+				var key := cell.x + cell.y * MAP_W
+				if not _block_rects_by_cell.has(key):
+					_block_rects_by_cell[key] = []
+				(_block_rects_by_cell[key] as Array).append(entry)
 	_block_rects_ver = bld_dirty
 # T-PERF-SIM: can_place building scan margin. Must exceed the largest
 # block_r on the map (gameplay radii are a few metres); 16 m is generous.
@@ -163,11 +175,14 @@ func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 		build_target = int(ord.get("target", 0))
 	# Buildings are solid 2D blocks: the drawn sprite's ink box stays impassable
 	# in every direction, not just the base circle stamped into `blocked`.
-	# T-PERF-SIM: flat cached rect list (see _block_rects_ensure). Buildings
-	# never move, so the old per-probe live_blds scan with dict lookups is
-	# replaced by a tight Rect2 loop.
+	# T-SIM-HOTSPOTS: only the rects registered on the probe's own tile.
+	# A point inside a rect is always inside one of bld_rect_cells(rect), so the
+	# bucket is a superset of every rect that could contain p; build_target skip
+	# and Rect2.has_point are unchanged. Buildings never move between rebuilds.
 	_block_rects_ensure()
-	for br in _block_rects:
+	# Inline tile_of()'s arithmetic to avoid a Vector2i allocation per probe.
+	var cell_key := int(p.x / TILE) + int(p.y / TILE) * MAP_W
+	for br in _block_rects_by_cell.get(cell_key, []):
 		if build_target != 0 and int(br[1]) == build_target:
 			continue
 		if (br[0] as Rect2).has_point(p):
@@ -387,6 +402,7 @@ func setup_begin(mode: String) -> void:
 	_res_grid_ver = -1
 	_res_grid_src_size = -1
 	_block_rects.clear()
+	_block_rects_by_cell.clear()
 	_block_rects_ver = -1
 	_nav_ink_cells.clear()
 	_nav_ink_ver = -1
@@ -736,11 +752,18 @@ func _gen_patterns() -> void:
 			match kind:
 				"forest":
 					# Sod is painted as one contiguous core disc above. Preserve
-					# the ORIGINAL short-circuit exactly: once 10 trees are
-					# placed no further randf() is drawn. Calling randf()
+					# the ORIGINAL short-circuit exactly: once the cap is hit no
+					# further randf() is drawn. Calling randf()
 					# unconditionally shifted the whole downstream RNG stream
 					# (stone stamps moved 27.7 -> 39.2 tiles, reach 3/3 -> 1/3).
-					if forest_nodes_here < 10 and rng.randf() < 0.10:
+					# T-FOREST-DENSE: raise the per-cell fill probability 0.10 ->
+					# 0.30 and the cap 10 -> 14 so each donor mask's footprint
+					# reads as a PACKED grove instead of sparse singles. Same
+					# one-draw-per-cell rule, just a higher threshold; the cap
+					# is now reached in fewer iterations, so the downstream rng
+					# stream shifts (deterministic for a fixed seed) but no
+					# extra draws are introduced. See app/tests/t_forest_dense.gd.
+					if forest_nodes_here < 14 and rng.randf() < 0.30:
 						var wp := Vector2((float(tx) + 0.5) * TILE, (float(ty) + 0.5) * TILE)
 						# T2GEN: keep new forest wood out of quarry/mine
 						# clearings so scan purity/clear stay at 100%.
@@ -1130,9 +1153,13 @@ func _gen_forests() -> void:
 		starts.append(sv as Vector2)
 	for st in starts:
 		_paint_terrain(st + Vector2(7, -7) * TILE * mscale, 4.5 * TILE * mscale, 2)
-		_scatter_forest(st + Vector2(7, -7) * TILE * mscale, int(26.0 * mscale), 5.0 * TILE * mscale)
+		# T-FOREST-DENSE: tighten the two sacred groves (spread 5/4 -> 3.5/3
+		# tiles) and raise counts ~30% so they read as clumps, not stragglers.
+		# Same number of randf_range draws per candidate (count only), no new
+		# RNG calls; the tighter spread keeps trees inside the painted terrain.
+		_scatter_forest(st + Vector2(7, -7) * TILE * mscale, int(34.0 * mscale), 3.5 * TILE * mscale)
 		_paint_terrain(st + Vector2(-8, 5) * TILE * mscale, 4.0 * TILE * mscale, 2)
-		_scatter_forest(st + Vector2(-8, 5) * TILE * mscale, int(18.0 * mscale), 4.0 * TILE * mscale)
+		_scatter_forest(st + Vector2(-8, 5) * TILE * mscale, int(23.0 * mscale), 3.0 * TILE * mscale)
 
 func _gen_resources() -> void:
 	_reseed_stage("mines")  # P-31 / dogenerate.inc:1772 SetupMines
@@ -1347,9 +1374,11 @@ func _gen_finish() -> void:
 		# T-FOOD-1: no wild-food re-plant here. The keep-clear wipe above only
 		# depletes nodes in the start zone; mill-owned fields regrow through
 		# the mill cycle (_tick_field_growth / cmd_sow), never from mapgen.
-		_scatter_forest(st + Vector2(9, -8) * TILE, 26, 5.0 * TILE)
+		# T-FOREST-DENSE: same clump tightening as _gen_forests (spread 5/4 ->
+		# 3.5/3 tiles, counts +30%). Seeded rng unchanged in draw count.
+		_scatter_forest(st + Vector2(9, -8) * TILE, 34, 3.5 * TILE)
 		_paint_terrain(st + Vector2(9, -8) * TILE, 4.5 * TILE, 2)
-		_scatter_forest(st + Vector2(-10, 6) * TILE, 18, 4.0 * TILE)
+		_scatter_forest(st + Vector2(-10, 6) * TILE, 23, 3.0 * TILE)
 		_paint_terrain(st + Vector2(-10, 6) * TILE, 4.0 * TILE, 2)
 	# purity pass: late groves must not invade quarries or mine pads.
 	for n in res_nodes:
@@ -2822,9 +2851,16 @@ func cmd_gather(e: Dictionary, res_node: Dictionary) -> void:
 	e.carry = 0
 	e.carry_type = ""
 	if res_node.type in ["gold", "iron", "coal"]:
-		var mine := nearest_mine(e.pos, res_node.type)
+		var mine := nearest_mine(e.pos, res_node.type, int(e.player))
 		if mine.is_empty():
 			say("No %s mine - build one on a deposit." % res_node.type)
+			return
+		# T-MINE-BUILD: an ore deposit whose mine is still under construction is
+		# a BUILD request, not a gather request. The old code overwrote the
+		# builder's `build` order with a gather-wait loop in _tick_gather(),
+		# permanently freezing the site (~80% of build_time in the repro).
+		if not bool(mine.get("finished", true)):
+			cmd_build(e, mine)
 			return
 		e.order = {"type": "gather", "res": res_node.type, "node": mine.id}
 	elif res_node.type == "food" and not res_node.has("mill"):
@@ -2941,8 +2977,17 @@ func cmd_unload(b: Dictionary) -> void:
 # A squad is a sticky group: orders to the officer fan out to the members in
 # the squad's formation (line / column / square from formations.cfg).
 func squad_of_unit(uid: int) -> Dictionary:
-	for sid in squads:
-		var s: Dictionary = squads[sid]
+	# T-SIM-HOTSPOTS: live units carry their squad id (set in squad_form and
+	# cleared by squad_remove/squad_disband/_kill), so the common case is one
+	# by_id lookup + one squads lookup instead of scanning every squad. Imported
+	# or legacy states may lack the field, so the membership scan stays as a
+	# fallback (also covers a stale id whose squad no longer exists).
+	var u: Dictionary = by_id.get(uid, {})
+	var sid := int(u.get("squad", 0)) if not u.is_empty() else 0
+	if sid != 0 and squads.has(sid):
+		return squads[sid]
+	for s_sid in squads:
+		var s: Dictionary = squads[s_sid]
 		if int(s.officer) == uid or int(s.get("drummer", 0)) == uid or uid in s.members:
 			return s
 	return {}
@@ -3831,6 +3876,12 @@ func tick(dt: float) -> void:
 	tick_market(dt)  # PORT-CONTROL hand-off: recover post-trade market rate
 	_check_victory()
 
+# T-SIM-HOTSPOTS: int hash keys replace Vector2i keys (no 19 allocations per
+# unit per tick). The 9-cell scan order is kept EXACTLY as before: this is a
+# sequential relaxation, so cell visitation order changes the result even when
+# the pair set is the same. cx/cy stay per-pass locals for the same reason.
+const _SEP_KEY_STRIDE := 65536
+
 # Like the original, units never stand inside each other: every tick each
 # pair is pushed apart until the gap is r1 + r2 + personal space, and units
 # are pushed out of building footprints. Two relaxation passes, spatial
@@ -3847,10 +3898,10 @@ func _separate_units() -> void:
 		units.append(e)
 		var cx := int(floor(e.pos.x / cell))
 		var cy := int(floor(e.pos.y / cell))
-		var key := Vector2i(cx, cy)
+		var key := cx + cy * _SEP_KEY_STRIDE
 		if not lgrid.has(key):
 			lgrid[key] = []
-		lgrid[key].append(e)
+		(lgrid[key] as Array).append(e)
 	if units.is_empty():
 		return
 	for _pass in 2:
@@ -3861,7 +3912,7 @@ func _separate_units() -> void:
 			var cy := int(floor(e.pos.y / cell))
 			for oy in range(-1, 2):
 				for ox in range(-1, 2):
-					var key := Vector2i(cx + ox, cy + oy)
+					var key := (cx + ox) + (cy + oy) * _SEP_KEY_STRIDE
 					if not lgrid.has(key):
 						continue
 					for o in lgrid[key]:
@@ -5451,6 +5502,7 @@ func deserialize(d: Dictionary) -> bool:
 	_res_grid_ver = -1
 	_res_grid_src_size = -1
 	_block_rects.clear()
+	_block_rects_by_cell.clear()
 	_block_rects_ver = -1
 	_nav_ink_cells.clear()
 	_nav_ink_ver = -1
