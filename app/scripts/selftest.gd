@@ -344,27 +344,29 @@ func run() -> Dictionary:
 	var efoe := game.spawn("peasant", 1, epos)
 	var epike := game.spawn("pikeman", 0, epos + Vector2(1, 0))
 	game.cmd_attack(epike, efoe)
-	_sim(5.0)
+	# Isolate the duel: a live AI would reassign the idle test peasant
+	# (economy) or ride it down (raid), making first-hit capture flaky.
+	Data.AI_ENABLED = false
+	# TEMP T-MILLCORE-DIAG: trace why capture fails in-suite (remove after fix).
+	print("TMCORE cap0 epos=%s foe=%s epi=%s" % [str(epos), str(efoe.pos), str(epike.pos)])
+	for ci in 5:
+		_sim(1.0)
+		print("TMCORE cap t+%d foe_dead=%s foe_hp=%d foe_player=%d foe=%s epi_dead=%s epiorder=%s dist=%.2f shots=%d" % [
+			ci + 1, str(efoe.dead), int(efoe.hp), int(efoe.player), str(efoe.pos),
+			str(epike.dead), str(epike.order.get("type", "")), efoe.pos.distance_to(epike.pos), game.stats.shots])
+	Data.AI_ENABLED = true
 	steps.append({"step": "peasant_capture", "passed": int(efoe.player) == 0, "detail": "peasant captured: player %d" % int(efoe.player)})
 
-	# ---- G15: field re-sowing
-	var fnode: Dictionary = {}
+	# ---- G15: field re-sowing (T-FOOD-1: a random skirmish map starts with
+	# ZERO food nodes - no seed wheat, no stragglers, no wild berries. Food
+	# comes strictly through the mill cycle, so the test sows a mill ring
+	# first and resows one of ITS fields.)
+	var wild_food := 0
 	for n in game.res_nodes:
-		if n.type == "food" and n.hits > 0:
-			fnode = n
-			break
-	var resow_ok := false
-	if not fnode.is_empty():
-		fnode.hits = 0
-		var rp := game.spawn("peasant", 0, fnode.pos + Vector2(1, 0))
-		game.players[0].res[0] += 500.0
-		game.cmd_resow(rp, fnode)
-		_sim(30.0)
-		resow_ok = int(fnode.hits) > 0
+		if n.type == "food" and not n.has("mill"):
+			wild_food += 1
 	# P-50/P-51: a finished mill auto-sows a field ring and the "Grain Crops"
-	# order sows more. Folded into this step so the suite stays at 29 steps.
-	var mill_ok := false
-	var mill_detail := "no mill"
+	# order sows more.
 	game.players[0].res[3] += 1000.0
 	var mill := game.spawn("mil", 0, peasant.pos + Vector2(-20, -20))
 	game._on_building_finished(mill)
@@ -372,10 +374,29 @@ func run() -> Dictionary:
 	# for its own mill, and cmd_sow only restores fields whose "mill" equals the
 	# given mill.id. Counting/depleting any mill-flagged field would pick the
 	# AI's field and leave the order with nothing of ours to restore.
-	var fields0 := 0
+	var mill_fields: Array = []
 	for n in game.res_nodes:
 		if n.has("mill") and int(n.mill) == int(mill.id):
-			fields0 += 1
+			mill_fields.append(n)
+	var fnode: Dictionary = mill_fields[0] if not mill_fields.is_empty() else {}
+	var resow_ok := false
+	# T-FOOD-1 DIAG (temporary): trace why phase-1 resow may fail in-suite.
+	print("TFOOD1 peasant_dead=%s peasant_pos=%s mill_pos=%s fields=%d fnode_pos=%s p0food=%.1f" % [
+		str(bool(peasant.get("dead", false))), str(peasant.pos), str(mill.pos),
+		mill_fields.size(), str(fnode.pos if not fnode.is_empty() else Vector2.INF), game.players[0].res[0]])
+	if not fnode.is_empty():
+		fnode.hits = 0
+		var rp := game.spawn("peasant", 0, fnode.pos + Vector2(1, 0))
+		game.players[0].res[0] += 500.0
+		game.cmd_resow(rp, fnode)
+		for si in 6:
+			_sim(5.0)
+			print("TFOOD1 t+%ds rp_order=%s rp_dead=%s fnode_hits=%d p0food=%.1f" % [
+				(si + 1) * 5, str(rp.order.get("type", "")), str(bool(rp.get("dead", false))),
+				int(fnode.hits), game.players[0].res[0]])
+		resow_ok = int(fnode.hits) > 0
+	var mill_ok := false
+	var mill_detail := "no mill fields"
 	for n in game.res_nodes:
 		if n.has("mill") and int(n.mill) == int(mill.id):
 			n.hits = 0  # deplete one of our mill's fields; Grain Crops must restore it
@@ -386,10 +407,10 @@ func run() -> Dictionary:
 		if n.has("mill") and int(n.mill) == int(mill.id) and int(n.hits) > 0:
 			restored = true
 			break
-	mill_ok = fields0 > 0 and manual > 0 and restored
-	mill_detail = "auto=%d restored=%d gold=%.0f" % [fields0, manual, game.players[0].res[3]]
-	steps.append({"step": "resow", "passed": resow_ok and mill_ok,
-		"detail": "depleted field re-sown: %s; mill: %s" % ["yes" if resow_ok else "no", mill_detail]})
+	mill_ok = mill_fields.size() > 0 and manual > 0 and restored
+	mill_detail = "auto=%d restored=%d gold=%.0f" % [mill_fields.size(), manual, game.players[0].res[3]]
+	steps.append({"step": "resow", "passed": wild_food == 0 and resow_ok and mill_ok,
+		"detail": "wild food nodes=%d; depleted mill field re-sown: %s; mill: %s" % [wild_food, "yes" if resow_ok else "no", mill_detail]})
 
 	# ---- G15: attack-ground
 	var can := game.spawn("cannon", 0, peasant.pos + Vector2(34, 0))

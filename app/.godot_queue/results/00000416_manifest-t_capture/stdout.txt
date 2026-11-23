@@ -1,8 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-  PASS  town_hall_capturable_by_peasants - enemy tur town hall owner after 8 s with 4 peasants = 0 (want 0), flag=true
-  PASS  mine_deposit_captured_with_mine - mine capture flag=true, owner=0, deposit 6667->6667, nearest_mine(p0)=id=466
-  PASS  foreign_town_hall_unlocks_nation - captured tur hall; train_unit(0,'serdiuk') queued 'jannisary', want 'jannisary' (baseline rus 'strelet')
-  PASS  capture_precondition_guard_blocks - guarded enemy hall owner after assault = 1 (want 1), guard order=guard, attackers=4
-  PASS  economy_buildings_capturable - economy sids without capture:true = []
-  PASS  military_buildings_not_capturable - military sids with capture:true = []

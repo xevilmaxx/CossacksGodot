@@ -172,8 +172,10 @@ def reach_radius(map_w):
 
 
 def reachability(w, h, blocked, res, starts, radius=25):
-    # L6: food / stone / deposit / grove; a deposit is any of the three ores.
-    kinds = (("food",), ("stone",), ("gold", "iron", "coal"), ("wood",))
+    # L6: stone / deposit / grove reachable; a deposit is any of the three
+    # ores. T-FOOD-1: food is NOT a map node anymore (mill cycle only), so a
+    # big reachable open set IS the food check - it proves mill+field room.
+    kinds = (("stone",), ("gold", "iron", "coal"), ("wood",))
     for sx, sy in starts:
         stx, sty = int(sx // 2.0), int(sy // 2.0)
         if not (0 <= stx < w and 0 <= sty < h) or blocked[sty*w+stx] != 0:

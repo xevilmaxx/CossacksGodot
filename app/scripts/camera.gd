@@ -16,6 +16,10 @@ const DEFAULT_ZOOM := 2.0
 var min_zoom := 1.0             # camera height 58
 var max_zoom := 2.9             # camera height 20 (58/20)
 var zoom_step := 1.15
+# T-PERF-RENDER: clamp_pos memo — edge scroll calls it every frame and mouse
+# motion calls it every event; skip the viewport math when nothing moved.
+var _last_clamp_pos := Vector2.INF
+var _last_clamp_zoom := Vector2.INF
 
 func bind(w: C3World) -> void:
 	world = w
@@ -38,14 +42,23 @@ func bind(w: C3World) -> void:
 func clamp_pos() -> void:
 	if world == null:
 		return
+	# T-PERF-RENDER: idempotent clamp — mouse-motion events and idle frames
+	# re-enter here constantly; bail out when position and zoom are settled.
+	if position == _last_clamp_pos and zoom == _last_clamp_zoom:
+		return
 	var half := get_viewport_rect().size / zoom / 2.0
 	var limit := Vector2(world.game.MAP_W, world.game.MAP_H) * Data.TILE_M * world.view_scale
 	# If the view is wider/taller than the map, clampf()'s min exceeds its max
 	# and pins the camera past the map edge; centre that axis instead.
 	position.x = limit.x * 0.5 if limit.x <= half.x * 2.0 else clampf(position.x, half.x, limit.x - half.x)
 	position.y = limit.y * 0.5 if limit.y <= half.y * 2.0 else clampf(position.y, half.y, limit.y - half.y)
+	_last_clamp_pos = position
+	_last_clamp_zoom = zoom
 
 func _process(dt: float) -> void:
+	# T-PERF-RENDER: hitch guard — a 250 ms stall (load, GC, alt-tab) must not
+	# teleport the camera across the map; 50 ms keeps 60 fps panning smooth.
+	dt = minf(dt, 0.05)
 	var vp := get_viewport().get_visible_rect().size
 	var m := get_viewport().get_mouse_position()
 	var dir := Vector2.ZERO

@@ -1,7 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-OpenGL API 3.3.0 NVIDIA 571.96 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce MX130
-
-sprites: 29 sets loaded (sids=72)
-PERF tick_ms=1.26 ai_ms=0.54 sync_ms=48.75 steps_per_frame=0.5 redraws r/b/u/f=5/5/120/120
-screenshot saved: C:/Users/Maxym.Oboyshev/Documents/Craft Anything/cossacks-3-3/app/shots/portvis-final.png
-ERROR: 1 RID allocations of type 'N5GLES37TextureE' were leaked at exit.

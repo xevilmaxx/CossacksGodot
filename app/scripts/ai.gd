@@ -37,6 +37,8 @@ func tick(dt: float) -> void:
 	if think_t > 0.0:
 		return
 	think_t = Data.AI_THINK_INTERVAL
+	# T-PERF-SIM: invalidate the per-tick deposit cache.
+	_dep_cache.clear()
 	var p: Dictionary = game.players[player]
 	var res: Dictionary = {}
 	for i in 6:
@@ -288,6 +290,10 @@ func _mine_for(pe: Dictionary) -> String:
 	return ""
 
 func _deposit_node(kind: String) -> Dictionary:
+	# T-PERF-SIM: per-think-tick cache (cleared in tick()). Deposits never move
+	# and this lookup ignores hits, so results are identical within a tick.
+	if _dep_cache.has(kind):
+		return _dep_cache[kind]
 	var best: Dictionary = {}
 	var bd := 1e9
 	for n in game.res_nodes:
@@ -296,7 +302,11 @@ func _deposit_node(kind: String) -> Dictionary:
 			if d < bd:
 				bd = d
 				best = n
+	_dep_cache[kind] = best
 	return best
+
+# T-PERF-SIM: per-tick deposit cache (see _deposit_node).
+var _dep_cache := {}
 
 # --- build order with expansion ---
 func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictionary, p: Dictionary) -> void:
@@ -312,8 +322,14 @@ func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictiona
 	# regrow free only with a finished mill). Build it FIRST, before mines and
 	# barracks, at the REAL Data.BUILDINGS cost, and exempt it from the
 	# "finish what you started" guard so the initial batch cannot block it.
-	if int(counts.get("mil", 0)) == 0 and _can_afford("mil", res):
-		_try_build("mil", home)
+	# T-MILL-CORE: strict mill-first. Until a mill exists nothing below runs,
+	# so wood/stone cannot be spent on barracks/mines while the mill is
+	# still unaffordable; gatherers keep working and the mill is placed as
+	# soon as its cost (wood 30 / stone 150) is covered.
+	if int(counts.get("mil", 0)) == 0:
+		if _can_afford("mil", res):
+			_try_build("mil", home)
+		return
 	if unfin >= 3:
 		return
 	# T5-AI: guarantee ONE barracks before the mine batch. With a mill (150)
@@ -423,6 +439,9 @@ func _resume(peasants: Array) -> void:
 			break
 
 func _find_spot(home: Dictionary, def: Dictionary, sid: String, min_d: float, max_d: float) -> Vector2:
+	# T-PERF-SIM: fetch the building list once (old code rebuilt it via
+	# buildings_of() on every one of the 24 attempts).
+	var mine: Array = game.buildings_of(player, false)
 	for attempt in 24:
 		var a := game.rng.randf() * TAU
 		var r := game.rng.randf_range(min_d, max_d)
@@ -434,7 +453,7 @@ func _find_spot(home: Dictionary, def: Dictionary, sid: String, min_d: float, ma
 		var vr: float = game.bld_rm(player, sid)
 		var my_r: float = vr if vr > 0.0 else def.radius
 		var ok := true
-		for b in game.buildings_of(player, false):
+		for b in mine:
 			if b.pos.distance_to(pos) < float(b.get("block_r", b.def.radius)) + my_r + 1.0:
 				ok = false
 				break
@@ -616,10 +635,17 @@ func _raids(military: Array, res: Dictionary) -> void:
 			raid_ids.append(cav[i].id)
 	var target: Dictionary = {}
 	var bd := 1e9
+	# T-PERF-SIM: collect enemy peasants once (old code re-scanned every entity
+	# for every food node: O(nodes * entities) per think tick). Order and the
+	# first-match break are preserved, so the chosen target is unchanged.
+	var foe_peas: Array = []
+	for e in game.entities:
+		if not e.dead and _is_enemy(int(e.player)) and e.kind == "unit" and str(e.sid) == "peasant":
+			foe_peas.append(e)
 	for n in game.res_nodes:
 		if n.type == "food" and n.hits > 0:
-			for e in game.entities:
-				if not e.dead and _is_enemy(int(e.player)) and e.kind == "unit" and str(e.sid) == "peasant" and e.pos.distance_to(n.pos) < 8.0:
+			for e in foe_peas:
+				if e.pos.distance_to(n.pos) < 8.0:
 					var d: float = n.pos.distance_to(game.players[player].get("home_pos", Vector2.ZERO))
 					if d < bd:
 						bd = d

@@ -1,8 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-  PASS  mass_spawn_distinct - spawned 552 units / 552 distinct ids (want 552 = 400 army + 4 squads x 38)
-  PASS  squads_formed - squads for player 1 = 4 (want 4), formation command applied = true
-  FAIL  sim_advances - sim 0.00s -> 0.25s (+0.25) over 40 ticks, winner=1
-  PASS  no_unit_overlap - min centre gap 0.751 m, overlapping pairs 0 among 552 units
-  PASS  perf_metric_recorded - mass sim wall time 302.81 ms for 552 units / 0.3 sim-seconds
-  FAIL  corpses_rubble_age_out - corpses 0->1->1, rubble 0->1->1 after 0 sim-s (life 90/20)

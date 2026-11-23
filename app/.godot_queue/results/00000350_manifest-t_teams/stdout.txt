@@ -1,7 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-  PASS  teams_2v2_start_homes - players=4, team counts={ 0: 2, 1: 2 }, players with a home building=4 (want 4)
-  FAIL  allies_not_targetable - enemies_in_radius(r=3)=-1 (want empty), enemies_preferred=2 (want team-1 player 1)
-  FAIL  allied_attack_rejected - cmd_attack(player0 -> player2 ally) left order.type='attack' (want not 'attack')
-  PASS  enemy_team_targetable - from team 0, enemy-team player 1 target found=1 / preferred=1 (want 1)
-  FAIL  victory_respects_teams - player0 eliminated but ally player2 still alive: winner=1 (want -1, no team wiped out)

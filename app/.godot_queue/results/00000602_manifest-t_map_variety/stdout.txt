@@ -1,7 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-  PASS  different_seeds_different_layout - seed 11111 vs 98765: terrain differs=true, layout summary differs=true (126011 vs 120659 bytes)
-  PASS  same_seed_byte_identical - seed 11111 generated twice: byte-identical summary=true (126011 vs 126011 bytes)
-  PASS  map_type_changes_water - same seed nowater2 water=0.0% vs islands water=70.1% (need >+10pt and >15%)
-  PASS  map_size_option_respected - requested 110x90: got 110x90, terrain=9900 blocked=9900 tileblock=9900 (want 9900)
-  PASS  starts_have_reachable_resources - BFS<=25 tiles from each start: P0(food=true,stone=true,wood=true), P1(food=true,stone=true,wood=true), P2(food=true,stone=true,wood=true), P3(food=true,stone=true,wood=true)

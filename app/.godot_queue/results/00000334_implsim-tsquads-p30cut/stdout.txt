@@ -1,7 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-  PASS  squad_size_ladder_with_officer - members/label per donor size 15->15/15, 36->36/36, 72->72/72, 120->120/120, 196->196/196, 400->400/400; no-officer form: rejected
-  PASS  formation_switch_line_column_square - line=line, column=column, square=square (bogus ignored); target layouts line/col/sq=15/15/15 for 15 men
-  PASS  replenish_at_officer - cmd_replenish=5, loose absorbed=5, members 20->20, far/wrong-type left loose
-  FAIL  formation_bonuses_2_3_hold_9 - atk/def move=2/2 hold=7/7 no-drummer=0/0
-  PASS  disband_clears_squad - squad 7 erased; officer/member squad_of_unit empty and 'squad' keys removed

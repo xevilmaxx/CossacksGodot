@@ -1,5 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-  PASS  six_resource_labels - res_labels=6 texts=["0 [0]", "0 [1]", "0 [0]", "0 [0]", "0 [0]", "0 [0]"] hud_report.resource_labels=true
-  PASS  worker_counts_brackets - wood_workers=1 wood_line='0 [1]' all_bracketed=true worker_counts={ "food": 0, "wood": 1, "stone": 0, "gold": 0, "iron": 0, "coal": 0 }
-  PASS  idle_warning_text - idle_count=7 eco_label='idle 7  slots 0'

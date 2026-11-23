@@ -1,8 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-  PASS  three_players_two_ai - players=3, is_ai=2 (want 3 / 2)
-  PASS  each_ai_has_start_and_resources - map_starts=4, AI1 home=(36.0,291.0) purse=1750, AI2 home=(40.0,40.0) purse=1750
-  PASS  each_ai_issues_orders - AI1 issued=14 active_ticks=120, AI2 issued=12 active_ticks=120
-  PASS  no_ai_stuck - AI1 late_active=60/60 moved=146.4m units=8, AI2 late_active=60/60 moved=125.3m units=8
-  PASS  no_chat_spam - messages=0, distinct=0, worst=0x "" (limit 5x)
-  PASS  game_continues_or_ends_cleanly - time_s=30.00 winner=-1 finite_res=true

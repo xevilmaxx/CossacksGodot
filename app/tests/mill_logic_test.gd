@@ -1,4 +1,4 @@
-# Focused regression test for the mill + field (food) loop.
+# Focused regression test for the strict mill + field (food) loop.
 # Run with:
 #   godot --headless --path app --script res://tests/mill_logic_test.gd
 extends SceneTree
@@ -21,67 +21,76 @@ func _initialize() -> void:
 	Data.AI_ENABLED = false
 	game.setup("skirmish")
 
-	# Find a food field and a clear spot for a mill nearby.
-	var field: Dictionary = {}
+	# T-MILL-CORE strict cycle: a fresh map carries ZERO wild food.
+	# Food exists only as mill-owned fields.
+	var wild := 0
 	for n in game.res_nodes:
-		if n.type == "food" and n.hits > 0:
-			field = n
+		if str(n.type) == "food":
+			wild += 1
+	_check("no_wild_food", wild == 0, "wild food nodes=%d" % wild)
+
+	# Build a finished mill on clear ground by the town center (the start
+	# zone is keep-clear, so the drop point is always reachable).
+	var anchor := Vector2.ZERO
+	for e in game.entities:
+		if not e.dead and str(e.get("kind", "")) == "building" and int(e.get("player", -1)) == 0:
+			anchor = e.pos
 			break
-	if field.is_empty():
-		_check("setup", false, "no food field on the map")
-		return _finish()
-
-	# --- no drop point: a carrier must keep its load --------------------
-	var p0 = game.spawn("peasant", 0, field.pos + Vector2(2, 0))
-	game.cmd_gather(p0, field)
-	print("DEBUG start pos=%s slot=%s food=%s gathered=%s" % [str(p0.pos), str(game._work_slot(p0, field.pos, float(field.radius)+1.1)), str(game.players[0].res[0]), str(game.stats.gathered)])
-	var drop = game.nearest_drop(p0, "food")
-	print("DEBUG drop=%s" % str(drop))
-	for i in 240:
-		game.tick(0.25)
-		if i in [0, 1, 4, 20, 100, 239]:
-			print("DEBUG t=%.1f pos=%s carry=%d order=%s deliv=%s food=%.1f gathered=%s" % [
-				game.time_s, str(p0.pos), int(p0.carry), str(p0.order.get("type","")),
-				str(p0.get("delivering", false)), game.players[0].res[0], str(game.stats.gathered)])
-	var held: bool = int(p0.get("carry", 0)) > 0
-	var slot = game._work_slot(p0, field.pos, float(field.radius) + 1.1)
-	print("DEBUG self=%.2f slot=%.2f slope=%.2f hself=%.2f hslot=%.2f blockedFor=%s" % [
-		game.height_at(p0.pos), game.height_at(slot), game.slope_to(p0.pos, slot),
-		game.height_at(p0.pos), game.height_at(slot), str(game._blocked_for(p0, slot))])
-	_check("no_mill_holds_load", held,
-		"carry=%d order=%s node=%s moving=%s pos=%s slot=%s field=%s hits=%d stuck=%s nav=%s" % [
-			int(p0.get("carry", 0)), str(p0.order.get("type", "")), str(p0.order.get("node", 0)),
-			str(p0.get("moving", false)), str(p0.pos), str(slot),
-			str(field.pos), int(field.hits), str(p0.get("stuck_t", 0.0)), str(p0.get("nav_path", []))])
-
-	# --- build a finished mill next to the field ------------------------
-	var mill = game.spawn("mil", 0, field.pos + Vector2(6, 0), true)
+	var mill_pos := anchor + Vector2(8, 0)
+	for cand in [Vector2(8, 0), Vector2(-8, 0), Vector2(0, 8), Vector2(0, -8), Vector2(8, 8)]:
+		if game.in_bounds(anchor + cand) and not game.is_blocked(anchor + cand):
+			mill_pos = anchor + cand
+			break
+	game.players[0].res[3] += 1000.0
+	var mill = game.spawn("mil", 0, mill_pos, true)
 	_check("mill_is_drop", Data.BUILDINGS["mil"].get("stores", []).has("food"),
 		"mill stores food")
+	var fields: Array = []
+	for n in game.res_nodes:
+		if n.has("mill") and int(n.mill) == int(mill.id):
+			fields.append(n)
+	_check("mill_sows_ring", fields.size() > 0,
+		"mill-owned fields=%d (cap %d)" % [fields.size(), game.MAX_FIELDS_PER_MILL])
+	if fields.is_empty():
+		return _finish()
+	# Gather from the field nearest the mill: shortest delivery walk.
+	var field: Dictionary = fields[0]
+	var best_d := 1e9
+	for n in fields:
+		var d: float = (n.pos as Vector2).distance_to(mill.pos)
+		if d < best_d:
+			best_d = d
+			field = n
+
+	# --- gather from a mill field reaches the player ------------------
+	var p0 = game.spawn("peasant", 0, field.pos + Vector2(2, 0))
+	game.cmd_gather(p0, field)
 	var f0: float = game.players[0].res[0]
-	var g0: float = float(game.stats.gathered.get("food", 0.0))
 	for i in 400:
 		game.tick(0.25)
-	var delivered: bool = game.players[0].res[0] > f0
-	_check("food_reaches_mill", delivered,
-		"food %.1f -> %.1f, gathered %.1f -> %.1f" % [
-			f0, game.players[0].res[0], g0, float(game.stats.gathered.get("food", 0.0))])
+	_check("food_reaches_mill", game.players[0].res[0] > f0,
+		"food %.1f -> %.1f" % [f0, game.players[0].res[0]])
 
-	# --- field depletion + resow ---------------------------------------
-	var depleted: Dictionary = {}
-	for n in game.res_nodes:
-		if n.type == "food":
-			depleted = n
-			break
-	var h0: int = int(depleted.hits)
-	depleted.hits = 0
-	var rp = game.spawn("peasant", 0, depleted.pos + Vector2(1, 0))
+	# --- depleted mill field: paid resow (20 food / 2 s) --------------
+	var resow_field: Dictionary = fields[1] if fields.size() > 1 else fields[0]
+	resow_field.hits = 0
+	var rp = game.spawn("peasant", 0, resow_field.pos + Vector2(1, 0))
 	game.players[0].res[0] += 500.0
-	game.cmd_resow(rp, depleted)
+	game.cmd_resow(rp, resow_field)
 	for i in 160:
 		game.tick(0.25)
-	_check("resow_restores_field", int(depleted.hits) > 0,
-		"hits %d -> 0 -> %d" % [h0, int(depleted.hits)])
+	_check("resow_restores_field", int(resow_field.hits) > 0,
+		"paid resow hits 0 -> %d" % int(resow_field.hits))
+
+	# --- depleted mill field: FREE regrow with finished mill -----------
+	var free_field: Dictionary = fields[2] if fields.size() > 2 else fields[0]
+	free_field.hits = 0
+	var food_before: float = game.players[0].res[0]
+	for i in 280:
+		game.tick(0.25)
+	_check("mill_regrows_free", int(free_field.hits) > 0,
+		"free regrow hits 0 -> %d (food %.0f -> %.0f, no resow order)" % [
+			int(free_field.hits), food_before, game.players[0].res[0]])
 
 	_finish()
 

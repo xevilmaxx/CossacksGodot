@@ -1,6 +1,0 @@
-SCRIPT ERROR: Parse Error: Cannot infer the type of "one" variable because the value doesn't have a set type.
-   at: GDScript::reload (res://tests/t_squads.gd:82)
-SCRIPT ERROR: Parse Error: Cannot infer the type of "form_ok" variable because the value doesn't have a set type.
-   at: GDScript::reload (res://tests/t_squads.gd:106)
-ERROR: Failed to load script "res://tests/t_squads.gd" with error "Parse error".
-   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

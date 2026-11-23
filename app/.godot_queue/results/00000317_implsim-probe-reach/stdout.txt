@@ -1,9 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-[REACH_REPAIR] starts=4 res_nodes=816
-[REACH_REPAIR] missing food at start (80.0, 80.0) reach=4896
-[REACH_REPAIR] missing gold at start (80.0, 80.0) reach=4896
-[REACH_REPAIR] missing food at start (560.0, 560.0) reach=4854
-[REACH_REPAIR] missing wood at start (560.0, 560.0) reach=4854
-[REACH_REPAIR] missing gold at start (560.0, 560.0) reach=4854
-map dump: C:/Users/Maxym.Oboyshev/Documents/Craft Anything/cossacks-3-3/scans/implsim_probe_8.json

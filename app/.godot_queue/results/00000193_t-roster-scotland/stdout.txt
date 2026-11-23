@@ -1,9 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-sprites: 29 sets loaded (sids=69)
-  PASS  sco_nation_registered - Data.NATIONS has sco=true, name='Scotland', nations=21 (want sco/Scotland)
-  PASS  sco_nation_units_wired - NATION_UNITS has sco=true, sco train sids resolved=["bagpiper"]
-  FAIL  sco_unique_units_in_roster - sco-specific Data.UNITS keys=2 (want >= 3): ["bagpiper", "highlander"]
-  FAIL  sco_building_skin - _bld_key(player=sco, cen)='cen', sprite loadable=false (want sco_* skin)
-  PASS  sco_peasant_sheet_reachable - _anim_key(peasant, sco)='sco_peasant', in index=true, actions=["walk", "idle", "attack", "workwood", "workfood", "workstone", "construct", "walkwood", "walkfood", "walkstone", "idlewood", "idlefood", "idlestone", "death"]
-  PASS  sco_unit_spawn_and_move - spawned 'bagpiper' (player 0), order=none, walked 6.0 m (want >= 3.0)

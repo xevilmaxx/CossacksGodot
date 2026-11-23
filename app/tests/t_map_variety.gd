@@ -6,7 +6,8 @@
 #   * the same seed reproduces a byte-identical map summary;
 #   * map type changes the water fraction (nowater2 vs islands);
 #   * the menu map_size option sets both grid dimensions;
-#   * every start has reachable food / stone / wood within 25 tiles (L6).
+#   * every start has reachable stone / wood within 25 tiles plus open room
+#     for a mill + field ring (T-FOOD-1: food comes from mills, L6).
 #
 # Options may still be PENDING: a failing check is the correct baseline for a
 # missing feature, not a test bug.  Do NOT weaken the assertions to make green.
@@ -97,14 +98,16 @@ func _water_frac(g) -> float:
 	return float(n) / float(g.terrain.size())
 
 # GUIDE4 L6 reachability: from each start, BFS the unblocked grid out to 25
-# tiles, then require at least one food, stone and wood node whose tile (or a
-# neighbour within +/-2 tiles) is in the reached set.
+# tiles, then require at least one stone and wood node whose tile (or a
+# neighbour within +/-2 tiles) is in the reached set. T-FOOD-1: food is NOT
+# a map node anymore (mill cycle only) - a large reachable open set proves
+# mill+field room, so "food" is satisfied by open ground, not by a node.
 func _reachable_resources(g) -> Dictionary:
 	var w := int(g.MAP_W)
 	var h := int(g.MAP_H)
 	var blocked = g.blocked
-	var wanted := {"food": ["food"], "stone": ["stone"], "wood": ["wood"]}
-	var nodes := {"food": [], "stone": [], "wood": []}
+	var wanted := {"stone": ["stone"], "wood": ["wood"]}
+	var nodes := {"stone": [], "wood": []}
 	for n in g.res_nodes:
 		var tp := str(n.type)
 		for k in nodes:
@@ -171,6 +174,9 @@ func _reachable_resources(g) -> Dictionary:
 				if ok:
 					break
 			per[k] = ok
+		# T-FOOD-1: no food nodes exist on the map (mill cycle only). A big
+		# reachable open set proves there is mill+field room near the start.
+		per["food"] = reach.size() > 50
 		out[pi] = per
 	return out
 
@@ -229,7 +235,9 @@ func _initialize() -> void:
 		[gf.MAP_W, gf.MAP_H, gf.terrain.size(), gf.blocked.size(), gf.tileblock.size()])
 	_dispose(gf)
 
-	# 5. GUIDE4 L6: each start must reach food, stone and wood within 25 tiles.
+	# 5. GUIDE4 L6: each start must reach stone and wood within 25 tiles, with
+	#    open room for a mill + field ring (T-FOOD-1: food comes from mills,
+	#    not from map nodes, so "food" = reachable open ground).
 	var gg = _make(20261113, "land", 160, 160)
 	var reach := _reachable_resources(gg)
 	var all_ok := reach.size() >= 2

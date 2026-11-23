@@ -20,6 +20,10 @@ var build_keys: Dictionary = {}    # building id -> key
 var rally_mode := false
 var cursor_tex: Dictionary = {}
 var cursor_now := ""
+# T-PERF-RENDER: hover-scan throttle state for _update_cursor().
+var _cursor_mouse := Vector2.INF
+var _cursor_t_ms := -100000
+var _cursor_sel_n := -1
 var attack_ground_mode := false
 var groups: Dictionary = {}
 var last_click_t := 0.0
@@ -114,7 +118,7 @@ func minimap_order(pos: Vector2) -> void:
 	for e in game.entities:
 		if not e.dead and e.player != 0 and e.pos.distance_to(pos) < 6.0:
 			any_enemy = true
-			break
+			break  # T-PERF-RENDER: one enemy is enough to pick attack-move
 	for e in sel:
 		if any_enemy and game.has_weapon(e):
 			game.cmd_attack_move(e, pos)
@@ -232,27 +236,29 @@ func _screen_to_world(p: Vector2) -> Vector2:
 	return (xform * p) / world.view_scale
 
 func _pick(pw: Vector2, players_only := true) -> Dictionary:
+	# T-PERF-RENDER: single pass. The old code scanned all entities twice on
+	# every miss (the common case: clicking empty ground) — once for the
+	# radius test, once for the 2 m fallback. Both best-candidates are tracked
+	# in one loop with identical hit semantics.
 	var best: Dictionary = {}
 	var best_d := 1e9
+	var fb: Dictionary = {}
+	var fb_d := 1e9
 	for e in game.entities:
 		if e.dead:
 			continue
-		if players_only and e.player != 0:
-			continue
 		var d: float = e.pos.distance_to(pw)
-		var r: float = game.pick_radius(e)
-		if d < r and d < best_d:
-			best_d = d
-			best = e
-	# fall back: any entity close by (enemies selectable for info/attack)
-	if best.is_empty():
-		for e in game.entities:
-			if e.dead:
-				continue
-			var d: float = e.pos.distance_to(pw)
-			if d < 2.0 and d < best_d:
+		if not players_only or e.player == 0:
+			var r: float = game.pick_radius(e)
+			if d < r and d < best_d:
 				best_d = d
 				best = e
+		if d < 2.0 and d < fb_d:
+			fb_d = d
+			fb = e
+	# fall back: any entity close by (enemies selectable for info/attack)
+	if best.is_empty():
+		return fb
 	return best
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -372,6 +378,8 @@ func _right_order(pw: Vector2) -> void:
 			if e.player == 0 and e.kind == "building" and e.def.get("trains", []).size() > 0:
 				game.set_rally(e, pw)
 				hud.show_hint("Rally set")
+		if world != null:
+			world.mark_rally_dirty()
 		return
 	var sel_units := get_selected().filter(func(e): return e.player == 0 and e.kind == "unit")
 	# Production buildings selected on their own: right-click sets the rally
@@ -395,6 +403,8 @@ func _right_order(pw: Vector2) -> void:
 			for b in sel_blds:
 				game.set_rally(b, pw)
 			hud.show_hint("Rally set")
+			if world != null:
+				world.mark_rally_dirty()
 		return
 	var sel := sel_units
 	var target := _pick(pw, false)
@@ -818,7 +828,20 @@ func _update_cursor() -> void:
 	if rally_mode:
 		_set_cursor("gotomine")
 		return
-	var pw := _screen_to_world(get_viewport().get_mouse_position())
+	# T-PERF-RENDER: the hover scan below walks every entity plus every res
+	# node. Throttle it: recompute on mouse moves (>3 px), selection-size
+	# changes, or age (>80 ms bounds staleness when units walk under a still
+	# cursor). Mode switches above stay instant (<100 ms click feedback).
+	var mp := get_viewport().get_mouse_position()
+	var now_ms := Time.get_ticks_msec()
+	var sel_key := selected_ids.size()
+	if mp.distance_to(_cursor_mouse) < 3.0 and now_ms - _cursor_t_ms < 80 \
+			and sel_key == _cursor_sel_n:
+		return
+	_cursor_mouse = mp
+	_cursor_t_ms = now_ms
+	_cursor_sel_n = sel_key
+	var pw := _screen_to_world(mp)
 	var sel := get_selected()
 	var peas := false
 	var military := false

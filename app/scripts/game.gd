@@ -87,6 +87,32 @@ var squads: Dictionary = {}  # squad_id -> {officer, drummer, members, formation
 var gates: Array = []
 var grid: Dictionary = {}          # Vector2i cell -> Array of entity dicts
 const GRID_M := 8.0
+# T-PERF-SIM: resource spatial hash. res_nodes are mostly static (trees/rocks/
+# deposits), so nearest_res() no longer scans every node per peasant per tick.
+# Rebuilt lazily when res_dirty changes; cell size balances bucket count vs
+# per-query fan-out. _res_grid_ver tracks the res_dirty value it was built at.
+var _res_grid: Dictionary = {}
+const RES_GRID_M := 16.0
+var _res_grid_ver := -1
+# T-PERF-SIM: cached impassable ink rects as [Rect2, id] pairs (see
+# _block_rects_ensure). Rebuilt when bld_dirty changes (spawn/finish/destroy),
+# which covers every mutation of the set (buildings never move).
+var _block_rects: Array = []
+var _block_rects_ver := -1
+func _block_rects_ensure() -> void:
+	if _block_rects_ver == bld_dirty:
+		return
+	_block_rects.clear()
+	for b in live_blds:
+		if b.dead:
+			continue
+		var r: Rect2 = b.get("block_rect", Rect2())
+		if r.has_area():
+			_block_rects.append([r, int(b.id)])
+	_block_rects_ver = bld_dirty
+# T-PERF-SIM: can_place building scan margin. Must exceed the largest
+# block_r on the map (gameplay radii are a few metres); 16 m is generous.
+const _CANPLACE_BLD_MARGIN := 16.0
 var live_units: Array = []
 var live_blds: Array = []
 var officers: Array = [[], []]
@@ -97,6 +123,12 @@ var res_dirty := 0
 var bld_dirty := 0
 var ai_cheat_t := 0.0
 var sow_t := 0.0
+# T-FIELDS-GFX: per-field regrow state. growth 0..1 mirrors regrow progress
+# while hits==0; regrow_t counts up to regrow_time (donor ~60 s seed cycle).
+# Auto-regrow runs only for fields with a finished mill within FIELD_MILL_RADIUS.
+const FIELD_REGROW_TIME := 60.0
+const FIELD_MILL_RADIUS := 18.0
+var fields_anim := false
 func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 	# P-10: water cells hold BLK_WATER and are hard blockers for land units,
 	# but a naval entity treats them as its road and land as its wall.
@@ -116,13 +148,14 @@ func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 		build_target = int(ord.get("target", 0))
 	# Buildings are solid 2D blocks: the drawn sprite's ink box stays impassable
 	# in every direction, not just the base circle stamped into `blocked`.
-	for b in live_blds:
-		if b.dead:
+	# T-PERF-SIM: flat cached rect list (see _block_rects_ensure). Buildings
+	# never move, so the old per-probe live_blds scan with dict lookups is
+	# replaced by a tight Rect2 loop.
+	_block_rects_ensure()
+	for br in _block_rects:
+		if build_target != 0 and int(br[1]) == build_target:
 			continue
-		if build_target != 0 and int(b.id) == build_target:
-			continue
-		var r: Rect2 = b.get("block_rect", Rect2())
-		if r.has_area() and r.has_point(p):
+		if (br[0] as Rect2).has_point(p):
 			return true
 	for g in gates:
 		if g.dead:
@@ -207,7 +240,10 @@ func _compact() -> void:
 	gates = gk
 	var rk: Array = []
 	for n in res_nodes:
-		if n.max_hits == 0 or n.hits > 0 or n.type == "food":
+		# T-FOOD-1: depleted mill fields are kept for resow; every other
+		# depleted node is dropped. (Wild food no longer spawns on random
+		# maps, and old wild nodes must not linger as immortal resow targets.)
+		if n.max_hits == 0 or n.hits > 0 or (n.type == "food" and n.has("mill")):
 			rk.append(n)
 		else:
 			by_id.erase(n.id)
@@ -321,6 +357,16 @@ func setup_begin(mode: String) -> void:
 	cluster_zones = []
 	pattern_stamps = []
 	hill_list = []
+	# T-PERF-SIM: drop all sim caches for the fresh map (versions alone could
+	# coincidentally match the previous game and serve stale buckets/rects).
+	_res_grid.clear()
+	_res_grid_ver = -1
+	_res_grid_src_size = -1
+	_block_rects.clear()
+	_block_rects_ver = -1
+	_nav_ink_cells.clear()
+	_nav_ink_ver = -1
+	_sep_bld_ver = -1
 	_st_budget = Data.mapgen_budget()
 	_st_mscale = clampf(float(MAP_W) / 160.0, 1.0, 2.0)
 	_st_forest = PackedFloat32Array()
@@ -419,6 +465,10 @@ func bld_rect_cells(rect: Rect2) -> Array:
 func _add_res(type: String, pos: Vector2, hits: int, radius: float) -> void:
 	var node := {"id": next_id, "kind": "res", "type": type, "pos": pos, "hits": hits,
 		"max_hits": hits, "radius": radius}
+	if type == "food" and hits > 0:
+		node["growth"] = 1.0
+		node["regrow_t"] = 0.0
+		node["regrow_time"] = FIELD_REGROW_TIME
 	next_id += 1
 	res_nodes.append(node)
 	by_id[node.id] = node
@@ -430,6 +480,9 @@ func _clear_area(pos: Vector2, r_m: float) -> void:
 	for n in res_nodes:
 		if n.pos.distance_to(pos) < r_m:
 			n.hits = 0  # depleted (removed visually)
+			if str(n.get("type", "")) == "food":
+				n["growth"] = 0.0
+				n["regrow_t"] = 0.0
 
 func _paint_terrain(pos: Vector2, r_m: float, t: int, feather := 2.5, mark_mine := false) -> void:
 	# Soft disc: full paint inside r-feather, then a noisy dithered rim so
@@ -1013,33 +1066,15 @@ func _gen_forests() -> void:
 func _gen_resources() -> void:
 	_reseed_stage("mines")  # P-31 / dogenerate.inc:1772 SetupMines
 	# Quarries, mines, hills, forest belts and decor are all stamped from
-	# donor pattern masks in _gen_patterns(). Left here: the donor's own
-	# rectangular seed-wheat strips by each town (SetupStartingResources).
+	# donor pattern masks in _gen_patterns(). Left here: richness ore scaling.
+	# T-FOOD-1 (owner rule): a random skirmish map starts with ZERO food
+	# resource nodes. No seed-wheat strips, no straggler fields, no wild
+	# berries. Food comes strictly through the mill cycle: a finished mill
+	# sows field rings (_sow_field_ring / _on_building_finished) and peasants
+	# resow depleted fields (cmd_resow / _tick_field_growth).
 	var starts: Array[Vector2] = []
 	for sv in map_starts:
 		starts.append(sv as Vector2)
-	# seed wheat (donor cSeedWheat): rectangular farm strips by each town.
-	for st in starts:
-		for g in 2:
-			var origin := st + Vector2(-10 + g * 7.0, 7.0) * TILE
-			for ix in 5:
-				for iy in 4:
-					var p := origin + Vector2(ix * 1.5, iy * 1.5) * TILE
-					if in_bounds(p) and not is_blocked(p):
-						_add_res("food", p, 50, 0.6)
-	# straggler fields: small claimed patches, never inside other clusters.
-	for st in starts:
-		for attempt in 6:
-			var c := st + Vector2(rng.randf_range(-6, 6), rng.randf_range(-6, 6)) * TILE
-			if not in_bounds(c) or is_blocked(c):
-				continue
-			if not _claim_cluster(c, 4.0 * TILE):
-				continue
-			for i in 6:
-				var p := c + Vector2(rng.randf_range(-2.5, 2.5), rng.randf_range(-2.5, 2.5)) * TILE
-				if in_bounds(p) and not is_blocked(p):
-					_add_res("food", p, 50, 0.6)
-			break
 	_apply_richness_ores(starts)
 
 # P-19 richness: donor Minerals changes how many ore deposits a start ring gets.
@@ -1090,14 +1125,9 @@ func _gen_finish() -> void:
 		for n in res_nodes:
 			if n.hits <= 0:
 				set_blocked_circle(n.pos, n.radius, false)
-		# re-plant what the keep-clear wiped: wheat + firewood in reach.
-		for g in 2:
-			var origin := st + Vector2(-9 + g * 8.0, 8.5) * TILE
-			for ix in 5:
-				for iy in 4:
-					var p := origin + Vector2(ix * 1.5, iy * 1.5) * TILE
-					if in_bounds(p) and not is_blocked(p):
-						_add_res("food", p, 50, 0.6)
+		# T-FOOD-1: no wild-food re-plant here. The keep-clear wipe above only
+		# depletes nodes in the start zone; mill-owned fields regrow through
+		# the mill cycle (_tick_field_growth / cmd_sow), never from mapgen.
 		_scatter_forest(st + Vector2(9, -8) * TILE, 26, 5.0 * TILE)
 		_paint_terrain(st + Vector2(9, -8) * TILE, 4.5 * TILE, 2)
 		_scatter_forest(st + Vector2(-10, 6) * TILE, 18, 4.0 * TILE)
@@ -1812,9 +1842,19 @@ func _on_building_finished(e: Dictionary) -> void:
 # 5 gold (unit.script:1691-1694) - paid per field here, no lump-sum inference.
 const SOW_ROW := 7
 const SOW_GOLD := 5
+# T-MILL-CORE: hard cap of mill-owned fields. The 7x7 rotated ring holds at
+# most SOW_ROW*SOW_ROW tiles; the clash check enforces it geometrically, but
+# the explicit cap keeps repeated 60 s re-seeds from ever stacking fields.
+const MAX_FIELDS_PER_MILL := 49
 
 func _sow_field_ring(mill: Dictionary) -> int:
 	if mill.is_empty() or str(mill.sid) != "mil" or not bool(mill.get("finished", false)):
+		return 0
+	var owned := 0
+	for n in res_nodes:
+		if n.has("mill") and int(n.mill) == int(mill.id):
+			owned += 1
+	if owned >= MAX_FIELDS_PER_MILL:
 		return 0
 	var player: int = int(mill.player)
 	var made := 0
@@ -1864,13 +1904,121 @@ func cmd_sow(mill: Dictionary) -> int:
 # growth timer, so there is only one field-restoration code path.
 func _restore_field(node: Dictionary) -> void:
 	node.hits = int(node.max_hits)
+	node["growth"] = 1.0
+	node["regrow_t"] = 0.0
+	if float(node.get("regrow_time", 0.0)) <= 0.0:
+		node["regrow_time"] = FIELD_REGROW_TIME
 	res_dirty += 1
 	post_event("construct", node.pos, "field")
+
+# T-FIELDS-GFX: mill lookup for a field. Linked mill id first (O(1));
+# falls back to adopting any finished mill within FIELD_MILL_RADIUS so
+# rebuilt mills and donor seed strips near a mill still regrow.
+# Hot path uses the int form (no per-tick Dictionary allocations).
+func _field_mill_id(n: Dictionary) -> int:
+	var mid := int(n.get("mill", 0))
+	if mid != 0:
+		var m: Dictionary = by_id.get(mid, {})
+		if not m.is_empty() and not bool(m.get("dead", false)) \
+				and bool(m.get("finished", false)) and str(m.get("sid", "")) == "mil" \
+				and (m.pos as Vector2).distance_to(n.pos) <= FIELD_MILL_RADIUS:
+			return mid
+	for b in live_blds:
+		if b.dead or str(b.get("sid", "")) != "mil" or not bool(b.get("finished", false)):
+			continue
+		if (b.pos as Vector2).distance_to(n.pos) <= FIELD_MILL_RADIUS:
+			n["mill"] = int(b.id)
+			return int(b.id)
+	return 0
+
+func _field_mill(n: Dictionary) -> Dictionary:
+	var mid := _field_mill_id(n)
+	if mid == 0:
+		return {}
+	return by_id.get(mid, {})
+
+# T-FIELDS-GFX: auto-regrow gate. Only depleted mill fields with a finished
+# owned mill nearby regrow; anything else stays depleted until resow.
+func field_can_regrow(n: Dictionary) -> bool:
+	if str(n.get("type", "")) != "food" or int(n.get("max_hits", 0)) <= 0 \
+			or int(n.get("hits", 0)) > 0:
+		return false
+	return _field_mill_id(n) != 0
+
+# T-FIELDS-GFX: HUD/minimap/world read the same state.
+# ripe = harvestable, growing = live but partially eaten,
+# regrowing = depleted but timer running, depleted = bare stubble.
+func field_state(n: Dictionary) -> String:
+	if str(n.get("type", "")) != "food":
+		return ""
+	if int(n.get("hits", 0)) > 0:
+		var ratio := clampf(float(n.hits) / maxf(1.0, float(n.max_hits)), 0.0, 1.0)
+		return "ripe" if ratio >= 0.75 else "growing"
+	if float(n.get("regrow_t", 0.0)) > 0.0:
+		return "regrowing"
+	return "depleted"
+
+# T-FIELDS-GFX: 0..1 progress for visuals. Live fields mirror hits ratio;
+# depleted mill fields mirror regrow_t/regrow_time; bare fields are 0.
+func field_growth01(n: Dictionary) -> float:
+	if int(n.get("hits", 0)) > 0:
+		return clampf(float(n.get("hits", 0)) / maxf(1.0, float(n.get("max_hits", 1))), 0.0, 1.0)
+	var rt := float(n.get("regrow_time", FIELD_REGROW_TIME))
+	if rt <= 0.0:
+		return 0.0
+	return clampf(float(n.get("regrow_t", 0.0)) / rt, 0.0, 1.0)
+
+# T-FIELDS-GFX: mill panel counts (HUD). No allocations beyond the result dict.
+func field_counts_for_mill(mill_id: int) -> Dictionary:
+	var ripe := 0
+	var growing := 0
+	var regrowing := 0
+	var depleted := 0
+	for n in res_nodes:
+		if str(n.get("type", "")) != "food" or int(n.get("max_hits", 0)) <= 0:
+			continue
+		if int(n.get("mill", 0)) != mill_id:
+			continue
+		match field_state(n):
+			"ripe":
+				ripe += 1
+			"growing":
+				growing += 1
+			"regrowing":
+				regrowing += 1
+			_:
+				depleted += 1
+	return {"ripe": ripe, "growing": growing, "regrowing": regrowing, "depleted": depleted}
+
+# T-FIELDS-GFX: per-tick fractional regrow. Only fields passing
+# field_can_regrow() advance; the 60 s legacy timer below stays for AI sowing.
+func _tick_fields(dt: float) -> void:
+	var any := false
+	for n in res_nodes:
+		if str(n.get("type", "")) != "food" or int(n.get("max_hits", 0)) <= 0 \
+				or int(n.get("hits", 0)) > 0:
+			continue
+		if _field_mill_id(n) == 0:
+			if float(n.get("regrow_t", 0.0)) != 0.0:
+				n["regrow_t"] = 0.0
+				n["growth"] = 0.0
+			continue
+		var rt := float(n.get("regrow_time", FIELD_REGROW_TIME))
+		if rt <= 0.0:
+			rt = FIELD_REGROW_TIME
+			n["regrow_time"] = rt
+		n["regrow_t"] = float(n.get("regrow_t", 0.0)) + dt
+		n["growth"] = clampf(float(n["regrow_t"]) / rt, 0.0, 1.0)
+		any = true
+		if float(n["regrow_t"]) >= rt:
+			_restore_field(n)
+	fields_anim = any
 
 # Donor progresseconomicai.inc:3688-3700,3896 + dmscript.global:1487
 # (gc_global_TimeSeedWheat = 0.03*2000, ~60 s). Only AI mills re-seed: the
 # human adviser path is deferred by the skirmish-only charter. Field regrowth
 # maps donor HP -> port hits (nothing.inc:78-84, derived).
+# T-FIELDS-GFX: the legacy bulk restore now respects the mill gate too.
 func _tick_field_growth() -> void:
 	for pi in players.size():
 		if not bool(players[pi].get("is_ai", false)):
@@ -1880,7 +2028,8 @@ func _tick_field_growth() -> void:
 				_sow_field_ring(b)
 	for n in res_nodes:
 		if n.type == "food" and n.has("mill") and int(n.hits) <= 0 and int(n.max_hits) > 0:
-			_restore_field(n)
+			if _field_mill_id(n) != 0:
+				_restore_field(n)
 
 func _start_positions(count := 0) -> Array[Vector2]:
 	# Donor dogenerate.inc keeps arrStartPos[0..7] regardless of player count.
@@ -1917,7 +2066,9 @@ func _ensure_start_slots() -> void:
 
 # Donor SetupStartingResources provisions every arrStartPos slot, used or not.
 # Give an appended slot a compact deterministic package so a 3rd/4th player and
-# the QA reach check both see food / stone / all three ores / wood nearby.
+# the QA reach check both see stone / all three ores / wood nearby.
+# T-FOOD-1: NO food here either - food comes strictly from mills, even on
+# appended starts.
 # scan_map.py quarry_purity: stone must be >8 m from any live wood.
 # scan_map.py mine_clearance: ore must be >=10 m from any live wood.
 # This pass runs AFTER all generation on a deterministic spiral (no global
@@ -1943,7 +2094,7 @@ func _provision_spot_clear(p: Vector2, t: String) -> bool:
 
 # Constraint-aware provisioning for appended starts (post-generation, no rng).
 func _provision_extra_start(sv: Vector2) -> void:
-	var types: Array[String] = ["wood", "food", "stone", "gold", "iron", "coal"]
+	var types: Array[String] = ["wood", "stone", "gold", "iron", "coal"]
 	var rings := [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0]
 	for i in types.size():
 		var t := types[i]
@@ -2038,7 +2189,7 @@ func _reach_has_kind(reach: Dictionary, grp: Array) -> bool:
 # land tile, clear of quarry-purity / mine-clearance rules. radius 0 adds no
 # blocked circle and no global rng draw, so default seeds stay byte-identical.
 func _repair_start_reach() -> void:
-	var groups: Array = [["food"], ["stone"], ["wood"], ["gold", "iron", "coal"]]
+	var groups: Array = [["stone"], ["wood"], ["gold", "iron", "coal"]]
 	var rings := [3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 16.0]
 	var rad: int = maxi(1, int(round(25.0 * float(MAP_W) / 160.0)))
 	for si in map_starts.size():
@@ -2186,26 +2337,61 @@ func nearest_drop(e: Dictionary, res: String) -> Dictionary:
 	return best
 
 func nearest_res(pos: Vector2, type: String, max_r := 40.0, exclude_blocked := true, avoid := 0) -> Dictionary:
+	# T-PERF-SIM: spatial-hash query. Scans only buckets overlapped by the
+	# max_r square instead of every node on the map. Filters and the strict
+	# `< best_d` nearest rule are unchanged, so results match the old brute
+	# force (up to exact-distance ties, which are measure-zero).
+	_res_grid_ensure()
 	var best: Dictionary = {}
 	var best_d := max_r
-	for n in res_nodes:
-		if n.type != type or n.hits <= 0:
-			continue
-		if avoid != 0 and int(n.id) == avoid:
-			continue
-		var d: float = n.pos.distance_to(pos)
-		if d < best_d:
-			best_d = d
-			best = n
+	var c0 := Vector2i(int((pos.x - max_r) / RES_GRID_M), int((pos.y - max_r) / RES_GRID_M))
+	var c1 := Vector2i(int((pos.x + max_r) / RES_GRID_M), int((pos.y + max_r) / RES_GRID_M))
+	for cy in range(c0.y, c1.y + 1):
+		for cx in range(c0.x, c1.x + 1):
+			var cell: Array = _res_grid.get(Vector2i(cx, cy), [])
+			for n in cell:
+				if n.type != type or n.hits <= 0:
+					continue
+				# T-FOOD-1: food comes strictly through the mill cycle. Wild (mill-less)
+				# food nodes - mapgen no longer places any, but old saves or debug
+				# spawns might - are never auto-targeted.
+				if type == "food" and not n.has("mill"):
+					continue
+				if avoid != 0 and int(n.id) == avoid:
+					continue
+				var d: float = n.pos.distance_to(pos)
+				if d < best_d:
+					best_d = d
+					best = n
 	return best
+
+# T-PERF-SIM: rebuild the resource hash when the node set changes. Tracks both
+# res_dirty and array size (mapgen/_compact mutate hits/membership without
+# always bumping res_dirty).
+var _res_grid_src_size := -1
+func _res_grid_ensure() -> void:
+	if _res_grid_ver == res_dirty and _res_grid_src_size == res_nodes.size():
+		return
+	_res_grid.clear()
+	for n in res_nodes:
+		# Live gatherables plus inexhaustible deposits (max_hits == 0, needed
+		# by can_place's mine-site/resource checks); depleted gatherables are
+		# never queried spatially.
+		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0:
+			continue
+		var c := Vector2i(int(n.pos.x / RES_GRID_M), int(n.pos.y / RES_GRID_M))
+		if not _res_grid.has(c):
+			_res_grid[c] = []
+		(_res_grid[c] as Array).append(n)
+	_res_grid_ver = res_dirty
+	_res_grid_src_size = res_nodes.size()
 
 func nearest_mine(pos: Vector2, res: String, player := -1) -> Dictionary:
 	var best: Dictionary = {}
 	var best_d := 1e9
-	var all_blds: Array = []
-	for pi in players.size():
-		all_blds.append_array(buildings_of(pi, false))
-	for b in all_blds:
+	# T-PERF-SIM: scan live_blds directly (old code rebuilt per-player
+	# buildings_of() arrays on every call, i.e. per peasant per AI tick).
+	for b in live_blds:
 		if player >= 0 and b.player != player:
 			continue
 		if b.sid == "mine_" + res and not b.dead:
@@ -2384,12 +2570,22 @@ func cmd_gather(e: Dictionary, res_node: Dictionary) -> void:
 			say("No %s mine - build one on a deposit." % res_node.type)
 			return
 		e.order = {"type": "gather", "res": res_node.type, "node": mine.id}
+	elif res_node.type == "food" and not res_node.has("mill"):
+		# T-FOOD-1: wild food is not harvestable. Mill fields carry a "mill"
+		# tag (_sow_field_ring); everything else is refused gracefully.
+		_say_human(int(e.player), "Build a mill first - food comes from mill fields.")
+		return
 	else:
 		e.order = {"type": "gather", "res": res_node.type, "node": res_node.id}
 	e.moving = true
 
 func cmd_resow(e: Dictionary, node: Dictionary) -> void:
 	if e.dead or str(e.sid) != "peasant" or node.is_empty() or str(node.type) != "food":
+		return
+	# T-FOOD-1: only mill-owned fields can be resown (wild food is refused
+	# by cmd_gather too, so a live wild node must not detour through gather).
+	if not node.has("mill"):
+		_say_human(int(e.player), "Build a mill first - food comes from mill fields.")
 		return
 	if node.hits > 0:
 		cmd_gather(e, node)
@@ -3077,11 +3273,21 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 		# require their own type (kept for the AI / older callers).
 		var want: String = "" if sid == "mine" else str(def.mine)
 		var dep := false
-		for n in res_nodes:
-			if n.max_hits != 0 or n.pos.distance_to(pos) >= MINE_SITE_RADIUS:
-				continue
-			if want == "" or n.type == want:
-				dep = true
+		# T-PERF-SIM: ore deposits only (spatial query; same MINE_SITE_RADIUS).
+		_res_grid_ensure()
+		var mc0 := Vector2i(int((pos.x - MINE_SITE_RADIUS) / RES_GRID_M), int((pos.y - MINE_SITE_RADIUS) / RES_GRID_M))
+		var mc1 := Vector2i(int((pos.x + MINE_SITE_RADIUS) / RES_GRID_M), int((pos.y + MINE_SITE_RADIUS) / RES_GRID_M))
+		for mcy in range(mc0.y, mc1.y + 1):
+			for mcx in range(mc0.x, mc1.x + 1):
+				for n in (_res_grid.get(Vector2i(mcx, mcy), []) as Array):
+					if n.max_hits != 0 or n.pos.distance_to(pos) >= MINE_SITE_RADIUS:
+						continue
+					if want == "" or n.type == want:
+						dep = true
+						break
+				if dep:
+					break
+			if dep:
 				break
 		if not dep:
 			return {"ok": false, "reason": "Mines must be built on an ore deposit."}
@@ -3090,30 +3296,38 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 	var terr: int = terrain[_t(t.x, t.y)]
 	if terr == 3:
 		return {"ok": false, "reason": "Too wet - cannot build on water."}
+	# T-PERF-SIM: my_r hoisted (old code re-queried bld_rm per node/building);
+	# resource footprint via the spatial hash, buildings via the entity grid.
+	var _mr: float = bld_rm(player, sid)
+	var my_r0: float = _mr if _mr > 0.0 else float(def.radius)
+	_res_grid_ensure()
+	var fr := my_r0 + 2.5
+	var fc0 := Vector2i(int((pos.x - fr) / RES_GRID_M), int((pos.y - fr) / RES_GRID_M))
+	var fc1 := Vector2i(int((pos.x + fr) / RES_GRID_M), int((pos.y + fr) / RES_GRID_M))
 	# footprint vs resources (stone fields, trees, groves; deco/stumps excluded)
-	for n in res_nodes:
-		if str(n.get("type", "")) in ["bush", "stump"]:
-			continue
-		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0:
-			continue
-		var rr: float = bld_rm(player, sid) if bld_rm(player, sid) > 0.0 else float(def.radius)
-		rr += float(n.get("radius", 0.5))
-		if n.pos.distance_to(pos) < rr:
-			match str(n.get("type", "")):
-				"wood":
-					return {"ok": false, "reason": "Trees in the way - clear them first."}
-				"stone":
-					return {"ok": false, "reason": "Stone field - pick open dirt."}
-				"food":
-					return {"ok": false, "reason": "Cornfield - pick open dirt."}
-				_:
-					return {"ok": false, "reason": "Deposit - build the right mine here."}
+	for fcy in range(fc0.y, fc1.y + 1):
+		for fcx in range(fc0.x, fc1.x + 1):
+			for n in (_res_grid.get(Vector2i(fcx, fcy), []) as Array):
+				if str(n.get("type", "")) in ["bush", "stump"]:
+					continue
+				if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0:
+					continue
+				var rr: float = my_r0 + float(n.get("radius", 0.5))
+				if n.pos.distance_to(pos) < rr:
+					match str(n.get("type", "")):
+						"wood":
+							return {"ok": false, "reason": "Trees in the way - clear them first."}
+						"stone":
+							return {"ok": false, "reason": "Stone field - pick open dirt."}
+						"food":
+							return {"ok": false, "reason": "Cornfield - pick open dirt."}
+						_:
+							return {"ok": false, "reason": "Deposit - build the right mine here."}
 	# footprint vs live buildings (own + enemy + unfinished sites)
-	for b in live_blds:
-		if b.dead:
+	for b in grid_query(pos, my_r0 + _CANPLACE_BLD_MARGIN):
+		if b.dead or b.kind != "building":
 			continue
-		var my_r: float = bld_rm(player, sid) if bld_rm(player, sid) > 0.0 else float(def.radius)
-		var rr2: float = my_r + float(b.get("block_r", b.def.radius)) + 0.3
+		var rr2: float = my_r0 + float(b.get("block_r", b.def.radius)) + 0.3
 		if b.pos.distance_to(pos) < rr2:
 			if (sid == "wal" or sid == "gat") and str(b.sid) in ["wal", "gat"] and b.player == player:
 				continue
@@ -3310,6 +3524,7 @@ func tick(dt: float) -> void:
 			p.res[4] += 0.8
 			p.res[5] += 0.8
 	_grid_rebuild()
+	_tick_fields(dt)
 	sow_t += dt
 	if sow_t >= 60.0:
 		sow_t = 0.0
@@ -3405,11 +3620,25 @@ func _separate_units() -> void:
 							var np_o: Vector2 = o.pos + push
 							if in_bounds(np_e) and not is_blocked(np_e):
 								e.pos = np_e
+								# T-PERF-SIM: marks units displaced by the pair
+								# pass so the building pass below still sees
+								# them (see do_bld_push).
+								e["sep_moved"] = true
 							if in_bounds(np_o) and not is_blocked(np_o):
 								o.pos = np_o
+								o["sep_moved"] = true
 		# buildings push units out (cheap: only nearby buildings per unit)
+		# T-PERF-SIM: skip units that cannot need it: settled, undisplaced,
+		# with an unchanged building set. The pass is a pure function of
+		# (unit pos, building set); anything it would move either moved this
+		# tick (movers / pair-pass displacement) or saw new buildings.
+		var do_bld_push := bld_dirty != _sep_bld_ver
 		for e in units:
 			if e.dead:
+				continue
+			var displaced: bool = bool(e.get("sep_moved", false))
+			e["sep_moved"] = false
+			if not do_bld_push and not bool(e.get("moving", false)) and not displaced:
 				continue
 			for b in grid_query(e.pos, 9.0):
 				if b.dead or b.kind != "building":
@@ -3429,61 +3658,86 @@ func _separate_units() -> void:
 						var alt: Vector2 = e.pos + side * 0.3
 						if in_bounds(alt) and not is_blocked(alt):
 							e.pos = alt
+		_sep_bld_ver = bld_dirty
 
+# T-PERF-SIM: bld_dirty value at the last building-push pass (see above).
+var _sep_bld_ver := -1
+
+# T-PERF-SIM: upkeep slot order (food/gold/stone) into Data.RES_NAMES indices.
+const _UPKEEP_RES_IDX := [0, 3, 2]
 func _tick_upkeep(dt: float) -> void:
 	# Upkeep, ported from player.script _player_ProcessResourceConsume
 	# (speed 20000, gc_time_to_frames = 32): each unit eats consume/625 units
 	# of food (or gold) per second. Video pass: prolonged famine first shows
 	# the warning, then the original starves the army - slow HP drain after a
 	# grace period so a test never dies instantly (estimated).
+	# T-PERF-SIM: one shared pass accumulates every player's upkeep (index
+	# 0/1/2 = food/gold/stone); the old code re-scanned live_units/live_blds
+	# once per player. Drain loops use live_units, not the full entity list.
+	var totals: Array = []
+	for _pi in players.size():
+		totals.append([0.0, 0.0, 0.0])
+	for e in live_units:
+		if e.dead:
+			continue
+		var epl: int = int(e.player)
+		if epl < 0 or epl >= totals.size():
+			continue
+		var ee: Dictionary = e.def.get("eat", {})
+		if ee.is_empty():
+			continue
+		var te: Array = totals[epl]
+		# player.script speed 20000
+		te[0] += float(ee.get("food", 0.0)) / Data.UPKEEP_DIVISOR
+		te[1] += float(ee.get("gold", 0.0)) / Data.UPKEEP_DIVISOR
+		te[2] += float(ee.get("stone", 0.0)) / Data.UPKEEP_DIVISOR
+	for b in live_blds:
+		if b.dead:
+			continue
+		var bpl: int = int(b.player)
+		if bpl < 0 or bpl >= totals.size():
+			continue
+		var be: Dictionary = b.def.get("eat", {})
+		if be.is_empty():
+			continue
+		var tb: Array = totals[bpl]
+		tb[0] += float(be.get("food", 0.0)) / Data.UPKEEP_DIVISOR
+		tb[1] += float(be.get("gold", 0.0)) / Data.UPKEEP_DIVISOR
+		tb[2] += float(be.get("stone", 0.0)) / Data.UPKEEP_DIVISOR
 	for pi in players.size():
 		var p: Dictionary = players[pi]
 		p["famine_msg_t"] = maxf(0.0, float(p.get("famine_msg_t", 0.0)) - dt)
-		var eat := {"food": 0.0, "gold": 0.0, "stone": 0.0}
-		for e in live_units:
-			if e.dead or e.player != pi:
-				continue
-			var ee: Dictionary = e.def.get("eat", {})
-			for k in ee:
-				if eat.has(k):
-					eat[k] += ee[k] / Data.UPKEEP_DIVISOR  # player.script speed 20000
-		for e in live_blds:
-			if e.dead or e.player != pi:
-				continue
-			var ee2: Dictionary = e.def.get("eat", {})
-			for k in ee2:
-				if eat.has(k):
-					eat[k] += ee2[k] / Data.UPKEEP_DIVISOR
-		for k in eat:
+		var eat: Array = totals[pi]
+		for k in 3:
 			if eat[k] > 0:
-				var idx: int = Data.RES_NAMES.find(k)
+				var idx: int = _UPKEEP_RES_IDX[k]
 				var have: float = p.res[idx]
-				var need: float = eat[k] * dt
+				var need: float = float(eat[k]) * dt
 				if have >= need:
 					p.res[idx] = have - need
-					if k == "food":
+					if k == 0:
 						p["famine"] = false
 						p["famine_t"] = 0.0
-					if k == "gold":
+					if k == 1:
 						p["gold_famine_t"] = 0.0
 				else:
 					p.res[idx] = 0.0
-					if k == "food":
+					if k == 0:
 						p["famine"] = true
 						p["famine_t"] = float(p.get("famine_t", 0.0)) + dt
 						if float(p["famine_t"]) >= Data.FAMINE_GRACE_S:
 							if float(p.get("famine_msg_t", 0.0)) <= 0.0:
 								p["famine_msg_t"] = 10.0
 								say("Famine! %s is starving." % p.name)
-							for e in entities:
-								if not e.dead and e.player == pi and e.kind == "unit":
-									e.hp -= Data.FAMINE_DRAIN_PER_S * dt
-					if k == "gold":
+							for eu in live_units:
+								if not eu.dead and eu.player == pi:
+									eu.hp -= Data.FAMINE_DRAIN_PER_S * dt
+					if k == 1:
 						p["gold_famine_t"] = float(p.get("gold_famine_t", 0.0)) + dt
 						if float(p["gold_famine_t"]) >= 60.0:
-							for e in entities:
-								if not e.dead and e.player == pi and e.kind == "unit" and e.def.get("eat", {}).has("gold"):
-									e["morale"] = maxf(0.0, float(e.get("morale", 70.0)) - 10.0 * dt)
+							for eu2 in live_units:
+								if not eu2.dead and eu2.player == pi and (eu2.def.get("eat", {}) as Dictionary).has("gold"):
+									eu2["morale"] = maxf(0.0, float(eu2.get("morale", 70.0)) - 10.0 * dt)
 
 func _tick_cleanup(dt: float) -> void:
 	for e in entities:
@@ -3587,10 +3841,16 @@ func _nav_wanted(e: Dictionary) -> bool:
 # Gates and building ink boxes are not part of the static blocked[] grid, so
 # pass their footprints to A* as extra blocked cells.
 func _nav_gate_cells(e: Dictionary) -> Array:
-	var out: Array = []
-	for b in live_blds:
-		if not b.dead:
-			out += bld_rect_cells(b.get("block_rect", Rect2()))
+	# T-PERF-SIM: building ink cells are cached per nav_version (they only
+	# change when the blocked grid does); only the small per-unit gate ring
+	# part is rebuilt per repath. Returned array is a fresh copy per call.
+	if _nav_ink_ver != nav_version:
+		_nav_ink_cells.clear()
+		for b in live_blds:
+			if not b.dead:
+				_nav_ink_cells.append_array(bld_rect_cells(b.get("block_rect", Rect2())))
+		_nav_ink_ver = nav_version
+	var out: Array = _nav_ink_cells.duplicate()
 	for g in gates:
 		if g.dead:
 			continue
@@ -3604,6 +3864,10 @@ func _nav_gate_cells(e: Dictionary) -> Array:
 					if c.distance_to(g.pos) <= r:
 						out.append(Vector2i(x, y))
 	return out
+
+# T-PERF-SIM: cached building ink cells for A* (see _nav_gate_cells).
+var _nav_ink_cells: Array = []
+var _nav_ink_ver := -1
 
 func _nav_line_clear(e: Dictionary, a: Vector2, b: Vector2) -> bool:
 	var d: float = a.distance_to(b)
@@ -4450,6 +4714,13 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 			e.order = {"type": "none"}
 			return
 		o.node = node.id
+	# T-FOOD-1: a directly-referenced wild food node (old save / debug spawn)
+	# is not harvestable - drop the order instead of gathering from it.
+	# nearest_res() already filters these for auto-retargeting.
+	if res == "food" and not node.has("mill"):
+		e.order = {"type": "none"}
+		e.moving = false
+		return
 	# the spot itself is blocked (a tree stands on it), so the peasant works
 	# from the neighbouring tile: stand-off must be wider than the arrival
 	# radius, otherwise the unit ends up in a dead zone and never works.
@@ -4503,6 +4774,11 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 				node["stump_t"] = 0.0
 				node["max_hits"] = 0
 				set_blocked_circle(node.pos, node.radius, false)
+			elif res == "food":
+				node["growth"] = 0.0
+				node["regrow_t"] = 0.0
+				if float(node.get("regrow_time", 0.0)) <= 0.0:
+					node["regrow_time"] = FIELD_REGROW_TIME
 			elif res != "food":
 				set_blocked_circle(node.pos, node.radius, false)
 			post_event("depleted", node.pos, res)
@@ -4551,6 +4827,10 @@ func _gather_deliver(e: Dictionary, dt: float) -> void:
 	if e.order.get("res", res) != res:
 		return
 	var node: Dictionary = by_id.get(e.order.get("node", 0), {})
+	# T-FOOD-1: never resume on a wild (mill-less) food node.
+	if res == "food" and not node.is_empty() and not node.has("mill"):
+		e.order = {"type": "none"}
+		return
 	if not node.is_empty() and node.get("hits", 0) > 0:
 		e.order = {"type": "gather", "res": res, "node": node.id}
 		e.moving = true
@@ -4894,6 +5174,16 @@ func deserialize(d: Dictionary) -> bool:
 		if e.kind == "building" and str(e.sid) == "gat":
 			gates.append(e)
 	_grid_rebuild()
+	# T-PERF-SIM: the entity/resource set was swapped wholesale; cached
+	# buckets/rects from the pre-load game must not survive.
+	_res_grid.clear()
+	_res_grid_ver = -1
+	_res_grid_src_size = -1
+	_block_rects.clear()
+	_block_rects_ver = -1
+	_nav_ink_cells.clear()
+	_nav_ink_ver = -1
+	_sep_bld_ver = -1
 	# tile art uses its own deterministic stream â€” restore the seed first so a
 	# quicksave made with seed A reloads with seed A's shore/smooth/variant art.
 	if d.has("seed"):

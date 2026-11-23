@@ -95,6 +95,31 @@ var fx_items: Array = []  # transient visual effects
 var view_rect := Rect2(0, 0, 1, 1)
 var sel_rect := Rect2(0, 0, 0, 0)
 var sel_active := false
+# T-PERF-RENDER: frame-cost guards. _view_moved mirrors sync()'s camera/dirty
+# check so _draw_fx can skip static passes (squad links, rally flags) when the
+# camera is still and nothing animated is alive. fog_revision bumps whenever
+# _update_fog writes a pixel, letting the HUD skip its full-map dim pass.
+var _view_moved := true
+var fog_revision := 0
+var _fog_last_pos := {}
+var _fog_unit_count := -1
+var _ghost_mouse := Vector2.INF
+var _ghost_t_ms := -100000
+var _ghost_raw := ""
+var _ghost_sid := ""
+var _ghost_ok := false
+var _ghost_reason := ""
+var _ghost_wp := Vector2.ZERO
+# T-PERF-RENDER: rally points are static lines; they only need an fx redraw
+# when the camera moves, sim state goes dirty, or a rally point is (re)set.
+var _rally_dirty := false
+var _fx_static_ok := true
+
+# T-PERF-RENDER: called by input_controller after game.set_rally(). The fx
+# layer is otherwise fully gated, so a static camera would never show the
+# new flag without this.
+func mark_rally_dirty() -> void:
+	_rally_dirty = true
 var anim_t := 0.0  # ambient animation clock (flags, water, idle bob)
 # Original-model sprites (assets/models/sprites, rendered from the game's own
 # .obj + .png by tools/render_models.py). Missing entries fall back to the
@@ -409,6 +434,8 @@ func _anim_action(e: Dictionary) -> String:
 				"food": return "workfood"
 				"stone": return "workstone"
 				_: return "workwood"
+		if o.type == "resow":
+			return "workfood"
 		if o.type == "build" or o.type == "repair":
 			return "construct"
 		var cy := str(e.get("carry_type", ""))
@@ -434,12 +461,19 @@ func _anim_dir() -> String:
 # ship at cell 160 in the main anim dir, so a quality preset that selects a
 # smaller SPRITE_CELL still falls back there (mirrors the separate naval index).
 func _anim_sheet(key: String, act: String) -> String:
-	var path := "%s/%s_%s.png" % [_anim_dir(), key, act]
-	if not _res_exists(path) and Data.EXTRA_ANIM_INDEX.has(key):
-		return "res://assets/models/anim/%s_%s.png" % [key, act]
-	if not _res_exists(path) and not _naval_info(key).is_empty():
-		return "res://assets/models/anim/naval/%s_%s.png" % [key, act]
-	return path
+	var anim_dir := _anim_dir()
+	var name := "%s_%s.png" % [key, act]
+	# New per-kind subfolders first; the last two candidates are the original
+	# legacy fallbacks (root for nation-unique sheets, naval for ships), so
+	# the filename + nation/naval fallback semantics are preserved. The base
+	# fallback is anim_dir/name, i.e. the old primary path.
+	return _sheet(anim_dir, name, [
+		anim_dir + "/land_units",
+		anim_dir + "/naval",
+		anim_dir + "/buildings",
+		"res://assets/models/anim",
+		"res://assets/models/anim/naval",
+	])
 
 func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	var key := _anim_key(e.sid, int(e.player))
@@ -522,13 +556,13 @@ func _bld_key(e: Dictionary) -> String:
 		nat = str(Data.PLAYER_NATIONS[int(e.player)])
 	if nat != "":
 		var nk := "%s_%s" % [nat, e.sid]
-		if _res_exists("%s/%s.png" % [_anim_dir(), nk]):
+		if _res_exists(_sheet(_anim_dir(), nk + ".png", [_anim_dir() + "/buildings"])):
 			return nk
 	return e.sid
 
 func _mill_rotor() -> Texture2D:
 	if mill_rotor_tex == null:
-		var path := "%s/mill_rotor.png" % [_anim_dir()]
+		var path := _sheet(_anim_dir(), "mill_rotor.png", [_anim_dir() + "/buildings"])
 		if _res_exists(path):
 			mill_rotor_tex = load(path) as Texture2D
 	return mill_rotor_tex
@@ -561,7 +595,7 @@ func _bld_anim(key: String) -> Texture2D:
 			anim_tex.erase(key)
 			return null
 		return t
-	var path := "%s/%s.png" % [_anim_dir(), key]
+	var path := _sheet(_anim_dir(), key + ".png", [_anim_dir() + "/buildings"])
 	if not _res_exists(path):
 		return null
 	anim_tex[key] = load(path)
@@ -762,6 +796,17 @@ func _load_image_tex(path: String) -> Image:
 func _res_exists(path: String) -> bool:
 	# Export-safe existence probe for res:// imported assets.
 	return ResourceLoader.exists(path) or FileAccess.file_exists(path)
+
+# Subfolder-aware sheet resolver: check candidate dirs in order (new locations
+# first), return the first existing path, else the legacy base path. Callers
+# keep their exact filenames and anim_tex keys, so layout moves need no redraw
+# changes. `base` is always the original legacy location.
+func _sheet(base: String, name: String, dirs: Array) -> String:
+	for d in dirs:
+		var p := "%s/%s" % [d, name]
+		if _res_exists(p):
+			return p
+	return "%s/%s" % [base, name]
 
 # TB-B1c / W-6: load a donor wave sheet and normalise it through the same
 # mirror-tile path the land blocks use, so the GPU shader can wrap it with
@@ -1706,7 +1751,15 @@ func sync(dt: float) -> void:
 	var moved := last_view_pos == Vector2.INF or last_view_pos.distance_to(view_rect.position) > 4.0 or last_view_end.distance_to(view_rect.end) > 4.0
 	last_view_pos = view_rect.position
 	last_view_end = view_rect.end
-	if moved or game.res_dirty != res_dirty:
+	_view_moved = moved
+	var sim_dirty := game.res_dirty != res_dirty or game.bld_dirty != bld_dirty
+	# T-FIELDS-GFX: regrow bars + pulse are time-driven like the mill rotor:
+	# force the resource layer while any field timer runs (no new nodes,
+	# just a redraw of the already-visible culled set).
+	# NOTE (T-PERF-RENDER parse fix): two-arg get() is Dictionary-only; on
+	# Objects use single-arg get() (null when absent) so this parses.
+	var fields_live: bool = bool(game.get("fields_anim"))
+	if moved or game.res_dirty != res_dirty or fields_live:
 		res_dirty = game.res_dirty
 		res_layer.queue_redraw()
 	# The rotor's angle comes from anim_t, which advances every frame; with a
@@ -1715,21 +1768,94 @@ func sync(dt: float) -> void:
 	if moved or game.bld_dirty != bld_dirty or mill_rotor_tex != null:
 		bld_dirty = game.bld_dirty
 		bld_layer.queue_redraw()
-	unit_layer.queue_redraw()
-	unit_anim_layer.queue_redraw()
-	fx_layer.queue_redraw()
+	# T-PERF-RENDER: units animate every tick, but a paused game shows a still
+	# frame — skip both unit redraws unless the camera moved or sim state went
+	# dirty. The fx layer is gated harder: static passes (squad links, rally
+	# flags) only matter on camera moves, animated ones only while fx items,
+	# projectiles, drag rects or the build ghost are alive.
+	var paused: bool = game.paused
+	if not paused or moved or sim_dirty:
+		unit_layer.queue_redraw()
+		unit_anim_layer.queue_redraw()
+	# Static fx passes (squad links, rally flags) are only worth running when
+	# the camera moved, sim state changed, or a rally point was just set.
+	_fx_static_ok = moved or sim_dirty or _rally_dirty
+	if _fx_needs_redraw(moved, sim_dirty):
+		fx_layer.queue_redraw()
+	_rally_dirty = false
 	for f in fx_items:
 		f.t += dt
 	fx_items = fx_items.filter(func(f): return f.t < f.life)
 
+# T-PERF-RENDER: fx redraw gate. Static passes need it on camera moves,
+# sim dirt or fresh rally points only; animated passes need it while anything
+# time-driven is alive.
+func _fx_needs_redraw(moved: bool, sim_dirty: bool) -> bool:
+	if moved or sim_dirty or _rally_dirty:
+		return true
+	if not fx_items.is_empty():
+		return true
+	if sel_active:
+		return true
+	if game != null and not game.projectiles.is_empty():
+		return true
+	if hud != null and str(hud.get("build_ghost_sid")) != "":
+		return true
+	if not patrol_route_active():
+		return false
+	return true
+
+# T-PERF-RENDER: the patrol route overlay (owned by input_controller) animates
+# with the mouse while a patrol mode is armed. World cannot see the route node,
+# so it asks the input group instead of redrawing fx blindly every frame.
+func patrol_route_active() -> bool:
+	var ictl = get_tree().get_first_node_in_group("c3_input")
+	if ictl == null:
+		return false
+	# NOTE: single-arg Object.get (null when absent); the two-arg form is
+	# Dictionary-only and fails parse on Objects.
+	if not bool(ictl.get("patrol_mode")):
+		return false
+	var pa = ictl.get("patrol_a")
+	return pa != null and pa != Vector2.INF
+
 func _player_color(p: int) -> Color:
 	return [Color(0.25, 0.5, 1.0), Color(1.0, 0.3, 0.25)][p]
+
+var _fog_tick := 0
 
 func _update_fog() -> void:
 	if game == null:
 		return
 	if not Data.FOG_OF_WAR:
 		return
+	# T-PERF-RENDER: the recount below is O(units x radius-tiles + map). Skip
+	# it when nothing that feeds it changed: no reveal requests, same live
+	# headcount, and no player-0 entity moved more than ~0.5 m. A forced full
+	# recount every 6th tick bounds drift from slow crawls.
+	_fog_tick += 1
+	var forced := _fog_tick % 6 == 0
+	var live_n := 0
+	var any_moved := forced or not game.reveal_requests.is_empty()
+	if not any_moved:
+		for e in game.entities:
+			if e.dead or int(e.player) != 0:
+				continue
+			live_n += 1
+			var lp: Vector2 = _fog_last_pos.get(int(e.id), Vector2.INF)
+			if lp == Vector2.INF or lp.distance_squared_to(e.pos) > 0.25:
+				any_moved = true
+				break
+		if not any_moved and live_n != _fog_unit_count:
+			any_moved = true
+	if not any_moved:
+		return
+	_fog_last_pos.clear()
+	for e in game.entities:
+		if e.dead or int(e.player) != 0:
+			continue
+		_fog_last_pos[int(e.id)] = e.pos
+	_fog_unit_count = _fog_last_pos.size()
 	for rq in game.reveal_requests:
 		var c: Vector2 = rq.pos
 		var rr: float = rq.r
@@ -1759,6 +1885,7 @@ func _update_fog() -> void:
 		if fog_vis[i] == v:
 			continue
 		fog_vis[i] = v
+		fog_revision += 1
 		var x: int = i % game.MAP_W
 		var y: int = i / game.MAP_W
 		if v == 1:
@@ -2030,62 +2157,99 @@ func _field_decal(winter: bool) -> Texture2D:
 	field_decal_tex[key] = tex
 	return tex
 
-# MICRO #15: field state is a visual read of the existing sim numbers. A
-# depleted food node has hits==0 (no ripe wheat); a mill-sown full field
-# regrows across the donor's ~60 s seed cycle, whose timer is game.sow_t
-# (game.gd:79, 2769-2772). No crop-stage sprite exists in app/assets (only
-# field.png, an unlit black sheaf), so the stages are drawn procedurally.
+# T-FIELDS-GFX: field state is a visual read of the sim numbers via
+# game.field_state()/field_growth01(). Stages:
+#  growing  = live but partially eaten (small green shoots),
+#  ripe     = harvestable (golden wheat decal),
+#  depleted = bare brown stubble/dirt (no mill regrow),
+#  regrowing= depleted + timer running (green tint + bar/pulse).
+# Near-mill only: regrowing requires a finished mill within
+# game.FIELD_MILL_RADIUS; other depleted fields stay bare until resow.
+# No new donor bytes: existing envfieldd/w decal + canvas modulate/scale.
 func _field_growth(n: Dictionary) -> float:
+	if game != null and game.has_method("field_growth01"):
+		return float(game.field_growth01(n))
 	var mh := maxf(1.0, float(n.get("max_hits", 50)))
-	var ratio: float = clampf(float(n.get("hits", 0)) / mh, 0.0, 1.0)
-	if ratio <= 0.0:
-		return 0.0
-	if ratio >= 1.0 and n.has("mill"):
-		return clampf(float(game.sow_t) / 60.0, 0.05, 1.0)
-	return ratio
+	return clampf(float(n.get("hits", 0)) / mh, 0.0, 1.0)
 
-func _draw_field(p: Vector2, h: float, g: float) -> void:
+func _field_state(n: Dictionary) -> String:
+	if game != null and game.has_method("field_state"):
+		return str(game.field_state(n))
+	return "ripe" if int(n.get("hits", 0)) > 0 else "depleted"
+
+func _draw_field(p: Vector2, h: float, g: float, n: Dictionary = {}) -> void:
 	# T5-RENDER: donor fields are dense VERTICAL STALKS in a hard-edged gold
 	# rectangle, with NO flower circles/heads. envfieldd/envfielddw already
 	# bake that stalk texture plus a 477 px near-rectangular alpha footprint
-	# (~12 px ramp), so the decal IS the field base. Growth stages change only
-	# patch size/opacity; g==0 is bare stubble. No procedural bead heads remain.
+	# (~12 px ramp), so the decal IS the field base. T-FIELDS-GFX adds:
+	# growing = small green decal, ripe = full gold decal,
+	# depleted = brown dirt + short stubble strokes,
+	# regrowing = dirt + green-gold decal scaled by timer + bar + pulse.
+	var st := _field_state(n)
+	if not n.is_empty() and st == "":
+		st = "ripe" if g > 0.0 else "depleted"
 	var winter: bool = _season_key() == "winter"
 	var dec: Texture2D = _field_decal(winter)
-	if dec != null and g > 0.0:
-		# 2.3 tiles wide at full growth, 2:1 ground-plane squash. Tint is
-		# linear (Godot modulates in linear space): sRGB donor mean (76,68,45)
-		# under this modulate lands ~#866A2D = H 41 deg, inside the 39-45 deg
-		# field-spec gold band. The alpha ramp is ~12 px in 512 px, i.e. ~2 px
-		# at this on-screen size -> a sharp 2-8 px rectangular edge.
+	if st == "depleted":
+		# Brown stubble/dirt: no wheat, short dry strokes on a dirt plate.
+		var span0: float = 0.34 * view_scale
+		res_layer.draw_rect(Rect2(p.x - span0, p.y - 1.5, span0 * 2.0, 3.0),
+			Color(0.30, 0.26, 0.16, 0.60))
+		for k in 7:
+			var fx0: float = float(k) / 6.0 - 0.5
+			var x0: float = p.x + fx0 * span0 * 2.0
+			var lean0: float = sin(h * 6.283 + float(k) * 2.1) * 0.6
+			res_layer.draw_line(Vector2(x0, p.y + 1.0),
+				Vector2(x0 + lean0, p.y - 2.5), Color(0.36, 0.30, 0.17), 1.6)
+		return
+	if dec != null:
+		# Width/height grow with progress; regrowing pulses while it fills.
 		var w: float = (1.6 + 0.7 * g) * Data.TILE_M * view_scale
+		if st == "growing" or st == "regrowing":
+			w = (1.1 + 0.9 * g) * Data.TILE_M * view_scale
 		var hh: float = w * 0.5
 		var tint: Color = Color(3.3, 2.5, 1.0, clampf(0.42 + 0.28 * g, 0.0, 1.0))
+		if st == "growing":
+			# Small green shoots: same decal, green modulate, smaller + sheer.
+			tint = Color(0.9, 1.6, 0.7, clampf(0.45 + 0.30 * g, 0.0, 1.0))
+		elif st == "regrowing":
+			# Dirt showing through young wheat: green-gold, pulsing alpha.
+			var pulse: float = 0.75 + 0.25 * sin(anim_t * 4.0 + h * 12.0)
+			var gg: float = clampf(g, 0.0, 1.0)
+			tint = Color(lerpf(0.9, 3.3, gg), lerpf(1.5, 2.5, gg), 0.7,
+				clampf((0.40 + 0.30 * gg), 0.0, 1.0) * pulse)
 		if winter:
 			tint = Color(1.0, 1.0, 1.06, 0.78)
 		res_layer.draw_texture_rect(dec,
 			Rect2(p.x - w * 0.5, p.y - hh * 0.5, w, hh), false, tint)
-	if dec == null or g <= 0.0:
-		# Fallback (no decal) / harvested field: short VERTICAL stalk strokes
-		# only, gold-olive, never bright head circles.
-		var span: float = 0.34 * view_scale * (0.6 + 0.4 * g)
-		var tall: float = 2.0 + g * 7.0
-		var stalk := Color(0.42, 0.37, 0.16)
-		if g < 0.35:
-			stalk = Color(0.34, 0.40, 0.20)
-		elif g < 0.7:
-			stalk = Color(0.42, 0.44, 0.20)
-		if g <= 0.0:
-			res_layer.draw_rect(Rect2(p.x - span, p.y - 1.5, span * 2.0, 3.0),
-				Color(0.30, 0.27, 0.17, 0.55))
-			tall = 2.5
-		var count: int = 7 + int(g * 5.0)
-		for k in count:
-			var fx: float = float(k) / float(maxf(1.0, float(count - 1))) - 0.5
-			var x: float = p.x + fx * span * 2.0
-			var lean: float = sin(h * 6.283 + float(k) * 2.1) * (0.6 + 0.8 * g)
-			res_layer.draw_line(Vector2(x, p.y + 1.0),
-				Vector2(x + lean, p.y - tall), stalk, 1.6)
+		if st == "regrowing":
+			# Regrow timer bar above the patch (no nodes, two rects only).
+			var bw: float = w * 0.9
+			var bx: float = p.x - bw * 0.5
+			var by: float = p.y - hh * 0.5 - 6.0
+			res_layer.draw_rect(Rect2(bx, by, bw, 3.0), Color(0, 0, 0, 0.65))
+			res_layer.draw_rect(Rect2(bx, by, bw * clampf(g, 0.0, 1.0), 3.0),
+				Color(0.35, 0.75, 0.25, 0.95))
+		return
+	# Fallback (no decal): short VERTICAL stalk strokes, colour by stage.
+	var span: float = 0.34 * view_scale * (0.6 + 0.4 * g)
+	var tall: float = 2.0 + g * 7.0
+	var stalk := Color(0.42, 0.37, 0.16)
+	if st == "growing" or (g < 0.35 and g > 0.0):
+		stalk = Color(0.34, 0.40, 0.20)
+	elif st == "regrowing" or (g < 0.7 and g > 0.0):
+		stalk = Color(0.42, 0.44, 0.20)
+	if g <= 0.0:
+		res_layer.draw_rect(Rect2(p.x - span, p.y - 1.5, span * 2.0, 3.0),
+			Color(0.30, 0.27, 0.17, 0.55))
+		tall = 2.5
+	var count: int = 7 + int(g * 5.0)
+	for k in count:
+		var fx: float = float(k) / float(maxf(1.0, float(count - 1))) - 0.5
+		var x: float = p.x + fx * span * 2.0
+		var lean: float = sin(h * 6.283 + float(k) * 2.1) * (0.6 + 0.8 * g)
+		res_layer.draw_line(Vector2(x, p.y + 1.0),
+			Vector2(x + lean, p.y - tall), stalk, 1.6)
 
 # T5-RENDER / mines_display.md A5: the baked 160px mine PNG carries a large
 # olive-green polygonal ground disc (H 45-95, S>=0.30, V<=0.52) that is a
@@ -2252,7 +2416,8 @@ func _draw_resources() -> void:
 				res_layer.draw_circle(p + Vector2(0.5, -1), 1.2, Color(0.8, 0.8, 0.78))
 			"food":
 				# MICRO #15: depleted fields are bare, re-sown ones grow.
-				_draw_field(p, h, _field_growth(n))
+				# T-FIELDS-GFX: pass the node so stage/bar/pulse resolve per field.
+				_draw_field(p, h, _field_growth(n), n)
 			"gold", "iron", "coal":
 				# T5-RENDER: deposit marker = disc-stripped mine mound whose ink
 				# box spans ~2 tiles (4 m), foot-anchored exactly at n.pos (the
@@ -2562,7 +2727,7 @@ func _queue_unit_sprite(tex: Texture2D, p: Vector2, world_h: float, tint: Color)
 var _yacht_hull_tex: Texture2D = null
 func _yacht_hull() -> Texture2D:
 	if _yacht_hull_tex == null:
-		var path := "res://assets/models/anim/naval/yacht_hull.png"
+		var path := _sheet("res://assets/models/anim/naval", "yacht_hull.png", [_anim_dir() + "/naval"])
 		if _res_exists(path):
 			_yacht_hull_tex = load(path) as Texture2D
 	return _yacht_hull_tex
@@ -2841,15 +3006,41 @@ func _draw_ghost() -> void:
 	var wp: Vector2 = (xform * mp) / maxf(1.0, view_scale)
 	if not game.in_bounds(wp):
 		return
-	# The one "Mine" button previews whichever mine matches the ore deposit
-	# currently under the cursor, so the ghost always shows the right type.
-	sid = game.resolve_mine_sid(sid, wp)
+	# T-PERF-RENDER: can_place() is a sim query (collision scan); running it on
+	# every fx redraw (up to 60x/s) stalls placement. Cache the verdict while
+	# the mouse sits still: recompute on move (>2 px), ghost switch, or age
+	# (>120 ms so affordability follows the treasury).
+	var now_ms := Time.get_ticks_msec()
+	var cached := sid == _ghost_raw and _ghost_mouse.distance_to(mp) < 2.0 \
+		and now_ms - _ghost_t_ms < 120
+	if cached:
+		sid = _ghost_sid
+		wp = _ghost_wp
+	else:
+		# The one "Mine" button previews whichever mine matches the ore deposit
+		# currently under the cursor, so the ghost always shows the right type.
+		_ghost_raw = sid
+		sid = game.resolve_mine_sid(sid, wp)
+		_ghost_mouse = mp
+		_ghost_t_ms = now_ms
+		_ghost_sid = sid
+		_ghost_wp = wp
+		_ghost_ok = false
+		_ghost_reason = ""
 	if not Data.BUILDINGS.has(sid):
 		return
 	var def: Dictionary = Data.BUILDINGS[sid]
-	var chk: Dictionary = game.can_place(0, sid, wp)
-	var ok: bool = bool(chk.get("ok", false)) and Data.can_pay(game.players[0].res, def.cost)
-	var reason: String = str(chk.get("reason", ""))
+	var ok: bool
+	var reason: String
+	if cached:
+		ok = _ghost_ok
+		reason = _ghost_reason
+	else:
+		var chk: Dictionary = game.can_place(0, sid, wp)
+		ok = bool(chk.get("ok", false)) and Data.can_pay(game.players[0].res, def.cost)
+		reason = str(chk.get("reason", ""))
+		_ghost_ok = ok
+		_ghost_reason = reason
 	if not Data.can_pay(game.players[0].res, def.cost):
 		reason = "Not enough resources."
 	var c := Color(0.2, 1.0, 0.3, 0.5) if ok else Color(1.0, 0.25, 0.2, 0.5)
@@ -2926,8 +3117,10 @@ func add_fx(kind: String, pos: Vector2) -> void:
 
 func _draw_fx() -> void:
 	dbg_fx += 1
-	# squad links: faint lines from the officer to his soldiers (selected only)
-	if game != null:
+	# squad links: faint lines from the officer to his soldiers (selected only).
+	# Static geometry: skipped unless the camera moved or sim/rally state went
+	# dirty (see sync()'s _fx_static_ok).
+	if _fx_static_ok and game != null:
 		for sid in game.squads:
 			var s: Dictionary = game.squads[sid]
 			var off: Dictionary = game.by_id.get(int(s.officer), {})
@@ -2943,8 +3136,8 @@ func _draw_fx() -> void:
 				if u.is_empty() or u.dead:
 					continue
 				fx_layer.draw_line(op, world_to_px(u.pos), Color(1, 1, 1, 0.35), 1.5)
-	# rally flags on barracks / stables / town halls
-	if game != null:
+	# rally flags on barracks / stables / town halls (static: same gate)
+	if _fx_static_ok and game != null:
 		for e in game.entities:
 			if e.dead or e.kind != "building" or not e.has("rally"):
 				continue

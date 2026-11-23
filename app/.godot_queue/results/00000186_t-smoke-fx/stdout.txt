@@ -1,9 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-sprites: 29 sets loaded (sids=69)
-  PASS  volley_fx_on_layer - shots +2, fx 0->4, events=["shot", "smoke", "shot", "smoke"], fx_layer z=4, near-shooter=true
-  PASS  muzzle_flash_short_lived - shot life=0.35s, smoke life=1.60s (flash must be shorter than the puff)
-  PASS  smoke_persists_then_expires - life=1.60s, alive after 0.5s=true (t=0.50), gone after 2.5s=true
-  FAIL  arrow_trail - arrow shots +8, in-flight arrow=true, trail evidence=false (baseline has no trail FX — FAIL is correct)
-  PASS  artillery_explosion_fx - cannon shots +1, explode events +1, explode/crater fx=true
-  PASS  fx_cap_respected - FX_CAP=220, before=2, after 280 adds=220 (oldest items evicted)

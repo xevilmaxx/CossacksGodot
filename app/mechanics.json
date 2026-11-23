@@ -1330,9 +1330,9 @@
   {
    "name": "field worker cap",
    "group": "economy",
-   "value": "2 peasants per food node, overflow retargets or idles",
+   "value": "3 peasants per food node, overflow retargets or idles",
    "unit": "workers",
-   "source": "Steam discussion 350542683212516833"
+   "source": "donor dmscript.global:222-225 gc_gameplay_resource_maxattackers_food=3 (port data.gd RESOURCE_WORKERS)"
   },
   {
    "name": "building cost escalation",

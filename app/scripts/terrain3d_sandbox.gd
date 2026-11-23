@@ -38,6 +38,7 @@ const TILT_DEG := 32.0
 var _frame: int = 0
 var _capture_started: bool = false
 var _seam_mask: bool = false
+var _stay: bool = false
 var _draw_sum: float = 0.0
 var _time_sum: float = 0.0
 var _delta_sum: float = 0.0
@@ -55,6 +56,8 @@ func _ready() -> void:
 			dump_path = arg.substr(7)
 		if arg == "--seam-mask":
 			_seam_mask = true
+		if arg == "--stay":
+			_stay = true
 	if not FileAccess.file_exists(dump_path):
 		push_error("terrain3d: dump not found: " + dump_path)
 		get_tree().call_deferred("quit", 1)
@@ -128,7 +131,7 @@ func _process(delta: float) -> void:
 		_time_sum += float(Performance.get_monitor(Performance.TIME_PROCESS))
 		_delta_sum += delta           # real frame-to-frame time, not CPU process time
 		_samples += 1
-	if _frame >= CAPTURE_FRAME and not _capture_started:
+	if not _stay and _frame >= CAPTURE_FRAME and not _capture_started:
 		_capture_started = true
 		_capture_async()
 

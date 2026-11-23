@@ -363,6 +363,17 @@ Sources: unit.script lines 2370-2521 (ukr cases), 2204-2221 (storehouse), 2141-2
 - delivery radius around a storehouse: 3 tiles (`gc_gameplay_resourceDropRadius`, dmscript.global:210).
 - max gatherers on one resource spot: food 3, wood 2, stone 3 (dmscript.global:222-225).
 
+## Mill food cycle (strict: no mill = no sustainable food)
+
+- maps spawn with ZERO wild food; food exists only as mill-owned fields.
+- build mill (30 wood / 150 stone, 300 f = 9.4 s) -> a finished mill auto-sows a
+  7x7 rotated ring (up to 49 fields, 5 gold each; game.gd SOW_ROW/SOW_GOLD).
+- peasants gather 45 food per 22 hits (1.25 s per hit), 3 workers per field;
+  depleted mill fields regrow FREE every ~60 s while their mill stands finished.
+- manual resow (peasant, 20 food / 2 s) works on mill-owned fields only.
+- upkeep is consume / 625 per s (peasant 0.051/s); famine warns, then 0.3 hp/s
+  after a 120 s grace. AI builds the mill FIRST (ai.gd _build).
+
 ## Mine income and upkeep (source: data/scripts/lib/player.script:240-290)
 
 - each peasant inside a mine adds 13 to the income counter (unit.script:2319-2321);

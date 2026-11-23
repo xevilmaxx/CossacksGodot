@@ -37,6 +37,15 @@ var _mm_box_last := Vector4i(-1, -1, -1, -1)  # x0,y0,x1,y1 of last drawn box
 var minimap_rect: TextureRect
 var minimap_panel: PanelContainer
 var mm_timer := 0.0
+# T-PERF-RENDER: fog-dimmed terrain cache. The full-map dim pass (100k pixels)
+# only rebuilds when world.fog_revision moves; blips still repaint every tick.
+var minimap_fog_base: Image = null
+var minimap_fog_rev := -1
+# T-PERF-RENDER: last pushed texts — Label.text assignment costs a relayout
+# even when the string is identical, so every per-frame label is dirty-flagged.
+var _last_res_text: Array = []
+var _last_eco_text := ""
+var _last_status_text := "\n"
 var fps_label: Label
 var fps_t := 0.0
 var fps_ema := 60.0
@@ -517,6 +526,15 @@ func refresh_selection(selected: Array) -> void:
 					gb.tooltip_text = "Sow a 7x7 field ring around this mill (5 gold per field)"
 					gb.pressed.connect(_on_grain_crops.bind(e))
 					build_bar.add_child(gb)
+					# T-FIELDS-GFX: mill field state line (same states as map).
+					if game.has_method("field_counts_for_mill"):
+						var fc: Dictionary = game.field_counts_for_mill(int(e.id))
+						var fl := _mklbl("Fields ripe %d / growing %d / regrowing %d / bare %d" % [
+							int(fc.get("ripe", 0)), int(fc.get("growing", 0)),
+							int(fc.get("regrowing", 0)), int(fc.get("depleted", 0))],
+							13, Color(0.85, 0.80, 0.60))
+						fl.tooltip_text = "Ripe = golden harvestable. Growing = green partial. Regrowing = timer to ripe (finished mill nearby). Bare = needs resow (20 food via peasant) or Grain Crops."
+						sel_box.add_child(fl)
 				# MICRO #9: market Buy / Sell / Exchange (three distinct modes)
 				if e.sid == "mar":
 					var give_res: String = str(MARKET_TRADABLE[market_give_idx])
@@ -911,7 +929,9 @@ func _update_dynamic() -> void:
 				b.disabled = not Data.can_pay(game.players[0].res, def.cost)
 
 func show_hint(text: String) -> void:
-	if hint_label != null:
+	# T-PERF-RENDER: input_controller calls this every frame with "" when idle;
+	# assigning the same text still triggers a Control relayout, so no-op.
+	if hint_label != null and hint_label.text != text:
 		hint_label.text = text
 
 func _on_message(text: String) -> void:
@@ -995,7 +1015,13 @@ func _process(dt: float) -> void:
 		_recompute_eco()
 	for i in 6:
 		var rname: String = str(Data.RES_NAMES[i])
-		res_labels[i].text = "%d [%d]" % [int(game.players[0].res[i]), int(worker_counts.get(rname, 0))]
+		var rt := "%d [%d]" % [int(game.players[0].res[i]), int(worker_counts.get(rname, 0))]
+		# T-PERF-RENDER: dirty-flagged text (same-string assignment relayouts).
+		while _last_res_text.size() < 6:
+			_last_res_text.append("")
+		if rt != str(_last_res_text[i]):
+			_last_res_text[i] = rt
+			res_labels[i].text = rt
 		# donor colours a resource red when upkeep outruns income/stock
 		var deficit := false
 		if i == 0:
@@ -1006,7 +1032,10 @@ func _process(dt: float) -> void:
 			res_deficit[i] = deficit
 			res_labels[i].add_theme_color_override("font_color", Color(1, 0.42, 0.38) if deficit else Color(1, 0.97, 0.9))
 	if eco_label != null:
-		eco_label.text = "idle %d  slots %d" % [idle_count, free_slots_count]
+		var et := "idle %d  slots %d" % [idle_count, free_slots_count]
+		if et != _last_eco_text:
+			_last_eco_text = et
+			eco_label.text = et
 		var warn: bool = idle_count > 0
 		if warn != eco_warn:
 			eco_warn = warn
@@ -1014,8 +1043,11 @@ func _process(dt: float) -> void:
 	var ucount := game.unit_count(0) + game.queue_count(0)
 	# the hint line carries placement text; the status line keeps units/score
 	if hint_label == null or hint_label.text == "":
-		status_label.text = "units %d/%d    score %d    %s" % [ucount, game.players[0].farm_cap,
+		var st := "units %d/%d    score %d    %s" % [ucount, game.players[0].farm_cap,
 			game.players[0].score, ("PAUSED" if game.paused else "")]
+		if st != _last_status_text:
+			_last_status_text = st
+			status_label.text = st
 	if msg_timer > 0.0:
 		msg_timer -= dt
 		if msg_timer <= 0.0:
@@ -1159,9 +1191,25 @@ func _mm_plot(t: Vector2i, c: Color, big: bool) -> void:
 func _update_minimap() -> void:
 	if world == null:
 		return
+	# T-PERF-RENDER: hidden minimap needs no pixels; it refreshes on the next
+	# tick after being reshown (bounded by MINIMAP_INTERVAL staleness).
+	if minimap_panel != null and not minimap_panel.visible:
+		return
 	# terrain base is static: duplicate the cached image (C++ fast) instead
-	# of repainting 100k tiles every update
-	minimap_img = minimap_base.duplicate()
+	# of repainting 100k tiles every update. The fog dim is cached separately
+	# and only rebuilt when the world's fog revision moves.
+	if Data.FOG_OF_WAR:
+		if minimap_fog_base == null or minimap_fog_rev != world.fog_revision:
+			minimap_fog_base = minimap_base.duplicate()
+			for y in game.MAP_H:
+				for x in game.MAP_W:
+					if world.fog_explored[y * game.MAP_W + x] == 0:
+						var c: Color = minimap_fog_base.get_pixel(x, y)
+						minimap_fog_base.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
+			minimap_fog_rev = world.fog_revision
+		minimap_img = minimap_fog_base.duplicate()
+	else:
+		minimap_img = minimap_base.duplicate()
 	for n in game.res_nodes:
 		var t := game.tile_of(n.pos)
 		if n.max_hits == 0 and (n.type == "gold" or n.type == "iron" or n.type == "coal"):
@@ -1183,6 +1231,14 @@ func _update_minimap() -> void:
 					minimap_img.set_pixel(mx, my, dc if core else Color(0.08, 0.07, 0.06))
 			continue
 		if n.hits <= 0:
+			# T-FIELDS-GFX: depleted fields stay on the minimap (brown
+			# stubble); regrowing ones read olive. Other spent nodes vanish.
+			if str(n.get("type", "")) == "food" and int(n.get("max_hits", 0)) > 0:
+				var fst := str(game.field_state(n)) if game.has_method("field_state") else "depleted"
+				if fst == "regrowing":
+					_mm_plot(t, Color(0.55, 0.58, 0.25), false)
+				else:
+					_mm_plot(t, Color(0.32, 0.26, 0.17), false)
 			continue
 		match n.type:
 			"wood":
@@ -1190,7 +1246,12 @@ func _update_minimap() -> void:
 			"stone":
 				_mm_plot(t, Color(0.6, 0.6, 0.55), false)
 			"food":
-				_mm_plot(t, Color(0.85, 0.75, 0.3), false)
+				# T-FIELDS-GFX: ripe = gold, growing = green.
+				var fst2 := str(game.field_state(n)) if game.has_method("field_state") else "ripe"
+				if fst2 == "growing":
+					_mm_plot(t, Color(0.35, 0.62, 0.22), false)
+				else:
+					_mm_plot(t, Color(0.85, 0.75, 0.3), false)
 			"gold":
 				_mm_plot(t, Color(0.9, 0.75, 0.2), false)
 			"iron":
@@ -1220,14 +1281,8 @@ func _update_minimap() -> void:
 					minimap_img.set_pixel(t.x, t.y, Color(1, 1, 1))
 				else:
 					minimap_img.set_pixel(t.x, t.y, Color(0.4, 0.7, 1) if e.player == 0 else Color(1, 0.3, 0.25))
-	# fog dimming only matters when fog is on (otherwise everything is known)
-	if Data.FOG_OF_WAR:
-		for y in game.MAP_H:
-			for x in game.MAP_W:
-				var i := y * game.MAP_W + x
-				if world.fog_explored[i] == 0:
-					var c: Color = minimap_img.get_pixel(x, y)
-					minimap_img.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
+	# T-PERF-RENDER: fog dimming now lives in the cached minimap_fog_base, so
+	# no full-map pass is needed here.
 	# The clean image is rebuilt above; redraw the box into the display image
 	# and upload both together (F3). force=true so a fresh clean image is
 	# always shown even if the camera has not moved since the last rebuild.

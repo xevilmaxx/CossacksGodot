@@ -1,17 +1,17 @@
 {
 	"checks": [
 		{
-			"detail": "seed 11111 vs 98765: terrain differs=true, layout summary differs=true (126011 vs 120659 bytes)",
+			"detail": "seed 11111 vs 98765: terrain differs=true, layout summary differs=true (120692 vs 119229 bytes)",
 			"name": "different_seeds_different_layout",
 			"passed": true
 		},
 		{
-			"detail": "seed 11111 generated twice: byte-identical summary=true (126011 vs 126011 bytes)",
+			"detail": "seed 11111 generated twice: byte-identical summary=true (120692 vs 120692 bytes)",
 			"name": "same_seed_byte_identical",
 			"passed": true
 		},
 		{
-			"detail": "same seed nowater2 water=0.0% vs islands water=70.1% (need >+10pt and >15%)",
+			"detail": "same seed nowater2 water=0.0% vs islands water=75.0% (need >+10pt and >15%)",
 			"name": "map_type_changes_water",
 			"passed": true
 		},
@@ -28,5 +28,5 @@
 	],
 	"id": "t_map_variety",
 	"passed": true,
-	"unix_ms": 1795257661736.0
+	"unix_ms": 1795439398637.0
 }
