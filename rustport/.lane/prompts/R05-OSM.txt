@@ -1,0 +1,33 @@
+You are MICRO-WORKER T6-R05-OSM in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST (sibling workers handle DDS, .oss, .aaf — do not touch their files).
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3.
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3. Read donor files at TEST TIME only; never commit donor bytes.
+
+OWNED FILES (write ONLY these — strict boundary; never edit app/**, Cargo.toml, src/main.rs, other assets/*.rs, docs outside your report, SWARM_BOARD.md):
+- rustport/src/assets/osm.rs
+- rustport/tests/assets_osm.rs
+- report: docs/t6/reports/T6-R05-OSM.md
+
+READ LIST (read-only): docs/decomp/DC_FORMATS.md section 2.2 (.osm first frame decoded, with the exact offset arithmetic and the winding-swap verdict) and section 3 (offset bug is REFUTED — shared reader already uses longs 12/13/14), app/tools/bake_sprites.py function read_osm_first (READ ONLY), SWARM_OPS.md section 7, app/tools/AGENT_PROTOCOL.md.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R05-OSM. New files need no backup.
+IMPORTANT: rustport/src/assets.rs is a scaffold STUB owned by integration — do NOT edit it. Your integration test must include your file directly: `#[path = "../src/assets/osm.rs"] mod osm_reader;` (path relative to rustport/tests/). Sibling readers live in separate files owned by other workers.
+
+MICRO-TASK (one format only): implement a std-only Rust reader for the static mesh .osm format (first vertex frame only, matching the proven Python reader):
+- 68-byte header of 17 little-endian i32. Indices: 0 magic 0x32504449 ("IDP2"), 1 version, 2-3 sw/sh, 4 fs, 5 ns, 6-8 nv/nu/nt, 9-10 ng/nf, 11 os, 12 ou (UV offset), 13 ot (triangle offset), 14 of (vertex-frame offset), 15-16 og/oe (end == file size).
+- Section bodies: UVs at ou: nu x [2f32]; triangles at ot: nt x [6i32] = three vertex indices + three UV indices, consumed with winding swap (0,2,1) for BOTH triples; vertices at of+16: a 16-byte frame/name header is read and discarded, then nv x [3f32 + u32 normal/attribute].
+- Public API: `pub struct Osm { pub nv, nu, nt: i32, pub vertices: Vec<[f32;3]>, pub faces: Vec<[i32;3]>, pub uvs: Vec<[f32;2]>, pub face_uvs: Vec<[i32;3]>, pub bbox: ([f32;3],[f32;3]) }`, `pub fn parse(bytes:&[u8])->Result<Osm,OsmError>`, `pub fn parse_file(path:&Path)->...`.
+
+CONCRETE TEST it MUST run BEFORE reporting done (piece-before-whole rule):
+- From rustport/: `cargo test --test assets_osm` passes. It must read real donor files at runtime:
+  - C:\Games\Cossacks 3\data\actors\units\yacht.osm — expect nv=9364, nu=11490, nt=7731, ou=132, ot=92052, of=277596, file size 427436, and bbox approx x -1.752..1.752, y -4.819..3.208, z -0.376..6.803 (per DC_FORMATS.md).
+  - C:\Games\Cossacks 3\data\actors\buildings\alg\algcen.osm — expect nv=4901, nu=5256, nt=4325, ou=132, ot=42180, of=145980, size 224412.
+  - Assert exact arithmetic closure (132 + nu*8 = ot; ot + nt*24 = of; of + 16 + nv*16 = filesize), magic and version, count checks, bbox within tolerance of the documented values, and that face indices are in range.
+  - Include a synthetic in-memory header+payload unit test.
+- Paste exact commands + output tails into the report.
+
+REPORT: write docs/t6/reports/T6-R05-OSM.md with a claim table (observed / derived / inferred), evidence paths, PASS/FAIL per acceptance criterion, and open questions. Write it BEFORE reporting done. Explicitly note that the "longs 10/11/12 bug" claim is REFUTED and that longs 12/13/14 are used.
+
+RECURSION (only if blocked): spawn helpers via `opencode api post /api/session --data` with parentID = your sessionID. Prefer doing this yourself — it is one format.
+
+When done, state concisely: files changed, commands run, results, report path, open questions.

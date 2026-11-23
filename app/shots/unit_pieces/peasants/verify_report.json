@@ -1,0 +1,1887 @@
+{
+ "keys": {
+  "peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.465,
+    [
+     0.0,
+     0.0,
+     1.101
+    ],
+    0.5,
+    0.8037
+   ],
+   "body_only_stand_ortho": 4.136,
+   "staged_stand_ortho": 5.465,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0466,
+    "stand_ground_z_max": 0.0244
+   },
+   "rendered_foot_row_range": [
+    0.625,
+    0.9125
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7862,
+      -0.1687,
+      0.598
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5348,
+       6
+      ],
+      [
+       0.6995,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.0707,
+       18
+      ],
+      [
+       0.0768,
+       19
+      ],
+      [
+       0.0832,
+       15
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1728,
+      0.0074
+     ],
+     "nearest_body_bones": [
+      [
+       0.0259,
+       15
+      ],
+      [
+       0.0954,
+       18
+      ],
+      [
+       0.1153,
+       17
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "ukr_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.465,
+    [
+     0.0,
+     0.0,
+     1.101
+    ],
+    0.5,
+    0.8037
+   ],
+   "body_only_stand_ortho": 4.136,
+   "staged_stand_ortho": 5.465,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0466,
+    "stand_ground_z_max": 0.0244
+   },
+   "rendered_foot_row_range": [
+    0.625,
+    0.9125
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7862,
+      -0.1687,
+      0.598
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5348,
+       6
+      ],
+      [
+       0.6995,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.0707,
+       18
+      ],
+      [
+       0.0768,
+       19
+      ],
+      [
+       0.0832,
+       15
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1728,
+      0.0074
+     ],
+     "nearest_body_bones": [
+      [
+       0.0259,
+       15
+      ],
+      [
+       0.0954,
+       18
+      ],
+      [
+       0.1153,
+       17
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "rus_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.465,
+    [
+     0.0,
+     0.0,
+     1.08
+    ],
+    0.5,
+    0.7978
+   ],
+   "body_only_stand_ortho": 4.135,
+   "staged_stand_ortho": 5.465,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0892,
+    "stand_ground_z_max": 0.0157
+   },
+   "rendered_foot_row_range": [
+    0.6125,
+    0.9062
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7862,
+      -0.1687,
+      0.598
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5348,
+       6
+      ],
+      [
+       0.6995,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.0467,
+       20
+      ],
+      [
+       0.0574,
+       19
+      ],
+      [
+       0.0719,
+       21
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1715,
+      0.0071
+     ],
+     "nearest_body_bones": [
+      [
+       0.0251,
+       15
+      ],
+      [
+       0.0854,
+       20
+      ],
+      [
+       0.0994,
+       21
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.5461,
+      0.2705,
+      0.1212
+     ],
+     "nearest_body_bones": [
+      [
+       0.1608,
+       10
+      ],
+      [
+       0.1862,
+       9
+      ],
+      [
+       0.5581,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "pol_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.465,
+    [
+     0.0,
+     0.0,
+     1.102
+    ],
+    0.5,
+    0.804
+   ],
+   "body_only_stand_ortho": 4.038,
+   "staged_stand_ortho": 5.465,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0442,
+    "stand_ground_z_max": 0.019
+   },
+   "rendered_foot_row_range": [
+    0.6188,
+    0.9125
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.5343,
+      0.3702,
+      0.1518
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.6127,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7896,
+      -0.0649,
+      0.5724
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5389,
+       6
+      ],
+      [
+       0.6053,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.5343,
+      0.3702,
+      0.1518
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.6127,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.5343,
+      0.3702,
+      0.1518
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.6127,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.0467,
+       20
+      ],
+      [
+       0.0574,
+       18
+      ],
+      [
+       0.0719,
+       22
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1728,
+      0.0074
+     ],
+     "nearest_body_bones": [
+      [
+       0.0867,
+       20
+      ],
+      [
+       0.1008,
+       22
+      ],
+      [
+       0.1153,
+       15
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.5343,
+      0.3702,
+      0.1518
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.6127,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "aus_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.369,
+    [
+     0.0,
+     0.0,
+     1.111
+    ],
+    0.5,
+    0.812
+   ],
+   "body_only_stand_ortho": 4.157,
+   "staged_stand_ortho": 5.369,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0413,
+    "stand_ground_z_max": 0.0159
+   },
+   "rendered_foot_row_range": [
+    0.625,
+    0.9375
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7352,
+      -0.0683,
+      0.5145
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5389,
+       6
+      ],
+      [
+       0.6053,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.1053,
+       12
+      ],
+      [
+       0.1095,
+       17
+      ],
+      [
+       0.1112,
+       15
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1728,
+      0.0074
+     ],
+     "nearest_body_bones": [
+      [
+       0.0063,
+       15
+      ],
+      [
+       0.1191,
+       17
+      ],
+      [
+       0.1281,
+       16
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "eng_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    4.439,
+    [
+     0.0,
+     0.0,
+     1.147
+    ],
+    0.5,
+    0.8895
+   ],
+   "body_only_stand_ortho": 3.508,
+   "staged_stand_ortho": 4.439,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0326,
+    "stand_ground_z_max": 0.0191
+   },
+   "rendered_foot_row_range": [
+    0.6562,
+    0.9313
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.4715,
+      0.2468,
+      0.0761
+     ],
+     "nearest_body_bones": [
+      [
+       0.1665,
+       10
+      ],
+      [
+       0.1965,
+       9
+      ],
+      [
+       0.475,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7347,
+      -0.1705,
+      0.5416
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5348,
+       6
+      ],
+      [
+       0.6984,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.4715,
+      0.2468,
+      0.0761
+     ],
+     "nearest_body_bones": [
+      [
+       0.1665,
+       10
+      ],
+      [
+       0.1965,
+       9
+      ],
+      [
+       0.475,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.4715,
+      0.2468,
+      0.0761
+     ],
+     "nearest_body_bones": [
+      [
+       0.1665,
+       10
+      ],
+      [
+       0.1965,
+       9
+      ],
+      [
+       0.475,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.0968,
+       22
+      ],
+      [
+       0.1053,
+       16
+      ],
+      [
+       0.1095,
+       21
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1728,
+      0.0074
+     ],
+     "nearest_body_bones": [
+      [
+       0.0063,
+       19
+      ],
+      [
+       0.0348,
+       22
+      ],
+      [
+       0.049,
+       23
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.4715,
+      0.2468,
+      0.0761
+     ],
+     "nearest_body_bones": [
+      [
+       0.1665,
+       10
+      ],
+      [
+       0.1965,
+       9
+      ],
+      [
+       0.475,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "spa_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.369,
+    [
+     0.0,
+     0.0,
+     1.111
+    ],
+    0.5,
+    0.812
+   ],
+   "body_only_stand_ortho": 3.9,
+   "staged_stand_ortho": 5.369,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0337,
+    "stand_ground_z_max": 0.0198
+   },
+   "rendered_foot_row_range": [
+    0.625,
+    0.9062
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7352,
+      -0.0683,
+      0.5145
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5389,
+       6
+      ],
+      [
+       0.6053,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.1053,
+       12
+      ],
+      [
+       0.1095,
+       17
+      ],
+      [
+       0.1112,
+       15
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1728,
+      0.0074
+     ],
+     "nearest_body_bones": [
+      [
+       0.0063,
+       15
+      ],
+      [
+       0.1191,
+       17
+      ],
+      [
+       0.1281,
+       16
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "tur_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.465,
+    [
+     0.0,
+     0.0,
+     1.105
+    ],
+    0.5,
+    0.8048
+   ],
+   "body_only_stand_ortho": 4.148,
+   "staged_stand_ortho": 5.465,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     -0.0126,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     -0.012584,
+     -1.3e-05
+    ],
+    "death_ref_per_clip": [
+     -0.012584,
+     -1.3e-05
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0385,
+    "stand_ground_z_max": 0.0139
+   },
+   "rendered_foot_row_range": [
+    0.6188,
+    0.9187
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.536,
+      0.2535,
+      0.1122
+     ],
+     "nearest_body_bones": [
+      [
+       0.1698,
+       10
+      ],
+      [
+       0.1747,
+       9
+      ],
+      [
+       0.5495,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7947,
+      -0.1869,
+      0.6111
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.538,
+       6
+      ],
+      [
+       0.6884,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.536,
+      0.2535,
+      0.1122
+     ],
+     "nearest_body_bones": [
+      [
+       0.1698,
+       10
+      ],
+      [
+       0.1747,
+       9
+      ],
+      [
+       0.5495,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.536,
+      0.2535,
+      0.1122
+     ],
+     "nearest_body_bones": [
+      [
+       0.1698,
+       10
+      ],
+      [
+       0.1747,
+       9
+      ],
+      [
+       0.5495,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0689,
+      -0.0995,
+      -0.0384
+     ],
+     "nearest_body_bones": [
+      [
+       0.0465,
+       18
+      ],
+      [
+       0.0553,
+       17
+      ],
+      [
+       0.0568,
+       15
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      -0.006,
+      -0.1734,
+      0.0075
+     ],
+     "nearest_body_bones": [
+      [
+       0.0878,
+       18
+      ],
+      [
+       0.0989,
+       15
+      ],
+      [
+       0.1006,
+       19
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.536,
+      0.2535,
+      0.1122
+     ],
+     "nearest_body_bones": [
+      [
+       0.1698,
+       10
+      ],
+      [
+       0.1747,
+       9
+      ],
+      [
+       0.5495,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  },
+  "sco_peasant": {
+   "checks": {
+    "action_set": true,
+    "frames_loop_duration": true,
+    "tool_mapping": true,
+    "shared_stand_group": true,
+    "shared_death_distinct": true,
+    "center_xz_zero": true,
+    "qmat_transposed": true,
+    "rest_quat_identity": true,
+    "ortho_body_lower_bound": true,
+    "zero_cell_clips": true,
+    "all_dirs_frames_distinct": true,
+    "single_global_idle_home": true,
+    "death_uses_own_ref": true,
+    "ground_plane_stable": true,
+    "feet_on_one_tile": true,
+    "grips_close_to_body_bone": true,
+    "all_7_props_present": true
+   },
+   "mismatches": [],
+   "tool_bad": [],
+   "stand_sig": [
+    5.369,
+    [
+     0.0,
+     0.0,
+     1.111
+    ],
+    0.5,
+    0.812
+   ],
+   "body_only_stand_ortho": 3.893,
+   "staged_stand_ortho": 5.369,
+   "total_clips": 0,
+   "de_travel": {
+    "home": [
+     0.0,
+     -0.0
+    ],
+    "n_stand_refs": 1,
+    "stand_ref": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_per_clip": [
+     0.0,
+     -0.0
+    ],
+    "death_ref_is_own_first_frame": true,
+    "death_ref_coincides_with_home": true,
+    "stand_ground_z_min": -0.0394,
+    "stand_ground_z_max": 0.0144
+   },
+   "rendered_foot_row_range": [
+    0.625,
+    0.9187
+   ],
+   "grips": {
+    "axe": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "hammer": {
+     "prop_bone0_rest": [
+      -0.7352,
+      -0.0683,
+      0.5145
+     ],
+     "nearest_body_bones": [
+      [
+       0.0,
+       7
+      ],
+      [
+       0.5389,
+       6
+      ],
+      [
+       0.6053,
+       5
+      ]
+     ]
+    },
+    "hoe": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "pick": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    },
+    "lumber": {
+     "prop_bone0_rest": [
+      -0.0563,
+      -0.0995,
+      -0.039
+     ],
+     "nearest_body_bones": [
+      [
+       0.1053,
+       12
+      ],
+      [
+       0.1095,
+       17
+      ],
+      [
+       0.1112,
+       15
+      ]
+     ]
+    },
+    "bag": {
+     "prop_bone0_rest": [
+      0.0065,
+      -0.1728,
+      0.0074
+     ],
+     "nearest_body_bones": [
+      [
+       0.0063,
+       15
+      ],
+      [
+       0.1191,
+       17
+      ],
+      [
+       0.1281,
+       16
+      ]
+     ]
+    },
+    "cart": {
+     "prop_bone0_rest": [
+      0.4584,
+      0.3582,
+      0.1082
+     ],
+     "nearest_body_bones": [
+      [
+       0.1022,
+       9
+      ],
+      [
+       0.1096,
+       10
+      ],
+      [
+       0.5401,
+       8
+      ]
+     ]
+    }
+   },
+   "pass": true
+  }
+ },
+ "checks": {},
+ "pass": true
+}

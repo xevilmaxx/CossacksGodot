@@ -238,3 +238,59 @@ earth can be a real second layer? (3) Which asset should supply dry vegetation o
 converted — or is a graded `rock_landstone1` acceptable as the only accent? (4) Are `desert_mnt_14/15`
 and the 4 missing `desert_plt_*` names recoverable from another donor config before the relief recipe
 is finalised?
+
+---
+
+## T6 verdict (T6-T15) — mini-baker render v4, C5 RESOLVED, 2026-11-23
+
+Headless Python/Pillow mini-baker: `app/tools/pieces/t6_desert_variant.py` (imports this repo's
+`terrain_piece_render.py` read-only; **no Godot/Blender jobs, no donor copies into the repo, no helper
+subagents**). Full claim table, donor C5 measurements, hashes and open questions:
+`docs/t6/reports/T6-T15.md`. Doc backed up first to `inbox/backup/desert_variant.md.bak-T6-T15`;
+pre-v3/pre-v4 code and report backups also in `inbox/backup`.
+
+**Wave-plan acceptance (T6-T15): 12 donor palettes — PASS; dry rock grade (not green mossy) — PASS.**
+12/12 port `desertN.png` are full-resolution RGB-identical to donor `desertN.dds`; 12 unique hashes,
+4 tonal families (L 79.4 / 81.8 / 100–101 / 110–114); **all 12 palette means contribute** to the
+zero-mean tonal grade (8 light/mid anchors) and patch modulation (4 dark anchors). The accent is
+`rock_sea1` (lit hue 40.68°, **0%** green-dominant) instead of the mossy mandated `rock_landstone1`
+(hue 67.75°, **93.5%** green-dominant).
+
+Outputs (deterministic; byte-identical on re-run):
+`app/shots/pieces/t6_desert_variant.png` — SHA-256 `676ea5938aa42c5925eb3869a1e5e50f79596ed7282d26d43788f3ad0ed12bb1`;
+`app/shots/pieces/t6_desert_variant_compare.png` — SHA-256 `9213f858d69767118ec71bfe27257f0d5d7ca00829c63a89ab760b5a639b2d8a` (REVISED valid donor panel).
+The pre-existing T2 `desert_variant*.png` outputs were left untouched.
+
+**QA escalation — C5 resolved, threshold unchanged.** v3's reported 7.12 was a wrong-scale artefact
+(512² measurement vs the donor's 200² convention). Fresh donor measurement: `desert2/3.dds` full tile
+`[0,0,1024,1024]` bilinear→200², 5 px blur = **8.42**. The mini-baker now measures cracked grain in
+that same convention (`patch_interior_hifreq()`, render+mask→200², mask>220): v3 config = 9.21; after
+A8 patch opacity 0.85→0.80, **v4 = 8.66**, inside the 8–9 band. Dark coverage stays **10.97%**
+(≤25% C3 ceiling). No threshold weakening or adjudication requested.
+
+Measured vs the §4 criteria: **C1 PASS** (raw base (121.9,112.1,76.9) within ±8 of (123,114,83);
+final median (121,111,74), L 105.60), **C2 PASS** (R>G>B 100%), **C3 PASS** (dark L<90 = 10.97%),
+**C4 PASS (marginal)** (ground sub-box L 66.68–119.93, σ 9.43, 0 sub-boxes <60), **C5 PASS**
+(base hf 2.44, cracked interior **8.66** vs donor 8.42, final 4.82), **C6 PASS** (one accent, 2.70%
+of frame incl. shadow), **C7 PASS** (12/12), **C8 PASS** for 2 block composites / no `.gd` change;
+only the engine 250 ms bake remains UNVERIFIED here (Python probe ≈2.5 s is a different metric).
+
+**Visual judgement (fresh read of the v4 compare PNG).** v2 was honestly FAIL visually: identical
+12.8 px rectangular stamps on a lattice, hard-edged floating rock, flat khaki. v4 shows irregular
+clustered cracked/scree patches with hairline cracks and empty ground between them (no lattice), a
+dry gray boulder with a soft contact shadow sitting on the ground, and a gentle low-frequency grade —
+**PASS on every defect the coordinator reported**, though still cooler/darker and less polygonal than
+donor `desert2/3`. The reference panel is visibly a wooden facade, not ground, so it is not a palette
+target. Adaptations A1–A8, spec JSON untouched: sprite substitution, auto-fit scale, draw order,
+brightness 1.09→1.00, organic patch geometry, 12-palette grade, softened rock + shadow, patch opacity
+0.85→0.80.
+
+**REVISED compare panel (coordinator CONDITION 2):** the old MADV crop `(5,5,470,38)` was a degenerate
+33 px strip stretched ~10× into a wooden-siding smear and has been replaced. The shipped
+`t6_desert_variant_compare.png` (SHA-256 `9213f858d69767118ec71bfe27257f0d5d7ca00829c63a89ab760b5a639b2d8a`)
+now pairs the unchanged port render with a labelled 2×2 contact sheet of genuine donor tiles
+`desert6/2/3/4`, each centre-cropped `(256,256,768,768)` from its 1024² DDS and resized to 256²; donor
+files are read by path only, no donor texture file copied into the repo. Re-read verdict: light ground
+and dark patches are in the correct donor tonal families and the three reported defects are fixed,
+but donor plates are sharper/more polygonal than the port's softer patches — an honest remaining
+fidelity gap. Render SHA is unchanged (`676ea593…`), so QA's pending C1–C8 re-measurement is unaffected.

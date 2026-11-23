@@ -1,0 +1,5055 @@
+{
+ "ticket": "T6-U02",
+ "cell": 160,
+ "engine": "workbench",
+ "index": {
+  "pikeman": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 6.093,
+     "center": [
+      0.0,
+      0.0,
+      1.637
+     ],
+     "ax": 0.5,
+     "ay": 0.905,
+     "tool": null,
+     "bbox": [
+      53,
+      33,
+      107,
+      124
+     ],
+     "fig_h": 0.5687,
+     "foot": 0.775,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 6.093,
+     "center": [
+      0.0,
+      0.0,
+      1.637
+     ],
+     "ax": 0.5,
+     "ay": 0.905,
+     "tool": null,
+     "bbox": [
+      58,
+      33,
+      102,
+      121
+     ],
+     "fig_h": 0.55,
+     "foot": 0.7562,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.5,
+     "loop": false,
+     "ortho": 6.093,
+     "center": [
+      0.0,
+      0.0,
+      1.637
+     ],
+     "ax": 0.5,
+     "ay": 0.905,
+     "tool": null,
+     "bbox": [
+      9,
+      56,
+      151,
+      131
+     ],
+     "fig_h": 0.4688,
+     "foot": 0.8187,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 1.833,
+     "loop": false,
+     "ortho": 6.202,
+     "center": [
+      0.0,
+      0.0,
+      1.336
+     ],
+     "ax": 0.5,
+     "ay": 0.8247,
+     "tool": null,
+     "bbox": [
+      9,
+      25,
+      150,
+      145
+     ],
+     "fig_h": 0.75,
+     "foot": 0.9062,
+     "cx": 0.4969
+    }
+   }
+  },
+  "roundshier": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.793,
+     "center": [
+      0.0,
+      0.0,
+      0.967
+     ],
+     "ax": 0.5,
+     "ay": 0.8843,
+     "tool": null,
+     "bbox": [
+      43,
+      39,
+      116,
+      126
+     ],
+     "fig_h": 0.5437,
+     "foot": 0.7875,
+     "cx": 0.4969
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 3.793,
+     "center": [
+      0.0,
+      0.0,
+      0.967
+     ],
+     "ax": 0.5,
+     "ay": 0.8843,
+     "tool": null,
+     "bbox": [
+      40,
+      42,
+      119,
+      126
+     ],
+     "fig_h": 0.525,
+     "foot": 0.7875,
+     "cx": 0.4969
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.4,
+     "loop": false,
+     "ortho": 3.793,
+     "center": [
+      0.0,
+      0.0,
+      0.967
+     ],
+     "ax": 0.5,
+     "ay": 0.8843,
+     "tool": null,
+     "bbox": [
+      9,
+      35,
+      151,
+      126
+     ],
+     "fig_h": 0.5687,
+     "foot": 0.7875,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 1.7,
+     "loop": false,
+     "ortho": 4.389,
+     "center": [
+      0.0,
+      0.0,
+      0.793
+     ],
+     "ax": 0.5,
+     "ay": 0.7723,
+     "tool": null,
+     "bbox": [
+      8,
+      35,
+      151,
+      140
+     ],
+     "fig_h": 0.6562,
+     "foot": 0.875,
+     "cx": 0.4969
+    }
+   }
+  },
+  "serdiuk": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.541,
+     "center": [
+      0.0,
+      0.0,
+      1.091
+     ],
+     "ax": 0.5,
+     "ay": 0.9645,
+     "tool": null,
+     "bbox": [
+      44,
+      22,
+      115,
+      135
+     ],
+     "fig_h": 0.7063,
+     "foot": 0.8438,
+     "cx": 0.4969
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 3.541,
+     "center": [
+      0.0,
+      0.0,
+      1.091
+     ],
+     "ax": 0.5,
+     "ay": 0.9645,
+     "tool": null,
+     "bbox": [
+      44,
+      22,
+      115,
+      132
+     ],
+     "fig_h": 0.6875,
+     "foot": 0.825,
+     "cx": 0.4969
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.533,
+     "loop": false,
+     "ortho": 3.541,
+     "center": [
+      0.0,
+      0.0,
+      1.091
+     ],
+     "ax": 0.5,
+     "ay": 0.9645,
+     "tool": null,
+     "bbox": [
+      8,
+      24,
+      152,
+      134
+     ],
+     "fig_h": 0.6875,
+     "foot": 0.8375,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.1,
+     "loop": false,
+     "ortho": 4.63,
+     "center": [
+      0.0,
+      0.0,
+      0.81
+     ],
+     "ax": 0.5,
+     "ay": 0.7638,
+     "tool": null,
+     "bbox": [
+      8,
+      28,
+      152,
+      139
+     ],
+     "fig_h": 0.6937,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  },
+  "archer": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.066,
+     "center": [
+      0.0,
+      0.0,
+      1.145
+     ],
+     "ax": 0.5,
+     "ay": 1.0632,
+     "tool": null,
+     "bbox": [
+      30,
+      37,
+      130,
+      146
+     ],
+     "fig_h": 0.6813,
+     "foot": 0.9125,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.7,
+     "loop": true,
+     "ortho": 3.066,
+     "center": [
+      0.0,
+      0.0,
+      1.145
+     ],
+     "ax": 0.5,
+     "ay": 1.0632,
+     "tool": null,
+     "bbox": [
+      41,
+      39,
+      119,
+      139
+     ],
+     "fig_h": 0.625,
+     "foot": 0.8688,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.933,
+     "loop": false,
+     "ortho": 3.066,
+     "center": [
+      0.0,
+      0.0,
+      1.145
+     ],
+     "ax": 0.5,
+     "ay": 1.0632,
+     "tool": null,
+     "bbox": [
+      8,
+      21,
+      151,
+      150
+     ],
+     "fig_h": 0.8063,
+     "foot": 0.9375,
+     "cx": 0.4969
+    },
+    "death": {
+     "frames": 8,
+     "duration": 1.667,
+     "loop": false,
+     "ortho": 4.086,
+     "center": [
+      0.0,
+      0.0,
+      0.93
+     ],
+     "ax": 0.5,
+     "ay": 0.843,
+     "tool": null,
+     "bbox": [
+      8,
+      37,
+      152,
+      150
+     ],
+     "fig_h": 0.7063,
+     "foot": 0.9375,
+     "cx": 0.5
+    }
+   }
+  },
+  "strelet": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.518,
+     "center": [
+      0.0,
+      0.0,
+      1.09
+     ],
+     "ax": 0.5,
+     "ay": 0.967,
+     "tool": null,
+     "bbox": [
+      19,
+      22,
+      140,
+      138
+     ],
+     "fig_h": 0.725,
+     "foot": 0.8625,
+     "cx": 0.4969
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 3.518,
+     "center": [
+      0.0,
+      0.0,
+      1.09
+     ],
+     "ax": 0.5,
+     "ay": 0.967,
+     "tool": null,
+     "bbox": [
+      37,
+      23,
+      122,
+      134
+     ],
+     "fig_h": 0.6937,
+     "foot": 0.8375,
+     "cx": 0.4969
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.733,
+     "loop": false,
+     "ortho": 3.518,
+     "center": [
+      0.0,
+      0.0,
+      1.09
+     ],
+     "ax": 0.5,
+     "ay": 0.967,
+     "tool": null,
+     "bbox": [
+      14,
+      26,
+      145,
+      151
+     ],
+     "fig_h": 0.7812,
+     "foot": 0.9437,
+     "cx": 0.4969
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.1,
+     "loop": false,
+     "ortho": 4.556,
+     "center": [
+      0.0,
+      0.0,
+      1.066
+     ],
+     "ax": 0.5,
+     "ay": 0.8526,
+     "tool": null,
+     "bbox": [
+      8,
+      35,
+      151,
+      150
+     ],
+     "fig_h": 0.7188,
+     "foot": 0.9375,
+     "cx": 0.4969
+    }
+   }
+  },
+  "pandur": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.128,
+     "center": [
+      0.0,
+      0.0,
+      1.036
+     ],
+     "ax": 0.5,
+     "ay": 0.9991,
+     "tool": null,
+     "bbox": [
+      43,
+      20,
+      116,
+      140
+     ],
+     "fig_h": 0.75,
+     "foot": 0.875,
+     "cx": 0.4969
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 3.128,
+     "center": [
+      0.0,
+      0.0,
+      1.036
+     ],
+     "ax": 0.5,
+     "ay": 0.9991,
+     "tool": null,
+     "bbox": [
+      46,
+      21,
+      114,
+      136
+     ],
+     "fig_h": 0.7188,
+     "foot": 0.85,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.867,
+     "loop": false,
+     "ortho": 3.128,
+     "center": [
+      0.0,
+      0.0,
+      1.036
+     ],
+     "ax": 0.5,
+     "ay": 0.9991,
+     "tool": null,
+     "bbox": [
+      8,
+      20,
+      152,
+      140
+     ],
+     "fig_h": 0.75,
+     "foot": 0.875,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.1,
+     "loop": false,
+     "ortho": 4.523,
+     "center": [
+      0.0,
+      0.0,
+      1.019
+     ],
+     "ax": 0.5,
+     "ay": 0.8398,
+     "tool": null,
+     "bbox": [
+      8,
+      39,
+      152,
+      149
+     ],
+     "fig_h": 0.6875,
+     "foot": 0.9313,
+     "cx": 0.5
+    }
+   }
+  },
+  "chasseur": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.561,
+     "center": [
+      0.0,
+      0.0,
+      1.098
+     ],
+     "ax": 0.5,
+     "ay": 0.9649,
+     "tool": null,
+     "bbox": [
+      47,
+      22,
+      113,
+      135
+     ],
+     "fig_h": 0.7063,
+     "foot": 0.8438,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 3.561,
+     "center": [
+      0.0,
+      0.0,
+      1.098
+     ],
+     "ax": 0.5,
+     "ay": 0.9649,
+     "tool": null,
+     "bbox": [
+      50,
+      22,
+      110,
+      132
+     ],
+     "fig_h": 0.6875,
+     "foot": 0.825,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.767,
+     "loop": false,
+     "ortho": 3.561,
+     "center": [
+      0.0,
+      0.0,
+      1.098
+     ],
+     "ax": 0.5,
+     "ay": 0.9649,
+     "tool": null,
+     "bbox": [
+      8,
+      24,
+      152,
+      135
+     ],
+     "fig_h": 0.6937,
+     "foot": 0.8438,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.1,
+     "loop": false,
+     "ortho": 4.679,
+     "center": [
+      0.0,
+      0.0,
+      0.878
+     ],
+     "ax": 0.5,
+     "ay": 0.783,
+     "tool": null,
+     "bbox": [
+      8,
+      30,
+      151,
+      144
+     ],
+     "fig_h": 0.7125,
+     "foot": 0.9,
+     "cx": 0.4969
+    }
+   }
+  },
+  "highlander": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.194,
+     "center": [
+      0.0,
+      0.0,
+      1.09
+     ],
+     "ax": 0.5,
+     "ay": 1.0145,
+     "tool": null,
+     "bbox": [
+      45,
+      17,
+      115,
+      141
+     ],
+     "fig_h": 0.775,
+     "foot": 0.8812,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 3.194,
+     "center": [
+      0.0,
+      0.0,
+      1.09
+     ],
+     "ax": 0.5,
+     "ay": 1.0145,
+     "tool": null,
+     "bbox": [
+      49,
+      20,
+      111,
+      137
+     ],
+     "fig_h": 0.7312,
+     "foot": 0.8562,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.867,
+     "loop": false,
+     "ortho": 3.194,
+     "center": [
+      0.0,
+      0.0,
+      1.09
+     ],
+     "ax": 0.5,
+     "ay": 1.0145,
+     "tool": null,
+     "bbox": [
+      8,
+      23,
+      152,
+      141
+     ],
+     "fig_h": 0.7375,
+     "foot": 0.8812,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.1,
+     "loop": false,
+     "ortho": 4.397,
+     "center": [
+      0.0,
+      0.0,
+      0.846
+     ],
+     "ax": 0.5,
+     "ay": 0.7901,
+     "tool": null,
+     "bbox": [
+      8,
+      29,
+      152,
+      145
+     ],
+     "fig_h": 0.725,
+     "foot": 0.9062,
+     "cx": 0.5
+    }
+   }
+  },
+  "jannisary": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 3.744,
+     "center": [
+      0.0,
+      0.0,
+      1.147
+     ],
+     "ax": 0.5,
+     "ay": 0.9618,
+     "tool": null,
+     "bbox": [
+      48,
+      22,
+      111,
+      134
+     ],
+     "fig_h": 0.7,
+     "foot": 0.8375,
+     "cx": 0.4969
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 1.667,
+     "loop": true,
+     "ortho": 3.744,
+     "center": [
+      0.0,
+      0.0,
+      1.147
+     ],
+     "ax": 0.5,
+     "ay": 0.9618,
+     "tool": null,
+     "bbox": [
+      50,
+      23,
+      110,
+      131
+     ],
+     "fig_h": 0.675,
+     "foot": 0.8187,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.867,
+     "loop": false,
+     "ortho": 3.744,
+     "center": [
+      0.0,
+      0.0,
+      1.147
+     ],
+     "ax": 0.5,
+     "ay": 0.9618,
+     "tool": null,
+     "bbox": [
+      8,
+      25,
+      152,
+      134
+     ],
+     "fig_h": 0.6813,
+     "foot": 0.8375,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.1,
+     "loop": false,
+     "ortho": 5.085,
+     "center": [
+      0.0,
+      0.0,
+      1.088
+     ],
+     "ax": 0.5,
+     "ay": 0.8225,
+     "tool": null,
+     "bbox": [
+      8,
+      36,
+      151,
+      148
+     ],
+     "fig_h": 0.7,
+     "foot": 0.925,
+     "cx": 0.4969
+    }
+   }
+  }
+ },
+ "units": {
+  "pikeman": {
+   "base": "pikeman",
+   "donor": {
+    "oss": {
+     "k": 312,
+     "fps": 30,
+     "bones": 20,
+     "verts": 733,
+     "faces": 1062,
+     "uvs": 939
+    },
+    "oss_bytes": 225352,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack0": {
+      "first": 32,
+      "last": 46,
+      "count": 15,
+      "duration": 0.5
+     },
+     "walk0": {
+      "first": 54,
+      "last": 77,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 80,
+      "last": 134,
+      "count": 55,
+      "duration": 1.833
+     },
+     "prepare0": {
+      "first": 135,
+      "last": 144,
+      "count": 10,
+      "duration": 0.333
+     },
+     "walkprepare0": {
+      "first": 146,
+      "last": 169,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkunprepare0": {
+      "first": 172,
+      "last": 195,
+      "count": 24,
+      "duration": 0.8
+     },
+     "unprepare0": {
+      "first": 197,
+      "last": 207,
+      "count": 11,
+      "duration": 0.367
+     },
+     "idle": {
+      "first": 209,
+      "last": 258,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 260,
+      "last": 309,
+      "count": 50,
+      "duration": 1.667
+     }
+    },
+    "aaf_count": 10,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     0.0192,
+     -0.0073
+    ],
+    "idle_ref_frame": 209,
+    "foot_xy": [
+     0.0072,
+     -0.0793
+    ],
+    "max_stand_drift_m": 0.0761,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 6.093,
+      "center": [
+       0.0,
+       0.0,
+       1.637
+      ],
+      "ax": 0.5,
+      "ay": 0.905,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       53,
+       33,
+       107,
+       124
+      ],
+      "fig_h": 0.5687,
+      "foot": 0.775,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 6.093,
+      "center": [
+       0.0,
+       0.0,
+       1.637
+      ],
+      "ax": 0.5,
+      "ay": 0.905,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       209,
+       258
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       209,
+       219,
+       229,
+       238,
+       248,
+       258
+      ],
+      "group": "stand",
+      "bbox": [
+       58,
+       33,
+       102,
+       121
+      ],
+      "fig_h": 0.55,
+      "foot": 0.7562,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.5,
+      "loop": false,
+      "ortho": 6.093,
+      "center": [
+       0.0,
+       0.0,
+       1.637
+      ],
+      "ax": 0.5,
+      "ay": 0.905,
+      "tool": null,
+      "donor_name": "attack0",
+      "donor_range": [
+       32,
+       46
+      ],
+      "donor_count": 15,
+      "fps": 30,
+      "sampled_frames": [
+       32,
+       33,
+       35,
+       36,
+       37,
+       38,
+       40,
+       41,
+       42,
+       43,
+       45,
+       46
+      ],
+      "group": "stand",
+      "bbox": [
+       9,
+       56,
+       151,
+       131
+      ],
+      "fig_h": 0.4688,
+      "foot": 0.8187,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 1.833,
+      "loop": false,
+      "ortho": 6.202,
+      "center": [
+       0.0,
+       0.0,
+       1.336
+      ],
+      "ax": 0.5,
+      "ay": 0.8247,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       80,
+       134
+      ],
+      "donor_count": 55,
+      "fps": 30,
+      "sampled_frames": [
+       80,
+       88,
+       95,
+       103,
+       111,
+       119,
+       126,
+       134
+      ],
+      "group": "death",
+      "bbox": [
+       9,
+       25,
+       150,
+       145
+      ],
+      "fig_h": 0.75,
+      "foot": 0.9062,
+      "cx": 0.4969,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 225352,
+      "expected": 225352
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        209,
+        258,
+        1.667
+       ],
+       [
+        "attack0",
+        32,
+        46,
+        0.5
+       ],
+       [
+        "death",
+        80,
+        134,
+        1.833
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       6.093,
+       [
+        0.0,
+        0.0,
+        1.637
+       ],
+       0.5,
+       0.905
+      ],
+      "death_sig": [
+       6.202,
+       [
+        0.0,
+        0.0,
+        1.336
+       ],
+       0.5,
+       0.8247
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       0.0192,
+       -0.0073
+      ],
+      "idle_ref_frame": 209,
+      "foot_xy": [
+       0.0072,
+       -0.0793
+      ],
+      "max_stand_drift_m": 0.0761,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 40.86
+  },
+  "roundshier": {
+   "base": "roundshier",
+   "donor": {
+    "oss": {
+     "k": 143,
+     "fps": 30,
+     "bones": 19,
+     "verts": 710,
+     "faces": 1048,
+     "uvs": 896
+    },
+    "oss_bytes": 125508,
+    "aaf": {
+     "idle": {
+      "first": 28,
+      "last": 77,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 28,
+      "last": 77,
+      "count": 50,
+      "duration": 1.667
+     },
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 91,
+      "last": 141,
+      "count": 51,
+      "duration": 1.7
+     },
+     "attack0": {
+      "first": 79,
+      "last": 90,
+      "count": 12,
+      "duration": 0.4
+     },
+     "prepare0": {
+      "first": 28,
+      "last": 29,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 28,
+      "last": 29,
+      "count": 2,
+      "duration": 0.067
+     }
+    },
+    "aaf_count": 7,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     -0.0063,
+     0.0066
+    ],
+    "idle_ref_frame": 28,
+    "foot_xy": [
+     -0.0085,
+     -0.0692
+    ],
+    "max_stand_drift_m": 0.1559,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.793,
+      "center": [
+       0.0,
+       0.0,
+       0.967
+      ],
+      "ax": 0.5,
+      "ay": 0.8843,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       43,
+       39,
+       116,
+       126
+      ],
+      "fig_h": 0.5437,
+      "foot": 0.7875,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 3.793,
+      "center": [
+       0.0,
+       0.0,
+       0.967
+      ],
+      "ax": 0.5,
+      "ay": 0.8843,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       28,
+       77
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       28,
+       38,
+       48,
+       57,
+       67,
+       77
+      ],
+      "group": "stand",
+      "bbox": [
+       40,
+       42,
+       119,
+       126
+      ],
+      "fig_h": 0.525,
+      "foot": 0.7875,
+      "cx": 0.4969,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.4,
+      "loop": false,
+      "ortho": 3.793,
+      "center": [
+       0.0,
+       0.0,
+       0.967
+      ],
+      "ax": 0.5,
+      "ay": 0.8843,
+      "tool": null,
+      "donor_name": "attack0",
+      "donor_range": [
+       79,
+       90
+      ],
+      "donor_count": 12,
+      "fps": 30,
+      "sampled_frames": [
+       79,
+       80,
+       81,
+       82,
+       83,
+       84,
+       85,
+       86,
+       87,
+       88,
+       89,
+       90
+      ],
+      "group": "stand",
+      "bbox": [
+       9,
+       35,
+       151,
+       126
+      ],
+      "fig_h": 0.5687,
+      "foot": 0.7875,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 1.7,
+      "loop": false,
+      "ortho": 4.389,
+      "center": [
+       0.0,
+       0.0,
+       0.793
+      ],
+      "ax": 0.5,
+      "ay": 0.7723,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       91,
+       141
+      ],
+      "donor_count": 51,
+      "fps": 30,
+      "sampled_frames": [
+       91,
+       98,
+       105,
+       112,
+       120,
+       127,
+       134,
+       141
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       35,
+       151,
+       140
+      ],
+      "fig_h": 0.6562,
+      "foot": 0.875,
+      "cx": 0.4969,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 125508,
+      "expected": 125508
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        28,
+        77,
+        1.667
+       ],
+       [
+        "attack0",
+        79,
+        90,
+        0.4
+       ],
+       [
+        "death",
+        91,
+        141,
+        1.7
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.793,
+       [
+        0.0,
+        0.0,
+        0.967
+       ],
+       0.5,
+       0.8843
+      ],
+      "death_sig": [
+       4.389,
+       [
+        0.0,
+        0.0,
+        0.793
+       ],
+       0.5,
+       0.7723
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       -0.0063,
+       0.0066
+      ],
+      "idle_ref_frame": 28,
+      "foot_xy": [
+       -0.0085,
+       -0.0692
+      ],
+      "max_stand_drift_m": 0.1559,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 59.47
+  },
+  "serdiuk": {
+   "base": "serdiuk",
+   "donor": {
+    "oss": {
+     "k": 631,
+     "fps": 30,
+     "bones": 24,
+     "verts": 787,
+     "faces": 1058,
+     "uvs": 977
+    },
+    "oss_bytes": 476160,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walk0": {
+      "first": 26,
+      "last": 49,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkprepare0": {
+      "first": 50,
+      "last": 73,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkunprepare0": {
+      "first": 74,
+      "last": 97,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack1": {
+      "first": 99,
+      "last": 114,
+      "count": 16,
+      "duration": 0.533
+     },
+     "idle": {
+      "first": 153,
+      "last": 202,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 204,
+      "last": 253,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle1": {
+      "first": 256,
+      "last": 305,
+      "count": 50,
+      "duration": 1.667
+     },
+     "prepare0": {
+      "first": 307,
+      "last": 328,
+      "count": 22,
+      "duration": 0.733
+     },
+     "unprepare0": {
+      "first": 329,
+      "last": 351,
+      "count": 23,
+      "duration": 0.767
+     },
+     "prepare1": {
+      "first": 353,
+      "last": 379,
+      "count": 27,
+      "duration": 0.9
+     },
+     "unprepare1": {
+      "first": 380,
+      "last": 405,
+      "count": 26,
+      "duration": 0.867
+     },
+     "trans01": {
+      "first": 408,
+      "last": 419,
+      "count": 12,
+      "duration": 0.4
+     },
+     "trans10": {
+      "first": 420,
+      "last": 431,
+      "count": 12,
+      "duration": 0.4
+     },
+     "death": {
+      "first": 433,
+      "last": 495,
+      "count": 63,
+      "duration": 2.1
+     },
+     "death1": {
+      "first": 498,
+      "last": 561,
+      "count": 64,
+      "duration": 2.133
+     },
+     "death0": {
+      "first": 565,
+      "last": 629,
+      "count": 65,
+      "duration": 2.167
+     }
+    },
+    "aaf_count": 17,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     0.0094,
+     -0.0075
+    ],
+    "idle_ref_frame": 153,
+    "foot_xy": [
+     0.0038,
+     -0.0454
+    ],
+    "max_stand_drift_m": 0.0977,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.541,
+      "center": [
+       0.0,
+       0.0,
+       1.091
+      ],
+      "ax": 0.5,
+      "ay": 0.9645,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       44,
+       22,
+       115,
+       135
+      ],
+      "fig_h": 0.7063,
+      "foot": 0.8438,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 3.541,
+      "center": [
+       0.0,
+       0.0,
+       1.091
+      ],
+      "ax": 0.5,
+      "ay": 0.9645,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       153,
+       202
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       153,
+       163,
+       173,
+       182,
+       192,
+       202
+      ],
+      "group": "stand",
+      "bbox": [
+       44,
+       22,
+       115,
+       132
+      ],
+      "fig_h": 0.6875,
+      "foot": 0.825,
+      "cx": 0.4969,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.533,
+      "loop": false,
+      "ortho": 3.541,
+      "center": [
+       0.0,
+       0.0,
+       1.091
+      ],
+      "ax": 0.5,
+      "ay": 0.9645,
+      "tool": null,
+      "donor_name": "attack1",
+      "donor_range": [
+       99,
+       114
+      ],
+      "donor_count": 16,
+      "fps": 30,
+      "sampled_frames": [
+       99,
+       100,
+       102,
+       103,
+       104,
+       106,
+       107,
+       109,
+       110,
+       111,
+       113,
+       114
+      ],
+      "group": "stand",
+      "bbox": [
+       8,
+       24,
+       152,
+       134
+      ],
+      "fig_h": 0.6875,
+      "foot": 0.8375,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.1,
+      "loop": false,
+      "ortho": 4.63,
+      "center": [
+       0.0,
+       0.0,
+       0.81
+      ],
+      "ax": 0.5,
+      "ay": 0.7638,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       433,
+       495
+      ],
+      "donor_count": 63,
+      "fps": 30,
+      "sampled_frames": [
+       433,
+       442,
+       451,
+       460,
+       468,
+       477,
+       486,
+       495
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       28,
+       152,
+       139
+      ],
+      "fig_h": 0.6937,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 476160,
+      "expected": 476160
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        153,
+        202,
+        1.667
+       ],
+       [
+        "attack1",
+        99,
+        114,
+        0.533
+       ],
+       [
+        "death",
+        433,
+        495,
+        2.1
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.541,
+       [
+        0.0,
+        0.0,
+        1.091
+       ],
+       0.5,
+       0.9645
+      ],
+      "death_sig": [
+       4.63,
+       [
+        0.0,
+        0.0,
+        0.81
+       ],
+       0.5,
+       0.7638
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       0.0094,
+       -0.0075
+      ],
+      "idle_ref_frame": 153,
+      "foot_xy": [
+       0.0038,
+       -0.0454
+      ],
+      "max_stand_drift_m": 0.0977,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 28.67
+  },
+  "archer": {
+   "base": "archer",
+   "donor": {
+    "oss": {
+     "k": 159,
+     "fps": 30,
+     "bones": 22,
+     "verts": 713,
+     "faces": 979,
+     "uvs": 1037
+    },
+    "oss_bytes": 146872,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "idle": {
+      "first": 28,
+      "last": 78,
+      "count": 51,
+      "duration": 1.7
+     },
+     "idle0": {
+      "first": 28,
+      "last": 78,
+      "count": 51,
+      "duration": 1.7
+     },
+     "idle1": {
+      "first": 28,
+      "last": 78,
+      "count": 51,
+      "duration": 1.7
+     },
+     "death": {
+      "first": 80,
+      "last": 129,
+      "count": 50,
+      "duration": 1.667
+     },
+     "attack0": {
+      "first": 130,
+      "last": 157,
+      "count": 28,
+      "duration": 0.933
+     },
+     "attack1": {
+      "first": 130,
+      "last": 157,
+      "count": 28,
+      "duration": 0.933
+     },
+     "prepare0": {
+      "first": 28,
+      "last": 29,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare0": {
+      "first": 28,
+      "last": 29,
+      "count": 2,
+      "duration": 0.067
+     },
+     "prepare1": {
+      "first": 28,
+      "last": 29,
+      "count": 2,
+      "duration": 0.067
+     },
+     "unprepare1": {
+      "first": 28,
+      "last": 29,
+      "count": 2,
+      "duration": 0.067
+     },
+     "trans01": {
+      "first": 77,
+      "last": 78,
+      "count": 2,
+      "duration": 0.067
+     },
+     "trans10": {
+      "first": 77,
+      "last": 78,
+      "count": 2,
+      "duration": 0.067
+     },
+     "attack0before": {
+      "first": 130,
+      "last": 147,
+      "count": 18,
+      "duration": 0.6
+     },
+     "attack0after": {
+      "first": 148,
+      "last": 157,
+      "count": 10,
+      "duration": 0.333
+     },
+     "attack1before": {
+      "first": 130,
+      "last": 147,
+      "count": 18,
+      "duration": 0.6
+     },
+     "attack1after": {
+      "first": 148,
+      "last": 157,
+      "count": 10,
+      "duration": 0.333
+     }
+    },
+    "aaf_count": 17,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     -0.0023,
+     0.0275
+    ],
+    "idle_ref_frame": 28,
+    "foot_xy": [
+     -0.0056,
+     -0.0413
+    ],
+    "max_stand_drift_m": 0.4458,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.066,
+      "center": [
+       0.0,
+       0.0,
+       1.145
+      ],
+      "ax": 0.5,
+      "ay": 1.0632,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       30,
+       37,
+       130,
+       146
+      ],
+      "fig_h": 0.6813,
+      "foot": 0.9125,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.7,
+      "loop": true,
+      "ortho": 3.066,
+      "center": [
+       0.0,
+       0.0,
+       1.145
+      ],
+      "ax": 0.5,
+      "ay": 1.0632,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       28,
+       78
+      ],
+      "donor_count": 51,
+      "fps": 30,
+      "sampled_frames": [
+       28,
+       38,
+       48,
+       58,
+       68,
+       78
+      ],
+      "group": "stand",
+      "bbox": [
+       41,
+       39,
+       119,
+       139
+      ],
+      "fig_h": 0.625,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 43,
+      "distinct_frac": 0.8958,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.933,
+      "loop": false,
+      "ortho": 3.066,
+      "center": [
+       0.0,
+       0.0,
+       1.145
+      ],
+      "ax": 0.5,
+      "ay": 1.0632,
+      "tool": null,
+      "donor_name": "attack1",
+      "donor_range": [
+       130,
+       157
+      ],
+      "donor_count": 28,
+      "fps": 30,
+      "sampled_frames": [
+       130,
+       132,
+       135,
+       137,
+       140,
+       142,
+       145,
+       147,
+       150,
+       152,
+       155,
+       157
+      ],
+      "group": "stand",
+      "bbox": [
+       8,
+       21,
+       151,
+       150
+      ],
+      "fig_h": 0.8063,
+      "foot": 0.9375,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 1.667,
+      "loop": false,
+      "ortho": 4.086,
+      "center": [
+       0.0,
+       0.0,
+       0.93
+      ],
+      "ax": 0.5,
+      "ay": 0.843,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       80,
+       129
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       80,
+       87,
+       94,
+       101,
+       108,
+       115,
+       122,
+       129
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       37,
+       152,
+       150
+      ],
+      "fig_h": 0.7063,
+      "foot": 0.9375,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 146872,
+      "expected": 146872
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        28,
+        78,
+        1.7
+       ],
+       [
+        "attack1",
+        130,
+        157,
+        0.933
+       ],
+       [
+        "death",
+        80,
+        129,
+        1.667
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.066,
+       [
+        0.0,
+        0.0,
+        1.145
+       ],
+       0.5,
+       1.0632
+      ],
+      "death_sig": [
+       4.086,
+       [
+        0.0,
+        0.0,
+        0.93
+       ],
+       0.5,
+       0.843
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       -0.0023,
+       0.0275
+      ],
+      "idle_ref_frame": 28,
+      "foot_xy": [
+       -0.0056,
+       -0.0413
+      ],
+      "max_stand_drift_m": 0.4458,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 26.41
+  },
+  "strelet": {
+   "base": "strelet",
+   "donor": {
+    "oss": {
+     "k": 346,
+     "fps": 30,
+     "bones": 22,
+     "verts": 714,
+     "faces": 975,
+     "uvs": 860
+    },
+    "oss_bytes": 260592,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "idle": {
+      "first": 159,
+      "last": 208,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 228,
+      "last": 278,
+      "count": 51,
+      "duration": 1.7
+     },
+     "death": {
+      "first": 95,
+      "last": 157,
+      "count": 63,
+      "duration": 2.1
+     },
+     "death0": {
+      "first": 277,
+      "last": 343,
+      "count": 67,
+      "duration": 2.233
+     },
+     "attack0": {
+      "first": 32,
+      "last": 53,
+      "count": 22,
+      "duration": 0.733
+     },
+     "prepare0": {
+      "first": 69,
+      "last": 92,
+      "count": 24,
+      "duration": 0.8
+     },
+     "unprepare0": {
+      "first": 210,
+      "last": 226,
+      "count": 17,
+      "duration": 0.567
+     }
+    },
+    "aaf_count": 8,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     0.0094,
+     -0.0075
+    ],
+    "idle_ref_frame": 159,
+    "foot_xy": [
+     0.0053,
+     -0.053
+    ],
+    "max_stand_drift_m": 0.2287,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.518,
+      "center": [
+       0.0,
+       0.0,
+       1.09
+      ],
+      "ax": 0.5,
+      "ay": 0.967,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       19,
+       22,
+       140,
+       138
+      ],
+      "fig_h": 0.725,
+      "foot": 0.8625,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 3.518,
+      "center": [
+       0.0,
+       0.0,
+       1.09
+      ],
+      "ax": 0.5,
+      "ay": 0.967,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       159,
+       208
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       159,
+       169,
+       179,
+       188,
+       198,
+       208
+      ],
+      "group": "stand",
+      "bbox": [
+       37,
+       23,
+       122,
+       134
+      ],
+      "fig_h": 0.6937,
+      "foot": 0.8375,
+      "cx": 0.4969,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.733,
+      "loop": false,
+      "ortho": 3.518,
+      "center": [
+       0.0,
+       0.0,
+       1.09
+      ],
+      "ax": 0.5,
+      "ay": 0.967,
+      "tool": null,
+      "donor_name": "attack0",
+      "donor_range": [
+       32,
+       53
+      ],
+      "donor_count": 22,
+      "fps": 30,
+      "sampled_frames": [
+       32,
+       34,
+       36,
+       38,
+       40,
+       42,
+       43,
+       45,
+       47,
+       49,
+       51,
+       53
+      ],
+      "group": "stand",
+      "bbox": [
+       14,
+       26,
+       145,
+       151
+      ],
+      "fig_h": 0.7812,
+      "foot": 0.9437,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.1,
+      "loop": false,
+      "ortho": 4.556,
+      "center": [
+       0.0,
+       0.0,
+       1.066
+      ],
+      "ax": 0.5,
+      "ay": 0.8526,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       95,
+       157
+      ],
+      "donor_count": 63,
+      "fps": 30,
+      "sampled_frames": [
+       95,
+       104,
+       113,
+       122,
+       130,
+       139,
+       148,
+       157
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       35,
+       151,
+       150
+      ],
+      "fig_h": 0.7188,
+      "foot": 0.9375,
+      "cx": 0.4969,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 260592,
+      "expected": 260592
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        159,
+        208,
+        1.667
+       ],
+       [
+        "attack0",
+        32,
+        53,
+        0.733
+       ],
+       [
+        "death",
+        95,
+        157,
+        2.1
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.518,
+       [
+        0.0,
+        0.0,
+        1.09
+       ],
+       0.5,
+       0.967
+      ],
+      "death_sig": [
+       4.556,
+       [
+        0.0,
+        0.0,
+        1.066
+       ],
+       0.5,
+       0.8526
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       0.0094,
+       -0.0075
+      ],
+      "idle_ref_frame": 159,
+      "foot_xy": [
+       0.0053,
+       -0.053
+      ],
+      "max_stand_drift_m": 0.2287,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 21.59
+  },
+  "pandur": {
+   "base": "pandur",
+   "donor": {
+    "oss": {
+     "k": 630,
+     "fps": 30,
+     "bones": 21,
+     "verts": 662,
+     "faces": 1003,
+     "uvs": 795
+    },
+    "oss_bytes": 416952,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walk0": {
+      "first": 26,
+      "last": 49,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkprepare0": {
+      "first": 50,
+      "last": 73,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkunprepare0": {
+      "first": 74,
+      "last": 97,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack1": {
+      "first": 99,
+      "last": 124,
+      "count": 26,
+      "duration": 0.867
+     },
+     "idle": {
+      "first": 153,
+      "last": 202,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 204,
+      "last": 254,
+      "count": 51,
+      "duration": 1.7
+     },
+     "idle1": {
+      "first": 256,
+      "last": 305,
+      "count": 50,
+      "duration": 1.667
+     },
+     "prepare0": {
+      "first": 307,
+      "last": 328,
+      "count": 22,
+      "duration": 0.733
+     },
+     "unprepare0": {
+      "first": 329,
+      "last": 350,
+      "count": 22,
+      "duration": 0.733
+     },
+     "prepare1": {
+      "first": 353,
+      "last": 379,
+      "count": 27,
+      "duration": 0.9
+     },
+     "unprepare1": {
+      "first": 380,
+      "last": 405,
+      "count": 26,
+      "duration": 0.867
+     },
+     "trans01": {
+      "first": 408,
+      "last": 418,
+      "count": 11,
+      "duration": 0.367
+     },
+     "trans10": {
+      "first": 419,
+      "last": 430,
+      "count": 12,
+      "duration": 0.4
+     },
+     "death": {
+      "first": 433,
+      "last": 495,
+      "count": 63,
+      "duration": 2.1
+     },
+     "death1": {
+      "first": 498,
+      "last": 557,
+      "count": 60,
+      "duration": 2.0
+     },
+     "death0": {
+      "first": 564,
+      "last": 628,
+      "count": 65,
+      "duration": 2.167
+     }
+    },
+    "aaf_count": 17,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     0.0094,
+     -0.0075
+    ],
+    "idle_ref_frame": 153,
+    "foot_xy": [
+     0.0054,
+     -0.0565
+    ],
+    "max_stand_drift_m": 0.1276,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.128,
+      "center": [
+       0.0,
+       0.0,
+       1.036
+      ],
+      "ax": 0.5,
+      "ay": 0.9991,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       43,
+       20,
+       116,
+       140
+      ],
+      "fig_h": 0.75,
+      "foot": 0.875,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 3.128,
+      "center": [
+       0.0,
+       0.0,
+       1.036
+      ],
+      "ax": 0.5,
+      "ay": 0.9991,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       153,
+       202
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       153,
+       163,
+       173,
+       182,
+       192,
+       202
+      ],
+      "group": "stand",
+      "bbox": [
+       46,
+       21,
+       114,
+       136
+      ],
+      "fig_h": 0.7188,
+      "foot": 0.85,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.867,
+      "loop": false,
+      "ortho": 3.128,
+      "center": [
+       0.0,
+       0.0,
+       1.036
+      ],
+      "ax": 0.5,
+      "ay": 0.9991,
+      "tool": null,
+      "donor_name": "attack1",
+      "donor_range": [
+       99,
+       124
+      ],
+      "donor_count": 26,
+      "fps": 30,
+      "sampled_frames": [
+       99,
+       101,
+       104,
+       106,
+       108,
+       110,
+       113,
+       115,
+       117,
+       119,
+       122,
+       124
+      ],
+      "group": "stand",
+      "bbox": [
+       8,
+       20,
+       152,
+       140
+      ],
+      "fig_h": 0.75,
+      "foot": 0.875,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.1,
+      "loop": false,
+      "ortho": 4.523,
+      "center": [
+       0.0,
+       0.0,
+       1.019
+      ],
+      "ax": 0.5,
+      "ay": 0.8398,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       433,
+       495
+      ],
+      "donor_count": 63,
+      "fps": 30,
+      "sampled_frames": [
+       433,
+       442,
+       451,
+       460,
+       468,
+       477,
+       486,
+       495
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       39,
+       152,
+       149
+      ],
+      "fig_h": 0.6875,
+      "foot": 0.9313,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 416952,
+      "expected": 416952
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        153,
+        202,
+        1.667
+       ],
+       [
+        "attack1",
+        99,
+        124,
+        0.867
+       ],
+       [
+        "death",
+        433,
+        495,
+        2.1
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.128,
+       [
+        0.0,
+        0.0,
+        1.036
+       ],
+       0.5,
+       0.9991
+      ],
+      "death_sig": [
+       4.523,
+       [
+        0.0,
+        0.0,
+        1.019
+       ],
+       0.5,
+       0.8398
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       0.0094,
+       -0.0075
+      ],
+      "idle_ref_frame": 153,
+      "foot_xy": [
+       0.0054,
+       -0.0565
+      ],
+      "max_stand_drift_m": 0.1276,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 26.79
+  },
+  "chasseur": {
+   "base": "chasseur",
+   "donor": {
+    "oss": {
+     "k": 630,
+     "fps": 30,
+     "bones": 19,
+     "verts": 677,
+     "faces": 934,
+     "uvs": 903
+    },
+    "oss_bytes": 381120,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walk0": {
+      "first": 26,
+      "last": 49,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkprepare0": {
+      "first": 50,
+      "last": 73,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkunprepare0": {
+      "first": 74,
+      "last": 97,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack1": {
+      "first": 99,
+      "last": 121,
+      "count": 23,
+      "duration": 0.767
+     },
+     "idle": {
+      "first": 153,
+      "last": 202,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 204,
+      "last": 254,
+      "count": 51,
+      "duration": 1.7
+     },
+     "idle1": {
+      "first": 256,
+      "last": 305,
+      "count": 50,
+      "duration": 1.667
+     },
+     "prepare0": {
+      "first": 307,
+      "last": 329,
+      "count": 23,
+      "duration": 0.767
+     },
+     "unprepare0": {
+      "first": 329,
+      "last": 351,
+      "count": 23,
+      "duration": 0.767
+     },
+     "prepare1": {
+      "first": 353,
+      "last": 379,
+      "count": 27,
+      "duration": 0.9
+     },
+     "unprepare1": {
+      "first": 380,
+      "last": 406,
+      "count": 27,
+      "duration": 0.9
+     },
+     "trans01": {
+      "first": 408,
+      "last": 420,
+      "count": 13,
+      "duration": 0.433
+     },
+     "trans10": {
+      "first": 420,
+      "last": 431,
+      "count": 12,
+      "duration": 0.4
+     },
+     "death": {
+      "first": 433,
+      "last": 495,
+      "count": 63,
+      "duration": 2.1
+     },
+     "death1": {
+      "first": 498,
+      "last": 562,
+      "count": 65,
+      "duration": 2.167
+     },
+     "death0": {
+      "first": 564,
+      "last": 628,
+      "count": 65,
+      "duration": 2.167
+     }
+    },
+    "aaf_count": 17,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     0.0094,
+     -0.0075
+    ],
+    "idle_ref_frame": 153,
+    "foot_xy": [
+     0.0076,
+     -0.0643
+    ],
+    "max_stand_drift_m": 0.0728,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.561,
+      "center": [
+       0.0,
+       0.0,
+       1.098
+      ],
+      "ax": 0.5,
+      "ay": 0.9649,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       47,
+       22,
+       113,
+       135
+      ],
+      "fig_h": 0.7063,
+      "foot": 0.8438,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 3.561,
+      "center": [
+       0.0,
+       0.0,
+       1.098
+      ],
+      "ax": 0.5,
+      "ay": 0.9649,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       153,
+       202
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       153,
+       163,
+       173,
+       182,
+       192,
+       202
+      ],
+      "group": "stand",
+      "bbox": [
+       50,
+       22,
+       110,
+       132
+      ],
+      "fig_h": 0.6875,
+      "foot": 0.825,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.767,
+      "loop": false,
+      "ortho": 3.561,
+      "center": [
+       0.0,
+       0.0,
+       1.098
+      ],
+      "ax": 0.5,
+      "ay": 0.9649,
+      "tool": null,
+      "donor_name": "attack1",
+      "donor_range": [
+       99,
+       121
+      ],
+      "donor_count": 23,
+      "fps": 30,
+      "sampled_frames": [
+       99,
+       101,
+       103,
+       105,
+       107,
+       109,
+       111,
+       113,
+       115,
+       117,
+       119,
+       121
+      ],
+      "group": "stand",
+      "bbox": [
+       8,
+       24,
+       152,
+       135
+      ],
+      "fig_h": 0.6937,
+      "foot": 0.8438,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 95,
+      "distinct_frac": 0.9896,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.1,
+      "loop": false,
+      "ortho": 4.679,
+      "center": [
+       0.0,
+       0.0,
+       0.878
+      ],
+      "ax": 0.5,
+      "ay": 0.783,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       433,
+       495
+      ],
+      "donor_count": 63,
+      "fps": 30,
+      "sampled_frames": [
+       433,
+       442,
+       451,
+       460,
+       468,
+       477,
+       486,
+       495
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       30,
+       151,
+       144
+      ],
+      "fig_h": 0.7125,
+      "foot": 0.9,
+      "cx": 0.4969,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 381120,
+      "expected": 381120
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        153,
+        202,
+        1.667
+       ],
+       [
+        "attack1",
+        99,
+        121,
+        0.767
+       ],
+       [
+        "death",
+        433,
+        495,
+        2.1
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.561,
+       [
+        0.0,
+        0.0,
+        1.098
+       ],
+       0.5,
+       0.9649
+      ],
+      "death_sig": [
+       4.679,
+       [
+        0.0,
+        0.0,
+        0.878
+       ],
+       0.5,
+       0.783
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       0.0094,
+       -0.0075
+      ],
+      "idle_ref_frame": 153,
+      "foot_xy": [
+       0.0076,
+       -0.0643
+      ],
+      "max_stand_drift_m": 0.0728,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 23.98
+  },
+  "highlander": {
+   "base": "highlander",
+   "donor": {
+    "oss": {
+     "k": 633,
+     "fps": 30,
+     "bones": 22,
+     "verts": 704,
+     "faces": 999,
+     "uvs": 855
+    },
+    "oss_bytes": 437664,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walk0": {
+      "first": 26,
+      "last": 49,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkprepare0": {
+      "first": 50,
+      "last": 73,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkunprepare0": {
+      "first": 74,
+      "last": 97,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack1": {
+      "first": 99,
+      "last": 124,
+      "count": 26,
+      "duration": 0.867
+     },
+     "idle": {
+      "first": 153,
+      "last": 202,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 204,
+      "last": 254,
+      "count": 51,
+      "duration": 1.7
+     },
+     "idle1": {
+      "first": 256,
+      "last": 305,
+      "count": 50,
+      "duration": 1.667
+     },
+     "prepare0": {
+      "first": 307,
+      "last": 328,
+      "count": 22,
+      "duration": 0.733
+     },
+     "unprepare0": {
+      "first": 329,
+      "last": 350,
+      "count": 22,
+      "duration": 0.733
+     },
+     "prepare1": {
+      "first": 353,
+      "last": 379,
+      "count": 27,
+      "duration": 0.9
+     },
+     "unprepare1": {
+      "first": 380,
+      "last": 405,
+      "count": 26,
+      "duration": 0.867
+     },
+     "trans01": {
+      "first": 408,
+      "last": 418,
+      "count": 11,
+      "duration": 0.367
+     },
+     "trans10": {
+      "first": 419,
+      "last": 430,
+      "count": 12,
+      "duration": 0.4
+     },
+     "death": {
+      "first": 433,
+      "last": 495,
+      "count": 63,
+      "duration": 2.1
+     },
+     "death1": {
+      "first": 498,
+      "last": 561,
+      "count": 64,
+      "duration": 2.133
+     },
+     "death0": {
+      "first": 564,
+      "last": 631,
+      "count": 68,
+      "duration": 2.267
+     }
+    },
+    "aaf_count": 17,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     0.0095,
+     -0.0075
+    ],
+    "idle_ref_frame": 153,
+    "foot_xy": [
+     0.0044,
+     -0.0323
+    ],
+    "max_stand_drift_m": 0.1018,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.194,
+      "center": [
+       0.0,
+       0.0,
+       1.09
+      ],
+      "ax": 0.5,
+      "ay": 1.0145,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       45,
+       17,
+       115,
+       141
+      ],
+      "fig_h": 0.775,
+      "foot": 0.8812,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 3.194,
+      "center": [
+       0.0,
+       0.0,
+       1.09
+      ],
+      "ax": 0.5,
+      "ay": 1.0145,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       153,
+       202
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       153,
+       163,
+       173,
+       182,
+       192,
+       202
+      ],
+      "group": "stand",
+      "bbox": [
+       49,
+       20,
+       111,
+       137
+      ],
+      "fig_h": 0.7312,
+      "foot": 0.8562,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.867,
+      "loop": false,
+      "ortho": 3.194,
+      "center": [
+       0.0,
+       0.0,
+       1.09
+      ],
+      "ax": 0.5,
+      "ay": 1.0145,
+      "tool": null,
+      "donor_name": "attack1",
+      "donor_range": [
+       99,
+       124
+      ],
+      "donor_count": 26,
+      "fps": 30,
+      "sampled_frames": [
+       99,
+       101,
+       104,
+       106,
+       108,
+       110,
+       113,
+       115,
+       117,
+       119,
+       122,
+       124
+      ],
+      "group": "stand",
+      "bbox": [
+       8,
+       23,
+       152,
+       141
+      ],
+      "fig_h": 0.7375,
+      "foot": 0.8812,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 92,
+      "distinct_frac": 0.9583,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.1,
+      "loop": false,
+      "ortho": 4.397,
+      "center": [
+       0.0,
+       0.0,
+       0.846
+      ],
+      "ax": 0.5,
+      "ay": 0.7901,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       433,
+       495
+      ],
+      "donor_count": 63,
+      "fps": 30,
+      "sampled_frames": [
+       433,
+       442,
+       451,
+       460,
+       468,
+       477,
+       486,
+       495
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       29,
+       152,
+       145
+      ],
+      "fig_h": 0.725,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 437664,
+      "expected": 437664
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        153,
+        202,
+        1.667
+       ],
+       [
+        "attack1",
+        99,
+        124,
+        0.867
+       ],
+       [
+        "death",
+        433,
+        495,
+        2.1
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.194,
+       [
+        0.0,
+        0.0,
+        1.09
+       ],
+       0.5,
+       1.0145
+      ],
+      "death_sig": [
+       4.397,
+       [
+        0.0,
+        0.0,
+        0.846
+       ],
+       0.5,
+       0.7901
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       0.0095,
+       -0.0075
+      ],
+      "idle_ref_frame": 153,
+      "foot_xy": [
+       0.0044,
+       -0.0323
+      ],
+      "max_stand_drift_m": 0.1018,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 23.91
+  },
+  "jannisary": {
+   "base": "jannisary",
+   "donor": {
+    "oss": {
+     "k": 633,
+     "fps": 30,
+     "bones": 20,
+     "verts": 777,
+     "faces": 1050,
+     "uvs": 1010
+    },
+    "oss_bytes": 406432,
+    "aaf": {
+     "walk": {
+      "first": 1,
+      "last": 24,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walk0": {
+      "first": 26,
+      "last": 49,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkprepare0": {
+      "first": 50,
+      "last": 73,
+      "count": 24,
+      "duration": 0.8
+     },
+     "walkunprepare0": {
+      "first": 74,
+      "last": 97,
+      "count": 24,
+      "duration": 0.8
+     },
+     "attack1": {
+      "first": 99,
+      "last": 124,
+      "count": 26,
+      "duration": 0.867
+     },
+     "idle": {
+      "first": 153,
+      "last": 202,
+      "count": 50,
+      "duration": 1.667
+     },
+     "idle0": {
+      "first": 204,
+      "last": 254,
+      "count": 51,
+      "duration": 1.7
+     },
+     "idle1": {
+      "first": 256,
+      "last": 305,
+      "count": 50,
+      "duration": 1.667
+     },
+     "prepare0": {
+      "first": 307,
+      "last": 328,
+      "count": 22,
+      "duration": 0.733
+     },
+     "unprepare0": {
+      "first": 329,
+      "last": 350,
+      "count": 22,
+      "duration": 0.733
+     },
+     "prepare1": {
+      "first": 353,
+      "last": 379,
+      "count": 27,
+      "duration": 0.9
+     },
+     "unprepare1": {
+      "first": 380,
+      "last": 405,
+      "count": 26,
+      "duration": 0.867
+     },
+     "trans01": {
+      "first": 408,
+      "last": 418,
+      "count": 11,
+      "duration": 0.367
+     },
+     "trans10": {
+      "first": 419,
+      "last": 430,
+      "count": 12,
+      "duration": 0.4
+     },
+     "death": {
+      "first": 433,
+      "last": 495,
+      "count": 63,
+      "duration": 2.1
+     },
+     "death1": {
+      "first": 498,
+      "last": 561,
+      "count": 64,
+      "duration": 2.133
+     },
+     "death0": {
+      "first": 564,
+      "last": 631,
+      "count": 68,
+      "duration": 2.267
+     }
+    },
+    "aaf_count": 17,
+    "attach": []
+   },
+   "foot_pin": {
+    "home": [
+     0.0094,
+     -0.0075
+    ],
+    "idle_ref_frame": 153,
+    "foot_xy": [
+     0.007,
+     -0.0707
+    ],
+    "max_stand_drift_m": 0.0905,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 3.744,
+      "center": [
+       0.0,
+       0.0,
+       1.147
+      ],
+      "ax": 0.5,
+      "ay": 0.9618,
+      "tool": null,
+      "donor_name": "walk",
+      "donor_range": [
+       1,
+       24
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       1,
+       3,
+       5,
+       7,
+       9,
+       11,
+       14,
+       16,
+       18,
+       20,
+       22,
+       24
+      ],
+      "group": "stand",
+      "bbox": [
+       48,
+       22,
+       111,
+       134
+      ],
+      "fig_h": 0.7,
+      "foot": 0.8375,
+      "cx": 0.4969,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 1.667,
+      "loop": true,
+      "ortho": 3.744,
+      "center": [
+       0.0,
+       0.0,
+       1.147
+      ],
+      "ax": 0.5,
+      "ay": 0.9618,
+      "tool": null,
+      "donor_name": "idle",
+      "donor_range": [
+       153,
+       202
+      ],
+      "donor_count": 50,
+      "fps": 30,
+      "sampled_frames": [
+       153,
+       163,
+       173,
+       182,
+       192,
+       202
+      ],
+      "group": "stand",
+      "bbox": [
+       50,
+       23,
+       110,
+       131
+      ],
+      "fig_h": 0.675,
+      "foot": 0.8187,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.867,
+      "loop": false,
+      "ortho": 3.744,
+      "center": [
+       0.0,
+       0.0,
+       1.147
+      ],
+      "ax": 0.5,
+      "ay": 0.9618,
+      "tool": null,
+      "donor_name": "attack1",
+      "donor_range": [
+       99,
+       124
+      ],
+      "donor_count": 26,
+      "fps": 30,
+      "sampled_frames": [
+       99,
+       101,
+       104,
+       106,
+       108,
+       110,
+       113,
+       115,
+       117,
+       119,
+       122,
+       124
+      ],
+      "group": "stand",
+      "bbox": [
+       8,
+       25,
+       152,
+       134
+      ],
+      "fig_h": 0.6813,
+      "foot": 0.8375,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 81,
+      "distinct_frac": 0.8438,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.1,
+      "loop": false,
+      "ortho": 5.085,
+      "center": [
+       0.0,
+       0.0,
+       1.088
+      ],
+      "ax": 0.5,
+      "ay": 0.8225,
+      "tool": null,
+      "donor_name": "death",
+      "donor_range": [
+       433,
+       495
+      ],
+      "donor_count": 63,
+      "fps": 30,
+      "sampled_frames": [
+       433,
+       442,
+       451,
+       460,
+       468,
+       477,
+       486,
+       495
+      ],
+      "group": "death",
+      "bbox": [
+       8,
+       36,
+       151,
+       148
+      ],
+      "fig_h": 0.7,
+      "foot": 0.925,
+      "cx": 0.4969,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true,
+      "dir_uniq_per_row": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ],
+      "dirs_ok": true
+     }
+    }
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 406432,
+      "expected": 406432
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        1,
+        24,
+        0.8
+       ],
+       [
+        "idle",
+        153,
+        202,
+        1.667
+       ],
+       [
+        "attack1",
+        99,
+        124,
+        0.867
+       ],
+       [
+        "death",
+        433,
+        495,
+        2.1
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "stand_sig": [
+       3.744,
+       [
+        0.0,
+        0.0,
+        1.147
+       ],
+       0.5,
+       0.9618
+      ],
+      "death_sig": [
+       5.085,
+       [
+        0.0,
+        0.0,
+        1.088
+       ],
+       0.5,
+       0.8225
+      ]
+     },
+     "foot_pin_de_travel": {
+      "home": [
+       0.0094,
+       -0.0075
+      ],
+      "idle_ref_frame": 153,
+      "foot_xy": [
+       0.007,
+       -0.0707
+      ],
+      "max_stand_drift_m": 0.0905,
+      "band": 0.5,
+      "ok": true
+     },
+     "attach_props": {
+      "ok": true,
+      "expected": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "observed": [
+       null,
+       null,
+       null,
+       null
+      ],
+      "donor_attach": []
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 28.07
+  }
+ }
+}

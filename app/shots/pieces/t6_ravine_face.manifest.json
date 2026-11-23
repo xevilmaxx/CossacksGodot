@@ -1,0 +1,36 @@
+{
+  "generator": "t6_ravine_face.py",
+  "module_version": "T6T05-R3-ORGULLY-20261123",
+  "source_sha256": "bb2cc4bfc57b3b47633dfe3ffb97e88cc210e0943b5673744b56b0d5bc3be7e1",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "native_px": 1024,
+  "geometry": "winding gully, two irregular walls, dark recess; no polyline",
+  "gully_amplitude": 0.1,
+  "floor_half_width": 0.018,
+  "wall_width": 0.06,
+  "flute_gain": 0.75,
+  "grass_ao_collar": 0.22,
+  "contact_ao": 0.12,
+  "vertical_grade": 0.1,
+  "palette": {
+    "lit": "#6C614B",
+    "mid": "#4B4430",
+    "shadow": "#393424",
+    "pale_flute": "#8B7D67"
+  },
+  "art": {
+    "grass": "grass1.png",
+    "fill": "rock8.png",
+    "flutes": "rock1.png"
+  },
+  "sha256": "7ca7ae7027170daf8945de8609fb6190608ef601c729a107f966c2bfd1b21de8",
+  "outputs": {
+    "piece": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\pieces\\t6_ravine_face.png",
+    "compare": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\pieces\\t6_ravine_face_compare.png",
+    "facecrop": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\pieces\\t6_ravine_face_facecrop.png"
+  }
+}

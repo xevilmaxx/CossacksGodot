@@ -1,0 +1,2954 @@
+{
+ "peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     61,
+     56,
+     98,
+     115
+    ],
+    "fig_h": 0.3688,
+    "foot": 0.7188,
+    "cx": 0.4969
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": null,
+    "bbox": [
+     67,
+     56,
+     93,
+     112
+    ],
+    "fig_h": 0.35,
+    "foot": 0.7,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "axe",
+    "bbox": [
+     31,
+     46,
+     129,
+     119
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "axe",
+    "bbox": [
+     31,
+     45,
+     129,
+     119
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "hoe",
+    "bbox": [
+     32,
+     50,
+     128,
+     126
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "pick",
+    "bbox": [
+     8,
+     37,
+     151,
+     142
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.8875,
+    "cx": 0.4969
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "hammer",
+    "bbox": [
+     57,
+     45,
+     103,
+     113
+    ],
+    "fig_h": 0.425,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "lumber",
+    "bbox": [
+     61,
+     54,
+     98,
+     114
+    ],
+    "fig_h": 0.375,
+    "foot": 0.7125,
+    "cx": 0.4969
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "bag",
+    "bbox": [
+     54,
+     52,
+     106,
+     117
+    ],
+    "fig_h": 0.4062,
+    "foot": 0.7312,
+    "cx": 0.5
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "cart",
+    "bbox": [
+     41,
+     55,
+     118,
+     125
+    ],
+    "fig_h": 0.4375,
+    "foot": 0.7812,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "lumber",
+    "bbox": [
+     62,
+     55,
+     97,
+     112
+    ],
+    "fig_h": 0.3563,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "bag",
+    "bbox": [
+     62,
+     56,
+     97,
+     112
+    ],
+    "fig_h": 0.35,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "cart",
+    "bbox": [
+     40,
+     56,
+     120,
+     125
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7812,
+    "cx": 0.5
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.462,
+    "center": [
+     0.0,
+     0.0,
+     0.911
+    ],
+    "ax": 0.5,
+    "ay": 0.8079,
+    "tool": null,
+    "bbox": [
+     8,
+     41,
+     152,
+     146
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.9125,
+    "cx": 0.5
+   }
+  }
+ },
+ "ukr_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     61,
+     56,
+     98,
+     115
+    ],
+    "fig_h": 0.3688,
+    "foot": 0.7188,
+    "cx": 0.4969
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": null,
+    "bbox": [
+     67,
+     56,
+     93,
+     112
+    ],
+    "fig_h": 0.35,
+    "foot": 0.7,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "axe",
+    "bbox": [
+     31,
+     46,
+     129,
+     119
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "axe",
+    "bbox": [
+     31,
+     45,
+     129,
+     119
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "hoe",
+    "bbox": [
+     32,
+     50,
+     128,
+     126
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "pick",
+    "bbox": [
+     8,
+     37,
+     151,
+     142
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.8875,
+    "cx": 0.4969
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "hammer",
+    "bbox": [
+     57,
+     45,
+     103,
+     113
+    ],
+    "fig_h": 0.425,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "lumber",
+    "bbox": [
+     61,
+     54,
+     98,
+     114
+    ],
+    "fig_h": 0.375,
+    "foot": 0.7125,
+    "cx": 0.4969
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "bag",
+    "bbox": [
+     54,
+     52,
+     106,
+     117
+    ],
+    "fig_h": 0.4062,
+    "foot": 0.7312,
+    "cx": 0.5
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "cart",
+    "bbox": [
+     41,
+     55,
+     118,
+     125
+    ],
+    "fig_h": 0.4375,
+    "foot": 0.7812,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "lumber",
+    "bbox": [
+     62,
+     55,
+     97,
+     112
+    ],
+    "fig_h": 0.3563,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "bag",
+    "bbox": [
+     62,
+     56,
+     97,
+     112
+    ],
+    "fig_h": 0.35,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.101
+    ],
+    "ax": 0.5,
+    "ay": 0.8037,
+    "tool": "cart",
+    "bbox": [
+     40,
+     56,
+     120,
+     125
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7812,
+    "cx": 0.5
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.462,
+    "center": [
+     0.0,
+     0.0,
+     0.911
+    ],
+    "ax": 0.5,
+    "ay": 0.8079,
+    "tool": null,
+    "bbox": [
+     8,
+     41,
+     152,
+     146
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.9125,
+    "cx": 0.5
+   }
+  }
+ },
+ "rus_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     59,
+     53,
+     101,
+     114
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.7125,
+    "cx": 0.5
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": null,
+    "bbox": [
+     67,
+     54,
+     93,
+     112
+    ],
+    "fig_h": 0.3625,
+    "foot": 0.7,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "axe",
+    "bbox": [
+     31,
+     45,
+     128,
+     119
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7438,
+    "cx": 0.4969
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "axe",
+    "bbox": [
+     31,
+     45,
+     128,
+     119
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7438,
+    "cx": 0.4969
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "hoe",
+    "bbox": [
+     32,
+     47,
+     128,
+     125
+    ],
+    "fig_h": 0.4875,
+    "foot": 0.7812,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "pick",
+    "bbox": [
+     8,
+     37,
+     151,
+     142
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.8875,
+    "cx": 0.4969
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "hammer",
+    "bbox": [
+     57,
+     45,
+     103,
+     114
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7125,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "lumber",
+    "bbox": [
+     60,
+     51,
+     100,
+     115
+    ],
+    "fig_h": 0.4,
+    "foot": 0.7188,
+    "cx": 0.5
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "bag",
+    "bbox": [
+     52,
+     50,
+     108,
+     118
+    ],
+    "fig_h": 0.425,
+    "foot": 0.7375,
+    "cx": 0.5
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "cart",
+    "bbox": [
+     41,
+     52,
+     118,
+     124
+    ],
+    "fig_h": 0.45,
+    "foot": 0.775,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "lumber",
+    "bbox": [
+     63,
+     52,
+     97,
+     113
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "bag",
+    "bbox": [
+     61,
+     53,
+     98,
+     112
+    ],
+    "fig_h": 0.3688,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.633,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.08
+    ],
+    "ax": 0.5,
+    "ay": 0.7978,
+    "tool": "cart",
+    "bbox": [
+     40,
+     54,
+     120,
+     125
+    ],
+    "fig_h": 0.4437,
+    "foot": 0.7812,
+    "cx": 0.5
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.644,
+    "center": [
+     0.0,
+     0.0,
+     0.954
+    ],
+    "ax": 0.5,
+    "ay": 0.8097,
+    "tool": null,
+    "bbox": [
+     8,
+     41,
+     151,
+     145
+    ],
+    "fig_h": 0.65,
+    "foot": 0.9062,
+    "cx": 0.4969
+   }
+  }
+ },
+ "pol_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     60,
+     56,
+     99,
+     114
+    ],
+    "fig_h": 0.3625,
+    "foot": 0.7125,
+    "cx": 0.4969
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": null,
+    "bbox": [
+     66,
+     57,
+     93,
+     112
+    ],
+    "fig_h": 0.3438,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "axe",
+    "bbox": [
+     31,
+     46,
+     129,
+     119
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "axe",
+    "bbox": [
+     31,
+     45,
+     129,
+     119
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "hoe",
+    "bbox": [
+     32,
+     50,
+     128,
+     126
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "pick",
+    "bbox": [
+     8,
+     37,
+     151,
+     142
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.8875,
+    "cx": 0.4969
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "hammer",
+    "bbox": [
+     57,
+     45,
+     103,
+     114
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7125,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "lumber",
+    "bbox": [
+     61,
+     55,
+     98,
+     115
+    ],
+    "fig_h": 0.375,
+    "foot": 0.7188,
+    "cx": 0.4969
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "bag",
+    "bbox": [
+     54,
+     53,
+     106,
+     118
+    ],
+    "fig_h": 0.4062,
+    "foot": 0.7375,
+    "cx": 0.5
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "cart",
+    "bbox": [
+     41,
+     56,
+     118,
+     125
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7812,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "lumber",
+    "bbox": [
+     63,
+     55,
+     96,
+     113
+    ],
+    "fig_h": 0.3625,
+    "foot": 0.7063,
+    "cx": 0.4969
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "bag",
+    "bbox": [
+     63,
+     56,
+     97,
+     112
+    ],
+    "fig_h": 0.35,
+    "foot": 0.7,
+    "cx": 0.5
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.102
+    ],
+    "ax": 0.5,
+    "ay": 0.804,
+    "tool": "cart",
+    "bbox": [
+     39,
+     57,
+     120,
+     126
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7875,
+    "cx": 0.4969
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.403,
+    "center": [
+     0.0,
+     0.0,
+     0.872
+    ],
+    "ax": 0.5,
+    "ay": 0.7986,
+    "tool": null,
+    "bbox": [
+     8,
+     41,
+     152,
+     146
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.9125,
+    "cx": 0.5
+   }
+  }
+ },
+ "aus_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     59,
+     51,
+     101,
+     116
+    ],
+    "fig_h": 0.4062,
+    "foot": 0.725,
+    "cx": 0.5
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": null,
+    "bbox": [
+     66,
+     52,
+     94,
+     113
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "axe",
+    "bbox": [
+     30,
+     45,
+     129,
+     121
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "axe",
+    "bbox": [
+     30,
+     45,
+     129,
+     121
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "hoe",
+    "bbox": [
+     33,
+     52,
+     127,
+     131
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "pick",
+    "bbox": [
+     8,
+     32,
+     152,
+     142
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.8875,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "hammer",
+    "bbox": [
+     58,
+     56,
+     102,
+     118
+    ],
+    "fig_h": 0.3875,
+    "foot": 0.7375,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "lumber",
+    "bbox": [
+     56,
+     55,
+     104,
+     116
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.725,
+    "cx": 0.5
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "bag",
+    "bbox": [
+     47,
+     55,
+     113,
+     119
+    ],
+    "fig_h": 0.4,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "cart",
+    "bbox": [
+     26,
+     54,
+     133,
+     134
+    ],
+    "fig_h": 0.5,
+    "foot": 0.8375,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "lumber",
+    "bbox": [
+     54,
+     56,
+     105,
+     114
+    ],
+    "fig_h": 0.3625,
+    "foot": 0.7125,
+    "cx": 0.4969
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "bag",
+    "bbox": [
+     56,
+     56,
+     104,
+     113
+    ],
+    "fig_h": 0.3563,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "cart",
+    "bbox": [
+     39,
+     52,
+     120,
+     127
+    ],
+    "fig_h": 0.4688,
+    "foot": 0.7937,
+    "cx": 0.4969
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.654,
+    "center": [
+     0.0,
+     0.0,
+     0.978
+    ],
+    "ax": 0.5,
+    "ay": 0.8168,
+    "tool": null,
+    "bbox": [
+     8,
+     43,
+     151,
+     150
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.9375,
+    "cx": 0.4969
+   }
+  }
+ },
+ "eng_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     55,
+     45,
+     105,
+     124
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.775,
+    "cx": 0.5
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": null,
+    "bbox": [
+     62,
+     46,
+     97,
+     121
+    ],
+    "fig_h": 0.4688,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "axe",
+    "bbox": [
+     20,
+     39,
+     140,
+     131
+    ],
+    "fig_h": 0.575,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "axe",
+    "bbox": [
+     20,
+     39,
+     140,
+     131
+    ],
+    "fig_h": 0.575,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "hoe",
+    "bbox": [
+     22,
+     42,
+     138,
+     142
+    ],
+    "fig_h": 0.625,
+    "foot": 0.8875,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "pick",
+    "bbox": [
+     8,
+     25,
+     152,
+     148
+    ],
+    "fig_h": 0.7688,
+    "foot": 0.925,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "hammer",
+    "bbox": [
+     53,
+     52,
+     107,
+     126
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7875,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "lumber",
+    "bbox": [
+     50,
+     48,
+     109,
+     125
+    ],
+    "fig_h": 0.4813,
+    "foot": 0.7812,
+    "cx": 0.4969
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "bag",
+    "bbox": [
+     39,
+     47,
+     119,
+     128
+    ],
+    "fig_h": 0.5062,
+    "foot": 0.8,
+    "cx": 0.4938
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "cart",
+    "bbox": [
+     15,
+     47,
+     144,
+     146
+    ],
+    "fig_h": 0.6188,
+    "foot": 0.9125,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "lumber",
+    "bbox": [
+     49,
+     48,
+     111,
+     122
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7625,
+    "cx": 0.5
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "bag",
+    "bbox": [
+     50,
+     48,
+     109,
+     121
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 4.439,
+    "center": [
+     0.0,
+     0.0,
+     1.147
+    ],
+    "ax": 0.5,
+    "ay": 0.8895,
+    "tool": "cart",
+    "bbox": [
+     30,
+     45,
+     129,
+     138
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.8625,
+    "cx": 0.4969
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.714,
+    "center": [
+     0.0,
+     0.0,
+     0.968
+    ],
+    "ax": 0.5,
+    "ay": 0.8095,
+    "tool": null,
+    "bbox": [
+     8,
+     42,
+     151,
+     149
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.9313,
+    "cx": 0.4969
+   }
+  }
+ },
+ "spa_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     58,
+     55,
+     101,
+     116
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.725,
+    "cx": 0.4969
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": null,
+    "bbox": [
+     66,
+     56,
+     94,
+     113
+    ],
+    "fig_h": 0.3563,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "axe",
+    "bbox": [
+     30,
+     45,
+     129,
+     121
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "axe",
+    "bbox": [
+     30,
+     45,
+     129,
+     121
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "hoe",
+    "bbox": [
+     27,
+     52,
+     133,
+     131
+    ],
+    "fig_h": 0.4938,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "pick",
+    "bbox": [
+     8,
+     32,
+     152,
+     142
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.8875,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "hammer",
+    "bbox": [
+     58,
+     56,
+     102,
+     117
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.7312,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "lumber",
+    "bbox": [
+     58,
+     55,
+     102,
+     116
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.725,
+    "cx": 0.5
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "bag",
+    "bbox": [
+     49,
+     56,
+     110,
+     119
+    ],
+    "fig_h": 0.3937,
+    "foot": 0.7438,
+    "cx": 0.4969
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "cart",
+    "bbox": [
+     26,
+     56,
+     133,
+     134
+    ],
+    "fig_h": 0.4875,
+    "foot": 0.8375,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "lumber",
+    "bbox": [
+     57,
+     56,
+     102,
+     114
+    ],
+    "fig_h": 0.3625,
+    "foot": 0.7125,
+    "cx": 0.4969
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "bag",
+    "bbox": [
+     58,
+     57,
+     102,
+     113
+    ],
+    "fig_h": 0.35,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "cart",
+    "bbox": [
+     39,
+     56,
+     120,
+     127
+    ],
+    "fig_h": 0.4437,
+    "foot": 0.7937,
+    "cx": 0.4969
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.479,
+    "center": [
+     0.0,
+     0.0,
+     0.913
+    ],
+    "ax": 0.5,
+    "ay": 0.8072,
+    "tool": null,
+    "bbox": [
+     8,
+     43,
+     151,
+     145
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.9062,
+    "cx": 0.4969
+   }
+  }
+ },
+ "tur_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     60,
+     55,
+     99,
+     114
+    ],
+    "fig_h": 0.3688,
+    "foot": 0.7125,
+    "cx": 0.4969
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": null,
+    "bbox": [
+     66,
+     57,
+     93,
+     112
+    ],
+    "fig_h": 0.3438,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "axe",
+    "bbox": [
+     31,
+     46,
+     129,
+     119
+    ],
+    "fig_h": 0.4562,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "axe",
+    "bbox": [
+     31,
+     45,
+     129,
+     119
+    ],
+    "fig_h": 0.4625,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "hoe",
+    "bbox": [
+     30,
+     48,
+     130,
+     131
+    ],
+    "fig_h": 0.5188,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "pick",
+    "bbox": [
+     8,
+     38,
+     151,
+     142
+    ],
+    "fig_h": 0.65,
+    "foot": 0.8875,
+    "cx": 0.4969
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "hammer",
+    "bbox": [
+     57,
+     45,
+     103,
+     113
+    ],
+    "fig_h": 0.425,
+    "foot": 0.7063,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "lumber",
+    "bbox": [
+     61,
+     54,
+     98,
+     114
+    ],
+    "fig_h": 0.375,
+    "foot": 0.7125,
+    "cx": 0.4969
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "bag",
+    "bbox": [
+     54,
+     52,
+     105,
+     118
+    ],
+    "fig_h": 0.4125,
+    "foot": 0.7375,
+    "cx": 0.4969
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "cart",
+    "bbox": [
+     41,
+     56,
+     118,
+     125
+    ],
+    "fig_h": 0.4313,
+    "foot": 0.7812,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "lumber",
+    "bbox": [
+     62,
+     55,
+     97,
+     112
+    ],
+    "fig_h": 0.3563,
+    "foot": 0.7,
+    "cx": 0.4969
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "bag",
+    "bbox": [
+     62,
+     56,
+     98,
+     112
+    ],
+    "fig_h": 0.35,
+    "foot": 0.7,
+    "cx": 0.5
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.465,
+    "center": [
+     0.0,
+     0.0,
+     1.105
+    ],
+    "ax": 0.5,
+    "ay": 0.8048,
+    "tool": "cart",
+    "bbox": [
+     38,
+     55,
+     121,
+     126
+    ],
+    "fig_h": 0.4437,
+    "foot": 0.7875,
+    "cx": 0.4969
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.455,
+    "center": [
+     0.0,
+     0.0,
+     0.921
+    ],
+    "ax": 0.5,
+    "ay": 0.8116,
+    "tool": null,
+    "bbox": [
+     8,
+     42,
+     151,
+     147
+    ],
+    "fig_h": 0.6562,
+    "foot": 0.9187,
+    "cx": 0.4969
+   }
+  }
+ },
+ "sco_peasant": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 1.08,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": null,
+    "donor_duration": 0.667,
+    "bbox": [
+     59,
+     55,
+     100,
+     116
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.725,
+    "cx": 0.4969
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": null,
+    "bbox": [
+     65,
+     56,
+     94,
+     113
+    ],
+    "fig_h": 0.3563,
+    "foot": 0.7063,
+    "cx": 0.4969
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "axe",
+    "bbox": [
+     30,
+     45,
+     129,
+     121
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "workwood": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "axe",
+    "bbox": [
+     30,
+     45,
+     129,
+     121
+    ],
+    "fig_h": 0.475,
+    "foot": 0.7562,
+    "cx": 0.4969
+   },
+   "workfood": {
+    "frames": 10,
+    "duration": 0.733,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "hoe",
+    "bbox": [
+     33,
+     53,
+     127,
+     131
+    ],
+    "fig_h": 0.4875,
+    "foot": 0.8187,
+    "cx": 0.5
+   },
+   "workstone": {
+    "frames": 10,
+    "duration": 0.6,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "pick",
+    "bbox": [
+     8,
+     32,
+     152,
+     142
+    ],
+    "fig_h": 0.6875,
+    "foot": 0.8875,
+    "cx": 0.5
+   },
+   "construct": {
+    "frames": 8,
+    "duration": 0.433,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "hammer",
+    "bbox": [
+     58,
+     56,
+     102,
+     117
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.7312,
+    "cx": 0.5
+   },
+   "walkwood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "lumber",
+    "bbox": [
+     59,
+     55,
+     101,
+     116
+    ],
+    "fig_h": 0.3812,
+    "foot": 0.725,
+    "cx": 0.5
+   },
+   "walkfood": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "bag",
+    "bbox": [
+     51,
+     56,
+     109,
+     119
+    ],
+    "fig_h": 0.3937,
+    "foot": 0.7438,
+    "cx": 0.5
+   },
+   "walkstone": {
+    "frames": 10,
+    "duration": 0.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "cart",
+    "bbox": [
+     26,
+     58,
+     133,
+     134
+    ],
+    "fig_h": 0.475,
+    "foot": 0.8375,
+    "cx": 0.4969
+   },
+   "idlewood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "lumber",
+    "bbox": [
+     58,
+     56,
+     102,
+     114
+    ],
+    "fig_h": 0.3625,
+    "foot": 0.7125,
+    "cx": 0.5
+   },
+   "idlefood": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "bag",
+    "bbox": [
+     59,
+     59,
+     101,
+     114
+    ],
+    "fig_h": 0.3438,
+    "foot": 0.7125,
+    "cx": 0.5
+   },
+   "idlestone": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 5.369,
+    "center": [
+     0.0,
+     0.0,
+     1.111
+    ],
+    "ax": 0.5,
+    "ay": 0.812,
+    "tool": "cart",
+    "bbox": [
+     39,
+     56,
+     120,
+     127
+    ],
+    "fig_h": 0.4437,
+    "foot": 0.7937,
+    "cx": 0.4969
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.167,
+    "loop": false,
+    "ortho": 4.311,
+    "center": [
+     0.0,
+     0.0,
+     0.915
+    ],
+    "ax": 0.5,
+    "ay": 0.8201,
+    "tool": null,
+    "bbox": [
+     8,
+     44,
+     151,
+     147
+    ],
+    "fig_h": 0.6438,
+    "foot": 0.9187,
+    "cx": 0.4969
+   }
+  }
+ }
+}

@@ -1,0 +1,173 @@
+# T6-T07 report — plateau mini-baker (LANE TERRAIN)
+
+Ticket **T6-T07**, parent T6-TERRAIN, micro-worker T6-T07. Date 2026-11-23.
+Owned outputs only: `app/tools/pieces/t6_plateau.py` (new),
+`app/shots/pieces/t6_plateau*.png` + manifest, an APPEND §7 to
+`docs/audit/PIECES/plateau.md` (backup `inbox\backup\plateau.md.bak-T6-T07`),
+and this report. No engine file, spec JSON, shared renderer, board or other
+lane file was edited. **No Godot job; no donor binary/texture copied into the
+repo.** Python 3.14.3 / Pillow 12.1.1 / NumPy 2.4.3.
+
+## 0. Method & artifacts
+
+1. **Donor truth first** — a temp-only probe
+   (`C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\t6t07_donor_probe.py`,
+   lossless crops in `t6t07_crops\`, numbers in `t6t07_donor_report.json`) read
+   the primary reference JPEG in place and re-verified all 16 donor plateau
+   `.pattern` footprints from `C:\Games\Cossacks 3\data\pattern\` via a
+   read-only `struct` header + mask count. Nothing donor-side was written into
+   the repo.
+2. **Renderer** — `app/tools/pieces/t6_plateau.py`: mirror-tiled port
+   `grass1` (plus signed two-octave olive gain), one 1024² native pass → one
+   Lanczos downsample to 512². The rim is a periodic multi-octave Fourier curve
+   with two gully tongues and two wall bulges; the wall uses stretched `rock1`
+   high-pass flutes with strong x-warp, organic amplitude patches, four dark
+   recess slits, vertical waviness, a lit-top→shadow-foot palette ramp, a
+   contact shadow under the grass rim, an AO collar above it and foot AO. One
+   right-edge sector blends the wall continuously into a walkable grass slope.
+   A 64² port-height model (flat top 2.964, 2-tile steep lip, 6-tile walkable
+   ramp) supplies the geometry metrics.
+   `terrain_piece_render.py` is imported READ-ONLY (`_png`, `mirror_tileable`,
+   `wrap_crop`, `adjust_bcs`, comparison primitives); it is never edited.
+3. **Acceptance** — every criterion of `docs/T6_WAVE_PLAN.md` T6-T07,
+   `plateau.md` §4, `plateau.json` and the T6 visual gate was measured on the
+   written PNG/model; the compare sheet was read back and judged visually.
+   No threshold was relaxed. Determinism: two consecutive renders gave the
+   identical PNG sha256 `003135ee…`; `python -m py_compile` clean.
+
+## 1. Donor anchors (independent re-measure)
+
+Primary #8 `cossacks-3-v1-498085.jpg` (1280×720).
+
+| Quantity | Value | Label |
+|---|---|---|
+| Crop C `(350,0,850,300)` L mean / std / hf5 | `77.98 / 26.19 / 10.36` (4 of 8 bins ≥3%) | derived |
+| Flat top `(375,20,440,85)` L mean / std / hf5 | `96.37 / 8.06 / 4.21`, **2** of 8 bins ≥3% | derived |
+| Boundary zoom `(0,600,210,720)` | grass→wall drop median 2 px (max ~4), tufts overhang; wall dark with pale vertical striations | observed |
+| Grass palette boxes | sunlit `#686935`, mid `#616727`, dark `#4A4B21` | derived |
+| Rock palette (retained from prior docs) | lit `#6C614B`, mid `#4B4430`, shadow `#393424`, pale flute `#8B7D67` | observed |
+| `plt1..f_plt_mid_2` (16 files) | `38×53 … 81×93`, occupancy `0.264–0.440` | observed — reproduces `plateau.md` §1.3 exactly |
+| Donor height ceiling | `cPlateauHeight = 2.964` from mask R=255 | observed (script text) |
+| Donor height grid | 256²/320²/480²/640² = map grid; port is fixed 160² | observed / derived (`T6_S01_camera.md`) |
+
+## 2. Claim table
+
+Labels: **observed** = read from bytes/pixels/visual; **derived** = deterministic
+arithmetic/model; **inferred** = reading with caveat; **UNVERIFIED** = not proven.
+
+| # | Claim | Evidence | Label | Verdict | Correction / caveat |
+|---|---|---|---|---|---|
+| D1 | Plateau is a near-planar grass top at +2.964 cut by near-vertical rock-wall gullies | #8 crop C + top_clean | observed | confirmed | rock is confined to the rim walls |
+| D2 | Grass→rock rim ≤3 px with overhanging tufts; lit/shadow `#6C614B`/`#393424` | boundary zoom | observed | confirmed | apparent 2.5D angle, not a 3D measurement |
+| D3 | Donor plateau stamp masks are 38–93 cells, 26–44% porous | 16 `.pattern` headers | observed | confirmed | no donor height delta decoded from stamps |
+| D4 | Port height profile is authored (`amp 2.964, edge .97, rim 8`, additive/unclamped) | `game.gd:641-642,692-703` | derived | confirmed | piece height model is a port profile, **not** donor truth |
+| P1 | Piece max height ≤2.964, no stacking | 64² model | derived | **PASS** (`2.964`) | model-derived |
+| P2 | Piece has a walkable ramp | ramp grad `0.25/tile` < gate `0.5` | derived | **PASS** | lip `0.732/tile` > gate supplies rock cells |
+| P3 | Rock face present | 86 steep model cells + visible wall | derived | **PASS** | — |
+| P4 | Piece rim organic, AO at grass contact, no hard black outline | compare sheet read back | observed | **PASS (cautious)** | simpler than donor: no trees, one main wall |
+| P5 | Piece flat-top spans ≥4 of 8 luminance bins | flat crop: 2 of 8 | derived | **FAIL** | donor flat top also has 2 bins; 38 olive patch clusters present |
+| P6 | Piece rock fraction 8–18% | 10.99% brown-pixel classifier | derived | **PASS** | classifier R>G+1, G>B+2, L<140 |
+| P7 | Piece flat-top L std ≤10, hi-freq ≈3 | 6.27 / 3.29 | derived | **PASS** | donor clean top std 8.1 / hf 4.21 (this probe) |
+| P8 | Piece wall lit/shadow palette within ±10, ratio ≥1.5 | lit `(98.5,89.6,67.7)`, shadow `(59.3,54.0,37.7)`, ratio `1.669` | derived | **PASS** | — |
+
+## 3. Acceptance — PASS / FAIL per criterion
+
+| # | Criterion (source) | Target | Measured | Verdict |
+|---|---|---|---|---|
+| 1 | Flat-top % of land (`plateau.md` §4) | 19–21% whole map | piece model 76.7% flat; whole-map metric not applicable to one 64-tile crop | **UNVERIFIABLE at piece level** |
+| 2 | Flat-top within one stamp | 55–65% | modelled ellipse rx48/ry30, 8-tile rim → **61.1%** | **PASS** (derived from port profile) |
+| 3 | Edge ramp ≤8 tiles; donor rim ≤3 px | 8 / 3 | ramp 8 tiles @ 0.25/tile; PNG rim median **1 px** | **PASS** |
+| 4 | Rock fraction | 8–18% | **10.99%** | **PASS** |
+| 5 | Flat top L std ≤10; ≥4 bins; hf≈3 | 10 / 4 / 3 | std **6.27** ✓, hf **3.29** ✓, bins **2** ✗, olive patch keys **38** | **FAIL** (literal bin count only) |
+| 6 | Amplitude ceiling / stacking | ≤2.964 | max **2.964**, no additive stacking | **PASS** |
+| 7 | Footprint 38–93 cells; anisotropy ≥1.5 | — | stamp 60–96 tiles, anisotropy **1.60** | **PASS** (derived) |
+| 8 | Start keep-clear | 0 cells | no start coordinates exist in a single piece; `game.gd` guard untouched | **UNVERIFIABLE at piece level** |
+| T6-a | h cap 2.964 | ≤2.964 | 2.964 | **PASS** |
+| T6-b | walkable ramp | gradient ≤0.5 | 0.25/tile | **PASS** |
+| T6-c | rock face present | yes | 86 steep cells + fluted wall | **PASS** |
+| V | visual A/B (governing) | donor-like, no hard outline / uniform pattern / missing contact shadow | see §4 | **PASS (cautious)** |
+
+**Numeric summary: 9 PASS / 1 FAIL (criterion 5 bin sub-threshold) /
+2 UNVERIFIABLE at piece level.** No criterion was weakened; the two
+UNVERIFIABLE ones require a whole-map dump verifier, not a PNG.
+
+### Why criterion 5 is recorded as FAIL and not argued away
+
+The literal spec asks for ≥4 of 8 luminance bins ≥3% *and* L std ≤10. An
+independent probe of the donor's own clean plateau crop gave **2 bins** at
+std 8.06 — the two halves of that criterion conflict for a near-planar
+surface. I keep the literal FAIL (38 olive patch clusters are reported
+separately) and raise the conflict as an open question rather than redefining
+the gate.
+
+## 4. Visual judgement — PASS (cautious), compare sheet read back
+
+I read both written PNGs (`t6_plateau.png` alone and
+`t6_plateau_compare.png` beside donor crop C and the donor rim zoom). The port
+side shows a near-planar olive grass top, a winding rock/earth rim of strongly
+variable thickness, dark recess slits, flutes whose spacing and strength vary
+between smooth and deeply striated sections, a lit upper edge grading into a
+shadowed foot, a soft AO collar on the grass above the rim, a contact shadow
+directly under it, and a gentle grassy ramp where the wall tapers out at the
+right edge. There is **no black contour, no round green dome, no regular
+checker/comb pattern, and no absent contact shadow** — the three failure modes
+the coordinator flagged from T05 are absent. Against the donor rim zoom the
+wall is still somewhat cleaner and less deeply weathered, and the piece lacks
+trees and the donor's full branching gully network; those are combo/whole-map
+concerns, not a single-tile defect. Under "metrics never override visual
+review" I record a **cautious PASS** and invite the parent spot-check.
+
+### Iterations (kept / reverted)
+
+* v1 rendered a near-constant-width ribbon with a uniform vertical comb and a
+  rectangular green gap → rejected visually (same class as T05's FAIL).
+* v2 added variable thickness, notches, warp, recesses and AO → kept.
+* v3 added a diagonal tributary gully; on reading the PNG it appeared as a
+  clean triangular scratch → **reverted** (T05 lesson: do not keep a degrading
+  iteration to chase a metric).
+* v4 replaced periodic flute amplitude with organic value noise and retuned
+  the lit/shadow palette to the canonical hexes → kept (final).
+
+## 5. Outputs & hashes (SHA-256)
+
+| File | sha256 |
+|---|---|
+| `app/tools/pieces/t6_plateau.py` | `9c137fb59790406e65d71315b98369f20ab1340ccd5983ab2dedbf8bd7b4c03e` |
+| `app/shots/pieces/t6_plateau.png` | `003135eee4b0956b97710b20a07001b44dc588409f5fbbab37bed8005c539408` |
+| `app/shots/pieces/t6_plateau_compare.png` | `7ac5be2b7587d413aa5f8220f38bac12f92d9a47a85573f985b2d6f9a632d0dd` |
+| `app/shots/pieces/t6_plateau.manifest.json` | `fb574aa338675174490db344fcce44c4042f31e0a0f3937486176db8d39a04c9` |
+| `docs/audit/PIECES/plateau.md` (after §7 append) | `1ce6445f2949429a4e5c99e5d342a3ab2c241b8755fa284cae5756d27d8f47b1` |
+| `inbox/backup/plateau.md.bak-T6-T07` | `db381812fcbd53881500bf21576bc4bf3b58e90432571a9ea413295ee6dcaa36` |
+
+Determinism: two consecutive runs produced byte-identical PNGs. Manifest
+records all tunables, the full height model and both PNG hashes.
+
+## 6. Open questions
+
+1. **Criterion 5 conflict** — donor clean plateau has 2 of 8 bins at std 8.06;
+   the spec asks ≥4 bins at std ≤10. Owner decision needed: reinterpret
+   "tonal patches" as colour clusters (38 measured here) or retire the bin
+   threshold. I did not change the gate.
+2. **Geometry needs a dump verifier** — flat-top % of land (criterion 1) and
+   start keep-clear (8) are whole-map metrics; the 64² port profile here is
+   model-derived, not a decoded engine heightfield. Assign a dump verifier at
+   combo/integration (no Godot in this ticket).
+3. **Donor stamp heights** — the 16 `.pattern` files give footprint only; any
+   per-cell height deltas remain undecoded, so the true donor rim profile is
+   still inferred.
+4. **Visual scope** — one main wall + one ramp sector, no trees and no full
+   branching network. Combo level must add gully branching, tuft density and
+   tree clusters before whole-map confrontation (acceptance ladder §7.6).
+5. **Rock-area classifier** — `R>G+1, G>B+2, L<140` gives 10.99%; other
+   thresholds used in sibling lanes give different numbers. Canonical
+   classifier still needs an owner/hand-mask decision.
+
+## 7. Bottom line
+
+**Ticket verdict: PASS (cautious)** — h cap 2.964, walkable ramp and rock face
+all PASS, plus 7 more numeric criteria; one literal FAIL (bin count) and two
+whole-map-only UNVERIFIABLEs are reported honestly. Visual A/B passes the
+specific T6 gate items. No engine file, shared tool, spec or other lane file
+was touched; no donor asset was copied; no Godot process was started.
+
+**End T6-T07.**

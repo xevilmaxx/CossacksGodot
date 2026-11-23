@@ -233,3 +233,61 @@ Global gate (from prior TS-1): HSV sat 0.30–0.55, value 0.25–0.45 for temper
 | 13 | Shadows fall lower-left with lit/shadow ratio ≥1.5 | `TERRAIN_REFERENCE_IMAGES.md` §3.5; ref7/ref11 crops | Prior paired-pixel sampling + visual | CONFIRMED | port blob is directionless (not sun-linked) |
 
 **End of research. No code, Godot scene, donor copy or repo asset was modified.**
+
+---
+
+## 6. T6-T08 mini-baker — rendered piece (2026-11-23)
+
+The research spec above is unchanged (this is a **render proxy**, not an engine
+change). Ticket T6-T08 closed the two visually decisive baseline FAILs of
+`verdict_decor.md` V2 (conifer 3 PASS / 5 FAIL): **#3/#4 density + 3-tier size**
+("repeated small icons on a flat tile") and **#6 contact shadow**, and also
+fixed **#7** ground tint while restoring **#1** to two in-band crown families.
+Full evidence, claim table and open questions:
+`docs/t6/reports/T6-T08.md`. Backup: `inbox/backup/forest_conifer.md.bak-T6-T08`.
+
+### 6.1 Outputs (seed 7, deterministic)
+
+| Artifact | SHA-256 (first 16) |
+|---|---|
+| `app/tools/pieces/t6_forest_conifer.py` (new) | `FABC7D3D5E7E3169` |
+| `app/shots/pieces/t6_forest_conifer.png` | `28E5B06053CA5BB5` |
+| `app/shots/pieces/t6_forest_conifer_compare.png` (dense #11 crop) | `1AF406F36E1F187B` |
+| `app/shots/pieces/t6_forest_conifer_compare_primary.png` (#8 gully rim) | `CB45257E7E1BE76F` |
+| `app/shots/pieces/t6_forest_conifer_metrics.json` | `D2DF084B4F2BB4F1` |
+
+Re-render into a separate temp dir is byte-identical (`28E5B06053CA5BB5…`).
+
+### 6.2 Method
+
+Headless Python 3.14 + Pillow + NumPy; the shared
+`app/tools/terrain_piece_render.py` is *imported* (tile primitives and the
+comparison builder) but never edited. No Godot, no Blender, no donor copy.
+Donor probes stayed in `%TEMP%\opencode\`. Pipeline: `grass_ground2`
+mirror-tile + `adjust_bcs(1.0,1.12)` tinted ×(0.78,0.86,1.12) to `#39401B`
+(§4 #7) → seeded 6×6 density field → Poisson rejection sampling of **212**
+conifers (§4 #3) with buckets 28–34 / 56–62 / 90–101 px at 50/35/15 % (§4 #4)
+→ per-species RGB grade + upper-crown branch frosting + near-black floor lift
+→ one soft lower-left contact ellipse per tree (length ≈1×h) → painter's order
+by y. Spruce/pines widen ×1.06 to hold the donor H/W hierarchy (§4 #5).
+`pinesmall3` (shrub silhouette) is excluded; dry accent is 6.6 % (§4 #8).
+
+### 6.3 Measured criteria from the final PNG
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | ≥2 crown families, B/G 0.42–0.55, hue 58–69°, lum 46–95 | dark `#32331C` h62.1° B/G 0.545 L48.0; lit `#53522A` h59.2° B/G 0.508 L77.7 | PASS |
+| 2 | B/G ≥ 0.40 | 0.545 / 0.508 / 0.514 overall | PASS |
+| 3 | 170–262 trees / 512² (650–1000/MP) | **212 (808.7/MP)**; 100 px grid overlay agrees | PASS |
+| 4 | 3 size buckets 24–34/43–62/77–101 | 132/59/21 = 62.3/27.8/9.9 %, 0 outside | PASS |
+| 5 | H/W hierarchy | spruce 1.58–2.43, pine 1.61–2.20, fir 1.45–1.88 (2 sprite-bank outliers ~0.1 over) | PASS |
+| 6 | shadow ratio ≥1.5, lower-left, 1–2×h | ratio **1.515**, offset (-13.2,+8.8) px, length 0.96×h | PASS (marginal) |
+| 7 | forest floor `#3B3F1B` | `#39401B` (56.8,64.2,27.0) | PASS |
+| 8 | conifers ≥90 %, dry ≤10 % | 93.4 % / 6.6 % | PASS |
+| G | global sat 0.30–0.55, val 0.25–0.45 (supporting) | 0.551 / 0.207 | NOT MET — donor floor itself violates sat gate; see report Q3 |
+
+**8/8 ranked criteria PASS; supporting global-gate value band not met.**
+Visual A/B: reads as a dark clumped conifer forest with organic layered
+spruces, lit tips and soft directional shadows — not stencil icons on a flat
+tile; no hard black outlines (near-black 0.006 %). Still a 2D proxy: no true
+branch-level AO/height channel. Open questions and caveats: `docs/t6/reports/T6-T08.md`.

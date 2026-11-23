@@ -1,0 +1,756 @@
+{
+  "generator": "app/tools/pieces/t6_winter_variant.py",
+  "seed": 7,
+  "final_size": [
+    512,
+    512
+  ],
+  "native_size": [
+    1024,
+    1024
+  ],
+  "final_resample": "0",
+  "footprint_scale": {
+    "snow": 1.0,
+    "mix": 0.55,
+    "rock": 0.55,
+    "gravel": 0.55,
+    "earth": 0.55
+  },
+  "snow_test": "R>=225,G>=225,B>=225,B>=R (winter_variant.md §0)",
+  "base_block": "winter10",
+  "donor_winter_aliasing": {
+    "base_alias": "grass1_winter -> winter10 (tiles.mat, winter_variant.md §1.2)",
+    "alias_map": {
+      "grass10_winter": "winter0",
+      "grass1_winter": "winter10",
+      "grass2_winter": "winter9",
+      "grass3_winter": "winter2",
+      "grass4_winter": "winter3",
+      "grass5_winter": "winter4",
+      "grass6_winter": "winter16",
+      "grass7_winter": "winter1",
+      "grass8_winter": "winter21",
+      "grass9_winter": "winter0",
+      "grass_ground1_winter": "winter5",
+      "grass_ground2_winter": "winter4",
+      "grass_ground3_winter": "winter5",
+      "ground1_winter": "winter11",
+      "rock1_winter": "winter12",
+      "rock2_winter": "winter13",
+      "rock3_winter": "winter13",
+      "rock4_winter": "winter17",
+      "rock5_winter": "winter22",
+      "rock6_winter": "winter15",
+      "rock7_winter": "winter14",
+      "rock8_winter": "winter16",
+      "rock9_winter": "winter20",
+      "sandrock1_winter": "winter1",
+      "sandrock2_winter": "winter10",
+      "sandrock3_winter": "winter19",
+      "sandrock4_winter": "winter19",
+      "sandsea1_winter": "winter19",
+      "sandsea2_winter": "winter2",
+      "sandsea3_winter": "winter2",
+      "sandsea4_winter": "winter19",
+      "sandsea5_winter": "winter19",
+      "sandsea6_winter": "winter3",
+      "test12_winter": "winter5",
+      "test13_winter": "winter5",
+      "test14_winter": "winter5",
+      "test1_winter": "winter6",
+      "test2_winter": "winter7",
+      "test3_winter": "winter8",
+      "test6_winter": "winter4",
+      "test7_winter": "winter10",
+      "test8_winter": "winter21",
+      "test9_winter": "winter10"
+    },
+    "chain_data": {
+      "source": "docs/research/T6_S03_smooth_chains.md §3 (verbatim transcription)",
+      "donor_cfg": "tilesmooth_scripts.cfg lines 934-1810 (C11-C20)",
+      "chain_count": 10,
+      "group_counts": [
+        4,
+        6,
+        6,
+        9,
+        9,
+        8,
+        6,
+        3,
+        3,
+        5
+      ],
+      "entry_count": 141,
+      "prob_zero_endpoints": [
+        "rock5_winter",
+        "rock8_winter",
+        "rock9_winter",
+        "test8_winter"
+      ],
+      "empty_terminators_excluded": [
+        "C10",
+        "C21"
+      ],
+      "chain_reachable_blocks": [
+        "winter0",
+        "winter1",
+        "winter2",
+        "winter3",
+        "winter4",
+        "winter5",
+        "winter6",
+        "winter7",
+        "winter8",
+        "winter9",
+        "winter10",
+        "winter11",
+        "winter12",
+        "winter13",
+        "winter14",
+        "winter15",
+        "winter16",
+        "winter17",
+        "winter19",
+        "winter20",
+        "winter21",
+        "winter22"
+      ],
+      "chain_reachable_count": 22,
+      "chain_unreferenced_blocks": [
+        "winter18",
+        "winter23",
+        "winter24",
+        "winter25",
+        "winter26"
+      ],
+      "notes": "OBSERVED: no smooth_winter.json in port; game.gd loads only smooth_summer.json and aliases art names via WINTER_ART. INFERRED: behavioural equivalence conditional on alias preserving group membership. UNVERIFIED: whether donor runtime selects the Winter sections. Adding smooth_winter.json is a gated T90 task."
+    }
+  },
+  "wired_block_count": 27,
+  "wired_distinct_blocks": [
+    "winter0",
+    "winter1",
+    "winter2",
+    "winter3",
+    "winter4",
+    "winter5",
+    "winter6",
+    "winter7",
+    "winter8",
+    "winter9",
+    "winter10",
+    "winter11",
+    "winter12",
+    "winter13",
+    "winter14",
+    "winter15",
+    "winter16",
+    "winter17",
+    "winter18",
+    "winter19",
+    "winter20",
+    "winter21",
+    "winter22",
+    "winter23",
+    "winter24",
+    "winter25",
+    "winter26"
+  ],
+  "used": [
+    {
+      "block": "winter10",
+      "role": "base",
+      "family": "snow",
+      "footprint": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "opacity": 1.0
+    },
+    {
+      "block": "winter0",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.16,
+        0.2,
+        0.3,
+        0.24
+      ],
+      "rotation_deg": 12,
+      "opacity": 0.72
+    },
+    {
+      "block": "winter1",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.82,
+        0.74,
+        0.28,
+        0.26
+      ],
+      "rotation_deg": -24,
+      "opacity": 0.68
+    },
+    {
+      "block": "winter2",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.52,
+        0.14,
+        0.24,
+        0.18
+      ],
+      "rotation_deg": 38,
+      "opacity": 0.62
+    },
+    {
+      "block": "winter3",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.3,
+        0.86,
+        0.26,
+        0.2
+      ],
+      "rotation_deg": -10,
+      "opacity": 0.55
+    },
+    {
+      "block": "winter9",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.78,
+        0.16,
+        0.22,
+        0.2
+      ],
+      "rotation_deg": 55,
+      "opacity": 0.6
+    },
+    {
+      "block": "winter18",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.18,
+        0.58,
+        0.24,
+        0.22
+      ],
+      "rotation_deg": -42,
+      "opacity": 0.66
+    },
+    {
+      "block": "winter19",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.64,
+        0.52,
+        0.22,
+        0.18
+      ],
+      "rotation_deg": 20,
+      "opacity": 0.58
+    },
+    {
+      "block": "winter21",
+      "role": "footprint",
+      "family": "snow",
+      "footprint_uvr": [
+        0.44,
+        0.34,
+        0.2,
+        0.17
+      ],
+      "rotation_deg": -16,
+      "opacity": 0.5
+    },
+    {
+      "block": "winter16",
+      "role": "footprint",
+      "family": "mix",
+      "footprint_uvr": [
+        0.62,
+        0.4,
+        0.063,
+        0.05
+      ],
+      "rotation_deg": 15,
+      "opacity": 0.98
+    },
+    {
+      "block": "winter20",
+      "role": "footprint",
+      "family": "mix",
+      "footprint_uvr": [
+        0.7,
+        0.56,
+        0.055,
+        0.044
+      ],
+      "rotation_deg": -22,
+      "opacity": 0.96
+    },
+    {
+      "block": "winter4",
+      "role": "footprint",
+      "family": "mix",
+      "footprint_uvr": [
+        0.24,
+        0.3,
+        0.044,
+        0.034
+      ],
+      "rotation_deg": 34,
+      "opacity": 0.9
+    },
+    {
+      "block": "winter5",
+      "role": "footprint",
+      "family": "mix",
+      "footprint_uvr": [
+        0.36,
+        0.64,
+        0.047,
+        0.033
+      ],
+      "rotation_deg": -30,
+      "opacity": 0.88
+    },
+    {
+      "block": "winter8",
+      "role": "footprint",
+      "family": "mix",
+      "footprint_uvr": [
+        0.86,
+        0.38,
+        0.039,
+        0.032
+      ],
+      "rotation_deg": 48,
+      "opacity": 0.82
+    },
+    {
+      "block": "winter12",
+      "role": "footprint",
+      "family": "rock",
+      "footprint_uvr": [
+        0.615,
+        0.415,
+        0.025,
+        0.017
+      ],
+      "rotation_deg": 18,
+      "opacity": 0.95
+    },
+    {
+      "block": "winter13",
+      "role": "footprint",
+      "family": "rock",
+      "footprint_uvr": [
+        0.705,
+        0.575,
+        0.023,
+        0.015
+      ],
+      "rotation_deg": -18,
+      "opacity": 0.95
+    },
+    {
+      "block": "winter14",
+      "role": "footprint",
+      "family": "rock",
+      "footprint_uvr": [
+        0.245,
+        0.315,
+        0.02,
+        0.013
+      ],
+      "rotation_deg": 26,
+      "opacity": 0.9
+    },
+    {
+      "block": "winter15",
+      "role": "footprint",
+      "family": "rock",
+      "footprint_uvr": [
+        0.365,
+        0.655,
+        0.019,
+        0.013
+      ],
+      "rotation_deg": -26,
+      "opacity": 0.9
+    },
+    {
+      "block": "winter17",
+      "role": "footprint",
+      "family": "rock",
+      "footprint_uvr": [
+        0.655,
+        0.435,
+        0.017,
+        0.011
+      ],
+      "rotation_deg": 8,
+      "opacity": 0.92
+    },
+    {
+      "block": "winter22",
+      "role": "footprint",
+      "family": "rock",
+      "footprint_uvr": [
+        0.715,
+        0.545,
+        0.015,
+        0.011
+      ],
+      "rotation_deg": -12,
+      "opacity": 0.92
+    },
+    {
+      "block": "winter6",
+      "role": "footprint",
+      "family": "gravel",
+      "footprint_uvr": [
+        0.5,
+        0.78,
+        0.03,
+        0.022
+      ],
+      "rotation_deg": 42,
+      "opacity": 0.55
+    },
+    {
+      "block": "winter7",
+      "role": "footprint",
+      "family": "gravel",
+      "footprint_uvr": [
+        0.12,
+        0.42,
+        0.026,
+        0.02
+      ],
+      "rotation_deg": -36,
+      "opacity": 0.48
+    },
+    {
+      "block": "winter11",
+      "role": "footprint",
+      "family": "gravel",
+      "footprint_uvr": [
+        0.9,
+        0.62,
+        0.023,
+        0.018
+      ],
+      "rotation_deg": 14,
+      "opacity": 0.42
+    },
+    {
+      "block": "winter23",
+      "role": "footprint",
+      "family": "earth",
+      "footprint_uvr": [
+        0.08,
+        0.86,
+        0.017,
+        0.012
+      ],
+      "rotation_deg": 22,
+      "opacity": 0.3
+    },
+    {
+      "block": "winter24",
+      "role": "footprint",
+      "family": "earth",
+      "footprint_uvr": [
+        0.94,
+        0.1,
+        0.015,
+        0.012
+      ],
+      "rotation_deg": -28,
+      "opacity": 0.28
+    },
+    {
+      "block": "winter25",
+      "role": "footprint",
+      "family": "earth",
+      "footprint_uvr": [
+        0.46,
+        0.06,
+        0.014,
+        0.011
+      ],
+      "rotation_deg": 36,
+      "opacity": 0.26
+    },
+    {
+      "block": "winter26",
+      "role": "footprint",
+      "family": "earth",
+      "footprint_uvr": [
+        0.56,
+        0.94,
+        0.014,
+        0.011
+      ],
+      "rotation_deg": -14,
+      "opacity": 0.26
+    },
+    {
+      "sprite": "tree_spruce1",
+      "pos_uv": [
+        0.4,
+        0.52
+      ],
+      "scale": 0.42,
+      "frost_strength": 0.8,
+      "foot_px": [
+        302,
+        341
+      ],
+      "alpha_bbox": [
+        60,
+        23,
+        155,
+        191
+      ],
+      "contact_shadow": [
+        45.6,
+        15.5
+      ]
+    },
+    {
+      "sprite": "tree_spruce2",
+      "pos_uv": [
+        0.74,
+        0.34
+      ],
+      "scale": 0.36,
+      "frost_strength": 0.58,
+      "foot_px": [
+        666,
+        185
+      ],
+      "alpha_bbox": [
+        63,
+        22,
+        120,
+        163
+      ],
+      "contact_shadow": [
+        27.4,
+        9.3
+      ]
+    },
+    {
+      "sprite": "tree_spruce3",
+      "pos_uv": [
+        0.13,
+        0.68
+      ],
+      "scale": 0.3,
+      "frost_strength": 0.74,
+      "foot_px": [
+        56,
+        558
+      ],
+      "alpha_bbox": [
+        52,
+        17,
+        103,
+        138
+      ],
+      "contact_shadow": [
+        24.5,
+        8.3
+      ]
+    },
+    {
+      "effect": "cool_lighting_veil",
+      "alpha": 0.3,
+      "veiled_pct": 53.12,
+      "preserved_exact_greys": [
+        239,
+        244,
+        247,
+        249,
+        252,
+        255
+      ]
+    },
+    {
+      "effect": "soften_nonsacred",
+      "gaussian_radius_native_px": 0.85,
+      "reason": "reduce uniform-procedural-speckle hf 8.39 toward donor 5.42"
+    }
+  ],
+  "cool_shadow_tinted_pct": 9.26,
+  "reference": {
+    "provided": true,
+    "box": [
+      120,
+      520,
+      420,
+      700
+    ],
+    "original": "3173885360_preview_Turkish battle 19 Light Infantry rush.jpg",
+    "directory": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3",
+    "available": true,
+    "safe_copy": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\t6t14\\winter_snow_reference.jpg",
+    "source_size": [
+      1920,
+      1080
+    ]
+  },
+  "donor_identity_check": {
+    "donor_dir": "C:\\Games\\Cossacks 3\\data\\terrain\\tiles\\textures",
+    "compared": 27,
+    "identical": 27,
+    "rows": [
+      {
+        "block": "winter0.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter1.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter2.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter3.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter4.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter5.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter6.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter7.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter8.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter9.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter10.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter11.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter12.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter13.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter14.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter15.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter16.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter17.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter18.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter19.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter20.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter21.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter22.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter23.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter24.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter25.dds",
+        "rgb_identical": true
+      },
+      {
+        "block": "winter26.dds",
+        "rgb_identical": true
+      }
+    ]
+  },
+  "outputs": {
+    "t6_winter_variant.png": {
+      "sha256": "c41aa118d0501bf3fafcf1d13a73d61b9cfd546d926f0e34ca7c1babdff4ad8a",
+      "size": [
+        512,
+        512
+      ]
+    },
+    "t6_winter_variant_27blocks.png": {
+      "sha256": "0dd3ba0e339604ae4db437e7a0f54f1320fb43c88bc4604f5311db215dde7f04",
+      "size": [
+        1064,
+        998
+      ]
+    },
+    "t6_winter_variant_compare.png": {
+      "sha256": "7a0e700208c6fb790da722b03d734a58f28bd70c4f2bb6d8a41556095e2b22cd",
+      "size": [
+        1062,
+        608
+      ]
+    }
+  }
+}

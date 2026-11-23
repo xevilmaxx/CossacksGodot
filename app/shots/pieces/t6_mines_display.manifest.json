@@ -1,0 +1,62 @@
+{
+  "generator": "t6_mines_display.py",
+  "version": 1,
+  "name": "t6_mines_display",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "layers": [
+    "ground1 block (contrast 1.12, NO mirror tile)",
+    "worked-ground apron: ragged core + 20 debris patches (no smooth halo)",
+    "mine_gold sprite with olive disc keyed out",
+    "directional contact shadow (sun upper-right)"
+  ],
+  "params": {
+    "scar_half_px": [
+      40.0,
+      36.0
+    ],
+    "halo_radius_px": 76.0,
+    "debris_patches": 20,
+    "mirror_tiling": false,
+    "mound_scale": 0.82,
+    "tile_pitch_px": 32.0,
+    "disc_key_hue_deg": [
+      54.0,
+      69.0
+    ],
+    "disc_key_sat_min": 0.5
+  },
+  "disc_key": {
+    "disc_px": 5932,
+    "mound_px": 2252,
+    "mound_bbox": [
+      13,
+      47,
+      141,
+      112
+    ],
+    "mound_aspect": 1.955
+  },
+  "scar": {
+    "scar_half_px": [
+      40.0,
+      36.0
+    ],
+    "debris_patches": 20,
+    "core_coverage_px": 5274,
+    "debris_coverage_px": 13040,
+    "mirror_tiling": false
+  },
+  "sprite_foot_px": [
+    190,
+    163
+  ],
+  "output": "app/shots/pieces/t6_mines_display.png",
+  "zoom": "app/shots/pieces/t6_mines_display_zoom.png",
+  "comparison": "app/shots/pieces/t6_mines_display_compare.png",
+  "sha256": "c6c689da33bcde3a7090cdf99a21f496a8ca0c994d1393a0da1a9063dd2f5783",
+  "reference_note": "A/B target is the donor mine sprite art (mine_gold.png converted from donor .osm), NOT a screenshot; no donor screenshot shows a mine. Mirror-tiling and soft smudge removed per coordinator intervention."
+}

@@ -185,3 +185,101 @@ Global gate: C1–C5 must pass simultaneously; a wide tan ring with a correct sa
 1. Native-resolution donor water frame needed to confirm the 38/80/30 px widths (current source is a 512×288 thumbnail; `UNVERIFIED` ±25%).
 2. Is there a post-TB-B1e render showing the narrowed ring, and does it add any wash band? Not captured in `app/shots/`.
 3. `game.gd:780` claims a "≈2–3 tile band"; exact tile width in metres (`Data.TILE_M`) at the reference camera zoom was not measured here.
+
+---
+
+## 6. T6 verdict (T6-T04) — single-piece mini-baker, 2026-11-23
+
+**Worker:** T6-T04 (LANE TERRAIN). Backup of this file before append:
+`inbox\backup\shore_water_transition.md.bak-T6-T04`. **Zero Godot jobs.** No shared file
+(`terrain_piece_render.py`, `piece_specs/*.json`, `world.gd`, `game.gd`) was edited; the shared
+renderer's pure tile helpers are imported READ-ONLY. Donor images were read in place; no donor
+binary/texture was copied into the repo.
+
+### 6.1 Donor truth re-measured first (all probe files in `%LOCALAPPDATA%\Temp\opencode\`)
+
+`observed` (Pillow/NumPy box means, lossless crops `t6t04_*_8x.png`, dump `t6t04_donor_measure.json`):
+
+| Anchor | Box (source px) | Mean hex | B−R | L mean / std | Label |
+|---|---|---|---|---|---|
+| Dry sand | `maxresdefault_1.jpg` x 361–375, y 238–272 | `#A69A79` | −44.2 | 153.8 | observed |
+| Sand→wash grad | x 376–387 | — | −31.0 | 167.3 | observed |
+| Pale wash | x 388–402 | `#B1B3A3` | −13.8 | 176.8 | observed |
+| Wash→water grad | x 403–407 | — | −3.9 | 173.6 | observed |
+| Near-rim shallow | x 408–419 | `#A8B1AB` | +3.0 | 173.6 | observed |
+| Clean shallow pool | x 398–420, y 182–212 | **`#C3D1CA`** | +7.0 | 204.1 / 11.6 | observed |
+| Dark river | `articolo-787.jpg` x 860–958, y 0–40 | `#333C3F` | +11 | 57.7 / 14.8 | observed |
+
+`derived`: hi-frequency (L − 5px Gaussian) mean 6.51 in the clean pool, 4.95 in wash; radial
+arc crest↔trough 22–46 levels, median crest spacing 2–3 src px (JPEG-limited). `inferred`:
+the two shallow tones are the same water at different distances from the rim, which is why the
+mini-baker paints `#A8B1AB` as the near-rim plateau (C1's B−R index) and `#C3D1CA` as the inner
+clean pool (the T6-T04 gate). No acceptance number was changed to accommodate this.
+
+### 6.2 Renderer + artifacts
+
+`app/tools/pieces/t6_shore_water_transition.py` — deterministic Pillow 12.1.1 + NumPy 2.4.3
+(Python 3.14.3) mini-baker, seed 7, 512×512. Outputs:
+
+| File | sha256 | Re-run |
+|---|---|---|
+| `app/shots/pieces/t6_shore_water_transition.png` | `abb20ef43087c226d00f3506c849d05b6c6e4231c24b47948ca5a2c7c6b18cbb` | byte-identical |
+| `app/shots/pieces/t6_shore_water_transition_compare.png` | `78ca03a89da4233ed0f31febfd21a818f8a9bbb1d5403bc770869372e9eca0ce` | byte-identical |
+
+**Visual-revision pass (parent T6-TERRAIN review):** the first sheet had straight vertical bands
+and a uniform `sin(r)` moire. Current renderer replaces the shore with a smooth multi-octave
+contour (12/5.5/2/1.4 px octaves), varies sand/wash widths per row, curves the pool/deep edges,
+replaces the periodic rings with three overlapping systems of jittered, angle-broken crest rings,
+adds two octaves of low-frequency mottling, and applies a soft Gaussian contact shadow at the
+sand/water junction. No hard contour or uniform procedural pattern remains.
+
+### 6.3 Acceptance (measured on the rendered PNG; `t6t04_render_v2.json`)
+
+| ID | Target | Measured | Verdict |
+|---|---|---|---|
+| C1 | 3 bands, plateaus ≥8 px, B−R −45→−14→+3 | sand 47.8 px / −45.8, wash 66.1 px / −14.0, shallow 299.5 px / +3.0 (pool +7.0, deep +12.0) @720p | **PASS** |
+| C2 | sand 30–65, wash 60–90, water ≥30 @720p; plan wash 30–50 @512 | 47.8 / 66.1 / ≥299.5 @720p; wash 47 px @512 (max 50) | **PASS** |
+| C3 | sand/wash/shallow/dark ±15; wash ≈ sand+25 | Δmax 1.1 / 0.7 / 0.0 / 0.2; wash +24.4 L over sand | **PASS** |
+| C4 | foam specks in wash, luma > both neighbours, 0 in deep | 1627 specks in wash, 0 in deep; wash L 177.2 > shallow 173.6 > sand 152.8 | **PASS** |
+| C5 | gradient ≤30/≤13, run ≤8, jump ≤8 | 18 px / 3 px @512 (25.3 / 4.2 @720p); max run 5, max jump 2.57 | **PASS** |
+| C6 | rock/grass rim ≤3 px (inherited) | not re-measured here (no rock face in this piece) | **UNVERIFIED** (carried) |
+| C7 | shallow vs deep Δ≥20 | 116.8 max-channel; deep `#333C3F` | **PASS** |
+| Global | C1–C5 simultaneously | all five pass | **PASS** |
+
+`derived` adaptation: the wash width is 46.5 ± 3.5 px on the 512² canvas (max 50 px), the overlap
+of C2's 60–90 px @720p (×512/720 = 43–64 px) and the WAVE_PLAN T6-T04 wash 30–50 px @512. Both
+gates were kept verbatim; the per-row variation is what breaks the old straight band edge.
+
+### 6.4 Visual judgement
+
+Both revised PNGs were read as images after the parent's visual-defect review. **Observed:**
+the band edges now wander organically (no straight vertical strips); the water carries faint,
+broken, irregular concentric arcs from three overlapping centres instead of a uniform moire;
+the wash and water show blotchy low-frequency mottling; and a soft darkening sits at the
+sand/water contact. The progression grainy tan sand → pale gray-tan wash → pale gray-cyan water
+matches the donor crop; the body is **not flat teal**. `inferred` caveat: a pale inner pool band
+and a dark right-hand strip remain visible as 2D depth proxies, and the donor crop is a 6×
+upscale of an 80×34 JPEG region, so exact texture similarity is not claimable. Verdict after
+re-review: **QUALIFIED PASS** on the depicted piece. No in-engine shader claim is made; the real
+shader/world fixes in verdict_water.md §2.4 and §3 remain open for T6-W04.
+
+### 6.5 Open questions
+
+1. `#A8B1AB` (near-rim) vs `#C3D1CA` (clean pool) both pass their own gates; owner should confirm
+   which is the single hard gate for integration (verdict_water.md already asks this).
+2. Arc spacing measured 2–3 src px on the 512×288 thumbnail (JPEG-limited) vs the 6 px working
+   target in verdict_water.md §2.5; native-resolution donor capture needed.
+3. C6 (rock/grass rim ≤3 px) is out of scope for this piece and remains inherited UNVERIFIED.
+
+### 6.6 Correction after second parent visual review (supersedes §6.2–§6.4)
+
+The parent found a residual dark right-edge band and faint arc remnants in the §6.2 render.
+Both were removed: the deep band no longer exists in the main tile (C7 is measured on a separate
+`app/shots/pieces/t6_shore_water_transition_dark_probe.png`), and the arc term is zero amplitude.
+**The §6.2 hashes and §6.3 numbers are superseded** by `docs/t6/reports/T6-T04.md` §8:
+main PNG `8ff5ea2378af8999869bdff3b4f43bc636ce5087f740e5eb61cd6962ede18532`, compare
+`8437388427510cbb6db343898d745b25e770f9d0bf0a332cabe3200a9f712f23`, probe
+`849296af2d5e7cbedfc5ac2d9aa7fadc76ffaffc9413ae8a75f884df7a6f66e0`. The earlier claim that
+arcs are depicted is **withdrawn**; donor ripples remain an in-engine task. Status: **QUALIFIED,
+not full PASS**, pending the parent's re-verification of the new PNG and acceptance of the probe
+route for C7.

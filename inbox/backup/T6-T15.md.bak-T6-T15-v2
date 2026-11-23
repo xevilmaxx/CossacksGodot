@@ -1,0 +1,143 @@
+# T6-T15 — `desert_variant` mini-baker verdict
+
+Parent: T6-TERRAIN (LANE TERRAIN). Worker: T6-T15. Date: 2026-11-23.
+Scope: ONE piece. Headless Python 3.14 + Pillow 12.1.1 + NumPy 2.4.3 only.
+**Zero Godot jobs.** No donor binary/texture copied into the repo: donor DDS are referenced by path
+and were only READ by temp probes; the compare sheet embeds only the reference JPEG crop from
+`C:\Users\Maxym.Oboyshev\Downloads\c3`, exactly as the shared renderer does. All probe scripts and
+lossless probe crops live in `C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\`.
+
+## Owned outputs
+
+| Artifact | Path | SHA-256 |
+|---|---|---|
+| Mini-baker module | `app/tools/pieces/t6_desert_variant.py` | `6ae76167c8f5dbb4f716bf7d5457a2d32a344733a725c77c8c8b39e11f8d8024` |
+| Render | `app/shots/pieces/t6_desert_variant.png` | `afb8b224d06154f32328f7c040d9b8688897fe49c492dfbf1ab5fd72d3f71ecc` |
+| Comparison sheet | `app/shots/pieces/t6_desert_variant_compare.png` | `0b10a258ba37164c173253e06dd0f2c99ef964550f5df68f716633a36343c437` |
+| Doc backup | `inbox/backup/desert_variant.md.bak-T6-T15` | `0e253d52c90437ab2cf6229daa9914cce353af42b6c00569331e8aa9cad30ab` |
+
+Determinism: two full CLI runs produced the identical render SHA `afb8b224…` and compare SHA
+`0b10a258…`; three in-process bakes were pixel-identical (`np.array_equal == True`).
+The pre-existing T2 outputs `app/shots/pieces/desert_variant*.png` were NOT touched.
+
+## Donor anchors (measured before any edit)
+
+Source: `C:\Games\Cossacks 3\data\terrain\tiles\textures\desert1..12.dds` (1024×1024 RGBA, alpha
+extrema `(255,255)`); 200×200 bilinear downsample; hi-freq = mean `|L − GaussianBlur(L,5)|`.
+Probe: `t6_t15_probe.py`, raw JSON `t6_t15_donor_truth.json` (temp only).
+
+| Tile | Mean hex | L mean | L std | hi-freq | MD5(200² RGB, 12 hex) | Family (`derived`) |
+|---|---|---:|---:|---:|---|---|
+| desert1 | `#7C7355` | 114.26 | 4.68 | 2.95 | `ff0c84696d00` | light sand |
+| desert6 | `#7B7252` | 112.94 | 4.02 | 2.27 | `fb0529bc32d8` | **light sand (base)** |
+| desert7 | `#7A7153` | 112.27 | 4.15 | 2.36 | `aca889ef9c57` | light sand |
+| desert8 | `#797050` | 110.82 | 6.74 | 4.73 | `919c8b444179` | light sand (coarse) |
+| desert11 | `#7B7252` | 113.11 | 3.23 | 1.75 | `b9a6e56ee89a` | light sand (smoothest) |
+| desert12 | `#7B7252` | 113.11 | 3.23 | 1.76 | `17a791e3883c` | light sand |
+| desert9 | `#6E6546` | 100.05 | 5.72 | 4.01 | `bac1fce7d179` | mid olive-tan |
+| desert10 | `#6F6647` | 101.08 | 4.91 | 2.57 | `026e50310cef` | mid olive-tan |
+| desert2 | `#5B5031` | 79.41 | 13.52 | 8.42 | `9e61c4cf1a17` | **dark cracked earth** |
+| desert3 | `#5B5031` | 79.41 | 13.52 | 8.42 | `acfc7bc7d63b` | dark cracked earth |
+| desert4 | `#5D5234` | 81.83 | 11.06 | 7.35 | `b755a555d928` | dark scree |
+| desert5 | `#5D5234` | 81.83 | 11.06 | 7.35 | `b051724d187b` | dark scree |
+
+- **12/12 unique MD5 at full resolution**, but only **4 tonal families** (L 79.4 / 81.8 / 100–101 /
+  110–114) — `derived`. The spec's family grouping is confirmed.
+- **C7 source faithfulness: 12/12** — full-resolution RGB MD5 of each port `app/assets/terrain/blocks/desertN.png`
+  equals its donor `desertN.dds` (`t6_t15_probe2.py`). Opaque alpha means only alpha was dropped.
+- **Reference (LOW confidence):** `MADVBuilding1.JPG` top strip `(5,5,470,38)` = `#C0976A`, L 158.06,
+  hi-freq 4.72; left margin `(2,120,90,335)` = `#9A7858`, L 126.51; bottom band `(5,300,470,345)` =
+  `#BB9166`, L 152.58. This is L 126–158 / orange-tan, ~12–79 L above the donor pool (L 79–114), and
+  sits in histogram bins 4–5 that **no donor desert tile populates** (`derived`). Visual inspection of
+  the crop shows vertical wooden siding with dark seams, i.e. a **building surface, not ground**
+  (`observed` in `t6_desert_variant_compare.png`) — strengthening the spec's decision to treat this
+  reference as a weak directional cue only, never a palette target.
+- **Dry-rock substitution:** `rock_landstone1.png` lit `#62673C`, hue **67.75°**, **93.5%** green-dominant
+  pixels → mossy (`derived`); `rock_sea1.png` lit `#8A816C`, hue **40.68°**, **0.0%** green-dominant →
+  dry R>G>B (`derived`). The inherited T2 verdict used a different crown sampling and got
+  `#62673C`-class vs `#847A64`-class lit values; direction and verdict agree, absolute lit RGB differs
+  by method — recorded as an open methodological note, not a contradiction.
+- **Spec grid:** 40×40, 477/1600 = **29.81%** full-strength `desert2` cells; 10%→90% coverage ramp
+  measured **16 px** on the bilinear field (`derived`). Reference rock/grass rim target is ≤3 px, but
+  that criterion concerns cliff rims, not desert patch tonal boundaries.
+
+## Adaptations to the T2 spec (all deliberate, spec JSON untouched)
+
+| ID | Spec value | Used | Reason |
+|---|---|---|---|
+| A1 | sprite `rock_landstone1` | `rock_sea1` | Mossy lit crown (G>R, hue 68°, 93.5% green-dominant) cannot read as dry desert rock. Inherited from `verdict_decor` and `sprite_correction` in the spec. |
+| A2 | sprite `scale: 1.0` | `0.27` (138 px, 2.47% ink) | A 512 px accent covers 15.5–30.9% of the frame; C6 (≤3%) is arithmetically impossible at scale 1.0. Same structural inconsistency T2 recorded. |
+| A3 | sprite before patches | sprite composited last | Otherwise dark patch cells bury the rock accent; it must read as sitting on the ground. |
+| A4 | block `brightness: 1.09` | `1.00` | The lift was a T2 workaround for the oversized dark accent. With A2 it pushes the raw base to (133,123,84), +10/+9 off the donor anchor; 1.00 restores (122.4,112.6,77.4), within ±8, and lowers the sub-box L ceiling to ~119. |
+
+No other spec field changed: contrast 1.12, patch grid/opacity 0.85, glaze tint `[1.04,1.0,0.97]` /
+strength 0.45 / white_floor 256, seed 7, pos `[0.6,0.5]`, anchor foot are all untouched.
+
+## Claim table
+
+| Claim | Evidence | Verification method | Label | Verdict | Required correction |
+|---|---|---|---|---|---|
+| 12 donor desert blocks exist, 1024² RGBA opaque | donor dir listing; alpha extrema `(255,255)` | file listing + Pillow | observed | confirmed | none |
+| 12 unique hashes but 4 tonal families | full-res MD5 + 200² L means | `t6_t15_probe2.py`, `t6_t15_probe.py` | derived | confirmed | none |
+| Port `desertN.png` ≡ donor `desertN.dds` RGB (12/12) | 12 equal full-res MD5 | Pillow MD5 pair | derived | confirmed (C7 PASS) | none |
+| `rock_landstone1` is mossy | lit `#62673C`, hue 67.75°, 93.5% G-dominant | Pillow + HSV on lit crown | derived | confirmed — spec's "sandstone" claim contradicted | keep A1 substitution |
+| `rock_sea1` is an acceptable dry accent | lit `#8A816C`, hue 40.68°, 0% G-dominant | same | derived | confirmed | none |
+| MADV crop is bright orange-tan ground | `#C0976A`, L 158, bins 4–5 | Pillow crop stats | observed | confirmed; visual crop reads as wooden siding, not ground | never tune palette to it |
+| Desert pool is L 79–114 olive-khaki | 12 tile L means 79.4–114.3 | Pillow 200² stats | derived | confirmed | donor palette authoritative |
+| Render uses ≥1 light and ≥1 dark family | layers `desert6` + `desert2`; dark L<90 = 12.72% | layer detail + Pillow L | derived | confirmed (C3 PASS) | none |
+| Render is dry, not green | 100% R>G>B; accent 0% G-dominant | per-pixel channel test | derived | confirmed (C2/C6 PASS) | none |
+| Patch grain equals donor cracked-earth grain | rendered patch interior ~7.1 hi-freq vs donor desert2 8.42 | masked `|L−blur5|` with 3 px erosion | derived | **NOT CONFIRMED** | see C5 correction |
+| Piece bake meets QA-P1 250 ms | Python mini-baker median 394 ms | `time.perf_counter`, 5 runs | derived | UNVERIFIED for engine — different metric | integration ticket must measure engine bake |
+| Reference brightness gap is gamma/JPEG artefact | measured gap only, no second same-location shot | inference | inferred | UNVERIFIED | out of scope (no new screenshot) |
+
+## Acceptance criteria — measured vs target
+
+Render measurements are on the shipped 512×512 PNG downsampled to 200×200 (spec convention).
+Full numeric trace: temp `t6_t15_metrics.json`, `t6_t15_verify.py`, `t6_t15_timing.py`.
+
+| # | Criterion | Target | Measured | Verdict |
+|---|---|---|---|---|
+| **T6-T15a** | 12 donor palettes | 12 unique hashes, 4 families, light+dark wired | 12/12 unique, 4 families (L 79.4/81.8/100–101/110–114), `desert6`+`desert2` wired, 12/12 port≡donor | **PASS** |
+| **T6-T15b** | Dry rock grade, not green mossy | accent R>G>B, no green-dominant crown | `rock_sea1`, hue 40.68°, 0% G-dominant, frame R>G>B 100% | **PASS** |
+| C1 | Base palette | raw mean ±8 of (123,114,83); final median R105–128 G96–118 B68–90, L100–118 | raw (122.44,112.63,77.35) → (−0.56,−1.37,−5.65) ✓; final mean (116.61,105.58,70.55), median (121,110,74), L **104.85** | **PASS** |
+| C2 | Hue order | R>G>B ≥95% | **100.0%** (0% B>G inversions) | **PASS** |
+| C3 | Tile variety | 12 hashes, 4 families, dark 5–25% | 12/12, 4 families, dark L<90 = **12.72%** | **PASS** |
+| C4 | Relief tonal spread | sub-box L ≥75 and ≤118; no black cracks L<60; σ>5 | ground-only sub-box L **68.92–119.78**, mean 105.7, σ **8.94**; 0 sub-boxes <60; 8/1468 <75 and 3/1468 >118 (0.75% outliers) | **PASS (marginal)** |
+| C5 | Grain / hi-freq | base 2.0–5.5; cracked 8–9; final 3–9 | base **2.38** ✓; final **7.42** ✓; rendered patch interior **~7.1** (3 px-eroded) / 10.57 (un-eroded, edge bleed) vs 8–9 | **FAIL** (cracked sub-band only) |
+| C6 | Sparse scatter | 1 accent ≤3% of frame | exactly 1 accent at (0.6,0.5), visible ink **2.47%** | **PASS** |
+| C7 | Source faithfulness | 12/12 port PNG ≡ donor DDS RGB | **12/12** full-res MD5 matches | **PASS** |
+| C8 | Budget | ≤3 block composites; ≤250 ms engine bake; no new `.gd` path | 2 composites (base+patched); no `.gd` touched. Python probe bake **median 393.9 ms** (not the engine metric) | **PASS** for composites/scope; engine bake **UNVERIFIED** |
+
+**Summary: 9 PASS + 1 marginal PASS + 1 FAIL + 1 UNVERIFIED** across 12 criteria
+(2 wave-plan + 8 spec + 1 sub-metric split). The two T6-T15 wave-plan acceptance items both PASS.
+
+C5 correction (not applied here): the spec is internally tense — raising patch opacity to 1.0 to reach
+donor cracked grain (~8.4) would push dark coverage to ~30% and break C3's ≤25% ceiling. Resolve by
+using a polygonal/voronoi crack mask (donor `desert2/3` facets) with a smaller area fraction, or raise
+the C3 ceiling in an integration ticket. Do not simply sharpen the whole tile: that also lifts final
+hi-freq above 9.
+
+## Visual judgement (metrics never override this)
+
+I read both shipped PNGs with the image-read tool. The render reads as **muted olive-khaki sand with
+fine pebble grain, darker cracked/scree patches and a single dry gray boulder cluster**. It visibly
+satisfies R>G>B everywhere, has no green moss cast, and its dark patches are legible as relief without
+black cracks. It sits in the donor desert family (L 79–114), not the bright orange reference trap.
+The rock accent is a dry gray cluster, not the mossy green boulder the literal spec would have used.
+Weakness: the 40×40 binary patch mask reads as rounded/blotchy camo rather than the polygonal facets
+visible in donor `desert2/3` — acceptable for a single 512² piece, but a known visual gap for the
+integration ticket. The compare sheet's right panel is a wooden building surface; it confirms why the
+reference image must not drive palette tuning.
+
+## Open questions
+
+1. C5 vs C3 tension: can a polygonal crack mask reach cracked hi-freq 8–9 while dark coverage stays
+   ≤25%, without a C3 threshold change?
+2. The MADV reference crop is visually a wooden facade, not ground. Should T6-RESEARCH supply a genuine
+   desert-biome screenshot before any further hue work?
+3. QA-P1's 250 ms is an in-engine chunk-bake metric; the Python probe's 394 ms says nothing about it.
+   Who measures the engine bake after T6-T90 integration?
+4. T2's crown-sampling method gave lit `rock_sea1` ≈ `#847A64` (hue 38.8°) vs this probe's `#8A816C`
+   (hue 40.7°); both agree on the verdict, but which sampling should the registry standardise on?
+5. Should A4 (brightness 1.00) be back-ported into the spec JSON at integration, or kept as a
+   mini-baker-only adaptation? (Spec JSON is read-only for T6-T15.)

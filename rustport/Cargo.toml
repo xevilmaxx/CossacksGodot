@@ -1,0 +1,21 @@
+[package]
+name = "cossacks3-rust"
+version = "0.1.0"
+edition = "2021"
+description = "Pure-Rust Cossacks 3 clone - std only, raw platform FFI, no third-party crates"
+publish = false
+license = "UNLICENSED"
+
+[[bin]]
+name = "cossacks3-rust"
+path = "src/main.rs"
+
+[lib]
+name = "cossacks3_rust"
+path = "src/lib.rs"
+
+# ZERO dependencies. This crate must build with the Rust standard library only.
+# Windowing, input, audio and GUI are reached through raw platform FFI
+# (Win32 / X11-Wayland / Cocoa) - never through third-party crates.
+# See ARCHITECTURE.md for the planned module layout.
+[dependencies]

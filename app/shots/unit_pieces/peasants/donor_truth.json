@@ -1,0 +1,4034 @@
+{
+ "peasant": {
+  "base": "peaukr",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 20,
+   "verts": 577,
+   "faces": 921,
+   "uvs": 733
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    278,
+    299
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    456,
+    481
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     299
+    ],
+    "sampled_frames": [
+     278,
+     280,
+     283,
+     285,
+     287,
+     290,
+     292,
+     294,
+     297,
+     299
+    ],
+    "loop": true,
+    "donor_duration": 0.7333
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 495,
+    "faces": 413,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "ukr_peasant": {
+  "base": "peaukr",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 20,
+   "verts": 577,
+   "faces": 921,
+   "uvs": 733
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    278,
+    299
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    456,
+    481
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     299
+    ],
+    "sampled_frames": [
+     278,
+     280,
+     283,
+     285,
+     287,
+     290,
+     292,
+     294,
+     297,
+     299
+    ],
+    "loop": true,
+    "donor_duration": 0.7333
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 495,
+    "faces": 413,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "rus_peasant": {
+  "base": "pearus",
+  "oss": {
+   "fps": 30,
+   "frames": 486,
+   "bones": 22,
+   "verts": 527,
+   "faces": 864,
+   "uvs": 662
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    281,
+    304
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    408,
+    457
+   ],
+   "idlewood": [
+    357,
+    406
+   ],
+   "idlestone": [
+    306,
+    354
+   ],
+   "walkfood": [
+    259,
+    278
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    459,
+    484
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     281,
+     304
+    ],
+    "sampled_frames": [
+     281,
+     284,
+     286,
+     289,
+     291,
+     294,
+     296,
+     299,
+     301,
+     304
+    ],
+    "loop": true,
+    "donor_duration": 0.8
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     259,
+     278
+    ],
+    "sampled_frames": [
+     259,
+     261,
+     263,
+     265,
+     267,
+     270,
+     272,
+     274,
+     276,
+     278
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     357,
+     406
+    ],
+    "sampled_frames": [
+     357,
+     367,
+     377,
+     386,
+     396,
+     406
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     408,
+     457
+    ],
+    "sampled_frames": [
+     408,
+     418,
+     428,
+     437,
+     447,
+     457
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     306,
+     354
+    ],
+    "sampled_frames": [
+     306,
+     316,
+     325,
+     335,
+     344,
+     354
+    ],
+    "loop": true,
+    "donor_duration": 1.6333
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 486,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 486,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 486,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 486,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 486,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 486,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 495,
+    "faces": 413,
+    "k": 486,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "pol_peasant": {
+  "base": "peapol",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 24,
+   "verts": 629,
+   "faces": 935,
+   "uvs": 734
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    278,
+    301
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    456,
+    481
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     301
+    ],
+    "sampled_frames": [
+     278,
+     281,
+     283,
+     286,
+     288,
+     291,
+     293,
+     296,
+     298,
+     301
+    ],
+    "loop": true,
+    "donor_duration": 0.8
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 519,
+    "faces": 425,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "aus_peasant": {
+  "base": "peaaus",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 18,
+   "verts": 714,
+   "faces": 1058,
+   "uvs": 957
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    278,
+    299
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    456,
+    481
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     299
+    ],
+    "sampled_frames": [
+     278,
+     280,
+     283,
+     285,
+     287,
+     290,
+     292,
+     294,
+     297,
+     299
+    ],
+    "loop": true,
+    "donor_duration": 0.7333
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 519,
+    "faces": 425,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "eng_peasant": {
+  "base": "peaeng",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 24,
+   "verts": 566,
+   "faces": 923,
+   "uvs": 728
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    278,
+    299
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    456,
+    481
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     299
+    ],
+    "sampled_frames": [
+     278,
+     280,
+     283,
+     285,
+     287,
+     290,
+     292,
+     294,
+     297,
+     299
+    ],
+    "loop": true,
+    "donor_duration": 0.7333
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 519,
+    "faces": 425,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "spa_peasant": {
+  "base": "peaspa",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 18,
+   "verts": 557,
+   "faces": 960,
+   "uvs": 716
+  },
+  "aaf_action_ranges": {
+   "walk": [
+    1,
+    20
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ],
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "workfood": [
+    278,
+    299
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "reaction": [
+    456,
+    481
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     299
+    ],
+    "sampled_frames": [
+     278,
+     280,
+     283,
+     285,
+     287,
+     290,
+     292,
+     294,
+     297,
+     299
+    ],
+    "loop": true,
+    "donor_duration": 0.7333
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 519,
+    "faces": 425,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "tur_peasant": {
+  "base": "peatur",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 20,
+   "verts": 565,
+   "faces": 1039,
+   "uvs": 1055
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    278,
+    299
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    456,
+    481
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     299
+    ],
+    "sampled_frames": [
+     278,
+     280,
+     283,
+     285,
+     287,
+     290,
+     292,
+     294,
+     297,
+     299
+    ],
+    "loop": true,
+    "donor_duration": 0.7333
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 519,
+    "faces": 425,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ },
+ "sco_peasant": {
+  "base": "peasco",
+  "oss": {
+   "fps": 30,
+   "frames": 483,
+   "bones": 18,
+   "verts": 570,
+   "faces": 952,
+   "uvs": 717
+  },
+  "aaf_action_ranges": {
+   "idle": [
+    64,
+    113
+   ],
+   "idle0": [
+    64,
+    113
+   ],
+   "walk": [
+    1,
+    20
+   ],
+   "death": [
+    115,
+    149
+   ],
+   "attack0": [
+    237,
+    254
+   ],
+   "workfood": [
+    278,
+    299
+   ],
+   "workwood": [
+    237,
+    254
+   ],
+   "workstone": [
+    217,
+    234
+   ],
+   "idlefood": [
+    405,
+    454
+   ],
+   "idlewood": [
+    354,
+    403
+   ],
+   "idlestone": [
+    303,
+    352
+   ],
+   "walkfood": [
+    257,
+    276
+   ],
+   "walkwood": [
+    22,
+    41
+   ],
+   "walkstone": [
+    43,
+    62
+   ],
+   "construct": [
+    186,
+    198
+   ],
+   "reaction": [
+    456,
+    481
+   ],
+   "prepare0": [
+    64,
+    65
+   ],
+   "unprepare0": [
+    64,
+    65
+   ]
+  },
+  "plan": [
+   {
+    "action": "walk",
+    "range": [
+     1,
+     20
+    ],
+    "sampled_frames": [
+     1,
+     3,
+     4,
+     6,
+     8,
+     10,
+     11,
+     13,
+     15,
+     17,
+     18,
+     20
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idle",
+    "range": [
+     64,
+     113
+    ],
+    "sampled_frames": [
+     64,
+     74,
+     84,
+     93,
+     103,
+     113
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "attack",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     240,
+     242,
+     243,
+     245,
+     246,
+     248,
+     249,
+     251,
+     252,
+     254
+    ],
+    "loop": false,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workwood",
+    "range": [
+     237,
+     254
+    ],
+    "sampled_frames": [
+     237,
+     239,
+     241,
+     243,
+     245,
+     246,
+     248,
+     250,
+     252,
+     254
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "workfood",
+    "range": [
+     278,
+     299
+    ],
+    "sampled_frames": [
+     278,
+     280,
+     283,
+     285,
+     287,
+     290,
+     292,
+     294,
+     297,
+     299
+    ],
+    "loop": true,
+    "donor_duration": 0.7333
+   },
+   {
+    "action": "workstone",
+    "range": [
+     217,
+     234
+    ],
+    "sampled_frames": [
+     217,
+     219,
+     221,
+     223,
+     225,
+     226,
+     228,
+     230,
+     232,
+     234
+    ],
+    "loop": true,
+    "donor_duration": 0.6
+   },
+   {
+    "action": "construct",
+    "range": [
+     186,
+     198
+    ],
+    "sampled_frames": [
+     186,
+     188,
+     189,
+     191,
+     193,
+     195,
+     196,
+     198
+    ],
+    "loop": true,
+    "donor_duration": 0.4333
+   },
+   {
+    "action": "walkwood",
+    "range": [
+     22,
+     41
+    ],
+    "sampled_frames": [
+     22,
+     24,
+     26,
+     28,
+     30,
+     33,
+     35,
+     37,
+     39,
+     41
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkfood",
+    "range": [
+     257,
+     276
+    ],
+    "sampled_frames": [
+     257,
+     259,
+     261,
+     263,
+     265,
+     268,
+     270,
+     272,
+     274,
+     276
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "walkstone",
+    "range": [
+     43,
+     62
+    ],
+    "sampled_frames": [
+     43,
+     45,
+     47,
+     49,
+     51,
+     54,
+     56,
+     58,
+     60,
+     62
+    ],
+    "loop": true,
+    "donor_duration": 0.6667
+   },
+   {
+    "action": "idlewood",
+    "range": [
+     354,
+     403
+    ],
+    "sampled_frames": [
+     354,
+     364,
+     374,
+     383,
+     393,
+     403
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlefood",
+    "range": [
+     405,
+     454
+    ],
+    "sampled_frames": [
+     405,
+     415,
+     425,
+     434,
+     444,
+     454
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "idlestone",
+    "range": [
+     303,
+     352
+    ],
+    "sampled_frames": [
+     303,
+     313,
+     323,
+     332,
+     342,
+     352
+    ],
+    "loop": true,
+    "donor_duration": 1.6667
+   },
+   {
+    "action": "death",
+    "range": [
+     115,
+     149
+    ],
+    "sampled_frames": [
+     115,
+     120,
+     125,
+     130,
+     134,
+     139,
+     144,
+     149
+    ],
+    "loop": false,
+    "donor_duration": 1.1667
+   }
+  ],
+  "attach_props": {
+   "axe": {
+    "bones": 1,
+    "verts": 124,
+    "faces": 138,
+    "k": 483,
+    "fps": 30
+   },
+   "hammer": {
+    "bones": 1,
+    "verts": 128,
+    "faces": 108,
+    "k": 483,
+    "fps": 30
+   },
+   "hoe": {
+    "bones": 1,
+    "verts": 148,
+    "faces": 130,
+    "k": 483,
+    "fps": 30
+   },
+   "pick": {
+    "bones": 1,
+    "verts": 62,
+    "faces": 96,
+    "k": 483,
+    "fps": 30
+   },
+   "lumber": {
+    "bones": 1,
+    "verts": 1214,
+    "faces": 746,
+    "k": 483,
+    "fps": 30
+   },
+   "bag": {
+    "bones": 1,
+    "verts": 172,
+    "faces": 268,
+    "k": 483,
+    "fps": 30
+   },
+   "cart": {
+    "bones": 1,
+    "verts": 519,
+    "faces": 425,
+    "k": 483,
+    "fps": 30
+   }
+  },
+  "tool_map": {
+   "axe": [
+    "workwood",
+    "attack"
+   ],
+   "hammer": [
+    "construct"
+   ],
+   "hoe": [
+    "workfood"
+   ],
+   "pick": [
+    "workstone"
+   ],
+   "lumber": [
+    "walkwood",
+    "idlewood"
+   ],
+   "bag": [
+    "walkfood",
+    "idlefood"
+   ],
+   "cart": [
+    "walkstone",
+    "idlestone"
+   ]
+  },
+  "textures": {
+   "body": true,
+   "tools": true
+  },
+  "attach_manifest": true
+ }
+}

@@ -240,3 +240,166 @@ All thresholds are `derived` from §1.3–1.4 measurements; state the mode (gene
 ---
 
 *End of T2-PIECE-WINTER winter_variant spec. Read-only research; exactly one document written; no donor binary, code, or Godot artefact added to the repository.*
+
+---
+
+## T6 verdict (T6-T14) — 27-block mini-baker, headless render + visual A/B
+
+Owner: **T6-T14** (micro-worker, recursive T6 terrain swarm). Date 2026-11-23.
+Backup of this file before edit: `inbox/backup/winter_variant.md.bak-T6-T14`
+(sha256 `fae9112d9c0336ab771aee87e595caaaf1603f1855cc995e60779b1442e4b7829`).
+Scope: ONE piece. Headless Python 3.14.3 + Pillow 12.1.1 + NumPy 2.4.3 only.
+**Zero Godot jobs. No donor binary copied into the repo. No shared file edited.**
+
+### Files owned / created by T6-T14
+
+| File | Action |
+|---|---|
+| `app/tools/pieces/t6_winter_variant.py` | NEW — self-contained headless mini-baker; READ-ONLY import of `terrain_piece_render.py` helpers |
+| `app/shots/pieces/t6_winter_variant.png` | NEW — 512×512 RGB hero piece |
+| `app/shots/pieces/t6_winter_variant_compare.png` | NEW — labelled [render \| donor crop] sheet |
+| `app/shots/pieces/t6_winter_variant_27blocks.png` | NEW — 27-block registration render (wiring evidence) |
+| `app/shots/pieces/t6_winter_variant_wiring.json` | NEW — per-block provenance + sha256 manifest |
+| this document | APPEND this section |
+| `docs/t6/reports/T6-T14.md` | NEW — full claim table + verdict |
+
+All probe scripts and lossless crops live in
+`C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\t6t14\` (never in the repo):
+`measure_donor.py`, `contact_sheet.py`, `measure_piece.py`, `donor_measurements.json`,
+`piece_metrics.json`, `ref1_*.png`, `probe_27blocks_sheet.png`, `probe_sprites.png`.
+
+### Step 1 — donor truth re-measured (numeric anchors)
+
+Tags: **observed** = read/measured directly; **derived** = computed from observed;
+**inferred** = interpretation with a stated caveat. Full data in
+`temp/t6t14/donor_measurements.json`.
+
+| Anchor | Value | Tag |
+|---|---|---|
+| Port `winterN.png` (27/27) vs donor `winterN.dds` RGB | pixel-identical, diff bbox `None` for all 27 | observed |
+| Donor `winter10.dds` | snow **90.54%**, mean **#F6F7F7**, L 246.55/9.06, hi-freq(|L−blur5|) **6.20** | observed |
+| `winter10` exact `#FFFFFF` | **28.37%**; near-white top-5 `#F9F9F9` 7.31, `#F7F7F7` 5.75, `#EFEFEF` 4.69, `#F4F4F4` 4.02, `#FCFCFC` 3.84 | observed |
+| `winter10` snow cool bias | **100% B≥R (inclusive)**, only 15.76% strict B>R, **0% B<R** | observed |
+| Reference #1 `snow_open` (120,520,420,700) | mean **#EFEFF9**, snow 92.62%, L 239.75/11.08, hf **5.42**, 100% B≥R | observed |
+| Reference #1 `rocks_snow` (700,430,960,620) | mean **#948C93**, L 143.48/56.30, hf 29.33, edge gradient mean 53.64 / p95 160.0 (sharp) | observed |
+| `rocks_snow` morphology by visual crop read | boulders have hard ≤3 px rims and ~30–70 px footprints at 1920×1080 | inferred (visual, not hand-masked) |
+| Reference #1 `conifers` (1360,600,1700,830) | mean **#ABA8AE**, L 169.55/56.81 — snow-laden white spruces mixed with dark green spruces | observed |
+| Donor rock families | `winter12/13/14/15` mean `#7E7B75`/`#7C7973`, `winter17` `#5B5349`; `winter16` (snow-over-rock) `#C2BFB9` 24.3% snow; `winter20` `#DAD8D5` 42.1% snow | observed |
+| `winter23–26` | mean `#3D471E`, 0% snow — green grass, must never be the snow base | observed |
+| Legacy `#F0F0FB` / `#B2AFB5` | 0 exact occurrences in all 27 DDS; they are reference **box means** (§1.3) | observed |
+| **Key correction to T2 recipe** | Because the donor tile already satisfies inclusive B≥R and carries all near-white hexes, the T2 `white_floor` glaze is unnecessary and destructive (it consumed near-whites). A preserve-mask cool veil is strictly better. | derived |
+| Cool cast origin | screenshot B−R ≈ +10 from the winter **lighting table** (`ShadowBlendingDiffuse #B4B4C8`), not tile albedo (B−R ≈ +1) | inferred (consistent with §1.3) |
+
+Mottling frequency: donor `winter10` hf 6.20 vs reference snow hf 5.42 (same fine
+2–5 px speckle scale). Rock edge width: donor rock tiles produce hard ≤3 px
+boundaries; the piece uses 4 px feather at 1024² (≈2 px at 512²), matching the
+reference rim class. Footprint geometry: 27 deterministic seeded radial blobs
+(3/5/7-lobe noise), family-scaled radii — snow 1.00, other families 0.55.
+
+### Step 2–3 — implementation and visual review
+
+`app/tools/pieces/t6_winter_variant.py` wires **all 27** port winter PNGs:
+`winter10` as the whole-canvas base + the other 26 as masked footprints
+(9 snow, 5 snow+earth, 6 rock, 3 gravel, 4 bare-earth desaturated). Three
+conifer sprites (`tree_spruce1/2/3`, all frosted to different degrees) supply
+the generated-map tree cue; `leaftree` is absent, so bare-tree count 0 is
+correct (V1 mode). A cool shadow tint (L<240 only), a 30% cool lighting veil
+(exact donor snow greys 239/244/247/249/252/255 preserved), whole-crown sprite
+frost with 2 px alpha softening, per-tree soft contact shadows, and a
+preserve-mask speckle blur (radius 0.85) complete the piece. Final downsample
+is **NEAREST** — a 2× Lanczos/bilinear resize was measured to drop exact white
+from 28.4% to 4–12% and destroy 3 of 4 near-white top-5 hexes.
+
+**Visual judgement — revised after coordinator review (my earlier PASS was too
+generous and is withdrawn).** The coordinator flagged four schematic proxy
+failure modes in the first compare sheet: stark black iconic tree silhouettes,
+hard tree outlines, missing soft contact shadow / AO, and uniform procedural
+speckle. All four were corrected in iterations 5–8 and re-read with the image
+tool: trees are now light-grey snow-laden shapes with softened edges and soft
+lower-left contact shadows; hf fell 8.39 → **6.75** and L std 21.68 → **13.99**
+(donor anchors 5.42 / 11.08) while exact donor hexes stayed intact. An
+intermediate full-frost pass (0.92) made featureless "ghosts" and was reduced to
+0.80 on visual evidence; a stronger blur (1.10) pushed snow to 95.2% (C1 FAIL)
+and was reverted to 0.85. **Residual:** the conifers still read as simplified
+sprite shapes, not the layered photographically snow-laden spruces of reference
+#1 — the port has no dedicated frosted-spruce sprite. **Verdict: CONDITIONAL
+PASS / not donor-equal**; owner visual review at combo/full-map is the final
+gate. Metrics alone were not allowed to override this.
+
+### Step 4 — acceptance (all thresholds unweakened)
+
+| ID | Criterion | Donor target | Measured | Verdict |
+|---|---|---|---|---|
+| T6-T14 | 27 distinct winter blocks wired in piece renders, not tint-only | 27 | **27** (wiring.json: 27 distinct, 27 uses; plus 27-block registration render) | **PASS** |
+| C1 | Snow area % (ground) | 85–95 (ref 92.62) | **94.93%** | **PASS** |
+| C2a | Exact `#FFFFFF` | ≥25% | **26.91%** | **PASS** |
+| C2b | Near-white hexes in top-5 | ≥3 | **4** (`#F9F9F9`, `#F7F7F7`, `#FCFCFC`, `#F4F4F4`) | **PASS** |
+| C2c | Cool bias B≥R among snow pixels | ≥80% | **100.0%** (strict B>R 50.64%) | **PASS** |
+| C2 | compound | all three | all three pass | **PASS** |
+| C3 | 0 bare trees (V1 generated mode); conifer present | 0 / present | **0 bare; 3 conifers** in wiring manifest with foot px + alpha bboxes (dark-green classifier invalid after frosting) | **PASS** |
+| C4 | Winter block wiring (non-PNG gate) | ≥1 winter block loaded; no tint-only | 27 blocks loaded and rendered; flat `#DBE8FF` absent | **PASS** (scope note: engine `world.gd` wiring remains an integration-ticket item, not a piece-worker edit) |
+| C5 | On-disk RGB identity to donor | 27/27 identical | **27/27** diff bbox `None` | **PASS** |
+| Extra | Determinism (byte-identical rerun) | identical | sha256 stable across two runs after final revision | **PASS** |
+
+All 10 numeric/gate criteria PASS, but the visual verdict is **CONDITIONAL**
+(see above); piece PASS is not claimed without owner visual review.
+`C2` strict-B>R sub-metric 50.64% is reported for transparency; the acceptance
+test defined in §0 / `winter_variant.json` is inclusive **B≥R**, which is 100%.
+
+### Output hashes (sha256)
+
+| File | sha256 | size |
+|---|---|---|
+| `app/shots/pieces/t6_winter_variant.png` | `c41aa118d0501bf3fafcf1d13a73d61b9cfd546d926f0e34ca7c1babdff4ad8a` | 512×512 |
+| `app/shots/pieces/t6_winter_variant_compare.png` | `7a0e700208c6fb790da722b03d734a58f28bd70c4f2bb6d8a41556095e2b22cd` | 1062×608 |
+| `app/shots/pieces/t6_winter_variant_27blocks.png` | `0dd3ba0e339604ae4db437e7a0f54f1320fb43c88bc4604f5311db215dde7f04` | 1064×998 |
+
+Hashes also recorded in `app/shots/pieces/t6_winter_variant_wiring.json`.
+
+### Open questions
+
+1. **V1 tree mode**: piece uses generated-map mode (conifers only, 0 bare trees);
+   the reference scenario shows ≥1 bare broadleaf per view. Whether the shipping
+   mode should be scenario remains an owner decision.
+2. **Engine wiring**: C4 is satisfied at the *piece* level (27 blocks rendered),
+   but `app/scripts/game.gd` still loads only summer presets and `data.gd` still
+   has the flat winter tint. Closing that needs the gated T6-T90 integration
+   ticket — deliberately NOT touched by this worker.
+3. **Snow-laden sprite (upgraded priority)**: no dedicated frosted conifer sprite
+   exists in the port; the frost here is procedural over a dark-green icon. This
+   is the dominant residual visual defect — a donor-derived snow-spruce sprite
+   micro-task is the only real fix.
+4. **Nearest final downsample** preserves donor exact hexes but slightly aliases
+   the 2–5 px speckle versus Lanczos; the preserve-mask blur (radius 0.85) is the
+   maximum that keeps snow inside 85–95% (radius 1.10 made snow 95.2%, C1 FAIL).
+5. **Owner visual gate**: not donor-equal. Coordinator/owner review of the
+   revised `t6_winter_variant_compare.png` is required before counting this piece
+   as PASS in the lane dashboard.
+
+### T6-S03 smoothing-chain input (read-only, applied to the piece module)
+
+The authoritative `docs/research/T6_S03_smooth_chains.md` was read. **OBSERVED:**
+donor `tilesmooth_scripts.cfg` has 22 sections; C11–C20 Winter are exact mirrors
+of C00–C09 Summer (same groups/probabilities, `_winter` suffix only), 10 chains /
+141 entries, prob=0 endpoints rock9/rock8/rock5/test8 (`_winter` forms), empty
+terminators C10/C21 carry no data. The piece module now embeds the verbatim C11–
+C20 transcription (`WINTER_SMOOTH_CHAINS`) and the donor alias map
+(`WINTER_ALIAS`, from §1.2 above), and `chain_audit()` asserts count/group/entry/
+probability/prob-0 integrity at runtime. Empty terminators are excluded; no
+probability was invented; no roulette is drawn from the chains. 22 winter blocks
+are chain-reachable and 5 are chain-unreferenced
+(`winter18/23/24/25/26`; `winter25` has aliases outside the chains) — all 27
+remain wired for the T6-T14 gate, with the 5 labelled in `*_wiring.json`.
+**Rendered PNG bytes are unchanged** by this data-only addition.
+
+**Careful labels:** **OBSERVED** — port has no `smooth_winter.json`, uses Summer
+table for all seasons via the `WINTER_ART` alias map; **INFERRED** — behavioural
+equivalence conditional on alias preserving group membership; **UNVERIFIED** —
+whether donor runtime selects the Winter sections. The port is **not** asserted
+wrong. Adding `smooth_winter.json` (transcribed from cfg lines 934–1810, no
+terminators, prob=0 kept at 0) and loading it for winter is a gated **T90**
+hand-off for ONE coordinator-granted builder owning `game.gd`; T6-T14 did not
+edit any shared file.
+
+*End of T6-T14 append. Numeric gates PASS; visual CONDITIONAL. No shared file
+edited; no donor binary in repo.*

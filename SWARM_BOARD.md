@@ -628,3 +628,57 @@ python app\tools\godot_runner.py status
 
 That reports `now_serving`, pending tickets, lock state, completed jobs, and
 max/mean wait times. A bounded max wait is the measurable proof of no starvation.
+
+## T6 RECURSIVE WAVE (owner directive 2026-11-23 — OPEN)
+
+Owner: analyze done-vs-not-done vs donor; restructure swarm as an infinite
+recursive micro-agent tree (parents supervise children, helpers test their own
+piece before whole tests); graphics piece-by-piece with many mini-bakers
+(terrain first, some units second); water explicitly not acceptable yet;
+optional pure-Rust zero-dependency-GUI multiplatform branch in `rustport/`.
+
+- Protocol: `SWARM_OPS.md` §7 (recursive tree, models, supervision, ownership).
+- Plan + gap analysis + full micro-ticket list: `docs/T6_WAVE_PLAN.md`.
+- Models (D-29, owner): workers PREFER `opencode-go/hy4-flash-free` (opencode
+  pool quota-blocked); escalation `opencode-go/muse-spark-1.3-contributor#high`.
+  Broadcast to all 6 lanes 2026-11-23. Child runtimes spawn via `opencode run`
+  CLI or subagent-session API (no `subagent` tool below coordinator).
+- Clean gate: 12 historical timeouts acked by coordinator (D-30); CLEAN re-verified.
+- Lane docs: `docs/t6/<LANE>_LANE.md`; worker reports `docs/t6/reports/<ID>.md`.
+- Progress: WATER W01 DONE (byte-offset-pinned equation verification,
+  `docs/t6/reports/T6-W01.md`) + W03 DONE (reflection = projected sampler2D;
+  SubViewport proxy recommended). W02 in progress. TERRAIN 8/15 mini-bakers
+  running, piece modules + compare PNGs landing. QA Q02/Q03 verified, Q01
+  registry + dashboard building; clean-gate blocker CLOSED (D-30, sweep 2 CLEAN).
+  UNITS/RUST/RESEARCH standing up.
+- Coordinator visual spot-check (2026-11-23 ~11:00): first staged pieces still
+  FAR from donor — ravine reads as wooden fence (uniform striations, black
+  outline, zigzag), water has concentric-ring artifact + black shore band.
+  Defect guidance relayed to TERRAIN + WATER parents; no piece PASS accepted
+  with these artifacts. 0/15 terrain pieces PASS so far.
+
+| ID | Lane / ticket | Owner | Owned files | State | Note |
+|---|---|---|---|---|---|
+| T6-TERRAIN | Lane parent: 15 terrain piece mini-bakers (T01–T15) | T6-TERRAIN parent `ses_df83a3717ffedjlk7Nu0JnxU16` | docs/t6/TERRAIN_LANE.md, lane children per plan | IN_PROGRESS | **COORDINATOR REVOCATION**: T02/T05/T12 PASS claims revoked after visual review of regenerated sheets (ravine still wooden-fence; shore rings + contaminated donor crop; mines crop contains no mine). Counting rule: only unconditional PASS counts. **T15 FULL PASS (D-32) — first piece through the complete loop → 1/15**; T04 qualified-only; T12 RED; T14 conditional (S03 chains embedded). 11 children active |
+| T6-T01…T15 | Terrain piece micro-tickets | children of T6-TERRAIN | app/tools/pieces/t6_*.py + own piece docs/shots | INTAKE | see plan §2 table for acceptance criteria |
+| T6-T90 | Terrain integration into world.gd | unassigned (gated) | world.gd | BLOCKED | opens only after ≥12/15 pieces PASS + owner visual review |
+| T6-UNITS | Lane parent: 7 family mini-bakers (U01–U07) | T6-UNITS parent `ses_df83a0375ffen2khQT5GOSXtDv` | docs/t6/UNITS_LANE.md, app/tools/unit_bakers/** | IN_PROGRESS | U01 peasants: 17 staged sheets + 17-check verify_report (coordinator spot-checked: PASS, tools/grips/de-travel correct). Phase-1 truth: U03/U05 PASS, U02 PASS w/ HOLDs — **cossack 1.03 m foot drift = confirmed genuine defect** (owner's unit complaint validated), croat borderline. U05 finding: artillery = composite body+2 wheels .oss + separate death .oss/.aaf → custom baker. Bake queue U03→U05→U02→U04→U07; duplicate-spawn incident cleaned |
+| T6-U01…U07 | Unit family micro-tickets | children of T6-UNITS | unit_bakers/<family>.py + staging shots | INTAKE | live anim dir read-only until T6-U90 |
+| T6-U90 | Unit integration (staging → live anim + index.json) | unassigned (gated) | anim assets, index.json | BLOCKED | opens only on family PASS evidence |
+| T6-WATER | Lane parent: W01–W04 water re-port | T6-WATER parent `ses_df839d7cfffesnEmyvs0mmm99d` | docs/t6/WATER_LANE.md | IN_PROGRESS | W01/W02/W03 running on muse-spark#high (hy4 free quota exhausted); shader path corrected to app/shaders/water_overlay.gdshader; shallow hard gate #C3D1CA re-affirmed |
+| T6-W04 | Water shader integration | unassigned (gated) | water_overlay.gdshader | BLOCKED | gated on T6-W02 piece PASS |
+| T6-RUST | Lane parent: pure-Rust branch R01–R08 | T6-RUST parent `ses_df83996f2ffeR7UWC6RR73aACk` | rustport/**, docs/t6/RUST_LANE.md | IN_PROGRESS | R01 DONE; R05 readers: AAF PASS, OSM PASS, OSS own-gates 5/0 PASS but A10 external FAIL = DDS synthetic_partial_edge_block (routed to DDS child: DXT partial-edge-block fix); R02 Win32 running; R06/R07 M0 gate next |
+| T6-RESEARCH | Lane parent: S01–S05 UNVERIFIED gaps + web | T6-RESEARCH parent `ses_df8396897ffeU2qScHMiE9LLAv` | docs/research/T6_S0*.md, docs/t6/RESEARCH_LANE.md | DONE | all 5 landed: S01 perspective glFrustum confirmed + heightfield 256–640²; S02 bindings statically unrecoverable (honest UNVERIFIED, functional identities); S03 Summer=exact 141-entry copy, Winter=_winter mirrors; S04 7 mechanics gaps (triaged below); S05 fps30 truth, 1.08 stride guard, unbaked actions/mounts. Cross-lane routing sent to UNITS+TERRAIN |
+| T6-QA | Lane parent: registry, gate desk, liveness | T6-QA parent `ses_df8393adbffeE3AT4n1abIh5W1` | app/tools/t6_registry.py, docs/t6/QA_LANE.md, DASHBOARD.md | DONE (reactivatable) | Q01/Q02/Q03 delivered, 3 sweeps CLEAN, dashboard live (43 tickets/49 rows); escalations routed: T15 FAIL→TERRAIN, R05-AAF id mismatch→RUST; Q03 periodic sweeps resumed; gate desk idle-watch |
+
+### T6-S04 mechanics gaps — INTAKE (sim tranche, opens after graphics pieces; source `docs/research/T6_S04_web.md`, cited URLs)
+
+| ID | Gap | Priority | Note |
+|---|---|---|---|
+| T6-M01 | Gold-shortage desertion + ship-stop rule | P1 | donor economy behavior absent from mechanics.json |
+| T6-M02 | Iron+coal shortage stops firing | P1 | resource-dependent combat gate |
+| T6-M03 | Omitted military research rows | P1 | diff vs donor research table |
+| T6-M04 | National unit stat deltas | P2 | per-nation modifiers beyond roster wiring |
+| T6-M05 | Naval classes + upkeep | P1 | pairs with P-10/T6-U07 naval port |
+| T6-M06 | Production-building siege rule | P2 | capture/siege interaction |
+| T6-M07 | Mass-army scale (200 → thousands) | P1 | overlaps P-22; perf-gated |

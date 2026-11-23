@@ -192,3 +192,81 @@ Open questions: (1) exact donor bitmap that drove the 20–80 px gain (tile_low/
 so a per-piece continuous gain field is port-authored — confirm with owner); (2) whether 3 composites is a
 hard runtime cap for piece renders too (QA-P1 measured chunks, not single-piece bakes); (3) whether bins
 4–7 may be dropped entirely for grass-only pieces or must retain a thin light-rim tail.
+
+---
+
+## T6 verdict (T6-T01) — mini-baker render, 2026-11-23
+
+Back up before edit: `inbox\backup\grass_mottled.md.bak-T6-T01` (source sha256
+`A1F857B70FF1DB51092925E7CA2517F9C45A799DD83B3EED8A1DCB43DD866CE8`).
+Full claim table, hashes and open questions: `docs/t6/reports/T6-T01.md`.
+Renderer: NEW `app/tools/pieces/t6_grass_mottled.py` (imports
+`terrain_piece_render.py` READ-ONLY; no Godot, no donor binary copied).
+
+**Donor anchors re-measured first (tags: observed / derived).** Primary #8 clean
+grass `(560,325,735,500)`: `#606428`, L 91.75, std 8.70, hi-freq 3.42, **2**
+bins ≥3%. Palette boxes: lit `#686935` (doc canonical `#6B6732`), mid `#616727`
+exact, mid-alt `#64642F` exact, dark sample `#464827` (doc canonical `#3E411F`).
+Mottled #6 `(250,220,450,420)`: `#4D4B2A`, L 71.66, std 37.55, hi-freq 11.18,
+bins `[5.0,39.3,44.7,4.8,1.9,1.2,1.2,1.8]` → 4 bins ≥3%. **Observed caveat:**
+that crop contains explosions/rock, so bins 4–7 are not grass; a grass-only
+subregion `(0,0,150,200)` measures L 71.77, std 33.98, hi-freq 9.31, bins
+`[4.2,36.4,49.4,4.7,2.0,1.1,1.1,1.2]`. Donor `grass{1,6,10}.dds` are 1024²
+DXT1 and decode **byte-identically** to the port block PNGs (diff 0.0).
+
+**Renderer defect found (observed):** the shared `patches` layer clamps signed
+grid values to 0 in an `L` image (seed 7 field mean 62.57 vs 128), biasing the
+baseline gain by **−38.6 L**. The old `grass_mottled.png` reached its std via a
+mostly-negative gain, not a symmetric ±L driver. The mini-baker keeps the gain
+in float NumPy arrays and uses a continuous rank→CDF ramp with fire-censored
+grass histogram `[6,36,41,12,3,1,1,0]`, a 56 px terrain driver and 6 px fine
+grain; three named block layers preserved (C7 = 3).
+
+**Measured acceptance (200² downsample) — 11 PASS / 0 FAIL:**
+
+| Criterion | Target | Measured | Verdict |
+|---|---|---|---|
+| T6-A patch amplitude | ±25–35 L | 5px-blur field 45/72/102 → **−27/+30 L** (40² proxy −22.4/+18.5) | PASS |
+| T6-B tonal patches | ≥4 bins ≥3% | **4 / 4** in bins 0–3 | PASS |
+| T6-C grid_peak | <0.20 | **0.083** (donor 0.048; old baseline 0.203; checker 0.93) | PASS |
+| C1 L std | 30–40 | **30.93** | PASS |
+| C2 bins ≥3% / low | ≥4 / ≥3 | **4 / 4** | PASS |
+| C3 hi-freq | 8–12 | **10.58** (donor 11.18) | PASS |
+| C4 patch px / 40² spread | 20–80 / ≥15 | **56 px / 50.84 L** | PASS |
+| C5 palette, sat, val | olive; 0.30–0.55; 0.25–0.45 | `#4B4E28`; **0.522 / 0.306** | PASS |
+| C6 light/dark ratio | 1.7–2.4 | **1.800** (donor crop range 1.50–1.99) | PASS |
+| C7 block layers | 3 | **3** | PASS |
+| C8 hist L1 | ≤25 pp | **23.54 pp** grass-only / **21.59 pp** full donor | PASS |
+
+**Parent visual feedback (2026-11-23) and response.** T6-TERRAIN read the first
+compare sheet and flagged "large blurry CAMOUFLAGE BLOBS (~40–80 px)". I accept
+the texture-scale part of that criticism: the single BICUBIC-upsampled driver
+had rounded, over-smooth patch edges and too little grain. The final render
+adds octaves at cell/2 (w 0.20) and cell/4 (w 0.08) to roughen edges and raises
+additive fine grain 4 → 6 L, lifting hi-freq 8.06 → **10.58** (donor 11.18),
+with `cdf_tighten` 0.85 → 0.82 to keep histogram L1 ≤25. All 11 gates still
+pass. **Scope note:** the parent's reference point was the #8 *clean-grass*
+crop (std 8.6 / hf 2.96), which is this piece's negative control — §1.1/§1.2,
+C1 and the failure signature above require std 30–40 and explicitly reject a
+collapse to clean grass. Matching that crop would be a regression, not a fix;
+only the valid "soft blobs" part was acted on.
+
+**Visual judgement (decisive):** PASS with caveats. Grain is visibly finer and
+patch edges are less blobby than the first submission; a few bright sunlit-tip
+specks (~1.8% pixels) remain slightly more yellow than donor grass, and broad
+tonal regions remain because C1 *requires* them. A 2-D noise proxy cannot
+reproduce actual grass-blade geometry. Rejected candidates are documented in
+the report (camo-posterised CDF, grid-peaked noise, fire-yellow blobs).
+
+**Outputs:** `app/shots/pieces/t6_grass_mottled.png` (sha256
+`d6e09cc2792cc8cad58ca4acd0102d544b89897d84e91838b70a005a1566867e`),
+`..._compare.png` (`d3fbe978e8a2721640f9b2688cd8232861086d155939f0fa768050b4f2141b47`),
+`..._nogain.png` (`5101196dc516c0a1128de947620db055f1d39a6bda0ee420f0c259bb44417e2a`).
+Determinism verified byte-identical across two runs.
+
+**Open questions:** (a) `grid_peak` detrend definition is my derived high-pass
+ACF — parent ratification needed; (b) clean-grass bin count is 2 measured, not
+the stated ≥3; (c) bright-tail censoring confirmed as pure-grass intent?;
+(d) shared `patches` clamp defect needs an integration ticket (not edited here);
+(e) exact donor gain bitmap still unknown — proxy is INFERRED.
+

@@ -1,0 +1,39 @@
+You are MICRO-WORKER T6-R01 in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST. Your sessionID is ses_df83462d5ffe559T1dGSqOyGgB.
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3 (run all commands from here).
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3.
+Toolchain: rustc 1.99.1, cargo 1.99.1 (verify with rustc --version and cargo --version).
+
+OWNED FILES (write ONLY these; strict boundary — do not edit anything else, especially app/**, docs outside your report, SWARM_BOARD.md, SWARM_OPS.md):
+- rustport/Cargo.toml
+- rustport/src/main.rs (you may also create rustport/src/lib.rs or module stub files inside rustport/ if useful)
+- rustport/ARCHITECTURE.md
+- rustport/README.md
+- rustport/.gitignore
+- report: docs/t6/reports/T6-R01.md
+
+READ LIST (read-only): SWARM_OPS.md section 7, docs/T6_WAVE_PLAN.md LANE RUST section, app/tools/AGENT_PROTOCOL.md, docs/decomp/DC_FORMATS.md.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R01. New files need no backup.
+
+MICRO-TASK (finish in one sitting): scaffold a cargo project rustport/ for a pure-Rust Cossacks 3 clone:
+1. Cargo.toml: edition 2021 or 2024, binary target, ZERO dependencies (no crates at all). Package name e.g. cossacks3-rust.
+2. src/main.rs: minimal compiling entry point that prints a clear banner and exits (or handles --help). No external crates.
+3. ARCHITECTURE.md: document the module architecture to be filled by later tickets — platform (win32/x11_wayland/cocoa raw FFI selected by cfg attributes), raster (software framebuffer + triangle/terrain-tile renderer), assets (DXT DDS + .oss/.osm/.aaf readers reading donor at runtime), sim (economy/AI from app/mechanics.json), gui (minimal widgets drawn into the framebuffer). Describe data flow: main -> platform window -> framebuffer -> raster -> present. State explicitly: no third-party GUI libraries, raw platform FFI only, std-only target.
+4. README.md: build (cargo build --release from rustport/), run (cargo run), test (cargo test), runtime donor-path requirement, multiplatform intent, honest current status (scaffold only).
+5. .gitignore: target/ at minimum, plus editor cruft.
+
+ACCEPTANCE + CONCRETE TEST (run BEFORE reporting done — piece-before-whole rule):
+- From rustport/: cargo build succeeds with zero errors.
+- cargo run prints the banner and exits cleanly.
+- cargo test passes (zero tests is acceptable at scaffold stage — say so explicitly).
+Paste the exact commands and their output tails into the report.
+
+REPORT: write docs/t6/reports/T6-R01.md with a claim table using observed / derived / inferred labels, evidence paths, PASS/FAIL per acceptance criterion, and open questions. Write it BEFORE reporting done.
+
+RECURSION (only if blocked): you may spawn helpers via the OpenCode HTTP API using the CLI from a shell:
+  opencode api post /api/session --data '{"parentID":"<your sessionID>","agent":"general"}'
+  opencode api post /api/session/<id>/prompt --data '{"text":"..."}'
+On Windows PowerShell, escape double quotes as \" when passing --data. This task is small; do not spawn unless genuinely blocked.
+
+When done, state concisely: files changed, commands run, results, report path, open questions.

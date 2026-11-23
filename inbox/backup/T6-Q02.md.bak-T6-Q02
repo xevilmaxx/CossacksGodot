@@ -1,0 +1,185 @@
+# T6-Q02 — Integration gate desk (IDLE-WATCH stub)
+
+```
+ticket:        T6-Q02 (LANE QA, parent T6-QA)
+sessionID:     ses_t6q02_gate   <- resume THIS session by this id on coordinator grant
+status:        IDLE-WATCH — NO integration ticket granted
+date:          2026-11-23
+owned output:  docs/t6/reports/T6-Q02.md  (the ONLY file written)
+boundary:      ZERO Godot jobs in idle mode; Godot ONLY via godot_runner.py.
+               No edit to SWARM_BOARD.md / SWARM_OPS.md / AGENT_PROTOCOL.md /
+               engine code / any other lane's file. Donor private-use, read-only.
+backup rule:   N/A (observed) — owned file was MISSING at write time; this is a
+               create, not an overwrite. No backup was required.
+labels:        observed = read from a file / command output;
+               derived  = arithmetic or structural conclusion from observations;
+               inferred = plausible reading, not proven;
+               UNVERIFIED = no evidence — never labelled PASS.
+```
+
+---
+
+## 1. Gate state: no integration granted (`observed` / `derived`)
+
+- (`observed`) No section titled exactly `INTEGRATION REQUEST` exists in any
+  `docs/t6/*_LANE.md` at this scan. A repo-wide grep of `docs/t6/` for
+  `INTEGRATION REQUEST|T6-T90|T6-U90|T6-W04` returned only *gated rows* and
+  the QA lane's definition of what a request looks like — no filed request.
+- (`observed`) Gated rows only: `WATER_LANE.md:35` T6-W04 "INTEGRATION — GATED.
+  DO NOT START" (blocked on W01 verification + W02 PASS);
+  `TERRAIN_LANE.md:36,40` T6-T90 "NOT OPEN", 0/15 pieces PASS; `UNITS_LANE.md:48`
+  T6-U90 "not started"; `T6_WAVE_PLAN.md:117,139` grant conditions.
+- (`observed`) `docs/t6/QA_LANE.md:116-129` records the parent's initial scan:
+  "none" — no integration request filed as of that pass.
+- (`derived`) Therefore Q02 remains in IDLE-WATCH and submits no Godot job. This
+  report is a stub: the acceptance suite below is **planned, not executed**.
+
+## 2. IDLE PIECE TEST — mandatory dry-run (all claims below labelled)
+
+### 2.1 Read-only runner status — EXECUTED (`observed`)
+
+Command: `python app\tools\godot_runner.py status`
+(allowed read-only command; launches no Godot job)
+
+Verbatim stdout (`observed` 2026-11-23):
+
+```
+now_serving = 1056
+next_ticket = 1056
+pending      = 0 []
+godot.lock   = free
+completed    = 500
+max wait     = 607.89s   mean wait = 31.58s
+max run      = 386.34s
+statuses     = {'failed': 50, 'ok': 438, 'timed-out': 12}
+```
+
+- (`derived`) `now_serving == next_ticket` and `godot.lock = free` ⇒ queue idle,
+  not wedged. `pending = 0` ⇒ no job is waiting.
+- (`derived`) No ticket was allocated by this desk: the only runner command
+  issued was `status`, which does not call `take_ticket()` (`godot_runner.py:395-415`).
+
+### 2.2 PATH CHECK table (`observed` — `Test-Path -PathType Leaf` from project root)
+
+| path | exists | note |
+|---|---|---|
+| `app\tools\godot_runner.py` | YES | 20805 B; single Godot door, FIFO runner; read `:1-562` this pass |
+| `app\tools\assert_clean.py` | YES | 10377 B; clean gate, `--json` |
+| `app\tools\scan_map.py` | YES | 13303 B; `--dir DIR` (`scan_map.py:244`) |
+| `app\tools\bake_bench.py` | YES | 7838 B; honesty contract read in full (§2.5) |
+| `app\tools\terrain_geometry_verify.py` | YES | 30569 B — **THIS is the geometry verifier**; `--dump FILE.json` (repeatable), `--baseline`, `--json` (`:626-630`) |
+| `app\tools\full_map_shot.py` | YES | 25848 B; `--dump`, `--out`, `--seed`, `--gen-dump`, `--runner-timeout` (`:470-486`) |
+| `app\tools\extract_map.py` | YES | 6563 B; donor `.map` ASCII placement extractor — see OQ-1 |
+| `app\tools\geometry_verify.py` | **NO** | negative control: docs naming this file are WRONG; do not use it |
+
+Supporting artifacts (`observed`, existence only — not gate results):
+`app\selftest.json` YES, `app\uitest.json` YES, `app\shots\` YES,
+`app\shots\perf_low.json` YES, `scans\` YES (existing dumps, e.g.
+`scan_7.json` — **not** a fresh dump), `app\dumps` NO.
+
+### 2.3 Planned acceptance command list — DRY-RUN ONLY, NOT EXECUTED
+
+Every shell call gets a **tool timeout ≥ 300000 ms** (`observed` requirement:
+`AGENT_PROTOCOL.md:46-48`, `STATUS_TESTS.md:301-302`, `QA_LANE.md:44-50`).
+Queue waits are NOT hangs: on a long wait, check
+`python app\tools\godot_runner.py status` and wait — never re-submit
+(`AGENT_PROTOCOL.md` §1b). Never re-run a red gate blindly; read its report and
+attribute parse errors to the owner (`SWARM_OPS.md` §5d.5).
+
+| # | Purpose | Exact planned command (runner id `t6qa-<purpose>`) | Shell timeout | Pass criterion (planned) |
+|---|---|---|---|---|
+| 0 | status | `python app\tools\godot_runner.py status` | n/a (read-only) | queue idle / lock free before launch |
+| 1 | selftest | `python app\tools\godot_runner.py run --id t6qa-selftest --timeout 300 -- --headless --path app -- --self-test app/selftest.json` | ≥ 300000 ms | `app/selftest.json` `"passed": true`, **29/29** (`observed` gate def `STATUS_TESTS.md:274-275`; `SWARM_OPS.md:66-67`) |
+| 2 | uitest | `python app\tools\godot_runner.py run --id t6qa-uitest --timeout 300 -- --headless --path app -- --ui-test app/uitest.json` | ≥ 300000 ms | `app/uitest.json` `"passed": true`, **17/17** (`STATUS_TESTS.md:277-278`) |
+| 3 | bench | `python app\tools\bake_bench.py --id t6qa-bench --timeout 300` | ≥ 300000 ms | **engine-emitted `BAKE_BENCH` line with `max_ms < 250`**; absence ⇒ UNVERIFIED, not PASS (§2.5) |
+| 4a | fresh dump | `python app\tools\extract_map.py --out <fresh dump dir>` | ≥ 300000 ms | fresh dump produced; exact args **TBD at trigger — OQ-1** |
+| 4b | scan_map | `python app\tools\scan_map.py --dir <fresh dump dir>` | ≥ 300000 ms | **ALL GREEN** on a fresh dump, exit 0 (`T6_WAVE_PLAN.md:29`; brief) |
+| 5 | geometry | `python app\tools\terrain_geometry_verify.py --dump <fresh dump json> --json` | ≥ 300000 ms | verifier runs; any FAIL blocks; UNVERIFIED rows stay UNVERIFIED, never PASS (`SWARM_OPS.md` §5b-QUALITY) |
+| 6a | capture (compositor) | `python app\tools\full_map_shot.py --dump <fresh dump> --out app/shots/t6qa_<ticket>.png` | ≥ 300000 ms | canonical whole-map PNG, `map_w*tile_px × map_h*tile_px` (`SWARM_OPS.md:314`); owner visual review is final gate |
+| 6b | capture (in-engine) | `python app\tools\godot_runner.py run --id t6qa-shot --timeout 300 -- --headless --path app -- --screenshot app/shots/t6qa_<ticket>_engine.png --timeout 60` | ≥ 300000 ms | relevant in-engine capture via runner (per brief, "when triggered"); non-blank |
+| 7 | clean gate | `python app\tools\assert_clean.py --json` | ≥ 300000 ms | exit 0 / CLEAN on a quiet queue — see blocker note §2.6 |
+
+The `<ticket>` token in capture paths resolves to the granted integration id
+(`t6qa_T90` / `t6qa_U90` / `t6qa_W04`) at trigger time (`derived` from
+`T6_WAVE_PLAN.md:117,139,148`; brief).
+
+**Godot jobs submitted: 0.**
+
+### 2.4 Ordering at trigger (planned, `derived` from `SWARM_OPS.md` §7.6)
+
+Piece PASS evidence must already exist before this desk runs anything
+(§7.6: piece → combo → integration → full-map). Sequence: status → selftest →
+uitest → bench → fresh scan + geometry → captures → clean gate. A parse or
+red gate is **reported**, not re-run; a parse error belongs to its owner
+(`SWARM_OPS.md` §5d.5).
+
+### 2.5 `bake_bench.py` honesty contract (`observed` — read `bake_bench.py:6-27,104-119,153-184`)
+
+- Only an explicit, **engine-emitted** `BAKE_BENCH ... max_ms=<n>` line can yield
+  a numeric verdict; `PERF ... sync_ms=X` is CONTEXT ONLY (mean of total
+  `world.sync()` over 120 frames, not a bake maximum).
+- `preset=low`, `px=8`, `chunks=120` in the engine line are **hardcoded labels,
+  not measurements**; verify the effective preset independently with
+  `--dump-config`, with an **absolute** config path (relative `app/shots/...` is
+  silently ignored by `config.gd::_candidate_paths`).
+- The true bake count is not emitted; a static-camera capture bakes few chunks,
+  so the line is usually flushed at exit and `max_ms` may be a cold-cache first
+  bake. Keep these caveats with any verdict.
+- The harness exit 0 means "harness ran", not "PASS" (`:193-194`).
+
+### 2.6 Clean-gate blocker carried forward (`observed` from `QA_LANE.md:98-104,108-111`)
+
+Parent's baseline: `assert_clean.py --json` exit 1 / **DIRTY** — processes clean
+(0), lock free, but `history` lists 12 unacknowledged `timed-out` jobs
+(tickets 752/754/756/758/815/865/969/975/978/979/983/1037). This is
+pre-existing historical state, not QA-lane breakage. (`derived`) At a granted
+integration, record this verdict for the coordinator; do **not** `ack`, reset,
+unwedge, or re-run to force green. This desk did not re-measure it in idle mode
+(only `godot_runner.py status` was permitted), so its current value is
+`UNVERIFIED` as of this report.
+
+## 3. Claim table (evidence labels)
+
+| Claim | Label | Evidence |
+|---|---|---|
+| No INTEGRATION REQUEST filed; Q02 stays idle | `observed` + `derived` | grep of `docs/t6/**`; `QA_LANE.md:116-129`; gated rows |
+| Runner queue idle, lock free, 0 pending | `observed` + `derived` | §2.1 verbatim status output |
+| All 7 required tool paths exist; `geometry_verify.py` does not | `observed` | §2.2 `Test-Path` table |
+| Planned commands are correct and use `t6qa-*` ids | `observed` + `derived` | brief + `STATUS_TESTS.md:270-305` + `AGENT_PROTOCOL.md:14-28` |
+| Gate pass criteria (29/29, 17/17, <250 ms, ALL GREEN) | `observed` | `SWARM_OPS.md:66-67,311`; `STATUS_TESTS.md:274-300`; `T6_WAVE_PLAN.md:29` |
+| Bench caveats (hardcoded labels, cold cache, PERF context only) | `observed` | `bake_bench.py:6-27,104-119,153-184` |
+| Clean gate currently DIRTY for historical timeouts | `observed` (doc) / `UNVERIFIED` (current) | `QA_LANE.md:98-111`; not re-measured this pass |
+| Actual gate results for any integration | `UNVERIFIED` | no integration granted; no Godot job run |
+| `extract_map.py` produces the `scan_map.py` fresh dump | `UNVERIFIED` — see OQ-1 | `extract_map.py:21-27` vs `scan_map.py:4-6` disagree |
+
+## 4. Open questions (for parent / coordinator — NOT acted on in idle)
+
+- **OQ-1** (`observed` conflict): the brief says produce a fresh dump with
+  `app\tools\extract_map.py`, but `extract_map.py:21-27` extracts *donor `.map`
+  ASCII placements* into `app/assets/maps`, whereas `scan_map.py:4-6` reads
+  JSON dumps produced by `godot --headless --path app -- --dump-map FILE --seed N`
+  (a runner job). These are different artifacts. (`inferred`) The brief may have
+  meant the Godot `--dump-map` path. Ask T6-QA/coordinator to confirm the exact
+  fresh-dump command and directory before triggering; Q02 will not guess.
+- **OQ-2** (`observed`): the 12 unacknowledged `timed-out` jobs keep the clean
+  gate DIRTY (`QA_LANE.md:98-104`). Needs coordinator ruling/ack before any
+  integration can be signed clean.
+- **OQ-3** (`derived`): if T90/U90/W04 is granted while the runner queue is busy,
+  expect FIFO waits; use `status` + ≥300000 ms tool timeouts, never duplicate
+  tickets.
+
+## 5. Resume trigger (do NOT do now)
+
+On grant of T6-T90 / T6-U90 / T6-W04, T6-QA resumes this exact session by
+`sessionID = ses_t6q02_gate` with the ticket id and the INTEGRATION REQUEST
+evidence. Then: run §2.3 with `t6qa-*` ids and ≥300000 ms shell timeouts, verify
+29/29 + 17/17 + BAKE_BENCH <250 ms + scan_map ALL GREEN on a **fresh** dump +
+geometry verifier + relevant capture + clean gate, and **append** the verdict
+(with `observed`/`derived`/`inferred` labels) to this file. Until then: STOP.
+
+---
+
+**Related:** `docs/T6_WAVE_PLAN.md` §2/§7.6 · `SWARM_OPS.md` §3/§5d.5/§7 ·
+`app/tools/AGENT_PROTOCOL.md` §1b · `docs/STATUS_TESTS.md` §7 ·
+`docs/t6/QA_LANE.md` §gate-readiness/§integration-requests ·
+`docs/t6/reports/T6-W03.md` (label style).

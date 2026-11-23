@@ -1,0 +1,34 @@
+You are MICRO-WORKER T6-R05-DDS in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST (sibling workers handle .oss, .osm, .aaf — do not touch their files).
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3.
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3. Read donor files at TEST TIME only; never commit donor bytes or goldens.
+
+OWNED FILES (write ONLY these — strict boundary; never edit app/**, Cargo.toml, src/main.rs, other assets/*.rs, docs outside your report, SWARM_BOARD.md):
+- rustport/src/assets/dds.rs
+- rustport/tests/assets_dds.rs
+- rustport/tests/tools/dds_golden.py (optional tiny Python golden generator)
+- report: docs/t6/reports/T6-R05-DDS.md
+
+READ LIST (read-only): docs/decomp/DC_FORMATS.md section 1 (DDS family) and 2, app/tools/bake_sprites.py (function dds_to_png / DDS handling — READ ONLY), docs/audit/TERRAIN_DONOR_ASSETS.md section 3.2, SWARM_OPS.md section 7, app/tools/AGENT_PROTOCOL.md.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R05-DDS. New files need no backup.
+IMPORTANT: rustport/src/assets.rs is a scaffold STUB owned by integration — do NOT edit it. Your integration test must include your file directly: `#[path = "../src/assets/dds.rs"] mod dds_reader;` (path relative to rustport/tests/). Sibling readers live in separate files owned by other workers.
+
+MICRO-TASK (one format only): implement a std-only Rust DDS reader/decoder for DXT1, DXT3 and DXT5 compressed textures, decoding to 8-bit RGBA:
+- Parse the standard 128-byte DDS header: magic b"DDS ", dwSize=124, flags, height, width, pitch/depth, dwFourCC == 'DXT1'/'DXT3'/'DXT5' (u32 LE), and DX10 extension if present (report unsupported clearly).
+- Implement block decompression: 4x4 blocks, 2 endpoint colours, interpolated palette, DXT1 1-bit alpha (and the no-alpha 3-colour case), DXT3 explicit 4-bit alpha, DXT5 interpolated 8-bit alpha with the 8-entry codebook. Handle partial edge blocks. Output row-major RGBA8 in top-down order.
+- Public API: `pub struct DdsImage { pub width: u32, pub height: u32, pub format: FourCc, pub rgba: Vec<u8> }`, `pub fn parse(bytes: &[u8]) -> Result<DdsImage, DdsError>`, plus `pub fn decode_file(path: &Path) -> ...` reading from the donor path.
+
+CONCRETE TEST it MUST run BEFORE reporting done (piece-before-whole rule):
+- From rustport/: `cargo test --test assets_dds` passes. The test must:
+  1. Read a real donor DDS at runtime, e.g. C:\Games\Cossacks 3\data\terrain\tiles\textures\grass1.dds (1024x1024, DXT? verify header) and sand1.dds (256x256).
+  2. Assert header fields (width/height/fourcc) match what Python/Pillow reports.
+  3. Compare decoded RGBA bytes against a golden produced AT TEST TIME by Python+Pillow (`Image.open(path).convert('RGBA').tobytes()`) written to a temp file (e.g. under rustport/target/), then read by the Rust test. Do NOT commit goldens or donor pixels. Compare byte-for-byte; if Pillow's DXT rounding differs from yours, report the exact mismatch count/percentage and investigate (do not silently accept a mismatch as PASS).
+  4. Include pure-unit tests for synthetic 4x4 DXT1/DXT3/DXT5 blocks with hand-computed expected RGBA (so the decoder is testable even if donor files are absent).
+- Paste exact commands + output tails into the report.
+
+REPORT: write docs/t6/reports/T6-R05-DDS.md with a claim table (observed / derived / inferred), evidence paths, PASS/FAIL per acceptance criterion, mismatch statistics if any, and open questions. Write it BEFORE reporting done.
+
+RECURSION (only if blocked): spawn helpers via `opencode api post /api/session --data` with parentID = your sessionID. Prefer doing this yourself — it is one format.
+
+When done, state concisely: files changed, commands run, results, report path, open questions.

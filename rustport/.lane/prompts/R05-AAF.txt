@@ -1,0 +1,31 @@
+You are MICRO-WORKER T6-R05-AAF in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST (sibling workers handle DDS, .oss, .osm — do not touch their files).
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3.
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3. Read donor files at TEST TIME only; never commit donor bytes.
+
+OWNED FILES (write ONLY these — strict boundary; never edit app/**, Cargo.toml, src/main.rs, other assets/*.rs, docs outside your report, SWARM_BOARD.md):
+- rustport/src/assets/aaf.rs
+- rustport/tests/assets_aaf.rs
+- report: docs/t6/reports/T6-R05-AAF.md
+
+READ LIST (read-only): docs/decomp/DC_FORMATS.md section 2.3 (.aaf text format; yacht.aaf example), app/tools/bake_sprites.py function read_aaf (READ ONLY), SWARM_OPS.md section 7, app/tools/AGENT_PROTOCOL.md.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R05-AAF. New files need no backup.
+IMPORTANT: rustport/src/assets.rs is a scaffold STUB owned by integration — do NOT edit it. Your integration test must include your file directly: `#[path = "../src/assets/aaf.rs"] mod aaf_reader;` (path relative to rustport/tests/).
+
+MICRO-TASK (one format only): implement a std-only Rust reader for the ASCII action-range .aaf format:
+- Line 1 is literally "AAF". Line 2 is an integer action count N. The next N non-empty lines have the shape `"name",start,end,morph` where name is a quoted string (support escaped quotes/backslashes), start/end are inclusive integer frame bounds, morph is a token (e.g. "morph"). Tolerate CRLF and trailing blank lines. Reject malformed lines with a clear error.
+- Public API: `pub struct Action { pub name: String, pub start: i32, pub end: i32, pub morph: String }`, `pub struct Aaf { pub actions: Vec<Action> }`, `pub fn parse(text: &str) -> Result<Aaf, AafError>`, `pub fn parse_file(path: &Path) -> ...` (read as ASCII/UTF-8 lossy if needed).
+
+CONCRETE TEST it MUST run BEFORE reporting done (piece-before-whole rule):
+- From rustport/: `cargo test --test assets_aaf` passes. It must:
+  1. Read the real donor file at runtime: C:\Games\Cossacks 3\data\animations\aaf\yacht.aaf — assert exactly 4 actions with names idle/walk/death/attack0, each start=1, end=280, morph="morph".
+  2. Include a synthetic in-memory parse test with quoted names containing an escaped quote and a comma, CRLF line endings, and trailing blank lines.
+  3. Include a malformed-input test asserting Err (e.g. wrong magic or missing fields).
+- Paste exact commands + output tails into the report.
+
+REPORT: write docs/t6/reports/T6-R05-AAF.md with a claim table (observed / derived / inferred), evidence paths, PASS/FAIL per acceptance criterion, and open questions. Write it BEFORE reporting done.
+
+RECURSION (only if blocked): spawn helpers via `opencode api post /api/session --data` with parentID = your sessionID. Prefer doing this yourself — it is one format.
+
+When done, state concisely: files changed, commands run, results, report path, open questions.

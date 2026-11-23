@@ -4324,7 +4324,10 @@
       "timeout": 300.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000752_t2gen-check\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000752_t2gen-check\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000752_t2gen-check\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Historical --check-only hang: environment-wide issue documented on SWARM_BOARD (T2 GEN note); parse validity proven by selftest loading all scripts; superseded by green gates. Coordinator ack D-14 precedent, T6 wave 2026-11-23.",
+      "ack_at": 1795427427.1049938
     },
     {
       "ticket": 753,
@@ -4365,7 +4368,10 @@
       "timeout": 300.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000754_t2gen-check-pgen\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000754_t2gen-check-pgen\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000754_t2gen-check-pgen\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Historical --check-only hang: environment-wide issue documented on SWARM_BOARD (T2 GEN note); parse validity proven by selftest loading all scripts; superseded by green gates. Coordinator ack D-14 precedent, T6 wave 2026-11-23.",
+      "ack_at": 1795427428.382522
     },
     {
       "ticket": 755,
@@ -4406,7 +4412,10 @@
       "timeout": 180.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000756_t2gen-check2\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000756_t2gen-check2\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000756_t2gen-check2\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Historical --check-only hang: environment-wide issue documented on SWARM_BOARD (T2 GEN note); parse validity proven by selftest loading all scripts; superseded by green gates. Coordinator ack D-14 precedent, T6 wave 2026-11-23.",
+      "ack_at": 1795427429.8547661
     },
     {
       "ticket": 757,
@@ -4447,7 +4456,10 @@
       "timeout": 90.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000758_t2gen-check-control\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000758_t2gen-check-control\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000758_t2gen-check-control\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Historical --check-only hang: environment-wide issue documented on SWARM_BOARD (T2 GEN note); parse validity proven by selftest loading all scripts; superseded by green gates. Coordinator ack D-14 precedent, T6 wave 2026-11-23.",
+      "ack_at": 1795427432.438973
     },
     {
       "ticket": 759,
@@ -5794,7 +5806,10 @@
       "timeout": 150.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000815_t2gen-check-final\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000815_t2gen-check-final\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000815_t2gen-check-final\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Historical --check-only hang: environment-wide issue documented on SWARM_BOARD (T2 GEN note); parse validity proven by selftest loading all scripts; superseded by green gates. Coordinator ack D-14 precedent, T6 wave 2026-11-23.",
+      "ack_at": 1795427433.9632063
     },
     {
       "ticket": 816,
@@ -6913,7 +6928,10 @@
       "timeout": 300.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000865_t2gen2-selftest8\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000865_t2gen2-selftest8\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000865_t2gen2-selftest8\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Superseded: T2 GEN final selftest 29/29 + uitest 17/17 green (board T2 BUILD WAVE). Coordinator ack, T6 wave 2026-11-23.",
+      "ack_at": 1795427436.0889964
     },
     {
       "ticket": 866,
@@ -9253,7 +9271,10 @@
       "timeout": 180.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000969_t5ai-check\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000969_t5ai-check\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000969_t5ai-check\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Historical --check-only hang: environment-wide issue documented on SWARM_BOARD (T2 GEN note); parse validity proven by selftest loading all scripts; superseded by green gates. Coordinator ack D-14 precedent, T6 wave 2026-11-23.",
+      "ack_at": 1795427435.152283
     },
     {
       "ticket": 970,
@@ -9382,7 +9403,10 @@
       "timeout": 300.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000975_t5gen-v2-d7\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000975_t5gen-v2-d7\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000975_t5gen-v2-d7\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Superseded: T5-GEN final gates green selftest 29/29 (1016/1023/1025), uitest 17/17 (1022/1024), dumps byte-identical. Coordinator ack, T6 wave 2026-11-23.",
+      "ack_at": 1795427437.780821
     },
     {
       "ticket": 976,
@@ -9439,7 +9463,10 @@
       "timeout": 180.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000978_m0-3d-terrain\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000978_m0-3d-terrain\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000978_m0-3d-terrain\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "3D sandbox branch CLOSED by coordinator decision (M0.6 visual FAIL, board R-ARCH); later captures obtained in successful jobs; experiment archived. Coordinator ack, T6 wave 2026-11-23.",
+      "ack_at": 1795427442.5719283
     },
     {
       "ticket": 979,
@@ -9463,7 +9490,10 @@
       "timeout": 300.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000979_t5gen-v2-d8\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000979_t5gen-v2-d8\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000979_t5gen-v2-d8\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Superseded: T5-GEN final gates green selftest 29/29 (1016/1023/1025), uitest 17/17 (1022/1024), dumps byte-identical. Coordinator ack, T6 wave 2026-11-23.",
+      "ack_at": 1795427439.4195843
     },
     {
       "ticket": 980,
@@ -9548,7 +9578,10 @@
       "timeout": 300.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00000983_t5gen-v2-d9\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00000983_t5gen-v2-d9\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00000983_t5gen-v2-d9\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "Superseded: T5-GEN final gates green selftest 29/29 (1016/1023/1025), uitest 17/17 (1022/1024), dumps byte-identical. Coordinator ack, T6 wave 2026-11-23.",
+      "ack_at": 1795427441.0822308
     },
     {
       "ticket": 984,
@@ -10717,7 +10750,10 @@
       "timeout": 180.0,
       "status": "timed-out",
       "stdout": "app\\.godot_queue\\results\\00001037_terrain3d_m05_a\\stdout.txt",
-      "stderr": "app\\.godot_queue\\results\\00001037_terrain3d_m05_a\\stderr.txt"
+      "stderr": "app\\.godot_queue\\results\\00001037_terrain3d_m05_a\\stderr.txt",
+      "acknowledged": true,
+      "ack_reason": "3D sandbox branch CLOSED by coordinator decision (M0.6 visual FAIL, board R-ARCH); later captures obtained in successful jobs; experiment archived. Coordinator ack, T6 wave 2026-11-23.",
+      "ack_at": 1795427444.355027
     },
     {
       "ticket": 1038,

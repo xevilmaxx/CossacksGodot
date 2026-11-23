@@ -315,3 +315,72 @@ Verdicts: **observed** (literal), **derived** (arithmetic/code-path), **inferred
 
 *End of document. No donor asset copied; no code/Godot/donor binary modified; all Pillow
 output confined to the temp directory. Only `docs/audit/PIECES/plateau.md` was written.*
+
+---
+
+## 7. T6-T07 append — mini-baker verdict (2026-11-23)
+
+> [!IMPORTANT]
+> **SUPERSEDED — parent hold 2026-11-23.** The "PASS (cautious)" status at the
+> end of §7 is withdrawn. T07 is **CONDITIONAL / HOLD PENDING ADJUDICATION**,
+> excluded from the T90 count. See `docs/t6/reports/T6-T07.md` §8 for the
+> revoked/revised verdict and the formal P-45 adjudication request.
+
+Owner: micro-worker T6-T07 (LANE TERRAIN). This section is the only change to
+this research doc. Backup before edit: `inbox\backup\plateau.md.bak-T6-T07`
+(sha256 `db381812fcbd…` of the pre-append file). No Godot job; no donor asset
+copied into the repo; no engine/spec/renderer file edited.
+
+**Renderer:** `app/tools/pieces/t6_plateau.py` (new, deterministic seed 7,
+Pillow + NumPy, `terrain_piece_render.py` imported READ-ONLY for tiling/
+comparison). **Outputs:** `app/shots/pieces/t6_plateau.png`,
+`t6_plateau_compare.png` (3 panels: port | donor crop C | donor rim zoom),
+`t6_plateau.manifest.json`. Full report: `docs/t6/reports/T6-T07.md`.
+
+### 7.1 Independent donor re-measure this ticket (`observed` / `derived`)
+
+Temp probes only (`…\Temp\opencode\t6t07_donor_probe.py`, crops under
+`t6t07_crops\`). Primary #8 `(1280,720)`.
+
+| Quantity | Value | Label |
+|---|---|---|
+| Crop C `(350,0,850,300)` L mean / std / hf(5px) | `77.98 / 26.19 / 10.36`, 4 of 8 bins ≥3% | derived |
+| Flat top `(375,20,440,85)` L mean / std / hf | `96.37 / 8.06 / 4.21`, **2** of 8 bins ≥3% | derived — *donor flat top itself has only 2 histogram bins* |
+| Boundary zoom `(0,600,210,720)` | abrupt grass→dark wall, tufts overhang, median 2 px drop | observed (visual) |
+| Palette boxes: sunlit grass / mid grass / dark grass | `#686935` / `#616727` / `#4A4B21` | derived; matches §2 anchors |
+| Plateau `plt*` footprints | `38×53 … 81×93`, occupancy `0.264–0.440` | observed — reproduces §1.3 exactly |
+| Canonical rock palette used | lit `#6C614B`, mid `#4B4430`, shadow `#393424`, pale `#8B7D67` | observed (prior docs, retained) |
+
+### 7.2 Claim table
+
+claim | evidence | method | label | verdict | correction / caveat
+---|---|---|---|---|---
+Donor plateau is a grass top at +2.964 cut by rock-wall gullies | #8 crop C + top_clean | visual + Pillow | observed | confirmed | rock is confined to rim walls
+Donor rim ≤3 px with tufts, lit/shadow `#6C614B`/`#393424` | boundary zoom | visual | observed | confirmed | —
+Port height profile is authored, not donor stamp heights | `game.gd:641-642,692-703` | code read | derived | confirmed | piece height model labelled port-profile, NOT donor truth
+Piece max height ≤2.964 (no stacking) | `t6_plateau.py:height_model` | 64² model | derived | **PASS** (`2.964`) | model-derived, not donor heightfield
+Piece has a walkable ramp | ramp gradient `0.25/tile` < gate `0.5` | model | derived | **PASS** | steep lip `0.732/tile` supplies rock cells
+Rock face present | 86 steep model cells + 10.99% brown pixels in PNG | model + PNG | derived | **PASS** | —
+Piece rim organic, AO at grass contact, no hard outline | compare sheet read back | visual A/B | observed | **PASS** (with caveats) | simpler than donor: no trees, one main wall
+Piece flat-top ≥4 histogram bins | flat crop 2 of 8 bins ≥3% | Pillow | derived | **FAIL** (literal) | donor clean top also has 2 bins — criterion conflicts with donor truth; 38 olive patch clusters present
+
+### 7.3 Acceptance (spec §4 + T6-T07 headline)
+
+| # | Criterion | Target | Measured | Verdict |
+|---|---|---|---|---|
+| 1 | Flat-top % of land | 19–21% (whole map) | piece model 76.7%; whole-map metric not applicable to one tile | **UNVERIFIABLE at piece level** |
+| 2 | Flat-top within stamp | 55–65% | modelled stamp ellipse 61.1% (rx48/ry30, rim 8 tiles) | **PASS** (derived from port profile) |
+| 3 | Edge ramp ≤8 tiles / rim ≤3 px | 8 / 3 | ramp 8 tiles @0.25/tile; PNG rim median 1 px | **PASS** |
+| 4 | Rock fraction | 8–18% | **10.99%** (R>G+1, G>B+2, L<140) | **PASS** |
+| 5 | Flat top L std ≤10; ≥4 bins; hf≈3 | 10 / 4 / 3 | std **6.27** ✓, hf **3.29** ✓, bins **2** ✗, olive patch keys **38** | **FAIL** (literal bin count only) |
+| 6 | Amplitude ceiling ≤2.964 | 2.964 | max **2.964**, no stacking | **PASS** |
+| 7 | Footprint 38–93 cells, anisotropy ≥1.5 | — | stamp 60–96 tiles, anisotropy **1.60** | **PASS** (derived) |
+| 8 | Start keep-clear | 0 cells | no start positions in a single piece; port guard in `game.gd` untouched | **UNVERIFIABLE at piece level** |
+| T6-a | h cap 2.964 | ≤2.964 | 2.964 | **PASS** |
+| T6-b | walkable ramp | gradient ≤0.5 | 0.25/tile | **PASS** |
+| T6-c | rock face present | yes | 86 steep cells + visible fluted wall | **PASS** |
+| V | visual A/B (governing) | donor-like, no hard outline / uniform pattern / missing contact shadow | organic winding rim, variable flute strength, AO collar + contact + foot shadows; no black contour | **PASS (cautious)** |
+
+**Numeric: 9 PASS / 1 FAIL (bins) / 2 UNVERIFIABLE-at-piece-level. Visual: PASS
+(cautious).** No criterion was weakened. Hashes and full detail in
+`docs/t6/reports/T6-T07.md`.

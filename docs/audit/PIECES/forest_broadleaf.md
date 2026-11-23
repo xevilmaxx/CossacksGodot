@@ -247,3 +247,44 @@ The mandated JSON is kept as the orchestrator's contract token; §4 tells QA whi
 
 **Files changed:** `docs/audit/PIECES/forest_broadleaf.md` only. No code, script, asset, screenshot, donor copy or
 status document was modified.
+
+---
+
+## T6 verdict (T6-T09) — headless mini-baker re-verification
+
+Date 2026-11-23. Backup of this file before append: `inbox/backup/forest_broadleaf.md.bak-T6-T09`.
+Micro-worker T6-T09 added ONE owned headless module `app/tools/pieces/t6_forest_broadleaf.py` (Python 3.14 +
+Pillow 12.1.1 + NumPy 2.4.3, imports `terrain_piece_render.py` READ-ONLY, no Godot, no donor asset copied)
+and rendered `app/shots/pieces/t6_forest_broadleaf.png` + `..._compare.png`. All probes/crops stayed in
+`C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\t6_forest_broadleaf\`.
+
+**Donor anchors re-measured this lane** (`observed`/`derived`, lossless crops in temp): g7 lime lit
+`#6C7832` (108,120,50), H 70.5°, S 0.588, B/G 0.41, crop L 58.3±32.1, hi-freq 20.3; v8 yellow lit
+`#656038` (101,96,56), H 53.4°, S 0.448, B/G 0.58, L 58.4±25.9, hi-freq 16.8; v4 lime lit `#6C6D3F`
+(108,109,63), H 61.3°, S 0.427; g7 conifer lit `#51582E` B/G 0.515; tree crown left edge ≈1–2 px
+(driven from 1-px G step median 17). Brown trunk segmentation gave B/G 0.47–0.52 (`observed`); the
+wave-plan `trunk B/G ≈ 0.74` anchor has **no prior-lane source** and is treated as the ticket target
+(`inferred` provenance — see report open question Q1).
+
+**Measured from the final 512² PNG** (block-only diff mask, method of §4 / `verdict_decor.md`):
+
+| # | Criterion | Target | Measured | Verdict |
+|---|-----------|--------|----------|---------|
+| 1 | Broadleaf colour | hue 53–70°, sat 0.43–0.59, B≥48, lit hex `#656038`–`#6C7832` ±12 | lit (97,106,52)=`#616A34`, H 69.8°, S 0.514, B 51.5 | **PASS** |
+| 2 | Crown/clump | broadleaf aspect ≤1.35, wide_frac ≥0.40; conifer aspect ≥1.40, wide_frac ≤0.30 | broadleaf 1.26 / 0.487; conifer 2.27 / **0.347** | **PARTIAL** (broadleaf PASS; conifer wide_frac FAIL at component level; source sprites 0.19–0.25 PASS) |
+| 3 | Species mix | 30–50% broadleaf | **31.1%** (28 of 90 components; placed 45/111 = 40.5%) | **PASS** |
+| 4 | Tree count | 60–140 (hard 45–255) | **90** connected crown components (111 placed) | **PASS** |
+| 5 | Height variety | ≥3 buckets 15–30/40–60/70–100 px | **64 / 13 / 6** components; max/min ≈ 3.5× | **PASS** |
+| 6 | Mix geometry | ≥50% broadleaf with conifer within one crown width | **57.1%** (dilation-by-own-width, conifer centroid) | **PASS** |
+| 7 | Ground continuity | no seam; grass in `#3B3F1B`–`#6B6732` | seam edge Δ **0.0** (mirror-axis crop); PNG median `#484A21` | **PASS** |
+| 8 | Shadow consistency | lower-left, length 1–2× height | centroid offset (−13.0,+8.5), far-edge length **1.24×** height | **PASS** |
+| G | Global gate | sat 0.30–0.55, value 0.25–0.45 | sat **0.522**, value **0.293** | **PASS** |
+
+**T6-T09 verdict: 7 PASS + 1 PARTIAL (criterion 2 conifer component-level wide_frac) / 0 hard FAIL;
+global gate PASS.** The mandated token spec (1 clipped oak, 14% broadleaf) is deliberately superseded by
+a 111-tree interleaved forest with donor-graded palettes; deviations are recorded in `docs/t6/reports/T6-T09.md`.
+Visual A/B (compare PNG read with image tool, port render vs donor crop `[180,200,340,340]`): the render
+reads as a muted lime/yellow broadleaf + dark conifer mixed forest at minimap scale — **VISUAL PASS with
+caveats**; donor trees are larger/more detailed and `grass_ground2` streaks remain more pronounced than the
+smoother donor grass. Metrics never override this caveat. No live asset, `world.gd`, `game.gd`, shared
+renderer, spec JSON or donor binary was modified.

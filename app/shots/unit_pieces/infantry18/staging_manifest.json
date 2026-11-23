@@ -1,0 +1,1127 @@
+{
+ "musketeer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 3.51,
+    "center": [
+     0.0,
+     0.0,
+     1.032
+    ],
+    "ax": 0.5,
+    "ay": 0.9432,
+    "tool": null,
+    "bbox": [
+     44,
+     19,
+     116,
+     134
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.8375,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      44,
+      19,
+      116,
+      134
+     ],
+     "fig_h": 0.7188,
+     "foot": 0.8375,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ]
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 3.51,
+    "center": [
+     0.0,
+     0.0,
+     1.032
+    ],
+    "ax": 0.5,
+    "ay": 0.9432,
+    "tool": null,
+    "bbox": [
+     45,
+     22,
+     115,
+     130
+    ],
+    "fig_h": 0.675,
+    "foot": 0.8125,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      45,
+      22,
+      115,
+      130
+     ],
+     "fig_h": 0.675,
+     "foot": 0.8125,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 6,
+     "rows": 6,
+     "cols": 8
+    },
+    "aaf_name": "idle",
+    "aaf_range": [
+     153,
+     202
+    ]
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.867,
+    "loop": false,
+    "ortho": 3.51,
+    "center": [
+     0.0,
+     0.0,
+     1.032
+    ],
+    "ax": 0.5,
+    "ay": 0.9432,
+    "tool": null,
+    "bbox": [
+     8,
+     17,
+     151,
+     134
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.8375,
+    "cx": 0.4969,
+    "sheet_metrics": {
+     "bbox": [
+      8,
+      17,
+      151,
+      134
+     ],
+     "fig_h": 0.7312,
+     "foot": 0.8375,
+     "cx": 0.4969,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "attack1",
+    "aaf_range": [
+     99,
+     124
+    ]
+   },
+   "death": {
+    "frames": 8,
+    "duration": 2.1,
+    "loop": false,
+    "ortho": 4.467,
+    "center": [
+     0.0,
+     0.0,
+     0.844
+    ],
+    "ax": 0.5,
+    "ay": 0.785,
+    "tool": null,
+    "bbox": [
+     8,
+     28,
+     151,
+     143
+    ],
+    "fig_h": 0.7188,
+    "foot": 0.8938,
+    "cx": 0.4969,
+    "sheet_metrics": {
+     "bbox": [
+      8,
+      28,
+      151,
+      143
+     ],
+     "fig_h": 0.7188,
+     "foot": 0.8938,
+     "cx": 0.4969,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 8,
+     "rows": 8,
+     "cols": 8
+    },
+    "aaf_name": "death",
+    "aaf_range": [
+     433,
+     495
+    ]
+   }
+  },
+  "donor_truth": {
+   "base": "musketeer",
+   "oss": {
+    "frames": 630,
+    "fps": 30,
+    "bones": 24,
+    "verts": 890,
+    "faces": 1096,
+    "uvs": 1047
+   },
+   "bind_bbox": {
+    "x": [
+     -0.738,
+     0.724
+    ],
+    "y": [
+     -0.308,
+     0.714
+    ],
+    "z": [
+     -0.007,
+     2.225
+    ]
+   },
+   "attach_props": [],
+   "tools_manifest": false,
+   "attach_fix5": "N/A - no donor props for this family; weapons in body mesh"
+  },
+  "foot_pin": {
+   "per_action_m": {
+    "walk": 0.1206,
+    "idle": 0.0528,
+    "attack": 0.0981,
+    "death": 0.3431
+   },
+   "foot_vert_count": 54,
+   "stand_max_m": 0.1206
+  },
+  "render_body_slide_px": {
+   "walk": 6.8,
+   "idle": 0.6,
+   "attack": 1.8,
+   "death": 34.2
+  }
+ },
+ "musk18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 4.627,
+    "center": [
+     0.0,
+     0.0,
+     1.241
+    ],
+    "ax": 0.5,
+    "ay": 0.9043,
+    "tool": null,
+    "bbox": [
+     44,
+     24,
+     116,
+     126
+    ],
+    "fig_h": 0.6375,
+    "foot": 0.7875,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      44,
+      24,
+      116,
+      126
+     ],
+     "fig_h": 0.6375,
+     "foot": 0.7875,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ]
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 4.627,
+    "center": [
+     0.0,
+     0.0,
+     1.241
+    ],
+    "ax": 0.5,
+    "ay": 0.9043,
+    "tool": null,
+    "bbox": [
+     46,
+     24,
+     114,
+     124
+    ],
+    "fig_h": 0.625,
+    "foot": 0.775,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      46,
+      24,
+      114,
+      124
+     ],
+     "fig_h": 0.625,
+     "foot": 0.775,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 6,
+     "rows": 6,
+     "cols": 8
+    },
+    "aaf_name": "idle",
+    "aaf_range": [
+     153,
+     202
+    ]
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.5,
+    "loop": false,
+    "ortho": 4.627,
+    "center": [
+     0.0,
+     0.0,
+     1.241
+    ],
+    "ax": 0.5,
+    "ay": 0.9043,
+    "tool": null,
+    "bbox": [
+     10,
+     33,
+     149,
+     127
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.7937,
+    "cx": 0.4969,
+    "sheet_metrics": {
+     "bbox": [
+      10,
+      33,
+      149,
+      127
+     ],
+     "fig_h": 0.5875,
+     "foot": 0.7937,
+     "cx": 0.4969,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "attack1",
+    "aaf_range": [
+     99,
+     113
+    ]
+   },
+   "death": {
+    "frames": 8,
+    "duration": 2.1,
+    "loop": false,
+    "ortho": 4.684,
+    "center": [
+     0.0,
+     0.0,
+     1.025
+    ],
+    "ax": 0.5,
+    "ay": 0.8299,
+    "tool": null,
+    "bbox": [
+     11,
+     24,
+     149,
+     146
+    ],
+    "fig_h": 0.7625,
+    "foot": 0.9125,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      11,
+      24,
+      149,
+      146
+     ],
+     "fig_h": 0.7625,
+     "foot": 0.9125,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 8,
+     "rows": 8,
+     "cols": 8
+    },
+    "aaf_name": "death",
+    "aaf_range": [
+     433,
+     495
+    ]
+   }
+  },
+  "donor_truth": {
+   "base": "musketeer18",
+   "oss": {
+    "frames": 630,
+    "fps": 30,
+    "bones": 20,
+    "verts": 809,
+    "faces": 1074,
+    "uvs": 1013
+   },
+   "bind_bbox": {
+    "x": [
+     -0.735,
+     0.737
+    ],
+    "y": [
+     -0.241,
+     0.617
+    ],
+    "z": [
+     -0.003,
+     2.719
+    ]
+   },
+   "attach_props": [],
+   "tools_manifest": false,
+   "attach_fix5": "N/A - no donor props for this family; weapons in body mesh"
+  },
+  "foot_pin": {
+   "per_action_m": {
+    "walk": 0.1383,
+    "idle": 0.0636,
+    "attack": 0.1158,
+    "death": 0.3478
+   },
+   "foot_vert_count": 50,
+   "stand_max_m": 0.1383
+  },
+  "render_body_slide_px": {
+   "walk": 5.4,
+   "idle": 0.3,
+   "attack": 1.6,
+   "death": 35.5
+  }
+ },
+ "pikeman18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 8.599,
+    "center": [
+     0.0,
+     0.0,
+     1.582
+    ],
+    "ax": 0.5,
+    "ay": 0.7773,
+    "tool": null,
+    "bbox": [
+     58,
+     45,
+     102,
+     111
+    ],
+    "fig_h": 0.4125,
+    "foot": 0.6937,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      58,
+      45,
+      102,
+      111
+     ],
+     "fig_h": 0.4125,
+     "foot": 0.6937,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ]
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 8.599,
+    "center": [
+     0.0,
+     0.0,
+     1.582
+    ],
+    "ax": 0.5,
+    "ay": 0.7773,
+    "tool": null,
+    "bbox": [
+     63,
+     47,
+     97,
+     109
+    ],
+    "fig_h": 0.3875,
+    "foot": 0.6813,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      63,
+      47,
+      97,
+      109
+     ],
+     "fig_h": 0.3875,
+     "foot": 0.6813,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 6,
+     "rows": 6,
+     "cols": 8
+    },
+    "aaf_name": "idle",
+    "aaf_range": [
+     209,
+     258
+    ]
+   },
+   "attack": {
+    "frames": 9,
+    "duration": 0.3,
+    "loop": false,
+    "ortho": 8.599,
+    "center": [
+     0.0,
+     0.0,
+     1.582
+    ],
+    "ax": 0.5,
+    "ay": 0.7773,
+    "tool": null,
+    "bbox": [
+     8,
+     51,
+     151,
+     131
+    ],
+    "fig_h": 0.5,
+    "foot": 0.8187,
+    "cx": 0.4969,
+    "sheet_metrics": {
+     "bbox": [
+      8,
+      51,
+      151,
+      131
+     ],
+     "fig_h": 0.5,
+     "foot": 0.8187,
+     "cx": 0.4969,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 9,
+     "rows": 9,
+     "cols": 8
+    },
+    "aaf_name": "attack0",
+    "aaf_range": [
+     32,
+     40
+    ]
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.833,
+    "loop": false,
+    "ortho": 8.576,
+    "center": [
+     0.0,
+     0.0,
+     1.327
+    ],
+    "ax": 0.5,
+    "ay": 0.7333,
+    "tool": null,
+    "bbox": [
+     9,
+     31,
+     151,
+     137
+    ],
+    "fig_h": 0.6625,
+    "foot": 0.8562,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      9,
+      31,
+      151,
+      137
+     ],
+     "fig_h": 0.6625,
+     "foot": 0.8562,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 8,
+     "rows": 8,
+     "cols": 8
+    },
+    "aaf_name": "death",
+    "aaf_range": [
+     80,
+     134
+    ]
+   }
+  },
+  "donor_truth": {
+   "base": "pikeman18",
+   "oss": {
+    "frames": 351,
+    "fps": 30,
+    "bones": 24,
+    "verts": 700,
+    "faces": 964,
+    "uvs": 1474
+   },
+   "bind_bbox": {
+    "x": [
+     -0.729,
+     0.731
+    ],
+    "y": [
+     -0.252,
+     0.629
+    ],
+    "z": [
+     -0.001,
+     3.499
+    ]
+   },
+   "attach_props": [],
+   "tools_manifest": false,
+   "attach_fix5": "N/A - no donor props for this family; weapons in body mesh"
+  },
+  "foot_pin": {
+   "per_action_m": {
+    "walk": 0.3196,
+    "idle": 0.0602,
+    "attack": 2.1007,
+    "death": 1.287
+   },
+   "foot_vert_count": 50,
+   "stand_max_m": 2.1007
+  },
+  "render_body_slide_px": {
+   "walk": 6.2,
+   "idle": 1.5,
+   "attack": 11.0,
+   "death": 39.2
+  }
+ },
+ "grenadier": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 4.634,
+    "center": [
+     0.0,
+     0.0,
+     1.306
+    ],
+    "ax": 0.5,
+    "ay": 0.9248,
+    "tool": null,
+    "bbox": [
+     48,
+     27,
+     111,
+     128
+    ],
+    "fig_h": 0.6312,
+    "foot": 0.8,
+    "cx": 0.4969,
+    "sheet_metrics": {
+     "bbox": [
+      48,
+      27,
+      111,
+      128
+     ],
+     "fig_h": 0.6312,
+     "foot": 0.8,
+     "cx": 0.4969,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ]
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 4.634,
+    "center": [
+     0.0,
+     0.0,
+     1.306
+    ],
+    "ax": 0.5,
+    "ay": 0.9248,
+    "tool": null,
+    "bbox": [
+     49,
+     28,
+     109,
+     126
+    ],
+    "fig_h": 0.6125,
+    "foot": 0.7875,
+    "cx": 0.4938,
+    "sheet_metrics": {
+     "bbox": [
+      49,
+      28,
+      109,
+      126
+     ],
+     "fig_h": 0.6125,
+     "foot": 0.7875,
+     "cx": 0.4938,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 6,
+     "rows": 6,
+     "cols": 8
+    },
+    "aaf_name": "idle",
+    "aaf_range": [
+     153,
+     202
+    ]
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.533,
+    "loop": false,
+    "ortho": 4.634,
+    "center": [
+     0.0,
+     0.0,
+     1.306
+    ],
+    "ax": 0.5,
+    "ay": 0.9248,
+    "tool": null,
+    "bbox": [
+     10,
+     36,
+     150,
+     129
+    ],
+    "fig_h": 0.5813,
+    "foot": 0.8063,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      10,
+      36,
+      150,
+      129
+     ],
+     "fig_h": 0.5813,
+     "foot": 0.8063,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "attack1",
+    "aaf_range": [
+     99,
+     114
+    ]
+   },
+   "death": {
+    "frames": 8,
+    "duration": 2.1,
+    "loop": false,
+    "ortho": 5.152,
+    "center": [
+     0.0,
+     0.0,
+     1.079
+    ],
+    "ax": 0.5,
+    "ay": 0.8157,
+    "tool": null,
+    "bbox": [
+     8,
+     29,
+     151,
+     145
+    ],
+    "fig_h": 0.725,
+    "foot": 0.9062,
+    "cx": 0.4969,
+    "sheet_metrics": {
+     "bbox": [
+      8,
+      29,
+      151,
+      145
+     ],
+     "fig_h": 0.725,
+     "foot": 0.9062,
+     "cx": 0.4969,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 8,
+     "rows": 8,
+     "cols": 8
+    },
+    "aaf_name": "death",
+    "aaf_range": [
+     433,
+     495
+    ]
+   }
+  },
+  "donor_truth": {
+   "base": "grenadier",
+   "oss": {
+    "frames": 682,
+    "fps": 30,
+    "bones": 21,
+    "verts": 801,
+    "faces": 1044,
+    "uvs": 1060
+   },
+   "bind_bbox": {
+    "x": [
+     -0.756,
+     0.85
+    ],
+    "y": [
+     -1.633,
+     0.617
+    ],
+    "z": [
+     -0.006,
+     2.293
+    ]
+   },
+   "attach_props": [],
+   "tools_manifest": false,
+   "attach_fix5": "N/A - no donor props for this family; weapons in body mesh"
+  },
+  "foot_pin": {
+   "per_action_m": {
+    "walk": 0.1384,
+    "idle": 0.064,
+    "attack": 0.1166,
+    "death": 0.3457
+   },
+   "foot_vert_count": 50,
+   "stand_max_m": 0.1384
+  },
+  "render_body_slide_px": {
+   "walk": 5.7,
+   "idle": 0.4,
+   "attack": 1.7,
+   "death": 32.2
+  }
+ },
+ "lightinfantry": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 3.418,
+    "center": [
+     0.0,
+     0.0,
+     1.358
+    ],
+    "ax": 0.5,
+    "ay": 1.0992,
+    "tool": null,
+    "bbox": [
+     40,
+     47,
+     120,
+     146
+    ],
+    "fig_h": 0.6188,
+    "foot": 0.9125,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      40,
+      47,
+      120,
+      146
+     ],
+     "fig_h": 0.6188,
+     "foot": 0.9125,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "walk",
+    "aaf_range": [
+     143,
+     166
+    ]
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 3.418,
+    "center": [
+     0.0,
+     0.0,
+     1.358
+    ],
+    "ax": 0.5,
+    "ay": 1.0992,
+    "tool": null,
+    "bbox": [
+     38,
+     52,
+     121,
+     146
+    ],
+    "fig_h": 0.5875,
+    "foot": 0.9125,
+    "cx": 0.4969,
+    "sheet_metrics": {
+     "bbox": [
+      38,
+      52,
+      121,
+      146
+     ],
+     "fig_h": 0.5875,
+     "foot": 0.9125,
+     "cx": 0.4969,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 6,
+     "rows": 6,
+     "cols": 8
+    },
+    "aaf_name": "idle",
+    "aaf_range": [
+     28,
+     77
+    ]
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.467,
+    "loop": false,
+    "ortho": 3.418,
+    "center": [
+     0.0,
+     0.0,
+     1.358
+    ],
+    "ax": 0.5,
+    "ay": 1.0992,
+    "tool": null,
+    "bbox": [
+     19,
+     8,
+     141,
+     149
+    ],
+    "fig_h": 0.8812,
+    "foot": 0.9313,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      19,
+      8,
+      141,
+      149
+     ],
+     "fig_h": 0.8812,
+     "foot": 0.9313,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 12,
+     "rows": 12,
+     "cols": 8
+    },
+    "aaf_name": "attack0",
+    "aaf_range": [
+     184,
+     197
+    ]
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.6,
+    "loop": false,
+    "ortho": 4.392,
+    "center": [
+     0.0,
+     0.0,
+     0.752
+    ],
+    "ax": 0.5,
+    "ay": 0.7581,
+    "tool": null,
+    "bbox": [
+     8,
+     34,
+     152,
+     141
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.8812,
+    "cx": 0.5,
+    "sheet_metrics": {
+     "bbox": [
+      8,
+      34,
+      152,
+      141
+     ],
+     "fig_h": 0.6687,
+     "foot": 0.8812,
+     "cx": 0.5,
+     "clip_cells": 0,
+     "distinct_dirs_min": 8,
+     "distinct_rows": 8,
+     "rows": 8,
+     "cols": 8
+    },
+    "aaf_name": "death",
+    "aaf_range": [
+     80,
+     127
+    ]
+   }
+  },
+  "donor_truth": {
+   "base": "lightinfantry",
+   "oss": {
+    "frames": 198,
+    "fps": 30,
+    "bones": 18,
+    "verts": 659,
+    "faces": 1060,
+    "uvs": 936
+   },
+   "bind_bbox": {
+    "x": [
+     -0.744,
+     0.744
+    ],
+    "y": [
+     -1.086,
+     0.215
+    ],
+    "z": [
+     0.001,
+     2.02
+    ]
+   },
+   "attach_props": [],
+   "tools_manifest": false,
+   "attach_fix5": "N/A - no donor props for this family; weapons in body mesh"
+  },
+  "foot_pin": {
+   "per_action_m": {
+    "walk": 0.1301,
+    "idle": 0.0498,
+    "attack": 0.1742,
+    "death": 0.2557
+   },
+   "foot_vert_count": 84,
+   "stand_max_m": 0.1742
+  },
+  "render_body_slide_px": {
+   "walk": 6.1,
+   "idle": 0.7,
+   "attack": 15.0,
+   "death": 39.2
+  }
+ }
+}

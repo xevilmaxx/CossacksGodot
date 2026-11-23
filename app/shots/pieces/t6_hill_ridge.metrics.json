@@ -1,0 +1,157 @@
+{
+  "size": [
+    512,
+    512
+  ],
+  "global": {
+    "mean_sat": 0.426,
+    "mean_val": 0.319,
+    "mean_L": 77.46,
+    "L_std": 14.78
+  },
+  "M1": {
+    "rock_bbox": {
+      "box": [
+        0,
+        0,
+        511,
+        511
+      ],
+      "wh": [
+        512,
+        512
+      ],
+      "aspect": 1.0,
+      "centroid": [
+        0.432,
+        0.505
+      ]
+    },
+    "rock_pca": {
+      "ratio": 1.017,
+      "long_axis": "Y",
+      "n": 55464
+    },
+    "rock_frac": 0.2116,
+    "ridge_bbox": {
+      "box": [
+        0,
+        0,
+        511,
+        511
+      ],
+      "wh": [
+        512,
+        512
+      ],
+      "aspect": 1.0,
+      "centroid": [
+        0.499,
+        0.499
+      ]
+    },
+    "ridge_pca": {
+      "ratio": 1.0,
+      "long_axis": "Y",
+      "n": 262014
+    }
+  },
+  "M2": {
+    "L75": 77.9,
+    "crest_bbox": {
+      "box": [
+        113,
+        41,
+        378,
+        471
+      ],
+      "wh": [
+        266,
+        431
+      ],
+      "aspect": 1.62,
+      "centroid": [
+        0.501,
+        0.489
+      ]
+    },
+    "crest_area_pct_of_ridge_bbox": 25.01,
+    "crest_px": 27789
+  },
+  "M3": {
+    "L_flank": 59.16,
+    "L_crest": 73.41,
+    "delta": 14.26,
+    "ratio": 1.241
+  },
+  "M4": {
+    "whole_piece_rock_pct": 21.16,
+    "ridge_bbox_rock_pct": 32.53
+  },
+  "M5": {
+    "rock_cx": 0.432,
+    "ridge_cx": 0.48,
+    "offset_x_frac": 0.048
+  },
+  "M6": {
+    "hue_deg": 62.33,
+    "sat": 0.42,
+    "val": 0.286,
+    "n": 13749
+  },
+  "M7": {
+    "flank_dxdy": 1.671,
+    "crest_dxdy": 0.987,
+    "ratio": 1.693
+  },
+  "M8": {
+    "tree_bbox": {
+      "box": [
+        188,
+        218,
+        220,
+        293
+      ],
+      "wh": [
+        33,
+        76
+      ],
+      "aspect": 2.303,
+      "centroid": [
+        0.399,
+        0.501
+      ]
+    },
+    "tree_pca": {
+      "ratio": 2.378,
+      "long_axis": "Y",
+      "n": 1012
+    },
+    "tree_height_px": 76,
+    "tree_frac": 0.00386
+  },
+  "profile_mid_L": [
+    87.4,
+    78.5,
+    76.2,
+    45.7,
+    35.1,
+    40.3,
+    49.1,
+    55.3,
+    68.3,
+    99.8,
+    104.2,
+    16.5,
+    74.1,
+    77.3,
+    72.2,
+    74.5,
+    77.8,
+    88.2
+  ],
+  "edge": {
+    "max_dL_per_px": 114.47,
+    "p99_dL_per_px": 28.3
+  }
+}

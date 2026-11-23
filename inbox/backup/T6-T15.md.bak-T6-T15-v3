@@ -1,0 +1,153 @@
+# T6-T15 — `desert_variant` mini-baker verdict (v3, after visual-defect guidance)
+
+Parent: T6-TERRAIN (LANE TERRAIN). Worker: T6-T15. Date: 2026-11-23.
+Scope: ONE piece. Headless Python 3.14.3 + Pillow 12.1.1 + NumPy 2.4.3 only.
+**Zero Godot jobs, zero Blender jobs, no helper subagents.** No donor binary/texture copied into the
+repo: donor DDS are referenced by path and were only READ by temp probes; the compare sheet embeds
+only the reference JPEG crop from `C:\Users\Maxym.Oboyshev\Downloads\c3`. All probe scripts, lossless
+probe crops and the v2→v3 before/after PNGs live in
+`C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\`.
+
+## Owned outputs (v3 — final)
+
+| Artifact | Path | SHA-256 |
+|---|---|---|
+| Mini-baker module | `app/tools/pieces/t6_desert_variant.py` | `3130fef909c38e44fca42dbb37f065d36c9c03ea1e47530b4516c7b7be54aaf6` |
+| Render | `app/shots/pieces/t6_desert_variant.png` | `f0be7dd09be3097c2df0ad4c9aa07c506d3948958cc108c3fa3180e26d83da17` |
+| Comparison sheet | `app/shots/pieces/t6_desert_variant_compare.png` | `18ff63080e27e3185efaddc245165dcd355676387bfdff0bfb6efc00900fc86c` |
+| Doc backup | `inbox/backup/desert_variant.md.bak-T6-T15` | `0e253d52c90437ab2cf6229daa9914cce353af42b6c00569331e8aa9cad30ab` |
+| Pre-v3 code backup | `inbox/backup/t6_desert_variant.py.bak-T6-T15-v2` | v2 module preserved |
+| Pre-v3 report backup | `inbox/backup/T6-T15.md.bak-T6-T15-v2` | v2 verdict preserved |
+
+Determinism: repeated full CLI runs produced the identical render SHA; three in-process bakes were
+pixel-identical (`np.array_equal == True`). The pre-existing T2 outputs
+`app/shots/pieces/desert_variant*.png` were NOT touched.
+
+## Coordinator visual-defect guidance and the v3 response
+
+Coordinator read the v2 compare sheet and reported: *"Port is olive/khaki ground with repeated
+IDENTICAL stamp-like rectangular blotches and one isolated rock; donor desert reference is warm sandy
+with natural grade. Schematic proxy failure mode: repeated procedural stamps, hard rock edges, no
+contact shadow."*
+
+| Defect | Root cause (`observed`/`derived`) | v3 correction | Effect in the new compare sheet |
+|---|---|---|---|
+| Identical rectangular stamps | v2 used the spec's literal 40×40 binary coverage grid → every dark cell was the same 12.8 px rounded rectangle on a visible lattice | A5: seeded 4-octave value noise (128/52/22/180 px) + spatially varying threshold + hairline ridge cracks | **Resolved** — patches are irregular, clustered, different sizes, with empty ground between them; no lattice |
+| Only 2 of 12 palettes visible | v2 wired only `desert6` + `desert2` | A6: all 12 donor palette means are read from the 12 port PNGs; 8 light/mid anchors drive a zero-mean tonal grade, 4 dark anchors modulate patch colour; selector fields normalised so every palette contributes | **Resolved** — measured interpolation shares: light+mid `desert1/6/7/8/11/12/9/10` = 1.3/10.1/23.0/25.4/18.4/15.0/6.3/0.5%; dark `desert2/3/4/5` = 9.5/43.7/35.8/11.0% |
+| Hard rock edges / floating rock | v2 used the raw sprite alpha with no ground interaction | A7: 0.6 px alpha blur + soft warm elliptical contact shadow (92×18 px, 5 px blur) under the foot | **Resolved** — the rock now reads as sitting on the ground; total accent+shadow ink 2.70% (still ≤3%) |
+| "Warm sandy with natural grade" | Donor desert pool is L 79–114 olive-khaki; the reference crop is L 126–158 orange-tan and visually a wooden facade | Kept donor palette authoritative; added only a low-frequency *zero-mean* grade within the donor band | **Partially addressed** — the grade is visibly less flat, but the frame stays donor-khaki (L 105.3), not reference orange. Tuning to the reference would break C1's explicit rejection gate (L≥128 >10%) |
+
+## Donor anchors (measured before any edit)
+
+Source: `C:\Games\Cossacks 3\data\terrain\tiles\textures\desert1..12.dds` (1024×1024 RGBA, alpha
+extrema `(255,255)`); 200×200 bilinear downsample; hi-freq = mean `|L − GaussianBlur(L,5)|`.
+Probe: `t6_t15_probe.py`, raw JSON `t6_t15_donor_truth.json` (temp only).
+
+| Tile | Mean hex | L mean | L std | hi-freq | Family (`derived`) |
+|---|---|---:|---:|---:|---|
+| desert1 | `#7C7355` | 114.26 | 4.68 | 2.95 | light sand |
+| desert6 | `#7B7252` | 112.94 | 4.02 | 2.27 | **light sand (base)** |
+| desert7 | `#7A7153` | 112.27 | 4.15 | 2.36 | light sand |
+| desert8 | `#797050` | 110.82 | 6.74 | 4.73 | light sand (coarse) |
+| desert11 | `#7B7252` | 113.11 | 3.23 | 1.75 | light sand |
+| desert12 | `#7B7252` | 113.11 | 3.23 | 1.76 | light sand |
+| desert9 | `#6E6546` | 100.05 | 5.72 | 4.01 | mid olive-tan |
+| desert10 | `#6F6647` | 101.08 | 4.91 | 2.57 | mid olive-tan |
+| desert2 | `#5B5031` | 79.41 | 13.52 | 8.42 | **dark cracked earth** |
+| desert3 | `#5B5031` | 79.41 | 13.52 | 8.42 | dark cracked earth |
+| desert4 | `#5D5234` | 81.83 | 11.06 | 7.35 | dark scree |
+| desert5 | `#5D5234` | 81.83 | 11.06 | 7.35 | dark scree |
+
+- **12/12 unique full-resolution MD5**, only **4 tonal families** (L 79.4/81.8/100–101/110–114) — `derived`.
+- **C7: 12/12** full-res RGB MD5 of port `desertN.png` equals donor `desertN.dds` (`t6_t15_probe2.py`).
+- **Reference (LOW confidence):** `MADVBuilding1.JPG` crop `(5,5,470,38)` = `#C0976A`, L 158.06;
+  `(2,120,90,335)` = `#9A7858`, L 126.51; `(5,300,470,345)` = `#BB9166`, L 152.58. L 126–158 /
+  orange-tan, ~12–79 L above the donor pool; bins 4–5 are empty in every donor tile (`derived`).
+  Visual read of the compare panel: vertical wooden siding with dark seams, **not ground** (`observed`).
+- **Dry-rock substitution:** `rock_landstone1.png` lit `#62673C`, hue 67.75°, **93.5%** green-dominant
+  (mossy) vs `rock_sea1.png` lit `#8A816C`, hue 40.68°, **0.0%** green-dominant (dry) — `derived`.
+
+## Adaptations (spec JSON untouched)
+
+| ID | Spec | Used | Reason |
+|---|---|---|---|
+| A1 | `rock_landstone1` | `rock_sea1` | mossy lit crown, G>R, hue 68° |
+| A2 | sprite `scale: 1.0` | `0.2554` | 512 px accent cannot fit C6's ≤3% |
+| A3 | sprite before patches | sprite last | so the rock is not buried |
+| A4 | `brightness: 1.09` | `1.00` | 1.09 pushes raw base +10/+9 off the donor anchor; 1.00 restores it |
+| A5 (v3) | 40×40 binary grid | irregular seeded noise + cracks | repeated identical rectangular stamps (coordinator defect) |
+| A6 (v3) | 2 palettes wired | all 12 palette means drive grade + patch modulation | "use the 12 donor palettes" |
+| A7 (v3) | raw sprite alpha | 0.6 px alpha blur + soft contact shadow | hard edges / floating rock |
+
+Contrast 1.12, patch opacity 0.85, glaze tint/strength/white_floor, seed 7, pos `[0.6,0.5]` and foot
+anchor are unchanged. Only two block composites remain (base + patch texture), so C8's budget holds.
+
+## Claim table
+
+| Claim | Evidence | Verification method | Label | Verdict | Required correction |
+|---|---|---|---|---|---|
+| 12 donor blocks, 1024² RGBA opaque | donor dir listing, alpha `(255,255)` | file list + Pillow | observed | confirmed | none |
+| 12 unique hashes, 4 tonal families | full-res MD5 + 200² L means | `t6_t15_probe*.py` | derived | confirmed | none |
+| Port PNG ≡ donor DDS RGB (12/12) | 12 equal full-res MD5 | Pillow MD5 pair | derived | confirmed (C7) | none |
+| `rock_landstone1` is mossy | lit `#62673C`, 93.5% G-dominant | Pillow + HSV crown | derived | confirmed — "sandstone" claim contradicted | keep A1 |
+| `rock_sea1` is a dry accent | lit `#8A816C`, 0% G-dominant, hue 40.7° | same | derived | confirmed | none |
+| MADV crop is orange-tan "ground" | `#C0976A`, L 158, bins 4–5 | Pillow crop stats | observed | colour confirmed; visual crop is a **wooden facade**, not ground | never tune palette to it |
+| v2 render had identical stamp-like blotches | v2 compare PNG read by me and by coordinator | visual A/B | observed | confirmed | A5 applied |
+| A5 removes the lattice | v3 compare PNG read with image-read tool | visual A/B | observed | confirmed | none |
+| All 12 palettes contribute | interpolation-weight histogram from the two selector fields | NumPy weights | derived | confirmed (smallest share 0.5%) | none |
+| Accent sits on ground | soft contact shadow visible under rock in v3 PNG | visual A/B | observed | confirmed | none |
+| Patch grain equals donor cracked-earth grain | eroded rendered patch hi-freq 7.12 vs donor desert2 8.42 | masked `\|L−blur5\|` | derived | **NOT CONFIRMED** | see C5 |
+| QA-P1 250 ms engine bake | Python probe ~1976 ms (v3) | `time.perf_counter` | derived | UNVERIFIED — different metric | integration ticket measures engine |
+
+## Acceptance criteria — measured vs target
+
+200×200 stats on the shipped 512² PNG (spec convention). Traces: temp `t6_t15_v3_metrics.json`,
+`t6_t15_final_verify.py`, `t6_t15_shares.py`, `t6_t15_subbox_v3.py`.
+
+| # | Criterion | Target | Measured | Verdict |
+|---|---|---|---|---|
+| **T6-T15a** | 12 donor palettes | 12 unique hashes, 4 families, all wired | 12/12 unique, 4 families; all 12 palette means contribute (shares 0.5–43.7%) | **PASS** |
+| **T6-T15b** | Dry rock grade | R>G>B, no green-dominant crown | `rock_sea1`, 0% G-dominant, frame R>G>B **100%** | **PASS** |
+| C1 | Base palette | raw mean ±8 of (123,114,83); final median R105–128 G96–118 B68–90, L100–118 | raw (121.96,112.12,76.92) → (−1.04,−1.88,−6.08) ✓; final mean (117.09,106.02,70.93), median (121,110,74), L **105.30** | **PASS** |
+| C2 | Hue order | R>G>B ≥95% | **100.0%** | **PASS** |
+| C3 | Tile variety | 12 hashes, 4 families, dark 5–25% | 12/12, 4 families, dark L<90 **11.61%** | **PASS** |
+| C4 | Relief spread | sub-box L 75–118, no L<60 cracks, σ>5 | ground-only sub-box L **63.96–119.93**, σ **9.93**; 0 sub-boxes <60; 34/1500 <75, 19/1500 >118 (3.5% outliers) | **PASS (marginal)** |
+| C5 | Grain / hi-freq | base 2.0–5.5; cracked 8–9; final 3–9 | base **2.44** ✓; final **5.00** ✓; eroded rendered patch interior **7.12** vs 8–9 | **FAIL** (cracked sub-band only) |
+| C6 | Sparse scatter | 1 accent ≤3% of frame | 1 accent, accent+shadow visible ink **2.70%** | **PASS** |
+| C7 | Source faithfulness | 12/12 port ≡ donor RGB | **12/12** | **PASS** |
+| C8 | Budget | ≤3 block composites; ≤250 ms engine bake; no `.gd` change | 2 composites; no `.gd` touched. Python probe ~1976 ms (not the engine metric) | **PASS** scope; engine bake **UNVERIFIED** |
+
+**Summary: 9 PASS + 1 marginal PASS + 1 FAIL + 1 UNVERIFIED** (12 criteria). Both T6-T15 wave-plan
+acceptance items PASS. C5 remains the one genuine numeric FAIL; see correction below.
+
+C5 correction (not applied): raising patch opacity to reach donor grain (~8.4) pushes dark coverage
+past C3's 25% ceiling. Needs a higher-frequency dark texture with a smaller area fraction (or a
+C3 threshold change in an integration ticket). Do not sharpen the whole tile — that breaks final ≤9.
+
+## Visual judgement (metrics never override this)
+
+I read both shipped PNGs (and the v2 before/after copies in temp) with the image-read tool.
+**v2 honest verdict: FAIL on visual fidelity** — identical rectangular stamps on a 12.8 px lattice,
+hard-edged isolated rock, flat khaki. That defect is real and the coordinator's read is accurate.
+**v3 honest verdict: PASS on the reported visual defects, not yet a donor-perfect match.** The
+lattice is gone: patches are now irregular, clustered, variable-size organic shapes with hairline cracks
+and empty ground between them; the rock has a softened edge and a visible contact shadow, so it sits
+on the ground; the whole tile has a gentle low-frequency tonal grade instead of a uniform fill. The
+palette remains donor-family olive-khaki with R>G>B everywhere and no green cast.
+**Remaining visual gap:** the reference panel is warm orange-tan (and is actually wooden siding); the
+port is still noticeably cooler/darker and the dark patches read more "stained/eroded" than the
+polygonal cracked-earth facets of donor `desert2/3`. Closing that gap would require tuning toward a
+reference that the spec itself labels LOW confidence and that C1 explicitly rejects — so it is left
+as an open question, not a silent palette change.
+
+## Open questions
+
+1. C5 vs C3 tension: can a higher-frequency dark texture reach 8–9 cracked hi-freq while dark coverage
+   stays ≤25%, without changing C3?
+2. The MADV crop is visually a wooden facade, not ground. Should T6-RESEARCH supply a real desert-biome
+   screenshot before any further warm-grade tuning?
+3. QA-P1's 250 ms is an engine metric; the Python probe's ~1976 ms (v3, 12-palette field generation)
+   is not comparable. Who measures the engine bake after T6-T90?
+4. T2 crown sampling gave `rock_sea1` lit ≈ `#847A64` (hue 38.8°) vs this probe's `#8A816C` (40.7°);
+   both agree on the verdict — which sampling should the registry standardise on?
+5. Should A4–A7 be back-ported into the spec JSON at integration, or stay mini-baker-only?

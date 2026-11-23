@@ -1,0 +1,3386 @@
+{
+ "peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   61,
+   56,
+   98,
+   115
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7188
+  ]
+ },
+ "peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   67,
+   56,
+   93,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   46,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7438
+  ]
+ },
+ "peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   45,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7438
+  ]
+ },
+ "peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   32,
+   50,
+   128,
+   126
+  ],
+  "foot_row_range": [
+   0.6375,
+   0.7875
+  ]
+ },
+ "peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   37,
+   151,
+   142
+  ],
+  "foot_row_range": [
+   0.625,
+   0.8875
+  ]
+ },
+ "peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   57,
+   45,
+   103,
+   113
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7063
+  ]
+ },
+ "peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   61,
+   54,
+   98,
+   114
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7125
+  ]
+ },
+ "peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   54,
+   52,
+   106,
+   117
+  ],
+  "foot_row_range": [
+   0.6687,
+   0.7312
+  ]
+ },
+ "peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   41,
+   55,
+   118,
+   125
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7812
+  ]
+ },
+ "peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   62,
+   55,
+   97,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   62,
+   56,
+   97,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   40,
+   56,
+   120,
+   125
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7812
+  ]
+ },
+ "peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   41,
+   152,
+   146
+  ],
+  "foot_row_range": [
+   0.6438,
+   0.9125
+  ]
+ },
+ "ukr_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   61,
+   56,
+   98,
+   115
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7188
+  ]
+ },
+ "ukr_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   67,
+   56,
+   93,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "ukr_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   46,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7438
+  ]
+ },
+ "ukr_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   45,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7438
+  ]
+ },
+ "ukr_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   32,
+   50,
+   128,
+   126
+  ],
+  "foot_row_range": [
+   0.6375,
+   0.7875
+  ]
+ },
+ "ukr_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   37,
+   151,
+   142
+  ],
+  "foot_row_range": [
+   0.625,
+   0.8875
+  ]
+ },
+ "ukr_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   57,
+   45,
+   103,
+   113
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7063
+  ]
+ },
+ "ukr_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   61,
+   54,
+   98,
+   114
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7125
+  ]
+ },
+ "ukr_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   54,
+   52,
+   106,
+   117
+  ],
+  "foot_row_range": [
+   0.6687,
+   0.7312
+  ]
+ },
+ "ukr_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   41,
+   55,
+   118,
+   125
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7812
+  ]
+ },
+ "ukr_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   62,
+   55,
+   97,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "ukr_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   62,
+   56,
+   97,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "ukr_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   40,
+   56,
+   120,
+   125
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7812
+  ]
+ },
+ "ukr_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   41,
+   152,
+   146
+  ],
+  "foot_row_range": [
+   0.6438,
+   0.9125
+  ]
+ },
+ "rus_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   59,
+   53,
+   101,
+   114
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7125
+  ]
+ },
+ "rus_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   67,
+   54,
+   93,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "rus_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   45,
+   128,
+   119
+  ],
+  "foot_row_range": [
+   0.65,
+   0.7438
+  ]
+ },
+ "rus_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   45,
+   128,
+   119
+  ],
+  "foot_row_range": [
+   0.65,
+   0.7438
+  ]
+ },
+ "rus_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   32,
+   47,
+   128,
+   125
+  ],
+  "foot_row_range": [
+   0.6375,
+   0.7812
+  ]
+ },
+ "rus_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   37,
+   151,
+   142
+  ],
+  "foot_row_range": [
+   0.6125,
+   0.8875
+  ]
+ },
+ "rus_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   57,
+   45,
+   103,
+   114
+  ],
+  "foot_row_range": [
+   0.6687,
+   0.7125
+  ]
+ },
+ "rus_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   60,
+   51,
+   100,
+   115
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7188
+  ]
+ },
+ "rus_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   52,
+   50,
+   108,
+   118
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7375
+  ]
+ },
+ "rus_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   41,
+   52,
+   118,
+   124
+  ],
+  "foot_row_range": [
+   0.675,
+   0.775
+  ]
+ },
+ "rus_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   63,
+   52,
+   97,
+   113
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.7063
+  ]
+ },
+ "rus_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   61,
+   53,
+   98,
+   112
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.7
+  ]
+ },
+ "rus_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   40,
+   54,
+   120,
+   125
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7812
+  ]
+ },
+ "rus_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   41,
+   151,
+   145
+  ],
+  "foot_row_range": [
+   0.6375,
+   0.9062
+  ]
+ },
+ "pol_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   60,
+   56,
+   99,
+   114
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7125
+  ]
+ },
+ "pol_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   66,
+   57,
+   93,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "pol_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   46,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7438
+  ]
+ },
+ "pol_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   45,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7438
+  ]
+ },
+ "pol_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   32,
+   50,
+   128,
+   126
+  ],
+  "foot_row_range": [
+   0.6438,
+   0.7875
+  ]
+ },
+ "pol_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   37,
+   151,
+   142
+  ],
+  "foot_row_range": [
+   0.6188,
+   0.8875
+  ]
+ },
+ "pol_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   57,
+   45,
+   103,
+   114
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7125
+  ]
+ },
+ "pol_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   61,
+   55,
+   98,
+   115
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7188
+  ]
+ },
+ "pol_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   54,
+   53,
+   106,
+   118
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7375
+  ]
+ },
+ "pol_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   41,
+   56,
+   118,
+   125
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7812
+  ]
+ },
+ "pol_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   63,
+   55,
+   96,
+   113
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7063
+  ]
+ },
+ "pol_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   63,
+   56,
+   97,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "pol_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   39,
+   57,
+   120,
+   126
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7875
+  ]
+ },
+ "pol_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   41,
+   152,
+   146
+  ],
+  "foot_row_range": [
+   0.6312,
+   0.9125
+  ]
+ },
+ "aus_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   59,
+   51,
+   101,
+   116
+  ],
+  "foot_row_range": [
+   0.675,
+   0.725
+  ]
+ },
+ "aus_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   66,
+   52,
+   94,
+   113
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7063
+  ]
+ },
+ "aus_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   45,
+   129,
+   121
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7562
+  ]
+ },
+ "aus_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   45,
+   129,
+   121
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7562
+  ]
+ },
+ "aus_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   33,
+   52,
+   127,
+   131
+  ],
+  "foot_row_range": [
+   0.65,
+   0.8187
+  ]
+ },
+ "aus_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   32,
+   152,
+   142
+  ],
+  "foot_row_range": [
+   0.625,
+   0.8875
+  ]
+ },
+ "aus_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   58,
+   56,
+   102,
+   118
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7375
+  ]
+ },
+ "aus_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   56,
+   55,
+   104,
+   116
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.725
+  ]
+ },
+ "aus_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   47,
+   55,
+   113,
+   119
+  ],
+  "foot_row_range": [
+   0.6687,
+   0.7438
+  ]
+ },
+ "aus_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   26,
+   54,
+   133,
+   134
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.8375
+  ]
+ },
+ "aus_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   54,
+   56,
+   105,
+   114
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7125
+  ]
+ },
+ "aus_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   56,
+   56,
+   104,
+   113
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7063
+  ]
+ },
+ "aus_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   39,
+   52,
+   120,
+   127
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7937
+  ]
+ },
+ "aus_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   43,
+   151,
+   150
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.9375
+  ]
+ },
+ "eng_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   55,
+   45,
+   105,
+   124
+  ],
+  "foot_row_range": [
+   0.7188,
+   0.775
+  ]
+ },
+ "eng_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   62,
+   46,
+   97,
+   121
+  ],
+  "foot_row_range": [
+   0.7375,
+   0.7562
+  ]
+ },
+ "eng_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   20,
+   39,
+   140,
+   131
+  ],
+  "foot_row_range": [
+   0.7,
+   0.8187
+  ]
+ },
+ "eng_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   20,
+   39,
+   140,
+   131
+  ],
+  "foot_row_range": [
+   0.7,
+   0.8187
+  ]
+ },
+ "eng_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   22,
+   42,
+   138,
+   142
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.8875
+  ]
+ },
+ "eng_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   25,
+   152,
+   148
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.925
+  ]
+ },
+ "eng_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   53,
+   52,
+   107,
+   126
+  ],
+  "foot_row_range": [
+   0.7438,
+   0.7875
+  ]
+ },
+ "eng_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   50,
+   48,
+   109,
+   125
+  ],
+  "foot_row_range": [
+   0.725,
+   0.7812
+  ]
+ },
+ "eng_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   39,
+   47,
+   119,
+   128
+  ],
+  "foot_row_range": [
+   0.7125,
+   0.8
+  ]
+ },
+ "eng_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   15,
+   47,
+   144,
+   146
+  ],
+  "foot_row_range": [
+   0.725,
+   0.9125
+  ]
+ },
+ "eng_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   49,
+   48,
+   111,
+   122
+  ],
+  "foot_row_range": [
+   0.7312,
+   0.7625
+  ]
+ },
+ "eng_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   50,
+   48,
+   109,
+   121
+  ],
+  "foot_row_range": [
+   0.7375,
+   0.7562
+  ]
+ },
+ "eng_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   45,
+   129,
+   138
+  ],
+  "foot_row_range": [
+   0.7375,
+   0.8625
+  ]
+ },
+ "eng_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   42,
+   151,
+   149
+  ],
+  "foot_row_range": [
+   0.6562,
+   0.9313
+  ]
+ },
+ "spa_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   58,
+   55,
+   101,
+   116
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.725
+  ]
+ },
+ "spa_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   66,
+   56,
+   94,
+   113
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7063
+  ]
+ },
+ "spa_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   45,
+   129,
+   121
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7562
+  ]
+ },
+ "spa_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   45,
+   129,
+   121
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7562
+  ]
+ },
+ "spa_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   27,
+   52,
+   133,
+   131
+  ],
+  "foot_row_range": [
+   0.6438,
+   0.8187
+  ]
+ },
+ "spa_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   32,
+   152,
+   142
+  ],
+  "foot_row_range": [
+   0.625,
+   0.8875
+  ]
+ },
+ "spa_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   58,
+   56,
+   102,
+   117
+  ],
+  "foot_row_range": [
+   0.7,
+   0.7312
+  ]
+ },
+ "spa_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   58,
+   55,
+   102,
+   116
+  ],
+  "foot_row_range": [
+   0.675,
+   0.725
+  ]
+ },
+ "spa_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   49,
+   56,
+   110,
+   119
+  ],
+  "foot_row_range": [
+   0.6687,
+   0.7438
+  ]
+ },
+ "spa_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   26,
+   56,
+   133,
+   134
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.8375
+  ]
+ },
+ "spa_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   57,
+   56,
+   102,
+   114
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7125
+  ]
+ },
+ "spa_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   58,
+   57,
+   102,
+   113
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7063
+  ]
+ },
+ "spa_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   39,
+   56,
+   120,
+   127
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7937
+  ]
+ },
+ "spa_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   43,
+   151,
+   145
+  ],
+  "foot_row_range": [
+   0.6562,
+   0.9062
+  ]
+ },
+ "tur_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   60,
+   55,
+   99,
+   114
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7125
+  ]
+ },
+ "tur_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   66,
+   57,
+   93,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "tur_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   46,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6562,
+   0.7438
+  ]
+ },
+ "tur_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   31,
+   45,
+   129,
+   119
+  ],
+  "foot_row_range": [
+   0.6562,
+   0.7438
+  ]
+ },
+ "tur_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   48,
+   130,
+   131
+  ],
+  "foot_row_range": [
+   0.6312,
+   0.8187
+  ]
+ },
+ "tur_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   38,
+   151,
+   142
+  ],
+  "foot_row_range": [
+   0.6188,
+   0.8875
+  ]
+ },
+ "tur_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   57,
+   45,
+   103,
+   113
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7063
+  ]
+ },
+ "tur_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   61,
+   54,
+   98,
+   114
+  ],
+  "foot_row_range": [
+   0.675,
+   0.7125
+  ]
+ },
+ "tur_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   54,
+   52,
+   105,
+   118
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7375
+  ]
+ },
+ "tur_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   41,
+   56,
+   118,
+   125
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.7812
+  ]
+ },
+ "tur_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   62,
+   55,
+   97,
+   112
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.7
+  ]
+ },
+ "tur_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   62,
+   56,
+   98,
+   112
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7
+  ]
+ },
+ "tur_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   38,
+   55,
+   121,
+   126
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.7875
+  ]
+ },
+ "tur_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   42,
+   151,
+   147
+  ],
+  "foot_row_range": [
+   0.6375,
+   0.9187
+  ]
+ },
+ "sco_peasant_walk": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   59,
+   55,
+   100,
+   116
+  ],
+  "foot_row_range": [
+   0.675,
+   0.725
+  ]
+ },
+ "sco_peasant_idle": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   65,
+   56,
+   94,
+   113
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7063
+  ]
+ },
+ "sco_peasant_attack": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 12,
+  "frames": 12,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   45,
+   129,
+   121
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7562
+  ]
+ },
+ "sco_peasant_workwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   30,
+   45,
+   129,
+   121
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.7562
+  ]
+ },
+ "sco_peasant_workfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   33,
+   53,
+   127,
+   131
+  ],
+  "foot_row_range": [
+   0.65,
+   0.8187
+  ]
+ },
+ "sco_peasant_workstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   32,
+   152,
+   142
+  ],
+  "foot_row_range": [
+   0.625,
+   0.8875
+  ]
+ },
+ "sco_peasant_construct": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   58,
+   56,
+   102,
+   117
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7312
+  ]
+ },
+ "sco_peasant_walkwood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   59,
+   55,
+   101,
+   116
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.725
+  ]
+ },
+ "sco_peasant_walkfood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   51,
+   56,
+   109,
+   119
+  ],
+  "foot_row_range": [
+   0.6687,
+   0.7438
+  ]
+ },
+ "sco_peasant_walkstone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 10,
+  "frames": 10,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   26,
+   58,
+   133,
+   134
+  ],
+  "foot_row_range": [
+   0.6813,
+   0.8375
+  ]
+ },
+ "sco_peasant_idlewood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   58,
+   56,
+   102,
+   114
+  ],
+  "foot_row_range": [
+   0.6875,
+   0.7125
+  ]
+ },
+ "sco_peasant_idlefood": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   59,
+   59,
+   101,
+   114
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7125
+  ]
+ },
+ "sco_peasant_idlestone": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 6,
+  "frames": 6,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   39,
+   56,
+   120,
+   127
+  ],
+  "foot_row_range": [
+   0.6937,
+   0.7937
+  ]
+ },
+ "sco_peasant_death": {
+  "clips": [],
+  "n_clips": 0,
+  "distinct_frames": 8,
+  "frames": 8,
+  "distinct_dirs_per_frame": [
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8,
+   8
+  ],
+  "ink_bbox": [
+   8,
+   44,
+   151,
+   147
+  ],
+  "foot_row_range": [
+   0.6625,
+   0.9187
+  ]
+ }
+}

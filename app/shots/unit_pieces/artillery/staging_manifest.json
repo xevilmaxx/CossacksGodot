@@ -1,0 +1,668 @@
+{
+ "cell": 160,
+ "engine": "workbench",
+ "keys": {
+  "cannon": {
+   "base": "cannon",
+   "cell": 160,
+   "actions": {
+    "idle": {
+     "frames": 1,
+     "duration": 0.033,
+     "loop": true,
+     "ortho": 4.85,
+     "center": [
+      0.0,
+      0.0,
+      0.353
+     ],
+     "ax": 0.5,
+     "ay": 0.6096,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1668,
+     "aaf_source": "cannon.aaf",
+     "aaf_range": [
+      1,
+      1
+     ],
+     "bbox": [
+      8,
+      38,
+      152,
+      128
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8,
+     "cx": 0.5,
+     "clip": false
+    },
+    "walk": {
+     "frames": 12,
+     "duration": 3.3,
+     "loop": true,
+     "ortho": 4.85,
+     "center": [
+      0.0,
+      0.0,
+      0.353
+     ],
+     "ax": 0.5,
+     "ay": 0.6096,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1668,
+     "aaf_source": "cannon.aaf",
+     "aaf_range": [
+      1,
+      99
+     ],
+     "bbox": [
+      8,
+      38,
+      152,
+      128
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8,
+     "cx": 0.5,
+     "clip": false
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 1.233,
+     "loop": false,
+     "ortho": 4.85,
+     "center": [
+      0.0,
+      0.0,
+      0.353
+     ],
+     "ax": 0.5,
+     "ay": 0.6096,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1668,
+     "aaf_source": "cannon.aaf",
+     "aaf_range": [
+      301,
+      337
+     ],
+     "bbox": [
+      8,
+      38,
+      152,
+      128
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8,
+     "cx": 0.5,
+     "clip": false
+    },
+    "death": {
+     "frames": 8,
+     "duration": 1.1,
+     "loop": false,
+     "ortho": 4.847,
+     "center": [
+      0.0,
+      0.0,
+      0.65
+     ],
+     "ax": 0.5,
+     "ay": 0.7022,
+     "tool": null,
+     "mesh": "death",
+     "mesh_verts": 1668,
+     "aaf_source": "cannon_death.aaf",
+     "aaf_range": [
+      1,
+      33
+     ],
+     "bbox": [
+      8,
+      47,
+      152,
+      136
+     ],
+     "fig_h": 0.5563,
+     "foot": 0.85,
+     "cx": 0.5,
+     "clip": false
+    }
+   },
+   "groups": {
+    "stand": {
+     "center": [
+      0.0,
+      0.0,
+      0.35263626286251326
+     ],
+     "ortho": 4.85,
+     "anchor": [
+      0.5,
+      0.6096
+     ]
+    },
+    "death": {
+     "center": [
+      0.0,
+      0.0,
+      0.6498932976919537
+     ],
+     "ortho": 4.847,
+     "anchor": [
+      0.5,
+      0.7022
+     ]
+    }
+   }
+  },
+  "howitzer": {
+   "base": "howitzer",
+   "cell": 160,
+   "actions": {
+    "idle": {
+     "frames": 1,
+     "duration": 0.033,
+     "loop": true,
+     "ortho": 3.899,
+     "center": [
+      0.0,
+      0.0,
+      0.482
+     ],
+     "ax": 0.5,
+     "ay": 0.6864,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1699,
+     "aaf_source": "howitzer.aaf",
+     "aaf_range": [
+      1,
+      1
+     ],
+     "bbox": [
+      8,
+      38,
+      152,
+      134
+     ],
+     "fig_h": 0.6,
+     "foot": 0.8375,
+     "cx": 0.5,
+     "clip": false
+    },
+    "walk": {
+     "frames": 12,
+     "duration": 3.3,
+     "loop": true,
+     "ortho": 3.899,
+     "center": [
+      0.0,
+      0.0,
+      0.482
+     ],
+     "ax": 0.5,
+     "ay": 0.6864,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1699,
+     "aaf_source": "howitzer.aaf",
+     "aaf_range": [
+      1,
+      99
+     ],
+     "bbox": [
+      8,
+      38,
+      152,
+      134
+     ],
+     "fig_h": 0.6,
+     "foot": 0.8375,
+     "cx": 0.5,
+     "clip": false
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.4,
+     "loop": false,
+     "ortho": 3.899,
+     "center": [
+      0.0,
+      0.0,
+      0.482
+     ],
+     "ax": 0.5,
+     "ay": 0.6864,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1699,
+     "aaf_source": "howitzer.aaf",
+     "aaf_range": [
+      301,
+      312
+     ],
+     "bbox": [
+      8,
+      37,
+      151,
+      134
+     ],
+     "fig_h": 0.6062,
+     "foot": 0.8375,
+     "cx": 0.4969,
+     "clip": false
+    },
+    "death": {
+     "frames": 8,
+     "duration": 0.767,
+     "loop": false,
+     "ortho": 3.891,
+     "center": [
+      0.0,
+      0.0,
+      0.78
+     ],
+     "ax": 0.5,
+     "ay": 0.8021,
+     "tool": null,
+     "mesh": "death",
+     "mesh_verts": 1699,
+     "aaf_source": "howitzer_death.aaf",
+     "aaf_range": [
+      1,
+      23
+     ],
+     "bbox": [
+      8,
+      44,
+      152,
+      144
+     ],
+     "fig_h": 0.625,
+     "foot": 0.9,
+     "cx": 0.5,
+     "clip": false
+    }
+   },
+   "groups": {
+    "stand": {
+     "center": [
+      0.0,
+      0.0,
+      0.4821242278126201
+     ],
+     "ortho": 3.899,
+     "anchor": [
+      0.5,
+      0.6864
+     ]
+    },
+    "death": {
+     "center": [
+      0.0,
+      0.0,
+      0.7795729609883348
+     ],
+     "ortho": 3.891,
+     "anchor": [
+      0.5,
+      0.8021
+     ]
+    }
+   }
+  },
+  "mortar": {
+   "base": "mortar",
+   "cell": 160,
+   "actions": {
+    "idle": {
+     "frames": 1,
+     "duration": 0.033,
+     "loop": true,
+     "ortho": 2.506,
+     "center": [
+      0.0,
+      0.0,
+      0.588
+     ],
+     "ax": 0.5,
+     "ay": 0.8535,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1037,
+     "aaf_source": "mortar.aaf",
+     "aaf_range": [
+      1,
+      1
+     ],
+     "bbox": [
+      8,
+      33,
+      151,
+      145
+     ],
+     "fig_h": 0.7,
+     "foot": 0.9062,
+     "cx": 0.4969,
+     "clip": false
+    },
+    "walk": {
+     "frames": 12,
+     "duration": 3.3,
+     "loop": true,
+     "ortho": 2.506,
+     "center": [
+      0.0,
+      0.0,
+      0.588
+     ],
+     "ax": 0.5,
+     "ay": 0.8535,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1037,
+     "aaf_source": "mortar.aaf",
+     "aaf_range": [
+      1,
+      99
+     ],
+     "bbox": [
+      8,
+      33,
+      151,
+      146
+     ],
+     "fig_h": 0.7063,
+     "foot": 0.9125,
+     "cx": 0.4969,
+     "clip": false
+    },
+    "attack": {
+     "frames": 6,
+     "duration": 0.2,
+     "loop": false,
+     "ortho": 2.506,
+     "center": [
+      0.0,
+      0.0,
+      0.588
+     ],
+     "ax": 0.5,
+     "ay": 0.8535,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 1037,
+     "aaf_source": "mortar.aaf",
+     "aaf_range": [
+      301,
+      306
+     ],
+     "bbox": [
+      8,
+      33,
+      152,
+      146
+     ],
+     "fig_h": 0.7063,
+     "foot": 0.9125,
+     "cx": 0.5,
+     "clip": false
+    },
+    "death": {
+     "frames": 8,
+     "duration": 0.967,
+     "loop": false,
+     "ortho": 4.95,
+     "center": [
+      0.0,
+      0.0,
+      0.687
+     ],
+     "ax": 0.5,
+     "ay": 0.7092,
+     "tool": null,
+     "mesh": "death",
+     "mesh_verts": 1271,
+     "aaf_source": "mortar_death.aaf",
+     "aaf_range": [
+      1,
+      29
+     ],
+     "bbox": [
+      8,
+      49,
+      152,
+      135
+     ],
+     "fig_h": 0.5375,
+     "foot": 0.8438,
+     "cx": 0.5,
+     "clip": false
+    }
+   },
+   "groups": {
+    "stand": {
+     "center": [
+      0.0,
+      0.0,
+      0.5875707457463946
+     ],
+     "ortho": 2.506,
+     "anchor": [
+      0.5,
+      0.8535
+     ]
+    },
+    "death": {
+     "center": [
+      0.0,
+      0.0,
+      0.6869790915213208
+     ],
+     "ortho": 4.95,
+     "anchor": [
+      0.5,
+      0.7092
+     ]
+    }
+   }
+  },
+  "multicannon": {
+   "base": "multicannon",
+   "cell": 160,
+   "actions": {
+    "idle": {
+     "frames": 1,
+     "duration": 0.033,
+     "loop": true,
+     "ortho": 4.905,
+     "center": [
+      0.0,
+      0.0,
+      0.521
+     ],
+     "ax": 0.5,
+     "ay": 0.6601,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 3442,
+     "aaf_source": "multicannon.aaf",
+     "aaf_range": [
+      1,
+      1
+     ],
+     "bbox": [
+      8,
+      31,
+      152,
+      131
+     ],
+     "fig_h": 0.625,
+     "foot": 0.8187,
+     "cx": 0.5,
+     "clip": false
+    },
+    "walk": {
+     "frames": 12,
+     "duration": 3.3,
+     "loop": true,
+     "ortho": 4.905,
+     "center": [
+      0.0,
+      0.0,
+      0.521
+     ],
+     "ax": 0.5,
+     "ay": 0.6601,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 3442,
+     "aaf_source": "multicannon.aaf",
+     "aaf_range": [
+      1,
+      99
+     ],
+     "bbox": [
+      8,
+      31,
+      152,
+      131
+     ],
+     "fig_h": 0.625,
+     "foot": 0.8187,
+     "cx": 0.5,
+     "clip": false
+    },
+    "attack": {
+     "frames": 7,
+     "duration": 0.233,
+     "loop": false,
+     "ortho": 4.905,
+     "center": [
+      0.0,
+      0.0,
+      0.521
+     ],
+     "ax": 0.5,
+     "ay": 0.6601,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 3442,
+     "aaf_source": "multicannon.aaf",
+     "aaf_range": [
+      301,
+      307
+     ],
+     "bbox": [
+      8,
+      31,
+      152,
+      131
+     ],
+     "fig_h": 0.625,
+     "foot": 0.8187,
+     "cx": 0.5,
+     "clip": false
+    },
+    "next": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": false,
+     "ortho": 4.905,
+     "center": [
+      0.0,
+      0.0,
+      0.521
+     ],
+     "ax": 0.5,
+     "ay": 0.6601,
+     "tool": null,
+     "mesh": "body+wheels",
+     "mesh_verts": 3442,
+     "aaf_source": "multicannon.aaf",
+     "aaf_range": [
+      308,
+      331
+     ],
+     "bbox": [
+      8,
+      31,
+      152,
+      131
+     ],
+     "fig_h": 0.625,
+     "foot": 0.8187,
+     "cx": 0.5,
+     "clip": false
+    },
+    "death": {
+     "frames": 8,
+     "duration": 0.867,
+     "loop": false,
+     "ortho": 6.928,
+     "center": [
+      0.0,
+      0.0,
+      0.923
+     ],
+     "ax": 0.5,
+     "ay": 0.7009,
+     "tool": null,
+     "mesh": "death",
+     "mesh_verts": 3442,
+     "aaf_source": "multicannon_death.aaf",
+     "aaf_range": [
+      1,
+      26
+     ],
+     "bbox": [
+      8,
+      51,
+      152,
+      136
+     ],
+     "fig_h": 0.5312,
+     "foot": 0.85,
+     "cx": 0.5,
+     "clip": false
+    }
+   },
+   "groups": {
+    "stand": {
+     "center": [
+      0.0,
+      0.0,
+      0.5206856411630998
+     ],
+     "ortho": 4.905,
+     "anchor": [
+      0.5,
+      0.6601
+     ]
+    },
+    "death": {
+     "center": [
+      0.0,
+      0.0,
+      0.9230723148295044
+     ],
+     "ortho": 6.928,
+     "anchor": [
+      0.5,
+      0.7009
+     ]
+    }
+   }
+  }
+ },
+ "bug_fixes": {
+  "1_transposed_quaternions": true,
+  "2_bone0_detravel_global_idle_home_perclip_death": true,
+  "3_shared_stand_death_group_anchor": true,
+  "4_projected_longside_ortho_8_az": true,
+  "5_wheels_composited_death_mesh_baked": true
+ }
+}

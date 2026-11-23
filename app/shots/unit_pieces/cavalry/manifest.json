@@ -1,0 +1,584 @@
+{
+ "ticket": "T6-U04",
+ "cell": 160,
+ "engine": "workbench",
+ "staging": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\unit_pieces\\cavalry",
+ "horse_tex": "horsebrown.dds",
+ "index": {
+  "dragoon": {
+   "cell": 160,
+   "actions": {
+    "walk": {
+     "frames": 12,
+     "duration": 0.8,
+     "loop": true,
+     "ortho": 4.2,
+     "center": [
+      0.0,
+      0.0,
+      1.371
+     ],
+     "ax": 0.5,
+     "ay": 0.9922,
+     "tool": "dragoon18_horse",
+     "bbox": [
+      8,
+      21,
+      152,
+      152
+     ],
+     "fig_h": 0.8187,
+     "foot": 0.95,
+     "cx": 0.5
+    },
+    "idle": {
+     "frames": 6,
+     "duration": 2.833,
+     "loop": true,
+     "ortho": 4.2,
+     "center": [
+      0.0,
+      0.0,
+      1.371
+     ],
+     "ax": 0.5,
+     "ay": 0.9922,
+     "tool": "dragoon18_horse",
+     "bbox": [
+      12,
+      25,
+      148,
+      145
+     ],
+     "fig_h": 0.75,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "attack": {
+     "frames": 12,
+     "duration": 0.433,
+     "loop": false,
+     "ortho": 4.2,
+     "center": [
+      0.0,
+      0.0,
+      1.371
+     ],
+     "ax": 0.5,
+     "ay": 0.9922,
+     "tool": "dragoon18_horse",
+     "bbox": [
+      11,
+      13,
+      149,
+      145
+     ],
+     "fig_h": 0.825,
+     "foot": 0.9062,
+     "cx": 0.5
+    },
+    "death": {
+     "frames": 8,
+     "duration": 2.367,
+     "loop": false,
+     "ortho": 9.413,
+     "center": [
+      0.0,
+      0.0,
+      1.437
+     ],
+     "ax": 0.5,
+     "ay": 0.7301,
+     "tool": "dragoon18_horse",
+     "bbox": [
+      8,
+      49,
+      152,
+      139
+     ],
+     "fig_h": 0.5625,
+     "foot": 0.8688,
+     "cx": 0.5
+    }
+   }
+  }
+ },
+ "units": {
+  "dragoon": {
+   "base": "dragoon18",
+   "mount": {
+    "file": "dragoon18_horse.oss",
+    "header": {
+     "k": 639,
+     "fps": 30,
+     "bones": 24,
+     "verts": 807,
+     "faces": 1146,
+     "uvs": 1086,
+     "size": 484992
+    },
+    "bytes": 484992,
+    "closure": 484992,
+    "closure_ok": true,
+    "actor": "section.begin {refurl=.\\data\\actors\\ref\\refunit.actor}\n   ShaderLODList.List[0].ShaderID = 20\n   ShaderLODList.List[0].ShaderIDIM = 13\n   Animations.LoadFromFile = .\\data\\animations\\aaf\\dragoon18.aaf\n   ActorList.Items[0].Name = dragoon18_horse.mesh\n   ActorList.Items[0].LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\attach\\dragoon18_horse.oss\nsection.end\n",
+    "root_at_idle": [
+     -0.0022,
+     -0.1534,
+     -0.0697
+    ],
+    "root_static": false,
+    "root_probe": {
+     "49": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "505": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "592": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.721
+      ],
+      "horse": [
+       -0.002,
+       -0.153,
+       -0.07
+      ]
+     },
+     "614": {
+      "rider": [
+       -2.003,
+       -0.364,
+       0.765
+      ],
+      "horse": [
+       0.043,
+       -0.491,
+       -0.003
+      ]
+     }
+    }
+   },
+   "donor": {
+    "oss": {
+     "k": 639,
+     "fps": 30,
+     "bones": 16,
+     "verts": 814,
+     "faces": 1124,
+     "uvs": 1039
+    },
+    "oss_bytes": 341144,
+    "aaf": {
+     "idle": {
+      "first": 505,
+      "last": 589,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle0": {
+      "first": 418,
+      "last": 502,
+      "count": 85,
+      "duration": 2.833
+     },
+     "idle_rest": {
+      "first": 335,
+      "last": 415,
+      "count": 81,
+      "duration": 2.7
+     },
+     "walk": {
+      "first": 614,
+      "last": 637,
+      "count": 24,
+      "duration": 0.8
+     },
+     "death": {
+      "first": 49,
+      "last": 119,
+      "count": 71,
+      "duration": 2.367
+     },
+     "attack0": {
+      "first": 592,
+      "last": 604,
+      "count": 13,
+      "duration": 0.433
+     },
+     "prepare0": {
+      "first": 214,
+      "last": 227,
+      "count": 14,
+      "duration": 0.467
+     },
+     "unprepare0": {
+      "first": 200,
+      "last": 213,
+      "count": 14,
+      "duration": 0.467
+     },
+     "death0": {
+      "first": 124,
+      "last": 195,
+      "count": 72,
+      "duration": 2.4
+     }
+    },
+    "aaf_count": 9,
+    "attach": [
+     "dragoon18_horse.actor",
+     "dragoon18_horse.oss"
+    ]
+   },
+   "foot_pin": {
+    "mode": "mounted",
+    "pin_metric": "mount_body_centroid",
+    "rider_home": [
+     -2.0029,
+     -0.3641
+    ],
+    "horse_home": [
+     -0.0022,
+     -0.1534
+    ],
+    "idle_ref_frame": 505,
+    "foot_xy": [
+     0.0037,
+     -0.6323
+    ],
+    "max_stand_drift_m": 0.0991,
+    "max_glue_drift_m": 0.1369,
+    "band": 0.5,
+    "ok": true
+   },
+   "entry": {
+    "cell": 160,
+    "actions": {
+     "walk": {
+      "frames": 12,
+      "duration": 0.8,
+      "loop": true,
+      "ortho": 4.2,
+      "center": [
+       0.0,
+       0.0,
+       1.371
+      ],
+      "ax": 0.5,
+      "ay": 0.9922,
+      "tool": "dragoon18_horse",
+      "donor_name": "walk",
+      "donor_range": [
+       614,
+       637
+      ],
+      "donor_count": 24,
+      "fps": 30,
+      "sampled_frames": [
+       614,
+       616,
+       618,
+       620,
+       622,
+       624,
+       627,
+       629,
+       631,
+       633,
+       635,
+       637
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       8,
+       21,
+       152,
+       152
+      ],
+      "fig_h": 0.8187,
+      "foot": 0.95,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "idle": {
+      "frames": 6,
+      "duration": 2.833,
+      "loop": true,
+      "ortho": 4.2,
+      "center": [
+       0.0,
+       0.0,
+       1.371
+      ],
+      "ax": 0.5,
+      "ay": 0.9922,
+      "tool": "dragoon18_horse",
+      "donor_name": "idle",
+      "donor_range": [
+       505,
+       589
+      ],
+      "donor_count": 85,
+      "fps": 30,
+      "sampled_frames": [
+       505,
+       522,
+       539,
+       555,
+       572,
+       589
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       12,
+       25,
+       148,
+       145
+      ],
+      "fig_h": 0.75,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 48,
+      "distinct_cells": 48,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "attack": {
+      "frames": 12,
+      "duration": 0.433,
+      "loop": false,
+      "ortho": 4.2,
+      "center": [
+       0.0,
+       0.0,
+       1.371
+      ],
+      "ax": 0.5,
+      "ay": 0.9922,
+      "tool": "dragoon18_horse",
+      "donor_name": "attack0",
+      "donor_range": [
+       592,
+       604
+      ],
+      "donor_count": 13,
+      "fps": 30,
+      "sampled_frames": [
+       592,
+       593,
+       594,
+       595,
+       596,
+       597,
+       599,
+       600,
+       601,
+       602,
+       603,
+       604
+      ],
+      "group": "stand",
+      "mounted": true,
+      "bbox": [
+       11,
+       13,
+       149,
+       145
+      ],
+      "fig_h": 0.825,
+      "foot": 0.9062,
+      "cx": 0.5,
+      "cells": 96,
+      "distinct_cells": 96,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     },
+     "death": {
+      "frames": 8,
+      "duration": 2.367,
+      "loop": false,
+      "ortho": 9.413,
+      "center": [
+       0.0,
+       0.0,
+       1.437
+      ],
+      "ax": 0.5,
+      "ay": 0.7301,
+      "tool": "dragoon18_horse",
+      "donor_name": "death",
+      "donor_range": [
+       49,
+       119
+      ],
+      "donor_count": 71,
+      "fps": 30,
+      "sampled_frames": [
+       49,
+       59,
+       69,
+       79,
+       89,
+       99,
+       109,
+       119
+      ],
+      "group": "death",
+      "mounted": true,
+      "bbox": [
+       8,
+       49,
+       152,
+       139
+      ],
+      "fig_h": 0.5625,
+      "foot": 0.8688,
+      "cx": 0.5,
+      "cells": 64,
+      "distinct_cells": 64,
+      "distinct_frac": 1.0,
+      "clips": [],
+      "bands_ok": true
+     }
+    },
+    "mounted": true,
+    "horse_tex": "horsebrown.dds"
+   },
+   "verification": {
+    "checks": {
+     "oss_size_closure": {
+      "ok": true,
+      "observed": 341144,
+      "expected": 341144
+     },
+     "donor_frames_durations": {
+      "ok": true,
+      "expected": [
+       [
+        "walk",
+        614,
+        637,
+        0.8
+       ],
+       [
+        "idle",
+        505,
+        589,
+        2.833
+       ],
+       [
+        "attack0",
+        592,
+        604,
+        0.433
+       ],
+       [
+        "death",
+        49,
+        119,
+        2.367
+       ]
+      ]
+     },
+     "GROUP_OK": {
+      "ok": true,
+      "stand_count": 3,
+      "death_count": 1,
+      "signatures": 2,
+      "stand_sig": [
+       4.2,
+       [
+        0.0,
+        0.0,
+        1.371
+       ],
+       0.5,
+       0.9922
+      ],
+      "death_sig": [
+       9.413,
+       [
+        0.0,
+        0.0,
+        1.437
+       ],
+       0.5,
+       0.7301
+      ]
+     },
+     "foot_pin_de_travel": {
+      "mode": "mounted",
+      "pin_metric": "mount_body_centroid",
+      "rider_home": [
+       -2.0029,
+       -0.3641
+      ],
+      "horse_home": [
+       -0.0022,
+       -0.1534
+      ],
+      "idle_ref_frame": 505,
+      "foot_xy": [
+       0.0037,
+       -0.6323
+      ],
+      "max_stand_drift_m": 0.0991,
+      "max_glue_drift_m": 0.1369,
+      "band": 0.5,
+      "ok": true,
+      "gating": false,
+      "note": "diagnostic only: foot-pin band N/A for mounted riders"
+     },
+     "mount_composited": {
+      "ok": true,
+      "expected": "dragoon18_horse",
+      "observed": [
+       "dragoon18_horse",
+       "dragoon18_horse",
+       "dragoon18_horse",
+       "dragoon18_horse"
+      ],
+      "donor_mount": "dragoon18_horse.oss"
+     },
+     "sheet_metrics": {
+      "ok": true,
+      "alarms": []
+     },
+     "sheets_exist": {
+      "ok": true
+     }
+    },
+    "verdict": "PASS"
+   },
+   "bake_seconds": 49.01
+  }
+ }
+}

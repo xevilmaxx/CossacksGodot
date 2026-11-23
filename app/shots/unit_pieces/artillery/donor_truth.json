@@ -1,0 +1,661 @@
+{
+ "cannon": {
+  "base": "cannon",
+  "oss": {
+   "frames": 339,
+   "fps": 30,
+   "bones": 3,
+   "verts": 736,
+   "faces": 564,
+   "uvs": 1827
+  },
+  "mesh_headers": {
+   "wheel_left": {
+    "frames": 339,
+    "fps": 30,
+    "bones": 1,
+    "verts": 466,
+    "faces": 376,
+    "uvs": 517
+   },
+   "wheel_right": {
+    "frames": 339,
+    "fps": 30,
+    "bones": 1,
+    "verts": 466,
+    "faces": 376,
+    "uvs": 1034
+   },
+   "death": {
+    "frames": 35,
+    "fps": 30,
+    "bones": 5,
+    "verts": 1668,
+    "faces": 1316,
+    "uvs": 3378
+   }
+  },
+  "aaf_alive": {
+   "idle": [
+    1,
+    1
+   ],
+   "walk": [
+    1,
+    99
+   ],
+   "attack0": [
+    301,
+    337
+   ],
+   "attack1": [
+    301,
+    337
+   ]
+  },
+  "aaf_death": {
+   "death": [
+    1,
+    33
+   ]
+  },
+  "actor_file": [
+   "ShaderLODList.List[0].ShaderID = 27",
+   "ShaderLODList.List[0].ShaderIDIM = 24",
+   "Animations.LoadFromFile = .\\data\\animations\\aaf\\cannon.aaf",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\cannon.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\cannon_wheel_left.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\cannon_wheel_right.oss"
+  ],
+  "attach_props": [],
+  "tools_manifest": false,
+  "texture": "cannon.dds",
+  "expected": {
+   "idle": {
+    "mesh": "body+wheels",
+    "aaf_source": "cannon.aaf",
+    "aaf_range": [
+     1,
+     1
+    ],
+    "sampled_frames": 1,
+    "frames_list": [
+     1
+    ],
+    "duration": 0.033,
+    "loop": true,
+    "tool": null
+   },
+   "walk": {
+    "mesh": "body+wheels",
+    "aaf_source": "cannon.aaf",
+    "aaf_range": [
+     1,
+     99
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     10,
+     19,
+     28,
+     37,
+     46,
+     54,
+     63,
+     72,
+     81,
+     90,
+     99
+    ],
+    "duration": 3.3,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "mesh": "body+wheels",
+    "aaf_source": "cannon.aaf",
+    "aaf_range": [
+     301,
+     337
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     301,
+     304,
+     308,
+     311,
+     314,
+     317,
+     321,
+     324,
+     327,
+     330,
+     334,
+     337
+    ],
+    "duration": 1.233,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "mesh": "death",
+    "aaf_source": "cannon_death.aaf",
+    "aaf_range": [
+     1,
+     33
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     1,
+     6,
+     10,
+     15,
+     19,
+     24,
+     28,
+     33
+    ],
+    "duration": 1.1,
+    "loop": false,
+    "tool": null
+   }
+  }
+ },
+ "howitzer": {
+  "base": "howitzer",
+  "oss": {
+   "frames": 314,
+   "fps": 30,
+   "bones": 3,
+   "verts": 767,
+   "faces": 672,
+   "uvs": 1878
+  },
+  "mesh_headers": {
+   "wheel_left": {
+    "frames": 314,
+    "fps": 30,
+    "bones": 1,
+    "verts": 466,
+    "faces": 376,
+    "uvs": 527
+   },
+   "wheel_right": {
+    "frames": 314,
+    "fps": 30,
+    "bones": 1,
+    "verts": 466,
+    "faces": 376,
+    "uvs": 527
+   },
+   "death": {
+    "frames": 25,
+    "fps": 30,
+    "bones": 5,
+    "verts": 1699,
+    "faces": 1424,
+    "uvs": 2932
+   }
+  },
+  "aaf_alive": {
+   "idle": [
+    1,
+    1
+   ],
+   "walk": [
+    1,
+    99
+   ],
+   "attack0": [
+    301,
+    312
+   ]
+  },
+  "aaf_death": {
+   "death": [
+    1,
+    23
+   ]
+  },
+  "actor_file": [
+   "ShaderLODList.List[0].ShaderID = 27",
+   "ShaderLODList.List[0].ShaderIDIM = 24",
+   "Animations.LoadFromFile = .\\data\\animations\\aaf\\howitzer.aaf",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\howitzer.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\howitzer_wheel_left.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\howitzer_wheel_right.oss"
+  ],
+  "attach_props": [],
+  "tools_manifest": false,
+  "texture": "howitzer.dds",
+  "expected": {
+   "idle": {
+    "mesh": "body+wheels",
+    "aaf_source": "howitzer.aaf",
+    "aaf_range": [
+     1,
+     1
+    ],
+    "sampled_frames": 1,
+    "frames_list": [
+     1
+    ],
+    "duration": 0.033,
+    "loop": true,
+    "tool": null
+   },
+   "walk": {
+    "mesh": "body+wheels",
+    "aaf_source": "howitzer.aaf",
+    "aaf_range": [
+     1,
+     99
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     10,
+     19,
+     28,
+     37,
+     46,
+     54,
+     63,
+     72,
+     81,
+     90,
+     99
+    ],
+    "duration": 3.3,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "mesh": "body+wheels",
+    "aaf_source": "howitzer.aaf",
+    "aaf_range": [
+     301,
+     312
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     301,
+     302,
+     303,
+     304,
+     305,
+     306,
+     307,
+     308,
+     309,
+     310,
+     311,
+     312
+    ],
+    "duration": 0.4,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "mesh": "death",
+    "aaf_source": "howitzer_death.aaf",
+    "aaf_range": [
+     1,
+     23
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     1,
+     4,
+     7,
+     10,
+     14,
+     17,
+     20,
+     23
+    ],
+    "duration": 0.767,
+    "loop": false,
+    "tool": null
+   }
+  }
+ },
+ "mortar": {
+  "base": "mortar",
+  "oss": {
+   "frames": 308,
+   "fps": 30,
+   "bones": 2,
+   "verts": 808,
+   "faces": 790,
+   "uvs": 1361
+  },
+  "mesh_headers": {
+   "wheel_left": {
+    "frames": 308,
+    "fps": 30,
+    "bones": 1,
+    "verts": 112,
+    "faces": 100,
+    "uvs": 116
+   },
+   "wheel_right": {
+    "frames": 308,
+    "fps": 30,
+    "bones": 1,
+    "verts": 117,
+    "faces": 104,
+    "uvs": 237
+   },
+   "death": {
+    "frames": 31,
+    "fps": 30,
+    "bones": 8,
+    "verts": 1271,
+    "faces": 1202,
+    "uvs": 1361
+   }
+  },
+  "aaf_alive": {
+   "idle": [
+    1,
+    1
+   ],
+   "walk": [
+    1,
+    99
+   ],
+   "attack0": [
+    301,
+    306
+   ]
+  },
+  "aaf_death": {
+   "death": [
+    1,
+    29
+   ]
+  },
+  "actor_file": [
+   "ShaderLODList.List[0].ShaderID = 27",
+   "ShaderLODList.List[0].ShaderIDIM = 24",
+   "Animations.LoadFromFile = .\\data\\animations\\aaf\\mortar.aaf",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\mortar.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\mortar_wheel_left.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\mortar_wheel_right.oss"
+  ],
+  "attach_props": [],
+  "tools_manifest": false,
+  "texture": "mortar.dds",
+  "expected": {
+   "idle": {
+    "mesh": "body+wheels",
+    "aaf_source": "mortar.aaf",
+    "aaf_range": [
+     1,
+     1
+    ],
+    "sampled_frames": 1,
+    "frames_list": [
+     1
+    ],
+    "duration": 0.033,
+    "loop": true,
+    "tool": null
+   },
+   "walk": {
+    "mesh": "body+wheels",
+    "aaf_source": "mortar.aaf",
+    "aaf_range": [
+     1,
+     99
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     10,
+     19,
+     28,
+     37,
+     46,
+     54,
+     63,
+     72,
+     81,
+     90,
+     99
+    ],
+    "duration": 3.3,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "mesh": "body+wheels",
+    "aaf_source": "mortar.aaf",
+    "aaf_range": [
+     301,
+     306
+    ],
+    "sampled_frames": 6,
+    "frames_list": [
+     301,
+     302,
+     303,
+     304,
+     305,
+     306
+    ],
+    "duration": 0.2,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "mesh": "death",
+    "aaf_source": "mortar_death.aaf",
+    "aaf_range": [
+     1,
+     29
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     1,
+     5,
+     9,
+     13,
+     17,
+     21,
+     25,
+     29
+    ],
+    "duration": 0.967,
+    "loop": false,
+    "tool": null
+   }
+  }
+ },
+ "multicannon": {
+  "base": "multicannon",
+  "oss": {
+   "frames": 332,
+   "fps": 30,
+   "bones": 5,
+   "verts": 2528,
+   "faces": 2410,
+   "uvs": 5944
+  },
+  "mesh_headers": {
+   "wheel_left": {
+    "frames": 332,
+    "fps": 30,
+    "bones": 1,
+    "verts": 457,
+    "faces": 376,
+    "uvs": 508
+   },
+   "wheel_right": {
+    "frames": 332,
+    "fps": 30,
+    "bones": 1,
+    "verts": 457,
+    "faces": 376,
+    "uvs": 508
+   },
+   "death": {
+    "frames": 28,
+    "fps": 30,
+    "bones": 8,
+    "verts": 3442,
+    "faces": 3162,
+    "uvs": 3608
+   }
+  },
+  "aaf_alive": {
+   "idle": [
+    1,
+    1
+   ],
+   "walk": [
+    1,
+    99
+   ],
+   "next": [
+    308,
+    331
+   ],
+   "attack0": [
+    301,
+    307
+   ]
+  },
+  "aaf_death": {
+   "death": [
+    1,
+    26
+   ]
+  },
+  "actor_file": [
+   "ShaderLODList.List[0].ShaderID = 28",
+   "ShaderLODList.List[0].ShaderIDIM = 25",
+   "Animations.LoadFromFile = .\\data\\animations\\aaf\\multicannon.aaf",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\multicannon.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\multicannon_wheel_left.oss",
+   "LODList.Items[0].MeshObjects.LoadFromFile = .\\data\\actors\\units\\multicannon_wheel_right.oss"
+  ],
+  "attach_props": [],
+  "tools_manifest": false,
+  "texture": "multicannon.dds",
+  "expected": {
+   "idle": {
+    "mesh": "body+wheels",
+    "aaf_source": "multicannon.aaf",
+    "aaf_range": [
+     1,
+     1
+    ],
+    "sampled_frames": 1,
+    "frames_list": [
+     1
+    ],
+    "duration": 0.033,
+    "loop": true,
+    "tool": null
+   },
+   "walk": {
+    "mesh": "body+wheels",
+    "aaf_source": "multicannon.aaf",
+    "aaf_range": [
+     1,
+     99
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     10,
+     19,
+     28,
+     37,
+     46,
+     54,
+     63,
+     72,
+     81,
+     90,
+     99
+    ],
+    "duration": 3.3,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "mesh": "body+wheels",
+    "aaf_source": "multicannon.aaf",
+    "aaf_range": [
+     301,
+     307
+    ],
+    "sampled_frames": 7,
+    "frames_list": [
+     301,
+     302,
+     303,
+     304,
+     305,
+     306,
+     307
+    ],
+    "duration": 0.233,
+    "loop": false,
+    "tool": null
+   },
+   "next": {
+    "mesh": "body+wheels",
+    "aaf_source": "multicannon.aaf",
+    "aaf_range": [
+     308,
+     331
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     308,
+     310,
+     312,
+     314,
+     316,
+     318,
+     321,
+     323,
+     325,
+     327,
+     329,
+     331
+    ],
+    "duration": 0.8,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "mesh": "death",
+    "aaf_source": "multicannon_death.aaf",
+    "aaf_range": [
+     1,
+     26
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     1,
+     5,
+     8,
+     12,
+     15,
+     19,
+     22,
+     26
+    ],
+    "duration": 0.867,
+    "loop": false,
+    "tool": null
+   }
+  }
+ }
+}

@@ -176,3 +176,144 @@ ticket lock. Workers are the parallel resource; files are partitioned so they
 never contend. Review and QA are separate desks so nobody reviews their own
 work. That is the whole design: **parallel people, serialized tools, gated
 merges.**
+
+## 7. Recursive swarm model (owner directive 2026-11-23 — T6 wave onward)
+
+The owner asked for an **infinite recursive tree of mini-agents**: every
+subagent may spawn its own helpers, every helper may spawn its own children,
+and every parent periodically supervises its children so nothing gets stuck.
+This section overrides the flat WIP-20 model for the T6 wave. The non-negotiable
+gates (§3), quality-first rules (§5b-QUALITY) and the runner door (§3.1) stay in
+force at EVERY depth of the tree.
+
+### 7.1 Tree structure
+
+```
+Coordinator (primary agent — owns SWARM_BOARD.md, SWARM_OPS.md, final merges)
+└── Lane parent (one per lane: TERRAIN, UNITS, WATER, RUST, RESEARCH, QA)
+    ├── Micro-worker (ONE micro-task, ONE owned output set)
+    │   ├── Helper (a still smaller piece: one measurement, one frame check…)
+    │   └── Helper …
+    └── Micro-worker …
+```
+
+- **Micro-task rule:** a ticket must be small enough that one worker can finish
+  it in one sitting: ONE piece, ONE unit family, ONE file, ONE question. If a
+  worker finds its task is bigger, it splits it and spawns children instead of
+  growing the diff.
+- **Fan-out:** a parent spawns as many children as its micro-task list needs.
+  Prefer many tiny children over few big ones. Practical guidance: ≤ 8 direct
+  children per parent at once; go deeper (grandchildren) rather than wider when
+  a child's task is still compound.
+- **Piece-before-whole rule (owner):** every helper tests ITS OWN simple piece
+  (headless render + measurement + visual A/B) BEFORE any whole-system test.
+  Whole-map / whole-roster / full-suite tests happen only at integration tickets,
+  after the pieces pass. Never bake everything together first.
+
+### 7.2 Models
+
+| Role | Model reference | Notes |
+|---|---|---|
+| Lane parents | `opencode-go/hy4-flash-free#high` | orchestration variant |
+| Micro-workers / helpers | `opencode-go/hy4-flash-free` | **PREFERRED** (owner directive 2026-11-23): the `opencode-go` provider pool; `opencode/hy4-flash-free` hit "Free usage limit reached" — use it only as secondary |
+| Escalation (worker struggled ≥ 2 attempts, quota-blocked, or a task needs deeper reasoning) | `opencode-go/muse-spark-1.3-contributor#high` | parent re-spawns the SAME micro-task with this model |
+
+Spawn children with the `subagent` tool: `agent: "general"`, `model` as above.
+Children are background sessions: the call returns a `sessionID` immediately and
+a notification arrives when the child goes idle. **Pass the returned sessionID
+to follow up** with a specific child (status ping, unblock, new instructions).
+
+**Observed runtime constraints (2026-11-23, WATER lane — binding for all lanes):**
+
+1. **The `subagent` tool is NOT exposed inside child sessions.** Only the
+   coordinator has it. Parents below the coordinator spawn their children as
+   background OpenCode CLI sessions instead:
+   `opencode run --agent general --model <model-ref> --session <unique-id> --title <title> --auto <prompt-text>`
+   (prompt as a positional argument read from a file, NOT a `--prompt` flag;
+   run it as a background shell job and tee output to a log file). Follow-ups
+   to a child = another `opencode run --session <same-id>` with the new message.
+   Record every child session id + log path in the lane doc.
+   **Alternative (TERRAIN lane demonstrated):** create real subagent sessions
+   through the OpenCode server API with `parentID` = the lane session,
+   `agent: general`, `subagent: allow` — this preserves recursion natively.
+   Either mechanism is acceptable; record which one the lane uses.
+2. **Free-tier quota:** `opencode/hy4-flash-free` can return "Free usage limit
+   reached". That counts as a failed spawn attempt; after 2 failures escalate
+   the SAME micro-task to `opencode-go/muse-spark-1.3-contributor#high`
+   (§7.3.4). Do not burn attempts retrying a quota-blocked model.
+3. **This host is Windows:** the Python command is `python` (3.14), NOT
+   `python3` (the Microsoft-Store alias trap). Blender is at
+   `"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe"` (not on PATH).
+   Put both facts in every child prompt.
+
+### 7.3 Parent supervision loop (anti-stuck, owner requirement)
+
+Every parent, on each child notification AND at least every few minutes while
+its lane is running:
+
+1. **Check outputs, not promises:** read the child's report doc / output files.
+   A child that went idle with no output file is suspect.
+2. **Ping** quiet children with a short follow-up (what is done, what is
+   blocked, what file/permission is needed). `pending` runner jobs = healthy
+   queue wait, NOT stuck (§1b of AGENT_PROTOCOL).
+3. **Unblock, don't take over:** grant a file, resolve an ownership clash,
+   re-submit a lost runner job, or split the task smaller.
+4. **Escalate:** a child that fails the same micro-task twice, or is silent
+   > 20 min with no pending job and no reply, is re-spawned as a fresh session
+   on `opencode-go/muse-spark-1.3-contributor#high` with the same owned files
+   and the failed attempt's report attached as context.
+5. **Aggregate:** the parent keeps its lane doc current (see 7.4) so the
+   coordinator can read lane state cold at any time.
+
+The coordinator runs the same loop over lane parents, plus
+`python app\tools\worker_health.py --stall-min 10` and
+`python app\tools\godot_runner.py status`.
+
+### 7.4 Reporting tree (docs, cold-readable)
+
+- Coordinator: `SWARM_BOARD.md` (state column — coordinator only), `docs/T6_WAVE_PLAN.md`.
+- Lane parent: `docs/t6/<LANE>_LANE.md` — micro-task table (id, child session,
+  owned files, state, evidence), updated on every child report.
+- Every worker (any depth): `docs/t6/reports/<TICKET-ID>.md` — claim table with
+  `observed` / `derived` / `inferred` labels, evidence paths, PASS/FAIL per
+  acceptance criterion, open questions. Written BEFORE reporting done.
+- No worker below the coordinator edits `SWARM_BOARD.md`, `SWARM_OPS.md`,
+  `AGENT_PROTOCOL.md` or another lane's files.
+
+### 7.5 Ownership and interference rules at depth
+
+1. **Disjoint outputs:** each micro-worker owns exactly the files named in its
+   ticket (new files preferred: `app/tools/pieces/<name>.py`,
+   `app/tools/unit_bakers/<family>.py`, `rustport/**`, one report doc).
+2. **Shared code is READ-ONLY below integration level.** `terrain_piece_render.py`,
+   `bake_sprites.py`, `world.gd`, `game.gd`, `water_overlay.gdshader`,
+   `anim/index.json` are read-only for piece workers. If a shared file must
+   change, the worker reports the needed change; the lane parent requests an
+   **integration ticket** from the coordinator, which grants ONE builder
+   exclusive ownership, gated on the pieces passing first.
+3. **Staging, not live:** piece outputs go to staging dirs
+   (`app/shots/pieces/`, `app/shots/unit_pieces/<family>/`). Nothing lands in
+   live asset dirs (`app/assets/models/anim/**`) except through an integration
+   ticket with gates.
+4. **Serialized resources stay serialized:** all Godot through `godot_runner.py`
+   (unique ids `<ticket>-<purpose>`). **Blender bakes: max 2 concurrent
+   project-wide** — the UNITS lane parent arbitrates bake slots; other lanes do
+   not launch Blender without coordinator grant. Headless Python/Pillow piece
+   work needs no runner and is fully parallel.
+5. Backups before any edit of an existing owned file:
+   `inbox\backup\<name>.bak-<ticket-id>`.
+
+### 7.6 Acceptance ladder (piece → combo → small map → full map)
+
+1. **Piece PASS:** headless render of the single piece + measurements inside
+   donor-derived bands + visual A/B against donor reference
+   (`C:\Users\Maxym.Oboyshev\Downloads\c3\`, donor assets at `C:\Games\Cossacks 3`).
+   Metrics never override visual review (R-ARCH process rule).
+2. **Combo PASS:** pieces composed (shore+water, grass+trees, ravine+grass…)
+   still pass their criteria.
+3. **Integration:** one builder wires accepted pieces into the engine; gates
+   selftest 29/29 + uitest 17/17 + bake bench < 250 ms + scan_map green +
+   determinism byte-identical where required.
+4. **Full-map confrontation:** canonical whole-map PNG
+   (`full_map_shot.py`, `map_w*tile_px × map_h*tile_px`) + in-engine captures,
+   compared to donor reference; owner visual review is the final gate.

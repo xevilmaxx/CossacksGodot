@@ -1,0 +1,449 @@
+{
+ "generated_utc": "2026-11-23T10:53:32.870253+00:00",
+ "donor_root": "C:\\Games\\Cossacks 3",
+ "keys": {
+  "yacht": {
+   "base": "yacht",
+   "composite_attach": {},
+   "parts": {
+    "crew": {
+     "oss": "data/actors/units/yacht.oss",
+     "aaf": "data/animations/aaf/yacht.aaf",
+     "header": {
+      "frames": 311,
+      "fps": 30,
+      "bones": 20,
+      "verts": 584,
+      "faces": 947,
+      "uvs": 793,
+      "bytes": 217344
+     },
+     "size_closure_ok": true,
+     "max_quat_norm_dev": 8.590848565859233e-08,
+     "aaf_actions": {
+      "idle": [
+       1,
+       280
+      ],
+      "walk": [
+       1,
+       280
+      ],
+      "death": [
+       1,
+       280
+      ],
+      "attack0": [
+       1,
+       280
+      ]
+     },
+     "aaf_all_same_range": true,
+     "material": "data/materials/units/yacht.dds",
+     "material_exists": true,
+     "expected": {
+      "action": "walk",
+      "frames": 12,
+      "frames_list": [
+       1,
+       26,
+       52,
+       77,
+       102,
+       128,
+       153,
+       179,
+       204,
+       229,
+       255,
+       280
+      ],
+      "duration": 9.333,
+      "loop": true,
+      "tool": null,
+      "ortho": 6.047,
+      "center": [
+       0.0,
+       0.0,
+       1.481
+      ],
+      "camera_group": "stand"
+     }
+    },
+    "hull": {
+     "osm": "data/actors/units/yacht.osm",
+     "verts": 9364,
+     "faces": 7731,
+     "uvs": 11490,
+     "morph_frames": 1,
+     "offsets": {
+      "ou": 132,
+      "ot": 92052,
+      "of": 277596
+     },
+     "bbox": [
+      [
+       -1.752,
+       -4.819,
+       -0.376
+      ],
+      [
+       1.752,
+       3.208,
+       6.803
+      ]
+     ],
+     "expected": {
+      "action": "hull",
+      "frames": 1,
+      "duration": 1.0,
+      "loop": false,
+      "tool": null,
+      "ortho": 11.355,
+      "center": [
+       0.0,
+       -0.805,
+       3.214
+      ],
+      "camera_group": "hull"
+     },
+     "variants": {
+      "yacht1.osm": {
+       "verts": 547,
+       "morph_frames": 1,
+       "bbox": [
+        [
+         -0.879,
+         -2.875,
+         -0.315
+        ],
+        [
+         0.83,
+         2.853,
+         1.174
+        ]
+       ],
+       "role": "build/direction stage"
+      },
+      "yacht2.osm": {
+       "verts": 677,
+       "morph_frames": 1,
+       "bbox": [
+        [
+         -0.879,
+         -3.556,
+         -0.375
+        ],
+        [
+         0.83,
+         2.853,
+         1.174
+        ]
+       ],
+       "role": "build/direction stage"
+      },
+      "yacht3.osm": {
+       "verts": 1406,
+       "morph_frames": 1,
+       "bbox": [
+        [
+         -1.752,
+         -4.819,
+         -0.375
+        ],
+        [
+         1.752,
+         2.899,
+         5.246
+        ]
+       ],
+       "role": "build/direction stage"
+      },
+      "yacht4.osm": {
+       "verts": 8319,
+       "morph_frames": 1,
+       "bbox": [
+        [
+         -1.752,
+         -4.819,
+         -0.376
+        ],
+        [
+         1.752,
+         3.208,
+         6.803
+        ]
+       ],
+       "role": "build/direction stage"
+      },
+      "yacht_death1.osm": {
+       "verts": 9523,
+       "morph_frames": 1,
+       "bbox": [
+        [
+         -1.051,
+         -5.363,
+         -0.408
+        ],
+        [
+         3.028,
+         3.208,
+         2.999
+        ]
+       ],
+       "role": "wreck stage"
+      },
+      "yacht_death2.osm": {
+       "verts": 8073,
+       "morph_frames": 1,
+       "bbox": [
+        [
+         -1.451,
+         -3.345,
+         -0.89
+        ],
+        [
+         1.068,
+         3.365,
+         3.284
+        ]
+       ],
+       "role": "wreck stage"
+      }
+     }
+    },
+    "attach": {
+     "dir": "data/actors/units/attach",
+     "files": {
+      "yacht1a.osm": {
+       "verts": 3594,
+       "morph_frames": 1,
+       "bytes": 147108
+      },
+      "yacht2a.osm": {
+       "verts": 4680,
+       "morph_frames": 1,
+       "bytes": 186388
+      },
+      "yacht3a.osm": {
+       "verts": 5100,
+       "morph_frames": 1,
+       "bytes": 203428
+      },
+      "yacht4a.osm": {
+       "verts": 7092,
+       "morph_frames": 1,
+       "bytes": 324932
+      },
+      "yacht_death1a.osm": {
+       "verts": 1006,
+       "morph_frames": 1,
+       "bytes": 45700
+      },
+      "yacht_death2a.osm": {
+       "verts": 957,
+       "morph_frames": 1,
+       "bytes": 40132
+      },
+      "yacht_flag1.actor": {
+       "meshes": [
+        ".\\data\\actors\\units\\attach\\yacht_flag1.oss"
+       ],
+       "anim": ".\\data\\animations\\aaf\\yacht_flag.aaf",
+       "reference": "",
+       "interval": "",
+       "animation_mode": "",
+       "bytes": 361
+      },
+      "yacht_flag1.oss": {
+       "frames": 151,
+       "fps": 30,
+       "bones": 7,
+       "verts": 32,
+       "faces": 36,
+       "uvs": 32,
+       "bytes": 31524
+      },
+      "yacht_flag2.actor": {
+       "meshes": [
+        ".\\data\\actors\\units\\attach\\yacht_flag2.oss"
+       ],
+       "anim": ".\\data\\animations\\aaf\\yacht_flag.aaf",
+       "reference": "",
+       "interval": "",
+       "animation_mode": "",
+       "bytes": 361
+      },
+      "yacht_flag2.oss": {
+       "frames": 151,
+       "fps": 30,
+       "bones": 4,
+       "verts": 46,
+       "faces": 44,
+       "uvs": 64,
+       "bytes": 19608
+      },
+      "yacht_sail.actor": {
+       "meshes": [
+        ".\\data\\actors\\units\\attach\\yacht_sail.osm"
+       ],
+       "anim": ".\\data\\animations\\aaf\\yacht_sail.aaf",
+       "reference": "aarMorph",
+       "interval": "30",
+       "animation_mode": "aamLoop",
+       "bytes": 604
+      },
+      "yacht_sail.osm": {
+       "verts": 1246,
+       "morph_frames": 151,
+       "bytes": 3042980
+      },
+      "yachta.actor": {
+       "meshes": [
+        ".\\data\\actors\\units\\attach\\yachta.osm",
+        ".\\data\\actors\\units\\attach\\yacht1a.osm",
+        ".\\data\\actors\\units\\attach\\yacht2a.osm",
+        ".\\data\\actors\\units\\attach\\yacht3a.osm",
+        ".\\data\\actors\\units\\attach\\yacht4a.osm",
+        ".\\data\\actors\\units\\attach\\yacht_death1a.osm",
+        ".\\data\\actors\\units\\attach\\yacht_death2a.osm"
+       ],
+       "anim": ".\\data\\animations\\aaf\\yacht.aaf",
+       "reference": "aarTransform",
+       "interval": "",
+       "animation_mode": "",
+       "bytes": 2003
+      },
+      "yachta.osm": {
+       "verts": 8,
+       "morph_frames": 1,
+       "bytes": 660
+      },
+      "yachttur1a.osm": {
+       "verts": 3572,
+       "morph_frames": 1,
+       "bytes": 131028
+      },
+      "yachttur2a.osm": {
+       "verts": 5650,
+       "morph_frames": 1,
+       "bytes": 206068
+      },
+      "yachttur3a.osm": {
+       "verts": 6194,
+       "morph_frames": 1,
+       "bytes": 225524
+      },
+      "yachttur4a.osm": {
+       "verts": 7092,
+       "morph_frames": 1,
+       "bytes": 324932
+      },
+      "yachttur_death1a.osm": {
+       "verts": 8,
+       "morph_frames": 1,
+       "bytes": 660
+      },
+      "yachttur_death2a.osm": {
+       "verts": 768,
+       "morph_frames": 1,
+       "bytes": 38668
+      },
+      "yachttur_sail.actor": {
+       "meshes": [
+        ".\\data\\actors\\units\\attach\\yachttur_sail.osm"
+       ],
+       "anim": ".\\data\\animations\\aaf\\yachttur_sail.aaf",
+       "reference": "aarMorph",
+       "interval": "30",
+       "animation_mode": "aamLoop",
+       "bytes": 613
+      },
+      "yachttur_sail.osm": {
+       "verts": 1375,
+       "morph_frames": 151,
+       "bytes": 3386932
+      },
+      "yachttura.actor": {
+       "meshes": [
+        ".\\data\\actors\\units\\attach\\yachttura.osm",
+        ".\\data\\actors\\units\\attach\\yachttur1a.osm",
+        ".\\data\\actors\\units\\attach\\yachttur2a.osm",
+        ".\\data\\actors\\units\\attach\\yachttur3a.osm",
+        ".\\data\\actors\\units\\attach\\yachttur4a.osm",
+        ".\\data\\actors\\units\\attach\\yachttur_death1a.osm",
+        ".\\data\\actors\\units\\attach\\yachttur_death2a.osm"
+       ],
+       "anim": ".\\data\\animations\\aaf\\yachttur.aaf",
+       "reference": "aarTransform",
+       "interval": "",
+       "animation_mode": "",
+       "bytes": 2051
+      },
+      "yachttura.osm": {
+       "verts": 8,
+       "morph_frames": 1,
+       "bytes": 660
+      }
+     },
+     "classification": "sail = aarMorph .osm stage; flags = skinned .oss; yachta/yacht1a..4a/death1a/2a = dock build stages; ALL are separate build stages, NOT in-place hand props",
+     "composite_into_crew": false,
+     "stage_texture": {
+      "observed": "no separate yacht_sail/flag .dds in donor",
+      "value": "data/materials/units/yacht.dds",
+      "label": "inferred"
+     }
+    },
+    "stage_aaf": {
+     "yacht_sail.aaf": {
+      "idle": [
+       1,
+       60
+      ],
+      "idle_to_walk": [
+       61,
+       90
+      ],
+      "walk": [
+       91,
+       120
+      ],
+      "walk_to_idle": [
+       121,
+       149
+      ]
+     },
+     "yacht_flag.aaf": {
+      "idle": [
+       1,
+       149
+      ]
+     },
+     "yachttur_sail.aaf": {
+      "idle": [
+       1,
+       59
+      ],
+      "idle_to_walk": [
+       60,
+       89
+      ],
+      "walk": [
+       90,
+       119
+      ],
+      "walk_to_idle": [
+       120,
+       149
+      ]
+     }
+    }
+   }
+  }
+ },
+ "labels": {
+  "observed": "read directly from donor file on disk",
+  "derived": "computed from observed donor geometry/ranges by the same math as the baker (no live asset used)",
+  "inferred": "not stated by donor; documented assumption"
+ }
+}

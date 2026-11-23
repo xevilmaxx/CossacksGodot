@@ -1,0 +1,37 @@
+You are MICRO-WORKER T6-R07 in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST. This is the M0 VISUAL GATE — the coordinator/owner reviews your verdict before R03/R04/R08 may expand.
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3.
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3.
+DONOR REFERENCE IMAGE: C:\Users\Maxym.Oboyshev\Downloads\c3\cossacks-3-v1-498085.jpg (read-only at test time; never copy into repo).
+Toolchain: rustc/cargo 1.99.1. Python is `python` (3.14) with Pillow available (verify with `python -c "import PIL; print(PIL.__version__)"`). NEVER use `python3`.
+
+OWNED FILES (write ONLY these — strict boundary; never edit app/**, Cargo.toml, src/main.rs, src/lib.rs, any src/** belonging to other workers, docs outside your report, SWARM_BOARD.md):
+- rustport/src/bin/m0_capture.rs (capture driver — Cargo auto-discovers src/bin/*.rs)
+- rustport/shots/m0/** (your outputs: rust render PNG, donor crop PNG, A/B side-by-side PNG, stats JSON)
+- rustport/tests/tools/m0_compare.py (Python/Pillow comparison harness)
+- report: docs/t6/reports/T6-R07.md
+
+READ LIST (read-only): docs/T6_WAVE_PLAN.md section 1.2 (donor visual gap table) and LANE RUST, docs/audit/TERRAIN_DONOR_ASSETS.md section 3.2, docs/t6/reports/T6-R06.md (rasterizer evidence), rustport/ARCHITECTURE.md, SWARM_OPS.md section 7 and §5b-QUALITY, app/tools/AGENT_PROTOCOL.md.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R07. New files need no backup.
+INTEGRATION NOTE: include the R06 rasterizer read-only from your bin via explicit `#[path = "../raster/xxx.rs"] mod xxx;` — do not edit R06's files.
+
+MICRO-TASK — M0 visual gate, 16x16-tile terrain A/B:
+1. Produce a deterministic 16x16-tile Rust terrain render (use R06's rasterizer + R05's DDS reader read-only) and save it to rustport/shots/m0/rust_terrain.png.
+2. From the donor reference JPG, crop a comparable terrain-only region (avoid HUD/units/water if possible) and save rustport/shots/m0/donor_crop.png at a matching size. Document the exact crop rectangle and WHY it was chosen (observed from the image, not guessed blindly).
+3. Build a side-by-side A/B image rustport/shots/m0/ab_side_by_side.png.
+4. Compute honest comparison statistics with Python/Pillow: mean/median RGB and luminance, luminance histogram, saturation distribution, and a coarse spatial-frequency measure (e.g. block-averaged gradient magnitude). Save rustport/shots/m0/stats.json. Metrics do NOT override visual review — they support an honest verdict.
+5. Write the verdict in the report. Use exactly one of: PASS (visually donor-similar at this scope), PARTIAL (recognisably same art direction, clear measurable gaps), FAIL (not donor-similar at this scope). Name the top 3 concrete deficits and what would fix each. Mark UNVERIFIED anything you cannot actually see/measure. Remember this is a 16x16-tile software-rendered patch vs a compressed screenshot — do NOT overclaim.
+
+ACCEPTANCE + CONCRETE TEST it MUST run BEFORE reporting done:
+- From rustport/: `cargo build --bin m0_capture` succeeds and `cargo run --bin m0_capture` produces rust_terrain.png (or raw + converted via Pillow).
+- `python rustport/tests/tools/m0_compare.py` produces donor_crop.png, ab_side_by_side.png, stats.json with no Pillow errors.
+- All four PNGs exist and are non-zero size; paste `Get-FileHash`/`python` SHA-256 values and the stats JSON into the report.
+- Report contains the verdict + top-3 deficit list, written BEFORE reporting done.
+No Godot, no runner.
+
+REPORT: docs/t6/reports/T6-R07.md with claim table (observed / derived / inferred), exact evidence paths + hashes, PASS/PARTIAL/FAIL verdict, and open questions.
+
+RECURSION (only if blocked): spawn helpers via `opencode api post /api/session --data` with parentID = your sessionID. Prefer doing this yourself.
+
+When done, state concisely: files/shots produced, commands run, verdict + rationale, report path, open questions.

@@ -389,3 +389,103 @@ embedded asset names).
 
 *End of document. No donor asset was copied; all donor paths are private-use
 references for existing conversion tooling only.*
+
+---
+
+## T6 verdict (T6-T12) — 2026-11-23
+
+Single-piece mini-baker `app/tools/pieces/t6_mines_display.py` (headless Python
+3.14 / Pillow 12.1.1 / NumPy 2.4.3, no Godot, no donor binary copied).
+Back up of this file before edit: `inbox/backup/mines_display.md.bak-T6-T12`.
+Outputs: `app/shots/pieces/t6_mines_display.png`,
+`t6_mines_display_compare.png`, `t6_mines_display_zoom.png`.
+
+### T6-T12 donor anchors (measured this lane)
+
+| Anchor | Value | Label |
+|---|---|---|
+| `mine_gold.png` (160², `source=low`) | alpha bbox (13,37)-(147,113) = 134×76; 8184 opaque px (31.97%) | observed |
+| Olive disc family | hue 54–69°, S>0.50; 5932 px (72.5% of opaque); RGB ≈(76,78,20), G−R≈+3..+6, median hue 62.4°, S≈0.70, V≈0.30 | observed |
+| Ore mound after key | 2252 px; bbox 129×66; aspect **1.95**; mean RGB ≈(83,72,48) | derived |
+| Native gold-ore specks | 16.78% of opaque in H40–62°, S>0.15 (pre-key; the old A3 PASS was disc-driven) | observed |
+| `envscales.cfg:16-36` mines | scale 0.3152, `minscale=maxscale=1` (no jitter) | observed |
+| Converted mesh footprint | 4.736×4.987×0.603 m → 2.37×2.49 tiles at TILE=2.0 m | derived (prior lane) |
+| `ground1.png` | 1024²; mean RGB (99.8,90.7,66.3) raw; tilt contrast 1.12 in render | observed |
+| Proxy reference crop `[880,130,1180,330]` of `cossacks-3-v1-498085.jpg` | 300×200; mean RGB (65.5,60.5,30.2), H 51.8°, S 0.552 — **watchtower/forest, no mine** | observed |
+
+The reference remains **UNVERIFIED** for mine appearance; the crop is a
+ground/rock proxy only. Geometry anchors (not the crop) drive the verdict.
+
+### T6-T12 claim table
+
+| Claim | Evidence | Method | Label | Verdict | Required correction |
+|---|---|---|---|---|---|
+| Olive disc is a hue 54–69°/S>0.50 family, not green-dominant | 5932 px keyed; strict `G>R+8 & G>B+8` finds only 28 px | NumPy HSV + channel test on sprite | observed | CONFIRMED | Key by hue+sat, not G-dominance |
+| Removing the disc alone cannot fix A1 (mound aspect 1.95) | keyed mound bbox 129×66 | NumPy mask bbox | derived | CONFIRMED | Replace disc with near-square worked-soil footprint |
+| Old A3 PASS was disc-driven | native ore in H40–62 = 16.8%; after key rendered ore fell to H30–40 | before/after HSV probe | derived | CONFIRMED | Gold-grade ore specks toward H≈55 in the bake |
+| `ground1` base emits no `test*` | 0/12 annulus patch-hash matches vs `test0..25.png` | 8×8 patch hash | observed | CONFIRMED | None in render; engine ticket §6.1 still open |
+| Worked soil can supply A4 numerically without the olive disc | annulus ΔL 9.43, S 0.351 vs 0.391 | annulus means on final PNG | derived | CONFIRMED (metric only) | Appearance still schematic — coordinator rejected |
+| Piece matches donor mine *visually* | proxy crop contains no mine; port is flat 2D | visual A/B | inferred | **REFUTED** | Real donor mine capture + genuine art/shadow required |
+
+### T6-T12 acceptance criteria (from §5 above + T6_WAVE_PLAN T6-T12)
+
+**HONEST VERDICT (after coordinator visual review): metrics 6 PASS / 1 FAIL;
+visual gate FAIL; piece FAIL.** The earlier "7 PASS / 0 FAIL" was a metric-only
+result and is withdrawn.
+
+| # | Criterion | Target | Measured (final PNG) | Verdict |
+|---|---|---|---|---|
+| A1 | Prop silhouette | one component, aspect 0.85–1.15, area 0.8–3.0% | bbox 84×82, aspect **1.024**, area **1.712%**, 1 component | **PASS (metric only)** |
+| A2 | No `test*` in footprint | 0% patch hash | **0/12** (0.00%) | **PASS** |
+| A3 | Ore colour | ≥1% of component in gold band | **3.59%** in H40–62°, S>0.5 | **PASS** |
+| A4 | Ground ring / scar | annulus ΔL ≥8, lower sat, no green disc | inner L 77.71/S 0.351; outer L 87.14/S 0.391 → **ΔL 9.43**; olive 0 | **PASS (metric only)** |
+| A5 | No baked green disc | olive bbox <25% of component | olive px **0**; green-dominant **0** | **PASS** |
+| A6 | Scale sanity | ≈2.4–2.5 tiles | **2.56 tiles** (cast shadow inflates bbox ~4 px) | **FAIL (marginal)** |
+| A7 | Determinism | byte-identical re-render | sha256 `c619a139fee2…` identical on re-render | **PASS** |
+| V | Visual A/B vs donor crop | looks like donor mine | flat 2D tile, small sprite, soft dark patch; donor panel is a proxy 3D scene with no mine | **FAIL** |
+
+The four "remaining fixes" are **not resolved**: A1/A4 pass only as numbers;
+their appearance is a schematic dark patch, not a real worked scar. A
+directional contact shadow was added (sun upper-right → lower-left) and the ore
+brightened, but neither yields legible mine art at 512².
+
+A1 measurement note: colour distance >24/255 from a seed-matched `ground1`
+background in the central 256² box. At looser thresholds (8–20) the halo joins
+the core and the component grows to ~3.7% area — disclosed, not hidden.
+
+### T6-T12 output hashes (SHA-256, current final render)
+
+| File | SHA-256 |
+|---|---|
+| `t6_mines_display.png` | `c619a139fee294a87b99c5c848e22b496c08335f52a522e5960a1fb30e5e42bc` |
+| `t6_mines_display_compare.png` | `53cc53710c8c2272776b85b37233098517e805a81a6b7449a7b6cbdcb6af783f` |
+| `t6_mines_display_zoom.png` | `9c5177179062c4711859f14d781c7252f4bbde18578ff60e464b0cc34a179f18` |
+
+### T6-T12 visual judgement (coordinator feedback accepted)
+
+The olive disc is gone and a brighter ore mound plus a cast shadow are present,
+but the zoom still shows a dark rounded patch with a small gold pile rather
+than legible mine art. The donor panel of the compare sheet is a **documented
+proxy** (`verdict_decor.md`: box `[880,130,1180,330]` of
+`cossacks-3-v1-498085.jpg`, `reference.status = UNVERIFIED`) and contains **no
+mine**. No donor mine visual match is claimed. **Visual verdict: FAIL.**
+
+### T6-T12 open questions
+
+1. Donor crop is a documented proxy; no donor screenshot shows a mine. The
+   real on-map worked-ground scar and mine read remain UNVERIFIED.
+2. The gold-grade and cast shadow are render-proxy corrections; a real sprite
+   rebake and an engine shadow are required for a genuine fix.
+3. All four *engine* tickets stand unchanged (§6.1–§6.3): this piece does not
+   edit `game.gd`, `world.gd`, or the sprite bake chain. Integration is gated.
+4. A6's 2.56 tiles is a marginal overshoot from the cast shadow; a
+   re-proportioned footprint is needed in a future iteration.
+
+> **REVOKED / REVISED (coordinator intervention, authoritative):** the entire
+> T6-T12 section above is superseded by the `REVOKED / REVISED` section in
+> `docs/t6/reports/T6-T12.md`. The old A/B crop had no mine; the renderer now
+> uses a valid donor-mine-sprite-art target, removes the mirror-tiling and the
+> dark smudge, and re-measures 6 PASS / 1 FAIL (A6) with visual FAIL. Final
+> hashes are in that section. Piece remains REVOKED pending coordinator
+> re-verification.
+

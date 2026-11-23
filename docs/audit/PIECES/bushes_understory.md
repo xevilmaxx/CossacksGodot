@@ -235,3 +235,40 @@ apply the `unit_anim_layer` lift shader to `res_layer` decor (current source say
 ---
 
 End of report. No code, Godot process, repo asset or donor file was modified.
+
+---
+
+## 6. T6-T10 implementation addendum (2026-11-23)
+
+Micro-worker **T6-T10** implemented the headless, deterministic mini-baker
+`app/tools/pieces/t6_bushes_understory.py` (Python 3.14 + Pillow + NumPy, no Godot,
+no donor file copied into the repo). Full claim table, hashes, criterion verdicts
+and visual judgement: `docs/t6/reports/T6-T10.md`. Backup of this file before the
+append: `inbox\backup\bushes_understory.md.bak-T6-T10`.
+
+**Measured correction to §2.1 finding 3 (*observed*, current port PNGs):** the
+`fern*/flower*/plantain*` sprites in `app/assets/models/sprites_hi/` now carry
+**0.0% opaque pure-black backing** (the 40–68% black described in §2.1 is no
+longer present in the shipped PNGs). `tree_stump2.png` still has 22.0% opaque
+black and is keyed to alpha 0 in the mini-baker. The mini-baker never loads a
+rock/stone asset: an explicit allowlist covers only `bush1..4`, `fern1..4`,
+`plantain1..3`, `flower1..3` and the newly used `tree_stump1..4` real sprites.
+
+**Donor crop used for the compare sheet (*observed*):** #8
+`cossacks-3-v1-498085.jpg` box `(0,435,150,585)` — a square 150×150 crop showing
+all three white-flowering bushes plus isolated tall tufts on forest floor. It was
+opened and visually checked: no minimap, UI text, units or degenerate stretched
+strip. The panel is resized uniformly to 512×512.
+
+**Result (Pillow on the 512² piece PNG, temp-only probes):** C1 PASS (7.27% y /
+1.82% x axis alignment, 18.18% max y-bin), C2 PASS (1.10% pink of decor, 0.12% of tile, 0%
+bright yellow), C3 PASS (11 components ≥800 px, ink 10.91%, largest 25.14%), C4
+PASS (87.77% green-dominant, mean B 31.33), C5 PASS (0% near-black opaque), C6
+PASS (heights 26–98 px, ratio 3.77, three buckets, no duplicate aspect), C7 PASS
+(0% achromatic gray). Density 12 clumps / 16 sprite layers, within the spec
+[8,12] band; rock-fallback assets 0. Piece SHA-256
+`46d1028f88beb7f451637792107f8871ac31a93f6a0bade6a5c7ea89d08f9fcc`.
+
+**Disclosed proxy:** the donor white-blossom accent (#C8CAA2) has no rebaked
+sprite; the piece uses soft pale specks (0.097% of the tile) as a labelled 2D
+proxy. Donor `chamomile*.osm` rebake remains an open integration question.

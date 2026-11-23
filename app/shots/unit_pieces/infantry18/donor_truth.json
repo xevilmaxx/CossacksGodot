@@ -1,0 +1,936 @@
+{
+ "musk18": {
+  "base": "musketeer18",
+  "oss": {
+   "frames": 630,
+   "fps": 30,
+   "bones": 20,
+   "verts": 809,
+   "faces": 1074,
+   "uvs": 1013
+  },
+  "aaf_all": {
+   "walk": [
+    1,
+    24
+   ],
+   "walk0": [
+    26,
+    49
+   ],
+   "walkprepare0": [
+    50,
+    73
+   ],
+   "walkunprepare0": [
+    74,
+    97
+   ],
+   "attack1": [
+    99,
+    113
+   ],
+   "attack0": [
+    126,
+    139
+   ],
+   "idle": [
+    153,
+    202
+   ],
+   "idle0": [
+    204,
+    254
+   ],
+   "idle1": [
+    256,
+    305
+   ],
+   "prepare0": [
+    307,
+    329
+   ],
+   "unprepare0": [
+    329,
+    351
+   ],
+   "prepare1": [
+    353,
+    379
+   ],
+   "unprepare1": [
+    380,
+    406
+   ],
+   "trans01": [
+    408,
+    420
+   ],
+   "trans10": [
+    420,
+    431
+   ],
+   "death": [
+    433,
+    495
+   ],
+   "death1": [
+    498,
+    562
+   ],
+   "death0": [
+    564,
+    628
+   ]
+  },
+  "bind_bbox": {
+   "x": [
+    -0.735,
+    0.737
+   ],
+   "y": [
+    -0.241,
+    0.617
+   ],
+   "z": [
+    -0.003,
+    2.719
+   ]
+  },
+  "attach_props": [],
+  "tools_manifest": false,
+  "expected": {
+   "walk": {
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11,
+     14,
+     16,
+     18,
+     20,
+     22,
+     24
+    ],
+    "duration": 0.8,
+    "loop": true,
+    "tool": null
+   },
+   "idle": {
+    "aaf_name": "idle",
+    "aaf_range": [
+     153,
+     202
+    ],
+    "sampled_frames": 6,
+    "frames_list": [
+     153,
+     163,
+     173,
+     182,
+     192,
+     202
+    ],
+    "duration": 1.667,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "aaf_name": "attack1",
+    "aaf_range": [
+     99,
+     113
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     99,
+     100,
+     102,
+     103,
+     104,
+     105,
+     107,
+     108,
+     109,
+     110,
+     112,
+     113
+    ],
+    "duration": 0.5,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "aaf_name": "death",
+    "aaf_range": [
+     433,
+     495
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     433,
+     442,
+     451,
+     460,
+     468,
+     477,
+     486,
+     495
+    ],
+    "duration": 2.1,
+    "loop": false,
+    "tool": null
+   }
+  }
+ },
+ "pikeman18": {
+  "base": "pikeman18",
+  "oss": {
+   "frames": 351,
+   "fps": 30,
+   "bones": 24,
+   "verts": 700,
+   "faces": 964,
+   "uvs": 1474
+  },
+  "aaf_all": {
+   "walk": [
+    1,
+    24
+   ],
+   "attack0": [
+    32,
+    40
+   ],
+   "walk0": [
+    54,
+    77
+   ],
+   "death": [
+    80,
+    134
+   ],
+   "prepare0": [
+    135,
+    145
+   ],
+   "walkprepare0": [
+    146,
+    170
+   ],
+   "walkunprepare0": [
+    172,
+    196
+   ],
+   "unprepare0": [
+    197,
+    207
+   ],
+   "idle": [
+    209,
+    258
+   ],
+   "idle0": [
+    260,
+    309
+   ],
+   "death0": [
+    310,
+    349
+   ]
+  },
+  "bind_bbox": {
+   "x": [
+    -0.729,
+    0.731
+   ],
+   "y": [
+    -0.252,
+    0.629
+   ],
+   "z": [
+    -0.001,
+    3.499
+   ]
+  },
+  "attach_props": [],
+  "tools_manifest": false,
+  "expected": {
+   "walk": {
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11,
+     14,
+     16,
+     18,
+     20,
+     22,
+     24
+    ],
+    "duration": 0.8,
+    "loop": true,
+    "tool": null
+   },
+   "idle": {
+    "aaf_name": "idle",
+    "aaf_range": [
+     209,
+     258
+    ],
+    "sampled_frames": 6,
+    "frames_list": [
+     209,
+     219,
+     229,
+     238,
+     248,
+     258
+    ],
+    "duration": 1.667,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "aaf_name": "attack0",
+    "aaf_range": [
+     32,
+     40
+    ],
+    "sampled_frames": 9,
+    "frames_list": [
+     32,
+     33,
+     34,
+     35,
+     36,
+     37,
+     38,
+     39,
+     40
+    ],
+    "duration": 0.3,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "aaf_name": "death",
+    "aaf_range": [
+     80,
+     134
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     80,
+     88,
+     95,
+     103,
+     111,
+     119,
+     126,
+     134
+    ],
+    "duration": 1.833,
+    "loop": false,
+    "tool": null
+   }
+  }
+ },
+ "musketeer": {
+  "base": "musketeer",
+  "oss": {
+   "frames": 630,
+   "fps": 30,
+   "bones": 24,
+   "verts": 890,
+   "faces": 1096,
+   "uvs": 1047
+  },
+  "aaf_all": {
+   "walk": [
+    1,
+    24
+   ],
+   "walk0": [
+    26,
+    49
+   ],
+   "walkprepare0": [
+    50,
+    73
+   ],
+   "walkunprepare0": [
+    74,
+    97
+   ],
+   "attack1": [
+    99,
+    124
+   ],
+   "idle": [
+    153,
+    202
+   ],
+   "idle0": [
+    204,
+    254
+   ],
+   "idle1": [
+    256,
+    305
+   ],
+   "prepare0": [
+    307,
+    328
+   ],
+   "unprepare0": [
+    329,
+    350
+   ],
+   "prepare1": [
+    353,
+    379
+   ],
+   "unprepare1": [
+    380,
+    405
+   ],
+   "trans01": [
+    408,
+    419
+   ],
+   "trans10": [
+    420,
+    430
+   ],
+   "death": [
+    433,
+    495
+   ],
+   "death1": [
+    498,
+    559
+   ],
+   "death0": [
+    564,
+    628
+   ]
+  },
+  "bind_bbox": {
+   "x": [
+    -0.738,
+    0.724
+   ],
+   "y": [
+    -0.308,
+    0.714
+   ],
+   "z": [
+    -0.007,
+    2.225
+   ]
+  },
+  "attach_props": [],
+  "tools_manifest": false,
+  "expected": {
+   "walk": {
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11,
+     14,
+     16,
+     18,
+     20,
+     22,
+     24
+    ],
+    "duration": 0.8,
+    "loop": true,
+    "tool": null
+   },
+   "idle": {
+    "aaf_name": "idle",
+    "aaf_range": [
+     153,
+     202
+    ],
+    "sampled_frames": 6,
+    "frames_list": [
+     153,
+     163,
+     173,
+     182,
+     192,
+     202
+    ],
+    "duration": 1.667,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "aaf_name": "attack1",
+    "aaf_range": [
+     99,
+     124
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     99,
+     101,
+     104,
+     106,
+     108,
+     110,
+     113,
+     115,
+     117,
+     119,
+     122,
+     124
+    ],
+    "duration": 0.867,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "aaf_name": "death",
+    "aaf_range": [
+     433,
+     495
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     433,
+     442,
+     451,
+     460,
+     468,
+     477,
+     486,
+     495
+    ],
+    "duration": 2.1,
+    "loop": false,
+    "tool": null
+   }
+  }
+ },
+ "grenadier": {
+  "base": "grenadier",
+  "oss": {
+   "frames": 682,
+   "fps": 30,
+   "bones": 21,
+   "verts": 801,
+   "faces": 1044,
+   "uvs": 1060
+  },
+  "aaf_all": {
+   "walk": [
+    1,
+    24
+   ],
+   "walk0": [
+    26,
+    49
+   ],
+   "walk2": [
+    1,
+    24
+   ],
+   "walkprepare0": [
+    50,
+    73
+   ],
+   "walkunprepare0": [
+    74,
+    97
+   ],
+   "attack1": [
+    99,
+    114
+   ],
+   "attack0": [
+    126,
+    141
+   ],
+   "idle": [
+    153,
+    202
+   ],
+   "idle0": [
+    204,
+    254
+   ],
+   "idle1": [
+    256,
+    305
+   ],
+   "prepare0": [
+    307,
+    328
+   ],
+   "unprepare0": [
+    329,
+    351
+   ],
+   "prepare1": [
+    353,
+    378
+   ],
+   "unprepare1": [
+    380,
+    405
+   ],
+   "trans01": [
+    408,
+    420
+   ],
+   "trans10": [
+    420,
+    431
+   ],
+   "death": [
+    433,
+    495
+   ],
+   "death1": [
+    498,
+    561
+   ],
+   "death0": [
+    564,
+    628
+   ],
+   "idle2": [
+    153,
+    202
+   ],
+   "attack2": [
+    153,
+    154
+   ],
+   "prepare2": [
+    153,
+    154
+   ],
+   "unprepare2": [
+    153,
+    154
+   ],
+   "trans02": [
+    329,
+    351
+   ],
+   "trans12": [
+    380,
+    405
+   ],
+   "trans20": [
+    307,
+    328
+   ],
+   "trans21": [
+    353,
+    378
+   ],
+   "death2": [
+    433,
+    495
+   ],
+   "attack2before": [
+    630,
+    663
+   ],
+   "attack2after": [
+    664,
+    679
+   ]
+  },
+  "bind_bbox": {
+   "x": [
+    -0.756,
+    0.85
+   ],
+   "y": [
+    -1.633,
+    0.617
+   ],
+   "z": [
+    -0.006,
+    2.293
+   ]
+  },
+  "attach_props": [],
+  "tools_manifest": false,
+  "expected": {
+   "walk": {
+    "aaf_name": "walk",
+    "aaf_range": [
+     1,
+     24
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     1,
+     3,
+     5,
+     7,
+     9,
+     11,
+     14,
+     16,
+     18,
+     20,
+     22,
+     24
+    ],
+    "duration": 0.8,
+    "loop": true,
+    "tool": null
+   },
+   "idle": {
+    "aaf_name": "idle",
+    "aaf_range": [
+     153,
+     202
+    ],
+    "sampled_frames": 6,
+    "frames_list": [
+     153,
+     163,
+     173,
+     182,
+     192,
+     202
+    ],
+    "duration": 1.667,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "aaf_name": "attack1",
+    "aaf_range": [
+     99,
+     114
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     99,
+     100,
+     102,
+     103,
+     104,
+     106,
+     107,
+     109,
+     110,
+     111,
+     113,
+     114
+    ],
+    "duration": 0.533,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "aaf_name": "death",
+    "aaf_range": [
+     433,
+     495
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     433,
+     442,
+     451,
+     460,
+     468,
+     477,
+     486,
+     495
+    ],
+    "duration": 2.1,
+    "loop": false,
+    "tool": null
+   }
+  }
+ },
+ "lightinfantry": {
+  "base": "lightinfantry",
+  "oss": {
+   "frames": 198,
+   "fps": 30,
+   "bones": 18,
+   "verts": 659,
+   "faces": 1060,
+   "uvs": 936
+  },
+  "aaf_all": {
+   "idle": [
+    28,
+    77
+   ],
+   "idle0": [
+    28,
+    77
+   ],
+   "walk": [
+    143,
+    166
+   ],
+   "death": [
+    80,
+    127
+   ],
+   "attack0": [
+    184,
+    197
+   ],
+   "prepare0": [
+    28,
+    29
+   ],
+   "unprepare0": [
+    28,
+    29
+   ]
+  },
+  "bind_bbox": {
+   "x": [
+    -0.744,
+    0.744
+   ],
+   "y": [
+    -1.086,
+    0.215
+   ],
+   "z": [
+    0.001,
+    2.02
+   ]
+  },
+  "attach_props": [],
+  "tools_manifest": false,
+  "expected": {
+   "walk": {
+    "aaf_name": "walk",
+    "aaf_range": [
+     143,
+     166
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     143,
+     145,
+     147,
+     149,
+     151,
+     153,
+     156,
+     158,
+     160,
+     162,
+     164,
+     166
+    ],
+    "duration": 0.8,
+    "loop": true,
+    "tool": null
+   },
+   "idle": {
+    "aaf_name": "idle",
+    "aaf_range": [
+     28,
+     77
+    ],
+    "sampled_frames": 6,
+    "frames_list": [
+     28,
+     38,
+     48,
+     57,
+     67,
+     77
+    ],
+    "duration": 1.667,
+    "loop": true,
+    "tool": null
+   },
+   "attack": {
+    "aaf_name": "attack0",
+    "aaf_range": [
+     184,
+     197
+    ],
+    "sampled_frames": 12,
+    "frames_list": [
+     184,
+     185,
+     186,
+     188,
+     189,
+     190,
+     191,
+     192,
+     193,
+     195,
+     196,
+     197
+    ],
+    "duration": 0.467,
+    "loop": false,
+    "tool": null
+   },
+   "death": {
+    "aaf_name": "death",
+    "aaf_range": [
+     80,
+     127
+    ],
+    "sampled_frames": 8,
+    "frames_list": [
+     80,
+     87,
+     93,
+     100,
+     107,
+     114,
+     120,
+     127
+    ],
+    "duration": 1.6,
+    "loop": false,
+    "tool": null
+   }
+  }
+ }
+}

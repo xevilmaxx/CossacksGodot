@@ -1,0 +1,839 @@
+{
+ "officer18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 4.03,
+    "center": [
+     0.0,
+     0.0,
+     1.253
+    ],
+    "ax": 0.5,
+    "ay": 0.9687,
+    "tool": null,
+    "bbox": [
+     46,
+     23,
+     114,
+     139
+    ],
+    "fig_h": 0.725,
+    "foot": 0.8688,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 4.03,
+    "center": [
+     0.0,
+     0.0,
+     1.253
+    ],
+    "ax": 0.5,
+    "ay": 0.9687,
+    "tool": null,
+    "bbox": [
+     53,
+     27,
+     107,
+     134
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.8375,
+    "cx": 0.5,
+    "clip": false
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.6,
+    "loop": false,
+    "ortho": 4.03,
+    "center": [
+     0.0,
+     0.0,
+     1.253
+    ],
+    "ax": 0.5,
+    "ay": 0.9687,
+    "tool": null,
+    "bbox": [
+     9,
+     44,
+     151,
+     142
+    ],
+    "fig_h": 0.6125,
+    "foot": 0.8875,
+    "cx": 0.5,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.8,
+    "loop": false,
+    "ortho": 5.127,
+    "center": [
+     0.0,
+     0.0,
+     1.04
+    ],
+    "ax": 0.5,
+    "ay": 0.8059,
+    "tool": null,
+    "bbox": [
+     8,
+     34,
+     152,
+     146
+    ],
+    "fig_h": 0.7,
+    "foot": 0.9125,
+    "cx": 0.5,
+    "clip": false
+   }
+  }
+ },
+ "drummer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 2.491,
+    "center": [
+     0.0,
+     0.0,
+     0.99
+    ],
+    "ax": 0.5,
+    "ay": 1.0993,
+    "tool": null,
+    "bbox": [
+     30,
+     18,
+     130,
+     152
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.95,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.7,
+    "loop": true,
+    "ortho": 2.491,
+    "center": [
+     0.0,
+     0.0,
+     0.99
+    ],
+    "ax": 0.5,
+    "ay": 1.0993,
+    "tool": null,
+    "bbox": [
+     29,
+     18,
+     130,
+     147
+    ],
+    "fig_h": 0.8063,
+    "foot": 0.9187,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.833,
+    "loop": false,
+    "ortho": 4.502,
+    "center": [
+     0.0,
+     0.0,
+     0.955
+    ],
+    "ax": 0.5,
+    "ay": 0.8198,
+    "tool": null,
+    "bbox": [
+     8,
+     43,
+     152,
+     146
+    ],
+    "fig_h": 0.6438,
+    "foot": 0.9125,
+    "cx": 0.5,
+    "clip": false
+   }
+  }
+ },
+ "drummer18": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 2.452,
+    "center": [
+     0.0,
+     0.0,
+     0.977
+    ],
+    "ax": 0.5,
+    "ay": 1.1008,
+    "tool": null,
+    "bbox": [
+     28,
+     18,
+     132,
+     152
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.95,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.7,
+    "loop": true,
+    "ortho": 2.452,
+    "center": [
+     0.0,
+     0.0,
+     0.977
+    ],
+    "ax": 0.5,
+    "ay": 1.1008,
+    "tool": null,
+    "bbox": [
+     28,
+     18,
+     132,
+     147
+    ],
+    "fig_h": 0.8063,
+    "foot": 0.9187,
+    "cx": 0.5,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.833,
+    "loop": false,
+    "ortho": 4.451,
+    "center": [
+     0.0,
+     0.0,
+     0.941
+    ],
+    "ax": 0.5,
+    "ay": 0.8187,
+    "tool": null,
+    "bbox": [
+     8,
+     43,
+     151,
+     146
+    ],
+    "fig_h": 0.6438,
+    "foot": 0.9125,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "priest": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 3.594,
+    "center": [
+     0.0,
+     0.0,
+     1.327
+    ],
+    "ax": 0.5,
+    "ay": 1.0565,
+    "tool": null,
+    "bbox": [
+     46,
+     31,
+     114,
+     151
+    ],
+    "fig_h": 0.75,
+    "foot": 0.9437,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 3.594,
+    "center": [
+     0.0,
+     0.0,
+     1.327
+    ],
+    "ax": 0.5,
+    "ay": 1.0565,
+    "tool": null,
+    "bbox": [
+     50,
+     30,
+     110,
+     144
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.9,
+    "cx": 0.5,
+    "clip": false
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 1.033,
+    "loop": false,
+    "ortho": 3.594,
+    "center": [
+     0.0,
+     0.0,
+     1.327
+    ],
+    "ax": 0.5,
+    "ay": 1.0565,
+    "tool": null,
+    "bbox": [
+     47,
+     10,
+     112,
+     144
+    ],
+    "fig_h": 0.8375,
+    "foot": 0.9,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 2.1,
+    "loop": false,
+    "ortho": 5.038,
+    "center": [
+     0.0,
+     0.0,
+     0.991
+    ],
+    "ax": 0.5,
+    "ay": 0.7964,
+    "tool": null,
+    "bbox": [
+     8,
+     35,
+     151,
+     146
+    ],
+    "fig_h": 0.6937,
+    "foot": 0.9125,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "pope": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 2.423,
+    "center": [
+     0.0,
+     0.0,
+     1.002
+    ],
+    "ax": 0.5,
+    "ay": 1.1234,
+    "tool": null,
+    "bbox": [
+     38,
+     17,
+     122,
+     152
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.95,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 2.423,
+    "center": [
+     0.0,
+     0.0,
+     1.002
+    ],
+    "ax": 0.5,
+    "ay": 1.1234,
+    "tool": null,
+    "bbox": [
+     48,
+     20,
+     111,
+     148
+    ],
+    "fig_h": 0.8,
+    "foot": 0.925,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": false,
+    "ortho": 2.423,
+    "center": [
+     0.0,
+     0.0,
+     1.002
+    ],
+    "ax": 0.5,
+    "ay": 1.1234,
+    "tool": null,
+    "bbox": [
+     36,
+     18,
+     124,
+     148
+    ],
+    "fig_h": 0.8125,
+    "foot": 0.925,
+    "cx": 0.5,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.833,
+    "loop": false,
+    "ortho": 4.486,
+    "center": [
+     0.0,
+     0.0,
+     0.953
+    ],
+    "ax": 0.5,
+    "ay": 0.8202,
+    "tool": null,
+    "bbox": [
+     8,
+     43,
+     152,
+     147
+    ],
+    "fig_h": 0.65,
+    "foot": 0.9187,
+    "cx": 0.5,
+    "clip": false
+   }
+  }
+ },
+ "padre": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 3.591,
+    "center": [
+     0.0,
+     0.0,
+     1.264
+    ],
+    "ax": 0.5,
+    "ay": 1.0305,
+    "tool": null,
+    "bbox": [
+     46,
+     31,
+     114,
+     151
+    ],
+    "fig_h": 0.75,
+    "foot": 0.9437,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 3.591,
+    "center": [
+     0.0,
+     0.0,
+     1.264
+    ],
+    "ax": 0.5,
+    "ay": 1.0305,
+    "tool": null,
+    "bbox": [
+     50,
+     30,
+     110,
+     144
+    ],
+    "fig_h": 0.7125,
+    "foot": 0.9,
+    "cx": 0.5,
+    "clip": false
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 1.033,
+    "loop": false,
+    "ortho": 3.591,
+    "center": [
+     0.0,
+     0.0,
+     1.264
+    ],
+    "ax": 0.5,
+    "ay": 1.0305,
+    "tool": null,
+    "bbox": [
+     48,
+     13,
+     112,
+     145
+    ],
+    "fig_h": 0.825,
+    "foot": 0.9062,
+    "cx": 0.5,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 2.1,
+    "loop": false,
+    "ortho": 4.367,
+    "center": [
+     0.0,
+     0.0,
+     0.971
+    ],
+    "ax": 0.5,
+    "ay": 0.8351,
+    "tool": null,
+    "bbox": [
+     8,
+     30,
+     152,
+     146
+    ],
+    "fig_h": 0.725,
+    "foot": 0.9125,
+    "cx": 0.5,
+    "clip": false
+   }
+  }
+ },
+ "mullah": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 2.465,
+    "center": [
+     0.0,
+     0.0,
+     1.016
+    ],
+    "ax": 0.5,
+    "ay": 1.1213,
+    "tool": null,
+    "bbox": [
+     38,
+     19,
+     122,
+     152
+    ],
+    "fig_h": 0.8313,
+    "foot": 0.95,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 2.465,
+    "center": [
+     0.0,
+     0.0,
+     1.016
+    ],
+    "ax": 0.5,
+    "ay": 1.1213,
+    "tool": null,
+    "bbox": [
+     52,
+     17,
+     107,
+     147
+    ],
+    "fig_h": 0.8125,
+    "foot": 0.9187,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 1.033,
+    "loop": false,
+    "ortho": 2.465,
+    "center": [
+     0.0,
+     0.0,
+     1.016
+    ],
+    "ax": 0.5,
+    "ay": 1.1213,
+    "tool": null,
+    "bbox": [
+     45,
+     12,
+     115,
+     147
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9187,
+    "cx": 0.5,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.833,
+    "loop": false,
+    "ortho": 4.529,
+    "center": [
+     0.0,
+     0.0,
+     0.935
+    ],
+    "ax": 0.5,
+    "ay": 0.8114,
+    "tool": null,
+    "bbox": [
+     8,
+     42,
+     151,
+     146
+    ],
+    "fig_h": 0.65,
+    "foot": 0.9125,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ },
+ "bagpiper": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 2.606,
+    "center": [
+     0.0,
+     0.0,
+     1.06
+    ],
+    "ax": 0.5,
+    "ay": 1.1131,
+    "tool": null,
+    "bbox": [
+     39,
+     9,
+     120,
+     151
+    ],
+    "fig_h": 0.8875,
+    "foot": 0.9437,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.7,
+    "loop": true,
+    "ortho": 2.606,
+    "center": [
+     0.0,
+     0.0,
+     1.06
+    ],
+    "ax": 0.5,
+    "ay": 1.1131,
+    "tool": null,
+    "bbox": [
+     41,
+     9,
+     119,
+     147
+    ],
+    "fig_h": 0.8625,
+    "foot": 0.9187,
+    "cx": 0.5,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.833,
+    "loop": false,
+    "ortho": 4.792,
+    "center": [
+     0.0,
+     0.0,
+     0.847
+    ],
+    "ax": 0.5,
+    "ay": 0.7664,
+    "tool": null,
+    "bbox": [
+     8,
+     35,
+     152,
+     139
+    ],
+    "fig_h": 0.65,
+    "foot": 0.8688,
+    "cx": 0.5,
+    "clip": false
+   }
+  }
+ },
+ "officer": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 3.927,
+    "center": [
+     0.0,
+     0.0,
+     1.258
+    ],
+    "ax": 0.5,
+    "ay": 0.9829,
+    "tool": null,
+    "bbox": [
+     47,
+     22,
+     113,
+     139
+    ],
+    "fig_h": 0.7312,
+    "foot": 0.8688,
+    "cx": 0.5,
+    "clip": false
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 3.927,
+    "center": [
+     0.0,
+     0.0,
+     1.258
+    ],
+    "ax": 0.5,
+    "ay": 0.9829,
+    "tool": null,
+    "bbox": [
+     49,
+     27,
+     110,
+     136
+    ],
+    "fig_h": 0.6813,
+    "foot": 0.85,
+    "cx": 0.4969,
+    "clip": false
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.467,
+    "loop": false,
+    "ortho": 3.927,
+    "center": [
+     0.0,
+     0.0,
+     1.258
+    ],
+    "ax": 0.5,
+    "ay": 0.9829,
+    "tool": null,
+    "bbox": [
+     9,
+     43,
+     151,
+     144
+    ],
+    "fig_h": 0.6312,
+    "foot": 0.9,
+    "cx": 0.5,
+    "clip": false
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.8,
+    "loop": false,
+    "ortho": 5.055,
+    "center": [
+     0.0,
+     0.0,
+     0.935
+    ],
+    "ax": 0.5,
+    "ay": 0.7789,
+    "tool": null,
+    "bbox": [
+     8,
+     30,
+     151,
+     148
+    ],
+    "fig_h": 0.7375,
+    "foot": 0.925,
+    "cx": 0.4969,
+    "clip": false
+   }
+  }
+ }
+}

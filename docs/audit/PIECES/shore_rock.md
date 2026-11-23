@@ -241,3 +241,49 @@ code-path consequence; **inferred** = attribution without direct proof;
    dedicated cliff-face sprite exists anywhere in `app/assets` was out of scope.
 
 End.
+
+---
+
+## 6. T6-T03 mini-baker verification (appended 2026-11-23; original §1–§5 above unchanged)
+
+A downstream piece worker implemented the §3 recipe as a **new, self-contained
+headless baker** `app/tools/pieces/t6_shore_rock.py` (Python 3.14 + Pillow +
+NumPy; `terrain_piece_render.py` imported read-only for tiling helpers and the
+comparison sheet only; no Godot, no spec-JSON edit, no donor binary copied).
+Outputs `app/shots/pieces/t6_shore_rock*.png` were rendered and read as images.
+Full claim table, hashes and open questions: `docs/t6/reports/T6-T03.md`.
+
+Re-measured donor truth (read-only probes in the temp dir) reproduced §1 exactly:
+`rock8` `#494226` / BA 0.896 / VSI 1.344; `rock1` `#4D4335` / BA 1.422 / VSI
+2.952; port `rockN.png` byte-exact to donor `rockN.dds` (MAD 0.0000); lit box
+`#726651` L103.25 colSD 21.07 rowSD 3.32 (anisotropy 6.34); shadow `#312E1B`
+L44.91; rim hue crossing ≈2 px; crest flute spacing CV 0.765 (irregular).
+
+Measured on the final 512² render:
+
+| Criterion | §4 target | Measured | Verdict |
+|---|---|---|---|
+| rock8 fill + rock1 flutes (arbitration §4) | both used | manifest: fill `rock8`, flutes `rock1` | PASS |
+| Flute anisotropy (T6-T03) | ≥ 3 | **11.06** | PASS |
+| Lit/shadow ratio (T6-T03) | ≥ 1.8 | **1.973** | PASS |
+| A1 colSD / anisotropy | ≥12 / ≥3 | 21.99 / 11.06 | PASS |
+| A2 rim width | ≤3 px | median 2, p90 3, max 4 (tuft columns) | PASS |
+| A3 ratio | 1.7–2.1 | 1.973 | PASS |
+| A4 face drift | <0.20 | 0.018 | PASS |
+| A5 face height | 60–90 px @720p | 77.3 | PASS |
+| A6 lit / fill palette | ±12 RGB | Δ(10,9,8) / Δ(9,8,3) | PASS |
+| HSV gate | S 0.30–0.55, V 0.25–0.45 | 0.379 / 0.301 | PASS |
+| Visual A/B (organic rock, no plank fence / black contour / straight edge / flat light) | qualitative | PASS with caveats (no vegetation; 2D proxy) | PASS |
+
+Disclosed adaptations (measurement geometry only; **no acceptance number
+changed**): the flutes are rock1 downsampled to 128/96 px then warped,
+two-scale-mixed, stratified by horizontal ledges and presence-gated, to break
+uniformity; the rim is a three-octave organic curve with a subtractive soft
+shadow collar instead of a hard contour; the broad lit-crest/dark-recess field
+supplies the face lighting. `rock_sea1` remains the small stand-in for the
+still-missing `rock_stones1`. Overall verdict: **PASS**, caveat that the final
+on-screen read still needs an in-engine capture (§5 C12) before build tickets
+close.
+
+*End of T6-T03 append.*
+

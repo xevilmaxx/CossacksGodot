@@ -1,0 +1,37 @@
+You are MICRO-WORKER T6-R02 in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST. Read the rustport/ scaffold that T6-R01 just created before writing anything.
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3 (run all commands from here).
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3 (not needed for this ticket).
+Toolchain: rustc/cargo 1.99.1, Windows x86_64 host.
+
+OWNED FILES (write ONLY these — strict boundary; never edit app/**, Cargo.toml, src/main.rs, docs outside your report, SWARM_BOARD.md):
+- rustport/src/platform/win32.rs
+- rustport/src/bin/win32_demo.rs
+- rustport/tests/win32_piece.rs (if useful)
+- report: docs/t6/reports/T6-R02.md
+Cargo auto-discovers src/bin/*.rs, so the demo binary needs no Cargo.toml change.
+
+READ LIST (read-only): rustport/Cargo.toml, rustport/src/main.rs, rustport/src/lib.rs, rustport/src/platform.rs (scaffold STUB — do NOT edit it), rustport/ARCHITECTURE.md, SWARM_OPS.md section 7, app/tools/AGENT_PROTOCOL.md.
+IMPORTANT: src/platform.rs is a scaffold stub owned by integration; leave it untouched. In the demo/test, include your file directly with `#[path = "../platform/win32.rs"] mod win32;` (paths relative to the including file). Cargo auto-discovers src/bin/*.rs; verify with `cargo build --bin win32_demo`.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R02. New files need no backup.
+
+MICRO-TASK: implement the Win32 platform layer with RAW FFI ONLY — zero third-party crates, std-only:
+1. In src/platform/win32.rs: extern "system" declarations for the APIs you use from user32.dll / gdi32.dll / kernel32.dll (e.g. RegisterClassExW, CreateWindowExW, DefWindowProcW, GetMessageW, TranslateMessage, DispatchMessageW, PostQuitMessage, ShowWindow, UpdateWindow, GetDC, ReleaseDC, StretchDIBits, InvalidateRect, SetTimer, KillTimer, GetClientRect, LoadCursorW, GetModuleHandleW, ExitProcess as needed). Define your own RECT/POINT/MSG/WNDCLASSEXW/BITMAPINFOHEADER/BITMAPINFO structs with repr(C). Use WndProc as `unsafe extern "system" fn(hwnd, msg, wparam, lparam) -> isize`.
+2. Window creation: registered class, top-level overlapped window (e.g. 640x400), caption "Cossacks 3 Rust — Win32 platform test".
+3. Message loop with keyboard (WM_KEYDOWN/WM_KEYUP), mouse (WM_MOUSEMOVE, WM_LBUTTONDOWN/UP), WM_SIZE, WM_DESTROY -> PostQuitMessage. Track input in a struct (key states, cursor x/y, buttons) exposed read-only.
+4. Software framebuffer: a Vec<u32> (BGRA or RGBA — document which) plus width/height. Present with StretchDIBits using a BITMAPINFOHEADER with NEGATIVE biHeight (top-down) and DIB_RGB_COLORS. Provide a safe-ish wrapper that takes &[u32].
+5. src/bin/win32_demo.rs: create the window, fill the framebuffer with a horizontal+vertical gradient (visible proof), present it, auto-close after ~1.5 s via SetTimer -> PostQuitMessage (so the test does not hang an agent shell). Print to stdout: window creation result, framebuffer size, and 5 sampled pixel values (corners + center) as deterministic proof. Handle WM_TIMER by posting quit; handle WM_DESTROY; run the loop; exit 0.
+
+ACCEPTANCE + CONCRETE TEST (run BEFORE reporting done — piece-before-whole rule):
+- From rustport/: `cargo build --bin win32_demo` succeeds with zero errors.
+- `cargo run --bin win32_demo` opens a real window on this Windows host, draws the gradient, auto-closes, and prints the sampled pixel values. Capture the exact stdout into the report.
+- `cargo test --test win32_piece` passes: at minimum, a unit test of gradient generation and of BITMAPINFOHEADER layout (size 40, negative height field round-trips). If a headless environment prevents window creation, the test must still validate the framebuffer/gradient/struct pieces; label the window-open part as observed from the demo run.
+- Optional proof: Python + Pillow ImageGrab screenshot of the window to rustport/shots/win32_demo.png — only if it can be done without hanging; otherwise the printed pixel readback is the accepted proof.
+Do NOT run Godot; this lane never uses the runner.
+
+REPORT: write docs/t6/reports/T6-R02.md with a claim table using observed / derived / inferred labels, evidence paths, PASS/FAIL per acceptance criterion, exact stdout tail, and open questions. Write it BEFORE reporting done. State honestly that this is Windows-runtime VERIFIED on this host (X11/Cocoa will not be).
+
+RECURSION (only if blocked): spawn helpers via `opencode api post /api/session --data` with parentID = your sessionID (escape quotes as \" on Windows PowerShell). Prefer doing this yourself.
+
+When done, state concisely: files changed, commands run, results, report path, open questions.

@@ -1,0 +1,77 @@
+{
+  "generator": "t6_hill_ridge.py",
+  "seed": 7,
+  "size_px": [
+    512,
+    512
+  ],
+  "native_px": 1024,
+  "footprint_box_px": [
+    113,
+    41,
+    379,
+    471
+  ],
+  "footprint_aspect": 1.62,
+  "donor_mask": {
+    "pattern": "g_hil1.pattern",
+    "w": 32,
+    "h": 56,
+    "occupied": 725,
+    "ratio": 0.405,
+    "eig_aspect": 2.215,
+    "long_axis": "Y",
+    "note": "raw bytes never copied; only a derived centreline/width envelope embedded"
+  },
+  "face": {
+    "width_norm": 0.163,
+    "stretch": 2.4,
+    "bands": 2.8,
+    "band_gain": 0.55,
+    "earth_amp": 9.0,
+    "ramp_gamma": 2.6,
+    "grain_amp": 5.0
+  },
+  "occlusion": {
+    "grass_contact_ao": 0.24,
+    "wall_contact_ao": 0.18,
+    "foot_ao": 0.24,
+    "cast_shadow": 0.14
+  },
+  "palette": {
+    "lit": "#6C614B",
+    "mid": "#4B4430",
+    "shadow": "#393424",
+    "pale_flute": "#8B7D67",
+    "grass_target": [
+      78,
+      78,
+      42
+    ]
+  },
+  "art": {
+    "field": "grass1.png",
+    "scuffs": "grass_rock1.png",
+    "flutes": "rock1.png",
+    "grain": "rock8.png",
+    "tree": "tree_spruce1.png"
+  },
+  "tree": {
+    "pos_norm": [
+      0.4,
+      0.5
+    ],
+    "anchor": "centre",
+    "stretch": [
+      0.15,
+      0.19
+    ],
+    "height_out_px": 97
+  },
+  "sha256": "73195aebfebfa7bb8d1c351b4e3ca5bf08780bb78374f79bbe89f9bc60fa6f19",
+  "outputs": {
+    "piece": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\pieces\\t6_hill_ridge.png",
+    "compare": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\pieces\\t6_hill_ridge_compare.png",
+    "facecrop": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\app\\shots\\pieces\\t6_hill_ridge_facecrop.png"
+  }
+}

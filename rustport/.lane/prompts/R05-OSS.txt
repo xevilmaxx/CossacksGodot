@@ -1,0 +1,33 @@
+You are MICRO-WORKER T6-R05-OSS in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST (sibling workers handle DDS, .osm, .aaf — do not touch their files).
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3.
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3. Read donor files at TEST TIME only; never commit donor bytes.
+
+OWNED FILES (write ONLY these — strict boundary; never edit app/**, Cargo.toml, src/main.rs, other assets/*.rs, docs outside your report, SWARM_BOARD.md):
+- rustport/src/assets/oss.rs
+- rustport/tests/assets_oss.rs
+- report: docs/t6/reports/T6-R05-OSS.md
+
+READ LIST (read-only): docs/decomp/DC_FORMATS.md section 2.1 (.oss fully decoded) and section 1, app/tools/bake_sprites.py function read_oss (READ ONLY), SWARM_OPS.md section 7, app/tools/AGENT_PROTOCOL.md.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R05-OSS. New files need no backup.
+IMPORTANT: rustport/src/assets.rs is a scaffold STUB owned by integration — do NOT edit it. Your integration test must include your file directly: `#[path = "../src/assets/oss.rs"] mod oss_reader;` (path relative to rustport/tests/). Sibling readers live in separate files owned by other workers.
+
+MICRO-TASK (one format only): implement a std-only Rust reader for the skinned animated mesh .oss format:
+- 24-byte header of six little-endian i32: k (frames per bone), fps, b (bones), v (vertices), fc (triangles), t (UVs).
+- Sequential payload (all little-endian): v x [3f32] vertices; fc x [3i32] face indices; t x [2f32] UVs; fc x [3i32] UV-index triples; v weight lists (i32 count, then count x (i32 bone_index, f32 weight)); b x k x [7f32] bone tracks (position xyz + quaternion xyzw).
+- Public API: `pub struct Oss { pub k:i32, pub fps:i32, pub bones:..., pub vertices:..., pub faces:..., pub uvs:..., pub weights:..., pub tracks:... }`, `pub fn parse(bytes:&[u8]) -> Result<Oss, OssError>`, `pub fn parse_file(path:&Path)->...`. Document that donor rotations use a transposed (row-vector) convention when later applied — this reader returns raw tracks only.
+
+CONCRETE TEST it MUST run BEFORE reporting done (piece-before-whole rule):
+- From rustport/: `cargo test --test assets_oss` passes. It must read real donor files at runtime:
+  - C:\Games\Cossacks 3\data\actors\units\yacht.oss — expect k=311, fps=30, b=20, v=584, fc=947, t=793 and EXACT size closure 217344 bytes.
+  - C:\Games\Cossacks 3\data\actors\units\peaukr.oss — expect k=483, b=20, v=577, fc=921, t=733 and EXACT size closure 312376 bytes.
+  - Assert the parsed counts, that consuming the whole file leaves 0 bytes (size closure), and spot-check a few vertex/face/quaternion values for finiteness and plausible ranges (e.g. quaternion norm ~1 for a sample of tracks).
+  - Include a synthetic in-memory header+payload unit test so the parser works without donor files too.
+- Paste exact commands + output tails into the report.
+
+REPORT: write docs/t6/reports/T6-R05-OSS.md with a claim table (observed / derived / inferred), evidence paths, PASS/FAIL per acceptance criterion, and open questions. Write it BEFORE reporting done.
+
+RECURSION (only if blocked): spawn helpers via `opencode api post /api/session --data` with parentID = your sessionID. Prefer doing this yourself — it is one format.
+
+When done, state concisely: files changed, commands run, results, report path, open questions.

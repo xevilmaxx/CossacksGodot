@@ -1,0 +1,39 @@
+You are MICRO-WORKER T6-R06 in the recursive swarm porting Cossacks 3. You are a child of lane parent T6-RUST. This ticket starts only AFTER the R05 asset-reader pieces and R02 have landed; read their code as READ-ONLY inputs.
+
+PROJECT ROOT: C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3.
+DONOR (PRIVATE USE — never redistribute, never copy donor bytes into repo): C:\Games\Cossacks 3. Donor terrain block DDS live at data\terrain\tiles\textures\ (112 files, mostly 1024x1024 DXT). Read them at RUNTIME from the install path in tests; never commit donor bytes or generated goldens.
+Toolchain: rustc/cargo 1.99.1. Python is `python` (3.14) with Pillow available (verify with `python -c "import PIL; print(PIL.__version__)"`).
+
+OWNED FILES (write ONLY these — strict boundary; never edit app/**, Cargo.toml, src/main.rs, src/lib.rs, other workers' assets/*.rs or platform/*.rs, docs outside your report, SWARM_BOARD.md):
+- rustport/src/raster/*.rs (new files inside this new directory; you may create rustport/src/raster/mod.rs)
+- rustport/src/bin/raster_piece.rs (demo binary — Cargo auto-discovers src/bin/*.rs)
+- rustport/tests/raster_piece.rs
+- rustport/shots/** (deterministic test outputs; .raw plus PNGs via the helper)
+- rustport/tests/tools/raw_to_png.py (tiny Pillow converter, if needed)
+- report: docs/t6/reports/T6-R06.md
+
+READ LIST (read-only): rustport/ARCHITECTURE.md, rustport/src/assets/dds.rs (R05-DDS output), docs/audit/TERRAIN_DONOR_ASSETS.md section 3.2 (block family inventory), docs/decomp/DC_FORMATS.md, SWARM_OPS.md section 7, app/tools/AGENT_PROTOCOL.md.
+
+BACKUP RULE: before editing any EXISTING owned file, copy to inbox\backup\<name>.bak-T6-R06. New files need no backup.
+INTEGRATION NOTE: src/raster.rs is a scaffold STUB owned by integration — do NOT edit it. Put your implementation in new files under src/raster/ and include them in your bin/test with explicit `#[path = "../raster/xxx.rs"] mod xxx;` or a mod.rs you own. To reuse the DDS decoder include it read-only: `#[path = "../assets/dds.rs"] mod dds;`.
+
+MICRO-TASK: std-only software rasterizer + terrain tile renderer:
+1. A minimal software framebuffer (Vec<u32> RGBA or BGRA — document which) with `put_pixel`, `clear`, `blit`, and a deterministic triangle fill (barycentric, top-left rule, depth buffer) — enough to prove a real rasterizer exists, not just a texture blitter.
+2. A terrain tile renderer: render a 16x16 grid of tiles, each tile sampling a crop from a donor block DDS decoded at runtime via R05's decoder. Pick blocks from documented donor families (e.g. grass1/ground1/rock1/sandsea1) through a deterministic, seeded tile assignment (no randomness without a seed). Target output 1024x1024 (64 px per tile).
+3. Height-aware shading: derive a per-tile (or per-pixel) height field from a deterministic function, compute a surface normal from its gradient, and apply a simple diffuse light (document the light direction and formula). Output must be visibly height-shaded, not a flat texture paste.
+4. Write deterministic raw RGBA output to rustport/shots/raster_piece.raw and convert it to rustport/shots/raster_piece.png with the Python/Pillow helper (never commit donor bytes — only your generated render PNG/raw).
+
+ACCEPTANCE + CONCRETE TEST it MUST run BEFORE reporting done (piece-before-whole rule):
+- From rustport/: `cargo test --test raster_piece` passes. It must assert:
+  1. Determinism: rendering the same seed twice yields byte-identical buffers.
+  2. Geometry: a synthetic triangle with known vertices fills exactly the expected pixel count; depth-buffer ordering is correct (near triangle wins).
+  3. Terrain: 16x16 grid produces a 1024x1024 buffer, all pixels opaque, and the image differs from a flat unshaded paste (measure luminance variance vs unshaded baseline).
+  4. Outputs the .raw and .png to rustport/shots/ and prints their paths + SHA-256 of the .raw (use a small std-only SHA-256 implementation or `python -c "import hashlib..."` in the test harness — do NOT add a crate).
+- Also run `cargo run --bin raster_piece` once to produce the actual deterministic shot and paste output tail into the report.
+- No Godot, no runner.
+
+REPORT: write docs/t6/reports/T6-R06.md with a claim table (observed / derived / inferred), evidence paths (shot path + hash), PASS/FAIL per acceptance criterion, and open questions. Write it BEFORE reporting done.
+
+RECURSION (only if blocked): spawn helpers via `opencode api post /api/session --data` with parentID = your sessionID. Prefer doing this yourself.
+
+When done, state concisely: files changed, commands run, shot path + hash, results, report path, open questions.
