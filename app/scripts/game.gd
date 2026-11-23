@@ -17,15 +17,15 @@ const TILE := 2.0
 # How close to an ore deposit the build cursor must be for a mine to be legal
 # (and for the unified "Mine" button to pick that deposit's type).
 const MINE_SITE_RADIUS := 4.0
-# T-MINES-PLACE: discoverability ring for the per-start ore guarantee (TILES).
-# The donor publishes no near-start deposit count/ring table (mines come from
-# stamped pattern masks), so these radii are a PORT INFERENCE made to stop
-# "on normal richness I cannot find the mines". 30 tiles is a generous cap;
-# the 16-24 tile placement band sits outside the 14-tile start keep-clear
-# (MINE_SITE_RADIUS is 4 m = 2 tiles, so the deposits stay buildable-adjacent).
-const MINE_DISCOVER_R := 30.0   # tiles: a start is "served" if ore is this close
-const MINE_NEAR_LO := 16.0      # tiles: outside the 14-tile start zone
-const MINE_NEAR_HI := 24.0      # tiles: still a short walk from town
+# T-MINES-PLACE: legacy discoverability ring (TILES), kept for t_mines_place.
+const MINE_DISCOVER_R := 30.0
+# T-MINES-START-FIX: tight per-start service ring and placement band.  Ores are
+# radius-0 deposits; they do not need the 14-tile tree/stone keep-clear, so a
+# guaranteed gold/iron/coal deposit may sit 6..14 tiles (12..28 m) from the
+# hall.  Worst case after the last-resort widen is MINE_SERVED_R (16 tiles).
+const MINE_SERVED_R := 16.0     # tiles: nearest ore per kind from the hall
+const MINE_NEAR_LO := 6.0       # tiles: inner edge of the guaranteed band
+const MINE_NEAR_HI := 14.0      # tiles: outer edge (short walk from town)
 # T-MINES-FIX: the stamped donor mine cells reach ~5 tiles from the centre and
 # game.gd paints a 3-tile dirt apron, so deposits must keep this much CENTRE
 # separation to have ZERO footprint/apron intersection (incl. 1-tile margin).
@@ -397,6 +397,9 @@ func setup_begin(mode: String) -> void:
 
 func setup_spawns() -> void:
 	_ensure_start_slots()
+	# T-MINES-START-FIX: now that map_starts is FINAL (water snap + appended
+	# slots), re-check every hall's guaranteed ore against its real position.
+	_ensure_start_ore_clusters(map_starts)
 	_spawn_starts()
 	_grid_rebuild()
 	# Must run AFTER start buildings block tiles: scan's BFS uses the post-spawn
@@ -1206,15 +1209,16 @@ func _ore_spot_clear(p: Vector2, ignore_id: int = -1) -> bool:
 				return false
 	return true
 
-# T-MINES-FIX: per-start ore discoverability safety net, NORMAL richness only.
-# pattern_gen.gd now OWNS mine placement: its final authoritative pass already
-# guarantees gold+iron+coal in the 10..24 tile band with zero footprint overlap,
-# so on a normally generated map this function relocates NOTHING (every start is
-# already inside MINE_DISCOVER_R). It is kept only for callers whose ore nodes
-# were moved/parked after generation (e.g. the T-MINES-PLACE fallback test) and
-# uses the SAME footprint rule as pattern_gen (_ore_spot_clear / MINE_MIN_SEP_TILES),
-# so a relocation can never reintroduce the visual overlap this task fixes.
-# It only RELOCATES an existing deposit - never adds one - keeping counts intact.
+# T-MINES-START-FIX: per-start ore proximity safety net, NORMAL richness only.
+# pattern_gen.gd OWNS mine placement: its final authoritative pass guarantees
+# gold+iron+coal in the 6..14 tile band (worst case 16) of the start tile it was
+# given.  That build happens BEFORE game.gd snaps starts to land and appends
+# extra starts, so this net re-checks against the FINAL map_starts (the exact
+# town-hall anchors) and tightens service to MINE_SERVED_R (16 tiles).  It also
+# covers nodes nudged away from a stamped site by the collision pass and the
+# T-MINES-PLACE fallback test.  Same footprint rule as pattern_gen
+# (_ore_spot_clear / MINE_MIN_SEP_TILES): a relocation never reintroduces
+# overlapping aprons, and only RELOCATES an existing deposit - count is intact.
 # Low/high richness are skipped so RICHNESS_ORE_DELTA stays byte-identical.
 # A dedicated seeded RNG leaves the shared `rng` stage stream untouched.
 func _ensure_start_ore_clusters(starts: Array[Vector2]) -> void:
@@ -1227,20 +1231,40 @@ func _ensure_start_ore_clusters(starts: Array[Vector2]) -> void:
 	r.seed = (int(Data.RANDOM_SEED) ^ 0x4d494e45) + 104729
 	var kinds := ["gold", "iron", "coal"]
 	var claimed: Array = []  # node ids already assigned to an earlier start
+	# One footprint test shared by the random passes and the deterministic sweep.
+	var spot_ok := func(p: Vector2, node_id: int) -> bool:
+		if not in_bounds(p) or is_blocked(p):
+			return false
+		if int(terrain[_t(tile_of(p).x, tile_of(p).y)]) == 3:
+			return false
+		# full scaled-mine footprint separation, not the old 3 m point check
+		if not _ore_spot_clear(p, node_id):
+			return false
+		for other in res_nodes:
+			if int(other.id) == node_id:
+				continue
+			if str(other.type) in ["wood", "stone"] and int(other.hits) > 0 and other.pos.distance_to(p) < 4.0 * TILE:
+				return false
+		return true
 	for si in starts.size():
 		var st: Vector2 = starts[si]
 		var base := r.randf() * TAU
 		for ki in kinds.size():
 			var k: String = kinds[ki]
-			# Already discoverable? Keep the stamped donor position as-is.
+			# Already close enough? Keep the stamped donor position as-is, but
+			# CLAIM it so a later start cannot steal this hall's guaranteed ore.
 			var served := false
+			var served_id := -1
 			for n in res_nodes:
 				if str(n.type) != k or int(n.max_hits) != 0 or claimed.has(int(n.id)):
 					continue
-				if n.pos.distance_to(st) / TILE <= MINE_DISCOVER_R:
+				if n.pos.distance_to(st) / TILE <= MINE_SERVED_R:
 					served = true
+					served_id = int(n.id)
 					break
 			if served:
+				if served_id >= 0:
+					claimed.append(served_id)
 				continue
 			# Pick the nearest unclaimed deposit of this kind and move it in.
 			var pick_idx := -1
@@ -1259,44 +1283,41 @@ func _ensure_start_ore_clusters(starts: Array[Vector2]) -> void:
 				continue  # no such deposit on the map: never invent one
 			var node: Dictionary = res_nodes[pick_idx]
 			var old_pos: Vector2 = node.pos
-			# Open ground in this ore's 120-deg sector, outside the start zone.
-			# If the sector points off-map (corner start), retry at any angle.
+			# Open ground in this ore's 120-deg sector (soft preference: a
+			# corner start or congested sector falls back to any angle).
 			var sector := base + float(ki) * TAU / 3.0
 			var dest: Vector2 = Vector2.ZERO
 			var found := false
+			# Seeded random passes: sector first, then any angle, then wider.
 			for pass_i in 3:
+				if found:
+					break
 				for _a in 96:
 					var ang := sector + r.randf_range(-0.9, 0.9)
 					if pass_i >= 1:
 						ang = r.randf() * TAU
-					var lo := MINE_NEAR_LO
 					var hi := MINE_NEAR_HI
 					if pass_i == 2:
-						hi = 32.0  # widen honestly if the sector is congested
-					var dst := r.randf_range(lo, hi)
-					var p := st + Vector2(cos(ang), sin(ang)) * dst * TILE
-					if not in_bounds(p) or is_blocked(p):
-						continue
-					if int(terrain[_t(tile_of(p).x, tile_of(p).y)]) == 3:
-						continue
-					# T-MINES-FIX: full scaled-mine footprint separation, not the
-					# old 3 m point check that let two ore aprons overlap.
-					if not _ore_spot_clear(p, int(node.id)):
-						continue
-					var clear := true
-					for other in res_nodes:
-						if int(other.id) == int(node.id):
-							continue
-						if str(other.type) in ["wood", "stone"] and int(other.hits) > 0 and other.pos.distance_to(p) < 4.0 * TILE:
-							clear = false
+						hi = MINE_SERVED_R  # last-resort widen, still <= service ring
+					var dst := r.randf_range(MINE_NEAR_LO, hi)
+					var p: Vector2 = st + Vector2(cos(ang), sin(ang)) * dst * TILE
+					if spot_ok.call(p, int(node.id)):
+						dest = p
+						found = true
+						break
+			# Deterministic sweep: a random stream can miss a valid spot on a
+			# congested start (observed on seed 1004).  Never leave a hall short.
+			if not found:
+				for di in [8.0, 10.0, 12.0, 14.0, 6.0, MINE_SERVED_R]:
+					for ai in 48:
+						var ang := TAU * float(ai) / 48.0
+						var p: Vector2 = st + Vector2(cos(ang), sin(ang)) * di * TILE
+						if spot_ok.call(p, int(node.id)):
+							dest = p
+							found = true
 							break
-					if not clear:
-						continue
-					dest = p
-					found = true
-					break
-				if found:
-					break
+					if found:
+						break
 			if not found:
 				continue
 			# Move the SAME node (by_id shares this Dictionary) and repaint its
@@ -2237,14 +2258,18 @@ func _tick_field_growth() -> void:
 
 func _start_positions(count := 0) -> Array[Vector2]:
 	# Donor dogenerate.inc keeps arrStartPos[0..7] regardless of player count.
-	# Well-separated perimeter anchors so a 3rd/4th participant gets a real
-	# start instead of an arbitrary fallback (P-43). count=0 returns all 8.
+	# T-MENU-MORE-PLAYERS: PORT EXTENSION adds four more well-separated anchors
+	# (slots 8..11) so a 9..12-player skirmish gets real starts. The original
+	# eight keep their exact positions/order, so 2..8-player maps stay
+	# byte-identical. count=0 returns all 12.
 	var w := float(MAP_W) * TILE
 	var h := float(MAP_H) * TILE
 	var slots: Array[Vector2] = [Vector2(w * 0.125, h * 0.125), Vector2(w * 0.875, h * 0.875),
 		Vector2(w * 0.5, h * 0.10), Vector2(w * 0.5, h * 0.90),
 		Vector2(w * 0.10, h * 0.5), Vector2(w * 0.90, h * 0.5),
-		Vector2(w * 0.27, h * 0.27), Vector2(w * 0.73, h * 0.73)]
+		Vector2(w * 0.27, h * 0.27), Vector2(w * 0.73, h * 0.73),
+		Vector2(w * 0.125, h * 0.875), Vector2(w * 0.875, h * 0.125),
+		Vector2(w * 0.27, h * 0.73), Vector2(w * 0.73, h * 0.27)]
 	if count > 0:
 		return slots.slice(0, mini(count, slots.size()))
 	return slots
@@ -2253,7 +2278,9 @@ func _start_positions(count := 0) -> Array[Vector2]:
 # map stays byte-identical (no extra RNG draws, no extra grove/resource paint).
 # Only the count exposed to sim consumers changes.
 func _ensure_start_slots() -> void:
-	var need: int = clampi(maxi(4, int(Data.PLAYER_COUNT)), 2, 8)
+	# T-MENU-MORE-PLAYERS: the old literal 8 clamped 9..12-player lobbies to 8
+	# starts (so players 9..12 had no town). Follow the shared cap instead.
+	var need: int = clampi(maxi(4, int(Data.PLAYER_COUNT)), 2, Data.MAX_PLAYERS)
 	if map_starts.size() >= need:
 		return
 	for sv in _start_positions(need):

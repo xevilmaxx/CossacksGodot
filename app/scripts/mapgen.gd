@@ -13,11 +13,12 @@
 # and realised as radius-0 resource nodes by game.gd:_gen_patterns().
 # pattern_gen.gd's final authoritative pass OWNS the layout: it relocates the
 # same stamps (count unchanged) so every start gets gold+iron+coal in the
-# 10..24 tile band with ZERO footprint intersection, and so all map-wide mines
-# are footprint-disjoint.  game.gd:_ensure_start_ore_clusters() is only a
-# no-op-on-normal-maps safety net using the same _ore_spot_clear footprint rule;
-# it never adds or removes a deposit.  C3MapGen stays deterministic: pick()
-# uses its own seed+type-hash stream and never touches game.gd's `rng`.
+# 6..14 tile band (worst case 16) with ZERO footprint intersection, and so all
+# map-wide mines are footprint-disjoint.  game.gd:_ensure_start_ore_clusters()
+# re-checks against the FINAL map_starts (water snap / appended slots) with the
+# same _ore_spot_clear footprint rule; it never adds or removes a deposit.
+# C3MapGen stays deterministic: pick() uses its own seed+type-hash stream and
+# never touches game.gd's `rng`.
 extends RefCounted
 class_name C3MapGen
 

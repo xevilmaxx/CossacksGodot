@@ -103,15 +103,22 @@ const MINE_MARKER_COLORS := {
 	"stone": Color(0.94, 0.89, 0.62),
 }
 const MINE_MARKER_RIM := Color(0.05, 0.04, 0.03)
-# T-MINIMAP-EXTRA: player tints (0 = local player, blue; 1 = red). Static
-# constants, so no player-colour revision is needed for the caches.
+# T-MINIMAP-BRIGHT: player tints (0 = local player, blue; 1 = red). High
+# saturation + high luminance so blips stay legible over the dark, fog-dimmed
+# minimap. Static constants, so no player-colour revision is needed for caches.
+# T-HUD-12: extended 8 -> 12 to match world.gd PLAYER_COLORS / menu.gd
+# ROSTER_COLORS. P0..P7 keep hud's brighter variants; P8..P11 from world.gd
+# (teal/amber brightened for legibility). P7 is white; wrapi handles p>=12.
 const MM_PLAYER_COLORS := [
-	Color(0.30, 0.62, 1.00), Color(1.00, 0.32, 0.26),
-	Color(1.00, 0.78, 0.22), Color(0.42, 0.85, 0.42),
-	Color(0.70, 0.45, 1.00), Color(0.25, 0.85, 0.85),
-	Color(1.00, 0.55, 0.72), Color(0.85, 0.85, 0.85),
+	Color(0.35, 0.75, 1.00), Color(1.00, 0.35, 0.30),
+	Color(1.00, 0.85, 0.20), Color(0.35, 1.00, 0.45),
+	Color(0.85, 0.50, 1.00), Color(0.30, 1.00, 1.00),
+	Color(1.00, 0.50, 0.85), Color(1.00, 1.00, 1.00),
+	Color(1.00, 0.60, 0.10), Color(0.55, 0.95, 0.30),
+	Color(0.12, 0.88, 0.80), Color(0.88, 0.58, 0.30),
 ]
 const MM_ENEMY_RIM := Color(0.34, 0.02, 0.02)  # dark red ring on enemy blips
+const MM_OWN_RIM := Color(0.04, 0.05, 0.03)    # near-black ring on friendly blips
 const MM_CLUSTER_THRESHOLD := 16   # per player: above this, group into blips
 const MM_CLUSTER_CELL := 4         # tiles per cluster bucket
 var market_give_idx := 1   # wood
@@ -1304,10 +1311,9 @@ func _draw_mine_markers() -> void:
 				minimap_img.set_pixel(px, py, MINE_MARKER_RIM if d == 3 else c)
 
 func _mm_player_color(p: int) -> Color:
-	if p < 0 or p >= MM_PLAYER_COLORS.size():
-		return Color(0.85, 0.85, 0.85)
-	var c: Color = MM_PLAYER_COLORS[p]
-	return c
+	# T-MINIMAP-BRIGHT: wrap instead of falling back to gray, so P8+ recycle
+	# the bright palette (mirrors world.gd PLAYER_COLORS wrapi behaviour).
+	return MM_PLAYER_COLORS[wrapi(p, 0, MM_PLAYER_COLORS.size())]
 
 func _mm_enemy_visible(t: Vector2i) -> bool:
 	# T-MINIMAP-EXTRA: an enemy needs BOTH explored history and current
@@ -1331,7 +1337,7 @@ func _rebuild_bld_blips() -> void:
 		var t := game.tile_of(e.pos)
 		if t.x < 0 or t.y < 0 or t.x >= game.MAP_W or t.y >= game.MAP_H:
 			continue
-		var p := clampi(int(e.player), 0, MM_PLAYER_COLORS.size() - 1)
+		var p := wrapi(int(e.player), 0, MM_PLAYER_COLORS.size())
 		_mm_bld_centers.append(t)
 		_mm_bld_colors.append(_mm_player_color(p))
 		_mm_bld_enemy.append(int(e.player) != 0)
@@ -1384,7 +1390,7 @@ func _rebuild_unit_blips() -> void:
 		if e.dead:
 			continue
 		var p := int(e.player)
-		var pi := clampi(p, 0, MM_PLAYER_COLORS.size() - 1)
+		var pi := wrapi(p, 0, MM_PLAYER_COLORS.size())
 		var own := p == 0
 		var t := game.tile_of(e.pos)
 		if t.x < 0 or t.y < 0 or t.x >= mw or t.y >= mh:
@@ -1420,51 +1426,79 @@ func _rebuild_unit_blips() -> void:
 		_mm_cluster_sy[ci] += t.y
 		_mm_cluster_cnt[ci] += 1
 
+func _mm_rim_cross(x: int, y: int, rim: Color) -> void:
+	# 1px cross rim around a single-pixel unit dot; map-bounds guarded.
+	var w := game.MAP_W
+	var h := game.MAP_H
+	if x > 0:
+		minimap_img.set_pixel(x - 1, y, rim)
+	if x + 1 < w:
+		minimap_img.set_pixel(x + 1, y, rim)
+	if y > 0:
+		minimap_img.set_pixel(x, y - 1, rim)
+	if y + 1 < h:
+		minimap_img.set_pixel(x, y + 1, rim)
+
+func _mm_rim_ring3(x: int, y: int, rim: Color, corners_only: bool) -> void:
+	# 3x3 rim around a cluster blip. Enemy clusters ring all 8 cells; own
+	# clusters are a bright plus, so only the 4 diagonal corners get rimmed.
+	var w := game.MAP_W
+	var h := game.MAP_H
+	for dxi in 3:
+		for dyi in 3:
+			if dxi == 1 and dyi == 1:
+				continue  # centre: bright core is painted in pass 2
+			if corners_only and (dxi == 1 or dyi == 1):
+				continue  # leave the 4 orthogonal cells to the own plus-core
+			var px := x + dxi - 1
+			var py := y + dyi - 1
+			if px < 0 or py < 0 or px >= w or py >= h:
+				continue
+			minimap_img.set_pixel(px, py, rim)
+
 func _draw_unit_blips() -> void:
-	# T-MINIMAP-EXTRA: layering (last wins) = mines < buildings < unit dots <
-	# clusters. Enemy blips get a dark-red rim and are stamped last so they
-	# stay legible even on top of friendly or marker pixels.
+	# T-MINIMAP-BRIGHT: two passes — every dark rim goes down first, then every
+	# bright player-tinted core. A neighbour's rim can therefore never dim an
+	# adjacent blip's colour, and every dot/cluster gets a near-black (own) or
+	# dark-red (enemy) outline so the tint reads on the dark fogged terrain.
+	# Layering (last wins) = mines < buildings < rims < cores.
 	var mw := game.MAP_W
 	var mh := game.MAP_H
+	# Pass 1: rims.
 	for i in _mm_unit_dots.size():
 		var ui: int = _mm_unit_dots[i]
 		var t: Vector2i = _mm_unit_tiles[ui]
 		if t.x < 0 or t.y < 0 or t.x >= mw or t.y >= mh:
 			continue
-		var c: Color = _mm_unit_colors[ui]
-		minimap_img.set_pixel(t.x, t.y, c)
-		if _mm_unit_enemy[ui]:
-			if t.x > 0:
-				minimap_img.set_pixel(t.x - 1, t.y, MM_ENEMY_RIM)
-			if t.x + 1 < mw:
-				minimap_img.set_pixel(t.x + 1, t.y, MM_ENEMY_RIM)
-			if t.y > 0:
-				minimap_img.set_pixel(t.x, t.y - 1, MM_ENEMY_RIM)
-			if t.y + 1 < mh:
-				minimap_img.set_pixel(t.x, t.y + 1, MM_ENEMY_RIM)
+		_mm_rim_cross(t.x, t.y, MM_ENEMY_RIM if _mm_unit_enemy[ui] else MM_OWN_RIM)
 	for ci in _mm_cluster_sx.size():
-		var n := maxi(1, _mm_cluster_cnt[ci])
-		var cx := clampi(int(_mm_cluster_sx[ci] / n), 0, mw - 1)
-		var cy := clampi(int(_mm_cluster_sy[ci] / n), 0, mh - 1)
-		var c: Color = _mm_cluster_colors[ci]
-		if _mm_cluster_enemy[ci]:
-			for dxi in 3:
-				for dyi in 3:
-					var px := cx + dxi - 1
-					var py := cy + dyi - 1
-					if px < 0 or py < 0 or px >= mw or py >= mh:
-						continue
-					minimap_img.set_pixel(px, py, c if dxi == 1 and dyi == 1 else MM_ENEMY_RIM)
-		else:
-			minimap_img.set_pixel(cx, cy, c)
+		var cn := maxi(1, _mm_cluster_cnt[ci])
+		var ccx := clampi(int(_mm_cluster_sx[ci] / cn), 0, mw - 1)
+		var ccy := clampi(int(_mm_cluster_sy[ci] / cn), 0, mh - 1)
+		_mm_rim_ring3(ccx, ccy, MM_ENEMY_RIM if _mm_cluster_enemy[ci] else MM_OWN_RIM, not _mm_cluster_enemy[ci])
+	# Pass 2: bright cores (always win over any rim painted above).
+	for i2 in _mm_unit_dots.size():
+		var ui2: int = _mm_unit_dots[i2]
+		var t2: Vector2i = _mm_unit_tiles[ui2]
+		if t2.x < 0 or t2.y < 0 or t2.x >= mw or t2.y >= mh:
+			continue
+		minimap_img.set_pixel(t2.x, t2.y, _mm_unit_colors[ui2])
+	for ci2 in _mm_cluster_sx.size():
+		var n := maxi(1, _mm_cluster_cnt[ci2])
+		var cx := clampi(int(_mm_cluster_sx[ci2] / n), 0, mw - 1)
+		var cy := clampi(int(_mm_cluster_sy[ci2] / n), 0, mh - 1)
+		var cc: Color = _mm_cluster_colors[ci2]
+		minimap_img.set_pixel(cx, cy, cc)
+		if not _mm_cluster_enemy[ci2]:
+			# own cluster = bright plus; enemy core stays 1px inside its rim
 			if cx > 0:
-				minimap_img.set_pixel(cx - 1, cy, c)
+				minimap_img.set_pixel(cx - 1, cy, cc)
 			if cx + 1 < mw:
-				minimap_img.set_pixel(cx + 1, cy, c)
+				minimap_img.set_pixel(cx + 1, cy, cc)
 			if cy > 0:
-				minimap_img.set_pixel(cx, cy - 1, c)
+				minimap_img.set_pixel(cx, cy - 1, cc)
 			if cy + 1 < mh:
-				minimap_img.set_pixel(cx, cy + 1, c)
+				minimap_img.set_pixel(cx, cy + 1, cc)
 
 func _update_minimap() -> void:
 	if world == null:

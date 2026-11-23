@@ -1,0 +1,52 @@
+{
+	"checks": [
+		{
+			"detail": "parent=@Control@3:<Control#27900511694>",
+			"name": "root_in_full_shell",
+			"passed": true
+		},
+		{
+			"detail": "filter=STOP",
+			"name": "root_receives_input",
+			"passed": true
+		},
+		{
+			"detail": "menu=true options=true",
+			"name": "scrolls_visible",
+			"passed": true
+		},
+		{
+			"detail": "buttons=2 disabled=0",
+			"name": "action_bar_enabled",
+			"passed": true
+		},
+		{
+			"detail": "shell_center.filter=IGNORE",
+			"name": "idle_shell_ignores_input",
+			"passed": true
+		},
+		{
+			"detail": "full=1 center=0",
+			"name": "active_shell_on_top",
+			"passed": true
+		},
+		{
+			"detail": "shell_full.filter=STOP",
+			"name": "active_shell_receives_input",
+			"passed": true
+		},
+		{
+			"detail": "at (640.0, 640.0) blockers=[]",
+			"name": "no_overlay_blocker",
+			"passed": true
+		},
+		{
+			"detail": "parent=@CenterContainer@4:<CenterContainer#27934066128> full=IGNORE center=PASS idx=1/0",
+			"name": "center_restored",
+			"passed": true
+		}
+	],
+	"id": "t_menu_input",
+	"passed": true,
+	"unix_ms": 1795450891672.0
+}

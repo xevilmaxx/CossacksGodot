@@ -1,6 +1,7 @@
-# T-MENU-ROSTER: skirmish roster (2..8 players, per-player nation/team/AI)
-# mapping through the real main.gd apply path, plus the world.gd colour OOB fix.
-# Small, headless, self-exiting; no whole-game selftest.
+# T-MENU-ROSTER / T-MENU-MORE-PLAYERS: skirmish roster (2..12 players,
+# per-player nation/team/AI) mapping through the real main.gd apply path, the
+# full-screen two-column skirmish layout, 12 start slots / colour lanes, and
+# the world.gd colour OOB fix. Small, headless, self-exiting; no whole-game selftest.
 #
 # Run with:
 #   python app\tools\godot_runner.py run --id t-menu-roster --timeout 100 -- \
@@ -42,15 +43,16 @@ func _write_result() -> void:
 	f.close()
 
 func _roster_cfg(teams: Array) -> Dictionary:
-	var nations := ["rus", "bav", "pol", "swe", "pru", "fra"]
+	var nations := ["rus", "bav", "pol", "swe", "pru", "fra", "eng", "spa",
+		"aus", "tur", "net", "den"]
 	var players := []
-	for i in 6:
-		players.append({"nation": nations[i], "team": int(teams[i]),
+	for i in teams.size():
+		players.append({"nation": nations[i % nations.size()], "team": int(teams[i]),
 			"ai": i > 0, "name": "P%d" % (i + 1),
 			"ai_difficulty": "normal" if i > 0 else "none",
 			"difficulty": "normal"})
 	return {"mode": "skirmish", "players": players, "nation0": "rus",
-		"nation1": "bav", "opponents": 5, "teams": "4",
+		"nation1": "bav", "opponents": teams.size() - 1, "teams": "4",
 		"map_size": 320, "seed": 12345}
 
 func _initialize() -> void:
@@ -94,6 +96,34 @@ func _initialize() -> void:
 	check("ffa_not_allied", ffa_allies == 0,
 		"ally pairs with team=-1: %d (want 0)" % ffa_allies)
 
+	# T-MENU-MORE-PLAYERS: a 10-player cfg must survive the whole apply path,
+	# cycle its 4-team preset, resize the AI array, and get 10 real start slots.
+	check("max_players_cap", Data.MAX_PLAYERS == 12,
+		"MAX_PLAYERS=%d (want 12)" % Data.MAX_PLAYERS)
+	var teams10 := [0, 0, 1, 1, 2, 2, 3, 3, 0, 0]
+	main._apply_menu_cfg(_roster_cfg(teams10))
+	check("ten_player_count", Data.PLAYER_COUNT == 10,
+		"PLAYER_COUNT=%d (want 10)" % Data.PLAYER_COUNT)
+	check("ten_player_teams", Data.TEAMS == teams10,
+		"TEAMS=%s (want %s)" % [str(Data.TEAMS), str(teams10)])
+	check("ten_player_ai", Data.PLAYER_AI.size() == 10 \
+		and not bool(Data.PLAYER_AI[0]) and bool(Data.PLAYER_AI[9]),
+		"PLAYER_AI=%s (want 10 entries, slot0 human)" % str(Data.PLAYER_AI))
+	var game10 := C3Game.new()
+	root.add_child(game10)
+	game10.setup_begin("skirmish")
+	var teams10_built := []
+	for p in game10.players:
+		teams10_built.append(int(p.get("team", -1)))
+	check("ten_sim_players", game10.players.size() == 10 and teams10_built == teams10,
+		"sim players=%d teams=%s" % [game10.players.size(), str(teams10_built)])
+	check("start_positions_12", game10._start_positions(12).size() == 12,
+		"start slots=%d (want 12)" % game10._start_positions(12).size())
+	game10._ensure_start_slots()
+	check("ten_start_slots", game10.map_starts.size() >= 10,
+		"map_starts=%d (want >=10)" % game10.map_starts.size())
+	game10.free()
+
 	# Legacy path (no roster) still caps 1..3 opponents and "2v1".
 	main._apply_menu_cfg({"opponents": 2, "teams": "2v1", "nation0": "rus", "nation1": "bav"})
 	check("legacy_path", Data.PLAYER_COUNT == 3 and Data.TEAMS == [0, 0, 1] \
@@ -118,6 +148,11 @@ func _initialize() -> void:
 	menu._apply_team_preset()
 	check("team_preset", menu.roster_teams == [0, 0, 1, 1],
 		"4 players / 2 teams -> %s" % str(menu.roster_teams))
+	var items12 := menu._player_items()
+	check("player_items_12", items12.size() == 11 and str(items12[0].id) == "2" \
+		and str(items12[10].id) == "12",
+		"Players options=%d range %s..%s (want 11 items, 2..12)" % [items12.size(),
+		str(items12[0].id), str(items12[10].id)])
 	menu.free()
 
 	# DEEP donor option struct: canonical ids map onto the port, Random is
@@ -153,43 +188,59 @@ func _initialize() -> void:
 		"balloon=%s century=%s market=%s adviser=%s" % [str(Data.BALLOON_MODE),
 		str(Data.CENTURY18_MODE), str(Data.MARKET_DIP_MODE), str(Data.ADVISER_MODE)])
 
-	# UI smoke: build the real skirmish screen headlessly, rebuild the rows for
-	# 6 players and verify the emitted cfg carries the full roster.
+	# UI smoke: build the real skirmish screen headlessly, verify the full-screen
+	# two-column layout, rebuild the rows for 12 players and emit the cfg.
 	var ui := C3Menu.new()
 	root.add_child(ui)
 	ui._build()  # _ready is deferred inside SceneTree._initialize; build by hand
 	ui._show_skirmish()
+	check("ui_fullscreen_layout", ui.skirmish_fullscreen \
+		and ui.root.get_parent() == ui.shell_full \
+		and ui.options_scroll.visible \
+		and is_equal_approx(ui.root.anchor_right, 1.0) \
+		and is_equal_approx(ui.root.anchor_bottom, 1.0),
+		"fullscreen=%s parent_full=%s right_col=%s anchors=%s/%s" % [
+		str(ui.skirmish_fullscreen), str(ui.root.get_parent() == ui.shell_full),
+		str(ui.options_scroll.visible), str(ui.root.anchor_right), str(ui.root.anchor_bottom)])
 	var rows2 := 0
-	var option_rows := 0
-	var headers := 0
+	var header_names := []
 	for c in ui.body.get_children():
 		if c.has_meta("roster_row"):
 			rows2 += 1
-		elif c is HBoxContainer:
+		elif c.has_meta("roster_header_row"):
+			for l in c.get_children():
+				header_names.append(str(l.text))
+	check("ui_roster_columns", header_names == ["Player", "Nation", "Team", "AI", "Color"],
+		"column headers=%s (want Player/Nation/Team/AI/Color)" % str(header_names))
+	var option_rows := 0
+	var headers := 0
+	for c in ui.options_body.get_children():
+		if c is HBoxContainer:
 			option_rows += 1
 		elif c is Label and str(c.text).begins_with("—"):
 			headers += 1
 	check("ui_option_rows", option_rows >= 20 and headers >= 3,
-		"option rows=%d, section headers=%d" % [option_rows, headers])
-	ui.players = 6
+		"right-column option rows=%d, section headers=%d" % [option_rows, headers])
+	ui.players = 12
 	ui._rebuild_roster()
-	var rows6 := 0
+	var rows12 := 0
 	for c in ui.body.get_children():
 		if c.has_meta("roster_row"):
-			rows6 += 1
-	check("ui_roster_rows", rows2 == 2 and rows6 == 6,
-		"rows after default=%d, after Players=6 -> %d (want 2 / 6)" % [rows2, rows6])
+			rows12 += 1
+	check("ui_roster_rows_12", rows2 == 2 and rows12 == 12,
+		"rows after default=%d, after Players=12 -> %d (want 2 / 12)" % [rows2, rows12])
 	var emitted := []
 	ui.chosen.connect(func(cfg: Dictionary): emitted.append(cfg))
 	ui._emit_start("Skirmish")
 	var cfg_emitted: Dictionary = emitted[0] if not emitted.is_empty() else {}
 	var pl: Array = cfg_emitted.get("players", []) if cfg_emitted.get("players") is Array else []
-	check("ui_emit_roster", pl.size() == 6 and int(pl[0].get("team", -99)) == -1 \
-		and not bool(pl[0].get("ai", true)) and bool(pl[5].get("ai", false)) \
+	check("ui_emit_roster", pl.size() == 12 and int(pl[0].get("team", -99)) == -1 \
+		and not bool(pl[0].get("ai", true)) and bool(pl[11].get("ai", false)) \
 		and str(cfg_emitted.get("allies", "")) == "default",
-		"emitted players=%d, P1 team/ai=%s/%s, allies=%s" % [pl.size(),
+		"emitted players=%d, P1 team/ai=%s/%s, P12 ai=%s, allies=%s" % [pl.size(),
 		str(pl[0].get("team", -99)) if not pl.is_empty() else "?",
 		str(pl[0].get("ai", true)) if not pl.is_empty() else "?",
+		str(pl[11].get("ai", false)) if pl.size() > 11 else "?",
 		str(cfg_emitted.get("allies", ""))])
 	var donor_keys := ["terraintype", "relieftype", "resourcestart", "resourcemines",
 		"mapsize", "startingunits", "balloon", "cannons", "peacetime", "century18",
@@ -202,12 +253,19 @@ func _initialize() -> void:
 		"missing donor keys: %s" % str(missing))
 	ui.queue_free()
 
-	# The critical OOB crash: p>=2 used to index a 2-element array.
+	# The critical OOB crash: p>=2 used to index a 2-element array. With the
+	# 12-player cap every id 0..11 must have its own colour lane.
 	var world := C3World.new()
 	var c5: Color = world._player_color(5)
 	var c8: Color = world._player_color(8)
+	var c11: Color = world._player_color(11)
 	check("player_color_oob", c5 is Color and c8 is Color and c5 != c8,
 		"color(5)=%s color(8)=%s (modulo fallback)" % [str(c5), str(c8)])
+	check("player_colors_12", C3World.PLAYER_COLORS.size() == 12 \
+		and C3Menu.ROSTER_COLORS.size() == 12 and c11 is Color \
+		and c11 != c5 and c11 != c8,
+		"world=%d menu=%d color(11)=%s" % [C3World.PLAYER_COLORS.size(),
+		C3Menu.ROSTER_COLORS.size(), str(c11)])
 	world.free()
 
 	main.free()

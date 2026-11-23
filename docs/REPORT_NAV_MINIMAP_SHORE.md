@@ -21,7 +21,7 @@ reported console result (no persisted JSON), that is called out explicitly.
 | Navigation | **Landed** | `camera.gd`, `input_controller.gd` source; `t_nav_smoke.gd` 6/6 PASS (reported) | No `t_nav_smoke.json` persisted in `results/` |
 | Minimap | **Landed** | `hud.gd` source; `--check-only` clean (lane report) | No dedicated persisted JSON; covered by console smoke |
 | Shore | **Landed** | `world.gd`, `water_overlay.gdshader` source; `t_shore_smoke.json` 6/6 PASS | D-43 shallow-tint deviation deliberately preserved (still a named deviation vs donor) |
-| Mines | **Landed in working tree** | `pattern_gen.gd`, `mapgen.gd`, `game.gd` source; `t_mines_fix.json` 4/4 PASS | Fix files are modified/untracked in `git status` at time of writing — not yet committed |
+| Mines | **Landed in working tree** | `pattern_gen.gd`, `mapgen.gd`, `game.gd` source; `t_mines_fix.json` 5/5 PASS (count baseline across 8 seeds) | Fix files are modified/untracked in `git status` at time of writing — not yet committed |
 | Static map cache | **Skipped by decision** | Perf rationale in §2.5 | Not implemented; rationale recorded instead |
 | Integrated wave smoke | **Landed** | `t_wave_smoke.gd` 9/9 PASS (reported) | Source-scan smoke, not behavioural; no persisted JSON |
 
@@ -207,7 +207,8 @@ Tuning applied in this wave (old → new):
 
 The new fix is **in the working tree and green**, so the final rule is now
 authoritative (the earlier "in flight" status is closed). Dedicated test:
-`app/tests/t_mines_fix.gd` → `app/tests/results/t_mines_fix.json`, **4/4 PASS**.
+`app/tests/t_mines_fix.gd` → `app/tests/results/t_mines_fix.json`, **5/5 PASS**
+(count baseline verified across 8 seeds).
 
 **Root cause (the three bugs)**
 
@@ -231,9 +232,11 @@ authoritative (the earlier "in flight" status is closed). Dedicated test:
   `C3MapGen` stay deterministic and untouched.
 - A **final authoritative pass** at the end of `build()` relocates *the same*
   mine stamps (count unchanged) so:
-  - every start gets **gold + iron + coal in the 10–24 tile band**, spaced
-    around the start (120° ore separation), with cluster count scaled by
-    `Data.RICHNESS`;
+  - ore is anchored to each start's **actual hall spawn** (`cen` building at
+    `map_starts[i]`, asserted by `hall_spawn_matches_map_starts`); every start
+    gets **gold + iron + coal in the 6–14 tile band** (16 tiles only as a last
+    resort), spaced around the hall (120° ore separation), with cluster count
+    scaled by `Data.RICHNESS`;
   - every pair of stamped scaled footprints, **dilated by 1 tile**, has **zero
     intersection**, and all ore nodes keep **≥10 tiles centre separation**;
   - placement uses the scaled footprint (`can_stand`/`stand` against
@@ -255,10 +258,10 @@ authoritative (the earlier "in flight" status is closed). Dedicated test:
   only the height/forest fields and start positions with its own deterministic
   stream.
 
-**Test detail (all PASS):** worst nearest ore = **24.9 tiles** (≤26 gate),
-max dilated footprint overlaps = **0**, min centre separation = **11.04
-tiles**, ore counts match the baseline for all 8 seeds, and the same seed gives
-a byte-identical ore layout.
+**Test detail (all PASS):** worst nearest ore = **16.0 tiles** (limit 16;
+6–14 tile band, 16 as last resort), max dilated footprint overlaps = **0**,
+min centre separation = **11.04 tiles**, ore counts match the baseline for all
+8 seeds, and the same seed gives a byte-identical ore layout.
 
 ### 2.5 Static map cache — skipped (decision recorded)
 
@@ -330,12 +333,13 @@ the uniform/interface set is unchanged, and the only new maths is gated by
 | `app/tests/t_nav_smoke.gd` | **6/6 PASS** (reported console; 6 checks in source) | No JSON persisted in `app/tests/results/` |
 | Minimap `hud.gd` | `--check-only` clean (lane report) | No dedicated JSON |
 | `app/tests/t_shore_smoke.gd` | **6/6 PASS** | `app/tests/results/t_shore_smoke.json` |
-| `app/tests/t_mines_fix.gd` | **4/4 PASS** | `app/tests/results/t_mines_fix.json` |
+| `app/tests/t_mines_fix.gd` | **5/5 PASS** (8-seed count baseline) | `app/tests/results/t_mines_fix.json` |
 | `app/tests/t_wave_smoke.gd` | **9/9 PASS** (reported console) | No JSON persisted |
 
 - **Shore smoke details**: wash depth = 0.48, pale lerp = 0.40, water chunk
   found, bed 64×64, **108 distinct colours**, two bakes identical.
-- **Mines fix details**: worst-nearest ore 24.9 tiles; zero dilated footprint
+- **Mines fix details**: ore anchored to the actual hall spawn; worst-nearest
+  ore 16.0 tiles (6–14 tile band, 16 as last resort); zero dilated footprint
   overlaps; min centre separation 11.04 tiles; counts match the 8-seed
   baseline; same seed → identical layout.
 - **Wave smoke details**: 6 script-load checks + source scans for
@@ -421,7 +425,7 @@ regression with seed + screenshot.
 - [ ] Two bakes of the same chunk are byte-identical (108 distinct colours, non-flat).
 
 ### Mines
-- [ ] Each start has gold, iron and coal within 26 tiles (target band 10–24).
+- [ ] Each start has gold, iron and coal within 16 tiles of its actual hall spawn (target band 6–14, 16 as last resort).
 - [ ] No two ore aprons visually intersect; map-wide footprints are disjoint with dirt gaps.
 - [ ] Ore count per seed matches the baseline (seed 1006 = 18 is expected).
 - [ ] Same seed produces an identical ore layout across two generations.

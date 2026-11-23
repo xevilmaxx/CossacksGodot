@@ -173,10 +173,15 @@ static var PLAYER_NAMES := ["Russia", "Bavaria", "Poland", "Sweden"]
 static var PLAYER_NATIONS := ["rus", "bav", "pol", "swe"]  # country.script sids, menu picks these
 # P-42 sim contract. main.gd writes these through Object.set(); keep the exact
 # names/types. Defaults stay 2 players / free-for-all so existing tests hold.
-# T-MENU-ROSTER: the skirmish lobby can field 2..8 players. MAX_PLAYERS is the
-# single cap used by menu.gd (row rebuild), main.gd (cfg mapping), config.gd
-# (saved configs) and game.gd (setup_begin clamp).
-const MAX_PLAYERS := 8
+# T-MENU-ROSTER / T-MENU-MORE-PLAYERS: the skirmish lobby can field 2..12
+# players. MAX_PLAYERS is the single cap used by menu.gd (row rebuild),
+# main.gd (cfg mapping), config.gd (saved configs) and game.gd (setup_begin /
+# _ensure_start_slots clamp).
+# PORT EXTENSION: the donor's gc_MaxNonSpectatorsCount is 8 (gc_MaxPlayerCount
+# is 12 including pseudo/spectator slots). The owner explicitly asked for MORE
+# skirmish players, so the port expands its non-spectator cap to 12 and
+# documents this as a PORT EXTENSION beyond donor spec (DONOR_OPTIONS_GAPS.md).
+const MAX_PLAYERS := 12
 static var PLAYER_COUNT := 2
 static var TEAMS: Array = []
 # Per-slot Human/Computer pick from the roster UI. Empty => legacy fallback

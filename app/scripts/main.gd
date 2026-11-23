@@ -215,9 +215,9 @@ func _on_menu_chosen(cfg: Dictionary) -> void:
 func _apply_menu_cfg(cfg: Dictionary) -> void:
 	var n0 := str(cfg.get("nation0", "ukr"))
 	var n1 := str(cfg.get("nation1", "rus"))
-	# T-MENU-ROSTER: the skirmish lobby emits a full per-slot roster. When that
-	# array is present it is authoritative (2..8 slots, explicit nation / team /
-	# control pick); otherwise the legacy opponents/teams path below keeps old
+	# T-MENU-ROSTER / T-MENU-MORE-PLAYERS: the skirmish lobby emits a full
+	# per-slot roster. When present it is authoritative (2..12 slots, explicit
+	# nation / team / control pick); otherwise the legacy path below keeps old
 	# callers (uitest / selftest / saved loads) byte-stable.
 	var roster: Array = cfg.get("players", []) if cfg.get("players") is Array else []
 	if not roster.is_empty():

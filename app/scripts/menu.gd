@@ -67,8 +67,16 @@ var season := "summer"       # donor Season; enum Data.BIOME = summer / winter /
 var relief := "plain"        # donor Relief id (6 values in Data.DONOR_RELIEF)
 var ui_us := 1.0
 var ui_vp := Vector2(1280, 720)
-var menu_scroll: ScrollContainer
+# Shell hosts: the legacy centered card (main menu / battles / campaigns) and
+# the full-screen skirmish shell. Only one owns `root` at a time.
+var shell_center: CenterContainer
+var shell_full: Control
+var columns: HBoxContainer
+var menu_scroll: ScrollContainer       # left column (roster on skirmish)
+var options_scroll: ScrollContainer    # right column (donor options, skirmish only)
+var options_body: VBoxContainer        # right content
 var action_bar: HBoxContainer
+var skirmish_fullscreen := false
 var main_menu_active := true
 
 func _ready() -> void:
@@ -130,23 +138,34 @@ func _apply_scale() -> void:
 		if mw > 0.0 or mh > 0.0:
 			var cur: Vector2 = c.custom_minimum_size
 			c.custom_minimum_size = Vector2(_mh(mw) if mw > 0.0 else cur.x, _mh(mh) if mh > 0.0 else cur.y)
-	if is_instance_valid(root) and is_instance_valid(menu_scroll) and is_instance_valid(body):
-		root.custom_minimum_size.x = minf(560.0 * ui_us, ui_vp.x * 0.94)
-		# Deterministic content height from row types (buttons 40, option /
-		# seed rows 38, labels 40 + separations): measuring combined minimums
-		# is unreliable because autowrapped labels report per-character-wrap
-		# heights when unconstrained (blew the card up to 2.5k px).
-		var want := 0.0
-		for ch in body.get_children():
-			if ch is BaseButton:
-				want += 40.0 * ui_us
-			elif ch is HBoxContainer:
-				want += 34.0 * ui_us
-			elif ch is Label:
-				want += 32.0 * ui_us
-			want += 8.0 * ui_us
-		var avail: float = maxf(120.0, ui_vp.y * 0.86 - 150.0 * ui_us)
-		menu_scroll.custom_minimum_size.y = minf(want, avail)
+	if not is_instance_valid(root) or not is_instance_valid(menu_scroll):
+		return
+	if skirmish_fullscreen:
+		# Full-screen: the shell anchors drive the size, both columns expand
+		# into the remaining height and scroll independently. Minimum widths
+		# are viewport fractions so the two columns can never overfill it.
+		root.custom_minimum_size = Vector2(0, 0)
+		menu_scroll.custom_minimum_size = Vector2(
+			minf(360.0 * ui_us, ui_vp.x * 0.36), 0.0)
+		options_scroll.custom_minimum_size = Vector2(
+			minf(380.0 * ui_us, ui_vp.x * 0.50), 0.0)
+		return
+	root.custom_minimum_size.x = minf(560.0 * ui_us, ui_vp.x * 0.94)
+	# Deterministic content height from row types (buttons 40, option /
+	# seed rows 38, labels 40 + separations): measuring combined minimums
+	# is unreliable because autowrapped labels report per-character-wrap
+	# heights when unconstrained (blew the card up to 2.5k px).
+	var want := 0.0
+	for ch in body.get_children():
+		if ch is BaseButton:
+			want += 40.0 * ui_us
+		elif ch is HBoxContainer:
+			want += 34.0 * ui_us
+		elif ch is Label:
+			want += 32.0 * ui_us
+		want += 8.0 * ui_us
+	var avail: float = maxf(120.0, ui_vp.y * 0.86 - 150.0 * ui_us)
+	menu_scroll.custom_minimum_size.y = minf(want, avail)
 
 func _load_data() -> void:
 	var paths := ["res://assets/missions.json", "user://missions.json"]
@@ -217,16 +236,28 @@ func _battles() -> Array:
 
 func _build() -> void:
 	ui_us = _calc_us()
-	# Full-rect centering + a card that can never outgrow the window: the
-	# body scrolls instead of clipping, at any window size or aspect.
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
+	# Two shell hosts. The centered card serves main menu / battles / campaigns;
+	# skirmish reparents `root` into the full-rect shell and gets two independent
+	# scrolling columns, so all 12 roster rows + donor options stay reachable
+	# at any window size without a tiny centered dialog.
+	shell_full = Control.new()
+	shell_full.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Both shells are sibling full-rect Controls. Godot's hit test returns the
+	# topmost Control under the cursor even with MOUSE_FILTER_PASS (PASS only
+	# forwards the event up the parent chain, it never reaches siblings
+	# behind). The shell that does not currently host `root` must therefore be
+	# IGNORE, or its empty full-rect area swallows every click and scroll.
+	shell_full.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(shell_full)
+	shell_center = CenterContainer.new()
+	shell_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(shell_center)
 	root = PanelContainer.new()
 	root.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
-	center.add_child(root)
+	shell_center.add_child(root)
 	var vb := VBoxContainer.new()
 	vb.add_theme_constant_override("separation", 10)
+	vb.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(vb)
 	title_label = Label.new()
 	title_label.text = "CossacksGodot — singleplayer"
@@ -241,25 +272,89 @@ func _build() -> void:
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vb.add_child(sub)
+	# Content columns. The right column is hidden outside skirmish, so the old
+	# single-column centered card keeps its exact layout and scaling.
+	columns = HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 10)
+	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vb.add_child(columns)
 	menu_scroll = ScrollContainer.new()
 	menu_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	vb.add_child(menu_scroll)
+	menu_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	menu_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columns.add_child(menu_scroll)
 	body = VBoxContainer.new()
 	body.add_theme_constant_override("separation", 8)
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	menu_scroll.add_child(body)
-	# Pinned action row: a sibling of the scroll area, never inside it, so
-	# Start/Back stay clickable even when the option rows need scrolling.
+	options_scroll = ScrollContainer.new()
+	options_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	options_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	options_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	options_scroll.visible = false
+	columns.add_child(options_scroll)
+	options_body = VBoxContainer.new()
+	options_body.add_theme_constant_override("separation", 8)
+	options_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	options_scroll.add_child(options_body)
+	# Pinned action row: a sibling of the scroll columns, never inside one, so
+	# Start/Back stay clickable even when either column needs scrolling.
 	action_bar = HBoxContainer.new()
 	action_bar.add_theme_constant_override("separation", 8)
 	action_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vb.add_child(action_bar)
 	_show_main()
 
+# Keep the shell that hosts `root` last (topmost). Hit testing walks siblings
+# in reverse order, so the last child wins at any overlapping point.
+func _raise_shell(active: Control) -> void:
+	var parent := active.get_parent()
+	if parent == null:
+		return
+	var idle := shell_center if active == shell_full else shell_full
+	if active.get_index() < idle.get_index():
+		parent.move_child(active, idle.get_index())
+
+func _set_fullscreen(on: bool) -> void:
+	skirmish_fullscreen = on
+	if on:
+		if root.get_parent() != shell_full:
+			root.reparent(shell_full)
+		# An empty full-rect shell with STOP/PASS is still hit by the viewport
+		# (PASS is not "click-through" - it only continues up the parent
+		# chain). Make the idle shell transparent and raise the active one so
+		# no overlay can steal clicks or wheel events from the skirmish UI.
+		shell_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shell_full.mouse_filter = Control.MOUSE_FILTER_STOP
+		_raise_shell(shell_full)
+		root.set_anchors_preset(Control.PRESET_FULL_RECT)
+		root.offset_left = 8
+		root.offset_top = 8
+		root.offset_right = -8
+		root.offset_bottom = -8
+		root.custom_minimum_size = Vector2(0, 0)
+		menu_scroll.size_flags_stretch_ratio = 0.42
+		options_scroll.size_flags_stretch_ratio = 0.58
+		options_scroll.visible = true
+	else:
+		if root.get_parent() != shell_center:
+			root.reparent(shell_center)
+		shell_full.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		shell_center.mouse_filter = Control.MOUSE_FILTER_PASS
+		_raise_shell(shell_center)
+		root.set_anchors_preset(Control.PRESET_CENTER)
+		options_scroll.visible = false
+		root.custom_minimum_size.x = minf(560.0 * ui_us, ui_vp.x * 0.94)
+
 func _clear() -> void:
 	main_menu_active = false
+	_set_fullscreen(false)
 	for c in body.get_children():
 		body.remove_child(c)
+		c.queue_free()
+	for c in options_body.get_children():
+		options_body.remove_child(c)
 		c.queue_free()
 	for c in action_bar.get_children():
 		action_bar.remove_child(c)
@@ -334,9 +429,10 @@ func _opt_row(label_text: String, items: Array, current: String, on_pick: Callab
 
 # ------------------------------------------------------------------- roster UI
 # The donor lobby's per-player list layout is inferred, not byte-verified:
-# the readable build exposes 2..8 slots, faction 0..3 and the team presets,
-# but not the exact widget arrangement. This reproduces the information in a
-# compact row that still fits the 1280x720 scaled card.
+# the readable build exposes 2..8 slots (gc_MaxNonSpectatorsCount), faction
+# 0..3 and the team presets, but not the exact widget arrangement. This port
+# extends the cap to 12 (owner request; PORT EXTENSION beyond donor spec) and
+# renders the rows in the full-screen skirmish left column.
 
 func _all_nations() -> Array:
 	var keys := Data.NATIONS.keys()
@@ -382,13 +478,17 @@ func _sim_difficulty(donor_id: String) -> String:
 		"hard", "veryhard", "impossible": return "hard"
 		_: return "normal"
 
-# Read-only copy of hud.gd MM_PLAYER_COLORS (that lane owns the palette); used
-# only for the donor's per-player Color swatch, never for gameplay logic.
+# Per-player Color swatch. Slots 0..7 mirror the donor palette; slots 8..11
+# are the T-MENU-MORE-PLAYERS port extension and match world.gd PLAYER_COLORS.
+# The hud.gd minimap palette is owned by another lane and still has 8 entries
+# with a grey fallback, so ids 8..11 read grey there (no crash).
 const ROSTER_COLORS := [
 	Color(0.30, 0.62, 1.00), Color(1.00, 0.32, 0.26),
 	Color(1.00, 0.78, 0.22), Color(0.42, 0.85, 0.42),
 	Color(0.70, 0.45, 1.00), Color(0.25, 0.85, 0.85),
 	Color(1.00, 0.55, 0.72), Color(0.85, 0.85, 0.85),
+	Color(1.00, 0.60, 0.10), Color(0.55, 0.95, 0.30),
+	Color(0.10, 0.70, 0.65), Color(0.65, 0.42, 0.22),
 ]
 
 func _team_preset_items() -> Array:
@@ -480,12 +580,12 @@ func _rebuild_roster() -> void:
 	roster_team_buttons.clear()
 	_ensure_roster()
 	_apply_team_preset()
-	# Re-insert directly after the "Team preset" row.
+	# Re-insert after the "Team preset" row / donor column header (whichever
+	# comes last), so the rows always sit under the header in the left column.
 	var at := 0
 	for c in body.get_children():
-		if c.has_meta("team_preset_row"):
+		if c.has_meta("team_preset_row") or c.has_meta("roster_header_row"):
 			at = c.get_index() + 1
-			break
 	for i in players:
 		var row := _roster_row(i)
 		body.add_child(row)
@@ -493,13 +593,33 @@ func _rebuild_roster() -> void:
 		at += 1
 	_apply_scale()
 
+# Donor-like column header for the left (roster) column. The widths mirror
+# _roster_row's widgets so the five columns line up across all 12 rows.
+func _roster_header() -> HBoxContainer:
+	var hb := HBoxContainer.new()
+	hb.set_meta("roster_header_row", true)
+	hb.add_theme_constant_override("separation", 4)
+	# The Nation column expands in both the header and the rows so Team/AI/Color
+	# line up; autowrap is off so short headers never break into two lines.
+	var cols := [["Player", 40.0, false], ["Nation", 132.0, true],
+		["Team", 76.0, false], ["AI", 100.0, false], ["Color", 40.0, false]]
+	for c in cols:
+		var l := _lbl(str(c[0]), 11, Color(0.85, 0.72, 0.35))
+		l.autowrap_mode = TextServer.AUTOWRAP_OFF
+		l.custom_minimum_size = Vector2(_mh(float(c[1])), 0)
+		l.set_meta("uimw", float(c[1]))
+		if bool(c[2]):
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hb.add_child(l)
+	return hb
+
 func _roster_row(i: int) -> HBoxContainer:
 	var hb := HBoxContainer.new()
 	hb.set_meta("roster_row", true)
 	hb.add_theme_constant_override("separation", 4)
 	var tag := _lbl("P%d" % (i + 1), 12, Color(0.95, 0.88, 0.65))
-	tag.custom_minimum_size = Vector2(_mh(26.0), 0)
-	tag.set_meta("uimw", 26.0)
+	tag.custom_minimum_size = Vector2(_mh(40.0), 0)
+	tag.set_meta("uimw", 40.0)
 	hb.add_child(tag)
 	var on_nation := func(id: String, pi: int) -> void:
 		roster_nations[pi] = id
@@ -538,9 +658,13 @@ func _roster_cfg() -> Array:
 func _show_skirmish() -> void:
 	_clear()
 	mode = "skirmish"
+	# T-MENU-MORE-PLAYERS: skirmish owns the full screen (other screens keep the
+	# centered card). LEFT column = donor player list Player | Nation | Team |
+	# AI | Color with up to 12 rows; RIGHT column = map/resources/rules options.
+	_set_fullscreen(true)
 	# OWNER-SPEC: donor player list is Player | Nation | Team | Color with a
-	# per-player AI-difficulty dropdown; 8 slots, min 2 inferred. The rows below
-	# are rebuilt whenever the player count or team preset changes.
+	# per-player AI-difficulty dropdown; 2..12 slots (12 is a PORT EXTENSION).
+	# The rows below are rebuilt whenever the player count or preset changes.
 	_ensure_roster()
 	body.add_child(_opt_row("Players", _player_items(), str(players), func(id: String):
 		players = int(id)
@@ -550,49 +674,50 @@ func _show_skirmish() -> void:
 		_rebuild_roster())
 	tp.set_meta("team_preset_row", true)
 	body.add_child(tp)
+	body.add_child(_roster_header())
 	_rebuild_roster()
-	# OWNER-SPEC deep donor lobby. Rows are grouped by labelled section headers;
-	# the scroll container keeps all of them reachable at 1280x720. Exact donor
-	# support status for every row is in docs/DONOR_OPTIONS_GAPS.md.
-	body.add_child(_section_label("Map"))
-	body.add_child(_opt_row("Map shape", _terrain_types(), terrain_type, func(id: String): terrain_type = id; map_type = id))
-	body.add_child(_opt_row("Relief", _relief_types(), relief, func(id: String): relief = id))
-	body.add_child(_opt_row("Season", [{"id": "summer", "name": "Summer"}, {"id": "desert", "name": "Desert"}, {"id": "winter", "name": "Winter"}], season, func(id: String): season = id))
+	# OWNER-SPEC deep donor lobby. Rows are grouped by labelled section headers
+	# in the RIGHT column; its own scroll container keeps all of them reachable
+	# at any resolution. Status for every row is in docs/DONOR_OPTIONS_GAPS.md.
+	options_body.add_child(_section_label("Map"))
+	options_body.add_child(_opt_row("Map shape", _terrain_types(), terrain_type, func(id: String): terrain_type = id; map_type = id))
+	options_body.add_child(_opt_row("Relief", _relief_types(), relief, func(id: String): relief = id))
+	options_body.add_child(_opt_row("Season", [{"id": "summer", "name": "Summer"}, {"id": "desert", "name": "Desert"}, {"id": "winter", "name": "Winter"}], season, func(id: String): season = id))
 	# OWNER-SPEC: donor Map Size = Tiny | Normal | Large 2x | Huge 4x.
 	# Port metric mapping is an inference (generator takes raw tile counts):
 	# Tiny=240, Normal=320, Large 2x=400, Huge 4x=480.
-	body.add_child(_opt_row("Map size", [{"id": "240", "name": "Tiny"}, {"id": "320", "name": "Normal"}, {"id": "400", "name": "Large 2x"}, {"id": "480", "name": "Huge 4x"}], str(map_size), func(id: String): map_size = int(id)))
-	body.add_child(_section_label("Resources & placement"))
-	body.add_child(_opt_row("Minerals", [{"id": "low", "name": "Poor"}, {"id": "med", "name": "Medium"}, {"id": "rich", "name": "Rich"}, {"id": "random", "name": "Random"}], richness, func(id: String): richness = id))
-	body.add_child(_opt_row("Starting resources", [{"id": "normal", "name": "Normal"}, {"id": "rich", "name": "Rich"}, {"id": "thousands", "name": "Thousands"}, {"id": "millions", "name": "Millions"}, {"id": "random", "name": "Random"}], start_resources, func(id: String): start_resources = id))
-	body.add_child(_opt_row("Allies", [{"id": "default", "name": "Default"}, {"id": "nearby", "name": "Nearby"}], allies, func(id: String): allies = id))
-	body.add_child(_section_label("Rules"))
-	body.add_child(_opt_row("Starting", _starts(), start_option, func(id: String): start_option = id))
-	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
-	body.add_child(_opt_row("Balloon", _donor_items(Data.DONOR_BALLOON,
+	options_body.add_child(_opt_row("Map size", [{"id": "240", "name": "Tiny"}, {"id": "320", "name": "Normal"}, {"id": "400", "name": "Large 2x"}, {"id": "480", "name": "Huge 4x"}], str(map_size), func(id: String): map_size = int(id)))
+	options_body.add_child(_section_label("Resources & placement"))
+	options_body.add_child(_opt_row("Minerals", [{"id": "low", "name": "Poor"}, {"id": "med", "name": "Medium"}, {"id": "rich", "name": "Rich"}, {"id": "random", "name": "Random"}], richness, func(id: String): richness = id))
+	options_body.add_child(_opt_row("Starting resources", [{"id": "normal", "name": "Normal"}, {"id": "rich", "name": "Rich"}, {"id": "thousands", "name": "Thousands"}, {"id": "millions", "name": "Millions"}, {"id": "random", "name": "Random"}], start_resources, func(id: String): start_resources = id))
+	options_body.add_child(_opt_row("Allies", [{"id": "default", "name": "Default"}, {"id": "nearby", "name": "Nearby"}], allies, func(id: String): allies = id))
+	options_body.add_child(_section_label("Rules"))
+	options_body.add_child(_opt_row("Starting", _starts(), start_option, func(id: String): start_option = id))
+	options_body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
+	options_body.add_child(_opt_row("Balloon", _donor_items(Data.DONOR_BALLOON,
 		{"default": "Default", "no_balloons": "No Balloons", "balloons": "Balloons"}),
 		balloon, func(id: String): balloon = id))
-	body.add_child(_opt_row("Cannons", _donor_items(Data.DONOR_CANNONS,
+	options_body.add_child(_opt_row("Cannons", _donor_items(Data.DONOR_CANNONS,
 		{"default": "Default", "no_cannons_towers_walls": "No Cannons Towers Walls", "expensive_cannons": "Expensive Cannons"}),
 		cannons, func(id: String): cannons = id))
-	body.add_child(_opt_row("Peace time", _peace_items(), str(peace_time), func(id: String): peace_time = int(id)))
-	body.add_child(_opt_row("18th century", _donor_items(Data.DONOR_CENTURY18,
+	options_body.add_child(_opt_row("Peace time", _peace_items(), str(peace_time), func(id: String): peace_time = int(id)))
+	options_body.add_child(_opt_row("18th century", _donor_items(Data.DONOR_CENTURY18,
 		{"default": "Default", "never": "Never", "immediately": "Immediately"}),
 		century18, func(id: String): century18 = id))
-	body.add_child(_opt_row("Capture", _donor_items(Data.DONOR_CAPTURE,
+	options_body.add_child(_opt_row("Capture", _donor_items(Data.DONOR_CAPTURE,
 		{"default": "Default", "no_peasants": "No Capturing Peasants",
 		"no_peasants_or_centres": "No Peasants or Centres", "artillery_only": "Artillery Only"}),
 		capture, func(id: String): capture = id))
-	body.add_child(_opt_row("Dip.center & market", _donor_items(Data.DONOR_MARKET_DIP,
+	options_body.add_child(_opt_row("Dip.center & market", _donor_items(Data.DONOR_MARKET_DIP,
 		{"default": "Default", "without_dip_center": "Without dip.center",
 		"without_market": "Without market", "without_both": "Without both"}),
 		market_dip, func(id: String): market_dip = id))
-	body.add_child(_opt_row("Pop limit", _pop_items(), str(pop_limit), func(id: String): pop_limit = int(id)))
-	body.add_child(_opt_row("Adviser", _donor_items(Data.DONOR_ADVISER,
+	options_body.add_child(_opt_row("Pop limit", _pop_items(), str(pop_limit), func(id: String): pop_limit = int(id)))
+	options_body.add_child(_opt_row("Adviser", _donor_items(Data.DONOR_ADVISER,
 		{"default": "Default", "with": "With", "without": "Without"}), adviser, func(id: String): adviser = id))
-	body.add_child(_opt_row("Autosave", _donor_items(Data.DONOR_AUTOSAVE,
+	options_body.add_child(_opt_row("Autosave", _donor_items(Data.DONOR_AUTOSAVE,
 		{"off": "Off", "on": "On", "every_5_min": "Every 5 min"}), autosave, func(id: String): autosave = id))
-	body.add_child(_opt_row("Game speed", _donor_items(Data.DONOR_GAME_SPEED.keys(),
+	options_body.add_child(_opt_row("Game speed", _donor_items(Data.DONOR_GAME_SPEED.keys(),
 		{"slow": "Slow", "normal": "Normal", "fast": "Fast", "very_fast": "Very fast"}),
 		game_speed, func(id: String): game_speed = id))
 	var shb := HBoxContainer.new()
@@ -611,7 +736,7 @@ func _show_skirmish() -> void:
 	seedbox.set_meta("uifs", 14)
 	seedbox.value_changed.connect(func(v: float): seed_val = int(v))
 	shb.add_child(seedbox)
-	body.add_child(shb)
+	options_body.add_child(shb)
 	var go := _btn("Start skirmish")
 	go.pressed.connect(func(): _emit_start("Skirmish"))
 	action_bar.add_child(go)

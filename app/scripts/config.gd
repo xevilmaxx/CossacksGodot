@@ -405,8 +405,9 @@ func apply() -> void:
 	Data.START_OPTION = text("gameplay.start_option", "default")
 	var n0 := text("gameplay.nation0", "ukr")
 	var n1 := text("gameplay.nation1", "rus")
-	# T-MENU-ROSTER: a saved config may carry the full 2..8 roster. Prefer it,
-	# otherwise the legacy nation0/nation1 keys still seed the two-slot default.
+	# T-MENU-ROSTER / T-MENU-MORE-PLAYERS: a saved config may carry the full
+	# 2..12 roster. Prefer it, otherwise the legacy nation0/nation1 keys still
+	# seed the two-slot default.
 	var pn: Variant = section("gameplay").get("player_nations", [])
 	if pn is Array and not (pn as Array).is_empty():
 		var ns := []

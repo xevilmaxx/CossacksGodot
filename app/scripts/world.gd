@@ -1873,11 +1873,16 @@ func patrol_route_active() -> bool:
 # indexed directly and crashed with OOB for p>=2. Values are copied read-only
 # from hud.gd MM_PLAYER_COLORS (that lane owns the minimap palette); wrapi gives
 # a safe modulo fallback for out-of-range / negative player ids.
+# T-MENU-MORE-PLAYERS: 8 donor lanes + 4 port-extension lanes (slots 8..11)
+# so a 12-player skirmish gives every participant a distinct tint. The modulo
+# fallback stays as a safety net for any caller passing a larger id.
 const PLAYER_COLORS := [
 	Color(0.30, 0.62, 1.00), Color(1.00, 0.32, 0.26),
 	Color(1.00, 0.78, 0.22), Color(0.42, 0.85, 0.42),
 	Color(0.70, 0.45, 1.00), Color(0.25, 0.85, 0.85),
 	Color(1.00, 0.55, 0.72), Color(0.85, 0.85, 0.85),
+	Color(1.00, 0.60, 0.10), Color(0.55, 0.95, 0.30),
+	Color(0.10, 0.70, 0.65), Color(0.65, 0.42, 0.22),
 ]
 
 func _player_color(p: int) -> Color:

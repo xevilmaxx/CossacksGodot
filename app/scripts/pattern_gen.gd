@@ -348,7 +348,9 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# Pass 1 - guaranteed close cluster per start: one of each ore, spaced
 	# around the start (base angle is per-start seeded) so deposits fall in
 	# different quadrants instead of one direction.  Distance is drawn from
-	# ring0, tight and capped, so every player starts with all three ores near.
+	# ring0, tight and capped.  KEEP THIS BAND AND ITS RNG DRAW COUNT EXACTLY:
+	# it decides HOW MANY stamps exist (count parity with the pre-fix baseline).
+	# T-MINES-START-FIX only relocates those same stamps at the end of build().
 	for st in start_tiles:
 		var base := mine_rng.randf() * TAU
 		# Edge-adaptive near radius: the scaled mine footprint is ~10 tiles on a
@@ -546,7 +548,9 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# relocates those SAME stamp objects - it never adds or removes one - so the
 	# count is unchanged while the layout gains two hard guarantees:
 	#   (1) every start_tiles entry gets gold+iron+coal on open ground in the
-	#       10..24 tile band, in distinct 120-deg sectors;
+	#       6..14 tile band (worst case 16 after the last-resort widen), with
+	#       distinct 120-deg sectors as a PREFERENCE, not a hard constraint:
+	#       proximity to the hall wins if a sector is blocked/crowded;
 	#   (2) no two mine footprints intersect.  A mine reserves its scaled donor
 	#       cells dilated by 1 tile, which also keeps the ~3-tile dirt aprons
 	#       painted by game.gd from touching (centre separation >= ~11 tiles).
@@ -618,7 +622,8 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		if mst.kind == "mine":
 			mine_stamps.append(mst)
 
-	# (1) near-start guarantee: one stamp per ore family, distinct sectors.
+	# (1) near-start guarantee: one stamp per ore family, close to THIS hall.
+	# Sector separation is a soft preference; proximity is the hard contract.
 	var mf_claimed: Array = []
 	for st in start_tiles:
 		var base := mine_rng.randf() * TAU
@@ -638,17 +643,17 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 			var sector := base + float(ki) * TAU / float(kinds.size())
 			var done := false
 			# Prefer the ore's own sector on open ground; then any open angle;
-			# then relax the forest/stone block; only widen past 24 tiles as a
-			# last resort (the gameplay guarantee is <= 26 tiles).
+			# then relax the forest/stone block; only widen to 16 tiles as a
+			# last resort (hard gameplay guarantee: nearest ore <= 16 tiles).
 			for pass_i in 4:
 				for _a in 128:
 					var ang := sector + mine_rng.randf_range(-1.0, 1.0)
 					if pass_i == 1 or pass_i == 3:
 						ang = mine_rng.randf() * TAU   # sector points off-map
-					var hi := 24
+					var hi := 14
 					if pass_i == 3:
-						hi = 26                        # widen honestly if needed
-					var dst := float(mine_rng.randi_range(10, hi))
+						hi = 16                        # widen honestly if needed
+					var dst := float(mine_rng.randi_range(6, hi))
 					var cx := int(round(st.x + cos(ang) * dst))
 					var cy := int(round(st.y + sin(ang) * dst))
 					var use_ignore := pass_i >= 2

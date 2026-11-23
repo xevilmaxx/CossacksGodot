@@ -4,7 +4,8 @@
 #       --headless --path app --script res://tests/t_mines_fix.gd
 #
 # Asserts, across 8 seeds:
-#   (a) every start has gold + iron + coal within 26 tiles;
+#   (a) every start (the FINAL map_starts == town-hall anchor) has gold + iron
+#       + coal within 16 tiles of its hall;
 #   (b) ZERO footprint intersection between ore nodes (stamped donor cells
 #       dilated by 1 tile) and >= 10-tile centre separation (dirt aprons);
 #   (c) total ore count equals the recorded pre-fix baseline for that seed;
@@ -102,6 +103,7 @@ func _initialize() -> void:
 	var all_served := true
 	var all_disjoint := true
 	var all_counts := true
+	var all_halls := true
 	var worst_near := 0.0
 	var min_sep := 1.0e9
 	var max_overlaps := 0
@@ -114,7 +116,17 @@ func _initialize() -> void:
 		var ores := _ores(g)
 		var stamps := _mine_stamps(g)
 
-		# (a) every start served in <= 26 tiles
+		# (a0) the town hall is spawned exactly at map_starts[i] - the distance
+		# measured below is from the ACTUAL hall, not an assumed anchor.
+		for pi in g.players.size():
+			var hall_pos := Vector2.INF
+			for b in g.buildings_of(pi, false):
+				if b.sid == "cen":
+					hall_pos = b.pos
+					break
+			if hall_pos == Vector2.INF or hall_pos.distance_to(g.map_starts[pi]) > 0.01:
+				all_halls = false
+		# (a) every start served in <= 16 tiles of its hall
 		var seed_served := true
 		for stv in g.map_starts:
 			var st: Vector2 = stv
@@ -124,7 +136,7 @@ func _initialize() -> void:
 					if str(n.type) == k:
 						dmin = minf(dmin, n.pos.distance_to(st) / g.TILE)
 				worst_near = maxf(worst_near, dmin)
-				if dmin > 26.0:
+				if dmin > 16.0:
 					seed_served = false
 		if not seed_served:
 			all_served = false
@@ -151,8 +163,10 @@ func _initialize() -> void:
 			sd, ores.size(), expect, stamps.size(), overlaps, worst_near, min_sep])
 		g.free()
 
-	check("all_starts_served_within_26_tiles", all_served,
-		"worst_nearest=%.1f tiles" % worst_near)
+	check("hall_spawn_matches_map_starts", all_halls,
+		"each player's 'cen' building sits at map_starts[i]")
+	check("all_starts_served_within_16_tiles", all_served,
+		"worst_nearest=%.1f tiles (limit 16)" % worst_near)
 	check("zero_mine_footprint_intersection", all_disjoint,
 		"max_dilated_overlaps=%d min_centre_sep=%.2f tiles" % [max_overlaps, min_sep])
 	check("ore_count_matches_pre_fix_baseline", all_counts,

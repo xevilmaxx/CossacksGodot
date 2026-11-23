@@ -1,8 +1,13 @@
 {
 	"checks": [
 		{
-			"detail": "worst_nearest=24.9 tiles",
-			"name": "all_starts_served_within_26_tiles",
+			"detail": "each player's 'cen' building sits at map_starts[i]",
+			"name": "hall_spawn_matches_map_starts",
+			"passed": true
+		},
+		{
+			"detail": "worst_nearest=16.0 tiles (limit 16)",
+			"name": "all_starts_served_within_16_tiles",
 			"passed": true
 		},
 		{
@@ -23,5 +28,5 @@
 	],
 	"id": "t_mines_fix",
 	"passed": true,
-	"unix_ms": 1795447968566.0
+	"unix_ms": 1795449992847.0
 }

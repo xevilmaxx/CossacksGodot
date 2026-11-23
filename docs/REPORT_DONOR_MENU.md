@@ -25,7 +25,10 @@ status: green-donor / amber-port
   `M app/scripts/menu.gd`, `main.gd`, `data.gd`, `config.gd`, `game.gd`,
   `world.gd`; `?? app/tests/t_menu_roster.gd`). It is **not a UI-only facade**:
   the roster reaches `Data.*` statics, `game.setup_begin`, team/ally logic and
-  the game-over screen. The 6-player headless test result JSON is **13/13 PASS**.
+  the game-over screen. `Data.MAX_PLAYERS` is now **12 — a PORT EXTENSION
+  beyond the donor's 8 usable slots** — with Players 2..12, a full-screen
+  two-column layout (left roster / right options, pinned action bar) and a
+  12-colour minimap palette. The headless test result JSON is **30/30 PASS**.
 - **Honest limits remain**: the donor's 10 named extra dropdowns (Balloon,
   Cannons, Peace Time, 18th Century, Capture, Dip.center/market, Pop limit,
   Adviser, Game Speed, Autosave) are **not implemented**; `allies` and
@@ -134,7 +137,7 @@ This section describes code as read, not a released commit.
 
 | | Before | After |
 |---|---|---|
-| Player pick | "Your nation" / "Enemy nation" / "Opponents" 1–3 / "Teams" `ffa`\|`2v1` | "Players" 2–8 + "Team preset" `ffa`\|`2`\|`3`\|`4`, followed by `P1..Pn` rows rebuilt on change (`menu.gd:495-510`, `:432-451`) |
+| Player pick | "Your nation" / "Enemy nation" / "Opponents" 1–3 / "Teams" `ffa`\|`2v1` | "Players" 2–12 (PORT EXTENSION; donor max 8) + "Team preset" `ffa`\|`2`\|`3`\|`4`, followed by `P1..Pn` rows rebuilt on change (`menu.gd:495-510`, `:432-451`) |
 | Per-player state | none | parallel arrays `roster_nations`, `roster_teams`, `roster_ai`, `roster_names`, `roster_difficulty` (`menu.gd:28-37`) |
 | Per-player row | n/a | Nation (all 21 port nations), Team (`-`,1,2,3,4 → `-1`,0,1,2,3), AI difficulty (5 donor labels), read-only Color swatch (`menu.gd:453-483`) |
 | Map Size row | raw `240/320/400` | donor labels `Tiny/Normal/Large 2x/Huge 4x` with ids `240/320/400/480` (`menu.gd:529-532`) |
@@ -142,13 +145,14 @@ This section describes code as read, not a released commit.
 | Starting resources / Allies | absent | two new rows (`menu.gd:519-524`) |
 | `cfg` emitted | legacy keys only | legacy keys **plus** `players` roster, `allies`, `start_resources` (`menu.gd:697-719`) |
 | Difficulty mapping | single global | donor ids retained in `ai_difficulty`, collapsed to sim `easy/normal/hard` in `difficulty` (`menu.gd:334-340`, `:485-493`) |
+| Layout | narrow dialog | full-screen two-column skirmish view: left = players picker + column headers + roster rows, right = donor options, with a pinned action bar at the bottom (`ui_fullscreen_layout` PASS) |
 
 Team preset math: `k` teams spread evenly (`int(i*k/players)`), so 4 players /
 2 teams → `[0,0,1,1]` (`menu.gd:424-429`). FFA stores team `-1`.
 
 ### 3.2 `app/scripts/data.gd`
 
-- Added `const MAX_PLAYERS := 8` and the single shared cap used by menu/main/config/game (`data.gd:176-179`).
+- `const MAX_PLAYERS := 12` (was 8; **PORT EXTENSION beyond the donor's 8 usable slots**) and the single shared cap used by menu/main/config/game (`data.gd:176-179`).
 - Added `PLAYER_AI: Array` and `PLAYER_AI_DIFFICULTY: Array` statics (`data.gd:181-188`); empty array deliberately means "legacy fallback".
 - `MAP_TYPES` still has **6** shapes (`data.gd:270-277`); `RELIEF_SCALE` still has **3** reliefs (`data.gd:206`).
 
@@ -175,16 +179,19 @@ Team preset math: `k` teams spread evenly (`int(i*k/players)`), so 4 players /
 ### 3.6 `app/scripts/world.gd`
 
 - Known crash fixed: `_player_color(p)` used a 2-element literal and went
-  out-of-bounds at `p >= 2`. Now an 8-entry `PLAYER_COLORS` constant with a
-  `wrapi()` modulo fallback (`world.gd:1872-1887`). Palette is a read-only copy
-  of the `hud.gd` minimap colours; that lane owns the palette.
+  out-of-bounds at `p >= 2`. Now a 12-entry `PLAYER_COLORS` constant with a
+  `wrapi()` modulo fallback (`world.gd:1872-1887`). Palette mirrors the
+  **12 bright colours** in the `hud.gd` minimap palette (`MM_PLAYER_COLORS`,
+  also extended 8 → 12); that lane owns the palette.
 
 ### 3.7 `app/tests/t_menu_roster.gd`
 
-- Headless, self-exiting 6-player test through the real `_apply_menu_cfg`
-  path; checks count/teams/AI flags/nations/per-slot difficulty, built sim
-  players, FFA non-alliance, legacy path, seeded `random` minerals, team-preset
-  math, UI row rebuild + emitted cfg, and the `_player_color` OOB case
+- Headless, self-exiting test through the real `_apply_menu_cfg` path, now
+  **30/30 PASS**: 6- and 10-player rosters plus `MAX_PLAYERS=12` / 12 start
+  anchors, count/teams/AI flags/nations/per-slot difficulty, built sim players,
+  FFA non-alliance, legacy path, seeded `random` minerals, team-preset math,
+  donor options, the full-screen two-column layout, 12-colour palettes,
+  UI row rebuild to 12 + emitted cfg, and the `_player_color` OOB case
   (`t_menu_roster.gd:44-164`).
 
 ---
@@ -193,9 +200,9 @@ Team preset math: `k` teams spread evenly (`int(i*k/players)`), so 4 players /
 
 | Donor option | Port UI | Port consuming code | Verdict |
 |---|---|---|---|
-| Player / Nation columns (2–8 slots) | "Players" + per-slot Nation | `Data.PLAYER_NATIONS`, `game.setup_begin` | **PORT-WIRED** |
+| Player / Nation columns (2–12 slots; donor 2–8) | "Players" + per-slot Nation | `Data.PLAYER_NATIONS`, `game.setup_begin` | **PORT-WIRED** (12 = PORT EXTENSION) |
 | Team column (`-`,1,2,3,4) + Team preset | per-slot Team + preset rows | `Data.TEAMS`, `new_player.team`, `_is_ally` | **PORT-WIRED** |
-| Color column | read-only swatch (8 colours) | `world._player_color` palette, no gameplay effect | **PORT-UI-ONLY** (by design) |
+| Color column | read-only swatch (12 colours; minimap palette also 12) | `world._player_color` palette, no gameplay effect | **PORT-UI-ONLY** (by design) |
 | Per-player AI difficulty (5 tiers) | 5 donor labels | `roster_ai` → `Data.PLAYER_AI`; tiers collapsed to `easy/normal/hard`, donor id kept in `Data.PLAYER_AI_DIFFICULTY` | **PORT-WIRED** (tiers **not** distinct in sim) |
 | Map Size (Tiny/Normal/Large 2x/Huge 4x) | donor labels | `map_size` → `Data.MAP_W/H` | **PORT-WIRED**; tile mapping 240/320/400/480 is **INFERRED** |
 | Map Shape (9 + Random) | 6 port shapes from `Data.MAP_TYPES` | `terrain_type` → `Data.MAP_TYPE` → generator | **GAP** (3+ shapes and Random unsupported) |
@@ -249,7 +256,7 @@ the legacy path (`menu.gd:707-718`).
 
 ### 5.2 `Data.*` statics after `_apply_roster_cfg`
 
-`PLAYER_COUNT` (2..8) · `PLAYER_NATIONS: Array[String]` ·
+`PLAYER_COUNT` (2..12; PORT EXTENSION) · `PLAYER_NATIONS: Array[String]` ·
 `PLAYER_NAMES: Array[String]` · `TEAMS: Array[int]` (`-1` or `0..3`) ·
 `PLAYER_AI: Array[bool]` · `PLAYER_AI_DIFFICULTY: Array[String]` (`easy/normal/hard`).
 
@@ -268,15 +275,17 @@ FFA slots are never allies. This is why `ffa_not_allied` is a test check.
 
 | Check | Evidence | Result |
 |---|---|---|
-| 6-player roster through real `_apply_menu_cfg` | `app/tests/results/t_menu_roster.json` checks `player_count`, `teams`, `ai_flags`, `nations`, `per_slot_difficulty` | PASS |
+| 6- and 10-player rosters through real `_apply_menu_cfg` | `app/tests/results/t_menu_roster.json` checks `player_count`, `teams`, `ai_flags`, `nations`, `per_slot_difficulty`, `ten_player_*` | PASS |
+| `MAX_PLAYERS=12`, 12 start anchors, 12-slot players picker | same JSON, `max_players_cap`, `start_positions_12`, `player_items_12` | PASS |
+| Full-screen two-column layout + 12-colour palettes | same JSON, `ui_fullscreen_layout`, `ui_roster_columns`, `player_colors_12` | PASS |
 | Sim builds 6 players with matching teams/AI | same JSON, `sim_players` | PASS |
 | FFA (`team=-1`) creates 0 ally pairs | same JSON, `ffa_not_allied` | PASS |
 | Legacy 1–3 opponents path unchanged | same JSON, `legacy_path` (`PLAYER_COUNT=3`, `TEAMS=[0,0,1]`, `PLAYER_AI=[]`) | PASS |
 | Donor `Random` minerals deterministic for seed 777 | same JSON, `random_richness` (`rich` / `rich`) | PASS |
 | Team preset 4 players / 2 teams → `[0,0,1,1]` | same JSON, `team_preset` | PASS |
-| UI builds 2 rows, rebuilds to 6, emits full roster | same JSON, `ui_roster_rows`, `ui_emit_roster` | PASS |
+| UI builds 2 rows, rebuilds to 12, emits full roster | same JSON, `ui_roster_rows_12`, `ui_emit_roster` | PASS |
 | `_player_color(5)` and `(8)` no longer OOB, distinct | same JSON, `player_color_oob` | PASS |
-| Result file total | `"passed": true`, 13 checks, `unix_ms` 1795448124190 (2026-11-23; file refreshed during report writing) | **13/13 PASS** |
+| Result file total | `"passed": true`, 30 checks, `unix_ms` 1795449904441 (2026-11-23) | **30/30 PASS** |
 
 Reproduce (single-door runner, per project rule):
 
