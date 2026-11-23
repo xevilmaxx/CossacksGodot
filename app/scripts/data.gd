@@ -173,8 +173,19 @@ static var PLAYER_NAMES := ["Russia", "Bavaria", "Poland", "Sweden"]
 static var PLAYER_NATIONS := ["rus", "bav", "pol", "swe"]  # country.script sids, menu picks these
 # P-42 sim contract. main.gd writes these through Object.set(); keep the exact
 # names/types. Defaults stay 2 players / free-for-all so existing tests hold.
+# T-MENU-ROSTER: the skirmish lobby can field 2..8 players. MAX_PLAYERS is the
+# single cap used by menu.gd (row rebuild), main.gd (cfg mapping), config.gd
+# (saved configs) and game.gd (setup_begin clamp).
+const MAX_PLAYERS := 8
 static var PLAYER_COUNT := 2
 static var TEAMS: Array = []
+# Per-slot Human/Computer pick from the roster UI. Empty => legacy fallback
+# (slot 0 human, every other slot AI) in game.gd setup_begin.
+static var PLAYER_AI: Array = []
+# Donor per-player AI difficulty (none/normal/hard/veryhard/impossible), mapped
+# to the sim's easy/normal/hard where possible. The sim still uses the single
+# global AI_DIFFICULTY; per-slot tiers are recorded here for config fidelity.
+static var PLAYER_AI_DIFFICULTY: Array = []
 static var MAP_TYPE := "land"           # generator.cfg TerrainTypes key
 static var BIOME := "summer"            # donor season: summer / winter / desert
 # P-19/P-14: PORT-MENU emits terrain_type/richness/season/relief (menu.gd:34-37,
@@ -264,6 +275,76 @@ const MAP_TYPES := {
 	"continents": {"water_frac": 1.8, "name": "Continents"},
 	"continent": {"water_frac": 1.0, "name": "Continent"},
 }
+
+# T-MENU-ROSTER DEEP: donor skirmish option enums (miscext2.script serialized
+# struct: season,terraintype,relieftype,resourcestart,resourcemines,mapsize,
+# startingunits,balloon,cannons,peacetime,century18,capture,marketdip,teams,
+# autosave,limit,gamespeed,adviserassistant). Labels live in menu.gd; these are
+# the canonical ids so menu / cfg / saved config / docs agree.
+#
+# Map Shape: 9 real shapes + Random (gui.txt:413-434,855-862). The generator
+# only knows the 6 mask families in MAP_TYPES above (mapgen.pick falls back to
+# "land" for unknown ids), so every donor shape maps to the NEAREST family:
+# coastal -> mediterranean, lakes -> islands, rivers -> peninsulas, etc. These
+# are deliberate approximations, not exact donor map masks (see gaps doc).
+const DONOR_MAP_SHAPES := {
+	"land": {"name": "Land", "generator": "land"},
+	"mediterranean": {"name": "Mediterranean", "generator": "mediterranean"},
+	"peninsulas": {"name": "Peninsulas", "generator": "peninsulas"},
+	"islands": {"name": "Islands", "generator": "islands"},
+	"several_continents": {"name": "Several Continents", "generator": "continents"},
+	"single_continent": {"name": "Single Continent", "generator": "continent"},
+	"coastal": {"name": "Coastal", "generator": "mediterranean"},
+	"lakes": {"name": "Lakes", "generator": "islands"},
+	"rivers": {"name": "Rivers", "generator": "peninsulas"},
+	"random": {"name": "Random", "generator": "random"},
+}
+
+# Relief / Terrain Type (gui.txt:449-460): 6 donor values. The sim's relief
+# scale table has only plain/hills/mountains, so the three extra tiers are
+# approximated by the nearest supported tier.
+const DONOR_RELIEF := {
+	"plain": {"name": "Plain", "relief": "plains"},
+	"low_mountains": {"name": "Low Mountains", "relief": "hills"},
+	"high_mountains": {"name": "High Mountains", "relief": "mountains"},
+	"highlands": {"name": "Highlands", "relief": "hills"},
+	"plateaus": {"name": "Plateaus", "relief": "mountains"},
+	"random": {"name": "Random", "relief": "random"},
+}
+
+const DONOR_RES_START_MULT := {
+	"normal": 1.0, "rich": 4.0, "thousands": 25.0,
+	"millions": 1000.0, "random": 0.0,  # 0 = seed-resolved at apply time
+}
+const DONOR_MINERALS := ["low", "med", "rich", "random"]
+const DONOR_BALLOON := ["default", "no_balloons", "balloons"]
+const DONOR_CANNONS := ["default", "no_cannons_towers_walls", "expensive_cannons"]
+const DONOR_PEACE_TIMES := [0, 10, 20, 30, 40, 50, 60, 90, 120, 180, 240]
+const DONOR_CENTURY18 := ["default", "never", "immediately"]
+const DONOR_CAPTURE := ["default", "no_peasants", "no_peasants_or_centres", "artillery_only"]
+const DONOR_MARKET_DIP := ["default", "without_dip_center", "without_market", "without_both"]
+const DONOR_POP_LIMITS := [0, 25, 50, 100, 200, 500]
+const DONOR_ADVISER := ["default", "with", "without"]
+const DONOR_GAME_SPEED := {"slow": 0.5, "normal": 1.0, "fast": 2.0, "very_fast": 4.0}
+const DONOR_AUTOSAVE := ["off", "on", "every_5_min"]  # labels unverified (English guesses)
+
+# Applied donor options. Defaults are the donor "Default"/"Normal"/"No" picks,
+# so an unchanged config behaves exactly like the pre-expansion port.
+static var DONOR_MAP_SHAPE := "land"
+static var DONOR_RELIEF_TYPE := "plain"
+static var DONOR_RES_START := "normal"
+static var DONOR_RES_MINES := "med"
+static var BALLOON_MODE := "default"
+static var CANNON_MODE := "default"
+static var PEACE_TIME := 0.0          # seconds of protected start (rule timer)
+static var CENTURY18_MODE := "default"
+static var CAPTURE_MODE := "default"
+static var MARKET_DIP_MODE := "default"
+static var POP_LIMIT := 0             # 0 = unlimited
+static var GAME_SPEED := "normal"
+static var AUTOSAVE_MODE := "off"
+static var ADVISER_MODE := "default"
+static var ALLIES_MODE := "default"
 
 # Starting options from data/game/var/startingsettings.cfg comments
 # (gc_mapsettings_startingunits_*). Armies scale the battle preset.

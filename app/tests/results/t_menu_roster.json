@@ -1,0 +1,102 @@
+{
+	"checks": [
+		{
+			"detail": "PLAYER_COUNT=6 (want 6)",
+			"name": "player_count",
+			"passed": true
+		},
+		{
+			"detail": "TEAMS=[0, 0, 1, 1, 2, 2] (want [0,0,1,1,2,2])",
+			"name": "teams",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_AI=[false, true, true, true, true, true] (want 6 entries, slot0 human)",
+			"name": "ai_flags",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_NATIONS=[\"rus\", \"bav\", \"pol\", \"swe\", \"pru\", \"fra\"]",
+			"name": "nations",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_AI_DIFFICULTY=[\"normal\", \"normal\", \"normal\", \"normal\", \"normal\", \"normal\"]",
+			"name": "per_slot_difficulty",
+			"passed": true
+		},
+		{
+			"detail": "sim players=6 teams=[0, 0, 1, 1, 2, 2] ai=[false, true, true, true, true, true]",
+			"name": "sim_players",
+			"passed": true
+		},
+		{
+			"detail": "ally pairs with team=-1: 0 (want 0)",
+			"name": "ffa_not_allied",
+			"passed": true
+		},
+		{
+			"detail": "legacy count=3 teams=[0, 0, 1] ai=[]",
+			"name": "legacy_path",
+			"passed": true
+		},
+		{
+			"detail": "seed 777 -> rich / rich",
+			"name": "random_richness",
+			"passed": true
+		},
+		{
+			"detail": "4 players / 2 teams -> [0, 0, 1, 1]",
+			"name": "team_preset",
+			"passed": true
+		},
+		{
+			"detail": "shape=coastal->mediterranean relief=plateaus->mountains",
+			"name": "donor_shape_relief",
+			"passed": true
+		},
+		{
+			"detail": "food 800.000000 -> 20000.000000 (want 25x)",
+			"name": "donor_stock",
+			"passed": true
+		},
+		{
+			"detail": "peace=600 pop=100 capture=artillery_only cannons=no_cannons_towers_walls speed=2.0",
+			"name": "donor_rules",
+			"passed": true
+		},
+		{
+			"detail": "balloon=balloons century=never market=without_both adviser=with",
+			"name": "donor_ui_only_recorded",
+			"passed": true
+		},
+		{
+			"detail": "option rows=22, section headers=3",
+			"name": "ui_option_rows",
+			"passed": true
+		},
+		{
+			"detail": "rows after default=2, after Players=6 -> 6 (want 2 / 6)",
+			"name": "ui_roster_rows",
+			"passed": true
+		},
+		{
+			"detail": "emitted players=6, P1 team/ai=-1/false, allies=default",
+			"name": "ui_emit_roster",
+			"passed": true
+		},
+		{
+			"detail": "missing donor keys: []",
+			"name": "ui_emit_donor_keys",
+			"passed": true
+		},
+		{
+			"detail": "color(5)=(0.25, 0.85, 0.85, 1.0) color(8)=(0.3, 0.62, 1.0, 1.0) (modulo fallback)",
+			"name": "player_color_oob",
+			"passed": true
+		}
+	],
+	"id": "t_menu_roster",
+	"passed": true,
+	"unix_ms": 1795448753487.0
+}

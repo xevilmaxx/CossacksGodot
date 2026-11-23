@@ -229,12 +229,12 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					st.cells.append(c)
 				stamps.append(st)
 
-	# T5GEN: mines use their own occupancy grid.  It inherits water + the tile
-	# footprints from the shared grid, but the CIRCLE1 start keep-clear ellipses
-	# are cleared: the donor keeps those ellipses for BUILD room, while ore nodes
-	# here are radius-0 (they never block a town/build site).  This lets a
-	# guaranteed near-start deposit sit 6-22 tiles out even at a corner start,
-	# so each player gets all three ores spread over >=3 quadrants.
+	# T5GEN/T-MINES-FIX: `mine_occ` is the COUNT-replay grid only.  It inherits
+	# the shared grid (water via terrain checks in place_at, plus tile/build
+	# occupancy) and clears CIRCLE1 so the original donor rejection sampling
+	# accepts the same number of mines as before.  The FINAL non-overlapping
+	# layout (and the per-start ore guarantee) is enforced at the end of build()
+	# by a separate authoritative pass that relocates these same stamps.
 	var mine_occ := occupied.duplicate()
 	for st0 in start_tiles:
 		var cx0: int = int(st0.x)
@@ -539,5 +539,171 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		if needed < 1:
 			needed = 1
 		stamp_relief.call(str(r[0]), needed, str(r[3]))
+
+	# --- T-MINES-FIX: final mine-layout authority -----------------------------
+	# The replay above is kept byte-identical: it decides HOW MANY mines exist
+	# (richness target) and preserves the shared `rng` stream.  This pass then
+	# relocates those SAME stamp objects - it never adds or removes one - so the
+	# count is unchanged while the layout gains two hard guarantees:
+	#   (1) every start_tiles entry gets gold+iron+coal on open ground in the
+	#       10..24 tile band, in distinct 120-deg sectors;
+	#   (2) no two mine footprints intersect.  A mine reserves its scaled donor
+	#       cells dilated by 1 tile, which also keeps the ~3-tile dirt aprons
+	#       painted by game.gd from touching (centre separation >= ~11 tiles).
+	# Water, forest and stone stamp footprints are blocked; the CIRCLE1/CIRCLE2
+	# start ellipses are deliberately NOT (near mines must be allowed close in).
+	# All draws come from the dedicated `mine_rng`, never from shared `rng`.
+	var mf_occ := PackedByteArray()
+	mf_occ.resize(map_w * map_h)
+	var mf_block := PackedByteArray()   # forest / stone stamp footprints
+	mf_block.resize(map_w * map_h)
+	for bi in map_w * map_h:
+		if terrain[bi] == water_id:
+			mf_occ[bi] = 1
+			mf_block[bi] = 1
+	for bs0 in stamps:
+		var bst: Stamp = bs0
+		if bst.kind != "forest" and bst.kind != "stone":
+			continue
+		for bc in bst.cells:
+			var bcc: Vector2i = bc
+			var bx := bst.x + bcc.x
+			var by := bst.y + bcc.y
+			if bx >= 0 and by >= 0 and bx < map_w and by < map_h:
+				mf_block[by * map_w + bx] = 1
+
+	var mf_margin := 1
+	var mf_centres: Array = []   # accepted mine centres, for the 11-tile rule
+	# ignore_block lets the last-resort passes prefer a slightly imperfect spot
+	# over dropping a deposit - the count is sacred.
+	var mf_ok := func(cells: Array, cx: int, cy: int, ignore_block: bool = false) -> bool:
+		# Centre-separation is the game.gd contract too (MINE_MIN_SEP_TILES).
+		for ctr in mf_centres:
+			var cp: Vector2 = ctr
+			if Vector2(float(cx) - cp.x, float(cy) - cp.y).length() < 11.0:
+				return false
+		for c in cells:
+			var cc: Vector2i = c
+			var tx := cx + cc.x
+			var ty := cy + cc.y
+			for dy in range(-mf_margin, mf_margin + 1):
+				for dx in range(-mf_margin, mf_margin + 1):
+					var mx := tx + dx
+					var my := ty + dy
+					if mx < 0 or my < 0 or mx >= map_w or my >= map_h:
+						return false
+					var mi := my * map_w + mx
+					if mf_occ[mi] != 0:
+						return false
+					if not ignore_block and mf_block[mi] != 0:
+						return false
+		return true
+
+	var mf_mark := func(cells: Array, cx: int, cy: int) -> void:
+		mf_centres.append(Vector2(cx, cy))
+		for c in cells:
+			var cc: Vector2i = c
+			var tx := cx + cc.x
+			var ty := cy + cc.y
+			for dy in range(-mf_margin, mf_margin + 1):
+				for dx in range(-mf_margin, mf_margin + 1):
+					var mx := tx + dx
+					var my := ty + dy
+					if mx >= 0 and my >= 0 and mx < map_w and my < map_h:
+						mf_occ[my * map_w + mx] = 1
+
+	var mine_stamps: Array = []
+	for ms0 in stamps:
+		var mst: Stamp = ms0
+		if mst.kind == "mine":
+			mine_stamps.append(mst)
+
+	# (1) near-start guarantee: one stamp per ore family, distinct sectors.
+	var mf_claimed: Array = []
+	for st in start_tiles:
+		var base := mine_rng.randf() * TAU
+		for ki in kinds.size():
+			var want: String = res_kinds[ki]
+			var pick_idx := -1
+			for mi in mine_stamps.size():
+				if mf_claimed.has(mi):
+					continue
+				if str((mine_stamps[mi] as Stamp).res) == want:
+					pick_idx = mi
+					break
+			if pick_idx < 0:
+				continue  # no such ore exists on this map: never invent one
+			var ms: Stamp = mine_stamps[pick_idx]
+			var cells: Array = ms.cells
+			var sector := base + float(ki) * TAU / float(kinds.size())
+			var done := false
+			# Prefer the ore's own sector on open ground; then any open angle;
+			# then relax the forest/stone block; only widen past 24 tiles as a
+			# last resort (the gameplay guarantee is <= 26 tiles).
+			for pass_i in 4:
+				for _a in 128:
+					var ang := sector + mine_rng.randf_range(-1.0, 1.0)
+					if pass_i == 1 or pass_i == 3:
+						ang = mine_rng.randf() * TAU   # sector points off-map
+					var hi := 24
+					if pass_i == 3:
+						hi = 26                        # widen honestly if needed
+					var dst := float(mine_rng.randi_range(10, hi))
+					var cx := int(round(st.x + cos(ang) * dst))
+					var cy := int(round(st.y + sin(ang) * dst))
+					var use_ignore := pass_i >= 2
+					if mf_ok.call(cells, cx, cy, use_ignore):
+						ms.x = cx
+						ms.y = cy
+						mf_mark.call(cells, cx, cy)
+						mf_claimed.append(pick_idx)
+						done = true
+						break
+				if done:
+					break
+			if not done:
+				push_warning("T-MINES-FIX: no open %s site near start (%.0f,%.0f)" % [want, st.x, st.y])
+
+	# (2) de-overlap every remaining stamp against the finalized footprints.
+	for mi in mine_stamps.size():
+		if mf_claimed.has(mi):
+			continue
+		var ms: Stamp = mine_stamps[mi]
+		var cells: Array = ms.cells
+		if mf_ok.call(cells, ms.x, ms.y):
+			mf_mark.call(cells, ms.x, ms.y)
+			continue
+		var placed := false
+		for d in [3, 5, 8, 12, 16, 22, 30, 40]:
+			for _a in 32:
+				var ang := mine_rng.randf() * TAU
+				var cx := int(round(float(ms.x) + cos(ang) * float(d)))
+				var cy := int(round(float(ms.y) + sin(ang) * float(d)))
+				if mf_ok.call(cells, cx, cy) or mf_ok.call(cells, cx, cy, true):
+					ms.x = cx
+					ms.y = cy
+					mf_mark.call(cells, cx, cy)
+					placed = true
+					break
+			if placed:
+				break
+		if not placed:
+			# deterministic full-map sweep, offset from a dedicated rng draw
+			var span_x := maxi(1, map_w - 4)
+			var span_y := maxi(1, map_h - 4)
+			var total := span_x * span_y
+			var off := mine_rng.randi_range(0, total - 1)
+			for k in total:
+				var kk := (k + off) % total
+				var cx := 2 + kk % span_x
+				var cy := 2 + kk / span_x
+				if mf_ok.call(cells, cx, cy, true):
+					ms.x = cx
+					ms.y = cy
+					mf_mark.call(cells, cx, cy)
+					placed = true
+					break
+		if not placed:
+			push_warning("T-MINES-FIX: could not de-overlap a %s stamp" % str(ms.res))
 
 	return {"stamps": stamps, "occupied": occupied, "scale": s}

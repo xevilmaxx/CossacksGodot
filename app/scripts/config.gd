@@ -405,12 +405,64 @@ func apply() -> void:
 	Data.START_OPTION = text("gameplay.start_option", "default")
 	var n0 := text("gameplay.nation0", "ukr")
 	var n1 := text("gameplay.nation1", "rus")
-	Data.PLAYER_NATIONS = [n0, n1]
-	# P-42: menu/shell may override these later; apply the JSON defaults here.
-	Data.PLAYER_COUNT = clampi(maxi(2, int(num("gameplay.players", 2))), 2, 8)
+	# T-MENU-ROSTER: a saved config may carry the full 2..8 roster. Prefer it,
+	# otherwise the legacy nation0/nation1 keys still seed the two-slot default.
+	var pn: Variant = section("gameplay").get("player_nations", [])
+	if pn is Array and not (pn as Array).is_empty():
+		var ns := []
+		for code in (pn as Array):
+			ns.append(str(code))
+		Data.PLAYER_NATIONS = ns
+		Data.PLAYER_COUNT = clampi(ns.size(), 2, Data.MAX_PLAYERS)
+		Data.PLAYER_NAMES = []
+		for i in ns.size():
+			Data.PLAYER_NAMES.append(_nation_display(str(ns[i]), i))
+	else:
+		Data.PLAYER_NATIONS = [n0, n1]
+		# P-42: menu/shell may override these later; apply the JSON defaults here.
+		Data.PLAYER_COUNT = clampi(maxi(2, int(num("gameplay.players", 2))), 2, Data.MAX_PLAYERS)
+		Data.PLAYER_NAMES = [_nation_display(n0, 0), _nation_display(n1, 1)]
 	var tm: Variant = section("gameplay").get("teams", [])
 	Data.TEAMS = tm.duplicate() if tm is Array else []
-	Data.PLAYER_NAMES = [_nation_display(n0, 0), _nation_display(n1, 1)]
+	# Per-slot control pick persisted by the lobby; empty keeps the sim fallback.
+	Data.PLAYER_AI = []
+	var pai: Variant = section("gameplay").get("player_ai", [])
+	if pai is Array:
+		for v in (pai as Array):
+			Data.PLAYER_AI.append(bool(v))
+	Data.PLAYER_AI_DIFFICULTY = []
+	var pad: Variant = section("gameplay").get("player_ai_difficulty", [])
+	if pad is Array:
+		for v in (pad as Array):
+			var d := str(v)
+			Data.PLAYER_AI_DIFFICULTY.append(d if ["easy", "normal", "hard"].has(d) else "normal")
+
+	# T-MENU-ROSTER DEEP: full donor option set for saved configs. Unknown ids
+	# fall back to the donor default instead of corrupting the sim.
+	Data.DONOR_MAP_SHAPE = _donor_id("map_shape", Data.DONOR_MAP_SHAPES.keys(), "land")
+	Data.DONOR_RELIEF_TYPE = _donor_id("relief_type", Data.DONOR_RELIEF.keys(), "plain")
+	Data.DONOR_RES_START = _donor_id("resource_start", Data.DONOR_RES_START_MULT.keys(), "normal")
+	Data.DONOR_RES_MINES = _donor_id("resource_mines", Data.DONOR_MINERALS, "med")
+	Data.BALLOON_MODE = _donor_id("balloon", Data.DONOR_BALLOON, "default")
+	Data.CANNON_MODE = _donor_id("cannons", Data.DONOR_CANNONS, "default")
+	Data.CENTURY18_MODE = _donor_id("century18", Data.DONOR_CENTURY18, "default")
+	Data.CAPTURE_MODE = _donor_id("capture", Data.DONOR_CAPTURE, "default")
+	Data.MARKET_DIP_MODE = _donor_id("marketdip", Data.DONOR_MARKET_DIP, "default")
+	Data.POP_LIMIT = clampi(int(num("gameplay.pop_limit", 0)), 0, 500)
+	Data.PEACE_TIME = clampf(num("gameplay.peace_time", 0.0), 0.0, 240.0 * 60.0)
+	Data.GAME_SPEED = _donor_id("game_speed", Data.DONOR_GAME_SPEED.keys(), "normal")
+	Data.AUTOSAVE_MODE = _donor_id("autosave", Data.DONOR_AUTOSAVE, "off")
+	Data.ADVISER_MODE = _donor_id("adviserassistant", Data.DONOR_ADVISER, "default")
+	Data.ALLIES_MODE = _donor_id("allies", ["default", "nearby"], "default")
+	# Saved configs may use donor ids only: resolve them to generator ids when
+	# the legacy terrain_type / relief keys were not supplied.
+	var gsec := section("gameplay")
+	if not gsec.has("terrain_type") and not gsec.has("map_type"):
+		var gen := str(Data.DONOR_MAP_SHAPES[Data.DONOR_MAP_SHAPE].get("generator", "land"))
+		Data.MAP_TYPE = "land" if gen == "random" else gen
+	if not gp.has("relief"):
+		var rg := str(Data.DONOR_RELIEF[Data.DONOR_RELIEF_TYPE].get("relief", "plains"))
+		Data.RELIEF = "plains" if rg == "random" else rg
 
 	var ec := section("economy")
 	Data.BUILD_PROGRESS_PER_HIT = num("economy.build_progress_per_hit", 0.359375)
@@ -499,6 +551,15 @@ static func unit_name(sid: String) -> String:
 static func building_name(sid: String) -> String:
 	const Data = preload("res://scripts/data.gd")
 	return str(Data.BUILDING_NAMES.get(sid, sid))
+
+# Donor option id with a safe default: an unknown saved value never reaches
+# the sim, it falls back to the donor default and is reported via problems.
+func _donor_id(key: String, allowed: Array, default: String) -> String:
+	var v := text("gameplay." + key, default)
+	if allowed.has(v):
+		return v
+	problems.append("unknown gameplay.%s='%s', using '%s'" % [key, v, default])
+	return default
 
 static func _nation_display(sid: String, i: int) -> String:
 	const Data = preload("res://scripts/data.gd")

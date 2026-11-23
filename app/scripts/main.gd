@@ -119,6 +119,8 @@ var seed_arg := -1
 var seed_random := false
 var dump_path := ""
 var journey_cam_t := 0.0
+var _base_start_res: Dictionary = {}  # cached config defaults for start-stock scaling
+var autosave_acc := 0.0
 
 func _ready() -> void:
 	started_ms = Time.get_ticks_msec()
@@ -213,16 +215,145 @@ func _on_menu_chosen(cfg: Dictionary) -> void:
 func _apply_menu_cfg(cfg: Dictionary) -> void:
 	var n0 := str(cfg.get("nation0", "ukr"))
 	var n1 := str(cfg.get("nation1", "rus"))
-	# The sim layer adds PLAYER_COUNT/TEAMS as Data statics. Route through an
-	# Object reference so this shell keeps parsing while that API lands; once
-	# declared, Object.set() writes the real static (verified in Godot 4.7).
-	# Defaults stay 1 opponent / ffa, so existing 2-player paths are unchanged.
-	var sim: Object = Data
+	# T-MENU-ROSTER: the skirmish lobby emits a full per-slot roster. When that
+	# array is present it is authoritative (2..8 slots, explicit nation / team /
+	# control pick); otherwise the legacy opponents/teams path below keeps old
+	# callers (uitest / selftest / saved loads) byte-stable.
+	var roster: Array = cfg.get("players", []) if cfg.get("players") is Array else []
+	if not roster.is_empty():
+		_apply_roster_cfg(roster, n0, n1)
+	else:
+		_apply_legacy_roster_cfg(cfg, n0, n1)
+	# PORT-SIM FP-1 hand-off + T-MENU-ROSTER DEEP: resolve the full donor option
+	# struct onto Data statics. Legacy keys stay as fallbacks so old callers are
+	# byte-stable; unknown donor ids fall back to the donor default.
+	var eff_seed := int(cfg.get("seed", Data.RANDOM_SEED))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = eff_seed
+
+	# Map shape: donor ids -> nearest generator mask family (see DONOR_MAP_SHAPES
+	# and docs/DONOR_OPTIONS_GAPS.md). "random" picks a real generator family.
+	var shape := _donor_cfg(cfg, ["terraintype", "terrain_type", "map_type"],
+		Data.DONOR_MAP_SHAPES.keys(), "land")
+	Data.DONOR_MAP_SHAPE = shape
+	var gen := str(Data.DONOR_MAP_SHAPES[shape].get("generator", "land"))
+	if gen == "random":
+		var gens := Data.MAP_TYPES.keys()
+		gen = str(gens[rng.randi() % gens.size()])
+	Data.MAP_TYPE = gen
+
+	# Relief: donor ids -> the 3 sim relief tiers; legacy plains/hills/mountains
+	# pass straight through. "random" picks a supported tier from the seed.
+	var rdon := str(cfg.get("relieftype", cfg.get("relief", "plain")))
+	var rg := ""
+	if Data.DONOR_RELIEF.has(rdon):
+		rg = str(Data.DONOR_RELIEF[rdon].get("relief", "plains"))
+	elif ["plains", "hills", "mountains"].has(rdon):
+		rg = rdon  # legacy caller
+	else:
+		rdon = "plain"
+		rg = "plains"
+	Data.DONOR_RELIEF_TYPE = rdon
+	if rg == "random":
+		var tiers := ["plains", "hills", "mountains"]
+		rg = str(tiers[rng.randi() % tiers.size()])
+	Data.RELIEF = rg
+
+	Data.BIOME = str(cfg.get("season", cfg.get("biome", "summer")))
+	# Minerals: donor 4th option "Random" resolves to low/med/rich from the seed.
+	var mines := _donor_cfg(cfg, ["resourcemines", "richness"], Data.DONOR_MINERALS, "med")
+	Data.DONOR_RES_MINES = mines
+	if mines == "random":
+		var pool := ["low", "med", "rich"]
+		mines = str(pool[rng.randi() % pool.size()])
+	Data.RICHNESS = mines
+
+	# Starting resources: donor tiers scale the config's base stock. "Random"
+	# resolves to one of the named tiers from the seed.
+	var rs := _donor_cfg(cfg, ["resourcestart", "start_resources"],
+		Data.DONOR_RES_START_MULT.keys(), "normal")
+	Data.DONOR_RES_START = rs
+	if rs == "random":
+		var rs_pool := ["normal", "rich", "thousands", "millions"]
+		rs = str(rs_pool[rng.randi() % rs_pool.size()])
+		Data.DONOR_RES_START = rs
+	if _base_start_res.is_empty():
+		_base_start_res = Data.START_RESOURCES.duplicate()
+	var mult := float(Data.DONOR_RES_START_MULT.get(rs, 1.0))
+	var stock := {}
+	for r in _base_start_res.keys():
+		stock[r] = float(_base_start_res[r]) * mult
+	Data.START_RESOURCES = stock
+
+	Data.BALLOON_MODE = _donor_cfg(cfg, ["balloon"], Data.DONOR_BALLOON, "default")
+	Data.CANNON_MODE = _donor_cfg(cfg, ["cannons"], Data.DONOR_CANNONS, "default")
+	Data.CENTURY18_MODE = _donor_cfg(cfg, ["century18"], Data.DONOR_CENTURY18, "default")
+	Data.CAPTURE_MODE = _donor_cfg(cfg, ["capture"], Data.DONOR_CAPTURE, "default")
+	Data.MARKET_DIP_MODE = _donor_cfg(cfg, ["marketdip"], Data.DONOR_MARKET_DIP, "default")
+	Data.POP_LIMIT = clampi(int(cfg.get("limit", Data.POP_LIMIT)), 0, 500)
+	Data.PEACE_TIME = clampf(float(cfg.get("peacetime", Data.PEACE_TIME)), 0.0, 240.0 * 60.0)
+	Data.GAME_SPEED = _donor_cfg(cfg, ["gamespeed"], Data.DONOR_GAME_SPEED.keys(), "normal")
+	Data.AUTOSAVE_MODE = _donor_cfg(cfg, ["autosave"], Data.DONOR_AUTOSAVE, "off")
+	Data.ADVISER_MODE = _donor_cfg(cfg, ["adviserassistant"], Data.DONOR_ADVISER, "default")
+	Data.ALLIES_MODE = _donor_cfg(cfg, ["allies"], ["default", "nearby"], "default")
+	# Peasant conversion follows the donor capture rule.
+	Data.CAPTURE_ENABLED = Data.CAPTURE_MODE == "default"
+	# Game speed is wired only when the command line did not force one.
+	if speed == 1.0:
+		speed = clampf(float(Data.DONOR_GAME_SPEED.get(Data.GAME_SPEED, 1.0)), 0.1, 8.0)
+	autosave_acc = 0.0
+
+	Data.START_OPTION = str(cfg.get("startingunits", cfg.get("start_option", "default")))
+	if cfg.has("difficulty"):
+		Data.AI_DIFFICULTY = str(cfg.get("difficulty", "normal"))
+	if cfg.has("mapsize") or cfg.has("map_size"):
+		var sz := int(cfg.get("mapsize", cfg.get("map_size", 320)))
+		Data.MAP_W = sz
+		Data.MAP_H = sz
+	if cfg.has("seed"):
+		Data.RANDOM_SEED = eff_seed
+	if not battle_requested:
+		start_mode = str(cfg.get("mode", "skirmish"))
+
+# T-MENU-ROSTER: map the lobby's [{nation, team, ai, name}, ...] onto the Data
+# statics the sim reads. Team -1 is free-for-all; game.gd's _is_ally ignores
+# it, so an FFA lobby never accidentally turns into one big alliance.
+func _apply_roster_cfg(roster: Array, n0: String, n1: String) -> void:
+	var count := clampi(roster.size(), 2, Data.MAX_PLAYERS)
+	var nations := []
+	var names := []
+	var teams := []
+	var ai := []
+	var ai_diff := []
+	for i in count:
+		var entry: Dictionary = roster[i] if roster[i] is Dictionary else {}
+		var fallback := n0 if i == 0 else n1
+		var sid := str(entry.get("nation", fallback))
+		if not Data.NATIONS.has(sid):
+			sid = fallback
+		nations.append(sid)
+		names.append(str(entry.get("name", _menu_nation_name(sid, i))))
+		teams.append(int(entry.get("team", -1)))
+		ai.append(bool(entry.get("ai", i > 0)))
+		var mapped := str(entry.get("difficulty", "normal"))
+		if not ["easy", "normal", "hard"].has(mapped):
+			mapped = "normal"
+		ai_diff.append(mapped)
+	Data.PLAYER_COUNT = count
+	Data.PLAYER_NATIONS = nations
+	Data.PLAYER_NAMES = names
+	Data.TEAMS = teams
+	Data.PLAYER_AI = ai
+	Data.PLAYER_AI_DIFFICULTY = ai_diff
+
+# Legacy 1..3 opponents path: no PLAYER_AI is published, so game.gd falls back
+# to slot 0 human / the rest AI, exactly as before.
+func _apply_legacy_roster_cfg(cfg: Dictionary, n0: String, n1: String) -> void:
 	var opponents := clampi(int(cfg.get("opponents", 1)), 1, 3)
-	sim.set("PLAYER_COUNT", opponents + 1)
-	sim.set("TEAMS", [0, 0, 1] if str(cfg.get("teams", "ffa")) == "2v1" else [])
-	# Menu picks the first two nations; extra opponents get unused donor nations.
-	# With the default one opponent the list is exactly [n0, n1] as before.
+	Data.PLAYER_COUNT = opponents + 1
+	Data.TEAMS = [0, 0, 1] if str(cfg.get("teams", "ffa")) == "2v1" else []
+	Data.PLAYER_AI = []
+	Data.PLAYER_AI_DIFFICULTY = []
 	var nations := [n0, n1]
 	if opponents > 1:
 		for code in Data.NATIONS.keys():
@@ -235,22 +366,6 @@ func _apply_menu_cfg(cfg: Dictionary) -> void:
 	Data.PLAYER_NAMES = [_menu_nation_name(nations[0], 0), _menu_nation_name(nations[1], 1)]
 	for i in range(2, nations.size()):
 		Data.PLAYER_NAMES.append(_menu_nation_name(nations[i], i))
-	# PORT-SIM FP-1 hand-off: the menu emits terrain_type/season/richness/relief.
-	# Legacy keys stay as fallbacks so old callers (uitest/selftest) are byte-stable.
-	Data.MAP_TYPE = str(cfg.get("terrain_type", cfg.get("map_type", "land")))
-	Data.BIOME = str(cfg.get("season", cfg.get("biome", "summer")))
-	Data.RICHNESS = str(cfg.get("richness", "med"))
-	Data.RELIEF = str(cfg.get("relief", "plains"))
-	Data.START_OPTION = str(cfg.get("start_option", "default"))
-	if cfg.has("difficulty"):
-		Data.AI_DIFFICULTY = str(cfg.get("difficulty", "normal"))
-	if cfg.has("map_size"):
-		Data.MAP_W = int(cfg.get("map_size", 320))
-		Data.MAP_H = int(cfg.get("map_size", 320))
-	if cfg.has("seed"):
-		Data.RANDOM_SEED = int(cfg.get("seed", Data.RANDOM_SEED))
-	if not battle_requested:
-		start_mode = str(cfg.get("mode", "skirmish"))
 
 func _apply_menu_post(cfg: Dictionary) -> void:
 	if game == null:
@@ -467,6 +582,17 @@ func _apply_menu_post_objectives(cfg: Dictionary) -> void:
 		game.set_objectives(objs)
 		if hud != null and is_instance_valid(hud):
 			hud.refresh_objectives()
+
+# First present cfg key that holds a valid donor id wins; unknown values fall
+# back to the donor default instead of reaching the sim.
+func _donor_cfg(cfg: Dictionary, keys: Array, allowed: Array, default: String) -> String:
+	for k in keys:
+		if cfg.has(k):
+			var v := str(cfg.get(k, default))
+			if allowed.has(v):
+				return v
+			break
+	return default
 
 func _menu_nation_name(sid: String, i: int) -> String:
 	if Data.NATIONS.has(sid):
@@ -787,7 +913,7 @@ func _on_game_over(w: int) -> void:
 	sl.text = lines
 	sl.add_theme_font_size_override("font_size", maxi(12, int(15 * _menu_us())))
 	vb.add_child(sl)
-	for pi in 2:
+	for pi in game.players.size():
 		var l := Label.new()
 		l.text = "P%d units %d bldgs %d score %d" % [pi, game.unit_count(pi), game.buildings_of(pi).size(), game.players[pi].score]
 		l.add_theme_font_size_override("font_size", maxi(12, int(14 * _menu_us())))
@@ -976,6 +1102,14 @@ func _process(dt: float) -> void:
 		return
 	if test_bridge != null:
 		test_bridge.poll()
+	# T-MENU-ROSTER donor "Autosave": "on" ~ 10 min, "every_5_min" 5 min.
+	# Labels are unverified English guesses (see gaps doc); the timer is wired.
+	if game != null and not cli_mode and Data.AUTOSAVE_MODE != "off":
+		var interval := 600.0 if Data.AUTOSAVE_MODE == "on" else 300.0
+		autosave_acc += dt
+		if autosave_acc >= interval:
+			autosave_acc = 0.0
+			game_save()
 	if game == null or ais.is_empty():
 		return
 	if cli_mode:

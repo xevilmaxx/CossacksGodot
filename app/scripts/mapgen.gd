@@ -8,13 +8,16 @@
 # it produces the height/forest fields and the two start positions.  All
 # resource/pattern placement stays in game.gd (the donor's pattern passes).
 #
-# T-MINES-PLACE: ore deposits are NOT placed here.  They are stamped as "mine"
+# T-MINES-FIX: ore deposits are NOT placed here.  They are stamped as "mine"
 # pattern masks by C3PatternGen.SetupMines (pattern_gen.gd, donor D1:522-717)
-# and realised as radius-0 resource nodes by game.gd:_gen_patterns().  On
-# normal/med richness game.gd also runs _ensure_start_ore_clusters(), a
-# count-preserving relocation safety net that guarantees each start has gold,
-# iron and coal within MINE_DISCOVER_R tiles.  C3MapGen stays deterministic:
-# pick() uses its own seed+type-hash stream and never touches game.gd's `rng`.
+# and realised as radius-0 resource nodes by game.gd:_gen_patterns().
+# pattern_gen.gd's final authoritative pass OWNS the layout: it relocates the
+# same stamps (count unchanged) so every start gets gold+iron+coal in the
+# 10..24 tile band with ZERO footprint intersection, and so all map-wide mines
+# are footprint-disjoint.  game.gd:_ensure_start_ore_clusters() is only a
+# no-op-on-normal-maps safety net using the same _ore_spot_clear footprint rule;
+# it never adds or removes a deposit.  C3MapGen stays deterministic: pick()
+# uses its own seed+type-hash stream and never touches game.gd's `rng`.
 extends RefCounted
 class_name C3MapGen
 

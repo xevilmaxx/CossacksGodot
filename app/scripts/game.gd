@@ -26,6 +26,12 @@ const MINE_SITE_RADIUS := 4.0
 const MINE_DISCOVER_R := 30.0   # tiles: a start is "served" if ore is this close
 const MINE_NEAR_LO := 16.0      # tiles: outside the 14-tile start zone
 const MINE_NEAR_HI := 24.0      # tiles: still a short walk from town
+# T-MINES-FIX: the stamped donor mine cells reach ~5 tiles from the centre and
+# game.gd paints a 3-tile dirt apron, so deposits must keep this much CENTRE
+# separation to have ZERO footprint/apron intersection (incl. 1-tile margin).
+# pattern_gen.gd uses the identical rule for its final layout; this helper is
+# the game.gd side of the same contract.
+const MINE_MIN_SEP_TILES := 11.0
 var MAP_W := 160
 var MAP_H := 160
 var TICK_MAX := 0.25  # clamp dt so tests never stall
@@ -266,6 +272,11 @@ func res_list() -> Array:
 
 func new_player(index: int, name: String, is_ai: bool) -> Dictionary:
 	return {"index": index, "name": name, "res": res_list(), "is_ai": is_ai,
+		# T-MENU-ROSTER: every player carries an explicit team key. -1 means
+		# free-for-all; setup_begin overwrites it from Data.TEAMS when the
+		# roster picked real teams. _is_ally() ignores negative teams, so an
+		# FFA slot is never mistaken for an ally of another FFA slot.
+		"team": -1,
 		"farm_cap": 0, "score": 0, "entities": [], "ai_state": {}, "starving": false,
 		"famine_t": 0.0, "famine": false,
 		"damage_mult": {"sword": 1.0, "pike": 1.0, "bullet": 1.0, "arrow": 1.0, "firearrow": 1.0, "cannonball": 1.0, "cannister": 1.0},
@@ -349,10 +360,14 @@ func setup_begin(mode: String) -> void:
 	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else ["ukr", "rus"]
 	# P-42: one slot per participant. Opponents 1/2/3 -> 2/3/4 players; the
 	# default is still 2 with player 0 human and every other slot AI.
-	var count: int = clampi(int(Data.PLAYER_COUNT), 2, 8)
+	var count: int = clampi(int(Data.PLAYER_COUNT), 2, Data.MAX_PLAYERS)
+	var ai_arr: Array = Data.PLAYER_AI if Data.PLAYER_AI is Array else []
 	players = []
 	for i in count:
-		var pl := new_player(i, _nation_name(i, pn), i > 0)
+		# Roster UI drives Human/Computer per slot; the i>0 rule is only the
+		# fallback for legacy callers with no PLAYER_AI array.
+		var is_ai := bool(ai_arr[i]) if i < ai_arr.size() else i > 0
+		var pl := new_player(i, _nation_name(i, pn), is_ai)
 		pl["nation"] = str(pns[i]) if i < pns.size() else "rus"
 		if i < Data.TEAMS.size():
 			pl["team"] = int(Data.TEAMS[i])
@@ -765,10 +780,40 @@ func _gen_patterns() -> void:
 						_add_res("stone", pp, 80, 0.9)
 				_clear_trees(cpos, 5.0 * TILE)
 			"mine":
-				if not is_blocked(cpos):
-					_add_res(str(st.res), cpos, 0, 0.0)
-				_paint_terrain(cpos, 3.0 * TILE, 1, 2.5, true)
-				_clear_trees(cpos, 6.0 * TILE)
+				# T-MINES-FIX: pattern_gen owns the footprint-safe layout, but
+				# the post-build collision pass can still turn a stamp
+				# centre into steep rock. Nudge to the nearest open, footprint-
+				# clear tile instead of DROPPING the deposit: the richness stamp
+				# target is the count authority, so every stamp must be realised.
+				# Keep the stamp in sync so it stays the authoritative footprint.
+				var mp := cpos
+				if is_blocked(mp) or not _ore_spot_clear(mp):
+					var nudged := false
+					for rr in [1, 2, 3, 4, 5, 6, 8, 10, 12, 16]:
+						for k in 16:
+							var a := TAU * float(k) / 16.0 + float(rr) * 0.31
+							var q := cpos + Vector2(cos(a), sin(a)) * float(rr) * TILE
+							if not in_bounds(q) or is_blocked(q):
+								continue
+							if int(terrain[_t(tile_of(q).x, tile_of(q).y)]) == 3:
+								continue
+							if not _ore_spot_clear(q):
+								continue
+							var tq := tile_of(q)
+							st.set("x", tq.x)
+							st.set("y", tq.y)
+							mp = Vector2((float(tq.x) + 0.5) * TILE, (float(tq.y) + 0.5) * TILE)
+							nudged = true
+							break
+						if nudged:
+							break
+					if not nudged:
+						# No open tile nearby: still realise the deposit on its
+						# stamped site so the richness count never changes.
+						mp = cpos
+				_add_res(str(st.res), mp, 0, 0.0)
+				_paint_terrain(mp, 3.0 * TILE, 1, 2.5, true)
+				_clear_trees(mp, 6.0 * TILE)
 		for c in cells:
 			var cc: Vector2i = c
 			ext = maxf(ext, float(maxi(abs(cc.x), abs(cc.y))) * TILE)
@@ -1113,11 +1158,22 @@ func _apply_richness_ores(starts: Array[Vector2]) -> void:
 		var kinds := ["gold", "iron", "coal"]
 		for st in starts:
 			for k in delta:
-				var a := TAU * (float(k) + 0.31) / 3.0
-				var p: Vector2 = st + Vector2(cos(a), sin(a)) * (11.0 * TILE)
-				if in_bounds(p) and not is_blocked(p):
+				# T-MINES-FIX: prefer the original 11-tile sector spot, but keep
+				# searching (no shared rng draw) until a footprint-clear site is
+				# found so the richness count is preserved without overlap.
+				for _try in 24:
+					var a := TAU * (float(k) + 0.31) / 3.0 + float(_try) * 0.26
+					var dst := 11.0 + float(_try % 6) * 2.0
+					var p: Vector2 = st + Vector2(cos(a), sin(a)) * (dst * TILE)
+					if not in_bounds(p) or is_blocked(p):
+						continue
+					if int(terrain[_t(tile_of(p).x, tile_of(p).y)]) == 3:
+						continue
+					if not _ore_spot_clear(p):
+						continue
 					_add_res(kinds[k % 3], p, 0, 0.0)
 					_mark_mine_mask(p, 3.0 * TILE)
+					break
 		return
 	# low: retire the nearest ore node to each start (deterministic, no rng draw)
 	for st in starts:
@@ -1138,16 +1194,29 @@ func _apply_richness_ores(starts: Array[Vector2]) -> void:
 				by_id.erase(n2.id)
 				res_nodes.remove_at(best)
 
-# T-MINES-PLACE: per-start ore discoverability guarantee, NORMAL richness only.
-# Donor mines are stamped from pattern masks (C3PatternGen.SetupMines) and the
-# donor publishes no per-start deposit count/ring table; the existing near-start
-# cluster (C3PatternGen "Pass 1") is a port inference, not donor data. This pass
-# is a second, game.gd-owned safety net: it only RELOCATES an existing deposit
-# when a start has no ore of that kind inside MINE_DISCOVER_R, so the total ore
-# count per richness is unchanged and no infinite resource is ever created.
-# Low/high richness are deliberately skipped so RICHNESS_ORE_DELTA keeps its
-# existing behaviour byte-for-byte. A dedicated seeded RNG leaves the shared
-# stage stream (`rng`, already reseeded to "mines" in _gen_resources) untouched.
+# T-MINES-FIX: single footprint test shared by every game.gd path that places
+# or relocates an ore deposit (richness, fallback net, extra-start provisioning,
+# reach repair).  `ignore_id` lets a relocation ignore its own old node.
+func _ore_spot_clear(p: Vector2, ignore_id: int = -1) -> bool:
+	for n in res_nodes:
+		if int(n.id) == ignore_id:
+			continue
+		if str(n.type) in ["gold", "iron", "coal"]:
+			if n.pos.distance_to(p) <= MINE_MIN_SEP_TILES * TILE:
+				return false
+	return true
+
+# T-MINES-FIX: per-start ore discoverability safety net, NORMAL richness only.
+# pattern_gen.gd now OWNS mine placement: its final authoritative pass already
+# guarantees gold+iron+coal in the 10..24 tile band with zero footprint overlap,
+# so on a normally generated map this function relocates NOTHING (every start is
+# already inside MINE_DISCOVER_R). It is kept only for callers whose ore nodes
+# were moved/parked after generation (e.g. the T-MINES-PLACE fallback test) and
+# uses the SAME footprint rule as pattern_gen (_ore_spot_clear / MINE_MIN_SEP_TILES),
+# so a relocation can never reintroduce the visual overlap this task fixes.
+# It only RELOCATES an existing deposit - never adds one - keeping counts intact.
+# Low/high richness are skipped so RICHNESS_ORE_DELTA stays byte-identical.
+# A dedicated seeded RNG leaves the shared `rng` stage stream untouched.
 func _ensure_start_ore_clusters(starts: Array[Vector2]) -> void:
 	var rkey := str(Data.RICHNESS)
 	if rkey != "med" and rkey != "normal":
@@ -1195,22 +1264,30 @@ func _ensure_start_ore_clusters(starts: Array[Vector2]) -> void:
 			var sector := base + float(ki) * TAU / 3.0
 			var dest: Vector2 = Vector2.ZERO
 			var found := false
-			for pass_i in 2:
-				for _a in 48:
+			for pass_i in 3:
+				for _a in 96:
 					var ang := sector + r.randf_range(-0.9, 0.9)
-					if pass_i == 1:
+					if pass_i >= 1:
 						ang = r.randf() * TAU
-					var dst := r.randf_range(MINE_NEAR_LO, MINE_NEAR_HI)
+					var lo := MINE_NEAR_LO
+					var hi := MINE_NEAR_HI
+					if pass_i == 2:
+						hi = 32.0  # widen honestly if the sector is congested
+					var dst := r.randf_range(lo, hi)
 					var p := st + Vector2(cos(ang), sin(ang)) * dst * TILE
 					if not in_bounds(p) or is_blocked(p):
 						continue
 					if int(terrain[_t(tile_of(p).x, tile_of(p).y)]) == 3:
 						continue
+					# T-MINES-FIX: full scaled-mine footprint separation, not the
+					# old 3 m point check that let two ore aprons overlap.
+					if not _ore_spot_clear(p, int(node.id)):
+						continue
 					var clear := true
 					for other in res_nodes:
 						if int(other.id) == int(node.id):
 							continue
-						if other.pos.distance_to(p) < 3.0 * TILE:
+						if str(other.type) in ["wood", "stone"] and int(other.hits) > 0 and other.pos.distance_to(p) < 4.0 * TILE:
 							clear = false
 							break
 					if not clear:
@@ -2222,7 +2299,9 @@ func _provision_spot_clear(p: Vector2, t: String) -> bool:
 # Constraint-aware provisioning for appended starts (post-generation, no rng).
 func _provision_extra_start(sv: Vector2) -> void:
 	var types: Array[String] = ["wood", "stone", "gold", "iron", "coal"]
-	var rings := [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0]
+	# T-MINES-FIX: wider rings so the footprint-aware ore check below still has
+	# open ground to land on (the pattern-gen mines are now strictly spaced).
+	var rings := [4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0]
 	for i in types.size():
 		var t := types[i]
 		var placed := false
@@ -2236,6 +2315,10 @@ func _provision_extra_start(sv: Vector2) -> void:
 				if terrain[ti] == 3 or terrain[ti] == 4 or terrain[ti] == 5:
 					continue
 				if not _provision_spot_clear(p, t):
+					continue
+				# T-MINES-FIX: provisioned deposits must obey the SAME footprint
+				# separation as stamped mines (they get a 3-tile apron too).
+				if str(t) in ["gold", "iron", "coal"] and not _ore_spot_clear(p):
 					continue
 				var hits: int = 60 if t == "wood" else (0 if t in ["gold", "iron", "coal"] else 50)
 				_add_res(t, p, hits, 0.0)
@@ -2344,6 +2427,9 @@ func _repair_start_reach() -> void:
 					if terrain[ti] == 3 or terrain[ti] == 4 or terrain[ti] == 5:
 						continue
 					if not reach.has(ti) or not _provision_spot_clear(p, rep):
+						continue
+					# T-MINES-FIX: same footprint rule as every other ore path.
+					if str(rep) in ["gold", "iron", "coal"] and not _ore_spot_clear(p):
 						continue
 					var hits: int = 60 if rep == "wood" else (0 if rep in ["gold", "iron", "coal"] else 50)
 					_add_res(rep, p, hits, 0.0)
@@ -2560,14 +2646,31 @@ func _mine_debug(res: String) -> String:
 		out.append("%s/%s fin=%s dep=%s dead=%s" % [b.sid, b.player, b.finished, b.get("deposit_left", -1), b.dead])
 	return "[" + ", ".join(out) + "]"
 
-# Single team predicate shared by every target-selection path. Players with a
-# `team` field are allies iff the ids match; no team field = free-for-all.
+# Single team predicate shared by every target-selection path. A negative team
+# id (the new_player default, -1) means free-for-all: never an alliance. Two
+# players are allies only when both carry a real (>= 0) team id that matches.
 func _is_ally(a: int, b: int) -> bool:
 	if a < 0 or b < 0 or a >= players.size() or b >= players.size() or a == b:
 		return false
 	if not players[a].has("team") or not players[b].has("team"):
 		return false
-	return int(players[a].team) == int(players[b].team)
+	var ta := int(players[a].team)
+	var tb := int(players[b].team)
+	if ta < 0 or tb < 0:
+		return false
+	return ta == tb
+
+# T-MENU-ROSTER donor "Capture" rule. Peasant conversion is already gated by
+# Data.CAPTURE_ENABLED (main clears it for the no-peasant modes); this decides
+# which units may lean on a building capture point.
+func _capture_unit_allowed(u: Dictionary) -> bool:
+	match str(Data.CAPTURE_MODE):
+		"no_peasants", "no_peasants_or_centres":
+			return str(u.get("sid", "")) != "peasant"
+		"artillery_only":
+			return bool((u.get("def", {}) as Dictionary).get("artillery", false))
+		_:
+			return true
 
 func enemies_in_radius(pos: Vector2, player: int, r: float, military_only := true) -> Dictionary:
 	var best: Dictionary = {}
@@ -3543,6 +3646,13 @@ func train_unit(player: int, building: Dictionary, sid: String, amount: int = 1,
 			rsid = alt
 			break
 	if not building.def.get("trains", []).has(sid) and not building.def.get("trains", []).has(rsid):
+		return false
+	# T-MENU-ROSTER donor rules: "No Cannons Towers Walls" removes artillery
+	# training, and Pop limit refuses new units once the cap is reached.
+	if str(Data.CANNON_MODE) == "no_cannons_towers_walls" \
+			and bool((Data.UNITS.get(rsid, {}) as Dictionary).get("artillery", false)):
+		return false
+	if Data.POP_LIMIT > 0 and unit_count(player) >= Data.POP_LIMIT:
 		return false
 	# officers and drummers need a finished academy (wiki: formation gate)
 	if rsid in ["officer", "officer18", "drummer", "drummer18"]:
@@ -5068,13 +5178,16 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 	# capture: peasants do it properly, soldiers only lean on it.
 	# Video pass: a white flag goes up and the bar fills while peasants swarm
 	# an empty building; garrisoned towers resist.
-	if e.finished and e.def.get("capture", false):
+	# "No capturing peasants or centres" also freezes the town-hall itself.
+	var centres_frozen := str(Data.CAPTURE_MODE) == "no_peasants_or_centres" and str(e.sid) == "cen"
+	if e.finished and e.def.get("capture", false) and not centres_frozen:
 		var peasants_allowed := bool(Data.CAPTURE_ENABLED)
 		var peas := 0
 		var sols := 0
 		var capturer := -1
 		for u in grid_query(e.pos, 8.0 + e.def.radius):
 			if not u.dead and u.kind == "unit" and u.player != e.player \
+					and _capture_unit_allowed(u) \
 					and u.pos.distance_to(e.pos) < 8.0 + e.def.radius:
 				if u.sid == "peasant":
 					if peasants_allowed:
@@ -5155,6 +5268,10 @@ func _team_alive(team: int) -> bool:
 	return false
 
 func _check_victory() -> void:
+	# T-MENU-ROSTER donor "Peace Time": no victory is awarded before the
+	# configured number of seconds has elapsed. Combat itself is unchanged.
+	if Data.PEACE_TIME > 0.0 and time_s < Data.PEACE_TIME:
+		return
 	# "destroy_all": the side that has nothing left loses (the port's default,
 	# estimated - the original skirmish condition was not in readable files).
 	# "score": the first side to reach the score limit wins.

@@ -1869,8 +1869,19 @@ func patrol_route_active() -> bool:
 	var pa = ictl.get("patrol_a")
 	return pa != null and pa != Vector2.INF
 
+# T-MENU-ROSTER: 2..8 players now reach the renderer. The old 2-entry literal
+# indexed directly and crashed with OOB for p>=2. Values are copied read-only
+# from hud.gd MM_PLAYER_COLORS (that lane owns the minimap palette); wrapi gives
+# a safe modulo fallback for out-of-range / negative player ids.
+const PLAYER_COLORS := [
+	Color(0.30, 0.62, 1.00), Color(1.00, 0.32, 0.26),
+	Color(1.00, 0.78, 0.22), Color(0.42, 0.85, 0.42),
+	Color(0.70, 0.45, 1.00), Color(0.25, 0.85, 0.85),
+	Color(1.00, 0.55, 0.72), Color(0.85, 0.85, 0.85),
+]
+
 func _player_color(p: int) -> Color:
-	return [Color(0.25, 0.5, 1.0), Color(1.0, 0.3, 0.25)][p]
+	return PLAYER_COLORS[wrapi(p, 0, PLAYER_COLORS.size())]
 
 var _fog_tick := 0
 
