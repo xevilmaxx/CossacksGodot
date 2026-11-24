@@ -43,8 +43,16 @@ gaps from the 9-agent parity audit are closed (`AUDIT3D_TRIAGE.md`):
 
 Post-verdict closures: PERF-3D fixed `sync_ms` hot paths (V7-79 pose memo
 8.18–11.91×, V7-80 resource gate 12.54×), final gate re-run green (jobs
-203/204/205), and V7-81 fixed the minimap black-view coordinate bug (probe
-11/11, selftest 212 29/29) — **user windowed retest pending**.
+203/204/205), V7-81 fixed the minimap black-view coordinate bug (probe 11/11,
+selftest 212 29/29), V7-90 applied donor camera math (probe 8/8, selftest
+241 29/29), and V7-92 integrated the DONOR-REPRESENTATION terrain: live
+`game.tileblock` uint8[320²] -> UV2 tile index, V7-86 tile-index shader with
+eye-plane UVs/face tiles, V7-91 triple-mode atlas (`single` default, 180 MB
+PNG restored but KEEP UNCOMMITTED OR LFS; `split`/`array` fallbacks), and
+V7-84 donor water shader. Post-integration final gate green: jobs 254 selftest
+29/29, 255 uitest 17/17, 256 t_render_mode PASS seam_missing=false.
+**User windowed retest still pending. DONOR VISUAL PARITY STILL UNVERIFIED —
+no GPU A/B was run.**
 Remaining follow-up wave: donor visual A/B, donor terrain fidelity (TERRAIN2
 research), AI force/wave failure, windowed perf re-measurement, Craft Anything
 donor deep dives, optional positional audio. No git operations were performed

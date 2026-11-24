@@ -268,6 +268,16 @@ historical failures" once the background job finishes (avoid spool race).
   only diffusewaves0.bmp sampled; diffusewaves2 live but unsampled; others
   commented; NO foam texture asset. Values relayed to V7-84.
 
+### FINAL POST-INTEGRATION GATE GREEN + ROOT README UPDATED
+- Jobs 254/255/256 all ok: variant selftest passed:true 29/29, uitest
+  passed:true 17/17, t_render_mode PASS seam_missing=false. Queue empty after.
+- Root README.md enriched: two main modes table (2D launch.bat/app vs 3D
+  launch_variant3d.bat/variant3d with launch_3d.bat shim), render_mode config,
+  three atlas modes table with GitHub LFS caveat + fallback chain, gate commands,
+  variant3d project map, links to AUDIT3D/TERRAIN2/DEEPDEC docs, honest
+  no-visual-parity footer. Test counts corrected 28->29.
+- STATUS_WAVE7_PHASE2.md final verdict updated with V7-81/90/92 and gate 254-256.
+
 ### V7-92 DONOR-REPRESENTATION TERRAIN INTEGRATED
 - SOLE file: variant3d/scripts/world3d_terrain.gd + report. TILE INDICES FROM
   LIVE GAME: game.tileblock PackedByteArray (game.gd:53, sized :1621, dumped
