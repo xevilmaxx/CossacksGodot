@@ -51,6 +51,11 @@ extends Node3D
 #                              3509 / :3602-3613) and forwards them to the FX
 #                              module's public draw_ghost / draw_rally. No 2D file
 #                              is edited; the FX meshes already exist.
+#   selection aura (FIX-SELECTVIS) -> this file derives one entry per selected id
+#                              from the EXISTING selected_ids / selected mirror
+#                              and calls fx.sync_selection(entries). FX builds a
+#                              flat ring + owner-colour pip per entry, in the 13
+#                              donor key colours. No sim state / 2D file edited.
 #   2D-only legacy slots    -> AUDIT3D-04 E08: aliases/no-ops for unbranched
 #                              main.gd/hud.gd/input_controller.gd call sites;
 #                              NO sprite/chunk pixels are fabricated (charter :40-53).
@@ -77,6 +82,17 @@ extends Node3D
 #                                 can_place + can_pay :3502-3503; colour :3509)
 #   rally trigger ............... app/scripts/world.gd:3602-3613 (selected player-0
 #                                 building with a "rally" field -> e.rally/e.player)
+#   selection ring / aura ....... app/scripts/world.gd:3011-3041 (building:
+#                                 squashed player glow, dark under-ring, tinted
+#                                 ring_sel, pulse), :3252-3254 (unit player ring),
+#                                 :2845,2969-2972 (building flag player colour);
+#                                 docs/coord_swarm_2026-11-24/reports/
+#                                   COMPLETENESS_02_vs_2d.md:81,127 (no 3D ring),
+#                                   AUDIT3D_02_colors.md:46-47,103-108 (G1/G3:
+#                                   player colour never rendered; draw_rally had
+#                                   no caller before V7-76)
+#   donor key colours ........... variant3d/data/donor_key_colors.json slots 0..12
+#                                 (13 donor colours; alpha UNVERIFIED — fx chooses 1.0)
 #   ghost/rally dead API ........ AUDIT3D_06_fx_anim_audio.md:45-46,103 (P0 G10)
 #   camera screen->ground ....... variant3d/scripts/camera3d.gd:167-176 (Camera3D
 #                                 raycast; the 3D translation of world.gd:3467-3469)
@@ -502,6 +518,77 @@ func _sync_rally() -> void:
 		fx.draw_rally(rp, 0)
 
 
+# --- FIX-SELECTVIS: existing selection state -> FX selection ring / owner ----
+# 2D draws a player-tinted aura under each selected building
+# (app/scripts/world.gd:3011-3041) and a player ring under each selected unit
+# (world.gd:3252-3254). Neither exists in 3D (COMPLETENESS_02_vs_2d.md:81,127;
+# AUDIT3D_02_colors.md:46-47,103-108). Translate the SEMANTICS only: hand FX one
+# entry per currently selected id and let it build procedural geometry. This
+# reads the SAME read-only selected_ids / selected mirror established by
+# _sync_selection(); it never writes e["selected"] or any other sim state.
+# The FX ring meshes are labelled PORT APPROXIMATION — NOT DONOR PARITY.
+func _sync_selection_aura() -> void:
+	if fx == null:
+		return
+	var entries: Array = []
+	for raw_id in selected_ids:
+		var id := int(raw_id)
+		var e = selected.get(id, null)
+		if e == null:
+			e = _entity_by_id(id)
+		if e == null:
+			continue
+		var p = _prop(e, "pos", null)
+		if not (p is Vector2 or p is Vector3):
+			continue
+		var kind := str(_prop(e, "kind", ""))
+		if kind != "unit" and kind != "building":
+			continue
+		entries.append({
+			"id": id,
+			"pos": p,
+			"player": _int_prop(e, "player", -1),
+			"kind": kind,
+			"radius": _selection_radius(e, kind),
+		})
+	fx.sync_selection(entries)
+
+
+# Fallback lookup when the mirror has an id but by_id was unavailable (e.g. an
+# Object stub that exposes get_selected() but not by_id). game.gd:2023 keys by_id
+# with the same `id` field used here; game.entities is the 2D draw source.
+func _entity_by_id(id: int):
+	if game == null:
+		return null
+	var ents = game.get("entities")
+	if ents is Array:
+		for e in (ents as Array):
+			if _int_prop(e, "id", -1) == id:
+				return e
+	var by_id = game.get("by_id")
+	if by_id is Dictionary and (by_id as Dictionary).has(id):
+		return (by_id as Dictionary)[id]
+	return null
+
+
+# Sim-metre footprint radius. 2D uses e.def.radius (world.gd:2846/3244); when a
+# stub has no def, the same sid-keyed Data tables used by fx._building_radius()
+# supply the donor-cited value (no invented per-frame measurement).
+func _selection_radius(e, kind: String) -> float:
+	var def = _prop(e, "def", null)
+	if def is Dictionary and (def as Dictionary).has("radius"):
+		return maxf(0.25, float((def as Dictionary).get("radius")))
+	var sid := str(_prop(e, "sid", ""))
+	var table = null
+	if Data != null:
+		table = Data.BUILDINGS if kind == "building" else Data.UNITS
+	if table is Dictionary and (table as Dictionary).has(sid):
+		var d = (table as Dictionary)[sid]
+		if d is Dictionary and (d as Dictionary).has("radius"):
+			return maxf(0.25, float((d as Dictionary).get("radius")))
+	return 1.5 if kind == "building" else 0.35
+
+
 # --- FULL 2D WORLD CONTRACT: API ---------------------------------------------
 
 func bind(g, h = null) -> void:
@@ -591,6 +678,7 @@ func sync(dt: float) -> void:
 	anim_t += maxf(dt, 0.0)
 	_update_view_rect()
 	_sync_selection()
+	_sync_selection_aura() # FIX-SELECTVIS: selected mirror -> fx.sync_selection
 	_sync_build_ghost()    # V7-76: 2D build ghost -> fx.draw_ghost (P0 G10)
 	_sync_rally()          # V7-76: selected-building rally -> fx.draw_rally
 	_reconcile_entities()   # V7-62: add new sim entities, remove gone ones

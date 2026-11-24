@@ -1,0 +1,131 @@
+---
+id: FIX-COLOR
+owner: FIX-COLOR subagent
+date: 2026-11-24
+scope: "variant3d/scripts/world3d_entities.gd and this report ONLY. Read-only donor text reads; no fx/world3d/main/hud/app/config/test edits; no git operations."
+status: "CODE COMPLETE — VERIFICATION PENDING (runner queue paused by coordinator). One parse attempt FAILED on PackedByteArray.subarray(); fixed at :378/:384; final re-parse/probe/selftest NOT yet run."
+governing_rule: "AUDIT3D_CHARTER.md:6-15 — path:line evidence, OBS vs INFERENCE, UNVERIFIED labels, smallest donor-grounded fix, no git operations."
+owns: ["variant3d/scripts/world3d_entities.gd", "docs/coord_swarm_2026-11-24/reports/FIXCOLOR_nation_bands.md"]
+godot_runs: "ticket 261 'fixcolor-probe0' (ok, pre-fix capability probe); ticket 271 'fixcolor-parse1' (failed — 2 subarray() parse errors, fixed; no successful parse yet)."
+---
+
+# FIX-COLOR — donor nation colour is a small alpha-masked BAND, not a body paint
+
+## 1. What the donor actually does (all OBS, read-only text/asset reads)
+
+| Claim | Donor `path:line` | OBS / INFERENCE |
+|---|---|---|
+| Key colour table `GetKeyColorByPlayerIndex`, default `koef := 1.1`, cases 0..13, `r/g/b = channel*koef/255` | `C:\Games\Cossacks 3\data\scripts\lib\classes.script:7986-8015` (formula `:8012-8014`, default `:7988`) | OBS |
+| `gKeyColor` array + population loop | `classes.script:7685`, `:8091-8092` | OBS |
+| `gc_MaxColorCount = 13`; guard applies only `0 <= colorInd < 13` | `data\scripts\dmscript.global:121`; `lib\misc.script:5070` | OBS |
+| Recursive application to the object AND every child | `lib\misc.script:5067-5081` (call at `:5073`, recursion `:5074-5081`) | OBS |
+| `a := 1` **only** when `GetLibMaterialTextureFormat(...) = 2` (tfRGBA); otherwise `a` is left unassigned | `misc.script:5069`, `:5072`; `data\materials\ref\refunit.mat:36-38` (`textureformat = tfRGBA`), `refbuilding.mat:36`; exceptions `units.mat:9,20` (`tfDefault`) | OBS |
+| **Uniform 0 = `custColor`, a `sut4f` uniform on the skinned unit shader `u`** | `data\shaders\shaders.ref:63-87` (`name = custColor`, `type = sut4f`, `value X/Y/Z/W = 0` at `:80-85`); fragment `unit.smx9.id8.frag`, vertex `unit.sm.b16.id16.vert` at `:137-138` | OBS |
+| **The actual tint operation is alpha-masked, per pixel:** `tex0.rgb = mix(tex0.rgb, custColor.rgb * custColor... , tex0.a * custColor.a)` | `data\shaders\obj\unit.smx9.id8.frag:37-38` (identical in `unit.smx3.id8.frag:37-38`) | OBS |
+| Texture alpha is **not** transparency: final `color.a` is forced from the material (`diffuse.a = 1`) | `unit.smx9.id8.frag:42`; `refunit.mat:60-65,88-93` | OBS |
+| Application sites for units / port buoys | `lib\unit.script:3860`; `lib\player.script:2971` | OBS |
+| Donor `.oss` has **no** per-face material/section field — one mesh + UVs | `docs/decomp/DC_FORMATS.md:46-64` (layout `v/fc/t`, no material block) | OBS |
+
+**Conclusion (INFERENCE, strongly constrained by the above):** the "little bands" the user saw are the texels where the donor RGBA albedo's **alpha channel is set**. The donor multiplies the key colour into those texels only; everything else keeps its original art. Two gates: (1) only tfRGBA objects get `custColor.a = 1` (`misc.script:5072`), (2) within them only `tex0.a > 0` texels are tinted (`unit.smx9.id8.frag:38`). Nothing in the donor text tints a whole body, and there is no separate band *mesh section* to copy — the scope is a texture mask.
+
+Measured donor alpha statistics (Pillow, read-only, first mip, threshold a>=128 unless stated):
+
+| Donor DDS | masked texels / total | share |
+|---|---|---|
+| `materials\units\peaukr.dds` | 34,990 / 262,144 (a>200: 34,578; any nonzero: 35,760; full 255: 32,814) | 13.35% |
+| `materials\units\musketeer.dds` | 32,230 / 262,144 (any nonzero) | 12.29% |
+| `materials\units\cossacksich.dds` | 39,377 / 262,144 (any nonzero) | 15.02% |
+| `materials\units\pikeman.dds` | 70,178 / 262,144 (any nonzero) | 26.77% |
+| `materials\units\dragoon18.dds` | 103,234 / 262,144 (any nonzero) | 39.38% |
+| `materials\units\archer.dds` | 124,909 / 262,144 (any nonzero) | 47.65% |
+
+`peaukr.dds` header: `DDS `, 512×512, fourcc `DXT5`, 10 mips, 349,680 bytes (first mip = 128×128 blocks = 262,144 bytes). A downscaled view of its alpha is a handful of small white rectangles on black — the bands.
+
+## 2. Why V7-65 painted everything
+
+- `variant3d/scripts/world3d_entities.gd` V7-65 `_tinted_material()` duplicated the surface material and set `StandardMaterial3D.albedo_color = tint` (old `:311-320`); `_apply_tint()` set that as `material_override` on MultiMesh batches and per-surface overrides on buildings (old `:330-344`). `albedo_color` multiplies the **entire** surface — no mask.
+- Root cause of the missing mask: `variant3d/tools/convert_models.py:148-151,449-450` converts unit/building textures with `force_opaque=True`, calling a donor alpha that "the game draws them opaque" **"garbage"** and dropping it. In fact `unit.smx9.id8.frag:42` shows that alpha is not opacity — it is the tint mask. The port PNGs are confirmed `RGB` (e.g. `assets/models/tex/peasant.png` mode `RGB`), so the V7-65 code had no mask even if it had wanted one.
+- The donor OBJ/MTL exposes no usable band section: `convert_models.py:133-137` writes one `newmtl model`, and the donor `.oss` has no material field (`DC_FORMATS.md:54-55`). So a "separate material subset" is not available in the port mesh.
+
+## 3. Fix implemented (final `variant3d/scripts/world3d_entities.gd`)
+
+The donor mask is recovered from the **donor DDS path the port manifest already carries** (`assets/models/manifest.json`, `models[i].texture`, e.g. `...\materials\units\peaukr.dds`) — no new path is invented and no colour is invented. The 13 `rgb_godot_float` slots and the identity `entity.player -> gKeyColor slot` mapping are untouched.
+
+1. **`bind()` (`:180-202`)** caches `_donor_texture_paths[sid]` from `manifest.json:models[i].texture`; clears `_band_mask_cache` / `_band_mask_stats`; stats now name the corrected scope (`:250-259`).
+2. **`_dxt5_mask()` (`:371-432`)** reads the DDS header (height `:12`, width `:16`, fourcc `:84`), validates `DDS ` + `DXT5` by direct byte comparison (`:378`, `:384` — `PackedByteArray.subarray()` does not exist in Godot 4.7), and decodes the **DXT5 alpha indices only** of the first mip into an RGBA8 `Image` whose alpha is the donor mask. RGB colour indices are ignored intentionally. Any mismatch returns `null`.
+3. **`_band_mask()` / `_band_mask_texture()` / `_mask_at()` / `_measure_band()` (`:439-526`)** cache one mask texture per sid, count masked texels, and measure how many **vertices/faces** of the baked mesh land on band texels. The measured numbers are exposed in `stats["donor_tint_mask_stats"]`.
+4. **`_tinted_material()` (`:528-550`)** now builds a `ShaderMaterial` whose fragment code is the donor line 38 verbatim in structure: `mix(t.rgb, custColor.rgb * t.rgb, m * custColor.a)` with `m = mask_tex.a`. Donor albedo texture is preserved. **If no donor mask is available the body is left UNTINTED** — V7-65's whole-body fallback is never reinstated.
+5. **`_apply_tint()` (`:560-578`)** calls `_measure_band()` and tags each batch/building with `donor_tint_label = PORT_LABEL` and `donor_tint_visual = "UNVERIFIED"` (buildings keep `donor_tint_slot`/`donor_tint_rgb` from V7-65).
+
+### Before / after tint scope
+
+| | V7-65 (before) | FIX-COLOR (after) |
+|---|---|---|
+| Carrier | `StandardMaterial3D.albedo_color` | `ShaderMaterial` uniform `custColor` + `mask_tex` |
+| Scope | whole surface, every texel | only texels where donor DDS alpha >= 0.5 |
+| Formula | albedo * tint (uniform) | `mix(albedo, tint*albedo, donor_alpha * 1.0)` (donor `unit.smx9.id8.frag:38`) |
+| Missing-mask behaviour | whole-body tint from the 13 slots | no tint at all, explicit warning |
+| Donor slots | 13 | 13 (unchanged) |
+| Public API | 6 signatures | 6 signatures (unchanged) |
+| V7-74 morph / V7-79 memo | consumed / memoized | untouched (no edit to `sync()` pose logic) |
+
+### Exact diff summary (final line numbers)
+
+| Final lines | Before | After |
+|---|---|---|
+| `:61-88` | no FIX-COLOR header | 24-line donor-evidence header (`classes.script`, `misc.script`, `shaders.ref`, `unit.smx*.frag`, `refunit.mat`, `refbuilding.mat`, `units.mat`, `convert_models.py`) |
+| `:93-102` | only `KEY_COLORS_PATH` | + `TINT_SHADER_CODE` (donor mix formula), `DDS_HEADER_SIZE`, `DXT5_BLOCK_BYTES`, `TINT_MASK_THRESHOLD` |
+| `:165-171` | only `_key_colors*` state | + `_donor_texture_paths`, `_band_mask_cache`, `_band_mask_stats` |
+| `:180-185` | clears mesh caches only | + clears the three new dictionaries |
+| `:197-202` | manifest loop read only `sid`/`bbox` | + reads and stores `m["texture"]` verbatim |
+| `:250-259` | `donor_tint_target = StandardMaterial3D.albedo_color...` | corrected target/scope/target label/visual/mask source/stats/UNVERIFIED text; all old keys retained |
+| `:363-432` | none | `clamped_dxt5()` + `_dxt5_mask()` (DXT5 alpha decoder; byte-wise magic check after ticket 271) |
+| `:439-526` | none | `_band_mask()`, `_band_mask_texture()`, `_mask_at()`, `_measure_band()` |
+| `:528-550` | albedo_color clone | masked `ShaderMaterial`; no mask => untinted clone |
+| `:560-578` | plain `_apply_tint` | + `_measure_band()` + `donor_tint_label` / `donor_tint_visual` meta |
+| `:934`, `:1099-1101`, `:1284` | V7-65 call sites / building meta | unchanged call sites; labels added inside `_apply_tint` |
+
+## 4. Verification — **PENDING** (coordinator paused the queue)
+
+### Jobs already run
+
+| Job id | Ticket | Result |
+|---|---|---|
+| `fixcolor-probe0` | `261` | **ok**, exit 0, run 2.91 s. Pre-fix capability probe: `DDS_LOADED=false` (stderr `Failed to load image. Error 15` at probe:5 — Godot 4.7 cannot load DDS via `Image.load_from_file`, hence the manual DXT5 decoder); `SHADER_PARAM=(0.74, 0.0, 0.0, 1.0)` and `SHADER_VALID=true` — `ShaderMaterial` uniform setting works headlessly. Temp probe deleted after measurement. |
+| `fixcolor-parse1` | `271` | **failed**, run 7.37 s (waited 289.03 s). Two parse errors: `Cannot find member "subarray" in base "PackedByteArray"` at `world3d_entities.gd:378` and `:384`. Fixed by direct byte comparisons of the DDS magic/fourcc; **no successful parse of the final file yet** — re-run is job 1 below. |
+
+No visual parity claim is made. No screenshot/render/donor comparison was performed.
+
+### Commands to run on resume (in this order)
+
+1. Parse the final file:
+   ```
+   cd "C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3"
+   python variant3d/tools/godot_runner.py run --id fixcolor-parse --timeout 120 -- --headless --path variant3d --check-only --script res://scripts/world3d_entities.gd
+   ```
+2. Recreate the temporary probe `variant3d/tests/_fixcolor_probe.gd` (SceneTree, stub game with `MAP_W/MAP_H` + `height_at`), bind the module, add two `peasant` units with `player=0`/`player=1` and two `hou` buildings with `player=0`/`player=1`; assert:
+   - both unit batch keys exist (`unit|peasant|p0`, `unit|peasant|p1`) and their `material_override` is a `ShaderMaterial` with **different** `custColor` uniforms matching donor slots 0/1 (`[0.739607843,0,0,1]` vs `[0.070588235,0.4,0.903529412,1]`, tol 1e-4);
+   - `mask_tex` alpha has 34,990/262,144 texels >= 0.5 for `peasant` (matches the Pillow donor measurement);
+   - mesh UV sampling gives `0 < tinted_verts < verts` and `0 < tinted_faces < faces` for both units and buildings, with exact counts written to the result JSON;
+   - no material anywhere has a non-white `albedo_color` carrying the player tint (regression guard against V7-65 whole-body paint).
+   Then run:
+   ```
+   python variant3d/tools/godot_runner.py run --id fixcolor-probe --timeout 180 -- --headless --path variant3d --script res://tests/_fixcolor_probe.gd
+   ```
+   Read `variant3d/.godot_queue/results/<ticket>_fixcolor-probe/stdout.txt`, then **delete** the probe and its result.
+3. Full selftest:
+   ```
+   python variant3d/tools/godot_runner.py run --id fixcolor-selftest --timeout 180 -- --headless --path variant3d -- --self-test variant3d/selftest.json
+   ```
+   Expect `variant3d/selftest.json` `passed: true`, 29/29 steps.
+4. Update this report's frontmatter `status`, add the three ticket ids and the measured vertex/face counts, and re-state "NO visual parity claim".
+
+## 5. Open questions / UNVERIFIED
+
+1. **Donor shader binary not executed.** The formula is read from `unit.smx9.id8.frag:37-38` and reproduced in a Godot spatial shader; no donor render is compared. `PORT APPROXIMATION — NOT DONOR PARITY` remains on every tinted object and in stats.
+2. **Runtime donor-asset dependency.** The mask is decoded from the donor DDS path stored in `assets/models/manifest.json:models[i].texture`. On a machine without the donor install, no mask is found and objects are left **UNTINTED** (never whole-body tinted). A build-time asset bake of the mask into `variant3d/assets` would remove this dependency but is outside this job's exclusive ownership.
+3. **DXT5 alpha decode** is CPU-side, first mip only, with integer interpolation; the donor GPU decoder's exact rounding on partial alpha values is UNVERIFIED. Masked texels are essentially binary (32,814 of 35,760 nonzero are exactly 255 for peaukr), so the impact is expected to be small — not measured visually.
+4. **UV orientation** — Godot's V-flipped UVs are sampled directly against the decoded image. Verification step 2 must confirm the tinted vertex/face counts are nonzero; if they are zero, the V axis needs a flip in `_mask_at()`.
+5. **tfDefault gate** — donor skips tint entirely for `tfDefault` child materials (`units.mat:9,20`); the port mesh is a single merged surface with no material split (`convert_models.py:133-137`), so this gate cannot be represented. All ported units/buildings use tfRGBA-style albedo textures; no tint is applied to resources.
+6. **Alpha / >1.0 clamp** — unchanged from V7-61/V7-65: donor emits no alpha (`misc.script:5069,5072`), slot 4 R=1.2 and slot 6 B=1.2; the exact donor and downstream clamping is UNVERIFIED. The 13 donor slots are used verbatim.
+7. **No visual parity claim** — all verification is structural/numeric.

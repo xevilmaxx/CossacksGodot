@@ -600,9 +600,9 @@ func _do_async_load(cfg: Dictionary) -> void:
 		camera.set_zoom_target(start_zoom, true)
 		var focus3: Vector2 = homes[0].pos if not homes.is_empty() \
 			else Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M
-		camera.set("_target", focus3)  # camera3d.gd:90 _target is sim metres
-		camera.clamp_pos()
-		_center_camera3d_target()  # V7-70: sim map-origin -> centred 3D metres
+		# CAM-SEAM v2: explicit SIM-focus handoff. The camera clamps in SIM space
+		# and applies the SIM->centred transform exactly once; no private writes.
+		camera.apply_external_target(focus3)
 	else:
 		camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
 		if not homes.is_empty():
@@ -1000,21 +1000,12 @@ func make_camera3d() -> Node:
 # ordinary bind(game, world, hud, cam) calls. bind_3d(cam) on the input
 # controller creates/binds picking3d.gd internally — never make a second
 # adapter here (that was the duplicate-binding risk of an earlier draft).
-# V7-70: the composed 3D scene is centred on origin (world3d_entities.gd:577,
-# world3d_terrain.gd:312-314, world3d.gd:161-162), but camera3d.gd:148 feeds
-# _target straight into a world Vector3. main.gd owns the seam that sets
-# _target, so convert the clamped map-origin focus into centred metres here.
-# clamp_pos() still uses map-origin limits: freeze its memo afterwards.
-func _center_camera3d_target() -> void:
-	if camera == null or not is_instance_valid(camera) or game == null:
-		return
-	var sim_focus: Vector2 = camera.get("_target")
-	var centre_offset := Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M
-	camera.set("_target", sim_focus - centre_offset)
-	camera.set("_last_clamp_target", camera.get("_target"))
-	camera.set("_last_clamp_zoom", camera.get("zoom"))
-	camera.call("_apply_transform")
-
+# CAM-SEAM v2 (2026-11-24): the v1 `_center_camera3d_target()` helper and all
+# three of its call sites were REMOVED. main.gd no longer writes camera private
+# fields (_target / _last_clamp_target / _last_clamp_zoom) or calls
+# _apply_transform() directly. External focus now goes through camera3d.gd's
+# versioned, idempotent apply_external_target(sim_pos) / jump_to_world() contract;
+# the camera owns the single SIM->centred subtraction. See CAMSEAM_double_subtract.
 
 func _apply_3d_hooks(p_hud, p_cam, p_input) -> void:
 	if p_hud != null and p_hud.has_method("bind_3d"):
@@ -1063,9 +1054,8 @@ func _setup_full_game() -> void:
 			focus3 = homes[0].pos
 		if screenshot_path != "" and screenshot_focus == "relief":
 			focus3 = _relief_focus_position() / world.view_scale
-		camera.set("_target", focus3)  # camera3d.gd:90 _target is sim metres
-		camera.clamp_pos()
-		_center_camera3d_target()  # V7-70: sim map-origin -> centred 3D metres
+		# CAM-SEAM v2: explicit SIM-focus handoff (relief screenshot focus preserved).
+		camera.apply_external_target(focus3)
 	else:
 		world = C3WorldScript.new()
 		world.bind(game)
@@ -1647,8 +1637,9 @@ func _process(dt: float) -> void:
 					# (top-left origin); no view_scale and no Vector2->Vector3
 					# lerp into global_position (the V7-75 handoff).
 					var target_m: Vector2 = focus / float(n)
+					# CAM-SEAM v2: jump_to_world() already leaves _target in SIM and
+					# applies the centred transform exactly once — no extra seam write.
 					camera.call("jump_to_world", target_m)
-					_center_camera3d_target()  # sim metres -> centred 3D metres
 				else:
 					var target: Vector2 = (focus / float(n)) * world.view_scale
 					camera.position = camera.position.lerp(target, 0.35)

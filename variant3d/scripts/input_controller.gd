@@ -50,6 +50,11 @@ var patrol_a := Vector2.INF
 var patrol_b := Vector2.INF
 var guard_mode := false
 var route_node: Node2D = null
+# FIX-SEL: 3D patrol/guard route overlay. A Node2D child of world3d.gd's Node3D
+# fx_layer (world3d.gd:119,604-606) never renders; the 3D branch draws an
+# ImmediateMesh in centred world metres instead. The 2D route_node path below
+# stays byte-identical.
+var route_mesh_node: MeshInstance3D = null
 # T-NAV-RESPONSIVE: minimap geometry is cached. It only changes when the
 # viewport resizes or hud.gd resizes/rebuilds its TextureRect — never on mouse
 # events — so the per-event path does no Control/layout math or allocations.
@@ -90,11 +95,9 @@ func bind(g: C3Game, w, h: C3HUD, cam) -> void:
 	_set_cursor("default")
 	# Draw the patrol route on the existing fx layer; a child node keeps this
 	# feature entirely inside input_controller.gd (world.gd is not owned here).
-	if world != null and world.fx_layer != null and route_node == null:
-		route_node = Node2D.new()
-		route_node.z_index = 5
-		world.fx_layer.add_child(route_node)
-		route_node.draw.connect(_draw_patrol_route)
+	# FIX-SEL: the 3D world is a Node3D, so use a mesh overlay there; the 2D
+	# branch is unchanged (same Node2D + draw signal as before).
+	_ensure_route_overlay()
 	add_to_group("c3_input")
 	# T-NAV-RESPONSIVE: invalidate the cached minimap rect only on real layout
 	# changes, not on every mouse-motion event.
@@ -121,6 +124,28 @@ func bind_3d(cam) -> void:
 	camera = cam
 	picking.bind(game, cam)
 	render_mode = "3d"
+
+# FIX-SEL: attach the route overlay to the world's FX layer. 2D (Node2D world)
+# keeps the original Node2D + draw-signal path byte-for-byte; 3D (Node3D world)
+# gets a MeshInstance3D/ImmediateMesh because a Node2D child of a Node3D tree
+# never renders. Called from bind(); also callable by tests directly.
+func _ensure_route_overlay() -> void:
+	if world == null or world.fx_layer == null:
+		return
+	if world is Node3D and world.fx_layer is Node3D:
+		if route_mesh_node == null or not is_instance_valid(route_mesh_node):
+			route_mesh_node = MeshInstance3D.new()
+			route_mesh_node.name = "PatrolRoute3D"
+			var mat := StandardMaterial3D.new()
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			mat.albedo_color = Color(1.0, 0.86, 0.30, 0.95)
+			route_mesh_node.material_override = mat
+			world.fx_layer.add_child(route_mesh_node)
+	elif route_node == null:
+		route_node = Node2D.new()
+		route_node.z_index = 5
+		world.fx_layer.add_child(route_node)
+		route_node.draw.connect(_draw_patrol_route)
 
 # The bindings come from the global settings file (config.json); the ones in
 # the original data/game/var/hotkeys.cfg are the values it starts with.
@@ -310,8 +335,7 @@ func begin_patrol_waypoints() -> void:
 	patrol_a = Vector2.INF
 	patrol_b = Vector2.INF
 	_clear_pending_modes()
-	if route_node != null:
-		route_node.queue_redraw()
+	_route_redraw()
 	if hud != null:
 		hud.show_hint("Patrol: click the first waypoint")
 
@@ -329,8 +353,7 @@ func _finish_patrol(b: Vector2) -> void:
 	patrol_mode = false
 	patrol_a = Vector2.INF
 	patrol_b = Vector2.INF
-	if route_node != null:
-		route_node.queue_redraw()
+	_route_redraw()
 	if hud != null:
 		# hint_label is cleared every frame once the mode ends; use the
 		# timed message line for the confirmation instead.
@@ -377,6 +400,57 @@ func _draw_patrol_route() -> void:
 		route_node.draw_colored_polygon([p + Vector2(0, -15), p + Vector2(11, -12), p + Vector2(0, -9)],
 			Color(1.0, 0.82, 0.22, 0.95))
 		route_node.draw_circle(p, 3.0, Color(1, 1, 1, 0.85))
+
+# FIX-SEL: 3D route redraw dispatch. 2D keeps its draw-signal path; 3D writes
+# an ImmediateMesh in the centred world frame used by world3d.gd/camera3d.gd.
+func _route_redraw() -> void:
+	if route_node != null and is_instance_valid(route_node):
+		route_node.queue_redraw()
+	elif route_mesh_node != null and is_instance_valid(route_mesh_node):
+		_draw_patrol_route3d()
+
+func _route_world(p: Vector2) -> Vector3:
+	# sim -> centred metres (world3d_entities.gd:783). Keep the marker just
+	# above the sampled ground so it is not z-fighting with the terrain.
+	var y := 0.18
+	if game != null and game.has_method("height_at"):
+		y += float(game.call("height_at", p))
+	return Vector3(p.x - float(game.MAP_W) * Data.TILE_M * 0.5,
+		y, p.y - float(game.MAP_H) * Data.TILE_M * 0.5)
+
+func _draw_patrol_route3d() -> void:
+	if route_mesh_node == null or not is_instance_valid(route_mesh_node) or game == null:
+		return
+	var im := route_mesh_node.mesh as ImmediateMesh
+	if im == null:
+		im = ImmediateMesh.new()
+		route_mesh_node.mesh = im
+	im.clear_surfaces()
+	if patrol_a == Vector2.INF:
+		return
+	var end_world := patrol_b
+	if end_world == Vector2.INF:
+		end_world = _screen_to_world(get_viewport().get_mouse_position())
+	if not is_finite(end_world.x) or not is_finite(end_world.y):
+		return
+	var a := _route_world(patrol_a)
+	var b := _route_world(end_world)
+	im.surface_begin(Mesh.PRIMITIVE_LINES)
+	im.surface_add_vertex(a)
+	im.surface_add_vertex(b)
+	# End ticks + a small arrow head, matching the 2D route markers.
+	for p in [a, b]:
+		im.surface_add_vertex(p)
+		im.surface_add_vertex(p + Vector3(0.0, 2.0, 0.0))
+	var back: Vector3 = a - b
+	if back.length() > 0.001:
+		back = back.normalized()
+		var side := Vector3(-back.z, 0.0, back.x)
+		im.surface_add_vertex(b)
+		im.surface_add_vertex(b + back * 3.0 + side * 1.5)
+		im.surface_add_vertex(b)
+		im.surface_add_vertex(b + back * 3.0 - side * 1.5)
+	im.surface_end()
 
 func _screen_to_world(p: Vector2) -> Vector2:
 	# V7-52 3D seam: ground unprojection moves to picking3d.ground_point(screen),
@@ -488,8 +562,7 @@ func _unhandled_input(event: InputEvent) -> void:
 							hud.show_hint("Patrol: click the second waypoint")
 					else:
 						_finish_patrol(pw)
-					if route_node != null:
-						route_node.queue_redraw()
+					_route_redraw()
 					return
 				if guard_mode:
 					var gtarget := _pick(pw, true)
@@ -1097,8 +1170,8 @@ func _process(_dt: float) -> void:
 			world.sel_active = true
 		else:
 			world.sel_active = false
-	if patrol_mode and patrol_a != Vector2.INF and route_node != null:
-		route_node.queue_redraw()
+	if patrol_mode and patrol_a != Vector2.INF:
+		_route_redraw()
 	# build ghost hint uses the message line, not the units/score label.
 	# A held refusal/confirmation hint wins over the idle modes for a moment.
 	if Time.get_ticks_msec() >= _hint_hold_ms:

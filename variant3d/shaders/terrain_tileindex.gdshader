@@ -196,6 +196,19 @@ uniform vec2 alpha_uv_scale = vec2(1.0);
 uniform float face_mode_override = -1.0;
 // -1 = use per-vertex `UV2.y` face mode. >=0 forces 0=ground / 1=front /
 // 2=side for every cell. Port-only, for A3 before A5 face flags exist.
+// FIX-TERRAIN: world3d_terrain.gd now WRITES 1/2 on donor-slope cells, so
+// the per-vertex path is live; the override stays a diagnostic escape hatch.
+
+uniform float mask_to_alpha = 1.0;
+// FIX-TERRAIN — DIAGNOSTIC KNOB, SHIPPED VALUE UNCHANGED.
+// Donor `bmTransparency` (reftile.mat:17) blends texUnit1.a over a SECOND
+// base-tile pass; the port has no base pass, so re-applying the whole-mask
+// intensity as Godot ALPHA is structurally wrong. HOWEVER a real OpenGL A/B
+// (fixterrain_ab_before/after.png) MEASURED that removing it DARKENS the port
+// frame (luma 42.735 -> 38.425) because the bright port sky is behind the
+// semi-transparent ground. This agent therefore LEFT the shipped value at
+// 1.0 (V7-86 behaviour) instead of guessing a new art direction.
+// 1.0 = shipped; 0.0 = diagnostic "no framebuffer mask blend". No parity claim.
 
 // ----------------------------------------------------------------------------
 // VERTEX ATTRIBUTE CONTRACT (transport only; donor has no such stream).
@@ -204,7 +217,9 @@ uniform float face_mode_override = -1.0;
 //   UV2.y = face mode: 0=ground (normal refkey, reftile.mat:1-108),
 //                      1=verticalfront (reftile.mat:120-144),
 //                      2=verticalside  (reftile.mat:146-170).
-//           Default 0 keeps TERRAIN2-06 §3.1 (UV2.y = 0) valid.
+//           FIX-TERRAIN: world3d_terrain.gd now promotes donor-slope cells to
+//           1/2 from texturemap.inc:63-64/438-447/559-575 — PORT APPROXIMATION,
+//           NOT DONOR PARITY. Flat cells remain 0 (TERRAIN2-06 §3.1).
 // No COLOR / vertex-colour array: donor has zero glColorPointer references
 // (DEEPDEC-02 §3.1, verified 0 hits over donor text); `shaders.lib:27` and
 // hf.pvl.sm.vert:20-21 read a colour CHANNEL, not a mesh buffer. Do not bind
@@ -356,5 +371,6 @@ void fragment() {
 	// metadata whose path into geometry/texgen is UNVERIFIED (DEEPDEC-02 #5;
 	// TERRAIN2-06 UNVERIFIED #2) and is deliberately NOT applied.
 	ALBEDO = rgb;
-	ALPHA = a;
+	// FIX-TERRAIN: see mask_to_alpha above — PORT SUBSTITUTE, not donor parity.
+	ALPHA = mix(1.0, a, mask_to_alpha);
 }

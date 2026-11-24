@@ -31,6 +31,22 @@ extends Node3D
 # No RNG: all drift/flicker is a deterministic function of (age, spawn index).
 # No water re-bake: the spatial water shader plane is owned by world3d.gd
 #   (`_make_water`, world3d.gd:345-406); this module never touches terrain/water.
+#
+# FIX-SELECTVIS — SELECTION RING / OWNER INDICATOR (additive, no sim edit):
+#   2D semantics translated, NOT the 2D sprites:
+#     app/scripts/world.gd:3011-3041 selected BUILDING aura (squashed
+#       player-tinted glow, dark under-ring, tinted donor ring_sel, pulse);
+#     app/scripts/world.gd:3252-3254 selected UNIT player ring;
+#     app/scripts/world.gd:2845,2969-2972 building flag colour;
+#     AUDIT3D_02_colors.md:46-47,103-108 (G1/G3: no player colour rendered in
+#       3D; draw_rally had no caller before V7-76), COMPLETENESS_02_vs_2d.md:81,127.
+#   The donor's glow is engine-side (gGuiUpdateHighlights / SetHighlightRenderSettings)
+#   with private-use textures, so every mesh here is a PROCEDURAL STAND-IN:
+#   `PORT APPROXIMATION — NOT DONOR PARITY`. No sprite sheet, no 2D bake, no RNG.
+#   Owner colour is read from the same 13-slot donor key-colour JSON as the
+#   rally pennant (`_player_color`, donor_key_colors.json slots 0..12).
+#   New public API: sync_selection(entries) — driven by world3d.gd from the
+#   existing selected_ids / selected mirror (V7-76 ghost/rally pattern).
 
 const Data = preload("res://scripts/data.gd")
 
@@ -114,6 +130,8 @@ var fx_items: Array = []
 var stats: Dictionary = {
 	"spawned": 0, "expired": 0, "events_consumed": 0,
 	"rally_active": 0, "ghost_shown": 0,
+	# FIX-SELECTVIS: measured ring/owner-colour counts for probes + reports.
+	"selection_rings": 0, "selection_entries": 0, "selection_owner_colors": [],
 }
 
 # --- private state ---------------------------------------------------------
@@ -126,6 +144,10 @@ var _ghost_ok: bool = true
 var _ghost_sid: String = ""
 var _rally_root: Node3D = null
 var _rally_markers: Dictionary = {}
+# FIX-SELECTVIS: one flat ring + owner pip per selected entity, keyed by sim id.
+var _selection_root: Node3D = null
+var _selection_markers: Dictionary = {}
+var _selection_positions: Dictionary = {}   # id -> Vector2, for world_offset shifts
 var _time: float = 0.0
 var _events_seen: int = 0
 var _spawn_index: int = 0
@@ -220,6 +242,16 @@ func _shift_created_nodes(shift: Vector2) -> void:
 		if rn is Node3D and is_instance_valid(rn):
 			(rn as Node3D).position.x += shift.x
 			(rn as Node3D).position.z += shift.y
+	# FIX-SELECTVIS: selection markers store their map-origin Vector2 so a late
+	# world_offset change re-places them exactly like FX/rally (V7-73).
+	for key in _selection_markers.keys():
+		var sm: Dictionary = _selection_markers[key]
+		var sn = sm.get("node")
+		var sp = _selection_positions.get(key, null)
+		if sn is Node3D and is_instance_valid(sn) and (_valid_pos(sp)):
+			var np3: Vector3 = world_pos(sp)
+			if _finite3(np3):
+				(sn as Node3D).position = np3
 
 
 # V7-65: exact donor formula output (rgb_godot_float), NOT the old invented
@@ -268,6 +300,7 @@ func sync(dt) -> void:
 	_update_fx(d)
 	_update_rally()
 	_update_ghost()
+	_update_selection()   # FIX-SELECTVIS: deterministic pulse only; set reconcile is in sync_selection()
 
 
 # Exact signature per contract: add_fx(pos, kind, life). `life` <= 0 means
@@ -343,6 +376,61 @@ func draw_rally(pos, player: int) -> void:
 	stats["rally_active"] = _rally_markers.size()
 
 
+# FIX-SELECTVIS — PUBLIC SELECTION API (V7-76 ghost/rally pattern):
+# `entries` is an Array of Dictionaries, one per currently selected entity:
+#   {"id": int, "pos": Vector2|Vector3, "player": int,
+#    "kind": "unit"|"building", "radius": float}
+# Set semantics, NOT TTL: an id absent from `entries` has its ring removed in
+# the SAME call (2D clears the aura the frame e.selected goes false). This is
+# driven by world3d.gd from the read-only selected_ids / selected mirror; no
+# sim state is written here and no donor texture is loaded.
+func sync_selection(entries) -> void:
+	_ensure_roots()
+	var want: Dictionary = {}
+	if entries is Array:
+		for raw in (entries as Array):
+			if not (raw is Dictionary):
+				continue
+			var d := raw as Dictionary
+			var id := int(d.get("id", -1))
+			if id < 0 or want.has(id):
+				continue
+			var pos = d.get("pos", null)
+			if not _valid_pos(pos):
+				continue
+			want[id] = d
+	# Remove first: ids that left the selection lose their node immediately.
+	for id in _selection_markers.keys():
+		if want.has(id):
+			continue
+		_free_selection_marker(int(id))
+	# Add / refresh. Owner colour is re-resolved every call from the 13 donor
+	# slots so a capture (player change) recolours the pip on the next sync.
+	var colors: Array = []
+	for id in want.keys():
+		var d: Dictionary = want[id]
+		var p3: Vector3 = world_pos(d.get("pos"))
+		if not _finite3(p3):
+			continue
+		var player := int(d.get("player", -1))
+		var kind := str(d.get("kind", ""))
+		var radius := maxf(0.25, float(d.get("radius", 0.5)))
+		var marker = _selection_markers.get(id, null)
+		if marker == null:
+			marker = _make_selection_marker(id, p3, player, kind, radius)
+			_selection_markers[id] = marker
+		else:
+			var m: Dictionary = marker
+			(m.get("node") as Node3D).position = p3
+			_set_selection_color(m, player)
+			_scale_selection_marker(m, radius)
+		_selection_positions[id] = d.get("pos")
+		colors.append([_player_color(player).r, _player_color(player).g, _player_color(player).b])
+	stats["selection_entries"] = want.size()
+	stats["selection_rings"] = _selection_markers.size()
+	stats["selection_owner_colors"] = colors
+
+
 func clear_all() -> void:
 	for item in fx_items:
 		_free_item(item)
@@ -353,6 +441,13 @@ func clear_all() -> void:
 		if n != null and is_instance_valid(n):
 			n.queue_free()
 	_rally_markers.clear()
+	for key in _selection_markers.keys():
+		_free_selection_marker(int(key))
+	_selection_markers.clear()
+	_selection_positions.clear()
+	stats["selection_rings"] = 0
+	stats["selection_entries"] = 0
+	stats["selection_owner_colors"] = []
 	_ghost_active = false
 	if _ghost_root != null:
 		_ghost_root.visible = false
@@ -458,6 +553,10 @@ func _ensure_roots() -> void:
 		_rally_root = Node3D.new()
 		_rally_root.name = "Rally3D"
 		add_child(_rally_root)
+	if _selection_root == null:
+		_selection_root = Node3D.new()
+		_selection_root.name = "Selection3D"
+		add_child(_selection_root)
 
 
 func _material(col: Color, additive: bool) -> StandardMaterial3D:
@@ -622,6 +721,116 @@ func _set_rally_color(m: Dictionary, player: int) -> void:
 	if mat != null:
 		mat.albedo_color = c
 		mat.emission = Color(c.r, c.g, c.b)
+
+
+# --- FIX-SELECTVIS: selection ring / owner indicator -----------------------
+# PROCEDURAL STAND-IN — `PORT APPROXIMATION — NOT DONOR PARITY`.
+# The 2D aura is a squashed, player-tinted set of draw calls using the private
+# `ring_sel.png` / `ring_p0.png` overlays (app/scripts/world.gd:210-211,319-320,
+# :3011-3041) and a per-player unit ring (world.gd:3252-3254). No donor texture
+# is readable/copiable here, so the equivalent 3D feedback is geometry: a flat
+# TorusMesh ring in the donor key colour, a thin dark under-ring for contrast
+# on light terrain, and a small owner-colour disc at the centre. Same semantics,
+# different pixels: selection is visible and ownership is distinguishable.
+
+func _make_selection_marker(id: int, p3: Vector3, player: int, kind: String,
+		radius: float) -> Dictionary:
+	var holder := Node3D.new()
+	holder.name = "SelRing_%d" % id
+	holder.position = p3
+	_selection_root.add_child(holder)
+
+	var c: Color = _player_color(player)
+	var ring_mat := _material(Color(c.r, c.g, c.b, 0.92), false)
+	var under_mat := _material(Color(0.05, 0.04, 0.03, 0.80), false)  # world.gd:3032
+	var pip_mat := _material(Color(c.r, c.g, c.b, 1.0), false)
+
+	var ring_mesh := TorusMesh.new()
+	var under_mesh := TorusMesh.new()
+	var pip_mesh := CylinderMesh.new()
+	pip_mesh.height = 0.05
+
+	var ring := _add_mesh(holder, ring_mesh, ring_mat, Vector3(0, 0.08, 0), Vector3.ZERO)
+	ring.name = "Ring"
+	var under := _add_mesh(holder, under_mesh, under_mat, Vector3(0, 0.055, 0), Vector3.ZERO)
+	under.name = "UnderRing"
+	var pip := _add_mesh(holder, pip_mesh, pip_mat, Vector3(0, 0.14, 0), Vector3.ZERO)
+	pip.name = "OwnerPip"
+
+	# Buildings 2D ring radius = def.radius*view_scale+9 (world.gd:3017);
+	# units use def.radius*view_scale*UNIT_SCALE*1.7+2 (world.gd:3244-3245).
+	# Here `radius` is already sim metres, so add a modest screen-space margin.
+	var m: Dictionary = {
+		"node": holder, "id": id, "player": player, "kind": kind,
+		"ring_mat": ring_mat, "under_mat": under_mat, "pip_mat": pip_mat,
+		"ring_mesh": ring_mesh, "under_mesh": under_mesh, "pip_mesh": pip_mesh,
+		"ring": ring, "under": under, "pip": pip,
+	}
+	_scale_selection_marker(m, radius)
+	return m
+
+
+# Resize the three procedural meshes to the entity footprint. TorusMesh is
+# generated in the XZ plane so it already hugs the ground (no rotation needed).
+func _scale_selection_marker(m: Dictionary, radius: float) -> void:
+	var outer := clampf(radius * 1.25, 0.45, 12.0)
+	var rm: TorusMesh = m.get("ring_mesh")
+	if rm != null:
+		rm.inner_radius = outer * 0.78
+		rm.outer_radius = outer
+	var um: TorusMesh = m.get("under_mesh")
+	if um != null:
+		um.inner_radius = outer * 0.96
+		um.outer_radius = outer * 1.10
+	var pm: CylinderMesh = m.get("pip_mesh")
+	if pm != null:
+		var pr := clampf(outer * 0.20, 0.10, 0.40)
+		pm.top_radius = pr
+		pm.bottom_radius = pr
+
+
+# Owner colour always comes from the 13 donor slots; capture/player changes
+# recolour the ring and pip on the next sync (no fallback palette — V7-65).
+func _set_selection_color(m: Dictionary, player: int) -> void:
+	if int(m.get("player", -1)) == player:
+		return
+	m["player"] = player
+	var c: Color = _player_color(player)
+	var ring_mat: StandardMaterial3D = m.get("ring_mat")
+	if ring_mat != null:
+		ring_mat.albedo_color = Color(c.r, c.g, c.b, ring_mat.albedo_color.a)
+		ring_mat.emission = Color(c.r, c.g, c.b)
+	var pip_mat: StandardMaterial3D = m.get("pip_mat")
+	if pip_mat != null:
+		pip_mat.albedo_color = c
+		pip_mat.emission = Color(c.r, c.g, c.b)
+
+
+func _free_selection_marker(id: int) -> void:
+	var m = _selection_markers.get(id, null)
+	if m is Dictionary:
+		var n = (m as Dictionary).get("node")
+		if n != null and is_instance_valid(n):
+			# Immediate (not queue_free): 2D clears the aura the very frame the
+			# selection flag flips; a queued node would linger for one frame and
+			# would also be invisible to a synchronous integration probe.
+			(n as Node3D).free()
+	_selection_markers.erase(id)
+	_selection_positions.erase(id)
+
+
+# Deterministic pulse only (world.gd:3019 uses the same sin(anim_t*3 + id*0.7)).
+# No RNG; the ring's base alpha is restored before apply so it cannot drift.
+func _update_selection() -> void:
+	for id in _selection_markers.keys():
+		var m: Dictionary = _selection_markers[id]
+		var mat: StandardMaterial3D = m.get("ring_mat")
+		if mat == null:
+			continue
+		var pulse: float = 0.82 + 0.18 * sin(_time * 3.0 + float(id) * 0.7)
+		mat.albedo_color.a = 0.92 * pulse
+		mat.emission_energy_multiplier = 0.35 * pulse
+	stats["selection_rings"] = _selection_markers.size()
 
 
 # --- per-frame animation ---------------------------------------------------

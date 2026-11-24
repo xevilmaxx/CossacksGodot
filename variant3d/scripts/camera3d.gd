@@ -8,6 +8,12 @@
 #   world_to_px(world:Vector2)->Vector2, screen_to_world(screen:Vector2)->Vector2,
 #   clamp_pos(), get_view_rect()->Rect2, get_viewport_corners()->Array,
 #   zoom_step(notches, anchor), set_zoom_target(target, immediate:=false)
+# CAM-SEAM v2 (explicit handoff — no private-field writes from main.gd):
+#   apply_external_target(sim_pos:Vector2), mark_external_transform()
+#   _target is ALWAYS SIM (top-left map origin); the SIM->centred subtraction lives
+#   only in _apply_transform() and happens exactly once per transform, regardless
+#   of zoom. This replaces the v1 signature seam (camera3d.gd:233-237 old) that
+#   detected a foreign centred write via `zoom == _last_clamp_zoom`.
 #
 # DONOR SOURCE OF TRUTH (private-use, read-only; Python bytes + latin-1; never run):
 #   C:\Games\Cossacks 3\data\cameras\camera.cfg:6-7   SphereHeight = 58 / SphereHeightMin = 20
@@ -61,6 +67,12 @@ const FOV_DEG_ASSUMED: float = 17.27
 # These are port frustum-safety values, explicitly NOT donor numbers.
 const NEAR_M: float = 0.1
 const FAR_M: float = 4096.0
+# CAM-SEAM handoff contract version. v1 = main.gd wrote centred _target and froze
+# _last_clamp_*; camera detected it by a zoom/target "signature" (double-subtract
+# risk). v2 = explicit apply_external_target(sim_pos): _target stays SIM and the
+# single SIM->centred subtraction is unconditional. Bump on any frame-contract
+# change so integration owners can see which seam a build implements.
+const CAM_HANDOFF_VERSION: int = 2
 
 var game: Object = null
 # Metres -> canvas px scalar, kept for HUD/minimap parity (Data.PIXELS_PER_METER = 16,
@@ -124,11 +136,10 @@ var _middle_drag_last: Vector2 = Vector2.INF
 var _target: Vector2 = Vector2.ZERO
 var _last_clamp_target: Vector2 = Vector2.INF
 var _last_clamp_zoom: float = -1.0
-# V7-81: the memo value this script last wrote itself. main.gd's read-only V7-70
-# seam (main.gd:1008-1016) writes _last_clamp_target/_last_clamp_zoom externally
-# AFTER converting _target from SIM to centred metres. Recognising that foreign
-# memo lets _apply_transform() restore SIM instead of subtracting the map half
-# twice — no edit to main.gd is needed (it is out of this ticket's ownership).
+# V7-81: the memo value this script last wrote itself. Still used by clamp_pos()
+# as a "fresh clamp" marker; it is NO LONGER a seam detector. CAM-SEAM v2 removed
+# the foreign centred write in main.gd, so _target stays SIM on every path and
+# _apply_transform() never needs to guess whether it was pre-converted.
 var _own_clamp_target: Vector2 = Vector2.INF
 
 const PROCESS_PRIORITY: int = -100  # camera.gd:36 — pan before world.sync()/HUD box
@@ -225,15 +236,14 @@ func _apply_transform() -> void:
 	# V7-81: _target stays in SIM metres (public contract); the composed 3D
 	# scene is centred on the origin, so subtract the map half here. This makes
 	# a minimap jump to sim (320,320) focus world (0,0), not the terrain corner.
+	# CAM-SEAM v2: _target is canonical SIM metres (top-left map origin) on EVERY
+	# path — bind(), jump_to_world(), _process pan/zoom and apply_external_target()
+	# all keep it in SIM. The composed 3D scene is centred on the origin, so this
+	# ONE subtraction maps SIM -> centred. It is unconditional and idempotent:
+	# no memo/zoom signature is consulted, so a wheel zoom at the handoff frame
+	# can never turn it into a double subtraction. Re-running with the same
+	# _target yields the same base, whatever zoom does between calls.
 	var half := _map_half()
-	# V7-70 seam defence: when an external writer freezes the memo to a target
-	# other than ours, it has already converted _target SIM -> centred. Restore
-	# SIM here so the subtraction below happens exactly once, whatever path set
-	# the focus (minimap jump, startup, journey mode).
-	if _target == _last_clamp_target and _target != _own_clamp_target and zoom == _last_clamp_zoom:
-		_target += half
-		_last_clamp_target = _target
-		_own_clamp_target = _target
 	var base := Vector3(_target.x - half.x, 0.0, _target.y - half.y)
 	var pitch: float = deg_to_rad(Data.CAMERA_PITCH)
 	# Camera sits behind+above the ground focus: offset.y = h, offset.z = h/tan(|pitch|).
@@ -396,9 +406,8 @@ func jump_to_world(world_pos: Vector2) -> void:
 	_apply_transform()
 	# Fresh memo, like 2D mark_dirty() (camera.gd:110-121): otherwise the stale memo
 	# makes the following clamp_pos() a no-op and the jump stays unclamped.
-	_last_clamp_target = Vector2.INF
-	_last_clamp_zoom = -1.0
-	_own_clamp_target = Vector2.INF
+	# CAM-SEAM v2: same explicit invalidation the external handoff uses.
+	mark_external_transform()
 	clamp_pos()
 
 
@@ -437,6 +446,33 @@ func clamp_pos() -> void:
 	_last_clamp_target = _target
 	_last_clamp_zoom = zoom
 	_own_clamp_target = _target
+
+
+# CAM-SEAM v2 — explicit, versioned handoff contract (see CAM_HANDOFF_VERSION).
+# Invalidate the clamp memos after ANY external focus write so the next
+# clamp_pos() re-evaluates it instead of early-returning on a stale signature.
+# Public so no caller has to write private fields. Zoom-independent by
+# construction: no zoom value is recorded or compared here.
+func mark_external_transform() -> void:
+	_last_clamp_target = Vector2.INF
+	_last_clamp_zoom = -1.0
+	_own_clamp_target = Vector2.INF
+
+
+# CAM-SEAM v2 — the single public entry point for external (main.gd) focus writes.
+# `sim_pos` is SIM metres (top-left map origin), the SAME space as _target,
+# jump_to_world() and the HUD minimap; no view_scale factor and no Vector3 here.
+# IDEMPOTENT by construction: the focus is stored ONCE in SIM, clamp_pos() runs in
+# SIM, and the SIM->centred subtraction in _apply_transform() happens exactly once.
+# Calling this twice with the same sim_pos — with or without a wheel zoom in
+# between — yields the same camera transform. There is no centred-target state
+# that a later _apply_transform() could subtract a second time.
+func apply_external_target(sim_pos: Vector2) -> void:
+	_target = sim_pos
+	_zoom_anchor_screen = Vector2.INF  # a focus handoff cancels any zoom anchor
+	mark_external_transform()
+	clamp_pos()         # clamps in SIM space; may apply the transform itself
+	_apply_transform()  # unconditional, single SIM->centred subtraction
 
 
 func _process(dt: float) -> void:

@@ -1,0 +1,94 @@
+{
+	"after": {
+		"colors": [],
+		"count": 0,
+		"names": []
+	},
+	"before": {
+		"colors": [
+			[
+				0.739607870578766,
+				0.0,
+				0.0
+			],
+			[
+				0.0705882385373116,
+				0.400000005960464,
+				0.903529405593872
+			]
+		],
+		"count": 2,
+		"names": [
+			"SelRing_11",
+			"SelRing_22"
+		]
+	},
+	"checks": [
+		{
+			"detail": "world=true fx=true",
+			"name": "scripts load",
+			"passed": true
+		},
+		{
+			"detail": "slots=13",
+			"name": "donor colours loaded",
+			"passed": true
+		},
+		{
+			"detail": "Ring=true OwnerPip=true",
+			"name": "ring children present SelRing_11",
+			"passed": true
+		},
+		{
+			"detail": "Ring=true OwnerPip=true",
+			"name": "ring children present SelRing_22",
+			"passed": true
+		},
+		{
+			"detail": "count=2 names=[\"SelRing_11\", \"SelRing_22\"]",
+			"name": "two ring nodes after sync",
+			"passed": true
+		},
+		{
+			"detail": "2",
+			"name": "stats ring count 2",
+			"passed": true
+		},
+		{
+			"detail": "[0.73960787057877, 0.0, 0.0] vs [0.07058823853731, 0.40000000596046, 0.90352940559387]",
+			"name": "different donor colours",
+			"passed": true
+		},
+		{
+			"detail": "[0.73960787057877, 0.0, 0.0]",
+			"name": "player 0 ring = donor slot 0",
+			"passed": true
+		},
+		{
+			"detail": "[0.07058823853731, 0.40000000596046, 0.90352940559387]",
+			"name": "player 1 ring = donor slot 1",
+			"passed": true
+		},
+		{
+			"detail": "count=0 names=[]",
+			"name": "ring nodes removed after clear",
+			"passed": true
+		},
+		{
+			"detail": "0",
+			"name": "stats ring count 0",
+			"passed": true
+		}
+	],
+	"job": "fixselvis-probe",
+	"ok": true,
+	"passed": true,
+	"stats_after": {
+		"selection_entries": 0,
+		"selection_rings": 0
+	},
+	"stats_before": {
+		"selection_entries": 2,
+		"selection_rings": 2
+	}
+}

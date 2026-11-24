@@ -14,7 +14,8 @@ extends Node3D
 #   * UV = ((x+0.5)/map_w, (z+0.5)/map_h) — 0..1 over the full map, aligned to
 #     the G3-4 splat albedo cell centres (row-major, north/west origin);
 #   * V7-92: UV2.x = donor tile index (game.tileblock uint8), UV2.y = face mode
-#     0 (ground default; A5 face flags have not landed);
+#     (FIX-TERRAIN: 0 ground / 1 front / 2 side from donor cDiff1/cDiff2 slope
+#     + aspect axis; PORT APPROXIMATION — NOT DONOR PARITY, see _face_mode_at);
 #   * V7-92: V7-86 tile-index ShaderMaterial bound to the V7-91 multi-mode atlas
 #     loader (single/split/array), with V7-82 splat kept as an explicit
 #     PORT APPROXIMATION — NOT DONOR PARITY fallback;
@@ -105,6 +106,17 @@ const EXPOSURE: float = 1.45
 const AMBIENT_ENERGY: float = 1.10
 const SUN_ENERGY: float = 1.7
 
+# FIX-TERRAIN — donor cliff/aspect thresholds, VERBATIM literals:
+#   data/scripts/common.inc/texturemap.inc:63  cDiff1 = 0.5
+#   data/scripts/common.inc/texturemap.inc:64  cDiff2 = 0.55
+# Donor uses them on 4-neighbour height deltas (:76-79, :88-129) to tag steep
+# cells, then quantises the gradient into 8 sectors (:438-447, :559-575) to pick
+# rockN / rockNvf / rockNvs. The port's EXACT base-tile -> vf/vs promotion rule
+# is UNVERIFIED (TERRAIN2-01 §6 #3), so these are used ONLY to set UV2.y face
+# mode — never to invent a tile index. See _face_mode_at().
+const DONOR_CDIFF1: float = 0.5   # texturemap.inc:63
+const DONOR_CDIFF2: float = 0.55  # texturemap.inc:64
+
 const SPLAT_PATH := "res://assets/terrain/heightmap/splat_albedo.png"
 const FALLBACK_BLOCK := "res://assets/terrain/blocks/grass1.png"
 
@@ -147,6 +159,7 @@ var _tile_indices := PackedByteArray()
 var _tile_index_source: String = ""
 var _tile_index_hist: Dictionary = {}
 var _tile_index_out_of_atlas: int = 0
+var _face_hist: Dictionary = {}             # FIX-TERRAIN: face-mode cell counts
 var _water3d = null                         # V7-84 water3d.gd instance
 
 
@@ -300,6 +313,14 @@ func _tileindex_material() -> Material:
 	mat.set_shader_parameter("atlas_grid", _atlas_grid)
 	# No real shadow map is supplied; keep the shader default OFF.
 	mat.set_shader_parameter("shadow_enabled", 0.0)
+	# FIX-TERRAIN — MEASURED, DELIBERATELY NOT CHANGED.
+	# The donor bmTransparency mask is re-applied as Godot framebuffer ALPHA
+	# (V7-86). This is structurally wrong (no second base-tile pass in the port)
+	# but an OpenGL A/B proved that REMOVING it makes the terrain DARKER, not
+	# brighter: the port sky behind the semi-transparent ground is brighter
+	# than the dark donor tile art. fixterrain_ab_before/after: luma 42.735 ->
+	# 38.425. The shader exposes `mask_to_alpha` (default 1.0 = V7-86) so the
+	# experiment is reproducible; this module leaves it at the shipped value.
 	# Deliberately NO cull_mode / transparency here: the shader owns both.
 	return mat
 
@@ -321,6 +342,44 @@ func _terrain_material(splat: Texture2D) -> Material:
 	mat.emission = EMISSION_RGB
 	mat.emission_energy_multiplier = 1.0
 	return mat
+
+
+# FIX-TERRAIN — UV2.y face mode from DONOR-READABLE slope data.
+# PORT APPROXIMATION — NOT DONOR PARITY.
+#   Steep test  : donor texturemap.inc:63-64,76-79,88-129 (cDiff1=0.5 on the
+#                 4 axis neighbours, cDiff2=0.55 on the 2 diagonals).
+#   Aspect axis: donor texturemap.inc:438-447 (dirX=lh-rh, dirY=th-bh) and
+#                 :559-575 (dominant sector picks rockN / rockNvf / rockNvs).
+#   Face planes: donor reftile.mat:130-141 verticalfront S=X,T=Z(height)
+#                 -> Godot front mode 1; reftile.mat:156-167 verticalside
+#                 S=Y(donor),T=Z(height) -> Godot side mode 2.
+# The donor's exact rule that PROMOTES a base tile to its vf/vs variant is
+# ENGINE/UNVERIFIED (TERRAIN2-01 §6 #3). This therefore changes ONLY the face
+# mode (which second sampler + eye-linear projection the shader uses); it never
+# changes UV2.x or fabricates a tile index. Flat cells stay mode 0.
+func _face_mode_at(height: PackedFloat32Array, w: int, h: int,
+		x: int, z: int) -> int:
+	var i: int = z * w + x
+	var c: float = height[i]
+	var lh: float = height[z * w + maxi(0, x - 1)]
+	var rh: float = height[z * w + mini(w - 1, x + 1)]
+	var th: float = height[maxi(0, z - 1) * w + x]
+	var bh: float = height[mini(h - 1, z + 1) * w + x]
+	var steep: bool = (absf(c - lh) > DONOR_CDIFF1
+		or absf(c - rh) > DONOR_CDIFF1
+		or absf(c - th) > DONOR_CDIFF1
+		or absf(c - bh) > DONOR_CDIFF1)
+	if not steep:
+		# Donor's diagonal collision test (texturemap.inc:116-129, cDiff2).
+		var rb: float = height[mini(h - 1, z + 1) * w + mini(w - 1, x + 1)]
+		steep = (absf(bh - rh) > DONOR_CDIFF2
+			or absf(c - rb) > DONOR_CDIFF2)
+	if not steep:
+		return 0
+	# Dominant donor gradient axis decides front (mode 1) vs side (mode 2).
+	var gx: float = lh - rh   # donor X -> Godot X
+	var gy: float = th - bh   # donor Y -> Godot Z
+	return 1 if absf(gy) >= absf(gx) else 2
 
 
 # Central difference over 2*TILE_M; one-sided at the grid borders. Donor
@@ -550,6 +609,7 @@ func invalidate() -> void:
 	_tile_index_source = ""
 	_tile_index_hist = {}
 	_tile_index_out_of_atlas = 0
+	_face_hist = {}
 	_water3d = null
 
 
@@ -611,6 +671,7 @@ func build() -> bool:
 	var cx: float = float(w) * 0.5
 	var cz: float = float(h) * 0.5
 	var max_tile_id: int = int(_manifest.get("atlas", {}).get("named_cells", 124)) - 1
+	_face_hist = {"0": nverts}
 	for z in range(h):
 		for x in range(w):
 			var i: int = z * w + x
@@ -621,14 +682,23 @@ func build() -> bool:
 			uvs[i] = Vector2((float(x) + 0.5) / float(w),
 				(float(z) + 0.5) / float(h))
 			# V7-86 CONTRACT: UV2.x = float(donor tile id), UV2.y = face mode.
-			# 0 = ground default (reftile.mat:1-108); A5 face flags not landed.
+			# FIX-TERRAIN: UV2.y is now derived from donor-readable slope data
+			# (_face_mode_at, texturemap.inc:63-64/438-447/559-575). 0 = ground
+			# default (reftile.mat:1-108), 1 = verticalfront, 2 = verticalside.
+			# This is a PORT APPROXIMATION — NOT DONOR PARITY: vf/vs promotion
+			# is ENGINE/UNVERIFIED, so no tile id is altered here.
 			# PORT GUARD: the live game uses 255 = BLK_WATER (game.gd:52) and
 			# other out-of-atlas ids; clamp to the V7-85 named-cell range so the
 			# shader never samples an empty/overflow cell. Counted in stats.
 			var tid: int = int(_tile_indices[i]) if tiles_available else 0
 			if tid < 0 or tid > max_tile_id:
 				tid = 0
-			uvs2[i] = Vector2(float(tid), 0.0)
+			var face: int = _face_mode_at(height, w, h, x, z)
+			if face != 0:
+				var fk: String = str(face)
+				_face_hist[fk] = int(_face_hist.get(fk, 0)) + 1
+				_face_hist["0"] = int(_face_hist["0"]) - 1
+			uvs2[i] = Vector2(float(tid), float(face))
 	var k: int = 0
 	for z in range(h - 1):
 		for x in range(w - 1):
@@ -659,8 +729,9 @@ func build() -> bool:
 		surface_mat = _tileindex_material()
 		if surface_mat != null:
 			material_model = ("V7-86 terrain_tileindex.gdshader ShaderMaterial; "
-				+ "UV2.x=donor tile id, UV2.y=0 ground; atlas_grid from V7-85 manifest; "
-				+ "shadow_enabled=0; shader owns blend/cull")
+				+ "UV2.x=donor tile id, UV2.y=donor-slope face mode (0/1/2); "
+				+ "atlas_grid from V7-85 manifest; shadow_enabled=0; "
+				+ "V7-86 mask blend retained (measured removal darkens); shader owns blend/cull")
 	if surface_mat == null:
 		surface_mat = _terrain_material(splat)
 		material_model = ("V7-82 splat fallback — PORT APPROXIMATION — NOT DONOR PARITY"
@@ -727,14 +798,18 @@ func build() -> bool:
 		"uv_model": ("V7-86 eye-plane dot(realpos,eye_plane_s/t) + texture_matrix + "
 			+ "fract repeat — PORT APPROXIMATION: donor gl_EyePlane*/TextureMatrix "
 			+ "values are engine-bound and UNVERIFIED (TERRAIN2-06 §6 #1)"),
-		"face_model": ("UV2.y=0 ground; A5 face-flag atom not landed; 25-degree "
-			+ "AngleX/AngleZ is metadata only — PORT APPROXIMATION — NOT DONOR PARITY"),
+		"face_model": ("UV2.y = donor cDiff1/cDiff2 slope + aspect axis "
+			+ "(texturemap.inc:63-64,438-447,559-575) -> 0 ground / 1 front / 2 side; "
+			+ "PORT APPROXIMATION — NOT DONOR PARITY: exact vf/vs promotion ENGINE/UNVERIFIED; "
+			+ "25-degree AngleX/AngleZ remains metadata only"),
 		"tile_index": {
 			"source": _tile_index_source,
 			"cells": nverts if tiles_available else 0,
 			"hist": _tile_index_hist.duplicate(true),
 			"out_of_atlas_cells_clamped": _tile_index_out_of_atlas,
-			"uv2": "x=float(donor tile id 0..123), y=0 (ground default)",
+			"uv2": ("x=float(donor tile id 0..123), "
+				+ "y=face mode 0/1/2 from donor slope+aspect (PORT APPROXIMATION)"),
+			"face_hist": _face_hist.duplicate(true),
 			"transport": "PORT APPROXIMATION (donor has no vertex attribute)",
 		},
 		"atlas": {

@@ -268,6 +268,199 @@ historical failures" once the background job finishes (avoid spool race).
   only diffusewaves0.bmp sampled; diffusewaves2 live but unsampled; others
   commented; NO foam texture asset. Values relayed to V7-84.
 
+### USER: right-click peasant movement goes LATERAL (FIX-MOVE dispatched)
+- New symptom after/beside the selection fix: right-click ground order makes
+  peasants move sideways/obliquely instead of toward the point. FIX-MOVE owns
+  input_controller.gd + picking3d.gd only; traces full cmd_move path, checks
+  SIM-vs-centred frame, x/z swap, sign flips, camera yaw (-Z) mapping, and
+  sim heading/velocity computation (game.gd is SHARED, never edited).
+- Probe must project four screen points (up/down/left/right) to ground, assert
+  correct SIM axis/sign of each destination and direction dot > 0 toward target.
+  Code first, Godot jobs held until queue clear. No git.
+
+### FIX-SEL UNIT/BUILDING SELECTION + MOVEMENT FIXED (user-reported)
+- ROOT CAUSE: picking3d._recalc_offset() calibrated sim<->world offset by
+  comparing camera3d.screen_to_world(centre) to the flat Y=0 ray hit at the
+  SAME pixel. After V7-81 made screen_to_world() return CENTRED metres, both
+  were identical by construction, so calibration ZEROED the required +half-map
+  offset (160,160). Ground clicks landed 160 m short of sim; entities projected
+  160 m away from where world3d_entities.gd renders them -> NOTHING pickable,
+  orders to wrong point. Secondary: analytic projection used 64x64 headless
+  viewport while real camera unprojects at 1280x720.
+- FIX (picking3d.gd + input_controller.gd only): deterministic half-map offset
+  with camera3d detected via jump_to_world(); unproject_position()-based screen
+  projection + pixel radii; V7-68 players_only, V7-75 forwarding, cmd_* and 2D
+  path preserved. Also converted patrol/guard route from Node2D to
+  MeshInstance3D/ImmediateMesh in 3D FX layer (COMP-04 risk 5).
+- Measured: before 1/6 probe (0/5 functional); after 10/10 incl exact move
+  destination (155,155). Parse clean, selftest 29/29, t_pick3d 6/6.
+  Probe deleted; no orphan Godot process from FIX-SEL jobs. No parity claim.
+
+### CAM-SEAM camera handoff rewritten — verification paused
+- Sole owner camera3d.gd + main.gd; new CAM_HANDOFF_VERSION=2.
+- `apply_external_target(sim_pos)` single public handoff stores SIM focus once,
+  clears zoom anchor, invalidates clamp memos, clamps in SIM, applies transform
+  exactly once. `mark_external_transform()` replaces main.gd private-field writes.
+  `zoom == _last_clamp_zoom` signature guard DELETED; SIM->centred subtraction
+  unconditional -> cannot double-subtract on wheel zoom.
+- main.gd no longer writes camera private fields or calls _apply_transform;
+  `_center_camera3d_target()` + 3 call sites removed; journey uses jump_to_world.
+  Public HUD/input APIs unchanged; V7-81/90/77/82-92/70 work preserved per §5.
+- Backups in inbox/backup/camera3d.gd.bak-CAMSEAM and main.gd.bak-CAMSEAM.
+- VERIFICATION PENDING — no runner job submitted, queue still has 2 pending.
+  Parse x2, selftest, uitest, zoom-perturbation probe, optional windowed shot
+  commands in report §7. Resume on all-clear.
+
+### FIX-COLOR root cause FOUND — verification paused
+- DONOR TRUTH: nation colour is NOT whole-body paint. unit.smx9.id8.frag:37-38
+  does `mix(tex.rgb, custColor.rgb*tex.rgb, tex.a*custColor.a)` — tint applies
+  ONLY where the albedo texture's ALPHA channel is set; :42 forces output alpha
+  from material, so alpha is a pure tint mask. misc.script:5072 gates it to
+  tfRGBA materials (refunit.mat:37, refbuilding.mat:37); tfDefault children
+  (units.mat:9,20) get NO tint. No band mesh section: the "little bands" are
+  alpha rectangles (peaukr 34,990/262,144 texels = 13.35%).
+- V7-65 painted everything via StandardMaterial3D.albedo_color; converter
+  dropped donor DDS alpha as "garbage" (convert_models.py:148-151,449-450).
+- FIX in world3d_entities.gd: recover donor DDS path from manifest.json, decode
+  DXT5 alpha manually (Godot cannot load_from_file DDS — probe 261), apply donor
+  mix in ShaderMaterial(custColor + mask_tex). No mask -> untinted, NO whole-body
+  fallback. 13 slots / 6 signatures / V7-74 morph / V7-79 memo preserved.
+- Jobs: 261 ok (DDS/ShaderMaterial feasibility); 271 parse FAILED on
+  PackedByteArray.subarray() (Godot 4.7 lacks it), fixed with direct byte
+  compares. FINAL parse/probe/selftest STILL PENDING — paused while queue has
+  2 pending jobs from other fix agents. Probe deleted; no git.
+
+### FIX-SELECTVIS selection rings + owner aura LANDED
+- world3d_fx.gd: new Selection3D FX root + public sync_selection(entries);
+  world3d.gd: `_sync_selection_aura()` drives it from existing selected_ids /
+  selected mirror inside sync(); no sim/state edits.
+- Each selected unit/building gets a flat TorusMesh ring tinted with owner's
+  donor key colour + thin dark under-ring + small owner-colour disc + 2D-style
+  deterministic pulse; clearing selection removes nodes same frame.
+  All labelled PORT APPROXIMATION — NOT DONOR PARITY; no sprites/RNG.
+- Jobs: parse 263/265/270 ok; probe 273 ok 13/13 (2 SelRing_* nodes with donor
+  colours [0.7396,0,0] slot 0 and [0.0706,0.4,0.9035] slot 1; after clear 0
+  nodes, stats 2->0); selftest 277 ok 29/29. Probe deleted. No git.
+
+### COMP-04 runtime stability — SECOND black-screen path found
+- 19 grouped historical error classes; all recorded SCRIPT ERRORs provably
+  gone (dbg_res, int(Dictionary), HUD typed param, shader/loader parse, audio
+  Vector3->Vector2). Latest jobs 254-256 only deliberate morph warning + leaks.
+- TOP RISK 1: V7-70/V7-81 camera seam is SIGNATURE-BASED — main.gd:1008-1016
+  writes camera private fields; camera3d.gd:233-237 detects foreign write only
+  when zoom == _last_clamp_zoom. A wheel zoom between write and next
+  _apply_transform() can DOUBLE-SUBTRACT half-map offset -> BLACK VIEW. Headless
+  probe held zoom constant. CAM-SEAM dispatched (sole owner camera3d.gd +
+  main.gd): replace with explicit idempotent handoff API (mark_external_transform
+  / apply_external_target), preserve all recent work, HOLD Godot jobs until
+  queue clear, report verification commands as PENDING.
+- Risk 3: audio.gd:157-161 fixed/stub-probed but headless selftest skips audio
+  (main.gd:1127-1129) — windowed ambient/positional events UNVERIFIED.
+- Risk 4: V7-92 atlas default 180 MB; single->split verified headless only;
+  array->splat degradation unmeasured in GPU window; _repack_mask_alpha loops
+  ~655k pixels/build (world3d_terrain.gd:270-283).
+- Risk 5: unbranched menu paths F9 load/quality/fog (main.gd:1394-1401,
+  1485-1512) are no-ops/Node3D proxies; patrol/guard route is Node2D in Node3D
+  tree (input_controller.gd:52-97) -> won't render in 3D. Relayed to FIX-SEL.
+- Risk 2: user windowed minimap retest STILL pending.
+
+### COMP-05 shipping hygiene — docs drift FIXED, queue DIRTY (orphan process)
+- 2D artifacts green (app selftest 29/29, uitest 17/17, CLEAN stored).
+- Big-file: 180 MB atlas is LFS-managed via .gitattributes (pointer blob not
+  directly verified; no git commands used). Two split parts GitHub-safe with
+  matching SHA-256s.
+- CORRECTED stale docs: README "28-step" -> 29 (2 places); STATUS_WAVE7_PHASE2
+  queue claim 60 unacked -> 19 timed-out / ~84 unacked non-ok, and noted that
+  `variant3d/tools/assert_clean.py` DOES exist; added a WARNING banner marking
+  all sections below FINAL VERDICT as HISTORICAL (old PENDING / not-run /
+  0-of-7 / jobs 1289/1290 were misleading).
+- Ran variant assert_clean: DIRTY only because 1 live Godot process from
+  FIX-SEL's `_fixsel_probe.gd` (PID 15656) survived the WinGet shim; lock free,
+  history failures [] with 9 acks. Alerted FIX-SEL to clean the orphan.
+- Other risks: 5 atlas/mask PNGs lack .import sidecars -> export inclusion
+  UNVERIFIED; `res://assets/models/glb/` referenced but absent (graceful via
+  ResourceLoader.exists(), OBJ live path); tracked stale probe leftovers
+  (_v716_probe.gd, 4 orphan .uid, 3 probe result JSONs, .import~RF*.TMP).
+
+### COMP-01 test completeness — gates fresh, PER-FEATURE SUITE NOT COMPLETE
+- Canonical gates GREEN and fresh after V7-92: selftest 29/29 (job 254, artifact
+  16:08:02), uitest 17/17 (255, 16:09:56), t_render_mode PASS 10/10 (256,
+  16:10:05); all 0 step/detail diffs vs 2D. 2D gate CLEAN documented.
+- BUT suite incomplete: manifest 31 = 24 inherited + 7 atomic + t_weather pending.
+  t_camera3d NO artifact, last FAIL 8/14, `_initialize()` tree-timing bug in
+  t_camera3d.gd:97-129 unchanged after V7-90. t_pick3d artifact STALE FAIL 0/6
+  MODULE_MISSING (12:05) though probe 127 passed ad hoc. t_terrain3d 6/6 STALE
+  (12:10) predates V7-92 module (15:54) and has no atlas/water checks.
+  t_entities3d no canonical artifact; t_fx3d stdout-only 13/13; t_fog3d 9/9 fresh.
+  Tints have NO registered test (probe 181 only). Registry hygiene: result_dir
+  points to app/, stale summary.json 19/19, t_smoke_fx FAIL 5/6 (pre-existing 2D).
+- Conclusion: gates green, but per-feature evidence relies on ad-hoc probes.
+  Test-harness refresh should follow the current FIX agents.
+
+### COMP-02 / COMP-03 completeness dimensions — current-source verified
+- COMP-02: 26 subsystems. SHARED byte-identical: game.gd sim, ai.gd, mapgen,
+  economy/building/capture, formations/morale, combat/weapons/naval, 2D camera,
+  menu. ADAPTED: render switch, world composition, terrain, water, light rig,
+  entities, animation, fog, FX, ghost/rally, 3D camera, input/picking, HUD,
+  audio bed, journey capture. 2D-ONLY: selection rings/aura, health/build bars,
+  morale pips, drag-select rect, patrol overlay, squad/officer/capture flags,
+  corpses/rubble, winter/season art, forest detail, positional audio. Correction:
+  13/21 common scripts byte-identical (not 14/21); audio.gd/data.gd now ADAPTED.
+  No sim rule/mechanic regression found.
+- FIX-SELECTVIS dispatched (sole owner world3d_fx.gd + world3d.gd): add 3D
+  selection rings + owner-colour aura driven by existing selection state, using
+  13 donor colours; probe two owners differ + disappear on clear; selftest.
+  FIX-SEL kept strictly functional (pick->cmd_*->selection mirror).
+- COMP-03 scorecard: 2 GREEN (terrain tiles/UVs, water data), 10 AMBER, 3 RED
+  (cliff/eye-plane UV, fog/sky, cross-cutting visual parity). Verified live
+  game.tileblock -> UV2.x -> donor atlas/shader at world3d_terrain.gd:631,649
+  and terrain_tileindex.gdshader:258. BUT UV2.y=0 for ALL cells — no cliff
+  faces / 25-degree promotion / alphavert projection. Evidence relayed to
+  FIX-TERRAIN. No donor GPU A/B exists -> all fidelity claims still UNVERIFIED.
+
+### COMPLETENESS VERDICT (COMP-06) — NOW SUPERSEDED BY USER PLAY TEST
+- COMP-06 returned FUNCTIONALLY COMPLETE WITH GAPS (no RED dimensions;
+  scorecard GREEN sim/meshes/terrain/AI/gates, AMBER water/lighting/animation/
+  FX-audio/camera-input-HUD/runtime/shipping). Definition: 2D-equivalent
+  skirmish + donor-grounded presentation + green gates, visual parity EXCLUDED.
+- IMPORTANT: that verdict was written BEFORE the user reported that units and
+  buildings are not selectable/movable and terrain/coloring look wrong. Those
+  failures mean the artifact/probe-level gates are insufficient. COMP-06 is
+  retained as evidence of the pre-play-test state, NOT the current verdict.
+- COMP-01..05 had not yet landed when COMP-06 looked; their dimensions rest on
+  older reports. Final completeness answer must be re-issued after FIX-SEL/
+  FIX-COLOR/FIX-TERRAIN and a real windowed play test.
+
+### USER-REPORTED PLAYABILITY FAILURES — 3 FIX AGENTS DISPATCHED
+- User: terrain quality low; nation colour should be small bands not whole-body;
+  units not selectable/movable; buildings not selectable. These OVERRIDE the
+  headless-green gate — functional tests evidently miss real play.
+- FIX-SEL (sole owner picking3d.gd + input_controller.gd): trace full click path
+  event -> pick -> cmd_* -> selection mirror, check coordinate frames (screen px,
+  centred metres, sim metres, world_offset), hit-test geometry/MultiMesh, fix,
+  probe projecting real unit/building to screen and asserting pick+select+move.
+- FIX-COLOR (sole owner world3d_entities.gd): read donor tint scope in
+  misc.script:5067-5081 / unit.script:3860 / player.script:2971, compare with
+  V7-65 whole-batch tint, restrict to donor-indicated bands/subset, preserve
+  V7-64 morph + V7-79 memo + 6 signatures.
+- FIX-TERRAIN (sole owner world3d_terrain.gd + terrain_tileindex.gdshader):
+  verify live tileblock -> UV2 for all verts, 4 sub-tiles/cell vs 1, atlas grid,
+  mask channel, material assignment; get BEFORE/AFTER windowed GPU captures,
+  measure non-black fraction/mean colour; smallest donor-grounded fix.
+- COMPLETENESS audit agents remain READ-ONLY (no Godot), so no queue contention.
+
+### COMPLETENESS AUDIT SWARM (user: "check completeness of 3d variant")
+- Charter `COMPLETENESS_CHARTER.md`; 6 READ-ONLY agents, no Godot/git:
+  COMP-01 test/gate completeness (31 manifest tests, 29/29, 17/17, stale
+  artifacts, t_camera3d known failure);
+  COMP-02 feature coverage vs 2D app (SHARED/ADAPTED/2D-ONLY/STUB per subsystem);
+  COMP-03 donor fidelity scorecard from AUDIT3D/TERRAIN2/DEEPDEC + current source;
+  COMP-04 runtime stability / error history + current-source hazard scan;
+  COMP-05 shipping hygiene (big files/LFS, .import, temp probes, docs accuracy);
+  COMP-06 synthesis verdict + top 10 remaining gaps.
+- Definition of COMPLETE for this audit: 2D-equivalent skirmish mechanics +
+  donor-grounded presentation + green gates; DONOR VISUAL PARITY EXCLUDED.
+
 ### FINAL POST-INTEGRATION GATE GREEN + ROOT README UPDATED
 - Jobs 254/255/256 all ok: variant selftest passed:true 29/29, uitest
   passed:true 17/17, t_render_mode PASS seam_missing=false. Queue empty after.

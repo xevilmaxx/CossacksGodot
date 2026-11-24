@@ -6,6 +6,12 @@ updated: 2026-11-24
 status: green-with-caveats
 ---
 
+> [!WARNING] ALL SECTIONS BELOW ARE HISTORICAL SNAPSHOTS from ~12:05, kept for
+> evidence only. Gate badges, "PENDING", "not run", "0 of 7 registered", old
+> job ids 1289/1290 and the atomic-task table do NOT describe the current
+> project. Use the FINAL VERDICT above plus `docs/coord_swarm_2026-11-24/PROGRESS.md`
+> for current state.
+
 # ⚔️ STATUS — Wave 7 Phase 2 (`variant3d/`)
 
 ## 🟢 FINAL VERDICT — 2026-11-24 (authoritative; sections below are historical snapshots)
@@ -37,9 +43,11 @@ gaps from the 9-agent parity audit are closed (`AUDIT3D_TRIAGE.md`):
 - E6 flat-Y zoom anchor: measurement showed **no** real drift bug — open question.
 - True positional audio (`AudioStreamPlayer3D`, donor emitter semantics) not built;
   only 3D-aware distance culling works.
-- Variant queue has 60 historical, unacked **probe-iteration** failures, each
-  superseded by a documented passing job; no variant `assert_clean.py` exists, so
-  a formal variant `CLEAN` verdict is **not claimed**. App `CLEAN` is measured.
+- Variant queue has 19 unacked `timed-out` and ~84 unacked non-ok historical
+  **probe-iteration** jobs (COMP-05 measured), each superseded by a documented
+  passing job. `variant3d/tools/assert_clean.py` DOES exist; a formal variant
+  `CLEAN` verdict is still **not claimed** until those historical probe
+  failures are acknowledged with reasons. App `CLEAN` is measured.
 
 Post-verdict closures: PERF-3D fixed `sync_ms` hot paths (V7-79 pose memo
 8.18–11.91×, V7-80 resource gate 12.54×), final gate re-run green (jobs

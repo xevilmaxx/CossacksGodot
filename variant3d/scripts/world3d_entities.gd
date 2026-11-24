@@ -57,6 +57,29 @@ extends Node3D
 #   keyframe, sprite sheet or RNG is ever substituted.
 #   A missing mesh gets a bbox-sized box proxy, also tagged; it is a
 #   placeholder, not donor fidelity.
+#
+# FIX-COLOR (2026-11-24) — DONOR TINT IS A BAND MASK, NOT A BODY PAINT
+#   The donor never paints a whole unit/building with the player key colour.
+#   `data/shaders/obj/unit.smx9.id8.frag:37-38` (and smx3:37-38) reads the
+#   albedo texture and mixes the key colour in ONLY where the texture's
+#   ALPHA channel is set:
+#       vec4 tex0 = texture2D(texUnit0, gl_TexCoord[0].xy);
+#       tex0.rgb = mix(tex0.rgb, custColor.rgb*tex0.rgb, tex0.a*custColor.a);
+#   `:42` then overrides output alpha from the material, so texture alpha is
+#   a pure tint mask, never transparency. Recursion in
+#   `misc.script:5067-5081` reaches every child, but only children whose lib
+#   material is tfRGBA get custColor.a=1 (`misc.script:5072`;
+#   `materials/ref/refunit.mat:37`, `refbuilding.mat:37`); tfDefault children
+#   such as `unitbox`/tool meshes (`materials/units/units.mat:9,20`) get no
+#   tint. The alpha=1 texels form small bands/stripes in the donor atlas
+#   (measured: peaukr.dds alpha>0.5 on 34990/262144 texels = 13.35%).
+#   The port's converter threw that alpha away as "garbage"
+#   (`tools/convert_models.py:148-151,449-450`), which is why V7-65's
+#   `albedo_color` tint painted the entire body. This fix recovers the mask
+#   from the donor DDS path that `assets/models/manifest.json` already keeps
+#   per sid, decodes its DXT5 alpha, and applies the donor mix formula per
+#   pixel. PORT APPROXIMATION — NOT DONOR PARITY: the recovery is CPU-side,
+#   no donor render is compared, and visual result stays UNVERIFIED.
 
 const OBJ_DIR: String = "res://assets/models/obj/"
 const GLB_DIR: String = "res://assets/models/glb/"
@@ -66,6 +89,15 @@ const MANIFEST_PATH: String = "res://assets/models/manifest.json"
 # classes.script:7986-8015 (formula :8012-8014), count dmscript.global:121,
 # guard/misc.script:5070, application misc.script:5073. Owned by V7-61's JSON.
 const KEY_COLORS_PATH: String = "res://data/donor_key_colors.json"
+
+# FIX-COLOR: exact donor shader operation (`unit.smx9.id8.frag:37-38`), with
+# the two textures split so the port's donor-derived albedo PNG is kept and
+# only the ADDITIONAL alpha mask comes from the donor DDS. Godot's spatial
+# `ALBEDO` keeps the port lighting; no colour is invented in this shader.
+const TINT_SHADER_CODE: String = "shader_type spatial;\nrender_mode cull_disabled;\nuniform sampler2D albedo_tex : source_color;\nuniform sampler2D mask_tex;\nuniform vec4 custColor : source_color = vec4(0.0);\nvoid fragment() {\n\tvec4 t = texture(albedo_tex, UV);\n\tfloat m = texture(mask_tex, UV).a;\n\tt.rgb = mix(t.rgb, custColor.rgb * t.rgb, m * custColor.a);\n\tALBEDO = t.rgb;\n}\n"
+const DDS_HEADER_SIZE: int = 128
+const DXT5_BLOCK_BYTES: int = 16
+const TINT_MASK_THRESHOLD: float = 0.5
 
 # C3Data.TILE_M (variant3d/scripts/data.gd:23) and C3Game.TILE (game.gd:16).
 # heightmap_world3d.gd:200-202 maps tile (x,z) to world
@@ -130,6 +162,14 @@ var _key_colors: Array = []
 var _key_colors_loaded: bool = false
 var _key_colors_error: String = ""
 
+# FIX-COLOR state. The donor DDS path is read from the manifest this module
+# already parses in bind(); it is NOT a new port invention. Every entry is
+# derived from donor data, and a missing/unreadable mask means NO tint at all
+# (never the V7-65 whole-body fallback).
+var _donor_texture_paths: Dictionary = {}   # sid -> donor DDS absolute path
+var _band_mask_cache: Dictionary = {}       # sid -> {"image":Image,"texture":ImageTexture}
+var _band_mask_stats: Dictionary = {}       # sid -> measured mask/vertex/face counts
+
 
 # ---------------------------------------------------------------- bind / stats
 func bind(g) -> void:
@@ -140,6 +180,9 @@ func bind(g) -> void:
 	_mesh_sources.clear()
 	_morph_meshes.clear()
 	_obj_topology.clear()
+	_donor_texture_paths.clear()
+	_band_mask_cache.clear()
+	_band_mask_stats.clear()
 	_anim = null
 	_anim_checked = false
 	var models: int = 0
@@ -151,6 +194,12 @@ func bind(g) -> void:
 				var bb = m.get("bbox", [])
 				if sid != "" and bb is Array and (bb as Array).size() >= 6:
 					_bbox[sid] = bb
+				# FIX-COLOR: manifest.json:models[i].texture is the DONOR DDS
+				# absolute path (measured for peasant:
+				# ...\materials\units\peaukr.dds). Kept verbatim, no guessing.
+				var donor_tex := str(m.get("texture", ""))
+				if sid != "" and donor_tex != "":
+					_donor_texture_paths[sid] = donor_tex
 				models += 1
 	# Asset availability is MEASURED here with ResourceLoader.exists(); actual
 	# load() happens lazily in _mesh_info() and is recorded in _mesh_sources.
@@ -199,9 +248,15 @@ func bind(g) -> void:
 		"donor_key_colors_slots": _key_colors.size(),
 		"donor_key_colors_error": _key_colors_error,
 		"donor_tint_mapping": "player slot index -> donor gKeyColor slot (identity; mercenary slot 12); NOT nation",
-		"donor_tint_target": "StandardMaterial3D.albedo_color (uniform-0 analogue, multiplicative over donor albedo texture)",
+		# FIX-COLOR: corrected scope — band mask, not a whole-body albedo paint.
+		"donor_tint_target": "ShaderMaterial custColor (uniform-0 analogue), donor mix(tex, custColor*tex, tex.a*custColor.a) — unit.smx9.id8.frag:37-38",
+		"donor_tint_scope": "tfRGBA albedo ALPHA bands only (refunit.mat:37, refbuilding.mat:37, misc.script:5072); tfDefault children untinted (units.mat:9,20)",
 		"donor_tint_alpha": 1.0,
-		"donor_tint_unverified": "uniform-0 operation, alpha and >1.0 clamp are UNVERIFIED (V7-61 §5; AUDIT3D-02 Q3)",
+		"donor_tint_label": PORT_LABEL,
+		"donor_tint_visual": "UNVERIFIED",
+		"donor_tint_mask_source": "manifest.json models[i].texture -> donor DDS first-mip DXT5 alpha (port PNG alpha dropped: tools/convert_models.py:148-151,449-450)",
+		"donor_tint_mask_stats": _band_mask_stats,
+		"donor_tint_unverified": "donor shader binary not executed; mask decoded from donor DDS text-asset path, not from a donor render; >1.0 clamp UNVERIFIED (V7-61 §5; AUDIT3D-02 Q3)",
 	}
 	push_warning("world3d_entities: " + ANIM_STATUS)
 
@@ -305,18 +360,191 @@ func _player_index(ed: Dictionary) -> int:
 	return -1
 
 
-# Clone a surface material and set albedo_color to the donor key colour. The
-# donor albedo TEXTURE is preserved (surface_get_material comes from the same
-# donor-derived material), matching "tint on top of albedo" from V7-61 §6.5.
+# --- FIX-COLOR: donor albedo-alpha band mask ------------------------------
+# Decode ONLY the first mip's DXT5 alpha from the donor DDS named by
+# manifest.json:models[i].texture. The 4x4 blocks carry 2 alpha endpoints and
+# 16 3-bit indices in 6 bytes; the colour endpoints/indices are deliberately
+# ignored because donor uses texture alpha solely as the uniform-0 mask
+# (unit.smx9.id8.frag:37-38,42). On ANY structural mismatch return null — a
+# missing mask means NO tint, never an invented band and never a whole-body
+# fallback.
+func _dxt5_mask(path: String) -> Image:
+	if path == "" or not FileAccess.file_exists(path):
+		return null
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return null
+	var hdr: PackedByteArray = f.get_buffer(DDS_HEADER_SIZE)
+	# PackedByteArray has no subarray() in Godot 4.7: compare the four magic
+	# bytes directly ("DDS " = 68,68,83,32; DXT5 = 68,88,84,53).
+	if hdr.size() < DDS_HEADER_SIZE or hdr[0] != 68 or hdr[1] != 68 or hdr[2] != 83 or hdr[3] != 32:
+		f.close()
+		return null
+	# DDS header: height :12, width :16, pixel format fourcc :84 (DXT5).
+	var h: int = int(hdr[12]) | (int(hdr[13]) << 8) | (int(hdr[14]) << 16) | (int(hdr[15]) << 24)
+	var w: int = int(hdr[16]) | (int(hdr[17]) << 8) | (int(hdr[18]) << 16) | (int(hdr[19]) << 24)
+	if hdr[84] != 68 or hdr[85] != 88 or hdr[86] != 84 or hdr[87] != 53 or w <= 0 or h <= 0:
+		f.close()
+		return null
+	var blocks_x: int = maxi(1, (w + 3) / 4)
+	var blocks_y: int = maxi(1, (h + 3) / 4)
+	var payload: PackedByteArray = f.get_buffer(blocks_x * blocks_y * DXT5_BLOCK_BYTES)
+	f.close()
+	if payload.size() < blocks_x * blocks_y * DXT5_BLOCK_BYTES:
+		return null
+	var data := PackedByteArray()
+	data.resize(w * h * 4)
+	data.fill(255)
+	var bi: int = 0
+	for by in range(blocks_y):
+		for bx in range(blocks_x):
+			var o: int = bi * DXT5_BLOCK_BYTES
+			bi += 1
+			var a0: int = payload[o]
+			var a1: int = payload[o + 1]
+			var bits: int = 0
+			for k in range(6):
+				bits |= int(payload[o + 2 + k]) << (k * 8)
+			for i in range(16):
+				var idx: int = (bits >> (i * 3)) & 7
+				var av: int = 255
+				if a0 > a1:
+					av = clamped_dxt5(((8 - idx) * a0 + (idx - 1) * a1) / 7)
+				elif idx == 0:
+					av = a0
+				elif idx == 1:
+					av = a1
+				elif idx == 6:
+					av = 0
+				elif idx == 7:
+					av = 255
+				else:
+					av = clamped_dxt5(((6 - idx) * a0 + (idx - 1) * a1) / 5)
+				var px: int = bx * 4 + (i % 4)
+				var py: int = by * 4 + (i / 4)
+				if px < w and py < h:
+					var di: int = (py * w + px) * 4
+					data[di] = av
+					data[di + 1] = av
+					data[di + 2] = av
+					data[di + 3] = av
+	return Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, data)
+
+
+func clamped_dxt5(v: float) -> int:
+	return clampi(int(v), 0, 255)
+
+
+# Per-sid mask cache + measured texel counts (structural, never a visual claim).
+func _band_mask(sid: String) -> Image:
+	if _band_mask_cache.has(sid):
+		var cached = _band_mask_cache[sid]
+		if cached is Dictionary and (cached as Dictionary).get("image") is Image:
+			return (cached as Dictionary)["image"] as Image
+	var img := _dxt5_mask(str(_donor_texture_paths.get(sid, "")))
+	if img == null:
+		return null
+	var w: int = img.get_width()
+	var h: int = img.get_height()
+	var raw: PackedByteArray = img.get_data()
+	var masked: int = 0
+	for i in range(3, raw.size(), 4):
+		if int(raw[i]) >= int(TINT_MASK_THRESHOLD * 255.0):
+			masked += 1
+	_band_mask_cache[sid] = {"image": img, "texture": ImageTexture.create_from_image(img)}
+	_band_mask_stats[sid] = {"source": str(_donor_texture_paths.get(sid, "")),
+		"texels": w * h, "mask_texels": masked, "verts": 0, "tinted_verts": 0,
+		"faces": 0, "tinted_faces": 0, "label": PORT_LABEL, "visual": "UNVERIFIED"}
+	return img
+
+
+func _band_mask_texture(sid: String) -> Texture2D:
+	_band_mask(sid)
+	var cached = _band_mask_cache.get(sid)
+	if cached is Dictionary:
+		return (cached as Dictionary).get("texture") as Texture2D
+	return null
+
+
+func _mask_at(img: Image, uv: Vector2) -> bool:
+	var w: int = img.get_width()
+	var h: int = img.get_height()
+	var px: int = clampi(int(uv.x * float(w)), 0, w - 1)
+	var py: int = clampi(int(uv.y * float(h)), 0, h - 1)
+	return img.get_pixel(px, py).a >= TINT_MASK_THRESHOLD
+
+
+# Count how many mesh vertices/faces actually land on donor band texels. The
+# vertex count is shared with the morph path (UVs there are Godot-V-flipped),
+# so sampling the baked surface UVs keeps one index space for both paths.
+func _measure_band(sid: String, mesh: Mesh) -> void:
+	var img := _band_mask(sid)
+	if img == null or mesh == null:
+		return
+	var st = _band_mask_stats.get(sid)
+	if not (st is Dictionary):
+		return
+	var d := st as Dictionary
+	if int(d.get("verts", 0)) > 0:
+		return
+	for s in range(mesh.get_surface_count()):
+		var arr: Array = mesh.surface_get_arrays(s)
+		var uvs = arr[Mesh.ARRAY_TEX_UV]
+		if not (uvs is PackedVector2Array):
+			continue
+		var uvarr: PackedVector2Array = uvs
+		var vs = arr[Mesh.ARRAY_VERTEX]
+		var n: int = (vs as PackedVector3Array).size() if vs is PackedVector3Array else 0
+		var tinted: int = 0
+		for i in range(uvarr.size()):
+			if _mask_at(img, uvarr[i]):
+				tinted += 1
+		d["verts"] = int(d.get("verts", 0)) + n
+		d["tinted_verts"] = int(d.get("tinted_verts", 0)) + tinted
+		var faces: int = 0
+		var tinted_faces: int = 0
+		var ix = arr[Mesh.ARRAY_INDEX]
+		if ix is PackedInt32Array:
+			var ia: PackedInt32Array = ix
+			for fi in range(0, ia.size() - 2, 3):
+				var i0: int = ia[fi]
+				var i1: int = ia[fi + 1]
+				var i2: int = ia[fi + 2]
+				faces += 1
+				if i0 < uvarr.size() and i1 < uvarr.size() and i2 < uvarr.size() \
+						and _mask_at(img, uvarr[i0]) and _mask_at(img, uvarr[i1]) \
+						and _mask_at(img, uvarr[i2]):
+					tinted_faces += 1
+		else:
+			faces = n / 3
+		d["faces"] = int(d.get("faces", 0)) + faces
+		d["tinted_faces"] = int(d.get("tinted_faces", 0)) + tinted_faces
+
+
+# FIX-COLOR: donor uniform-0, reproduced as a ShaderMaterial using the donor
+# albedo texture + the donor alpha band mask. If no donor-derived mask is
+# available the material is left UNTINTED — V7-65's whole-body albedo tint was
+# the reported defect and is never reinstated as a fallback.
 func _tinted_material(base: Material, tint: Color, sid: String, kind: String) -> Material:
-	var dup = base.duplicate() if base != null else null
-	var m: Material = dup as Material
-	if m == null:
-		m = _default_material(sid, kind)
-	if m is StandardMaterial3D:
-		(m as StandardMaterial3D).albedo_color = tint
-	else:
-		push_warning("world3d_entities: non-Standard material for " + sid + " cannot carry donor uniform-0 tint")
+	var mask := _band_mask_texture(sid)
+	if mask == null:
+		push_warning("world3d_entities: no donor band mask for " + sid + " - left UNTINTED, no whole-body fallback")
+		return base.duplicate() if base != null else _default_material(sid, kind)
+	var bm: Material = base
+	if bm == null:
+		bm = _default_material(sid, kind)
+	var albedo: Texture2D = null
+	if bm is StandardMaterial3D:
+		albedo = (bm as StandardMaterial3D).albedo_texture
+	if albedo == null and ResourceLoader.exists(TEX_DIR + sid + ".png"):
+		albedo = load(TEX_DIR + sid + ".png") as Texture2D
+	var sh := Shader.new()
+	sh.code = TINT_SHADER_CODE
+	var m := ShaderMaterial.new()
+	m.shader = sh
+	m.set_shader_parameter("albedo_tex", albedo)
+	m.set_shader_parameter("mask_tex", mask)
+	m.set_shader_parameter("custColor", tint)
 	return m
 
 
@@ -327,10 +555,15 @@ func _tinted_material(base: Material, tint: Color, sid: String, kind: String) ->
 # albedo material of surface 0, so the donor texture is kept) and the normal
 # surface overrides on building MeshInstance3Ds. One override per batch means
 # the player slot is part of the batch key (see add_unit), as batching allows.
+# FIX-COLOR: the override is now a masked ShaderMaterial, not an
+# albedo_color paint; _measure_band records the measured donor-band subset.
 func _apply_tint(instance: GeometryInstance3D, mesh: Mesh, tint: Color,
 		sid: String, kind: String) -> void:
 	if mesh == null:
 		return
+	_measure_band(sid, mesh)
+	instance.set_meta("donor_tint_label", PORT_LABEL)
+	instance.set_meta("donor_tint_visual", "UNVERIFIED")
 	if instance is MultiMeshInstance3D:
 		var base: Material = null
 		if mesh.get_surface_count() > 0:

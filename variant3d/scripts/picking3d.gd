@@ -56,11 +56,22 @@ func bind(game, cam) -> void:
 	_recalc_offset()
 
 
-# Default to the heightmap cell-centre convention (see header); if the bound
-# camera exposes camera3d.gd's screen_to_world, calibrate against it so a
-# differently-centred 3D world still maps back to the sim's metre coordinates.
-# The calibration uses the FLAT Y=0 plane (no height sampling) so it cannot
-# recurse into _ray_heightfield().
+# sim = centred world + half the map extent. The rendered 3D scene is centred
+# on the origin (world3d_entities.gd:764-783, world3d_terrain.gd:312-314) and
+# camera3d.gd's _target/screen_to_world() use that SAME centred frame after
+# V7-81. sim entities are stored with a top-left map origin, so the only correct
+# offset is (MAP_W*TILE/2, MAP_H*TILE/2).
+#
+# FIX-SEL root cause: the old code calibrated this offset by comparing
+# cam.screen_to_world(centre) with the Y=0 ray hit at the same pixel. Once V7-81
+# made screen_to_world() return CENTRED metres those two values are identical
+# BY CONSTRUCTION, so the calibration returned (0,0) and overwrote the correct
+# half-map offset. Ground clicks then landed 160 m short of the sim point and
+# every entity was projected 160 m away from where it is rendered — no unit or
+# building could be picked in the windowed 3D game. camera3d.gd is identified
+# by its jump_to_world API (V7-66) and is NEVER re-calibrated against the flat
+# ray hit. Legacy/stub cameras that still return SIM metres keep the old
+# calibration, guarded so a centred camera cannot zero the offset.
 func _recalc_offset() -> void:
 	_offset_ready = true
 	_world_to_sim = Vector2.ZERO
@@ -68,9 +79,14 @@ func _recalc_offset() -> void:
 		return
 	var mw: float = float(game.MAP_W) * TILE_M
 	var mh: float = float(game.MAP_H) * TILE_M
-	_world_to_sim = Vector2(mw * 0.5, mh * 0.5)
+	var half := Vector2(mw * 0.5, mh * 0.5)
+	_world_to_sim = half
 	if cam == null or not cam.has_method("screen_to_world"):
 		return
+	# camera3d.gd (V7-81 centred frame): keep the deterministic half-map offset.
+	if cam.has_method("jump_to_world"):
+		return
+	# Legacy/SIM-metre camera: preserve the original flat-plane calibration.
 	var vp: Vector2 = _viewport_size()
 	var ref: Vector2 = vp * 0.5
 	var sv: Variant = cam.call("screen_to_world", ref)
@@ -85,8 +101,10 @@ func _recalc_offset() -> void:
 		return
 	var flat: Vector3 = _plane_hit(o, d, 0.0)
 	var candidate: Vector2 = sim_ref - Vector2(flat.x, flat.z)
-	# Reject nonsense (wrong projection / non-ground screen_to_world).
-	if absf(candidate.x) <= mw * 4.0 + 1000.0 and absf(candidate.y) <= mh * 4.0 + 1000.0:
+	# Reject nonsense (wrong projection / non-ground screen_to_world) and any
+	# candidate that disagrees with the known centred-frame half-map offset.
+	var tol: float = maxf(2.0, half.length() * 0.02)
+	if candidate.distance_to(half) <= tol:
 		_world_to_sim = candidate
 
 
@@ -172,14 +190,35 @@ func _ppm(depth: float) -> float:
 	return vp.x / (2.0 * tan(fov) * dep)
 
 
-# Analytic world -> screen (camera looks along local -Z). Self-consistent with
-# _ppm() and independent of whether the camera has been added to a viewport.
+# World -> screen. FIX-SEL: use Camera3D.unproject_position(), the SAME
+# projection the renderer uses, instead of an analytic FOV reconstruction that
+# can disagree with the camera's effective viewport (headless probes measured
+# a 64x64 get_viewport().size against a 1280x720 unprojection). The analytic
+# formula stays only as a fallback when unprojection is unavailable.
 func _project_world(w: Vector3) -> Vector2:
+	if cam != null:
+		var p: Variant = cam.unproject_position(w)
+		if p is Vector2 and (p as Vector2).is_finite():
+			return p
 	var vp: Vector2 = _viewport_size()
 	var local: Vector3 = cam.global_transform.affine_inverse() * w
 	var depth: float = maxf(0.01, -local.z)
 	var scale: float = _ppm(depth)
 	return Vector2(vp.x * 0.5 + local.x * scale, vp.y * 0.5 - local.y * scale)
+
+
+# Screen pixels per metre at THIS world point, measured with the real camera.
+# A 1 m world-X step at the entity's own depth gives the exact horizontal
+# pixel radius for the shipped yaw-0 RTS camera; the analytic _ppm(depth) is
+# kept as the fallback for cameras without unproject_position().
+func _pixel_reach(w: Vector3, metres: float) -> float:
+	if cam != null and metres > 0.0:
+		var a: Variant = cam.unproject_position(w)
+		var b: Variant = cam.unproject_position(w + Vector3(metres, 0.0, 0.0))
+		if a is Vector2 and b is Vector2 and (a as Vector2).is_finite() and (b as Vector2).is_finite():
+			return absf((b as Vector2).x - (a as Vector2).x)
+	var local: Vector3 = cam.global_transform.affine_inverse() * w
+	return _ppm(-local.z) * metres
 
 
 func _screen_of(sim: Vector2, lift: float) -> Vector2:
@@ -239,18 +278,22 @@ func pick(screen: Vector2, players_only: bool = true) -> Dictionary:
 	for e in game.entities:
 		if not (e is Dictionary) or bool(e.get("dead", false)) or not e.has("pos"):
 			continue
-		var sp: Vector2 = _screen_of(Vector2(e.pos), BODY_LIFT_M)
+		var sim: Vector2 = Vector2(e.pos)
+		# FIX-SEL: project the SAME centred world point the 3D renderer draws
+		# (world3d_entities.gd:764-783), not an un-offset sim point.
+		var w: Vector3 = _to_world(sim, _height_at_sim(sim) + BODY_LIFT_M)
+		var sp: Vector2 = _project_world(w)
 		var sd: float = sp.distance_to(screen)
-		var depth: float = _depth_of(Vector2(e.pos), BODY_LIFT_M)
+		var depth: float = _depth_of(sim, BODY_LIFT_M)
 		if not players_only or int(e.get("player", -1)) == 0:
-			var r: float = float(game.call("pick_radius", e)) * _ppm(depth)
+			var r: float = _pixel_reach(w, float(game.call("pick_radius", e)))
 			if sd < r and _closer(sd, depth, best_sd, best_depth):
 				best_sd = sd
 				best_depth = depth
 				best = e
-		# Per-entity depth replaces the old fixed `_ppm(30.0)` reach probe:
-		# the 2 m metre fallback reach is converted at THIS candidate's depth.
-		var fb_reach: float = FALLBACK_REACH_M * _ppm(depth)
+		# Per-entity reach replaces the old fixed `_ppm(30.0)` probe: the 2 m
+		# metre fallback reach is converted at THIS candidate's world point.
+		var fb_reach: float = _pixel_reach(w, FALLBACK_REACH_M)
 		if sd < fb_reach and _closer(sd, depth, fb_sd, fb_depth):
 			fb_sd = sd
 			fb_depth = depth
@@ -280,9 +323,11 @@ func pick_res(screen: Vector2) -> Dictionary:
 		if int(n.get("max_hits", 0)) > 0 and int(n.get("hits", 0)) <= 0 and typ != "food":
 			continue
 		var sim: Vector2 = Vector2(n.pos)
-		var sp: Vector2 = _screen_of(sim, BODY_LIFT_M * 0.5)
+		# Same renderer frame as entities (FIX-SEL; see pick()).
+		var w: Vector3 = _to_world(sim, _height_at_sim(sim) + BODY_LIFT_M * 0.5)
+		var sp: Vector2 = _project_world(w)
 		var sd: float = sp.distance_to(screen)
-		var reach: float = (RES_REACH_M + float(n.get("radius", 0.0))) * _ppm(_depth_of(sim, 0.0))
+		var reach: float = _pixel_reach(w, RES_REACH_M + float(n.get("radius", 0.0)))
 		if sd >= reach:
 			continue
 		var depth: float = _depth_of(sim, BODY_LIFT_M * 0.5)

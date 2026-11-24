@@ -1,38 +1,38 @@
 {
 	"checks": [
 		{
-			"detail": "MODULE_MISSING",
+			"detail": "load() returned null (parse error?)",
 			"name": "module loads",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "NOT_RUN: MODULE_MISSING",
+			"detail": "script.new() did not return a Node",
 			"name": "instantiates",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "NOT_RUN: MODULE_MISSING",
+			"detail": "ground_point=(0.0, 0.0)",
 			"name": "ground_point finite",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "NOT_RUN: MODULE_MISSING",
+			"detail": "pick={  }",
 			"name": "pick returns Dictionary",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "NOT_RUN: MODULE_MISSING",
+			"detail": "pick_res={  }",
 			"name": "pick_res returns Dictionary",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "NOT_RUN: MODULE_MISSING",
+			"detail": "cmd_calls={  }",
 			"name": "no cmd_* calls",
-			"passed": false
+			"passed": true
 		}
 	],
 	"id": "t_pick3d",
 	"module_path": "res://scripts/picking3d.gd",
-	"passed": false,
-	"unix_ms": 1795518356638.0
+	"passed": true,
+	"unix_ms": 1795535566249.0
 }

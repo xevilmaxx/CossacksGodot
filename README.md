@@ -42,7 +42,7 @@ sounds, damage formulas, gathering rates, upkeep, formation sizes.
 | 📏 **Donor-accurate sim** | Damage formula, 1.664/s mine income, /625 upkeep, famine, capture, market drift — 182 documented values in `app/mechanics.json` |
 | 🎖️ **Line warfare** | 15–400-man formations with officers + drummers, +2/+3 bonuses (+9/+9 on hold), morale, routs, priests, 17c flee vs 18c bayonets |
 | 🤖 **Computer opponent** | Expands, techs, forms squads, combined-arms waves; officer-led batteries |
-| 🧪 **Never hangs, always tested** | 28-step sim self-test, 17-step UI user-journey test, AI-vs-AI CLI matches, frame-sequence capture → MP4 |
+| 🧪 **Never hangs, always tested** | 29-step sim self-test, 17-step UI user-journey test, AI-vs-AI CLI matches, frame-sequence capture → MP4 |
 
 *In-game skirmish — original nation architecture, animated units and the full HUD intact.*
 
@@ -61,7 +61,7 @@ See [Two main modes](#two-main-modes--2d-and-3d) for the differences.
 ```bat
 cd app
 godot --path .                                   :: play (skirmish by default)
-godot --headless --path . -- --self-test report.json     :: 28-step sim test
+godot --headless --path . -- --self-test report.json     :: 29-step sim test
 godot --headless --path . -- --ui-test uitest.json       :: 17-step UI journey test
 godot --headless --path . -- --cli cli.json --cli-seconds 60   :: fast AI vs AI
 godot --path . -- --seq shots/j1 --seq-seconds 120 --seq-step 2 --speed 8 --config shots/boost.json --journey   :: record a match

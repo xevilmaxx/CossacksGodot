@@ -1,0 +1,312 @@
+extends Node
+
+# V7-12 — 3D picking adapter. NEW FILE: no other module is edited.
+# Contract: docs/coord_swarm_2026-11-24/V73_ATOMIC_CONTRACT.md:11 —
+#   bind(game, cam); pick(screen, players_only)->Dictionary;
+#   pick_res(screen)->Dictionary; ground_point(screen)->Vector2.
+#   NO game.cmd_* calls (read sim only; the 2D
+#   input_controller integration agent keeps every cmd_* call untouched).
+#
+# Ported 2D semantics (authoritative, OBSERVED at these lines):
+#   app/scripts/input_controller.gd:337-343  screen px -> world metres via camera
+#   app/scripts/input_controller.gd:345-369  _pick: players_only ? player-0 : all
+#       entities nearest inside game.pick_radius(e), then 2 m any-entity
+#       fallback (enemies for info); flag forwarded by the 3D caller
+#   app/scripts/input_controller.gd:643-690  _pick_res: 2.5 + radius reach,
+#       skip stump/bush, skip depleted (food exempt), strict '<', tie -> low id
+#   app/scripts/game.gd:1555-1560  pick_radius (bld block_r + 1.4; else def.radius + 1.4)
+#   app/scripts/game.gd:1893-1907  height_at(p) bilinear height field, metres
+#   app/scripts/game.gd:459-460    tile_of(p) = p / TILE
+#   app/scripts/heightmap_world3d.gd:200-202 cell (x,z) mesh vertex =
+#       ((x+0.5-w/2)*TILE_M, h, (z+0.5-h/2)*TILE_M) -> sim p <-> world
+#       (p.x - MAP_W*TILE/2, h, p.y - MAP_H*TILE/2).  See _recalc_offset().
+# Donor (private use, READ-ONLY bytes; no donor binary run or copy):
+#   C:\Games\Cossacks 3\data\scripts\lib\misc.script:7-27 — picking itself is
+#   engine-side (GetCountGameManagerPickedObjects / GetHandleGameManagerPickedObjects),
+#   so the donor's exact pick radius / overlap-depth rule is NOT script-readable.
+#   C:\Games\Cossacks 3\data\gui\menu.inc\oncamera.inc:1-80 — camera control only,
+#   no pick test. Donor pick-depth semantics: UNVERIFIED.
+#
+# Godot 4 Camera3D.size is the diameter of width OR height by keep_aspect
+# (docs.godotengine.org/en/stable/classes/class_camera3d.html, property "size");
+# KEEP_HEIGHT (default) => px/m = viewport_height / size.
+
+const TILE_M: float = 2.0               # game.gd:16 TILE; data.gd:23
+const HEIGHT_SCALE: float = 1.0         # world3d.gd:13, heightmap_world3d.gd:32
+const RAY_STEP_M: float = 1.0           # port approximation: half a 2 m tile
+const RAY_MAX_STEPS: int = 2048         # >= 2 km of ray travel
+const RAY_REFINE_ITERS: int = 20        # bisection after the first terrain hit
+const RES_REACH_M: float = 2.5          # input_controller.gd:647, 669
+const FALLBACK_REACH_M: float = 2.0     # input_controller.gd:363
+const BODY_LIFT_M: float = 0.8          # PORT APPROXIMATION: body centre above ground; UNVERIFIED
+const TIE_PX: float = 0.5               # screen-px epsilon for the donor id tie-break
+const DEFAULT_VP: Vector2 = Vector2(1280.0, 720.0)  # project.godot:15-16
+
+var game = null
+var cam = null
+# sim(Vector2) = Vector2(world.x, world.z) + _world_to_sim
+var _world_to_sim: Vector2 = Vector2.ZERO
+var _offset_ready: bool = false
+
+
+func bind(game, cam) -> void:
+	self.game = game
+	self.cam = cam
+	_offset_ready = false
+	_recalc_offset()
+
+
+# Default to the heightmap cell-centre convention (see header); if the bound
+# camera exposes camera3d.gd's screen_to_world, calibrate against it so a
+# differently-centred 3D world still maps back to the sim's metre coordinates.
+# The calibration uses the FLAT Y=0 plane (no height sampling) so it cannot
+# recurse into _ray_heightfield().
+func _recalc_offset() -> void:
+	_offset_ready = true
+	_world_to_sim = Vector2.ZERO
+	if game == null:
+		return
+	var mw: float = float(game.MAP_W) * TILE_M
+	var mh: float = float(game.MAP_H) * TILE_M
+	_world_to_sim = Vector2(mw * 0.5, mh * 0.5)
+	if cam == null or not cam.has_method("screen_to_world"):
+		return
+	var vp: Vector2 = _viewport_size()
+	var ref: Vector2 = vp * 0.5
+	var sv: Variant = cam.call("screen_to_world", ref)
+	if not (sv is Vector2):
+		return
+	var sim_ref: Vector2 = sv
+	if not (is_finite(sim_ref.x) and is_finite(sim_ref.y)):
+		return
+	var o: Vector3 = cam.project_ray_origin(ref)
+	var d: Vector3 = cam.project_ray_normal(ref)
+	if absf(d.y) < 1.0e-6:
+		return
+	var flat: Vector3 = _plane_hit(o, d, 0.0)
+	var candidate: Vector2 = sim_ref - Vector2(flat.x, flat.z)
+	# Reject nonsense (wrong projection / non-ground screen_to_world).
+	if absf(candidate.x) <= mw * 4.0 + 1000.0 and absf(candidate.y) <= mh * 4.0 + 1000.0:
+		_world_to_sim = candidate
+
+
+func _viewport_size() -> Vector2:
+	if cam != null and cam.get_viewport() != null:
+		var sz: Vector2 = cam.get_viewport().size
+		if sz.x > 0.0 and sz.y > 0.0:
+			return sz
+	var w: int = int(ProjectSettings.get_setting("display/window/size/viewport_width", int(DEFAULT_VP.x)))
+	var h: int = int(ProjectSettings.get_setting("display/window/size/viewport_height", int(DEFAULT_VP.y)))
+	return Vector2(maxf(1.0, float(w)), maxf(1.0, float(h)))
+
+
+func _to_sim(w: Vector3) -> Vector2:
+	return Vector2(w.x, w.z) + _world_to_sim
+
+
+func _to_world(sim: Vector2, y: float) -> Vector3:
+	var w: Vector2 = sim - _world_to_sim
+	return Vector3(w.x, y, w.y)
+
+
+func _height_at_sim(p: Vector2) -> float:
+	if game == null or not game.has_method("height_at"):
+		return 0.0
+	return float(game.call("height_at", p)) * HEIGHT_SCALE
+
+
+func _plane_hit(origin: Vector3, dir: Vector3, plane_y: float) -> Vector3:
+	if absf(dir.y) < 1.0e-6:
+		return origin
+	var t: float = (plane_y - origin.y) / dir.y
+	if t < 0.0:
+		t = 0.0
+	return origin + dir * t
+
+
+# March the camera ray against the bilinear height field (game.height_at),
+# then refine the crossing by bisection. Falls back to the Y=0 plane when the
+# ray is parallel to the ground, points away from it, or never reaches terrain.
+func _ray_heightfield(origin: Vector3, dir: Vector3) -> Vector3:
+	if absf(dir.y) < 1.0e-6:
+		return _plane_hit(origin, dir, 0.0)
+	var t: float = 0.0
+	var prev_t: float = 0.0
+	for i in range(RAY_MAX_STEPS):
+		t += RAY_STEP_M
+		var p: Vector3 = origin + dir * t
+		var h: float = _height_at_sim(_to_sim(p))
+		if p.y - h <= 0.0:
+			var lo: float = prev_t
+			var hi: float = t
+			for j in range(RAY_REFINE_ITERS):
+				var mid: float = (lo + hi) * 0.5
+				var pm: Vector3 = origin + dir * mid
+				if pm.y - _height_at_sim(_to_sim(pm)) > 0.0:
+					lo = mid
+				else:
+					hi = mid
+			var hit: Vector3 = origin + dir * hi
+			hit.y = _height_at_sim(_to_sim(hit))
+			return hit
+		prev_t = t
+	return _plane_hit(origin, dir, 0.0)
+
+
+# Pixels per world metre. Godot 4.4: Camera3D.size is the width/height diameter
+# chosen by keep_aspect (default KEEP_HEIGHT). Perspective uses the vertical
+# (or horizontal) FOV at the given camera-space depth.
+func _ppm(depth: float) -> float:
+	if cam == null:
+		return 1.0
+	var vp: Vector2 = _viewport_size()
+	if cam.projection == Camera3D.PROJECTION_ORTHOGONAL:
+		var size: float = maxf(0.001, float(cam.size))
+		if cam.keep_aspect == Camera3D.KEEP_HEIGHT:
+			return vp.y / size
+		return vp.x / size
+	var dep: float = maxf(0.01, depth)
+	var fov: float = deg_to_rad(maxf(1.0, float(cam.fov))) * 0.5
+	if cam.keep_aspect == Camera3D.KEEP_HEIGHT:
+		return vp.y / (2.0 * tan(fov) * dep)
+	return vp.x / (2.0 * tan(fov) * dep)
+
+
+# Analytic world -> screen (camera looks along local -Z). Self-consistent with
+# _ppm() and independent of whether the camera has been added to a viewport.
+func _project_world(w: Vector3) -> Vector2:
+	var vp: Vector2 = _viewport_size()
+	var local: Vector3 = cam.global_transform.affine_inverse() * w
+	var depth: float = maxf(0.01, -local.z)
+	var scale: float = _ppm(depth)
+	return Vector2(vp.x * 0.5 + local.x * scale, vp.y * 0.5 - local.y * scale)
+
+
+func _screen_of(sim: Vector2, lift: float) -> Vector2:
+	return _project_world(_to_world(sim, _height_at_sim(sim) + lift))
+
+
+func _depth_of(sim: Vector2, lift: float) -> float:
+	var local: Vector3 = cam.global_transform.affine_inverse() * _to_world(sim, _height_at_sim(sim) + lift)
+	return -local.z
+
+
+# EXACT API -------------------------------------------------------------------
+
+func ground_point(screen: Vector2) -> Vector2:
+	if cam == null:
+		# mirrors input_controller.gd:341's pre-camera fallback
+		return screen / TILE_M
+	if not _offset_ready:
+		_recalc_offset()
+	var o: Vector3 = cam.project_ray_origin(screen)
+	var d: Vector3 = cam.project_ray_normal(screen)
+	return _to_sim(_ray_heightfield(o, d))
+
+
+# Unit/building entity. The 2D `players_only` flag is forwarded verbatim
+# (app/scripts/input_controller.gd:345-369, :358): when true only player-0
+# entities receive the pick_radius test; when false every entity does, so
+# enemies are selectable for attack orders / info / cursor. The 2 m fallback
+# is unconditional in both modes (input_controller.gd:363-365). The test is
+# done in screen space and depth orders overlapping hits (nearer wins on a tie).
+#
+# HANDOFF: variant3d/scripts/input_controller.gd:396 must pass the flag —
+# `picking.pick(_pick_screen, players_only)` — mirroring its 2D call sites
+# (:434 true; :492/:585/:1089 false). That file is owned by V7-66 and was NOT
+# edited here; until it forwards the flag, the default `true` preserves the
+# guard-mode semantics but the three enemy-facing call sites stay degraded.
+#
+# APPROXIMATION (declared honestly): 2D compares metre distances
+# (`e.pos.distance_to(pw)`) against metre radii. Here each metre radius/reach
+# is converted to pixels at THAT entity's own camera depth via
+# `_ppm(_depth_of(e.pos, BODY_LIFT_M))`, while the cursor is the height-field
+# ground hit. BODY_LIFT_M = 0.8 is an unverified body-centre estimate, so a
+# ground-cursor / lifted-entity parallax residual remains. Donor pick depth is
+# engine-side and UNVERIFIED (header :21-26); app is the authority.
+func pick(screen: Vector2, players_only: bool = true) -> Dictionary:
+	var none: Dictionary = {}
+	if game == null or cam == null or game.entities == null:
+		return none
+	if not _offset_ready:
+		_recalc_offset()
+	var best: Dictionary = {}
+	var best_sd: float = 1e9
+	var best_depth: float = 1e9
+	var fb: Dictionary = {}
+	var fb_sd: float = 1e9
+	var fb_depth: float = 1e9
+	for e in game.entities:
+		if not (e is Dictionary) or bool(e.get("dead", false)) or not e.has("pos"):
+			continue
+		var sp: Vector2 = _screen_of(Vector2(e.pos), BODY_LIFT_M)
+		var sd: float = sp.distance_to(screen)
+		var depth: float = _depth_of(Vector2(e.pos), BODY_LIFT_M)
+		if not players_only or int(e.get("player", -1)) == 0:
+			var r: float = float(game.call("pick_radius", e)) * _ppm(depth)
+			if sd < r and _closer(sd, depth, best_sd, best_depth):
+				best_sd = sd
+				best_depth = depth
+				best = e
+		# Per-entity depth replaces the old fixed `_ppm(30.0)` reach probe:
+		# the 2 m metre fallback reach is converted at THIS candidate's depth.
+		var fb_reach: float = FALLBACK_REACH_M * _ppm(depth)
+		if sd < fb_reach and _closer(sd, depth, fb_sd, fb_depth):
+			fb_sd = sd
+			fb_depth = depth
+			fb = e
+	return best if not best.is_empty() else fb
+
+
+# Resource spot (trees/rocks/fields/mine deposits). Filters and the strict
+# nearest-with-lowest-id rule are byte-intent-preserved from
+# input_controller.gd:666-690; depth orders overlapping hits within TIE_PX.
+func pick_res(screen: Vector2) -> Dictionary:
+	var none: Dictionary = {}
+	if game == null or cam == null or game.res_nodes == null:
+		return none
+	if not _offset_ready:
+		_recalc_offset()
+	var best: Dictionary = {}
+	var best_sd: float = 1e9
+	var best_depth: float = 1e9
+	var best_id: int = 0
+	for n in game.res_nodes:
+		if not (n is Dictionary) or not n.has("pos"):
+			continue
+		var typ: String = str(n.get("type", ""))
+		if typ == "stump" or typ == "bush":
+			continue
+		if int(n.get("max_hits", 0)) > 0 and int(n.get("hits", 0)) <= 0 and typ != "food":
+			continue
+		var sim: Vector2 = Vector2(n.pos)
+		var sp: Vector2 = _screen_of(sim, BODY_LIFT_M * 0.5)
+		var sd: float = sp.distance_to(screen)
+		var reach: float = (RES_REACH_M + float(n.get("radius", 0.0))) * _ppm(_depth_of(sim, 0.0))
+		if sd >= reach:
+			continue
+		var depth: float = _depth_of(sim, BODY_LIFT_M * 0.5)
+		var id: int = int(n.get("id", 0))
+		if sd < best_sd - TIE_PX:
+			best_sd = sd
+			best_depth = depth
+			best_id = id
+			best = n
+		elif absf(sd - best_sd) <= TIE_PX:
+			if depth < best_depth - 1.0e-4 or (absf(depth - best_depth) <= 1.0e-4 and id < best_id):
+				best_sd = minf(sd, best_sd)
+				best_depth = depth
+				best_id = id
+				best = n
+	return best
+
+
+# Nearer-to-cursor wins; on a near-tie the entity nearer the camera wins
+# (occlusion / depth ordering). Used for entities, where the donor tie rule is
+# nearest-distance (no id tie-break in input_controller.gd:345-369).
+func _closer(sd: float, depth: float, bsd: float, bdepth: float) -> bool:
+	if sd < bsd - TIE_PX:
+		return true
+	if sd > bsd + TIE_PX:
+		return false
+	return depth < bdepth
