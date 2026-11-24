@@ -1,0 +1,3164 @@
+{
+ "version": 1,
+ "generator": "variant3d/tools/build_tile_index_atlas.py",
+ "labels": [
+  "DONOR_INDEX",
+  "DONOR_ART",
+  "APPROX_ATLAS_PACKING",
+  "APPROX_SAND_UPSCALE",
+  "APPROX_ALPHA_INTENSITY_FORMULA",
+  "UNVERIFIED_EMPTY_CELLS",
+  "UNVERIFIED_ALPHA_SUBRECT_MAPPING"
+ ],
+ "atlas": {
+  "file": "tile_index_atlas.png",
+  "size": [
+   16384,
+   8192
+  ],
+  "cell_size": [
+   1024,
+   1024
+  ],
+  "grid": [
+   16,
+   8
+  ],
+  "slots": 128,
+  "named_cells": 124,
+  "filled_cells": 121,
+  "empty_cells": 3,
+  "upscaled_sources": [
+   "sand1.png [256, 256]->1024",
+   "sand2.png [256, 256]->1024",
+   "sand1.png [256, 256]->1024",
+   "sand1.png [256, 256]->1024",
+   "sand2.png [256, 256]->1024",
+   "sand2.png [256, 256]->1024"
+  ],
+  "packing_label": "APPROX_ATLAS_PACKING (donor tsDouble/ttExtended is engine-side, UNVERIFIED)"
+ },
+ "index_dictionary": {
+  "file": "variant3d/assets/terrain/structs/presets_summer.json",
+  "lines": "2-125",
+  "count": 124,
+  "donor_evidence": "data/terrain/tiles/terrain.presets:2-6"
+ },
+ "layout": [
+  {
+   "index": 0,
+   "name": "grass1",
+   "cell_xy": [
+    0,
+    0
+   ],
+   "cell_px": [
+    0,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:2",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "28e617b1f72233f91335f3020c02599678673eff12de390ce8f6084e87a8019a"
+  },
+  {
+   "index": 1,
+   "name": "grass2",
+   "cell_xy": [
+    1,
+    0
+   ],
+   "cell_px": [
+    1024,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:3",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "cdbbb30f23a32a0ad5984095b9008b612f57e2c2426631b0ff4e8a1370ee579c"
+  },
+  {
+   "index": 2,
+   "name": "grass3",
+   "cell_xy": [
+    2,
+    0
+   ],
+   "cell_px": [
+    2048,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:4",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "8cc9399c11671b0fa94c55d114fdc19fddcd0bb734f51f1a11259dbdce849376"
+  },
+  {
+   "index": 3,
+   "name": "grass4",
+   "cell_xy": [
+    3,
+    0
+   ],
+   "cell_px": [
+    3072,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:5",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "bb9e2b324b886e6576e417dfa5d6011f01486449f139d7a6fb0f5df9557b3ef9"
+  },
+  {
+   "index": 4,
+   "name": "grass5",
+   "cell_xy": [
+    4,
+    0
+   ],
+   "cell_px": [
+    4096,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:6",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ff2c732dd94e84ab1c4160f649b2d8b7154fd8846fca5e6128bd190915541c02"
+  },
+  {
+   "index": 5,
+   "name": "grass6",
+   "cell_xy": [
+    5,
+    0
+   ],
+   "cell_px": [
+    5120,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:7",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0c34bea286800d06bc12d0f40fe4cd3641b8ed82987540c95c9bbe902832b20d"
+  },
+  {
+   "index": 6,
+   "name": "grass7",
+   "cell_xy": [
+    6,
+    0
+   ],
+   "cell_px": [
+    6144,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass7.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:8",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "aa94c98d6c97f95873c068804e20a5ba2137f1e46b614759d68929646202abfe"
+  },
+  {
+   "index": 7,
+   "name": "grass8",
+   "cell_xy": [
+    7,
+    0
+   ],
+   "cell_px": [
+    7168,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass8.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:9",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "26b2edb974721b8d0ce00eed8ebc37216bef7326b7c101ab2808ee3c0b1b7d5e"
+  },
+  {
+   "index": 8,
+   "name": "grass9",
+   "cell_xy": [
+    8,
+    0
+   ],
+   "cell_px": [
+    8192,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass9.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:10",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "144acce46381fd7712fb7526f028243025b04dcab05e0111b0c2a5571619f5ab"
+  },
+  {
+   "index": 9,
+   "name": "grass10",
+   "cell_xy": [
+    9,
+    0
+   ],
+   "cell_px": [
+    9216,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass10.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:11",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1ab142963d2fcc43588dbd9e73f0a2324d2f74be64bf3a2df6a6b774662151fd"
+  },
+  {
+   "index": 10,
+   "name": "ground1",
+   "cell_xy": [
+    10,
+    0
+   ],
+   "cell_px": [
+    10240,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "ground1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:12",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "075d6c67ad42c93dd105f1e6cfaf7f034e5cb8906b3864a971a1d3289d5758cc"
+  },
+  {
+   "index": 11,
+   "name": "grass_sand1",
+   "cell_xy": [
+    11,
+    0
+   ],
+   "cell_px": [
+    11264,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass_sand1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:13",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "6fb324fefcb1ac6f29f5b9b8c431dea7ca02aa07594b2da8c1af1308301109fe"
+  },
+  {
+   "index": 12,
+   "name": "grass_sand2",
+   "cell_xy": [
+    12,
+    0
+   ],
+   "cell_px": [
+    12288,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass_sand2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:14",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "6f80ebdb0f5d347eedc46ea496336cbce0f649f59d579d1623e5ae7cdae91b24"
+  },
+  {
+   "index": 13,
+   "name": "grass_rock1",
+   "cell_xy": [
+    13,
+    0
+   ],
+   "cell_px": [
+    13312,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass_rock1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:15",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "472ed8daa22a992434103e3d36e771b8676159dfa0a8ea34c99d2905fec07a7b"
+  },
+  {
+   "index": 14,
+   "name": "grass_ground1",
+   "cell_xy": [
+    14,
+    0
+   ],
+   "cell_px": [
+    14336,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass_ground1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:16",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "93a5ad238d5c72f91aaa46e0621dee2d329449f12b4e6f746cdd6f4e8ff6d3eb"
+  },
+  {
+   "index": 15,
+   "name": "grass_ground2",
+   "cell_xy": [
+    15,
+    0
+   ],
+   "cell_px": [
+    15360,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "grass_ground2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:17",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "eb66ca47e09f9ac2b337fc6637c42afbac5b4a5961e1dbede654a7021dd8556e"
+  },
+  {
+   "index": 16,
+   "name": "grass_ground3",
+   "cell_xy": [
+    0,
+    1
+   ],
+   "cell_px": [
+    0,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "grass_ground3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:18",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "781677072f628ca66bea2c67a5607ceef8a02cbbe6c6c95de07d7e99a6ce9228"
+  },
+  {
+   "index": 17,
+   "name": "rock1",
+   "cell_xy": [
+    1,
+    1
+   ],
+   "cell_px": [
+    1024,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:19",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1799e7c7b12381150fde6d02744013424eb9fea4b9eb3ec0c1a14f1b2541f24f"
+  },
+  {
+   "index": 18,
+   "name": "rock2",
+   "cell_xy": [
+    2,
+    1
+   ],
+   "cell_px": [
+    2048,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:20",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "96daa694aa956e0bfb12b472035d75fd9df34bcdfc0c43f98bf09ff4c23686fb"
+  },
+  {
+   "index": 19,
+   "name": "rock3",
+   "cell_xy": [
+    3,
+    1
+   ],
+   "cell_px": [
+    3072,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:21",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9f0a6014c4148c2cac0c144802367b327c4d675686c95a2a3e92dcf1cf4951f6"
+  },
+  {
+   "index": 20,
+   "name": "rock4",
+   "cell_xy": [
+    4,
+    1
+   ],
+   "cell_px": [
+    4096,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:22",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "174f4bbde0d6ec1848ed808dcfb2e27c8e5aaf440e0f01fbea59e31004d6e794"
+  },
+  {
+   "index": 21,
+   "name": "rock5",
+   "cell_xy": [
+    5,
+    1
+   ],
+   "cell_px": [
+    5120,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:23",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9e0f14d72af1c66ba5e41920db4b1019a808c9e5447bfbf6944ce2054bddf734"
+  },
+  {
+   "index": 22,
+   "name": "rock6",
+   "cell_xy": [
+    6,
+    1
+   ],
+   "cell_px": [
+    6144,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:24",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "2b0415e02d9c7d5a049b8001f0ab6487577b7c00fa7eee117aa091ced798910f"
+  },
+  {
+   "index": 23,
+   "name": "rock7",
+   "cell_xy": [
+    7,
+    1
+   ],
+   "cell_px": [
+    7168,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock7.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:25",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ff594832efbce38c445eee3f4c56d39dda64301df1c1e37adb223addade001c9"
+  },
+  {
+   "index": 24,
+   "name": "rock8",
+   "cell_xy": [
+    8,
+    1
+   ],
+   "cell_px": [
+    8192,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock8.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:26",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "d33435c41d7474d1544c01323e0cbf2739a0e0a20f7b404cad44377b13393939"
+  },
+  {
+   "index": 25,
+   "name": "rock9",
+   "cell_xy": [
+    9,
+    1
+   ],
+   "cell_px": [
+    9216,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "rock9.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:27",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ba5f539c5819cb00c811afa16732c6d6de33a04eb1a0f987431358e752739dcc"
+  },
+  {
+   "index": 26,
+   "name": "sand1",
+   "cell_xy": [
+    10,
+    1
+   ],
+   "cell_px": [
+    10240,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "sand1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:28",
+   "status": "OK",
+   "upscaled": true,
+   "upscale_label": "APPROX_SAND_UPSCALE",
+   "source_size": [
+    256,
+    256
+   ],
+   "source_sha256": "2b02d8f92e4bb0fd97dbaecf6eb32d074e12c696185508079c4aca4c14316f86"
+  },
+  {
+   "index": 27,
+   "name": "sand2",
+   "cell_xy": [
+    11,
+    1
+   ],
+   "cell_px": [
+    11264,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "sand2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:29",
+   "status": "OK",
+   "upscaled": true,
+   "upscale_label": "APPROX_SAND_UPSCALE",
+   "source_size": [
+    256,
+    256
+   ],
+   "source_sha256": "5b12476837f161e4f1db5252f09d3265eceb3fbddcf282ad8f68b65052fc52b7"
+  },
+  {
+   "index": 28,
+   "name": "sand3",
+   "cell_xy": [
+    12,
+    1
+   ],
+   "cell_px": [
+    12288,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "sand3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:30",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "33887e0747585c750718c0c4aef6d14f2f8676c75b37f8d51046569ce27869ee"
+  },
+  {
+   "index": 29,
+   "name": "sand4",
+   "cell_xy": [
+    13,
+    1
+   ],
+   "cell_px": [
+    13312,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "sand4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:31",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "37d5a9e2b7e08ba1c268e5601c5101f38f4293705796fb3547f1f2ae55d11da6"
+  },
+  {
+   "index": 30,
+   "name": "sand5",
+   "cell_xy": [
+    14,
+    1
+   ],
+   "cell_px": [
+    14336,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "sand5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:32",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "00f7ee4e3a0d190da0a183a11b16e44ba476c6a0b562be6ee4bae33bc75117f8"
+  },
+  {
+   "index": 31,
+   "name": "sand6",
+   "cell_xy": [
+    15,
+    1
+   ],
+   "cell_px": [
+    15360,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "sand6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:33",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4c7ca8e8ae36263fc2dba3ce8efa7ccbdf1636b0a7064c1d348bd43e4c94fa4f"
+  },
+  {
+   "index": 32,
+   "name": "sand7",
+   "cell_xy": [
+    0,
+    2
+   ],
+   "cell_px": [
+    0,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand7.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:34",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "97aabe2cfa9beb5434f77ada4f0931d8e61fc99785e97a6509763313e28293cc"
+  },
+  {
+   "index": 33,
+   "name": "sand8",
+   "cell_xy": [
+    1,
+    2
+   ],
+   "cell_px": [
+    1024,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand8.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:35",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "787437b9c8d3243ddf47eadc19720c879dd9f2adfed43f5ffc3e175bcabdfa3c"
+  },
+  {
+   "index": 34,
+   "name": "sand9",
+   "cell_xy": [
+    2,
+    2
+   ],
+   "cell_px": [
+    2048,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand9.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:36",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b1d392fbbb31c17c3b178be607f87524a196f62474b0172a9c7445435b9c4e77"
+  },
+  {
+   "index": 35,
+   "name": "sand1f",
+   "cell_xy": [
+    3,
+    2
+   ],
+   "cell_px": [
+    3072,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand1f binds sand1.dds)",
+   "status": "OK",
+   "upscaled": true,
+   "upscale_label": "APPROX_SAND_UPSCALE",
+   "source_size": [
+    256,
+    256
+   ],
+   "source_sha256": "2b02d8f92e4bb0fd97dbaecf6eb32d074e12c696185508079c4aca4c14316f86"
+  },
+  {
+   "index": 36,
+   "name": "sand1s",
+   "cell_xy": [
+    4,
+    2
+   ],
+   "cell_px": [
+    4096,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand1s binds sand1.dds)",
+   "status": "OK",
+   "upscaled": true,
+   "upscale_label": "APPROX_SAND_UPSCALE",
+   "source_size": [
+    256,
+    256
+   ],
+   "source_sha256": "2b02d8f92e4bb0fd97dbaecf6eb32d074e12c696185508079c4aca4c14316f86"
+  },
+  {
+   "index": 37,
+   "name": "sand2f",
+   "cell_xy": [
+    5,
+    2
+   ],
+   "cell_px": [
+    5120,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand2f binds sand2.dds)",
+   "status": "OK",
+   "upscaled": true,
+   "upscale_label": "APPROX_SAND_UPSCALE",
+   "source_size": [
+    256,
+    256
+   ],
+   "source_sha256": "5b12476837f161e4f1db5252f09d3265eceb3fbddcf282ad8f68b65052fc52b7"
+  },
+  {
+   "index": 38,
+   "name": "sand2s",
+   "cell_xy": [
+    6,
+    2
+   ],
+   "cell_px": [
+    6144,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand2s binds sand2.dds)",
+   "status": "OK",
+   "upscaled": true,
+   "upscale_label": "APPROX_SAND_UPSCALE",
+   "source_size": [
+    256,
+    256
+   ],
+   "source_sha256": "5b12476837f161e4f1db5252f09d3265eceb3fbddcf282ad8f68b65052fc52b7"
+  },
+  {
+   "index": 39,
+   "name": "sand3f",
+   "cell_xy": [
+    7,
+    2
+   ],
+   "cell_px": [
+    7168,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand3.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand3f binds sand3.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "33887e0747585c750718c0c4aef6d14f2f8676c75b37f8d51046569ce27869ee"
+  },
+  {
+   "index": 40,
+   "name": "sand3s",
+   "cell_xy": [
+    8,
+    2
+   ],
+   "cell_px": [
+    8192,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand3.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand3s binds sand3.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "33887e0747585c750718c0c4aef6d14f2f8676c75b37f8d51046569ce27869ee"
+  },
+  {
+   "index": 41,
+   "name": "sand4f",
+   "cell_xy": [
+    9,
+    2
+   ],
+   "cell_px": [
+    9216,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand4.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand4f binds sand4.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "37d5a9e2b7e08ba1c268e5601c5101f38f4293705796fb3547f1f2ae55d11da6"
+  },
+  {
+   "index": 42,
+   "name": "sand4s",
+   "cell_xy": [
+    10,
+    2
+   ],
+   "cell_px": [
+    10240,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand4.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand4s binds sand4.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "37d5a9e2b7e08ba1c268e5601c5101f38f4293705796fb3547f1f2ae55d11da6"
+  },
+  {
+   "index": 43,
+   "name": "sand5f",
+   "cell_xy": [
+    11,
+    2
+   ],
+   "cell_px": [
+    11264,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand5f binds sand5.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "00f7ee4e3a0d190da0a183a11b16e44ba476c6a0b562be6ee4bae33bc75117f8"
+  },
+  {
+   "index": 44,
+   "name": "sand5s",
+   "cell_xy": [
+    12,
+    2
+   ],
+   "cell_px": [
+    12288,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand5s binds sand5.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "00f7ee4e3a0d190da0a183a11b16e44ba476c6a0b562be6ee4bae33bc75117f8"
+  },
+  {
+   "index": 45,
+   "name": "sand6f",
+   "cell_xy": [
+    13,
+    2
+   ],
+   "cell_px": [
+    13312,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand6.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand6f binds sand6.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4c7ca8e8ae36263fc2dba3ce8efa7ccbdf1636b0a7064c1d348bd43e4c94fa4f"
+  },
+  {
+   "index": 46,
+   "name": "sand6s",
+   "cell_xy": [
+    14,
+    2
+   ],
+   "cell_px": [
+    14336,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand6.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand6s binds sand6.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4c7ca8e8ae36263fc2dba3ce8efa7ccbdf1636b0a7064c1d348bd43e4c94fa4f"
+  },
+  {
+   "index": 47,
+   "name": "sand7f",
+   "cell_xy": [
+    15,
+    2
+   ],
+   "cell_px": [
+    15360,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "sand7.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand7f binds sand7.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "97aabe2cfa9beb5434f77ada4f0931d8e61fc99785e97a6509763313e28293cc"
+  },
+  {
+   "index": 48,
+   "name": "sand7s",
+   "cell_xy": [
+    0,
+    3
+   ],
+   "cell_px": [
+    0,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "sand7.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand7s binds sand7.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "97aabe2cfa9beb5434f77ada4f0931d8e61fc99785e97a6509763313e28293cc"
+  },
+  {
+   "index": 49,
+   "name": "sand8f",
+   "cell_xy": [
+    1,
+    3
+   ],
+   "cell_px": [
+    1024,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "sand8.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand8f binds sand8.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "787437b9c8d3243ddf47eadc19720c879dd9f2adfed43f5ffc3e175bcabdfa3c"
+  },
+  {
+   "index": 50,
+   "name": "sand8s",
+   "cell_xy": [
+    2,
+    3
+   ],
+   "cell_px": [
+    2048,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "sand8.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand8s binds sand8.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "787437b9c8d3243ddf47eadc19720c879dd9f2adfed43f5ffc3e175bcabdfa3c"
+  },
+  {
+   "index": 51,
+   "name": "sand9f",
+   "cell_xy": [
+    3,
+    3
+   ],
+   "cell_px": [
+    3072,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "sand9.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand9f binds sand9.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b1d392fbbb31c17c3b178be607f87524a196f62474b0172a9c7445435b9c4e77"
+  },
+  {
+   "index": 52,
+   "name": "sand9s",
+   "cell_xy": [
+    4,
+    3
+   ],
+   "cell_px": [
+    4096,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "sand9.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (sand9s binds sand9.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b1d392fbbb31c17c3b178be607f87524a196f62474b0172a9c7445435b9c4e77"
+  },
+  {
+   "index": 53,
+   "name": "rock1vf",
+   "cell_xy": [
+    5,
+    3
+   ],
+   "cell_px": [
+    5120,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock1vf binds rock1.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1799e7c7b12381150fde6d02744013424eb9fea4b9eb3ec0c1a14f1b2541f24f"
+  },
+  {
+   "index": 54,
+   "name": "rock1vs",
+   "cell_xy": [
+    6,
+    3
+   ],
+   "cell_px": [
+    6144,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock1vs binds rock1.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1799e7c7b12381150fde6d02744013424eb9fea4b9eb3ec0c1a14f1b2541f24f"
+  },
+  {
+   "index": 55,
+   "name": "rock2vf",
+   "cell_xy": [
+    7,
+    3
+   ],
+   "cell_px": [
+    7168,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock2vf binds rock2.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "96daa694aa956e0bfb12b472035d75fd9df34bcdfc0c43f98bf09ff4c23686fb"
+  },
+  {
+   "index": 56,
+   "name": "rock2vs",
+   "cell_xy": [
+    8,
+    3
+   ],
+   "cell_px": [
+    8192,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock2vs binds rock2.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "96daa694aa956e0bfb12b472035d75fd9df34bcdfc0c43f98bf09ff4c23686fb"
+  },
+  {
+   "index": 57,
+   "name": "rock3vf",
+   "cell_xy": [
+    9,
+    3
+   ],
+   "cell_px": [
+    9216,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock3.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock3vf binds rock3.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9f0a6014c4148c2cac0c144802367b327c4d675686c95a2a3e92dcf1cf4951f6"
+  },
+  {
+   "index": 58,
+   "name": "rock3vs",
+   "cell_xy": [
+    10,
+    3
+   ],
+   "cell_px": [
+    10240,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock3.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock3vs binds rock3.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9f0a6014c4148c2cac0c144802367b327c4d675686c95a2a3e92dcf1cf4951f6"
+  },
+  {
+   "index": 59,
+   "name": "rock4vf",
+   "cell_xy": [
+    11,
+    3
+   ],
+   "cell_px": [
+    11264,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock4.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock4vf binds rock4.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "174f4bbde0d6ec1848ed808dcfb2e27c8e5aaf440e0f01fbea59e31004d6e794"
+  },
+  {
+   "index": 60,
+   "name": "rock4vs",
+   "cell_xy": [
+    12,
+    3
+   ],
+   "cell_px": [
+    12288,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock4.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock4vs binds rock4.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "174f4bbde0d6ec1848ed808dcfb2e27c8e5aaf440e0f01fbea59e31004d6e794"
+  },
+  {
+   "index": 61,
+   "name": "rock5vf",
+   "cell_xy": [
+    13,
+    3
+   ],
+   "cell_px": [
+    13312,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock5vf binds rock5.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9e0f14d72af1c66ba5e41920db4b1019a808c9e5447bfbf6944ce2054bddf734"
+  },
+  {
+   "index": 62,
+   "name": "rock5vs",
+   "cell_xy": [
+    14,
+    3
+   ],
+   "cell_px": [
+    14336,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock5vs binds rock5.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9e0f14d72af1c66ba5e41920db4b1019a808c9e5447bfbf6944ce2054bddf734"
+  },
+  {
+   "index": 63,
+   "name": "rock6vf",
+   "cell_xy": [
+    15,
+    3
+   ],
+   "cell_px": [
+    15360,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "rock6.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock6vf binds rock6.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "2b0415e02d9c7d5a049b8001f0ab6487577b7c00fa7eee117aa091ced798910f"
+  },
+  {
+   "index": 64,
+   "name": "rock6vs",
+   "cell_xy": [
+    0,
+    4
+   ],
+   "cell_px": [
+    0,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "rock6.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock6vs binds rock6.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "2b0415e02d9c7d5a049b8001f0ab6487577b7c00fa7eee117aa091ced798910f"
+  },
+  {
+   "index": 65,
+   "name": "rock7vf",
+   "cell_xy": [
+    1,
+    4
+   ],
+   "cell_px": [
+    1024,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "rock7.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock7vf binds rock7.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ff594832efbce38c445eee3f4c56d39dda64301df1c1e37adb223addade001c9"
+  },
+  {
+   "index": 66,
+   "name": "rock7vs",
+   "cell_xy": [
+    2,
+    4
+   ],
+   "cell_px": [
+    2048,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "rock7.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock7vs binds rock7.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ff594832efbce38c445eee3f4c56d39dda64301df1c1e37adb223addade001c9"
+  },
+  {
+   "index": 67,
+   "name": "rock8vf",
+   "cell_xy": [
+    3,
+    4
+   ],
+   "cell_px": [
+    3072,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "rock8.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock8vf binds rock8.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "d33435c41d7474d1544c01323e0cbf2739a0e0a20f7b404cad44377b13393939"
+  },
+  {
+   "index": 68,
+   "name": "rock8vs",
+   "cell_xy": [
+    4,
+    4
+   ],
+   "cell_px": [
+    4096,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "rock8.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock8vs binds rock8.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "d33435c41d7474d1544c01323e0cbf2739a0e0a20f7b404cad44377b13393939"
+  },
+  {
+   "index": 69,
+   "name": "rock9vf",
+   "cell_xy": [
+    5,
+    4
+   ],
+   "cell_px": [
+    5120,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "rock9.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock9vf binds rock9.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ba5f539c5819cb00c811afa16732c6d6de33a04eb1a0f987431358e752739dcc"
+  },
+  {
+   "index": 70,
+   "name": "rock9vs",
+   "cell_xy": [
+    6,
+    4
+   ],
+   "cell_px": [
+    6144,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "rock9.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "data/terrain/tiles/tiles.mat:142-148,206-220 (rock9vs binds rock9.dds)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ba5f539c5819cb00c811afa16732c6d6de33a04eb1a0f987431358e752739dcc"
+  },
+  {
+   "index": 71,
+   "name": "test0",
+   "cell_xy": [
+    7,
+    4
+   ],
+   "cell_px": [
+    7168,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test0.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:73",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "26b2edb974721b8d0ce00eed8ebc37216bef7326b7c101ab2808ee3c0b1b7d5e"
+  },
+  {
+   "index": 72,
+   "name": "test1",
+   "cell_xy": [
+    8,
+    4
+   ],
+   "cell_px": [
+    8192,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:74",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "eb6ab2bdea40d795f356eb66d5548c8e381be2699eaafb9906fd97072a29606e"
+  },
+  {
+   "index": 73,
+   "name": "test2",
+   "cell_xy": [
+    9,
+    4
+   ],
+   "cell_px": [
+    9216,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:75",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "13c82463ec1ea9d30841ac1b19629503dea094990e41ec1654ad9cb4f9702ed6"
+  },
+  {
+   "index": 74,
+   "name": "test3",
+   "cell_xy": [
+    10,
+    4
+   ],
+   "cell_px": [
+    10240,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:76",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3cbf263c70b01e3202bd94b375181e100338a25b19702b36f90b306ea6c7c86a"
+  },
+  {
+   "index": 75,
+   "name": "test4",
+   "cell_xy": [
+    11,
+    4
+   ],
+   "cell_px": [
+    11264,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:77",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "f574b4279d20b08a75d931f84eab769e661f2f9347ad89936ac5651f3661de51"
+  },
+  {
+   "index": 76,
+   "name": "test5",
+   "cell_xy": [
+    12,
+    4
+   ],
+   "cell_px": [
+    12288,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:78",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "221139de7a7fee0b26ee43a042874ddcd6b78c28a6f2f7116cf4b01e33ec1e32"
+  },
+  {
+   "index": 77,
+   "name": "test6",
+   "cell_xy": [
+    13,
+    4
+   ],
+   "cell_px": [
+    13312,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:79",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "f20ccd6c4827bde70b346f0bfa996996086f978d2bb55bd96f172aca26c8c3cf"
+  },
+  {
+   "index": 78,
+   "name": "test7",
+   "cell_xy": [
+    14,
+    4
+   ],
+   "cell_px": [
+    14336,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test7.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:80",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "6321a6f05946e08deda7f3bc113368c8466d09256af92bca4cd0d059b3378b10"
+  },
+  {
+   "index": 79,
+   "name": "test8",
+   "cell_xy": [
+    15,
+    4
+   ],
+   "cell_px": [
+    15360,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "test8.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:81",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "6106facd2601621a27432ad6c8f5c51a94fd0768ef1f0466bd4df1271d1d512a"
+  },
+  {
+   "index": 80,
+   "name": "test9",
+   "cell_xy": [
+    0,
+    5
+   ],
+   "cell_px": [
+    0,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "test9.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:82",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3a9721cfe722dde80c4ccaeafee1fac593aa171411c93697774fa8aec3acc671"
+  },
+  {
+   "index": 81,
+   "name": "test10",
+   "cell_xy": [
+    1,
+    5
+   ],
+   "cell_px": [
+    1024,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "test10.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:83",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "28e617b1f72233f91335f3020c02599678673eff12de390ce8f6084e87a8019a"
+  },
+  {
+   "index": 82,
+   "name": "test11",
+   "cell_xy": [
+    2,
+    5
+   ],
+   "cell_px": [
+    2048,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "test11.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:84",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "28e617b1f72233f91335f3020c02599678673eff12de390ce8f6084e87a8019a"
+  },
+  {
+   "index": 83,
+   "name": "test12",
+   "cell_xy": [
+    3,
+    5
+   ],
+   "cell_px": [
+    3072,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "test12.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:85",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "2735962fdf2fbf0883c272ace87347a94e9cf4f2409f73358e8f1dac8dc345bc"
+  },
+  {
+   "index": 84,
+   "name": "test13",
+   "cell_xy": [
+    4,
+    5
+   ],
+   "cell_px": [
+    4096,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "test13.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:86",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "10bf13adb9ecbf9566d1790e2d35d1a00a19daadf7db4ab23d1fe303be592a28"
+  },
+  {
+   "index": 85,
+   "name": "test14",
+   "cell_xy": [
+    5,
+    5
+   ],
+   "cell_px": [
+    5120,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "test14.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:87",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "059bc55bf9f318bd9390e353cb75875cd86e5ecd935bd0c0ef6d31e5ccf82f13"
+  },
+  {
+   "index": 86,
+   "name": "alpha0a",
+   "cell_xy": [
+    6,
+    5
+   ],
+   "cell_px": [
+    6144,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": null,
+   "kind": "EMPTY",
+   "donor_evidence": null,
+   "status": "UNVERIFIED — no shipped PNG for this preset name; cell left transparent, no art fabricated",
+   "source_size": null,
+   "upscaled": false
+  },
+  {
+   "index": 87,
+   "name": "sandrock1",
+   "cell_xy": [
+    7,
+    5
+   ],
+   "cell_px": [
+    7168,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandrock1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:89",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "063bc72945e09f39e904438541aea0f6f3aa39ab64ba61d3d0e8e65efeac93b9"
+  },
+  {
+   "index": 88,
+   "name": "sandrock2",
+   "cell_xy": [
+    8,
+    5
+   ],
+   "cell_px": [
+    8192,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandrock2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:90",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "69d95c9fe2b368ad5fc6d56f4e4c85e7658108d304215666f728ee30ffbc33db"
+  },
+  {
+   "index": 89,
+   "name": "sandrock3",
+   "cell_xy": [
+    9,
+    5
+   ],
+   "cell_px": [
+    9216,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandrock3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:91",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4582398c12f08074af772462ba69a2cbaeb7c34a61ba2e024afac58c90d7df30"
+  },
+  {
+   "index": 90,
+   "name": "sandrock4",
+   "cell_xy": [
+    10,
+    5
+   ],
+   "cell_px": [
+    10240,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandrock4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:92",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "19b3fe98476b8c4c5a3a210e329c83dd4e021aa3ccd571f65b11ec1fccf88c2c"
+  },
+  {
+   "index": 91,
+   "name": "sandrock5",
+   "cell_xy": [
+    11,
+    5
+   ],
+   "cell_px": [
+    11264,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandrock5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:93",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "692b90cf69c3212731a216a013a93113447ea20bc6af8a12e6434a66de2fa7e9"
+  },
+  {
+   "index": 92,
+   "name": "sandrock6",
+   "cell_xy": [
+    12,
+    5
+   ],
+   "cell_px": [
+    12288,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandrock6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:94",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "eea8891ab965d188183b59e2c15640f25c3a2eb3f431b2eecd048fc1f8465019"
+  },
+  {
+   "index": 93,
+   "name": "sandsea1",
+   "cell_xy": [
+    13,
+    5
+   ],
+   "cell_px": [
+    13312,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandsea1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:95",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "32fac1e7de30cf7568c2676601b8fefbf36f9deb7bea991049acdcbeaf37140d"
+  },
+  {
+   "index": 94,
+   "name": "sandsea2",
+   "cell_xy": [
+    14,
+    5
+   ],
+   "cell_px": [
+    14336,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandsea2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:96",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b988cb1554abbc415be0efe6d9040bcd69d8c9dab4d609c6abdcbfade9c6ad9e"
+  },
+  {
+   "index": 95,
+   "name": "sandsea3",
+   "cell_xy": [
+    15,
+    5
+   ],
+   "cell_px": [
+    15360,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "sandsea3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:97",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "c5d941575a7fc37935e2e4a764ff014087fdbe388dbba69d4b76c9ec3aaf92fc"
+  },
+  {
+   "index": 96,
+   "name": "sandsea4",
+   "cell_xy": [
+    0,
+    6
+   ],
+   "cell_px": [
+    0,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "sandsea4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:98",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "f38419c5d22915999af2618aa82b543e89eed8986f14b88cc671cc68ea6c1b52"
+  },
+  {
+   "index": 97,
+   "name": "sandsea5",
+   "cell_xy": [
+    1,
+    6
+   ],
+   "cell_px": [
+    1024,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "sandsea5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:99",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "dfde5ce1c8e24ca56e8646b6c5c1d257ea0b5927c8c73cc8db29092b174e64c5"
+  },
+  {
+   "index": 98,
+   "name": "sandsea6",
+   "cell_xy": [
+    2,
+    6
+   ],
+   "cell_px": [
+    2048,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "sandsea6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:100",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3ef8a7aaf0187681a49304a5b6c8527451a59e36a13f043e956a83f83fe45c3b"
+  },
+  {
+   "index": 99,
+   "name": "test15",
+   "cell_xy": [
+    3,
+    6
+   ],
+   "cell_px": [
+    3072,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test15.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:101",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "c86f7f4c0383061676da2fba8a4be741bd20c028837fde7ed299c136da3cfff8"
+  },
+  {
+   "index": 100,
+   "name": "test16",
+   "cell_xy": [
+    4,
+    6
+   ],
+   "cell_px": [
+    4096,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test16.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:102",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "abedceda8c6e374ea8ed5a2f1e27efcf74dc78730496d5c5661969dbd95377dc"
+  },
+  {
+   "index": 101,
+   "name": "test17",
+   "cell_xy": [
+    5,
+    6
+   ],
+   "cell_px": [
+    5120,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test17.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:103",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "34c937d97d58c0ac0723edc689b1a7430c9e796e5088b9f7bb4d54d1206e94fb"
+  },
+  {
+   "index": 102,
+   "name": "test18",
+   "cell_xy": [
+    6,
+    6
+   ],
+   "cell_px": [
+    6144,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test18.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:104",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "013525a8f6168a50c326d0e9f42bc2eb312cce7c9dd7b0ec9eb543059f8e700c"
+  },
+  {
+   "index": 103,
+   "name": "test19",
+   "cell_xy": [
+    7,
+    6
+   ],
+   "cell_px": [
+    7168,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test19.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:105",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4e0e5e8d18a12bbbb0bf4f9cdc8e16737f67fde10dda860dc9b66451eb212fc9"
+  },
+  {
+   "index": 104,
+   "name": "test20",
+   "cell_xy": [
+    8,
+    6
+   ],
+   "cell_px": [
+    8192,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test20.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:106",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "2690841ed3ac05c84cc065502b60829f07c6a642edb8d636e8168f01f0dc2615"
+  },
+  {
+   "index": 105,
+   "name": "test21",
+   "cell_xy": [
+    9,
+    6
+   ],
+   "cell_px": [
+    9216,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test21.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:107",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9d5602afd9a776c40a657f5921c9de09f21001e851e592e6e9a7c815ff76b214"
+  },
+  {
+   "index": 106,
+   "name": "test22",
+   "cell_xy": [
+    10,
+    6
+   ],
+   "cell_px": [
+    10240,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test22.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:108",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "645641dda0a4d9632ecf158bacecd192d52322f80a0d4f52377acafea4836662"
+  },
+  {
+   "index": 107,
+   "name": "test23",
+   "cell_xy": [
+    11,
+    6
+   ],
+   "cell_px": [
+    11264,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test23.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:109",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "ee037f26e71d06685b141ec48eca96c74d4b54b46bddbb2ae3140e4589544b46"
+  },
+  {
+   "index": 108,
+   "name": "test24",
+   "cell_xy": [
+    12,
+    6
+   ],
+   "cell_px": [
+    12288,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test24.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:110",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b74e3d7973224b7dc7fd2cc07af542dbdd8f024a671f7db9d5b24f7aec82b27d"
+  },
+  {
+   "index": 109,
+   "name": "test25",
+   "cell_xy": [
+    13,
+    6
+   ],
+   "cell_px": [
+    13312,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "test25.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:111",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "74d290ddd993bacbda1d043918647176ea6049de5ee523baea49682c51c564d1"
+  },
+  {
+   "index": 110,
+   "name": "alpha0b",
+   "cell_xy": [
+    14,
+    6
+   ],
+   "cell_px": [
+    14336,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": null,
+   "kind": "EMPTY",
+   "donor_evidence": null,
+   "status": "UNVERIFIED — no shipped PNG for this preset name; cell left transparent, no art fabricated",
+   "source_size": null,
+   "upscaled": false
+  },
+  {
+   "index": 111,
+   "name": "desert1",
+   "cell_xy": [
+    15,
+    6
+   ],
+   "cell_px": [
+    15360,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "desert1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:113",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "c4f8d99c2d9be289d97e0e7121174222a8489cc25924e4a8b80578f042ce1a51"
+  },
+  {
+   "index": 112,
+   "name": "desert2",
+   "cell_xy": [
+    0,
+    7
+   ],
+   "cell_px": [
+    0,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:114",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b625bf03fa85c0e45e5a11cbdc97b2283cee0e2b7be3c4a560ec5d545be932e4"
+  },
+  {
+   "index": 113,
+   "name": "desert3",
+   "cell_xy": [
+    1,
+    7
+   ],
+   "cell_px": [
+    1024,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:115",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1abd86923806a16c09109cd4f03b938b3599f8966e08c8279c3edbeb209e8cd2"
+  },
+  {
+   "index": 114,
+   "name": "desert4",
+   "cell_xy": [
+    2,
+    7
+   ],
+   "cell_px": [
+    2048,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:116",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "899ac58e32df607f56014260d0a43f2215a924618d975b460fd2de018f6c8716"
+  },
+  {
+   "index": 115,
+   "name": "desert5",
+   "cell_xy": [
+    3,
+    7
+   ],
+   "cell_px": [
+    3072,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:117",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "5ab5f759136a54000d926f2f3c35c541303cd0895c7dd04e6712d97712f9de26"
+  },
+  {
+   "index": 116,
+   "name": "desert6",
+   "cell_xy": [
+    4,
+    7
+   ],
+   "cell_px": [
+    4096,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:118",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "8aeec4135c4e5c94f24f4fc0989b966073bf7d068ff1340c4d317f15656cd378"
+  },
+  {
+   "index": 117,
+   "name": "desert7",
+   "cell_xy": [
+    5,
+    7
+   ],
+   "cell_px": [
+    5120,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert7.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:119",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1c817419b217ab35fb7f6e1ab0bdc4ef103056b62d3c2003af2c2b963a553eb3"
+  },
+  {
+   "index": 118,
+   "name": "desert8",
+   "cell_xy": [
+    6,
+    7
+   ],
+   "cell_px": [
+    6144,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert8.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:120",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "2f63801867004bc1c1f108555d3d1563ac507d94d6d5be331f54b4c9c2cd1132"
+  },
+  {
+   "index": 119,
+   "name": "desert9",
+   "cell_xy": [
+    7,
+    7
+   ],
+   "cell_px": [
+    7168,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert9.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:121",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "818d838657a5d471a9b8e677f0b2280956c400a5fb3e797a968b777b05668d9a"
+  },
+  {
+   "index": 120,
+   "name": "desert10",
+   "cell_xy": [
+    8,
+    7
+   ],
+   "cell_px": [
+    8192,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert10.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:122",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "94552049ac59e37027d25b31024a73096b8b8d1d35c41302983b82b6f5070a61"
+  },
+  {
+   "index": 121,
+   "name": "desert11",
+   "cell_xy": [
+    9,
+    7
+   ],
+   "cell_px": [
+    9216,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert11.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:123",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "96705c4af810e55dbb55229a19e5256da034cb3df4aca5e0b3c98448baff6c84"
+  },
+  {
+   "index": 122,
+   "name": "desert12",
+   "cell_xy": [
+    10,
+    7
+   ],
+   "cell_px": [
+    10240,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert12.png",
+   "kind": "DIRECT",
+   "donor_evidence": "presets_summer.json:124",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "20df2ac3c0c37e101401b1be72b1e5dbf549f0b42383227af4d87359939d2560"
+  },
+  {
+   "index": 123,
+   "name": "alpha0c",
+   "cell_xy": [
+    11,
+    7
+   ],
+   "cell_px": [
+    11264,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": null,
+   "kind": "EMPTY",
+   "donor_evidence": null,
+   "status": "UNVERIFIED — no shipped PNG for this preset name; cell left transparent, no art fabricated",
+   "source_size": null,
+   "upscaled": false
+  }
+ ],
+ "unused_shipped_blocks": [
+  "winter0.png",
+  "winter1.png",
+  "winter10.png",
+  "winter11.png",
+  "winter12.png",
+  "winter13.png",
+  "winter14.png",
+  "winter15.png",
+  "winter16.png",
+  "winter17.png",
+  "winter18.png",
+  "winter19.png",
+  "winter2.png",
+  "winter20.png",
+  "winter21.png",
+  "winter22.png",
+  "winter23.png",
+  "winter24.png",
+  "winter25.png",
+  "winter26.png",
+  "winter3.png",
+  "winter4.png",
+  "winter5.png",
+  "winter6.png",
+  "winter7.png",
+  "winter8.png",
+  "winter9.png"
+ ],
+ "unused_note": "27 winterN.png ship but have no index in presets_summer.json; they belong to the Winter set and are intentionally not packed",
+ "masks": {
+  "alpha": {
+   "donor_evidence": "data/terrain/ref/reftilealpha.mat:30-37",
+   "donor_path": "C:/Games/Cossacks 3/data/terrain/tiles/textures/alpha.bmp",
+   "expected_size": [
+    512,
+    256
+   ],
+   "expected_bpp": 8,
+   "status": "CONVERTED_FROM_DONOR",
+   "file": "alpha.png",
+   "size": [
+    512,
+    256
+   ],
+   "mode": "L",
+   "source_sha256": "a5b9dda1dd5aaf87e485b6343880d026b87f798e2b19ec7d316285d3ff42a9f8",
+   "header": {
+    "w": 512,
+    "h": 256,
+    "bpp": 8,
+    "compression": 0
+   },
+   "note": "intensity PNG from donor BMP; exact tiaAlphaFromIntensity formula is ENGINE/UNVERIFIED; no cell<->tile sub-rect mapping invented"
+  },
+  "alphavert": {
+   "donor_evidence": "data/terrain/ref/reftilealpha.mat:139-146",
+   "donor_path": "C:/Games/Cossacks 3/data/terrain/tiles/textures/alphavert.bmp",
+   "expected_size": [
+    1024,
+    512
+   ],
+   "expected_bpp": 24,
+   "status": "CONVERTED_FROM_DONOR",
+   "file": "alphavert.png",
+   "size": [
+    1024,
+    512
+   ],
+   "mode": "L",
+   "source_sha256": "59420a036e83d1500d4581b23e2df3a296395f44875a5760373d014cbd0109ce",
+   "header": {
+    "w": 1024,
+    "h": 512,
+    "bpp": 24,
+    "compression": 0
+   },
+   "note": "intensity PNG from donor BMP; exact tiaAlphaFromIntensity formula is ENGINE/UNVERIFIED; no cell<->tile sub-rect mapping invented"
+  }
+ },
+ "shipped_tileblock": {
+  "source": "app/shots/g32_dump.json:1 (key 'tileblock', base64 uint8)",
+  "bytes": 102400,
+  "distinct_ids": 31,
+  "min_id": 0,
+  "max_id": 85,
+  "histogram": {
+   "0": 15993,
+   "1": 2863,
+   "4": 77,
+   "6": 42,
+   "7": 837,
+   "8": 1,
+   "9": 43,
+   "10": 717,
+   "14": 28535,
+   "15": 144,
+   "16": 15962,
+   "17": 1498,
+   "18": 282,
+   "19": 879,
+   "20": 2415,
+   "21": 1735,
+   "22": 265,
+   "23": 1255,
+   "24": 2283,
+   "25": 4135,
+   "72": 267,
+   "73": 576,
+   "74": 279,
+   "77": 162,
+   "78": 6691,
+   "79": 7667,
+   "80": 2229,
+   "82": 19,
+   "83": 1779,
+   "84": 599,
+   "85": 2171
+  },
+  "unresolved_ids": [],
+  "all_resolvable": true,
+  "top_ids": [
+   [
+    14,
+    28535
+   ],
+   [
+    0,
+    15993
+   ],
+   [
+    16,
+    15962
+   ],
+   [
+    79,
+    7667
+   ],
+   [
+    78,
+    6691
+   ]
+  ]
+ },
+ "visual_parity_claim": false
+}

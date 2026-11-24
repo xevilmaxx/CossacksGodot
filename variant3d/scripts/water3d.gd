@@ -28,6 +28,38 @@ const SPEC_SOFT: float = 170.0             # water.dev.frag:42 water_softlight_f
 const SPEC_GLOSSY: float = 120.0           # water.dev.frag:43 water_glossylight_fact
 const PARTICLE_AMOUNT: float = 30.0        # water.dev.frag:44 particle_amount
 
+# ---- DONOR WATER.LIB DEFAULTS — PROVEN, but deliberately NOT wired ---------
+# DEEPDEC-03 §2/§6.2 (ev_6fcb07113a5beb30f35b8f11334e23cb2c84fe8b5020ef16f97cd91b6d9d27ff)
+# proves these values in external water.lib. Eight of them are declared
+# COMMENTED OUT in the shipped fragment (water.dev.frag:8-16; DEEPDEC-03 §4.1),
+# so wiring them into the spatial material would invent donor behaviour.
+# Recorded as an audit trail only; the live fragment uniforms (hdrMultiplier,
+# texScaleS/T, fogEnabled) are already set on the material below.
+const DONOR_WATER_LIB_PROVEN := {
+	"MaxDepth": 1, "MinDepth": 0, "MaxAlpha": 1.1, "MinAlpha": 0,
+	"DeepColor": [0.0, 0.0, 0.1255, 0.5],
+	"ShallowColor": [0.0, 0.0, 0.0, 0.5],
+	"ReflectionAmount": 1, "WaterAmount": 1,
+	"FresnelPower": 1, "FresnelBias": 1,
+	"WaveFreq": 0, "WaveAmp": 0, "DistFactor": 1, "BumpFactor": 1,
+	"WaveDir0": [-1.0, 0.0], "WaveDir1": [-0.7, 0.7], "Speed": 1.0,
+	"Offset": 0.495, "LayerCount": 1,
+	"CustomTexCoord": true,
+	"HeightMapEnable": true, "ShadowMapEnable": true,
+}
+const DONOR_WATER_LIB_COMMENTED_IN_FRAGMENT := [
+	"deepColor", "shallowColor", "reflectionAmount", "waterAmount",
+	"fresnelPower", "fresnelBias", "distFactor", "bumpFactor",
+]
+# DEEPDEC-03 §2.2 (ev_03eb161c90d6962781179abd247668f28b08f324e69e7a837b6dbd22c0ddb988,
+# ev_d94dda9482a38c5a0aa3322f1eb7ffddc2f812530d8886205613ad9b23d21319):
+# the 0x853ad4 block is 30 STRING-KEY assignments, not numeric defaults; the
+# only static number, f32 1.9999998807907104 at 0x853eb8, is an all-keys-enable
+# BITMASK (test byte [ebx+0x7c],1 / ,0x40). Never read it as a shader float.
+const BINARY_CAUTION := ("0x853ad4 = string-key assignments; 0x853eb8 f32 "
+	+ "1.9999998807907104 is an enable bitmask, NOT a shader constant. "
+	+ "No numeric descriptor default is provable in cossacks.exe (DEEPDEC-03 §2.3).")
+
 # Donor colours (water.dev.frag:45-47).
 const SHALLOW_COLOR := Color(0.1, 0.24, 0.24)
 const DEEP_COLOR := Color(0.0, 0.025, 0.05)
@@ -190,6 +222,13 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 		},
 		"height_aware": false,
 		"visual_parity_claimed": false,
+		"donor_water_lib_proven": DONOR_WATER_LIB_PROVEN,
+		"water_lib_keys_commented_in_fragment": DONOR_WATER_LIB_COMMENTED_IN_FRAGMENT,
+		"binary_caution": BINARY_CAUTION,
+		"hmap_min_max": "PORT APPROXIMATION -max_height/+max_height; binary defaults UNVERIFIED (DEEPDEC-03 §2.3)",
+		# clamp(-0.25*3-1.5,0,1)=0: the donor swell term is zeroed under the
+		# -0.25 threshold literal. Kept donor-faithful, not retuned to the 2D app's 1.0.
+		"waveheight_from_donor_literal": clampf(WATER_LEVEL * 3.0 - 1.5, 0.0, 1.0),
 	}
 	return true
 

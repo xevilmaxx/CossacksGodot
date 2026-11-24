@@ -1,0 +1,84 @@
+{
+ "version": 1,
+ "generator": "variant3d/tools/pack_tile_atlas_split.py",
+ "task": "V7-91 — dual-mode atlas (split parts + Texture2DArray)",
+ "labels": [
+  "DONOR_INDEX_VIA_V785_MANIFEST",
+  "LOSSLESS_BYTE_SPLIT",
+  "REASSEMBLY_SHA256_VERIFIED",
+  "APPROX_ATLAS_PACKING (inherited from V7-85; donor packing UNVERIFIED)",
+  "NO_VISUAL_PARITY_CLAIM"
+ ],
+ "source": {
+  "file": "variant3d/assets/terrain/atlas/tile_index_atlas.png",
+  "bytes": 179912941,
+  "sha256": "a1f123a1072e07eb28f416a9d8541aae5ffd23891a1836904b3cb05eb84dcfbd",
+  "status": "DELETED__REGENERABLE",
+  "regenerate": "python variant3d/tools/build_tile_index_atlas.py",
+  "regenerate_note": "V7-85 tool; donor root read-only via $COSSACKS3_DIR"
+ },
+ "part_max_bytes": 90000000,
+ "part_count": 2,
+ "parts": [
+  {
+   "name": "tile_index_atlas.part000",
+   "order": 0,
+   "bytes": 90000000,
+   "sha256": "019f0f9d7ea1430131189881db58e3f3fa138eb76209d643d53e698b73dd525f",
+   "offset": 0
+  },
+  {
+   "name": "tile_index_atlas.part001",
+   "order": 1,
+   "bytes": 89912941,
+   "sha256": "295a527ce8c402d8c8c80775538a6a0c0e6859fa94a758194cc096db0faba1be",
+   "offset": 90000000
+  }
+ ],
+ "reassembly": {
+  "order": [
+   "tile_index_atlas.part000",
+   "tile_index_atlas.part001"
+  ],
+  "algorithm": "concatenate parts in `order` to user:// cache; sha256 must equal source.sha256",
+  "destination": "user://tile_atlas_cache/tile_index_atlas.png (never res://)"
+ },
+ "masks": {
+  "alpha.png": {
+   "file": "alpha.png",
+   "bytes": 55242,
+   "sha256": "dfaf78d0c285920cd2009f74476a8d4647f3666efb7c6dcf0bfd1b44487b8ef7",
+   "copied_from": "variant3d/assets/terrain/atlas/alpha.png",
+   "donor_evidence": "data/terrain/ref/reftilealpha.mat:30-37",
+   "status": "CONVERTED_FROM_DONOR (V7-85), small separate file — NOT split"
+  },
+  "alphavert.png": {
+   "file": "alphavert.png",
+   "bytes": 167954,
+   "sha256": "c916ea98ddb7f8ccc9a4898f324540335d4d74ee5250f4774b9769c762afd245",
+   "copied_from": "variant3d/assets/terrain/atlas/alphavert.png",
+   "donor_evidence": "data/terrain/ref/reftilealpha.mat:139-146",
+   "status": "CONVERTED_FROM_DONOR (V7-85), small separate file — NOT split"
+  }
+ },
+ "verification": {
+  "reassembled_bytes": 179912941,
+  "reassembled_sha256": "a1f123a1072e07eb28f416a9d8541aae5ffd23891a1836904b3cb05eb84dcfbd",
+  "expected_bytes": 179912941,
+  "expected_sha256": "a1f123a1072e07eb28f416a9d8541aae5ffd23891a1836904b3cb05eb84dcfbd",
+  "matches": true
+ },
+ "zip_vs_split": {
+  "raw_bytes": 179912941,
+  "zip_deflated_level9_bytes": 179553069,
+  "ratio": 0.998,
+  "exceeds_github_100mb": true,
+  "note": "PNG is already deflated; zip does not fit GitHub's ~100MB per-file limit."
+ },
+ "index_order_source": {
+  "file": "variant3d/assets/terrain/atlas/tile_index_atlas.manifest.json",
+  "use": "array mode: layout[index].source_png + kind define slot order",
+  "evidence": "presets_summer.json:2-125 (terrain.presets:2-6)"
+ },
+ "visual_parity_claim": false
+}

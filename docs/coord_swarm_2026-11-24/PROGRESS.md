@@ -247,6 +247,264 @@ historical failures" once the background job finishes (avoid spool race).
   t_render_mode PASS, seam_missing=false. (Gate run before V7-81 camera fix;
   V7-81 will re-verify its own selftest.)
 
+### DEEPDEC-03 water — PROVEN defaults + full fragment algorithm
+- Binary at 0x853ad4 = 30 STRING-KEY assignments (field->key layout +0x04
+  reflectionMap .. +0x54 hmapTex 0x853e0c .. +0x78 cameraModel 0x853eac;
+  ev_9918481e..., ev_1dfd1d67...), NOT numeric defaults. Only static numeric
+  0x853eb8 = f32 1.9999998807907104 (file 0x4532b8, ev_d94dda94...), loaded at
+  0x853c5d and stored +0x7c at 0x853c62 (ev_9e9f2845...) — used as an ALL-KEYS
+  BITMASK (test byte ...,1 / ...,0x40 at 0x85405d/0x8540eb), NOT a shader float.
+  waveFreq/Amp, fresnelPower/Bias, texScaleS/T, hdrMultiplier, waveDir0/1,
+  hmapMin/Max, shadowSize/Color UNVERIFIED in binary (reader 0x854051 uses
+  runtime object fields with fallbacks +0x88..+0xb0). No function discovered
+  for either block; documented cleanly.
+- EXTERNAL water.lib PROVEN defaults: MaxDepth 1, MinDepth 0, MaxAlpha 1.1,
+  DeepColor (0,0,0.1255,0.5), ShallowColor (0,0,0,0.5), ReflectionAmount 1,
+  WaterAmount 1, FresnelPower/Bias 1, HDRMultiplier 1, WaveFreq/Amp 0,
+  DistFactor/BumpFactor 1, TexScaleS 0.1, TexScaleT 0.01, WaveDir0 (-1,0),
+  WaveDir1 (-0.7,0.7), Speed 1.0, Offset 0.495, LayerCount 1,
+  CustomTexCoord True, HeightMapEnable/ShadowMapEnable True.
+- Full water.dev.frag step order (10 steps) recovered with line citations;
+  only diffusewaves0.bmp sampled; diffusewaves2 live but unsampled; others
+  commented; NO foam texture asset. Values relayed to V7-84.
+
+### V7-82 splat interim polish LANDED
+- variant3d-ONLY: splat 320x320 (81,711 B) -> 1280x1280 (1,150,428 B) using
+  existing tool --texels-per-cell 4 against SAME dump/seed/mapping (31 mapping
+  rows + dump sha preserved). ONE line in world3d_terrain.gd:104 sets LINEAR.
+- Measured texture grain: within-cell deviation 0 -> 1.233/255; adjacent-texel
+  |dx| 0.614 -> 1.305. Windowed A/B qualitative only (camera drift ~1.3 m);
+  captures at temp/opencode/v782_splat_before.png and ...after.png (213/214).
+- Parse 242 ok, selftest 243 ok 29/29. Report explicitly labelled
+  `PORT APPROXIMATION — NOT DONOR PARITY` citing TERRAIN2-01:152-157,199-205,
+  369-372 (integer tile indices + eye-plane projection). No tile-index work done.
+- Queue now EMPTY; V7-91 resumed for final dual-mode verification.
+
+### V7-91 dual-mode atlas — PARTIAL (split PASS, array fix unverified)
+- SPLIT COMPLETE & VERIFIED (no Godot): 2 parts 90,000,000 B + 89,912,941 B
+  in variant3d/assets/terrain/atlas_parts/, manifest split_manifest.json;
+  reassembly 179,912,941 B / SHA-256 a1f123a1...dcfbd matches V7-85;
+  pack_tile_atlas_split.py --check PASS. Masks copied small. ZIP level 9 still
+  179,553,069 B (ratio 0.998) > GitHub limit, so split is the shipping path.
+- Loader tile_atlas_loader.gd written. Job 239 20/26: SPLIT MODE FULLY PASS
+  (reassembly hash/size, 16384x8192 atlas, 2 masks, API, UV/layer helpers);
+  ARRAY MODE aborted at test14.png after 86 images (String cast exception;
+  config-dict ctor rejected Dictionary->String). Job 230 timed out on early
+  GDScript parse errors.
+- Static fixes after job 239 (NOT runtime-verified): self.load disambiguation,
+  Image.resize void return, Texture2DArray.create_from_images(), _init Variant,
+  str() casts, res://-first loads (root path has a space).
+- 180 MB PNG and temp probe DELIBERATELY still present, gated on clean dual-mode
+  run; manifest says PENDING_DELETION_AFTER_VERIFICATION__REGENERABLE.
+- BLOCKED: one more runner job once queue is clear; then delete probe + result
+  + big PNG, update report/manifest to DELETED, re-run Python --check.
+
+### V7-90 donor camera changes APPLIED (user-approved)
+- camera3d.gd: explicit height state + additive 2.000000 m/notch wheel delta,
+  zoom-independent profile*4 pan, donor 60/45 middle-drag divisors, old/new
+  height anchor preserved. ArcTan minimap offset DOCUMENTED but NOT implemented
+  (UNVERIFIED); FOV untouched (2.90 vs 17.27 assumptions). V7-81 coordinate fix,
+  V7-77 height sampler, V7-66 jump_to_world contract all preserved.
+- Jobs: parse 229 ok; probe harness iterations 231/236 failed (probe defects,
+  not module), final probe 238 8/8 PASS (wheel 2.000000 m/notch; pan identical
+  0.100006 m/0.05 s at zoom 2.9 and 0.345; jump->world (0,34.06,54.505);
+  tilt -32; FOV 17.27); selftest 241 ok 29/29. uitest 240 failed (exit 1,
+  stdout only banner, uitest.json STALE from 14:29) — queue contention, not
+  fresh evidence. t_camera3d.gd not run (known pre-existing timing failure).
+
+### V7-86 tile-index shader LANDED
+- NEW `variant3d/shaders/terrain_tileindex.gdshader` + report. Deep-folded
+  DEEPDEC-02 exact shader chain: vertex realpos/e/l/h/n Blinn-Phong, fragment
+  rgb*TexCoord[4]+TexCoord[5] (gl_Color multiplies DIFFUSE; no donor colour
+  buffer), 3-tap + 9-tap PCF of=1/512, fog modes 1/2/3 with 1.442695, face
+  planes S=(1,0,0,0)/T=(0,0,1,0) front and S=(0,1,0,0)/T=(0,0,1,0) side
+  scale 0.125. Report has a DEEPDEC-02 line-label correction section.
+- Final probe 235: PASS 47/47, empty stderr; 30 uniforms present, donor-cited
+  defaults verified, no tile-name->id table, no COLOR attribute. Headless dummy
+  renderer => compile/interface proof ONLY, not GPU rendering.
+- A3 INTEGRATION CONTRACT: UV2.x = float(tile_index) 0..85, UV2.y = face mode
+  0 ground/1 front/2 side (default 0 valid); A3 MUST set atlas_grid=(cols,rows)
+  from V7-85 manifest and bind tile_atlas/alpha_atlas/alphavert_atlas (masks
+  need donor intensity in ALPHA channel); shadow_map optional (shadow_enabled=0).
+  Donor-cited defaults: face_scale 0.125, shininess 16, ambient 0.15686,
+  diffuse 0.78125, specular 0, shadow_offset 1/512, fog_color palette
+  60/100/150, fog_mode 0, fog_use_abs_z 0. Eye planes are neutral substitutes /
+  APPROX. render_mode blend_mix, unshaded, cull_disabled (no second cull set).
+
+### DEEPDEC-07 §4.3 FX keys + shot mesh assets
+- Effect keys are PER-WEAPON object properties: unit.script:778,905,950,1233,
+  1552,1583,1608,2547 assign objprop.weapon[N].fxshot := shotmusket /
+  shotmusketcav / shotmusketking / shotmusketdrag / shotmusketpoint — resolves
+  where fx.tree effectname keys are selected.
+- Shot FX has its OWN mesh/animation assets (private-use, not copied):
+  shotmusket1.actor / shotmusket2.actor (ev_acbfb30f..., ev_f20c4886...) bind
+  aaf\pfx\pfxshotmusket1.aaf / pfxshotmusket2.aaf and
+  actors\pfx\shot\shotmusket1.oss / shotmusket2.oss.
+- INFERENCE: donor shot = animated 3D mesh PLUS the 5 sprite layers in
+  fx.tree:4-63, so our sphere+light simplification is larger than AUDIT3D-06
+  assumed. unit.script:6737 uses EffectCreateWithKey(...,'TXLifeColorEffect',
+  'blink') — effect classes beyond PFX managers.
+- Exact PFX parameter list for musketsmoke/musketflash/cannonexp/bullettrail
+  (source.pfx + source.ref) is in DEEPDEC_07; NO count/velocity fields in those
+  four keys — size=PixelRatio/MarkWidth, lifetime=EndFrame/Interval/FrameRate
+  or TimeLimit/AlphaTime, colour=Diffuse/Start/Life/EndColor, count=
+  ExpNumbParticles/MaxParticles, velocity=InitialVelocity/Min,MaxExpInitSpeed.
+  Pixel->metre and FrameRate->second conversions UNVERIFIED.
+
+### V7-83 v1.1.0 tile indices + placements EXTRACTED
+- Extended importer with donor tiles.lib ordinal mirror via repo tileblocks.json.
+  Histograms (all four sub-tile positions; 1.0f quads 100% present):
+  bonmis1 43 distinct ids 0-98 (top 0 grass1, 79 test8, 78 test7, 25 sand9,
+  98 sandsea6), grid 0xacd4c9..0xe6a4c9 gap 2,556 B; engmis4 50 ids 0-101
+  (top adds 10 ground1), grid 0xa97f38..0xe34f38 gap 2,556 B; battle1 384²
+  14 ids 10-121 (winter tiles), gap 3,068 B. The earlier "31 distinct ids"
+  was g32_dump.json (range 0-85), a DIFFERENT map — no parity claimed.
+- Placements: bonmis1 7,742 GameObjectBegin / 8,777 named records, first at
+  0xebd0ec; engmis4 12,711 / 2,832 first 0xe9966c; battle1 10,118 / 11,279
+  first 0x2550de1. First 5 decoded placements per map in report §8.4.
+- --verify intact (bonmis1 16,274 exact, engmis4 40,327, battle1 refuses as
+  non-320); regenerated dump passes heightmap_splat.py --dry-run.
+  Float-triplet semantics, mesh binding, byte 12, row orientation, visual
+  parity still UNVERIFIED. No donor data written into repo.
+
+### DEEPDEC-04 fog/light/sky — ACTIVE vs INACTIVE SETTLED
+- Fixed-function GL fog/light APIs ARE used: IAT thunks resolve to sub_4d0cb4
+  (6x glFogi, 4x glFogf, 1x glFogfv; ev_a921d40a...) and sub_4d08bc (11x
+  glLightfv, 1x glLightf; ev_8175321c...). Supersedes earlier "no consumer".
+- sub_4d0cb4 exact fog state: mode byte 0/1/2 -> GL_LINEAR/GL_EXP/GL_EXP2
+  (0x2601/0x800/0x801), + colour/start/end/density; byte +0x29 ->
+  GL_FOG_DISTANCE_MODE_NV 0=driver default, 1=EYE_RADIAL_NV (0x855b),
+  2=EYE_PLANE_ABSOLUTE_NV (0x855c) = binary counterpart of ATI abs(z)/length(z).
+- DynFog parser sub_7ab704 stores bool at camera+0x3bc and Start/End/Density/
+  Power/Offset at +0x3c0..+0x3d0 but NO downstream consumer found.
+  docreate.inc:315-320 force DynFogDepth(False) and the whole block is
+  commented; camerascreenshot.cfg:61=True is NOT shipped behaviour.
+- ACTIVE scene fog: colors.lib:34-36 FogStart=390 FogEnd=490 FogMode=0 with
+  instruction-level consumers 0x585490..0x5858e8 and applied by sub_4d2140.
+  FogMode numbering mismatch: RTTI 0/1/2 vs shader 1/2/3 (+1 bridge UNVERIFIED).
+- Two sun descriptors light.cfg:2-40 (our rig) vs light.ref:9-56 (world-scale
+  16629/11111, brighter) — precedence UNVERIFIED; DateTimeEnable=False static.
+- Sky conflict: skydome.cfg:7-46 blue two-band (active via env.cfg:17) vs
+  light.ref:61-94 black sky, both real, precedence UNVERIFIED; unlit/unfogged.
+- Weather=40 -> only soft clouds active (bands 10-50), wind (-0.742116,0,
+  -0.867266), horizont=5000, fogdensity=0.00092, 12 unlit transparent billboards.
+- FOW active mechanic (player.script:453-464, API names 0x6a821e/0x6a824e) but
+  0 static xrefs; keep world3d_fog.gd as STATE overlay, never substitute depth fog.
+- PORT RULE: sky/cloud/static-sun values and LINEAR/EXP/EXP2 + abs(z)/length()
+  equations may be translated as a SEPARATE OPT-IN layer gated OFF for gameplay;
+  do NOT rewrite world3d_fog.gd, enable DynFog, or invent HFog constants.
+
+### DEEPDEC-05 map serialization — FULL SECTION GRAMMAR + PLACEMENTS
+- 22 unique delimiters in fixed order across bonmis1/engmis4/battle1:
+  GameMapSnapShot -> GameMapRecord -> GameMap -> Resource -> TerrainMap
+  (with MergeCamera/MergeModules) -> Environment -> Players (11-13) ->
+  GameObject records (7,742 / 12,711 / 10,118) -> end markers.
+- 37-byte tile records: bytes 8-11 = FOUR u8 tile indices mapping EXACTLY to
+  tiles.lib ordinals (0=grass1, 79=test8, 93=sandsea1, 98=sandsea6...);
+  bytes 16-31 = four constant 1.0f weights.
+- Named records are VARIABLE length, not fixed 31B: u32 count + (u32 nameLen +
+  "xNyM" + 5*f32); counts 8,777/2,832/11,279; world=2*idx-(N-1), N=160/192.
+- ENTITY PLACEMENTS YES: typed/named/player-owned GameObject records (env/units/
+  buildings/misc) with mesh names and floats; 17-byte type=26 placement records
+  in GameMapRecord. RESOURCES YES (resource.lib, minegold). START POSITIONS
+  schema YES (concrete values UNVERIFIED). AI DATA YES (TAiData, ailist,
+  TAIBuildingProject). FOG/EXPLORED NOT FOUND.
+- V7-83 follow-up dispatched to decode tile indices + placements in importer.
+
+### DEEPDEC-09 AI economy — ROOT CAUSE CHAIN
+- Donor rules: affordability = real cost (PE:1377,1405); AI reserve +300 food/
+  +25 gold (US:5704-5710), upgrades +500/+25; escalation pow(costpercent/100,
+  count) cap 2 merc/20000 other; peasants=townhalls*2 cap 400/30; army quotas
+  inf36/shoot16/horse16+16/cannon1 cap256 (CL:4784-4829); tiers; mines gate
+  PE:1157 with 5 peasants and dist>30; gold requested first PE:2714;
+  market sells surplus to gold PE:3041-3110; waves RELATIVE with 8 s interval
+  (DG:478, PW:1122), force = sum aiForce (AI:2249-2267), sortie when >3 squads
+  and force > enemy max (AI:2198). NO donor 120/260 constant. Capture is binary
+  flip ~1.9 s (MX:963-1185), port /8.0s is port-only.
+- AI-wave root cause CHAIN: (1) ai.gd:437-445 builds iron+coal before gold ->
+  gold mine never built, gold->2; (2) game.gd:3831-3836 rejects gold units and
+  ai.gd:702-736 has no affordable sid retry; (3) ai.gd:868 absolute threshold
+  120 is port-only. Fix recipe F1-F5 in DEEPDEC_09 §6.
+
+### V7-84 donor water shader module LANDED
+- NEW `variant3d/scripts/water3d.gd` (self-contained Node3D, 4-vertex plane +
+  ShaderMaterial, donor `time`, `bind_height_grid()` hook) and
+  `variant3d/shaders/water3d.gdshader` (water.dev.frag translation), + report.
+- DONOR-GROUNDED: -0.25/-0.1/2.96 (texturemap.inc:29-31), 0.57/1.07/170/120/30
+  and colours (water.dev.frag:37,42-47,168), water.lib:25,32-33 defaults;
+  full 10-step algorithm order; `water_noise` = shipped diffusewaves0.png;
+  heightmapwaves0 deliberately NOT bound. Commented-out uniforms not wired.
+- APPROXIMATION labels: hmapTex neutral fallback / height[]-derived texture
+  (binding UNVERIFIED), SCREEN_UV reflection substitute disabled by default,
+  CalcTerrain/PCF shadow omitted, LINEAR fog omitted, unshaded, shore_prox
+  port art. waveheight=0 below -0.25 is donor-faithful.
+- Parse PASS (222); probe 10/10 PASS (224) with all three donor literals read
+  back exactly and MeshInstance3D+ShaderMaterial+4 verts confirmed. Probe deleted.
+  Full gate deferred to integration; no visual parity claim.
+
+### V7-85 tile atlas BUILT — 180 MB SIZE DECISION PENDING
+- NEW `variant3d/tools/build_tile_index_atlas.py` + 4 assets in
+  `variant3d/assets/terrain/atlas/`: tile_index_atlas.png (16,384 x 8,192 RGBA,
+  179,912,941 bytes), manifest, alpha.png 512x256 L, alphavert.png 1024x512 L.
+- 124 named 1024² cells (index = presets_summer.json:2-125 position); 121
+  filled, 3 empty alpha0a/b/c with NO art fabricated. 31/31 shipped tile ids
+  resolve; g32_dump.json:1 tileblock 102,400 bytes, ids 0-85.
+- Masks byte-identical to read-only donor intensity conversion. sand1/sand2
+  256²->1024² NEAREST upscale flagged APPROX_SAND_UPSCALE (6 cells).
+  Tool --check 12/12 PASS, no 2D bake/splat/spritesheet output.
+- UNVERIFIED: tiaAlphaFromIntensity exact formula, alpha sub-atlas cell mapping,
+  face-promotion/blend rule, 16x8 packing vs donor tsDouble/ttExtended.
+- CONCERN: 180 MB PNG duplicates the 112 already-shipped block PNGs. Decision
+  needed: keep full-res / reduce cell size / runtime Texture2DArray.
+
+### DEEPDEC-06 models/anim — BONE-PARENT BLOCKER RESOLVED (math)
+- PROVEN: NO parent indices/parent table in .oss; all 335 files close with ZERO
+  slack; 6-int header + 7-float bone record fully accounted; no bone-name
+  ASCII. Frame 0 is EXACT identity bind pose for every bone; flat skin
+  reproduces bind verts to <=1.6e-7 m. Stored (p,q) per bone is an ABSOLUTE
+  affine delta from bind (parent chain pre-folded), not a local parent-relative
+  offset (V72 was right about absence, wrong about consequence).
+- Therefore V7-64 flat-root skinning is MATHEMATICALLY DONOR-EQUIVALENT for
+  deformation (ref_frame=-1); an identity-inverse-bind glTF/Godot joint tree
+  with absolute node matrices is a faithful transport, not an invented rig.
+- Still UNVERIFIED: bone names/semantics, internal TSkeletonBone hierarchy
+  (RTTI only), quaternion convention (bypassable via matrices), visual A/B,
+  yaw, loop/clamp. KEEP `PORT APPROXIMATION — NOT DONOR PARITY` until render
+  A/B passes. Frame decimation (N=6) remains a real fidelity gap.
+- .osm: 68-byte <17i> IDP2 header + 64-byte SkinBitMap name; offsets 12/13/14
+  ou/ot/of; FRAME 000 at of, verts <3f I> at of+16. Correction to DC_FORMATS:
+  closure is sample-specific — spruce1.osm oe=46,492 < filesize 60,300,
+  leaving 13,808 B (nv x 16) second vertex frame.
+- EXE RTTI proves TSkeletonBone/List/Frame, TSkinnedMeshObject, TXAnimation,
+  XTrackPoint, XStateMachine, afpSkin, ShaderIDNoBones exist but 0 code refs.
+- DEEPDEC-02 also corrected DEEPDEC-03: GLSL IS embedded for post-FX 0x5bc800
+  and water 0x453000; terrain shader source stays external. Correction noted.
+
+### DEEPDEC-08 UI/minimap — full donor math recovered
+- Data-section string search FALSE NEGATIVE again: whole-file native_bytes_find
+  found ScreenToWorldRayCast 0x69e45a / file 0x29d85a CODE, GetGUIMinimapUnderMouse
+  0x66db22, GetCurrentMouseWorldCoord 0x66daa2, SetMainCameraMoveToTargetXZ
+  0x5fc902, IsKeyDownByName 0x66a916, GetCameraRestrictInfo 0x5fe772;
+  MiniMap 61 whole-file hits. core_feature_find saw 0 (ev_3f5b55..., ev_ab7397...).
+- 0x5fc902 sits inside sub_5fc2d0 (2,698 blocks / 5,583 instrs / 0 callers /
+  70 callees / 97 refs; ev_b17317..., ev_b444c...) — script-API registration
+  table, not recovered camera implementation; study blocked by shared limits.
+- EXACT minimap click -> camera math in control.script:574-613 (via
+  eventminimap.inc:8-34 -> onmousedown.inc:116-131): sim-metre x/y, double-click
+  uses instant _control_MoveCameraToPosition(x,y,0,False); otherwise elastic
+  target with camera height, angleZ=-Lerp(-32,-32,Clamp((height-20)/38,0,1))
+  = +32, dx=cx-tx, dz=0.1, VectorRotateX, offZ=ArcTan(angleZ)*height,
+  angleX=VectorAngle(...), VectorRotateY, then MoveToTargetXZ(x+offX+dx,
+  y+offZ+dz). Port camera3d.gd:341-350 sets _target=world_pos with NONE of the
+  offset/heading terms. ArcTan units UNVERIFIED -> don't implement numerically yet.
+- Hotkey table donor `data/game/var/hotkeys.cfg` 55 Key/Action records;
+  registershortcuts.inc:187-221, hotkeysettings.inc:25-223. Divergences: donor
+  Shift+N ADDS to group and group 0 supported (onshortcut.inc:668-806); port
+  Shift+N recentres camera and only groups 1-9 (input_controller.gd:818-847).
+  Patrol is BUTTON-ONLY in donor (P commented //TOHOTKEYS//); port P/Q are
+  extensions. Donor selection filtering richer (onselection.inc:10-175).
+  Journey mode is port-only, no donor counterpart.
+
 ### V7-83 donor map importer LANDED
 - NEW `variant3d/tools/import_donor_map.py` (stdlib-only, read-only) + report.
   Decodes TerrainMapBegin/End float32[320x320] grid into the schema

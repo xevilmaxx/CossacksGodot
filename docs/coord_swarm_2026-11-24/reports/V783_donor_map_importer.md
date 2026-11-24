@@ -5,6 +5,7 @@ owner: V7-83
 scope: "ONE NEW tool (variant3d/tools/import_donor_map.py) + this report ONLY. Donor path read-only; no donor binary copied/executed; no .gd, splat tool, app/, config, test or git changes."
 date: 2026-11-24
 status: PASS__DONOR_VERIFY_2_MAPS__SPLAT_CONSUMED__TEMP_DELETED__NO_VISUAL_CLAIM
+followup: "DEEPDEC-05 extension in §8: v1.1.0 adds W/H-generalised parsing, 4-index tile histogram and GameObject placement sampling; verified on bonmis1/engmis4/battle1."
 verdict: "A standalone stdlib-only importer locates TerrainMapBegin, validates the SECOND 320x320 header after it and decodes the raw float32[320x320] elevation grid into the exact JSON shape heightmap_splat.py::load_dump() consumes. Measured on bonmis1.map and engmis4.map: 102,400 cells each, bounds exactly -2.964000/+2.964000 m, zero bounds delta against app/shots/g32_dump.json; exact cell matches 16,274 and 40,327 (strict float32 equality), max abs error 5.928000 m and 5.302495 m. Generated JSON was consumed by heightmap_splat.py (dry-run and a real 320x320 RGBA render into a temp dir outside the repo; temp dir deleted). Tile-index and named-coordinate structures are parsed as opaque counts only and labelled SEMANTICS UNVERIFIED. No visual parity claim."
 ---
 
@@ -189,3 +190,132 @@ Remove-Item -Recurse -Force $tmp
   task, separate evidence); this tool deliberately does not.
 - No donor binary, dump copy or generated JSON is present in the repo; no
   source/asset/config/test/git state changed.
+
+---
+
+## 8. DEEPDEC-05 extension — tile indices and placement samples (follow-up)
+
+Read first: `DEEPDEC_05_map_serialization.md` (`:99-143` tile record, `:145-203`
+named records, `:205-250` entities, `:290-300` reader anchors). Tool bumped to
+`TOOL_VERSION = 1.1.0`; the original height dump JSON and `--verify` results are
+unchanged (re-measured below).
+
+### 8.1 What changed in `variant3d/tools/import_donor_map.py`
+
+| Change | Evidence | Behaviour |
+|---|---|---|
+| W/H no longer hard-coded | DEEPDEC-05 `:95-97`, `:290-300` | first repeated `u32 W,u32 W` after `TerrainMapBegin`, then its SECOND occurrence; 320/320 and 384/384 both parse. `--verify` still requires a 320×320 dump and refuses 384 with a clear error. |
+| Tile grid located by invariant | DEEPDEC-05 `:90`, `:101-123` | find the first record with four `1.0f` at +16 and `FF FF` at +5; measured gaps: 2,556 B (320 maps), **3,068 B (battle1)** — not hard-coded. |
+| Four tile indices decoded | DEEPDEC-05 `:99-131`, `:46` | bytes 8..11 → u8 ordinals; names from repo `tileblocks.json` (DEEPDEC-05:46: donor `tiles.lib` order mirror). `--survey` emits full histogram, per-position distinct counts, `unresolved_ids`. |
+| Named records count-prefixed | DEEPDEC-05 `:145-170` | read `u32 count` immediately before first `xNyM`, walk variable strides `24+nameLen`, assert declared == parsed. |
+| Placements sampled | DEEPDEC-05 `:205-228`, `:281-287` | `--export-placements --limit N`: `int32 15 + GameObjectBegin`, category/type lp strings, first float triplet, four following lp strings, first `.mesh` string within 2,048 B. |
+| Output discipline | original V7-83 contract | `--verify` writes nothing; all other output goes to stdout or `--out` outside the repo (guard retained). |
+
+### 8.2 Measured tile-index histograms
+
+Counts are over **all four sub-tile positions** (`4 × W × H` values);
+`id:name` comes from the `tiles.lib` ordinal mirror, not invented.
+
+| Map (W×H) | Tile grid | distinct ids | range | 1.0f quads | unresolved |
+|---|---|---:|---|---:|---:|
+| `bonmis1.map` (320²) | `0xacd4c9..0xe6a4c9`, gap 2,556 | **43** | 0..98 | 102,400/102,400 | 0 |
+| `engmis4.map` (320²) | `0xa97f38..0xe34f38`, gap 2,556 | **50** | 0..101 | 102,400/102,400 | 0 |
+| `battle1.map` (384²) | `0x1fb291a..0x24e691a`, gap 3,068 | **14** | 10..121 | 147,456/147,456 | 0 |
+
+`bonmis1` (`id:count`, 409,600 values):
+`0:100034 1:18200 10:176 14:18056 15:216 16:10838 17:2500 19:2616 2:460 20:11822 21:6476 23:2356 24:6790 25:29170 28:12 29:56 4:4246 5:304 6:600 7:5922 71:24 72:48 74:44 75:112 76:36 77:1390 78:39641 79:48788 8:36 80:12934 82:160 83:11360 84:3746 85:13315 86:3032 87:2180 88:1844 89:3088 9:338 90:2848 93:14944 97:8304 98:20538`
+Top: `0 grass1`, `79 test8`, `78 test7`, `25 sand9`, `98 sandsea6`.
+
+`engmis4` (`id:count`, 409,600 values):
+`0:78512 1:17766 10:24903 100:312 101:6200 14:14228 15:704 16:8288 17:760 18:670 19:478 2:3532 20:4068 21:1230 22:52 23:440 24:2026 25:32494 3:1348 32:44 33:524 4:13474 5:616 6:2840 7:6381 71:108 72:3466 73:6432 74:7166 75:1324 76:1092 77:2752 78:36249 79:36953 8:3312 80:16020 82:124 83:8016 84:2852 85:9134 86:416 87:1208 88:906 89:3854 9:752 90:1524 93:22020 97:7840 98:8218 99:5972`
+Top: `0 grass1`, `79 test8`, `78 test7`, `25 sand9`, `10 ground1`.
+
+`battle1` (`id:count`, 589,824 values):
+`10:308 32:24 87:3226 89:24678 92:8832 93:28850 97:251930 98:31228 106:13122 107:29568 112:4376 114:716 116:31890 121:161076`
+Top: `97 sandsea5`, `121 ground1_winter`, `116 grass6_winter`, `98 sandsea6`, `107 test23`.
+Winter ordinals appear in `battle1` and resolve against the same `tiles.lib`
+mirror; the V7-85 summer preset atlas (124 names) is **not** the right dictionary
+for those ids.
+
+**On the "31 distinct ids" expectation:** V7-85 `:44,225-236` measures **31
+distinct ids in the shipped `g32_dump.json`** (range 0..85) — a different map
+from these three donor missions. The donor maps measured here have 43 / 50 / 14
+distinct ids. No parity between the shipped dump and any donor mission is
+claimed.
+
+### 8.3 Named-coordinate and GameObject counts (cross-check against DEEPDEC-05)
+
+| Map | count prefix | declared / parsed named | record-size histogram (B) | `GameObjectBegin` count | first offset |
+|---|---:|---:|---|---:|---|
+| `bonmis1.map` | `0xe6d612` | 8,777 / 8,777 | 30×2,455; 31×5,981; 32×341 | **7,742** | `0xebd0ec` |
+| `engmis4.map` | `0xe76b5c` | 2,832 / 2,832 | 29×117; 30×1,570; 31×1,145 | **12,711** | `0xe9966c` |
+| `battle1.map` | `0x24ef77c` | 11,279 / 11,279 | 28×100; 29×1,800; 30×4,627; 31×3,393; 32×1,359 | **10,118** | `0x2550de1` |
+
+All three match DEEPDEC-05 `:38,74,166-170` exactly. `battle1.map` = 56,117,715 B,
+SHA-256 `f9a70198e2127cf630976d2f365601e76bf2cc6cac1290256264b392b0898b1a`;
+its height grid (`0x1f21d1e`, 147,456 cells) measures −1.100000 / +2.371200 m.
+
+### 8.4 First five decoded placements per map
+
+Offsets are the `int32 15` prefix before `GameObjectBegin`. Floats are raw LE
+`f32[0..2]`; roles of the four strings are the DEEPDEC-05 §5 reading
+(instance / repeated type / category / owner), not independently re-proven.
+
+| Map | Offset | Category | Type | f32[0..2] | Strings after floats | Mesh hint |
+|---|---|---|---|---|---|---|
+| bonmis1 | `0xebd0ec` | buildings | polcen | −23.75, 0.0, −140.75 | polcen0.15978 / polcen / buildings / player0 | `polcen.mesh` @`0xebd426` |
+| bonmis1 | `0xebda57` | buildings | ukrsta | 106.75, 0.0, −138.75 | ukrsta0.16248 / ukrsta / buildings / player0 | `ukrsta.mesh` |
+| bonmis1 | `0xebe3c2` | buildings | eurmil | −13.25, 0.0, −127.25 | eurmil0.16256 / eurmil / buildings / player0 | `eurmil.mesh` |
+| bonmis1 | `0xebf05f` | units | peapol | −18.7435, 0.0, −138.4953 | peapol0.16697 / peapol / units / player0 | `peapol.mesh` |
+| bonmis1 | `0xebfa9b` | units | peapol | −19.4623, 0.0, −138.0697 | peapol0.16698 / peapol / units / player0 | `peapol.mesh` |
+| engmis4 | `0xe9966c` | buildings | engcen | −49.25, 0.0, 17.25 | engcen0.107 / engcen / buildings / player0 | `engcen.mesh` @`0xe999b8` |
+| engmis4 | `0xe99fed` | buildings | engart | −65.25, 0.0, 19.25 | engart0.113 / engart / buildings / player0 | `engart.mesh` |
+| engmis4 | `0xe9a96e` | buildings | eurmar | −44.25, 0.0, 23.75 | eurmar0.115 / eurmar / buildings / player0 | `eurmar.mesh` |
+| engmis4 | `0xe9b2ef` | buildings | enghou | −50.25, 0.0, −14.25 | enghou0.119 / enghou / buildings / player0 | `enghou.mesh` |
+| engmis4 | `0xe9bc70` | buildings | enghou | −77.25, 0.0, −6.75 | enghou0.121 / enghou / buildings / player0 | `enghou.mesh` |
+| battle1 | `0x2550de1` | units | pikeman | −66.6852, −0.0331, −83.0658 | pikeman0.20844 / pikeman / units / player0 | `pikeman.mesh` @`0x2551298` |
+| battle1 | `0x255165e` | units | pikeman | −67.0047, −0.0809, −86.079 | pikeman0.20845 / pikeman / units / player0 | `pikeman.mesh` |
+| battle1 | `0x2551edb` | units | pikeman | −66.9299, −0.1056, −87.3654 | pikeman0.20846 / pikeman / units / player0 | `pikeman.mesh` |
+| battle1 | `0x2552758` | units | pikeman | −66.131, −0.0868, −87.4127 | pikeman0.20847 / pikeman / units / player0 | `pikeman.mesh` |
+| battle1 | `0x2552fd5` | units | pikeman | −66.3335, −0.0782, −86.8416 | pikeman0.20848 / pikeman / units / player0 | `pikeman.mesh` |
+
+DEEPDEC-05 §5 quotes −138.75 as the first bonmis1 float; the bytes at
+`0xebd116` decode to **−140.75** (`00 00 be c1`). This tool reports the decoded
+bytes; the difference is noted rather than silently reconciled.
+
+### 8.5 Verification of unchanged behaviour and commands
+
+- `--verify bonmis1.map`: 16,274 / 102,400 exact (15.8926%), max abs error
+  5.928000 m, bounds delta 0 — identical to §4. `engmis4.map`: 40,327 /
+  102,400, max abs error 5.302495 m. `battle1.map` refuses with
+  `--verify compares against a 320x320 dump; this map is 384x384`.
+- Regenerated `bonmis1_height.json` in `%TEMP%\opencode\v783b\` and ran
+  `heightmap_splat.py --dump ... --dry-run`: 320×320 / 102,400 cells, 124
+  presets, used id `{0}` only, no missing PNGs. No splat output was written
+  during this follow-up; every JSON/PNG from the earlier V7-83 run was deleted
+  with the temp dirs (`Test-Path` → `False`).
+- Commands (all donor reads read-only; `$tmp =
+  C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\v783b`):
+
+```powershell
+python variant3d/tools/import_donor_map.py MAP --survey
+python variant3d/tools/import_donor_map.py MAP --export-placements --limit 5 --out "$tmp\$m.placements.json"
+python variant3d/tools/import_donor_map.py MAP --verify
+python variant3d/tools/import_donor_map.py "C:\Games\Cossacks 3\data\maps\missions\bonmis1.map" --out "$tmp\bonmis1_height.json"
+python variant3d/tools/heightmap_splat.py --dump "$tmp\bonmis1_height.json" --out "$tmp\splat.png" --dry-run
+Remove-Item -Recurse -Force $tmp
+```
+
+### 8.6 UNVERIFIED / open questions after the extension
+
+1. Float-triplet world meaning, rotation fields and all bytes after the four
+   strings in a `GameObject` record — **UNVERIFIED** (DEEPDEC-05 §8:1-4). The
+   `.mesh` string is a bounded search hint, not a proven binding.
+2. Runtime meaning of four tile indices per cell and the four `1.0f` weights;
+   byte 12 and the `FF FF` marker remain opaque (DEEPDEC-05 §8:2-3).
+3. Winter ordinal mapping is decoded from the `tiles.lib` mirror, but the
+   V7-85 summer atlas has no winter art; no winter-name provenance is asserted.
+4. Named-record consumer, height-grid row orientation, `TILE_M`, and visual
+   parity remain **UNVERIFIED** / unclaimed. No GPU A/B was run.
+5. No donor data, generated JSON, PNG or bytecode was left in the repository;
+   no source/asset/config/test/git state changed in this follow-up.

@@ -25,6 +25,14 @@
 #       keyscrollspeed/mousescrollspeed * 4
 #   C:\Games\Cossacks 3\data\gui\menu.inc\oncamera.inc:18-27,60-72  arrow keys -> camera absolute
 #       left/right/forward/backward directions; SetCameraElasticMoveDirection
+#   C:\Games\Cossacks 3\data\gui\common.inc\onmousewheel.inc:296  wheelDelta =
+#       -(GetGUIEventMouseWheelDelta/60)*(wheelspeed*0.5+0.25)*2 (DEEPDEC-01 E10/E16)
+#   C:\Games\Cossacks 3\data\gui\menu.inc\dombtncameracontrol.inc:23-24  middle drag
+#       deltaX=(prevX-curX)/60*(0.5+middlemousescrollspeed), deltaY=.../45*... (E15)
+#   C:\Games\Cossacks 3\data\scripts\lib\profile.script:17-20,513-516  four profile
+#       speeds default 0.5, clamped [0,1] (E16)
+#   V7-90 donor-grounded camera pass = DEEPDEC-01 §6 items 1/2/3/5/6. FOV and the
+#       ArcTan minimap offset/heading remain OPEN (DEEPDEC-01 #9/#10, §7; DEEPDEC-08 §2).
 #   Evidence: G31_donor_3d_truth.md:42-63, claim 1 :225; V71_mechanics_inventory.md:158-159.
 # Port-side tunables are read from variant3d/scripts/data.gd (V7-3 donor-cited mirror) and the
 # shipping 2D camera (variant3d/scripts/camera.gd) for byte-comparable 2D semantics.
@@ -71,6 +79,20 @@ var zoom_step_factor: float = 1.15     # Data.CAMERA_ZOOM_STEP (data.gd:168)
 var zoom_notch_gain: float = 2.0       # camera.gd:22 (port parity)
 var zoom_smooth_rate: float = 18.0     # camera.gd:25 (port parity)
 var _zoom_anchor_screen: Vector2 = Vector2.INF
+
+# DEEPDEC-01 §6 item 1 (E10 `onmousewheel.inc:39-41`, E8 `camera.cfg:9-10`): donor
+# stores camera HEIGHT directly and clamps it to SphereLengthMin..SphereLength
+# (20..58 m). `height`/`height_target` are that explicit metre state; `zoom`/
+# `zoom_target` survive only as a derived compatibility view for legacy callers.
+var height: float = sqrt(DONOR_HEIGHT_MIN * DONOR_HEIGHT_MAX)
+var height_target: float = sqrt(DONOR_HEIGHT_MIN * DONOR_HEIGHT_MAX)
+# DEEPDEC-01 §6 item 2 / E16 (`profile.script:17-20,513-516`): the four donor
+# profile speeds all default to 0.5 and are clamped to [0,1]. Read from the
+# merged config with those donor names; absent keys keep the donor default.
+var wheel_speed: float = 0.5
+var middle_mouse_scroll_speed: float = 0.5
+var key_scroll_speed_profile: float = 0.5
+var mouse_scroll_speed_profile: float = 0.5
 
 # E6 — terrain height sampler for the zoom-at-cursor anchor ONLY. Resolved from the
 # bound game/world in bind() (no other file is edited, no new public API):
@@ -138,11 +160,19 @@ func bind(game: Object, view_scale: float = 1.0) -> void:
 		edge_dwell_tau = cfg.num("camera.edge_dwell_tau", 0.5)
 		edge_dwell_max = cfg.num("camera.edge_dwell_max", 3.0)
 		edge_total_max = cfg.num("camera.edge_total_max", 6.0)
+		# DEEPDEC-01 §6 item 2 / E16 — donor profile names, default 0.5, clamp [0,1].
+		wheel_speed = clampf(cfg.num("camera.wheelspeed", 0.5), 0.0, 1.0)
+		middle_mouse_scroll_speed = clampf(cfg.num("camera.middlemousescrollspeed", 0.5), 0.0, 1.0)
+		key_scroll_speed_profile = clampf(cfg.num("camera.keyscrollspeed", 0.5), 0.0, 1.0)
+		mouse_scroll_speed_profile = clampf(cfg.num("camera.mousescrollspeed", 0.5), 0.0, 1.0)
 	# Donor sphere bounds -> 2D zoom interval (camera.gd:81-84).
 	min_zoom = maxf(1.0, Data.CAMERA_MIN_HEIGHT) / maxf(1.0, Data.CAMERA_MAX_HEIGHT)
 	max_zoom = maxf(1.0, Data.CAMERA_MAX_HEIGHT) / maxf(1.0, Data.CAMERA_MIN_HEIGHT)
 	zoom_target = clampf(1.0, min_zoom, max_zoom)
 	zoom = zoom_target
+	# DEEPDEC-01 §6 item 1 — seed the explicit height state from the 2D start zoom.
+	height_target = _zoom_to_height(zoom_target)
+	height = height_target
 	_zoom_anchor_screen = Vector2.INF
 	# V7-81: _target is SIM metres (top-left map origin). Start at the map CENTRE,
 	# not the corner ZERO — _apply_transform() subtracts _map_half() to reach the
@@ -156,13 +186,22 @@ func bind(game: Object, view_scale: float = 1.0) -> void:
 	_apply_transform()
 
 
-# Donor wheel zoom clamps HEIGHT (camera.cfg:6-7 via onmousewheel.inc:30-41), not canvas
-# scale. Map the 2D zoom scalar into those metres so the 2D zoom bounds land exactly on the
-# donor bounds: zoom=20/58 -> 58 m, zoom=58/20 -> 20 m, zoom=1 -> sqrt(20*58) m.
-# height = sqrt(H_MIN * H_MAX / zoom) — derived solely from camera.cfg:6-7.
+# DEEPDEC-01 §6 item 1 — the camera now carries an explicit HEIGHT state (metres).
+# _height_m() returns that state; the 2D zoom scalar is only a derived compatibility
+# view. The two inverses below keep legacy zoom_step/set_zoom_target callers in sync.
+# Donor bounds: zoom=20/58 -> 58 m, zoom=58/20 -> 20 m, zoom=1 -> sqrt(20*58) m
+# (camera.cfg:9-10; E8/E10).
 func _height_m() -> float:
-	var z: float = clampf(zoom, min_zoom, max_zoom)
-	return sqrt(maxf(0.0001, DONOR_HEIGHT_MIN * DONOR_HEIGHT_MAX) / maxf(0.0001, z))
+	return height
+
+
+func _zoom_to_height(z: float) -> float:
+	var zc: float = clampf(z, min_zoom, max_zoom)
+	return sqrt(maxf(0.0001, DONOR_HEIGHT_MIN * DONOR_HEIGHT_MAX) / maxf(0.0001, zc))
+
+
+func _height_to_zoom(h: float) -> float:
+	return clampf((DONOR_HEIGHT_MIN * DONOR_HEIGHT_MAX) / maxf(0.0001, h * h), min_zoom, max_zoom)
 
 
 # V7-81 — half the map extent in SIM metres. Null-safe for stubs/test doubles
@@ -338,6 +377,19 @@ func get_view_rect() -> Rect2:
 # Writes the smoothed target AND the current Camera3D transform together: a target-only
 # write is overwritten by the next _apply_transform(), a transform-only write is snapped
 # back by clamp_pos() through the memo at :232-233 (the old 3D P0 failure).
+#
+# OPEN — DONOR MINIMAP OFFSET/HEADING NOT IMPLEMENTED (DEEPDEC-01 §6 item 10 /
+# DEEPDEC-08 §2, E14/E26). Donor additionally keeps the camera's pre-click offset:
+#   angleZ := -Lerp(minHeightMaxAngle, maxHeightMaxAngle,
+#                   Clamp((height-minHeight)/(maxHeight-minHeight),0,1));  // = +32
+#   dx := cx-tx; dz := 0.1; VectorRotateX(dx,dy,dz,angleZ);
+#   offZ := ArcTan(angleZ)*height; angleX := VectorAngle(0,0,1,dx,0,dz);
+#   if dx < 0 then angleX := -angleX; VectorRotateY(offX,tmp,offZ,angleX);
+#   newX := dstX+offX+dx; newZ := dstZ+offZ+dz;
+# (control.script:595-612; onmousewheel.inc:56-67). ArcTan() units (deg vs rad) and
+# its VM body are UNVERIFIED (DEEPDEC-01 #10, §7): no donor text defines it, and
+# `_control_GetMoveCameraToPositionOffset` is absent from the binary. Therefore NO
+# offset/heading is applied — V7-66's contract stays "centre the clicked sim point".
 func jump_to_world(world_pos: Vector2) -> void:
 	_zoom_anchor_screen = Vector2.INF  # a jump cancels any in-flight zoom anchor (camera.gd:97)
 	_target = world_pos
@@ -395,13 +447,17 @@ func _process(dt: float) -> void:
 	var m: Vector2 = get_viewport().get_mouse_position()
 	var dir := Vector2.ZERO
 
-	# Middle-button drag: pointer delta px -> metres (camera.gd:152-160 parity).
+	# Middle-button drag. DEEPDEC-01 §6 item 6 / E15 (dombtncameracontrol.inc:23-24):
+	# deltaX=(prevX-curX)/60*(0.5+middlemousescrollspeed),
+	# deltaY=(prevY-curY)/45*(0.5+middlemousescrollspeed). Additive, zoom-INDEPENDENT,
+	# no px/m factor; default profile 0.5 -> factor 1.0. clamp_pos() supplies the clamp.
 	var middling: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE)
 	if middling:
 		if _middle_drag_last != Vector2.INF:
 			var md: Vector2 = m - _middle_drag_last
 			if md != Vector2.ZERO:
-				_target -= md / (zoom * maxf(0.0001, view_scale))
+				var drag_factor: float = 0.5 + clampf(middle_mouse_scroll_speed, 0.0, 1.0)
+				_target -= Vector2(md.x / 60.0, md.y / 45.0) * drag_factor
 		_middle_drag_last = m
 	else:
 		_middle_drag_last = Vector2.INF
@@ -470,62 +526,88 @@ func _process(dt: float) -> void:
 	if k_down:
 		dir.y += 1.0
 	if dir != Vector2.ZERO:
-		# Port profile speeds -> m/s: Data px/s / PIXELS_PER_METER (data.gd:113,166-167).
-		var key_m: float = Data.CAMERA_KEY_SPEED / maxf(1.0, Data.PIXELS_PER_METER)
-		var mouse_m: float = Data.CAMERA_MOUSE_SPEED / maxf(1.0, Data.PIXELS_PER_METER)
+		# DEEPDEC-01 §6 item 5 / E11 (oncamera.inc:10-11): keySpeed=keyscrollspeed*4,
+		# mouseSpeed=mousescrollspeed*4 (defaults 0.5 -> 2.0), ADDITIVE and
+		# zoom-INDEPENDENT. The old `/ zoom` made pan slow down when zoomed out;
+		# donor has no zoom factor, so it is removed. Edge depth/dwell (port
+		# extension) still scales the mouse component only.
+		var key_m: float = clampf(key_scroll_speed_profile, 0.0, 1.0) * 4.0
+		var mouse_m: float = clampf(mouse_scroll_speed_profile, 0.0, 1.0) * 4.0
 		var speed: float = key_m if (k_left or k_right or k_up or k_down) else mouse_m * mouse_mult
-		_target += dir.normalized() * speed * dt / zoom
+		_target += dir.normalized() * speed * dt
 		_apply_transform()
 	clamp_pos()
 
 
-# W4-1 public zoom API (camera.gd:246-262). notches > 0 = zoom in. anchor is the screen
-# point that stays over the same world point (wheel event position); same semantics as 2D.
+# DEEPDEC-01 §6 item 2 / E10 (`onmousewheel.inc:296`): donor wheel is an ADDITIVE
+# height delta, not a multiplicative zoom:
+#   wheelDelta = -(GetGUIEventMouseWheelDelta/60)*(wheelspeed*0.5+0.25)*2
+# with default wheelspeed=0.5 -> -(Δ/60)*1 -> 2 m per standard Δ=120 notch.
+# input_controller.gd:443 maps one standard notch to `notches = ±1`, so the port
+# substitutes Δ = notches*120. Sign convention kept (notches>0 = zoom in = height
+# down), so legacy callers still see zoom_target increase on positive notches.
+# Clamp is the donor SphereLengthMin..SphereLength pair (20..58 m; E8/E10).
 func zoom_step(notches: float, anchor: Vector2 = Vector2.INF) -> void:
 	if notches == 0.0:
 		return
-	set_zoom_target(zoom_target * pow(zoom_step_factor, notches * zoom_notch_gain), false, anchor)
+	var wheel_event_delta: float = notches * 120.0
+	var delta_h: float = -(wheel_event_delta / 60.0) * (wheel_speed * 0.5 + 0.25) * 2.0
+	height_target = clampf(height_target + delta_h, DONOR_HEIGHT_MIN, DONOR_HEIGHT_MAX)
+	set_zoom_target(_height_to_zoom(height_target), false, anchor)
 
 
-# Absolute clamped zoom target. The first two parameters are the exact contract API; the
-# OPTIONAL third argument is additive (2-arg calls are unchanged) and carries the zoom-at-
-# cursor anchor set by zoom_step. immediate=true snaps (startup/reset), like camera.gd:257-262.
+# Absolute clamped zoom target (legacy 2D scalar). The first two parameters are the
+# exact contract API; the OPTIONAL third argument is additive (2-arg calls unchanged)
+# and carries the zoom-at-cursor anchor set by zoom_step. immediate=true snaps
+# (startup/reset), like camera.gd:257-262. The explicit height state is kept in
+# lockstep (DEEPDEC-01 §6 item 1).
 func set_zoom_target(target: float, immediate: bool = false, anchor: Vector2 = Vector2.INF) -> void:
 	zoom_target = clampf(target, min_zoom, max_zoom)
+	height_target = _zoom_to_height(zoom_target)
 	_zoom_anchor_screen = anchor
 	if immediate:
 		zoom = zoom_target
+		height = height_target
 		_zoom_anchor_screen = Vector2.INF
 		_apply_transform()
 
 
-# Frame-rate-independent exponential approach (camera.gd:267-284) expressed in metres:
-# hold the world point under the zoom anchor fixed across the perspective dolly.
+# Frame-rate-independent exponential approach (camera.gd:267-284), now interpolated
+# in the explicit HEIGHT state (DEEPDEC-01 §6 item 1). Hold the world point under the
+# zoom anchor fixed across the perspective dolly. The old/new-height distinction is
+# preserved: anchor_world/anchor_h are sampled at the OLD height (before the dolly),
+# then the ray is re-hit at that height after _apply_transform() moved to the NEW
+# height — the port equivalent of donor's oldHeight target shift / height camera
+# offset (onmousewheel.inc:56,60; DEEPDEC-01 §6 item 3).
 func _smooth_zoom(dt: float) -> void:
 	if absf(zoom_target - zoom) < 0.0005:
-		if zoom != zoom_target:
+		if height != height_target or zoom != zoom_target:
+			height = height_target
 			zoom = zoom_target
 			_apply_transform()
 		_zoom_anchor_screen = Vector2.INF
 		return
 	var anchored: bool = is_finite(_zoom_anchor_screen.x) and is_finite(_zoom_anchor_screen.y)
-	# E6: hold the TERRAIN surface point under the cursor, not its Y=0 shadow.
+	# E6 / V7-77: hold the TERRAIN surface point under the cursor, not its Y=0 shadow.
 	# With no sampler _screen_to_surface() == screen_to_world() (flat default).
 	var anchor_world: Vector2 = _screen_to_surface(_zoom_anchor_screen) if anchored else Vector2.INF
 	# Freeze the anchor's sampled height: after the dolly, the same world point must
 	# stay under the cursor, so re-hit the ray at THIS height (not a re-sampled one,
 	# which would track a different surface point on a slope).
 	var anchor_h: float = _sample_height(anchor_world) if is_finite(anchor_world.x) and is_finite(anchor_world.y) else 0.0
-	var old_z: float = zoom
+	var old_h: float = height
 	var t: float = 1.0 - exp(-zoom_smooth_rate * dt)
-	var new_z: float = old_z + (zoom_target - old_z) * t
+	var new_h: float = old_h + (height_target - old_h) * t
+	var new_z: float = _height_to_zoom(new_h)
 	if absf(zoom_target - new_z) < 0.0005:
+		new_h = height_target
 		new_z = zoom_target
+	height = new_h
 	zoom = new_z
 	_apply_transform()
 	if anchored and is_finite(anchor_world.x) and is_finite(anchor_world.y):
-		# Same-height ray hit at the NEW zoom; with no sampler anchor_h == 0.0 and
-		# this is byte-equivalent to the old flat screen_to_world() correction.
+		# Same-height ray hit at the NEW height/zoom; with no sampler anchor_h == 0.0
+		# and this is byte-equivalent to the old flat screen_to_world() correction.
 		var after: Vector2 = _screen_to_plane(_zoom_anchor_screen, anchor_h)
 		if not is_finite(after.x) or not is_finite(after.y):
 			# Steep hill above the dolly position: the sampled plane is not hit.
@@ -534,5 +616,5 @@ func _smooth_zoom(dt: float) -> void:
 		if is_finite(after.x) and is_finite(after.y):
 			_target += anchor_world - after
 			_apply_transform()
-	if new_z == zoom_target:
+	if height == height_target:
 		_zoom_anchor_screen = Vector2.INF

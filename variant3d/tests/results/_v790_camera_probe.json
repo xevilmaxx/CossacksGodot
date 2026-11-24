@@ -1,0 +1,48 @@
+{
+	"checks": [
+		{
+			"detail": "script=(res://scripts/camera3d.gd):<GDScript#-9223372010313218612>",
+			"name": "module_loads",
+			"passed": true
+		},
+		{
+			"detail": "fov=17.270000",
+			"name": "fov_unchanged_17_27",
+			"passed": true
+		},
+		{
+			"detail": "height_target 34.058773 -> 32.058773, delta=2.000000 m",
+			"name": "wheel_delta_about_2m_per_notch",
+			"passed": true
+		},
+		{
+			"detail": "height 34.058773 -> 32.058773, delta=2.000000 m",
+			"name": "wheel_height_follows_target_2m",
+			"passed": true
+		},
+		{
+			"detail": "near=(0.100006, 0.0) far=(0.100006, 0.0)",
+			"name": "pan_speed_zoom_independent",
+			"passed": true
+		},
+		{
+			"detail": "2.0 m/s * 0.05 s = 0.1 m; got dx=0.100006",
+			"name": "pan_speed_donor_profile_times_4",
+			"passed": true
+		},
+		{
+			"detail": "pos=(0.0, 34.05877, 54.50543) h=34.059 expected_back=54.505",
+			"name": "minimap_centre_jump_world_centre",
+			"passed": true
+		},
+		{
+			"detail": "forward=(0.0, -0.529919, -0.848048)",
+			"name": "tilt_remains_minus_32",
+			"passed": true
+		}
+	],
+	"id": "_v790_camera_probe",
+	"passed": true,
+	"passes": 8,
+	"total": 8
+}

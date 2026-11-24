@@ -4,6 +4,16 @@ shader_type spatial;
 // (shipped pair pinned by water.lib:67-68). Every donor literal below carries a
 // path:line citation. See docs/coord_swarm_2026-11-24/reports/V784_donor_water_shader.md
 // for the donor-vs-approximation ledger and the UNVERIFIED list.
+// Cross-checked against DEEPDEC-03 §4/§6
+// (ev_b284c02cf7c0727264d5d59d4ed3f2399566c0b1fb505da77f4852ab50fd3cc2).
+//
+// DEEPDEC-03 §4.1/§6.1: deepColor, shallowColor, reflectionAmount, waterAmount,
+// fresnelPower/Bias, distFactor and bumpFactor are declared but COMMENTED OUT in
+// the shipped fragment (water.dev.frag:8-16). They are deliberately NOT wired
+// here; the LIVE water.lib keys this shader uses are hdrMultiplier, texScaleS/T
+// and fogEnabled. Fresnel/eyeVector are likewise not wired (:203-206).
+// DEEPDEC-03 §2.2: the 0x853eb8 f32 1.9999998807907104 is an enable BITMASK,
+// not a shader float; no numeric descriptor default is provable in the binary.
 //
 // render_mode unshaded: the donor fragment assembles a FINAL colour (its own
 // fake bed lighting + specular + foam), so Godot's lighting must not re-shade
@@ -42,7 +52,7 @@ uniform sampler2D reflection_map : filter_linear;
 uniform float reflection_enabled;
 uniform vec2 map_size;            // port substitute for hmapW/hmapH (water.dev.vert:2-3, UNVERIFIED)
 uniform float time;               // donor `time` (water.dev.frag:1), advanced in water3d.gd
-uniform float fog_enabled;        // 0 default (colors.lib:36 FogMode=0)
+uniform int fog_enabled;          // int, donor water.dev.frag:23; 0 default (colors.lib:36 FogMode=0)
 uniform vec3 fog_color;           // donor palette Fog (60,100,150)/255 colors.lib:23
 uniform float fog_density;        // neutral 0 while fog_enabled==0
 
@@ -120,8 +130,10 @@ float particles(vec2 p) {
 	return pow(f * 0.35, 7.0) * particle_amount;
 }
 
-// donor terrain_map() bed colour — water.dev.frag:77-81 (only the colour is
-// kept; its CalcTerrain lighting/shadow at :145-160 is NOT ported).
+// donor terrain_map() bed colour — water.dev.frag:77-81 (DEEPDEC-03 §4.2).
+// PORT APPROXIMATION: only the bed colour is kept. CalcTerrain's 4-tap terrain
+// normal, `col *= grad + grad^8` and 3-tap PCF test_shadow (:129-160,196) are
+// NOT ported — their engine sampler/FBO bindings are UNVERIFIED (DEEPDEC-03 §6.4).
 vec3 terrain_map(vec2 p) {
 	return vec3(0.175, 0.1375, 0.1) + texture(wave_noise, fract(p * 8.0 * (1.0 / 256.0))).rgb * 0.25;
 }
@@ -138,6 +150,9 @@ void fragment() {
 	float deepwater_fadedepth = 0.5 + coast_fade_depth;   // (:168)
 	float height = height_map(v_height_uv);               // (:170)
 
+	// With the donor -0.25 literal this is clamp(-2.25,0,1)=0, so the coarse
+	// swell term (:95) stays at zero. Kept donor-faithful; the 2D app's 1.0 is
+	// a port choice and is NOT copied here.
 	float waveheight = clamp(WATER_LEVEL * 3.0 - 1.5, 0.0, 1.0); // (:174)
 	float level = WATER_LEVEL + 0.2 * water_map(v_height_uv * 15.0 + vec2(time * 0.1), waveheight); // (:175)
 	if (height > level) {
