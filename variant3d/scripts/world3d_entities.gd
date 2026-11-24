@@ -950,6 +950,16 @@ func sync(dt: float) -> void:
 	var pose_sources: Dictionary = {}
 	var seen_frames: Dictionary = {}
 	var morph_rejects: Dictionary = {}
+	# V7-79: ONE donor sample per (sid, action, frame) per sync(), not per unit.
+	# All units in this pass see the same _anim_t, so pose_for() resolves the
+	# same donor frame and returns byte-identical verts for a given
+	# (sid, action); the cached pose already carries its resolved frame. Cache
+	# the whole pose Dictionary (real donor verts + frame + batch fields) and
+	# reuse it for later units of that key. The memo is LOCAL to this sync():
+	# the next call starts with an empty dict, so a new donor frame is never
+	# served stale data. No sprite sheet / RNG / invented value; every label,
+	# visual status, tint and auto-loaded skin stays untouched.
+	var pose_memo: Dictionary = {}
 	# Pass 1: sample the donor pose per unit and migrate it to a frame-keyed
 	# (sid, player, action, frame) batch when a real donor morph is available.
 	for id in _slot.keys():
@@ -969,9 +979,15 @@ func sync(dt: float) -> void:
 		var morphed: Dictionary = {}
 		if anim != null and anim.has_method("pose_for") \
 				and bool(anim.call("has_skin", sid)):
-			var p = anim.call("pose_for", ed, action, _anim_t)
-			if p is Dictionary:
-				pose = p as Dictionary
+			var memo_key := sid + "|" + action
+			if pose_memo.has(memo_key):
+				pose = pose_memo[memo_key] as Dictionary
+			else:
+				var p = anim.call("pose_for", ed, action, _anim_t)
+				if p is Dictionary:
+					pose = p as Dictionary
+				pose_memo[memo_key] = pose
+			if not pose.is_empty():
 				var verts = pose.get("verts", null)
 				if verts is PackedVector3Array and not (verts as PackedVector3Array).is_empty() \
 						and str(pose.get("pose_source", "")) == MORPH_POSE_SOURCE:
@@ -1045,6 +1061,9 @@ func sync(dt: float) -> void:
 	stats["anim_clock_s"] = _anim_t
 	# V7-74 measured morph telemetry (never a visual-parity claim).
 	stats["donor_morph_units"] = morph_units
+	# V7-79: actual pose_for() calls this frame (one per memo key, not per
+	# unit). Structural telemetry, not a visual-parity claim.
+	stats["donor_morph_pose_samples"] = pose_memo.size()
 	stats["donor_morph_static_units"] = static_units
 	stats["donor_morph_frame_changes"] = frame_changes
 	stats["donor_morph_meshes_cached"] = _morph_meshes.size()

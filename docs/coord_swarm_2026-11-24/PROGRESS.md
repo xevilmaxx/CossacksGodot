@@ -242,6 +242,30 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### V7-79 pose memoization LANDED (main perf fix)
+- world3d_entities.gd Pass 1 only: local pose_memo at :953-962, reuse at
+  :982-999, telemetry :1064-1066. anim3d.gd read-only, untouched. All donor
+  skins/tints/signatures and PORT APPROXIMATION labels preserved.
+- Measured 200 units: 133.122 ms -> 11.175-16.270 ms/frame = 8.18x-11.91x;
+  100 units 141.350 -> 7.514-15.931 ms. pose_for() calls/frame N -> 6.
+  Morph delta donor frames 1->16 BYTE-IDENTICAL (118.295389942825); batches /
+  cached meshes unchanged 36/36. Jobs BEFORE 196, AFTER 199/200, selftest 202
+  29/29. Probe deleted. No visual parity claim.
+- Combined with V7-80: expected windowed sync_ms drop from 12-20 ms to a few ms
+  (final windowed measurement still UNVERIFIED).
+- Post-perf final gate re-run launched (selftest + uitest + t_render_mode).
+
+### V7-80 resource reconcile gate LANDED
+- world3d.gd now gates the resource half of _reconcile_entities() on a direct
+  translation of app game.gd:2642-2661 (res_dirty AND res_nodes.size() parity;
+  app world.gd:2095-2104 cited for the 2D pattern). No invented 30-frame forced
+  rescan or moved/fields_live clauses.
+- Measured 12.54x on the gated reconcile at 200 units + 1200 res_nodes:
+  4.18 ms -> 0.33 ms per frame (~3.85 ms removed). Parse PASS (195/201);
+  probe 11/11 (197) confirms entity half still runs gate-closed, resources
+  add/remove on res_dirty, size-only guard works, no-signal doubles keep old
+  behaviour. Selftest 29/29 (198). Probe deleted. All dbg_*/ghost/rally intact.
+
 ### PERF-3D measured the sync hot path (audit only)
 - Report `PERF3D_sync_hotpath.md`; temp probe deleted; no edits/git.
 - #1 per-unit donor skin sampling `world3d_entities.gd:955-1000` ->

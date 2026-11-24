@@ -150,6 +150,12 @@ var _rally_dirty: bool = false                  # world.gd:149 (legacy slot)
 var _feed_entity_ids: Dictionary = {}
 var _feed_res_ids: Dictionary = {}
 
+# V7-80: mirrors of the 2D resource-change gate (app/scripts/game.gd:2642-2661).
+# -1 is the "unset" sentinel: a real res_dirty starts at 0 (game.gd:149) and only
+# climbs, so a freshly bound game can never match a stale value from the last one.
+var _feed_res_ver: int = -1
+var _feed_res_size: int = -1
+
 # V7-76 build-ghost ground position. In a live 3D run `_ghost_world_pos()` derives
 # this from the current Camera3D + viewport mouse (camera3d.gd:167-176), the exact
 # 3D translation of world.gd:3467-3469. `_ghost_pos_override` lets a caller hand a
@@ -332,6 +338,37 @@ func _reconcile_entities() -> void:
 		if not live_ents.has(id):
 			entities.remove(id)
 			_feed_entity_ids.erase(id)
+
+	# --- V7-80: gate ONLY the resource half of this feed -----------------------
+	# Translate, do not invent: 2D rebuilds its resource hash only when the node
+	# SET changes —
+	#   if _res_grid_ver == res_dirty and _res_grid_src_size == res_nodes.size():
+	#       return
+	# (app/scripts/game.gd:2642-2661). res_dirty is the exact field
+	# (game.gd:149): it is bumped on add (:520), mine relocation (:1360), field
+	# restore (:2170), stump expiry (:3942) and resow (:5206). The array-size
+	# guard is ALSO verbatim 2D: _compact()'s depletion filter (game.gd:251-280,
+	# called :3914) and mapgen's remove_at (:1225) mutate membership without a
+	# res_dirty bump; the same comment sits at game.gd:2643-2644.
+	# The 2D world layer additionally force-redraws on camera move / fields_anim
+	# (app/scripts/world.gd:2095-2104), but that clause is for per-frame growth
+	# bars and rotors (world.gd:2096-2098) — pure redraw concerns with no
+	# counterpart in this add/remove feed. Field restoration bumps res_dirty at
+	# game.gd:2170, so the add/remove state is still fully covered.
+	#
+	# SAFE FALLBACK: if the signal is unavailable (Dictionary test doubles,
+	# Object stubs without res_dirty, or a non-Array res_nodes), run the resource
+	# half every frame — byte-identical to the pre-V7-80 behaviour.
+	var rd = _prop(game, "res_dirty", null)
+	var signal_ok: bool = (rd is int or rd is float) and res_coll is Array
+	if signal_ok:
+		var rv := int(rd)
+		var rs: int = (res_coll as Array).size()
+		if rv == _feed_res_ver and rs == _feed_res_size:
+			return
+		# Mark seen on the run that actually rebuilds (game.gd:2660-2661).
+		_feed_res_ver = rv
+		_feed_res_size = rs
 	var live_res: Dictionary = {}
 	if res_coll is Array:
 		for n in (res_coll as Array):
@@ -497,6 +534,11 @@ func bind(g, h = null) -> void:
 	# state; restart the feed id sets so no id is silently skipped.
 	_feed_entity_ids.clear()
 	_feed_res_ids.clear()
+	# V7-80: reset the resource gate too. Without this, a new game whose
+	# res_dirty/size match the old cached pair would skip the seed reconcile just
+	# below and leave _feed_res_ids empty with no resources ever registered.
+	_feed_res_ver = -1
+	_feed_res_size = -1
 
 	# Dependency order: terrain geometry before fog overlay, entities before anim.
 	if terrain != null:
