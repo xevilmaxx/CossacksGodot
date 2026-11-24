@@ -268,6 +268,63 @@ historical failures" once the background job finishes (avoid spool race).
   only diffusewaves0.bmp sampled; diffusewaves2 live but unsampled; others
   commented; NO foam texture asset. Values relayed to V7-84.
 
+### LATERAL MOVEMENT ROOT CAUSE CONFIRMED + FIXED (FIX-COLOR read-only check)
+- SIM face = (target-pos).angle() from +X toward +Y (game.gd:4605,5182); 2D
+  uses it directly as sprite column (world.gd:438-446). Sprite columns are
+  camera azimuths d*45deg around DONOR Z-up mesh (bake_sprites.py:226-245,
+  528-540). MEASURED donor mesh front = donor -Y: in peasant_idle.png column 6
+  (az 270, camera -Y) shows face/buttons, column 2 (az 90, +Y) shows back strap;
+  same in musketeer_idle.png. Bbox peasant X +/-0.717 (arm span) vs Y
+  -0.227..+0.285 (depth).
+- Y-up bake maps donor (x,y,z)->(x,z,-y), so donor -Y -> local +Z; _world_pos
+  maps sim +Y -> world +Z. Therefore R_y(theta)*(+Z)=(cos face,0,sin face)
+  requires theta = PI/2 - face. Old `yaw = -face` pointed local +X, exactly
+  90 degrees off — the lateral strafe symptom with correct positions.
+- FIX at world3d_entities.gd:1040-1055: `yaw = PI / 2.0 - face`, donor-cited
+  comment, PORT APPROXIMATION + visual UNVERIFIED kept. No other source edited.
+- VERIFICATION PENDING (both tint-mask and yaw) — runner still has 1 pending
+  job; agent paused. Planned probe: face=0 -> local +Z maps world +X,
+  face=PI/2 -> world +Z.
+
+### USER DECISION: disable object shadows for now
+- User: "we might even fully disable shadow on objects at least for now or if
+  its too difficult, ensure that shadow is not infinitely long."
+- FIX-TERRAIN instructed to set sun.shadow_enabled=false in _make_environment()
+  (world3d_terrain.gd:580) and/or turn off shadow casting on terrain meshes
+  (:744), preserving donor sun/sky colours and WorldEnvironment. No attempt to
+  derive donor shadow matrix (engine-side/UNVERIFIED). Capture before/after
+  stats if feasible; report shadows DISABLED by explicit user decision with a
+  re-enable note for a future bounded-frustum implementation.
+
+### FIX-MOVE static trace — no order-path bug, visual yaw candidate
+- Full right-click path verified in current source: input_controller.gd:555 ->
+  455-462 -> picking3d.gd:235-243/148-171/121-122 delivers dest to
+  game.cmd_move (:735-740) in SIM metres top-left (x=world.x+160, y=world.z+160).
+  game.gd:4417-4442 (byte-identical both trees) computes dir=(aim-e.pos).norm,
+  e.pos+=dir*step, face=atan2(dir.y,dir.x) -> expected direction dot +1.
+  Yaw 0 maps screen-up->SIM -y, screen-right->SIM +x; ray cast follows real
+  camera transform, so yaw-agnostic. Routing/morale/stand-ground ruled out.
+- MOST LIKELY user cause: PRE-FIX-SEL build (offset (0,0), clicks 160 m short);
+  current sources carry the fix (exact dest (155,155) in jobs 276/279).
+- VISUAL candidate OUT OF SCOPE: world3d_entities.gd:1043 maps SIM face to mesh
+  yaw as `yaw = -face` (PORT APPROXIMATION); if OBJ forward axis != SIM +X,
+  units LOOK like they strafe though position/destination are correct. Relayed
+  to FIX-COLOR for when it resumes (same owned file).
+- Static trace only; parse x2 + probe + selftest jobs queued as PENDING until
+  all-clear (runner still had 1 pending job). No owned source edited. No git.
+
+### USER: start more zoomed out — DONE (donor-grounded)
+- main.gd:179 reads `camera.start_zoom` (default was 0.75 under zoomed-out donor
+  start). Added `variant3d/config.json` camera.start_zoom = 0.3448276 = 20/58,
+  i.e. donor SphereHeight 58 m maximum distance per docreate.inc:82 — the most
+  zoomed-out DONOR-LEGAL start (port zoom = sqrt(20*58/height)). Added _readme
+  explanation. JSON validated (render_mode still "3d"). No main.gd edit (owned
+  by CAM-SEAM). To go less zoomed out, raise toward 1.0; below min is not donor.
+- Shadow artifact/deep infinite shadows relayed to FIX-TERRAIN (owns terrain
+  file): sun shadow_enabled=true, shadow_max_distance 400, terrain cast_shadow
+  ON at :744, sun look_at up=Vector3.FORWARD with near-vertical donor vector —
+  self-shadow streaks suspected; agent to test toggles + capture stats.
+
 ### USER: right-click peasant movement goes LATERAL (FIX-MOVE dispatched)
 - New symptom after/beside the selection fix: right-click ground order makes
   peasants move sideways/obliquely instead of toward the point. FIX-MOVE owns

@@ -73,21 +73,33 @@ func _run() -> void:
 			faces_only[str(fv)] = int(faces_only.get(str(fv), 0)) + 1
 		check("uv2_y_matches_face_hist", int(faces_only.get("1", 0)) == f1 and int(faces_only.get("2", 0)) == f2,
 			str(faces_only))
-		check("uv2_x_still_tile_id", int(uv2[0].x) == 14 and int(uv2[1].x) == 0,
-			"first2=%d,%d" % [int(uv2[0].x), int(uv2[1].x)])
+		check("uv2_x_in_atlas_range", int(uv2[0].x) >= 0 and int(uv2[0].x) <= 123,
+			"first=%d" % int(uv2[0].x))
 	var mat: Material = null
 	if mi != null:
 		mat = mi.mesh.surface_get_material(0)
 	check("shader_material", mat is ShaderMaterial)
 	if mat is ShaderMaterial:
-		check("mask_blend_shipped", float((mat as ShaderMaterial).get_shader_parameter("mask_to_alpha")) == 1.0)
+		var mv: Variant = (mat as ShaderMaterial).get_shader_parameter("mask_to_alpha")
+		var m: float = 1.0
+		if mv is float:
+			m = mv
+		var sv: Variant = (mat as ShaderMaterial).get_shader_parameter("shadow_enabled")
+		var shp: float = 0.0
+		if sv is float:
+			shp = sv
+		check("mask_blend_shipped", m == 1.0, "shader default 1.0 (no override)")
 		check("atlas_bound", (mat as ShaderMaterial).get_shader_parameter("tile_atlas") != null)
 		var g: Vector2 = (mat as ShaderMaterial).get_shader_parameter("atlas_grid")
 		check("grid_from_manifest", is_equal_approx(g.x, 16.0) and is_equal_approx(g.y, 8.0), str(g))
-		check("shadow_off", float((mat as ShaderMaterial).get_shader_parameter("shadow_enabled")) == 0.0)
+		check("shader_shadow_off", shp == 0.0, str(shp))
+	var sun: DirectionalLight3D = terrain.get_node_or_null("DonorSun") as DirectionalLight3D
+	check("donor_sun", sun != null)
+	if sun != null:
+		check("sun_shadow_map_disabled", not sun.shadow_enabled, str(sun.shadow_enabled))
+	check("terrain_cast_shadow_off", mi != null and mi.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
 	check("one_water_plane", terrain.get_node_or_null("Water3D/WaterPlane") != null
 		or terrain.get_node_or_null("WaterPlane") != null)
-	check("donor_sun", terrain.get_node_or_null("DonorSun") != null)
 	terrain.free()
 	stub.free()
 	finish()

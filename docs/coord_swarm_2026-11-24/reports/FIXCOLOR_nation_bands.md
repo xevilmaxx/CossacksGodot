@@ -3,7 +3,7 @@ id: FIX-COLOR
 owner: FIX-COLOR subagent
 date: 2026-11-24
 scope: "variant3d/scripts/world3d_entities.gd and this report ONLY. Read-only donor text reads; no fx/world3d/main/hud/app/config/test edits; no git operations."
-status: "CODE COMPLETE — VERIFICATION PENDING (runner queue paused by coordinator). One parse attempt FAILED on PackedByteArray.subarray(); fixed at :378/:384; final re-parse/probe/selftest NOT yet run."
+status: "CODE COMPLETE — VERIFICATION PENDING (runner queue paused by coordinator). One parse attempt FAILED on PackedByteArray.subarray(); fixed at :378/:384; final re-parse/probe/selftest NOT yet run. Also includes the queued FIX-MOVE-VISUAL one-line yaw correction (section 6); that too is unverified by runner."
 governing_rule: "AUDIT3D_CHARTER.md:6-15 — path:line evidence, OBS vs INFERENCE, UNVERIFIED labels, smallest donor-grounded fix, no git operations."
 owns: ["variant3d/scripts/world3d_entities.gd", "docs/coord_swarm_2026-11-24/reports/FIXCOLOR_nation_bands.md"]
 godot_runs: "ticket 261 'fixcolor-probe0' (ok, pre-fix capability probe); ticket 271 'fixcolor-parse1' (failed — 2 subarray() parse errors, fixed; no successful parse yet)."
@@ -129,3 +129,24 @@ No visual parity claim is made. No screenshot/render/donor comparison was perfor
 5. **tfDefault gate** — donor skips tint entirely for `tfDefault` child materials (`units.mat:9,20`); the port mesh is a single merged surface with no material split (`convert_models.py:133-137`), so this gate cannot be represented. All ported units/buildings use tfRGBA-style albedo textures; no tint is applied to resources.
 6. **Alpha / >1.0 clamp** — unchanged from V7-61/V7-65: donor emits no alpha (`misc.script:5069,5072`), slot 4 R=1.2 and slot 6 B=1.2; the exact donor and downstream clamping is UNVERIFIED. The 13 donor slots are used verbatim.
 7. **No visual parity claim** — all verification is structural/numeric.
+
+## 6. Queued FIX-MOVE-VISUAL check — `face -> yaw` (separate from tint work)
+
+Coordinator relay: FIX-MOVE proved the order/destination path correct (`game.cmd_move` receives exact SIM metres, heading math byte-identical to 2D) and suspected a **visual** 90° error in this file's `yaw = -face`.
+
+**Result: the suspicion is CONFIRMED. Fixed one line; no other source touched.**
+
+| Evidence | `path:line` / measurement |
+|---|---|
+| SIM `face` is `(target - pos).angle()` — angle from +X toward +Y | `app/scripts/game.gd:4605`, `:5182` (also `:4442`, `:4698`, `:4737`, `:4762`) |
+| `world.gd` uses that same `face` directly as a sprite column `round(face/(PI/4)) % 8` | `variant3d/scripts/world.gd:438-446` |
+| Sprite sheet columns are camera azimuths `d*45°` around the **donor Z-up** mesh, camera at `(cos az, sin az, ·)*50` | `variant3d/tools/bake_sprites.py:226-245`, `:528-540` |
+| **Measured donor mesh front = donor -Y:** in `assets/models/anim/common/units/peasant_idle.png`, column 6 (az 270°, camera at -Y) shows the face/buttons; column 2 (az 90°, camera +Y) shows the back strap. Same for `musketeer_idle.png` (buttons/sword vs bandolier back). Geometry cross-check: peasant bbox X ±0.717 (arm span) vs Y -0.227..+0.285 (depth). | read-only image crops of the donor-derived sheets; `assets/models/manifest.json` peasant bbox |
+| Y-up bake maps donor `(x,y,z) -> (x,z,-y)`, so donor -Y becomes **local +Z** | `world3d_entities.gd:_bake_mesh` (`:398-400` after FIX-COLOR edits); `docs/coord_swarm_2026-11-24/reports/V72_mesh_conversion_feasibility.md:209-212` |
+| `world3d_entities.gd:_world_pos` maps sim +Y to world +Z | `world3d_entities.gd:1016` |
+
+**Math:** `R_y(θ) * local +Z = (sin θ, 0, cos θ)`. We need `(cos face, 0, sin face)`, hence `θ = PI/2 - face`. Face 0 (sim +X) → world +X; face 90° (sim +Y) → world +Z. V7-65's `yaw = -face` pointed **local +X** — 90° away from the donor mesh's true forward — exactly matching "peasants move laterally" while positions/destinations stay correct.
+
+**Change (final `world3d_entities.gd:1040-1055`):** replaced the old three-line approximation with a donor-cited explanation and `yaw = PI / 2.0 - float(ed.get("face", 0.0))`. The `PORT APPROXIMATION` label and `visual UNVERIFIED` wording are retained (donor yaw is a renderer transform; no turn actions exist in 246 `.aaf` per V7-2 §3.3.3 / V7-1 C4). Public signatures, tint-mask work, V7-74 morph and V7-79 memoization are untouched.
+
+**Verification:** still PENDING under the coordinator's runner pause. The queued probe should additionally assert, for one unit with `face = 0.0`, that the transform's local +Z axis maps to world +X (`Basis.xform(Vector3.FORWARD) ≈ Vector3.RIGHT` within tolerance) and for `face = PI/2` maps to world +Z. No visual parity claim.

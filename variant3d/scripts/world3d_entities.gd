@@ -1037,10 +1037,22 @@ func _xf(id: int) -> Transform3D:
 	var yaw := 0.0
 	var sl = _slot.get(id)
 	if sl is Dictionary and str((sl as Dictionary).get("class", "")) == "unit":
-		# PORT APPROXIMATION: donor yaw is a renderer transform (V7-2 3.3.3;
-		# V7-1 C4: zero turn actions in 246 .aaf). Sim face is in the same
-		# X/Y ground space, so map it to XZ with a negative Y rotation.
-		yaw = -float(ed.get("face", 0.0))
+		# FIX-MOVE-VISUAL: the converted donor mesh's FRONT is donor -Y, not
+		# +X. Evidence (all read-only): bake_sprites.py:226-238 places camera
+		# d at azimuth d*45 deg around the donor Z-up mesh; in the donor-
+		# derived sheet assets/models/anim/common/units/peasant_idle.png
+		# column 6 (az 270 deg, camera at -Y) shows the FACE/buttons while
+		# column 2 (az 90 deg, +Y) shows the back strap (same for musketeer).
+		# convert_models.py:43-66 + _bake_mesh map donor (x,y,z) -> (x,z,-y),
+		# so donor -Y becomes local +Z in the Y-up mesh. SIM face is
+		# (target-pos).angle() (app/scripts/game.gd:4605,5182), i.e. angle
+		# from +X toward +Y, and _world_pos maps sim +Y to world +Z.
+		# R_y(PI/2-face)*local +Z = (cos face, 0, sin face): face 0 -> world
+		# +X, face 90 deg -> world +Z. V7-65's yaw=-face pointed local +X
+		# and was 90 deg off -> units looked like they strafed.
+		# PORT APPROXIMATION retained: donor yaw itself is a renderer transform
+		# (V7-2 3.3.3; V7-1 C4: zero turn actions in 246 .aaf); visual UNVERIFIED.
+		yaw = PI / 2.0 - float(ed.get("face", 0.0))
 	var s := HIDDEN_SCALE if _is_hidden(ed) else 1.0
 	var basis := Basis().rotated(Vector3.UP, yaw).scaled(Vector3(s, s, s))
 	return Transform3D(basis, _world_pos(p))

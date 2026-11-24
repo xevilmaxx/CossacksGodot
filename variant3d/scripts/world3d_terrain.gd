@@ -577,8 +577,15 @@ func _make_environment() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.name = "DonorSun"
 	sun.light_energy = SUN_ENERGY
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 400.0
+	# FIX-TERRAIN — EXPLICIT USER DECISION (this wave): shadows are DISABLED.
+	# The old shadow map combined a near-vertical donor sun, a 400 m frustum on
+	# a 640 x 640 m self-shadowing mesh and engine-side projection (UNVERIFIED:
+	# light.cfg:26-29 / water.dev.vert:22 give the vector, not a shadow matrix),
+	# producing long directional streaks. Donor sun colour/energy and the sky
+	# rig are UNCHANGED; only the Godot shadow map is switched off. Re-enable
+	# ONLY after a bounded donor-grounded frustum is implemented and A/B'd.
+	sun.shadow_enabled = false
+	sun.directional_shadow_max_distance = 400.0  # retained, now INERT (no map)
 	# The donor sun is almost overhead, so look_at with up=+Y is degenerate;
 	# use +Z as the up axis exactly as M0.6 did.
 	sun.look_at_from_position(SUN_LIGHTVEC.normalized() * 120.0,
@@ -741,7 +748,12 @@ func build() -> bool:
 	var mi := MeshInstance3D.new()
 	mi.name = "HeightmapTerrain"
 	mi.mesh = mesh
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	# FIX-TERRAIN — EXPLICIT USER DECISION: a 640 x 640 m self-shadowing mesh
+	# with a near-vertical sun produced unbounded directional streaks. The
+	# tile-index ShaderMaterial is `unshaded`, so terrain receives no Godot
+	# shadow map anyway; casting one only shaded OTHER objects. Keep it OFF
+	# until a bounded donor-grounded shadow frustum is measured.
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
 	var t_mesh := Time.get_ticks_usec()
 
