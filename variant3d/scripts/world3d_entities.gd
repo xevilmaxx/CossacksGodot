@@ -38,14 +38,23 @@ extends Node3D
 #     fixed capacity and visible_instance_count (V7-1 section 2.4 mass-army
 #     row: "Batch by sid/facing with MultiMesh"; V7-3 contract line 13).
 #
-# ANIMATION HANDOFF (explicit, not a silent fallback)
+# ANIMATION (V7-74: donor pose DATA is now consumed, still NOT donor parity)
 #   Donor .oss carries per-bone tracks but NO parent hierarchy, so a
-#   donor-faithful skin cannot be built from readable data
+#   donor-faithful skeletal skin cannot be built from readable data
 #   (V7-2 sections 3.3 / 4.3, Table B1 BLOCKED; data/actors/units/peaukr.oss
 #   layout at docs/decomp/DC_FORMATS.md:46-64, evidence ev_392885a6...).
-#   This module therefore renders a STATIC BIND POSE only. Every batch/node is
-#   tagged with `anim_status`; the anim3d.gd agent (V7-3 contract line 17)
-#   must replace/augment these with sampled pose meshes or a donor-backed rig.
+#   V7-64 added anim3d.gd.pose_for(e, action, t) -> pose["verts"]: REAL
+#   donor-sampled FLAT-ROOT skinned verts at the resolved AAF frame (V764
+#   report section 4). This module now calls that API per unit in sync() and
+#   swaps the unit into a frame-keyed MultiMesh batch whose mesh is rebuilt
+#   from those verts using this file's SAME bbox/Y-up transform (_bake_mesh).
+#   Batching is preserved: units at the same (sid, player, action, frame)
+#   share one draw call. The deform is flat-root because bone parents are
+#   unreadable, and normals/tangents stay at bind values (not re-skinned).
+#   Every batch/node keeps the honest label and visual = UNVERIFIED.
+#   With no registered donor skin (shipped runtime today) the module falls
+#   back to the exact static bind pose path of V7-14/V7-65 - no invented
+#   keyframe, sprite sheet or RNG is ever substituted.
 #   A missing mesh gets a bbox-sized box proxy, also tagged; it is a
 #   placeholder, not donor fidelity.
 
@@ -53,6 +62,10 @@ const OBJ_DIR: String = "res://assets/models/obj/"
 const GLB_DIR: String = "res://assets/models/glb/"
 const TEX_DIR: String = "res://assets/models/tex/"
 const MANIFEST_PATH: String = "res://assets/models/manifest.json"
+# V7-65: player key colours are extracted donor text, NOT a port palette.
+# classes.script:7986-8015 (formula :8012-8014), count dmscript.global:121,
+# guard/misc.script:5070, application misc.script:5073. Owned by V7-61's JSON.
+const KEY_COLORS_PATH: String = "res://data/donor_key_colors.json"
 
 # C3Data.TILE_M (variant3d/scripts/data.gd:23) and C3Game.TILE (game.gd:16).
 # heightmap_world3d.gd:200-202 maps tile (x,z) to world
@@ -72,7 +85,13 @@ const POOL_ROCK := ["rock", "stone", "rock_stones1", "rock_stones2", "rock_stone
 const POOL_BUSH := ["bush1", "bush2", "bush3", "bush4"]
 const POOL_STUMP := ["tree_stump1", "tree_stump2", "tree_stump3", "tree_stump4"]
 
-const ANIM_STATUS: String = "STATIC BIND POSE - PORT APPROXIMATION - NOT DONOR PARITY (V7-2 3.3/4.3 Table B1: .oss bone parents unreadable; hand off to anim3d.gd)"
+# Exact V7-64 PORT_LABEL text (anim3d.gd:55), kept verbatim with the em dash.
+const PORT_LABEL: String = "PORT APPROXIMATION — NOT DONOR PARITY"
+# Honest status: real donor flat-root morph DATA is consumed, but this is not
+# donor-parity skeletal deformation and the rendered result is UNVERIFIED.
+const ANIM_STATUS: String = "DONOR-SAMPLED FLAT-ROOT MORPH — " + PORT_LABEL + " (V7-2 3.3/4.3 Table B1: .oss bone parents unreadable; flat-root skin via anim3d.gd.pose_for; visual UNVERIFIED)"
+const MORPH_POSE_SOURCE: String = "donor_flat_root_morph"   # anim3d.gd:96
+const MORPH_ACTION_MAP: String = "dead->death / moving->walk / else idle (PORT policy over donor AAF names anim3d.gd:63-82; UNVERIFIED)"
 
 # Deliberately UNTYPED: the integration seam passes the live C3Game (a Node)
 # but atomic tests bind a RefCounted stub. V7-1 §3 "relaxed Node typing".
@@ -90,13 +109,39 @@ var _nodes: Dictionary = {}         # building id -> MeshInstance3D
 var _mesh_sources: Dictionary = {}  # source label -> sid count (measured at bind)
 var _anim_t: float = 0.0
 
+# V7-74: anim3d.gd instance, discovered once among the composed world's
+# children (world3d.gd:152-165 add_child's every module under one Node3D).
+# No edit to world3d.gd is needed; atomic tests that bind a bare stub have no
+# sibling anim module and therefore keep the static bind path.
+var _anim = null
+var _anim_checked: bool = false
+# sid|action|frame -> {"mesh":ArrayMesh, "frame":int, "action":String, ...}
+# Bounded by the distinct donor frames actually visited; shared by all units.
+var _morph_meshes: Dictionary = {}
+# sid -> donor OBJ v/vt/f topology, parsed once (the Godot OBJ importer
+# de-indexes and reorders verts, so its 719-vertex buffer cannot be addressed
+# by the 577 donor indices; the source OBJ is the common index space).
+var _obj_topology: Dictionary = {}
+
+# V7-65 donor key-colour table. Index = PLAYER SLOT (identity mapping, see
+# bind() stats + report), NOT nation. _key_colors[i] is Color(rgb_godot_float,
+# alpha=1.0); alpha is a PORT choice (donor alpha UNVERIFIED, V7-61 §5).
+var _key_colors: Array = []
+var _key_colors_loaded: bool = false
+var _key_colors_error: String = ""
+
 
 # ---------------------------------------------------------------- bind / stats
 func bind(g) -> void:
 	game = g
+	_load_key_colors()
 	_bbox.clear()
 	_mesh_cache.clear()
 	_mesh_sources.clear()
+	_morph_meshes.clear()
+	_obj_topology.clear()
+	_anim = null
+	_anim_checked = false
 	var models: int = 0
 	if FileAccess.file_exists(MANIFEST_PATH):
 		var parsed = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST_PATH))
@@ -138,8 +183,25 @@ func bind(g) -> void:
 		"axis": "Z-up to Y-up baked: (x,y,z) -> (x,z,-y); V7-2 section 4.1",
 		"scale": "bbox height; units/buildings s=1, env uses envscales.cfg, field exempt; V7-2 4.1/1.1/2.3",
 		"animation": ANIM_STATUS,
+		# V7-74 donor morph telemetry (structural/numeric, NOT a visual claim).
+		"donor_morph_api": "anim3d.gd.pose_for(e, action, t) -> pose['verts'] (V764 report section 4)",
+		"donor_morph_label": PORT_LABEL,
+		"donor_morph_visual": "UNVERIFIED",
+		"donor_morph_rig": "BLOCKED_RIG - flat root only, donor bone parents unreadable (V7-2 Table B1)",
+		"donor_morph_coord": "donor Z-up metres -> bbox/Y-up; vertex i == assets/models/obj/<sid>.obj vertex i",
+		"donor_morph_action_map": MORPH_ACTION_MAP,
+		"donor_morph_normals": "generated from morphed donor faces (donor .oss emits positions only); tangents unset - UNVERIFIED",
 		"no_2d_sprite_sheets": true,
 		"tile_m": TILE_M,
+		# V7-65 donor tint telemetry (measured, not a visual-parity claim).
+		"donor_key_colors_path": KEY_COLORS_PATH,
+		"donor_key_colors_loaded": _key_colors_loaded,
+		"donor_key_colors_slots": _key_colors.size(),
+		"donor_key_colors_error": _key_colors_error,
+		"donor_tint_mapping": "player slot index -> donor gKeyColor slot (identity; mercenary slot 12); NOT nation",
+		"donor_tint_target": "StandardMaterial3D.albedo_color (uniform-0 analogue, multiplicative over donor albedo texture)",
+		"donor_tint_alpha": 1.0,
+		"donor_tint_unverified": "uniform-0 operation, alpha and >1.0 clamp are UNVERIFIED (V7-61 §5; AUDIT3D-02 Q3)",
 	}
 	push_warning("world3d_entities: " + ANIM_STATUS)
 
@@ -186,6 +248,100 @@ func _default_material(sid: String, kind: String) -> Material:
 	# to double-swap winding).
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return mat
+
+
+# --- V7-65 donor player-slot key colours -----------------------------------
+# Loads res://data/donor_key_colors.json (V7-61) at runtime. On ANY failure it
+# pushes an error and leaves bodies UNTINTED: no invented fallback palette is
+# ever substituted. rgb_godot_float is the exact donor formula output; alpha
+# 1.0 is an explicit port choice (donor alpha UNVERIFIED).
+func _load_key_colors() -> void:
+	_key_colors.clear()
+	_key_colors_loaded = false
+	_key_colors_error = ""
+	if not FileAccess.file_exists(KEY_COLORS_PATH):
+		_key_colors_error = "missing file " + KEY_COLORS_PATH
+		push_error("world3d_entities: donor key colours unavailable (" + _key_colors_error + "); bodies left UNTINTED - no fallback palette")
+		return
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(KEY_COLORS_PATH))
+	if not (parsed is Dictionary) or not (parsed as Dictionary).has("slots") \
+			or not ((parsed as Dictionary)["slots"] is Array):
+		_key_colors_error = "malformed JSON or missing slots array"
+		push_error("world3d_entities: donor key colours unavailable (" + _key_colors_error + "); bodies left UNTINTED - no fallback palette")
+		return
+	for entry in ((parsed as Dictionary)["slots"] as Array):
+		if not (entry is Dictionary):
+			continue
+		var d := entry as Dictionary
+		var idx := int(d.get("index", -1))
+		var rgb = d.get("rgb_godot_float", [])
+		if idx < 0 or not (rgb is Array) or (rgb as Array).size() < 3:
+			continue
+		var arr = rgb
+		var c := Color(float(arr[0]), float(arr[1]), float(arr[2]), 1.0)
+		if _key_colors.size() <= idx:
+			_key_colors.resize(idx + 1)
+		_key_colors[idx] = c
+	_key_colors_loaded = _key_colors.size() > 0
+	if not _key_colors_loaded:
+		_key_colors_error = "no usable slot entries"
+		push_error("world3d_entities: donor key colours unavailable (" + _key_colors_error + "); bodies left UNTINTED - no fallback palette")
+
+
+# Donor guard misc.script:5070: only 0 <= colorInd < gc_MaxColorCount (13) is
+# applied. Anything else returns null = no tint, never a made-up colour.
+func _player_tint(player: int) -> Variant:
+	if not _key_colors_loaded or player < 0 or player >= _key_colors.size():
+		return null
+	return _key_colors[player]
+
+
+func _player_index(ed: Dictionary) -> int:
+	var pv = ed.get("player", -1)
+	if pv is int:
+		return int(pv)
+	if pv is float:
+		return int(pv)
+	return -1
+
+
+# Clone a surface material and set albedo_color to the donor key colour. The
+# donor albedo TEXTURE is preserved (surface_get_material comes from the same
+# donor-derived material), matching "tint on top of albedo" from V7-61 §6.5.
+func _tinted_material(base: Material, tint: Color, sid: String, kind: String) -> Material:
+	var dup = base.duplicate() if base != null else null
+	var m: Material = dup as Material
+	if m == null:
+		m = _default_material(sid, kind)
+	if m is StandardMaterial3D:
+		(m as StandardMaterial3D).albedo_color = tint
+	else:
+		push_warning("world3d_entities: non-Standard material for " + sid + " cannot carry donor uniform-0 tint")
+	return m
+
+
+# Per-instance tint, still sharing the baked donor mesh.
+# Godot 4: MultiMeshInstance3D derives from GeometryInstance3D, NOT from
+# MeshInstance3D, so it has no set_surface_override_material(). Use the
+# GeometryInstance3D.material_override on batches (built from the donor
+# albedo material of surface 0, so the donor texture is kept) and the normal
+# surface overrides on building MeshInstance3Ds. One override per batch means
+# the player slot is part of the batch key (see add_unit), as batching allows.
+func _apply_tint(instance: GeometryInstance3D, mesh: Mesh, tint: Color,
+		sid: String, kind: String) -> void:
+	if mesh == null:
+		return
+	if instance is MultiMeshInstance3D:
+		var base: Material = null
+		if mesh.get_surface_count() > 0:
+			base = mesh.surface_get_material(0)
+		instance.material_override = _tinted_material(base, tint, sid, kind)
+		return
+	if instance is MeshInstance3D:
+		for s in range(mesh.get_surface_count()):
+			var base_m: Material = mesh.surface_get_material(s)
+			(instance as MeshInstance3D).set_surface_override_material(
+				s, _tinted_material(base_m, tint, sid, kind))
 
 
 # Box sized from the donor bbox. Used only when neither OBJ nor GLB exists.
@@ -311,36 +467,241 @@ func _mesh_info(sid: String, kind: String) -> Dictionary:
 		src_mesh = _proxy_mesh_raw(bbox)
 	var info := _bake_mesh(src_mesh, bbox, scale, target_h, pre_normalised, sid, kind)
 	info["source"] = source
+	info["sid"] = sid       # V7-65: needed by per-player material cloning
+	info["kind"] = kind
 	_mesh_cache[key] = info
 	_mesh_sources[source] = int(_mesh_sources.get(source, 0)) + 1
 	stats["mesh_sources_loaded"] = _mesh_sources
 	return info
 
 
+# ---------------------------------------------------------------- V7-74 morph
+# The anim module is a SIBLING of this module under world3d.gd (both are
+# add_child'd at world3d.gd:152-165). Discover it once by its handoff methods;
+# never fabricate pose data when it is absent (atomic stub tests, shipped
+# runtime without a registered skin).
+func _find_anim():
+	if _anim != null and is_instance_valid(_anim):
+		return _anim
+	if _anim_checked:
+		return null
+	_anim_checked = true
+	var parent := get_parent()
+	if parent == null:
+		return null
+	for child in parent.get_children():
+		if child == self:
+			continue
+		if child.has_method("pose_for") and child.has_method("has_skin"):
+			_anim = child
+			break
+	return _anim
+
+
+# PORT-LEVEL state -> donor AAF name policy, NOT a donor statement. All three
+# names exist in anim3d.gd AAF_ACTIONS (:64 idle, :66 walk, :67 death) and are
+# taken from data/animations/aaf/peaukr.aaf:3-5. The sim fields are the same
+# ones the 2D renderer reads (t_entities3d.gd:118/124, game.gd entities).
+# No keyframe is invented: the actual frame and verts come from pose_for().
+func _unit_action(ed: Dictionary) -> String:
+	if bool(ed.get("dead", false)):
+		return "death"
+	if bool(ed.get("moving", false)):
+		return "walk"
+	return "idle"
+
+
+# Parse the DONOR-CONVERTED OBJ (convert_models.py:43-66, :109-125) once per
+# sid. Its vertex i is the donor .oss vertex i == pose vert i (V764 section 4),
+# and its f/vt rows are the donor faces/UVs. The Godot importer may de-index
+# and reorder vertices (measured: 719 imported vs 577 donor for peasant), so
+# this source topology - not the imported buffer - is the shared index space.
+func _load_obj_topology(sid: String) -> Dictionary:
+	if _obj_topology.has(sid):
+		return _obj_topology[sid]
+	var result: Dictionary = {"verts": [], "uvs": [], "tris": []}
+	var path := OBJ_DIR + sid + ".obj"
+	if not FileAccess.file_exists(path):
+		_obj_topology[sid] = result
+		return result
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		_obj_topology[sid] = result
+		return result
+	var vv: Array = []
+	var uu: Array = []
+	var tt: Array = []
+	while not f.eof_reached():
+		var line := f.get_line().strip_edges()
+		if line.begins_with("v "):
+			var p := line.split(" ", false)
+			if p.size() >= 4:
+				vv.append(Vector3(float(p[1]), float(p[2]), float(p[3])))
+		elif line.begins_with("vt "):
+			var p := line.split(" ", false)
+			if p.size() >= 3:
+				uu.append(Vector2(float(p[1]), float(p[2])))
+		elif line.begins_with("f "):
+			var corners: Array = []
+			var p := line.split(" ", false)
+			for token in p.slice(1):
+				var sub := token.split("/", false)
+				if sub.is_empty():
+					continue
+				var vi: int = int(sub[0]) - 1
+				var ui: int = int(sub[1]) - 1 if sub.size() > 1 and sub[1] != "" else -1
+				corners.append([vi, ui])
+			# Fan-triangulate any non-triangle face (this donor OBJ is all tris).
+			for j in range(1, corners.size() - 1):
+				tt.append([corners[0], corners[j], corners[j + 1]])
+	f.close()
+	result = {"verts": vv, "uvs": uu, "tris": tt}
+	_obj_topology[sid] = result
+	return result
+
+
+# Rebuild the mesh from donor flat-root verts + donor OBJ topology using the
+# EXACT transform of _bake_mesh (:341-360): (x-cx, z-z0, -(y-cy)) * scale.
+# On any structural mismatch return no mesh and the caller keeps the static
+# bind pose - never a filled/guessed vertex. Normals are generated from the
+# morphed donor geometry (the donor skin emits positions only); UVs keep the
+# donor vt values with the standard Godot V flip, both UNVERIFIED vs a render.
+func _morph_mesh(sid: String, info: Dictionary, frame: int, action: String,
+		verts: PackedVector3Array) -> Dictionary:
+	var key := sid + "|" + action + "|f" + str(frame)
+	if _morph_meshes.has(key):
+		return _morph_meshes[key]
+	var result: Dictionary = {"mesh": null, "reason": ""}
+	var base := info.get("mesh") as Mesh
+	if base == null or base.get_surface_count() < 1 or verts.is_empty():
+		result["reason"] = "no source mesh or empty donor verts"
+		_morph_meshes[key] = result
+		return result
+	var topo: Dictionary = _load_obj_topology(sid)
+	var bind_verts: Array = topo.get("verts", [])
+	var uvs: Array = topo.get("uvs", [])
+	var tris: Array = topo.get("tris", [])
+	if bind_verts.is_empty() or tris.is_empty() or bind_verts.size() != verts.size():
+		result["reason"] = "no donor OBJ topology or vertex count mismatch: obj=%d donor=%d" % [bind_verts.size(), verts.size()]
+		_morph_meshes[key] = result
+		return result
+	var bbox: Array = _bbox.get(sid, [])
+	var cx := 0.0
+	var cy := 0.0
+	var z0 := 0.0
+	if bbox.size() >= 6:
+		cx = (float(bbox[0]) + float(bbox[1])) * 0.5
+		cy = (float(bbox[2]) + float(bbox[3])) * 0.5
+		z0 = float(bbox[4])
+	var sc := float(info.get("scale", 1.0))
+	var out_v := PackedVector3Array()
+	var out_uv := PackedVector2Array()
+	var out_idx := PackedInt32Array()
+	var corner_map: Dictionary = {}
+	for tri in tris:
+		for corner in tri:
+			var vi: int = int(corner[0])
+			var ui: int = int(corner[1])
+			if vi < 0 or vi >= verts.size():
+				result["reason"] = "OBJ face index out of range: %d" % vi
+				_morph_meshes[key] = result
+				return result
+			var ck := str(vi) + "," + str(ui)
+			var ni: int = int(corner_map.get(ck, -1))
+			if ni < 0:
+				ni = out_v.size()
+				corner_map[ck] = ni
+				var mv: Vector3 = verts[vi]
+				out_v.append(Vector3((mv.x - cx) * sc, (mv.z - z0) * sc, -(mv.y - cy) * sc))
+				if ui >= 0 and ui < uvs.size():
+					var uv: Vector2 = uvs[ui]
+					out_uv.append(Vector2(uv.x, 1.0 - uv.y))
+				else:
+					out_uv.append(Vector2.ZERO)
+			out_idx.append(ni)
+	var dst: Array = []
+	dst.resize(Mesh.ARRAY_MAX)
+	for i in range(Mesh.ARRAY_MAX):
+		dst[i] = null
+	dst[Mesh.ARRAY_VERTEX] = out_v
+	dst[Mesh.ARRAY_TEX_UV] = out_uv
+	dst[Mesh.ARRAY_INDEX] = out_idx
+	# ArrayMesh has no generate_normals() in Godot 4.7; accumulate face normals
+	# from the morphed donor geometry (no donor normals exist in the .oss).
+	var norms := PackedVector3Array()
+	norms.resize(out_v.size())
+	for i in range(0, out_idx.size(), 3):
+		var i0: int = out_idx[i]
+		var i1: int = out_idx[i + 1]
+		var i2: int = out_idx[i + 2]
+		var a: Vector3 = out_v[i0]
+		var b: Vector3 = out_v[i1]
+		var c: Vector3 = out_v[i2]
+		var n: Vector3 = (b - a).cross(c - a)
+		norms[i0] += n
+		norms[i1] += n
+		norms[i2] += n
+	for i in range(norms.size()):
+		norms[i] = norms[i].normalized()
+	dst[Mesh.ARRAY_NORMAL] = norms
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, dst)
+	var mat: Material = base.surface_get_material(0)
+	if mat == null:
+		mat = _default_material(sid, "unit")
+	mesh.surface_set_material(0, mat)
+	result = {"mesh": mesh, "frame": frame, "action": action,
+		"verts": out_v.size(), "source": "donor_flat_root_morph",
+		"coord": "donor Z-up -> bbox/Y-up (V764 section 4)",
+		"label": PORT_LABEL, "visual": "UNVERIFIED"}
+	_morph_meshes[key] = result
+	return result
+
+
 # ---------------------------------------------------------------- batching
-func _new_batch(key: String, info: Dictionary, cls: String) -> Dictionary:
+func _new_batch(key: String, info: Dictionary, cls: String,
+		pose: Dictionary = {}) -> Dictionary:
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.mesh = info["mesh"]
 	mm.instance_count = BATCH_CAPACITY
 	mm.visible_instance_count = 0
 	var mmi := MultiMeshInstance3D.new()
-	mmi.name = "Batch_" + key.replace("|", "_") + "_STATIC_POSE"
+	var is_morph: bool = not pose.is_empty()
+	var tag := "MORPH_a" + str(pose.get("action", "?")) + "_f" + str(pose.get("frame", -1)) \
+		if is_morph else "STATIC_POSE"
+	mmi.name = "Batch_" + key.replace("|", "_") + "_" + tag
 	mmi.set_meta("anim_status", ANIM_STATUS)
 	mmi.set_meta("mesh_source", str(info.get("source", "?")))
+	if is_morph:
+		mmi.set_meta("donor_pose_source", MORPH_POSE_SOURCE)
+		mmi.set_meta("donor_frame", int(pose.get("frame", -1)))
+		mmi.set_meta("donor_action", str(pose.get("action", "")))
+		mmi.set_meta("donor_label", PORT_LABEL)
+		mmi.set_meta("donor_visual", "UNVERIFIED")
 	mmi.multimesh = mm
 	add_child(mmi)
 	# xforms is a CPU mirror. Headless Godot 4.7 dummy RenderingServer makes
 	# MultiMesh.get_instance_transform() return identity for every slot, so a
 	# mirror is needed for O(1) swap-removal and headless verification.
-	return {"node": mmi, "mm": mm, "ids": [], "xforms": [], "class": cls, "key": key}
+	return {"node": mmi, "mm": mm, "ids": [], "xforms": [], "class": cls,
+		"key": key, "morph": is_morph}
 
 
-func _acquire(key: String, id: int, info: Dictionary, cls: String) -> int:
+# V7-65: `tint` / `player` are INTERNAL batching-key extensions only; the six
+# public signatures are unchanged. Resources pass tint=null and stay untinted.
+func _acquire(key: String, id: int, info: Dictionary, cls: String,
+		tint: Variant = null, player: int = -1,
+		pose: Dictionary = {}) -> int:
 	var b = _batches.get(key)
 	if not (b is Dictionary):
-		b = _new_batch(key, info, cls)
+		b = _new_batch(key, info, cls, pose)
 		_batches[key] = b
+		(b as Dictionary)["tint"] = tint
+		(b as Dictionary)["player"] = player
+		if tint is Color:
+			_apply_tint((b as Dictionary)["node"], info["mesh"], tint,
+				str(info.get("sid", "")), str(info.get("kind", cls)))
 	var ids: Array = b["ids"]
 	if ids.size() >= BATCH_CAPACITY:
 		push_warning("world3d_entities: batch full " + key + " (cap " + str(BATCH_CAPACITY) + ")")
@@ -348,7 +709,11 @@ func _acquire(key: String, id: int, info: Dictionary, cls: String) -> int:
 	var ix: int = ids.size()
 	ids.append(id)
 	(b as Dictionary)["xforms"].append(Transform3D())
-	_slot[id] = {"key": key, "index": ix, "class": cls}
+	# Keep tint/player/pose on the slot so a frame change can re-acquire the
+	# matching batch without re-reading sim state or guessing a key.
+	_slot[id] = {"key": key, "index": ix, "class": cls, "tint": tint,
+		"player": player, "pose_source": str(pose.get("pose_source", "static_bind_pose")),
+		"frame": int(pose.get("frame", -1)), "action": str(pose.get("action", ""))}
 	var mm: MultiMesh = b["mm"]
 	mm.visible_instance_count = ids.size()
 	return ix
@@ -382,10 +747,12 @@ func _release(id: int) -> void:
 				(_slot[moved] as Dictionary)["index"] = ix
 		ids.pop_back()
 		mm.visible_instance_count = ids.size()
-		# An empty batch has no reason to keep a node/draw call alive; free it
-		# synchronously so same-frame node counts return to baseline. The baked
-		# mesh stays cached in _mesh_cache for a cheap later re-create.
-		if ids.is_empty():
+		# An empty STATIC batch has no reason to keep a node/draw call alive;
+		# free it synchronously so same-frame node counts return to baseline.
+		# V7-74: keep EMPTY MORPH batches alive so a unit oscillating between
+		# donor frames reuses the node instead of free/create churn; they draw
+		# nothing (visible_instance_count == 0) and are bounded by visited frames.
+		if ids.is_empty() and not bool((b as Dictionary).get("morph", false)):
 			var node = (b as Dictionary).get("node")
 			if is_instance_valid(node):
 				(node as Node).free()
@@ -459,8 +826,16 @@ func add_unit(e) -> void:
 		return
 	var sid := str(ed.get("sid", ""))
 	var info := _mesh_info(sid, "unit")
+	var player: int = _player_index(ed)
+	# Explicit Variant type: `:=` from a Variant-returning helper is an
+	# INFERRED_DECLARATION warning, which this project treats as an error.
+	var tint: Variant = _player_tint(player)
 	var key := "unit|" + sid
-	var ix := _acquire(key, id, info, "unit")
+	if tint is Color:
+		# Internal batch-key extension: one MultiMesh per (sid, player slot).
+		# Without this, two players' units would share one material/tint.
+		key += "|p" + str(player)
+	var ix := _acquire(key, id, info, "unit", tint, player)
 	if ix >= 0:
 		var b: Dictionary = _batches[key]
 		var xf := _xf(id)
@@ -483,6 +858,16 @@ func add_building(e) -> void:
 	mi.mesh = info["mesh"]
 	mi.set_meta("anim_status", ANIM_STATUS)
 	mi.set_meta("mesh_source", str(info.get("source", "?")))
+	# V7-65: per-building tint (each building owns its own MeshInstance3D, so
+	# no batching-key change is needed here; surface overrides keep siblings
+	# of other players independent while sharing the baked donor mesh).
+	var player: int = _player_index(ed)
+	# Explicit Variant type (see add_unit): `:=` here is a treated-as-error warning.
+	var tint: Variant = _player_tint(player)
+	if tint is Color:
+		_apply_tint(mi, info["mesh"], tint, sid, "building")
+		mi.set_meta("donor_tint_slot", player)
+		mi.set_meta("donor_tint_rgb", [tint.r, tint.g, tint.b])
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(mi)
 	_nodes[id] = mi
@@ -553,8 +938,69 @@ func remove(id) -> void:
 
 
 func sync(dt: float) -> void:
-	# Static bind pose: dt only feeds the anim3d handoff clock, no mesh morph.
+	# V7-74: the sim clock drives a deterministic donor AAF frame through
+	# anim3d.gd.pose_for() (donor 30 fps, fposmod loop - anim3d.gd:514-520).
+	# No RNG, no sprite sheet, no invented keyframe. With no anim module or no
+	# registered donor skin this is exactly the V7-14/V7-65 static bind path.
 	_anim_t += maxf(dt, 0.0)
+	var anim = _find_anim()
+	var morph_units := 0
+	var static_units := 0
+	var frame_changes := 0
+	var pose_sources: Dictionary = {}
+	var seen_frames: Dictionary = {}
+	var morph_rejects: Dictionary = {}
+	# Pass 1: sample the donor pose per unit and migrate it to a frame-keyed
+	# (sid, player, action, frame) batch when a real donor morph is available.
+	for id in _slot.keys():
+		var sl = _slot[id]
+		if not (sl is Dictionary):
+			continue
+		if str((sl as Dictionary).get("class", "")) != "unit":
+			continue
+		var e = _refs.get(int(id))
+		if not (e is Dictionary):
+			continue
+		var ed := e as Dictionary
+		var sid := str(ed.get("sid", ""))
+		var old_key := str((sl as Dictionary).get("key", ""))
+		var action := _unit_action(ed)
+		var pose: Dictionary = {}
+		var morphed: Dictionary = {}
+		if anim != null and anim.has_method("pose_for") \
+				and bool(anim.call("has_skin", sid)):
+			var p = anim.call("pose_for", ed, action, _anim_t)
+			if p is Dictionary:
+				pose = p as Dictionary
+				var verts = pose.get("verts", null)
+				if verts is PackedVector3Array and not (verts as PackedVector3Array).is_empty() \
+						and str(pose.get("pose_source", "")) == MORPH_POSE_SOURCE:
+					var info: Dictionary = _mesh_info(sid, "unit")
+					morphed = _morph_mesh(sid, info, int(pose.get("frame", -1)),
+						action, verts as PackedVector3Array)
+					if morphed["mesh"] == null:
+						var why := str(morphed.get("reason", "?"))
+						morph_rejects[why] = int(morph_rejects.get(why, 0)) + 1
+		if morphed.has("mesh") and morphed["mesh"] != null:
+			var tint = (sl as Dictionary).get("tint", null)
+			var player := int((sl as Dictionary).get("player", -1))
+			var new_key := "unit|" + sid
+			if tint is Color:
+				new_key += "|p" + str(player)
+			new_key += "|a" + action + "|f" + str(int(pose.get("frame", -1)))
+			if new_key != old_key:
+				_release(int(id))
+				var pose_info: Dictionary = {"mesh": morphed["mesh"],
+					"source": "donor_flat_root_morph", "sid": sid, "kind": "unit",
+					"scale": float((_mesh_info(sid, "unit")).get("scale", 1.0))}
+				_acquire(new_key, int(id), pose_info, "unit", tint, player, pose)
+				frame_changes += 1
+			pose_sources[MORPH_POSE_SOURCE] = int(pose_sources.get(MORPH_POSE_SOURCE, 0)) + 1
+			seen_frames[int(pose.get("frame", -1))] = true
+			morph_units += 1
+		else:
+			static_units += 1
+	# Pass 2: unchanged transform contract for morphed, static and resource slots.
 	for id in _slot.keys():
 		var sl = _slot[id]
 		if not (sl is Dictionary):
@@ -575,16 +1021,38 @@ func sync(dt: float) -> void:
 			mi.transform = _xf(int(id))
 	var units := 0
 	var ress := 0
+	var tinted_batches := 0
 	for key in _batches.keys():
-		var cls := str((_batches[key] as Dictionary).get("class", ""))
-		var n: int = (_batches[key] as Dictionary)["ids"].size()
+		var bd := _batches[key] as Dictionary
+		var cls := str(bd.get("class", ""))
+		var n: int = bd["ids"].size()
+		if bd.get("tint") is Color:
+			tinted_batches += 1
 		if cls == "unit":
 			units += n
 		else:
 			ress += n
+	var tinted_buildings := 0
+	for id in _nodes.keys():
+		if (_nodes[id] as Node).has_meta("donor_tint_rgb"):
+			tinted_buildings += 1
+	stats["tinted_batches"] = tinted_batches
+	stats["tinted_buildings"] = tinted_buildings
 	stats["batches"] = _batches.size()
 	stats["units"] = units
 	stats["resources"] = ress
 	stats["buildings"] = _nodes.size()
 	stats["anim_clock_s"] = _anim_t
-	anim_handoff["applied"] = false
+	# V7-74 measured morph telemetry (never a visual-parity claim).
+	stats["donor_morph_units"] = morph_units
+	stats["donor_morph_static_units"] = static_units
+	stats["donor_morph_frame_changes"] = frame_changes
+	stats["donor_morph_meshes_cached"] = _morph_meshes.size()
+	stats["donor_morph_frames"] = seen_frames.keys()
+	stats["donor_morph_pose_sources"] = pose_sources
+	stats["donor_morph_rejects"] = morph_rejects
+	stats["donor_morph_anim_available"] = anim != null
+	anim_handoff["applied"] = morph_units > 0
+	anim_handoff["morph_units"] = morph_units
+	anim_handoff["label"] = PORT_LABEL
+	anim_handoff["visual"] = "UNVERIFIED"

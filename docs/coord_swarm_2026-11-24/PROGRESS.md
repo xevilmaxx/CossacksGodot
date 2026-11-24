@@ -242,6 +242,303 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### V7-77 E6 zoom anchor — HONEST NON-RESULT
+- camera3d.gd zoom anchor now resolves terrain height via guarded dynamic
+  sampler (height_at_world centred metres; game.height_at with map-centre
+  offset; no sampler -> explicit 0.0 flat fallback). Public APIs/defaults and
+  V7-66 jump_to_world unchanged. Parse PASS (172); probe 12/12 (174).
+- BUT measured drift on sloped stub: before 0.0001 px / 0.00000 m -> after
+  0.0024 px / 0.00008 m. Anchored point stayed under cursor in BOTH cases:
+  the old flat correction preserved the whole view ray, so E6's drift premise
+  is an OPEN QUESTION, not a fixed bug. No improvement claimed.
+
+### V7-74 donor poses CONSUMED — with one shipping caveat
+- entities sync() calls anim3d.pose_for(e, action, t) per unit at donor 30 fps,
+  rebuilds the unit mesh from real donor flat-root verts via V764 §4 transform,
+  migrates to a frame-keyed MultiMesh batch; V7-65 tints + 6 signatures intact.
+- Probe 20/20 PASS (161): real peaukr.oss walk frames 1->10 changed
+  733/733 rendered verts, max 0.295301526784897 m (matches V764 exactly),
+  mean 0.1065164 m. Parse PASS (162); selftest 29/29 (163).
+- CAVEAT §7: shipped runtime has NO REGISTERED SKIN, so morph only appeared
+  because the probe registered one manually. V7-78 dispatched to export donor
+  skin data as runtime assets and auto-register it (anim3d + new converter +
+  new assets only).
+
+### V7-76 ghost/rally visuals LANDED
+- world3d.gd 527 -> 682 lines; sync() now translates the exact 2D triggers
+  (app world.gd:3464-3509, :3602-3613) and calls fx.draw_ghost / draw_rally;
+  ghost ground point from Camera3D.screen_to_world(mouse) (camera3d.gd:167-176),
+  optional set_build_ghost_pos() handoff documented.
+- Probe PASS (152/155): ghost false->true, rally markers 0->1,
+  FX MeshInstance3D 1->5, ghost_shown 0->1, rally_active 0->1. Parse PASS (145);
+  selftest 29/29 (157). Probe deleted. No visual parity claim; 2D can_place
+  throttle deliberately not copied.
+
+### V7-75 pick caller + E18 LANDED
+- input_controller.gd 3D `_pick()` forwards players_only to picking3d; 2D
+  untouched, no cmd_* changes. E18 shift+group now calls jump_to_world(metres)
+  instead of writing Vector2 into Camera3D.global_position.
+- Parse PASS (140); probe 5/5 (141): true->true, false->false, omitted->true,
+  screen pixel forwarded; selftest 29/29 (144); E18 probe 2/2 (149/151) with
+  2D still (480,640). Probes deleted.
+- Open: E6 camera3d.gd:361-394 flat Y=0 zoom anchor -> V7-77; E19 main.gd:1626-
+  1627 journey-mode Vector2->Vector3 lerp + wrong view_scale -> V7-70.
+
+### V7-73 FX world offset FIXED
+- `world3d_fx.gd.bind()` now derives world_offset from game.MAP_W/MAP_H
+  (320x320 -> (320,320) m), matching world3d_entities.gd:541 / terrain:307-314;
+  optional explicit bind offset + set_world_offset() shifts live nodes.
+  V7-65 donor tints preserved.
+- Measured error before (320,320) m / 452.548 m magnitude -> after (0,0) m /
+  0.000 m; FX at sim (100,240) renders at expected (-220,0,-80).
+- Parse PASS (133); probe 7/7 (134); existing t_fx3d 13/13 (135). Probe deleted.
+  No world3d.gd edit needed; no visual parity claim.
+
+### V7-62 entity feed + world contract LANDED (biggest P0 closed)
+- `world3d.gd` 331 -> 527 lines. Probe: 0 -> 5 REAL entity mesh nodes
+  (2 units + 1 building + 2 resources), dropping to 4 after removal; selection
+  mirror [7001,7002] -> [7001]; view_rect with Vector2 corners now
+  (160,160,320,320) instead of full map; all 8 added contract methods present.
+- `int()` root cause fixed by extracting "id" from entity Dictionaries (no
+  blanket cast); error gone from stderr. Parse PASS (109); selftest 29/29 PASS
+  (130), no missing-contract errors. Probe/result deleted; no visual claim.
+- V7-76 dispatched to wire the remaining dead draw_ghost/draw_rally APIs using
+  world3d.gd (current file preserved).
+
+### V7-68 picking players_only FIXED
+- `picking3d.gd.pick(screen, players_only := true)` now honors the 2D flag
+  (`if not players_only or player == 0`, app input_controller.gd:358); fallback
+  reach converted per candidate instead of fixed 30 m.
+- Parse PASS (129); probe 127: pick(true)->friendly id 10, pick(false)->enemy
+  id 20, default->friendly, pick_res()->resource 77, no cmd_* calls. Probe deleted.
+- OPEN handoff: input_controller.gd:396 still calls pick without forwarding the
+  flag -> V7-75 dispatched. E6/E18/E19 (zoom-at-cursor, shift+group, journey
+  mode) traced to camera3d.gd/main.gd, documented as handoffs.
+
+### V7-65 donor player tints LANDED
+- Donor JSON loaded at runtime; player mapping is identity `entity.player ->
+  gKeyColor[slot]`, evidenced from app game.gd:1988-1992,378-389, world.gd:2172-
+  2182, data.gd:225-239 — no nation mapping exists.
+- All six public signatures unchanged; batch key extended internally to
+  `unit|sid|p<player>`; resources untinted; load failure = push_error + no tint
+  (no invented fallback palette). FX invented palette removed, rally pennant
+  uses donor values; non-player FX untouched.
+- Fixed relayed entity errors at :590/:624 (explicit Variant, not suppressed)
+  and a MultiMeshInstance3D material_override runtime error found by probe.
+- Parse PASS (100/101/115); probe 21/21 PASS (116, deleted); selftest 29/29
+  PASS (122) with ticket-86 errors gone. Alpha, >1.0 clamping, uniform-0
+  semantics UNVERIFIED.
+- Follow-ups dispatched now that files are free: V7-73 FX world_offset (P0),
+  V7-74 consume donor poses (P0) — both strictly one file each.
+
+### V7-71 audio 3D fix LANDED
+- audio.gd: Vector3->Vector2 horizontal (x,z) for ambient centre (old :153)
+  and a 3D-aware get_camera_3d() culling branch (old :318); 2D statements
+  byte-identical, no new constants/RNG.
+- Parse PASS (97); stub Camera3D probe 6/6 PASS (117, deleted); full selftest
+  29/29 PASS (121). Open: true 3D positional audio / AudioStreamPlayer3D
+  and donor emitter semantics (sound.script:418,515) NOT implemented.
+
+### Minimap P0 END-TO-END CONTRACT VERIFIED
+- V7-67 trace: hud.gd:1403-1404 normalized mouse -> tile*TILE_M (2.0,
+  data.gd:23) = sim metres top-left, byte-identical to app hud.gd:1369-1370;
+  :1453 passes the unchanged value as ONE Vector2 to jump_to_world, no
+  view_scale. camera3d.gd:215-223 assigns _target directly, no view_scale.
+  get_minimap_box() only affects the post-jump redraw box, not the jump value.
+  V7-67's open question resolved; no edits needed.
+
+### V7-66 camera jump API LANDED
+- `camera3d.gd:208-223` public `jump_to_world(world_pos: Vector2)` sets target,
+  applies transform, resets clamp memo, clears zoom anchor. API contract: ONE
+  arg in sim metres, top-left origin — do NOT pass view_scale.
+- `input_controller.gd:226-233` 3D branch calls it dynamically; 2D block
+  byte-identical. Parse PASS (85/87), runtime probe 11/11 PASS (114): two jumps
+  moved 316.2 m, memo stable, out-of-map clamped inside 640x640 m. Probe deleted.
+- `t_camera3d.gd` has a PRE-EXISTING `_initialize()` tree-timing failure unrelated
+  to this diff — needs separate triage at final gate.
+- V7-67 compatibility check dispatched (exact one-arg sim-metre call).
+
+### V7-72 new OBJ imports VERIFIED
+- Headless import via variant runner only: job `v772-editor-import` (104) exit 0
+  using `--headless --path variant3d --import` (CLI syntax pre-checked, 98).
+- `.obj.import` 116 -> 172 (+56); `.png.import` 116 -> 172 (+56); 0 missing;
+  stderr empty. Probe (113): module reports `obj_available = 172`, all 56/56
+  new sids true, 5 sampled assets load() as Mesh; temp probe deleted.
+- Open: GLB lane empty; bar18/dock still have no donor actor; entity feed (G2)
+  unchanged until V7-62 lands.
+
+### V7-69 snapshot regression FIXED — VERIFIED DONE
+- Root cause in variant3d/scripts/main.gd:760-769 (regressed w52-self-base-1 +
+  JSON.stringify, no _json_rect, plain float compare, raw-path checks); fixed
+  concurrently by V7-70 (ticket 102 parse). V7-69 restored the owned artefact
+  `variant3d/tests/results/w52_self_base.json` byte-identically to canonical
+  sha256 d807526f... (w52-self-base-2, native Rect2). app/selftest.json hash
+  unchanged.
+- Verification (variant runner): job 91 selftest 29/29 (all step names/details/
+  flags identical to app, only timing differs). BEFORE: job 92 no SELF-SNAPSHOT
+  line, full mapgen 53.07 s; job 93 MISMATCH/bad format. AFTER: job 111
+  `SELF-SNAPSHOT fast load parity: OK (320x320, 18 ents, seed 20261113)` +
+  `check: OK`, stderr empty; job 110 same subset fast path 25.92 s (-51%).
+- Open: no direct `first difference at ...block_rect` log captured; sim_seconds
+  variance UNVERIFIED.
+
+### V7-69 snapshot verification — interim PASS
+- Job 91 (`v769-selftest-snapshot`) ok, 29/29; all step names/details/passed
+  flags byte-identical to canonical app/selftest.json (only timing differs);
+  app hash unchanged. No SELF-SNAPSHOT/fallback lines in a full run (expected:
+  snapshot path is subset-only). Two subset diagnostic jobs still queued;
+  lossy Rect2 source in main.gd:752-769 already relayed to V7-70.
+
+### V7-60 donor light rig LANDED
+- `_make_environment()` ported verbatim from heightmap_world3d.gd:114-147 into
+  wired `world3d_terrain.gd` and called from build() at :347; donor citations
+  light.cfg:3-16,26-29 and water.dev.vert:22 preserved, no invented values.
+- Backup `inbox/backup/world3d_terrain.gd.bak-V760`; parse PASS (79); node-tree
+  probe 19/19 PASS (90) with measured HeightmapTerrain, WaterPlane,
+  WorldEnvironment, DonorSun and donor-valued sky/sun properties.
+- Honest open questions: donor Z-up→Y-up comment conflicts with verbatim Z-up
+  expression (not corrected); ambient/diffuse constants recorded but unused;
+  emission floor unchanged; visual parity UNVERIFIED.
+
+### V7-67 minimap 3D jump LANDED
+- hud.gd 3D-only guard at :1405-1410 + `_minimap_jump_3d()` / `_cam3d_jump()`
+  helpers; calls `cam.call("jump_to_world", world_pos)` guarded by has_method,
+  so it degrades safely until V7-66 lands. 2D handler byte-identical to app
+  (1002/1002 chars). Parse PASS (83); selftest 29/29 PASS (86).
+- Selftest stderr still shows world3d_entities.gd:573,606 errors -> relayed to
+  V7-65; world3d.gd:207 -> V7-62.
+
+### V7-63 missing models LANDED
+- Roster unit/building OBJ coverage 23/81 -> 79/81 (missing 58 -> 2).
+- Manifest 116 -> 172 (unit 9->62, building 14->17, env 93 unchanged).
+- 56 new donors converted: 46 .oss units + 7 .osm naval hulls + 3 .osm
+  buildings; 168 new asset files. Original 116 outputs 348/348 byte-identical;
+  app/ manifest untouched (116 entries); 0 2D bake/sprite outputs.
+- Still absent (not unreadable): `bar18` (no ukrba2/eurba2/turba2 actor) and
+  `dock` (no shipyard actor; Shipyard in units.txt:975 is only a label).
+- Caveat: 56 new OBJs lack .import caches -> V7-72 dispatched to run the
+  project's own headless editor import via variant runner + probe obj_available.
+
+### V7-64 donor morph animation LANDED
+- `anim3d.gd` rewritten: GDScript translation of donor `bake_sprites.read_oss` /
+  `qmat` / `skin` / `sample`; `pose_for(e, action, t)` returns the real skinned
+  vertex array for the resolved AAF frame.
+- Measured: parse exit 0 (80); behaviour probe 17/17 PASS (82); real donor
+  `peaukr.oss` (k=483,fps=30,b=20,v=577, exact 312,376-byte closure); donor
+  walk frames 1->10 changed 577/577 verts, max 0.2953 m, mean 0.1037 m,
+  cross-checked with independent Python re-implementation.
+- Honest label kept: flat-root `PORT APPROXIMATION — NOT DONOR PARITY`, bone
+  parents unreadable, visual UNVERIFIED. Consumer integration into
+  world3d_entities.gd queued after V7-65 frees that file (handoff in V764 §4).
+
+### ALL 9 AUDITS IN — consolidated triage written
+- `AUDIT3D_TRIAGE.md` created with verified-good list, 10 P0s, 11 P1s, 4 P2s
+  and per-gap assignment/state. No git operations.
+- AUDIT3D-06 (FX/anim/audio): 2D audio bed fully preserved (identical audio.gd
+  hash, 325 ogg clips, event dispatch). But P0: FX ~320 m off target because
+  `world_offset` never set (world3d_fx.gd:90,227-236) -> queued as follow-up to
+  V7-65 (same file). P0: draw_ghost/draw_rally/play_anim have no runtime callers
+  -> queued after V7-62/65/66. P1: no 3D positional audio; audio.gd:318 looks
+  for Camera2D -> relayed to V7-71 along with the Vector3 fix. Donor PFX size/
+  lifetime/colour/count unconsumed; only 3 unverified bullettrail literals used.
+
+### AUDIT3D-09 runtime proof — 3D nodes real, PIXELS UNVERIFIED
+- Measured (variant runner): clean headless boot (72); 3D-default selftest PASS
+  (76); real node tree with Node3D + MeshInstance3D x4 + Camera3D +
+  DirectionalLight3D + WorldEnvironment (75); real OpenGL 3.3 context in
+  windowed mode (73).
+- P0 G1: BOTH screenshot paths end in CPU 2D map fallback — headless by design
+  (main.gd:1716-1725), windowed because viewport capture was blank
+  (main.gd:1749-1752). No genuine 3D image proof -> V7-70 dispatched (main.gd).
+- P1 G2: per-frame `int()` constructor error at world3d.gd:207, exact cause
+  `int(id)` on entity Dictionaries from game.gd:2585-2590 -> relayed to V7-62.
+- P1 G3: windowed-only Vector3->Vector2 error at audio.gd:153 (cam is Camera3D)
+  -> V7-71 dispatched.
+
+### AUDIT3D-04 / 05 / 07 results
+- AUDIT3D-04: core sim BYTE-IDENTICAL (14/21 common scripts incl. game.gd,
+  ai.gd, world.gd; all 29 selftest step details match; config differs only by
+  render_mode). Gaps: P0 incomplete 3D world contract (missing _update_fog,
+  mark_rally_dirty, fog_revision, fog_sprite, terrain_chunks, _anim_dir etc.
+  called unbranched from main.gd:1331/1418-1442, input_controller.gd:609/634,
+  hud.gd:1741) -> added to V7-62; P1 picking loses players_only=false
+  (picking3d.gd:208-236) -> V7-68; P1 self-snapshot regression to
+  w52-self-base-1 + lossy block_rect string -> V7-69.
+- AUDIT3D-05: donor zoom bounds/tilt/edge-scroll match 2D; all cmd_* paths
+  inherited; no double-binding (bind_3d idempotent). P0 minimap camera jump
+  no-op in 3D (hud.gd:1397-1415 + input_controller.gd:222-232) -> V7-66/V7-67.
+  P1s: view_rect full-map (to V7-62), fog quad height/centre mismatch and
+  missing fog_revision, fixed-depth pick fallback, assumed FOV, missing
+  selection-rect/patrol overlays.
+- AUDIT3D-07: RESOURCE INTEGRITY SOUND, NO P0. project.godot files differ only
+  in name/description. 306 res:// refs scanned: 278 resolve; 28 non-resolving
+  are 9 dynamic UNVERIFIED + 19 benign (comments, guarded legacy, shots writes,
+  guarded GLB_DIR, one test output). Full .import coverage for importables;
+  DDS correctly .gdignore'd. P1 conditional: .gitignore excludes 4236 legacy
+  sprite files referenced by 2D world.gd — tracking UNVERIFIED (no git used).
+  P2s: shots/ dir never created; 17 .gd lack .uid sidecars; 2099 .ctex absent.
+
+### V7-61 donor key colours EXTRACTED
+- `variant3d/data/donor_key_colors.json`: 13 exact player slots, normalised
+  RGB floats (channel*koef/255) from classes.script:7986-8015; donor literals
+  verified verbatim. Slot 3 inherits default koef 1.1 at :7988; slot 12 is
+  mercenary. Case table has 14 entries but index 13 is unreachable per
+  gc_MaxColorCount=13 / misc.script:5070 guard. Alpha UNVERIFIED.
+- V7-65 dispatched: apply donor tints in world3d_entities.gd (batching keyed
+  internally by player slot; public add_* signatures unchanged for V7-62) and
+  replace invented FX palette in world3d_fx.gd; probe asserts two players differ.
+
+### AUDIT3D-01 models — user-reported concern CONFIRMED
+- V7-14 asset claim HOLDS: 116 manifest bboxes, 116 real donor-derived OBJ
+  meshes (binary .oss/.osm geometry, NOT boxes/billboards), 0 GLB. "6 loaded"
+  was only a 5-entity stub smoke, not coverage.
+- BUT no production code calls add_unit/add_building, so a real 3D skirmish
+  renders ZERO entity meshes. P0 -> V7-62 dispatched (entity feed in
+  world3d.gd + fix `world3d.gd:207 Invalid call. Nonexistent 'int' constructor.`
+  seen in the 3D selftest).
+- 58/81 unit/building IDs have no OBJ -> invented 1 m cube. P0 ->
+  V7-63 dispatched (extend variant3d/tools/convert_models.py from existing
+  donor .oss/.osm). P1 animation discarded by converter -> V7-64 dispatched
+  (donor-sampled morph poses via bake_sprites.skin, approximation labelled).
+
+### AUDIT3D-08 donor coverage
+- variant3d inherits the SAME donor-derived asset base as app/ (hardlinked
+  assets + byte-identical sim scripts; only render_mode differs). 3D modules
+  consume a subset. Readable but unused: light.cfg, colors.lib, weather,
+  terrainmesh1..4.osm, shader text, donor team palette. Unreadable: .map
+  relief, .oss bone parents, ACL/PFX semantics, absolute FOV. No .ani files
+  exist in installed donor. Its light-rig P0 is already covered by V7-60;
+  team-colour P1 by V7-61 + follow-up implementation.
+
+### HUD 3D bind regression FIXED
+- V7-53: hud.gd `bind(g, w: C3World)` and `var world: C3World` -> untyped;
+  2D logic unchanged. Variant selftest with render_mode="3d": ticket 71 PASS,
+  passed:true 29/29, no watchdog. Remaining stderr: pre-existing
+  world3d.gd:207 'int' constructor error -> assigned to V7-62.
+
+### AUDIT3D-02 colours — user-reported concern CONFIRMED
+- 3D FX/rally colours DO reuse exact 2D RGB from app/scripts/world.gd, and unit
+  albedo is donor-DDS-grounded via manifest.json. BUT no player/nation colour
+  is donor-derived in EITHER port: real donor `gKeyColor` table
+  (classes.script:7986-8015, 13 slots) is never read. Three mutually
+  inconsistent invented palettes exist in app/ world.gd/menu.gd/hud.gd;
+  variant3d copies one (world3d_fx.gd:67-74).
+- P0: `world3d_entities.gd:170-188,321-336` batches by `sid` only, so donor
+  recursive uniform-0 team tint (misc.script:5067-5081) cannot exist.
+  P0: invented palette. P1: `draw_rally()` has no caller; no 3D selection
+  ring/flag/stripe equivalents.
+- V7-61 dispatched: extract the exact donor 13-slot key-colour table read-only
+  into `variant3d/data/donor_key_colors.json` with citations; implementation
+  into the 3D renderer follows after the data lands.
+
+### AUDIT3D results arriving
+- AUDIT3D-03 terrain: runtime is a real 102,400-vertex live-height grid;
+  splat provenance SHA-256 matches g32_dump.json (same in app/ and variant3d/).
+  Gaps: P0 no runtime WorldEnvironment/sun (donor rig stranded in unreferenced
+  `heightmap_world3d.gd:114-147`) -> V7-60 dispatched to wire it; P1 static
+  albedo baked from one seed with no consistency check; P1 flat water quad
+  vs 2D port's animated diffusewaves shader. Visual parity UNVERIFIED.
+
 ### Launcher fix + 3D parity audit swarm (user-reported blocker)
 - ROOT CAUSE of "launch3d variant bat launches nothing" FOUND and FIXED:
   1. `launch_variant3d.bat` routed an INTERACTIVE windowed game through the

@@ -150,7 +150,15 @@ func _process(dt: float) -> void:
 	var center := Vector2.ZERO
 	var cam = parent.get("camera")
 	if cam != null and is_instance_valid(cam):
-		center = cam.global_position / 16.0   # main.gd's metres convention
+		# Variant3d may bind a Camera3D here (camera3d.gd:38): its global_position
+		# is Vector3. Keep the 2D ground-plane convention — game y is world z
+		# (hud3d_adapter.gd:95-96, camera3d.gd:159-161) — and feed the same two
+		# horizontal components into the unchanged /16.0 metres conversion below.
+		if cam.global_position is Vector3:
+			var p3: Vector3 = cam.global_position
+			center = Vector2(p3.x, p3.z) / 16.0
+		else:
+			center = cam.global_position / 16.0   # main.gd's metres convention
 
 	# Donor gui.script:3274-3298 scans built storehouses for mill/town usage.
 	var nearest_mill := AMBIENT_MAX_DIST
@@ -321,6 +329,18 @@ func play(prefixes: Array, vol_db := 0.0, at := Vector2.INF) -> void:
 			if d > 60.0:
 				return
 			vol_db -= clampf((d - 20.0) * 0.15, 0.0, 12.0)
+		else:
+			# No Camera2D in render_mode="3d" (AUDIT3D-06 §5, audio.gd:317-323):
+			# use the active Camera3D's horizontal ground-plane components with
+			# the SAME cutoff/curve literals as the 2D branch above.
+			var vp := get_viewport()
+			var cam3 := vp.get_camera_3d() if vp != null else null
+			if cam3 != null:
+				var p3: Vector3 = cam3.global_position
+				var d3: float = at.distance_to(Vector2(p3.x, p3.z) / 16.0)
+				if d3 > 60.0:
+					return
+				vol_db -= clampf((d3 - 20.0) * 0.15, 0.0, 12.0)
 	var names := names_for(prefixes)
 	if names.is_empty():
 		return

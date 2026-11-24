@@ -17,6 +17,11 @@ Usage:
 
 Everything is read from the installed game; nothing is written outside the
 project folder. The donor is private use only — never redistribute it.
+
+V7-63: outputs are STATIC BIND POSES only. The reader discards .oss weights,
+bones and animation frames (read_oss), and .osm keeps only its first frame.
+Every exported mesh is a PORT APPROXIMATION, not donor animation parity; the
+3D entity renderer must keep its "static bind pose" label.
 """
 from __future__ import annotations
 
@@ -172,6 +177,61 @@ def unit_models(game: str) -> list:
         "officer": "officer",
         "cannon": "cannon",
     }
+    # V7-63 — port sid -> EXACT donor .oss base (same-named DDS albedo).
+    # Source of every mapping: the port's own donor-derived bake table
+    # `app/tools/bake_sprites.py:664-674`, except `sco_highlandersword`, whose
+    # donor base is fixed by `app/tools/bake_scottish.py:52-53`. Where a port
+    # sid differs from the donor actor name the donor name is kept verbatim:
+    # musk18->musketeer18, dragoon17->dragoon, sco_highlandersword->
+    # swordsmansco. No shape is invented: each entry is read by read_oss().
+    table.update({
+        "officer18": "officer18",
+        "drummer": "drummer",
+        "priest": "priest",
+        "grenadier": "grenadier",
+        "musk18": "musketeer18",
+        "howitzer": "howitzer",
+        "mortar": "mortar",
+        "musketeer": "musketeer",
+        "strelet": "strelet",
+        "pikeman18": "pikeman18",
+        "dragoon17": "dragoon",
+        "hussar": "hussar",
+        "wingedhussar": "wingedhussar",
+        "cuirassier": "cuirassier",
+        "reiter": "reiter",
+        "lightcavalry": "lightcavalry",
+        "lightinfantry": "lightinfantry",
+        "tatar": "tatar",
+        "sipahi": "sipahi",
+        "jannisary": "jannisary",
+        "spakh": "spakh",
+        "mameluke": "mameluke",
+        "vityaz": "vityaz",
+        "hetman": "hetman",
+        "croat": "croat",
+        "pandur": "pandur",
+        "chasseur": "chasseur",
+        "highlander": "highlander",
+        "pope": "pope",
+        "padre": "padre",
+        "mullah": "mullah",
+        "drummer18": "drummer18",
+        "multicannon": "multicannon",
+        "cossackdon": "cossackdon",
+        "hackapell": "hackapell",
+        "cossackregister": "cossackregister",
+        "bagpiper": "bagpiper",
+        "sco_highlandersword": "swordsmansco",
+        "pikemansco": "pikemansco",
+        "swordsmansco": "swordsmansco",
+        "musketeersco": "musketeersco",
+        "archersco": "archersco",
+        "officersco": "officersco",
+        "lancersco": "lancersco",
+        "raidersco": "raidersco",
+        "framegun": "framegun",
+    })
     out = []
     for sid, base in table.items():
         out.append({
@@ -202,6 +262,22 @@ def building_models(game: str) -> list:
         "mar": ("commoneur", "eurmar", "commoneur", "eurmar"),
         "tow": ("commoneur", "eurtow", "commoneur", "eurtow"),
     }
+    # V7-63 — three more port sids with exact donor actors. `dip` is the
+    # Ukrainian actor named in `app/tools/bake_sprites.py:657` ("dip") and in
+    # the donor `data/actors/actors.lib:475` (ukrdip). `wal`/`gat` are the
+    # stone wall and gate actors listed under `// walls` in that same donor
+    # library (`actors.lib:543,657`, base eurswa / eurswa_gate); their albedo
+    # is the shared `commonrus/eurswa.dds` used by those actors.
+    table.update({
+        "dip": ("ukr", "ukrdip", "ukr", "ukrdip"),
+        "wal": ("commoneur", "eurswa", "commonrus", "eurswa"),
+        "gat": ("commonrus", "eurswa_gate", "commonrus", "eurswa"),
+    })
+    # NOT mapped (no donor actor exists — do not guess):
+    #   bar18: bake_sprites.py:657 candidates ukrba2 / eurba2 / turba2 are all
+    #          absent on disk (17 other nations have <nat>ba2, not Ukraine).
+    #   dock:  no shipyard/dock .osm anywhere under data/actors; "Shipyard" at
+    #          data/locale/en/units.txt:975 is a name only, not an actor.
     out = []
     for sid, (af, ab, tf, tb) in table.items():
         out.append({
@@ -219,6 +295,34 @@ def building_models(game: str) -> list:
             "directions": 1,
         })
     return out
+
+
+def ship_models(game: str) -> list:
+    """V7-63 — naval hulls live as IDP2 .osm under data/actors/units.
+
+    The seven donor bases are the port's own naval table
+    (`app/tools/bake_naval.py:46-54`). For battleship/xebec there is no
+    animated .oss at all; for the others the .oss is the crew figure, not the
+    hull, so the .osm is the correct static geometry in every case. All seven
+    have a same-named `data/materials/units/<base>.dds`.
+    """
+    actors = os.path.join(game, "data", "actors", "units")
+    mats = os.path.join(game, "data", "materials", "units")
+    table = {
+        "yacht": "yacht",
+        "yachttur": "yachttur",
+        "fishboat": "fishboat",
+        "frigate": "frigate",
+        "galley": "galley",
+        "battleship": "battleship",
+        "xebec": "xebec",
+    }
+    return [{
+        "sid": sid, "kind": "unit",
+        "mesh": os.path.join(actors, base + ".osm"),
+        "texture": os.path.join(mats, base + ".dds"),
+        "directions": 8,
+    } for sid, base in table.items()]
 
 
 def env_models(game: str) -> list:
@@ -324,7 +428,8 @@ def main() -> int:
     os.makedirs(obj_dir, exist_ok=True)
     os.makedirs(tex_dir, exist_ok=True)
 
-    models = unit_models(game) + building_models(game) + env_models(game)
+    models = (unit_models(game) + building_models(game) + ship_models(game)
+              + env_models(game))
     manifest = {"game": game, "models": []}
     ok = 0
     for m in models:

@@ -2,9 +2,10 @@
 agent: V7-53
 role: integration builder — route the 3D minimap viewport box through hud3d_adapter
 date: 2026-11-24
-status: DONE (parse PASS, inherited HUD fidelity test 6/6 PASS; 3D box runtime value not measured here)
+status: DONE (parse PASS, inherited HUD fidelity 6/6 PASS, 3D-config full selftest 29/29 PASS after bind-type regression fix; 3D box pixel value not measured here)
 owns: "variant3d/scripts/hud.gd + this report only; no other edits"
-runner_jobs: ["v753-hud-parse", "v753-hud-fidelity"]
+runner_jobs: ["v753-hud-parse", "v753-hud-fidelity", "v753-hud-bindfix-parse", "v753-hud-bind3d-fix"]
+regression: "ticket 69 v-launcher-config3d-selftest failed on C3HUD.bind(arg2: C3World) rejecting Node3D world3d; fixed by relaxing world typing (see §3b)"
 scope: "SINGLEPLAYER SKIRMISH (D-12); TABS; no RNG; no called-symbol renames; no donor binaries; app/** untouched"
 backup: "inbox/backup/hud.gd.bak-V753 (Copy-Item, 73202 bytes, taken before first edit)"
 handoff_to: "V7-50 (main.gd owner) — call hud.bind_3d(cam3d) from the render_mode == \"3d\" branch"
@@ -132,10 +133,77 @@ Notes on scope of proof:
 - The test regenerated the tracked `variant3d/tests/results/t_hud_fidelity.json`
   (timestamp-only diff). It was restored to HEAD with `git checkout --` so no
   out-of-scope file remains modified.
-- NOT done here (no full gate, per task): no live `Camera3D` +
-  `get_viewport_corners()` box-value assertion, no pixel/screenshot comparison,
-  no `t_render_mode.gd` run. `git status` for the owned paths shows only
-  ` M variant3d/scripts/hud.gd` and the new backup + this report.
+- NOT done in the first pass: no live `Camera3D` box-value assertion, no
+  pixel/screenshot comparison, no full-config selftest. The selftest was added
+  in the regression fix below (§3b).
+
+## 3b. Regression fix — 3D-config selftest (ticket 69 → 71)
+
+**Reported failure** (ticket 69, `v-launcher-config3d-selftest`, `status=failed`,
+`exit=1`, run 123.20 s, watchdog forced exit):
+
+```
+SCRIPT ERROR: Invalid type in function 'bind' in base 'CanvasLayer (C3HUD)'.
+  The Object-derived class of argument 2 (Node3D (world3d.gd)) is not a subclass
+  of the expected argument class.
+   at: _setup_full_game (res://scripts/main.gd:1043)
+```
+
+**Root cause (in my owned file):** `C3HUD.bind()` declared arg 2 as `w: C3World`
+and the member as `var world: C3World`. `C3World` is the 2D `Node2D` world;
+`make_world3d()` returns a `Node3D` (`world3d.gd`), so Godot rejected the typed
+argument at `main.gd:1043`. The minimap-box changes from §1 were not the cause,
+but the 3D path could never reach them.
+
+**Fix (only `variant3d/scripts/hud.gd`, minimal):**
+
+```diff
+-var world: C3World
++# V7-53: relaxed to untyped (main.gd:60 uses the same pattern for its world).
++# C3World is a Node2D; the 3D world is a Node3D (world3d.gd), so a static
++# C3World annotation rejects it in bind(). Both worlds expose the same duck-
++# typed contract (view_scale / fog_explored / fog_vis / fog_revision), so all
++# member reads below stay dynamic and behave identically in 2D and 3D.
++var world
+...
+-func bind(g: C3Game, w: C3World) -> void:
++func bind(g: C3Game, w) -> void:
+```
+
+`main.gd:60` already declares its `world` untyped for this same reason; this
+mirrors that established pattern. Untyped (Variant) rather than a `Node`
+annotation is required because HUD reads duck-typed fields
+(`view_scale`, `fog_explored`, `fog_vis`, `fog_revision`) that are not members of
+`Node` — a `Node` annotation would turn those reads into static-analysis errors.
+No world member access, no 2D logic and no called symbol changed; `bind(game,
+world)` behaves byte-for-byte as before in 2D.
+
+**Whole-file scan for other world/camera typed params/casts:** the only other
+world type was the two annotations above (both fixed). The single remaining
+`as C3Camera` at `variant3d/scripts/hud.gd:1405` casts
+`get_viewport().get_camera_2d()` only, which is a `Camera2D` or `null` even in
+3D mode — it never receives the `Camera3D`, so it needs no relaxation and was
+left untouched to keep the 2D path unchanged. `bind_3d(cam)` was already untyped.
+`game: C3Game` is correct in both modes (3D still uses `C3Game`).
+
+**Verification jobs (variant3d runner, exact results):**
+
+| Job id | Ticket | Command tail | Result |
+|---|---|---|---|
+| `v753-hud-bindfix-parse` | 70 | `--headless --path variant3d --check-only --script res://scripts/hud.gd` | **PASS**: `status=ok`, `exit=0`, run 5.33 s. |
+| `v753-hud-bind3d-fix` | 71 | `--headless --path variant3d -- --self-test variant3d/selftest.json` | **PASS / no watchdog**: `status=ok`, `exit=0`, run 132.24 s (limit 300 s). stdout contains `self-test report: .../variant3d/selftest.json`. Regenerated `selftest.json`: `passed: true`, **29/29 steps passed**, `sim_seconds 366.53125`. |
+
+**Honest stderr note (out of my ownership):** ticket 71's `stderr.txt` still
+contains a pre-existing `world3d.gd` warning and five
+`SCRIPT ERROR: Invalid call. Nonexistent 'int' constructor.` at
+`world3d.gd:207` in `_sync_selection()` (called from `world3d.gd:282` ←
+`main.gd:1551`), plus an ObjectDB/resource leak warning at exit. The `int(id)`
+call at `world3d.gd:207` receives `game.get_selected()` entries that are
+Dictionaries, not ids. These are in the world3d integration owner's file, not
+`hud.gd`; they did **not** stop the selftest, which completed and reported
+`passed: true`. I did not edit those files. The selftest run rewrote the tracked
+`variant3d/selftest.json` (normal test artifact); no git operations were used
+for this regression fix.
 
 ## 4. Handoff — V7-50 (`main.gd` owner)
 
@@ -193,7 +261,9 @@ if hud.has_method("bind_3d"):
 
 ## 6. Files changed / backup
 
-- EDITED: `variant3d/scripts/hud.gd` (only code file; +29 lines net).
+- EDITED: `variant3d/scripts/hud.gd` (only code file; +29 lines for the 3D box
+  seam, plus the §3b bind-type relaxation: `var world: C3World` → `var world`,
+  `bind(..., w: C3World)` → `bind(..., w)`).
 - NEW: `docs/coord_swarm_2026-11-24/reports/V753_hud_integration.md` (this report).
 - BACKUP: `inbox/backup/hud.gd.bak-V753` — pre-edit copy, 73202 bytes.
 - NOT touched: `main.gd`, `camera3d.gd`, `hud3d_adapter.gd`, `app/**`,

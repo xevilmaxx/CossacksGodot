@@ -1,0 +1,138 @@
+{
+	"checks": [
+		{
+			"detail": "load() of res://scripts/world3d_terrain.gd",
+			"name": "module_loads",
+			"passed": true
+		},
+		{
+			"detail": "instance class=Node3D",
+			"name": "module_is_Node3D",
+			"passed": true
+		},
+		{
+			"detail": "build() returned true",
+			"name": "build_ok",
+			"passed": true
+		},
+		{
+			"detail": "WorldEnvironment node found in built module tree",
+			"name": "world_environment_present",
+			"passed": true
+		},
+		{
+			"detail": "DirectionalLight3D node found in built module tree",
+			"name": "directional_light_present",
+			"passed": true
+		},
+		{
+			"detail": "name=WorldEnvironment",
+			"name": "world_environment_name",
+			"passed": true
+		},
+		{
+			"detail": "environment=set",
+			"name": "environment_assigned",
+			"passed": true
+		},
+		{
+			"detail": "background_mode=2 (BG_SKY=2)",
+			"name": "env_background_sky",
+			"passed": true
+		},
+		{
+			"detail": "background_color=(0.62, 0.7, 0.66, 1.0)",
+			"name": "env_background_color",
+			"passed": true
+		},
+		{
+			"detail": "sky=():<Sky#-9223372009877010986> material=ProceduralSkyMaterial",
+			"name": "env_sky_material",
+			"passed": true
+		},
+		{
+			"detail": "top=(0.18, 0.3, 0.42, 1.0) horizon=(0.36, 0.44, 0.38, 1.0) curve=0.18000000715256 ground_bottom=(0.09, 0.12, 0.07, 1.0) ground_horizon=(0.17, 0.22, 0.14, 1.0) ground_curve=0.10000000149012",
+			"name": "sky_donor_port_colors",
+			"passed": true
+		},
+		{
+			"detail": "mode=0 exposure=1.45000004768372",
+			"name": "env_tonemap_linear",
+			"passed": true
+		},
+		{
+			"detail": "source=2 color=(0.86, 0.88, 0.82, 1.0) energy=1.10000002384186",
+			"name": "env_ambient_from_color",
+			"passed": true
+		},
+		{
+			"detail": "name=DonorSun",
+			"name": "sun_name",
+			"passed": true
+		},
+		{
+			"detail": "light_energy=1.70000004768372",
+			"name": "sun_energy",
+			"passed": true
+		},
+		{
+			"detail": "shadow_enabled=true max_distance=400.0",
+			"name": "sun_shadow",
+			"passed": true
+		},
+		{
+			"detail": "origin=(-10.97114, 0.0, 119.4974) expected=(-10.97114, 0.0, 119.4974)",
+			"name": "sun_position_matches_donor_vector",
+			"passed": true
+		},
+		{
+			"detail": "basis.z=(-0.091426, 0.0, 0.995812) origin_dir=(-0.091426, 0.0, 0.995812)",
+			"name": "sun_aims_at_origin",
+			"passed": true
+		},
+		{
+			"detail": "stats.sun_direction_yup=[-0.08618278801441, 0.0, 0.93870145082474] donor=(-0.086183, 0.0, 0.938701)",
+			"name": "stats_sun_direction_matches_donor",
+			"passed": true
+		}
+	],
+	"directional_light_present": true,
+	"donor_light_vector_from_expr": [
+		-0.0861827880144119,
+		0.0,
+		0.938701450824738
+	],
+	"donor_sun_pos": [
+		-0.344731152057648,
+		0.938701450824738,
+		0.0
+	],
+	"donor_vector_note": "heightmap_world3d.gd:35 comment says Z-up->Y-up but the expression yields (x/4, z/2, y) = Z-up; translated verbatim, not corrected",
+	"engine": "4.7.2-stable (official)",
+	"id": "v760_light_probe",
+	"measured_sun_origin": [
+		-10.9711351394653,
+		0.0,
+		119.497421264648
+	],
+	"module": "res://scripts/world3d_terrain.gd",
+	"module_is_Node3D": true,
+	"module_loads": true,
+	"node_tree": [
+		"@Node3D@2 [Node3D]",
+		"  HeightmapTerrain [MeshInstance3D]",
+		"  WaterPlane [MeshInstance3D]",
+		"  WorldEnvironment [WorldEnvironment]",
+		"  DonorSun [DirectionalLight3D]"
+	],
+	"passed": true,
+	"passes": 19,
+	"probe": "V7-60",
+	"stats_sun_direction_yup": [
+		-0.0861827880144119,
+		0.0,
+		0.938701450824738
+	],
+	"total": 19,
+	"world_environment_present": true
+}

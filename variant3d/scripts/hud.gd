@@ -1402,6 +1402,12 @@ func _build_minimap() -> void:
 func _on_minimap_input(ev: InputEvent) -> void:
 	var mp := minimap_rect.get_local_mouse_position() / minimap_rect.size
 	var world_pos := Vector2(mp.x * game.MAP_W, mp.y * game.MAP_H) * Data.TILE_M
+	# V7-67 P0: in 3D get_camera_2d() is null, so the 2D block below would call
+	# set_input_as_handled() on an LMB press without moving any camera. Consume the
+	# 3D left press/drag here and return before that unconditional swallow. RMB
+	# orders are NOT consumed here: they fall through to the unchanged block below.
+	if _render_mode_3d and _minimap_jump_3d(ev, world_pos):
+		return
 	var cam := get_viewport().get_camera_2d() as C3Camera
 	if ev is InputEventMouseButton and ev.pressed:
 		get_viewport().set_input_as_handled()
@@ -1418,6 +1424,34 @@ func _on_minimap_input(ev: InputEvent) -> void:
 		cam.global_position = world_pos * world.view_scale
 		cam.clamp_pos()  # F2
 		_draw_minimap_viewport_box()  # F3
+
+# V7-67: 3D minimap left press/drag -> Camera3D ground focus. Uses the public
+# jump_to_world(world_pos) API V7-66 adds, via a dynamic call so hud.gd has no
+# camera3d.gd class-name dependency. Returns true only for a 3D left press/drag
+# so the caller returns before the 2D path's unconditional set_input_as_handled;
+# the press is swallowed ONLY when the jump actually ran. Motion is never swallowed.
+func _minimap_jump_3d(ev: InputEvent, world_pos: Vector2) -> bool:
+	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+		if _cam3d_jump(world_pos):
+			get_viewport().set_input_as_handled()  # swallow only on success
+			_draw_minimap_viewport_box()  # F3: adapter box reflects the new focus
+		return true
+	if ev is InputEventMouseMotion and ev.button_mask & MOUSE_BUTTON_MASK_LEFT:
+		if _cam3d_jump(world_pos):
+			_draw_minimap_viewport_box()  # F3: adapter box follows the drag
+		return true
+	return false
+
+func _cam3d_jump(world_pos: Vector2) -> bool:
+	var cam: Object = _bound_cam3d
+	if cam == null or not cam.has_method("jump_to_world"):
+		return false
+	# world_pos is sim metres in game (x,y); game y == world z (world3d.gd:215-216).
+	# Same public contract as 2D camera.gd:96 jump_to_world(world_pos). The
+	# minimap viewport box redraw (above) reads hud3d_adapter.get_minimap_box(),
+	# so the adapter's tile<->metre mapping stays the single source of truth.
+	cam.call("jump_to_world", world_pos)
+	return true
 
 # F3: draw the white viewport rectangle into a DISPLAY image and upload it.
 # The box is derived straight from the camera transform, so it reflects a jump

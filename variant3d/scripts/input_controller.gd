@@ -223,6 +223,14 @@ func _minimap_reposition(screen_pos: Vector2) -> void:
 	var wp := _minimap_world(screen_pos)
 	if wp == Vector2.INF or camera == null or world == null:
 		return
+	# V7-66 P0: the 3D camera exposes a metre-space jump_to_world (camera3d.gd); call it
+	# dynamically so the 2D Camera2D path below stays byte-identical and is still the
+	# default (render_mode defaults to "2d" at :21). The old fallback wrote a Vector2
+	# into Camera3D.global_position and scaled metres by 16 px/m, bypassing _target and
+	# the clamp memo — a 3D no-op that snaps back on the next _apply_transform().
+	if render_mode == "3d":
+		camera.call("jump_to_world", wp)
+		return
 	if camera.has_method("jump_to_world"):
 		camera.jump_to_world(wp, world.view_scale)
 	else:
@@ -386,14 +394,16 @@ func _screen_to_world(p: Vector2) -> Vector2:
 	return (xform * p) / world.view_scale
 
 func _pick(pw: Vector2, players_only := true) -> Dictionary:
-	# V7-52 3D seam. picking3d.pick(screen) already applies the player-0 radius
-	# test AND the 2 m any-entity fallback (V712 report §5), so the 2D
-	# `players_only` distinction is absorbed inside the adapter: none of the
-	# four inherited call sites (guard/left-click/right-order/cursor) change.
+	# V7-52 3D seam. picking3d.pick(screen, players_only) applies the SAME
+	# radius/fallback rule as the 2D loop below (V7-68): `true` restricts the
+	# radius test to player-0 entities, `false` lets every entity compete, and
+	# the 2 m any-entity fallback is unconditional in both modes. Forward the
+	# caller's flag verbatim so the guard site (:493 true) and the left-click,
+	# right-order and cursor sites (:551/:645/:1156 false) keep 2D parity.
 	if render_mode == "3d" and picking != null:
 		if not is_finite(_pick_screen.x) or not is_finite(_pick_screen.y):
 			return {}
-		return picking.pick(_pick_screen)
+		return picking.pick(_pick_screen, players_only)
 	# T-PERF-RENDER: single pass. The old code scanned all entities twice on
 	# every miss (the common case: clicking empty ground) — once for the
 	# radius test, once for the 2 m fallback. Both best-candidates are tracked
@@ -823,7 +833,17 @@ func _handle_key(k: InputEventKey) -> void:
 			if not arr.is_empty():
 				_set_selection(arr)
 				if k.shift_pressed and camera != null:
-					camera.global_position = arr[0].pos * world.view_scale
+					# E18 (AUDIT3D-05): the Camera3D branch must not take the
+					# 2D Camera2D write — `arr[0].pos * world.view_scale` is a
+					# Vector2 assigned to a Vector3 global_position, and it
+					# bypasses `_target`/clamp_pos() so the next
+					# _apply_transform() snaps back. Route through the same
+					# metre-space `jump_to_world` API as the minimap at :232.
+					# The 2D line below is unchanged (byte-identical text).
+					if render_mode == "3d" and camera.has_method("jump_to_world"):
+						camera.call("jump_to_world", arr[0].pos)
+					else:
+						camera.global_position = arr[0].pos * world.view_scale
 		return
 	# Donor select family (hotkeys.cfg): Ctrl+Alt+A / Ctrl+Shift+A military,
 	# Ctrl+Q ships, Ctrl+Z / Ctrl+Shift+Z all-of-same-type, backtick idle

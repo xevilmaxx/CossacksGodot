@@ -41,6 +41,19 @@ extends Node3D
 #   anim3d handoff          -> this file loads anim3d.gd and bind(game, entities);
 #                              its PORT_LABEL "PORT APPROXIMATION — NOT DONOR
 #                              PARITY" is preserved by that module (V7-18).
+#   entity feed (V7-62)     -> this file reconciles game.entities / game.res_nodes
+#                              into the entities module via add_*/remove (2D
+#                              sources: world.gd:2213,2706,2837; by_id keys at
+#                              game.gd:2023,517). The module itself only mutates
+#                              already-registered slots (world3d_entities.gd:555+).
+#   ghost / rally (V7-76)   -> this file translates the 2D build-ghost and
+#                              selected-building rally conditions (world.gd:3460-
+#                              3509 / :3602-3613) and forwards them to the FX
+#                              module's public draw_ghost / draw_rally. No 2D file
+#                              is edited; the FX meshes already exist.
+#   2D-only legacy slots    -> AUDIT3D-04 E08: aliases/no-ops for unbranched
+#                              main.gd/hud.gd/input_controller.gd call sites;
+#                              NO sprite/chunk pixels are fabricated (charter :40-53).
 #
 # --- DONOR / PORT CITATIONS (V73 rule: cite path:line or mark UNVERIFIED) ------
 #   Full 2D contract members .... docs/coord_swarm_2026-11-24/reports/
@@ -58,6 +71,15 @@ extends Node3D
 #                                 .oss bone parents unreadable -> static bind pose)
 #   fx module ................... V715 report §4 (PFX keys literal / SEMANTICS
 #                                 UNVERIFIED; lifetimes from world.gd:3563-3579)
+#   ghost trigger ............... app/scripts/world.gd:3460-3509 (hud.build_ghost_sid
+#                                 :3464; mouse->ground wp :3467-3469; in_bounds :3470;
+#                                 resolve_mine_sid :3486; BUILDINGS gate :3493;
+#                                 can_place + can_pay :3502-3503; colour :3509)
+#   rally trigger ............... app/scripts/world.gd:3602-3613 (selected player-0
+#                                 building with a "rally" field -> e.rally/e.player)
+#   ghost/rally dead API ........ AUDIT3D_06_fx_anim_audio.md:45-46,103 (P0 G10)
+#   camera screen->ground ....... variant3d/scripts/camera3d.gd:167-176 (Camera3D
+#                                 raycast; the 3D translation of world.gd:3467-3469)
 #   fog module .................. V716 report §3 (donor fog<->explored UNVERIFIED;
 #                                 alpha ladder is port state from world.gd:2251-2255)
 #   anim module ................. V718 report / anim3d.gd:41 PORT_LABEL
@@ -97,7 +119,44 @@ var anim = null      # anim3d.gd           : bind(game, entities)/play
 
 var stats: Dictionary = {}
 var anim_t: float = 0.0
+
+# PERF redraw counters read/reset by the unbranched debug print at
+# main.gd:1592,1599-1602. 2D declares them at app/scripts/world.gd:59-62 and
+# increments at :2696 (resources), :2836 (buildings), :3227 (units), :3582 (FX).
+# The 3D world has no sprite redraws, so count the equivalent module work:
+# entity-feed additions below and explicit FX spawns in add_fx().
+var dbg_res: int = 0
+var dbg_bld: int = 0
+var dbg_unit: int = 0
+var dbg_fx: int = 0
 var _modules_ready: bool = false
+
+# --- 2D-only legacy contract slots (AUDIT3D-04 E08; app/scripts/world.gd) -----
+# These keep byte-identical callers legal in 3D. They carry NO drawn pixels:
+# 3D terrain is ONE mesh (no Sprite2D chunks) and the 3D branch loads no
+# baked sheet (WAVE7 charter :40-53). See report V762_entity_feed.md §4.
+var fog_revision: int = 0                       # world.gd:137 / hud.gd:1741
+var _fog_rev_vis: PackedByteArray = PackedByteArray()
+var fog_sprite: Node3D = null                   # visibility proxy, NOT a Sprite2D
+var terrain_chunks: Dictionary = {}             # world.gd:32
+var terrain_order: Array = []                   # world.gd:34
+var terrain_px: int = int(Data.TERRAIN_PX)      # world.gd:56; data.gd:118
+var terrain_masks: Array = []                   # world.gd:69
+var anim_index: Dictionary = {}                 # world.gd:163
+var anim_tex: Dictionary = {}                   # world.gd:164
+var _rally_dirty: bool = false                  # world.gd:149 (legacy slot)
+
+# V7-62 entity feed: ids already forwarded to the composed entities module.
+var _feed_entity_ids: Dictionary = {}
+var _feed_res_ids: Dictionary = {}
+
+# V7-76 build-ghost ground position. In a live 3D run `_ghost_world_pos()` derives
+# this from the current Camera3D + viewport mouse (camera3d.gd:167-176), the exact
+# 3D translation of world.gd:3467-3469. `_ghost_pos_override` lets a caller hand a
+# sim-metre point in when no Camera3D is current (headless probe/tests) or when it
+# prefers picking3d.ground_point(); see `set_build_ghost_pos()`.
+var _ghost_pos: Vector2 = Vector2.INF
+var _ghost_pos_override: bool = false
 
 
 # --- helpers -----------------------------------------------------------------
@@ -111,6 +170,14 @@ func _int_prop(g, key: String, fallback: int) -> int:
 	if v is float:
 		return int(v)
 	return fallback
+
+
+# Same key read for Dictionary entities (game.gd:1980-1999) and Object stubs.
+func _prop(g, key: String, fallback):
+	if g == null:
+		return fallback
+	var v = g.get(key)
+	return fallback if v == null else v
 
 
 # Instantiate one module once and attach it to the composed world.
@@ -175,16 +242,28 @@ func _update_view_rect() -> void:
 						var max_z: float = -INF
 						var saw: bool = false
 						for c in ca:
-							if not (c is Vector3):
+							var xy := Vector2.ZERO
+							if c is Vector2:
+								# camera3d.gd:181-188 returns ground metres in
+								# MAP-ORIGIN sim space (camera3d.gd:89-90);
+								# no half-map shift (AUDIT3D-05 E9).
+								xy = c as Vector2
+							elif c is Vector3:
+								# Legacy centre-origin corner: preserve the
+								# existing re-centring onto map-origin metres.
+								var v3 := c as Vector3
+								xy = Vector2(v3.x, v3.z) + Vector2(ox, oz)
+							else:
+								continue
+							if not is_finite(xy.x) or not is_finite(xy.y):
 								continue
 							saw = true
-							min_x = minf(min_x, (c as Vector3).x)
-							max_x = maxf(max_x, (c as Vector3).x)
-							min_z = minf(min_z, (c as Vector3).z)
-							max_z = maxf(max_z, (c as Vector3).z)
+							min_x = minf(min_x, xy.x)
+							max_x = maxf(max_x, xy.x)
+							min_z = minf(min_z, xy.y)
+							max_z = maxf(max_z, xy.y)
 						if saw and min_x <= max_x and min_z <= max_z:
-							rect = Rect2((min_x + ox) * view_scale,
-								(min_z + oz) * view_scale,
+							rect = Rect2(min_x * view_scale, min_z * view_scale,
 								(max_x - min_x) * view_scale,
 								(max_z - min_z) * view_scale)
 	view_rect = rect
@@ -198,15 +277,192 @@ func _sync_selection() -> void:
 	if not (game is Object) or not game.has_method("get_selected"):
 		return
 	var got = game.call("get_selected")
-	if got is Array:
-		selected_ids = (got as Array).duplicate()
+	selected_ids.clear()
 	selected.clear()
+	if not (got is Array):
+		return
+	# game.gd:2585-2590 returns ENTITY DICTIONARIES, not ids. Extract the id
+	# with the same key by_id uses (game.gd:2023); `int(item)` on a Dictionary
+	# throws "Nonexistent 'int' constructor" every frame (AUDIT3D-09 G2).
+	# selected_ids therefore holds ints, matching input_controller.gd:189.
 	var by_id = game.get("by_id")
-	if by_id is Dictionary:
-		for id in selected_ids:
-			var k := int(id)
-			if (by_id as Dictionary).has(k):
-				selected[k] = (by_id as Dictionary)[k]
+	for item in (got as Array):
+		var k := _int_prop(item, "id", -1)
+		if k < 0:
+			continue
+		selected_ids.append(k)
+		if by_id is Dictionary and (by_id as Dictionary).has(k):
+			selected[k] = (by_id as Dictionary)[k]
+
+
+# --- V7-62: live sim entities -> composed entity module ----------------------
+# The 2D renderer draws units/buildings from game.entities (world.gd:2213,
+# :2837) and resource nodes from game.res_nodes (world.gd:2706); by_id keys
+# both collections (game.gd:2023, :517). Reconcile those SAME collections into
+# the existing world3d_entities API — no new art, no RNG, no sprite sheets.
+# The module's add_* calls are idempotent; the two id sets here make the
+# "newly seen -> add_* / gone -> remove()" transitions explicit and O(n).
+func _reconcile_entities() -> void:
+	if entities == null or game == null:
+		return
+	var ent_coll = game.get("entities")
+	var res_coll = game.get("res_nodes")
+	var live_ents: Dictionary = {}
+	if ent_coll is Array:
+		for e in (ent_coll as Array):
+			var id := _int_prop(e, "id", -1)
+			# 2D skips dead entities at world.gd:2201/2230/2838.
+			if id < 0 or bool(_prop(e, "dead", false)):
+				continue
+			live_ents[id] = e
+			if _feed_entity_ids.has(id):
+				continue
+			var kind := str(_prop(e, "kind", ""))
+			if kind == "unit":
+				entities.add_unit(e)
+				dbg_unit += 1  # 3D analogue of world.gd:3227
+			elif kind == "building":
+				entities.add_building(e)
+				dbg_bld += 1  # 3D analogue of world.gd:2836
+			else:
+				live_ents.erase(id)
+				continue
+			_feed_entity_ids[id] = true
+	for id in _feed_entity_ids.keys():
+		if not live_ents.has(id):
+			entities.remove(id)
+			_feed_entity_ids.erase(id)
+	var live_res: Dictionary = {}
+	if res_coll is Array:
+		for n in (res_coll as Array):
+			var rid := _int_prop(n, "id", -1)
+			if rid < 0:
+				continue
+			var ty := str(_prop(n, "type", ""))
+			# Mirror 2D world.gd:2712-2716: exhausted finite nodes are gone;
+			# permanent ore (max_hits == 0), stumps and food stay visible.
+			if _int_prop(n, "hits", 0) <= 0 and _int_prop(n, "max_hits", 0) != 0 \
+					and ty != "stump" and ty != "food":
+				continue
+			live_res[rid] = n
+			if not _feed_res_ids.has(rid):
+				entities.add_resource(n)
+				dbg_res += 1  # 3D analogue of world.gd:2696
+				_feed_res_ids[rid] = true
+	for id in _feed_res_ids.keys():
+		if not live_res.has(id):
+			entities.remove(id)
+			_feed_res_ids.erase(id)
+
+
+# --- V7-76: 2D build-ghost / rally state -> FX draw_ghost / draw_rally --------
+# P0 G10 (AUDIT3D_06_fx_anim_audio.md:45-46,103): world3d_fx.gd exposes the two
+# public draw APIs but nothing called them at runtime. Translate the exact 2D
+# conditions; do not invent a placement sid, point or affordability rule.
+
+# Build the ghost's sim-metre (map-origin) ground point. Two sources, in order:
+#   1. explicit handoff via set_build_ghost_pos() (headless probe / input owner);
+#   2. the current Camera3D's screen_to_world(viewport mouse) — the 3D analogue
+#      of world.gd:3467-3469's canvas-inverse transform (camera3d.gd:167-176).
+# Returns Vector2.INF when neither is usable; the caller then hides the ghost.
+func _ghost_world_pos() -> Vector2:
+	if _ghost_pos_override and is_finite(_ghost_pos.x) and is_finite(_ghost_pos.y):
+		return _ghost_pos
+	if is_inside_tree():
+		var vp = get_viewport()
+		if vp != null:
+			var cam = vp.get_camera_3d()
+			if cam != null and cam.has_method("screen_to_world"):
+				var wp = cam.call("screen_to_world", vp.get_mouse_position())
+				if wp is Vector2 and is_finite((wp as Vector2).x) and is_finite((wp as Vector2).y):
+					return wp
+	return Vector2.INF
+
+
+# world.gd:3502-3503 gates the ghost colour on can_place().ok AND affordability
+# of Data.BUILDINGS[sid].cost from game.players[0].res (data.gd:1549-1553).
+func _can_pay_building(def) -> bool:
+	if not (def is Dictionary):
+		return true
+	var players = (null if game == null else game.get("players"))
+	if not (players is Array) or (players as Array).is_empty():
+		return true   # no sim treasury to consult: do not block the preview
+	var p = (players as Array)[0]
+	var res = null
+	if p is Dictionary:
+		res = (p as Dictionary).get("res")
+	elif p is Object:
+		res = p.get("res")
+	if not (res is Array) or not ((def as Dictionary).get("cost") is Dictionary):
+		return true
+	return Data.can_pay(res as Array, (def as Dictionary)["cost"])
+
+
+# Mirrors world.gd:3460-3509. `hud.build_ghost_sid` is authoritative (main.gd:614
+# assigns world.hud AFTER hud.bind, so it is live in both ports). No mouse-cache/
+# 120 ms verdict throttle is copied: that is a perf optimization, not a state
+# condition, and the 3D FX ghost has no per-draw cost scan.
+func _sync_build_ghost() -> void:
+	if fx == null:
+		return
+	var sid: String = ""
+	if hud != null:
+		var raw = hud.get("build_ghost_sid")
+		if raw != null:
+			sid = str(raw)
+	if sid.is_empty():
+		# world.gd:3465 returns; FX has no ghost TTL, so actively clear it.
+		fx.draw_ghost("", Vector2.ZERO, false)
+		return
+	var wp := _ghost_world_pos()
+	if not is_finite(wp.x) or not is_finite(wp.y):
+		fx.draw_ghost("", Vector2.ZERO, false)
+		return
+	# world.gd:3470 in_bounds gate.
+	if game is Object and game.has_method("in_bounds") \
+			and not bool(game.call("in_bounds", wp)):
+		fx.draw_ghost("", Vector2.ZERO, false)
+		return
+	# world.gd:3486: the single "mine" button resolves to the deposit under cursor.
+	if game is Object and game.has_method("resolve_mine_sid"):
+		sid = str(game.call("resolve_mine_sid", sid, wp))
+	# world.gd:3493: unknown sid draws no ghost.
+	if not Data.BUILDINGS.has(sid):
+		fx.draw_ghost("", Vector2.ZERO, false)
+		return
+	var ok := false
+	if game is Object and game.has_method("can_place"):
+		var chk = game.call("can_place", 0, sid, wp)
+		if chk is Dictionary:
+			ok = bool((chk as Dictionary).get("ok", false))
+	if ok and not _can_pay_building(Data.BUILDINGS[sid]):
+		ok = false
+	fx.draw_ghost(sid, wp, ok)
+
+
+# Mirrors world.gd:3602-3613: one rally marker per SELECTED player-0 building
+# that has a "rally" field. FX caches markers by rounded ground point and expires
+# unseen ones after world3d_fx.gd:102 RALLY_TTL, so a fresh draw each sync both
+# refreshes live flags and lets stale ones expire — no 2D dirty-bit copy needed.
+func _sync_rally() -> void:
+	if fx == null or game == null:
+		return
+	var ents = game.get("entities")
+	if not (ents is Array):
+		return
+	for e in (ents as Array):
+		if e == null or bool(_prop(e, "dead", false)):
+			continue
+		if str(_prop(e, "kind", "")) != "building":
+			continue
+		var rp = _prop(e, "rally", null)
+		if not (rp is Vector2):
+			continue
+		if _int_prop(e, "player", -1) != 0:
+			continue
+		if not bool(_prop(e, "selected", false)):
+			continue
+		fx.draw_rally(rp, 0)
 
 
 # --- FULL 2D WORLD CONTRACT: API ---------------------------------------------
@@ -229,7 +485,18 @@ func bind(g, h = null) -> void:
 			holder.name = "FXLayer3D"
 			add_child(holder)
 			fx_layer = holder
+		# AUDIT3D-04 E08: main.gd:1442 writes `world.fog_sprite.visible`. 3D has
+		# no Sprite2D; this Node3D is an honest visibility proxy only. Actual
+		# fog visibility is read from Data.FOG_OF_WAR by world3d_fog.gd:317.
+		fog_sprite = Node3D.new()
+		fog_sprite.name = "FogVisibilityProxy3D"
+		add_child(fog_sprite)
 		_modules_ready = true
+
+	# Re-binding reuses the module instances but rebuilds their registration
+	# state; restart the feed id sets so no id is silently skipped.
+	_feed_entity_ids.clear()
+	_feed_res_ids.clear()
 
 	# Dependency order: terrain geometry before fog overlay, entities before anim.
 	if terrain != null:
@@ -238,6 +505,7 @@ func bind(g, h = null) -> void:
 			terrain.build()   # ONE full-grid mesh; no chunk scheduling
 	if entities != null:
 		entities.bind(game)
+		_reconcile_entities()   # V7-62: seed meshes from the live sim collections
 	if fx != null:
 		fx.bind(game)
 		# V7-15 §6 Q1: main forwards add_fx(); disable the module's event peek.
@@ -270,6 +538,7 @@ func bind(g, h = null) -> void:
 		"view_scale": view_scale,
 		"fx_events_forwarded_only": true,
 		"fog_arrays_aliased": fog != null,
+		"entity_feed": "V7-62 game.entities + game.res_nodes -> add_*/remove",
 		"contract": "V71_mechanics_inventory.md:180-199 / V73_ATOMIC_CONTRACT.md:24",
 	}
 
@@ -280,12 +549,20 @@ func sync(dt: float) -> void:
 	anim_t += maxf(dt, 0.0)
 	_update_view_rect()
 	_sync_selection()
+	_sync_build_ghost()    # V7-76: 2D build ghost -> fx.draw_ghost (P0 G10)
+	_sync_rally()          # V7-76: selected-building rally -> fx.draw_rally
+	_reconcile_entities()   # V7-62: add new sim entities, remove gone ones
 	if entities != null:
 		entities.sync(dt)
 	if fx != null:
 		fx.sync(dt)   # consume_events=false: ages existing FX only
 	if fog != null:
 		fog.sync(dt)  # internally gated by Data.FOG_INTERVAL (data.gd:118)
+		# AUDIT3D-05 E16 / app world.gd:137,2247: bump only when the live
+		# aliased fog array actually changes, so HUD's minimap cache can hit.
+		if fog_vis != _fog_rev_vis:
+			_fog_rev_vis = fog_vis.duplicate()
+			fog_revision += 1
 
 
 # Data-only scalar: metres -> canvas px (world.gd:350-351). Do NOT change the
@@ -305,6 +582,7 @@ func add_fx(kind, pos, life := -1.0) -> Dictionary:
 		p = kind
 	if fx == null:
 		return {}
+	dbg_fx += 1  # 3D analogue of world.gd:3582
 	return fx.add_fx(p, str(k), float(life))
 
 
@@ -329,3 +607,90 @@ func play_anim(e, action, t):
 	if anim == null:
 		return {}
 	return anim.play(e, action, t)
+
+
+# --- AUDIT3D-04 E08: 2D-only members used by UNBRANCHED shared callers --------
+# All of these are honest aliases/no-ops. They keep main.gd:1331/1418-1442,
+# hud.gd:1741/1748 and input_controller.gd:609/634 callable in 3D mode. No
+# donor behaviour is invented and no sprite sheet is loaded (charter :40-53).
+
+# Forced recompute after F9 load (main.gd:1329-1331). Fog state is owned by
+# world3d_fog.gd:128; the arrays here are its live aliases (bind :361-364).
+func _update_fog() -> void:
+	if fog == null:
+		return
+	var before: PackedByteArray = fog_vis.duplicate()
+	fog.call("_update_fog")
+	if fog_vis != before:
+		_fog_rev_vis = fog_vis.duplicate()
+		fog_revision += 1
+
+
+# 2D uses a dirty bit for static rally lines (world.gd:149-156). The 3D FX
+# module refreshes rally markers on EVERY sync (world3d_fx.gd:129), so no bit
+# is needed; dt=0 forces an immediate refresh without ageing any FX.
+# V7-76: re-read the live selected-building rally state first, then age it, so
+# a right-click (input_controller.gd:619/644) shows the new marker this frame.
+func mark_rally_dirty() -> void:
+	_rally_dirty = true
+	_sync_rally()
+	if fx != null:
+		fx.sync(0.0)
+
+
+# OPTIONAL input-side handoff (V7-76). A live 3D run does NOT need this: sync()
+# derives the point from the current Camera3D + viewport mouse (camera3d.gd:167,
+# world.gd:3467-3469). Use this only when no Camera3D is current (headless probe)
+# or when the input owner prefers picking3d.ground_point()'s height-field hit.
+#
+# EXACT CALLER HANDOFF (documented, NOT implemented here — input_controller.gd is
+# owned by V7-75 and was not edited): in C3Input._process(), immediately after
+# `_screen_to_world(get_viewport().get_mouse_position())` (input_controller.gd:1095
+# / :372), add:
+#   if world != null and world.has_method("set_build_ghost_pos"):
+#       world.set_build_ghost_pos(pw)
+# `pw` there is already sim-metre map-origin coordinates, the same space FX's
+# world_pos()/world_offset expect. No call site is added by this atom.
+func set_build_ghost_pos(p: Vector2) -> void:
+	_ghost_pos = p
+	_ghost_pos_override = true
+
+
+# NO-OP by design: every 3D entity is a static bind pose and anim3d.gd owns
+# the (explicitly labelled PORT APPROXIMATION) handoff. No sprite frames.
+func _update_anim(_dt: float = 0.0) -> void:
+	pass
+
+
+# NO-OP: 3D terrain is ONE mesh; there are no Sprite2D chunks or forest bake.
+func invalidate_forest_bake() -> void:
+	pass
+
+
+# Legacy scalar/array slots. `_bake_px` is copied verbatim from world.gd:1039
+# (mini(terrain_px * 4, 64)); `_build_masks` returns the same empty legacy
+# array as world.gd:1044-1051 — no side-effect images exist in 3D.
+func _bake_px() -> int:
+	return mini(terrain_px * 4, 64)
+
+
+func _build_masks(_px: int) -> Array:
+	return []
+
+
+# Path STRING only, copied from world.gd:501-508 so main.gd:1429-1436 can
+# resolve its legacy index. world3d.gd never loads from this directory.
+func _anim_dir() -> String:
+	if Data.SPRITE_CELL != 160:
+		var d := "res://assets/models/anim%d" % Data.SPRITE_CELL
+		if DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(d)):
+			return d
+		if FileAccess.file_exists(d + "/land_units/index.json") or FileAccess.file_exists(d + "/index.json"):
+			return d
+	return "res://assets/models/anim"
+
+
+# NO-OP: camera3d.gd derives its transform from _target/clamp_pos (:146-153)
+# and has no 2D camera-dirty gate (camera.gd:116-121).
+func mark_camera_dirty() -> void:
+	pass

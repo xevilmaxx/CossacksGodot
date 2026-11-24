@@ -72,6 +72,18 @@ var zoom_notch_gain: float = 2.0       # camera.gd:22 (port parity)
 var zoom_smooth_rate: float = 18.0     # camera.gd:25 (port parity)
 var _zoom_anchor_screen: Vector2 = Vector2.INF
 
+# E6 — terrain height sampler for the zoom-at-cursor anchor ONLY. Resolved from the
+# bound game/world in bind() (no other file is edited, no new public API):
+#   * world3d.gd:584 height_at_world(p) / world3d_terrain.gd:406 expects CENTRED
+#     x/z metres — the same space screen_to_world() returns after V7-70 seam.
+#   * game.gd:1893 height_at(p) expects SIM map-origin metres, so a
+#     (MAP_W/2, MAP_H/2)*TILE_M offset is applied before the call.
+# Empty method = no sampler reachable; _sample_height() then returns 0.0, the old
+# flat Y=0 plane. NO height is invented when the sampler is absent.
+var _height_sampler_obj: Object = null
+var _height_sampler_method: String = ""
+var _height_sampler_sim_offset: Vector2 = Vector2.ZERO
+
 # Edge-scroll / depth / dwell tunables: port parity with the shipping 2D camera
 # (camera.gd:11-14, :39-51) and Data.CAMERA_{EDGE,CORNER,KEY,MOUSE} (data.gd:164-167).
 var edge_margin: float = 8.0
@@ -97,6 +109,7 @@ const PROCESS_PRIORITY: int = -100  # camera.gd:36 — pan before world.sync()/H
 func bind(game: Object, view_scale: float = 1.0) -> void:
 	self.game = game
 	self.view_scale = view_scale
+	_resolve_height_sampler()
 	projection = PROJECTION_PERSPECTIVE  # G31:225 — donor main view is perspective, not ortho
 	fov = FOV_DEG_ASSUMED
 	near = NEAR_M
@@ -176,6 +189,82 @@ func screen_to_world(screen: Vector2) -> Vector2:
 	return Vector2(hit.x, hit.z)
 
 
+# Bind an existing height sampler without touching its owner. Preference order:
+# centred-space height_at_world (world3d.gd:584 / a bound stub world), then
+# sim-space game.height_at (game.gd:1893) with the map-centre offset, then an
+# optional `world` field exposing height_at_world. Empty result = no sampler.
+func _resolve_height_sampler() -> void:
+	_height_sampler_obj = null
+	_height_sampler_method = ""
+	_height_sampler_sim_offset = Vector2.ZERO
+	if game == null or not is_instance_valid(game):
+		return
+	if game.has_method("height_at_world"):
+		_height_sampler_obj = game
+		_height_sampler_method = "height_at_world"  # centred x/z — no offset
+		return
+	if game.has_method("height_at"):
+		var mw: float = float(game.get("MAP_W")) if game.get("MAP_W") != null else 0.0
+		var mh: float = float(game.get("MAP_H")) if game.get("MAP_H") != null else 0.0
+		if mw > 0.0 and mh > 0.0:
+			_height_sampler_obj = game
+			_height_sampler_method = "height_at"
+			_height_sampler_sim_offset = Vector2(mw, mh) * 0.5 * Data.TILE_M
+			return
+	var w = game.get("world")
+	if w is Object and is_instance_valid(w) and w.has_method("height_at_world"):
+		_height_sampler_obj = w
+		_height_sampler_method = "height_at_world"
+
+
+# Terrain height in metres at an x/z point in screen_to_world()'s CENTRED metre
+# space. No sampler reachable -> 0.0, the same flat Y=0 plane as before E6; no
+# height is fabricated. The sampler is called dynamically so no typed coupling to
+# game.gd / world3d.gd is introduced here.
+func _sample_height(p: Vector2) -> float:
+	if _height_sampler_obj == null or _height_sampler_method == "":
+		return 0.0
+	if not is_instance_valid(_height_sampler_obj):
+		return 0.0
+	if not is_finite(p.x) or not is_finite(p.y):
+		return 0.0
+	return float(_height_sampler_obj.call(_height_sampler_method, p + _height_sampler_sim_offset))
+
+
+# Ray -> horizontal plane at fixed height_m. x/z in the same space as
+# screen_to_world(); INF if parallel or behind the camera.
+func _screen_to_plane(screen: Vector2, height_m: float) -> Vector2:
+	var origin: Vector3 = project_ray_origin(screen)
+	var dir: Vector3 = project_ray_normal(screen)
+	if absf(dir.y) < 0.000001:
+		return Vector2.INF
+	var t: float = (height_m - origin.y) / dir.y
+	if t < 0.0:
+		return Vector2.INF
+	var hit: Vector3 = origin + dir * t
+	return Vector2(hit.x, hit.z)
+
+
+# E6: terrain SURFACE point under a screen pixel (not the flat Y=0 point). Start
+# at the flat hit, sample its height, re-cast at that height, repeat until the
+# horizontal hit moves < 0.1 mm (max 12 passes) so the returned point really lies
+# on the sampled height field. With no sampler every pass reads 0.0, so the result
+# is exactly the old screen_to_world() point (default unchanged).
+func _screen_to_surface(screen: Vector2) -> Vector2:
+	var p: Vector2 = screen_to_world(screen)
+	for _i in range(12):
+		if not is_finite(p.x) or not is_finite(p.y):
+			return Vector2.INF
+		var q: Vector2 = _screen_to_plane(screen, _sample_height(p))
+		if not is_finite(q.x) or not is_finite(q.y):
+			return p
+		var moved: float = q.distance_squared_to(p)
+		p = q
+		if moved < 1.0e-8:
+			break
+	return p
+
+
 # Four GROUND corners in screen order TL, TR, BR, BL (metres, top-left map origin).
 # The HUD minimap box adapter projects these into minimap pixel space (contract :16).
 func get_viewport_corners() -> Array:
@@ -203,6 +292,24 @@ func get_view_rect() -> Rect2:
 	if seen == 0:
 		return Rect2()
 	return Rect2(min_v, max_v - min_v)
+
+
+# T-NAV-RESPONSIVE — minimap click/drag jump. 2D parity: app/scripts/camera.gd:96-104
+# (jump_to_world) and donor onmousedown.inc:116-131 (SetMainCameraMoveToTargetXZ).
+# `world_pos` is sim metres in the top-left map origin — the SAME space as `_target` — so
+# NO view_scale factor is applied here (3D view_scale = 16 px/m, world3d.gd:79).
+# Writes the smoothed target AND the current Camera3D transform together: a target-only
+# write is overwritten by the next _apply_transform(), a transform-only write is snapped
+# back by clamp_pos() through the memo at :232-233 (the old 3D P0 failure).
+func jump_to_world(world_pos: Vector2) -> void:
+	_zoom_anchor_screen = Vector2.INF  # a jump cancels any in-flight zoom anchor (camera.gd:97)
+	_target = world_pos
+	_apply_transform()
+	# Fresh memo, like 2D mark_dirty() (camera.gd:110-121): otherwise the stale memo
+	# makes the following clamp_pos() a no-op and the jump stays unclamped.
+	_last_clamp_target = Vector2.INF
+	_last_clamp_zoom = -1.0
+	clamp_pos()
 
 
 # Keep the whole visible ground quad inside the map. Mirrors 2D clamp_pos (camera.gd:123-137):
@@ -359,7 +466,13 @@ func _smooth_zoom(dt: float) -> void:
 		_zoom_anchor_screen = Vector2.INF
 		return
 	var anchored: bool = is_finite(_zoom_anchor_screen.x) and is_finite(_zoom_anchor_screen.y)
-	var anchor_world: Vector2 = screen_to_world(_zoom_anchor_screen) if anchored else Vector2.INF
+	# E6: hold the TERRAIN surface point under the cursor, not its Y=0 shadow.
+	# With no sampler _screen_to_surface() == screen_to_world() (flat default).
+	var anchor_world: Vector2 = _screen_to_surface(_zoom_anchor_screen) if anchored else Vector2.INF
+	# Freeze the anchor's sampled height: after the dolly, the same world point must
+	# stay under the cursor, so re-hit the ray at THIS height (not a re-sampled one,
+	# which would track a different surface point on a slope).
+	var anchor_h: float = _sample_height(anchor_world) if is_finite(anchor_world.x) and is_finite(anchor_world.y) else 0.0
 	var old_z: float = zoom
 	var t: float = 1.0 - exp(-zoom_smooth_rate * dt)
 	var new_z: float = old_z + (zoom_target - old_z) * t
@@ -368,7 +481,13 @@ func _smooth_zoom(dt: float) -> void:
 	zoom = new_z
 	_apply_transform()
 	if anchored and is_finite(anchor_world.x) and is_finite(anchor_world.y):
-		var after: Vector2 = screen_to_world(_zoom_anchor_screen)
+		# Same-height ray hit at the NEW zoom; with no sampler anchor_h == 0.0 and
+		# this is byte-equivalent to the old flat screen_to_world() correction.
+		var after: Vector2 = _screen_to_plane(_zoom_anchor_screen, anchor_h)
+		if not is_finite(after.x) or not is_finite(after.y):
+			# Steep hill above the dolly position: the sampled plane is not hit.
+			# Fall back to the old flat hit rather than dropping the anchor.
+			after = screen_to_world(_zoom_anchor_screen)
 		if is_finite(after.x) and is_finite(after.y):
 			_target += anchor_world - after
 			_apply_transform()

@@ -1,0 +1,227 @@
+{
+  "_schema": "v7-61-donor-key-colors/1",
+  "_source": {
+    "donor_root": "C:\\Games\\Cossacks 3",
+    "table_file": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script",
+    "function": "GetKeyColorByPlayerIndex (nested in _classes_RunConstructors)",
+    "line_range": "7986-8015",
+    "active_case_line_range": "7991-8008",
+    "formula_lines": "8012-8014",
+    "koef_default_line": 7988,
+    "array_declaration": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:7685 (gKeyColor : array [0..gc_MaxKeyColorCount-1] of array [0..2] of Float)",
+    "array_population": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8091-8092 (for i:=0 to gc_MaxKeyColorCount-1 do GetKeyColorByPlayerIndex(i, gKeyColor[i][0], gKeyColor[i][1], gKeyColor[i][2]))",
+    "count_constants": {
+      "gc_MaxColorCount": 13,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global:121",
+      "gc_MaxKeyColorCount": 24,
+      "citation_key": "C:\\Games\\Cossacks 3\\data\\scripts\\dmscript.global:122"
+    },
+    "application_guard": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\misc.script:5070 (if (colorInd>=0) and (colorInd<gc_MaxColorCount) then) — only indices 0..12 can ever be applied",
+    "application_call": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\misc.script:5073 (SetGameObjectUniform4fByHandle(goHnd, 0, gKeyColor[colorInd][0], gKeyColor[colorInd][1], gKeyColor[colorInd][2], a, False))",
+    "application_sites": [
+      "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\unit.script:3860",
+      "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\player.script:2971"
+    ],
+    "gui_application_sites": [
+      "C:\\Games\\Cossacks 3\\data\\gui\\menu.inc\\showcustomgame.inc:705",
+      "C:\\Games\\Cossacks 3\\data\\gui\\menu.inc\\showhistoricalbattle.inc:648",
+      "C:\\Games\\Cossacks 3\\data\\gui\\menu.inc\\showtraderesources.inc:265"
+    ],
+    "extraction_method": "Read-only text reads of the donor .script/.global/.inc files at the cited lines. Every case line below is transcribed verbatim from the donor text (leading indentation trimmed only; inline comments retained). Channel integers and koef overrides were copied from the literal, then r/g/b were recomputed with the donor formula at classes.script:8012-8014: channel * effective_koef / 255, where an entry without an explicit koef inherits the default 1.1 declared at :7988. No donor binary was copied or executed; nothing was inferred from artwork.",
+    "format": {
+      "donor": "r, g, b : Float = integer_channel * koef / 255 — normalised floats, nominally 0..1 but allowed to exceed 1.0 because koef can be 1.2 (no clamp in the donor procedure).",
+      "godot": "rgb_godot_float = [r, g, b] passed to Godot Color(r, g, b) as floats. rgb_display_clamped = same values clamped to 0..1 for display. rgb_8bit_clamped = round(min(r,1)*255) etc., derived for convenience only. Channel order is RGB, not BGR: the donor passes [0],[1],[2] to SetGameObjectUniform4fByHandle and to SetGUIElementUserColor in that order.",
+      "alpha": "UNVERIFIED — GetKeyColorByPlayerIndex emits no alpha. misc.script:5069 declares 'var a : Float;' and :5072 assigns a:=1 ONLY when GetLibMaterialTextureFormat(GetGameObjectLibMaterialByHandle(goHnd))=2; otherwise a is left unassigned. No alpha value is stored in this file. Godot consumers must choose their own alpha explicitly."
+    },
+    "keyed_by": "player slot index, NOT nation",
+    "keying_evidence": [
+      "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\map.script:123 (mapplayer.color := ind)",
+      "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\map.script:136-137 (if (ind=gc_player_mercenaryind) then mapplayer.color := gc_MaxColorCount-1) — mercenary uses slot 12",
+      "C:\\Games\\Cossacks 3\\data\\gui\\menu.inc\\showcustomgame.inc:705 (gKeyColor[gMap.players[i].color])",
+      "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\unit.script:3860 and player.script:2971 (_misc_ApplyKeyColorRecursiveChild(..., gMap.players[pl].color))"
+    ],
+    "slot_count": 13,
+    "usable_indices": "0..12"
+  },
+  "slots": [
+    {
+      "index": 0,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:7991",
+      "donor_literal": "0 : begin ir := 164; ig := 0; ib := 0; koef := 1.15; end;",
+      "ir": 164, "ig": 0, "ib": 0,
+      "koef": 1.15,
+      "koef_source": "explicit at :7991",
+      "rgb_godot_float": [0.739607843, 0.0, 0.0],
+      "rgb_display_clamped": [0.739607843, 0.0, 0.0],
+      "rgb_8bit_clamped": [189, 0, 0]
+    },
+    {
+      "index": 1,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:7992",
+      "donor_literal": "1 : begin ir := 15; ig := 60+25; ib := 192; koef := 1.2; end;",
+      "ir": 15, "ig": 85, "ib": 192,
+      "ig_note": "donor literal writes the expression 60+25 (=85)",
+      "koef": 1.2,
+      "koef_source": "explicit at :7992",
+      "rgb_godot_float": [0.070588235, 0.4, 0.903529412],
+      "rgb_display_clamped": [0.070588235, 0.4, 0.903529412],
+      "rgb_8bit_clamped": [18, 102, 230]
+    },
+    {
+      "index": 2,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:7993",
+      "donor_literal": "2 : begin ir := 44; ig := 180; ib := 148; koef := 1.15; end;",
+      "ir": 44, "ig": 180, "ib": 148,
+      "koef": 1.15,
+      "koef_source": "explicit at :7993",
+      "rgb_godot_float": [0.198431373, 0.811764706, 0.66745098],
+      "rgb_display_clamped": [0.198431373, 0.811764706, 0.66745098],
+      "rgb_8bit_clamped": [51, 207, 170]
+    },
+    {
+      "index": 3,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:7996",
+      "donor_literal": "3 : begin ir := 127; ig := 50; ib := 190; end;",
+      "ir": 127, "ig": 50, "ib": 190,
+      "koef": 1.1,
+      "koef_source": "no override in case line — inherits default koef := 1.1 at :7988",
+      "rgb_godot_float": [0.547843137, 0.215686275, 0.819607843],
+      "rgb_display_clamped": [0.547843137, 0.215686275, 0.819607843],
+      "rgb_8bit_clamped": [140, 55, 209]
+    },
+    {
+      "index": 4,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:7997",
+      "donor_literal": "4 : begin ir := 255; ig := 90; ib := 0; koef := 1.2; end;",
+      "ir": 255, "ig": 90, "ib": 0,
+      "koef": 1.2,
+      "koef_source": "explicit at :7997",
+      "rgb_godot_float": [1.2, 0.423529412, 0.0],
+      "rgb_display_clamped": [1.0, 0.423529412, 0.0],
+      "rgb_8bit_clamped": [255, 108, 0],
+      "note": "donor formula yields 1.2 in R, above 1.0; AUDIT3D-02 records the clamped 1.0"
+    },
+    {
+      "index": 5,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8000",
+      "donor_literal": "5 : begin ir := 0; ig := 164; ib := 0; koef := 1; end; // black to green",
+      "ir": 0, "ig": 164, "ib": 0,
+      "koef": 1,
+      "koef_source": "explicit at :8000",
+      "rgb_godot_float": [0.0, 0.643137255, 0.0],
+      "rgb_display_clamped": [0.0, 0.643137255, 0.0],
+      "rgb_8bit_clamped": [0, 164, 0],
+      "note": "donor inline comment '// black to green' is retained verbatim but does not describe the resulting colour"
+    },
+    {
+      "index": 6,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8001",
+      "donor_literal": "6 : begin ir := 140; ig := 228; ib := 255; koef := 1.2; end;",
+      "ir": 140, "ig": 228, "ib": 255,
+      "koef": 1.2,
+      "koef_source": "explicit at :8001",
+      "rgb_godot_float": [0.658823529, 1.072941176, 1.2],
+      "rgb_display_clamped": [0.658823529, 1.0, 1.0],
+      "rgb_8bit_clamped": [168, 255, 255],
+      "note": "donor formula yields 1.072941176 in G and 1.2 in B; AUDIT3D-02 records both as clamped 1.0"
+    },
+    {
+      "index": 7,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8002",
+      "donor_literal": "7 : begin ir := 255; ig := 80; ib := 140; koef := 1.0; end;",
+      "ir": 255, "ig": 80, "ib": 140,
+      "koef": 1.0,
+      "koef_source": "explicit at :8002",
+      "rgb_godot_float": [1.0, 0.31372549, 0.549019608],
+      "rgb_display_clamped": [1.0, 0.31372549, 0.549019608],
+      "rgb_8bit_clamped": [255, 80, 140]
+    },
+    {
+      "index": 8,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8003",
+      "donor_literal": "8 : begin ir := 255; ig := 190; ib := 0; koef := 1.0; end;",
+      "ir": 255, "ig": 190, "ib": 0,
+      "koef": 1.0,
+      "koef_source": "explicit at :8003",
+      "rgb_godot_float": [1.0, 0.745098039, 0.0],
+      "rgb_display_clamped": [1.0, 0.745098039, 0.0],
+      "rgb_8bit_clamped": [255, 190, 0]
+    },
+    {
+      "index": 9,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8004",
+      "donor_literal": "9 : begin ir := 0; ig := 128; ib := 140; koef := 1.0; end;",
+      "ir": 0, "ig": 128, "ib": 140,
+      "koef": 1.0,
+      "koef_source": "explicit at :8004",
+      "rgb_godot_float": [0.0, 0.501960784, 0.549019608],
+      "rgb_display_clamped": [0.0, 0.501960784, 0.549019608],
+      "rgb_8bit_clamped": [0, 128, 140]
+    },
+    {
+      "index": 10,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8005",
+      "donor_literal": "10 : begin ir := 140; ig := 190; ib := 80; koef := 1.0; end;",
+      "ir": 140, "ig": 190, "ib": 80,
+      "koef": 1.0,
+      "koef_source": "explicit at :8005",
+      "rgb_godot_float": [0.549019608, 0.745098039, 0.31372549],
+      "rgb_display_clamped": [0.549019608, 0.745098039, 0.31372549],
+      "rgb_8bit_clamped": [140, 190, 80]
+    },
+    {
+      "index": 11,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8006",
+      "donor_literal": "11 : begin ir := 110; ig := 90; ib := 35; koef := 1.1; end;",
+      "ir": 110, "ig": 90, "ib": 35,
+      "koef": 1.1,
+      "koef_source": "explicit at :8006",
+      "rgb_godot_float": [0.474509804, 0.388235294, 0.150980392],
+      "rgb_display_clamped": [0.474509804, 0.388235294, 0.150980392],
+      "rgb_8bit_clamped": [121, 99, 39]
+    },
+    {
+      "index": 12,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8007",
+      "donor_literal": "12 : begin ir := 101; ig := 52; ib := 0; koef := 1.1; end;",
+      "ir": 101, "ig": 52, "ib": 0,
+      "koef": 1.1,
+      "koef_source": "explicit at :8007",
+      "rgb_godot_float": [0.435686275, 0.224313725, 0.0],
+      "rgb_display_clamped": [0.435686275, 0.224313725, 0.0],
+      "rgb_8bit_clamped": [111, 57, 0],
+      "note": "mercenary slot: map.script:136-137 forces mapplayer.color := gc_MaxColorCount-1 = 12"
+    }
+  ],
+  "_out_of_range_case_entries": [
+    {
+      "index": 13,
+      "citation": "C:\\Games\\Cossacks 3\\data\\scripts\\lib\\classes.script:8008",
+      "donor_literal": "13 : begin ir := 50; ig := 50; ib := 68; koef := 1.2; end; // black",
+      "ir": 50, "ig": 50, "ib": 68,
+      "koef": 1.2,
+      "koef_source": "explicit at :8008",
+      "rgb_godot_float": [0.235294118, 0.235294118, 0.32],
+      "rgb_display_clamped": [0.235294118, 0.235294118, 0.32],
+      "rgb_8bit_clamped": [60, 60, 82],
+      "reason_excluded": "case entry exists and is written to gKeyColor[13] by classes.script:8091-8092, but the only application of key colours guards colorInd < gc_MaxColorCount = 13 at misc.script:5070, so index 13 is never applied to objects and is not one of the 13 player colour slots."
+    }
+  ],
+  "_unverified": [
+    {
+      "item": "alpha channel",
+      "status": "UNVERIFIED",
+      "reason": "No alpha is returned by GetKeyColorByPlayerIndex; misc.script:5069,5072 assigns a:=1 only for texture format 2 and leaves a unassigned otherwise. The donor's effective alpha for other texture formats cannot be determined from text."
+    },
+    {
+      "item": "uniform-0 shading operation (multiplicative / additive / palette swap)",
+      "status": "UNVERIFIED",
+      "reason": "SetGameObjectUniform4fByHandle(goHnd, 0, ...) is a call into donor engine code, not readable script text; no shader fragment implementing uniform 0 was identified by AUDIT3D-02."
+    },
+    {
+      "item": "whether values >1.0 are clamped by the donor engine",
+      "status": "UNVERIFIED",
+      "reason": "The donor script performs no clamp at classes.script:8012-8014; downstream shader behaviour is not in readable text. Both exact and clamped variants are supplied; choosing one for rendering is a consumer decision."
+    }
+  ]
+}

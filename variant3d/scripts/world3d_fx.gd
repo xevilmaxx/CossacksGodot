@@ -5,6 +5,21 @@ extends Node3D
 # API (exact, per docs/coord_swarm_2026-11-24/V73_ATOMIC_CONTRACT.md:14):
 #   bind(game), sync(dt), add_fx(pos, kind, life),
 #   draw_ghost(sid, pos, ok:bool), draw_rally(pos, player:int)
+# V7-73 — additive, backward-compatible origin surface (no existing call changes):
+#   bind(game, world_offset) — optional 2nd arg (Vector2); default derives from game
+#   set_world_offset(offset) — public setter; shifts already-live FX nodes by the delta
+#
+# ORIGIN CONVENTION (V7-73, fixes AUDIT3D-06 G9; evidence at
+# docs/coord_swarm_2026-11-24/reports/AUDIT3D_06_fx_anim_audio.md:47,102):
+#   Sim positions are map-origin metres; the 3D scene is centred on origin.
+#   world3d_entities.gd:63-65,541 maps p -> (p.x - MAP_W*0.5*TILE_M, y,
+#   p.y - MAP_H*0.5*TILE_M). world3d_terrain.gd:307-314 centres vertices with
+#   (x+0.5-w/2)*TILE_M; its +0.5 is a cell-CENTRE term (terrain vertices sit at
+#   cell centres), whereas FX/entity sim positions are POINTS, so FX follows the
+#   entity point transform. TILE_M = data.gd:23 / game.gd:16 = 2.0. With
+#   config.json:39-40 (320x320 tiles) the half extent is (320, 320) metres.
+#   bind() now derives that offset from game.MAP_W/MAP_H: no edit to world3d.gd
+#   (owned by V7-62) is needed. No donor art or 2D bake involved.
 #
 # DONOR EVIDENCE POLICY (WAVE7 charter :29-38, V7-1 inventory §2.4 :156-176):
 #   readable donor keys are CITED as `path:line`; their runtime mapping is NOT
@@ -60,18 +75,21 @@ const TRAIL_WIDTH_M: float = 0.1      # source.pfx:1746 `MarkWidth = 0.1`
 const TRAIL_STREAK_M: float = 1.2     # PORT approximation (no donor length key)
 
 # Colour precedents are PORT, not donor art:
-#   world.gd:3509 green/red build ghost; world.gd:3655-3668 smoke/fire;
-#   world.gd:2172-2179 player palette (copied from hud.gd MM_PLAYER_COLORS).
-const GHOST_OK := Color(0.20, 1.00, 0.30, 0.45)   # world.gd:3509
-const GHOST_BAD := Color(1.00, 0.25, 0.20, 0.45)  # world.gd:3509
-const PLAYER_COLORS := [
-	Color(0.30, 0.62, 1.00), Color(1.00, 0.32, 0.26),
-	Color(1.00, 0.78, 0.22), Color(0.42, 0.85, 0.42),
-	Color(0.70, 0.45, 1.00), Color(0.25, 0.85, 0.85),
-	Color(1.00, 0.55, 0.72), Color(0.85, 0.85, 0.85),
-	Color(1.00, 0.60, 0.10), Color(0.55, 0.95, 0.30),
-	Color(0.10, 0.70, 0.65), Color(0.65, 0.42, 0.22),
-]
+#   world.gd:3509 green/red build ghost; world.gd:3655-3668 smoke/fire.
+# The old invented PLAYER_COLORS literal (copied from world.gd:2172-2179) is
+# REMOVED in V7-65. Player-coloured FX (rally pennant via _player_color) now
+# read the same donor key-colour JSON as the 3D entity tints; NON-player FX
+# colours (_kind_color, green/red build ghost, rally wood/finial/foot) are
+# deliberately left unchanged.
+const GHOST_OK := Color(0.20, 1.00, 0.30, 0.45)   # world.gd:3509 — non-player FX
+const GHOST_BAD := Color(1.00, 0.25, 0.20, 0.45)  # world.gd:3509 — non-player FX
+
+const KEY_COLORS_PATH: String = "res://data/donor_key_colors.json"
+# Donor slot -> Color(rgb_godot_float, alpha 1.0). Loaded in bind() from JSON;
+# alpha 1.0 is a port choice (donor alpha UNVERIFIED, V7-61 §5).
+var PLAYER_COLORS: Array = []
+var _key_colors_loaded: bool = false
+var _key_colors_error: String = ""
 
 # Event names are sim-agnostic and come from main.gd:1518-1554 `_consume_events`
 # (which forwards only shot/smoke/heal/rout/crater/explode/chop to add_fx).
@@ -87,7 +105,10 @@ const RALLY_TTL: float = 2.0   # PORT choice: clear markers not redrawn for 2 s 
 var game = null
 var consume_events: bool = true    # set false if main.gd already forwards add_fx
 var emit_arrow_trails: bool = true
-var world_offset: Vector2 = Vector2.ZERO  # subtract from map pos to centre the scene
+# Subtract from map-origin sim pos to centre the scene (see ORIGIN CONVENTION).
+# Pre-V7-73 this was never assigned; bind() now derives it from the bound game.
+var world_offset: Vector2 = Vector2.ZERO
+var _offset_pinned: bool = false   # explicit bind arg / setter wins over re-derivation
 var height_bias: float = 0.0
 var fx_items: Array = []
 var stats: Dictionary = {
@@ -112,10 +133,129 @@ var _spawn_index: int = 0
 
 # --- PUBLIC API ------------------------------------------------------------
 
-func bind(g) -> void:
+# `world_offset` is optional: bind(game) keeps the V73 contract signature and
+# derives the centred origin from game.MAP_W/MAP_H; bind(game, offset) accepts an
+# explicit Vector2 (V7-73 integration handoff surface).
+func bind(g, world_offset_override = null) -> void:
 	game = g
 	_events_seen = 0
+	_apply_world_offset(world_offset_override)
+	_load_player_colors()
+	stats["donor_key_colors_path"] = KEY_COLORS_PATH
+	stats["donor_key_colors_loaded"] = _key_colors_loaded
+	stats["donor_key_colors_slots"] = PLAYER_COLORS.size()
+	stats["donor_key_colors_error"] = _key_colors_error
 	_ensure_roots()
+
+
+# V7-73 public setter, safe to call after bind(): existing FX/ghost/rally nodes
+# are shifted by the delta so a late integration call cannot leave stale FX.
+# Pass a finite Vector2 in the SAME convention as world3d_entities.gd:541, i.e.
+# Vector2(MAP_W, MAP_H) * 0.5 * TILE_M (map-origin metres, not tiles).
+func set_world_offset(offset: Vector2, shift_existing: bool = true) -> void:
+	if not _finite(offset.x) or not _finite(offset.y):
+		push_error("world3d_fx: non-finite world_offset ignored")
+		return
+	var delta: Vector2 = offset - world_offset
+	world_offset = offset
+	_offset_pinned = true
+	stats["world_offset"] = [offset.x, offset.y]
+	stats["world_offset_source"] = "setter"
+	if shift_existing and (not is_zero_approx(delta.x) or not is_zero_approx(delta.y)):
+		_shift_created_nodes(-delta)
+
+
+# Resolve the origin from the bound game unless an explicit offset was given.
+# MAP_W/MAP_H are ints on game.gd:35-36 (config.json:39-40 sets both to 320);
+# Dictionary stubs expose the same keys. Missing/invalid values keep ZERO and
+# are reported in stats rather than guessed from a port default.
+func _apply_world_offset(override = null) -> void:
+	if override is Vector2:
+		var v: Vector2 = override
+		if _finite(v.x) and _finite(v.y):
+			world_offset = v
+			_offset_pinned = true
+			stats["world_offset_source"] = "explicit_bind_arg"
+			stats["world_offset"] = [v.x, v.y]
+			return
+		stats["world_offset_source"] = "invalid_explicit_ignored"
+	if _offset_pinned:
+		# An explicit bind arg / setter call outranks later re-derivation.
+		stats["world_offset_source"] = "pinned_retained"
+		stats["world_offset"] = [world_offset.x, world_offset.y]
+		return
+	var w := _map_tiles(game, "MAP_W")
+	var h := _map_tiles(game, "MAP_H")
+	if w > 0 and h > 0:
+		world_offset = Vector2(float(w), float(h)) * (0.5 * TILE_M)
+		stats["world_offset_source"] = "game.MAP_W/MAP_H"
+	else:
+		world_offset = Vector2.ZERO
+		stats["world_offset_source"] = "unavailable_zero"
+	stats["world_offset"] = [world_offset.x, world_offset.y]
+
+
+func _map_tiles(g, key: String) -> int:
+	if g == null:
+		return -1
+	var v = g.get(key)
+	if v is int or v is float:
+		return int(v)
+	return -1
+
+
+# Shift only XZ; Y is height_bias/height_at driven and must not be touched.
+func _shift_created_nodes(shift: Vector2) -> void:
+	for item in fx_items:
+		var n = item.get("node")
+		if n is Node3D and is_instance_valid(n):
+			(n as Node3D).position.x += shift.x
+			(n as Node3D).position.z += shift.y
+	if _ghost_root != null and is_instance_valid(_ghost_root):
+		_ghost_root.position.x += shift.x
+		_ghost_root.position.z += shift.y
+	for key in _rally_markers.keys():
+		var m: Dictionary = _rally_markers[key]
+		var rn = m.get("node")
+		if rn is Node3D and is_instance_valid(rn):
+			(rn as Node3D).position.x += shift.x
+			(rn as Node3D).position.z += shift.y
+
+
+# V7-65: exact donor formula output (rgb_godot_float), NOT the old invented
+# 2D palette. Missing/malformed JSON => push_error and NO player-coloured FX
+# (a transparent marker), never a fallback palette.
+func _load_player_colors() -> void:
+	PLAYER_COLORS.clear()
+	_key_colors_loaded = false
+	_key_colors_error = ""
+	if not FileAccess.file_exists(KEY_COLORS_PATH):
+		_key_colors_error = "missing file " + KEY_COLORS_PATH
+		push_error("world3d_fx: donor key colours unavailable (" + _key_colors_error + "); rally pennant left TRANSPARENT - no fallback palette")
+		return
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(KEY_COLORS_PATH))
+	if not (parsed is Dictionary) or not (parsed as Dictionary).has("slots") \
+			or not ((parsed as Dictionary)["slots"] is Array):
+		_key_colors_error = "malformed JSON or missing slots array"
+		push_error("world3d_fx: donor key colours unavailable (" + _key_colors_error + "); rally pennant left TRANSPARENT - no fallback palette")
+		return
+	for entry in ((parsed as Dictionary)["slots"] as Array):
+		if not (entry is Dictionary):
+			continue
+		var d := entry as Dictionary
+		var idx := int(d.get("index", -1))
+		var rgb = d.get("rgb_godot_float", [])
+		if idx < 0 or not (rgb is Array) or (rgb as Array).size() < 3:
+			continue
+		var arr = rgb
+		var c := Color(float(arr[0]), float(arr[1]), float(arr[2]), 1.0)
+		if PLAYER_COLORS.size() <= idx:
+			PLAYER_COLORS.resize(idx + 1)
+		PLAYER_COLORS[idx] = c
+	_key_colors_loaded = PLAYER_COLORS.size() > 0
+	if not _key_colors_loaded:
+		_key_colors_error = "no usable slot entries"
+		push_error("world3d_fx: donor key colours unavailable (" + _key_colors_error + "); rally pennant left TRANSPARENT - no fallback palette")
 
 
 func sync(dt) -> void:
@@ -619,8 +759,14 @@ func _valid_pos(p) -> bool:
 	return false
 
 
+# Donor guard misc.script:5070: only slots 0..12 exist; no wrapi() fallback to
+# a made-up colour. On load failure the pennant material is transparent.
 func _player_color(p: int) -> Color:
-	return PLAYER_COLORS[wrapi(p, 0, PLAYER_COLORS.size())]
+	if not _key_colors_loaded:
+		return Color(0.0, 0.0, 0.0, 0.0)
+	if p < 0 or p >= PLAYER_COLORS.size():
+		return Color(0.0, 0.0, 0.0, 0.0)
+	return PLAYER_COLORS[p]
 
 
 func _building_radius(sid: String) -> float:

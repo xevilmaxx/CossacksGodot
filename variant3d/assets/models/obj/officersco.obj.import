@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://c6qiql830xjsj"
+path="res://.godot/imported/officersco.obj-49d792a31010e0df14c897abf9ab0ebc.mesh"
+
+[deps]
+
+files=["res://.godot/imported/officersco.obj-49d792a31010e0df14c897abf9ab0ebc.mesh"]
+
+source_file="res://assets/models/obj/officersco.obj"
+dest_files=["res://.godot/imported/officersco.obj-49d792a31010e0df14c897abf9ab0ebc.mesh", "res://.godot/imported/officersco.obj-49d792a31010e0df14c897abf9ab0ebc.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

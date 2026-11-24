@@ -2,14 +2,16 @@ extends Node
 
 # V7-12 — 3D picking adapter. NEW FILE: no other module is edited.
 # Contract: docs/coord_swarm_2026-11-24/V73_ATOMIC_CONTRACT.md:11 —
-#   bind(game, cam); pick(screen)->Dictionary; pick_res(screen)->Dictionary;
-#   ground_point(screen)->Vector2. NO game.cmd_* calls (read sim only; the 2D
+#   bind(game, cam); pick(screen, players_only)->Dictionary;
+#   pick_res(screen)->Dictionary; ground_point(screen)->Vector2.
+#   NO game.cmd_* calls (read sim only; the 2D
 #   input_controller integration agent keeps every cmd_* call untouched).
 #
 # Ported 2D semantics (authoritative, OBSERVED at these lines):
 #   app/scripts/input_controller.gd:337-343  screen px -> world metres via camera
-#   app/scripts/input_controller.gd:345-369  _pick: player-0 nearest inside
-#       game.pick_radius(e), then 2 m any-entity fallback (enemies for info)
+#   app/scripts/input_controller.gd:345-369  _pick: players_only ? player-0 : all
+#       entities nearest inside game.pick_radius(e), then 2 m any-entity
+#       fallback (enemies for info); flag forwarded by the 3D caller
 #   app/scripts/input_controller.gd:643-690  _pick_res: 2.5 + radius reach,
 #       skip stump/bush, skip depleted (food exempt), strict '<', tie -> low id
 #   app/scripts/game.gd:1555-1560  pick_radius (bld block_r + 1.4; else def.radius + 1.4)
@@ -202,10 +204,27 @@ func ground_point(screen: Vector2) -> Vector2:
 	return _to_sim(_ray_heightfield(o, d))
 
 
-# Unit/building entity. players_only nearest-inside-radius with the 2 m
-# any-entity fallback is preserved (input_controller.gd:345-369); the test is
+# Unit/building entity. The 2D `players_only` flag is forwarded verbatim
+# (app/scripts/input_controller.gd:345-369, :358): when true only player-0
+# entities receive the pick_radius test; when false every entity does, so
+# enemies are selectable for attack orders / info / cursor. The 2 m fallback
+# is unconditional in both modes (input_controller.gd:363-365). The test is
 # done in screen space and depth orders overlapping hits (nearer wins on a tie).
-func pick(screen: Vector2) -> Dictionary:
+#
+# HANDOFF: variant3d/scripts/input_controller.gd:396 must pass the flag —
+# `picking.pick(_pick_screen, players_only)` — mirroring its 2D call sites
+# (:434 true; :492/:585/:1089 false). That file is owned by V7-66 and was NOT
+# edited here; until it forwards the flag, the default `true` preserves the
+# guard-mode semantics but the three enemy-facing call sites stay degraded.
+#
+# APPROXIMATION (declared honestly): 2D compares metre distances
+# (`e.pos.distance_to(pw)`) against metre radii. Here each metre radius/reach
+# is converted to pixels at THAT entity's own camera depth via
+# `_ppm(_depth_of(e.pos, BODY_LIFT_M))`, while the cursor is the height-field
+# ground hit. BODY_LIFT_M = 0.8 is an unverified body-centre estimate, so a
+# ground-cursor / lifted-entity parallax residual remains. Donor pick depth is
+# engine-side and UNVERIFIED (header :21-26); app is the authority.
+func pick(screen: Vector2, players_only: bool = true) -> Dictionary:
 	var none: Dictionary = {}
 	if game == null or cam == null or game.entities == null:
 		return none
@@ -215,7 +234,7 @@ func pick(screen: Vector2) -> Dictionary:
 	var best_sd: float = 1e9
 	var best_depth: float = 1e9
 	var fb: Dictionary = {}
-	var fb_sd: float = FALLBACK_REACH_M * _ppm(30.0)
+	var fb_sd: float = 1e9
 	var fb_depth: float = 1e9
 	for e in game.entities:
 		if not (e is Dictionary) or bool(e.get("dead", false)) or not e.has("pos"):
@@ -223,13 +242,16 @@ func pick(screen: Vector2) -> Dictionary:
 		var sp: Vector2 = _screen_of(Vector2(e.pos), BODY_LIFT_M)
 		var sd: float = sp.distance_to(screen)
 		var depth: float = _depth_of(Vector2(e.pos), BODY_LIFT_M)
-		if int(e.get("player", -1)) == 0:
+		if not players_only or int(e.get("player", -1)) == 0:
 			var r: float = float(game.call("pick_radius", e)) * _ppm(depth)
 			if sd < r and _closer(sd, depth, best_sd, best_depth):
 				best_sd = sd
 				best_depth = depth
 				best = e
-		if sd < fb_sd and _closer(sd, depth, fb_sd, fb_depth):
+		# Per-entity depth replaces the old fixed `_ppm(30.0)` reach probe:
+		# the 2 m metre fallback reach is converted at THIS candidate's depth.
+		var fb_reach: float = FALLBACK_REACH_M * _ppm(depth)
+		if sd < fb_reach and _closer(sd, depth, fb_sd, fb_depth):
 			fb_sd = sd
 			fb_depth = depth
 			fb = e

@@ -16,8 +16,10 @@ extends Node3D
 #   * splat first, one donor grass block as runtime Image.load fallback;
 #   * one translucent water quad at donor WATER_LEVEL.
 # NO per-chunk dictionaries, NO 2-chunk/frame cap, NO imported sprite sheets,
-# NO RNG. Lighting/environment belongs to V7-9 (scenes/env), so this module
-# does NOT create a WorldEnvironment or a DirectionalLight3D.
+# NO RNG. V7-13 deliberately left lighting to V7-9; V7-60 now ports the
+# donor-cited WorldEnvironment + DirectionalLight3D rig from the UNWIRED
+# variant3d/scripts/heightmap_world3d.gd:114-147 so the WIRED runtime terrain
+# is actually lit. All rig values stay donor-cited; none are invented here.
 
 # Donor citations (read-only text; singleplayer skirmish path):
 #   C:\Games\Cossacks 3\data\scripts\generatemap.inc:537-577 — bitmap -> engine
@@ -32,16 +34,41 @@ extends Node3D
 #   variant3d/scripts/main.gd:694-701 — dump schema (map_w/map_h/height base64).
 #   variant3d/scripts/game.gd:44,1893-1907 — live height[] grid + bilinear read.
 #   variant3d/scripts/game.gd:5564 — height[] -> base64 on save/dump.
+#
+# V7-60 light/sky rig — translated (not invented) from the UNWIRED sibling
+# variant3d/scripts/heightmap_world3d.gd:22-37,114-147. Donor references
+# (read-only text, singleplayer skirmish path):
+#   C:\Games\Cossacks 3\data\shaders\water\water.dev.vert:22 builds
+#     lightVector = (LightPos.x/4, LightPos.z/2, LightPos.y)  [donor Z-up]
+#   C:\Games\Cossacks 3\data\env\lights\light.cfg:26-29 Position =
+#     (-0.344731152057648, 0.938701450824738, 0)
+#   -> donor lightVector = (-0.0861828, 0, 0.9387015) Z-up
+#   -> Godot Y-up        = (-0.0861828, 0.9387015, 0)
+# Donor light colours are literal light.cfg:3-16 Ambient/Diffuse; the ENERGIES
+# below are port-side M0.6 compensation, not donor values.
 
 const TILE_M: float = 2.0                 # data.gd:23; donor cell size UNVERIFIED
 const HEIGHT_SCALE: float = 1.0           # dump height[] is already metres (main.gd:698)
 const WATER_LEVEL: float = -0.25          # mapgen.gd:29 C3MapGen.WATER_DEEP; donor literal UNVERIFIED
 
+# V7-60 donor light rig constants (verbatim values + citations from
+# heightmap_world3d.gd:34-37); only the two light.cfg colours are recorded as
+# donor evidence, the rig itself uses the same body as the sibling module.
+const SUN_POS := Vector3(-0.344731152057648, 0.938701450824738, 0.0)  # light.cfg:26-29
+const SUN_LIGHTVEC := Vector3(SUN_POS.x / 4.0, SUN_POS.z / 2.0, SUN_POS.y)  # water.dev.vert:22, then Z-up->Y-up
+const DONOR_AMBIENT := Color(0.196078434586525, 0.184313729405403, 0.129411771893501)  # light.cfg:3-8 (donor evidence)
+const DONOR_DIFFUSE := Color(0.811764717102051, 0.780392169952393, 0.694117665290833)  # light.cfg:11-16 (donor evidence)
+# Port-side M0.6 art compensation (NOT donor values) — kept as cited in the rig.
+const EXPOSURE: float = 1.45
+const AMBIENT_ENERGY: float = 1.10
+const SUN_ENERGY: float = 1.7
+
 const SPLAT_PATH := "res://assets/terrain/heightmap/splat_albedo.png"
 const FALLBACK_BLOCK := "res://assets/terrain/blocks/grass1.png"
 
 # PORT-TUNED art floor (not a donor value): a tiny emission keeps the terrain
-# legible in a standalone no-light probe; V7-9 owns the real donor light rig.
+# legible in a standalone no-light probe. V7-60 leaves this value UNCHANGED —
+# the donor-grounded light/sky rig lives in this module (see _make_environment).
 const EMISSION_RGB := Color(0.06, 0.06, 0.05)
 
 var stats: Dictionary = {}
@@ -175,6 +202,47 @@ func _make_water(w: int, h: int) -> void:
 	add_child(mi)
 
 
+# V7-60 — donor-grounded sky/sun rig translated VERBATIM from the unwired
+# variant3d/scripts/heightmap_world3d.gd:114-147. Values/citations: light.cfg:3-16
+# (ambient/diffuse), light.cfg:26-29 (sun position), water.dev.vert:22 (light
+# vector transform). Port-side energies stay flagged as M0.6 compensation.
+# invalidate() frees these children too, so a rebuild cannot stack rigs.
+func _make_environment() -> void:
+	var env := Environment.new()
+	env.background_mode = Environment.BG_SKY
+	env.background_color = Color(0.62, 0.70, 0.66)
+	var sky := Sky.new()
+	var skymat := ProceduralSkyMaterial.new()
+	skymat.sky_top_color = Color(0.18, 0.30, 0.42)
+	skymat.sky_horizon_color = Color(0.36, 0.44, 0.38)
+	skymat.sky_curve = 0.18
+	skymat.ground_bottom_color = Color(0.09, 0.12, 0.07)
+	skymat.ground_horizon_color = Color(0.17, 0.22, 0.14)
+	skymat.ground_curve = 0.10
+	sky.sky_material = skymat
+	env.sky = sky
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	env.tonemap_exposure = EXPOSURE
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.86, 0.88, 0.82)
+	env.ambient_light_energy = AMBIENT_ENERGY
+	var we := WorldEnvironment.new()
+	we.name = "WorldEnvironment"
+	we.environment = env
+	add_child(we)
+
+	var sun := DirectionalLight3D.new()
+	sun.name = "DonorSun"
+	sun.light_energy = SUN_ENERGY
+	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 400.0
+	# The donor sun is almost overhead, so look_at with up=+Y is degenerate;
+	# use +Z as the up axis exactly as M0.6 did.
+	sun.look_at_from_position(SUN_LIGHTVEC.normalized() * 120.0,
+		Vector3.ZERO, Vector3.FORWARD)
+	add_child(sun)
+
+
 # Drop every object created by the last build so a rebuild cannot stack meshes.
 func invalidate() -> void:
 	for child in get_children():
@@ -276,6 +344,7 @@ func build() -> bool:
 	var t_mesh := Time.get_ticks_usec()
 
 	_make_water(w, h)
+	_make_environment()
 
 	_height = height
 	_w = w
@@ -301,6 +370,7 @@ func build() -> bool:
 		"albedo_size": [albedo_size.x, albedo_size.y],
 		"alpha_as_transparency": false,
 		"water_level_m": WATER_LEVEL,
+		"sun_direction_yup": [SUN_LIGHTVEC.x, SUN_LIGHTVEC.y, SUN_LIGHTVEC.z],
 		"chunks": 0,
 		"per_frame_cap": 0,
 		"donor_references": {
@@ -308,6 +378,10 @@ func build() -> bool:
 			"camera_framing": "data/cameras/camera.cfg:32-35,44-45 (V7-5, not this module)",
 			"water_level": "variant3d/scripts/mapgen.gd:29 C3MapGen.WATER_DEEP (donor texturemap.inc:30; literal UNVERIFIED)",
 			"cell_size": "variant3d/scripts/data.gd:23 C3Data.TILE_M (donor metres UNVERIFIED)",
+			"sun_position": "data/env/lights/light.cfg:26-29 (SUN_POS, donor Z-up)",
+			"sun_light_vector": "data/shaders/water/water.dev.vert:22 (x/4, z/2, y) then Z-up->Y-up",
+			"ambient_diffuse": "data/env/lights/light.cfg:3-16 (Ambient/Diffuse literals)",
+			"light_rig_port": "variant3d/scripts/heightmap_world3d.gd:114-147 (V7-60, translated)",
 		},
 		"timing_ms": {
 			"parse_dump": float(t_parsed - t_total) / 1000.0,

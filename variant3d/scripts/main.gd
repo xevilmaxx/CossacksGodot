@@ -157,8 +157,13 @@ var seed_arg := -1
 var seed_random := false
 var dump_path := ""
 var journey_cam_t := 0.0
+var dbg_journey := 0   # V7-70 E19 probe: first two journey camera updates
 var _base_start_res: Dictionary = {}  # cached config defaults for start-stock scaling
 var autosave_acc := 0.0
+# V7-70 (P0 G1): windowed 3D screenshot render target. The root window
+# backbuffer reads blank under gl_compatibility, so the 3D capture goes through
+# an explicit SubViewport texture (the same pattern as world.gd:1894-1993).
+var capture_view3d: SubViewport = null
 
 func _ready() -> void:
 	started_ms = Time.get_ticks_msec()
@@ -222,7 +227,7 @@ func _ready() -> void:
 		return
 
 	# Test / capture modes skip the menu so they never wait for input.
-	if bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or battle_requested:
+	if bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or battle_requested or journey_mode:
 		_setup_full_game()
 		if bench_mode:
 			Data.MINIMAP_INTERVAL = 9999.0
@@ -597,6 +602,7 @@ func _do_async_load(cfg: Dictionary) -> void:
 			else Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M
 		camera.set("_target", focus3)  # camera3d.gd:90 _target is sim metres
 		camera.clamp_pos()
+		_center_camera3d_target()  # V7-70: sim map-origin -> centred 3D metres
 	else:
 		camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
 		if not homes.is_empty():
@@ -749,24 +755,21 @@ func _dump_self_base() -> void:
 	game = C3Game.new()
 	add_child(game)
 	game.setup(start_mode)
-	var starts: Array = []
-	for s in game.map_starts:
-		starts.append([float(s.x), float(s.y)])
-	var zones: Array = []
-	for z in game.cluster_zones:
-		var zd: Dictionary = z
-		zones.append([float(zd.pos.x), float(zd.pos.y), float(zd.r)])
+	# var_to_str preserves Variant types exactly (JSON.parse_string turns every
+	# number into a float and Rect2 into a String, which corrupts entity ids and
+	# building block_rects on load). The inner "base" blob is game.serialize()'s
+	# own base64 form, which deserialize() expects verbatim.
 	var dump := {
-		"format": "w52-self-base-1", "seed": int(Data.RANDOM_SEED),
+		"format": "w52-self-base-2", "seed": int(Data.RANDOM_SEED),
 		"map_w": int(Data.MAP_W), "map_h": int(Data.MAP_H),
 		"base": game.serialize(),
-		"tileblock": Marshalls.raw_to_base64(game.tileblock),
-		"mine_mask": Marshalls.raw_to_base64(game.mine_mask),
-		"starts": starts, "zones": zones, "meta": game.map_meta,
+		"terrain": game.terrain, "blocked": game.blocked, "height": game.height,
+		"tileblock": game.tileblock, "mine_mask": game.mine_mask,
+		"starts": game.map_starts, "zones": game.cluster_zones, "meta": game.map_meta,
 		"rng_state": game.rng.get("state"), "gen_rng_state": game.gen_rng.get("state"),
 		"sow_t": game.sow_t, "ai_enabled": Data.AI_ENABLED,
 	}
-	var out := _write_text(self_base_dump_path, JSON.stringify(dump))
+	var out := _write_text(self_base_dump_path, var_to_str(dump))
 	if out == "":
 		printerr("dump-self-base: could not write ", self_base_dump_path)
 		_quit(1)
@@ -805,8 +808,35 @@ func _same_json(a: Variant, b: Variant) -> bool:
 				return false
 		return true
 	if (a is int or a is float) and (b is int or b is float):
-		return float(a) == float(b)
+		# Sim positions are float32 (Vector2); JSON keeps float64 text, so the
+		# same Vector2 can print as two distinct float64 values. Compare after
+		# quantising both through float32 - that is the sim's actual precision.
+		var q := PackedFloat32Array()
+		q.append(float(a))
+		q.append(float(b))
+		return q[0] == q[1]
 	return str(a) == str(b)
+
+func _json_rect(v: Variant) -> Rect2:
+	if v is Rect2:
+		return v
+	if v is String:
+		var s := str(v)
+		var p0 := s.find("(")
+		var p1 := s.find(")", p0 + 1)
+		var p2 := s.find("(", p1 + 1)
+		var p3 := s.find(")", p2 + 1)
+		if p0 >= 0 and p1 > p0 and p2 > p1 and p3 > p2:
+			var a := s.substr(p0 + 1, p1 - p0 - 1).split(",")
+			var b := s.substr(p2 + 1, p3 - p2 - 1).split(",")
+			for i in a.size():
+				a[i] = str(a[i]).strip_edges()
+			for i in b.size():
+				b[i] = str(b[i]).strip_edges()
+			if a.size() == 2 and b.size() == 2 and a[0].is_valid_float() and a[1].is_valid_float() \
+				and b[0].is_valid_float() and b[1].is_valid_float():
+				return Rect2(float(a[0]), float(a[1]), float(b[0]), float(b[1]))
+	return Rect2()
 
 func _json_diff(a: Variant, b: Variant, path: String) -> String:
 	if a is Dictionary and b is Dictionary:
@@ -826,25 +856,29 @@ func _json_diff(a: Variant, b: Variant, path: String) -> String:
 				return s
 		return ""
 	if (a is int or a is float) and (b is int or b is float):
-		return "" if float(a) == float(b) else path + " " + str(b) + "->" + str(a)
+		var q := PackedFloat32Array()
+		q.append(float(a))
+		q.append(float(b))
+		return "" if q[0] == q[1] else path + " " + str(b) + "->" + str(a)
 	return "" if str(a) == str(b) else path + " " + str(b).substr(0, 100) + "->" + str(a).substr(0, 100)
 
 # W5-2: restore a pre-baked snapshot into a FRESH C3Game without running
 # mapgen. The canonical deserializer restores entities/players/stats; it is
-# called with a 0x0 map so its own _assign_tileblocks() pass touches no cells,
-# then the real terrain arrays are installed verbatim from the dump. Returns
+# called with a 1x1 stub map so its own _assign_tileblocks() pass touches one
+# cell, then the real arrays are installed verbatim from the Variant dump. Returns
 # false (caller falls back to full setup) on any validation or parity failure.
 func _load_self_base(g: C3Game, path: String) -> bool:
-	var txt := FileAccess.get_file_as_string(path)
+	var resolved := _pick_target(path)
+	var txt := FileAccess.get_file_as_string(resolved)
 	if txt == "":
-		printerr("self-snapshot: cannot read ", path)
+		printerr("self-snapshot: cannot read ", resolved)
 		return false
-	var parsed = JSON.parse_string(txt)
+	var parsed = str_to_var(txt)
 	if not parsed is Dictionary:
-		printerr("self-snapshot: invalid JSON in ", path)
+		printerr("self-snapshot: not a Variant snapshot in ", path)
 		return false
 	var d: Dictionary = parsed
-	if str(d.get("format", "")) != "w52-self-base-1" or not d.has("base"):
+	if str(d.get("format", "")) != "w52-self-base-2" or not d.has("base"):
 		printerr("self-snapshot: bad format in ", path)
 		return false
 	var bs = d["base"]
@@ -884,20 +918,16 @@ func _load_self_base(g: C3Game, path: String) -> bool:
 	g.height.resize(g.MAP_W * g.MAP_H)
 	for i in mini(g.height.size(), int(raw.size() / 4)):
 		g.height[i] = raw.decode_float(i * 4)
-	g.tileblock = Marshalls.base64_to_raw(str(d.get("tileblock", "")))
-	g.mine_mask = Marshalls.base64_to_raw(str(d.get("mine_mask", "")))
+	if d.get("tileblock") is PackedByteArray:
+		g.tileblock = d.tileblock
+	if d.get("mine_mask") is PackedByteArray:
+		g.mine_mask = d.mine_mask
 	var sarr = d.get("starts", [])
 	if sarr is Array:
-		g.map_starts = []
-		for s in sarr:
-			var sa: Array = s
-			g.map_starts.append(Vector2(float(sa[0]), float(sa[1])))
+		g.map_starts = (sarr as Array).duplicate(true)
 	var zarr = d.get("zones", [])
 	if zarr is Array:
-		g.cluster_zones = []
-		for z in zarr:
-			var za: Array = z
-			g.cluster_zones.append({"pos": Vector2(float(za[0]), float(za[1])), "r": float(za[2])})
+		g.cluster_zones = (zarr as Array).duplicate(true)
 	var meta = d.get("meta", {})
 	g.map_meta = meta.duplicate(true) if meta is Dictionary else {}
 	g.nav.configure(g.MAP_W, g.MAP_H, g.TILE)
@@ -909,22 +939,25 @@ func _load_self_base(g: C3Game, path: String) -> bool:
 		g.gen_rng.set("state", int(d.gen_rng_state))
 	Data.AI_ENABLED = bool(d.get("ai_enabled", true))
 	g.sow_t = float(d.get("sow_t", 0.0))
+	# Defensive: the Variant snapshot preserves Rect2 natively; this only
+	# normalises any legacy string-form block_rect from an older dump.
+	for e in g.entities:
+		if e.has("block_rect"):
+			e["block_rect"] = _json_rect(e.block_rect)
 	g.events.clear()
 	g.projectiles.clear()
 	g.corpses.clear()
 	g.rubble.clear()
 	# Parity gate: refuse the fast path unless the loaded game reproduces every
 	# serialized field and the non-serialized map arrays byte-for-byte.
-	# JSON.parse_string returns floats for integer-looking numbers, so a plain
-	# str() compare would report a false MISMATCH on every numeric field.
 	var now := g.serialize()
 	var same := _same_json(now, b)
 	if not same:
 		var dpath := _json_diff(now, b, "root")
 		printerr("self-snapshot: first difference at ", dpath)
-	if g.tileblock != Marshalls.base64_to_raw(str(d.get("tileblock", ""))):
+	if d.get("tileblock") is PackedByteArray and g.tileblock != d.tileblock:
 		same = false
-	if g.mine_mask != Marshalls.base64_to_raw(str(d.get("mine_mask", ""))):
+	if d.get("mine_mask") is PackedByteArray and g.mine_mask != d.mine_mask:
 		same = false
 	if g.map_starts.size() != (sarr as Array).size():
 		same = false
@@ -967,6 +1000,22 @@ func make_camera3d() -> Node:
 # ordinary bind(game, world, hud, cam) calls. bind_3d(cam) on the input
 # controller creates/binds picking3d.gd internally — never make a second
 # adapter here (that was the duplicate-binding risk of an earlier draft).
+# V7-70: the composed 3D scene is centred on origin (world3d_entities.gd:577,
+# world3d_terrain.gd:312-314, world3d.gd:161-162), but camera3d.gd:148 feeds
+# _target straight into a world Vector3. main.gd owns the seam that sets
+# _target, so convert the clamped map-origin focus into centred metres here.
+# clamp_pos() still uses map-origin limits: freeze its memo afterwards.
+func _center_camera3d_target() -> void:
+	if camera == null or not is_instance_valid(camera) or game == null:
+		return
+	var sim_focus: Vector2 = camera.get("_target")
+	var centre_offset := Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M
+	camera.set("_target", sim_focus - centre_offset)
+	camera.set("_last_clamp_target", camera.get("_target"))
+	camera.set("_last_clamp_zoom", camera.get("zoom"))
+	camera.call("_apply_transform")
+
+
 func _apply_3d_hooks(p_hud, p_cam, p_input) -> void:
 	if p_hud != null and p_hud.has_method("bind_3d"):
 		p_hud.bind_3d(p_cam)          # V7-53: minimap viewport box via hud3d_adapter
@@ -988,7 +1037,7 @@ func _setup_full_game() -> void:
 	# pre-baked post-setup snapshot is supplied and passes validation/parity.
 	# Canonical runs (no --self-only) never take this path.
 	var loaded_fast := false
-	if selftest_only != "" and self_snapshot_path != "" and FileAccess.file_exists(self_snapshot_path):
+	if selftest_only != "" and self_snapshot_path != "" and FileAccess.file_exists(_pick_target(self_snapshot_path)):
 		loaded_fast = _load_self_base(game, self_snapshot_path)
 	if not loaded_fast:
 		game.setup(start_mode)
@@ -1016,6 +1065,7 @@ func _setup_full_game() -> void:
 			focus3 = _relief_focus_position() / world.view_scale
 		camera.set("_target", focus3)  # camera3d.gd:90 _target is sim metres
 		camera.clamp_pos()
+		_center_camera3d_target()  # V7-70: sim map-origin -> centred 3D metres
 	else:
 		world = C3WorldScript.new()
 		world.bind(game)
@@ -1131,6 +1181,26 @@ func _setup_screenshot_window() -> void:
 		pass
 	# No waiting for the screen refresh: a covered window must not block.
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+
+	# V7-70: 3D mode captures a real GPU pass into an explicit render target.
+	# The root window texture reads blank in gl_compatibility, which is why the
+	# old harness silently swapped in a CPU map image. The world and camera keep
+	# their existing references; only their parent viewport changes. 2D mode is
+	# left byte-for-byte unchanged.
+	if render_mode == "3d" and world != null and camera != null:
+		capture_view3d = SubViewport.new()
+		capture_view3d.name = "Screenshot3DViewport"
+		capture_view3d.world_3d = World3D.new()
+		capture_view3d.size = Vector2i(Data.WINDOW_WIDTH, Data.WINDOW_HEIGHT)
+		capture_view3d.render_target_update_mode = SubViewport.UPDATE_ONCE
+		add_child(capture_view3d)
+		if world.get_parent() != null:
+			world.get_parent().remove_child(world)
+		capture_view3d.add_child(world)
+		if camera.get_parent() != null:
+			camera.get_parent().remove_child(camera)
+		capture_view3d.add_child(camera)
+		camera.make_current()
 
 # Read the options. Unknown words are skipped, so the engine's own arguments
 # (--path, --headless, ...) do no harm.
@@ -1572,10 +1642,23 @@ func _process(dt: float) -> void:
 					n = 1
 					break
 			if n > 0:
-				var target: Vector2 = (focus / float(n)) * world.view_scale
-				camera.position = camera.position.lerp(target, 0.35)
+				if render_mode == "3d":
+					# V7-70 E19: Camera3D's canonical API takes sim metres
+					# (top-left origin); no view_scale and no Vector2->Vector3
+					# lerp into global_position (the V7-75 handoff).
+					var target_m: Vector2 = focus / float(n)
+					camera.call("jump_to_world", target_m)
+					_center_camera3d_target()  # sim metres -> centred 3D metres
+				else:
+					var target: Vector2 = (focus / float(n)) * world.view_scale
+					camera.position = camera.position.lerp(target, 0.35)
 				var want_zoom: float = 0.75 if fighting else 1.0
 				camera.set_zoom_target(want_zoom)  # W4-1 smoothing owns the lerp
+			if dbg_journey < 2:
+				dbg_journey += 1
+				print("V770_JOURNEY probe mode=", render_mode,
+					" focus_m=", (focus / float(n)) if n > 0 else Vector2.ZERO,
+					" camera=", (camera.get("_target") if render_mode == "3d" else camera.position))
 	_consume_events()
 	walk_snd_t -= dt
 	if walk_snd_t <= 0.0:
@@ -1724,20 +1807,59 @@ func _save_screenshot() -> void:
 		print("screenshot saved (headless map render): ", out)
 		_quit(0)
 		return
-	# Windowed: capture the real viewport (waits for the GPU frame first).
+	# Windowed: capture a real GPU frame. In 3D mode the dedicated render target
+	# is authoritative: the window backbuffer read blank under gl_compatibility,
+	# which is why the old harness silently substituted a CPU map image.
+	if capture_view3d != null and is_instance_valid(capture_view3d):
+		capture_view3d.render_target_update_mode = SubViewport.UPDATE_ONCE
 	await RenderingServer.frame_post_draw
+	var vp = get_viewport()
+	if capture_view3d != null and is_instance_valid(capture_view3d):
+		vp = capture_view3d
 	# The window may have been closed while waiting - exit cleanly.
-	if not is_instance_valid(get_viewport()):
+	if vp == null or not is_instance_valid(vp):
 		printerr("screenshot: viewport gone")
 		_quit(1)
 		return
-	var tex := get_viewport().get_texture()
+	var tex := vp.get_texture()
 	if tex == null:
 		printerr("screenshot: no viewport texture")
 		_quit(1)
 		return
 	var img := tex.get_image()
-	if img == null or img.is_empty():
+	if render_mode == "3d":
+		# V7-70 diagnostics: always keep the unfiltered GPU image so a blank
+		# result can be distinguished from "2D map substituted for 3D".
+		var raw_path := _write_bytes(screenshot_path + ".raw.png", img) if img != null else ""
+		print("screenshot raw capture: ", raw_path)
+		var wimg := 0
+		var himg := 0
+		var p00 := Color(-1.0, -1.0, -1.0)
+		var pcenter := Color(-1.0, -1.0, -1.0)
+		if img != null and not img.is_empty():
+			wimg = img.get_width()
+			himg = img.get_height()
+			p00 = img.get_pixel(0, 0)
+			pcenter = img.get_pixel(int(wimg / 2), int(himg / 2))
+		var cam_ok := false
+		if camera != null and is_instance_valid(camera) and camera.get_viewport() != null:
+			cam_ok = camera.get_viewport().get_camera_3d() == camera
+		var wp := "none"
+		if world != null and is_instance_valid(world) and world.get_parent() != null:
+			wp = world.get_parent().name
+		var cam_pos = camera.global_position if camera != null and is_instance_valid(camera) else "none"
+		var cam_target = camera.get("_target") if camera != null and is_instance_valid(camera) else "none"
+		print("screenshot capture diag: viewport=", vp.name, " image=", wimg, "x", himg,
+			" p00=", p00, " pcenter=", pcenter, " camera_current=", cam_ok,
+			" world_parent=", wp, " camera_pos=", cam_pos, " target=", cam_target)
+	if img == null or img.is_empty() or (render_mode == "3d" and _is_blank(img)):
+		if render_mode == "3d":
+			# No CPU fallback outside headless: a blank 3D capture must never
+			# be presented as visual proof. Fail loudly instead.
+			printerr("screenshot: windowed 3D capture is blank; no CPU fallback "
+				+ "(visual parity UNVERIFIED)")
+			_quit(1)
+			return
 		printerr("screenshot: blank image, retrying with map render")
 		img = _render_headless_image(800, 600)
 	var out2 := _write_bytes(screenshot_path, img)
@@ -1745,8 +1867,10 @@ func _save_screenshot() -> void:
 		printerr("screenshot: could not write ", screenshot_path)
 		_quit(1)
 		return
-	# A blank picture never passes: fall back to the map render instead.
-	if _is_blank(img):
+	if render_mode == "3d":
+		print("screenshot capture source: ", vp.name, "/", img.get_width(), "x", img.get_height())
+	# A blank picture never passes: fall back to the map render instead (2D only).
+	if render_mode != "3d" and _is_blank(img):
 		var fb := _render_headless_image(800, 600)
 		out2 = _write_bytes(screenshot_path, fb)
 		print("screenshot saved (fallback map render): ", out2)
