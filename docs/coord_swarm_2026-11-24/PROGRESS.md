@@ -242,6 +242,33 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### PERF-3D measured the sync hot path (audit only)
+- Report `PERF3D_sync_hotpath.md`; temp probe deleted; no edits/git.
+- #1 per-unit donor skin sampling `world3d_entities.gd:955-1000` ->
+  anim3d.gd:489-530/410-459: **115.4-160.1 ms @ 200 units (0.58-0.80
+  ms/unit), 90-98% of world.sync**. Every unit re-skins 531-1014 verts into a
+  fresh PackedVector3Array even when sharing sid/action/donor frame. At 15-34
+  skinned units this matches the user's 12-20 ms.
+- #2 `_reconcile_entities()` full scan world3d.gd:305-355: 0.42 ms @ 200 units,
+  3.92 ms @ 200 units + 1200 res_nodes.
+- #3 transform writes 2.07-3.03 ms @ 200 units; the morph mesh rebuild is
+  CACHED (entities.gd:571-573) and only 1.1-1.7 ms steady state.
+- FX 0.02 ms, fog 0.003 ms, view_rect 0.01 ms — not bottlenecks.
+- Dispatched V7-79 (memoize pose by sid/action/frame in entities+anim3d) and
+  V7-80 (gate resource reconcile on game.res_dirty in world3d) — disjoint files.
+
+### FINAL GATES RUN (functional green, honesty caveats intact)
+- Variant: selftest 29/29 (last full 186 + 185), uitest 17/17 (191),
+  t_render_mode PASS 10/10 seam_missing=false (193). Variant runner empty/lock
+  free at end. 60 historical unacked probe-iteration failures remain; no
+  variant assert_clean.py -> no formal variant CLEAN claimed.
+- 2D app: uitest 17/17 (1341), clean CLEAN (0 processes, free lock, 9 acks).
+  selftest job 1340 FAILED transiently (concurrent Godot contention with
+  PERF-3D probe; exit 1, empty stderr, selftest.json still passed 29/29);
+  rerun on quiet queue 1342 ok, 29/29. app/ files untouched all wave.
+- `STATUS_WAVE7_PHASE2.md` got an authoritative FINAL VERDICT section at top;
+  older sections are explicitly labelled historical snapshots.
+
 ### V7-78 donor skins SHIPPED — V7-74 caveat closed
 - New `variant3d/tools/convert_skins.py` reads donor .oss + each unit's .aaf
   via read-only manifest paths; exports deterministic 6-frames/action subset

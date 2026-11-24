@@ -3,10 +3,49 @@ title: STATUS — Wave 7 Phase 2 (variant3d 3D variant)
 area: variant3d / wave-7-phase-2
 owner: V7-40 (docs atom; living doc — coordinator updates after gates)
 updated: 2026-11-24
-status: amber
+status: green-with-caveats
 ---
 
 # ⚔️ STATUS — Wave 7 Phase 2 (`variant3d/`)
+
+## 🟢 FINAL VERDICT — 2026-11-24 (authoritative; sections below are historical snapshots)
+
+The 3D variant is **functional and its functional gates are green**. All 10 P0
+gaps from the 9-agent parity audit are closed (`AUDIT3D_TRIAGE.md`):
+
+| Gate / milestone | Result | Evidence |
+|---|---|---|
+| Variant selftest, `render_mode="3d"` | **29/29 PASS** | jobs 130, 157, 163, 186, 185; `variant3d/selftest.json` `passed:true` |
+| Variant uitest | **17/17 PASS** | job `coord-variant-final-uitest` (191); `variant3d/uitest.json` `passed:true` |
+| `t_render_mode` | **PASS 10/10**, `seam_missing=false` | job 193; `variant3d/tests/results/t_render_mode.json` |
+| 2D shipping gate (`app/`) | selftest **29/29** (1342), uitest **17/17** (1341), clean **CLEAN** | job 1340 was a transient concurrent-Godot failure, rerun 1342 green |
+| Launcher | `launch_variant3d.bat` works; `launch_3d.bat` shim delegates | direct launch, WinGet symlink resolution; `--dump-config` reports `"render_mode": "3d"` |
+| Real 3D pixels | **YES** (windowed GPU capture) | V7-70 jobs 138/179; `Screenshot3DViewport`; CPU map remains headless/2D-only |
+| Real entity meshes in play | **YES** — 0 → 5 in probe | V7-62 (job 130) |
+| Donor models | 79/81 roster IDs, 172 OBJ importable | V7-63 + V7-72; bar18/dock absent in donor |
+| Donor player colours | 13 slots, auto-loaded, tint by player batch | V7-61 + V7-65; probe 21/21 |
+| Donor animation data | 55 shipped skins auto-register; 733/733 verts morph | V7-64/74/78; probe 24/24 |
+| Runtime lighting | donor `WorldEnvironment` + `DonorSun` attached | V7-60, probe 19/19 |
+| FX / ghost / rally | FX offset 452.548 m → 0.000 m; ghost/rally nodes appear | V7-73 + V7-76 |
+
+**Qualifications that remain genuinely UNVERIFIED (do not silently drop):**
+- Donor **visual parity** — real 3D pixels exist, but no A/B comparison against
+  the donor was performed.
+- Donor-sampled animation is **flat-root `PORT APPROXIMATION — NOT DONOR PARITY`**
+  (`.oss` bone parents unreadable); ships static; N=6 frames/action, no interpolation.
+- Alpha / >1.0 colour clamping / uniform-0 donor shading semantics.
+- E6 flat-Y zoom anchor: measurement showed **no** real drift bug — open question.
+- True positional audio (`AudioStreamPlayer3D`, donor emitter semantics) not built;
+  only 3D-aware distance culling works.
+- Variant queue has 60 historical, unacked **probe-iteration** failures, each
+  superseded by a documented passing job; no variant `assert_clean.py` exists, so
+  a formal variant `CLEAN` verdict is **not claimed**. App `CLEAN` is measured.
+
+Remaining follow-up wave: PERF-3D (`sync_ms` 12–20 ms) and optional positional
+audio / donor visual A/B. No git operations were performed by the assistant;
+the user owns all commits.
+
+---
 
 > [!IMPORTANT]
 > Cold-readable living status for the **wave-7 phase-2 3D variant work**. A human
