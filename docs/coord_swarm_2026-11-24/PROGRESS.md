@@ -247,6 +247,86 @@ historical failures" once the background job finishes (avoid spool race).
   t_render_mode PASS, seam_missing=false. (Gate run before V7-81 camera fix;
   V7-81 will re-verify its own selftest.)
 
+### DECOMP-02 RTTI class names decoded + DECOMP-03 vertex layout
+- DECOMP-02: RTTI strings carry a leading Delphi metadata flag byte; corrected
+  names XTerrain 0x95864a, XTerrainDataLite 0x9587c3, XTerrainData 0x958b76,
+  XTerrainBorders 0x9593b4, XHeightField 0x958aa3, XMap 0x958ab2,
+  XTile 0x9589e9, XWorld 0x9589e0, XColorTable 0x958ab9, XBrush 0x9587d6,
+  each with VA->file offset in its report. ALL xref searches 0 code refs.
+- DECOMP-03 §6 exact layout: sub_4ff680 glVertexPointer(3,FLOAT,0),
+  glNormalPointer(FLOAT,0), glTexCoordPointer(2,FLOAT,stride 12), NO color array
+  (glColorPointer 0 refs). sub_501420 adds two extra glTexCoordPointer(4,FLOAT)
+  on texture units GL_TEXTURE0+ offsets — genuine MULTI-TEXTURE/multi-UV path.
+  Draws are mode 4 GL_TRIANGLES only, arrays (first=0,count=[obj+0x90]+8) or
+  indexed shared-vertex triangle lists with 32-bit indices (count=[obj+0x1c]+8).
+  Display lists are generic object caches (gated byte [obj+0xbc]); terrain/UI
+  identity UNVERIFIED. Implication: ShaderMaterial can mirror triangle-list
+  indexed geometry + multi-UV sampling; vertex colours NOT donor-proven;
+  tile factors/UV transforms/fog/water constants unrecoverable from EXE.
+
+### TERRAIN2-02 donor textures — fix dispatched
+- Top reusable donor blocks (all 1024x1024 DXT1, 11 mips, ALREADY converted to
+  `variant3d/assets/terrain/blocks/*.png`): grass1 (15,993 splat cells;
+  tiles.mat:2-4, terrain.presets:6), grass2 (2,863; presets:7), rock8
+  (high-face fill; world.gd:1394-1396,1476-1479), sandsea6 (shoreline tile
+  texturemap.inc:505-511; world.gd:1060-1063), ground1 (bare earth; tiles.lib:32,
+  presets:16 — no donor road tile exists). Masks: alpha.bmp 512x256 8bpp blend
+  atlas, alphavert.bmp 1024x512 cliff mask.
+- UNVERIFIED: detail.dds 2048x 2 (name suggests detail, construction link, not
+  proven terrain detail/normal); alphanull.bmp; hmapTex binding; sand1/2 256x vs
+  sand3/4 1024x despite same metadata; no donor terrain normal map bound; road
+  art; inert dmask/d_*.png; most terrain scripts commented in shipped build.
+- V7-82 dispatched: variant3d-only splat regeneration with --texels-per-cell 4
+  + LINEAR filter (owns variant3d/tools/heightmap_splat.py, splat PNG, one
+  filter line in world3d_terrain.gd), before/after GPU captures if feasible,
+  29/29 gate. app/ untouched.
+
+### DECOMP-04 strings/config keys — CORRECTED DECOMP-01
+- IMPORTANT correction: native_strings_find is DATA-SECTIONS-ONLY, so DECOMP-01's
+  zero matches were false negatives. Whole-file native_bytes_find found real
+  donor keys in CODE: SphereHeight 0x7abc44, SphereHeightMin 0x7abc5c,
+  MinHeightMinAngle 0x7abe5c, DynFogDepth 0x5fe437/0x5fe46b/0x7ac0ac,
+  FocalLength (16), Weather (32), DateTimeEnable 0x7e6630/0x7e9aac,
+  hmapTex 0x853e0c (file offset 4534796), XTerrainBorders 0x7783b6/0x7783cf/
+  0x7783e9, HXHeightField/XColorTable .rsrc + 47/29 CODE hits.
+- Truly ABSENT whole-file: grass1, sand, rock, diffusewaves, terrainmesh,
+  .hmap, .dds, .tga -> external data/** confirmed, not disuse.
+- DECOMP_01 report corrected with a WARNING block; follow-up dispatched to find
+  code consumers of hmapTex / DynFogDepth / SphereHeight (could unlock donor
+  water/fog semantics). Report DECOMP_04_strings_config.md.
+
+### DECOMP-03 donor render path PROVEN
+- Fixed-function OpenGL 1.x, CPU-side vertex arrays + index remaps, cached state
+  setters, NO VBOs/shaders in the analysed binary path. Packing confined to
+  .bind; CODE segment yielded full Ghidra dossiers/pseudo-C.
+- Proven call sites: glDrawArrays 0x4ffaeb in sub_4ff680 (ev_53e679e4...,
+  ev_e8b90d94...); glDrawElements 0x4ffb7a (ev_510b131a..., ev_6861feca...);
+  second draw path sub_501420 at 0x501e80/0x501fcd incl. glNewList/glCallList
+  (ev_5b533b72...); glVertexPointer/NormalPointer/TexCoordPointer +
+  glEnableClientState around 0x4ffa7e/0x4ffb41 (ev_1426cbde..., ev_4eb0f457...);
+  cached glBindTexture at 0x88f8c0 (ev_7283a6b2..., ev_b07dd093...).
+- UNVERIFIED: shader setup (no shader imports, wglGetProcAddress 0 refs,
+  $XWaterShader etc. are .rsrc metadata with 0 code refs); D3D9 path
+  (Direct3DCreate9 imported but 0 refs, DrawPrimitive 0 matches).
+- Follow-up dispatched to extract exact gl*Pointer size/type/stride args and
+  draw modes from sub_4ff680 / sub_501420, with terrain implications.
+
+### DECOMP-05 static-vs-runtime feasibility
+- Ghidra static decompilation IS feasible PER FUNCTION: entry 0x8f1a08 -> real
+  113-line pseudo-C (DEP check, mutex, "Cossacks III", WinExec) evidence
+  ev_8fb27745...; arbitrary sub_60faa0 -> 39 lines virtual call ev_2cbea617...
+- NOT terrain-targeted: 4 terrain strings have 0 code refs (ev_01c9b39d...,
+  ev_b218360c...); 18,918 functions, 6M-instruction cutoff, 1,238 unresolved
+  indirect jumps, stripped names, no recovered types (ev_60b49743...).
+- High entropy is LOCALISED to .bind (7.96, 146,800 B); 5.18 MB CODE segment
+  entropy 6.61 analysed fine (ev_2a27e4cd...). Packed-file listing refused the
+  EXEs (no recognised container, 0 evidence records); .bind is NOT an
+  enumerable static archive.
+- Verdict: do NOT ask for consented runtime unpacking for terrain work — small
+  uncertain payoff vs anti-cheat/DEP/network/instability risk. Focus on static
+  external `data/**` scripts/shaders (TERRAIN2 lane). Frida/runtime tools were
+  only enumerated, NEVER executed. Report DECOMP_05, finding fnd_1.
+
 ### V7-81 minimap black-view FIXED — USER RETEST PENDING
 - camera3d.gd coordinate frame fixed. Measured minimap-centre click on 320x320
   stub: BEFORE global_position (320.0, 34.06, 374.51), centred view centre

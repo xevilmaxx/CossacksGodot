@@ -50,16 +50,35 @@ all in the `.rsrc` section:
 
 | Address | String |
 |---|---|
-| `0x958649` | `EXTerrain` |
+| `0x958649` | `EXTerrain` → actually `XTerrain` (leading `E` is a Delphi metadata flag byte; corrected by DECOMP-02) |
 | `0x9587c3` | `XTerrainDataLite` |
-| `0x958b75` | `sXTerrainData` |
-| `0x9593b3` | `<XTerrainBorders` |
+| `0x958b75` | `sXTerrainData` → actually `XTerrainData` (metadata flag) |
+| `0x9593b3` | `<XTerrainBorders` → actually `XTerrainBorders` (metadata flag) |
+
+> [!NOTE] DECOMP-02 decoded the RTTI names properly: the first character in
+> each raw string is a Delphi metadata/type flag, not part of the class name.
+> It also located `XHeightField` `0x958aa3`, `XMap` `0x958ab2`,
+> `XTile` `0x9589e9`, `XWorld` `0x9589e0`, `XColorTable` `0x958ab9`,
+> `XBrush` `0x9587d6`, with VA-to-file-offset mappings in
+> `DECOMP_02_rtti_terrain_classes.md`. All xref searches returned **zero code
+> references** — these are names, not decompiled implementations.
 
 `hmap`, `diffusewave`, `texturemap`, `generatemap` and `water.dev` produced
 **0 matches**; this is expected because those names live in external text data
 files (`data/**`), not in the executable. Absence in the binary is **not** proof
 of absence in the game. Evidence: `ev_1de8519d…`, `ev_d4f23220…`,
 `ev_9e42e02b…`, `ev_a9414ccc…`, `ev_19016788…`.
+
+> [!WARNING] CORRECTION by DECOMP-04 (see `DECOMP_04_strings_config.md`):
+> `native_strings_find` searches **data sections only**, so the "0 matches"
+> above are FALSE NEGATIVES for whole-file presence. Whole-file
+> `native_bytes_find` found real config keys in `CODE`, including
+> `SphereHeight` `0x7abc44`, `DynFogDepth` `0x5fe437/0x5fe46b/0x7ac0ac`,
+> `FocalLength` (16 hits), `Weather` (32 hits), `DateTimeEnable` `0x7e6630`,
+> **`hmapTex` `0x853e0c`**, `XTerrainBorders` `0x7783b6/…`, and
+> `HXHeightField`/`XColorTable` CODE hits. Truly absent from the whole file:
+> `grass1`, `sand`, `rock`, `diffusewaves`, `terrainmesh`, `.hmap`, `.dds`,
+> `.tga` — those live in external `data/**`, not in the EXE.
 
 ## 3. String → code linking failed — `ev_b218360c…`
 
