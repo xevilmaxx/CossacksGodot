@@ -122,7 +122,7 @@ var start_mode := "skirmish"
 # NOTE: do not put the literal 3d value on this line; t_render_mode.gd checks
 # that the declared default is unambiguously 2D.
 var render_mode := "2d"
-var picker3d = null                # picking3d.gd instance, 3D mode only
+
 var battle_requested := false
 var config_path := ""
 var dump_config := false
@@ -172,6 +172,9 @@ func _ready() -> void:
 	cfg.apply()
 	screenshot_focus = cfg.text("gameplay.screenshot_focus", "start")
 	start_zoom = cfg.num("camera.start_zoom", 0.75)
+	# V7-50 PORT ADDITION: new additive key; 2D is the default when absent.
+	render_mode = str(cfg.text("gameplay.render_mode", "2d")).to_lower()
+	Data.RENDER_MODE = render_mode
 	if seed_random:
 		Data.RANDOM_SEED = int(randi())
 	elif seed_arg >= 0:
@@ -567,20 +570,39 @@ func _do_async_load(cfg: Dictionary) -> void:
 	_apply_menu_post_loadsave(cfg)
 	if not await _loading_tick(0.90, "Loading art...", gen):
 		return
-	world = C3WorldScript.new()
-	world.bind(game)
-	add_child(world)
+	if render_mode == "3d":
+		world = make_world3d()
+		world.bind(game)
+		add_child(world)
+	else:
+		world = C3WorldScript.new()
+		world.bind(game)
+		add_child(world)
 	if not await _loading_tick(0.94, "Building interface...", gen):
 		return
-	camera = C3CameraScript.new()
-	add_child(camera)
-	camera.bind(world)
-	camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
-	var homes := game.buildings_of(0)
-	if not homes.is_empty():
-		camera.position = homes[0].pos * world.view_scale
+	if render_mode == "3d":
+		camera = make_camera3d()
+		add_child(camera)
+		camera.bind(game, world.view_scale)  # camera3d.gd contract: bind(game, view_scale)
 	else:
-		camera.position = Vector2(20, 20) * Data.TILE_M * world.view_scale
+		camera = C3CameraScript.new()
+		add_child(camera)
+		camera.bind(world)
+	var homes := game.buildings_of(0)
+	if render_mode == "3d":
+		# camera3d.gd's set_zoom_target(target, immediate, anchor) differs from
+		# the 2D camera's 3-arg call; keep the 2D call verbatim in the else leg.
+		camera.set_zoom_target(start_zoom, true)
+		var focus3: Vector2 = homes[0].pos if not homes.is_empty() \
+			else Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M
+		camera.set("_target", focus3)  # camera3d.gd:90 _target is sim metres
+		camera.clamp_pos()
+	else:
+		camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
+		if not homes.is_empty():
+			camera.position = homes[0].pos * world.view_scale
+		else:
+			camera.position = Vector2(20, 20) * Data.TILE_M * world.view_scale
 	hud = C3HUDScript.new()
 	add_child(hud)
 	hud.bind(game, world)
@@ -599,6 +621,8 @@ func _do_async_load(cfg: Dictionary) -> void:
 	input_ctl = C3InputScript.new()
 	add_child(input_ctl)
 	input_ctl.bind(game, world, hud, camera)
+	if render_mode == "3d":
+		_apply_3d_hooks(hud, camera, input_ctl)  # V7-53 HUD + V7-52 picking hooks
 	var homes2 := game.buildings_of(0)
 	if not homes2.is_empty():
 		input_ctl._set_selection([homes2[0]])
@@ -910,6 +934,46 @@ func _load_self_base(g: C3Game, path: String) -> bool:
 		" (", g.MAP_W, "x", g.MAP_H, ", ", g.entities.size(), " ents, seed ", b.seed, ")")
 	return same
 
+# --- V7-50 render-mode seam ---------------------------------------------------
+# PORT ADDITION: no donor "render mode" key exists (V71 :171,:176). The 3D
+# modules are loaded dynamically (no class_name: .godot's global-class cache is
+# only rebuilt by the serialized runner), so these factories are the single
+# construction point for the 3D world and camera. Both legacy C3WorldScript /
+# C3CameraScript constructors remain in the 2D branches below, unchanged.
+
+func make_world3d() -> Node:
+	var script = load("res://scripts/world3d.gd")
+	if script == null:
+		push_error("V7-50: res://scripts/world3d.gd is missing")
+		return null
+	var node = script.new()
+	if node == null:
+		push_error("V7-50: world3d.gd.new() failed")
+	return node
+
+
+func make_camera3d() -> Node:
+	var script = load("res://scripts/camera3d.gd")
+	if script == null:
+		push_error("V7-50: res://scripts/camera3d.gd is missing")
+		return null
+	var node = script.new()
+	if node == null:
+		push_error("V7-50: camera3d.gd.new() failed")
+	return node
+
+
+# V7-52 / V7-53 documented hooks. Called only from the 3D branches, after the
+# ordinary bind(game, world, hud, cam) calls. bind_3d(cam) on the input
+# controller creates/binds picking3d.gd internally — never make a second
+# adapter here (that was the duplicate-binding risk of an earlier draft).
+func _apply_3d_hooks(p_hud, p_cam, p_input) -> void:
+	if p_hud != null and p_hud.has_method("bind_3d"):
+		p_hud.bind_3d(p_cam)          # V7-53: minimap viewport box via hud3d_adapter
+	if p_input != null and p_input.has_method("bind_3d"):
+		p_input.bind_3d(p_cam)        # V7-52: picking3d wiring, cmd_* untouched
+
+
 func _setup_full_game() -> void:
 	if not is_headless:
 		get_window().size = Vector2i(Data.WINDOW_WIDTH, Data.WINDOW_HEIGHT)
@@ -935,27 +999,44 @@ func _setup_full_game() -> void:
 	if selftest_path != "":
 		selftest_baseline = game.serialize()
 
-	world = C3WorldScript.new()
-	world.bind(game)
-	add_child(world)
-
-	camera = C3CameraScript.new()
-	add_child(camera)
-	camera.bind(world)
-	camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
 	var homes := game.buildings_of(0)
-	# Small samples need the map centre to avoid an off-screen void; larger maps
-	# frame the first town hall (where starts/resources cluster), as in normal play.
-	# An explicit "relief" focus overrides both in screenshot mode only.
-	if screenshot_path != "" and screenshot_focus == "relief":
-		camera.position = _relief_focus_position()
+	if render_mode == "3d":
+		world = make_world3d()
+		world.bind(game)
+		add_child(world)
+
+		camera = make_camera3d()
+		add_child(camera)
+		camera.bind(game, world.view_scale)  # camera3d.gd contract: bind(game, view_scale)
+		camera.set_zoom_target(start_zoom, true)
+		var focus3: Vector2 = Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M
+		if not homes.is_empty():
+			focus3 = homes[0].pos
+		if screenshot_path != "" and screenshot_focus == "relief":
+			focus3 = _relief_focus_position() / world.view_scale
+		camera.set("_target", focus3)  # camera3d.gd:90 _target is sim metres
 		camera.clamp_pos()
-	elif screenshot_path != "" and game.MAP_W < 96:
-		camera.position = Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M * world.view_scale
-	elif not homes.is_empty():
-		camera.position = homes[0].pos * world.view_scale
 	else:
-		camera.position = Vector2(20, 20) * Data.TILE_M * world.view_scale
+		world = C3WorldScript.new()
+		world.bind(game)
+		add_child(world)
+
+		camera = C3CameraScript.new()
+		add_child(camera)
+		camera.bind(world)
+		camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
+		# Small samples need the map centre to avoid an off-screen void; larger maps
+		# frame the first town hall (where starts/resources cluster), as in normal play.
+		# An explicit "relief" focus overrides both in screenshot mode only.
+		if screenshot_path != "" and screenshot_focus == "relief":
+			camera.position = _relief_focus_position()
+			camera.clamp_pos()
+		elif screenshot_path != "" and game.MAP_W < 96:
+			camera.position = Vector2(game.MAP_W, game.MAP_H) * 0.5 * Data.TILE_M * world.view_scale
+		elif not homes.is_empty():
+			camera.position = homes[0].pos * world.view_scale
+		else:
+			camera.position = Vector2(20, 20) * Data.TILE_M * world.view_scale
 
 	hud = C3HUDScript.new()
 	add_child(hud)
@@ -978,6 +1059,8 @@ func _setup_full_game() -> void:
 	input_ctl = C3InputScript.new()
 	add_child(input_ctl)
 	input_ctl.bind(game, world, hud, camera)
+	if render_mode == "3d":
+		_apply_3d_hooks(hud, camera, input_ctl)  # V7-53 HUD + V7-52 picking hooks
 	# start framed on the town hall with it selected, like the original
 	# battle view: the bottom panel shows the building instead of empty black
 	if screenshot_path == "":
@@ -1341,7 +1424,9 @@ func _show_options(parent: VBoxContainer) -> void:
 		world.terrain_masks = world._build_masks(world._bake_px())
 		world.anim_tex.clear()
 		world.anim_index = {}
-		var idx_path := world._anim_dir() + "/land_units/index.json"
+		# V7-50: explicit type — `world` is intentionally untyped for the 3D
+		# factory, and GDScript cannot infer `:=` from a Variant member call.
+		var idx_path: String = String(world.call("_anim_dir")) + "/land_units/index.json"
 		if not FileAccess.file_exists(idx_path):
 			idx_path = world._anim_dir() + "/index.json"  # legacy flat fallback
 		var j := FileAccess.get_file_as_string(idx_path)

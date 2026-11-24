@@ -1,7 +1,7 @@
 {
 	"checks": [
 		{
-			"detail": "res://scripts/main.gd (71512 chars)",
+			"detail": "res://scripts/main.gd (75849 chars)",
 			"name": "main_source_readable",
 			"passed": true,
 			"result": "PASS"
@@ -15,38 +15,38 @@
 		{
 			"detail": "main.gd declares/assigns render_mode",
 			"name": "render_mode_exposed",
-			"passed": false,
-			"result": "FAIL"
+			"passed": true,
+			"result": "PASS"
 		},
 		{
 			"detail": "gameplay.render_mode fallback is \"2d\"",
 			"name": "render_mode_default_2d",
-			"passed": false,
-			"result": "FAIL"
+			"passed": true,
+			"result": "PASS"
 		},
 		{
 			"detail": "func make_world3d(...) present",
 			"name": "make_world3d_exposed",
-			"passed": false,
-			"result": "FAIL"
+			"passed": true,
+			"result": "PASS"
 		},
 		{
 			"detail": "func make_camera3d(...) present",
 			"name": "make_camera3d_exposed",
-			"passed": false,
-			"result": "FAIL"
+			"passed": true,
+			"result": "PASS"
 		},
 		{
 			"detail": "world/camera construction gated on render_mode",
 			"name": "three_d_branch_present",
-			"passed": false,
-			"result": "FAIL"
+			"passed": true,
+			"result": "PASS"
 		},
 		{
 			"detail": "both make_* helpers declared AND called",
 			"name": "three_d_helpers_wired",
-			"passed": false,
-			"result": "FAIL"
+			"passed": true,
+			"result": "PASS"
 		},
 		{
 			"detail": "legacy 2D world/camera constructors still present",
@@ -55,16 +55,16 @@
 			"result": "PASS"
 		},
 		{
-			"detail": "SEAM_MISSING: no render_mode property on main.gd instance",
+			"detail": "bare instance render_mode=\"2d\" (expected \"2d\")",
 			"name": "runtime_default_2d",
-			"passed": false,
-			"result": "FAIL"
+			"passed": true,
+			"result": "PASS"
 		}
 	],
 	"id": "t_render_mode",
-	"passed": false,
-	"result": "FAIL",
-	"seam_missing": true,
-	"status": "BLOCKED-PENDING-INTEGRATION",
-	"unix_ms": 1795519428112.0
+	"passed": true,
+	"result": "PASS",
+	"seam_missing": false,
+	"status": "PASS",
+	"unix_ms": 1795520171218.0
 }

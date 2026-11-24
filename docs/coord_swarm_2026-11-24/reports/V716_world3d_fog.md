@@ -78,8 +78,8 @@ No extra public methods were added. Private helpers: `_alpha_for`,
 
 ## 5. Verification
 
-- Tabs: `variant3d/scripts/world3d_fog.gd` — 317 lines, **0 space-indented
-  lines** (PowerShell scan of every line).
+- Tabs: `variant3d/scripts/world3d_fog.gd` — **0 space-indented lines**
+  (PowerShell scan of every line; line count 317 before the one-line fix).
 - Parse via variant runner: **PASS** —
   `python variant3d\tools\godot_runner.py run --id v716-parse --timeout 90 -- --headless --path variant3d --check-only --script res://scripts/world3d_fog.gd`
   → `[runner] ticket 20 'v716-parse' END ok (run 6.27s)` (waited 128.96s in the
@@ -94,10 +94,44 @@ No extra public methods were added. Private helpers: `_alpha_for`,
   `no_fullmap_sprite2d` (`sprite2d_nodes=0 source_Sprite2D.new=false`),
   `no_new_hangs` (`0.20s`).
 
-**Verification is structural/API only**: the stub has no sim, no mapgen and no
-GPU frame, so PASS does **not** prove visual fog parity, donor depth-fog parity,
-or correct alignment with `world3d_terrain.gd` heights (open questions 1, 2, 4
-and 6 above). No windowed visual gate was run by this agent.
+### 5.1 Bug reported by V7-51 (integration) — FIXED
+
+**Bug:** `world3d_fog.gd:211` assigned `_overlay.render_priority = 10` on a
+`MeshInstance3D`. On the project's Godot 4.7.2 this property does not exist,
+so `_build_overlay()` aborted before `add_child()` — the fog overlay never
+attached and `sync()` no-oped. The original 9/9 fog test only checked API and
+data, not child attachment, so it could not catch this.
+
+**Fix (one line, plus an explanatory comment):**
+`_overlay.render_priority = 10` → `_overlay.sorting_offset = 10.0` — the
+equivalent transparent-sort bias on `VisualInstance3D`. No other code changed.
+
+**Live-property probe (temporary script `variant3d/tests/_v716_probe.gd`, run
+via the runner; it is a throwaway probe, not an owned deliverable. A concurrent
+repo commit captured it, so it was restored to HEAD rather than left deleted —
+the only working-tree diff from this agent is this report; the module fix is
+already in HEAD):**
+
+- `python variant3d\tools\godot_runner.py run --id v716-parse-fix --timeout 90 -- --headless --path variant3d --check-only --script res://scripts/world3d_fog.gd`
+  → `[runner] ticket 63 'v716-parse-fix' END ok (run 2.55s)`.
+- `python variant3d\tools\godot_runner.py run --id v716-attach-probe --timeout 90 -- --headless --path variant3d --script res://tests/_v716_probe.gd`
+  → `[runner] ticket 64 'v716-attach-probe' END ok (run 2.24s)`.
+- Probe result (`variant3d/tests/results/v716_probe.json`, read then deleted):
+  `has_render_priority: false`, `has_sorting_offset: true`,
+  `overlay_child_attached: true`, `overlay_is_meshinstance3d: true`,
+  `overlay_mesh_surface_count: 1`, `overlay_sorting_offset: 10.0`.
+  This proves the property exists on this Godot build **and** that the
+  `FogOverlay` `MeshInstance3D` with a real mesh surface is actually a child
+  after `bind()` + `sync()`, which the old test did not assert.
+- Regression re-run:
+  `python variant3d\tools\godot_runner.py run --id v716-t-fog3d-fix --timeout 90 -- --headless --path variant3d --script res://tests/t_fog3d.gd`
+  → `[runner] ticket 65 'v716-t-fog3d-fix' END ok (run 2.16s)`;
+  `t_fog3d.json` still `status: PASS`, **9/9** (`0.10s`).
+
+**Verification is still structural/API only**: the stub has no sim, no mapgen
+and no GPU frame, so PASS does **not** prove visual fog parity, donor depth-fog
+parity, or correct alignment with `world3d_terrain.gd` heights (open questions
+1, 2, 4 and 6 above). No windowed visual gate was run by this agent.
 
 ## 6. Open questions
 
