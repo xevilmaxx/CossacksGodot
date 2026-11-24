@@ -20,6 +20,9 @@ var idle_count := 0
 var free_slots_count := 0
 var gold_deficit := false
 var eco_t := 0.0
+# T-PERF-RENDER: unit/queue counts are O(live units + buildings); refresh them
+# on the same ~0.5 s cadence as the economy read-out instead of every frame.
+var _cached_ucount := 0
 var res_deficit: Array = [false, false, false, false, false, false]
 var eco_warn := false
 var sel_panel: PanelContainer
@@ -1066,6 +1069,7 @@ func _process(dt: float) -> void:
 	if eco_t <= 0.0:
 		eco_t = 0.5
 		_recompute_eco()
+		_cached_ucount = game.unit_count(0) + game.queue_count(0)
 	for i in 6:
 		var rname: String = str(Data.RES_NAMES[i])
 		var rt := "%d [%d]" % [int(game.players[0].res[i]), int(worker_counts.get(rname, 0))]
@@ -1093,7 +1097,7 @@ func _process(dt: float) -> void:
 		if warn != eco_warn:
 			eco_warn = warn
 			eco_label.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if warn else Color(0.8, 0.85, 1))
-	var ucount := game.unit_count(0) + game.queue_count(0)
+	var ucount := _cached_ucount  # throttled on eco_t (~0.5 s); other fields stay live
 	# the hint line carries placement text; the status line keeps units/score
 	if hint_label == null or hint_label.text == "":
 		var st := "units %d/%d    score %d    %s" % [ucount, game.players[0].farm_cap,

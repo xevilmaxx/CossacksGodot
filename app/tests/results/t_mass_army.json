@@ -21,7 +21,7 @@
 			"passed": true
 		},
 		{
-			"detail": "mass sim wall time 16601.41 ms for 552 units / 10.0 sim-seconds",
+			"detail": "mass sim wall time 20832.75 ms for 552 units / 10.0 sim-seconds",
 			"name": "perf_metric_recorded",
 			"passed": true
 		},
@@ -33,7 +33,7 @@
 	],
 	"id": "t_mass_army",
 	"passed": true,
-	"sim_ms": 16601.408,
+	"sim_ms": 20832.751,
 	"units": 552,
-	"unix_ms": 1795452912408.0
+	"unix_ms": 1795507719146.0
 }

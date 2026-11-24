@@ -57,6 +57,7 @@ var screenshot_focus := "start"   # gameplay.screenshot_focus: start | relief
 var test_api_port := 0
 var test_bridge: C3TestBridge = null
 var selftest_path := ""
+var selftest_only := ""
 var uitest_path := ""
 var uitest_only := ""
 var seq_dir := ""
@@ -812,6 +813,10 @@ func _parse_args(args: PackedStringArray) -> void:
 				selftest_path = args[i + 1] if i + 1 < args.size() else "selftest.json"
 				i += 2
 				continue
+			"--self-only":
+				selftest_only = args[i + 1] if i + 1 < args.size() else ""
+				i += 2
+				continue
 			"--ui-test":
 				uitest_path = args[i + 1] if i + 1 < args.size() else "uitest.json"
 				i += 2
@@ -1501,7 +1506,7 @@ func _run_selftest() -> void:
 	# game.tick/selftest has a fixed step cap, so it cannot hang.
 	var st := C3SelfTest.new()
 	st.bind(game, hud, self)
-	var report: Dictionary = st.run()
+	var report: Dictionary = st.run_only(selftest_only) if selftest_only != "" else st.run()
 	var out := _write_text(selftest_path, JSON.stringify(report, "  "))
 	if out == "":
 		printerr("self-test: could not write ", selftest_path)

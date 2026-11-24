@@ -165,14 +165,45 @@ func _trace(res: Dictionary, p: Dictionary, peasants: Array, military: Array, fi
 				alive_fields += 1
 			else:
 				depleted_fields += 1
+	# T6-I6-METAL: soak-only fields (the env gate means selftest/uitest stdout
+	# stays byte-identical). They let a 300 s CLI run verify the metal-mine fix
+	# without changing simulation state.
+	var force := 0.0
+	for m in military:
+		force += float(m.def.aiforce)
+	var jobs := {"food": 0, "wood": 0, "stone": 0, "mine": 0, "build": 0, "idle": 0, "other": 0}
+	for pe in peasants:
+		if pe.inside_of != 0:
+			jobs["mine"] += 1
+		elif pe.order.type == "gather":
+			var jk: String = str(pe.order.get("res", ""))
+			jobs[jk] = int(jobs.get(jk, 0)) + 1
+		elif pe.order.type == "build":
+			jobs["build"] += 1
+		elif pe.order.type == "none":
+			jobs["idle"] += 1
+		else:
+			jobs["other"] += 1
+	var home_pos: Vector2 = p.get("home_pos", Vector2.ZERO)
+	var stone_node := game.nearest_res(home_pos, "stone", 400.0)
+	var stone_d := -1.0
+	if not stone_node.is_empty():
+		stone_d = snappedf(stone_node.pos.distance_to(home_pos), 1.0)
 	var row := {
 		"p": player, "t": snappedf(game.time_s, 0.1),
 		"food": snappedf(res.food, 1.0), "wood": snappedf(res.wood, 1.0), "stone": snappedf(res.stone, 1.0),
+		"gold": snappedf(res.gold, 1.0), "iron": snappedf(res.iron, 1.0), "coal": snappedf(res.coal, 1.0),
 		"famine": bool(p.get("famine", false)), "famine_t": snappedf(float(p.get("famine_t", 0.0)), 1.0),
 		"peasants": peasants.size(), "military": military.size(),
 		"food_workers": _count_food_workers(peasants),
 		"reserve": snappedf(ai_food_reserve, 1.0), "food_ok": ai_food_ok, "starving": ai_starving,
 		"mills_fin": int(fin.get("mil", 0)), "mills_all": int(counts.get("mil", 0)),
+		"mines_fin": {
+			"gold": int(fin.get("mine_gold", 0)), "iron": int(fin.get("mine_iron", 0)),
+			"coal": int(fin.get("mine_coal", 0)),
+		},
+		"force": snappedf(force, 1.0), "wave": wave,
+		"jobs": jobs, "stone_d": stone_d, "blds": counts,
 		"fields": alive_fields, "fields_depleted": depleted_fields,
 	}
 	print("C3AITrace ", JSON.stringify(row))
@@ -197,6 +228,15 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 		"wood": maxi(1, int(float(n) * wood_share)),
 		"stone": maxi(1, int(float(n) * stone_share)),
 	}
+	# T6-I6-METAL: the flat 0.15 stone quota never gets a worker while builders
+	# eat the idle pool, so stone reaches 0 and the second metal mine is never
+	# affordable. Give stone a guaranteed, first-served slot until both mines
+	# exist (no RNG, no resource cheat, no threshold changes).
+	var metal_pending: bool = int(counts.get("mine_iron", 0)) == 0 or int(counts.get("mine_coal", 0)) == 0
+	var stone_first: bool = metal_pending and float(res.stone) < 100.0
+	if stone_first:
+		want["stone"] = maxi(want["stone"], 3 if n < 16 else 5)
+	var kinds: Array = ["stone", "food", "wood"] if stone_first else ["food", "wood", "stone"]
 	var on := {"food": 0, "wood": 0, "stone": 0, "mine": 0}
 	var by_res := {"food": [], "wood": [], "stone": []}
 	var idle: Array = []
@@ -218,7 +258,7 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 		if pe.order.type == "none":
 			idle.append(pe)
 	# reassign only idle + surplus workers, never interrupt carriers
-	for kind in ["food", "wood", "stone"]:
+	for kind in kinds:
 		var deficit: int = int(want[kind]) - int(on[kind])
 		while deficit > 0 and not idle.is_empty():
 			var pe: Dictionary = idle.pop_front()
@@ -228,7 +268,7 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 			game.cmd_gather(pe, node)
 			deficit -= 1
 	# surplus gatherers (no load) rotate onto mines with free slots
-	for kind in ["food", "wood", "stone"]:
+	for kind in kinds:
 		var surplus: Array = []
 		for pe3 in by_res[kind]:
 			if int(pe3.get("carry", 0)) == 0 and pe3.inside_of == 0 and pe3.order.type == "gather":
@@ -337,16 +377,27 @@ func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictiona
 	# barracks, leaving the AI with 0 military; observed in a 240 s soak.
 	if int(counts.get("bar", 0)) == 0 and res.wood >= 150 and res.stone >= 150:
 		_try_build("bar", home)
-	for k in ["gold", "iron", "coal"]:
+	# T6-I6-METAL: iron/coal FIRST. The old gold,iron,coal order let the gold
+	# mine eat the last 100 of the 400 starting stone (mill 150 + bar 150 +
+	# gold 100), so neither metal mine was ever affordable and no metal income
+	# could reach the army (force < AI_ATTACK_FORCE => _waves never fired).
+	for k in ["iron", "coal", "gold"]:
 		var sid: String = "mine_" + k
 		if int(counts.get(sid, 0)) == 0 and res.wood >= 100 and res.stone >= 100:
 			_build_mine(k, home)
-	if int(counts.get("bar", 0)) < 3 and res.wood >= 150 and res.stone >= 150:
+	# T6-I6-METAL: reserve 200 stone for the two metal mines while either is
+	# missing; extra barracks may only spend that stone once both are placed.
+	var metal_ready := int(counts.get("mine_iron", 0)) > 0 and int(counts.get("mine_coal", 0)) > 0
+	var bar_stone := 150.0 if metal_ready else 300.0
+	if int(counts.get("bar", 0)) < 3 and res.wood >= 150 and res.stone >= bar_stone:
 		_try_build("bar", home)
-	if int(counts.get("sto", 0)) == 0 and res.wood >= 50 and res.stone >= 20:
-		_try_build("sto", home)
-	if int(counts.get("bla", 0)) == 0 and res.wood >= 100 and res.stone >= 30:
-		_try_build("bla", home)
+	# T6-I6-METAL: every other stone sink waits until both metal mines exist;
+	# the flat gates below used to eat the trickle that funds mine_coal.
+	if metal_ready:
+		if int(counts.get("sto", 0)) == 0 and res.wood >= 50 and res.stone >= 20:
+			_try_build("sto", home)
+		if int(counts.get("bla", 0)) == 0 and res.wood >= 100 and res.stone >= 30:
+			_try_build("bla", home)
 	# T5-AI: configured thresholds are the explicit priority switch. Food is
 	# first (starving => no luxury building at all); wood and stone must also
 	# clear their configured buffers before non-food investment. Priority:
@@ -367,9 +418,9 @@ func _build(res: Dictionary, counts: Dictionary, fin: Dictionary, home: Dictiona
 		if int(fin.get("cen", 0)) >= 1 and int(counts.get("cen", 0)) < 2 and res.wood >= 2000 and res.stone >= 1500 and res.gold >= 1000:
 			_try_build("cen", home, 30.0, 60.0)
 		# wall ring: 6 segments max, placed wide so the base stays reachable
-		if int(counts.get("wal", 0)) < 6 and res.stone >= 200 and res.wood >= 60:
+		if metal_ready and int(counts.get("wal", 0)) < 6 and res.stone >= 200 and res.wood >= 60:
 			_try_build("wal", home, 20.0, 30.0)
-		if int(counts.get("tow", 0)) < 2 and res.wood >= 300 and res.stone >= 400 and int(fin.get("bar", 0)) > 0:
+		if metal_ready and int(counts.get("tow", 0)) < 2 and res.wood >= 300 and res.stone >= 400 and int(fin.get("bar", 0)) > 0:
 			_try_build("tow", home, 16.0, 24.0)
 	for b in game.buildings_of(player):
 		if b.sid == "mar" and b.finished:

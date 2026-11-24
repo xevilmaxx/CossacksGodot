@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "resources_gathered": {},
+  "shots_fired": 4,
+  "sim_seconds": 5.3125,
+  "steps": [
+    {
+      "detail": "peasant captured: player 0",
+      "passed": true,
+      "step": "peasant_capture"
+    }
+  ],
+  "version": 1
+}

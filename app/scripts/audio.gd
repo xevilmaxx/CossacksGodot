@@ -43,8 +43,6 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		players.append(p)
-	for f in files:
-		_stream(f)
 
 # The music of the player's nation and the air around it.
 func start_music(nation := "ukr") -> void:

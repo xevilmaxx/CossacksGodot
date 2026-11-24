@@ -1,0 +1,25 @@
+# Landed improvements — 2026-11-24 session
+
+Only entries with evidence (backup + runner job + gate result) belong here. No speculative wins.
+
+| ID | Change | Files owned | Backup | Runner evidence | Gate result | Determinism / risk | Status |
+|---|---|---|---|---|---|---|---|
+| CLEAN-1 | Acknowledge 4 verified historical runner timeouts (#1132/#1135 superseded by #1136/#1160/#1167/#1175 + #1154; #1184 by #1187/#1190; #1205 by #1212/#1217/#1222/#1229) | `app/.godot_queue/status.json` (runner ack, no source edit) | n/a | `assert_clean.py --json` after ack | **CLEAN** — 140 jobs, 4 acked, 0 processes, lock free | none — process/state only | **LANDED** |
+| I1 | Add donor aca.3 "Agriculturists' salary +50%" academy upgrade (`gather_mult.food=1.5`) | `app/scripts/data.gd` (exclusive) | `inbox/backup/data.gd.bak-I1-AGRONOM` | ticket **1233** `i1-agronom-upgrades`, ok 12.11 s; `app/tests/results/t_upgrades.json` | `passed:true`, 6/6 | none — data-only, no RNG; ai.gd research list untouched | **LANDED** (final gate pending) |
+| I2 | Throttle HUD unit/queue counter recompute to the existing ~0.5 s `eco_t` cadence; removes per-frame O(units+buildings) scan before the dirty-text guard | `app/scripts/hud.gd` (exclusive) | `inbox/backup/hud.gd.bak-I2-HUDCOUNT` | ticket **1234** `i2-hud-throttle`, ok; `app/tests/results/t_hud_fidelity.json` | `passed:true`, 6/6 (`score_text`: units 8/100, score 1160) | none — number lags ≤0.5 s; no pixels/layout change | **LANDED** (final gate pending) |
+| I3 | Render micro-wins: sprite descriptor pool (`_push_unit_sprite`), `_bld_tex` hoist + `_bld_key` memo, missing death-sheet cache, cull hoist, `fx_items` empty guard | `app/scripts/world.gd` (exclusive) | `inbox/backup/world.gd.bak-I3-RENDERPOL` | ticket **1237** `i3-render-micro`, ok; `app/tests/results/t_mass_army.json` | `passed:true`, 6/6 (552 units, 10 sim-s, 20832.75 ms) | draw order/args identical by design; screenshot A/B + full gate pending | **LANDED** (final gate pending) |
+| I4 | resow test truth fix (`_sim(30)`→`_sim(10)`) + `--self-only`/`run_only` 8-group subset support + per-step wall_ms (stretch) | `app/scripts/selftest.gd`, `app/scripts/main.gd` (exclusive) | `inbox/backup/selftest.gd.bak-I4-SPLIT`, `main.gd.bak-I4-SPLIT` | pending (full + 2 subsets) | pending | test-only; no game-state/RNG change | IN_PROGRESS |
+| I5 | Remove eager preload of 325 OGGs (~281.81 MiB) — 2-line loop in `_ready()`, lazy `_stream()` retained | `app/scripts/audio.gd` (exclusive) | `inbox/backup/audio.gd.bak-I5-LAZYAUDIO` | ticket **1236** `i5-audio-lazy`, ok 1.07 s; `app/tests/results/t_audio_events.json` | `passed:true`, 5/5 | none — `files`/`names_for()`/music fallback intact; one-off first-play load | **LANDED** (final gate pending) |
+| I6 | AI metal-mine starvation fix: iron/coal before gold, 200-stone reserve, stone-first quota + deferred stone sinks while a metal mine is missing, env-gated trace fields | `app/scripts/ai.gd` (exclusive) | `inbox/backup/ai.gd.bak-I6-METAL` | tickets **1239**/**1242**/**1247** ok (1247 = final code, full 300 s); 1245 failed on a `: bool` parse error, fixed | mine_iron=1 from t=42 (PASS); mine_coal=1 at t=290 final run only; iron 415 (PASS), coal flat 150 (starting value, no accumulation); **force max 40 / wave 0 = MEASURED FAIL** of R6 acceptance | no RNG; resource-spend/assignment order changes only; trace gated by `C3_AI_TRACE` | **LANDED (partial)** — mine fix real, wave stall is a separate `_train`-gate cause → follow-up |
+| COORD-1 | Fix `peasant_capture` subset order interaction: fixture now picks a walkable spot ≥14 m from any building (avoids friendly peasants from the prior `capture` step landing the first hit) | `app/scripts/selftest.gd` (coordinator, after I4 closed) | `inbox/backup/selftest.gd.bak-COORD-PCAP` | ticket **1254** `coord-pcap-subset`, ok 26.98 s; `app/tests/results/selftest_capture.json` | `passed:true`, 2/2 (`capture` yes, `peasant_capture` player 0) | test fixture only; no assertion weakened | **LANDED** |
+| P4-fix | Runner: throttle `pid_alive()` `tasklist` to ~2 s in `wait_for_turn`; reap Godot children left by the WinGet shim after every job | `app/tools/godot_runner.py` (coordinator) | `inbox/backup/godot_runner.py.bak-COORD-LEAK` | `py_compile` clean; ticket **1257** `coord-runner-leak-check` ok 5.33 s; `assert_clean.py --json` CLEAN afterwards | gate CLEAN, 0 orphans | tooling only; no sim change | **LANDED** |
+| FINAL | Settled gate after all wave-2 changes | — | — | tickets **1255** `coord-final-selftest` ok 50.11 s, **1256** `coord-final-uitest` ok 71.54 s | **selftest 29/29 PASS · uitest 17/17 PASS · clean CLEAN** | all green | **LANDED** |
+
+## Gate legend
+
+- Code change → backup before edit, then targeted test through
+  `python app\tools\godot_runner.py run --id <id> --timeout <s> -- …`.
+- Determinism-sensitive change (generator/sim) → byte-identical `--dump-map` + `scan_map.py` green.
+- Visual change → screenshot + donor A/B; metrics never override visual review.
+- Final settled gate (coordinator): selftest 29/29 + uitest 17/17 + clean gate CLEAN,
+  after all wave-2 builders release their files.

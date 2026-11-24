@@ -221,6 +221,38 @@ def pid_alive(pid: int) -> bool:
         return False
 
 
+def godot_pids() -> set[int]:
+    """PIDs of live Godot processes (used to reap children the shim leaves behind)."""
+    if sys.platform == "win32":
+        ps = ("Get-CimInstance Win32_Process -Filter \"Name like 'Godot%'\" | "
+              "Select-Object -ExpandProperty ProcessId")
+        try:
+            out = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                                 capture_output=True, text=True, timeout=15).stdout
+        except (OSError, subprocess.SubprocessError):
+            return set()
+        return {int(x) for x in out.split() if x.strip().isdigit()}
+    try:
+        out = subprocess.run(["pgrep", "-f", "godot"],
+                             capture_output=True, text=True, timeout=15).stdout
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return {int(x) for x in out.split() if x.strip().isdigit()}
+
+
+def reap_spawned_godot(before: set[int]) -> None:
+    """Kill Godot children left alive after a job (WinGet shim exits first)."""
+    for pid in godot_pids() - before:
+        try:
+            if sys.platform == "win32":
+                subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            else:
+                os.kill(pid, signal.SIGKILL)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+
 def godot_process_count() -> int:
     if sys.platform == "win32":
         out = subprocess.run(
@@ -273,6 +305,8 @@ def unwedge() -> int:
 def wait_for_turn(ticket: int, max_wait: float) -> None:
     """Block until it is this ticket's turn. Stale tickets are skipped."""
     t0 = time.time()
+    last_pid_check = 0.0
+    holder_alive = False
     while True:
         if time.time() - t0 > max_wait:
             raise TimeoutError(f"ticket {ticket} waited > {max_wait:.0f}s for its turn")
@@ -293,7 +327,13 @@ def wait_for_turn(ticket: int, max_wait: float) -> None:
         # demonstrably stale). Age alone is NOT proof of death: a live waiter
         # can sit in the FIFO queue longer than STALE_SEC and must not be
         # skipped (2026-11-21: agentQ's tickets 48/84 were wrongly skipped).
-        dead_holder = holder is None or not pid_alive(holder_pid)
+        # T-PERF-TOOL: pid_alive() spawns `tasklist` (~1 s on Windows); with a
+        # 0.15 s poll that cost dominates a waiting job. Throttle it to ~2 s.
+        now = time.time()
+        if now - last_pid_check >= 2.0:
+            last_pid_check = now
+            holder_alive = pid_alive(holder_pid) if holder_pid else False
+        dead_holder = holder is None or (holder_pid != 0 and not holder_alive)
         if dead_holder or (lock_stale and not lock_free):
             if not lock_free:
                 release_godot_lock()
@@ -354,6 +394,7 @@ def cmd_run(ns: argparse.Namespace) -> int:
 
     started = time.time()
     result["status"] = "running"
+    pids_before = godot_pids()  # T-PERF-TOOL: reap children left by the shim
     print(f"[runner] ticket {ticket} '{ns.id}' START (waited {result['wait']:.2f}s)", flush=True)
     try:
         with open(out_file, "wb") as fo, open(err_file, "wb") as fe:
@@ -379,6 +420,10 @@ def cmd_run(ns: argparse.Namespace) -> int:
         # file open; if unlink() raised here, now_serving would never advance
         # and every later ticket would wait forever (real starvation).
         advance_serving(ticket)
+        try:
+            reap_spawned_godot(pids_before)
+        except Exception:  # noqa: BLE001 - cleanup must never stall the queue
+            pass
         for attempt in range(10):
             try:
                 job_path(ticket).unlink(missing_ok=True)

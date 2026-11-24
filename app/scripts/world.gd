@@ -92,7 +92,8 @@ var ter_white: Image
 var ter_black: Image
 var unit_layer: Node2D
 var unit_anim_layer: Node2D   # baked unit sheets only: alpha-solid shader lives here
-var pending_unit_sprites: Array = []
+var pending_unit_sprites: Array = []  # reusable pool of sprite dicts; only the first _pending_unit_sprites_count entries are live
+var _pending_unit_sprites_count := 0
 var bld_layer: Node2D
 var res_layer: Node2D
 # T-FOREST-BAKE: static forest detail (the 600-4000 prop quads/frame that used
@@ -153,6 +154,10 @@ var sprites: Dictionary = {}
 # Animated original-model sheets (tools/bake_sprites.py): key -> {cell, actions}.
 var anim_index := {}
 var anim_tex := {}
+# Known-missing death sheets (resolved path -> true). Without this, every
+# corpse re-probes ResourceLoader each redraw even though the art never appears.
+# Keyed by path so a quality change (new _anim_dir) resolves to a fresh key.
+var death_sheet_missing: Dictionary = {}
 # PORT-SIM P-10: yacht crew + static hull live in a separate naval index/sheet
 # folder, like the nation-unique sheets. data.gd's EXTRA_ANIM_INDEX only loads
 # sco_units.json, so world.gd reads the naval index itself (read-only).
@@ -587,10 +592,18 @@ func _draw_anim(e: Dictionary, p: Vector2, tint: Color) -> bool:
 	sc *= Data.UNIT_SCALE
 	sz = Vector2(cell, cell) * sc
 	tl = p - Vector2(sz.x * cx, sz.y * foot)
-	pending_unit_sprites.append({"tex": tex, "dst": Rect2(tl, sz), "src": src, "tint": tint})
+	_push_unit_sprite(tex, Rect2(tl, sz), src, tint)
 	return true
 
+# Memoized by (quality/cell, player, sid): the nation-sheet probe only depends
+# on those values, so a building no longer re-probes ResourceLoader on every
+# redraw. SPRITE_CELL is part of the key so a runtime quality change (which
+# clears anim_tex in main.gd) cannot leave a stale nation answer behind.
+var _bld_key_cache: Dictionary = {}
 func _bld_key(e: Dictionary) -> String:
+	var ck := "%d|%s|%s" % [Data.SPRITE_CELL, str(e.player), str(e.sid)]
+	if _bld_key_cache.has(ck):
+		return _bld_key_cache[ck]
 	# nation sheet (assets/models/anim, lazy) wins, else the shared static one
 	var nat := ""
 	if int(e.player) >= 0 and int(e.player) < Data.PLAYER_NATIONS.size():
@@ -599,7 +612,9 @@ func _bld_key(e: Dictionary) -> String:
 		var nk := "%s_%s" % [nat, e.sid]
 		if _res_exists(_nation_sheet(_anim_dir(), nk + ".png", "buildings", [
 				_anim_dir() + "/buildings", "res://assets/models/anim/buildings"])):
+			_bld_key_cache[ck] = nk
 			return nk
+	_bld_key_cache[ck] = e.sid
 	return e.sid
 
 func _mill_rotor() -> Texture2D:
@@ -2081,7 +2096,10 @@ func sync(dt: float) -> void:
 	_rally_dirty = false
 	for f in fx_items:
 		f.t += dt
-	fx_items = fx_items.filter(func(f): return f.t < f.life)
+	# Skip the filter entirely when there is nothing to filter: the empty-case
+	# allocation (and lambda setup) is pure overhead on the common quiet frame.
+	if not fx_items.is_empty():
+		fx_items = fx_items.filter(func(f): return f.t < f.life)
 
 # T-PERF-RENDER: fx redraw gate. Static passes need it on camera moves,
 # sim dirt or fresh rally points only; animated passes need it while anything
@@ -2653,21 +2671,25 @@ func _draw_resources() -> void:
 	# Doing both would double-draw the trees; doing neither would drop them.
 	if not forest_bake_enabled:
 		_draw_forest_detail()
+	# Hoisted once: view_rect is fixed for the whole redraw, so growing it per
+	# resource node was rebuilding the same Rect2. Draw order is untouched.
+	var cull := view_rect.grow(64)
 	for n in game.res_nodes:
+		var ty := str(n.get("type", ""))
 		# Ore deposits are PERMANENT nodes: they are created with hits == 0 and
 		# max_hits == 0 (game.gd:_add_res), so "hits <= 0" alone used to cull
 		# them and no mine was ever drawn on the map. Only finite nodes that
 		# were really used up (and stumps, which stay as decor) are skipped.
 		if int(n.get("hits", 0)) <= 0 and int(n.get("max_hits", 0)) != 0 \
-				and str(n.get("type", "")) != "stump" and str(n.get("type", "")) != "food":
+				and ty != "stump" and ty != "food":
 			# MICRO #15: a depleted field stays visible as bare stubble;
 			# only depleted wood/stone/ore nodes are culled.
 			continue
 		var p := world_to_px(n.pos)
-		if not view_rect.grow(64).has_point(p):
+		if not cull.has_point(p):
 			continue
 		var h := _hash(n.pos.x, n.pos.y)
-		if str(n.get("type", "")) == "stump":
+		if ty == "stump":
 			# TB-B1d: stumps only ever resolve to tree_stump*; no rock fallback.
 			var stump_tex := _prop_tex(STUMP_POOL, n.pos)
 			if stump_tex != null:
@@ -2681,7 +2703,7 @@ func _draw_resources() -> void:
 				res_layer.draw_circle(p, 4.0, Color(0.42, 0.32, 0.2))
 				res_layer.draw_rect(Rect2(p.x - 1.5, p.y - 5, 3.0, 5), Color(0.35, 0.25, 0.14))
 			continue
-		if str(n.get("type", "")) == "bush":
+		if ty == "bush":
 			# TB-B1d: bush* only; the procedural silhouette stays deterministic.
 			var bush_tex := _prop_tex(BUSH_POOL, n.pos)
 			if bush_tex != null:
@@ -2801,14 +2823,17 @@ func _draw_buildings() -> void:
 			hgt = r * 2.0
 		elif e.sid == "hou" or e.sid == "sto":
 			hgt = r * 1.3
+		# Resolve the building sheet once per visible building per redraw; the
+		# old code called _bld_tex twice (existence test + draw) and re-probed
+		# _bld_key a third time for the scale data.
+		var bspr := _bld_tex(e)
 		if e.sid.begins_with("mine_"):
 			_draw_mine(p, e, col)
 		elif e.sid == "wal" or e.sid == "gat":
 			_draw_wall(p, e)
-		elif _bld_tex(e) != null:
+		elif bspr != null:
 			# original-model sprite (static or nation sheet); the selection
 			# ring, damage smoke and capture flag below still draw on top
-			var bspr := _bld_tex(e)
 			var tint_b := Color(0.55, 0.55, 0.6) if not e.finished else Color(1, 1, 1)
 			# cleared dirt under the footprint: original dirt plates per nation +
 			# building when converted, procedural ellipse otherwise (buildings
@@ -3058,8 +3083,8 @@ func _queue_unit_sprite(tex: Texture2D, p: Vector2, world_h: float, tint: Color)
 	var sc: float = px_h / maxf(1.0, float(tex.get_height()))
 	var sz := Vector2(float(tex.get_width()), float(tex.get_height())) * sc
 	var tl := p - Vector2(sz.x * 0.5, sz.y * 0.82)
-	pending_unit_sprites.append({"tex": tex, "dst": Rect2(tl, sz),
-		"src": Rect2(0, 0, tex.get_width(), tex.get_height()), "tint": tint})
+	_push_unit_sprite(tex, Rect2(tl, sz),
+		Rect2(0, 0, tex.get_width(), tex.get_height()), tint)
 
 var hull_tex_cache := {}
 
@@ -3115,16 +3140,33 @@ func _draw_naval_hull(e: Dictionary, p: Vector2) -> void:
 	unit_layer.draw_texture_rect_region(tex, Rect2(tl, sz),
 			Rect2(dir * cell, 0, cell, cell), Color(1, 1, 1))
 
+func _push_unit_sprite(tex: Texture2D, dst: Rect2, src: Rect2, tint: Color) -> void:
+	# Reusable pool: overwrite the next preallocated dict slot instead of
+	# allocating a fresh Dictionary per visible unit on every redraw. The
+	# iteration order and the exact dict fields seen by _draw_unit_sprites
+	# are unchanged.
+	var i: int = _pending_unit_sprites_count
+	if i < pending_unit_sprites.size():
+		var d: Dictionary = pending_unit_sprites[i]
+		d["tex"] = tex
+		d["dst"] = dst
+		d["src"] = src
+		d["tint"] = tint
+	else:
+		pending_unit_sprites.append({"tex": tex, "dst": dst, "src": src, "tint": tint})
+	_pending_unit_sprites_count = i + 1
+
 func _draw_unit_sprites() -> void:
 	# Runs on unit_anim_layer (child of unit_layer) after all unit shapes are
 	# queued, so the optional ShaderMaterial makes figures opaque and vivid
 	# without touching shadows, selection rings or damage bars.
-	for d in pending_unit_sprites:
+	for i in range(_pending_unit_sprites_count):
+		var d: Dictionary = pending_unit_sprites[i]
 		unit_anim_layer.draw_texture_rect_region(d.tex, d.dst, d.src, d.tint)
 
 func _draw_units() -> void:
 	dbg_unit += 1
-	pending_unit_sprites.clear()
+	_pending_unit_sprites_count = 0  # reuse pooled dict slots; no per-frame allocation
 	_draw_corpses()
 	for e in game.entities:
 		if e.dead or e.kind != "unit":
@@ -3301,8 +3343,12 @@ func _draw_corpses() -> void:
 			var dd: float = maxf(0.05, float(dact.duration))
 			var dcell: int = int(cinfo.cell)
 			var dtk := ckey + "_death"
-			if not anim_tex.has(dtk) and _res_exists(_anim_sheet(ckey, "death")):
-				anim_tex[dtk] = load(_anim_sheet(ckey, "death"))
+			var dpath := _anim_sheet(ckey, "death")
+			if not anim_tex.has(dtk) and not death_sheet_missing.has(dpath):
+				if _res_exists(dpath):
+					anim_tex[dtk] = load(dpath)
+				else:
+					death_sheet_missing[dpath] = true
 			if anim_tex.has(dtk):
 				var dtex: Texture2D = anim_tex[dtk]
 				if dtex == null:

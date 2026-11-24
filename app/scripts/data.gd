@@ -1141,6 +1141,10 @@ const UPGRADES_BASE := {
 	# not the previous estimated +40% (deep-MICRO §2.2).
 	"aca_rye1": {"building": "aca", "cost": {"food": 2500, "gold": 500}, "time": 12.0,
 		"effect": {"gather_mult": {"food": 1.5}}, "name": "New rye +50%"},
+	# Donor locale/en/upgrades.txt:5-6 = "agriculturists' salary +50%" -> multiplier 1.5
+	# (aca.3); cost estimated, donor locale gives the effect only.
+	"aca_agronom1": {"building": "aca", "cost": {"food": 2000, "gold": 400}, "time": 12.0,
+		"effect": {"gather_mult": {"food": 1.5}}, "name": "Agriculturists' salary +50%"},
 	"aca_wood1b": {"building": "aca", "cost": {"wood": 2000, "gold": 400}, "time": 12.0,
 		"effect": {"gather_mult": {"wood": 2.0}}, "name": "Woodworking tools +100%"},
 	"aca_stone1": {"building": "aca", "cost": {"stone": 2000, "gold": 400}, "time": 12.0,
