@@ -242,6 +242,31 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### Launcher fix + 3D parity audit swarm (user-reported blocker)
+- ROOT CAUSE of "launch3d variant bat launches nothing" FOUND and FIXED:
+  1. `launch_variant3d.bat` routed an INTERACTIVE windowed game through the
+     serialized test runner. That runner redirects stdout/stderr to spool files
+     and resolves Godot as bare `shutil.which("godot")` -> godot is NOT on PATH
+     here (only a WinGet symlink), so Popen fails and no window appears.
+     It also calls `reap_spawned_godot()` which would taskkill a real game window.
+     Replaced with the working direct-launch pattern from `launch.bat` (explicit
+     WinGet/PATH/ProgramFiles resolution, foreground launch, args forwarded).
+  2. Batch parse error: `(V7-0)` inside an `if not exist (...)` block closed the
+     block early -> "is was unexpected at this time." Removed the parentheses.
+  3. `variant3d/config.json` still defaulted to `render_mode: "2d"`, so even a
+     working launcher showed the 2D renderer. Flipped to `"3d"` in variant3d
+     ONLY; app/ untouched; main.gd source default stays "2d" for t_render_mode.
+- VERIFIED: `launch_variant3d.bat --headless --quit` and the `launch_3d.bat` shim
+  both exit 0 with Godot 4.7.2; `--dump-config` reports render_mode "3d";
+  `--quit-after 10` clean. Full selftest with 3d config FAILED (ticket 69):
+  `hud.bind()` typed world param rejects world3d.gd at main.gd:1043, watchdog
+  forced exit -> fix routed to V7-53 (hud owner).
+- Launched 9 parallel AUDIT3D agents (models, nation colours, terrain, sim
+  parity, camera/HUD/picking, FX/anim/audio, resources, donor coverage, runtime
+  proof). Charter: `AUDIT3D_CHARTER.md`; one report per agent under reports/.
+  User's specific concern (unit/building models are placeholders, nation colour
+  basis) is AUDIT3D-01/02.
+
 ### Wave 7 integration progress
 - V7-53 LANDED: hud.gd 3D adapter seam (bind_3d + minimap box branch), parse
   PASS + 6/6 2D regression; handoff to V7-50 (call hud.bind_3d(cam3d) in 3D

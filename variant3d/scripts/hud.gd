@@ -6,7 +6,12 @@ const Data = preload("res://scripts/data.gd")
 const ConfigScript = preload("res://scripts/config.gd")
 
 var game: C3Game
-var world: C3World
+# V7-53: relaxed to untyped (main.gd:60 uses the same pattern for its world).
+# C3World is a Node2D; the 3D world is a Node3D (world3d.gd), so a static
+# C3World annotation rejects it in bind(). Both worlds expose the same duck-
+# typed contract (view_scale / fog_explored / fog_vis / fog_revision), so all
+# member reads below stay dynamic and behave identically in 2D and 3D.
+var world
 var icons_tex: Texture2D
 var units_tex: Texture2D
 var top_panel: PanelContainer
@@ -159,7 +164,7 @@ var cmd_panel: PanelContainer
 var cmd_bar: GridContainer
 var top_center: CenterContainer
 
-func bind(g: C3Game, w: C3World) -> void:
+func bind(g: C3Game, w) -> void:
 	game = g
 	world = w
 	ui_us = _calc_us()
