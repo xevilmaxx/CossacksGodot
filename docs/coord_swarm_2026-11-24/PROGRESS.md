@@ -242,6 +242,23 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### FINAL 2D GATE GREEN (after all wave-5 merges)
+- Jobs 1338 selftest ok (72.39 s), 1339 uitest ok (170.92 s), both 29/29 and
+  17/17 PASS. Clean gate DIRTY only from historical 1292 (env timeout) + 1295
+  (FIFO skip) — BOTH acked with evidence (env churn / re-run 1316 clean).
+  Final: **CLEAN** (246 jobs, 9 acked, 0 processes, lock free).
+
+### Wave 7 phase 2 — ATOMIC SPLIT LAUNCHED (owner directive)
+- Owner: "subdivide migration in as smallerst/atomic tasks as possible, same for
+  docs/tests, multiply subagent quantities to parallelize."
+- Created `V73_ATOMIC_CONTRACT.md` (exact one-API-per-file contracts), then
+  launched 18 agents in 4 batches: 8 new 3D modules (camera3d, picking3d,
+  world3d_terrain/entities/fx/fog, hud3d_adapter, anim3d), 7 atomic tests,
+  manifest registration, 2 docs atoms + read-only supervision. Each owns ONE
+  new file + ONE report; no two agents share a file. Integration seams on
+  EXISTING variant3d files (main/input/hud/world3d) deliberately deferred to a
+  follow-up batch so no agent overwrites another's work.
+
 ### Wave 6 heightmap result
 - G3-2 LANDED: ONE full-grid ArrayMesh (102,400 verts / 203,522 tris / 1
   surface, build 129.168 ms), donor-block splat albedo, water plane + donor

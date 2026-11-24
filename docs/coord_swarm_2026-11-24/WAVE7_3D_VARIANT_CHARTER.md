@@ -90,4 +90,14 @@ Coordinator final gate in variant3d: selftest 29/29 + uitest 17/17 + clean.
 | V7-1 | ses_df2e3adb2ffeosBotjEFKc5ynL |
 | V7-2 | ses_df2e3adafffeL6vMnrTm0zslC3 |
 
+## PHASE 2 ATOMIC SPLIT (owner directive: smallest possible tasks, maximum agents)
+Contract: `V73_ATOMIC_CONTRACT.md` (one exact API per new file, no collisions).
+Launched in 4 batches, 18 agents total, each owning ONE new file + ONE report:
+- V7-11 camera3d · V7-12 picking3d · V7-13 world3d_terrain · V7-14 world3d_entities · V7-15 world3d_fx
+- V7-16 world3d_fog · V7-17 hud3d_adapter · V7-18 anim3d
+- V7-31..V7-37 atomic tests (terrain/camera/pick/entities/fx/fog/render_mode)
+- V7-38 manifest registration · V7-40 docs atoms · V7-41 independent read-only supervision
+Integration seams (main.gd / input_controller.gd / hud.gd / world3d.gd) remain for a
+FOLLOW-UP batch after module APIs land — one owner per existing file, never parallel.
+
 Reports: `reports/V7*.md`. Phase 1 agents launched in parallel; phase 2 waits for V7-0 scaffold.
