@@ -242,6 +242,11 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### Wave 7 integration progress
+- V7-53 LANDED: hud.gd 3D adapter seam (bind_3d + minimap box branch), parse
+  PASS + 6/6 2D regression; handoff to V7-50 (call hud.bind_3d(cam3d) in 3D
+  branch). V7-50/51/52 still running; variant queue empty, no orphans.
+
 ### Wave 7 phase 2 — integration batch launched
 - All 8 modules landed (camera3d parse PASS, picking3d parse PASS, terrain
   probe 25,600 verts/75.6 ms, fog 9/9 test PASS, FX 13/13 test PASS, entities,

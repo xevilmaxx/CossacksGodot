@@ -7,9 +7,24 @@ const Data = preload("res://scripts/data.gd")
 const ConfigScript = preload("res://scripts/config.gd")
 
 var game: C3Game
-var world: C3World
+# V7-52: world/camera are untyped so 3D mode can receive the Node3D world and
+# Camera3D that main.gd (V7-50) builds. 2D mode still binds C3World/C3Camera and
+# runs byte-identically; only the static annotations are relaxed, no symbols change.
+var world = null
 var hud: C3HUD
-var camera: C3Camera
+var camera = null
+# V7-52 integration seam (V73_ATOMIC_CONTRACT.md:22). "2d" (DEFAULT) keeps the
+# original internals; "3d" routes ONLY _screen_to_world/_pick/_pick_res through
+# picking3d.gd. All game.cmd_* calls, hotkeys, control groups, build ghost and
+# order semantics are untouched. main.gd (V7-50) calls bind_3d(cam) after bind()
+# when gameplay.render_mode == "3d"; this file does NOT edit main.gd.
+var render_mode: String = "2d"
+var picking = null            # picking3d instance, created by bind_3d() only
+# Raw screen pixel that produced the latest _screen_to_world() result. picking3d
+# takes SCREEN pixels (not sim metres), yet every inherited call site feeds the
+# returned world point `pw` to _pick/_pick_res. Recording the source pixel here
+# lets those internals switch adapters without editing a single call site.
+var _pick_screen: Vector2 = Vector2.INF
 var selected_ids: Array = []
 var drag_start := Vector2.INF
 var dragging := false
@@ -48,7 +63,7 @@ var _hint_hold_ms := 0
 # coalesce fractional high-resolution wheel deltas into whole notch requests.
 var _wheel_accum := 0.0
 
-func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
+func bind(g: C3Game, w, h: C3HUD, cam) -> void:
 	game = g
 	world = w
 	hud = h
@@ -87,6 +102,25 @@ func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 		get_viewport().size_changed.connect(_invalidate_minimap_rect)
 	if hud != null and hud.minimap_rect != null and is_instance_valid(hud.minimap_rect):
 		hud.minimap_rect.resized.connect(_invalidate_minimap_rect)
+
+# V7-52 PUBLIC HANDOFF for main.gd (V7-50). Call AFTER bind(game, world, hud, cam).
+# `cam` is the Camera3D returned by make_camera3d(); the 3D world is the Node3D
+# already passed as `world`. This method ONLY wires the picking adapter and flips
+# render_mode — it does not touch any cmd_*, hotkey, group or build-ghost code.
+# Loading is dynamic (no class_name), per V712 report §5.
+func bind_3d(cam) -> void:
+	var PickingScript = load("res://scripts/picking3d.gd")
+	if PickingScript == null:
+		push_error("V7-52: res://scripts/picking3d.gd missing; keeping 2D internals")
+		return
+	if picking == null:
+		picking = PickingScript.new()
+		add_child(picking)
+	# Keep the shared `camera` handle on the 3D cam so zoom/minimap/group code
+	# keeps working (those call sites are unchanged).
+	camera = cam
+	picking.bind(game, cam)
+	render_mode = "3d"
 
 # The bindings come from the global settings file (config.json); the ones in
 # the original data/game/var/hotkeys.cfg are the values it starts with.
@@ -322,11 +356,13 @@ func begin_guard() -> void:
 func _draw_patrol_route() -> void:
 	if world == null or route_node == null or patrol_a == Vector2.INF:
 		return
-	var a := world.world_to_px(patrol_a)
+	# V7-52: explicit type guards — `world` is untyped (V71:197 relaxed-typing
+	# seam), so `:=` cannot infer these members; the values/behaviour are unchanged.
+	var a: Vector2 = world.world_to_px(patrol_a)
 	var end_world := patrol_b
 	if end_world == Vector2.INF:
 		end_world = _screen_to_world(get_viewport().get_mouse_position())
-	var b := world.world_to_px(end_world)
+	var b: Vector2 = world.world_to_px(end_world)
 	route_node.draw_line(a, b, Color(1.0, 0.86, 0.30, 0.95), 2.0)
 	for p in [a, b]:
 		route_node.draw_line(p, p + Vector2(0, -15), Color(0.96, 0.90, 0.70, 0.95), 1.5)
@@ -335,6 +371,13 @@ func _draw_patrol_route() -> void:
 		route_node.draw_circle(p, 3.0, Color(1, 1, 1, 0.85))
 
 func _screen_to_world(p: Vector2) -> Vector2:
+	# V7-52 3D seam: ground unprojection moves to picking3d.ground_point(screen),
+	# which ray-marches the height field and returns the SAME sim-metre `pw` the
+	# 2D inverse below produced. Record the source pixel so _pick/_pick_res (which
+	# call sites feed `pw`, not the screen point) can use the adapter unchanged.
+	if render_mode == "3d" and picking != null:
+		_pick_screen = p
+		return picking.ground_point(p)
 	# Screen pixels -> map meters through the camera (position + zoom),
 	# otherwise clicks only line up near the map origin.
 	if world == null:
@@ -343,6 +386,14 @@ func _screen_to_world(p: Vector2) -> Vector2:
 	return (xform * p) / world.view_scale
 
 func _pick(pw: Vector2, players_only := true) -> Dictionary:
+	# V7-52 3D seam. picking3d.pick(screen) already applies the player-0 radius
+	# test AND the 2 m any-entity fallback (V712 report §5), so the 2D
+	# `players_only` distinction is absorbed inside the adapter: none of the
+	# four inherited call sites (guard/left-click/right-order/cursor) change.
+	if render_mode == "3d" and picking != null:
+		if not is_finite(_pick_screen.x) or not is_finite(_pick_screen.y):
+			return {}
+		return picking.pick(_pick_screen)
 	# T-PERF-RENDER: single pass. The old code scanned all entities twice on
 	# every miss (the common case: clicking empty ground) — once for the
 	# radius test, once for the 2 m fallback. Both best-candidates are tracked
@@ -494,7 +545,8 @@ func _unhandled_input(event: InputEvent) -> void:
 					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < 0.35:
 						# double click: all same-type units on screen (original behaviour)
 						var arr2: Array = []
-						var vp := world.view_rect
+						# V7-52: explicit type guard for the untyped `world` seam (V71:197).
+						var vp: Rect2 = world.view_rect
 						for u in game.entities:
 							if not u.dead and u.player == 0 and u.kind == "unit" and u.sid == e.sid and vp.has_point(u.pos * world.view_scale):
 								arr2.append(u)
@@ -664,6 +716,13 @@ func _pick_res_grid_ensure() -> void:
 # list, so right-click harvest needs its own lookup. Deposits (max_hits == 0)
 # count too: cmd_gather routes them to a finished mine on the spot.
 func _pick_res(pw: Vector2) -> Dictionary:
+	# V7-52 3D seam. picking3d.pick_res(screen) preserves the donor port's exact
+	# resource filters (skip stump/bush, skip depleted except food, 2.5 + radius,
+	# strict '<', lowest id on tie) and adds camera-depth ordering for overlaps.
+	if render_mode == "3d" and picking != null:
+		if not is_finite(_pick_screen.x) or not is_finite(_pick_screen.y):
+			return {}
+		return picking.pick_res(_pick_screen)
 	_pick_res_grid_ensure()
 	var best: Dictionary = {}
 	var best_d := 2.5

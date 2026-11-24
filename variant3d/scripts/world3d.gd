@@ -1,498 +1,331 @@
 extends Node3D
 
-# Loaded by terrain3d_sandbox.gd via load() (no class_name: a brand-new global
-# class is not in .godot's cache until an editor import, and all Godot launches
-# must go through the serialized runner). NEW FILE - world.gd is untouched.
-# M0 terrain-only 3D world. NEW FILE - the 2D path (world.gd) is untouched.
-# Builds a donor-faithful *block* heightfield: each tile is a flat top quad and
-# every steep step gets a real vertical wall quad (donor verticalfront/side).
-# All numbers below are documented assumptions; nothing here is claimed to be
-# a pixel-exact donor match.
+# V7-51 — world3d.gd: INTEGRATION COMPOSITION of the five landed world3d_* atoms.
+#
+# SCOPE: SINGLEPLAYER SKIRMISH ONLY (D-12). No donor binaries, no sprite sheets,
+# no chunking, no RNG. TABS ONLY. Loaded dynamically (no class_name — a fresh
+# global class is not in .godot's cache until an editor import, and every Godot
+# launch goes through variant3d/tools/godot_runner.py).
+#
+# THIS FILE REPLACES the legacy M0 terrain-only world (backup:
+# inbox/backup/world3d.gd.bak-V751). It does NOT re-implement terrain, entities,
+# fog or FX: it instantiates and delegates to the owned modules and supplies the
+# FULL 2D world contract that main.gd / hud.gd / input_controller.gd consume.
+#
+# --- COMPOSITION MAP (which module owns which contract member) ----------------
+#   bind(game)              -> this file: creates + bind()s all modules, aliases
+#                              fog arrays, sets view_scale, builds terrain once.
+#   sync(dt)                -> this file: derives view_rect, mirrors selection,
+#                              then delegates to entities.sync / fx.sync / fog.sync.
+#   view_scale (data)       -> this file (Data.PIXELS_PER_METER, data.gd:113).
+#   view_rect (data)        -> this file (Camera3D ground frustum -> canvas px;
+#                              axis-aligned under yaw is a PORT APPROXIMATION,
+#                              V71 §6 Q5 / study open Q9).
+#   fx_layer (node)         -> this file: aliases the composed world3d_fx node.
+#   world_to_px(p) (data)   -> this file: p * view_scale, canvas px (world.gd:350).
+#   fog_explored/fog_vis    -> world3d_fog arrays, ALIASED after fog.bind()
+#                              (fog.bind reassigns them). main.gd:1234-1235 fill()
+#                              therefore reaches the fog module's live arrays.
+#   add_fx(kind,pos)        -> this file swaps to world3d_fx.add_fx(pos,kind,life).
+#                              fx.consume_events = false: main._consume_events
+#                              (main.gd:1518-1554) forwards events explicitly, so
+#                              the module's own event peek must not double-spawn
+#                              (V7-15 report §6 Q1).
+#   has_chunk_or_fallback() -> world3d_terrain (trivially true: ONE full-grid
+#                              mesh, no chunks — V7-13 §2/§4).
+#   selected state          -> this file mirrors input_controller's selected_ids
+#                              and exposes sel_rect/sel_active (input writes them
+#                              at input_controller.gd:1017-1020). The authoritative
+#                              e["selected"] flag stays on the sim entities
+#                              (V71 §3 "selection state" row).
+#   anim3d handoff          -> this file loads anim3d.gd and bind(game, entities);
+#                              its PORT_LABEL "PORT APPROXIMATION — NOT DONOR
+#                              PARITY" is preserved by that module (V7-18).
+#
+# --- DONOR / PORT CITATIONS (V73 rule: cite path:line or mark UNVERIFIED) ------
+#   Full 2D contract members .... docs/coord_swarm_2026-11-24/reports/
+#                                 V71_mechanics_inventory.md:180-199 (§3 table)
+#   Integration seam owner ...... V73_ATOMIC_CONTRACT.md:19-24
+#   view_scale scalar ........... variant3d/scripts/data.gd:113 PIXELS_PER_METER=16
+#                                 (port value; donor px/metre UNVERIFIED).
+#   world_to_px ................. variant3d/scripts/world.gd:350-351 (p*view_scale)
+#   fx_layer / add_fx ........... world.gd:126,310-316,3563-3579; main.gd:1521-1553
+#   fog arrays .................. world.gd:27-28,333-347; main.gd:1234-1235
+#   has_chunk_or_fallback ....... world.gd:1746-1747 (test hook; trivial in 3D)
+#   terrain module .............. V713 report §4 (generatemap.inc:537-577,
+#                                 mapgen.gd:29, data.gd:23; donor absolutes UNVERIFIED)
+#   entities module ............. V714 report §2 (116 donor OBJ, envscales.cfg;
+#                                 .oss bone parents unreadable -> static bind pose)
+#   fx module ................... V715 report §4 (PFX keys literal / SEMANTICS
+#                                 UNVERIFIED; lifetimes from world.gd:3563-3579)
+#   fog module .................. V716 report §3 (donor fog<->explored UNVERIFIED;
+#                                 alpha ladder is port state from world.gd:2251-2255)
+#   anim module ................. V718 report / anim3d.gd:41 PORT_LABEL
+# HONEST LIMIT: visual / integration runtime is UNVERIFIED until the main.gd,
+# input_controller.gd and hud.gd render_mode seams land (separate owners).
 
-const TILE_M: float = 2.0            # C3Data.TILE_M (read-only reference)
-const HEIGHT_SCALE: float = 1.0      # dump height is already in world metres
-const WATER_LEVEL: float = -0.25     # C3MapGen.WATER_DEEP
-const SIDE_STEP: float = 0.35        # LEGACY dead-band; M0.5 emits walls for ALL dh > SIDE_EPS
-const SIDE_EPS: float = 1e-4         # M0.5: any height discontinuity > 0.1 mm gets a wall
-const SKIRT_DEPTH_M: float = 0.7     # shallow lip: a deep skirt read as a giant slab face
-const SUN_DONOR := Vector3(-0.3447, 0.9387, 0.0)       # light.cfg Position (X,Y,Z; Z-up)
-const SUN_LIGHTVEC := Vector3(-0.086, 0.939, 0.0)      # world.gd:818-820 comment, mapped to Y-up
+const Data = preload("res://scripts/data.gd")
 
-# --- M0.5 ART-PASS TUNABLES (measured, not guessed) -------------------------
-# Before M0.5 the 1280x720 shot read 49.7 mean L in the central terrain ROI
-# while the donor reads ~75 and the 2D sample ~67.  The donor block textures
-# themselves average L 63-75, so the 3D lighting was losing ~30% in sRGB.
-# These four constants restore that loss explicitly and are reported in stats.
-const EXPOSURE: float = 1.45         # Environment.tonemap_exposure (LINEAR tonemap)
-const AMBIENT_ENERGY: float = 1.10   # ambient colour energy (was 1.0)
-const SUN_ENERGY: float = 1.7        # donor sun energy (was 2.0)
-const EMISSION_MULT: float = 1.0     # constant emission lift so rock striations read
-const ALBEDO_GAIN: float = 1.05      # slight albedo multiplier (>1 allowed by Godot)
+# Module scripts (loaded dynamically — V73_ATOMIC_CONTRACT.md:26-30).
+const TERRAIN_SCRIPT := "res://scripts/world3d_terrain.gd"
+const ENTITIES_SCRIPT := "res://scripts/world3d_entities.gd"
+const FX_SCRIPT := "res://scripts/world3d_fx.gd"
+const FOG_SCRIPT := "res://scripts/world3d_fog.gd"
+const ANIM_SCRIPT := "res://scripts/anim3d.gd"
+
+# --- FULL 2D WORLD CONTRACT: DATA MEMBERS (V71 §3 :184-195) -------------------
+var game = null                      # untyped: C3Game object OR dictionary test double
+var hud = null                       # 2D bind parity (world.gd:237-239)
+var view_scale: float = 16.0         # port scalar: Data.PIXELS_PER_METER (data.gd:113)
+var view_rect := Rect2(0.0, 0.0, 1.0, 1.0)   # canvas px, map-origin (V71 §3 :191)
+var fx_layer: Node3D = null          # composed FX node (V71 §3 :190)
+var fog_explored: PackedByteArray = PackedByteArray()
+var fog_vis: PackedByteArray = PackedByteArray()
+
+# Selection state: world mirrors, input_controller owns the authoritative ids.
+var selected_ids: Array = []
+var selected: Dictionary = {}        # id -> entity (aura consumers; read-only mirror)
+var sel_rect := Rect2(0.0, 0.0, 0.0, 0.0)   # input_controller.gd:1017 writes this
+var sel_active := false              # input_controller.gd:1018/1020 writes this
+
+# --- composed module instances (children of this Node3D; never re-implemented) -
+var terrain = null   # world3d_terrain.gd : bind/build/invalidate/height_at_world
+var entities = null  # world3d_entities.gd : bind/sync/add_*/remove
+var fx = null        # world3d_fx.gd       : bind/sync/add_fx/draw_*/
+var fog = null       # world3d_fog.gd      : bind/sync + fog_* arrays
+var anim = null      # anim3d.gd           : bind(game, entities)/play
 
 var stats: Dictionary = {}
-var _height_error: float = 0.0
-var _n: int = 0
-var _water_time: float = 0.0
-var _water_mat: ShaderMaterial = null
-var _skirt_y: float = -7.0
+var anim_t: float = 0.0
+var _modules_ready: bool = false
 
 
-func _block_names() -> Array:
-	var path := "res://assets/terrain/structs/presets_summer.json"
-	if not FileAccess.file_exists(path):
-		return []
-	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
-	return parsed if parsed is Array else []
+# --- helpers -----------------------------------------------------------------
+
+func _int_prop(g, key: String, fallback: int) -> int:
+	if g == null:
+		return fallback
+	var v = g.get(key)
+	if v is int:
+		return int(v)
+	if v is float:
+		return int(v)
+	return fallback
 
 
-func _albedo(nm: String) -> Material:
-	var mat := StandardMaterial3D.new()
-	var path := "res://assets/terrain/blocks/%s.png" % nm
-	if ResourceLoader.exists(path):
-		var tex := load(path) as Texture2D
-		if tex != null:
-			mat.albedo_texture = tex
-	mat.roughness = 1.0
-	mat.metallic = 0.0
-	# Slight gain so donor's 63-75 L blocks land near the donor's lit 75-100 L
-	# once the explicit exposure/ambient pass is applied.
-	mat.albedo_color = Color(ALBEDO_GAIN, ALBEDO_GAIN, ALBEDO_GAIN * 0.96, 1.0)
-	# The block-heightfield is a thin shell with no underside; disabling cull
-	# keeps top faces visible even if a face-winding convention differs.
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.vertex_color_use_as_albedo = false
-	# Donor-derived blocks are dark (~70/255); a constant emission lift keeps
-	# the albedo legible and lets grey rock striations show on vertical faces.
-	mat.emission_enabled = true
-	mat.emission = Color(0.10, 0.10, 0.085)
-	mat.emission_energy_multiplier = EMISSION_MULT
-	return mat
+# Instantiate one module once and attach it to the composed world.
+func _instantiate(path: String) -> Node:
+	if not ResourceLoader.exists(path):
+		push_error("world3d: missing module " + path)
+		return null
+	var scr = load(path)
+	if scr == null or not scr.can_instantiate():
+		push_error("world3d: cannot instantiate " + path)
+		return null
+	var inst = scr.new()
+	if not (inst is Node):
+		push_error("world3d: module is not a Node " + path)
+		return null
+	add_child(inst as Node)
+	return inst as Node
 
 
-# M0.5: wall faces are seen almost edge-on under a near-vertical sun. With the
-# top material they blew out to thin white "seams". A darker, low-emission
-# rock material makes them read as shadowed striated cliff faces like the donor.
-func _wall_material() -> Material:
-	var mat := StandardMaterial3D.new()
-	var path := "res://assets/terrain/blocks/rock4.png"
-	if ResourceLoader.exists(path):
-		var tex := load(path) as Texture2D
-		if tex != null:
-			mat.albedo_texture = tex
-	# M0.6: donor ravine faces are pale striated grey, not near-black. Lighter
-	# albedo + a constant emission floor "feathers" the darkest faces so they
-	# never read as flat horizontal bands.
-	mat.albedo_color = Color(0.95, 0.93, 0.88, 1.0)
-	mat.roughness = 1.0
-	mat.metallic = 0.0
-	# Keep culling DISABLED: with a step wall, the face the camera needs to see
-	# depends on which side of the step it is on, and CULL_BACK removed real
-	# cliff quads (34,902 px of see-through holes in the mask render). Correct
-	# per-face normals now give proper lighting without relying on culling.
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.emission_enabled = true
-	mat.emission = Color(0.085, 0.082, 0.075)
-	mat.emission_energy_multiplier = 1.0
-	return mat
+# The terrain module builds from a dump dict or a live game.height[] grid.
+# Check for either so a minimal stub does not emit a spurious push_error.
+func _has_height_source(g) -> bool:
+	if g == null:
+		return false
+	for key in ["dump", "map_dump", "self_base"]:
+		var cand = g.get(key)
+		if cand is Dictionary and (cand as Dictionary).has("height"):
+			return true
+	return g.get("height") is PackedFloat32Array
 
 
-func _record_vertex(verts: Array, norms: Array, uvs: Array,
-		p: Vector3, normal: Vector3, uv: Vector2, expected_y: float) -> void:
-	verts.append(p)
-	norms.append(normal)
-	uvs.append(uv)
-	_height_error = maxf(_height_error, absf(p.y - expected_y))
+func _full_map_rect_px() -> Rect2:
+	var w := _int_prop(game, "MAP_W", 160)   # game.gd:35-36 defaults
+	var h := _int_prop(game, "MAP_H", 160)
+	var t: float = float(Data.TILE_M)        # data.gd:23
+	return Rect2(0.0, 0.0, float(w) * t * view_scale, float(h) * t * view_scale)
 
 
-func _quad(arrays_group: Dictionary, p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3,
-		normal: Vector3, uv0: Vector2, uv1: Vector2, uv2: Vector2, uv3: Vector2,
-		expected: Array, flip: bool = false) -> void:
-	var base: int = arrays_group["verts"].size()
-	_record_vertex(arrays_group["verts"], arrays_group["norms"], arrays_group["uvs"],
-		p0, normal, uv0, expected[0])
-	_record_vertex(arrays_group["verts"], arrays_group["norms"], arrays_group["uvs"],
-		p1, normal, uv1, expected[1])
-	_record_vertex(arrays_group["verts"], arrays_group["norms"], arrays_group["uvs"],
-		p2, normal, uv2, expected[2])
-	_record_vertex(arrays_group["verts"], arrays_group["norms"], arrays_group["uvs"],
-		p3, normal, uv3, expected[3])
-	if flip:
-		# reversed winding: p0,p2,p1 / p0,p3,p2
-		arrays_group["inds"].append_array([base, base + 2, base + 1, base, base + 3, base + 2])
-	else:
-		# forward winding: p0,p1,p2 / p0,p2,p3
-		arrays_group["inds"].append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+# Camera3D ground frustum -> visible map rect in canvas px (map-origin metres
+# x view_scale), so input_controller.gd:499 `vp.has_point(u.pos*view_scale)` and
+# world.gd's view_rect consumers stay semantically identical. Axis-aligned AABB
+# under camera yaw is a PORT APPROXIMATION (V71 §6 Q5 / study open Q9).
+func _update_view_rect() -> void:
+	var rect := _full_map_rect_px()
+	var w := _int_prop(game, "MAP_W", 160)
+	var h := _int_prop(game, "MAP_H", 160)
+	var t: float = float(Data.TILE_M)
+	var ox := float(w) * 0.5 * t   # 3D scene is centred on origin; sim is map-origin
+	var oz := float(h) * 0.5 * t
+	if is_inside_tree():
+		var vp = get_viewport()
+		if vp != null:
+			var cam = vp.get_camera_3d()
+			if cam != null and cam.has_method("get_viewport_corners"):
+				var corners = cam.call("get_viewport_corners")
+				if corners is Array:
+					var ca: Array = corners
+					if ca.size() >= 4:
+						var min_x: float = INF
+						var max_x: float = -INF
+						var min_z: float = INF
+						var max_z: float = -INF
+						var saw: bool = false
+						for c in ca:
+							if not (c is Vector3):
+								continue
+							saw = true
+							min_x = minf(min_x, (c as Vector3).x)
+							max_x = maxf(max_x, (c as Vector3).x)
+							min_z = minf(min_z, (c as Vector3).z)
+							max_z = maxf(max_z, (c as Vector3).z)
+						if saw and min_x <= max_x and min_z <= max_z:
+							rect = Rect2((min_x + ox) * view_scale,
+								(min_z + oz) * view_scale,
+								(max_x - min_x) * view_scale,
+								(max_z - min_z) * view_scale)
+	view_rect = rect
 
 
-func _new_group() -> Dictionary:
-	return {"verts": [], "norms": [], "uvs": [], "inds": []}
-
-
-func _min_height(height: PackedFloat32Array) -> float:
-	var m: float = INF
-	for v in height:
-		m = minf(m, v)
-	return m
-
-
-# M0.6: one wall quad along an X-normal edge. `normal` is the direction of the
-# EXPOSED face (the side the camera can see) and `flip` gives that face the
-# winding that makes it front-facing. Previously every X-wall used +X as its
-# normal regardless of which side was exposed; with CULL_BACK that lit half the
-# ravine faces from the wrong side and produced flat dark horizontal bands.
-func _emit_x_wall(sides: Dictionary, ex: float, wz: float,
-		lo: float, hi: float, flip: bool, normal: Vector3) -> void:
-	var a := Vector3(ex, lo, wz)
-	var b := Vector3(ex, lo, wz + TILE_M)
-	var c := Vector3(ex, hi, wz + TILE_M)
-	var d := Vector3(ex, hi, wz)
-	_quad(sides, a, b, c, d, normal,
-		Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1),
-		[lo, lo, hi, hi], flip)
-
-
-# M0.6: one wall quad along a Z-normal edge; `normal` is the exposed face.
-func _emit_z_wall(sides: Dictionary, ez: float, wx: float,
-		lo: float, hi: float, flip: bool, normal: Vector3) -> void:
-	var a := Vector3(wx, lo, ez)
-	var b := Vector3(wx + TILE_M, lo, ez)
-	var c := Vector3(wx + TILE_M, hi, ez)
-	var d := Vector3(wx, hi, ez)
-	_quad(sides, a, b, c, d, normal,
-		Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1),
-		[lo, lo, hi, hi], flip)
-
-
-func _to_mesh(group: Dictionary, mat: Material, mesh: ArrayMesh) -> void:
-	if group["verts"].is_empty():
+# Mirror only; never write e["selected"] (input_controller.gd:148-158 owns it).
+func _sync_selection() -> void:
+	if game == null:
 		return
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = PackedVector3Array(group["verts"])
-	arrays[Mesh.ARRAY_NORMAL] = PackedVector3Array(group["norms"])
-	arrays[Mesh.ARRAY_TEX_UV] = PackedVector2Array(group["uvs"])
-	arrays[Mesh.ARRAY_INDEX] = PackedInt32Array(group["inds"])
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(mesh.get_surface_count() - 1, mat)
+	# Dictionary test doubles (V7-13/V7-14 bind those) have no has_method().
+	if not (game is Object) or not game.has_method("get_selected"):
+		return
+	var got = game.call("get_selected")
+	if got is Array:
+		selected_ids = (got as Array).duplicate()
+	selected.clear()
+	var by_id = game.get("by_id")
+	if by_id is Dictionary:
+		for id in selected_ids:
+			var k := int(id)
+			if (by_id as Dictionary).has(k):
+				selected[k] = (by_id as Dictionary)[k]
 
 
-func build_from_dump(dump: Dictionary, x0: int, y0: int, n: int) -> bool:
-	_n = n
-	_height_error = 0.0
-	var w := int(dump.get("map_w", 0))
-	var h := int(dump.get("map_h", 0))
-	var raw := Marshalls.base64_to_raw(str(dump.get("height", "")))
-	var rawtb := Marshalls.base64_to_raw(str(dump.get("tileblock", "")))
-	if w <= 0 or h <= 0 or raw.size() < w * h * 4 or rawtb.size() < w * h:
-		push_error("terrain3d: bad dump dimensions")
-		return false
-	if x0 < 0 or y0 < 0 or x0 + n > w or y0 + n > h:
-		push_error("terrain3d: window out of bounds")
-		return false
+# --- FULL 2D WORLD CONTRACT: API ---------------------------------------------
 
-	var names := _block_names()
-	var height := PackedFloat32Array()
-	height.resize(n * n)
-	var tbidx := PackedByteArray()
-	tbidx.resize(n * n)
-	for z in range(n):
-		for x in range(n):
-			var src := (y0 + z) * w + (x0 + x)
-			height[z * n + x] = raw.decode_float(src * 4)
-			tbidx[z * n + x] = rawtb[src]
+func bind(g, h = null) -> void:
+	game = g
+	hud = h
+	view_scale = float(Data.PIXELS_PER_METER)   # world.gd:240; data.gd:113
+	if not _modules_ready:
+		terrain = _instantiate(TERRAIN_SCRIPT)
+		entities = _instantiate(ENTITIES_SCRIPT)
+		fx = _instantiate(FX_SCRIPT)
+		fog = _instantiate(FOG_SCRIPT)
+		anim = _instantiate(ANIM_SCRIPT)
+		# fx_layer is a real Node3D the input seam can attach route overlays to.
+		if fx != null:
+			fx_layer = fx as Node3D
+		else:
+			var holder := Node3D.new()
+			holder.name = "FXLayer3D"
+			add_child(holder)
+			fx_layer = holder
+		_modules_ready = true
 
-	# Group top quads by donor TileBlock name -> one material/draw call per name.
-	var groups := {}
-	var used_names := {}
-	for z in range(n):
-		for x in range(n):
-			var bi := int(tbidx[z * n + x])
-			var nm := str(names[bi]) if bi >= 0 and bi < names.size() else "grass1"
-			if not groups.has(nm):
-				groups[nm] = _new_group()
-			used_names[nm] = true
-			var y: float = height[z * n + x] * HEIGHT_SCALE
-			var wx: float = (float(x) - float(n) * 0.5) * TILE_M
-			var wz: float = (float(z) - float(n) * 0.5) * TILE_M
-			var p0 := Vector3(wx, y, wz)
-			var p1 := Vector3(wx + TILE_M, y, wz)
-			var p2 := Vector3(wx + TILE_M, y, wz + TILE_M)
-			var p3 := Vector3(wx, y, wz + TILE_M)
-			# +Y facing uses reversed winding relative to the p0..p3 ring.
-			_quad(groups[nm], p0, p1, p2, p3, Vector3.UP,
-				Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1),
-				[y, y, y, y], true)
+	# Dependency order: terrain geometry before fog overlay, entities before anim.
+	if terrain != null:
+		terrain.bind(game)
+		if _has_height_source(game):
+			terrain.build()   # ONE full-grid mesh; no chunk scheduling
+	if entities != null:
+		entities.bind(game)
+	if fx != null:
+		fx.bind(game)
+		# V7-15 §6 Q1: main forwards add_fx(); disable the module's event peek.
+		fx.consume_events = false
+	if fog != null:
+		fog.bind(game)
+	if anim != null:
+		anim.bind(game, entities)
 
-	# M0.5 SEAM FIX. The old code only emitted a wall when |dh| > SIDE_STEP
-	# (0.35 m), so sub-0.35 m steps left literal cracks, and the map perimeter
-	# had no wall at all. Both let the flat background show through as thin
-	# light slivers. Now EVERY discontinuity > SIDE_EPS gets a wall, and every
-	# outer edge gets a shallow local lip (a deep global skirt produced a huge
-	# black cliff at this dump window's near edge). The distant ground plane
-	# sits at _skirt_y, below the whole patch.
-	_skirt_y = minf(WATER_LEVEL, _min_height(height) * HEIGHT_SCALE) - SKIRT_DEPTH_M
-	var sides := _new_group()       # real cliffs (|dh| > SIDE_STEP): dark rock
-	var small := _new_group()       # sub-step cracks: grass, so they vanish visually
-	var walls := 0
-	var small_walls := 0
-	var perimeter := 0
-	for z in range(n):
-		for x in range(n):
-			var ha: float = height[z * n + x] * HEIGHT_SCALE
-			var wx: float = (float(x) - float(n) * 0.5) * TILE_M
-			var wz: float = (float(z) - float(n) * 0.5) * TILE_M
-			# --- +X edge: interior neighbour, or outer skirt on the east border
-			if x + 1 < n:
-				var hb: float = height[z * n + x + 1] * HEIGHT_SCALE
-				if absf(hb - ha) > SIDE_EPS:
-					var g: Dictionary = sides if absf(hb - ha) > SIDE_STEP else small
-					_emit_x_wall(g, wx + TILE_M, wz, minf(ha, hb), maxf(ha, hb), ha > hb,
-						Vector3.RIGHT if ha > hb else Vector3.LEFT)
-					if g == sides:
-						walls += 1
-					else:
-						small_walls += 1
-			else:
-				# Shallow LOCAL lip. A global skirt down to the lowest tile made
-				# a 6 m black cliff across the near edge at this dump window
-				# (edge heights +0.7..+2.9, min -2.8). Below the lip the distant
-				# grass ground simply continues - like a low terrace edge.
-				_emit_x_wall(sides, wx + TILE_M, wz, ha - SKIRT_DEPTH_M, ha, true, Vector3.RIGHT)
-				walls += 1
-				perimeter += 1
-			# --- -X edge: outer lip on the west border only
-			if x == 0:
-				_emit_x_wall(sides, wx, wz, ha - SKIRT_DEPTH_M, ha, false, Vector3.LEFT)
-				walls += 1
-				perimeter += 1
-			# --- +Z edge: interior neighbour, or outer skirt on the north border
-			if z + 1 < n:
-				var hc: float = height[(z + 1) * n + x] * HEIGHT_SCALE
-				if absf(hc - ha) > SIDE_EPS:
-					var g: Dictionary = sides if absf(hc - ha) > SIDE_STEP else small
-					_emit_z_wall(g, wz + TILE_M, wx, minf(ha, hc), maxf(ha, hc), ha <= hc,
-						Vector3.FORWARD if ha > hc else Vector3.BACK)
-					if g == sides:
-						walls += 1
-					else:
-						small_walls += 1
-			else:
-				_emit_z_wall(sides, wz + TILE_M, wx, ha - SKIRT_DEPTH_M, ha, false, Vector3.FORWARD)
-				walls += 1
-				perimeter += 1
-			# --- -Z edge: outer lip on the south border only
-			if z == 0:
-				_emit_z_wall(sides, wz, wx, ha - SKIRT_DEPTH_M, ha, true, Vector3.BACK)
-				walls += 1
-				perimeter += 1
-
-	var mesh := ArrayMesh.new()
-	var vertex_total := 0
-	var triangle_total := 0
-	for nm in groups.keys():
-		_to_mesh(groups[nm], _albedo(str(nm)), mesh)
-		vertex_total += groups[nm]["verts"].size()
-		triangle_total += groups[nm]["inds"].size() / 3
-	# M0.5: real cliffs use dark striated rock; sub-0.35 m cracks use grass so
-	# the seam is closed geometrically but does not read as a black stripe.
-	_to_mesh(sides, _wall_material(), mesh)
-	vertex_total += sides["verts"].size()
-	triangle_total += sides["inds"].size() / 3
-	_to_mesh(small, _albedo("grass_ground1"), mesh)
-	vertex_total += small["verts"].size()
-	triangle_total += small["inds"].size() / 3
-	var mi := MeshInstance3D.new()
-	mi.name = "TerrainMesh"
-	mi.mesh = mesh
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	add_child(mi)
-
-	_make_water(height, n)
-	_make_environment()
+	# Alias AFTER fog.bind(): fog.bind() reassigns its PackedByteArrays.
+	if fog != null:
+		fog_explored = fog.fog_explored
+		fog_vis = fog.fog_vis
+	else:
+		var n: int = _int_prop(game, "MAP_W", 0) * _int_prop(game, "MAP_H", 0)
+		fog_explored = PackedByteArray()
+		fog_vis = PackedByteArray()
+		fog_explored.resize(maxi(n, 0))
+		fog_vis.resize(maxi(n, 0))
 
 	stats = {
-		"dump_window": {"x0": x0, "y0": y0, "n": n},
-		"tile_m": TILE_M,
-		"height_scale": HEIGHT_SCALE,
-		"mesh_vertices": vertex_total,
-		"top_surface_vertices": n * n * 4,
-		"side_quads": walls,
-		"cliff_wall_quads": walls,
-		"grass_crack_quads": small_walls,
-		"side_vertices": sides["verts"].size() + small["verts"].size(),
-		"surfaces": mesh.get_surface_count(),
-		"triangles": triangle_total,
-		"height_error_max_m": _height_error,
-		"block_names": used_names.keys(),
-		"water_level_m": WATER_LEVEL,
-		"seam_policy": "wall on EVERY |dh|>SIDE_EPS + shallow local edge lip (M0.5)",
-		"side_epsilon_m": SIDE_EPS,
-		"perimeter_wall_quads": perimeter,
-		"skirt_y_m": _skirt_y,
-		"art_pass": {
-			"exposure": EXPOSURE,
-			"tonemap": "LINEAR",
-			"ambient_energy": AMBIENT_ENERGY,
-			"sun_energy": SUN_ENERGY,
-			"emission_mult": EMISSION_MULT,
-			"albedo_gain": ALBEDO_GAIN,
-			"background": "ProceduralSky + distant grass ground plane",
+		"composition": "V7-51 world3d.gd",
+		"modules": {
+			"terrain": terrain != null,
+			"entities": entities != null,
+			"fx": fx != null,
+			"fog": fog != null,
+			"anim": anim != null,
 		},
+		"view_scale": view_scale,
+		"fx_events_forwarded_only": true,
+		"fog_arrays_aliased": fog != null,
+		"contract": "V71_mechanics_inventory.md:180-199 / V73_ATOMIC_CONTRACT.md:24",
 	}
+
+
+# Mirrors world.gd:2072-2081 responsibilities: derive data, then let each
+# composed module update its own render state. dt stays sim-agnostic.
+func sync(dt: float) -> void:
+	anim_t += maxf(dt, 0.0)
+	_update_view_rect()
+	_sync_selection()
+	if entities != null:
+		entities.sync(dt)
+	if fx != null:
+		fx.sync(dt)   # consume_events=false: ages existing FX only
+	if fog != null:
+		fog.sync(dt)  # internally gated by Data.FOG_INTERVAL (data.gd:118)
+
+
+# Data-only scalar: metres -> canvas px (world.gd:350-351). Do NOT change the
+# meaning for shared callers (V71 §3 :188, §6 Q2).
+func world_to_px(p: Vector2) -> Vector2:
+	return p * view_scale
+
+
+# 2D contract order is add_fx(kind, pos) (world.gd:3563 / main.gd:1521-1553);
+# the composed fx module takes add_fx(pos, kind, life) (V73 :14, V715 §2).
+# Swap here so both call orders work. Returns the spawned item (benign superset).
+func add_fx(kind, pos, life := -1.0) -> Dictionary:
+	var k = kind
+	var p = pos
+	if kind is Vector2 and (pos is String or pos is StringName):
+		k = pos
+		p = kind
+	if fx == null:
+		return {}
+	return fx.add_fx(p, str(k), float(life))
+
+
+# 2D test-hook takes an optional chunk key; the composed terrain builds ONE
+# full-grid mesh so there are no chunks/fallback (V713 §2/§4, V71 §3 :194).
+func has_chunk_or_fallback(_k = null) -> bool:
+	if terrain != null:
+		return bool(terrain.has_chunk_or_fallback())
 	return true
 
 
-func _make_water(height: PackedFloat32Array, n: int) -> void:
-	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
-	for z in range(n):
-		for x in range(n):
-			var d: float = WATER_LEVEL - height[z * n + x]
-			var cov: float = 1.0 if d > 0.0 else 0.0
-			var coast: float = clampf(d / 0.57, 0.0, 1.0)
-			var deep: float = clampf(d / 1.07, 0.0, 1.0)
-			img.set_pixel(x, z, Color(cov, deep, coast, 1.0))
-	var tex := ImageTexture.create_from_image(img)
-	# Filtering is requested by the shader uniform hint (filter_linear).
-
-	var sh := Shader.new()
-	sh.code = """
-shader_type spatial;
-render_mode blend_mix, depth_draw_never, cull_back;
-// Spatial port of the port's canvas_item water tint (water_overlay.gdshader):
-// same WATERCOLOR / WATERCOLOR2 / 2.2 body gain / coast->deep mix. No screen
-// texture and no refraction (Compatibility); alpha uses donor resalpha.
-uniform sampler2D mask : repeat_enable, filter_linear;
-uniform float time;
-// M0.5: donor slate water. Old WATERCOLOR (0.56,0.65,0.60)*2.2 clipped to a
-// bright mint that read as "light-blue slivers" in the capture; the donor's
-// water is a deep desaturated slate. Keep the spatial mask+swell, drop gain,
-// and fade alpha at the shore (m.b = normalised depth) instead of a hard edge.
-const vec3 WATERCOLOR = vec3(0.19, 0.245, 0.255);
-const vec3 WATERCOLOR2 = vec3(0.050, 0.065, 0.080);
-void fragment() {
-    vec4 m = texture(mask, UV);
-    float coverage = m.r;
-    if (coverage < 0.001) discard;
-    vec3 col = mix(WATERCOLOR, WATERCOLOR2, smoothstep(0.0, 1.0, m.g));
-    float swell = sin(UV.x * 42.0 + time * 0.6) + sin(UV.y * 57.0 - time * 0.4);
-    col *= 1.15 * (0.93 + 0.05 * swell);
-    float shore = smoothstep(0.0, 0.32, m.b);
-    ALBEDO = clamp(col, 0.0, 1.0);
-    ALPHA = coverage * (0.28 + 0.72 * shore);   // subtle shoreline fade
-}
-"""
-	_water_mat = ShaderMaterial.new()
-	_water_mat.shader = sh
-	_water_mat.set_shader_parameter("mask", tex)
-	_water_mat.set_shader_parameter("time", 0.0)
-
-	var half: float = float(n) * TILE_M * 0.5
-	var wmesh := ArrayMesh.new()
-	var v := PackedVector3Array([
-		Vector3(-half, WATER_LEVEL, -half), Vector3(half, WATER_LEVEL, -half),
-		Vector3(half, WATER_LEVEL, half), Vector3(-half, WATER_LEVEL, half)])
-	var uv := PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)])
-	var ind := PackedInt32Array([0, 3, 1, 1, 3, 2])
-	var arr := []
-	arr.resize(Mesh.ARRAY_MAX)
-	arr[Mesh.ARRAY_VERTEX] = v
-	arr[Mesh.ARRAY_TEX_UV] = uv
-	arr[Mesh.ARRAY_INDEX] = ind
-	wmesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-	var wmi := MeshInstance3D.new()
-	wmi.name = "WaterPlane"
-	wmi.mesh = wmesh
-	wmi.material_override = _water_mat
-	add_child(wmi)
+# Optional height passthrough for callers that used the legacy M0 world API.
+func height_at_world(p: Vector2) -> float:
+	if terrain != null:
+		return float(terrain.height_at_world(p))
+	return 0.0
 
 
-func _make_environment() -> void:
-	var env := Environment.new()
-	# M0.5 SKY: the patch was a floating island in flat grey-green. A procedural
-	# sky plus a distant grass plane below gives the terrain a horizon/context.
-	env.background_mode = Environment.BG_SKY
-	env.background_color = Color(0.62, 0.70, 0.66)  # fallback if sky is unavailable
-	var sky := Sky.new()
-	var skymat := ProceduralSkyMaterial.new()
-	skymat.sky_top_color = Color(0.18, 0.30, 0.42)
-	skymat.sky_horizon_color = Color(0.36, 0.44, 0.38)
-	skymat.sky_curve = 0.18
-	skymat.ground_bottom_color = Color(0.09, 0.12, 0.07)
-	skymat.ground_horizon_color = Color(0.17, 0.22, 0.14)
-	skymat.ground_curve = 0.10
-	skymat.sun_angle_max = 18.0
-	sky.sky_material = skymat
-	env.sky = sky
-
-	# M0.5 EXPOSURE/TONEMAP: donor blocks are L 63-75 but the un-tonemapped 3D
-	# shot read 49.7. An explicit LINEAR tonemap exposure + stronger ambient
-	# lifts lit grass toward the donor's L 75-100 and reveals rock striations.
-	# Godot 4.7 renamed the enum to TONE_MAPPER_*; LINEAR is value 0 and simply
-	# applies tonemap_exposure without a filmic curve (verified via API probe).
-	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-	env.tonemap_exposure = EXPOSURE
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.86, 0.88, 0.82)
-	env.ambient_light_energy = AMBIENT_ENERGY
-	var we := WorldEnvironment.new()
-	we.name = "WorldEnvironment"
-	we.environment = env
-	add_child(we)
-
-	var sun := DirectionalLight3D.new()
-	sun.name = "DonorSun"
-	sun.light_energy = SUN_ENERGY
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 220.0
-	# light.cfg Position (-0.3447,0.9387,0) -> donor lightVector (-0.086,0,0.939)
-	# (Z-up, world.gd:818-820) -> Godot Y-up (-0.086,0.939,0).
-	# The donor sun is almost straight up, so look_at up=+Y is degenerate here;
-	# use +Z as the look-at up axis for a well-defined rotation.
-	var sun_pos := SUN_LIGHTVEC.normalized() * 90.0
-	sun.look_at_from_position(sun_pos, Vector3.ZERO, Vector3.FORWARD)
-	add_child(sun)
-
-	_make_distant_ground()
-
-
-# M0.5: a wide grass plane just below the perimeter skirt so the patch reads
-# as a piece of a larger landmass instead of a tile quilt in an empty void.
-func _make_distant_ground() -> void:
-	var pm := PlaneMesh.new()
-	pm.size = Vector2(1600.0, 1600.0)
-	var gp := MeshInstance3D.new()
-	gp.name = "DistantGround"
-	gp.mesh = pm
-	# Godot 4.7 Texture2D has no repeat_mode property; tiling is explicit in a
-	# tiny spatial shader with a repeat_enable sampler hint (same pattern the
-	# water shader uses). This avoids depending on the PNG import flags.
-	var sh := Shader.new()
-	sh.code = """
-shader_type spatial;
-render_mode unshaded;
-uniform sampler2D ground_tex : repeat_enable, filter_linear;
-uniform vec3 tint = vec3(0.92, 0.92, 0.88);
-void fragment() {
-    vec3 c = texture(ground_tex, UV * 120.0).rgb;
-    // Unshaded so the surrounding land stays at donor grass brightness
-    // (the lit version blew out to L~185 against an L~75 patch).
-    ALBEDO = clamp(c * tint, 0.0, 1.0);
-}
-"""
-	var gmat := ShaderMaterial.new()
-	gmat.shader = sh
-	var path := "res://assets/terrain/blocks/grass_ground1.png"
-	if ResourceLoader.exists(path):
-		var src := load(path) as Texture2D
-		if src != null:
-			gmat.set_shader_parameter("ground_tex", src)
-	gmat.set_shader_parameter("tint", Vector3(0.92, 0.92, 0.88))
-	gp.material_override = gmat
-	gp.position.y = _skirt_y - 0.1
-	add_child(gp)
-
-
-func _process(delta: float) -> void:
-	_water_time += delta
-	if _water_mat != null:
-		_water_mat.set_shader_parameter("time", _water_time)
+# Explicit anim3d handoff surface (V73 :17, V714 §4). The module labels every
+# pose PORT APPROXIMATION — NOT DONOR PARITY; no rig is fabricated here.
+func play_anim(e, action, t):
+	if anim == null:
+		return {}
+	return anim.play(e, action, t)

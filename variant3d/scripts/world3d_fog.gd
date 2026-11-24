@@ -207,8 +207,9 @@ func _build_overlay() -> bool:
 	_overlay.name = "FogOverlay"
 	_overlay.mesh = _overlay_mesh
 	_overlay.material_override = _make_fog_material()
-	# 2D draws fog above units at world.gd:346 (z_index = 10).
-	_overlay.render_priority = 10
+	# 2D draws fog above units at world.gd:346 (z_index = 10). In 3D the
+	# equivalent transparent-sort bias is VisualInstance3D.sorting_offset.
+	_overlay.sorting_offset = 10.0
 	_overlay.visible = bool(Data.FOG_OF_WAR)
 	add_child(_overlay)
 	return true

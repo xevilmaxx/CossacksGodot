@@ -55,6 +55,10 @@ static var TICK_MAX := 0.25                  # clamp on dt so a test never stall
 static var FOG_OF_WAR := false
 static var CORPSE_LIFE := 90.0
 static var CAPTURE_ENABLED := true  # match rule "peasant capture" (config rules.peasant_capture)
+# V7-50 PORT ADDITION — there is no donor render-mode key (V71 mechanics
+# inventory :171,:176: "No donor 'render mode' flag exists — port-side switch").
+# Additive only: no existing simulation number or default is changed.
+static var RENDER_MODE := "2d"      # gameplay.render_mode; 2d default, 3d opt-in
 
 static var BUILD_PROGRESS_PER_HIT := 10 * 0.03125 * 1.15  # 0.359 s, dmscript.global:182
 static var BUILD_HIT_INTERVAL := 1.25  # cWalkIntervalInf

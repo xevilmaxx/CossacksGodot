@@ -6,7 +6,7 @@ files_owned:
   - docs/coord_swarm_2026-11-24/reports/V714_world3d_entities.md
 scope: "SINGLEPLAYER SKIRMISH ONLY (D-12): static 3D entity meshes for units, buildings, trees, rocks, mines and fields; no campaign/mission/cutscene/network assets (WAVE7_3D_VARIANT_CHARTER.md:37-38)"
 governing_rule: "Leverage existing DONOR code/data; every 3D decision cites donor path:line or an evidence id; UNVERIFIED where unreadable (WAVE7_3D_VARIANT_CHARTER.md:29-36)"
-godot_runs: 11 (all via variant3d/tools/godot_runner.py; tickets 16, 27, 30, 32, 34, 35, 36, 38, 41, 42, 45)
+godot_runs: 17 (all via variant3d/tools/godot_runner.py; tickets 16, 27, 30, 32, 34, 35, 36, 38, 41, 42, 45, 46, 47, 48, 49, 51, 52)
 code_edits: "one new module only; no app/** or other variant3d/** file touched"
 donor: "not read directly this pass; donor path:line and evidence ids are quoted from V7-1/V7-2 reports; no donor binary copied or run"
 status: "IMPLEMENTED — parse MEASURED pass, runtime API smoke MEASURED pass, OBJ mesh load MEASURED, visual/animation parity UNVERIFIED"
@@ -16,18 +16,21 @@ status: "IMPLEMENTED — parse MEASURED pass, runtime API smoke MEASURED pass, O
 
 ## 1. Exact API (implemented)
 
-File: `variant3d/scripts/world3d_entities.gd` (572 lines, tabs only, no spaces used
+File: `variant3d/scripts/world3d_entities.gd` (590 lines, tabs only, no spaces used
 for indentation, no RNG). `extends Node3D`; no `class_name` — loaded dynamically
 via `load("res://scripts/world3d_entities.gd")` as the atomic contract requires.
+`var game` is deliberately UNTYPED (line 79) because the seam passes a live
+`C3Game` (Node) while atomic tests bind a `RefCounted` stub (V7-1 §3 relaxed
+typing).
 
 | Method | Line | Behaviour |
 |---|---:|---|
-| `bind(game)` | 93 | Reads `assets/models/manifest.json` bboxes, measures OBJ/GLB availability into `stats`, emits the animation-label warning. No sim mutation. |
-| `sync(dt)` | 537 | Rewrites every batched instance transform and building transform from sim `e.pos` / `e.face`; hides dead/hidden/exhausted entities at `0.0001` scale; refreshes `stats`; advances a clock for anim3d. No morph (see §5). |
-| `add_unit(e)` | 434 | `MultiMeshInstance3D` batch keyed `unit|<sid>`, O(1) slot acquire, instance transform set immediately. |
-| `add_building(e)` | 455 | One `MeshInstance3D` per building (tagged `anim_status` + `mesh_source`). |
-| `add_resource(n)` | 501 | `MultiMeshInstance3D` batch keyed `res|<sid>`; `n.type` → donor sid mapping (`wood`→trees, `stone`→rocks, `gold/iron/coal`→`mine_*`, `food`→`field`, `bush`, `stump`). |
-| `remove(id)` | 525 | O(1) swap-remove from the dense batch arrays (CPU transform mirror), or frees a building node; erases the sim reference. |
+| `bind(game)` | 95 | Reads `assets/models/manifest.json` bboxes, measures OBJ/GLB availability into `stats`, emits the animation-label warning. No sim mutation. |
+| `sync(dt)` | 555 | Rewrites every batched instance transform and building transform from sim `e.pos` / `e.face`; hides dead/hidden/exhausted entities at `0.0001` scale; refreshes `stats`; advances a clock for anim3d. No morph (see §5). |
+| `add_unit(e)` | 450 | `MultiMeshInstance3D` batch keyed `unit|<sid>`, O(1) slot acquire, instance transform set immediately. |
+| `add_building(e)` | 471 | One `MeshInstance3D` per building (tagged `anim_status` + `mesh_source`). |
+| `add_resource(n)` | 517 | `MultiMeshInstance3D` batch keyed `res|<sid>`; `n.type` → donor sid mapping (`wood`→trees, `stone`→rocks, `gold/iron/coal`→`mine_*`, `food`→`field`, `bush`, `stump`). |
+| `remove(id)` | 541 | O(1) swap-remove from the dense batch arrays (CPU transform mirror), frees an empty batch or a building node synchronously; erases the sim reference. |
 
 Public read-only state used by integrators/tests: `stats` (asset counts, mesh
 sources actually loaded, batch counts, axis/scale/animation labels) and
@@ -45,7 +48,7 @@ one draw call each. Each node carries `set_meta("anim_status", ...)`.
 |---|---|
 | 116 `.obj` bind-pose meshes are the geometry source; 0 `.glb` at this date | V7-2 report §2.1 **[MEASURE]**: 116 OBJ / 116 MTL / 0 GLB / 0 GLTF / 0 DAE; manifest 9 unit / 14 building / 93 env. `variant3d/assets/models/manifest.json:3-22` sample peasant bbox. |
 | OBJ holds donor bind-pose verts + UVs, normals absent, winding already swapped | `app/tools/convert_models.py:43-66,69-94,109-125,160-183`; V7-2 §2.3 (`vn` 0/116, `vt` 116/116, `f` 128,435). |
-| Z-up → Y-up baked as `(x,y,z) → (x,z,-y)` into vertices/normals/tangents | Donor Z-up confirmed by `peasant.obj` vertex 0 `(0.062326,-0.057036,0.384664)` and manifest Z-height bboxes (V7-2 §2.3); mapping is the determinant-preserving `export_yup` rotation in V7-2 §4.1 (one conversion only, no double swap). Code: `_bake_mesh` line 215. |
+| Z-up → Y-up baked as `(x,y,z) → (x,z,-y)` into vertices/normals/tangents | Donor Z-up confirmed by `peasant.obj` vertex 0 `(0.062326,-0.057036,0.384664)` and manifest Z-height bboxes (V7-2 §2.3); mapping is the determinant-preserving `export_yup` rotation in V7-2 §4.1 (one conversion only, no double swap). Code: `_bake_mesh` line 217. |
 | Bbox centring + foot at Y=0 | V7-2 §4.1: `t = (-(x0+x1)/2, -(y0+y1)/2, -z0)`; mandatory for mounted `cossack` (X 1.466..2.871) and `dragoon` (X 1.317..2.710). |
 | Units/buildings `s = 1.0` (donor metres ≈1.9–3.5 m) | V7-2 §4.1: "`H_target = z1-z0`, `s=1.0` is the sane first pass". |
 | Env props scale from bbox × donor `envscales.cfg` values: mine `0.3152`, stone `0.329`, tree `0.5` | `data/game/var/envscales.cfg:25-28` (minegold), `:43-46` (stones), `:231-234` (pine1), `:371-374` (spruce1), via V7-2 §1.1 ledger and Table A row "Per-instance env scale". |
@@ -66,12 +69,26 @@ All jobs used `python variant3d\tools\godot_runner.py run --id ...` with
 |---|---|---|
 | 30 / `v714-parse` | Godot 4.7.2 `--check-only` parse | ok (2.86 s) |
 | 42 / `v714-parse-final` | parse after CPU-mirror fix | **ok (2.75 s)** |
+| 52 / `v714-parse-final2` | parse after ALL integration fixes | **ok (4.35 s)** |
+| 51 / `v714-runtime-final2` | runtime smoke after ALL fixes | **ok (3.84 s)**: 116 bboxes, 116 OBJ available, 0 GLB, 6 real OBJ loads, 5 batches, 2 units / 3 resources / 1 building; no script errors |
 | 27 / `v714-meshprobe` | runtime `load()` of 4 OBJ paths | **MEASURED: 4/4 loaded**, `surfaces=1`, `mats=["null"]`; AABBs peasant `(1.4345, 0.5119, 1.9886)`, `hou` `(10.782, 8.174, 5.529)`, `tree_spruce1` `(3.133, 3.495, 6.930)`, `field` `(58.519, 51.925, 20.453)` — all Z-height, confirming Z-up. |
 | 32 / `v714-runtime` | first full API smoke | found and fixed one typed-Dictionary bug in `_acquire` (`Nil` assigned to `Dictionary`). |
 | 41 / `v714-runtime-final` | full API smoke after fix | **ok (3.15 s)**. `stats`: `bbox_sids=116`, `obj_available=116`, `glb_available=0`, `mesh_sources_loaded={"obj_zup_bbox_normalised":6}`, 5 batches, 2 units, 3 resources, 1 building; after `remove()` of all IDs: units 1 (the untouched second unit), resources 0, buildings 0. No script errors; only the intentional `push_warning` label. |
 | 35 / `v714-geom` | baked mesh AABBs | **MEASURED Y-up**: peasant `(1.4345, 1.9886, 0.5119)` with `y_min=0`; `hou` Y-height `5.529` grounded at 0; `tree_spruce2` Y-height `3.340` (= native 6.680 × donor 0.5); `field` Y-height `20.453` unchanged (exempt). Mesh meta `obj_zup_bbox_normalised` on every batch. |
 | 45 / `v714-mirror` | CPU transform mirror | **MEASURED** batch `unit|peasant` ids `[1,2]`, instance-0 origin `(-150, 1, -150)`, scale `(1,1,1)` = `p - W/2*TILE_M` with stub height 1. |
 | 36 / `v714-mm`, 38 / `v714-mm2` | headless MultiMesh readback | **MEASURED harness caveat**: `MultiMesh.get_instance_transform()` and `get_aabb()` return identity/zero after `set_instance_transform()` under the headless dummy `RenderingServer`, even in a minimal isolated script. Mitigated with a CPU-side `xforms` mirror (used by swap-remove and headless verification). |
+| 46 / `v714-entities-test` → 49 / `v714-entities-test4` | V7-34's `t_entities3d.gd` (independent contract test) | Initial failure exposed three integration bugs in this module, all fixed: (a) `game` typed `Node` rejected the test's `RefCounted` stub → untyped `var game`; (b) `float(null)` in `_world_pos` with a stub returning null for `MAP_W`/`MAP_H` → null-safe read with `MAP_DEFAULT` fallback; (c) `queue_free()` + kept empty batches left stale nodes → `free()` and free-and-erase an empty batch. **Ticket 49: 8/8 checks PASS**, `before=1 peak=6 after=1` (node lifecycle returns to baseline). |
+
+**Independent no-sprite-sheet evidence:** V7-34's structural source scan could not
+run because its own `_strip_comments()` helper indexes `[0]` on an empty
+`PackedStringArray` (`t_entities3d.gd:97`, script error in tickets 46-49 — a
+defect in the test file, which V7-34 owns). I therefore ran the equivalent scan
+locally in Python over `world3d_entities.gd` with all `#` comments stripped:
+`forbidden_hits []` for `res://assets/models/anim`, `assets/models/anim`,
+`models/anim/`, `sprites_hi`, `models/sprites`, `Sprite2D`,
+`AnimatedSprite2D`, `SpriteFrames`, `AtlasTexture`, `AnimatedSprite3D`.
+The runtime node scan (V7-34 check `no_sprite_sheet_loads`) also found zero
+sprite nodes.
 
 **Answer to the verification question:** mesh assets **actually loaded = MEASURED
 YES** — 116 OBJ paths available, 4 loaded directly by ticket 27, and 6 distinct
@@ -93,9 +110,9 @@ readable donor file (layout `docs/decomp/DC_FORMATS.md:46-64`, evidence
 
 Therefore this module renders a **STATIC BIND POSE** and labels it everywhere:
 
-- `const ANIM_STATUS` (line 75) and `anim_handoff` (line 79):
+- `const ANIM_STATUS` (line 75) and `anim_handoff` (line 81):
   `STATIC BIND POSE - PORT APPROXIMATION - NOT DONOR PARITY (V7-2 3.3/4.3 Table B1: .oss bone parents unreadable; hand off to anim3d.gd)`.
-- `push_warning(...)` in `bind()` (line 142), observed in tickets 32/41 stderr.
+- `push_warning(...)` in `bind()` (line 144), observed in tickets 41/48/49 stderr.
 - `set_meta("anim_status", ANIM_STATUS)` on every batch and building node;
   `stats["animation"]` and `stats["no_2d_sprite_sheets"] = true`.
 

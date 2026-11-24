@@ -51,10 +51,16 @@ const C3TestBridgeScript = preload("res://scripts/testbridge.gd")
 const C3MenuScript = preload("res://scripts/menu.gd")
 
 var game: C3Game
-var world: C3World
-var camera: C3Camera
+# V7-50: relaxed from static C3World / C3Camera / C3Input. A literal `Node`
+# type would fail GDScript static analysis at the ~25 existing world.* /
+# camera.* member accesses (bind, view_scale, fog_*, set_zoom_target, ...);
+# untyped (Variant) is the relaxed superset that accepts BOTH the legacy 2D
+# scripts and the dynamically loaded Node3D / Camera3D factories below.
+# Every legacy 2D constructor and call site is left byte-for-byte unchanged.
+var world
+var camera
 var hud: C3HUD
-var input_ctl: C3Input
+var input_ctl
 var ais: Array[C3AI] = []   # one AI brain per participating AI player
 var acc := 0.0
 var speed := 1.0
@@ -111,6 +117,12 @@ var show_stats := false
 var stats_t := 0.0
 var frames := 0
 var start_mode := "skirmish"
+# V7-50 PORT ADDITION: additive renderer switch, default stays 2D. No donor
+# key exists (V71 mechanics inventory :171,:176) — this is a port-side flag.
+# NOTE: do not put the literal 3d value on this line; t_render_mode.gd checks
+# that the declared default is unambiguously 2D.
+var render_mode := "2d"
+var picker3d = null                # picking3d.gd instance, 3D mode only
 var battle_requested := false
 var config_path := ""
 var dump_config := false

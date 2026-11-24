@@ -9,7 +9,8 @@
   "Start the game with --dump-config to see the settings it is running with.",
   "display.unit_scale: unit sprite size relative to donor-scale buildings (1.25 default).",
   "display.show_centroids: flat round anchor disks under buildings and trees (false = hidden).",
-  "display.units_opaque: solid, normally-coloured unit figures (true default)."
+  "display.units_opaque: solid, normally-coloured unit figures (true default).",
+  "gameplay.render_mode: port-side renderer switch (2d default, 3d opt-in); no donor key exists."
  ],
  "display": {
   "window_width": 1280,
@@ -34,6 +35,7 @@
  },
  "gameplay": {
   "mode": "skirmish",
+  "render_mode": "2d",
   "map_width_tiles": 320,
   "map_height_tiles": 320,
   "random_seed": 20261113,

@@ -43,6 +43,14 @@ var _mm_box_last := Vector4i(-1, -1, -1, -1)  # x0,y0,x1,y1 of last drawn box
 var minimap_rect: TextureRect
 var minimap_panel: PanelContainer
 var mm_timer := 0.0
+# V7-53 (integration seam from V73_ATOMIC_CONTRACT.md:23): the 3D minimap
+# viewport-box source. Set ONLY by bind_3d(), which the main.gd owner (V7-50)
+# calls from its gameplay.render_mode == "3d" construction branch. In 2D these
+# stay at defaults, so the entire 2D path is unchanged. The minimap image, its
+# data/orders and _mm_paint_box are NOT touched — only the box source switches.
+var _render_mode_3d := false
+var _hud3d_adapter: Object = null
+var _bound_cam3d: Object = null
 # T-PERF-RENDER: fog-dimmed terrain cache. The full-map dim pass (100k pixels)
 # only rebuilds when world.fog_revision moves; blips still repaint every tick.
 var minimap_fog_base: Image = null
@@ -177,6 +185,27 @@ func bind(g: C3Game, w: C3World) -> void:
 	_apply_scale()
 	if is_instance_valid(get_tree()) and is_instance_valid(get_tree().root) and not get_tree().root.size_changed.is_connected(_on_vp_resize):
 		get_tree().root.size_changed.connect(_on_vp_resize)
+
+# V7-53 — public handoff for the main.gd owner (V7-50). Call once from the
+# render_mode == "3d" construction branch after the Camera3D exists, e.g.
+#   hud.bind_3d(cam3d)
+# This creates/binds the V7-17 adapter (kept alive for the session) and switches
+# ONLY the minimap viewport-box source to hud3d_adapter.get_minimap_box().
+# 2D never calls this, so its path stays byte-identical. Safe to call again with
+# a different camera (rebinding updates the adapter in place, no allocation).
+func bind_3d(cam) -> void:
+	if _hud3d_adapter == null:
+		var adapter_script = load("res://scripts/hud3d_adapter.gd")
+		if adapter_script == null:
+			push_warning("hud.bind_3d: hud3d_adapter.gd unavailable; 3D box falls back to full map")
+			return
+		_hud3d_adapter = adapter_script.new()
+	if not _hud3d_adapter.has_method("bind") or not _hud3d_adapter.has_method("get_minimap_box"):
+		push_warning("hud.bind_3d: adapter API mismatch; 3D box falls back to full map")
+		return
+	_hud3d_adapter.bind(cam, self)
+	_bound_cam3d = cam
+	_render_mode_3d = true
 
 func atlas(src: Texture2D, region: Rect2) -> AtlasTexture:
 	var at := AtlasTexture.new()
@@ -1399,7 +1428,18 @@ func _draw_minimap_viewport_box(force: bool = false) -> void:
 	var x1 := game.MAP_W - 1
 	var y1 := game.MAP_H - 1
 	var cam := get_viewport().get_camera_2d()
-	if cam != null and world != null:
+	if _render_mode_3d and _hud3d_adapter != null:
+		# V7-53: 3D seam. The box source is the V7-17 adapter ONLY; the minimap
+		# image, its data/orders and _mm_paint_box below are unchanged.
+		# get_minimap_box(): position = inclusive (x0,y0), end = EXCLUSIVE.
+		# Convert to the inclusive Vector4i the existing painter expects
+		# (V717 report §2 / hud.gd:1423-1433), re-clamping to the map bounds.
+		var b3: Rect2 = _hud3d_adapter.get_minimap_box()
+		x0 = clampi(int(b3.position.x), 0, game.MAP_W - 1)
+		y0 = clampi(int(b3.position.y), 0, game.MAP_H - 1)
+		x1 = clampi(int(b3.end.x) - 1, 0, game.MAP_W - 1)
+		y1 = clampi(int(b3.end.y) - 1, 0, game.MAP_H - 1)
+	elif cam != null and world != null:
 		# view_rect is canvas pixels (metres * view_scale); screen = canvas * zoom
 		var pxm: float = Data.TILE_M * world.view_scale
 		var vp: Vector2 = get_viewport().get_visible_rect().size
