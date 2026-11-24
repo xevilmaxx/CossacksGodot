@@ -268,6 +268,27 @@ historical failures" once the background job finishes (avoid spool race).
   only diffusewaves0.bmp sampled; diffusewaves2 live but unsampled; others
   commented; NO foam texture asset. Values relayed to V7-84.
 
+### V7-92 DONOR-REPRESENTATION TERRAIN INTEGRATED
+- SOLE file: variant3d/scripts/world3d_terrain.gd + report. TILE INDICES FROM
+  LIVE GAME: game.tileblock PackedByteArray (game.gd:53, sized :1621, dumped
+  main.gd:741), one uint8/cell (320²=102,400); live dump has 31 distinct ids
+  0-85. PORT APPROXIMATION fallback kept for stubs without tileblock.
+- atlas_mode DEFAULT "single" (per user), split/array still selectable; loader's
+  ACTUAL chosen mode (incl. auto-fallback) exposed as stats["atlas_mode"].
+- Wired V7-86 tile-index shader (UV2.x index, UV2.y face, atlas_grid from V7-85
+  manifest, both donor masks alpha-packed, shadow_enabled=0) and V7-84 water
+  module with bind_height_grid(); donor literals -0.25/-0.1/2.96 confirmed.
+- Preserved V7-60 sun/sky rig, V7-82 LINEAR splat + 1280² fallback, live-height
+  mesh, water quad fallback, all stats keys + donor citations.
+- Jobs: parse 247 ok (246 failed on PackedByteArray.to_byte_array(), fixed);
+  probe 251 ok 20/20 (both split/array init, array 121 layers, UV2 102,400
+  cells/0 mismatches, atlas grid 16x8 + 16384x8192, mask alpha repack, shader
+  material, water module + height grid, donor sun present); selftest 252 ok
+  29/29; windowed GPU capture 253 ok -> temp/opencode/v792_tileindex_water.png.
+- VISUAL PARITY VS DONOR STILL UNVERIFIED — no A/B run.
+- Post-integration final gate launched in background (selftest + uitest +
+  t_render_mode).
+
 ### V7-91 triple-mode atlas DELIVERED — single is default
 - Restored `variant3d/assets/terrain/atlas/tile_index_atlas.png`: 179,912,941 B,
   sha a1f123a1072e07eb28f416a9d8541aae5ffd23891a1836904b3cb05eb84dcfbd.
