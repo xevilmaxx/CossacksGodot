@@ -268,6 +268,182 @@ historical failures" once the background job finishes (avoid spool race).
   only diffusewaves0.bmp sampled; diffusewaves2 live but unsampled; others
   commented; NO foam texture asset. Values relayed to V7-84.
 
+### TERRAIN-SMALL 64x64 harness LANDED (fast lane)
+- NEW test-only fixtures small_map_64.json / small_map_128.json, probe
+  t_smallmap_terrain.gd, tool smallmap_capture.py, report. Canonical config,
+  gate artifacts, source, shader, manifest, app, git: UNTOUCHED.
+- 64² probe ticket 307 exit 0, 21/21 PASS: 4,096 verts / 7,938 tris / 4,096
+  UV2; face_hist {0:3455,1:311,2:330} sums 4096; UV2.x 0..85, 0 out-of-atlas;
+  flat-grid promoted 0; atlas (16,8); sun shadow false; terrain cast shadow OFF;
+  Water3D height-aware; 0 SCRIPT ERRORs.
+- 64² capture ticket 308: real Screenshot3DViewport 1280x720 at
+  temp/opencode/terrain_smallmaps/smallmap_64.png, 1,705,282 B, non-black
+  0.99916, mean RGB [42.883,46.497,25.718], luma 44.181, 0 full-width dark rows.
+  Dark bands = height-driven water fields, not shadows. No donor parity claim.
+- 128² READY_NOT_RUN per fast lane; gate hashes/mtimes unchanged.
+- Earlier 301/302/306 failures were probe/path/timing bugs, fixed + disclosed.
+
+### PLAY2FIX build ghost LANDED (fast lane)
+- F1 world3d.gd:432-436 _ghost_world_pos() adds half-map (MAP_W,MAP_H)*TILE_M*0.5
+  to camera centred hit; override branch kept; stale comments fixed.
+- F2 input_controller.gd:1173-1181 3D-build-only handoff forwards existing SIM
+  pw from _screen_to_world() to set_build_ghost_pos(); 2D + cmd_* unchanged.
+- Measured job 304: BEFORE ghost hidden (in_bounds(-20,-40)=false), would-be FX
+  pos (-340,0,-360); AFTER visible=true, hou/ok, ghost XZ (-20,0,-40), recovered
+  SIM (300,280), 0.000 px from cursor. Jobs 303/305 parse ok; probe 10/10.
+  Full selftest/uitest PENDING (fast lane); no visual parity claim; probe deleted;
+  backups in inbox/backup/*.bak-PLAY2FIX-GHOST.
+
+### CAM-SEAM VERIFIED (fast lane)
+- Parse camera3d.gd 1343 ok, main.gd 1344 ok (empty stderr); clamp-order probe
+  1347 5/5 PASS — corner focus (12,12) clamped to (12.89,24.33), 2nd clamp no-op,
+  transform invariant under 3x _apply_transform(), no double-subtract under
+  interleaved zoom, repeated handoff idempotent. Earlier probe attempts 1345/1346
+  were harness-only (absolute --script path / pre-tree artifact), fixed with
+  res:// path + deferred _run(). No selftest/uitest per fast lane.
+- Probe deleted (project + Temp); no git; report frontmatter VERIFIED (FAST LANE).
+
+### FIX-COLOR tints + yaw VERIFIED (fast lane)
+- parse 295 ok; probe 298 ok 17/17; full selftest skipped per fast lane.
+- 13 donor slots; batch keys unit|peasant|p0 / p1 with custColor slot0
+  (0.7396,0,0,1) vs slot1 (0.0706,0.4,0.9035,1), donor-matching.
+- Donor band mask for peaukr.dds: 37,147/262,144 texels (14.17%) decoded (Pillow
+  34,990 at a>=128; DXT5 interpolation broadens partial alpha). Peasant tinted
+  subset 119/719 verts (16.55%), 103/921 faces (11.18%); building hou 74/2462
+  verts, 42/2298 faces. NO non-white albedo_color remains (whole-body regression
+  guard PASS). Yaw face=0 -> world +X, face=pi/2 -> world +Z, both PASS.
+- Probe deleted; no visual parity claim; no git. Entities file now free.
+- MILLFIX dispatched (sole owner world3d_entities.gd): rotor child from shipped
+  mill_rotor.png/json spinning 0.75 rad/s + per-field state visuals at sow scale;
+  parse + one probe only, selftest PENDING.
+
+### PLAY2FIX minimap box frame LANDED (fast lane)
+- hud3d_adapter.gd:62 adds half-map offset before tile indexing. Measured box
+  centres on 160x160 stub: SIM (160,160) before (3.0,3.5) -> after (79.5,77.0)
+  [want 80,80]; (40,40) -> (19.5,17.0) [want 20,20]; (280,280) -> (139.5,137.0)
+  [want 140,140]. x within +/-0.5; y uniformly -3 tiles from requested due
+  fixed -32 tilt / perspective-AABB + int() truncation, NOT half-map error.
+  Parse PASS (299); probe measured (300); full selftest skipped per fast lane.
+  Probe deleted; no visual parity claim. Open: +/-2 tile tolerance ruling.
+
+### PLAY2-03 animations — DATA LIVE, ACTION SET INCOMPLETE
+- PROVEN: 3D skinned verts change (733/733 corners, pose_source=
+  donor_flat_root_morph), 55 skins auto-load with no manual registration, frame
+  selection from donor AAF range + global sim clock (NOT hardcoded). V7-79 memo
+  keyed (sid,action) locally per sync() does NOT freeze shared-frame units today;
+  would become a bug if per-unit timing added.
+- GAPS: (1) renderer asks only 3 actions — world3d_entities.gd:739-744
+  dead/moving/else -> death/walk/idle vs 2D 14 clip classes (world.gd:470-499):
+  gather/build/carry/attack all play idle/walk. (2) shipped skins lack clips —
+  convert_skins.py:69-73 requests 7 actions but peasant.json:1 has only
+  idle/idle0/walk/death/attack0; fixing (1) alone snaps to peaukr fallback.
+  (3) NO death visual — dead units filtered before sync (world3d.gd:337,684-686)
+  to game.corpses, which no world3d* module reads; death action unreachable.
+- Four-wave donor-grounded fix plan in report; needs world3d_entities.gd (owned
+  by FIX-COLOR until its fast-lane verification clears) + anim3d/convert_skins.
+
+### FIX-MOVE CLOSED (static trace only)
+- No source edits/probe/Godot jobs per speed request. Conclusion: order-path
+  frame correct (SIM metres with +160 offset from FIX-SEL); symptom was likely
+  stale pre-FIX-SEL build or the visual yaw artifact now fixed by FIX-COLOR.
+
+### PLAY2-04 build ghost root cause — FIX DISPATCHED (fast lane)
+- Ghost sid IS set correctly (hud.gd:922, input_controller.gd:1030) and world3d
+  DOES call fx.draw_ghost (world3d.gd:682,458-493). Break is the GROUND POINT:
+  _ghost_world_pos() (:421-432) returns raw screen_to_world() = CENTRED metres,
+  but in_bounds/can_place/FX world_pos() expect SIM map-origin metres -> ghost
+  rejected/hidden or drawn ~320 m off-screen. Same half-map family as picking.
+  set_build_ghost_pos() (:784-786) has ZERO callers. V7-76 probe manually fed
+  override on 8x8 stub, masking both faults. No ghost assertion in selftest.
+- PLAY2FIX-GHOST owns world3d.gd + input_controller.gd: add half-map offset in
+  _ghost_world_pos and wire set_build_ghost_pos(pw) from input's already-correct
+  SIM projection. Parse + ONE probe only, selftest PENDING. No git.
+
+### USER: SPEED UP MODS, FEWER TESTS TODAY
+- Fast-lane directive issued to all held agents: parse + ONE targeted probe per
+  fix, skip full selftest/uitest; FIX-MOVE skip all verification (static trace
+  only, no code change); TERRAIN-SMALL run only 64x64 probe+capture, mark
+  128x128 READY_NOT_RUN. A SINGLE full gate will be run by coordinator at the
+  end once the fixes land. Honesty preserved: unrun checks labelled PENDING.
+
+### CAM-SEAM clamp-order correction applied
+- camera3d.gd:470-481 apply_external_target() reordered: _target -> clear zoom
+  anchor -> mark_external_transform -> _apply_transform -> clamp_pos. Comment
+  cites PLAY2-01 E10/E11/RC2. Report §3/§4/§7/§9 updated with 4 new probe
+  assertions (corner focus clamps; 2nd clamp no-op; 3x transform invariant;
+  interleaved-zoom/repeat-call invariance). No donor double-click work.
+- Still VERIFICATION PENDING (no runner job); will resume after FIX-COLOR.
+
+### PLAY2-02 mill rotor + fields — 3D gaps CONFIRMED
+- ROTOR: 2D sail is a CanvasItem draw effect at world.gd:628-654,2894-2895
+  (anim_t*0.75 rad/s, hub 0.525/0.21 of tower cell, donor eurmilanim.oss).
+  3D never uses that script (main.gd:578-585); a mill is ONE static
+  Building_mil_*_STATIC_POSE mesh (world3d_entities.gd:1091-1119,1279-1282)
+  with no child and no per-frame rotation; world3d.gd:_update_anim() is a no-op
+  (:791-792). Donor rotor PNG/JSON exist but only the dormant 2D copy uses them.
+- FIELDS: sim WORKS — game.gd byte-identical (sha 8649A865...), 7x7 ring,
+  resow, 60 s regrow at game.gd:2094-2147,2152-2274; t_mill_logic 6/6
+  (14 fields, 0->21 resow, 0->50 regrow). BUT 3D feed is add/remove only
+  (world3d.gd:358-404); no module reads field_state()/field_growth01()/
+  fields_anim; every field is the same static field1.osm mesh 58.5x51.9 m vs
+  ~2.4 m sow spacing -> invisible/wrong scale.
+- 3D t_mill_rotor/t_mill_logic are byte-identical COPIES of the 2D ones using
+  2D C3World; rotor test only checks viewport texture + PNG save, no spin.
+- FIX PLAN (queued behind FIX-COLOR which owns entities): attach billboarded
+  alpha-cutout MillRotor_<id> quad from mill_rotor.png/json (ortho=6.352),
+  hub from MILL_HUB/buildings.json:578-589, spin 0.75 rad/s from _anim_t,
+  label PORT APPROXIMATION; consume field_state()/growth in per-field visual
+  pass (ripe/growing/regrowing/depleted), shrink footprint to sow step;
+  add genuine t_mill_rotor3d / t_mill_fields3d.
+
+### FIX-TERRAIN visual quality LANDED — with an important correction
+- Shadows DISABLED per user decision: world3d_terrain.gd:587 sun.shadow_enabled
+  = false; :756 terrain cast_shadow = OFF. Donor sun vector/colours/energies,
+  WorldEnvironment and sky untouched. directional_shadow_max_distance=400 kept
+  but inert. Controlled A/B ticket 291 measured 0 changed pixels because the
+  tile shader is `unshaded` (terrain receives no Godot shadow map) — the disable
+  is justified by source analysis + user decision, NOT a measured pixel delta.
+- IMPORTANT CORRECTION: the dark full-width bands in BEFORE frames are the
+  HEIGHT-AWARE WATER FIELDS, not shadows. Source-level unbounded-shadow risk
+  remains credible but was not the observed band source.
+- Face mode FIXED (COMP-03 RED): UV2.y was 0 everywhere; now donor cDiff1=0.5 /
+  cDiff2=0.55 + aspect-axis thresholds -> 3,416 front / 3,732 side cells on
+  320². Controlled same-scene A/B: 5.74% pixels changed, luma 42.735->42.961.
+  Labelled PORT APPROXIMATION — NOT DONOR PARITY.
+- Top remaining cause OUTSIDE his files: live tileblock has 31 ids, top 5 = 73%
+  of cells, test7/8/9 transitions 14%, only 82 unique block arts for 124 atlas
+  cells -> repeated 'maze' look. Mask-alpha removal experiment made terrain
+  DARKER (luma 42.735->38.425) and was reverted; donor-light colour swap
+  measured and rejected as non-faithful. Eye-plane values still UNVERIFIED.
+- Parse 288 ok, probe 293 20/20 (deleted), selftest 294 29/29, windowed captures
+  taken. No donor A/B / parity claim. Small-map assertions relayed.
+
+### PLAY2-01 minimap navigation — 2 concrete root causes
+- ROOT 1 (FIX DISPATCHED): hud3d_adapter.gd:53-65 feeds CENTRED camera corners
+  into int(p/TILE_M) as if SIM tiles; negatives clamp to 0. Minimap image is
+  SIM-tile indexed, so viewport box is offset by -(MAP_W/2,MAP_H/2): centre
+  click draws box near tile (5,10) instead of (80,80). PLAY2FIX-NAVBOX owns
+  hud3d_adapter.gd only: add half-map offset before int(), probe three centres.
+- ROOT 2 (CAM-SEAM CORRECTED): apply_external_target() calls clamp_pos() BEFORE
+  _apply_transform(); clamp measures PREVIOUS transform but freezes memo for the
+  NEW unclamped target, so next _process early-returns and focus is never
+  clamped -> off-terrain/black edges at startup/screenshot. Fix order:
+  target->clear anchor->mark_external->apply transform->clamp. Probe added.
+- ROOT 3 donor parity gap (LATER, separate owner): no donor pre-click
+  offset/heading (control.script:595-612) and no instant double-click jump
+  (control.script:618-665); ArcTan units UNVERIFIED, no invented constant.
+- Explicitly NOT causes: no stale CAM-SEAM handoff in jump path, no double
+  conversion; wheel/middle-drag/arrow/edge pan donor-consistent at code level.
+
+### USER REQUEST: terrain tests on much smaller maps
+- TERRAIN-SMALL dispatched: NEW test-only configs 64x64 and 128x128 under
+  variant3d/tests/fixtures/, probe asserting size² verts/UV2, atlas material,
+  donor sun + water, and windowed GPU captures into temp (outside repo) with
+  measured non-black fraction/mean colour. Canonical config + selftest/uitest
+  artifacts MUST NOT be touched. Artifacts that scale with map size vs not.
+- FIX-TERRAIN told not to duplicate; continue shadow-disable + own diagnosis.
+- Both hold Godot jobs until queue clears.
+
 ### LATERAL MOVEMENT ROOT CAUSE CONFIRMED + FIXED (FIX-COLOR read-only check)
 - SIM face = (target-pos).angle() from +X toward +Y (game.gd:4605,5182); 2D
   uses it directly as sprite column (world.gd:438-446). Sprite columns are

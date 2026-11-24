@@ -1170,6 +1170,15 @@ func _process(_dt: float) -> void:
 			world.sel_active = true
 		else:
 			world.sel_active = false
+		# FIX-GHOST (F2): in 3D build mode, forward the SAME SIM ground point the
+		# click path places with (_screen_to_world -> picking3d.ground_point,
+		# :455-468/:555/:579-605) to world3d's build ghost. The preview then
+		# tracks the cursor in the frame the click uses it, and the centred-camera
+		# fallback in world3d._ghost_world_pos() is never taken in real play.
+		# 2D is byte-identical: this handoff is gated to render_mode == "3d".
+		if render_mode == "3d" and picking != null and hud != null \
+				and hud.build_ghost_sid != "" and world.has_method("set_build_ghost_pos"):
+			world.set_build_ghost_pos(_screen_to_world(get_viewport().get_mouse_position()))
 	if patrol_mode and patrol_a != Vector2.INF:
 		_route_redraw()
 	# build ghost hint uses the message line, not the units/score label.

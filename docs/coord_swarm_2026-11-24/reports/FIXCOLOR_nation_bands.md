@@ -3,10 +3,10 @@ id: FIX-COLOR
 owner: FIX-COLOR subagent
 date: 2026-11-24
 scope: "variant3d/scripts/world3d_entities.gd and this report ONLY. Read-only donor text reads; no fx/world3d/main/hud/app/config/test edits; no git operations."
-status: "CODE COMPLETE — VERIFICATION PENDING (runner queue paused by coordinator). One parse attempt FAILED on PackedByteArray.subarray(); fixed at :378/:384; final re-parse/probe/selftest NOT yet run. Also includes the queued FIX-MOVE-VISUAL one-line yaw correction (section 6); that too is unverified by runner."
+status: "CODE COMPLETE — parse PASS (ticket 295), targeted probe PASS 17/17 (ticket 298). FULL SELFTEST SKIPPED BY USER SPEED REQUEST ('FAST LANE'). No visual parity claim. Includes the FIX-MOVE-VISUAL yaw correction (section 6), verified by the same probe."
 governing_rule: "AUDIT3D_CHARTER.md:6-15 — path:line evidence, OBS vs INFERENCE, UNVERIFIED labels, smallest donor-grounded fix, no git operations."
 owns: ["variant3d/scripts/world3d_entities.gd", "docs/coord_swarm_2026-11-24/reports/FIXCOLOR_nation_bands.md"]
-godot_runs: "ticket 261 'fixcolor-probe0' (ok, pre-fix capability probe); ticket 271 'fixcolor-parse1' (failed — 2 subarray() parse errors, fixed; no successful parse yet)."
+godot_runs: "tickets 261 (capability probe, ok), 271 (parse failed on PackedByteArray.subarray(), fixed), 295 (final parse ok), 297 (probe failed on probe-only Basis.xform API, fixed in temp probe), 298 (probe ok 17/17). Full selftest intentionally not run."
 ---
 
 # FIX-COLOR — donor nation colour is a small alpha-masked BAND, not a body paint
@@ -85,47 +85,43 @@ The donor mask is recovered from the **donor DDS path the port manifest already 
 | `:560-578` | plain `_apply_tint` | + `_measure_band()` + `donor_tint_label` / `donor_tint_visual` meta |
 | `:934`, `:1099-1101`, `:1284` | V7-65 call sites / building meta | unchanged call sites; labels added inside `_apply_tint` |
 
-## 4. Verification — **PENDING** (coordinator paused the queue)
+## 4. Verification — parse PASS, probe PASS, full selftest SKIPPED
 
-### Jobs already run
+All Godot work went through `variant3d/tools/godot_runner.py` (no direct launches).
 
 | Job id | Ticket | Result |
 |---|---|---|
-| `fixcolor-probe0` | `261` | **ok**, exit 0, run 2.91 s. Pre-fix capability probe: `DDS_LOADED=false` (stderr `Failed to load image. Error 15` at probe:5 — Godot 4.7 cannot load DDS via `Image.load_from_file`, hence the manual DXT5 decoder); `SHADER_PARAM=(0.74, 0.0, 0.0, 1.0)` and `SHADER_VALID=true` — `ShaderMaterial` uniform setting works headlessly. Temp probe deleted after measurement. |
-| `fixcolor-parse1` | `271` | **failed**, run 7.37 s (waited 289.03 s). Two parse errors: `Cannot find member "subarray" in base "PackedByteArray"` at `world3d_entities.gd:378` and `:384`. Fixed by direct byte comparisons of the DDS magic/fourcc; **no successful parse of the final file yet** — re-run is job 1 below. |
+| `fixcolor-probe0` | `261` | ok, 2.91 s — pre-fix capability probe: Godot 4.7 cannot `Image.load_from_file()` DDS (`Error 15`), so the manual DXT5 decoder was needed; `ShaderMaterial` uniform set works headlessly. Probe deleted. |
+| `fixcolor-parse1` | `271` | **failed**, 7.37 s — `PackedByteArray.subarray()` does not exist in Godot 4.7 (`world3d_entities.gd:378`, `:384`). Fixed in source by direct byte comparisons. |
+| `fixcolor-parse-final` | `295` | **PASS**, exit 0, 5.41 s — final `world3d_entities.gd` parses clean. |
+| `fixcolor-probe` | `297` | **failed**, 4.59 s — probe-only error: `Basis.xform()` does not exist. Fixed in the temporary probe (`basis * vector`), no source change. |
+| `fixcolor-probe2` | `298` | **PASS**, exit 0, 11.98 s — **17/17 checks passed** (see measured numbers below). Temp probe and its result JSON were deleted after measurement. |
+| full selftest | — | **NOT RUN — skipped by explicit user FAST LANE request.** No 29/29 claim is made in this report. |
+
+### Measured probe results (ticket 298)
+
+| Measurement | Value |
+|---|---|
+| Donor slots loaded | 13 |
+| Batch keys | `unit|peasant|p0`, `unit|peasant|p1` |
+| Tint carrier | two distinct `ShaderMaterial`s, `custColor` slot 0 `(0.7396, 0, 0, 1)`, slot 1 `(0.0706, 0.4, 0.9035, 1)` — DIFFERENT and donor-matching (tol 1e-4) |
+| Whole-body regression guard | PASS — no batch/building material carries a non-white `albedo_color` |
+| Peasant donor mask texels | **37,147 / 262,144** (14.17%) decoded in Godot; Pillow read of `peaukr.dds` gave 34,990 at a>=128 (DXT5 interpolation broadens partial-alpha texels; held within 2,500 tolerance) |
+| Peasant mesh tinted subset | **119 / 719 vertices (16.55%)** and **103 / 921 faces (11.18%)** |
+| Building `hou` tinted subset (stats) | 74 / 2,462 vertices, 42 / 2,298 faces; mask 15,872 / 4,194,304 texels (`ukrhou.dds`) |
+| Yaw face=0 | local +Z maps to world `(1.0, 0.0, -4.4e-08)` ≈ +X — PASS |
+| Yaw face=PI/2 | local +Z maps to world `(0.0, 0.0, 1.0)` = +Z — PASS |
+
+Both tinted vertex and face counts are strictly between zero and the model totals: the player colour now reaches only the donor-indicated band subset, not the body. Stderr contained only the pre-existing ANIM_STATUS warning and a harmless dummy-renderer `Parameter "material" is null` message while reading shader parameters; no script errors.
 
 No visual parity claim is made. No screenshot/render/donor comparison was performed.
-
-### Commands to run on resume (in this order)
-
-1. Parse the final file:
-   ```
-   cd "C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3"
-   python variant3d/tools/godot_runner.py run --id fixcolor-parse --timeout 120 -- --headless --path variant3d --check-only --script res://scripts/world3d_entities.gd
-   ```
-2. Recreate the temporary probe `variant3d/tests/_fixcolor_probe.gd` (SceneTree, stub game with `MAP_W/MAP_H` + `height_at`), bind the module, add two `peasant` units with `player=0`/`player=1` and two `hou` buildings with `player=0`/`player=1`; assert:
-   - both unit batch keys exist (`unit|peasant|p0`, `unit|peasant|p1`) and their `material_override` is a `ShaderMaterial` with **different** `custColor` uniforms matching donor slots 0/1 (`[0.739607843,0,0,1]` vs `[0.070588235,0.4,0.903529412,1]`, tol 1e-4);
-   - `mask_tex` alpha has 34,990/262,144 texels >= 0.5 for `peasant` (matches the Pillow donor measurement);
-   - mesh UV sampling gives `0 < tinted_verts < verts` and `0 < tinted_faces < faces` for both units and buildings, with exact counts written to the result JSON;
-   - no material anywhere has a non-white `albedo_color` carrying the player tint (regression guard against V7-65 whole-body paint).
-   Then run:
-   ```
-   python variant3d/tools/godot_runner.py run --id fixcolor-probe --timeout 180 -- --headless --path variant3d --script res://tests/_fixcolor_probe.gd
-   ```
-   Read `variant3d/.godot_queue/results/<ticket>_fixcolor-probe/stdout.txt`, then **delete** the probe and its result.
-3. Full selftest:
-   ```
-   python variant3d/tools/godot_runner.py run --id fixcolor-selftest --timeout 180 -- --headless --path variant3d -- --self-test variant3d/selftest.json
-   ```
-   Expect `variant3d/selftest.json` `passed: true`, 29/29 steps.
-4. Update this report's frontmatter `status`, add the three ticket ids and the measured vertex/face counts, and re-state "NO visual parity claim".
 
 ## 5. Open questions / UNVERIFIED
 
 1. **Donor shader binary not executed.** The formula is read from `unit.smx9.id8.frag:37-38` and reproduced in a Godot spatial shader; no donor render is compared. `PORT APPROXIMATION — NOT DONOR PARITY` remains on every tinted object and in stats.
 2. **Runtime donor-asset dependency.** The mask is decoded from the donor DDS path stored in `assets/models/manifest.json:models[i].texture`. On a machine without the donor install, no mask is found and objects are left **UNTINTED** (never whole-body tinted). A build-time asset bake of the mask into `variant3d/assets` would remove this dependency but is outside this job's exclusive ownership.
 3. **DXT5 alpha decode** is CPU-side, first mip only, with integer interpolation; the donor GPU decoder's exact rounding on partial alpha values is UNVERIFIED. Masked texels are essentially binary (32,814 of 35,760 nonzero are exactly 255 for peaukr), so the impact is expected to be small — not measured visually.
-4. **UV orientation** — Godot's V-flipped UVs are sampled directly against the decoded image. Verification step 2 must confirm the tinted vertex/face counts are nonzero; if they are zero, the V axis needs a flip in `_mask_at()`.
+4. **UV orientation** — Godot's V-flipped UVs are sampled directly against the decoded image. Ticket 298 measured 119/719 tinted vertices and 103/921 tinted faces for peasant, so the sampled orientation is non-degenerate; exact per-pixel parity with a donor render is still UNVERIFIED.
 5. **tfDefault gate** — donor skips tint entirely for `tfDefault` child materials (`units.mat:9,20`); the port mesh is a single merged surface with no material split (`convert_models.py:133-137`), so this gate cannot be represented. All ported units/buildings use tfRGBA-style albedo textures; no tint is applied to resources.
 6. **Alpha / >1.0 clamp** — unchanged from V7-61/V7-65: donor emits no alpha (`misc.script:5069,5072`), slot 4 R=1.2 and slot 6 B=1.2; the exact donor and downstream clamping is UNVERIFIED. The 13 donor slots are used verbatim.
 7. **No visual parity claim** — all verification is structural/numeric.
@@ -149,4 +145,4 @@ Coordinator relay: FIX-MOVE proved the order/destination path correct (`game.cmd
 
 **Change (final `world3d_entities.gd:1040-1055`):** replaced the old three-line approximation with a donor-cited explanation and `yaw = PI / 2.0 - float(ed.get("face", 0.0))`. The `PORT APPROXIMATION` label and `visual UNVERIFIED` wording are retained (donor yaw is a renderer transform; no turn actions exist in 246 `.aaf` per V7-2 §3.3.3 / V7-1 C4). Public signatures, tint-mask work, V7-74 morph and V7-79 memoization are untouched.
 
-**Verification:** still PENDING under the coordinator's runner pause. The queued probe should additionally assert, for one unit with `face = 0.0`, that the transform's local +Z axis maps to world +X (`Basis.xform(Vector3.FORWARD) ≈ Vector3.RIGHT` within tolerance) and for `face = PI/2` maps to world +Z. No visual parity claim.
+**Verification (ticket 298, 17/17 PASS):** `face=0` → local +Z maps to world `(1.0, 0.0, -4.4e-08)` ≈ +X; `face=PI/2` → local +Z maps to world `(0.0, 0.0, 1.0)` = +Z. Parse of the final file passed at ticket 295. Full selftest skipped by user FAST LANE request. No visual parity claim.

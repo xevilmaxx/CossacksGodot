@@ -54,6 +54,12 @@ func get_minimap_box() -> Rect2:
 		var p := _corner_xy(c)
 		if not _finite(p):
 			continue
+		# PLAY2FIX-NAVBOX: camera3d.get_viewport_corners() returns CENTRED metres
+		# (camera3d.gd:266-275,354-363; PLAY2-01 E5), while the minimap image is
+		# SIM-tile indexed (PLAY2-01 E7: hud.gd:1541,1598,1656,1796). Convert to
+		# SIM metres before the tile mapping — the same half-map offset camera3d
+		# subtracts at :246-247. Do NOT change int()/clamps/exclusive end (V717:48-56).
+		p += Vector2(mw, mh) * Data.TILE_M * 0.5
 		# Same mapping as 2D hud.gd:1409-1412. The view_scale factors cancel:
 		#   int(canvas_px / pxm) == int(world_m / Data.TILE_M)
 		# 2D uses int() (truncate toward zero), so keep int() here too.

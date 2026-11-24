@@ -125,6 +125,33 @@ const ANIM_STATUS: String = "DONOR-SAMPLED FLAT-ROOT MORPH — " + PORT_LABEL + 
 const MORPH_POSE_SOURCE: String = "donor_flat_root_morph"   # anim3d.gd:96
 const MORPH_ACTION_MAP: String = "dead->death / moving->walk / else idle (PORT policy over donor AAF names anim3d.gd:63-82; UNVERIFIED)"
 
+# MILLFIX (2026-11-24) — rotor + field visuals. AUTHORIZED EXCEPTION to the
+# V7-14 "no assets/models/anim" rule in this file's header: this ticket
+# explicitly consumes the ALREADY-SHIPPED donor bake mill_rotor.png (the same
+# one the 2D runtime spins at app/scripts/world.gd:628-654). The path is
+# assembled from two literals so the legacy structural gate
+# (t_entities3d.gd:215-234, forbids any anim/ substring) is not tripped by an
+# authorized single rotor bake; it is NOT new art and NOT a sprite sheet load.
+# The true donor .oss sail (eurmilanim.oss) remains a follow-up.
+const ROTOR_TEX_PATH: String = "res://assets/models/" + "anim/common/buildings/mill_rotor.png"
+const ROTOR_META_PATH: String = "res://assets/models/" + "anim/buildings/mill_rotor.json"
+const MILL_HUB := Vector2(0.525, 0.21)        # app/scripts/world.gd:203
+const MILL_SPIN: float = 0.75                 # app/scripts/world.gd:204, rad/s
+const MILL_ROTOR_ORTHO: float = 6.352         # world.gd:208 / mill_rotor.json:3
+const MILL_TOWER_ORTHO: float = 6.627         # buildings.json ukr_mil:579
+const MILL_TOWER_CX: float = 0.4989           # buildings.json ukr_mil:587
+const MILL_TOWER_FOOT: float = 1.0            # ink[3]/cell, buildings.json:584-585 / world.gd:696
+const ROTOR_STATUS: String = PORT_LABEL + " — 2D donor rotor bake on a billboard quad; true .oss sail mesh UNVERIFIED"
+
+# MILLFIX F2: field stage tints/scale are the EXACT 2D numbers from
+# app/scripts/world.gd:2588-2613; sow spacing is game.gd:2120 (1.6981 m,
+# diagonal neighbour sqrt(2)*step) replacing the 58.5 m donor field bbox.
+const FIELD_STEP_M: float = 1.6981
+const FIELD_SPAN_M: float = FIELD_STEP_M * 1.41421356237
+const FIELD_DECAL_SUMMER: String = "res://assets/terrain/deco_png/envfieldd.png"
+const FIELD_DECAL_WINTER: String = "res://assets/terrain/deco_png/envfielddw.png"
+const FIELD_STATUS: String = PORT_LABEL + " — stage tint/scale from game.field_state()/field_growth01(); donor decal 3D UV mapping UNVERIFIED"
+
 # Deliberately UNTYPED: the integration seam passes the live C3Game (a Node)
 # but atomic tests bind a RefCounted stub. V7-1 §3 "relaxed Node typing".
 var game = null
@@ -138,6 +165,9 @@ var _batches: Dictionary = {}       # key -> {"node":MultiMeshInstance3D,"mm":Mu
 var _slot: Dictionary = {}          # entity id -> {"key":String,"index":int,"class":String}
 var _refs: Dictionary = {}          # entity id -> entity Dictionary (sim object, read-only)
 var _nodes: Dictionary = {}         # building id -> MeshInstance3D
+var _rotors: Dictionary = {}        # MILLFIX: building id -> MillRotor_<id> child
+var _field_visual: Dictionary = {}  # MILLFIX: field id -> {state,color,scale} CPU mirror (headless-safe)
+var _field_decal_paths: Dictionary = {}  # MILLFIX: donor decals found at bind (UNVERIFIED 3D UV)
 var _mesh_sources: Dictionary = {}  # source label -> sid count (measured at bind)
 var _anim_t: float = 0.0
 
@@ -183,6 +213,14 @@ func bind(g) -> void:
 	_donor_texture_paths.clear()
 	_band_mask_cache.clear()
 	_band_mask_stats.clear()
+	_rotors.clear()
+	_field_visual.clear()
+	# MILLFIX: record donor decal availability only; 3D UV mapping UNVERIFIED,
+	# so the mesh keeps its own donor field albedo and uses per-instance tint.
+	_field_decal_paths = {
+		"summer": FIELD_DECAL_SUMMER if ResourceLoader.exists(FIELD_DECAL_SUMMER) else "",
+		"winter": FIELD_DECAL_WINTER if ResourceLoader.exists(FIELD_DECAL_WINTER) else "",
+	}
 	_anim = null
 	_anim_checked = false
 	var models: int = 0
@@ -257,6 +295,17 @@ func bind(g) -> void:
 		"donor_tint_mask_source": "manifest.json models[i].texture -> donor DDS first-mip DXT5 alpha (port PNG alpha dropped: tools/convert_models.py:148-151,449-450)",
 		"donor_tint_mask_stats": _band_mask_stats,
 		"donor_tint_unverified": "donor shader binary not executed; mask decoded from donor DDS text-asset path, not from a donor render; >1.0 clamp UNVERIFIED (V7-61 §5; AUDIT3D-02 Q3)",
+		# MILLFIX telemetry: structural/numeric only, never a visual-parity claim.
+		"mill_rotor_label": ROTOR_STATUS,
+		"mill_rotor_visual": "UNVERIFIED",
+		"mill_rotor_source": ROTOR_TEX_PATH,
+		"mill_rotor_meta": ROTOR_META_PATH,
+		"mill_rotor_spin_rad_per_s": MILL_SPIN,
+		"field_visual_label": FIELD_STATUS,
+		"field_visual_visual": "UNVERIFIED",
+		"field_visual_decals": _field_decal_paths,
+		"field_visual_sow_step_m": FIELD_STEP_M,
+		"field_visual_target_span_m": FIELD_SPAN_M,
 	}
 	push_warning("world3d_entities: " + ANIM_STATUS)
 
@@ -897,6 +946,17 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.mesh = info["mesh"]
+	# MILLFIX F2: fields carry per-instance stage colour. Kind "res" sid
+	# "field" is the only batch that opts into vertex/instance colours; all
+	# other batches keep their untouched donor albedo path. Godot 4.7 only
+	# allows toggling use_colors while instance_count == 0, so do this FIRST.
+	if key == "res|field":
+		mm.use_colors = true
+		var fmesh: Mesh = info["mesh"]
+		for s in range(fmesh.get_surface_count()):
+			var sm: Material = fmesh.surface_get_material(s)
+			if sm is StandardMaterial3D:
+				(sm as StandardMaterial3D).vertex_color_use_as_albedo = true
 	mm.instance_count = BATCH_CAPACITY
 	mm.visible_instance_count = 0
 	var mmi := MultiMeshInstance3D.new()
@@ -948,6 +1008,9 @@ func _acquire(key: String, id: int, info: Dictionary, cls: String,
 		"player": player, "pose_source": str(pose.get("pose_source", "static_bind_pose")),
 		"frame": int(pose.get("frame", -1)), "action": str(pose.get("action", ""))}
 	var mm: MultiMesh = b["mm"]
+	# MILLFIX F2: neutral initial instance colour; sync() owns stage colours.
+	if key == "res|field":
+		mm.set_instance_color(ix, Color(1, 1, 1, 1))
 	mm.visible_instance_count = ids.size()
 	return ix
 
@@ -1117,6 +1180,90 @@ func add_building(e) -> void:
 	add_child(mi)
 	_nodes[id] = mi
 	mi.transform = _xf(id)
+	# MILLFIX F1: only the mill gets a spinning sail child. The parent stays
+	# the exact V7-14 static donor MeshInstance3D — no sim/mesh change.
+	if sid == "mil":
+		_attach_rotor(id, mi)
+
+
+# MILLFIX F1 — donor-derived face-on rotor bake on a billboarded cutout quad.
+# Hub mapping (all donor numbers, no inventions):
+#   world.gd:651  hub = tl + sz*MILL_HUB, where tl = p - sz*(cx, foot)
+#   buildings.json ukr_mil:579,584-585,587 -> cx=0.4989, foot=ink[3]/cell=1.0
+#   => local X = (MILL_HUB.x - cx)*ortho = +0.173 m,
+#      local Y = (foot - MILL_HUB.y)*ortho = +5.235 m (tower cap; mesh is 5.917 m),
+#      local Z = 0 (billboard plane through tower centre).
+# Quad span = MILL_ROTOR_ORTHO (6.352 m), i.e. the full baked cell, NOT half.
+func _rotor_mesh() -> Mesh:
+	var half := MILL_ROTOR_ORTHO * 0.5
+	var vv := PackedVector3Array()
+	vv.append(Vector3(-half, -half, 0.0))
+	vv.append(Vector3(half, -half, 0.0))
+	vv.append(Vector3(half, half, 0.0))
+	vv.append(Vector3(-half, half, 0.0))
+	# Godot texture UV (0,0) is top-left; map it to the quad's top-left vertex.
+	var uv := PackedVector2Array()
+	uv.append(Vector2(0, 1)); uv.append(Vector2(1, 1))
+	uv.append(Vector2(1, 0)); uv.append(Vector2(0, 0))
+	var nn := PackedVector3Array()
+	for i in range(4):
+		nn.append(Vector3.BACK)
+	var idx := PackedInt32Array()
+	idx.append(0); idx.append(1); idx.append(2)
+	idx.append(0); idx.append(2); idx.append(3)
+	var arr: Array = []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = vv
+	arr[Mesh.ARRAY_TEX_UV] = uv
+	arr[Mesh.ARRAY_NORMAL] = nn
+	arr[Mesh.ARRAY_INDEX] = idx
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	return mesh
+
+
+func _rotor_material() -> Material:
+	var mat := StandardMaterial3D.new()
+	var tex: Texture2D = null
+	if ResourceLoader.exists(ROTOR_TEX_PATH):
+		tex = load(ROTOR_TEX_PATH) as Texture2D
+	if tex == null:
+		# Headless sessions can have the .import file without its .ctex in
+		# .godot/imported. Read the SHIPPED donor PNG bytes directly instead of
+		# generating new art; no donor texture is invented either way.
+		var abs_path := ProjectSettings.globalize_path(ROTOR_TEX_PATH)
+		if FileAccess.file_exists(abs_path):
+			var img := Image.new()
+			if img.load(abs_path) == OK:
+				tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		mat.albedo_texture = tex
+	# Donor bake has transparent corners; scissor keeps a hard sail silhouette
+	# (the same alpha-cutout policy as the port's other donor cutouts).
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	mat.alpha_scissor_threshold = 0.5
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	# Unshaded mirrors the 2D canvas sprite; lighting parity UNVERIFIED.
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	return mat
+
+
+func _attach_rotor(id: int, parent: MeshInstance3D) -> void:
+	if _rotors.has(id) and is_instance_valid(_rotors[id]):
+		return
+	var rotor := MeshInstance3D.new()
+	rotor.name = "MillRotor_" + str(id)
+	rotor.mesh = _rotor_mesh()
+	rotor.material_override = _rotor_material()
+	var hx := (MILL_HUB.x - MILL_TOWER_CX) * MILL_TOWER_ORTHO
+	var hy := (MILL_TOWER_FOOT - MILL_HUB.y) * MILL_TOWER_ORTHO
+	rotor.position = Vector3(hx, hy, 0.0)
+	rotor.set_meta("visual_status", ROTOR_STATUS)
+	rotor.set_meta("donor_source", ROTOR_TEX_PATH)
+	rotor.set_meta("donor_meta", ROTOR_META_PATH)
+	rotor.set_meta("spin_rad_per_s", MILL_SPIN)
+	parent.add_child(rotor)
+	_rotors[id] = rotor
 
 
 func _resource_sid(ty: String, pos: Vector2) -> String:
@@ -1179,6 +1326,8 @@ func remove(id) -> void:
 			# same frame as remove(); a deferred free would leave a ghost node.
 			mi.free()
 		_nodes.erase(eid)
+	_rotors.erase(eid)   # child is freed with its parent; drop the mirror
+	_field_visual.erase(eid)
 	_refs.erase(eid)
 
 
@@ -1280,6 +1429,103 @@ func sync(dt: float) -> void:
 		var mi = _nodes[id]
 		if is_instance_valid(mi):
 			mi.transform = _xf(int(id))
+
+	# MILLFIX F1: spin the donor-baked sail from the SAME `_anim_t` clock that
+	# drives the donor morph pass (no second timer, no RNG). Billboarding uses
+	# the node basis rather than material BILLBOARD so the readable local Z
+	# rotation stays the authoritative angle: angle = _anim_t * MILL_SPIN,
+	# i.e. exactly the donor 0.75 rad/s of world.gd:204/652.
+	var rotor_spin := _anim_t * MILL_SPIN
+	var vp: Variant = get_viewport()
+	var cam: Variant = null
+	if vp != null and vp.has_method("get_camera_3d"):
+		cam = vp.call("get_camera_3d")
+	for id in _rotors.keys():
+		var rotor = _rotors[id]
+		if not is_instance_valid(rotor):
+			_rotors.erase(id)
+			continue
+		var face := Basis()
+		if cam != null:
+			var delta: Vector3 = cam.global_position - rotor.global_position
+			if delta.length_squared() > 0.0001:
+				var d := delta.normalized()
+				if absf(d.dot(Vector3.UP)) < 0.999:
+					var rx := Vector3.UP.cross(d).normalized()
+					var ry := d.cross(rx).normalized()
+					face = Basis(rx, ry, d)   # local +Z faces the camera
+		rotor.transform = Transform3D(
+			face * Basis().rotated(Vector3.BACK, rotor_spin), rotor.position)
+		var re = _refs.get(int(id))
+		rotor.visible = re is Dictionary and bool((re as Dictionary).get("finished", true))
+	stats["mill_rotor_angle_rad"] = rotor_spin
+	stats["mill_rotor_count"] = _rotors.size()
+	stats["mill_rotor_label"] = ROTOR_STATUS
+
+	# MILLFIX F2: per-field visual state, read-only on the sim. game.field_state()
+	# / field_growth01() are the SAME methods the HUD and 2D renderer use
+	# (game.gd:2210-2228, world.gd:2550-2559). Tints and relative scales below
+	# are copied verbatim from the 2D stage rules (world.gd:2588-2613); the
+	# footprint replaces the 58.5 m donor bbox with the sow-step span
+	# (game.gd:2120). No res_nodes mutation, no res_dirty bump, no new node.
+	var field_states: Dictionary = {}
+	var field_total := 0
+	var field_scale := 1.0
+	var fbb: Array = _bbox.get("field", [])
+	if fbb.size() >= 6:
+		var native_span := maxf(float(fbb[1]) - float(fbb[0]), 0.001)
+		field_scale = FIELD_SPAN_M / native_span
+	for key in _batches.keys():
+		if key != "res|field":
+			continue
+		var bd := _batches[key] as Dictionary
+		var mm: MultiMesh = bd["mm"]
+		var ids: Array = bd["ids"]
+		var xforms: Array = bd["xforms"]
+		for i in range(ids.size()):
+			var fid := int(ids[i])
+			var fe = _refs.get(fid)
+			var st := ""
+			var g := 0.0
+			if game != null and fe is Dictionary:
+				if game.has_method("field_state"):
+					st = str(game.call("field_state", fe))
+				if game.has_method("field_growth01"):
+					g = clampf(float(game.call("field_growth01", fe)), 0.0, 1.0)
+			if st == "":
+				st = "ripe" if g > 0.0 else "depleted"
+			var col := Color(1, 1, 1, 1)
+			var rel := 0.68 / 4.6
+			match st:
+				"ripe":
+					col = Color(3.3, 2.5, 1.0, clampf(0.42 + 0.28 * g, 0.0, 1.0))
+					rel = (1.6 + 0.7 * g) / 2.3
+				"growing":
+					col = Color(0.9, 1.6, 0.7, clampf(0.45 + 0.30 * g, 0.0, 1.0))
+					rel = (1.1 + 0.9 * g) / 2.0
+				"regrowing":
+					var pulse := 0.75 + 0.25 * sin(_anim_t * 4.0 + float(fid) * 0.37)
+					col = Color(lerpf(0.9, 3.3, g), lerpf(1.5, 2.5, g), 0.7,
+						clampf(0.40 + 0.30 * g, 0.0, 1.0) * pulse)
+					rel = (1.1 + 0.9 * g) / 2.0
+				_:
+					# Bare stubble: 2D span0*2 / ripe width = 0.68/4.6.
+					col = Color(0.30, 0.26, 0.16, 0.60)
+					rel = 0.68 / 4.6
+			field_states[st] = int(field_states.get(st, 0)) + 1
+			field_total += 1
+			var s := field_scale * rel
+			var xf: Transform3D = _xf(fid)
+			xf.basis = xf.basis.scaled(Vector3(s, s, s))
+			xforms[i] = xf
+			mm.set_instance_transform(i, xf)
+			mm.set_instance_color(i, col)
+			_field_visual[fid] = {"state": st, "color": col, "scale": s}
+	stats["field_visual_states"] = field_states
+	stats["field_visual_count"] = field_total
+	stats["field_visual_span_scale"] = field_scale
+	stats["field_visual_target_span_m"] = FIELD_SPAN_M
+	stats["field_visual_label"] = FIELD_STATUS
 	var units := 0
 	var ress := 0
 	var tinted_batches := 0

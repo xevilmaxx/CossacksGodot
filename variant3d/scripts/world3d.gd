@@ -172,11 +172,13 @@ var _feed_res_ids: Dictionary = {}
 var _feed_res_ver: int = -1
 var _feed_res_size: int = -1
 
-# V7-76 build-ghost ground position. In a live 3D run `_ghost_world_pos()` derives
-# this from the current Camera3D + viewport mouse (camera3d.gd:167-176), the exact
-# 3D translation of world.gd:3467-3469. `_ghost_pos_override` lets a caller hand a
-# sim-metre point in when no Camera3D is current (headless probe/tests) or when it
-# prefers picking3d.ground_point(); see `set_build_ghost_pos()`.
+# V7-76 build-ghost ground position (SIM map-origin metres). In a live 3D run
+# `_ghost_world_pos()` derives this from the current Camera3D + viewport mouse:
+# camera3d.gd:266-275's screen_to_world() returns CENTRED scene metres since
+# V7-81, so the fallback adds the half-map offset before returning (FIX-GHOST F1).
+# The 2D analogue is world.gd:3467-3469. `_ghost_pos_override` lets a caller hand
+# a SIM point in when no Camera3D is current (headless probe/tests) or when the
+# input owner prefers picking3d.ground_point(); see `set_build_ghost_pos()`.
 var _ghost_pos: Vector2 = Vector2.INF
 var _ghost_pos_override: bool = false
 
@@ -413,10 +415,11 @@ func _reconcile_entities() -> void:
 # public draw APIs but nothing called them at runtime. Translate the exact 2D
 # conditions; do not invent a placement sid, point or affordability rule.
 
-# Build the ghost's sim-metre (map-origin) ground point. Two sources, in order:
+# Build the ghost's SIM map-origin ground point. Two sources, in order:
 #   1. explicit handoff via set_build_ghost_pos() (headless probe / input owner);
-#   2. the current Camera3D's screen_to_world(viewport mouse) — the 3D analogue
-#      of world.gd:3467-3469's canvas-inverse transform (camera3d.gd:167-176).
+#   2. the current Camera3D's screen_to_world(viewport mouse) — camera3d.gd:266-275
+#      returns CENTRED scene metres since V7-81, so add the half-map offset here
+#      to reach SIM map-origin metres (3D analogue of world.gd:3467-3469).
 # Returns Vector2.INF when neither is usable; the caller then hides the ghost.
 func _ghost_world_pos() -> Vector2:
 	if _ghost_pos_override and is_finite(_ghost_pos.x) and is_finite(_ghost_pos.y):
@@ -428,7 +431,9 @@ func _ghost_world_pos() -> Vector2:
 			if cam != null and cam.has_method("screen_to_world"):
 				var wp = cam.call("screen_to_world", vp.get_mouse_position())
 				if wp is Vector2 and is_finite((wp as Vector2).x) and is_finite((wp as Vector2).y):
-					return wp
+					var hw := float(_int_prop(game, "MAP_W", 0)) * float(Data.TILE_M) * 0.5
+					var hh := float(_int_prop(game, "MAP_H", 0)) * float(Data.TILE_M) * 0.5
+					return (wp as Vector2) + Vector2(hw, hh)   # centred -> SIM map-origin
 	return Vector2.INF
 
 
@@ -768,19 +773,14 @@ func mark_rally_dirty() -> void:
 		fx.sync(0.0)
 
 
-# OPTIONAL input-side handoff (V7-76). A live 3D run does NOT need this: sync()
-# derives the point from the current Camera3D + viewport mouse (camera3d.gd:167,
-# world.gd:3467-3469). Use this only when no Camera3D is current (headless probe)
-# or when the input owner prefers picking3d.ground_point()'s height-field hit.
-#
-# EXACT CALLER HANDOFF (documented, NOT implemented here — input_controller.gd is
-# owned by V7-75 and was not edited): in C3Input._process(), immediately after
-# `_screen_to_world(get_viewport().get_mouse_position())` (input_controller.gd:1095
-# / :372), add:
-#   if world != null and world.has_method("set_build_ghost_pos"):
-#       world.set_build_ghost_pos(pw)
-# `pw` there is already sim-metre map-origin coordinates, the same space FX's
-# world_pos()/world_offset expect. No call site is added by this atom.
+# Input-side handoff (V7-76; now WIRED by FIX-GHOST F2 in 3D build mode). sync()
+# can still derive a fallback from the current Camera3D + viewport mouse, but
+# camera3d.gd:266-275 returns CENTRED scene metres there, so F1 converts it to
+# SIM map-origin metres. The live 3D path prefers this explicit handoff: the
+# input owner forwards the SAME SIM `pw` from picking3d.ground_point() that
+# placement uses, avoiding a second projection and the flat-ray slope residual.
+# `pw` must be SIM map-origin metres — the space FX's world_pos()/world_offset
+# and game.in_bounds/can_place all expect.
 func set_build_ghost_pos(p: Vector2) -> void:
 	_ghost_pos = p
 	_ghost_pos_override = true

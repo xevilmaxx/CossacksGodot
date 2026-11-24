@@ -1,0 +1,16 @@
+{
+  "_readme": [
+    "TERRAIN-SMALL fixture: 64x64 tile map (test-only overlay, NOT the canonical config).",
+    "Run with: godot --path variant3d -- --config <absolute path to this file> --screenshot <temp .png>",
+    "config.gd reads res://config.json FIRST and merges this file over it (config.gd:229-243).",
+    "Therefore ONLY gameplay.map_width_tiles / map_height_tiles change from the shipped 320x320",
+    "config: render_mode=3d, random_seed=20261113 and every height/mapgen rule are inherited.",
+    "render_mode and random_seed are repeated VERBATIM as an explicit guard, not a change."
+  ],
+  "gameplay": {
+    "render_mode": "3d",
+    "random_seed": 20261113,
+    "map_width_tiles": 64,
+    "map_height_tiles": 64
+  }
+}

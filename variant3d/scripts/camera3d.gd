@@ -471,8 +471,14 @@ func apply_external_target(sim_pos: Vector2) -> void:
 	_target = sim_pos
 	_zoom_anchor_screen = Vector2.INF  # a focus handoff cancels any zoom anchor
 	mark_external_transform()
-	clamp_pos()         # clamps in SIM space; may apply the transform itself
+	# PLAY2-01 RC2: the transform MUST come first. clamp_pos() derives its
+	# clamp centre from get_viewport_corners() of the CURRENT camera transform;
+	# clamping before the new transform measured the OLD view and then froze
+	# _last_clamp_* for the unclamped focus, so the next _process early-returned
+	# and the new focus was never clamped (off-terrain / black edges at startup).
+	# Same order as jump_to_world(): transform :406, clamp :411.
 	_apply_transform()  # unconditional, single SIM->centred subtraction
+	clamp_pos()         # now measures the NEW view's corners, clamps in SIM space
 
 
 func _process(dt: float) -> void:
