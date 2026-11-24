@@ -1,0 +1,56 @@
+{
+	"checks": [
+		{
+			"detail": "load(res://scripts/world3d_entities.gd) -> GDScript",
+			"name": "module_loads",
+			"passed": true
+		},
+		{
+			"detail": "new() -> <Node3D#26793215434>",
+			"name": "instantiates",
+			"passed": true
+		},
+		{
+			"detail": "missing=[]",
+			"name": "api_surface",
+			"passed": true
+		},
+		{
+			"detail": "before=1 after_add_and_sync=6",
+			"name": "node_count_grows",
+			"passed": true
+		},
+		{
+			"detail": "peak=6 after_remove=1",
+			"name": "node_count_shrinks",
+			"passed": true
+		},
+		{
+			"detail": "before=1 after_remove=1",
+			"name": "remove_below_baseline",
+			"passed": true
+		},
+		{
+			"detail": "METHOD: structural source scan + runtime node scan; forbidden_patterns=[] sprite_nodes=[]",
+			"name": "no_sprite_sheet_loads",
+			"passed": true
+		},
+		{
+			"detail": "count=0",
+			"name": "no_internal_errors",
+			"passed": true
+		}
+	],
+	"counts": {
+		"after": 1,
+		"before": 1,
+		"peak": 6
+	},
+	"id": "v734_entities3d",
+	"internal_errors": 0,
+	"module": "res://scripts/world3d_entities.gd",
+	"passed": true,
+	"sprite_check_method": "structural source scan (comment-stripped) + runtime node scan; no runtime ResourceLoader interception in GDScript",
+	"status": "DONE",
+	"unix_ms": 1795519241810.0
+}

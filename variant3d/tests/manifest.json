@@ -191,6 +191,62 @@
       "owner": "T-FOREST-BAKE",
       "timeout": 90,
       "windowed": true
+    },
+    {
+      "id": "t_terrain3d",
+      "path": "res://tests/t_terrain3d.gd",
+      "feature": "3D full-grid terrain ArrayMesh (normals/UV/height_at_world)",
+      "status": "ready",
+      "owner": "V7-31",
+      "timeout": 90
+    },
+    {
+      "id": "t_camera3d",
+      "path": "res://tests/t_camera3d.gd",
+      "feature": "3D camera perspective/tilt/zoom + world<->screen mapping",
+      "status": "ready",
+      "owner": "V7-32",
+      "timeout": 90
+    },
+    {
+      "id": "t_pick3d",
+      "path": "res://tests/t_pick3d.gd",
+      "feature": "3D pick/pick_res/ground_point with no cmd_* side effects",
+      "status": "ready",
+      "owner": "T-PICK3D",
+      "timeout": 60
+    },
+    {
+      "id": "t_entities3d",
+      "path": "res://tests/t_entities3d.gd",
+      "feature": "3D unit/building/resource static-mesh entities (no 2D sheets)",
+      "status": "ready",
+      "owner": "V7-34",
+      "timeout": 90
+    },
+    {
+      "id": "t_fx3d",
+      "path": "res://tests/t_fx3d.gd",
+      "feature": "3D FX lifetime + ghost/rally markers (no 2D sheets)",
+      "status": "ready",
+      "owner": "V7-35",
+      "timeout": 60
+    },
+    {
+      "id": "t_fog3d",
+      "path": "res://tests/t_fog3d.gd",
+      "feature": "3D per-tile fog shading arrays for HUD minimap",
+      "status": "ready",
+      "owner": "V7-36",
+      "timeout": 60
+    },
+    {
+      "id": "t_render_mode",
+      "path": "res://tests/t_render_mode.gd",
+      "feature": "render_mode seam: 2D default + make_world3d/make_camera3d",
+      "status": "ready",
+      "owner": "V7-37",
+      "timeout": 60
     }
   ]
 }

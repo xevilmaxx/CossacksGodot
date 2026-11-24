@@ -1,0 +1,56 @@
+{
+	"agent": "V7-36",
+	"blocked": false,
+	"checks": [
+		{
+			"detail": "GDScript loaded from res://scripts/world3d_fog.gd",
+			"name": "module_loads",
+			"passed": true
+		},
+		{
+			"detail": "new() -> <Node3D#27128759754>",
+			"name": "instance_created",
+			"passed": true
+		},
+		{
+			"detail": "has_method('bind')=true",
+			"name": "bind_api",
+			"passed": true
+		},
+		{
+			"detail": "has_method('sync')=true",
+			"name": "sync_api",
+			"passed": true
+		},
+		{
+			"detail": "sync(0.016) returned without aborting the test",
+			"name": "sync_callable",
+			"passed": true
+		},
+		{
+			"detail": "size=12 want=12 first=1",
+			"name": "fog_explored_exposed",
+			"passed": true
+		},
+		{
+			"detail": "size=12 want=12 first=1",
+			"name": "fog_vis_exposed",
+			"passed": true
+		},
+		{
+			"detail": "sprite2d_nodes=0 source_Sprite2D.new=false",
+			"name": "no_fullmap_sprite2d",
+			"passed": true
+		},
+		{
+			"detail": "all checks completed in 0.20s (runner hard timeout 90s)",
+			"name": "no_new_hangs",
+			"passed": true
+		}
+	],
+	"elapsed_s": 0.204,
+	"id": "t_fog3d",
+	"passed": true,
+	"status": "PASS",
+	"unix_ms": 1795518669946.0
+}

@@ -1,4 +1,4 @@
-# V7-38 — Variant manifest registration report (2026-11-24)
+# V7-38 — Variant manifest registration report (2026-11-24, updated follow-up)
 
 ## Owned files
 - `variant3d/tests/manifest.json`
@@ -6,56 +6,58 @@
 
 No Godot runs (not required). No test files edited.
 
-## Contract reference
-`docs/coord_swarm_2026-11-24/V73_ATOMIC_CONTRACT.md` defines 7 test atoms
-under `variant3d/tests/`:
-`t_terrain3d.gd`, `t_camera3d.gd`, `t_pick3d.gd`, `t_entities3d.gd`,
-`t_fx3d.gd`, `t_fog3d.gd`, `t_render_mode.gd`.
+## Correction to earlier state
+The initial V7-38 audit found none of the 7 atomic test files on disk and
+registered zero entries. Independent supervision V7-41 found all 7 now exist.
+Re-audit confirms this: all seven `.gd` files are present in `variant3d/tests/`.
+The manifest has now been updated accordingly.
 
-## Disk audit (authoritative)
-Recursive, case-insensitive existence check across the whole repo for all 7
-atomic test filenames returned **zero** matches. None are present on disk
-`variant3d/tests/` contains only the inherited 2D test files plus `README.md`
-and `_template_test.gd`.
+## Audit of `variant3d/tests/`
+Present and registered (7):
+- `t_terrain3d.gd` -> `t_terrain3d`
+- `t_camera3d.gd` -> `t_camera3d`
+- `t_pick3d.gd` -> `t_pick3d`
+- `t_entities3d.gd` -> `t_entities3d`
+- `t_fx3d.gd` -> `t_fx3d`
+- `t_fog3d.gd` -> `t_fog3d`
+- `t_render_mode.gd` -> `t_render_mode`
 
-## Registered vs pending
-- **Registered: NONE.** Per the charter ("register ONLY the atomic test files
-  that exist on disk", "Do NOT invent entries for missing files"), zero
-  entries were added to `variant3d/tests/manifest.json`.
-- **Pending (file absent, therefore not registered): all 7**
-  - `t_terrain3d`  — pending (file missing)
-  - `t_camera3d`   — pending (file missing)
-  - `t_pick3d`     — pending (file missing)
-  - `t_entities3d` — pending (file missing)
-  - `t_fx3d`       — pending (file missing)
-  - `t_fog3d`      — pending (file missing)
-  - `t_render_mode`— pending (file missing)
+Pending (absent from disk, NOT registered): none of the 7 contract atoms.
 
-These atoms are owned by separate test agents and must land on disk before
-they can be registered. Re-run this registration once they exist; entries must
-be appended LAST using the exact manifest schema (`id`, `path`, `feature`,
-`status`, `owner`, `timeout`, and `windowed` where applicable), with `path`
-values of the form `res://tests/<name>.gd`.
+## Registered ids (appended LAST to `tests[]`, in contract order)
+1. `t_terrain3d` — owner `V7-31`, timeout 90
+2. `t_camera3d` — owner `V7-32`, timeout 90
+3. `t_pick3d` — owner `T-PICK3D`, timeout 60
+4. `t_entities3d` — owner `V7-34`, timeout 90
+5. `t_fx3d` — owner `V7-35`, timeout 60
+6. `t_fog3d` — owner `V7-36`, timeout 60
+7. `t_render_mode` — owner `V7-37`, timeout 60
 
-## Manifest state (unchanged)
-All 24 pre-existing 2D entries are intact and byte-for-byte preserved:
-`t_build_flow`, `t_mill_logic`, `t_mine_unified`, `t_visual_tuning`,
-`t_mill_rotor`, `t_upgrades`, `t_roster_scotland`, `t_squads`, `t_multi_ai`,
-`t_teams`, `t_smoke_fx`, `t_water`, `t_weather`, `t_hud_fidelity`,
-`t_anim_metrics`, `t_naval`, `t_mass_army`, `t_map_variety`, `t_capture`,
-`t_audio_events`, `t_pick_res`, `t_forest_dense`, `t_forest_bake`,
-`t_forest_bake_render`. (23 `ready`, 1 `pending`.) The variant still runs the
-29/29 + 17/17 2D baselines.
+Each entry uses the manifest's exact schema keys: `id`, `path`, `feature`,
+`status`, `owner`, `timeout` (no `windowed` needed — all are headless). Paths
+are `res://tests/<name>.gd`. All 24 inherited 2D entries are preserved
+byte-for-byte as the first 24 elements; the 29/29 + 17/17 2D baselines remain
+covered. Total entries: 31 (24 inherited + 7 atomic), all ids unique.
 
-## Verification
+## Verification (no Godot runs)
 ```
 python -c "import json; json.load(open('variant3d/tests/manifest.json'))"
 ```
-Result: **VALID JSON** (`version` 1, 24 tests). No exceptions.
+Result: **VALID JSON** — `version` 1, 31 tests, no exceptions.
+
+Additional programmatic checks:
+- 24-entry 2D prefix unchanged: **True**
+- New ids: all 7 present, in order: **True**
+- Ids unique: **True**
+- Every new `path` resolves to an existing file on disk: **True**
+- Schema keys used by new entries: `feature, id, owner, path, status, timeout`
 
 ## Expected failure note
-3D atomic tests currently FAIL with `MODULE_MISSING` until the `variant3d/scripts/`
-modules land. This is expected during the port. Do NOT "fix" by removing or
-weakening assertions in any test file — assertions must remain so the tests
-actually validate the modules once they exist. MODULE_MISSING is a consequence
-of module-less dynamic `load()`, not a manifest problem.
+Disk inspection shows `camera3d.gd`, `picking3d.gd`, `world3d_terrain.gd`,
+`world3d_fx.gd`, `world3d_fog.gd` present, but `world3d_entities.gd` absent and
+`main.gd` has no `render_mode` / `make_world3d` / `make_camera3d` seam yet.
+So `t_entities3d` and `t_render_mode` are expected to fail with
+`MODULE_MISSING` / `SEAM_MISSING` until those land. This is expected during the
+port. Do NOT "fix" by removing or weakening assertions in any test file —
+assertions must remain so the tests actually validate the modules once they
+exist. No pass/fail is claimed here because no Godot run was performed.

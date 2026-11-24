@@ -100,4 +100,12 @@ Launched in 4 batches, 18 agents total, each owning ONE new file + ONE report:
 Integration seams (main.gd / input_controller.gd / hud.gd / world3d.gd) remain for a
 FOLLOW-UP batch after module APIs land — one owner per existing file, never parallel.
 
+## PHASE 2 INTEGRATION BATCH (launched after all atomic modules/tests landed)
+Four agents, each owning exactly ONE existing variant3d file (no collisions):
+- V7-50 main.gd + config.json + data.gd: render_mode default "2d" + make_world3d()/make_camera3d() factories + both construction branches (keeps 2D byte-identical)
+- V7-51 world3d.gd: REPLACE legacy M0 world with composition of the 5 landed world3d_* modules + full 2D world contract
+- V7-52 input_controller.gd: route screen↔world/pick/pick_res through picking3d.gd only in 3D; cmd_* untouched
+- V7-53 hud.gd: minimap box via hud3d_adapter.get_minimap_box() only in 3D
+After these land: run variant final gate (29/29 + 17/17 + clean) + t_render_mode (was SEAM_MISSING).
+
 Reports: `reports/V7*.md`. Phase 1 agents launched in parallel; phase 2 waits for V7-0 scaffold.

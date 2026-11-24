@@ -1,0 +1,38 @@
+{
+	"checks": [
+		{
+			"detail": "MODULE_MISSING",
+			"name": "module loads",
+			"passed": false
+		},
+		{
+			"detail": "NOT_RUN: MODULE_MISSING",
+			"name": "instantiates",
+			"passed": false
+		},
+		{
+			"detail": "NOT_RUN: MODULE_MISSING",
+			"name": "ground_point finite",
+			"passed": false
+		},
+		{
+			"detail": "NOT_RUN: MODULE_MISSING",
+			"name": "pick returns Dictionary",
+			"passed": false
+		},
+		{
+			"detail": "NOT_RUN: MODULE_MISSING",
+			"name": "pick_res returns Dictionary",
+			"passed": false
+		},
+		{
+			"detail": "NOT_RUN: MODULE_MISSING",
+			"name": "no cmd_* calls",
+			"passed": false
+		}
+	],
+	"id": "t_pick3d",
+	"module_path": "res://scripts/picking3d.gd",
+	"passed": false,
+	"unix_ms": 1795518356638.0
+}

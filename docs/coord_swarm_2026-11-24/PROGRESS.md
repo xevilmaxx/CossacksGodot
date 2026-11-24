@@ -242,6 +242,16 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### Wave 7 phase 2 — integration batch launched
+- All 8 modules landed (camera3d parse PASS, picking3d parse PASS, terrain
+  probe 25,600 verts/75.6 ms, fog 9/9 test PASS, FX 13/13 test PASS, entities,
+  anim3d, hud3d_adapter). All 7 atomic tests landed; terrain 6/6 PASS, fog 9/9
+  PASS, FX 13/13 PASS; others honest BLOCKED/MODULE_MISSING or SEAM_MISSING.
+  Manifest registered all 7 (31 total, 2D prefix intact).
+- Integration batch launched: V7-50 main/config/data (render_mode seam),
+  V7-51 world3d composition, V7-52 input 3D picking, V7-53 hud 3D adapter —
+  one existing file per owner, no collisions. Variant final gate after these.
+
 ### FINAL 2D GATE GREEN (after all wave-5 merges)
 - Jobs 1338 selftest ok (72.39 s), 1339 uitest ok (170.92 s), both 29/29 and
   17/17 PASS. Clean gate DIRTY only from historical 1292 (env timeout) + 1295

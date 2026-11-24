@@ -1,0 +1,43 @@
+{
+	"checks": [
+		{
+			"detail": "loaded res://scripts/world3d_terrain.gd; missing_methods=[]",
+			"name": "module_load_and_api",
+			"passed": true
+		},
+		{
+			"detail": "build() returned true",
+			"name": "build_ok",
+			"passed": true
+		},
+		{
+			"detail": "terrain_mesh=HeightmapTerrain surfaces=1 (expected 1)",
+			"name": "surface_count",
+			"passed": true
+		},
+		{
+			"detail": "vertices=102400 expected=102400 triangles=203522 (informational)",
+			"name": "vertex_count",
+			"passed": true
+		},
+		{
+			"detail": "returned true (expected true, no chunks)",
+			"name": "has_chunk_or_fallback",
+			"passed": true
+		},
+		{
+			"detail": "eps=0.0001 (3,5) expected=1.29160225391388 got=1.29160225391388 err=0.0 ok | (160,160) expected=-1.5742666721344 got=-1.5742666721344 err=0.0 ok | (317,312) expected=-1.27049291133881 got=-1.27049291133881 err=0.0 ok",
+			"name": "height_at_world_samples",
+			"passed": true
+		}
+	],
+	"grid": {
+		"h": 320,
+		"w": 320
+	},
+	"id": "t_terrain3d",
+	"module": "res://scripts/world3d_terrain.gd",
+	"passed": true,
+	"passes": 6,
+	"total": 6
+}
