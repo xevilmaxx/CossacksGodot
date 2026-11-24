@@ -242,6 +242,53 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### V7-78 donor skins SHIPPED — V7-74 caveat closed
+- New `variant3d/tools/convert_skins.py` reads donor .oss + each unit's .aaf
+  via read-only manifest paths; exports deterministic 6-frames/action subset
+  using verbatim bake_sprites decimation. 55 per-sid c3_skin_v1 JSON + index
+  in `variant3d/assets/models/skin/`, 3,746,538 bytes total, byte-deterministic
+  (SHA-256 verified). 7 ship hulls skipped (.osm, no skin tracks).
+- anim3d.gd lazy `_ensure_shipped_skins()` on first bind/has_skin/pose_for;
+  per-unit AAF ranges + nearest-exported-frame snapping; no edits to other files.
+- Parse PASS (176/184). Probe 24/24 PASS (181) with ZERO manual registrations:
+  auto-loaded 55 skins; idle 64->74 changed 733/733 verts (max 0.02205 m);
+  walk 1->9 changed 733/733 (max 0.391075552 m, Python donor recheck
+  0.391075624 m; V7-74 frames 1->10 value reproduces exactly). Selftest 29/29 (186).
+- Honest: still flat-root PORT APPROXIMATION — NOT DONOR PARITY, visual
+  UNVERIFIED; N=6 no interpolation; ships static; tools unskinned; perf unchanged.
+
+### USER WINDOWED RUN — clean, new perf target
+- User pasted live windowed output: NO SCRIPT ERROR. The expected deliberate
+  flat-root morph WARNING appears (world3d_entities.gd:206), and PERF lines now
+  print correctly (e.g. r/b/u/f=299/6/16/0 then FX counts), confirming the
+  dbg_* fix. Measured `sync_ms=12.65..20.06` vs tick_ms ~1-2 ms — the main
+  remaining perf target, likely per-frame donor morph mesh rebuild.
+- PERF-3D audit-only agent dispatched to measure per-stage sync costs via
+  variant runner and propose minimal fixes; no edits yet.
+
+### USER-REPORTED RUNTIME ERROR FIXED (dbg_res)
+- User saw repeated `Invalid access to property or key 'dbg_res' on ... Node3D
+  (world3d.gd)` at `main.gd:1592` in the windowed game after ~120 frames.
+- Root cause: unbranched PERF debug print in main.gd reads/resets four 2D world
+  counters (`dbg_res`, `dbg_bld`, `dbg_unit`, `dbg_fx`; app world.gd:59-62)
+  that world3d.gd never declared.
+- Fix applied directly in `variant3d/scripts/world3d.gd`: declare all four ints
+  with citations, increment unit/building in _reconcile_entities (2D analogues
+  world.gd:3227/2836), resource at add_resource (:2696), FX in add_fx (:3582).
+- Verified via variant runner: parse PASS (182), direct property-access probe
+  PASS (183, stdout `DBG_PROBE PASS`, stderr empty), full selftest PASS (185,
+  passed:true 29/29), no dbg/Invalid access lines in stderr. Probe deleted.
+
+### V7-70 3D VIEWPORT CAPTURE + SNAPSHOT + E19 LANDED
+- P0 G1 CLOSED: windowed 3D capture now saves genuine GPU pixels from a
+  dedicated Screenshot3DViewport (jobs 138/179). Root cause: blank backbuffer +
+  camera target in sim metres vs +-320 m centred terrain. Blank 3D captures now
+  fail loudly; CPU map remains headless/2D-only. Donor visual parity UNVERIFIED.
+- Snapshot: canonical w52-self-base-2 / var_to_str / Rect2 / float32 compare
+  restored from app; dump round-trip + check + self-snapshot OK (147/148/153).
+- E19: journey 3D routes sim metres through jump_to_world(); 2D byte-identical
+  (probes 173/175). Selftest 29/29 (143/177); parse clean (171). No git ops.
+
 ### V7-77 E6 zoom anchor — HONEST NON-RESULT
 - camera3d.gd zoom anchor now resolves terrain height via guarded dynamic
   sampler (height_at_world centred metres; game.height_at with map-centre
