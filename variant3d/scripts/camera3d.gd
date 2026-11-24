@@ -102,6 +102,12 @@ var _middle_drag_last: Vector2 = Vector2.INF
 var _target: Vector2 = Vector2.ZERO
 var _last_clamp_target: Vector2 = Vector2.INF
 var _last_clamp_zoom: float = -1.0
+# V7-81: the memo value this script last wrote itself. main.gd's read-only V7-70
+# seam (main.gd:1008-1016) writes _last_clamp_target/_last_clamp_zoom externally
+# AFTER converting _target from SIM to centred metres. Recognising that foreign
+# memo lets _apply_transform() restore SIM instead of subtracting the map half
+# twice — no edit to main.gd is needed (it is out of this ticket's ownership).
+var _own_clamp_target: Vector2 = Vector2.INF
 
 const PROCESS_PRIORITY: int = -100  # camera.gd:36 — pan before world.sync()/HUD box
 
@@ -138,9 +144,14 @@ func bind(game: Object, view_scale: float = 1.0) -> void:
 	zoom_target = clampf(1.0, min_zoom, max_zoom)
 	zoom = zoom_target
 	_zoom_anchor_screen = Vector2.INF
-	_target = Vector2.ZERO
+	# V7-81: _target is SIM metres (top-left map origin). Start at the map CENTRE,
+	# not the corner ZERO — _apply_transform() subtracts _map_half() to reach the
+	# origin-centred world3d mesh (world3d_terrain.gd:312-314). Null-safe: a stub
+	# without MAP_W/MAP_H leaves the half at ZERO.
+	_target = _map_half()
 	_last_clamp_target = Vector2.INF
 	_last_clamp_zoom = -1.0
+	_own_clamp_target = Vector2.INF
 	make_current()
 	_apply_transform()
 
@@ -154,11 +165,37 @@ func _height_m() -> float:
 	return sqrt(maxf(0.0001, DONOR_HEIGHT_MIN * DONOR_HEIGHT_MAX) / maxf(0.0001, z))
 
 
+# V7-81 — half the map extent in SIM metres. Null-safe for stubs/test doubles
+# that expose no MAP_W/MAP_H: a missing dimension contributes ZERO. Used to
+# convert between the SIM top-left frame of _target/jump_to_world and the
+# origin-centred world3d frame of screen_to_world()/the terrain mesh.
+func _map_half() -> Vector2:
+	if game == null or not is_instance_valid(game):
+		return Vector2.ZERO
+	var mw = game.get("MAP_W")
+	var mh = game.get("MAP_H")
+	if mw == null or mh == null:
+		return Vector2.ZERO
+	return Vector2(float(mw), float(mh)) * Data.TILE_M * 0.5
+
+
 # Fixed -32 deg tilt (camera.cfg:32-35; onmousewheel.inc:43-47). Yaw 0 = look toward -Z
 # (default.cameras:DirZ=-1); exact donor yaw UNVERIFIED (G31:227).
 func _apply_transform() -> void:
 	var h: float = _height_m()
-	var base := Vector3(_target.x, 0.0, _target.y)
+	# V7-81: _target stays in SIM metres (public contract); the composed 3D
+	# scene is centred on the origin, so subtract the map half here. This makes
+	# a minimap jump to sim (320,320) focus world (0,0), not the terrain corner.
+	var half := _map_half()
+	# V7-70 seam defence: when an external writer freezes the memo to a target
+	# other than ours, it has already converted _target SIM -> centred. Restore
+	# SIM here so the subtraction below happens exactly once, whatever path set
+	# the focus (minimap jump, startup, journey mode).
+	if _target == _last_clamp_target and _target != _own_clamp_target and zoom == _last_clamp_zoom:
+		_target += half
+		_last_clamp_target = _target
+		_own_clamp_target = _target
+	var base := Vector3(_target.x - half.x, 0.0, _target.y - half.y)
 	var pitch: float = deg_to_rad(Data.CAMERA_PITCH)
 	# Camera sits behind+above the ground focus: offset.y = h, offset.z = h/tan(|pitch|).
 	var back: float = h * cos(pitch) / maxf(0.0001, -sin(pitch))
@@ -309,6 +346,7 @@ func jump_to_world(world_pos: Vector2) -> void:
 	# makes the following clamp_pos() a no-op and the jump stays unclamped.
 	_last_clamp_target = Vector2.INF
 	_last_clamp_zoom = -1.0
+	_own_clamp_target = Vector2.INF
 	clamp_pos()
 
 
@@ -333,15 +371,20 @@ func clamp_pos() -> void:
 		return
 	var centre: Vector2 = (min_v + max_v) * 0.5
 	var half: Vector2 = (max_v - min_v) * 0.5
+	# V7-81: get_viewport_corners()/screen_to_world() return CENTRED world metres,
+	# while _target and the clamp limit are SIM metres. Convert the observed view
+	# centre back to SIM before clamping; the delta then applies to SIM _target.
+	var centre_sim: Vector2 = centre + _map_half()
 	var limit := Vector2(game.MAP_W, game.MAP_H) * Data.TILE_M
-	var nx: float = limit.x * 0.5 if limit.x <= half.x * 2.0 else clampf(centre.x, half.x, limit.x - half.x)
-	var nz: float = limit.y * 0.5 if limit.y <= half.y * 2.0 else clampf(centre.y, half.y, limit.y - half.y)
-	var delta := Vector2(nx - centre.x, nz - centre.y)
+	var nx: float = limit.x * 0.5 if limit.x <= half.x * 2.0 else clampf(centre_sim.x, half.x, limit.x - half.x)
+	var nz: float = limit.y * 0.5 if limit.y <= half.y * 2.0 else clampf(centre_sim.y, half.y, limit.y - half.y)
+	var delta := Vector2(nx - centre_sim.x, nz - centre_sim.y)
 	if delta != Vector2.ZERO:
 		_target += delta
 		_apply_transform()
 	_last_clamp_target = _target
 	_last_clamp_zoom = zoom
+	_own_clamp_target = _target
 
 
 func _process(dt: float) -> void:

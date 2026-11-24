@@ -41,9 +41,14 @@ gaps from the 9-agent parity audit are closed (`AUDIT3D_TRIAGE.md`):
   superseded by a documented passing job; no variant `assert_clean.py` exists, so
   a formal variant `CLEAN` verdict is **not claimed**. App `CLEAN` is measured.
 
-Remaining follow-up wave: PERF-3D (`sync_ms` 12–20 ms) and optional positional
-audio / donor visual A/B. No git operations were performed by the assistant;
-the user owns all commits.
+Post-verdict closures: PERF-3D fixed `sync_ms` hot paths (V7-79 pose memo
+8.18–11.91×, V7-80 resource gate 12.54×), final gate re-run green (jobs
+203/204/205), and V7-81 fixed the minimap black-view coordinate bug (probe
+11/11, selftest 212 29/29) — **user windowed retest pending**.
+Remaining follow-up wave: donor visual A/B, donor terrain fidelity (TERRAIN2
+research), AI force/wave failure, windowed perf re-measurement, Craft Anything
+donor deep dives, optional positional audio. No git operations were performed
+by the assistant; the user owns all commits.
 
 ---
 

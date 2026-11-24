@@ -53,6 +53,9 @@ All reports: `docs/coord_swarm_2026-11-24/reports/AUDIT3D_0*_*.md`.
 - P1.14 E18 shift+group camera write -> V7-75 — **CLOSED**.
 - P1.15 E6 flat-Y zoom anchor -> V7-77 — **OPEN QUESTION, no measured bug**
   (drift did not improve; flat correction preserves whole view ray).
+- RB-01 minimap LMB -> black main view -> V7-81 — **CLOSED by measurement**
+  (camera before (320,34,374) off-terrain -> after (0,34,54) centred; probe
+  11/11, selftest 29/29). USER WINDOWED RETEST STILL PENDING.
 - P1.9 Windowed Vector3->Vector2 audio error + no 3D distance culling (09/06, audio.gd:153,318) -> V7-71.
 - P1.10 No 3D positional audio / AudioStreamPlayer3D (06, donor sound.script:418,515) -> later wave.
 - P1.11 .gitignore excludes 4236 legacy sprite files (07) — tracking UNVERIFIED, no git used.

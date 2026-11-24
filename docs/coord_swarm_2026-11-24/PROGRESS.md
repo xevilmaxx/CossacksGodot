@@ -242,6 +242,92 @@ historical failures" once the background job finishes (avoid spool race).
   acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
   + single barracks throughput — left as explicit next ticket, NOT re-patched.
 
+### POST-PERF FINAL GATE GREEN
+- Jobs 203/204/205 all ok. selftest passed:true 29/29; uitest passed:true 17/17;
+  t_render_mode PASS, seam_missing=false. (Gate run before V7-81 camera fix;
+  V7-81 will re-verify its own selftest.)
+
+### V7-81 minimap black-view FIXED — USER RETEST PENDING
+- camera3d.gd coordinate frame fixed. Measured minimap-centre click on 320x320
+  stub: BEFORE global_position (320.0, 34.06, 374.51), centred view centre
+  (320.0, 315.24) -> off-terrain/black; AFTER global_position (0.0, 34.06,
+  54.51), centred view centre (0.0, -4.76), sim round-trip (320.0,315.24) ~=
+  (320,320). Corner click clamps to centred (-297.08,-300.43).
+- Extra: main.gd's read-only V7-70 seam ALSO converts _target to centred after
+  jumps/setup; naive fix would double-subtract and black out startup. Added a
+  camera-local memo guard `_own_clamp_target` so conversion happens exactly once;
+  verified by simulated seam checks. Open question flagged for main.gd owner.
+- Jobs: before-probe 206 (2/8, bug reproduced), parse 207/210, after-probe 208
+  8/8, final probe 211 11/11, selftest 212 29/29. Probe deleted. No visual claim.
+
+### CRAFT ANYTHING donor decompilation — initial pass documented
+- User asked if we use Craft Anything for donor scanning; answer was NO until
+  now (direct read-only text extraction). Enabled native toolset, triaged donor
+  EXEs with Craft Anything 0.6.1 (Deep mode, no runtime unpacking, no copies).
+- Documentation: `reports/DECOMP_01_craft_anything_donor.md` with exact paths,
+  sha256, evidence ids, addresses and limits.
+- Proven: cossacks.exe PE x86, 5,768,048 B, entry 0x8f1a08, 18,918 functions /
+  12,073 strings / 746 imports before analysis cap; Delphi/C++Builder hint;
+  `.bind` entropy 7.96; stripped; 6M-instruction cap + 1,238 unresolved jumps.
+  Four terrain strings in .rsrc: EXTerrain 0x958649, XTerrainDataLite 0x9587c3,
+  sXTerrainData 0x958b75, <XTerrainBorders 0x9593b3.
+  0x9587c3 -> file offset 0x5499c3; byte window reveals a Delphi unit/class
+  table with HXHeightField, XMap, XTile, XColorTable, XWorld, XBrush,
+  OSWTexture, LXShaderLOD, XShadowMap etc. `core_feature_find` found 0 code
+  refs for XTerrainData — no pseudo-C produced, packing likely.
+- Delegated long dives to 5 subagents: DECOMP-02 RTTI terrain classes,
+  DECOMP-03 render API functions, DECOMP-04 config/data strings, DECOMP-05
+  static-vs-runtime feasibility (no donor execution without consent),
+  DECOMP-06 donor .map binary format. All audit-only, shared target id
+  t_87f0f3c130b0, no target open/select collisions.
+
+### TERRAIN2 results and leftovers (user request)
+- TERRAIN2-03 water/weather: donor water geometry IS a flat plane
+  (water.dev.vert:14-18,29); all detail is fragment-stage (water.dev.frag:85-104,
+  186-227). Only diffusewaves0.bmp is bound (water.mat:7,11, 256² tfLuminance);
+  diffusewaves1 commented, waves2 library-only, heightmapwaves0 fully commented.
+  Shoreline is height-contour driven with real literals cMaxHeight=2.96 /
+  cWaterHeight=-0.25 / cWaterShoreHeight=-0.1 (texturemap.inc:29-31); frags fade
+  over 0.57/1.07 m. DynFogDepth=False in camera.cfg:59 + cameradebug.cfg:57 but
+  TRUE in camerascreenshot.cfg:61. Sky = unlit two-band dome (skydome.cfg:7-46)
+  + 12 cloud billboards, Weather=40, wind (-0.7421,0,-0.8673); no day/night.
+- TERRAIN2-04 ranked recipe: (P0-1) regenerate splat with
+  `--texels-per-cell 4` + LINEAR filter — current tool crushes 1024² donor
+  grass1.dds blocks to ONE mean texel per 2 m cell (heightmap_splat.py:191-208,
+  383-384), the direct cause of uniform dark olive. (P0-2) water coverage must
+  follow dump/height mask, not a full-map wash — g32_dump.json has 0 water
+  cells but 2,359 below -0.25. (P1-2) seed/size consistency guard using the
+  manifest's input_seed/map_w/map_h/input_dump_sha256. AUDIT3D-03's light-rig
+  P0 already fixed; forest/stone painting UNVERIFIED.
+- TERRAIN2-05 leftovers: 82 evidence-cited items in 5 groups. Top: RB-01
+  V7-81 minimap black-view fix unverified; RB-07 AI force>=260/wave>=1 fails
+  (gold mine never built, gold bottoms at 2); DF-01 no donor GPU visual A/B;
+  PF-01 windowed sync_ms never re-measured after perf fixes; DF-02 terrain
+  fidelity open. Recommended next three: RB-01, DF-01, RB-07.
+- User explicitly unsatisfied with 3D terrain quality: "need to understand better
+  how donor did it properly". Charter `TERRAIN2_CHARTER.md`.
+- Five AUDIT-ONLY agents launched, one report each, no source/git edits:
+  TERRAIN2-01 donor terrain pipeline (elevation -> mesh -> textures -> shading);
+  TERRAIN2-02 donor terrain texture inventory/reuse;
+  TERRAIN2-03 water/weather/fog/sky vs our flat quad;
+  TERRAIN2-04 ranked gap recipe for current world3d_terrain.gd;
+  TERRAIN2-05 exhaustive leftovers/open-questions to-do sweep.
+- Hard rule reiterated: donor read-only, cite path:line, mark UNVERIFIED,
+  never invent terrain values, no visual-parity claims without GPU A/B.
+
+### USER BUG: minimap LMB -> black main view (V7-81 dispatched)
+- User: clicking the middle of the minimap in windowed variant3d turns the main
+  render area black. Diagnosed from source: camera3d.gd `_target` is TOP-LEFT sim
+  metres (0..640) but `_apply_transform():161` uses it directly as CENTRED world
+  X/Z while terrain spans -320..+320. Minimap centre sim (320,320) therefore
+  places the camera at world (320,320) = terrain corner -> black.
+- clamp_pos():323-344 also mixes frames (centred screen corners clamped against
+  0..640 limit, delta written into sim target); bind():141 sets _target=ZERO (map
+  corner, not centre).
+- V7-81 owns camera3d.gd only: keep public API, subtract map half in transform,
+  convert centred corner centre back to sim in clamp, initialise at map centre.
+  Probe must assert minimap-centre jump lands near world centre, not (320,320).
+
 ### V7-79 pose memoization LANDED (main perf fix)
 - world3d_entities.gd Pass 1 only: local pose_memo at :953-962, reuse at
   :982-999, telemetry :1064-1066. anim3d.gd read-only, untouched. All donor
