@@ -1,0 +1,431 @@
+{
+  "alpha_mode": "height",
+  "blend_height_eps_m": 0.25,
+  "blend_radius_cells": 1,
+  "channels": {
+    "A": "height = normalised heap height",
+    "RGB": "blended port block albedo (sRGB bytes)"
+  },
+  "determinism": "no randomness; fixed LANCZOS resize, half-up rounding; byte-identical on re-run",
+  "height_max_m": 2.964,
+  "height_min_m": -2.964,
+  "input_dump": "app\\shots\\t6t90_dumps\\dump_20261113_a.json",
+  "input_dump_sha256": "5b006c81ff3f04d7d2b0c2f2be6b6cd481a870331f652d9cef95fe0bd7577951",
+  "input_seed": 20261113,
+  "map_h": 320,
+  "map_w": 320,
+  "mapping": [
+    {
+      "cell_count": 16075,
+      "family": "grass",
+      "id": 0,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        76,
+        83,
+        30
+      ],
+      "name": "grass1",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 2842,
+      "family": "grass",
+      "id": 1,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        77,
+        80,
+        32
+      ],
+      "name": "grass2",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 81,
+      "family": "grass",
+      "id": 4,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        65,
+        62,
+        31
+      ],
+      "name": "grass5",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 42,
+      "family": "grass",
+      "id": 6,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        75,
+        77,
+        29
+      ],
+      "name": "grass7",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 838,
+      "family": "grass",
+      "id": 7,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        74,
+        79,
+        24
+      ],
+      "name": "grass8",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 1,
+      "family": "grass",
+      "id": 8,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        77,
+        79,
+        29
+      ],
+      "name": "grass9",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 43,
+      "family": "grass",
+      "id": 9,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        76,
+        74,
+        24
+      ],
+      "name": "grass10",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 677,
+      "family": "ground",
+      "id": 10,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        100,
+        91,
+        66
+      ],
+      "name": "ground1",
+      "roughness_proxy": 215
+    },
+    {
+      "cell_count": 28558,
+      "family": "grass",
+      "id": 14,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        82,
+        79,
+        36
+      ],
+      "name": "grass_ground1",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 146,
+      "family": "grass",
+      "id": 15,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        84,
+        84,
+        40
+      ],
+      "name": "grass_ground2",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 15929,
+      "family": "grass",
+      "id": 16,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        82,
+        79,
+        36
+      ],
+      "name": "grass_ground3",
+      "roughness_proxy": 205
+    },
+    {
+      "cell_count": 1518,
+      "family": "rock",
+      "id": 17,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        77,
+        67,
+        54
+      ],
+      "name": "rock1",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 277,
+      "family": "rock",
+      "id": 18,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        77,
+        67,
+        54
+      ],
+      "name": "rock2",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 889,
+      "family": "rock",
+      "id": 19,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        77,
+        67,
+        54
+      ],
+      "name": "rock3",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 2392,
+      "family": "rock",
+      "id": 20,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        71,
+        62,
+        50
+      ],
+      "name": "rock4",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 1675,
+      "family": "rock",
+      "id": 21,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        72,
+        66,
+        42
+      ],
+      "name": "rock5",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 294,
+      "family": "rock",
+      "id": 22,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        77,
+        67,
+        54
+      ],
+      "name": "rock6",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 1224,
+      "family": "rock",
+      "id": 23,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        77,
+        67,
+        54
+      ],
+      "name": "rock7",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 2339,
+      "family": "rock",
+      "id": 24,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        73,
+        65,
+        38
+      ],
+      "name": "rock8",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 4130,
+      "family": "rock",
+      "id": 25,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        75,
+        71,
+        34
+      ],
+      "name": "rock9",
+      "roughness_proxy": 240
+    },
+    {
+      "cell_count": 238,
+      "family": "test",
+      "id": 72,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        82,
+        83,
+        41
+      ],
+      "name": "test1",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 558,
+      "family": "test",
+      "id": 73,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        93,
+        87,
+        61
+      ],
+      "name": "test2",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 302,
+      "family": "test",
+      "id": 74,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        84,
+        83,
+        49
+      ],
+      "name": "test3",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 163,
+      "family": "test",
+      "id": 77,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        68,
+        76,
+        25
+      ],
+      "name": "test6",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 6694,
+      "family": "test",
+      "id": 78,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        74,
+        79,
+        28
+      ],
+      "name": "test7",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 7657,
+      "family": "test",
+      "id": 79,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        73,
+        78,
+        28
+      ],
+      "name": "test8",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 2233,
+      "family": "test",
+      "id": 80,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        75,
+        76,
+        25
+      ],
+      "name": "test9",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 19,
+      "family": "test",
+      "id": 82,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        76,
+        83,
+        30
+      ],
+      "name": "test11",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 1786,
+      "family": "test",
+      "id": 83,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        74,
+        80,
+        29
+      ],
+      "name": "test12",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 594,
+      "family": "test",
+      "id": 84,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        75,
+        81,
+        29
+      ],
+      "name": "test13",
+      "roughness_proxy": 210
+    },
+    {
+      "cell_count": 2186,
+      "family": "test",
+      "id": 85,
+      "is_water_sentinel": false,
+      "mean_rgb": [
+        74,
+        80,
+        29
+      ],
+      "name": "test14",
+      "roughness_proxy": 210
+    }
+  ],
+  "output_file": "app\\assets\\terrain\\heightmap\\splat_albedo.png",
+  "output_size": [
+    320,
+    320
+  ],
+  "texels_per_cell": 1,
+  "tool": "heightmap_splat.py",
+  "tool_version": "1.0.0",
+  "water_block": "sandsea6"
+}

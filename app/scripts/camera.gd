@@ -1,21 +1,30 @@
 # Camera: edge scroll + arrow keys + mouse wheel zoom, clamped like the original.
+# W4-1: the zoom state, smoothing and public zoom API live here. Event
+# translation (wheel/key -> zoom_step) belongs to W4-2 in input_controller.gd.
 extends Camera2D
 class_name C3Camera
 
 const Data = preload("res://scripts/data.gd")
+const C3ConfigScript = preload("res://scripts/config.gd")
 
 var world: C3World
 var edge_margin := 8.0          # cameracontrol.inc cMargin
 var corner_margin := 24.0       # cCornerMargin
 var key_speed := 24.0 * 4.0     # profile keyscrollspeed*4 (default ~24) — estimated default
 var mouse_speed := 16.0 * 4.0   # profile mousescrollspeed*4 — estimated default
-# T5-RENDER: ~2x closer than the old 1.0 default. This is a camera-only change;
-# Data.TILE_M and all world coordinates are untouched. 2.0 sits inside the
-# donor-derived 0.34-2.9 clamp range below, so wheel zoom still works both ways.
-const DEFAULT_ZOOM := 2.0
+# Donor camera.cfg SphereHeight=58 / SphereHeightMin=20 bounds zoom to 0.345..2.9.
+# The START zoom is owned by main.gd (camera.start_zoom, port default 0.75).
 var min_zoom := 1.0             # camera height 58
 var max_zoom := 2.9             # camera height 20 (58/20)
-var zoom_step := 1.15
+var zoom_step_factor := 1.15    # Data.CAMERA_ZOOM_STEP — donor-style base step
+# W4-1: one notch moves the TARGET by zoom_step_factor^zoom_notch_gain. 1.15^2 = 1.3225
+# per notch (~2x the log-speed of the old flat 1.15 step).
+var zoom_notch_gain := 2.0      # camera.zoom_notch_gain
+# W4-1: frame-rate-independent exponential approach to zoom_target (per second).
+# 18/s reaches ~95% of a step in ~0.17 s: fast and fluid at any frame rate.
+var zoom_smooth_rate := 18.0    # camera.zoom_smooth_rate
+var zoom_target := 1.0
+var _zoom_anchor_screen := Vector2.INF  # screen point held fixed during a zoom step
 # T-PERF-RENDER: clamp_pos memo — edge scroll calls it every frame and the
 # minimap calls it on each jump; skip the viewport math when nothing moved.
 var _last_clamp_pos := Vector2.INF
@@ -27,24 +36,56 @@ var _last_clamp_zoom := Vector2.INF
 const PROCESS_PRIORITY := -100
 # Middle-button drag: previous pointer position in screen space; INF = idle.
 var _middle_drag_last := Vector2.INF
+# W5-7: edge-scroll acceleration state. _edge_dwell_dir holds the EDGE-ONLY
+# direction (arrow keys excluded); the dwell clock resets instantly whenever
+# the direction changes or the cursor leaves the edge band.
+var _edge_dwell_dir := Vector2.ZERO
+var _edge_dwell_time := 0.0
+# W5-7: tunables read from camera.* settings at bind(). The defaults below
+# reproduce the old flat mouse_speed when no keys exist (bind(null) safe).
+var edge_depth_gain := 3.0      # camera.edge_depth_gain — k in 1 + k*depth^2
+var edge_depth_max := 4.0       # camera.edge_depth_max — cap of depth multiplier
+var edge_dwell_gain := 1.0      # camera.edge_dwell_gain — k in log ramp
+var edge_dwell_tau := 0.5       # camera.edge_dwell_tau — seconds time constant
+var edge_dwell_max := 3.0       # camera.edge_dwell_max — cap of dwell multiplier
+var edge_total_max := 6.0       # camera.edge_total_max — cap of combined multiplier
 
 func bind(w: C3World) -> void:
 	world = w
 	process_priority = PROCESS_PRIORITY
 	_middle_drag_last = Vector2.INF
+	_edge_dwell_dir = Vector2.ZERO
+	_edge_dwell_time = 0.0
 	# the settings file decides how the camera behaves
 	edge_margin = Data.CAMERA_EDGE_MARGIN
 	corner_margin = Data.CAMERA_CORNER_MARGIN
 	key_speed = Data.CAMERA_KEY_SPEED
 	mouse_speed = Data.CAMERA_MOUSE_SPEED
-	zoom_step = Data.CAMERA_ZOOM_STEP
+	zoom_step_factor = Data.CAMERA_ZOOM_STEP
+	# W4-1: these two keys are read straight from the merged settings (config.gd
+	# only applies the W2-owned camera.* keys); null-safe for bind(null) tests.
+	var cfg = C3ConfigScript.active
+	if cfg != null:
+		zoom_notch_gain = cfg.num("camera.zoom_notch_gain", 2.0)
+		zoom_smooth_rate = cfg.num("camera.zoom_smooth_rate", 18.0)
+		# W5-7: edge acceleration keys are read the same way (the merged
+		# settings may carry them even though config.gd's DEFAULT does not).
+		edge_depth_gain = cfg.num("camera.edge_depth_gain", 3.0)
+		edge_depth_max = cfg.num("camera.edge_depth_max", 4.0)
+		edge_dwell_gain = cfg.num("camera.edge_dwell_gain", 1.0)
+		edge_dwell_tau = cfg.num("camera.edge_dwell_tau", 0.5)
+		edge_dwell_max = cfg.num("camera.edge_dwell_max", 3.0)
+		edge_total_max = cfg.num("camera.edge_total_max", 6.0)
 	# the original keeps the camera between two heights (camera.cfg
 	# SphereHeightMin 20 and SphereHeight 58)
 	var h_min: float = maxf(1.0, Data.CAMERA_MIN_HEIGHT)
 	var h_max: float = maxf(h_min, Data.CAMERA_MAX_HEIGHT)
 	min_zoom = h_min / h_max
 	max_zoom = h_max / h_min
-	zoom = Vector2.ONE * clampf(DEFAULT_ZOOM, min_zoom, max_zoom)
+	# Startup zoom is applied by main.gd with set_zoom_target(..., immediate=true).
+	zoom_target = clampf(1.0, min_zoom, max_zoom)
+	zoom = Vector2.ONE * zoom_target
+	_zoom_anchor_screen = Vector2.INF
 	make_current()
 	position = Vector2(0, 0)
 
@@ -53,6 +94,7 @@ func bind(w: C3World) -> void:
 # for a sim tick or MINIMAP_INTERVAL. hud.gd writes global_position directly
 # today; callers can switch to this helper to get the same one-frame path.
 func jump_to_world(world_pos: Vector2, view_scale: float = 1.0) -> void:
+	_zoom_anchor_screen = Vector2.INF  # a jump cancels any in-flight zoom anchor
 	if world != null:
 		view_scale = world.view_scale
 	var target := world_pos * view_scale
@@ -68,6 +110,7 @@ func jump_to_world(world_pos: Vector2, view_scale: float = 1.0) -> void:
 func mark_dirty() -> void:
 	_last_clamp_pos = Vector2.INF
 	_last_clamp_zoom = Vector2.INF
+	_zoom_anchor_screen = Vector2.INF
 	if world == null:
 		return
 	# world.gd has no camera-dirty hook today: sync() derives its "moved" flag
@@ -96,9 +139,10 @@ func clamp_pos() -> void:
 func _process(dt: float) -> void:
 	# T-PERF-RENDER: hitch guard — a 250 ms stall (load, GC, alt-tab) must not
 	# teleport the camera across the map; 50 ms keeps 60 fps panning smooth.
-	# The clamped dt is used UNSCALED: no extra speed factor sits between input
-	# and camera movement, so edge/key pan matches the profile speeds exactly.
+	# dt is UNSCALED. W5-7 folds its depth/dwell factor into mouse_speed only;
+	# arrow-key and middle-drag pan still match the profile speeds exactly.
 	dt = minf(dt, 0.05)
+	_smooth_zoom(dt)  # W4-1: frame-rate-independent zoom, before pan and clamp
 	var vp := get_viewport().get_visible_rect().size
 	var m := get_viewport().get_mouse_position()
 	var dir := Vector2.ZERO
@@ -116,19 +160,64 @@ func _process(dt: float) -> void:
 		_middle_drag_last = Vector2.INF
 	# Edge scroll is suspended while middle-dragging so the two pan sources
 	# cannot fight over the same position write.
+	# W5-7: multiplier applied ONLY to mouse edge scroll; arrow keys keep the
+	# fixed key_speed and middle-drag is untouched. 1.0 = old flat behaviour.
+	var mouse_mult := 1.0
 	if not middling:
 		var at_left := m.x < edge_margin or (m.x < corner_margin and m.y < corner_margin)
 		var at_right := m.x > vp.x - edge_margin or (m.x > vp.x - corner_margin and m.y < corner_margin)
 		var at_top := m.y < edge_margin
 		var at_bot := m.y > vp.y - edge_margin
+		var edge_dir := Vector2.ZERO
 		if at_left:
 			dir.x -= 1
+			edge_dir.x -= 1
 		if at_right:
 			dir.x += 1
+			edge_dir.x += 1
 		if at_top:
 			dir.y -= 1
+			edge_dir.y -= 1
 		if at_bot:
 			dir.y += 1
+			edge_dir.y += 1
+		# W5-7 DEPTH RAMP: 0 at the inner boundary of the active band, 1 at the
+		# physical screen edge (corner zones use the wider corner_margin).
+		# Smooth quadratic growth, capped — faster the closer to the edge.
+		var em := maxf(edge_margin, 0.001)
+		var cm := maxf(corner_margin, em)
+		var depth := 0.0
+		if at_left:
+			var l_extent := cm if m.y < corner_margin else em
+			depth = maxf(depth, clampf((l_extent - m.x) / l_extent, 0.0, 1.0))
+		if at_right:
+			var r_extent := cm if m.y < corner_margin else em
+			depth = maxf(depth, clampf((m.x - (vp.x - r_extent)) / r_extent, 0.0, 1.0))
+		if at_top:
+			depth = maxf(depth, clampf((em - m.y) / em, 0.0, 1.0))
+		if at_bot:
+			depth = maxf(depth, clampf((m.y - (vp.y - em)) / em, 0.0, 1.0))
+		var depth_mult := clampf(1.0 + edge_depth_gain * depth * depth, 1.0, edge_depth_max)
+		# W5-7 DWELL: accumulate clamped dt while the SAME edge direction is
+		# held, reset instantly on a direction change or when leaving the edge.
+		# Logarithmic ramp -> fast early, gently decelerating, hard-capped.
+		if edge_dir == Vector2.ZERO:
+			_edge_dwell_dir = Vector2.ZERO
+			_edge_dwell_time = 0.0
+		else:
+			if edge_dir != _edge_dwell_dir:
+				_edge_dwell_dir = edge_dir
+				_edge_dwell_time = 0.0
+			_edge_dwell_time += dt
+		var dwell_mult := 1.0
+		if _edge_dwell_time > 0.0:
+			dwell_mult = clampf(1.0 + edge_dwell_gain * log(1.0 + _edge_dwell_time / maxf(edge_dwell_tau, 0.001)), 1.0, edge_dwell_max)
+		mouse_mult = clampf(depth_mult * dwell_mult, 1.0, edge_total_max)
+	else:
+		# Middle-drag suspends edge scroll: drop any accumulated dwell so a
+		# later edge entry starts at the flat speed again.
+		_edge_dwell_dir = Vector2.ZERO
+		_edge_dwell_time = 0.0
 	# Arrow keys only: WASD is owned by the donor order/build hotkeys (A attack,
 	# S stand, D hold-fire, W wall, ...) and must not double as camera pan.
 	# T-NAV-RESPONSIVE: query each key once (the old code asked twice — once
@@ -147,34 +236,49 @@ func _process(dt: float) -> void:
 	if k_down:
 		dir.y += 1
 	if dir != Vector2.ZERO:
-		var speed := key_speed if (k_left or k_right or k_up or k_down) else mouse_speed
+		var speed := key_speed if (k_left or k_right or k_up or k_down) else mouse_speed * mouse_mult
 		position += dir.normalized() * speed * dt / zoom
 	# One memoized clamp per frame, after every writer above. Mouse-motion no
 	# longer clamps per event: this runs before main.gd's world.sync(), so the
 	# new position is drawn on THIS frame instead of the next one.
 	clamp_pos()
 
-func _zoom_at_cursor(factor: float) -> void:
-	# zoom keeps the world point under the mouse fixed (donor-style: zoom
-	# happens where you point, not at the screen centre). Camera2D position
-	# is the view centre (see clamp_pos), so re-anchor it around the cursor.
-	var vp_size := get_viewport().get_visible_rect().size
-	var m := get_viewport().get_mouse_position()
-	var off: Vector2 = (m - vp_size * 0.5) / zoom.x
-	var w: Vector2 = position + off
-	zoom = Vector2.ONE * clampf(zoom.x * factor, min_zoom, max_zoom)
-	position = w - (m - vp_size * 0.5) / zoom.x
-	clamp_pos()
+# W4-1 public zoom API. W4-2's input_controller.gd translates wheel/key events
+# into zoom_step()/set_zoom_target() and owns NO smoothing, tween or default.
+# notches > 0 = zoom in, < 0 = zoom out; anchor_screen is the screen point that
+# stays over the same world point (pass the wheel event's mb.position).
+func zoom_step(notches: float, anchor_screen: Vector2 = Vector2.INF) -> void:
+	if notches == 0.0:
+		return
+	set_zoom_target(zoom_target * pow(zoom_step_factor, notches * zoom_notch_gain), anchor_screen)
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
-		_zoom_at_cursor(zoom_step)
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-		_zoom_at_cursor(1.0 / zoom_step)
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseMotion:
-		# T-NAV-RESPONSIVE: no per-event viewport math here. The single
-		# memoized clamp in _process() (now ordered before world.sync()) covers
-		# every camera writer, including hud.gd's minimap jump.
-		pass
+# Absolute clamped target. INF anchor means zoom about the view centre
+# (scripted/journey use); immediate=true snaps (startup/reset).
+func set_zoom_target(target: float, anchor_screen: Vector2 = Vector2.INF, immediate: bool = false) -> void:
+	zoom_target = clampf(target, min_zoom, max_zoom)
+	_zoom_anchor_screen = anchor_screen
+	if immediate:
+		zoom = Vector2.ONE * zoom_target
+		_zoom_anchor_screen = Vector2.INF
+
+# Frame-rate-independent exponential approach to zoom_target. The incremental
+# anchor correction holds the world point under the last zoom screen point
+# fixed without overriding pan writes made earlier in _process.
+func _smooth_zoom(dt: float) -> void:
+	if absf(zoom_target - zoom.x) < 0.0005:
+		if zoom.x != zoom_target:
+			zoom = Vector2.ONE * zoom_target
+		_zoom_anchor_screen = Vector2.INF
+		return
+	var old_z := zoom.x
+	var t := 1.0 - exp(-zoom_smooth_rate * dt)
+	var new_z := old_z + (zoom_target - old_z) * t
+	if absf(zoom_target - new_z) < 0.0005:
+		new_z = zoom_target
+	zoom = Vector2.ONE * new_z
+	if _zoom_anchor_screen != Vector2.INF and new_z != old_z:
+		var vp_size := get_viewport().get_visible_rect().size
+		var off := (_zoom_anchor_screen - vp_size * 0.5) / old_z
+		position += off * (1.0 - old_z / new_z)
+	if new_z == zoom_target:
+		_zoom_anchor_screen = Vector2.INF

@@ -29,11 +29,91 @@ var game: C3Game
 var hud: C3HUD
 var main: Node
 var _only := ""
+# W26 / T3 Scenario B: post-setup snapshot supplied by main.gd. Subsets restore
+# it so each group starts from the same generated world (one map-gen per job).
+var baseline_snapshot: Dictionary = {}
+var baseline_ai_enabled := true
+var baseline_sow_t := 0.0
+var baseline_rng_state: Variant = null
+var baseline_gen_rng_state: Variant = null
+var _restore_count := 0
 
 func bind(g: C3Game, h: C3HUD, m: Node) -> void:
 	game = g
 	hud = h
 	main = m
+
+func set_baseline(d: Dictionary) -> void:
+	baseline_snapshot = d.duplicate(true)
+	baseline_ai_enabled = Data.AI_ENABLED
+	baseline_sow_t = game.sow_t
+	# RNG streams are NOT part of game.serialize(). Capture them via Object.get
+	# so a restored group sees the same stream position as a fresh process.
+	baseline_rng_state = game.rng.get("state")
+	baseline_gen_rng_state = game.gen_rng.get("state")
+
+func _find_peasant() -> Dictionary:
+	for u in game.units_of(0):
+		if u.sid == "peasant":
+			return u
+	return {}
+
+func _restore_baseline() -> void:
+	if baseline_snapshot.is_empty():
+		return
+	if not game.deserialize(baseline_snapshot.duplicate(true)):
+		return
+	# deserialize() restores entities, res_nodes (hits), players, stats,
+	# blocked, squads, objectives, next_id and time_s (game.gd:5455-5515).
+	# It does NOT restore these process-locals - restore them explicitly.
+	Data.AI_ENABLED = baseline_ai_enabled
+	game.sow_t = baseline_sow_t
+	if baseline_rng_state != null:
+		game.rng.set("state", baseline_rng_state)
+	if baseline_gen_rng_state != null:
+		game.gen_rng.set("state", baseline_gen_rng_state)
+	game.events.clear()
+	game.projectiles.clear()
+	game.corpses.clear()
+	game.rubble.clear()
+	_restore_count += 1
+	_parity_print()
+
+func _parity_print() -> void:
+	# Diagnostic only (stdout); report shape and assertions are untouched.
+	var now := game.serialize()
+	var p := {
+		"res_nodes": str(now.res_nodes) == str(baseline_snapshot.res_nodes),
+		"stats": str(now.stats) == str(baseline_snapshot.stats),
+		"blocked": hash(now.blocked) == hash(baseline_snapshot.blocked),
+		"squads": str(now.squads) == str(baseline_snapshot.squads),
+		"objectives": str(now.objectives) == str(baseline_snapshot.objectives),
+		"ai": Data.AI_ENABLED == baseline_ai_enabled,
+	}
+	var parts: Array[String] = []
+	for k in p:
+		parts.append("%s=%s" % [str(k), "OK" if p[k] else "MISMATCH"])
+	print("SELFTEST baseline restore #%d parity: %s" % [_restore_count, ", ".join(parts)])
+
+# Run several groups in ONE process; each run_only() restores the baseline
+# first, so the startup/map-gen cost is paid once for the whole set.
+func run_groups(groups: String) -> Dictionary:
+	var tokens: Array = []
+	for t in groups.split(","):
+		var n := t.strip_edges()
+		if n != "":
+			tokens.append(n)
+	var all_steps: Array = []
+	var ok := true
+	for g in tokens:
+		var r := run_only(g)
+		for s in r.get("steps", []):
+			all_steps.append(s)
+			if not bool(s.get("passed", false)):
+				ok = false
+	return {"version": 1, "passed": ok, "sim_seconds": game.time_s,
+		"shots_fired": game.stats.shots, "resources_gathered": game.stats.gathered,
+		"steps": all_steps}
 
 func _sim(seconds: float) -> void:
 	var steps := int(seconds / 0.25)
@@ -92,24 +172,26 @@ func run_only(group: String = "") -> Dictionary:
 			"shots_fired": game.stats.shots, "resources_gathered": game.stats.gathered,
 			"steps": steps}
 
-	# Shared anchor: the first player-0 peasant, re-read once per process.
-	# Kept outside the step guards because every subset spawns relative to it.
-	var peasant: Dictionary = {}
-	for u in game.units_of(0):
-		if u.sid == "peasant":
-			peasant = u
-			break
+	# W26: subset runs restore the post-setup baseline first. The canonical gate
+	# calls run() -> run_only("") and never restores, so it stays byte-stable.
+	if group != "":
+		_restore_baseline()
+	# deserialize() swaps entity dictionaries, so rebind the shared anchor AFTER
+	# any restore. Every subset spawns relative to this peasant.
+	var peasant: Dictionary = _find_peasant()
 
 	# ---- move
 	if _want("move"):
+		var _t0 := Time.get_ticks_msec()
 		var start_pos: Vector2 = peasant.pos
 		game.cmd_move(peasant, start_pos + Vector2(6, 0))
 		_sim(8.0)
 		var moved: float = peasant.pos.distance_to(start_pos)
-		steps.append({"step": "move", "passed": moved >= 3.0, "detail": "walked %.1f m forward (speed 1.5 m/s)" % moved})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "move", "passed": moved >= 3.0, "detail": "walked %.1f m forward (speed 1.5 m/s)" % moved})
 
 	# ---- act: gather wood like a player (right-click a tree)
 	if _want("act"):
+		var _t0 := Time.get_ticks_msec()
 		var before_wood: int = game.players[0].res[1]
 		var tree := game.nearest_res(peasant.pos, "wood", 60.0)
 		var gathered := false
@@ -122,20 +204,22 @@ func run_only(group: String = "") -> Dictionary:
 			detail = "gathered %d wood (carry %d of 28, order '%s', node hits %d)" % [gain, peasant.carry, peasant.order.type, game.by_id.get(peasant.order.get("node", 0), {}).get("hits", -1)]
 		else:
 			detail = "no tree within 60 m"
-		steps.append({"step": "act", "passed": gathered, "detail": detail})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "act", "passed": gathered, "detail": detail})
 
 	# ---- act: fight (attack an enemy peasant with a pikeman)
 	if _want("fight"):
+		var _t0 := Time.get_ticks_msec()
 		var foe := game.spawn("peasant", 1, peasant.pos + Vector2(2.5, 0))
 		var pike := game.spawn("pikeman", 0, peasant.pos + Vector2(0, 2.0))
 		game.cmd_attack(pike, foe)
 		var foe_hp0: int = foe.hp
 		_sim(30.0)
-		steps.append({"step": "fight", "passed": foe.dead,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "fight", "passed": foe.dead,
 			"detail": "pikeman dealt %d damage (8 per 1.25 s), target %s" % [foe_hp0 - maxi(0, foe.hp), "dead" if foe.dead else "alive"]})
 
 	# ---- build a house with peasants
 	if _want("build"):
+		var _t0 := Time.get_ticks_msec()
 		game.players[0].res[1] += 500
 		var hpos := _spot("hou", peasant.pos)
 		var house := game.place_building(0, "hou", hpos, true, [peasant]) if hpos != Vector2.INF else {}
@@ -143,11 +227,12 @@ func run_only(group: String = "") -> Dictionary:
 		if not house.is_empty():
 			_sim(25.0)
 			built = house.finished
-		steps.append({"step": "build", "passed": built,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "build", "passed": built,
 			"detail": "house built in %.1f s of build time (cost 120 wood)" % (house.def.build_time if not house.is_empty() else 0.0)})
 
 	# ---- train a peasant from the town hall (farm cap must allow it)
 	if _want("train"):
+		var _t0 := Time.get_ticks_msec()
 		var cen: Dictionary = {}
 		for b in game.buildings_of(0):
 			if b.sid == "cen":
@@ -161,11 +246,12 @@ func run_only(group: String = "") -> Dictionary:
 			if trained:
 				_sim(16.0)
 				trained = game.unit_count(0) > units_before
-		steps.append({"step": "train", "passed": trained,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "train", "passed": trained,
 			"detail": "peasant trained (100 food, 12.5 s)"})
 
 	# ---- mine income (gold mine on the nearest deposit)
 	if _want("mine"):
+		var _t0 := Time.get_ticks_msec()
 		var dep: Dictionary = {}
 		var dep_best_d := 1e9
 		for n in game.res_nodes:
@@ -208,18 +294,20 @@ func run_only(group: String = "") -> Dictionary:
 						worker.pos.distance_to(mine.pos)]
 			else:
 				mine_detail = "could not place the mine on the deposit"
-		steps.append({"step": "mine", "passed": mine_ok, "detail": mine_detail})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "mine", "passed": mine_ok, "detail": mine_detail})
 
 	# ---- hud: the on-screen information is present and drawn
 	if _want("hud"):
+		var _t0 := Time.get_ticks_msec()
 		hud.refresh_selection([peasant])
 		var hinfo: Dictionary = hud.hud_report()
 		var hud_ok: bool = hinfo.resource_labels and hinfo.minimap and hinfo.selection_panel and hinfo.top_bar
-		steps.append({"step": "hud", "passed": hud_ok,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "hud", "passed": hud_ok,
 			"detail": "resource bar (%s), minimap, selection panel and status text ('%s') are drawn" % ["ok" if hinfo.resource_labels else "missing", hinfo.status_text]})
 
 	# ---- no_overlap: like the original, units never stand inside each other
 	if _want("no_overlap"):
+		var _t0 := Time.get_ticks_msec()
 		var min_d := 1e9
 		var units := game.units_of(0) + game.units_of(1)
 		for i in units.size():
@@ -235,11 +323,12 @@ func run_only(group: String = "") -> Dictionary:
 				# measure overlap beyond a small tolerance so jitter never fails
 				min_d = minf(min_d, d - want)
 		var overlap_ok := min_d >= -0.25
-		steps.append({"step": "no_overlap", "passed": overlap_ok,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "no_overlap", "passed": overlap_ok,
 			"detail": "min gap %.2f m vs bodies (want >= -0.25 tolerance)" % min_d})
 
 	# ---- video pass: volley fire with smoke and delayed shells
 	if _want("volley"):
+		var _t0 := Time.get_ticks_msec()
 		var shots0: int = game.stats.shots
 		var musk := game.spawn("serdiuk", 0, peasant.pos + Vector2(3, -3))
 		var tgt := game.spawn("pikeman", 1, peasant.pos + Vector2(3 + 20, -3))
@@ -254,33 +343,36 @@ func run_only(group: String = "") -> Dictionary:
 					smoke_seen = true
 			if tgt.dead:
 				break
-		steps.append({"step": "volley", "passed": game.stats.shots > shots0,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "volley", "passed": game.stats.shots > shots0,
 			"detail": "serdiuk fired %d shots, smoke %s, target %s" % [game.stats.shots - shots0, "seen" if smoke_seen else "missing", "dead" if tgt.dead else "hp %d" % maxi(0, tgt.hp)]})
 
 	# ---- video pass: priest heals the line
 	if _want("heal"):
+		var _t0 := Time.get_ticks_msec()
 		var hurt := game.spawn("pikeman", 0, peasant.pos + Vector2(-3, 2))
 		hurt.hp = 30
 		var priest := game.spawn("priest", 0, peasant.pos + Vector2(-3, 3))
 		var hp0: int = hurt.hp
 		for i in 40:
 			game.tick(0.25)
-		steps.append({"step": "heal", "passed": hurt.hp > hp0,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "heal", "passed": hurt.hp > hp0,
 			"detail": "priest healed pikeman %d -> %d hp" % [hp0, hurt.hp]})
 
 	# ---- video pass: officer holds morale, routing recovers
 	if _want("morale"):
+		var _t0 := Time.get_ticks_msec()
 		var shaky := game.spawn("pikeman", 0, peasant.pos + Vector2(5, 5))
 		shaky["morale"] = 10.0
 		shaky["routing"] = true
 		var off := game.spawn("officer", 0, shaky.pos + Vector2(2, 0))
 		for i in 40:
 			game.tick(0.25)
-		steps.append({"step": "morale", "passed": not bool(shaky.get("routing", true)) or float(shaky.get("morale", 0.0)) > 10.0,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "morale", "passed": not bool(shaky.get("routing", true)) or float(shaky.get("morale", 0.0)) > 10.0,
 			"detail": "morale %.0f near officer, routing %s" % [float(shaky.get("morale", 0.0)), shaky.get("routing", false)]})
 
 	# ---- video pass: blacksmith upgrade + market barter (shared grants)
 	if _want("upgrade") or _want("market"):
+		var _t0 := Time.get_ticks_msec()
 		game.players[0].res[0] += 2000.0
 		game.players[0].res[1] += 2000.0
 		game.players[0].res[2] += 2000.0
@@ -291,18 +383,20 @@ func run_only(group: String = "") -> Dictionary:
 			for i in 40:
 				game.tick(0.25)
 			up_ok = game.players[0].upgrades.has("bla_sword1")
-			steps.append({"step": "upgrade", "passed": up_ok,
+			steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "upgrade", "passed": up_ok,
 				"detail": "bla_sword1 researched: %s" % ("yes" if up_ok else "no")})
 		if _want("market"):
+			_t0 = Time.get_ticks_msec()
 			var mar := game.spawn("mar", 0, peasant.pos + Vector2(-10, -6))
 			var gold0: float = game.players[0].res[3]
 			var trade_ok := game.trade(0, "wood", "gold", 100.0)
 			var gold1: float = game.players[0].res[3]
-			steps.append({"step": "market", "passed": trade_ok and gold1 > gold0,
+			steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "market", "passed": trade_ok and gold1 > gold0,
 				"detail": "traded 100 wood for %.0f gold (rate %d%%)" % [gold1 - gold0, int(game.players[0].market_rate * 100.0)]})
 
 	# ---- video pass: peasants capture an empty hall with a white flag
 	if _want("capture"):
+		var _t0 := Time.get_ticks_msec()
 		var foe_hall := game.spawn("cen", 1, peasant.pos + Vector2(10, 10))
 		var cap_peas: Array = []
 		for k in 3:
@@ -312,12 +406,13 @@ func run_only(group: String = "") -> Dictionary:
 			game.tick(0.25)
 			if foe_hall.player == 0:
 				break
-		steps.append({"step": "capture", "passed": foe_hall.player == 0,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "capture", "passed": foe_hall.player == 0,
 			"detail": "3 peasants captured the hall: %s" % ("yes" if foe_hall.player == 0 else "owner %d" % foe_hall.player)})
 
 	# ---- menu/squad pass: officer-led squad with line formation.
 	# squad and formation share squad_ok; they co-locate in every subset.
 	if _want("squad") or _want("formation"):
+		var _t0 := Time.get_ticks_msec()
 		var sq_off := game.spawn("officer", 0, peasant.pos + Vector2(12, 0))
 		var sq_m1 := game.spawn("pikeman", 0, peasant.pos + Vector2(13, 1))
 		var sq_m2 := game.spawn("pikeman", 0, peasant.pos + Vector2(13, -1))
@@ -325,17 +420,19 @@ func run_only(group: String = "") -> Dictionary:
 		var squad_ok := not squad.is_empty()
 		var form_targets: Array = game.formation_targets([sq_m1, sq_m2], peasant.pos + Vector2(20, 0), "line")
 		if _want("squad"):
-			steps.append({"step": "squad", "passed": squad_ok and form_targets.size() == 2,
+			steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "squad", "passed": squad_ok and form_targets.size() == 2,
 				"detail": "squad %s with %d soldiers, line targets %d" % ["formed" if squad_ok else "missing", squad.get("members", []).size() if squad_ok else 0, form_targets.size()]})
+		_t0 = Time.get_ticks_msec()  # formation work starts here
 		if squad_ok:
 			if _want("formation"):
 				game.squad_set_formation(int(squad.squad_id), "column")
 				game.squad_disband(int(squad.squad_id))
-				steps.append({"step": "formation", "passed": game.squads.is_empty(),
+				steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "formation", "passed": game.squads.is_empty(),
 					"detail": "column set, then disbanded (squads left %d)" % game.squads.size()})
 
 	# ---- menu/shell pass: stone wall + rally + objectives (share wall_ok)
 	if _want("wall") or _want("shell"):
+		var _t0 := Time.get_ticks_msec()
 		game.players[0].res[1] += 500
 		game.players[0].res[2] += 500
 		var wpos := _spot("wal", peasant.pos)
@@ -345,8 +442,9 @@ func run_only(group: String = "") -> Dictionary:
 			_sim(30.0)
 			wall_ok = wall.finished or wall.progress > 0.0
 		if _want("wall"):
-			steps.append({"step": "wall", "passed": wall_ok,
+			steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "wall", "passed": wall_ok,
 				"detail": "stone wall %s" % ("built" if wall_ok else "missing")})
+		_t0 = Time.get_ticks_msec()  # shell work starts here
 		var bar2 := game.spawn("bar", 0, peasant.pos + Vector2(-12, -10))
 		game.set_rally(bar2, peasant.pos + Vector2(30, 30))
 		var rally_ok: bool = bar2.get("rally", Vector2.INF) != Vector2.INF
@@ -354,11 +452,12 @@ func run_only(group: String = "") -> Dictionary:
 		var obj_ok: bool = game.objectives.size() == 2
 		game.complete_objective(1)
 		if _want("shell"):
-			steps.append({"step": "shell", "passed": wall_ok and rally_ok and obj_ok,
+			steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "shell", "passed": wall_ok and rally_ok and obj_ok,
 				"detail": "wall %s, rally %s, objectives %d" % ["ok" if wall_ok else "missing", "set" if rally_ok else "missing", game.objectives.size()]})
 
 	# ---- formation bonus + replenish (share fsq/f_off/f_men)
 	if _want("formation_bonus") or _want("replenish"):
+		var _t0 := Time.get_ticks_msec()
 		var f_off := game.spawn("officer", 0, peasant.pos + Vector2(24, 0))
 		var f_dru := game.spawn("drummer", 0, peasant.pos + Vector2(24, 2))
 		var f_men: Array = []
@@ -377,8 +476,9 @@ func run_only(group: String = "") -> Dictionary:
 		# Donor formations.cfg LINE15 = [2,2,7,7] (not the wiki +9 hold).
 		var bonus_ok := not fsq.is_empty() and fbonus == 2 and fhold == 7 and lone_bonus == 0
 		if _want("formation_bonus"):
-			steps.append({"step": "formation_bonus", "passed": bonus_ok,
+			steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "formation_bonus", "passed": bonus_ok,
 				"detail": "formed bonus +%d (hold +%d), lone +%d" % [fbonus, fhold, lone_bonus]})
+		_t0 = Time.get_ticks_msec()  # replenish work starts here
 		var repl_ok := false
 		if not fsq.is_empty():
 			game._kill(f_men[0])
@@ -387,11 +487,12 @@ func run_only(group: String = "") -> Dictionary:
 			game.spawn("pikeman", 0, f_off.pos + Vector2(0, 1))
 			repl_ok = game.cmd_replenish(f_off) == 2
 		if _want("replenish"):
-			steps.append({"step": "replenish", "passed": repl_ok,
+			steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "replenish", "passed": repl_ok,
 				"detail": "2 losses refilled from nearby troops: %s" % ("yes" if repl_ok else "no")})
 
 	# ---- 17c min-range flee (self-spawns; independent of the formation pair)
 	if _want("flee"):
+		var _t0 := Time.get_ticks_msec()
 		var fleer := game.spawn("serdiuk", 0, peasant.pos + Vector2(-20, 5))
 		var chaser := game.spawn("pikeman", 1, fleer.pos + Vector2(3, 0))
 		var d0: float = fleer.pos.distance_to(chaser.pos)
@@ -404,11 +505,12 @@ func run_only(group: String = "") -> Dictionary:
 			if fleer.order.type == "move":
 				fled = true
 		var d1: float = fleer.pos.distance_to(chaser.pos) if not fleer.dead else d0
-		steps.append({"step": "flee", "passed": fled and d1 > d0,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "flee", "passed": fled and d1 > d0,
 			"detail": "serdiuk fell back from pikes: %s (%.1f -> %.1f m)" % ["yes" if fled else "no", d0, d1]})
 
 	# ---- G15: garrison hides units & U unloads
 	if _want("garrison"):
+		var _t0 := Time.get_ticks_msec()
 		var tow := game.spawn("tow", 0, peasant.pos + Vector2(30, 0))
 		var gmen: Array = []
 		for i in 3:
@@ -420,12 +522,13 @@ func run_only(group: String = "") -> Dictionary:
 		game.cmd_unload(tow)
 		_sim(1.0)
 		garr_ok = garr_ok and int(tow.get("garrison", 0)) == 0 and not bool(gmen[0].get("hidden", false))
-		steps.append({"step": "garrison", "passed": garr_ok, "detail": "garrison 3 hid, unload restored: %s" % ("yes" if garr_ok else "no")})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "garrison", "passed": garr_ok, "detail": "garrison 3 hid, unload restored: %s" % ("yes" if garr_ok else "no")})
 
 	# ---- G15: peasant capture
 	# Donor masks put the town on a real coast/hill, so pick a nearby tile that
 	# is actually walkable instead of assuming the old fixed corner was open.
 	if _want("peasant_capture"):
+		var _t0 := Time.get_ticks_msec()
 		var epos: Vector2 = (peasant.pos as Vector2) + Vector2(32, 2)
 		# Keep the duel clear of buildings from earlier steps (e.g. the hall
 		# captured by the `capture` step): friendly peasants clustering there
@@ -458,13 +561,14 @@ func run_only(group: String = "") -> Dictionary:
 				ci + 1, str(efoe.dead), int(efoe.hp), int(efoe.player), str(efoe.pos),
 				str(epike.dead), str(epike.order.get("type", "")), efoe.pos.distance_to(epike.pos), game.stats.shots])
 		Data.AI_ENABLED = true
-		steps.append({"step": "peasant_capture", "passed": int(efoe.player) == 0, "detail": "peasant captured: player %d" % int(efoe.player)})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "peasant_capture", "passed": int(efoe.player) == 0, "detail": "peasant captured: player %d" % int(efoe.player)})
 
 	# ---- G15: field re-sowing (T-FOOD-1: a random skirmish map starts with
 	# ZERO food nodes - no seed wheat, no stragglers, no wild berries. Food
 	# comes strictly through the mill cycle, so the test sows a mill ring
 	# first and resows one of ITS fields.)
 	if _want("resow"):
+		var _t0 := Time.get_ticks_msec()
 		var wild_food := 0
 		for n in game.res_nodes:
 			if n.type == "food" and not n.has("mill"):
@@ -534,31 +638,34 @@ func run_only(group: String = "") -> Dictionary:
 				break
 		mill_ok = mill_fields.size() > 0 and manual > 0 and restored
 		mill_detail = "auto=%d restored=%d gold=%.0f" % [mill_fields.size(), manual, game.players[0].res[3]]
-		steps.append({"step": "resow", "passed": wild_food == 0 and resow_ok and mill_ok,
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "resow", "passed": wild_food == 0 and resow_ok and mill_ok,
 			"detail": "wild food nodes=%d; depleted mill field re-sown: %s; mill: %s" % [wild_food, "yes" if resow_ok else "no", mill_detail]})
 
 	# ---- G15: attack-ground
 	if _want("attack_ground"):
+		var _t0 := Time.get_ticks_msec()
 		var can := game.spawn("cannon", 0, peasant.pos + Vector2(34, 0))
 		game.players[0].res[4] += 500.0
 		game.players[0].res[5] += 500.0
 		var shots_before: int = game.stats.shots
 		game.cmd_attack_ground(can, can.pos + Vector2(20, 0))
 		_sim(5.0)
-		steps.append({"step": "attack_ground", "passed": game.stats.shots > shots_before, "detail": "cannon shells ground: shots %d -> %d" % [shots_before, game.stats.shots]})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "attack_ground", "passed": game.stats.shots > shots_before, "detail": "cannon shells ground: shots %d -> %d" % [shots_before, game.stats.shots]})
 
 	# ---- G15: save/load round-trip
 	if _want("save_load"):
+		var _t0 := Time.get_ticks_msec()
 		var ents0 := game.entities.size()
 		var t0s: float = game.time_s
 		var snap := game.serialize()
 		var fresh := C3Game.new()
 		var load_ok := fresh.deserialize(snap)
 		load_ok = load_ok and fresh.entities.size() == game.entities.filter(func(e): return not e.dead).size() and absf(fresh.time_s - t0s) < 0.01
-		steps.append({"step": "save_load", "passed": load_ok, "detail": "serialize %d ents round-trip: %s" % [ents0, "ok" if load_ok else "fail"]})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "save_load", "passed": load_ok, "detail": "serialize %d ents round-trip: %s" % [ents0, "ok" if load_ok else "fail"]})
 
 	# ---- G15: grid equivalence (brute force vs grid)
 	if _want("grid_equiv"):
+		var _t0 := Time.get_ticks_msec()
 		var geq_ok := true
 		for qi in 10:
 			var qp: Vector2 = peasant.pos + Vector2(qi * 3.0 - 15.0, qi * 2.0 - 10.0)
@@ -577,10 +684,11 @@ func run_only(group: String = "") -> Dictionary:
 			if (brute.is_empty() != fast.is_empty()) or (not brute.is_empty() and int(brute.id) != int(fast.id)):
 				# scores may differ by kind weighting; at least both empty/non-empty must agree when only one enemy
 				pass
-		steps.append({"step": "grid_equiv", "passed": geq_ok, "detail": "grid vs brute force agreed on 10 points"})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "grid_equiv", "passed": geq_ok, "detail": "grid vs brute force agreed on 10 points"})
 
 	# ---- G15: farm cap on build/kill
 	if _want("farm_cap"):
+		var _t0 := Time.get_ticks_msec()
 		var cap0: int = int(game.players[0].farm_cap)
 		game.players[0].res[1] += 500.0
 		var houtest := {}
@@ -598,10 +706,11 @@ func run_only(group: String = "") -> Dictionary:
 		if not houtest.is_empty():
 			game.cmd_delete(houtest)
 		var cap2: int = int(game.players[0].farm_cap)
-		steps.append({"step": "farm_cap", "passed": cap1 == cap0 + 25 and cap2 == cap0, "detail": "farm %d -> %d -> %d" % [cap0, cap1, cap2]})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "farm_cap", "passed": cap1 == cap0 + 25 and cap2 == cap0, "detail": "farm %d -> %d -> %d" % [cap0, cap1, cap2]})
 
 	# ---- pathfinding: ordered past a wall, a unit must route around it
 	if _want("nav_detour"):
+		var _t0 := Time.get_ticks_msec()
 		var nav_ok := false
 		var nav_detail := "no clear patch on the map"
 		var patch := Vector2i(-1, -1)
@@ -638,7 +747,7 @@ func run_only(group: String = "") -> Dictionary:
 			nav_detail = "walked around a 24 m wall: %s (dist %.1f m)" % ["yes" if nav_ok else "no", walker.pos.distance_to(ng)]
 			for wy in range(patch.y + 1, patch.y + 13):
 				game.set_blocked_tile(patch.x + 6, wy, false)
-		steps.append({"step": "nav_detour", "passed": nav_ok, "detail": nav_detail})
+		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "nav_detour", "passed": nav_ok, "detail": nav_detail})
 
 	# Defensive: only steps that were actually requested may reach the report.
 	var kept: Array = []

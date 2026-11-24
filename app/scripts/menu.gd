@@ -464,14 +464,24 @@ func _team_items() -> Array:
 
 # OWNER-SPEC (en\gui.txt:153-162, showcustomgame.inc:73-86): per-player AI
 # difficulty replaces the plain Human/Computer pick. "None" => human slot.
+# R06 C1: the last two donor tiers are appended, so legacy id order is intact.
 func _ai_items() -> Array:
 	return [{"id": "none", "name": "None"},
 		{"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"},
 		{"id": "veryhard", "name": "Very Hard"},
 		{"id": "impossible", "name": "Impossible"}]
 
-# The sim only knows easy/normal/hard globally; collapse the two hardest donor
-# tiers onto "hard" and keep the donor id alongside for config/UI fidelity.
+# Global difficulty rows mirror ConfigScript.AI_DIFFICULTIES: the legacy three
+# keep their order/indices, the two donor tiers are appended (R06 C1).
+func _difficulty_items() -> Array:
+	return [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"},
+		{"id": "hard", "name": "Hard"}, {"id": "veryhard", "name": "Very Hard"},
+		{"id": "impossible", "name": "Impossible"}]
+
+# main.gd:339-342 only accepts easy/normal/hard, so the two new donor tiers
+# collapse onto "hard" for that legacy key. The real id is emitted unchanged as
+# the roster's "ai_difficulty" key below (_roster_cfg); making the sim's
+# Data.PLAYER_AI_DIFFICULTY carry it needs the main.gd/game.gd hand-off.
 func _sim_difficulty(donor_id: String) -> String:
 	match donor_id:
 		"none": return "none"
@@ -693,7 +703,7 @@ func _show_skirmish() -> void:
 	options_body.add_child(_opt_row("Allies", [{"id": "default", "name": "Default"}, {"id": "nearby", "name": "Nearby"}], allies, func(id: String): allies = id))
 	options_body.add_child(_section_label("Rules"))
 	options_body.add_child(_opt_row("Starting", _starts(), start_option, func(id: String): start_option = id))
-	options_body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id))
+	options_body.add_child(_opt_row("Difficulty", _difficulty_items(), difficulty, func(id: String): difficulty = id))
 	options_body.add_child(_opt_row("Balloon", _donor_items(Data.DONOR_BALLOON,
 		{"default": "Default", "no_balloons": "No Balloons", "balloons": "Balloons"}),
 		balloon, func(id: String): balloon = id))
@@ -846,7 +856,7 @@ func _on_seed_text_changed(text: String, field: LineEdit) -> void:
 
 func _show_options() -> void:
 	_clear()
-	body.add_child(_opt_row("Difficulty", [{"id": "easy", "name": "Easy"}, {"id": "normal", "name": "Normal"}, {"id": "hard", "name": "Hard"}], difficulty, func(id: String): difficulty = id; _save_options()))
+	body.add_child(_opt_row("Difficulty", _difficulty_items(), difficulty, func(id: String): difficulty = id; _save_options()))
 	var shb := HBoxContainer.new()
 	shb.add_theme_constant_override("separation", 10)
 	var sl := Label.new()

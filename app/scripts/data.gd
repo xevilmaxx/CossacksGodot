@@ -654,9 +654,15 @@ const UNITS_BASE := {
 		"hp": 9000, "speed": 0.75, "score": 50, "aiforce": 1, "artillery": true, "shield": 75,
 		"price": {"wood": 250, "gold": 400, "iron": 400}, "build_time": 2400 * 0.03125, "search": 500 * PX_TO_M,
 		"eat": {"gold": 300},
+		# W2-2 data truth: donor lib/unit.script:1710 cannon weapon[1] (cannister)
+		# has radiusmax = 450 px, detectmax = 550 px. Every port weapon range is
+		# donor pixels * PX_TO_M (metres; header line 16), so 450 px -> 16.875 m.
+		# The old 175 px (6.5625 m) made the cannon advance instead of firing in
+		# the 175-450 px band. Only the range is corrected here; cd/cost stay as
+		# the existing port estimates (donor: pause 350, iron 24, coal 21).
 		"weapons": [{"kind": "cannonball", "dmg": 1800, "min": 550 * PX_TO_M, "max": 2160 * PX_TO_M, "cd": 350 * 0.03125,
 			"cost": {"iron": 20, "coal": 40}, "splash": 35 * PX_TO_M},
-			{"kind": "cannister", "dmg": 300, "min": 0.0, "max": 175 * PX_TO_M, "cd": 300 * 0.03125,
+			{"kind": "cannister", "dmg": 300, "min": 0.0, "max": 450 * PX_TO_M, "cd": 300 * 0.03125,
 			"cost": {"iron": 10, "coal": 20}, "splash": 60 * PX_TO_M}],
 		"prot": [0, 0, 0, 0, 0, 0],
 		"radius": 0.6,
@@ -720,6 +726,10 @@ const UNITS_BASE := {
 		"hp": 6000, "speed": 0.7, "score": 60, "aiforce": 2, "artillery": true, "shield": 60,
 		"price": {"wood": 300, "gold": 500, "iron": 500}, "build_time": 2600 * 0.03125, "search": 500 * PX_TO_M,
 		"eat": {"gold": 350},
+		# W2-2 data-truth note: donor lib/unit.script:1732-1763 defines only
+		# weapon[0] cannonball for the howitzer. The cannister row below is a
+		# PORT-ONLY extension (R04 GAP-2), not a donor-parity value; kept to
+		# avoid a gameplay change, but do not cite it as donor-faithful.
 		"weapons": [{"kind": "cannonball", "dmg": 1200, "min": 300 * PX_TO_M, "max": 1800 * PX_TO_M, "cd": 380 * 0.03125,
 			"cost": {"iron": 25, "coal": 50}, "splash": 50 * PX_TO_M},
 			{"kind": "cannister", "dmg": 250, "min": 0.0, "max": 150 * PX_TO_M, "cd": 300 * 0.03125,
@@ -1034,6 +1044,105 @@ const UNITS_BASE := {
 		"radius": 0.35,
 		"icon": Rect2(46, 184, 46, 46),
 	},
+	# --- W2-2 data truth: the 8 Scottish donor-unique combat units
+	# (R08 claim 2 / G-RO2). R08 §2 said "7" because it counted the pre-existing
+	# sco_highlandersword as the stand-in for swordsmansco; the literal donor
+	# sid swordsmansco is added here too (units.txt:1248-1252), so all 8 donor
+	# combat sids now exist. Names/nation mapping: locale/en/units.txt:1237-1284
+	# and lib/country.script:942,1039,1143,1266,1573,1936,2031,2820. HP / price /
+	# protection / weapon damage+ranges are transcribed from the donor stat
+	# blocks cited per row (ranges are donor px * PX_TO_M as everywhere here).
+	# build_time, speed, score and icon follow the nearest port generic unit and
+	# are ESTIMATED: donor build times/speeds are not read for these sids.
+	# No NATION_UNITS or train-list wiring is done here (that would change AI
+	# army picks / existing seed traces); no sprite keys are added (W2-10 owns
+	# assets). These rows are data-only and unreachable in current skirmish play.
+	# Covenanter pikeman - donor lib/unit.script:630-636 (shared pikeman block).
+	"pikemansco": {
+		"hp": 90, "speed": 1.2, "score": 10, "aiforce": 10,
+		"price": {"food": 25, "gold": 3, "iron": 20}, "build_time": 144 * 0.03125, "search": 700 * PX_TO_M,
+		"eat": {"food": 30},
+		"weapons": [{"kind": "pike", "dmg": 8, "min": 35 * PX_TO_M, "max": 100 * PX_TO_M, "cd": 1.25}],
+		"prot": [3, 2, 4, 210, 6, 40],
+		"radius": 0.35,
+		"icon": Rect2(0, 46, 46, 46),
+	},
+	# Sword Clansman - donor lib/unit.script:735-754, sco override at 746-753.
+	"swordsmansco": {
+		"hp": 180, "speed": 1.1, "score": 18, "aiforce": 5,
+		"price": {"food": 110, "wood": 5, "gold": 10}, "build_time": 128 * 0.03125, "search": 800 * PX_TO_M,
+		"eat": {"food": 45},
+		"weapons": [{"kind": "sword", "dmg": 10, "min": 25 * PX_TO_M, "max": 60 * PX_TO_M, "cd": 1.25}],
+		"prot": [1, 2, 2, 110, 6, 10],
+		"radius": 0.35,
+		"icon": Rect2(184, 46, 46, 46),
+	},
+	# Covenanter musketeer - donor lib/unit.script:771-787 + 852-859.
+	"musketeersco": {
+		"hp": 90, "speed": 1.2, "score": 12, "aiforce": 15, "no_melee": true,
+		"price": {"food": 55, "gold": 8, "iron": 7}, "build_time": 352 * 0.03125, "search": 850 * PX_TO_M,
+		"eat": {"food": 30},
+		"weapons": [{"kind": "bullet", "dmg": 12, "min": 350 * PX_TO_M, "max": 850 * PX_TO_M, "cd": 150 * 0.03125,
+			"cost": {"iron": 2, "coal": 5}, "splash": 0.0}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(230, 92, 46, 46),
+	},
+	# Bow Clansman - donor lib/unit.script:997-1039, sco override at 1029-1038.
+	# Donor weapon[1] is firearrow (unit.script:1005,1034); the port has no
+	# firearrow weapon and PROT_SLOT clamps that kind, so it is NOT added here
+	# (adding it would introduce a new live weapon kind into the sim).
+	"archersco": {
+		"hp": 150, "speed": 1.2, "score": 15, "aiforce": 2, "no_melee": true,
+		"price": {"food": 80, "wood": 5, "gold": 7}, "build_time": 48 * 0.03125, "search": 1000 * PX_TO_M,
+		"eat": {"food": 40},
+		"weapons": [{"kind": "arrow", "dmg": 20, "min": 250 * PX_TO_M, "max": 1000 * PX_TO_M, "cd": 100 * 0.03125,
+			"cost": {"wood": 2}, "splash": 20 * PX_TO_M}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.35,
+		"icon": Rect2(322, 92, 46, 46),
+	},
+	# Officer - donor lib/unit.script:1062-1074 (shared officer block).
+	"officersco": {
+		"hp": 125, "speed": 1.2, "score": 10, "aiforce": 5,
+		"price": {"food": 50, "gold": 150, "iron": 30}, "build_time": 320 * 0.03125, "search": 500 * PX_TO_M,
+		"eat": {"gold": 60},
+		"weapons": [{"kind": "pike", "dmg": 30, "min": 35 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.25}],
+		"prot": [2, 2, 5, 200, 10, 30],
+		"radius": 0.35,
+		"icon": Rect2(0, 184, 46, 46),
+	},
+	# Lancer - donor lib/unit.script:1418-1430 + 1524-1531.
+	"lancersco": {
+		"hp": 320, "speed": 2.1, "score": 38, "aiforce": 10, "cavalry": "hard",
+		"price": {"food": 120, "gold": 6}, "build_time": 720 * 0.03125, "search": 600 * PX_TO_M,
+		"eat": {"food": 60},
+		"weapons": [{"kind": "pike", "dmg": 11, "min": 30 * PX_TO_M, "max": 100 * PX_TO_M, "cd": 1.25}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.5,
+		"icon": Rect2(0, 368, 46, 46),
+	},
+	# Raider - donor lib/unit.script:1320-1329 + 1392-1398.
+	"raidersco": {
+		"hp": 280, "speed": 3.6, "score": 35, "aiforce": 25, "cavalry": "fast",
+		"price": {"food": 130, "gold": 8, "iron": 2}, "build_time": 432 * 0.03125, "search": 1000 * PX_TO_M,
+		"eat": {"food": 75},
+		"weapons": [{"kind": "sword", "dmg": 11, "min": 20 * PX_TO_M, "max": 65 * PX_TO_M, "cd": 1.0}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.5,
+		"icon": Rect2(92, 276, 46, 46),
+	},
+	# Frame gun - donor lib/unit.script:1823-1840.
+	"framegun": {
+		"hp": 3000, "speed": 0.75, "score": 50, "aiforce": 2, "artillery": true, "shield": 50,
+		"price": {"wood": 200, "gold": 300, "iron": 150}, "build_time": 2400 * 0.03125, "search": 1200 * PX_TO_M,
+		"eat": {"gold": 300},
+		"weapons": [{"kind": "cannonball", "dmg": 500, "min": 200 * PX_TO_M, "max": 1800 * PX_TO_M, "cd": 90 * 0.03125,
+			"cost": {"iron": 30, "coal": 40}, "splash": 32 * PX_TO_M}],
+		"prot": [0, 0, 0, 0, 0, 0],
+		"radius": 0.6,
+		"icon": Rect2(138, 230, 46, 46),
+	},
 	# P-10 naval: static hull + crew sheets baked in app/assets/models/anim/naval_units/
 	# (index.json: hull ortho 11.355, crew ortho 6.047). Movement/shape flags are
 	# donor-evidenced; hp/speed/dmg/price are ESTIMATED (NAVAL_PORT_PLAN §5 Q2).
@@ -1045,6 +1154,87 @@ const UNITS_BASE := {
 			"cd": 180 * 0.03125, "cost": {"iron": 2, "coal": 3}, "splash": 12 * PX_TO_M}],
 		"prot": [2, 2, 4, 60, 6, 45],
 		"radius": 1.8,
+		"icon": Rect2(322, 368, 46, 46),
+	},
+	# --- G-N1 W2-10 hand-off (reports/W210_naval_assets.md §3): six staged ship
+	# sids whose hull PNGs/index keys are already baked. Donor-exact hp / price /
+	# eat / weapon damage+range+per-shot cost from lib/unit.script lines cited
+	# in that report. PORT ESTIMATES (flagged, NOT donor-verbatim): speed, score,
+	# aiforce, prot, radius, icon, all pause->cd conversions, all build_time and
+	# search values. Archetype: galley weapon[1] is donor mortarball (no port
+	# kind), stored here as a long-range cannonball; battleship/xebec damage is
+	# derived from the shared 1800 block (donor says `default`).
+	# OPEN: these hp values are donor-exact (30000-90000) while the existing
+	# yacht hp above stays at the old declared estimate 900 (~34x mismatch).
+	# Rescaling all seven is a coordinator decision; NOT done here to avoid
+	# changing existing yacht combat behaviour / seed traces.
+	# xebec eat.gold 0 is donor-exact; game.gd's gold-firing gate keys on the
+	# presence of "gold", so W2-1 must arbitrate that interaction.
+	"fishboat": {
+		"hp": 300, "speed": 2.4, "score": 50, "aiforce": 4, "naval": true,
+		"price": {"wood": 600}, "build_time": 1280 * 0.03125, "search": 1280 * PX_TO_M,
+		"weapons": [],
+		"prot": [1, 1, 2, 30, 3, 20],
+		"radius": 1.0,
+		"icon": Rect2(322, 368, 46, 46),
+	},
+	"yachttur": {
+		"hp": 35000, "speed": 2.6, "score": 200, "aiforce": 14, "naval": true,
+		"price": {"wood": 900, "gold": 450, "iron": 150, "coal": 200},
+		"build_time": 1536 * 0.03125, "search": 1050 * PX_TO_M,
+		"eat": {"gold": 1500},
+		"weapons": [{"kind": "cannonball", "dmg": 30, "min": 300 * PX_TO_M, "max": 1000 * PX_TO_M,
+			"cd": 400 * 0.03125, "cost": {"iron": 5, "coal": 15}, "splash": 32 * PX_TO_M}],
+		"prot": [2, 2, 4, 60, 6, 45],
+		"radius": 1.8,
+		"icon": Rect2(322, 368, 46, 46),
+	},
+	"galley": {
+		"hp": 35000, "speed": 2.5, "score": 200, "aiforce": 14, "naval": true,
+		"price": {"wood": 9500, "gold": 900, "iron": 800},
+		"build_time": 1600 * 0.03125, "search": 1100 * PX_TO_M,
+		"eat": {"gold": 1000},
+		"weapons": [
+			{"kind": "cannonball", "dmg": 100, "min": 300 * PX_TO_M, "max": 1200 * PX_TO_M,
+				"cd": 150 * 0.03125, "cost": {"iron": 4, "coal": 9}, "splash": 32 * PX_TO_M},
+			{"kind": "cannonball", "dmg": 1000, "min": 1100 * PX_TO_M, "max": 3100 * PX_TO_M,
+				"cd": 50 * 0.03125, "cost": {"iron": 4, "coal": 9}, "splash": 32 * PX_TO_M}
+		],
+		"prot": [2, 2, 4, 60, 6, 45],
+		"radius": 1.8,
+		"icon": Rect2(322, 368, 46, 46),
+	},
+	"frigate": {
+		"hp": 50000, "speed": 2.7, "score": 300, "aiforce": 20, "naval": true,
+		"price": {"wood": 5000, "gold": 1100, "iron": 600, "coal": 800},
+		"build_time": 7360 * 0.03125, "search": 1800 * PX_TO_M,
+		"eat": {"gold": 150},
+		"weapons": [{"kind": "cannonball", "dmg": 1800, "min": 400 * PX_TO_M, "max": 1650 * PX_TO_M,
+			"cd": 75 * 0.03125, "cost": {"iron": 25, "coal": 35}, "splash": 32 * PX_TO_M}],
+		"prot": [3, 3, 6, 80, 8, 60],
+		"radius": 2.2,
+		"icon": Rect2(322, 368, 46, 46),
+	},
+	"xebec": {
+		"hp": 65000, "speed": 2.9, "score": 300, "aiforce": 20, "naval": true,
+		"price": {"wood": 7000, "gold": 1600, "iron": 320, "coal": 960},
+		"build_time": 7360 * 0.03125, "search": 1800 * PX_TO_M,
+		"eat": {"gold": 0},
+		"weapons": [{"kind": "cannonball", "dmg": 1800, "min": 550 * PX_TO_M, "max": 1700 * PX_TO_M,
+			"cd": 50 * 0.03125, "cost": {"iron": 25, "coal": 35}, "splash": 32 * PX_TO_M}],
+		"prot": [3, 3, 6, 80, 8, 60],
+		"radius": 2.2,
+		"icon": Rect2(322, 368, 46, 46),
+	},
+	"battleship": {
+		"hp": 90000, "speed": 2.2, "score": 500, "aiforce": 32, "naval": true,
+		"price": {"wood": 9000, "gold": 3200, "iron": 700, "coal": 6500},
+		"build_time": 12480 * 0.03125, "search": 1680 * PX_TO_M,
+		"eat": {"gold": 15000},
+		"weapons": [{"kind": "cannonball", "dmg": 1800, "min": 600 * PX_TO_M, "max": 1950 * PX_TO_M,
+			"cd": 20 * 0.03125, "cost": {"iron": 5, "coal": 15}, "splash": 32 * PX_TO_M}],
+		"prot": [4, 4, 8, 100, 10, 80],
+		"radius": 2.6,
 		"icon": Rect2(322, 368, 46, 46),
 	},
 }
@@ -1100,9 +1290,11 @@ const BUILDINGS_BASE := {
 		"eat": {"gold": 500}, "score": 500, "icon": Rect2(414, 0, 46, 46)},
 	# P-10: donor Shipyard (hotkey P) has no readable stats; hp/cost are
 	# ESTIMATED. train_unit() gates strictly on `trains`, so this is the only
-	# training hook needed for the yacht.
+	# training hook needed for the seven ship sids (W2-10 hand-off). AI never
+	# builds docks (ai.gd has no dock/naval reference), so extending this list
+	# cannot change AI army picks or existing seed traces.
 	"dock": {"hp": 12000, "build_time": 900 * 0.03125, "cost": {"wood": 600, "stone": 200, "gold": 150}, "radius": 3.0,
-		"trains": ["yacht"], "score": 500, "icon": Rect2(414, 46, 46, 46)},
+		"trains": ["fishboat", "yacht", "yachttur", "galley", "frigate", "xebec", "battleship"], "score": 500, "icon": Rect2(414, 46, 46, 46)},
 }
 
 # Upgrades researched at blacksmith (bla) and academy (aca).
@@ -1161,8 +1353,16 @@ const UPGRADES_BASE := {
 		"effect": {"reveal_map": true}, "name": "Montgolfier (reveal map)"},
 	"art_range1": {"building": "art", "cost": {"gold": 600, "iron": 300}, "time": 12.0,
 		"effect": {"art_range": 1.05}, "name": "Artillery range +5%"},
+	# W2-2 data truth: donor aca.27 "Develop mathematics" is
+	# gc_upg_type_attdispertionperc = -35 (lib/country.script:3629) = artillery
+	# accuracy +35% (locale/en/upgrades.txt:58). The +10% range this row used to
+	# carry is donor aca.17 "unicorn, carronade" (country.script:3575,
+	# upgrades.txt:38) and is preserved under its own row below. The key
+	# "art_range2" is retained deliberately so no called symbol is renamed.
 	"art_range2": {"building": "art", "cost": {"gold": 1200, "iron": 600}, "time": 14.0,
-		"effect": {"art_range": 1.1}, "name": "Mathematics (range +10%)"},
+		"effect": {"art_acc": 0.65}, "name": "Mathematics (accuracy +35%)"},
+	"aca_range2": {"building": "art", "cost": {"gold": 1200, "iron": 600}, "time": 14.0,
+		"effect": {"art_range": 1.1}, "name": "Unicorn & carronade barrels (range +10%)"},
 	"art_hp1": {"building": "art", "cost": {"gold": 1500, "iron": 800}, "time": 14.0,
 		"effect": {"art_hp": 2.5}, "name": "Gribovalle system (arty hp +150%)"},
 	"art_acc1": {"building": "art", "cost": {"gold": 900, "iron": 400}, "time": 12.0,
@@ -1201,22 +1401,35 @@ const UPGRADES_BASE := {
 	"mine_coal_up7": {"building": "mine_coal", "cost": {"food": 60000, "gold": 26000}, "time": 26.0, "effect": {"mine_slots": 40}, "name": "Mine shafts VII (+40)"},
 	# --- Skirmish combat tree (RB G-02..G-06, G-08). Effects are applied in
 	# game.gd apply_upgrade(); costs/times are estimated like the rows above.
+	# W2-2 data truth: donor aca.12/13/14/15 = +10/+10/+15/+25% fire power
+	# (locale/en/upgrades.txt:28,30,32,34; lib/country.script:3555,3557,3559,3561
+	# gc_upg_type_damageperc 10,10,15,25). aca_fire1 was already +10% (untouched).
 	"aca_fire1": {"building": "aca", "cost": {"gold": 300, "iron": 200}, "time": 10.0,
 		"effect": {"damage_mult": {"bullet": 1.1, "cannonball": 1.1}}, "name": "Rifled barrels +10%"},
 	"aca_fire2": {"building": "aca", "cost": {"gold": 600, "iron": 400}, "time": 11.0,
-		"effect": {"damage_mult": {"bullet": 1.15, "cannonball": 1.15}}, "name": "Granular powder +15%"},
+		"effect": {"damage_mult": {"bullet": 1.1, "cannonball": 1.1}}, "name": "Granular powder +10%"},
 	"aca_fire3": {"building": "aca", "cost": {"gold": 1000, "iron": 700}, "time": 12.0,
-		"effect": {"damage_mult": {"bullet": 1.2, "cannonball": 1.2}}, "name": "Purified sulphur +20%"},
+		"effect": {"damage_mult": {"bullet": 1.15, "cannonball": 1.15}}, "name": "Purified sulphur +15%"},
 	"aca_fire4": {"building": "aca", "cost": {"gold": 1600, "iron": 1100}, "time": 13.0,
-		"effect": {"damage_mult": {"bullet": 1.3, "cannonball": 1.3}}, "name": "Saltpetre +30%"},
+		"effect": {"damage_mult": {"bullet": 1.25, "cannonball": 1.25}}, "name": "Saltpetre +25%"},
+	# W2-2 data truth: donor aca.31/33 (lib/country.script:3664,3697) pass
+	# gc_upg_type_attpauseperc = -30, and lib/player.script:1857 applies
+	# pause := pause * (1 + value/100) = 0.70. Port rof_mult multiplies the
+	# cooldown (game.gd:4855), so 0.70 is the exact donor script value.
+	# Locale upgrades.txt:66,70 says "rate of fire +30%" (tooltip copy);
+	# -30% pause is actually ~+42.9% RoF. The name follows the tooltip, the
+	# effect follows the script (D-22: numeric params are authoritative).
 	"aca_rof1": {"building": "aca", "cost": {"gold": 900, "iron": 500}, "time": 12.0,
-		"effect": {"rof_mult": {"bullet": 0.65}}, "name": "Wheellock (+35% RoF)"},
+		"effect": {"rof_mult": {"bullet": 0.7}}, "name": "Wheellock (+30% RoF)"},
 	"aca_rof2": {"building": "aca", "cost": {"gold": 1400, "iron": 800}, "time": 13.0,
-		"effect": {"rof_mult": {"bullet": 0.65}}, "name": "Paper cartridge (+35% RoF)"},
+		"effect": {"rof_mult": {"bullet": 0.7}}, "name": "Paper cartridge (+30% RoF)"},
 	"bla_flint1": {"building": "bla", "cost": {"gold": 500, "iron": 300}, "time": 10.0,
 		"effect": {"cost_mult": 0.5}, "name": "Flintlock muskets (-50% shot cost)"},
+	# W2-2 data truth: donor aca.35 (lib/country.script:3707) is
+	# gc_upg_type_damage = 5 on pike, locale/en/upgrades.txt:74 "+5". The
+	# "+7" came from the stale comment at dmscript.global:542; script wins.
 	"bla_bayonet1": {"building": "bla", "cost": {"wood": 200, "iron": 250}, "time": 10.0,
-		"effect": {"melee_add": 7}, "name": "Bayonets +7 melee"},
+		"effect": {"melee_add": 5}, "name": "Bayonets +5 melee"},
 	"bla_steel1": {"building": "bla", "cost": {"iron": 600, "gold": 400}, "time": 12.0, "no18c": true,
 		"effect": {"damage_mult": {"sword": 1.25, "pike": 1.25}}, "name": "Steel grades +25% melee"},
 	"bla_harness1": {"building": "bla", "cost": {"food": 500, "gold": 300}, "time": 10.0,
@@ -1243,6 +1456,31 @@ const UPGRADES_BASE := {
 		"effect": {"art_build_mult": 0.6}, "name": "Metalworking +40% build speed"},
 	"art_repair1": {"building": "art", "cost": {"gold": 700, "iron": 500}, "time": 12.0,
 		"effect": {"repair_arty": true}, "name": "Artillery repair shops"},
+	# --- W2-2 data truth: naval upgrades (R08 claim 17). Donor values ARE
+	# readable (locale/en/upgrades.txt:10,12,18,60,62,64,165-166;
+	# lib/country.script:3495,3503,3512-3513,3639,3650,3655,3993), but the port
+	# naval sim has no handlers for them yet. Every effect key below is
+	# deliberately INERT - none is in game.gd apply_upgrade's handled-key list -
+	# so these are data-only records, not live buffs. Costs/times are estimated
+	# like the rest of this table. R9 must add handlers before these are live.
+	"aca_boat_eff1": {"building": "dock", "cost": {"wood": 300, "gold": 200}, "time": 12.0,
+		"effect": {"naval_fishing_mult": 2.0}, "name": "New tackle & fishing nets (boat efficiency +100%)"},
+	"aca_frigate1": {"building": "dock", "cost": {"wood": 800, "gold": 500}, "time": 14.0,
+		"effect": {"naval_unlock": "frigate"}, "name": "New woodworking methods (frigate building)"},
+	"aca_fishboat_cost1": {"building": "dock", "cost": {"wood": 200, "gold": 300}, "time": 12.0,
+		"effect": {"naval_unit_cost_mult": {"fishboat": 0.15}}, "name": "New fishing boat shipyards (cost -85%)"},
+	"aca_ship_speed1": {"building": "dock", "cost": {"wood": 700, "gold": 900}, "time": 14.0,
+		"effect": {"naval_speed_mult": 1.4}, "name": "New rigging types (ship speed +40%)"},
+	"aca_battleship1": {"building": "dock", "cost": {"wood": 1200, "gold": 1500, "iron": 800}, "time": 18.0,
+		"effect": {"naval_unlock": "battleship"}, "name": "New ribs & hulls (battleship construction)"},
+	# Donor-internal conflict: country.script:3655 buildtimeperc -5000000 =
+	# -50% build time (cf. aca.10 -7500000 = -75%, country.script:3530), but
+	# upgrades.txt:64 says "shipbuilding speed x10". Stored as the locale x10
+	# flag; unresolved and inert either way.
+	"aca_shipbuild1": {"building": "dock", "cost": {"wood": 900, "gold": 1200}, "time": 16.0,
+		"effect": {"naval_build_mult": 0.1}, "name": "Train carpenters (shipbuilding x10)"},
+	"por_repair1": {"building": "dock", "cost": {"wood": 400, "gold": 500}, "time": 12.0,
+		"effect": {"naval_repair_all": true}, "name": "Train woodworkers (repair all ships)"},
 }
 
 # The live tables. They start as a copy of the original numbers and are then

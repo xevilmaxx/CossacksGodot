@@ -1,12 +1,12 @@
 {
 	"checks": [
 		{
-			"detail": "bullet damage_mult tiers with >1x = 6 (need >= 3): [\"aca_fire1=1.10\", \"aca_fire2=1.15\", \"aca_fire3=1.20\", \"aca_fire4=1.30\", \"bla_bullet1=1.20\", \"sta_fire1=1.15\"]",
+			"detail": "bullet damage_mult tiers with >1x = 6 (need >= 3): [\"aca_fire1=1.10\", \"aca_fire2=1.10\", \"aca_fire3=1.15\", \"aca_fire4=1.25\", \"bla_bullet1=1.20\", \"sta_fire1=1.15\"]",
 			"name": "firepower_tiers_depth",
 			"passed": true
 		},
 		{
-			"detail": "effective bullet damage 1.000 -> 1.265 (want 1.265, 2 tiers applied)",
+			"detail": "effective bullet damage 1.000 -> 1.210 (want 1.210, 2 tiers applied)",
 			"name": "firepower_damage_stacks",
 			"passed": true
 		},
@@ -16,7 +16,7 @@
 			"passed": true
 		},
 		{
-			"detail": "bayonet=[\"bla_bayonet1\"] steel=[\"bla_steel1\"] melee_add 0->7 melee_mult 1.00->1.00 sword 1.00->1.25",
+			"detail": "bayonet=[\"bla_bayonet1\"] steel=[\"bla_steel1\"] melee_add 0->5 melee_mult 1.00->1.00 sword 1.00->1.25",
 			"name": "bayonet_melee_upgrade",
 			"passed": true
 		},
@@ -33,5 +33,5 @@
 	],
 	"id": "t_upgrades",
 	"passed": true,
-	"unix_ms": 1795509863310.0
+	"unix_ms": 1795511056877.0
 }

@@ -4,8 +4,16 @@
 #                            (headless: saves a CPU-rendered map picture instead,
 #                            so the check never needs a window and never hangs)
 #   --self-test  <file.json>  drive the game with scripted input, save a report
+#   --self-only <group[,..]>  run only named subset(s); each group restores the
+#                             post-setup snapshot (diagnostics, not a gate)
+#   --self-snapshot <file.json>  load a pre-baked post-setup snapshot instead of
+#                             regenerating the map (only with --self-only)
+#   --dump-self-base <file.json> generate that snapshot once (full mapgen), exit
 #   --cli        [file.json]  fast headless match (no window) for quick tests
 #   --cli-seconds <n>         how many simulated seconds the CLI match runs (default 60)
+#   --cli-frame-ms <n>        CLI per-frame tick budget in ms (default 40); step
+#                             size/order unchanged, no sim semantics change
+#   --cli-ticks-per-frame <n> CLI max fixed ticks per frame (default 1500)
 #   --journey                 computer plays BOTH sides (AI vs AI) in full-game
 #   --seq <dir>               capture a frame sequence (gameplay video stills):
 #                             windowed = real viewport frames, headless/CLI =
@@ -54,10 +62,20 @@ var screenshot_path := ""
 var screenshot_frames := 120
 var screenshot_done := false
 var screenshot_focus := "start"   # gameplay.screenshot_focus: start | relief
+# W4-1 startup zoom: donor docreate.inc:82 clamps the start camera to max
+# distance (SphereHeight 58 -> ~0.345 in port zoom units). 0.75 is the port
+# compromise: 2.67x wider than the old 2.0 default, still inside 0.345..2.9.
+var start_zoom := 0.75            # camera.start_zoom
 var test_api_port := 0
 var test_bridge: C3TestBridge = null
 var selftest_path := ""
 var selftest_only := ""
+# W26 (T3 Scenario B): one post-setup snapshot, reused by --self-only subsets.
+var selftest_baseline: Dictionary = {}
+# W5-2: disk-backed pre-baked baseline. --dump-self-base writes it once; a
+# --self-only run with --self-snapshot loads it instead of running mapgen.
+var self_snapshot_path := ""
+var self_base_dump_path := ""
 var uitest_path := ""
 var uitest_only := ""
 var seq_dir := ""
@@ -72,6 +90,11 @@ var seq_ready := false
 var cli_path := ""
 var cli_mode := false
 var cli_seconds := 60.0
+# W26: headless-only CLI frame budget. Defaults are the historical 40 ms / 1500
+# ticks. Raising them changes only how many FIXED 1/FPS ticks run per frame;
+# tick size, tick order and all simulation semantics are untouched.
+var cli_frame_ms := 40.0
+var cli_ticks_cap := 1500
 var cli_ticks_left := 0
 var cli_t := 0.0
 var cli_done := false
@@ -134,6 +157,7 @@ func _ready() -> void:
 	cfg.load_all(config_path)
 	cfg.apply()
 	screenshot_focus = cfg.text("gameplay.screenshot_focus", "start")
+	start_zoom = cfg.num("camera.start_zoom", 0.75)
 	if seed_random:
 		Data.RANDOM_SEED = int(randi())
 	elif seed_arg >= 0:
@@ -170,6 +194,10 @@ func _ready() -> void:
 
 	if dump_path != "":
 		_dump_map()
+		return
+
+	if self_base_dump_path != "":
+		_dump_self_base()
 		return
 
 	# Test / capture modes skip the menu so they never wait for input.
@@ -326,6 +354,11 @@ func _apply_roster_cfg(roster: Array, n0: String, n1: String) -> void:
 	var teams := []
 	var ai := []
 	var ai_diff := []
+	# W5-2 / R06 C1: the raw per-slot donor id is authoritative. AI_DIFFICULTIES
+	# is the five-tier sim whitelist; "none" is the donor's human-slot marker and
+	# is stored verbatim so the array stays index-aligned with PLAYER_AI/NATIONS.
+	var allowed: Array = C3ConfigScript.AI_DIFFICULTIES.duplicate()
+	allowed.append("none")
 	for i in count:
 		var entry: Dictionary = roster[i] if roster[i] is Dictionary else {}
 		var fallback := n0 if i == 0 else n1
@@ -336,8 +369,11 @@ func _apply_roster_cfg(roster: Array, n0: String, n1: String) -> void:
 		names.append(str(entry.get("name", _menu_nation_name(sid, i))))
 		teams.append(int(entry.get("team", -1)))
 		ai.append(bool(entry.get("ai", i > 0)))
-		var mapped := str(entry.get("difficulty", "normal"))
-		if not ["easy", "normal", "hard"].has(mapped):
+		# Prefer the menu's "ai_difficulty" (raw donor id) over the legacy
+		# collapsed "difficulty" key so veryhard/impossible reach ai.gd (W5-1).
+		# Old configs without the new key fall back byte-identically to normal.
+		var mapped := str(entry.get("ai_difficulty", entry.get("difficulty", "normal")))
+		if not allowed.has(mapped):
 			mapped = "normal"
 		ai_diff.append(mapped)
 	Data.PLAYER_COUNT = count
@@ -521,6 +557,7 @@ func _do_async_load(cfg: Dictionary) -> void:
 	camera = C3CameraScript.new()
 	add_child(camera)
 	camera.bind(world)
+	camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
 	var homes := game.buildings_of(0)
 	if not homes.is_empty():
 		camera.position = homes[0].pos * world.view_scale
@@ -664,6 +701,175 @@ func _dump_map() -> void:
 	print("map dump: ", out)
 	_quit(0)
 
+# W5-2: write ONE post-setup snapshot (full mapgen paid once). Later
+# --self-only processes load it via _load_self_base() and skip mapgen entirely.
+func _dump_self_base() -> void:
+	game = C3Game.new()
+	add_child(game)
+	game.setup(start_mode)
+	var starts: Array = []
+	for s in game.map_starts:
+		starts.append([float(s.x), float(s.y)])
+	var zones: Array = []
+	for z in game.cluster_zones:
+		var zd: Dictionary = z
+		zones.append([float(zd.pos.x), float(zd.pos.y), float(zd.r)])
+	var dump := {
+		"format": "w52-self-base-1", "seed": int(Data.RANDOM_SEED),
+		"map_w": int(Data.MAP_W), "map_h": int(Data.MAP_H),
+		"base": game.serialize(),
+		"tileblock": Marshalls.raw_to_base64(game.tileblock),
+		"mine_mask": Marshalls.raw_to_base64(game.mine_mask),
+		"starts": starts, "zones": zones, "meta": game.map_meta,
+		"rng_state": game.rng.get("state"), "gen_rng_state": game.gen_rng.get("state"),
+		"sow_t": game.sow_t, "ai_enabled": Data.AI_ENABLED,
+	}
+	var out := _write_text(self_base_dump_path, JSON.stringify(dump))
+	if out == "":
+		printerr("dump-self-base: could not write ", self_base_dump_path)
+		_quit(1)
+		return
+	print("self-base dump: ", out)
+	# Round-trip proof: load into a second game and require exact parity with
+	# the just-generated world before declaring the snapshot usable.
+	var probe := C3Game.new()
+	add_child(probe)
+	var ok := _load_self_base(probe, out)
+	print("SELF-SNAPSHOT dump round-trip: ", "OK" if ok else "MISMATCH")
+	_quit(0 if ok else 1)
+
+# Numeric types survive JSON as floats, so compare recursively with numeric
+# coercion (ints/floats are equal by value, everything else by string form).
+func _same_json(a: Variant, b: Variant) -> bool:
+	if a is Dictionary and b is Dictionary:
+		if (a as Dictionary).size() != (b as Dictionary).size():
+			return false
+		for k in (a as Dictionary):
+			if not (b as Dictionary).has(k) or not _same_json((a as Dictionary)[k], (b as Dictionary)[k]):
+				return false
+		return true
+	if a is Array and b is Array:
+		if (a as Array).size() != (b as Array).size():
+			return false
+		for i in (a as Array).size():
+			if not _same_json((a as Array)[i], (b as Array)[i]):
+				return false
+		return true
+	if (a is int or a is float) and (b is int or b is float):
+		return float(a) == float(b)
+	return str(a) == str(b)
+
+# W5-2: restore a pre-baked snapshot into a FRESH C3Game without running
+# mapgen. The canonical deserializer restores entities/players/stats; it is
+# called with a 0x0 map so its own _assign_tileblocks() pass touches no cells,
+# then the real terrain arrays are installed verbatim from the dump. Returns
+# false (caller falls back to full setup) on any validation or parity failure.
+func _load_self_base(g: C3Game, path: String) -> bool:
+	var txt := FileAccess.get_file_as_string(path)
+	if txt == "":
+		printerr("self-snapshot: cannot read ", path)
+		return false
+	var parsed = JSON.parse_string(txt)
+	if not parsed is Dictionary:
+		printerr("self-snapshot: invalid JSON in ", path)
+		return false
+	var d: Dictionary = parsed
+	if str(d.get("format", "")) != "w52-self-base-1" or not d.has("base"):
+		printerr("self-snapshot: bad format in ", path)
+		return false
+	var bs = d["base"]
+	if not bs is Dictionary:
+		return false
+	var b: Dictionary = bs
+	if int(b.get("version", 0)) not in [3, 4]:
+		return false
+	if int(b.get("seed", -1)) != int(Data.RANDOM_SEED):
+		printerr("self-snapshot: seed mismatch (dump ", b.get("seed"),
+			", current ", Data.RANDOM_SEED, ")")
+		return false
+	if int(b.get("map_w", -1)) != int(Data.MAP_W) or int(b.get("map_h", -1)) != int(Data.MAP_H):
+		printerr("self-snapshot: map-size mismatch (dump ", b.get("map_w"), "x",
+			b.get("map_h"), ", current ", Data.MAP_W, "x", Data.MAP_H, ")")
+		return false
+	# A 1x1 stub keeps the canonical deserializer's own tile pass trivial while
+	# avoiding empty-PackedByteArray encoding warnings. Real arrays are set below.
+	var stub := PackedByteArray()
+	stub.resize(1)
+	var stub_h := PackedByteArray()
+	stub_h.resize(4)
+	var thin := b.duplicate(true)
+	thin["map_w"] = 1
+	thin["map_h"] = 1
+	thin["terrain"] = Marshalls.raw_to_base64(stub)
+	thin["blocked"] = Marshalls.raw_to_base64(stub)
+	thin["height"] = Marshalls.raw_to_base64(stub_h)
+	if not g.deserialize(thin):
+		printerr("self-snapshot: deserialize failed")
+		return false
+	g.MAP_W = int(b.map_w)
+	g.MAP_H = int(b.map_h)
+	g.terrain = Marshalls.base64_to_raw(str(b.terrain))
+	g.blocked = Marshalls.base64_to_raw(str(b.blocked))
+	var raw := Marshalls.base64_to_raw(str(b.height))
+	g.height.resize(g.MAP_W * g.MAP_H)
+	for i in mini(g.height.size(), int(raw.size() / 4)):
+		g.height[i] = raw.decode_float(i * 4)
+	g.tileblock = Marshalls.base64_to_raw(str(d.get("tileblock", "")))
+	g.mine_mask = Marshalls.base64_to_raw(str(d.get("mine_mask", "")))
+	var sarr = d.get("starts", [])
+	if sarr is Array:
+		g.map_starts = []
+		for s in sarr:
+			var sa: Array = s
+			g.map_starts.append(Vector2(float(sa[0]), float(sa[1])))
+	var zarr = d.get("zones", [])
+	if zarr is Array:
+		g.cluster_zones = []
+		for z in zarr:
+			var za: Array = z
+			g.cluster_zones.append({"pos": Vector2(float(za[0]), float(za[1])), "r": float(za[2])})
+	var meta = d.get("meta", {})
+	g.map_meta = meta.duplicate(true) if meta is Dictionary else {}
+	g.nav.configure(g.MAP_W, g.MAP_H, g.TILE)
+	g.nav_version += 1
+	Data.load_extra_anim_index()
+	if d.has("rng_state"):
+		g.rng.set("state", int(d.rng_state))
+	if d.has("gen_rng_state"):
+		g.gen_rng.set("state", int(d.gen_rng_state))
+	Data.AI_ENABLED = bool(d.get("ai_enabled", true))
+	g.sow_t = float(d.get("sow_t", 0.0))
+	g.events.clear()
+	g.projectiles.clear()
+	g.corpses.clear()
+	g.rubble.clear()
+	# Parity gate: refuse the fast path unless the loaded game reproduces every
+	# serialized field and the non-serialized map arrays byte-for-byte.
+	# JSON.parse_string returns floats for integer-looking numbers, so a plain
+	# str() compare would report a false MISMATCH on every numeric field.
+	var now := g.serialize()
+	var same := _same_json(now, b)
+	if not same:
+		for k in b:
+			if not _same_json(now.get(k, null), b[k]):
+				var a1 := str(b[k])
+				var a2 := str(now.get(k, "<missing>"))
+				printerr("self-snapshot: field '", k, "' differs (dump ",
+					a1.substr(0, mini(160, a1.length())), " / loaded ",
+					a2.substr(0, mini(160, a2.length())), ")")
+				break
+	if g.tileblock != Marshalls.base64_to_raw(str(d.get("tileblock", ""))):
+		same = false
+	if g.mine_mask != Marshalls.base64_to_raw(str(d.get("mine_mask", ""))):
+		same = false
+	if g.map_starts.size() != (sarr as Array).size():
+		same = false
+	if g.cluster_zones.size() != (zarr as Array).size():
+		same = false
+	print("SELF-SNAPSHOT fast load parity: ", "OK" if same else "MISMATCH",
+		" (", g.MAP_W, "x", g.MAP_H, ", ", g.entities.size(), " ents, seed ", b.seed, ")")
+	return same
+
 func _setup_full_game() -> void:
 	if not is_headless:
 		get_window().size = Vector2i(Data.WINDOW_WIDTH, Data.WINDOW_HEIGHT)
@@ -674,8 +880,20 @@ func _setup_full_game() -> void:
 
 	game = C3Game.new()
 	add_child(game)
-	game.setup(start_mode)
+	# W5-2: a standalone subset may skip the expensive mapgen entirely when a
+	# pre-baked post-setup snapshot is supplied and passes validation/parity.
+	# Canonical runs (no --self-only) never take this path.
+	var loaded_fast := false
+	if selftest_only != "" and self_snapshot_path != "" and FileAccess.file_exists(self_snapshot_path):
+		loaded_fast = _load_self_base(game, self_snapshot_path)
+	if not loaded_fast:
+		game.setup(start_mode)
 	game.game_over.connect(func(w: int) -> void: _on_game_over(w))
+	# W26 (T3 Scenario B): snapshot the freshly generated world ONCE. Subsets
+	# restore this instead of relying on cross-step side effects. Gates (no
+	# --self-only) never restore, so their byte-stable behaviour is unchanged.
+	if selftest_path != "":
+		selftest_baseline = game.serialize()
 
 	world = C3WorldScript.new()
 	world.bind(game)
@@ -684,6 +902,7 @@ func _setup_full_game() -> void:
 	camera = C3CameraScript.new()
 	add_child(camera)
 	camera.bind(world)
+	camera.set_zoom_target(start_zoom, Vector2.INF, true)  # W4-1: wide start
 	var homes := game.buildings_of(0)
 	# Small samples need the map centre to avoid an off-screen void; larger maps
 	# frame the first town hall (where starts/resources cluster), as in normal play.
@@ -817,6 +1036,14 @@ func _parse_args(args: PackedStringArray) -> void:
 				selftest_only = args[i + 1] if i + 1 < args.size() else ""
 				i += 2
 				continue
+			"--self-snapshot":
+				self_snapshot_path = args[i + 1] if i + 1 < args.size() else ""
+				i += 2
+				continue
+			"--dump-self-base":
+				self_base_dump_path = args[i + 1] if i + 1 < args.size() else ""
+				i += 2
+				continue
 			"--ui-test":
 				uitest_path = args[i + 1] if i + 1 < args.size() else "uitest.json"
 				i += 2
@@ -845,6 +1072,14 @@ func _parse_args(args: PackedStringArray) -> void:
 					continue
 			"--cli-seconds":
 				cli_seconds = clampf(float(args[i + 1]) if i + 1 < args.size() else 60.0, 1.0, 600.0)
+				i += 2
+				continue
+			"--cli-frame-ms":
+				cli_frame_ms = clampf(float(args[i + 1]) if i + 1 < args.size() else 40.0, 1.0, 60000.0)
+				i += 2
+				continue
+			"--cli-ticks-per-frame":
+				cli_ticks_cap = clampi(int(args[i + 1]) if i + 1 < args.size() else 1500, 1, 100000)
 				i += 2
 				continue
 			"--journey":
@@ -1211,7 +1446,7 @@ func _process(dt: float) -> void:
 				var target: Vector2 = (focus / float(n)) * world.view_scale
 				camera.position = camera.position.lerp(target, 0.35)
 				var want_zoom: float = 0.75 if fighting else 1.0
-				camera.zoom = camera.zoom.lerp(Vector2(want_zoom, want_zoom), 0.2)
+				camera.set_zoom_target(want_zoom)  # W4-1 smoothing owns the lerp
 	_consume_events()
 	walk_snd_t -= dt
 	if walk_snd_t <= 0.0:
@@ -1501,12 +1736,20 @@ func _write_bytes(given: String, img: Image) -> String:
 	return ""
 
 func _run_selftest() -> void:
-	# Self-test runs synchronously (about 1 s wall time, ~230 sim seconds).
+	# Self-test runs synchronously. Real wall time is per-step `wall_ms` in the
+	# report (T3 measured ~89 s for the full 29-step gate, not ~1 s).
 	# It is guarded by the wall-clock watchdog above, and every loop inside
 	# game.tick/selftest has a fixed step cap, so it cannot hang.
 	var st := C3SelfTest.new()
 	st.bind(game, hud, self)
-	var report: Dictionary = st.run_only(selftest_only) if selftest_only != "" else st.run()
+	st.set_baseline(selftest_baseline)
+	var report: Dictionary
+	if selftest_only == "":
+		report = st.run()                       # canonical 29-step gate: unchanged
+	elif selftest_only.find(",") >= 0:
+		report = st.run_groups(selftest_only)   # one process, baseline per group
+	else:
+		report = st.run_only(selftest_only)
 	var out := _write_text(selftest_path, JSON.stringify(report, "  "))
 	if out == "":
 		printerr("self-test: could not write ", selftest_path)
@@ -1578,15 +1821,17 @@ func _run_cli_incremental() -> void:
 	var step := 1.0 / Data.FPS
 	var frame_start := Time.get_ticks_msec()
 	var ticks_this_frame := 0
-	while cli_ticks_left > 0 and game.winner == -1 and ticks_this_frame < 1500:
+	while cli_ticks_left > 0 and game.winner == -1 and ticks_this_frame < cli_ticks_cap:
 		game.tick(step)
 		for brain in ais:
 			brain.tick(step)
 		cli_t += step
 		cli_ticks_left -= 1
 		ticks_this_frame += 1
-		# 40 ms per-frame budget: return to the main loop, never block.
-		if Time.get_ticks_msec() - frame_start > 40:
+		# Per-frame budget (default 40 ms): return to the main loop, never block.
+		# Only the budget changes; game.tick(step) still uses the same fixed step
+		# and the same order relative to brain.tick(step). No sim semantics change.
+		if Time.get_ticks_msec() - frame_start > cli_frame_ms:
 			break
 		if deadline_ms > 0 and Time.get_ticks_msec() >= deadline_ms - 200:
 			printerr("cli: wall-clock limit reached")

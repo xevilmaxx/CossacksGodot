@@ -21,17 +21,17 @@
 			"passed": true
 		},
 		{
-			"detail": "cannon shots +3, explode events +1, explode/crater fx=true",
+			"detail": "cannon shots +0, explode events +1, explode/crater fx=true",
 			"name": "artillery_explosion_fx",
-			"passed": true
+			"passed": false
 		},
 		{
-			"detail": "FX_CAP=220, before=7, after 280 adds=220 (oldest items evicted)",
+			"detail": "FX_CAP=220, before=1, after 280 adds=220 (oldest items evicted)",
 			"name": "fx_cap_respected",
 			"passed": true
 		}
 	],
 	"id": "t_smoke_fx",
-	"passed": true,
-	"unix_ms": 1795257633237.0
+	"passed": false,
+	"unix_ms": 1795512295080.0
 }

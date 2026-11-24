@@ -41,6 +41,12 @@ var route_node: Node2D = null
 var _mm_rect := Rect2()
 var _mm_rect_dirty := true
 var _mm_dragging := false
+# W3-2: hold a refusal/confirmation hint for a couple of seconds instead of
+# letting the next _process frame overwrite it with "" (or the ghost prompt).
+var _hint_hold_ms := 0
+# W4-2: wheel-delta accumulator. Input translation only (no tween/easing):
+# coalesce fractional high-resolution wheel deltas into whole notch requests.
+var _wheel_accum := 0.0
 
 func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 	game = g
@@ -52,6 +58,20 @@ func bind(g: C3Game, w: C3World, h: C3HUD, cam: C3Camera) -> void:
 		var p := "res://assets/ui/cursor_%s.bmp" % cn
 		if FileAccess.file_exists(p):
 			cursor_tex[cn] = load(p)
+	# X1 rank 5: donor rally mode uses the crSetRallyPoint cursor. No donor art
+	# is copied; tint the existing gotomine/construct cursor cyan-green instead.
+	var rbase: Texture2D = cursor_tex.get("gotomine", cursor_tex.get("construct", null))
+	# Imported BMPs are CompressedTexture2D, not ImageTexture; Texture2D.get_image()
+	# works for both (and is null on an uninitialised placeholder).
+	if rbase != null:
+		var src: Image = rbase.get_image()
+		if src != null and src.get_width() > 0:
+			var tinted: Image = src.duplicate()
+			for ty in tinted.get_height():
+				for tx in tinted.get_width():
+					var c: Color = tinted.get_pixel(tx, ty)
+					tinted.set_pixel(tx, ty, Color(c.r * 0.35, minf(1.0, c.g * 1.15), minf(1.0, c.b * 1.25 + 0.15), c.a))
+			cursor_tex["rally"] = ImageTexture.create_from_image(tinted)
 	_set_cursor("default")
 	# Draw the patrol route on the existing fx layer; a child node keeps this
 	# feature entirely inside input_controller.gd (world.gd is not owned here).
@@ -101,6 +121,21 @@ func _matches(k: InputEventKey, hk: Dictionary) -> bool:
 	if bool(hk.get("alt", false)) != k.alt_pressed:
 		return false
 	return true
+
+# W3-2: show a HUD hint and stop the idle _process pass from erasing it on the
+# very next frame, so "Need 40 stone" / refund notes are actually readable.
+func _hint(text: String, hold_s := 2.5) -> void:
+	if hud != null and hud.has_method("show_hint"):
+		hud.show_hint(text)
+		_hint_hold_ms = Time.get_ticks_msec() + int(hold_s * 1000.0)
+
+func _price_hint(cost: Dictionary) -> String:
+	var parts: Array = []
+	for k in Data.RES_NAMES:
+		var rk := str(k)
+		if int(cost.get(rk, 0)) > 0:
+			parts.append("%d %s" % [int(cost[rk]), rk])
+	return ", ".join(parts)
 
 func get_selected() -> Array:
 	var out: Array = []
@@ -199,6 +234,26 @@ func command_from_hud(action: String) -> void:
 		"stop":
 			for e in sel:
 				game.cmd_stop(e)
+		"select_idle_peasants":
+			select_idle_peasants()
+		"select_idle_mines":
+			select_idle_mines()
+
+# HUD top-bar buttons (donor eventresourcepanel.inc:35-36) reuse the same
+# select handlers as the idle-peasant / idle-mine hotkeys below.
+func select_idle_peasants() -> void:
+	var arr: Array = []
+	for e in game.units_of(0):
+		if e.sid == "peasant" and e.order.type == "none" and e.inside_of == 0:
+			arr.append(e)
+	_set_selection(arr)
+
+func select_idle_mines() -> void:
+	var arrm: Array = []
+	for b in game.buildings_of(0):
+		if b.sid.begins_with("mine_") and b.finished and int(b.workers) < int(b.get("slots", b.def.get("slots", 5))):
+			arrm.append(b)
+	_set_selection(arrm)
 
 # --- Micro #6: patrol waypoints and guard target ----------------------------
 func _clear_pending_modes() -> void:
@@ -313,9 +368,37 @@ func _pick(pw: Vector2, players_only := true) -> Dictionary:
 		return fb
 	return best
 
+# W4-2: pure input translation — a wheel event becomes one or more camera
+# zoom requests. No interpolation, easing, clamp or cursor math is computed
+# here; camera.gd (W4-1) owns all of that. The accumulator only coalesces
+# fractional high-resolution wheel deltas into whole notches, which removes
+# one-notch jitter on trackpad-style wheels without changing normal wheels.
+func _zoom_wheel(ev: InputEventMouseButton, sign: float) -> void:
+	if camera == null:
+		return
+	var fv: Variant = ev.get("factor")
+	var f: float = clampf(float(fv), 0.01, 8.0) if fv != null else 1.0
+	_wheel_accum += f
+	var notches: int = int(_wheel_accum)
+	if notches > 0:
+		_wheel_accum -= float(notches)
+		if camera.has_method("zoom_step"):
+			# W4-1 authoritative API: camera owns step size, smoothing and
+			# the clamp. Dynamic call: camera.gd has a float `zoom_step`
+			# member, so a literal call would not compile. Pass the wheel
+			# event position as the zoom-to-cursor anchor.
+			camera.call("zoom_step", sign * float(notches), ev.position)
+	get_viewport().set_input_as_handled()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
+		# W4-2: wheel translation lives here; set_input_as_handled() makes this
+		# and camera.gd's legacy wheel branch mutually exclusive, so one notch
+		# can never zoom twice regardless of scene-tree order.
+		if mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom_wheel(mb, 1.0 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else -1.0)
+			return
 		var mm := _minimap_screen_rect()
 		# T-NAV-RESPONSIVE: hud.gd's gui_input normally consumes minimap button
 		# presses first. These branches are the same-path fallback so minimap
@@ -365,6 +448,17 @@ func _unhandled_input(event: InputEvent) -> void:
 					for su in game.get_selected():
 						if not su.is_empty() and str(su.get("sid", "")) == "peasant":
 							sel_peasants.append(su)
+					# W3-2 / X1 C2-C5: refuse the click BEFORE the sim call when no
+					# peasant is selected or the escalated cost cannot be paid.
+					# Donor onshortcut.inc:270-276 / unit.script:10164-10177.
+					if sel_peasants.is_empty():
+						_hint("Select at least one peasant to build (right-click cancels)")
+						return
+					if hud.has_method("build_gate"):
+						var cg: Dictionary = hud.build_gate(hud.build_ghost_sid, pos)
+						if not bool(cg.get("ok", false)):
+							_hint(str(cg.get("reason", "Cannot build here.")))
+							return
 					# DO-L8.04: echo the central can_place reason on the HUD hint
 					# line before committing. Do NOT block the click: place_building
 					# re-validates (and handles mine-snap), shift-queue still works.
@@ -458,7 +552,7 @@ func _right_order(pw: Vector2) -> void:
 		for e in get_selected():
 			if e.player == 0 and e.kind == "building" and e.def.get("trains", []).size() > 0:
 				game.set_rally(e, pw)
-				hud.show_hint("Rally set")
+				_hint("Rally set (%.1f, %.1f)" % [pw.x, pw.y])
 		if world != null:
 			world.mark_rally_dirty()
 		return
@@ -483,7 +577,7 @@ func _right_order(pw: Vector2) -> void:
 		if not sel_blds.is_empty():
 			for b in sel_blds:
 				game.set_rally(b, pw)
-			hud.show_hint("Rally set")
+			_hint("Rally set (%.1f, %.1f)" % [pw.x, pw.y])
 			if world != null:
 				world.mark_rally_dirty()
 		return
@@ -726,6 +820,8 @@ func _handle_key(k: InputEventKey) -> void:
 			hud.build_ghost_sid = ""
 			hud.build_menu_open = false
 			hud.refresh_selection(get_selected())
+			# X1 rank 10: the ghost was never paid for, so say so explicitly.
+			_hint("Build cancelled - no resources spent")
 		else:
 			var m3 = get_tree().get_first_node_in_group("c3_main")
 			if m3 != null:
@@ -733,12 +829,20 @@ func _handle_key(k: InputEventKey) -> void:
 		return
 	if k.keycode == KEY_DELETE:
 		var wiped := false
+		var site_note := ""
 		for e in get_selected():
 			if e.player == 0 and not e.dead:
+				# W3-1 owns the refund: cmd_delete() already calls
+				# cancel_build_site() (game.gd:4222/4239). Only the hint is ours.
+				if e.kind == "building" and not bool(e.get("finished", false)):
+					var paid: Dictionary = e.get("paid_cost", {})
+					site_note = "Site cancelled - %s refunded" % (_price_hint(paid) if not paid.is_empty() else "resources")
 				game.cmd_delete(e)
 				wiped = true
 		if wiped:
 			hud.refresh_selection(get_selected())
+			if site_note != "":
+				_hint(site_note + " (full before work, half once work starts)")
 		return
 	if _is(k, "pause"):
 		game.paused = not game.paused
@@ -763,6 +867,12 @@ func _handle_key(k: InputEventKey) -> void:
 	if hud.build_menu_open:
 		for sid in build_keys:
 			if _matches(k, build_keys[sid]):
+				# X1 C4 / donor onshortcut.inc:276: refuse before opening the
+				# ghost, naming the missing resource instead of a silent no-op.
+				var hk_gate: Dictionary = hud.build_gate(sid)
+				if not bool(hk_gate.get("ok", false)):
+					_hint(str(hk_gate.get("reason", "Cannot build.")))
+					return
 				# "mine" is a single button; the deposit under the cursor
 				# picks gold / iron / coal automatically when placing it.
 				hud.build_ghost_sid = sid
@@ -835,11 +945,7 @@ func _handle_key(k: InputEventKey) -> void:
 				arrp.append(e)
 		_set_selection(arrp)
 	elif _is(k, "select_idle_mines"):
-		var arrm: Array = []
-		for b in game.buildings_of(0):
-			if b.sid.begins_with("mine_") and b.finished and int(b.workers) < int(b.get("slots", b.def.get("slots", 5))):
-				arrm.append(b)
-		_set_selection(arrm)
+		select_idle_mines()
 	elif _is(k, "add_same_type"):
 		var sel2 := get_selected()
 		if not sel2.is_empty():
@@ -874,11 +980,7 @@ func _handle_key(k: InputEventKey) -> void:
 			arr.append(e)
 		_set_selection(arr)
 	elif _is(k, "select_idle_peasants"):
-		var arr: Array = []
-		for e in game.units_of(0):
-			if e.sid == "peasant" and e.order.type == "none" and e.inside_of == 0:
-				arr.append(e)
-		_set_selection(arr)
+		select_idle_peasants()
 	elif _is(k, "select_all_buildings"):
 		var arr: Array = []
 		for e in game.buildings_of(0):
@@ -894,12 +996,19 @@ func _handle_key(k: InputEventKey) -> void:
 					arr.append(e)
 			_set_selection(arr)
 
+# X1 rank 5: a selected trainer advertises the right-click rally gesture.
+func _has_selected_trainer() -> bool:
+	for e in get_selected():
+		if e.player == 0 and e.kind == "building" and e.def.get("trains", []).size() > 0:
+			return true
+	return false
+
 func _process(_dt: float) -> void:
 	# the Rally button hands over to keyboard mode: next right-click sets it
 	if hud != null and hud.want_rally:
 		hud.want_rally = false
 		rally_mode = true
-		hud.show_hint("Rally: right-click the map to set the gather point")
+		_hint("Rally: right-click the map to set the gather point")
 	# drag rectangle overlay (drawn by the world in map space)
 	if world != null:
 		if dragging and drag_start != Vector2.INF:
@@ -911,16 +1020,20 @@ func _process(_dt: float) -> void:
 			world.sel_active = false
 	if patrol_mode and patrol_a != Vector2.INF and route_node != null:
 		route_node.queue_redraw()
-	# build ghost hint uses the message line, not the units/score label
-	if hud != null and hud.build_ghost_sid != "" and hud.has_method("show_hint"):
-		hud.show_hint("Placing %s - left-click to build, right-click to cancel" % hud.build_ghost_sid)
-	elif hud != null and patrol_mode and hud.has_method("show_hint"):
-		hud.show_hint("Patrol: click the first waypoint" if patrol_a == Vector2.INF else "Patrol: click the second waypoint")
-	elif hud != null and guard_mode and hud.has_method("show_hint"):
-		# keep the guard prompt set by begin_guard()
-		pass
-	elif hud != null and hud.has_method("show_hint"):
-		hud.show_hint("")
+	# build ghost hint uses the message line, not the units/score label.
+	# A held refusal/confirmation hint wins over the idle modes for a moment.
+	if Time.get_ticks_msec() >= _hint_hold_ms:
+		if hud != null and hud.build_ghost_sid != "" and hud.has_method("show_hint"):
+			hud.show_hint("Placing %s - left-click to build, right-click to cancel" % hud.build_ghost_sid)
+		elif hud != null and patrol_mode and hud.has_method("show_hint"):
+			hud.show_hint("Patrol: click the first waypoint" if patrol_a == Vector2.INF else "Patrol: click the second waypoint")
+		elif hud != null and guard_mode and hud.has_method("show_hint"):
+			# keep the guard prompt set by begin_guard()
+			pass
+		elif hud != null and hud.has_method("show_hint") and _has_selected_trainer():
+			hud.show_hint("Rally: right-click the map to set the gather point [R]")
+		elif hud != null and hud.has_method("show_hint"):
+			hud.show_hint("")
 	_update_cursor()
 
 func _set_cursor(name: String) -> void:
@@ -946,7 +1059,8 @@ func _update_cursor() -> void:
 		_set_cursor("artillery")
 		return
 	if rally_mode:
-		_set_cursor("gotomine")
+		# W3-2: cyan-tinted donor-style rally cursor, generated in bind().
+		_set_cursor("rally" if cursor_tex.has("rally") else "gotomine")
 		return
 	# T-PERF-RENDER: the hover scan below walks every entity plus every res
 	# node. Throttle it: recompute on mouse moves (>3 px), selection-size

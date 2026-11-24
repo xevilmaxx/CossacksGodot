@@ -57,7 +57,7 @@
       "step": "speed_pause"
     },
     {
-      "detail": "cursors 11 loaded, now default",
+      "detail": "cursors 12 loaded, now default",
       "passed": true,
       "step": "cursor_ctx"
     },

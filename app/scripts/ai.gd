@@ -3,6 +3,7 @@ extends RefCounted
 class_name C3AI
 
 const Data = preload("res://scripts/data.gd")
+const C3ConfigScript = preload("res://scripts/config.gd")
 
 var game: C3Game
 var player: int
@@ -10,6 +11,13 @@ var think_t := 0.0
 var wave := 0
 var raid_ids: Array = []
 var retreat_t := 0.0
+# W5-1: donor tier resolved once per think tick from the per-slot array, with a
+# safe fallback to the single global knob. "normal" remains the port default.
+var ai_tier := "normal"
+# T6-W24: donor gc_ai_BitvaInterval=8 (dmscript.global:478). Real-time cooldown
+# between sorties; decremented by the fixed sim step in tick(), so it is
+# deterministic and independent of the 1 s think interval.
+var wave_cd := 0.0
 
 # T5-AI: food-safety snapshot, recomputed once per think tick and shared by the
 # economy allocator, the training gate and the optional soak trace.
@@ -25,18 +33,48 @@ const AI_WOOD_FLOOR := 260.0
 const AI_STONE_FLOOR := 160.0
 # Seconds of whole-army upkeep kept as a live buffer before new soldiers train.
 const AI_FOOD_HORIZON_S := 45.0
+# Donor progresseconomicai.inc:795-799 keeps 4 peasants on wood/stone through
+# the famine recall ("always have 4 peasants for wood and stone").
+const AI_FAMINE_WOODSTONE_FLOOR := 4
+# W5-1 / donor PE:1405: _ai_TryUnit gates on the REAL unit cost, not on a
+# reserve horizon. Keep one peasant price (data.gd:580) free so a soldier order
+# cannot bankrupt the next farmer.
+const AI_TRAIN_FOOD_MARGIN := 100.0
+# W5-1 / donor CLS:4784-4788: armyMinCount lightinf=36, shootinf=16,
+# fasthorse=16, hardhorse=16. The old 1:1 ranged quota bought costly 2-force
+# serdiuks after 4 melee, which froze force growth in job 1262.
+const AI_RANGED_PER_MELEE := 16.0 / 36.0
+const AI_HORSE_PER_MELEE := 32.0 / 36.0
 
 func _init(g: C3Game, p: int) -> void:
 	game = g
 	player = p
 
+# W5-1: per-slot donor tier is indexed by the SIM PLAYER INDEX, exactly like
+# Data.PLAYER_NATIONS[player] (W5-2 publishes the raw donor id there).
+# "none" marks a human slot, not a sim tier, so it falls through to the global.
+func _tier() -> String:
+	var per: Array = Data.PLAYER_AI_DIFFICULTY
+	if player >= 0 and player < per.size():
+		var t := str(per[player])
+		if t != "" and t != "none" and C3ConfigScript.AI_DIFFICULTIES.has(t):
+			return t
+	var g := str(Data.AI_DIFFICULTY)
+	if C3ConfigScript.AI_DIFFICULTIES.has(g):
+		return g
+	return "normal"
+
 func tick(dt: float) -> void:
 	if not Data.AI_ENABLED:
 		return
+	# T6-W24: accumulate every fixed step, not only think ticks, so the 8 s
+	# donor-style battle interval stays exact and replay-stable.
+	wave_cd = maxf(0.0, wave_cd - dt)
 	think_t -= dt
 	if think_t > 0.0:
 		return
 	think_t = Data.AI_THINK_INTERVAL
+	ai_tier = _tier()
 	# T-PERF-SIM: invalidate the per-tick deposit cache.
 	_dep_cache.clear()
 	var p: Dictionary = game.players[player]
@@ -190,7 +228,7 @@ func _trace(res: Dictionary, p: Dictionary, peasants: Array, military: Array, fi
 	if not stone_node.is_empty():
 		stone_d = snappedf(stone_node.pos.distance_to(home_pos), 1.0)
 	var row := {
-		"p": player, "t": snappedf(game.time_s, 0.1),
+		"p": player, "t": snappedf(game.time_s, 0.1), "tier": ai_tier,
 		"food": snappedf(res.food, 1.0), "wood": snappedf(res.wood, 1.0), "stone": snappedf(res.stone, 1.0),
 		"gold": snappedf(res.gold, 1.0), "iron": snappedf(res.iron, 1.0), "coal": snappedf(res.coal, 1.0),
 		"famine": bool(p.get("famine", false)), "famine_t": snappedf(float(p.get("famine_t", 0.0)), 1.0),
@@ -308,9 +346,24 @@ func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionar
 	# configured threshold) only miners are recalled, so wood/stone gathering
 	# continues and the mill can still be afforded. cmd_gather() leaves mines.
 	var famine := bool(p.get("famine", false))
+	# T6-W24: donor floor (PE:795-799) — never recall the first 4 wood/stone
+	# workers. Stable peasants-array order is the tie-break, so no RNG is used
+	# and the same replay always protects the same workers.
+	var protected: Dictionary = {}
+	if ai_starving:
+		var ws: Array = []
+		for pe4 in peasants:
+			if pe4.inside_of != 0:
+				ws.append(pe4)
+			elif pe4.order.type == "gather" and str(pe4.order.get("res", "")) in ["wood", "stone"]:
+				ws.append(pe4)
+		for i in range(mini(AI_FAMINE_WOODSTONE_FLOOR, ws.size())):
+			protected[int(ws[i].id)] = true
 	if ai_starving:
 		for pe in peasants:
 			if pe.order.type == "resow" or (not famine and pe.inside_of == 0):
+				continue
+			if protected.has(int(pe.id)):
 				continue
 			var f2 := game.nearest_res(pe.pos, "food", 120.0)
 			if not f2.is_empty():
@@ -532,6 +585,30 @@ func _market_balance(market: Dictionary) -> void:
 
 func _research(res: Dictionary, fin: Dictionary) -> void:
 	var order := ["aca_bread1", "bla_sword1", "bla_armor1", "aca_wood1", "bla_bullet1", "sta_horse1", "art_caliber1", "mil_food1", "aca_field1", "cen_18c", "art_range1", "art_hp1"]
+	# W5-1: consume C3ConfigScript.AI_TIER_EFFECTS read-only. The default
+	# "normal" tier keeps the legacy order byte-identical. Donor PE:2204-2213
+	# sets easy attack/defence caps to 0/0; PE:3653-3658 caps mine upgrades at
+	# 2/3/4/5/5. Port upgrades are single-level rows, so only the zero cap and
+	# the mine row count have a faithful hook here (see report open questions).
+	var fx: Dictionary = C3ConfigScript.AI_TIER_EFFECTS.get(ai_tier, {})
+	var att := int(fx.get("max_level_att", 2))
+	var def := int(fx.get("max_level_def", 3))
+	if ai_tier != "normal" and att <= 0 and def <= 0:
+		var keep: Array = []
+		for uid0 in order:
+			var uu: Dictionary = Data.UPGRADES.get(uid0, {})
+			var e: Dictionary = uu.get("effect", {})
+			if e.has("damage_mult") or e.has("prot_bonus"):
+				continue
+			keep.append(uid0)
+		order = keep
+	if ai_tier != "normal":
+		var maxlevel := clampi(int(fx.get("mine_maxlevel", 3)), 1, 7)
+		for k in ["iron", "coal", "gold"]:
+			for lv in range(1, maxlevel + 1):
+				var uid2: String = "mine_" + str(k) + "_up" + str(lv)
+				if Data.UPGRADES.has(uid2):
+					order.append(uid2)
 	for uid in order:
 		var u: Dictionary = Data.UPGRADES.get(uid, {})
 		if u.is_empty() or game.players[player].upgrades.has(uid):
@@ -543,16 +620,26 @@ func _research(res: Dictionary, fin: Dictionary) -> void:
 
 # --- production: always fill queues, respect limits (uses train_unit!) ---
 func _train(peasants: Array, military: Array, res: Dictionary, counts: Dictionary, fin: Dictionary, p: Dictionary) -> void:
+	# W5-1: local food ledger so several buildings trained in the same think
+	# tick cannot overdraw the real resource (game.train_unit charges up front).
+	var food_budget: float = float(res.food)
 	# T5-AI: one reserve/income margin shared by all training. Peasants pay the
 	# same 100 food up front, so they respect the reserve too (with their cost
 	# on top); soldiers are gated below before ANY queue slot is consumed.
 	var food_workers := _count_food_workers(peasants)
 	var min_food_workers := maxi(1, ceili(float(peasants.size()) * 0.4))
-	var can_train_military := ai_food_ok and not ai_starving and food_workers >= min_food_workers
-	if int(fin.get("cen", 0)) > 0 and peasants.size() < Data.AI_MAX_PEASANTS and res.food >= maxf(ai_food_reserve, 100.0) + 100.0:
+	# W5-1 / donor PE:1405: _ai_TryUnit gates only on real cost. The port's
+	# 45 s horizon (ai_food_reserve >= AI_FOOD_THRESHOLD=260) left ai_food_ok
+	# false at the soak's ~240 food, so NO soldier was ever ordered and force
+	# crawled 40->46. Keep the reserve for build/economy priority, but gate an
+	# actual order on real famine only plus the per-unit cost check below.
+	var famine := bool(p.get("famine", false))
+	var can_train_military := (not famine) and food_workers >= min_food_workers
+	if int(fin.get("cen", 0)) > 0 and peasants.size() < Data.AI_MAX_PEASANTS and food_budget >= maxf(ai_food_reserve, 100.0) + 100.0:
 		for b in game.buildings_of(player):
 			if b.sid == "cen" and b.finished and b.queue.size() < 3:
-				game.train_unit(player, b, "peasant")
+				if game.train_unit(player, b, "peasant"):
+					food_budget -= 100.0
 				break
 	var priests := 0
 	var drums := 0
@@ -589,24 +676,64 @@ func _train(peasants: Array, military: Array, res: Dictionary, counts: Dictionar
 			if force >= float(Data.AI_ATTACK_FORCE) * 2.0:
 				continue
 			var want := "melee"
-			if cls["ranged"] < cls["melee"]:
+			# W5-1 / C9 donor CLS:4784-4788: 36 lightinf vs 16 shootinf and
+			# 16+16 horse. The old 1:1 ranged quota kept buying 60-food,
+			# 2-force serdiuks once ranged caught up with melee, so force grew
+			# ~2 per 10 s. Donor ratios keep the cheap 10-force melee majority.
+			if float(cls["ranged"]) < float(cls["melee"]) * AI_RANGED_PER_MELEE:
 				want = "ranged"
-			elif cls["cavalry"] < cls["melee"] / 2:
+			elif float(cls["cavalry"]) < float(cls["melee"]) * AI_HORSE_PER_MELEE:
 				want = "cavalry"
 			elif cls["artillery"] < 3 and b.sid == "art":
 				want = "artillery"
+			# T6-W24: train_unit() validates against the GENERIC sid held in
+			# building.def.trains (game.gd:3720) and resolves the nation itself.
+			# Passing an already-resolved sid ("strelet" for rus "serdiuk") made
+			# that gate fail forever: the 1247 soak stopped at force 40 / 4
+			# melee units as soon as the AI wanted its first ranged soldier.
+			# Use the resolved sid ONLY for the class check and the force value;
+			# order the GENERIC sid, which train_unit() accepts.
+			var nat: String = str(p.get("nation", ""))
+			if nat == "":
+				nat = str(Data.PLAYER_NATIONS[player])
 			var pick := ""
+			var pick_force := 0.0
+			var pick_food := 0.0
 			for o in b.def.trains:
-				var rs: String = Data.resolve_sid(str(Data.PLAYER_NATIONS[player]), str(o))
+				var rs: String = Data.resolve_sid(nat, str(o))
 				if not Data.UNITS.has(rs):
 					continue
 				if game._kind_class({"def": Data.UNITS[rs], "kind": "unit"}) == want:
-					pick = rs
+					pick = str(o)
+					pick_force = float(Data.UNITS[rs].aiforce)
+					var pr: Dictionary = Data.UNITS[rs].get("price", {})
+					pick_food = float(pr.get("food", 0.0))
 					break
 			if pick == "":
+				# Fallback: a barracks cannot train cavalry/artillery. Without
+				# this the class quota idled the queue forever once ranged
+				# caught up with melee. Produce any combat unit this building
+				# can train; def.trains order makes the choice deterministic.
+				for o2 in b.def.trains:
+					var rs2: String = Data.resolve_sid(nat, str(o2))
+					if not Data.UNITS.has(rs2) or bool(Data.UNITS[rs2].get("support", false)):
+						continue
+					var kc2: String = game._kind_class({"def": Data.UNITS[rs2], "kind": "unit"})
+					if kc2 in ["melee", "ranged", "cavalry", "artillery"]:
+						pick = str(o2)
+						pick_force = float(Data.UNITS[rs2].aiforce)
+						var pr2: Dictionary = Data.UNITS[rs2].get("price", {})
+						pick_food = float(pr2.get("food", 0.0))
+						break
+			if pick == "":
+				continue
+			# W5-1 / donor PE:1405: real-cost gate + one-peasant margin, using
+			# this tick's ledger so a fill of all 3 barracks stays affordable.
+			if pick_food > 0.0 and food_budget < pick_food + AI_TRAIN_FOOD_MARGIN:
 				continue
 			if game.train_unit(player, b, pick):
-				force += float(Data.UNITS[pick].aiforce)
+				force += pick_force
+				food_budget -= pick_food
 
 func _form_squads(military: Array) -> void:
 	if int(game.buildings_of(player).size()) == 0:
@@ -669,7 +796,17 @@ func _raids(military: Array, res: Dictionary) -> void:
 	for m in military:
 		if game._kind_class(m) == "cavalry" and m.order.type == "none":
 			cav.append(m)
-	if cav.size() < 6:
+	var min_cav := 6
+	# W5-1 / donor PE:2322-2327: numdiver 0/0/2/4/4. The port has no diver
+	# unit, so the only faithful hook in this file is the raid-party size:
+	# "normal" keeps the legacy 6, higher tiers commit their donor count.
+	# This is a PORT APPROXIMATION, not donor diver parity (see report).
+	if ai_tier != "normal":
+		var dz: Dictionary = C3ConfigScript.AI_TIER_EFFECTS.get(ai_tier, {})
+		var divers := int(dz.get("divers", 0))
+		if divers > 0:
+			min_cav = maxi(1, divers)
+	if cav.size() < min_cav:
 		return
 	# A wiped raid leaves raid_ids pointing only at dead units; without this
 	# cleanup those stale ids are never replaced and fresh cavalry never raids.
@@ -742,7 +879,12 @@ func _waves(military: Array, home: Dictionary, p: Dictionary) -> void:
 				enemy_home = b
 	if enemy_home.is_empty():
 		return
-	wave += 1
+	# T6-W24: donor gc_ai_BitvaInterval=8 (dg:478). A sortie may only be
+	# ordered once per interval; the timer is consumed only when an order is
+	# actually issued, so a targetless or idle tick never burns the cooldown.
+	if wave_cd > 0.0:
+		return
+	var sortied := false
 	for m in military:
 		if m.order.type != "none" and m.order.type != "attackmove":
 			continue
@@ -751,13 +893,21 @@ func _waves(military: Array, home: Dictionary, p: Dictionary) -> void:
 			var off: Dictionary = game.by_id.get(int(sq.officer), {})
 			if not off.is_empty() and not off.dead and off.order.type == "none":
 				game.cmd_attack_move(off, enemy_home.pos)
+				sortied = true
 			continue
 		var kc := game._kind_class(m)
 		if kc == "artillery":
 			game.cmd_attack_ground(m, enemy_home.pos)
+			sortied = true
 		elif kc == "ranged":
 			game.cmd_attack_move(m, enemy_home.pos + (home.pos - enemy_home.pos).normalized() * 14.0)
+			sortied = true
 		elif kc == "cavalry":
 			game.cmd_attack_move(m, enemy_home.pos + Vector2(10, -10))
+			sortied = true
 		else:
 			game.cmd_attack_move(m, enemy_home.pos)
+			sortied = true
+	if sortied:
+		wave += 1
+		wave_cd = 8.0

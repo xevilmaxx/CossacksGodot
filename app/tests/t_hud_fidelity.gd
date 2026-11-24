@@ -139,12 +139,12 @@ func _run() -> void:
 	var wood_txt := str(labels[wood_i].text) if wood_i >= 0 and labels.size() > wood_i else ""
 	var all_bracketed := true
 	for l in labels:
-		if not str(l.text).contains("["):
+		if not str(l.text).contains("("):
 			all_bracketed = false
 	var counts = hud.worker_counts
 	var wood_workers := int(counts.get("wood", 0)) if counts is Dictionary else 0
 	check("worker_counts_brackets",
-		all_bracketed and wood_workers >= 1 and wood_txt.contains("[%d]" % wood_workers),
+		all_bracketed and wood_workers >= 1 and wood_txt.contains("(%d)" % wood_workers),
 		"wood_workers=%d wood_line='%s' all_bracketed=%s worker_counts=%s" % [
 			wood_workers, wood_txt, str(all_bracketed), str(counts)])
 

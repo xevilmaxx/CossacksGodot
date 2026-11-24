@@ -37,6 +37,14 @@ var terrain_order: Array = []         # bake order (no eviction)
 # cached texture, one Sprite2D per missing in-view key, freed when baked.
 var fallback_chunks: Dictionary = {}  # Vector2i -> Sprite2D
 var fallback_tex: ImageTexture = null
+# P2 #3: steady-state chunk-scheduling gate. Recomputed from terrain_chunks.size()
+# on every _sync_terrain_chunks() call, so main.gd's quality-change clear (which
+# empties terrain_chunks) self-resets it without any edit outside world.gd.
+var lod_complete := false
+# P2 #3: view->chunk bounds (x=c0x, y=c0y, z=c1x, w=c1y) computed ONCE in sync()
+# and shared by terrain + forest syncs. -1 means "unset": a direct caller (the
+# forest bake tests) re-derives from view_rect via _view_chunk_bounds().
+var view_chunk_range := Vector4i(-1, -1, -1, -1)
 # QA-1 / N-07: one-shot per-bake timing over the first 120 bakes. The runner
 # harness only accepts an explicit BAKE_BENCH line; nothing here changes draw
 # output or the 2-chunk/frame bake-rate cap below (T5-RENDER keeps that rate,
@@ -1738,16 +1746,35 @@ func _make_chunk_sprite(cx: int, cy: int, tex: Texture2D, z: int, scale: float) 
 func has_chunk_or_fallback(k: Vector2i) -> bool:
 	return terrain_chunks.has(k) or fallback_chunks.has(k)
 
-func _sync_terrain_chunks() -> void:
+# P2 #3: the view->tile->chunk derivation used to be duplicated verbatim in
+# both sync functions. sync() now calls this ONCE and shares the result. Direct
+# callers (forest bake tests, which never run sync()) fall back to view_rect.
+func _view_chunk_bounds() -> Vector4i:
 	# view_rect is canvas pixels (meters x view_scale); tile_of wants meters
 	var m0 := view_rect.position / view_scale
 	var m1 := view_rect.end / view_scale
 	var t0 := game.tile_of(m0)
 	var t1 := game.tile_of(m1)
-	var c0x := maxi(0, t0.x / CHUNK_T)
-	var c0y := maxi(0, t0.y / CHUNK_T)
-	var c1x := mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T)
-	var c1y := mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T)
+	return Vector4i(
+		maxi(0, t0.x / CHUNK_T),
+		maxi(0, t0.y / CHUNK_T),
+		mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T),
+		mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T))
+
+func _sync_terrain_chunks() -> void:
+	# P2 #3: reuse the shared bounds computed in sync(); direct callers re-derive.
+	var cr: Vector4i = view_chunk_range if view_chunk_range.x >= 0 else _view_chunk_bounds()
+	var c0x: int = cr.x
+	var c0y: int = cr.y
+	var c1x: int = cr.z
+	var c1y: int = cr.w
+	var ncx: int = int(ceil(float(game.MAP_W) / float(CHUNK_T)))
+	var ncy: int = int(ceil(float(game.MAP_H) / float(CHUNK_T)))
+	# P2 #3: once all map chunks are resident, the whole-map reconciliation and
+	# LOD warm-up below do no work but still scan/sort every frame. Recompute
+	# from cache size each call so main.gd's quality clear (which empties
+	# terrain_chunks) self-resets the gate without an edit outside world.gd.
+	lod_complete = terrain_chunks.size() == ncx * ncy
 	# T5-RENDER: the WHOLE configured map stays resident. ceil(W/CHUNK_T)*
 	# ceil(H/CHUNK_T) = 100 chunks at 320x320. Two LODs, never evicted:
 	#   * in-view chunks get the FULL donor-texture bake (_build_chunk), ordered
@@ -1756,11 +1783,10 @@ func _sync_terrain_chunks() -> void:
 	# A full HIGH bake is ~5 s, so 100 of them is ~8 min and breaks short jobs;
 	# the LOD is ~3 ms/chunk. Either way every key is covered immediately, so a
 	# minimap jump never exposes the clear colour and upgrades over later frames.
-	for k in full_chunks.keys():
-		if not terrain_chunks.has(k):   # e.g. main.gd cleared chunks on quality change
-			full_chunks.erase(k)
-	var ncx: int = int(ceil(float(game.MAP_W) / float(CHUNK_T)))
-	var ncy: int = int(ceil(float(game.MAP_H) / float(CHUNK_T)))
+	if not lod_complete:
+		for k in full_chunks.keys():
+			if not terrain_chunks.has(k):   # e.g. main.gd cleared chunks on quality change
+				full_chunks.erase(k)
 	var in_view := {}
 	var ccx: float = float(c0x + c1x) * 0.5
 	var ccy: float = float(c0y + c1y) * 0.5
@@ -1804,16 +1830,18 @@ func _sync_terrain_chunks() -> void:
 		built += 1
 	# 2) Distant LOD warm-up: any map chunk with no texture yet. Time-budgeted so
 	#    it adds no frame hitch; entries accumulate and are never evicted.
-	var lod_budget_us := 8000
-	var lod_t0 := Time.get_ticks_usec()
-	for cy in ncy:
-		for cx in ncx:
-			var k := _chunk_key(cx, cy)
-			if terrain_chunks.has(k):
-				continue
-			if Time.get_ticks_usec() - lod_t0 >= lod_budget_us:
-				break
-			terrain_chunks[k] = _build_chunk_low(cx, cy)
+	#    P2 #3: skipped entirely at steady state (lod_complete) - no keys left.
+	if not lod_complete:
+		var lod_budget_us := 8000
+		var lod_t0 := Time.get_ticks_usec()
+		for cy in ncy:
+			for cx in ncx:
+				var k := _chunk_key(cx, cy)
+				if terrain_chunks.has(k):
+					continue
+				if Time.get_ticks_usec() - lod_t0 >= lod_budget_us:
+					break
+				terrain_chunks[k] = _build_chunk_low(cx, cy)
 	# 3) Reconcile fallbacks: cover any still-missing in-view key, free those
 	#    now baked or out of view. Keeps the no-hole invariant EVERY frame.
 	for k in in_view.keys():
@@ -1974,15 +2002,12 @@ func _sync_forest_chunks() -> void:
 		_forest_bake_key = sig
 	if not forest_bake_enabled or _forest_bake_busy:
 		return
-	# Same view -> tile -> chunk derivation as _sync_terrain_chunks().
-	var m0 := view_rect.position / view_scale
-	var m1 := view_rect.end / view_scale
-	var t0 := game.tile_of(m0)
-	var t1 := game.tile_of(m1)
-	var c0x := maxi(0, t0.x / CHUNK_T)
-	var c0y := maxi(0, t0.y / CHUNK_T)
-	var c1x := mini(int(ceil(float(game.MAP_W) / CHUNK_T)) - 1, t1.x / CHUNK_T)
-	var c1y := mini(int(ceil(float(game.MAP_H) / CHUNK_T)) - 1, t1.y / CHUNK_T)
+	# P2 #3: reuse the bounds computed once in sync(); direct callers re-derive.
+	var cr: Vector4i = view_chunk_range if view_chunk_range.x >= 0 else _view_chunk_bounds()
+	var c0x: int = cr.x
+	var c0y: int = cr.y
+	var c1x: int = cr.z
+	var c1y: int = cr.w
 	var ccx := float(c0x + c1x) * 0.5
 	var ccy := float(c0y + c1y) * 0.5
 	var q: Array = []
@@ -2048,8 +2073,12 @@ func sync(dt: float) -> void:
 	# visible WORLD rect (not screen pixels): cull in the same space the
 	# entities are drawn in, otherwise big maps hide everything
 	view_rect = get_viewport().get_canvas_transform().affine_inverse() * get_viewport_rect()
+	# P2 #3: derive the view->chunk range ONCE per sync and hand it to both
+	# syncs; clear it afterwards so direct callers always use their own view_rect.
+	view_chunk_range = _view_chunk_bounds()
 	_sync_terrain_chunks()
 	_sync_forest_chunks()  # T-FOREST-BAKE: bake at most 1-2 missing chunks/frame
+	view_chunk_range = Vector4i(-1, -1, -1, -1)
 	anim_t += dt
 	# TB-B1c: advance the GPU water clock EVERY frame (the old bake-time phase
 	# only changed on chunk rebuild, so a stationary camera saw frozen water).
@@ -2980,14 +3009,44 @@ func _draw_buildings() -> void:
 					bld_layer.draw_rect(Rect2(p.x - w / 2, apex.y - 10, w, 5), Color(0, 0, 0, 0.6))
 					bld_layer.draw_rect(Rect2(p.x - w / 2, apex.y - 10, w * k2, 5), Color(0.2, 0.9, 0.2))
 		if e.get("selected", false):
+			# W3-3 donor-styled aura. The original's glow is engine-side
+			# (SetHighlightRenderSettings / gGuiUpdateHighlights) and its textures
+			# are private-use, so this is procedural + the existing overlay PNGs:
+			# squashed player-tinted glow, dark under-ring, tinted donor ring_sel,
+			# pulsing corner diamonds, plus site-progress and garrison pips.
 			var rr: float = e.def.radius * view_scale + 9.0
-			bld_layer.draw_arc(p, rr, 0, TAU, 32, Color(0.15, 0.12, 0.08, 0.7), 3.0)
-			bld_layer.draw_arc(p, rr, 0, TAU, 32, Color(1, 1, 1, 0.95), 1.5)
+			var pc := _player_color(e.player)
+			var pulse := 0.85 + 0.15 * sin(anim_t * 3.0 + float(e.id) * 0.7)
+			# squash circles into a ground-hugging ellipse for the glow + halo
+			bld_layer.draw_set_transform(p, 0.0, Vector2(1.0, 0.5))
+			bld_layer.draw_circle(Vector2.ZERO, rr * 1.20, Color(pc.r, pc.g, pc.b, 0.08 * pulse))
+			bld_layer.draw_circle(Vector2.ZERO, rr * 0.96, Color(pc.r, pc.g, pc.b, 0.13 * pulse))
+			if not e.finished:
+				# unfinished site: progress halo around the aura (X1 rank 8)
+				var pk: float = clampf(e.progress / e.def.build_time, 0.0, 1.0)
+				bld_layer.draw_arc(Vector2.ZERO, rr * 1.34, 0.0, TAU, 32, Color(0, 0, 0, 0.35), 3.0)
+				bld_layer.draw_arc(Vector2.ZERO, rr * 1.34, -PI / 2.0, -PI / 2.0 + TAU * pk, 32,
+					Color(pc.r, pc.g, pc.b, 0.95), 3.0)
+			bld_layer.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			# thin dark under-ring keeps the aura readable on light terrain
+			bld_layer.draw_arc(p, rr, 0, TAU, 32, Color(0.05, 0.04, 0.03, 0.8), 3.0)
+			if ov_sel != null:
+				var sw := rr * 2.0
+				bld_layer.draw_texture_rect(ov_sel, Rect2(p.x - sw / 2, p.y - sw * 0.25, sw, sw * 0.5), false, pc)
 			for k in 4:
 				var a := k * PI / 2.0 + PI / 4.0
-				var q := p + Vector2(cos(a), sin(a)) * rr
-				bld_layer.draw_circle(q, 3.5, Color(0.2, 0.15, 0.08))
-				bld_layer.draw_circle(q, 2.5, Color(1, 0.85, 0.3))
+				var q := p + Vector2(cos(a) * rr, sin(a) * rr * 0.5)
+				var d: float = 2.4 + 0.8 * pulse
+				bld_layer.draw_circle(q, d + 1.0, Color(0.05, 0.04, 0.03, 0.85))
+				bld_layer.draw_circle(q, d, Color(pc.r, pc.g, pc.b, 0.95))
+			var garr: int = int(e.get("garrison", 0))
+			if garr > 0:
+				var gp: int = mini(garr, 10)
+				var gy := p.y + rr * 0.5 + 7.0
+				for gi in gp:
+					var gx := p.x - (gp - 1) * 3.5 + float(gi) * 7.0
+					bld_layer.draw_circle(Vector2(gx, gy), 2.5, Color(0.05, 0.04, 0.03, 0.8))
+					bld_layer.draw_circle(Vector2(gx, gy), 1.6, Color(1.0, 0.85, 0.35, 0.95))
 		# video pass: damaged buildings smoke and burn, contested ones fly white
 		if e.finished and not e.sid.begins_with("mine_"):
 			var frac: float = float(e.hp) / float(maxi(1, e.max_hp))
@@ -3540,20 +3599,34 @@ func _draw_fx() -> void:
 				if u.is_empty() or u.dead:
 					continue
 				fx_layer.draw_line(op, world_to_px(u.pos), Color(1, 1, 1, 0.35), 1.5)
-	# rally flags on barracks / stables / town halls (static: same gate)
+	# rally flags on the SELECTED building (WAVE3 decision D2: selected-gated;
+	# donor showrallypoints draws one marker per gSelectedObjects). Styling is
+	# primitive — the donor rallypoint.dds is private-use and stays uncopied.
 	if _fx_static_ok and game != null:
 		for e in game.entities:
 			if e.dead or e.kind != "building" or not e.has("rally"):
 				continue
-			if e.player != 0:
+			if e.player != 0 or not bool(e.get("selected", false)):
 				continue
 			var rp: Vector2 = e.rally
 			var bp := world_to_px(e.pos)
 			var fp := world_to_px(rp)
-			fx_layer.draw_line(bp, fp, Color(1, 1, 1, 0.4), 1.5)
-			fx_layer.draw_line(fp, fp + Vector2(0, -12), Color(0.3, 0.25, 0.2), 1.5)
-			fx_layer.draw_colored_polygon([fp + Vector2(0, -12), fp + Vector2(9, -10), fp + Vector2(0, -8)],
-				_player_color(e.player))
+			var rc := _player_color(e.player)
+			# ground-to-flag guide: dark under-layer + player-coloured core
+			fx_layer.draw_line(bp, fp, Color(0, 0, 0, 0.3), 3.0)
+			fx_layer.draw_line(bp, fp, Color(rc.r, rc.g, rc.b, 0.45), 1.5)
+			# foot disc so the marker reads against grass
+			fx_layer.draw_circle(fp, 4.0, Color(0, 0, 0, 0.45))
+			fx_layer.draw_circle(fp, 2.4, Color(rc.r, rc.g, rc.b, 0.7))
+			# wooden pole + lit edge
+			var top := fp + Vector2(0, -16)
+			fx_layer.draw_line(fp, top, Color(0.16, 0.10, 0.06), 2.5)
+			fx_layer.draw_line(fp + Vector2(-0.6, 0), top + Vector2(-0.6, 0), Color(0.55, 0.42, 0.25, 0.85), 0.8)
+			# pennant: dark outlined triangle tinted by player colour + finial
+			fx_layer.draw_colored_polygon([top, top + Vector2(11, 4), top + Vector2(0, 8)],
+				Color(0.05, 0.04, 0.03, 0.9))
+			fx_layer.draw_colored_polygon([top + Vector2(0.6, 1.0), top + Vector2(9.4, 4.2), top + Vector2(0.6, 6.9)], rc)
+			fx_layer.draw_circle(top, 1.8, Color(0.95, 0.85, 0.45))
 	_draw_ghost()
 	# in-flight shells and arrows (video: cannonballs arc across the field)
 	for pr in game.projectiles:

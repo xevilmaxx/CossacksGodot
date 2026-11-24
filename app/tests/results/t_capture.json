@@ -6,7 +6,7 @@
 			"passed": true
 		},
 		{
-			"detail": "mine capture flag=true, owner=0, deposit 6667->6667, nearest_mine(p0)=id=466",
+			"detail": "mine capture flag=true, owner=0, deposit 20000->20000, nearest_mine(p0)=id=429",
 			"name": "mine_deposit_captured_with_mine",
 			"passed": true
 		},
@@ -33,5 +33,5 @@
 	],
 	"id": "t_capture",
 	"passed": true,
-	"unix_ms": 1795257664100.0
+	"unix_ms": 1795510548238.0
 }

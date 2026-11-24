@@ -13,6 +13,32 @@ class_name C3Config
 
 const FILE_NAME := "config.json"
 
+# R06 C1 / donor dmscript.global:781-786,235: six lobby ids
+# (none=-1, easy=0, normal=1, hard=2, veryhard=3, impossible=4). "none" marks a
+# human slot, so the sim's canonical tiers are these five, in donor order.
+const AI_DIFFICULTIES := ["easy", "normal", "hard", "veryhard", "impossible"]
+
+# Donor-backed tier defaults (PE = units/global.inc/progresseconomicai.inc).
+# Documented for the W2-4 / main.gd / game.gd hand-off only: config.gd does not
+# apply them and leaves ai.gd behaviour and the game.gd resource cheat alone.
+#   easy        maxLevelAtt/Def 0/0 (PE:2205-2208), divers 0 (unset PE:2321),
+#               mine maxlevel 2 (PE:3654), cannon_count div 2 (PE:2355)
+#   normal      maxLevelAtt/Def 2/3 (PE:2209-2212), divers 0 (PE:2323),
+#               mine maxlevel 3 (PE:3655) - the unchanged port default
+#   hard        inherited 7/7 (PE:2202-2203), divers 2 (PE:2324),
+#               mine maxlevel 4 (PE:3656), howitzer 2..8 / mortar 8..40 (PE:2349-2352)
+#   veryhard    inherited 7/7, divers 4 (PE:2325), mine maxlevel 5 (PE:3657),
+#               artillery as hard
+#   impossible  inherited 7/7, divers 4 (PE:2326), mine maxlevel 5 (PE:3658),
+#               artillery as hard
+const AI_TIER_EFFECTS := {
+	"easy": {"max_level_att": 0, "max_level_def": 0, "divers": 0, "mine_maxlevel": 2},
+	"normal": {"max_level_att": 2, "max_level_def": 3, "divers": 0, "mine_maxlevel": 3},
+	"hard": {"max_level_att": 7, "max_level_def": 7, "divers": 2, "mine_maxlevel": 4},
+	"veryhard": {"max_level_att": 7, "max_level_def": 7, "divers": 4, "mine_maxlevel": 5},
+	"impossible": {"max_level_att": 7, "max_level_def": 7, "divers": 4, "mine_maxlevel": 5},
+}
+
 # The base values. config.json is merged over this, so a file that only
 # changes one line still works.
 const DEFAULT := {
@@ -436,7 +462,7 @@ func apply() -> void:
 	if pad is Array:
 		for v in (pad as Array):
 			var d := str(v)
-			Data.PLAYER_AI_DIFFICULTY.append(d if ["easy", "normal", "hard"].has(d) else "normal")
+			Data.PLAYER_AI_DIFFICULTY.append(d if AI_DIFFICULTIES.has(d) else "normal")
 
 	# T-MENU-ROSTER DEEP: full donor option set for saved configs. Unknown ids
 	# fall back to the donor default instead of corrupting the sim.
@@ -502,6 +528,10 @@ func apply() -> void:
 	Data.AI_ATTACK_FORCE = num("ai.attack_force", 60.0)
 	Data.AI_MAX_PEASANTS = int(num("ai.max_peasants", 14.0))
 	Data.AI_DIFFICULTY = text("ai.difficulty", "normal")
+	# Legacy port-only knobs below cover easy/hard. veryhard/impossible are now
+	# accepted ids but have no sim effect yet: consuming AI_TIER_EFFECTS above
+	# needs ai.gd (W2-4) + per-slot wiring in main.gd/game.gd. The "normal"
+	# default path is unchanged.
 	if Data.AI_DIFFICULTY == "easy":
 		Data.AI_THINK_INTERVAL *= 1.6
 		Data.AI_ATTACK_FORCE *= 0.7

@@ -253,5 +253,61 @@
     "cx": 0.4969
    }
   }
+ },
+ "battleship": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 19.311,
+    "center": [
+     -0.008,
+     -0.261,
+     4.985
+    ],
+    "ax": 0.5135,
+    "ay": 0.8896,
+    "tool": null,
+    "bbox": [
+     16,
+     28,
+     144,
+     152
+    ],
+    "fig_h": 0.775,
+    "foot": 0.95,
+    "cx": 0.5
+   }
+  }
+ },
+ "xebec": {
+  "cell": 160,
+  "actions": {
+   "hull": {
+    "frames": 1,
+    "duration": 1.0,
+    "loop": false,
+    "ortho": 15.52,
+    "center": [
+     -0.116,
+     -0.76,
+     5.062
+    ],
+    "ax": 0.5489,
+    "ay": 0.9988,
+    "tool": null,
+    "bbox": [
+     8,
+     14,
+     151,
+     149
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9313,
+    "cx": 0.4969
+   }
+  }
  }
 }

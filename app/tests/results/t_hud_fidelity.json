@@ -1,17 +1,17 @@
 {
 	"checks": [
 		{
-			"detail": "res_labels=6 texts=[\"0 [0]\", \"0 [1]\", \"0 [0]\", \"0 [0]\", \"0 [0]\", \"0 [0]\"] hud_report.resource_labels=true",
+			"detail": "res_labels=6 texts=[\"0  (0)\", \"0  (1)\", \"0  (0)\", \"0  (0)\", \"0  (0)\", \"0  (0)\"] hud_report.resource_labels=true",
 			"name": "six_resource_labels",
 			"passed": true
 		},
 		{
-			"detail": "wood_workers=1 wood_line='0 [1]' all_bracketed=true worker_counts={ \"food\": 0, \"wood\": 1, \"stone\": 0, \"gold\": 0, \"iron\": 0, \"coal\": 0 }",
+			"detail": "wood_workers=1 wood_line='0  (1)' all_bracketed=true worker_counts={ \"food\": 0, \"wood\": 1, \"stone\": 0, \"gold\": 0, \"iron\": 0, \"coal\": 0 }",
 			"name": "worker_counts_brackets",
 			"passed": true
 		},
 		{
-			"detail": "idle_count=7 eco_label='idle 7  slots 0'",
+			"detail": "idle_count=7 eco_label='idle 7'",
 			"name": "idle_warning_text",
 			"passed": true
 		},
@@ -33,5 +33,5 @@
 	],
 	"id": "t_hud_fidelity",
 	"passed": true,
-	"unix_ms": 1795507341718.0
+	"unix_ms": 1795514995372.0
 }

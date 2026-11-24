@@ -1,0 +1,90 @@
+{
+  "state": "PENDING_G32_SANDBOX_INCOMPLETE",
+  "measured_at": "2026-11-24",
+  "tool": "app/tools/heightmap3d_shot.py",
+  "shot": "app/shots/hm3d_full.png",
+  "shot_present": false,
+  "g32_sandbox": {
+    "gd_exists": true,
+    "gd_bytes": 169,
+    "world_exists": false,
+    "scene_exists": false,
+    "note": "heightmap3d_sandbox.gd is a 169-byte CLI probe stub, not a capture scene"
+  },
+  "donor_measured": {
+    "path": "C:\\Users\\Maxym.Oboyshev\\Downloads\\c3\\cossacks-3-v1-498085.jpg",
+    "size": "1280x720",
+    "mean_luma": 75.35,
+    "stddev_luma": 29.09,
+    "mode_luma": 94,
+    "nonblank_fraction": 0.7344,
+    "occupied_colour_buckets": 28,
+    "greenish_fraction": 0.2752,
+    "top_colours": [
+      {
+        "rgb_lo": [
+          64,
+          64,
+          32
+        ],
+        "share": 0.2376
+      },
+      {
+        "rgb_lo": [
+          32,
+          32,
+          0
+        ],
+        "share": 0.1747
+      },
+      {
+        "rgb_lo": [
+          96,
+          96,
+          32
+        ],
+        "share": 0.1709
+      },
+      {
+        "rgb_lo": [
+          32,
+          32,
+          32
+        ],
+        "share": 0.0665
+      },
+      {
+        "rgb_lo": [
+          96,
+          96,
+          64
+        ],
+        "share": 0.0536
+      },
+      {
+        "rgb_lo": [
+          64,
+          64,
+          0
+        ],
+        "share": 0.0508
+      }
+    ]
+  },
+  "m06_image_present": false,
+  "m06_documented": {
+    "source": "docs/SWARM_BOARD.md:407-413",
+    "ground_luma": 80.65,
+    "cliff_band_px": "2921->0",
+    "seam_gaps_px": 0,
+    "draw_calls": 78,
+    "frame_ms": 16,
+    "verdict": "visual FAIL: flat top-down tile mosaic"
+  },
+  "limits": [
+    "headless capture",
+    "no units/trees/HUD",
+    "camera FOV UNVERIFIED",
+    "no hm3d shot measured yet"
+  ]
+}

@@ -2065,6 +2065,11 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 	players[player].score += def.get("score", 0)
 	return e
 
+# W3-1: shared default rally for trainers, used both on completion and after a
+# capture (X1 C10) so _on_building_finished is not the only place that sets it.
+func _default_rally(e: Dictionary) -> Vector2:
+	return e.pos + Vector2(0, float(e.get("block_r", e.def.radius)) + 2.0)
+
 func _on_building_finished(e: Dictionary) -> void:
 	var p: Dictionary = players[e.player]
 	if e.def.has("farm"):
@@ -2085,7 +2090,7 @@ func _on_building_finished(e: Dictionary) -> void:
 		else:
 			e["deposit_left"] = deposits.get(e.def.mine, 0)
 	if e.def.has("trains"):
-		e["rally"] = e.pos + Vector2(0, float(e.get("block_r", e.def.radius)) + 2.0)
+		e["rally"] = _default_rally(e)
 	if e.sid == "mil":
 		_sow_field_ring(e)  # P-50: donor cSeedWheat on a finished mill
 	bld_dirty += 1
@@ -2716,15 +2721,35 @@ func _is_ally(a: int, b: int) -> bool:
 		return false
 	return ta == tb
 
-# T-MENU-ROSTER donor "Capture" rule. Peasant conversion is already gated by
-# Data.CAPTURE_ENABLED (main clears it for the no-peasant modes); this decides
-# which units may lean on a building capture point.
+# DONOR capture-mode semantics (R02 claim 3): the skirmish option governs WHAT
+# may change owner, not who may lean on a capture point. Modes:
+#   default                 -> capturable units + buildings
+#   no_peasants             -> no peasant *target*, buildings still fall
+#   no_peasants_or_centres  -> same, plus the town hall itself is frozen
+#   artillery_only          -> only artillery objects; buildings NEVER checked
+# The port has no artillery-object owner flip, so `artillery_only` disables the
+# building-capture path entirely (donor building.inc/nothing.inc:311-324).
+func _building_capture_allowed(e: Dictionary) -> bool:
+	match str(Data.CAPTURE_MODE):
+		"artillery_only":
+			return false
+		"no_peasants_or_centres":
+			return str(e.get("sid", "")) != "cen"
+		_:
+			return true
+
+# DONOR bcancapture=False on peasants and artillery (unit.script:461-470,
+# :1198, :1721+): only soldiers may capture buildings. The port keeps peasant
+# swarming as its tested "video pass" loop (t_capture.gd:103-106), so peasants
+# stay eligible; artillery is gated out of the building path here.
 func _capture_unit_allowed(u: Dictionary) -> bool:
+	if bool((u.get("def", {}) as Dictionary).get("artillery", false)):
+		return false
 	match str(Data.CAPTURE_MODE):
 		"no_peasants", "no_peasants_or_centres":
 			return str(u.get("sid", "")) != "peasant"
 		"artillery_only":
-			return bool((u.get("def", {}) as Dictionary).get("artillery", false))
+			return false
 		_:
 			return true
 
@@ -3638,6 +3663,38 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 		return {"ok": false, "reason": "Blocked ground (rock/forest/water)."}
 	return {"ok": true, "reason": ""}
 
+# W3-1: single source of truth for the cost place_building actually charges.
+# Mirrors the old inline escalation exactly: resolve the generic "mine" first,
+# skip walls/gates/mines, then pow(3,cnt) for a town hall or pow(1.5,cnt) for
+# every other sid. `cnt` counts FINISHED buildings only, matching the default
+# of buildings_of(player) (only_finished = true).
+func build_cost(player: int, sid: String, pos: Vector2) -> Dictionary:
+	var rsid := resolve_mine_sid(sid, pos)
+	var def: Dictionary = Data.BUILDINGS.get(rsid, {})
+	if def.is_empty():
+		return {}
+	var mult := 1.0
+	if not rsid.begins_with("mine_") and rsid != "wal" and rsid != "gat":
+		var cnt := 0
+		for b in buildings_of(player):
+			if b.sid == rsid:
+				cnt += 1
+		mult = pow(3.0, cnt) if rsid == "cen" else pow(1.5, cnt)
+	var cost := {}
+	for k in def.cost:
+		cost[k] = int(round(float(def.cost[k]) * mult))
+	return cost
+
+# W3-1: upfront affordability gate used by the sim and exposed for W3-2's HUD.
+# True only when the player can pay the ESCALATED cost at this spot.
+func can_afford(player: int, sid: String, pos: Vector2) -> bool:
+	if player < 0 or player >= players.size():
+		return false
+	var rsid := resolve_mine_sid(sid, pos)
+	if not Data.BUILDINGS.has(rsid):
+		return false
+	return Data.can_pay(players[player].res, build_cost(player, sid, pos))
+
 func place_building(player: int, sid: String, pos: Vector2, send := true, builders: Array = []) -> Dictionary:
 	# A single "Mine" request becomes the mine that matches this deposit.
 	sid = resolve_mine_sid(sid, pos)
@@ -3658,20 +3715,33 @@ func place_building(player: int, sid: String, pos: Vector2, send := true, builde
 			if n.type == def.mine and n.max_hits == 0 and n.pos.distance_to(pos) < MINE_SITE_RADIUS:
 				pos = n.pos
 				break
-	var mult := 1.0
-	if not sid.begins_with("mine_") and sid != "wal" and sid != "gat":
-		var cnt := 0
-		for b in buildings_of(player):
-			if b.sid == sid:
-				cnt += 1
-		mult = pow(3.0, cnt) if sid == "cen" else pow(1.5, cnt)
-	var esc_cost := {}
-	for k in def.cost:
-		esc_cost[k] = int(round(float(def.cost[k]) * mult))
+	# W3-1 / X1 C5: a human site with no builder is an orphan that can never
+	# finish. Refuse it up front; do NOT auto-assign idle peasants. AI calls
+	# pass send=false and issue their own build orders, so they are untouched.
+	if send:
+		var n_builders := 0
+		for u in builders:
+			if not (u is Dictionary) or bool(u.get("dead", false)):
+				continue
+			if int(u.get("player", -1)) != player or str(u.get("sid", "")) != "peasant":
+				continue
+			n_builders += 1
+		if n_builders == 0:
+			_say_human(player, "Select at least one peasant to build.")
+			return {}
+	# W3-1 / WAVE3_DECISIONS 4: gate on the same escalated cost the sim charges,
+	# before the site exists and before pay_cost touches the player's resources.
+	var esc_cost: Dictionary = build_cost(player, sid, pos)
+	if not can_afford(player, sid, pos):
+		_say_human(player, "Not enough resources.")
+		return {}
 	if not pay_cost(player, esc_cost):
 		_say_human(player, "Not enough resources.")
 		return {}
 	var b := spawn(sid, player, pos, false)
+	# W3-1: remember exactly what was paid so cancel/refund is faithful even if
+	# escalation would differ by the time the site is removed.
+	b["paid_cost"] = esc_cost.duplicate()
 	b.hp = maxi(1, int(def.hp * 0.25))
 	post_event("construct", pos, sid)
 	if not send:
@@ -3980,6 +4050,14 @@ var _sep_bld_ver := -1
 
 # T-PERF-SIM: upkeep slot order (food/gold/stone) into Data.RES_NAMES indices.
 const _UPKEEP_RES_IDX := [0, 3, 2]
+# DONOR T6-M01 (unit.script:8185-8201): bturnoff units stop firing while the
+# owner has <4 gold, with a 100-frame attack delay. Port has no bturnoff flag;
+# the deterministic analogue is gold-upkeep units (def.eat.gold), which
+# includes the naval yacht (data.gd:1043). Threshold is the donor literal 4;
+# a config key (economy.gold_fire_stop_res / _seconds) is needed to make it
+# tunable - data.gd/config.gd are owned by another worker.
+const _GOLD_FIRE_STOP_RES := 4.0
+const _GOLD_FIRE_STOP_S := 100.0 / 32.0
 func _tick_upkeep(dt: float) -> void:
 	# Upkeep, ported from player.script _player_ProcessResourceConsume
 	# (speed 20000, gc_time_to_frames = 32): each unit eats consume/625 units
@@ -4134,11 +4212,34 @@ func cmd_repair(pe: Dictionary, b: Dictionary) -> void:
 	_leave_building(pe)
 	pe.order = {"type": "repair", "target": b.id}
 
+# W3-1 / X1 C11: cancelling an unfinished site refunds what was actually paid.
+# Full refund (1.0) while no builder has worked the site; once work started the
+# refund is PARTIAL (SITE_REFUND_WORKED = 0.5) to represent consumed material.
+# Finished buildings are never refunded (donor demolition gives no refund).
+const SITE_REFUND_UNWORKED := 1.0
+const SITE_REFUND_WORKED := 0.5
+
+func cancel_build_site(e: Dictionary) -> bool:
+	if e.dead or e.kind != "building" or bool(e.get("finished", false)):
+		return false
+	var pi: int = int(e.get("player", -1))
+	if pi < 0 or pi >= players.size():
+		return false
+	var paid: Dictionary = e.get("paid_cost", {})
+	if paid.is_empty():
+		paid = build_cost(pi, str(e.sid), e.pos)
+	if paid.is_empty():
+		return false
+	var pct: float = SITE_REFUND_UNWORKED if float(e.get("progress", 0.0)) <= 0.0 else SITE_REFUND_WORKED
+	Data.refund(players[pi].res, paid, pct)
+	return true
+
 # Delete: remove your own selected units/buildings (wiki: delete what you
 # cannot hold so the enemy cannot capture it). No score penalty, farm freed.
 func cmd_delete(e: Dictionary) -> void:
 	if e.dead or e.player != 0:
 		return
+	cancel_build_site(e)
 	var sc: int = players[e.player].score
 	_kill(e, null, false)
 	players[e.player].score = sc
@@ -4798,6 +4899,12 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 	if not cost.is_empty() and not Data.can_pay(players[e.player].res, cost):
 		e.cooldown = 1.0
 		return
+	# DONOR T6-M01: gold-upkeep units (incl. ships) stop firing when the owner
+	# has <4 gold; deterministic state check, no new RNG.
+	if (e.def.get("eat", {}) as Dictionary).has("gold") \
+			and float(players[e.player].res[_UPKEEP_RES_IDX[1]]) < _GOLD_FIRE_STOP_RES:
+		e.cooldown = _GOLD_FIRE_STOP_S
+		return
 	# artillery must be deployed: the crew unlimbers before the first shot
 	if e.def.get("artillery", false) and float(e.get("deploy_t", 0.0)) < Data.ARTILLERY_DEPLOY_S:
 		e.cooldown = 0.25
@@ -4879,8 +4986,7 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 		players[oldp].entities.erase(t.id)
 		players[int(e.player)].entities.append(t.id)
 		post_event("capture", t.pos, "unit")
-		if e.player == 0:
-			say("Enemy peasant captured!")
+		_say_human(int(e.player), "Enemy peasant captured!")
 		return
 	# towers are fortifications: only artillery, grenades and arrows hurt them
 	if t.kind == "building" and t.sid in ["tow", "wal", "gat"] and not str(w.kind) in ["cannonball", "cannister", "arrow", "firearrow"]:
@@ -5256,9 +5362,9 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 	# capture: peasants do it properly, soldiers only lean on it.
 	# Video pass: a white flag goes up and the bar fills while peasants swarm
 	# an empty building; garrisoned towers resist.
-	# "No capturing peasants or centres" also freezes the town-hall itself.
-	var centres_frozen := str(Data.CAPTURE_MODE) == "no_peasants_or_centres" and str(e.sid) == "cen"
-	if e.finished and e.def.get("capture", false) and not centres_frozen:
+	# DONOR mode semantics: artillery_only never checks buildings; the
+	# no-peasants-or-centres mode freezes the town hall itself.
+	if e.finished and e.def.get("capture", false) and _building_capture_allowed(e):
 		var peasants_allowed := bool(Data.CAPTURE_ENABLED)
 		var peas := 0
 		var sols := 0
@@ -5316,9 +5422,19 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 					players[capturer].farm_cap += e.def.farm
 				if e.sid.begins_with("mine_"):
 					e["deposit_left"] = float(e.get("deposit_left", 0.0))
+				# R12-04: donor _unit_ClearOrders / _unit_CancelUpgradePerform
+				# (miscext.script:1115-1132) fire on capture - queued production
+				# and any in-progress upgrade are lost; no refund to old owner.
+				e["queue"] = []
+				e["research"] = null
 				e.erase("rally")
+				# W3-1 / X1 C10: _on_building_finished will not run again for a
+				# captured trainer, so re-arm the same default rally here.
+				if e.def.has("trains"):
+					e["rally"] = _default_rally(e)
 				post_event("capture", e.pos, e.sid)
-				say("A building was captured!")
+				# R02 claim 11 / P-44: do not spam the human chat for AI captures.
+				_say_human(capturer, "A building was captured!")
 		else:
 			e.capture_t = maxf(0.0, e.capture_t - dt)
 

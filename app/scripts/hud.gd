@@ -11,11 +11,14 @@ var icons_tex: Texture2D
 var units_tex: Texture2D
 var top_panel: PanelContainer
 var res_labels: Array = []
-# Donor-style economy read-outs (RE gap 3 / S11): bracketed worker counts per
-# resource, idle-villager + free mine-slot indicators and a gold deficit flag.
-# All derived from existing game state; no sim-layer changes.
-var eco_label: Label
+# Donor-style economy read-outs (RE gap 3 / S11): net worker counts per
+# resource in ( ), clickable idle-villager + free mine-slot buttons and a
+# per-resource deficit flag. All derived from existing game state; no sim edits.
+var eco_label: Button
+var mines_btn: Button
 var worker_counts: Dictionary = {}
+var upkeep_workers: Dictionary = {}  # donor showresourcepanel.inc:110 rawconsume -> worker units
+var ammo_blocked: Dictionary = {}    # donor gui.txt:59-60/77-78 iron+coal shot stop
 var idle_count := 0
 var free_slots_count := 0
 var gold_deficit := false
@@ -74,6 +77,7 @@ var _mm_cluster_rows := 0
 # even when the string is identical, so every per-frame label is dirty-flagged.
 var _last_res_text: Array = []
 var _last_eco_text := ""
+var _last_mines_text := ""
 var _last_status_text := "\n"
 var fps_label: Label
 var fps_t := 0.0
@@ -97,6 +101,18 @@ var trade_amount := 100.0
 # game.trade(player, give, want, amount). Gold is handled by Buy/Sell; the
 # resource pair selectors feed Exchange. Data.MARKET* supplies the rate/floor.
 const MARKET_TRADABLE := ["food", "wood", "stone", "iron", "coal"]
+# Donor data/locale/en/gui.txt:227-248 (resourcepanel.*.hint). Indexed in
+# Data.RES_NAMES order; the stock icon's hover hint is the donor's hint element.
+const RES_TOOLTIPS := [
+	"Food is produced by peasants in the fields and by fish boats at the port.",
+	"Wood is cut in the forests then stored at storehouses or town halls. Wood is primarily used for building construction.",
+	"Peasants gather stone at stone quarries then store it at storehouses or town halls. Stone is used for construction and for walls and towers.",
+	"Gold is produced at gold mines which can be placed over gold deposits. It recruits and maintains mercenaries and pays for upgrades; without gold, mercenaries rebel.",
+	"Iron is produced at iron mines. It recruits armored units and pays for upgrades and ammunition; without iron, ranged units cannot fire.",
+	"Coal is produced at coal mines. It is used to produce ammunition for ranged units, artillery and ships; without coal, they cannot fire.",
+]
+const RES_STOCK_CAP := 9999999  # donor gui.txt:251-252 "9999999+"
+const RES_STOCK_CAP_TEXT := "9999999+"
 # T-MINIMAP: bright amber-family marker per mine/quarry ore (distinct hues,
 # all readable on the dimmed terrain); the dark rim keeps them crisp.
 const MINE_MARKER_COLORS := {
@@ -315,16 +331,25 @@ func _build_top() -> void:
 		ic.texture = atlas(icons_tex, Data.RES_ICONS[i])
 		ic.custom_minimum_size = Vector2(36, 31)
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		# donor showresourcepanel.inc:141-144 resourcehintN hit rect + hint
+		ic.tooltip_text = RES_TOOLTIPS[i]
 		bar.add_child(ic)
 		var l := _mklbl("0", 17, Color(1, 0.97, 0.9))
 		bar.add_child(l)
 		res_labels.append(l)
-	# idle villager + unused mine slots, as in the donor's top strip (S11)
+	# Idle villagers + unused mine slots are donor GUI BUTTONS
+	# (showresourcepanel.inc:219-243, eventresourcepanel.inc:35-36). Both use
+	# the select handlers already wired in input_controller.gd.
 	var eco_sep := VSeparator.new()
 	bar.add_child(eco_sep)
-	eco_label = _mklbl("idle 0  slots 0", 14, Color(0.8, 0.85, 1))
-	eco_label.tooltip_text = "Idle peasants / free mine worker slots"
+	eco_label = _mkbtn("idle 0", 12, 26, 78)
+	eco_label.tooltip_text = "Select all idle peasants"
+	eco_label.pressed.connect(_on_select_idle_peasants)
 	bar.add_child(eco_label)
+	mines_btn = _mkbtn("slots 0", 12, 26, 78)
+	mines_btn.tooltip_text = "Select all unoccupied mines"
+	mines_btn.pressed.connect(_on_select_idle_mines)
+	bar.add_child(mines_btn)
 	var sep := VSeparator.new()
 	bar.add_child(sep)
 	status_label = _mklbl("", 15, Color(0.8, 0.85, 1))
@@ -408,6 +433,18 @@ func _on_menu() -> void:
 	audio_click.play()
 	if menu_cb.is_valid():
 		menu_cb.call()
+
+func _on_select_idle_peasants() -> void:
+	# Donor eventresourcepanel.inc:35 -> EmulateGUIShortcut('select|idlepeasants')
+	var ictl := get_tree().get_first_node_in_group("c3_input")
+	if ictl != null and ictl.has_method("command_from_hud"):
+		ictl.command_from_hud("select_idle_peasants")
+
+func _on_select_idle_mines() -> void:
+	# Donor eventresourcepanel.inc:36 -> EmulateGUIShortcut('select|idlemines')
+	var ictl := get_tree().get_first_node_in_group("c3_input")
+	if ictl != null and ictl.has_method("command_from_hud"):
+		ictl.command_from_hud("select_idle_mines")
 
 func _settings_text() -> String:
 	var src := "built-in defaults"
@@ -623,7 +660,9 @@ func refresh_selection(selected: Array) -> void:
 				# rally point: one click enters the mode, right-click then sets it
 				if e.def.get("trains", []).size() > 0:
 					var ral := _mkbtn("Rally [R]", 14, 50, 64)
-					ral.tooltip_text = "Set rally point: click, then right-click the map"
+					# X1 rank 5: right-click on an already-selected trainer sets
+					# the rally directly; the button/keyboard mode is a second path.
+					ral.tooltip_text = "Set rally point: right-click the map while this building is selected, or click here then right-click [R]"
 					ral.pressed.connect(_on_rally_mode)
 					build_bar.add_child(ral)
 	# squad panel: officer + soldiers -> Form [F], Line [J], Column [K], Square [L]
@@ -841,6 +880,11 @@ func _on_attack_hint() -> void:
 
 func _on_build_pick(sid: String) -> void:
 	audio_click.play()
+	# W3-2 / X1 C4: gate the ghost before it opens (donor onshortcut.inc:276).
+	var gate: Dictionary = build_gate(sid)
+	if not bool(gate.get("ok", false)):
+		show_hint(str(gate.get("reason", "Cannot build.")))
+		return
 	build_ghost_sid = sid
 	build_menu_open = false
 	refresh_selection(game.get_selected())
@@ -877,6 +921,12 @@ func _selection_summary(mine: Array) -> String:
 				s += " " + str(first.order.res)
 	else:
 		s += "  HP %d/%d" % [maxi(0, first.hp), first.max_hp]
+		# X1 C8 / rank 5: make the rally discoverable on selection — show the
+		# stored point, or the right-click gesture when no point is set yet.
+		if first.has("rally") and first.rally is Vector2:
+			s += "  Rally set (%.1f, %.1f)" % [first.rally.x, first.rally.y]
+		elif first.def.get("trains", []).size() > 0:
+			s += "  Rally: right-click map"
 		if not first.finished:
 			s += "  under construction"
 		elif first.queue.size() > 0:
@@ -886,7 +936,12 @@ func _selection_summary(mine: Array) -> String:
 		if first.get("research") != null:
 			s += "  researching %s" % first.research.uid
 		if float(first.get("capture_t", 0.0)) > 0.1:
-			s += "  CAPTURE %.0f%%" % (float(first.capture_t) / 8.0 * 100.0)
+			# Handoff W2-1 / R2 claim 10: the sim computes the full time locally
+			# at game.gd:5297 (5 + max_hp/2500 s) and does not store it on the
+			# entity, so mirror that expression instead of the old fixed 8.0 s.
+			var need: float = 5.0 + float(first.max_hp) / 2500.0
+			var pct: float = clampf(float(first.capture_t) / maxf(need, 0.001) * 100.0, 0.0, 100.0)
+			s += "  CAPTURE %.0f%%" % pct
 		if game.players[0].get("famine", false):
 			s += "  FAMINE!"
 	return s
@@ -898,6 +953,74 @@ func _price_text(cost: Dictionary) -> String:
 			parts.append("%d %s" % [cost[k], k])
 	return " ".join(parts) if parts.size() > 0 else "free"
 
+# W3-2 / X1 C3-C5: the UI gates on the SAME escalated cost the sim charges.
+# W3-1 exposes game.build_cost()/game.can_afford() (game.gd:3671,3690). The
+# fallback mirrors the old inline escalation if that API is unavailable; pos
+# only changes the concrete sid of the generic "mine" button.
+func build_cost_ui(sid: String, pos := Vector2.ZERO) -> Dictionary:
+	if game == null:
+		return {}
+	if game.has_method("build_cost"):
+		var raw: Variant = game.build_cost(0, sid, pos)
+		if raw is Dictionary:
+			return (raw.get("cost") if raw.get("cost") is Dictionary else raw) as Dictionary
+	var rsid := sid
+	if game.has_method("resolve_mine_sid"):
+		rsid = str(game.resolve_mine_sid(sid, pos))
+	var def: Dictionary = Data.BUILDINGS.get(rsid, {})
+	if def.is_empty():
+		return {}
+	var mult := 1.0
+	if not rsid.begins_with("mine_") and rsid != "wal" and rsid != "gat":
+		var cnt := 0
+		for b in game.buildings_of(0):
+			if b.sid == rsid:
+				cnt += 1
+		mult = pow(3.0, cnt) if rsid == "cen" else pow(1.5, cnt)
+	var out := {}
+	for k in def.cost:
+		out[k] = int(round(float(def.cost[k]) * mult))
+	return out
+
+func missing_cost_text(sid: String, pos := Vector2.ZERO) -> String:
+	if game == null:
+		return ""
+	var cost := build_cost_ui(sid, pos)
+	var res: Array = game.players[0].res
+	var parts: Array = []
+	for k in Data.RES_NAMES:
+		var rk := str(k)
+		var need := int(cost.get(rk, 0))
+		if need <= 0:
+			continue
+		var have := int(res[Data.RES_NAMES.find(rk)])
+		if need > have:
+			parts.append("%d %s" % [need - have, rk])
+	if parts.is_empty():
+		return ""
+	return "Need " + ", ".join(parts)
+
+# Donor onshortcut.inc:270-276 gates the ghost on cost; unit.script:10164-10177
+# requires a selected peasant. One gate for build buttons, hotkeys and clicks.
+func build_gate(sid: String, pos := Vector2.ZERO) -> Dictionary:
+	if game == null:
+		return {"ok": false, "reason": "Cannot build right now."}
+	var peas := 0
+	for e in game.get_selected():
+		if e.player == 0 and not e.dead and str(e.get("sid", "")) == "peasant":
+			peas += 1
+	if peas == 0:
+		# W3-1 hand-off note 3: echo the sim's refusal string verbatim.
+		return {"ok": false, "reason": "Select at least one peasant to build (right-click cancels)."}
+	if sid == "bar18" and not bool(game.players[0].get("has18c", false)):
+		return {"ok": false, "reason": "Research the 18th century first (Town Hall)."}
+	var miss := missing_cost_text(sid, pos)
+	if miss != "":
+		return {"ok": false, "reason": miss}
+	if game.has_method("can_afford") and not bool(game.can_afford(0, sid, pos)):
+		return {"ok": false, "reason": "Not enough resources for %s." % ConfigScript.building_name(sid)}
+	return {"ok": true, "reason": ""}
+
 # The name of a unit or a building, as the settings file gives it.
 func _name_of(e: Dictionary) -> String:
 	if e.kind == "building":
@@ -905,19 +1028,30 @@ func _name_of(e: Dictionary) -> String:
 	return ConfigScript.unit_name(e.sid)
 
 func _refresh_build_menu(peasants: Array) -> void:
-	var order := ["cen", "hou", "wal", "bar", "sta", "bla", "aca", "sto", "mil", "mar", "art", "tow", "mine"]
+	# X1 C6 / WAVE3 ruling 5: expose the four data+art-backed sids that the AI
+	# already uses. `bar18` shares the barracks icon; `gat` shares the wall icon;
+	# `dock` has its own icon and a procedural in-world fallback.
+	var order := ["cen", "hou", "wal", "bar", "bar18", "dip", "sta", "bla", "aca", "sto",
+		"mil", "mar", "art", "tow", "gat", "dock", "mine"]
 	for sid in order:
 		# One generic Mine button: all three mine types share the same icon,
 		# cost and build time, so the gold def is just the display template.
 		# The deposit under the cursor decides which mine actually gets built.
 		var def: Dictionary = Data.BUILDINGS["mine_gold" if sid == "mine" else sid]
 		var b := _unit_button(icons_tex, def.icon, "")
+		# W3-1 hand-off: echo what the sim actually charges, not def.cost.
+		var cost: Dictionary = build_cost_ui(sid)
 		var tip := "%s  [%s]  %s  Time: %ds" % [ConfigScript.building_name(sid), _key_text(sid),
-			_price_text(def.cost), int(round(float(def.get("build_time", 0.0))))]
+			_price_text(cost), int(round(float(def.get("build_time", 0.0))))]
+		if cost != def.cost:
+			tip += "  (escalated)"
 		if sid == "mine":
 			tip += "  - type follows the ore deposit"
+		if sid == "bar18" and not bool(game.players[0].get("has18c", false)):
+			tip += "  - needs 18th-century research"
 		b.tooltip_text = tip
-		b.disabled = not Data.can_pay(game.players[0].res, def.cost)
+		var afford: bool = bool(game.can_afford(0, sid, Vector2.ZERO)) if game.has_method("can_afford") else Data.can_pay(game.players[0].res, cost)
+		b.disabled = not afford or (sid == "bar18" and not bool(game.players[0].get("has18c", false)))
 		b.pressed.connect(_on_build_pick.bind(sid))
 		build_buttons[sid] = b
 		build_bar.add_child(b)
@@ -982,7 +1116,9 @@ func _update_dynamic() -> void:
 		elif d.kind == "build":
 			var def: Dictionary = Data.BUILDINGS.get("mine_gold" if d.sid == "mine" else d.sid, {})
 			if not def.is_empty():
-				b.disabled = not Data.can_pay(game.players[0].res, def.cost)
+				var cost2: Dictionary = build_cost_ui(d.sid)
+				var afford2: bool = bool(game.can_afford(0, d.sid, Vector2.ZERO)) if game.has_method("can_afford") else Data.can_pay(game.players[0].res, cost2)
+				b.disabled = not afford2 or (d.sid == "bar18" and not bool(game.players[0].get("has18c", false)))
 
 func show_hint(text: String) -> void:
 	# T-PERF-RENDER: input_controller calls this every frame with "" when idle;
@@ -1000,17 +1136,20 @@ func game_over(winner: int) -> void:
 	game_over_label.add_theme_color_override("font_color", Color(1, 0.9, 0.3) if winner == 0 else Color(1, 0.4, 0.3))
 
 # Economy read-outs derived entirely from existing game state (no sim edits):
-#  - bracketed worker count per resource = peasants gathering that resource,
-#    or miners inside a mine (inside_of -> "mine_<res>" building)
-#  - idle peasants + free mine slots = the donor's two top-bar warnings (S11)
-#  - gold upkeep rate vs mine income rate = the donor's red-negative-upkeep
-#    signal, using the sim's own UPKEEP_DIVISOR / MINE_INCOME_PER_S constants.
+#  - net worker count per resource in ( ) = peasants gathering that resource
+#    (or miners inside a mine) minus the donor's upkeep-in-worker-units term
+#  - idle peasants + free mine slots = the donor's two top-bar BUTTONS (S11)
+#  - gold upkeep rate vs mine income rate keeps the existing deficit signal;
+#    iron/coal use the sim's own shot-cost gate (gui.txt:59-60/77-78) instead.
 func _recompute_eco() -> void:
 	if game == null:
 		return
 	var counts := {}
+	var consume_raw := {}
+	ammo_blocked.clear()
 	for r in Data.RES_NAMES:
 		counts[str(r)] = 0
+		consume_raw[str(r)] = 0
 	var idle := 0
 	var slots := 0
 	var gold_upkeep := 0.0
@@ -1022,6 +1161,20 @@ func _recompute_eco() -> void:
 		var eat: Dictionary = e.def.get("eat", {})
 		if eat.has("gold"):
 			gold_upkeep += float(eat["gold"]) / Data.UPKEEP_DIVISOR
+		# Donor lib/unit.script:3810 accumulates resconsume[i] from object consume.
+		for k in eat:
+			if consume_raw.has(str(k)):
+				consume_raw[str(k)] += int(eat[k])
+		# Donor gui.txt:59-60/77-78: iron/coal short => ranged units cannot fire.
+		# game.gd:4826 already gates _fire() on can_pay(res, weapon cost).
+		if str(e.kind) == "unit":
+			for w in e.def.get("weapons", []):
+				var wc: Dictionary = (w as Dictionary).get("cost", {})
+				if (wc.has("iron") or wc.has("coal")) and not Data.can_pay(p.res, wc):
+					if wc.has("iron"):
+						ammo_blocked["iron"] = true
+					if wc.has("coal"):
+						ammo_blocked["coal"] = true
 		if str(e.sid) != "peasant":
 			continue
 		var o: Dictionary = e.get("order", {})
@@ -1042,12 +1195,21 @@ func _recompute_eco() -> void:
 		var eat2: Dictionary = b.def.get("eat", {})
 		if eat2.has("gold"):
 			gold_upkeep += float(eat2["gold"]) / Data.UPKEEP_DIVISOR
+		for k in eat2:
+			if consume_raw.has(str(k)):
+				consume_raw[str(k)] += int(eat2[k])
 		var bsid: String = str(b.sid)
 		if bsid.begins_with("mine_") and bool(b.finished):
 			var used: int = int(b.get("workers", 0))
 			slots += maxi(0, int(b.get("slots", b.def.get("slots", 5))) - used)
 			if bsid.substr(5) == "gold":
 				gold_income += float(used) * Data.MINE_INCOME_PER_S * float(p.get("mine_mult", 1.0))
+	# Donor showresourcepanel.inc:110: floor((resconsume*32/100)/250) workers.
+	var uw := {}
+	for r in Data.RES_NAMES:
+		var rk := str(r)
+		uw[rk] = int(floor(float(consume_raw[rk]) * 32.0 / 100.0 / 250.0))
+	upkeep_workers = uw
 	worker_counts = counts
 	idle_count = idle
 	free_slots_count = slots
@@ -1072,31 +1234,47 @@ func _process(dt: float) -> void:
 		_cached_ucount = game.unit_count(0) + game.queue_count(0)
 	for i in 6:
 		var rname: String = str(Data.RES_NAMES[i])
-		var rt := "%d [%d]" % [int(game.players[0].res[i]), int(worker_counts.get(rname, 0))]
+		var stock: int = int(game.players[0].res[i])
+		var stock_s: String = RES_STOCK_CAP_TEXT if stock > RES_STOCK_CAP else str(stock)
+		# Donor showresourcepanel.inc:101-125: gross workers for food/wood/stone,
+		# (income-consumption) for gold/iron/coal, red when net < 0.
+		var workers: int = int(worker_counts.get(rname, 0))
+		var consume: int = int(upkeep_workers.get(rname, 0)) if i >= 3 else 0
+		var net: int = workers - consume
+		var net_s: String = "(%d-%d)" % [workers, consume] if consume > 0 else "(%d)" % workers
+		var rt := "%s  %s" % [stock_s, net_s]
 		# T-PERF-RENDER: dirty-flagged text (same-string assignment relayouts).
 		while _last_res_text.size() < 6:
 			_last_res_text.append("")
 		if rt != str(_last_res_text[i]):
 			_last_res_text[i] = rt
 			res_labels[i].text = rt
-		# donor colours a resource red when upkeep outruns income/stock
 		var deficit := false
 		if i == 0:
 			deficit = bool(game.players[0].famine)
 		elif i == 3:
-			deficit = gold_deficit or float(game.players[0].get("gold_famine_t", 0.0)) > 0.0
+			deficit = gold_deficit or net < 0 or float(game.players[0].get("gold_famine_t", 0.0)) > 0.0
+		elif i == 4 or i == 5:
+			deficit = net < 0 or bool(ammo_blocked.get(rname, false))
 		if deficit != bool(res_deficit[i]):
 			res_deficit[i] = deficit
 			res_labels[i].add_theme_color_override("font_color", Color(1, 0.42, 0.38) if deficit else Color(1, 0.97, 0.9))
 	if eco_label != null:
-		var et := "idle %d  slots %d" % [idle_count, free_slots_count]
+		var et := "idle %d" % idle_count
 		if et != _last_eco_text:
 			_last_eco_text = et
 			eco_label.text = et
+		eco_label.disabled = idle_count <= 0
 		var warn: bool = idle_count > 0
 		if warn != eco_warn:
 			eco_warn = warn
 			eco_label.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if warn else Color(0.8, 0.85, 1))
+	if mines_btn != null:
+		var mt := "slots %d" % free_slots_count
+		if mt != _last_mines_text:
+			_last_mines_text = mt
+			mines_btn.text = mt
+		mines_btn.disabled = free_slots_count <= 0
 	var ucount := _cached_ucount  # throttled on eco_t (~0.5 s); other fields stay live
 	# the hint line carries placement text; the status line keeps units/score
 	if hint_label == null or hint_label.text == "":
@@ -1586,6 +1764,8 @@ func hud_report() -> Dictionary:
 		"top_bar": top_panel != null and top_panel.visible,
 		"status_text": status_label.text,
 		"worker_counts": worker_counts.duplicate(true),
+		"upkeep_workers": upkeep_workers.duplicate(true),
+		"ammo_blocked": ammo_blocked.duplicate(true),
 		"idle_peasants": idle_count,
 		"free_mine_slots": free_slots_count,
 		"gold_deficit": gold_deficit,
