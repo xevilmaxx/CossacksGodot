@@ -1,10 +1,13 @@
-# V7-91 / TERRAIN2-06 — dual-mode donor tile-atlas loader.
+# V7-91 / TERRAIN2-06 — three-mode donor tile-atlas loader.
 #
 # Owned by V7-91 ONLY. This is the single new .gd in this atom: it does not
 # edit the V7-85 build tool, the V7-86 shader, any other .gd, app/, config,
 # tests or git state. It provides the STABLE API that V7-86 (and later A3)
-# binds against, in two mutually exclusive modes:
+# binds against, in three mutually exclusive modes:
 #
+#   MODE_SINGLE (DEFAULT) load the original V7-85 PNG directly from res://,
+#               no split parts, no reassembly, no user:// cache. This is the
+#               user's explicitly requested default ("original atlas").
 #   MODE_SPLIT  reassemble the V7-85 atlas from lossless byte parts in
 #               res://assets/terrain/atlas_parts/ into a user:// cache file,
 #               verify its whole-file SHA-256, decode with Image.load_from_file
@@ -13,12 +16,18 @@
 #               PNGs in res://assets/terrain/blocks/, using the V7-85 manifest
 #               `layout` for index order, and expose the index->slot map.
 #
+# GITHUB CAVEAT: the single PNG is 179,912,941 bytes, ABOVE GitHub's ~100 MB
+# per-file limit. It must stay UNCOMMITTED (or be tracked with Git LFS). A clone
+# without it still works: when `single` cannot open the PNG, load() emits a
+# clear push_warning and falls back to `split`, then to `array`.
+#
 # Mode is selectable by constructor OR config OR explicit load() call:
+#   var loader := TileAtlasLoader.new()                 # default -> "single"
 #   var loader := TileAtlasLoader.new("array")          # ctor
 #   var loader := TileAtlasLoader.new({"tile_atlas_mode": "split"})  # config dict
 #   var loader := TileAtlasLoader.new(); loader.load("array")        # explicit
 # A ProjectSettings setting `terrain/tile_atlas_mode` is read as a last config
-# source (read-only — this file never edits config). Default: MODE_SPLIT.
+# source (read-only — this file never edits config). Default: MODE_SINGLE.
 #
 # DONOR EVIDENCE (all read-only citations, no invented indices):
 #   * index dictionary = variant3d/assets/terrain/structs/presets_summer.json:2-125
@@ -42,9 +51,11 @@
 extends RefCounted
 class_name TileAtlasLoader
 
+const MODE_SINGLE := "single"
 const MODE_SPLIT := "split"
 const MODE_ARRAY := "array"
 
+const SINGLE_ATLAS := "res://assets/terrain/atlas/tile_index_atlas.png"
 const PARTS_DIR := "res://assets/terrain/atlas_parts/"
 const ATLAS_DIR := "res://assets/terrain/atlas/"
 const BLOCKS_DIR := "res://assets/terrain/blocks/"
@@ -54,10 +65,14 @@ const CACHE_DIR := "user://tile_atlas_cache/"
 const CACHE_FILE := "user://tile_atlas_cache/tile_index_atlas.png"
 const CONFIG_SETTING := "terrain/tile_atlas_mode"
 const CONFIG_KEY := "tile_atlas_mode"
+const CONFIG_SINGLE_PATH_KEY := "single_atlas_path"
 const CHUNK := 1 << 20  # 1 MiB — never hold the whole 180 MB in RAM
 
-var mode: String = MODE_SPLIT
+var mode: String = MODE_SINGLE  # user-requested default: original atlas
 var last_error: String = ""
+# Overridable so a caller (or a probe simulating a clone without the big file)
+# can point single mode at a missing path and exercise the fallback chain.
+var single_atlas_path: String = SINGLE_ATLAS
 
 var _atlas_texture: ImageTexture = null
 var _tile_array: Texture2DArray = null
@@ -85,6 +100,8 @@ func _init(p_mode: Variant = "", p_config: Dictionary = {}) -> void:
 		var setting: Variant = ProjectSettings.get_setting(CONFIG_SETTING, null)
 		if setting != null and str(setting).strip_edges() != "":
 			chosen = str(setting).strip_edges()
+	if cfg.has(CONFIG_SINGLE_PATH_KEY):
+		single_atlas_path = str(cfg[CONFIG_SINGLE_PATH_KEY])
 	set_mode(chosen)
 
 
@@ -92,7 +109,8 @@ func _init(p_mode: Variant = "", p_config: Dictionary = {}) -> void:
 # Mode selection / stable API consumed by V7-86 and A3.
 # ---------------------------------------------------------------------------
 func set_mode(p_mode: String) -> void:
-	mode = p_mode if (p_mode == MODE_SPLIT or p_mode == MODE_ARRAY) else MODE_SPLIT
+	var valid := (p_mode == MODE_SINGLE or p_mode == MODE_SPLIT or p_mode == MODE_ARRAY)
+	mode = p_mode if valid else MODE_SINGLE
 	_reset()
 
 
@@ -127,6 +145,16 @@ func _fail(msg: String) -> bool:
 	return false
 
 
+# Missing-resource failures during the automatic fallback are expected, not
+# errors: report them once as warnings so a clone without the big PNG stays
+# usable without flooding stderr with push_error().
+func _soft_fail(msg: String) -> bool:
+	last_error = msg
+	_loaded = false
+	push_warning("TileAtlasLoader: " + msg)
+	return false
+
+
 # Stable entry point. `load()` deliberately mirrors the requested API name; it
 # shadows GDScript's global load() INSIDE this instance only — no global load()
 # is called anywhere in this file (textures use Image.load / create_from_image).
@@ -136,9 +164,27 @@ func load(p_mode: String = "") -> bool:
 		set_mode(target)
 	_reset()
 	last_error = ""
+
 	if mode == MODE_ARRAY:
 		return _load_array()
-	return _load_split()
+	if mode == MODE_SPLIT:
+		return _load_split()
+
+	# MODE_SINGLE (default): direct res:// load, no parts, no cache. If the big
+	# PNG is absent (e.g. an LFS clone that skipped it), degrade gracefully.
+	if _load_single():
+		return true
+	var single_reason := last_error
+	push_warning("TileAtlasLoader: single atlas unavailable (%s); falling back to 'split'" % single_reason)
+	_reset()
+	mode = MODE_SPLIT
+	if _load_split():
+		return true
+	var split_reason := last_error
+	push_warning("TileAtlasLoader: split atlas unavailable (%s); falling back to 'array'" % split_reason)
+	_reset()
+	mode = MODE_ARRAY
+	return _load_array()
 
 
 # Explicit alias for callers that prefer a non-shadowing name.
@@ -147,7 +193,8 @@ func load_atlas(p_mode: String = "") -> bool:
 
 
 func get_atlas_texture() -> Texture2D:
-	# MODE_SPLIT only: one 16384x8192 RGBA atlas sampler (V7-85 atlas).
+	# MODE_SINGLE / MODE_SPLIT: one 16384x8192 RGBA atlas sampler (V7-85 atlas).
+	# null in MODE_ARRAY (use get_tile_array() there).
 	return _atlas_texture
 
 
@@ -171,13 +218,13 @@ func atlas_grid() -> Vector2:
 
 
 # Stable UV helper for V7-86.
-#   MODE_SPLIT: bottom-left UV of the index's cell in the single atlas image,
-#               cell = (index % cols, index / cols), cols/rows from V7-85.
-#               Shader adds the local fract(s,t) fraction inside that cell.
+#   MODE_SINGLE / MODE_SPLIT: bottom-left UV of the index's cell in the single
+#               atlas image, cell = (index % cols, index / cols), cols/rows
+#               from V7-85. Shader adds the local fract(s,t) fraction.
 #   MODE_ARRAY: Vector2.ZERO — each layer IS one whole tile, so the shader's
 #               local UV applies directly (no atlas offset needed).
 func tile_uv(index: int) -> Vector2:
-	if mode != MODE_SPLIT:
+	if mode == MODE_ARRAY:
 		return Vector2.ZERO
 	var cols := int(maxf(_grid.x, 1.0))
 	var rows := int(maxf(_grid.y, 1.0))
@@ -187,8 +234,8 @@ func tile_uv(index: int) -> Vector2:
 			float(index / cols) / float(rows))
 
 
-# Stable layer helper for V7-86. Returns -1 in split mode (no array) or for an
-# unresolved/empty preset index (alpha0a/b/c never had a shipped PNG).
+# Stable layer helper for V7-86. Returns -1 in single/split mode (no array) or
+# for an unresolved/empty preset index (alpha0a/b/c never had a shipped PNG).
 func tile_layer(index: int) -> int:
 	if mode != MODE_ARRAY:
 		return -1
@@ -209,7 +256,25 @@ func get_reassembly_info() -> Dictionary:
 		"bytes": _reassembled_bytes,
 		"sha256": _reassembled_sha256,
 		"array_layers": _tile_array.get_layers() if _tile_array != null else 0,
+		"single_path": single_atlas_path,
 	}
+
+
+# ---------------------------------------------------------------------------
+# MODE_SINGLE (DEFAULT) — direct res:// load of the original V7-85 PNG.
+# No split parts, no SHA reassembly, no user:// cache write.
+# ---------------------------------------------------------------------------
+func _load_single() -> bool:
+	_load_grid()
+	var img := _load_image_at(single_atlas_path)
+	if img == null:
+		return _soft_fail("single atlas unavailable: " + last_error)
+	_atlas_texture = ImageTexture.create_from_image(img)
+	if _atlas_texture == null:
+		return _soft_fail("ImageTexture.create_from_image failed for " + single_atlas_path)
+	_load_masks()
+	_loaded = true
+	return true
 
 
 # ---------------------------------------------------------------------------

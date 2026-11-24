@@ -13,7 +13,7 @@
   "file": "variant3d/assets/terrain/atlas/tile_index_atlas.png",
   "bytes": 179912941,
   "sha256": "a1f123a1072e07eb28f416a9d8541aae5ffd23891a1836904b3cb05eb84dcfbd",
-  "status": "DELETED__REGENERABLE",
+  "status": "RESTORED__DEFAULT_MODE_SINGLE__KEEP_UNCOMMITTED_OR_LFS",
   "regenerate": "python variant3d/tools/build_tile_index_atlas.py",
   "regenerate_note": "V7-85 tool; donor root read-only via $COSSACKS3_DIR"
  },

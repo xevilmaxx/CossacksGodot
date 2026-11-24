@@ -13,13 +13,48 @@ extends Node3D
 #   * central-difference normals from the height field itself (one-sided edges);
 #   * UV = ((x+0.5)/map_w, (z+0.5)/map_h) — 0..1 over the full map, aligned to
 #     the G3-4 splat albedo cell centres (row-major, north/west origin);
-#   * splat first, one donor grass block as runtime Image.load fallback;
-#   * one translucent water quad at donor WATER_LEVEL.
+#   * V7-92: UV2.x = donor tile index (game.tileblock uint8), UV2.y = face mode
+#     0 (ground default; A5 face flags have not landed);
+#   * V7-92: V7-86 tile-index ShaderMaterial bound to the V7-91 multi-mode atlas
+#     loader (single/split/array), with V7-82 splat kept as an explicit
+#     PORT APPROXIMATION — NOT DONOR PARITY fallback;
+#   * V7-92: V7-84 donor water module with bind_height_grid(); the old constant
+#     water quad is retained only as a fallback if that module cannot build.
 # NO per-chunk dictionaries, NO 2-chunk/frame cap, NO imported sprite sheets,
 # NO RNG. V7-13 deliberately left lighting to V7-9; V7-60 now ports the
 # donor-cited WorldEnvironment + DirectionalLight3D rig from the UNWIRED
 # variant3d/scripts/heightmap_world3d.gd:114-147 so the WIRED runtime terrain
 # is actually lit. All rig values stay donor-cited; none are invented here.
+#
+# V7-92 INTEGRATION (all three landed pieces wired here, no other file edited):
+#   * V7-85 / TERRAIN2-06 A1: donor-indexed 124-cell atlas + two converted masks
+#     (docs/coord_swarm_2026-11-24/reports/V785_tile_atlas.md).
+#   * V7-86 / TERRAIN2-06 A2: terrain_tileindex.gdshader. Its INTEGRATION
+#     CONTRACT (V786_tileindex_shader.md §3) is followed exactly: UV2.x carries
+#     the donor `.tex` id, UV2.y the face mode; `atlas_grid` comes from the
+#     V7-85 manifest (16x8), never a donor default; the three samplers are bound
+#     with donor intensity in ALPHA; `shadow_enabled=0` (no shadow map shipped);
+#     NO second cull setting (the shader already declares
+#     `render_mode blend_mix, unshaded, cull_disabled`, :37).
+#   * V7-91: tile_atlas_loader.gd multi-mode transport (coordinator update:
+#     "single" is now the DEFAULT — the original 180 MB PNG was restored;
+#     "split" and "array" remain selectable). The loader auto-falls back
+#     single -> split -> array with a warning when the single PNG is absent
+#     (fresh clones observe GitHub's 100 MB/file limit); this module simply
+#     uses the loader's default and surfaces its CHOSEN mode in stats as
+#     `stats["atlas_mode"]`. Both split and array were runtime-verified 28/28
+#     by V7-91 job 245 (`v791-dual-mode`). `set_atlas_mode` selects
+#     "single"/"split"/"array" publicly; the V7-86 shader is sampler2D-only, so
+#     when the chosen transport exposes no 2D atlas (array) the selected loader
+#     is still loaded and its index→slot map exposed in stats, while a dedicated
+#     SECOND split loader supplies the single 2D atlas sampler the shader
+#     requires. This is an explicit PORT LIMITATION, not a donor claim.
+#   * V7-84: water3d.gd + water3d.gdshader, built at the decoded grid size and
+#     fed the live height[] via bind_height_grid(). All donor literals
+#     (-0.25 / -0.1 / 2.96) and UNVERIFIED labels from V784 remain in force.
+#
+# NO VISUAL / DONOR PARITY CLAIM: no GPU A/B was run by this agent. Every visual
+# effect remains a prediction from static donor text (TERRAIN2-06 §6).
 
 # Donor citations (read-only text; singleplayer skirmish path):
 #   C:\Games\Cossacks 3\data\scripts\generatemap.inc:537-577 — bitmap -> engine
@@ -34,7 +69,14 @@ extends Node3D
 #   variant3d/scripts/main.gd:694-701 — dump schema (map_w/map_h/height base64).
 #   variant3d/scripts/game.gd:44,1893-1907 — live height[] grid + bilinear read.
 #   variant3d/scripts/game.gd:5564 — height[] -> base64 on save/dump.
-#
+#   TERRAIN2-06:29-31 (E01/E02) — game.gd:53 `tileblock: PackedByteArray`,
+#     game.gd:1610-1689 `_assign_tileblocks()`, main.gd:741 dumps it base64;
+#     dmscript.global:2026-2035 `TMapTerrainDataTile{height,tex,collision[4]}`.
+#     VERIFIED live in this agent: game.gd:53/1621 sizes tileblock to
+#     MAP_W*MAP_H (320² = 102,400 bytes); world3d.gd:185-202 (2D 3D sibling)
+#     decodes `dump["tileblock"]` as uint8 per cell; world.gd:258-261 iterates
+#     the live `game.tileblock`. One uint8 per cell, NOT four sub-tile indices.
+
 # V7-60 light/sky rig — translated (not invented) from the UNWIRED sibling
 # variant3d/scripts/heightmap_world3d.gd:22-37,114-147. Donor references
 # (read-only text, singleplayer skirmish path):
@@ -66,9 +108,20 @@ const SUN_ENERGY: float = 1.7
 const SPLAT_PATH := "res://assets/terrain/heightmap/splat_albedo.png"
 const FALLBACK_BLOCK := "res://assets/terrain/blocks/grass1.png"
 
+# V7-92 module paths. Dynamic load() keeps the no-class_name cache rule above.
+const TILE_ATLAS_LOADER_PATH := "res://scripts/tile_atlas_loader.gd"
+const WATER3D_PATH := "res://scripts/water3d.gd"
+const TILEINDEX_SHADER_PATH := "res://shaders/terrain_tileindex.gdshader"
+const V785_MANIFEST_PATH := "res://assets/terrain/atlas/tile_index_atlas.manifest.json"
+const ATLAS_MODE_SINGLE := "single"  # coordinator update: DEFAULT (original PNG restored)
+const ATLAS_MODE_SPLIT := "split"    # lossless byte parts -> user:// cache
+const ATLAS_MODE_ARRAY := "array"    # 121-layer Texture2DArray
+
 # PORT-TUNED art floor (not a donor value): a tiny emission keeps the terrain
 # legible in a standalone no-light probe. V7-60 leaves this value UNCHANGED —
 # the donor-grounded light/sky rig lives in this module (see _make_environment).
+# NOTE: only used by the V7-82 splat fallback material; the V7-86 shader is
+# `unshaded` and reproduces the donor's final colour itself.
 const EMISSION_RGB := Color(0.06, 0.06, 0.05)
 
 var stats: Dictionary = {}
@@ -79,9 +132,50 @@ var _w: int = 0
 var _h: int = 0
 var _built: bool = false
 
+# V7-92 state.
+var atlas_mode: String = ATLAS_MODE_SINGLE  # public: "single" (default) | "split" | "array"
+var _atlas_loader = null                    # TileAtlasLoader in the selected mode
+var _shader_atlas_loader = null             # split-only loader for shader sampler2D
+var _atlas_texture: Texture2D = null
+var _alpha_tex: Texture2D = null            # donor intensity repacked into ALPHA
+var _alphavert_tex: Texture2D = null        # donor intensity repacked into ALPHA
+var _atlas_grid := Vector2.ZERO             # (cols, rows) from V7-85 manifest
+var _atlas_info: Dictionary = {}
+var _atlas_mode_loaded: String = ""
+var _manifest: Dictionary = {}
+var _tile_indices := PackedByteArray()
+var _tile_index_source: String = ""
+var _tile_index_hist: Dictionary = {}
+var _tile_index_out_of_atlas: int = 0
+var _water3d = null                         # V7-84 water3d.gd instance
+
 
 func bind(game) -> void:
 	_game = game
+
+
+# ---------------------------------------------------------------------------
+# V7-92 — public atlas-mode selection (coordinator update).
+#   "single" (DEFAULT) : the restored single 16384x8192 PNG; loader auto-falls
+#                        back to "split" then "array" when absent (fresh clones).
+#   "split"            : V7-91 lossless split parts reassembled into user:// cache.
+#   "array"            : V7-91 Texture2DArray, 121 layers, donor index→slot map.
+# Split and array were runtime-verified 28/28 by V7-91 job 245 (`v791-dual-mode`).
+# Unknown values normalize to "single". The loader decides the mode it actually
+# uses; it is surfaced in stats["atlas_mode"] / stats["atlas"]["loaded_mode"].
+# If already built and bound, the terrain is rebuilt to apply the new transport.
+# ---------------------------------------------------------------------------
+func set_atlas_mode(mode: String) -> void:
+	var m := mode.strip_edges().to_lower()
+	if m != ATLAS_MODE_SINGLE and m != ATLAS_MODE_SPLIT and m != ATLAS_MODE_ARRAY:
+		m = ATLAS_MODE_SINGLE
+	if m == atlas_mode and _atlas_loader != null:
+		return
+	atlas_mode = m
+	if _atlas_loader != null:
+		_atlas_loader.set_mode(m)
+	if _built and _game != null:
+		build()
 
 
 # Python-written splat PNG has no Godot .import sidecar in a --script run:
@@ -95,6 +189,119 @@ func _load_png_texture(res_path: String) -> Texture2D:
 	if img.load(abs_path) != OK or img.is_empty():
 		return null
 	return ImageTexture.create_from_image(img)
+
+
+func _read_json(res_path: String) -> Dictionary:
+	var abs_path := ProjectSettings.globalize_path(res_path)
+	var f := FileAccess.open(abs_path, FileAccess.READ)
+	if f == null:
+		return {}
+	var text := f.get_as_text()
+	f.close()
+	var parsed: Variant = JSON.parse_string(text)
+	return parsed if parsed is Dictionary else {}
+
+
+# ---------------------------------------------------------------------------
+# V7-92 — V7-91 loader + V7-86 material bindings.
+# ---------------------------------------------------------------------------
+func _load_atlas() -> bool:
+	_atlas_texture = null
+	_alpha_tex = null
+	_alphavert_tex = null
+	_atlas_grid = Vector2.ZERO
+	_atlas_info = {}
+	_atlas_mode_loaded = ""
+	_manifest = _read_json(V785_MANIFEST_PATH)
+	var loader_script := load(TILE_ATLAS_LOADER_PATH) as Script
+	if loader_script == null or not loader_script.can_instantiate():
+		push_error("world3d_terrain: cannot load " + TILE_ATLAS_LOADER_PATH)
+		return false
+
+	# Instantiate the loader in the requested mode (default "single"). V7-91's
+	# loader owns auto-fallback single -> split -> array with a warning; this
+	# module never second-guesses that choice, it only reports it in stats.
+	_atlas_loader = loader_script.new(atlas_mode)
+	if _atlas_loader == null:
+		return false
+	if not bool(_atlas_loader.call("load")):
+		push_error("world3d_terrain: atlas load(%s) failed: %s" % [
+			atlas_mode, str(_atlas_loader.call("get_last_error"))])
+		return false
+	# V7-91 coordinator update exposes `current_mode` (the mode actually chosen
+	# after fallback); older loaders only have get_mode(). Read defensively.
+	var chosen: Variant = _atlas_loader.get("current_mode")
+	if chosen == null or str(chosen).is_empty():
+		chosen = _atlas_loader.call("get_mode")
+	_atlas_mode_loaded = str(chosen)
+	_atlas_grid = _atlas_loader.call("atlas_grid")   # from V7-85 manifest, NO donor default
+	_atlas_info = _atlas_loader.call("get_reassembly_info")
+
+	var masks: Array = _atlas_loader.call("get_mask_textures")
+	if masks.size() < 2:
+		push_error("world3d_terrain: V7-91 loader returned fewer than 2 masks")
+		return false
+	# V7-85 PNGs are single-channel grayscale (IHDR colour type 0: alpha.png
+	# 512x256, alphavert.png 1024x512). V7-86 §3.2 reads donor intensity from
+	# `.a`, so repack R->A here rather than inventing a new asset.
+	_alpha_tex = _repack_mask_alpha(masks[0])
+	_alphavert_tex = _repack_mask_alpha(masks[1])
+	if _alpha_tex == null or _alphavert_tex == null:
+		push_error("world3d_terrain: mask alpha repack failed")
+		return false
+
+	# "single" and "split" both expose a 16384x8192 2D atlas sampler. An array
+	# transport (or any fallback that yields no 2D texture) needs a dedicated
+	# split loader for the V7-86 `uniform sampler2D tile_atlas` (:54) — PORT
+	# LIMITATION only; no shader edit is in this agent's ownership.
+	_atlas_texture = _atlas_loader.call("get_atlas_texture")
+	if _atlas_texture == null:
+		_shader_atlas_loader = loader_script.new(ATLAS_MODE_SPLIT)
+		if _shader_atlas_loader == null or not bool(_shader_atlas_loader.call("load")):
+			push_error("world3d_terrain: split fallback for sampler2D failed")
+			return false
+		_atlas_texture = _shader_atlas_loader.call("get_atlas_texture")
+	if _atlas_texture == null:
+		push_error("world3d_terrain: no 2D atlas texture for tile_atlas sampler")
+		return false
+	return true
+
+
+func _repack_mask_alpha(src: Texture2D) -> Texture2D:
+	if src == null or not (src is ImageTexture):
+		return null
+	var img: Image = (src as ImageTexture).get_image()
+	if img == null or img.is_empty():
+		return null
+	img.convert(Image.FORMAT_RGBA8)
+	var w: int = img.get_width()
+	var h: int = img.get_height()
+	for y in range(h):
+		for x in range(w):
+			var v: float = img.get_pixel(x, y).r   # donor tiaAlphaFromIntensity
+			img.set_pixel(x, y, Color(v, v, v, v)) # alpha = intensity for V7-86 `.a`
+	return ImageTexture.create_from_image(img)
+
+
+# V7-86 INTEGRATION CONTRACT (V786_tileindex_shader.md §3.2/§3.3):
+# atlas_grid from V7-85 manifest; three samplers with alpha-channel masks;
+# shadow_enabled=0 (no shadow map shipped); NO second cull setting because the
+# shader already declares `blend_mix, unshaded, cull_disabled` (:37).
+func _tileindex_material() -> Material:
+	var shader := load(TILEINDEX_SHADER_PATH) as Shader
+	if shader == null:
+		push_error("world3d_terrain: cannot load " + TILEINDEX_SHADER_PATH)
+		return null
+	var mat := ShaderMaterial.new()
+	mat.shader = shader
+	mat.set_shader_parameter("tile_atlas", _atlas_texture)
+	mat.set_shader_parameter("alpha_atlas", _alpha_tex)
+	mat.set_shader_parameter("alphavert_atlas", _alphavert_tex)
+	mat.set_shader_parameter("atlas_grid", _atlas_grid)
+	# No real shadow map is supplied; keep the shader default OFF.
+	mat.set_shader_parameter("shadow_enabled", 0.0)
+	# Deliberately NO cull_mode / transparency here: the shader owns both.
+	return mat
 
 
 func _terrain_material(splat: Texture2D) -> Material:
@@ -137,6 +344,8 @@ func _normal_at(height: PackedFloat32Array, w: int, h: int,
 # dump dictionary on the game wins; otherwise the live game.height[] grid is
 # encoded with the SAME Marshalls recipe as game.gd:5564 so build() always
 # decodes a base64 height[] grid, exactly like the G3-2 donor reference.
+# V7-92: the synthesized dump also carries base64(game.tileblock) so the live
+# donor index buffer is visible to build() (TERRAIN2-06:72, V786 §3.3 step 2).
 func _dump_from_game() -> Dictionary:
 	if _game == null:
 		return {}
@@ -166,13 +375,62 @@ func _dump_from_game() -> Dictionary:
 	var grid: PackedFloat32Array = src
 	if gw <= 0 or gh <= 0 or grid.size() < gw * gh:
 		return {}
-	return {
+	var result := {
 		"map_w": gw,
 		"map_h": gh,
 		"height": Marshalls.raw_to_base64(grid.to_byte_array()),
 	}
+	var tb: Variant = _game.get("tileblock")
+	if tb is PackedByteArray and (tb as PackedByteArray).size() >= gw * gh:
+		result["tileblock"] = Marshalls.raw_to_base64(tb as PackedByteArray)
+	return result
 
 
+# V7-92 — decode the ONE uint8 per cell written by game.gd:1621-1689 and dumped
+# at main.gd:741. Accepts base64 in a dump dictionary OR a live PackedByteArray.
+# The 2D 3D sibling app/scripts/world3d.gd:185-202 decodes the same byte source.
+func _decode_tile_indices(dump: Dictionary, w: int, h: int) -> void:
+	_tile_indices = PackedByteArray()
+	_tile_index_source = ""
+	var want: int = w * h
+	var tbv: Variant = dump.get("tileblock", null)
+	if tbv is PackedByteArray:
+		var live: PackedByteArray = tbv
+		if live.size() >= want:
+			_tile_indices.resize(want)
+			for i in range(want):
+				_tile_indices[i] = live[i]
+			_tile_index_source = "dump.tileblock PackedByteArray (main.gd:725)"
+	elif tbv is String and not str(tbv).is_empty():
+		var raw := Marshalls.base64_to_raw(str(tbv))
+		if raw.size() >= want:
+			_tile_indices.resize(want)
+			for i in range(want):
+				_tile_indices[i] = raw[i]
+			_tile_index_source = "dump.tileblock base64 (main.gd:741)"
+	if _tile_indices.is_empty() and _game != null:
+		var live_v: Variant = _game.get("tileblock")
+		if live_v is PackedByteArray and (live_v as PackedByteArray).size() >= want:
+			var live2: PackedByteArray = live_v
+			_tile_indices.resize(want)
+			for i in range(want):
+				_tile_indices[i] = live2[i]
+			_tile_index_source = "live game.tileblock PackedByteArray (game.gd:53,1610-1689)"
+	if _tile_indices.is_empty():
+		_tile_index_source = ("PORT APPROXIMATION — NOT DONOR PARITY: "
+			+ "no tileblock in dump or game; V7-82 splat fallback retained")
+		return
+	_tile_index_hist = {}
+	_tile_index_out_of_atlas = 0
+	for i in range(want):
+		var tid: int = int(_tile_indices[i])
+		_tile_index_hist[str(tid)] = int(_tile_index_hist.get(str(tid), 0)) + 1
+		if tid >= int(_manifest.get("atlas", {}).get("named_cells", 124)):
+			_tile_index_out_of_atlas += 1
+
+
+# Keep the original constant water quad only as a fallback. The V7-84 module
+# replaces it in the normal path; never submit both surfaces at once.
 func _make_water(w: int, h: int) -> void:
 	var half_x: float = float(w) * TILE_M * 0.5
 	var half_z: float = float(h) * TILE_M * 0.5
@@ -201,6 +459,31 @@ func _make_water(w: int, h: int) -> void:
 	mi.mesh = mesh
 	mi.material_override = mat
 	add_child(mi)
+
+
+# V7-92 — V7-84 water3d.gd integration hook (V784 §5):
+#   build(w, h) with the decoded dump dims, then bind_height_grid(height, w, h).
+# The module is built BEFORE add_child so its _ready() does not auto-build a
+# default 320² grid. The internal plane is renamed "WaterPlane" to keep the
+# terrain3d_sandbox.gd:122 seam-mask hook working; only ONE water plane exists.
+func _make_water3d(w: int, h: int, height: PackedFloat32Array) -> bool:
+	var script := load(WATER3D_PATH) as Script
+	if script == null or not script.can_instantiate():
+		push_error("world3d_terrain: cannot load " + WATER3D_PATH)
+		return false
+	var node: Node = script.new()
+	if node == null or not bool(node.call("build", w, h)):
+		if node != null:
+			node.free()
+		return false
+	bool(node.call("bind_height_grid", height, w, h))
+	node.name = "Water3D"
+	add_child(node)
+	var plane := node.get_node_or_null("WaterPlane3D")
+	if plane != null:
+		plane.name = "WaterPlane"
+	_water3d = node
+	return true
 
 
 # V7-60 — donor-grounded sky/sun rig translated VERBATIM from the unwired
@@ -254,6 +537,20 @@ func invalidate() -> void:
 	_h = 0
 	_built = false
 	stats = {}
+	_atlas_loader = null
+	_shader_atlas_loader = null
+	_atlas_texture = null
+	_alpha_tex = null
+	_alphavert_tex = null
+	_atlas_grid = Vector2.ZERO
+	_atlas_info = {}
+	_atlas_mode_loaded = ""
+	_manifest = {}
+	_tile_indices = PackedByteArray()
+	_tile_index_source = ""
+	_tile_index_hist = {}
+	_tile_index_out_of_atlas = 0
+	_water3d = null
 
 
 # EXACT CONTRACT: one full-grid ArrayMesh from the base64 dump height[] grid.
@@ -283,8 +580,12 @@ func build() -> bool:
 		hmax = maxf(hmax, y)
 	var t_heights := Time.get_ticks_usec()
 
-	# Splat first; one donor grass block as deterministic fallback. If neither
-	# PNG is loadable the mesh still builds with a plain material.
+	# V7-92: decode donor tile indices and load the selected atlas transport.
+	_decode_tile_indices(dump, w, h)
+	var atlas_ready := _load_atlas()
+	var tiles_available: bool = not _tile_indices.is_empty()
+
+	# Splat stays loaded for the V7-82 fallback path and for stats provenance.
 	var splat_path := SPLAT_PATH
 	var splat := _load_png_texture(splat_path)
 	if splat == null:
@@ -300,13 +601,16 @@ func build() -> bool:
 	var verts := PackedVector3Array()
 	var norms := PackedVector3Array()
 	var uvs := PackedVector2Array()
+	var uvs2 := PackedVector2Array()
 	verts.resize(nverts)
 	norms.resize(nverts)
 	uvs.resize(nverts)
+	uvs2.resize(nverts)
 	var inds := PackedInt32Array()
 	inds.resize(ntris * 3)
 	var cx: float = float(w) * 0.5
 	var cz: float = float(h) * 0.5
+	var max_tile_id: int = int(_manifest.get("atlas", {}).get("named_cells", 124)) - 1
 	for z in range(h):
 		for x in range(w):
 			var i: int = z * w + x
@@ -316,6 +620,15 @@ func build() -> bool:
 			norms[i] = _normal_at(height, w, h, x, z)
 			uvs[i] = Vector2((float(x) + 0.5) / float(w),
 				(float(z) + 0.5) / float(h))
+			# V7-86 CONTRACT: UV2.x = float(donor tile id), UV2.y = face mode.
+			# 0 = ground default (reftile.mat:1-108); A5 face flags not landed.
+			# PORT GUARD: the live game uses 255 = BLK_WATER (game.gd:52) and
+			# other out-of-atlas ids; clamp to the V7-85 named-cell range so the
+			# shader never samples an empty/overflow cell. Counted in stats.
+			var tid: int = int(_tile_indices[i]) if tiles_available else 0
+			if tid < 0 or tid > max_tile_id:
+				tid = 0
+			uvs2[i] = Vector2(float(tid), 0.0)
 	var k: int = 0
 	for z in range(h - 1):
 		for x in range(w - 1):
@@ -333,10 +646,27 @@ func build() -> bool:
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = norms
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_TEX_UV2] = uvs2
 	arrays[Mesh.ARRAY_INDEX] = inds
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, _terrain_material(splat))
+
+	# V7-86 tile-index material only when BOTH live indices and atlas art exist.
+	# Otherwise the V7-82 splat path is kept with an explicit approximation label.
+	var surface_mat: Material = null
+	var material_model: String = ""
+	if tiles_available and atlas_ready:
+		surface_mat = _tileindex_material()
+		if surface_mat != null:
+			material_model = ("V7-86 terrain_tileindex.gdshader ShaderMaterial; "
+				+ "UV2.x=donor tile id, UV2.y=0 ground; atlas_grid from V7-85 manifest; "
+				+ "shadow_enabled=0; shader owns blend/cull")
+	if surface_mat == null:
+		surface_mat = _terrain_material(splat)
+		material_model = ("V7-82 splat fallback — PORT APPROXIMATION — NOT DONOR PARITY"
+			+ (" (atlas unavailable)" if not atlas_ready else "")
+			+ (" (no live tileblock)" if not tiles_available else ""))
+	mesh.surface_set_material(0, surface_mat)
 	var mi := MeshInstance3D.new()
 	mi.name = "HeightmapTerrain"
 	mi.mesh = mesh
@@ -344,7 +674,11 @@ func build() -> bool:
 	add_child(mi)
 	var t_mesh := Time.get_ticks_usec()
 
-	_make_water(w, h)
+	# V7-84 water module replaces the old constant quad; fallback only if the
+	# module cannot build. Never stack both water surfaces.
+	var water_module_ok := _make_water3d(w, h, height)
+	if not water_module_ok:
+		_make_water(w, h)
 	_make_environment()
 
 	_height = height
@@ -354,6 +688,17 @@ func build() -> bool:
 	var albedo_size := Vector2i(0, 0)
 	if splat != null:
 		albedo_size = splat.get_size()
+	var atlas_size := Vector2i(0, 0)
+	if _atlas_texture != null:
+		atlas_size = _atlas_texture.get_size()
+	var water_literals: Dictionary = {}
+	var water_stats: Dictionary = {}
+	if _water3d != null:
+		water_stats = _water3d.get("stats")
+		if water_stats is Dictionary and water_stats.has("donor_literals"):
+			var wl: Variant = water_stats.get("donor_literals")
+			if wl is Dictionary:
+				water_literals = wl
 	stats = {
 		"grid": {"w": w, "h": h, "cells": nverts},
 		"tile_m": TILE_M,
@@ -374,6 +719,46 @@ func build() -> bool:
 		"sun_direction_yup": [SUN_LIGHTVEC.x, SUN_LIGHTVEC.y, SUN_LIGHTVEC.z],
 		"chunks": 0,
 		"per_frame_cap": 0,
+		# ---- V7-92 additions (TERRAIN2-06 A3 stats shape + integration) ----
+		"tile_index_cells": nverts if tiles_available else 0,
+		"tile_index_hist": _tile_index_hist.duplicate(true),
+		"atlas_mode": _atlas_mode_loaded,   # loader's CHOSEN mode after auto-fallback
+		"atlas_path": V785_MANIFEST_PATH + " (V7-85 manifest; V7-91 loader transport)",
+		"uv_model": ("V7-86 eye-plane dot(realpos,eye_plane_s/t) + texture_matrix + "
+			+ "fract repeat — PORT APPROXIMATION: donor gl_EyePlane*/TextureMatrix "
+			+ "values are engine-bound and UNVERIFIED (TERRAIN2-06 §6 #1)"),
+		"face_model": ("UV2.y=0 ground; A5 face-flag atom not landed; 25-degree "
+			+ "AngleX/AngleZ is metadata only — PORT APPROXIMATION — NOT DONOR PARITY"),
+		"tile_index": {
+			"source": _tile_index_source,
+			"cells": nverts if tiles_available else 0,
+			"hist": _tile_index_hist.duplicate(true),
+			"out_of_atlas_cells_clamped": _tile_index_out_of_atlas,
+			"uv2": "x=float(donor tile id 0..123), y=0 (ground default)",
+			"transport": "PORT APPROXIMATION (donor has no vertex attribute)",
+		},
+		"atlas": {
+			"requested_mode": atlas_mode,
+			"loaded_mode": _atlas_mode_loaded,
+			"fallback_policy": "loader auto-fallback single -> split -> array (coordinator update)",
+			"v791_verified": "split and array 28/28 (job 245, v791-dual-mode)",
+			"grid": [_atlas_grid.x, _atlas_grid.y],
+			"texture_size": [atlas_size.x, atlas_size.y],
+			"manifest": V785_MANIFEST_PATH,
+			"reassembly": _atlas_info.duplicate(true),
+			"masks": "alpha.png 512x256 + alphavert.png 1024x512, intensity repacked into ALPHA",
+			"array_mode_note": ("V7-86 shader is sampler2D-only; array loader is "
+				+ "loaded/exposed, a dedicated split loader supplies tile_atlas"),
+		},
+		"material_model": material_model,
+		"water": {
+			"module": WATER3D_PATH if water_module_ok else "V7-82 constant quad fallback",
+			"height_aware": bool(water_stats.get("height_aware", false)),
+			"donor_literals": water_literals,
+			"visual_parity_claimed": false,
+			"label": ("V7-84 donor equations; hmapTex engine binding UNVERIFIED "
+				+ "(DECOMP-04 §8); PORT SUBSTITUTE height grid via bind_height_grid()"),
+		},
 		"donor_references": {
 			"height_source": "data/scripts/generatemap.inc:537-577 (bitmap->grid->smoothing)",
 			"camera_framing": "data/cameras/camera.cfg:32-35,44-45 (V7-5, not this module)",
@@ -383,6 +768,14 @@ func build() -> bool:
 			"sun_light_vector": "data/shaders/water/water.dev.vert:22 (x/4, z/2, y) then Z-up->Y-up",
 			"ambient_diffuse": "data/env/lights/light.cfg:3-16 (Ambient/Diffuse literals)",
 			"light_rig_port": "variant3d/scripts/heightmap_world3d.gd:114-147 (V7-60, translated)",
+			"tile_index": ("data/scripts/dmscript.global:2026-2035 (.tex); "
+				+ "variant3d/scripts/game.gd:53,1610-1689; main.gd:741; TERRAIN2-06:29-31,67-72"),
+			"tile_atlas": ("data/terrain/tiles/terrain.presets:2-6; presets_summer.json:2-125; "
+				+ "V7-85 manifest; V7-91 dual-mode loader"),
+			"tileindex_shader": ("hf.pvl.sm.vert:9,26-33; hf.pvl.smx3.frag:13-14; "
+				+ "reftile.mat:120-169; V7-86 INTEGRATION CONTRACT §3"),
+			"water_shader": ("data/shaders/water/water.dev.frag; texturemap.inc:29-31 "
+				+ "(-0.25/-0.1/2.96); V7-84 §5 integration hook"),
 		},
 		"timing_ms": {
 			"parse_dump": float(t_parsed - t_total) / 1000.0,

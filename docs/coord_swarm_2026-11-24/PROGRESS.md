@@ -268,6 +268,46 @@ historical failures" once the background job finishes (avoid spool race).
   only diffusewaves0.bmp sampled; diffusewaves2 live but unsampled; others
   commented; NO foam texture asset. Values relayed to V7-84.
 
+### V7-91 triple-mode atlas DELIVERED — single is default
+- Restored `variant3d/assets/terrain/atlas/tile_index_atlas.png`: 179,912,941 B,
+  sha a1f123a1072e07eb28f416a9d8541aae5ffd23891a1836904b3cb05eb84dcfbd.
+- Loader has THREE modes: `single` DEFAULT (direct res:// PNG, no parts/cache),
+  `split`, `array`. Missing single -> push_warning -> split -> array.
+  `get_mode()` reports actual mode; tile_uv() treats single like split.
+- Manifest status RESTORED__DEFAULT_MODE_SINGLE__KEEP_UNCOMMITTED_OR_LFS;
+  part hashes/sizes unchanged. pack_tile_atlas_split.py --check PASSED.
+- Probe jobs: 248 failed (probe Vector2/Vector2i mismatch), 250 ok PASS 24/24:
+  all 3 modes init, single 16384x8192 ImageTexture, split same dims + hash,
+  array 121 layers/map, simulated missing single -> warning + split fallback.
+  Probe + result deleted. GitHub caveat recorded. No git, no visual parity.
+
+### USER DECISION: original single atlas back, DEFAULT mode
+- User asked to restore the original atlas and add a mode that uses it WITHOUT
+  splitters, enabled by default. V7-91 follow-up: regenerate 180 MB PNG via
+  V7-85 tool, verify sha a1f123a1...dcfbd, add third mode `single` as DEFAULT,
+  keep split/array explicit, auto-fallback single->split->array with warning if
+  the big PNG is absent in a clone. Manifest/report updated. GitHub caveat:
+  the single PNG must stay uncommitted or use Git LFS.
+- V7-92 integration updated: `atlas_mode` default "single", surface chosen mode
+  in stats, no assumption that the big PNG exists in a fresh clone.
+
+### V7-91 dual-mode atlas DELIVERED — 180 MB PNG DELETED
+- BOTH MODES VERIFIED: job 245 ok PASS 28/28 (earlier 230 timeout, 239 20/26,
+  244 23/28 on str(null) for 3 EMPTY cells — fixed). Split reassembles
+  179,912,941 B / sha a1f123...dcfbd -> 16384x8192 ImageTexture. Array yields
+  Texture2DArray with 121 layers + 121-entry donor-grounded index->slot map
+  (EMPTY indices 86/110/123 unmapped). Two masks load in both modes.
+- Parts: tile_index_atlas.part000 90,000,000 B + part001 89,912,941 B +
+  split_manifest.json + small alpha.png/alphavert.png in atlas_parts/. ZIP
+  measured 179,553,069 B (0.998) so split required.
+- 180 MB SINGLE PNG DELETED (DELETED__REGENERABLE via V7-85 tool); probe +
+  result deleted. pack_tile_atlas_split.py --check passes after deletion.
+  NO visual parity claim, no git.
+- V7-92 dispatched: SOLE owner of world3d_terrain.gd for final integration of
+  tile-index shader + dual-mode atlas + water module, preserving V7-60 light
+  rig and V7-82 splat filter; live game.tileblock source required or fallback
+  labelled PORT APPROXIMATION. Parse/probe/selftest/windowed capture.
+
 ### V7-82 splat interim polish LANDED
 - variant3d-ONLY: splat 320x320 (81,711 B) -> 1280x1280 (1,150,428 B) using
   existing tool --texels-per-cell 4 against SAME dump/seed/mapping (31 mapping
