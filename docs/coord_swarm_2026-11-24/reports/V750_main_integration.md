@@ -82,7 +82,7 @@ key is purely additive.
 
 ## 4. Exact diff (file:line against the shipped files)
 
-### `variant3d/scripts/data.gd` (new line 60, after `CAPTURE_ENABLED`)
+### `variant3d/scripts/data.gd` (new line 61, after `CAPTURE_ENABLED`)
 
 ```gdscript
 # V7-50 PORT ADDITION — there is no donor render-mode key (V71 mechanics
