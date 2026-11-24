@@ -1,0 +1,101 @@
+{
+	"checks": [
+		{
+			"detail": "first={\"max_nn\":32.06,\"mean_nn\":4.65,\"min_cross\":10.0,\"within6_pct\":82.38,\"wood_all\":1862,\"wood_live\":1681} second={\"max_nn\":32.06,\"mean_nn\":4.65,\"min_cross\":10.0,\"within6_pct\":82.38,\"wood_all\":1862,\"wood_live\":1681}",
+			"name": "seed 20261113 deterministic",
+			"passed": true
+		},
+		{
+			"detail": "live 1055 -> 1681 (x1.59)",
+			"name": "seed 20261113 wood count grew but <2x",
+			"passed": true
+		},
+		{
+			"detail": "6.819 m -> 4.650 m (-31.8%)",
+			"name": "seed 20261113 mean NN distance >=20% lower",
+			"passed": true
+		},
+		{
+			"detail": "60.37% -> 82.38% (+22.01 pp)",
+			"name": "seed 20261113 within-6m share >=15pp higher",
+			"passed": true
+		},
+		{
+			"detail": "min live-wood <-> stone/ore = 10.00 m (need >= 8.0)",
+			"name": "seed 20261113 no wood/mine overlap",
+			"passed": true
+		},
+		{
+			"detail": "max NN 37.95 m -> 32.06 m",
+			"name": "seed 20261113 max isolated gap shrank",
+			"passed": true
+		},
+		{
+			"detail": "first={\"max_nn\":22.8,\"mean_nn\":4.777,\"min_cross\":10.0,\"within6_pct\":80.64,\"wood_all\":1766,\"wood_live\":1612} second={\"max_nn\":22.8,\"mean_nn\":4.777,\"min_cross\":10.0,\"within6_pct\":80.64,\"wood_all\":1766,\"wood_live\":1612}",
+			"name": "seed 12345 deterministic",
+			"passed": true
+		},
+		{
+			"detail": "live 1001 -> 1612 (x1.61)",
+			"name": "seed 12345 wood count grew but <2x",
+			"passed": true
+		},
+		{
+			"detail": "7.085 m -> 4.777 m (-32.6%)",
+			"name": "seed 12345 mean NN distance >=20% lower",
+			"passed": true
+		},
+		{
+			"detail": "58.22% -> 80.64% (+22.42 pp)",
+			"name": "seed 12345 within-6m share >=15pp higher",
+			"passed": true
+		},
+		{
+			"detail": "min live-wood <-> stone/ore = 10.00 m (need >= 8.0)",
+			"name": "seed 12345 no wood/mine overlap",
+			"passed": true
+		},
+		{
+			"detail": "max NN 31.62 m -> 22.80 m",
+			"name": "seed 12345 max isolated gap shrank",
+			"passed": true
+		}
+	],
+	"id": "t_forest_dense",
+	"passed": true,
+	"rows": [
+		{
+			"baseline": {
+				"max_nn": 37.95,
+				"mean_nn": 6.819,
+				"within6_pct": 60.37,
+				"wood_all": 1186,
+				"wood_live": 1055
+			},
+			"max_nn": 32.06,
+			"mean_nn": 4.65,
+			"min_cross": 10.0,
+			"seed": 20261113,
+			"within6_pct": 82.38,
+			"wood_all": 1862,
+			"wood_live": 1681
+		},
+		{
+			"baseline": {
+				"max_nn": 31.62,
+				"mean_nn": 7.085,
+				"within6_pct": 58.22,
+				"wood_all": 1113,
+				"wood_live": 1001
+			},
+			"max_nn": 22.8,
+			"mean_nn": 4.777,
+			"min_cross": 10.0,
+			"seed": 12345,
+			"within6_pct": 80.64,
+			"wood_all": 1766,
+			"wood_live": 1612
+		}
+	],
+	"unix_ms": 1795452724365.0
+}

@@ -9,6 +9,7 @@
 #   --self-snapshot <file.json>  load a pre-baked post-setup snapshot instead of
 #                             regenerating the map (only with --self-only)
 #   --dump-self-base <file.json> generate that snapshot once (full mapgen), exit
+#   --check-self-base <file.json> load a snapshot into a fresh game, print parity
 #   --cli        [file.json]  fast headless match (no window) for quick tests
 #   --cli-seconds <n>         how many simulated seconds the CLI match runs (default 60)
 #   --cli-frame-ms <n>        CLI per-frame tick budget in ms (default 40); step
@@ -76,6 +77,7 @@ var selftest_baseline: Dictionary = {}
 # --self-only run with --self-snapshot loads it instead of running mapgen.
 var self_snapshot_path := ""
 var self_base_dump_path := ""
+var self_base_check_path := ""
 var uitest_path := ""
 var uitest_only := ""
 var seq_dir := ""
@@ -198,6 +200,10 @@ func _ready() -> void:
 
 	if self_base_dump_path != "":
 		_dump_self_base()
+		return
+
+	if self_base_check_path != "":
+		_check_self_base()
 		return
 
 	# Test / capture modes skip the menu so they never wait for input.
@@ -707,24 +713,21 @@ func _dump_self_base() -> void:
 	game = C3Game.new()
 	add_child(game)
 	game.setup(start_mode)
-	var starts: Array = []
-	for s in game.map_starts:
-		starts.append([float(s.x), float(s.y)])
-	var zones: Array = []
-	for z in game.cluster_zones:
-		var zd: Dictionary = z
-		zones.append([float(zd.pos.x), float(zd.pos.y), float(zd.r)])
+	# var_to_str preserves Variant types exactly (JSON.parse_string turns every
+	# number into a float and Rect2 into a String, which corrupts entity ids and
+	# building block_rects on load). The inner "base" blob is game.serialize()'s
+	# own base64 form, which deserialize() expects verbatim.
 	var dump := {
-		"format": "w52-self-base-1", "seed": int(Data.RANDOM_SEED),
+		"format": "w52-self-base-2", "seed": int(Data.RANDOM_SEED),
 		"map_w": int(Data.MAP_W), "map_h": int(Data.MAP_H),
 		"base": game.serialize(),
-		"tileblock": Marshalls.raw_to_base64(game.tileblock),
-		"mine_mask": Marshalls.raw_to_base64(game.mine_mask),
-		"starts": starts, "zones": zones, "meta": game.map_meta,
+		"terrain": game.terrain, "blocked": game.blocked, "height": game.height,
+		"tileblock": game.tileblock, "mine_mask": game.mine_mask,
+		"starts": game.map_starts, "zones": game.cluster_zones, "meta": game.map_meta,
 		"rng_state": game.rng.get("state"), "gen_rng_state": game.gen_rng.get("state"),
 		"sow_t": game.sow_t, "ai_enabled": Data.AI_ENABLED,
 	}
-	var out := _write_text(self_base_dump_path, JSON.stringify(dump))
+	var out := _write_text(self_base_dump_path, var_to_str(dump))
 	if out == "":
 		printerr("dump-self-base: could not write ", self_base_dump_path)
 		_quit(1)
@@ -736,6 +739,13 @@ func _dump_self_base() -> void:
 	add_child(probe)
 	var ok := _load_self_base(probe, out)
 	print("SELF-SNAPSHOT dump round-trip: ", "OK" if ok else "MISMATCH")
+	_quit(0 if ok else 1)
+
+func _check_self_base() -> void:
+	var probe := C3Game.new()
+	add_child(probe)
+	var ok := _load_self_base(probe, self_base_check_path)
+	print("SELF-SNAPSHOT check: ", "OK" if ok else "MISMATCH")
 	_quit(0 if ok else 1)
 
 # Numeric types survive JSON as floats, so compare recursively with numeric
@@ -756,25 +766,77 @@ func _same_json(a: Variant, b: Variant) -> bool:
 				return false
 		return true
 	if (a is int or a is float) and (b is int or b is float):
-		return float(a) == float(b)
+		# Sim positions are float32 (Vector2); JSON keeps float64 text, so the
+		# same Vector2 can print as two distinct float64 values. Compare after
+		# quantising both through float32 - that is the sim's actual precision.
+		var q := PackedFloat32Array()
+		q.append(float(a))
+		q.append(float(b))
+		return q[0] == q[1]
 	return str(a) == str(b)
+
+func _json_rect(v: Variant) -> Rect2:
+	if v is Rect2:
+		return v
+	if v is String:
+		var s := str(v)
+		var p0 := s.find("(")
+		var p1 := s.find(")", p0 + 1)
+		var p2 := s.find("(", p1 + 1)
+		var p3 := s.find(")", p2 + 1)
+		if p0 >= 0 and p1 > p0 and p2 > p1 and p3 > p2:
+			var a := s.substr(p0 + 1, p1 - p0 - 1).split(",")
+			var b := s.substr(p2 + 1, p3 - p2 - 1).split(",")
+			for i in a.size():
+				a[i] = str(a[i]).strip_edges()
+			for i in b.size():
+				b[i] = str(b[i]).strip_edges()
+			if a.size() == 2 and b.size() == 2 and a[0].is_valid_float() and a[1].is_valid_float() \
+				and b[0].is_valid_float() and b[1].is_valid_float():
+				return Rect2(float(a[0]), float(a[1]), float(b[0]), float(b[1]))
+	return Rect2()
+
+func _json_diff(a: Variant, b: Variant, path: String) -> String:
+	if a is Dictionary and b is Dictionary:
+		if (a as Dictionary).size() != (b as Dictionary).size():
+			return path + ".size " + str((a as Dictionary).size()) + "!=" + str((b as Dictionary).size())
+		for k in (a as Dictionary):
+			var s := _json_diff((a as Dictionary)[k], (b as Dictionary)[k], path + "." + str(k))
+			if s != "":
+				return s
+		return ""
+	if a is Array and b is Array:
+		if (a as Array).size() != (b as Array).size():
+			return path + ".size " + str((a as Array).size()) + "!=" + str((b as Array).size())
+		for i in (a as Array).size():
+			var s := _json_diff((a as Array)[i], (b as Array)[i], path + "[" + str(i) + "]")
+			if s != "":
+				return s
+		return ""
+	if (a is int or a is float) and (b is int or b is float):
+		var q := PackedFloat32Array()
+		q.append(float(a))
+		q.append(float(b))
+		return "" if q[0] == q[1] else path + " " + str(b) + "->" + str(a)
+	return "" if str(a) == str(b) else path + " " + str(b).substr(0, 100) + "->" + str(a).substr(0, 100)
 
 # W5-2: restore a pre-baked snapshot into a FRESH C3Game without running
 # mapgen. The canonical deserializer restores entities/players/stats; it is
-# called with a 0x0 map so its own _assign_tileblocks() pass touches no cells,
-# then the real terrain arrays are installed verbatim from the dump. Returns
+# called with a 1x1 stub map so its own _assign_tileblocks() pass touches one
+# cell, then the real arrays are installed verbatim from the Variant dump. Returns
 # false (caller falls back to full setup) on any validation or parity failure.
 func _load_self_base(g: C3Game, path: String) -> bool:
-	var txt := FileAccess.get_file_as_string(path)
+	var resolved := _pick_target(path)
+	var txt := FileAccess.get_file_as_string(resolved)
 	if txt == "":
-		printerr("self-snapshot: cannot read ", path)
+		printerr("self-snapshot: cannot read ", resolved)
 		return false
-	var parsed = JSON.parse_string(txt)
+	var parsed = str_to_var(txt)
 	if not parsed is Dictionary:
-		printerr("self-snapshot: invalid JSON in ", path)
+		printerr("self-snapshot: not a Variant snapshot in ", path)
 		return false
 	var d: Dictionary = parsed
-	if str(d.get("format", "")) != "w52-self-base-1" or not d.has("base"):
+	if str(d.get("format", "")) != "w52-self-base-2" or not d.has("base"):
 		printerr("self-snapshot: bad format in ", path)
 		return false
 	var bs = d["base"]
@@ -814,20 +876,16 @@ func _load_self_base(g: C3Game, path: String) -> bool:
 	g.height.resize(g.MAP_W * g.MAP_H)
 	for i in mini(g.height.size(), int(raw.size() / 4)):
 		g.height[i] = raw.decode_float(i * 4)
-	g.tileblock = Marshalls.base64_to_raw(str(d.get("tileblock", "")))
-	g.mine_mask = Marshalls.base64_to_raw(str(d.get("mine_mask", "")))
+	if d.get("tileblock") is PackedByteArray:
+		g.tileblock = d.tileblock
+	if d.get("mine_mask") is PackedByteArray:
+		g.mine_mask = d.mine_mask
 	var sarr = d.get("starts", [])
 	if sarr is Array:
-		g.map_starts = []
-		for s in sarr:
-			var sa: Array = s
-			g.map_starts.append(Vector2(float(sa[0]), float(sa[1])))
+		g.map_starts = (sarr as Array).duplicate(true)
 	var zarr = d.get("zones", [])
 	if zarr is Array:
-		g.cluster_zones = []
-		for z in zarr:
-			var za: Array = z
-			g.cluster_zones.append({"pos": Vector2(float(za[0]), float(za[1])), "r": float(za[2])})
+		g.cluster_zones = (zarr as Array).duplicate(true)
 	var meta = d.get("meta", {})
 	g.map_meta = meta.duplicate(true) if meta is Dictionary else {}
 	g.nav.configure(g.MAP_W, g.MAP_H, g.TILE)
@@ -839,28 +897,25 @@ func _load_self_base(g: C3Game, path: String) -> bool:
 		g.gen_rng.set("state", int(d.gen_rng_state))
 	Data.AI_ENABLED = bool(d.get("ai_enabled", true))
 	g.sow_t = float(d.get("sow_t", 0.0))
+	# Defensive: the Variant snapshot preserves Rect2 natively; this only
+	# normalises any legacy string-form block_rect from an older dump.
+	for e in g.entities:
+		if e.has("block_rect"):
+			e["block_rect"] = _json_rect(e.block_rect)
 	g.events.clear()
 	g.projectiles.clear()
 	g.corpses.clear()
 	g.rubble.clear()
 	# Parity gate: refuse the fast path unless the loaded game reproduces every
 	# serialized field and the non-serialized map arrays byte-for-byte.
-	# JSON.parse_string returns floats for integer-looking numbers, so a plain
-	# str() compare would report a false MISMATCH on every numeric field.
 	var now := g.serialize()
 	var same := _same_json(now, b)
 	if not same:
-		for k in b:
-			if not _same_json(now.get(k, null), b[k]):
-				var a1 := str(b[k])
-				var a2 := str(now.get(k, "<missing>"))
-				printerr("self-snapshot: field '", k, "' differs (dump ",
-					a1.substr(0, mini(160, a1.length())), " / loaded ",
-					a2.substr(0, mini(160, a2.length())), ")")
-				break
-	if g.tileblock != Marshalls.base64_to_raw(str(d.get("tileblock", ""))):
+		var dpath := _json_diff(now, b, "root")
+		printerr("self-snapshot: first difference at ", dpath)
+	if d.get("tileblock") is PackedByteArray and g.tileblock != d.tileblock:
 		same = false
-	if g.mine_mask != Marshalls.base64_to_raw(str(d.get("mine_mask", ""))):
+	if d.get("mine_mask") is PackedByteArray and g.mine_mask != d.mine_mask:
 		same = false
 	if g.map_starts.size() != (sarr as Array).size():
 		same = false
@@ -884,7 +939,7 @@ func _setup_full_game() -> void:
 	# pre-baked post-setup snapshot is supplied and passes validation/parity.
 	# Canonical runs (no --self-only) never take this path.
 	var loaded_fast := false
-	if selftest_only != "" and self_snapshot_path != "" and FileAccess.file_exists(self_snapshot_path):
+	if selftest_only != "" and self_snapshot_path != "" and FileAccess.file_exists(_pick_target(self_snapshot_path)):
 		loaded_fast = _load_self_base(game, self_snapshot_path)
 	if not loaded_fast:
 		game.setup(start_mode)
@@ -1042,6 +1097,10 @@ func _parse_args(args: PackedStringArray) -> void:
 				continue
 			"--dump-self-base":
 				self_base_dump_path = args[i + 1] if i + 1 < args.size() else ""
+				i += 2
+				continue
+			"--check-self-base":
+				self_base_check_path = args[i + 1] if i + 1 < args.size() else ""
 				i += 2
 				continue
 			"--ui-test":

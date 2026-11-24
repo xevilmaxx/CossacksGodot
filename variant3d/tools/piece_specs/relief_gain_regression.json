@@ -1,0 +1,31 @@
+{
+  "name": "relief_gain_regression",
+  "size_px": [512, 512],
+  "seed": 31,
+  "background": [40, 44, 48],
+  "native_render": true,
+  "final_resample": "lanczos",
+  "grain_lift": 0.25,
+  "layers": [
+    {"type": "block", "name": "grass1", "tile": true, "opacity": 1.0},
+    {"type": "patches", "seed": 31, "patch_px": [20, 80], "gain": 32,
+     "olive_weights": [1.0, 0.96, 0.68], "cover": "full", "opacity": 1.0,
+     "opacity_mask": {"type": "grid",
+                      "grid": [[0.25, 0.90, 0.35],
+                               [0.85, 0.45, 0.95],
+                               [0.30, 0.88, 0.28]]}},
+    {"type": "face", "geometry": {"kind": "polyline",
+      "points": [[0.10, 0.18], [0.38, 0.44], [0.66, 0.27], [0.92, 0.52]],
+      "height_px": 80},
+     "fill": "rock8", "flutes": "rock1", "stretch": 2.0,
+     "rim_px": 2, "contour": true,
+     "lit": "#6C614B", "shadow": "#393424", "ramp_gain": 24,
+     "opacity": 1.0},
+    {"type": "sprite", "name": "fern1", "source": "hi",
+     "pos": [0.24, 0.74], "scale": 0.35, "anchor": "foot", "opacity": 1.0}
+  ],
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [180, 220, 620, 660]
+  }
+}

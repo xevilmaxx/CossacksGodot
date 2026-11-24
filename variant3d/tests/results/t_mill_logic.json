@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "wild food nodes=0",
+			"name": "no_wild_food",
+			"passed": true
+		},
+		{
+			"detail": "mill stores food",
+			"name": "mill_is_drop",
+			"passed": true
+		},
+		{
+			"detail": "mill-owned fields=14 (cap 49)",
+			"name": "mill_sows_ring",
+			"passed": true
+		},
+		{
+			"detail": "food 0.0 -> 114.2",
+			"name": "food_reaches_mill",
+			"passed": true
+		},
+		{
+			"detail": "paid resow hits 0 -> 21",
+			"name": "resow_restores_field",
+			"passed": true
+		},
+		{
+			"detail": "free regrow hits 0 -> 50 (food 676 -> 844, no resow order)",
+			"name": "mill_regrows_free",
+			"passed": true
+		}
+	],
+	"id": "t_mill_logic",
+	"passed": true,
+	"unix_ms": 1795439349918.0
+}

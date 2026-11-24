@@ -1,0 +1,134 @@
+{
+  "albedo_channels": "RGB = donor block albedo; A = normalised height DATA (not opacity)",
+  "albedo_path": "res://assets/terrain/heightmap/splat_albedo.png",
+  "albedo_size": [
+    320,
+    320
+  ],
+  "alpha_as_transparency": false,
+  "art_pass": {
+    "albedo_gain": 1.15,
+    "ambient_energy": 2.5,
+    "emission_mult": 1.0,
+    "emission_rgb": [
+      0.119999997317791,
+      0.119999997317791,
+      0.100000001490116
+    ],
+    "energies_are_donor": false,
+    "exposure": 2.4,
+    "reason": "first capture with M0.6 gains + literal donor ambient measured L=0.134; gains raised for legibility",
+    "sun_energy": 2.2,
+    "tonemap": "LINEAR"
+  },
+  "camera": {
+    "cam_scale": 15.0,
+    "donor_height_range_ok": false,
+    "donor_literals": [
+      "camera.cfg:32-35 tilt -32",
+      "camera.cfg:44-45 focal 400",
+      "camera.cfg:6-10 height 20..58"
+    ],
+    "focal_length_mm": 400.0,
+    "fov_verified": false,
+    "fov_vertical_deg": 17.2716045379639,
+    "framing": "full grid in ONE mesh; --cam-scale=15.0 -> height 600.0 m / dolly 960.20071742463 m. Default scale 1.0 is donor-valid (40 m) and frames a local patch; scales >1 exit the donor 20..58 m range and are DIAGNOSTIC OVERVIEWS that keep only donor tilt/focal/sensor.",
+    "ground_dist_m": 960.20071742463,
+    "height_m": 600.0,
+    "position": [
+      0.0,
+      600.0,
+      960.200744628906
+    ],
+    "projection": "perspective",
+    "rotation_deg": [
+      -31.9999997521163,
+      0.0,
+      0.0
+    ],
+    "sensor_is_donor": false,
+    "sensor_width_mm_assumed": 216.0,
+    "tilt_deg": -32.0
+  },
+  "capture": {
+    "luminance_span": 0.0800423622131348,
+    "mean_luminance": 0.188873101950087,
+    "non_blank": true,
+    "samples": 4224
+  },
+  "capture_saved": true,
+  "donor_references": {
+    "ambient_diffuse": "data/env/lights/light.cfg:3-16",
+    "camera_tilt_focal": "data/cameras/camera.cfg:32-35,44-45 (sandbox camera)",
+    "height_source": "data/scripts/generatemap.inc:537-577 (donor); port dump main.gd:688-695",
+    "heightfield_shader": "data/shaders/shaders.lib:16-19 + hf.pvl.sm.vert (donor, not copied)",
+    "sun_lightvector": "data/shaders/water/water.dev.vert:22 (x/4, z/2, y Z-up)",
+    "sun_position": "data/env/lights/light.cfg:26-29",
+    "unverified": [
+      "donor sensor/absolute FOV",
+      "donor height-grid mesh LOD",
+      "donor cell size in metres",
+      "donor water-height literal",
+      "height-grid -> mesh connector"
+    ]
+  },
+  "grid": {
+    "cells": 102400,
+    "h": 320,
+    "w": 320
+  },
+  "height_max_m": 2.96399998664856,
+  "height_min_m": -2.96399998664856,
+  "height_range_m": 5.92799997329712,
+  "height_scale": 1.0,
+  "mesh_surfaces": 1,
+  "mesh_triangles": 203522,
+  "mesh_vertices": 102400,
+  "missing": [
+    "units/buildings/trees/decor",
+    "HUD/minimap/fog of war",
+    "donor HeightField shader PCF/fog (hf.pvl.sm.vert/hf.pvl.smx3.frag)",
+    "donor terrainmesh1..4.osm relief LOD props",
+    "donor verticalfront/verticalside oriented cliff face art",
+    "verified donor sensor/FOV and height-grid mesh LOD"
+  ],
+  "normals": "central finite difference on height[] (one-sided at borders)",
+  "performance": {
+    "frames_sampled": 26,
+    "mean_draw_calls": 2.0,
+    "mean_frame_delta_ms": 15.6848974358974,
+    "mean_frame_process_ms": 9.349
+  },
+  "sandbox": {
+    "capture_frame": 30,
+    "dump": "res://shots/g32_dump.json",
+    "extends": "SceneTree (CLI --script requirement; see file header)",
+    "no_donor_copy": true,
+    "scene_content": "terrain + water + sky/light only; no units/buildings/trees/HUD",
+    "world_extends": "Node3D",
+    "world_load": "load('res://scripts/heightmap_world3d.gd')"
+  },
+  "shot": "res://shots/hm3d_full.png",
+  "shot_size": {
+    "h": 720,
+    "resized": false,
+    "source_h": 720,
+    "source_w": 1280,
+    "w": 1280
+  },
+  "sun_direction_yup": [
+    -0.0861827880144119,
+    0.938701450824738,
+    0.0
+  ],
+  "terrain_draw_calls_expected": 1,
+  "tile_m": 2.0,
+  "timing_ms": {
+    "decode_heights": 8.261,
+    "mesh_build": 129.168,
+    "parse_dump": 9.071,
+    "total_build": 148.633
+  },
+  "uv": "cell-centre (x+0.5)/map_w, (z+0.5)/map_h; 0..1 over full map",
+  "water_level_m": -0.25
+}

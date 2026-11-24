@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Bake the windmill's rotating sail assembly as ONE clean sprite.
+
+The donor keeps the sails as a separate attach, exactly like the peasant hand
+tools:  data/actors/buildings/commoneur/attach/eurmilanim.oss
+        data/animations/aaf/eurmilanim.aaf           ("idle",1,249,morph)
+
+The tower sheet (<nat>_mil.png) was baked from the +X view, where the rotor is
+edge-on (the pale horizontal bars).  Here we render the same skinned mesh from
+the +Y view, where the four wooden lattice blades read properly, then world.gd
+squashes it horizontally and spins it so it projects back into the tower's
+view - a separate moving object, not a baked-in still.
+
+Run:
+  blender.exe --background --factory-startup --python tools/bake_mill_rotor.py -- \
+      --game "C:\\Games\\Cossacks 3" --out assets/models/anim [--size 320]
+
+By default the rotor sheet is written to <out>/common/buildings/ (the shared
+nation-first tree), where world.gd's `_nation_sheet()` resolver looks first.
+Its metadata sibling mill_rotor.json stays in <out>/buildings/. Pass
+--legacy-flat to write both at the anim root instead.
+"""
+import argparse, json, os, shutil, sys, tempfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bpy
+import bake_sprites as bs
+from mathutils import Vector
+
+
+def main():
+    rest = sys.argv[sys.argv.index("--")+1:] if "--" in sys.argv else []
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--game", required=True)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--size", type=int, default=320)
+    ap.add_argument("--samples", type=int, default=4)
+    ap.add_argument("--engine", default="cycles", choices=["cycles", "eevee", "workbench"])
+    ap.add_argument("--legacy-flat", action="store_true",
+                    help="write mill_rotor.{png,json} at the anim root instead of "
+                         "common/buildings/ + buildings/")
+    a = ap.parse_args(rest)
+
+    bs._ENGINE = a.engine; bs._SAMPLES = a.samples
+    game = os.path.abspath(a.game); out = os.path.abspath(a.out)
+    os.makedirs(out, exist_ok=True)
+    # Nation-first layout writes the PNG to common/buildings/ and keeps its
+    # JSON metadata in buildings/. --legacy-flat puts both at the anim root.
+    out_rotor = out if a.legacy_flat else os.path.join(out, "common", "buildings")
+    out_meta = out if a.legacy_flat else os.path.join(out, "buildings")
+    os.makedirs(out_rotor, exist_ok=True)
+    if out_meta != out_rotor:
+        os.makedirs(out_meta, exist_ok=True)
+    # Donor-derived intermediates must never land inside res://: keep them in
+    # a throwaway system-temp dir and remove it even when a step fails.
+    tmp = tempfile.mkdtemp(prefix="mill_rotor_")
+    try:
+        oss = os.path.join(game, "data", "actors", "buildings", "commoneur", "attach", "eurmilanim.oss")
+        if not os.path.exists(oss):
+            print("MISSING", oss); return 1
+        m = bs.read_oss(oss)
+        tex = os.path.join(game, "data", "materials", "buildings", "commoneur", "eurmil.dds")
+        png = bs.dds_to_png(tex, os.path.join(tmp, "eurmil.png"), True)
+
+        # Frame 0 is the AAF bind pose: an upright 4-blade rotor.  Raw verts are
+        # already in that pose (bone 0 is identity at frame 0), so no skinning is
+        # needed and the framing is stable.
+        vs = m["verts"]
+        xs = [v[0] for v in vs]; ys = [v[1] for v in vs]; zs = [v[2] for v in vs]
+        cx, cy, cz = (min(xs)+max(xs))*0.5, (min(ys)+max(ys))*0.5, (min(zs)+max(zs))*0.5
+        ortho = max(max(xs)-min(xs), max(zs)-min(zs)) * 1.06
+        mm = dict(m)
+        mm["verts"] = [(x-cx, y-cy, z-cz) for (x, y, z) in vs]
+
+        bs.setup_scene()
+        mat = bs.make_mat(png)
+        ob = bs.build_mesh(mm, mat)
+        # +Y camera: the rotor's lattice blades read face-on.
+        cam = bs.camera(Vector((0, 0, 0)), 90.0, ortho)
+        bs.render_cell(os.path.join(out_rotor, "mill_rotor.png"), a.size)
+        bpy.data.objects.remove(ob, do_unlink=True)
+        bpy.data.objects.remove(cam, do_unlink=True)
+
+        json.dump({"cell": a.size, "ortho": round(ortho, 3),
+                   "note": "face-on 4-blade sail rotor, squash in X and spin in Godot"},
+                  open(os.path.join(out_meta, "mill_rotor.json"), "w"), indent=1)
+        print("mill rotor: cell=%d ortho=%.3f" % (a.size, ortho), flush=True)
+        return 0
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

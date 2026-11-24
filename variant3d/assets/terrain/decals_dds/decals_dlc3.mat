@@ -1,0 +1,276 @@
+default : section.begin
+   Material : struct.begin
+      Name = polartd
+      Tag = 500
+      Shader = [nil]
+      Texture2Name = 
+      TextureOffset : struct.begin
+         X = 0
+         Y = 0
+         Z = 0
+      struct.end
+      TextureScale : struct.begin
+         X = 1
+         Y = 1
+         Z = 1
+      struct.end
+      BlendingMode = bmTransparency
+      FaceCulling = fcCull
+      MaterialOptions : struct.begin
+         moIgnoreFog = False
+         moNoLighting = False
+      struct.end
+      LibTextureName = 
+      Texture : struct.begin
+         imagebrightness = 1
+         ImageGamma = 1
+         disabled = False
+         Compression = tcHighSpeed
+         filteringquality = tfIsotropic
+         image = .\data\terrain\decals\buildings\polartd.dds
+         imagealpha = tiaDefault
+         magfilter = maLinear
+         minfilter = miLinearMipmapLinear
+         mappingmode = tmmUser
+         textureformat = tfDefault
+         texturemode = tmModulate
+         texturewrap = twBoth
+         mappingscoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+         mappingtcoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+      struct.end
+      BackProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+      FrontProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+   struct.end
+section.end
+section.begin {refkey=default}
+   Material.Name = poracad
+   Material.Texture.image = .\data\terrain\decals\buildings\poracad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porartd
+   Material.Texture.image = .\data\terrain\decals\buildings\porartd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porba2d
+   Material.Texture.image = .\data\terrain\decals\buildings\porba2d.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porbard
+   Material.Texture.image = .\data\terrain\decals\buildings\porbard.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porblad
+   Material.Texture.image = .\data\terrain\decals\buildings\porblad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porcend
+   Material.Texture.image = .\data\terrain\decals\buildings\porcend.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = pordipd
+   Material.Texture.image = .\data\terrain\decals\buildings\pordipd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porhoud
+   Material.Texture.image = .\data\terrain\decals\buildings\porhoud.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porstad
+   Material.Texture.image = .\data\terrain\decals\buildings\porstad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = portemd
+   Material.Texture.image = .\data\terrain\decals\buildings\portemd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porpord
+   Material.Texture.image = .\data\terrain\decals\buildings\porpord.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = poracadw
+   Material.Texture.image = .\data\terrain\decals\buildings\poracadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porartdw
+   Material.Texture.image = .\data\terrain\decals\buildings\porartdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porba2dw
+   Material.Texture.image = .\data\terrain\decals\buildings\porba2dw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porbardw
+   Material.Texture.image = .\data\terrain\decals\buildings\porbardw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porbladw
+   Material.Texture.image = .\data\terrain\decals\buildings\porbladw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porcendw
+   Material.Texture.image = .\data\terrain\decals\buildings\porcendw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = pordipdw
+   Material.Texture.image = .\data\terrain\decals\buildings\pordipdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porhoudw
+   Material.Texture.image = .\data\terrain\decals\buildings\porhoudw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porstadw
+   Material.Texture.image = .\data\terrain\decals\buildings\porstadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = portemdw
+   Material.Texture.image = .\data\terrain\decals\buildings\portemdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = porpordw
+   Material.Texture.image = .\data\terrain\decals\buildings\porpordw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunacad
+   Material.Texture.image = .\data\terrain\decals\buildings\hunacad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunartd
+   Material.Texture.image = .\data\terrain\decals\buildings\hunartd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunba2d
+   Material.Texture.image = .\data\terrain\decals\buildings\hunba2d.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunbard
+   Material.Texture.image = .\data\terrain\decals\buildings\hunbard.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunblad
+   Material.Texture.image = .\data\terrain\decals\buildings\hunblad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = huncend
+   Material.Texture.image = .\data\terrain\decals\buildings\huncend.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hundipd
+   Material.Texture.image = .\data\terrain\decals\buildings\hundipd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunhoud
+   Material.Texture.image = .\data\terrain\decals\buildings\hunhoud.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunstad
+   Material.Texture.image = .\data\terrain\decals\buildings\hunstad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = huntemd
+   Material.Texture.image = .\data\terrain\decals\buildings\huntemd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunacadw
+   Material.Texture.image = .\data\terrain\decals\buildings\hunacadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunartdw
+   Material.Texture.image = .\data\terrain\decals\buildings\hunartdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunba2dw
+   Material.Texture.image = .\data\terrain\decals\buildings\hunba2dw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunbardw
+   Material.Texture.image = .\data\terrain\decals\buildings\hunbardw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunbladw
+   Material.Texture.image = .\data\terrain\decals\buildings\hunbladw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = huncendw
+   Material.Texture.image = .\data\terrain\decals\buildings\huncendw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hundipdw
+   Material.Texture.image = .\data\terrain\decals\buildings\hundipdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunhoudw
+   Material.Texture.image = .\data\terrain\decals\buildings\hunhoudw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = hunstadw
+   Material.Texture.image = .\data\terrain\decals\buildings\hunstadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = huntemdw
+   Material.Texture.image = .\data\terrain\decals\buildings\huntemdw.dds
+section.end

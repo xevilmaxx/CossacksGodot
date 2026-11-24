@@ -1,0 +1,32 @@
+{
+	"checks": [
+		{
+			"detail": "parsed=true, unit keys=54 (expect 54)",
+			"name": "main_index_54_units",
+			"passed": true
+		},
+		{
+			"detail": "actions=304, out-of-spec=0 (duration>0, frames>=2 except donor-static siege idle, loop bool): []",
+			"name": "action_structure",
+			"passed": true
+		},
+		{
+			"detail": "out-of-range actions=0 (fig_h 0.30..0.95, foot 0.66..0.96 measured pose band, cx 0.40..0.60): []",
+			"name": "metric_ranges",
+			"passed": true
+		},
+		{
+			"detail": "walks checked=54, donor-class cadence bands, out-of-band=0: []",
+			"name": "walk_stride",
+			"passed": true
+		},
+		{
+			"detail": "naval units=1, schema deviations=0: []",
+			"name": "naval_schema",
+			"passed": true
+		}
+	],
+	"id": "t_anim_metrics",
+	"passed": true,
+	"unix_ms": 1795433365151.0
+}

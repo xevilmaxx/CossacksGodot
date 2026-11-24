@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "enemy tur town hall owner after 8 s with 4 peasants = 0 (want 0), flag=true",
+			"name": "town_hall_capturable_by_peasants",
+			"passed": true
+		},
+		{
+			"detail": "mine capture flag=true, owner=0, deposit 20000->20000, nearest_mine(p0)=id=429",
+			"name": "mine_deposit_captured_with_mine",
+			"passed": true
+		},
+		{
+			"detail": "captured tur hall; train_unit(0,'serdiuk') queued 'jannisary', want 'jannisary' (baseline rus 'strelet')",
+			"name": "foreign_town_hall_unlocks_nation",
+			"passed": true
+		},
+		{
+			"detail": "guarded enemy hall owner after assault = 1 (want 1), guard order=guard, attackers=4",
+			"name": "capture_precondition_guard_blocks",
+			"passed": true
+		},
+		{
+			"detail": "economy sids without capture:true = []",
+			"name": "economy_buildings_capturable",
+			"passed": true
+		},
+		{
+			"detail": "military sids with capture:true = []",
+			"name": "military_buildings_not_capturable",
+			"passed": true
+		}
+	],
+	"id": "t_capture",
+	"passed": true,
+	"unix_ms": 1795510548238.0
+}

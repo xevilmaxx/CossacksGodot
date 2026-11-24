@@ -1,0 +1,34 @@
+{
+  "name": "shore_bands_regression",
+  "size_px": [512, 512],
+  "seed": 23,
+  "background": [40, 44, 48],
+  "bands": {
+    "seed": 23,
+    "direction": "down",
+    "origin": 0.52,
+    "jitter_px": 12,
+    "step_px": 6,
+    "sand": [26, 51],
+    "wash": [30, 50]
+  },
+  "layers": [
+    {"type": "block", "name": "grass_rock1", "opacity": 1.0, "tile": true},
+    {"type": "block", "name": "sandsea3", "mask": "band", "band": "sand",
+     "rect": [0.0, 0.0, 1.0, 0.7], "feather_px": 4,
+     "contour": true, "contour_strength": 0.8},
+    {"type": "sprite", "name": "rock1", "source": "block",
+     "pos": [0.24, 0.34], "stretch": [0.42, 0.34], "tile": true,
+     "anchor": "center", "opacity": 0.55},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "wash",
+     "band": "wash", "opacity": 0.9, "feather_px": 3},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "foam",
+     "band": "wash", "intensity": 1.1, "speck_scale": 1.0, "opacity": 0.95},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "shallow",
+     "band": "water", "opacity": 0.85}
+  ],
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [300, 180, 740, 620]
+  }
+}

@@ -1,0 +1,268 @@
+default : section.begin
+   Material : struct.begin
+      Name = polartd
+      Tag = 500
+      Shader = [nil]
+      Texture2Name = 
+      TextureOffset : struct.begin
+         X = 0
+         Y = 0
+         Z = 0
+      struct.end
+      TextureScale : struct.begin
+         X = 1
+         Y = 1
+         Z = 1
+      struct.end
+      BlendingMode = bmTransparency
+      FaceCulling = fcCull
+      MaterialOptions : struct.begin
+         moIgnoreFog = False
+         moNoLighting = False
+      struct.end
+      LibTextureName = 
+      Texture : struct.begin
+         imagebrightness = 1
+         ImageGamma = 1
+         disabled = False
+         Compression = tcHighSpeed
+         filteringquality = tfIsotropic
+         image = .\data\terrain\decals\buildings\polartd.dds
+         imagealpha = tiaDefault
+         magfilter = maLinear
+         minfilter = miLinearMipmapLinear
+         mappingmode = tmmUser
+         textureformat = tfDefault
+         texturemode = tmModulate
+         texturewrap = twBoth
+         mappingscoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+         mappingtcoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+      struct.end
+      BackProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+      FrontProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+   struct.end
+section.end
+section.begin {refkey=default}
+   Material.Name = denacad
+   Material.Texture.image = .\data\terrain\decals\buildings\denacad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denartd
+   Material.Texture.image = .\data\terrain\decals\buildings\denartd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denba2d
+   Material.Texture.image = .\data\terrain\decals\buildings\denba2d.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denbard
+   Material.Texture.image = .\data\terrain\decals\buildings\denbard.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denblad
+   Material.Texture.image = .\data\terrain\decals\buildings\denblad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = dencend
+   Material.Texture.image = .\data\terrain\decals\buildings\dencend.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = dendipd
+   Material.Texture.image = .\data\terrain\decals\buildings\dendipd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denhoud
+   Material.Texture.image = .\data\terrain\decals\buildings\denhoud.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denstad
+   Material.Texture.image = .\data\terrain\decals\buildings\denstad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = dentemd
+   Material.Texture.image = .\data\terrain\decals\buildings\dentemd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netacad
+   Material.Texture.image = .\data\terrain\decals\buildings\netacad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netartd
+   Material.Texture.image = .\data\terrain\decals\buildings\netartd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netba2d
+   Material.Texture.image = .\data\terrain\decals\buildings\netba2d.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netbard
+   Material.Texture.image = .\data\terrain\decals\buildings\netbard.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netblad
+   Material.Texture.image = .\data\terrain\decals\buildings\netblad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netcend
+   Material.Texture.image = .\data\terrain\decals\buildings\netcend.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netdipd
+   Material.Texture.image = .\data\terrain\decals\buildings\netdipd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = nethoud
+   Material.Texture.image = .\data\terrain\decals\buildings\nethoud.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netstad
+   Material.Texture.image = .\data\terrain\decals\buildings\netstad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = nettemd
+   Material.Texture.image = .\data\terrain\decals\buildings\nettemd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denacadw
+   Material.Texture.image = .\data\terrain\decals\buildings\denacadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denartdw
+   Material.Texture.image = .\data\terrain\decals\buildings\denartdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denba2dw
+   Material.Texture.image = .\data\terrain\decals\buildings\denba2dw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denbardw
+   Material.Texture.image = .\data\terrain\decals\buildings\denbardw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denbladw
+   Material.Texture.image = .\data\terrain\decals\buildings\denbladw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = dencendw
+   Material.Texture.image = .\data\terrain\decals\buildings\dencendw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = dendipdw
+   Material.Texture.image = .\data\terrain\decals\buildings\dendipdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denhoudw
+   Material.Texture.image = .\data\terrain\decals\buildings\denhoudw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = denstadw
+   Material.Texture.image = .\data\terrain\decals\buildings\denstadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = dentemdw
+   Material.Texture.image = .\data\terrain\decals\buildings\dentemdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netacadw
+   Material.Texture.image = .\data\terrain\decals\buildings\netacadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netartdw
+   Material.Texture.image = .\data\terrain\decals\buildings\netartdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netba2dw
+   Material.Texture.image = .\data\terrain\decals\buildings\netba2dw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netbardw
+   Material.Texture.image = .\data\terrain\decals\buildings\netbardw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netbladw
+   Material.Texture.image = .\data\terrain\decals\buildings\netbladw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netcendw
+   Material.Texture.image = .\data\terrain\decals\buildings\netcendw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netdipdw
+   Material.Texture.image = .\data\terrain\decals\buildings\netdipdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = nethoudw
+   Material.Texture.image = .\data\terrain\decals\buildings\nethoudw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = netstadw
+   Material.Texture.image = .\data\terrain\decals\buildings\netstadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = nettemdw
+   Material.Texture.image = .\data\terrain\decals\buildings\nettemdw.dds
+section.end

@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "shots +2, fx 0->4, events=[\"shot\", \"smoke\", \"shot\", \"smoke\"], fx_layer z=4, near-shooter=true",
+			"name": "volley_fx_on_layer",
+			"passed": true
+		},
+		{
+			"detail": "shot life=0.35s, smoke life=1.60s (flash must be shorter than the puff)",
+			"name": "muzzle_flash_short_lived",
+			"passed": true
+		},
+		{
+			"detail": "life=1.60s, alive after 0.5s=true (t=0.50), gone after 2.5s=true",
+			"name": "smoke_persists_then_expires",
+			"passed": true
+		},
+		{
+			"detail": "arrow shots +1, in-flight arrow=true, trail evidence=true (baseline has no trail FX — FAIL is correct)",
+			"name": "arrow_trail",
+			"passed": true
+		},
+		{
+			"detail": "cannon shots +0, explode events +1, explode/crater fx=true",
+			"name": "artillery_explosion_fx",
+			"passed": false
+		},
+		{
+			"detail": "FX_CAP=220, before=1, after 280 adds=220 (oldest items evicted)",
+			"name": "fx_cap_respected",
+			"passed": true
+		}
+	],
+	"id": "t_smoke_fx",
+	"passed": false,
+	"unix_ms": 1795512295080.0
+}

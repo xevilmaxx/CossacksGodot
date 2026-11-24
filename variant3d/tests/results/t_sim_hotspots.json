@@ -1,0 +1,42 @@
+{
+	"checks": [
+		{
+			"detail": "200 points x 2 targets: 0 mismatches, 0 indexed-only, 0 brute-only; index cells=791",
+			"name": "block_rect_index_parity",
+			"passed": true
+		},
+		{
+			"detail": "4 rects in 791 tile buckets",
+			"name": "block_rect_index_populated",
+			"passed": true
+		},
+		{
+			"detail": "300 units: max position delta 0.0000000 m vs legacy 9-cell algorithm",
+			"name": "separation_matches_legacy",
+			"passed": true
+		},
+		{
+			"detail": "min gap 0.838 m, overlapping pairs 0 among 300 units",
+			"name": "separation_no_overlap",
+			"passed": true
+		},
+		{
+			"detail": "officer/drummer/4 members resolve to squad 1 via unit.squad",
+			"name": "squad_fast_path",
+			"passed": true
+		},
+		{
+			"detail": "member without unit.squad still found by membership scan (got 77)",
+			"name": "squad_legacy_fallback",
+			"passed": true
+		},
+		{
+			"detail": "unrelated id returns empty dictionary",
+			"name": "squad_nonmember_empty",
+			"passed": true
+		}
+	],
+	"id": "t_sim_hotspots",
+	"passed": true,
+	"unix_ms": 1795452879055.0
+}

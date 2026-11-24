@@ -1,0 +1,17 @@
+{
+	"checks": [
+		{
+			"detail": "root viewport texture acquired",
+			"name": "viewport_texture",
+			"passed": true
+		},
+		{
+			"detail": "res://shots/mill_rotor_check.png (1280, 720) (save error=0)",
+			"name": "png_saved",
+			"passed": true
+		}
+	],
+	"id": "t_mill_rotor",
+	"passed": true,
+	"unix_ms": 1795257599226.0
+}

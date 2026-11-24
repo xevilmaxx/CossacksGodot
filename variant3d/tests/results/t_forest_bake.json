@@ -1,0 +1,52 @@
+{
+	"checks": [
+		{
+			"detail": "forest_layer idx=1 z=1, res_layer idx=3 z=1",
+			"name": "forest_layer_below_res_layer",
+			"passed": true
+		},
+		{
+			"detail": "view=true size=(1280, 1280) canvas=true",
+			"name": "bake_viewport_ready",
+			"passed": true
+		},
+		{
+			"detail": "forest_chunks=20, order=20 (visible 5x5 chunks)",
+			"name": "chunks_populate",
+			"passed": true
+		},
+		{
+			"detail": "chunks=20 order=20 cap=20",
+			"name": "lru_bounded",
+			"passed": true
+		},
+		{
+			"detail": "key stable across res_dirty/fields_anim: 7|160x160|16|16.00|summer|plains|91",
+			"name": "no_res_dirty_invalidation",
+			"passed": true
+		},
+		{
+			"detail": "cleared=true, chunks after re-bake=4",
+			"name": "invalidate_rebakes",
+			"passed": true
+		},
+		{
+			"detail": "detail=0 tree=5 understory=4 args (bake args are optional)",
+			"name": "fallback_still_callable",
+			"passed": true
+		},
+		{
+			"detail": "fog_z=10 water_z=-9",
+			"name": "layering_untouched",
+			"passed": true
+		},
+		{
+			"detail": "7|160x160|16|16.00|summer|plains|91",
+			"name": "deterministic_signature",
+			"passed": true
+		}
+	],
+	"id": "t_forest_bake",
+	"passed": true,
+	"unix_ms": 1795453059891.0
+}

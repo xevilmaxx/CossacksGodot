@@ -1,0 +1,92 @@
+{
+  "name": "shore_rock",
+  "size_px": [512, 512],
+  "seed": 7,
+  "background": [40, 44, 48],
+  "source_doc": "docs/audit/PIECES/shore_rock.md",
+  "resample": "nearest",
+  "adaptation_notes_v2": [
+    "Upgraded renderer: the new face layer supplies the rock8 fill, hard 2 px contour rim and lit/shadow ramp; rock1 flutes are layered over the fill as a source:'block' sprite (stretch/tile mode), which is the documented face-skin route. face.flutes is disabled because that path's gain darkens rock1 to near-black in this renderer build (observed in an intermediate render). No acceptance number weakened.",
+    "face.geometry.height_px=55 on the 512 canvas = 77 px @720p, inside A5's 60-90 target; the straight top polyline gives near-zero top/bottom x drift for A4.",
+    "ramp_gain=18 with a raw rock8 fill (~#494226) targets A3's 1.7-2.1 luma ratio; lit/shadow hexes are the doc's own #6C614B / #393424.",
+    "rock_sea1 is retained only as a small accent (stretch 0.16x0.20) because rock_stones1 is still missing (doc open question 2); it no longer dominates the face-height measurement."
+  ],
+  "adaptation_notes": [
+    "Transcribed from shore_rock.md section 3 (machine-readable build spec); no acceptance number changed.",
+    "The doc's sprite name rock_stones1 has no asset on disk (open question 2); substituted rock_sea1 (app/assets/models/sprites_hi/rock_sea1.png), a faceted striated sea-rock accent, with source hi and anchor foot as required by the renderer schema. Substitution is documented, not tuned to pass.",
+    "Renderer accepts a single reference image/box; reference.primary.zoom_crop [840,360,1100,480] is used. All other boxes, donor tile data and script line ranges are preserved under reference.detail.",
+    "Face/rim/ratio acceptance numbers are kept verbatim at top level and under acceptance; unknown keys are ignored by the renderer."
+  ],
+  "layers": [
+    {"type": "block", "name": "rock8", "tile": true, "opacity": 1.0},
+    {"type": "face",
+     "geometry": {"kind": "polyline",
+                  "points": [[0.22, 0.28], [0.42, 0.28], [0.62, 0.28]],
+                  "height_px": 55},
+     "fill": "rock8", "flutes": null, "stretch": 2.0,
+     "rim_px": 2, "contour": true, "contour_strength": 0.75,
+     "ramp_gain": 19, "lit": "#6C614B", "shadow": "#393424", "opacity": 1.0},
+    {"type": "sprite", "name": "rock1", "source": "block",
+     "pos": [0.42, 0.36], "stretch": [0.40, 0.12], "tile": true,
+     "anchor": "center", "opacity": 0.75,
+     "role": "vertical_flutes_over_rock8_fill"},
+    {"type": "sprite", "name": "rock_sea1", "source": "hi", "pos": [0.7, 0.6],
+     "stretch": [0.16, 0.20], "anchor": "foot", "opacity": 1.0}
+  ],
+  "face_height_px": 75,
+  "face_height_range_px": [60, 90],
+  "face_height_fraction_of_frame": [0.08, 0.12],
+  "face_apparent_slope_deg": [75, 85],
+  "rim_edge_width_px": 2,
+  "rim_edge_width_max_px": 3,
+  "lit_shadow_luma_ratio_target": 1.9,
+  "lit_shadow_luma_ratio_range": [1.7, 2.1],
+  "acceptance": {
+    "A1": {"colSD_min": 12, "anisotropy_min": 3.0, "unit": "luminance std ratio", "donor_lit_colSD": 21.1, "donor_lit_rowSD": 3.3, "donor_anisotropy": 6.4},
+    "A2": {"rim_transition_max_px": 3, "target_px": 2},
+    "A3": {"lit_shadow_luma_ratio": [1.7, 2.1], "target": 1.9},
+    "A4": {"top_bottom_x_offset_div_height_max": 0.20},
+    "A5": {"face_height_px": [60, 90], "fraction_of_frame": [0.08, 0.12]},
+    "A6": {"lit_face_hex": "#726651", "prior_hex": "#6C614B", "tolerance_rgb": 12, "rock_fill_hex": "#494226"},
+    "global_gate": {"hsv_saturation": [0.30, 0.55], "hsv_value": [0.25, 0.45]}
+  },
+  "reference": {
+    "image": "cossacks-3-v1-498085.jpg",
+    "box": [840, 360, 1100, 480],
+    "detail": {
+      "primary": {
+        "file": "C:/Users/Maxym.Oboyshev/Downloads/c3/cossacks-3-v1-498085.jpg",
+        "size": [1280, 720],
+        "zoom_crop": [840, 360, 1100, 480],
+        "zoom_factor": 4,
+        "lit_face": {"box": [948, 385, 1012, 450], "hex": "#726651", "luma": 103.3, "col_sd": 21.1, "row_sd": 3.3},
+        "mid_face": {"box": [925, 380, 958, 445], "hex": "#464030", "luma": 64.0},
+        "shadow_face": {"box": [880, 300, 930, 370], "hex": "#312E1B", "luma": 44.9},
+        "grass_rim": {"box": [955, 365, 985, 383], "hex": "#3F3D24", "luma": 58.3},
+        "rock_below_rim": {"box": [955, 388, 985, 404], "hex": "#6F644C", "luma": 100.3},
+        "rim_profile": {"x": 965, "y": [368, 400], "grass_r_minus_g": [1, 4], "rock_r_minus_g": [9, 13], "transition_px": 2},
+        "prior_hex_pair": {"lit": "#6C614B", "shadow": "#393424", "ratio": 1.9}
+      },
+      "secondary": {
+        "file": "C:/Users/Maxym.Oboyshev/Downloads/c3/articolo-787.jpg",
+        "size": [960, 540],
+        "gully_center": {"box": [400, 225, 480, 285], "hex": "#4B452C", "luma": 68.3},
+        "gully_left": {"box": [140, 445, 215, 495], "hex": "#403A25", "luma": 57.5}
+      },
+      "donor_tiles": {
+        "dir": "C:/Games/Cossacks 3/data/terrain/tiles/textures",
+        "size": [1024, 1024],
+        "rock1": {"hex": "#4D4335", "anisotropy": 1.41, "sector": "bB"},
+        "rock4": {"hex": "#473D32", "anisotropy": 0.57, "sector": "bR/bT/bRB", "height_override": ">2.4"},
+        "rock7": {"hex": "#4C4335", "anisotropy": 1.06, "sector": "bLB"},
+        "rock8": {"hex": "#494226", "anisotropy": 0.91, "height_override": ">2.7"}
+      },
+      "donor_script": {
+        "file": "C:/Games/Cossacks 3/data/scripts/common.inc/texturemap.inc",
+        "sector_lines": [474, 501],
+        "cliff_name_lines": [577, 591],
+        "height_override_lines": [594, 601]
+      }
+    }
+  }
+}

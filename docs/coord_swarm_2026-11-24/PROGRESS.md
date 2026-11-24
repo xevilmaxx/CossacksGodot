@@ -217,6 +217,97 @@ historical failures" once the background job finishes (avoid spool race).
 - Runner queue ~7 pending (burst), lock fresh — no orphan. No full gate until all
   W5 reports land.
 
+### Wave 5 progress
+- W5-7 LANDED: edge-scroll depth ramp + log dwell in camera.gd, 6 config keys
+  with defaults. Donor has FLAT speed only (oncamera.inc:10-11,23-29) → explicit
+  port improvement; job 1313 parse/load 6/6, FEEL unverified (owner review).
+- W5-5 mid-flight: strong MEASURED zoom evidence (canvas scale 0.75 → 2.90 →
+  0.395, 245,740 changed pixels); final aura A/B capture queued. No code edits.
+
+### Wave 5 final status
+- W5-2 LANDED: per-slot AI tiers FIXED (main.gd prefers roster ai_difficulty;
+  W5-1's ai.gd consumer reads it). Pre-baked self-snapshot fast subset FIXED
+  parity bug (JSON float/Rect2 loss → var_to_str + quantised compare): 41.83 s
+  vs 61.72 s no-snapshot (32% faster), full 1337 29/29 PASS. **<30 s NOT met**
+  — residual ~36 s world/hud forest-bake; no assertions weakened.
+- ALL Wave-5 reports now landed (W5-1..W5-7 + W5-6 recon). Wave-6 reports all
+  landed (G3-1..G3-4). Wave-7 phase 1 landed (V7-0/V7-1/V7-2 + H1).
+  Need one FINAL settled gate in app/ before opening phase 2.
+
+### Wave 5 AI result (measured fail, honest)
+- W5-1 report landed: per-slot AI tier consumer FIXED in ai.gd (normal path
+  byte-identical). Force/wave root causes fixed (real-cost gate + donor min-count
+  quotas), clean soak job 1316 ok 300 sim-s → force 84 (was 46) but wave 0;
+  effective threshold is 120 (config.json overrides data.gd's 260), so
+  acceptance is MEASURED FAIL. Binding cause: gold mine never built (gold floor 2)
+  + single barracks throughput — left as explicit next ticket, NOT re-patched.
+
+### Wave 6 heightmap result
+- G3-2 LANDED: ONE full-grid ArrayMesh (102,400 verts / 203,522 tris / 1
+  surface, build 129.168 ms), donor-block splat albedo, water plane + donor
+  light; 1280×720 non-blank capture. VERDICT = GEOMETRY_FIX_VERIFIED,
+  DONOR_FIDELITY_NOT_CLAIMED: still flat/dark, no relief/face art/units, FOV
+  unverified (600 m overview). Donor text cited, no binaries copied. Feeds V7-4
+  full world3d in variant3d; never replaces shipping 2D renderer.
+
+### Wave 5 visual A/B result
+- W5-5 report landed: startup zoomed-out PASS (canvas_scale 0.75 at frame 475),
+  wheel zoom PASS (0.75→2.90→0.395 via real OS wheel), clamp PASS (2.9 donor
+  max), 245,740 px changed (26.66%), real GPU capture 1280×720. Aura/rally/
+  deselect and donor equality UNVERIFIED — building was off-screen in the
+  selected capture and a minimap click moved the box the wrong way; flagged for
+  owner review with a required re-capture (blocker, not a claimed pass).
+
+### 3D variant: NO 2D bake pipeline (owner directive 2026-11-24)
+- Owner: "in 3d variant you need models anim pngs? if its 3d why even need
+  making baking." CORRECT — recorded §NO 2D BAKE PIPELINE in WAVE7 charter.
+  3D variant renders MESHES: keep donor geometry (.obj→.glb), material albedo
+  textures, and ANIMATION DATA (.oss skin + .aaf actions); DEAD WEIGHT = baked
+  8-azimuth sprite sheets (anim/** PNGs, sprites/, sprites_hi/), anim/index.json
+  metrics, buildings.json sprite keys, bake tools. V7-0 instructed to `.gdignore`
+  only the sprite dirs inside variant3d (not obj/tex/blocks); H1 hygiene told to
+  document and ignore 3D-conversion garbage. V7-2 independently confirmed
+  donor-faithful skinned rigs are BLOCKED (unreadable bone hierarchy) and the
+  sampled-pose fallback must be labelled PORT APPROXIMATION, not donor parity.
+
+### Hygiene + 3D governance (owner directives 2026-11-24)
+- H1 launched (owns ONLY clean_temp.bat, .gitignore, launch_3d.bat, new
+  launch_variant3d.bat + report) to add variant3d/ cleanup rules, 3D experiment
+  ignore patterns, and fix stale launch scripts. Owner added "point launch3d.bat
+  to correct godot project" — H1 instructed to target active `variant3d/`, with
+  legacy M0 sandbox documented separately.
+- Governing rule for all 3D work: LEVERAGE DONOR CODE, don't invent; singleplayer
+  skirmish scope only. V7-1 inventory landed with donor-source table §2.4 and
+  D-12 scope; it corrected R-ARCH's ortho premise (donor main view is PERSPECTIVE)
+  and flagged study line-number drift — seam numbers must be re-verified.
+
+### Owner governing rule for 3D (added 2026-11-24)
+- "Leverage existent donor code to transform into feasible Godot project — no
+  need to invent who knows what; we are attempting the singleplayer part port."
+  Added §GOVERNING RULE to WAVE6/WAVE7 charters: every 3D decision cites donor
+  path:line (`data\scripts`, `data\cameras\camera.cfg`, `data\shaders`, `.osm/
+  .oss/.aaf`, `light.cfg/env.cfg`), UNVERIFIED where unreadable, no invented
+  constants, singleplayer skirmish scope only (D-12). Reinforced to G3-2 and
+  V7-0/V7-1/V7-2.
+- W5-4 LANDED: `t_hud_fidelity` 2 literals `[N]`→`(N)` (test 6/6 PASS, job 1291),
+  `uitest` minimap assertion NO-CHANGE (matches shipped bottom-left 200 px);
+  fresh uitest attempts all blocked by environmental/concurrent parse issues,
+  pre-wave-5 gate 1290 was 17/17. Donor bottom-right 240 px remains an OPEN
+  hud fidelity gap.
+
+### Wave 7 — FULL 3D variant with all mechanics (owner directive 2026-11-24)
+- Owner: "for 3d variant duplicate all game mechanics you invented for 2d world,
+  just make a 3d variant; may be separate project or same with 3d branch and own
+  tests." Architecture decision: **separate project `variant3d/` inside repo** —
+  full script/test/tool/scene/shader copies, assets HARDLINKED (2.31 GiB saved),
+  `.import` files real copies, own project.godot, OWN runner queue (no contention
+  with waves 5/6), own selftest/uitest. 2D app/ remains untouched.
+- Phase 1 launched: V7-0 scaffold + baseline 29/29 proof, V7-1 read-only mechanics
+  inventory (SHARE/ADAPT/NEW + world contract + ownership plan), V7-2 read-only
+  mesh/animation conversion feasibility. Charter + ids in `WAVE7_3D_VARIANT_CHARTER.md`.
+- Phase 2 (after scaffold): V7-3 main/config/data seams, V7-4 full world3d,
+  V7-5 camera3d+input, V7-6 hud, V7-7 tests, V7-8 meshes/anim, V7-9 scenes/env.
+
 ### Wave 6 — parallel Godot 3D heightmap variant (owner directive 2026-11-24)
 - Owner: "in parallel try to develop godot 3d variant; for terrain generation
   leverage heightmap concept instead of per-chunk reasoning; maybe donor were

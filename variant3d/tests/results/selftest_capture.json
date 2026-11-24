@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "resources_gathered": {},
+  "shots_fired": 4,
+  "sim_seconds": 7.8125,
+  "steps": [
+    {
+      "detail": "3 peasants captured the hall: yes",
+      "passed": true,
+      "step": "capture"
+    },
+    {
+      "detail": "peasant captured: player 0",
+      "passed": true,
+      "step": "peasant_capture"
+    }
+  ],
+  "version": 1
+}

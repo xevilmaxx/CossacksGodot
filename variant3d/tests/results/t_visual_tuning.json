@@ -1,0 +1,52 @@
+{
+	"checks": [
+		{
+			"detail": "unit_scale=1.25 show_centroids=false units_opaque=true",
+			"name": "config.defaults",
+			"passed": true
+		},
+		{
+			"detail": "Data UNIT_SCALE=2.0 SHOW_CENTROIDS=true UNITS_OPAQUE=true",
+			"name": "config.apply",
+			"passed": true
+		},
+		{
+			"detail": "low=0.25 high=4.0",
+			"name": "config.clamp",
+			"passed": true
+		},
+		{
+			"detail": "unit_anim_layer.material=():<ShaderMaterial#-9223372000817314238>",
+			"name": "shader.attached",
+			"passed": true
+		},
+		{
+			"detail": "rect size=(87.44, 87.44)",
+			"name": "anim.draw_queued",
+			"passed": true
+		},
+		{
+			"detail": "1.0=(87.44, 87.44)  2.0=(174.88, 174.88)",
+			"name": "unit_scale.doubles",
+			"passed": true
+		},
+		{
+			"detail": "foot y at scale 2.0=298.97, 1.0=299.48",
+			"name": "unit_scale.anchored",
+			"passed": true
+		},
+		{
+			"detail": "material=<Object#null>",
+			"name": "shader.disabled",
+			"passed": true
+		},
+		{
+			"detail": "false=false true=true (gates both the prop and building disk draws)",
+			"name": "centroids.toggle",
+			"passed": true
+		}
+	],
+	"id": "t_visual_tuning",
+	"passed": true,
+	"unix_ms": 1795257580840.0
+}

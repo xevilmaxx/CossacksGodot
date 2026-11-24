@@ -1,0 +1,188 @@
+default : section.begin
+   Material : struct.begin
+      Name = polartd
+      Tag = 500
+      Shader = [nil]
+      Texture2Name = 
+      TextureOffset : struct.begin
+         X = 0
+         Y = 0
+         Z = 0
+      struct.end
+      TextureScale : struct.begin
+         X = 1
+         Y = 1
+         Z = 1
+      struct.end
+      BlendingMode = bmTransparency
+      FaceCulling = fcCull
+      MaterialOptions : struct.begin
+         moIgnoreFog = False
+         moNoLighting = False
+      struct.end
+      LibTextureName = 
+      Texture : struct.begin
+         imagebrightness = 1
+         ImageGamma = 1
+         disabled = False
+         Compression = tcHighSpeed
+         filteringquality = tfIsotropic
+         image = .\data\terrain\decals\buildings\polartd.dds
+         imagealpha = tiaDefault
+         magfilter = maLinear
+         minfilter = miLinearMipmapLinear
+         mappingmode = tmmUser
+         textureformat = tfDefault
+         texturemode = tmModulate
+         texturewrap = twBoth
+         mappingscoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+         mappingtcoordinates : struct.begin
+            X = 1
+            Y = 0
+            Z = 0
+            W = 0
+         struct.end
+      struct.end
+      BackProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+      FrontProperties : struct.begin
+         Ambient : struct.begin
+            Red = 0.15686
+            Green = 0.15686
+            Blue = 0.15686
+            Alpha = 1
+         struct.end
+         Diffuse : struct.begin
+            Red = 0.78125
+            Green = 0.78125
+            Blue = 0.78125
+            Alpha = 1
+         struct.end
+         Emission : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Specular : struct.begin
+            Red = 0
+            Green = 0
+            Blue = 0
+            Alpha = 1
+         struct.end
+         Shininess = 16
+         PolygonMode = pmFill
+      struct.end
+   struct.end
+section.end
+section.begin {refkey=default}
+   Material.Name = scoacad
+   Material.Texture.image = .\data\terrain\decals\buildings\scoacad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scoartd
+   Material.Texture.image = .\data\terrain\decals\buildings\scoartd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scoba2d
+   Material.Texture.image = .\data\terrain\decals\buildings\scoba2d.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scobard
+   Material.Texture.image = .\data\terrain\decals\buildings\scobard.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scoblad
+   Material.Texture.image = .\data\terrain\decals\buildings\scoblad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scocend
+   Material.Texture.image = .\data\terrain\decals\buildings\scocend.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scodipd
+   Material.Texture.image = .\data\terrain\decals\buildings\scodipd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scohoud
+   Material.Texture.image = .\data\terrain\decals\buildings\scohoud.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scostad
+   Material.Texture.image = .\data\terrain\decals\buildings\scostad.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scotemd
+   Material.Texture.image = .\data\terrain\decals\buildings\scotemd.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scoacadw
+   Material.Texture.image = .\data\terrain\decals\buildings\scoacadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scoartdw
+   Material.Texture.image = .\data\terrain\decals\buildings\scoartdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scoba2dw
+   Material.Texture.image = .\data\terrain\decals\buildings\scoba2dw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scobardw
+   Material.Texture.image = .\data\terrain\decals\buildings\scobardw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scobladw
+   Material.Texture.image = .\data\terrain\decals\buildings\scobladw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scocendw
+   Material.Texture.image = .\data\terrain\decals\buildings\scocendw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scodipdw
+   Material.Texture.image = .\data\terrain\decals\buildings\scodipdw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scohoudw
+   Material.Texture.image = .\data\terrain\decals\buildings\scohoudw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scostadw
+   Material.Texture.image = .\data\terrain\decals\buildings\scostadw.dds
+section.end
+section.begin {refkey=default}
+   Material.Name = scotemdw
+   Material.Texture.image = .\data\terrain\decals\buildings\scotemdw.dds
+section.end

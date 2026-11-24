@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "players=3, is_ai=2 (want 3 / 2)",
+			"name": "three_players_two_ai",
+			"passed": true
+		},
+		{
+			"detail": "map_starts=4, AI1 home=(36.0,291.0) purse=1750, AI2 home=(40.0,40.0) purse=1750",
+			"name": "each_ai_has_start_and_resources",
+			"passed": true
+		},
+		{
+			"detail": "AI1 issued=11 active_ticks=120, AI2 issued=11 active_ticks=120",
+			"name": "each_ai_issues_orders",
+			"passed": true
+		},
+		{
+			"detail": "AI1 late_active=60/60 moved=141.3m units=8, AI2 late_active=60/60 moved=79.9m units=8",
+			"name": "no_ai_stuck",
+			"passed": true
+		},
+		{
+			"detail": "messages=0, distinct=0, worst=0x \"\" (limit 5x)",
+			"name": "no_chat_spam",
+			"passed": true
+		},
+		{
+			"detail": "time_s=30.00 winner=-1 finite_res=true",
+			"name": "game_continues_or_ends_cleanly",
+			"passed": true
+		}
+	],
+	"id": "t_multi_ai",
+	"passed": true,
+	"unix_ms": 1795257627024.0
+}

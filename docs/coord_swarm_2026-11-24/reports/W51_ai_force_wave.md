@@ -6,8 +6,8 @@ area: app/scripts/ai.gd ONLY (+ this report)
 backup: inbox/backup/ai.gd.bak-W51 (32,483 bytes, taken before first edit)
 charter: disjoint files; runner only; one clean 300 s soak; no unseeded RNG
 gaps: G-AI4 force/wave acceptance; per-slot AI tier consumer (R06 C1)
-runner_jobs: 1295 w51-force-soak (SKIPPED 0 s, FIFO race); 1298 w51-force-soak2 (FAILED at startup, 2 parse errors, no sim); smoke probe then final soak PENDING
-status: CODE FIXED / SOAK PENDING
+runner_jobs: 1295 SKIPPED; 1298 FAILED startup parse; 1308 smoke FAILED no output; 1315 parse-check OK; 1316 w51-force-soak-final OK exit 0 run 136.97 s
+status: CODE FIXED / MEASURED FAIL (force 84 < 120, wave 0) / tier consumer CODE FIXED
 donor_access: read-only latin-1 via Python; no donor binary executed
 ---
 
@@ -37,30 +37,32 @@ used below is the measured 120.
 
 | Cause | Current-source evidence (pre-edit) | Donor evidence |
 |---|---|---|
-| **Reserve horizon permanently closed the military gate** | `ai.gd:576` (backup) `can_train_military := ai_food_ok and not ai_starving and food_workers >= min_food_workers`; `ai.gd:82` `ai_food_ok = (food >= ai_food_reserve) and not starving`; `ai.gd:127-130` `reserve = upkeep_s*45 + 130 + 100`, floored by `AI_FOOD_THRESHOLD=260` (`config.json:111`). Job 1262 trace: food 215/248/268/239 vs reserve 269/271/273/275 → `food_ok:false` and `starving:true` on nearly every tick. `ai.gd:603` then `continue`d for every building: **no soldier was ever ordered.** | `PE:1405` `_ai_TryUnit` gates only on `_unit_CanApplyCountCostByID(...)` — the REAL cost; no reserve horizon. `PE:2094-2097` food-700 peasant switch. |
+| **Reserve horizon permanently closed the military gate** | `ai.gd:576` (backup) `can_train_military := ai_food_ok and not ai_starving and food_workers >= min_food_workers`; `ai.gd:110` `ai_food_ok = (food >= ai_food_reserve) and not starving`; `ai.gd:155-158` `reserve = upkeep_s*45 + 130 + 100`, floored by `AI_FOOD_THRESHOLD=260` (`config.json:111`). Job 1262 trace: food 215/248/268/239 vs reserve 269/271/273/275 → `food_ok:false` and `starving:true` on nearly every tick. `ai.gd:603` then `continue`d for every building: **no soldier was ever ordered.** | `PE:1405` `_ai_TryUnit` gates only on `_unit_CanApplyCountCostByID(...)` — the REAL cost; no reserve horizon. `PE:2094-2097` food-700 peasant switch. |
 | **Class quota bought low-force, expensive ranged units** | `ai.gd:617-620` (backup) `if cls["ranged"] < cls["melee"]: want="ranged"` — a 1:1 quota. After 4 melee (force 40) the AI bought `serdiuk` (generic, aiforce **2**, food cost **60**) instead of `pikeman` (aiforce **10**, food cost **25**, `data.gd:588-590,606-608`). This is exactly the measured 40→42→44→46 pattern. | `CLS:4784-4788` `armyMinCount[lightinfantry]=36`, `shootinfantry=16`, `fasthorse=16`, `hardhorse=16` → ~0.44 shooters/melee, ~0.89 horse/melee. |
-| **W2-4 train-sid fix and 8 s wave cooldown verified present** | `ai.gd:623-660` (now `685-...`) passes the GENERIC sid; `ai.gd:16,45,799-801,825-827` implements the 8 s `wave_cd` and increments `wave` only on a real sortie. | `DG:478 gc_ai_BitvaInterval = 8`. |
+| **W2-4 train-sid fix and 8 s wave cooldown verified present** | `ai.gd:696-736` passes the GENERIC sid; `ai.gd:20,72,853-913` implements the 8 s `wave_cd` and increments `wave` only on a real sortie. | `DG:478 gc_ai_BitvaInterval = 8`. |
 | **Barracks queue / AI_ATTACK_FORCE cap ruled out** | `ai.gd:598` queue<6 and `ai.gd:614` `force >= 2*120` were never approached with force=46. | n/a |
 
 ### 1.2 FIXED — minimal changes in `ai.gd`
 
-1. `ai.gd:39-46` — `AI_TRAIN_FOOD_MARGIN := 100.0` (one peasant price,
+1. `ai.gd:42-47` — `AI_TRAIN_FOOD_MARGIN := 100.0` (one peasant price,
    `data.gd:580`), `AI_RANGED_PER_MELEE := 16/36`, `AI_HORSE_PER_MELEE := 32/36`.
-2. `ai.gd:625-640` — `can_train_military` no longer uses the 45 s reserve /
+2. `ai.gd:631-637` — `can_train_military` no longer uses the 45 s reserve /
    predictive-starvation snapshot; it uses **real famine only** plus the
    existing food-worker ratio. The reserve stays in force for build/economy
    priority and peasant training (byte-unchanged there).
-3. `ai.gd:622-624,632-642,728-736` — a per-tick `food_budget` ledger, real
+3. `ai.gd:625,638-642,698-736` — a per-tick `food_budget` ledger, real
    food-cost capture on the chosen unit, and a `cost + margin` gate before
    `game.train_unit()`. `game.train_unit` itself still enforces the real cost
    (`game.gd:3826-3841`); no resource cheat was added.
-4. `ai.gd:676-686` — donor C9 class ratios replace the 1:1 quota.
+4. `ai.gd:681-686` — donor C9 class ratios replace the 1:1 quota.
 
 `Data.AI_ATTACK_FORCE` was **not** changed. No RNG, no tick-order change.
 
 ### 1.3 MEASURED soak
 
-PENDING — see §4, filled after job `w51-force-soak2` completes.
+**MEASURED FAIL** in the one clean soak (job 1316): force max 84 < effective
+threshold 120, `wave=0` throughout. Full trace rows and the next binding gate
+(gold mine never built) are in §4.3.
 
 ## 2. Residual 2 — per-slot AI tier consumer
 
@@ -74,23 +76,23 @@ file).
 
 ### 2.2 FIXED — consumer in `ai.gd` (read-only on config.gd)
 
-* `ai.gd:5` preloads `res://scripts/config.gd` as `C3ConfigScript` (same pattern
+* `ai.gd:6` preloads `res://scripts/config.gd` as `C3ConfigScript` (same pattern
   as `main.gd:37`); no called symbol renamed.
-* `ai.gd:14-16` `ai_tier` cache, refreshed once per think tick at `ai.gd:77`.
-* `ai.gd:49-59` `_tier()` reads `Data.PLAYER_AI_DIFFICULTY[player]` first, then
+* `ai.gd:16` `ai_tier` cache, refreshed once per think tick at `ai.gd:77`.
+* `ai.gd:56-65` `_tier()` reads `Data.PLAYER_AI_DIFFICULTY[player]` first, then
   falls back to `Data.AI_DIFFICULTY`, then `"normal"`. **Exact convention for
   W5-2: the array is indexed by the sim player index, identical to
   `Data.PLAYER_NATIONS[player]`; values are the raw donor ids
   `easy|normal|hard|veryhard|impossible`; `"none"` (human slot) and unknown
   strings are treated as absent and fall through to the global.** No method
   call, no new Data API.
-* `ai.gd:588-611` `_research()` consumes `AI_TIER_EFFECTS`: for non-normal
+* `ai.gd:586-611` `_research()` consumes `AI_TIER_EFFECTS`: for non-normal
   tiers it appends `mine_<iron|coal|gold>_up1..up<mine_maxlevel>` (cap 1..7)
   from `data.gd:1378-1401` — donor `PE:3653-3658` caps 2/3/4/5/5; and for
   `easy` (`max_level_att=0, max_level_def=0`, `PE:2204-2213`) it drops upgrades
   whose effect has `damage_mult` or `prot_bonus`. **The `normal` research order
   is byte-identical to backup.**
-* `ai.gd:799-811` `_raids()` consumes `divers` (`PE:2322-2327`, 0/0/2/4/4):
+* `ai.gd:794-809` `_raids()` consumes `divers` (`PE:2322-2327`, 0/0/2/4/4):
   `normal` keeps the legacy 6-cavalry minimum; higher tiers use the donor
   count as the raid-party size. This is a **port approximation** — `data.gd`
   has no diver unit or diversion order — and is reported as such, not claimed
@@ -162,11 +164,11 @@ below.
 +		var maxlevel := clampi(int(fx.get("mine_maxlevel", 3)), 1, 7)
 +		for k in ["iron", "coal", "gold"]:
 +			for lv in range(1, maxlevel + 1):
-+				var uid2 := "mine_" + k + "_up" + str(lv)
++				var uid2: String = "mine_" + str(k) + "_up" + str(lv)
 +				if Data.UPGRADES.has(uid2):
 +					order.append(uid2)
 @@ func _train ...
-+	var food_budget := res.food
++	var food_budget: float = float(res.food)
 -	var can_train_military := ai_food_ok and not ai_starving and food_workers >= min_food_workers
 +	var famine := bool(p.get("famine", false))
 +	var can_train_military := (not famine) and food_workers >= min_food_workers
@@ -199,8 +201,11 @@ below.
 +	if cav.size() < min_cav:
 ```
 
-Full unabridged diff is available with the command above; the elided lines are
-comments only.
+Full unabridged diff is available with the command above. Two lines shown in the
+abridged block above were themselves corrected after job 1298 (see §4.2):
+`var uid2: String = "mine_" + str(k) + "_up" + str(lv)` (`ai.gd:609`) and
+`var food_budget: float = float(res.food)` (`ai.gd:625`) — the final text, not
+the `:=` versions that failed to compile.
 
 ## 4. Runner jobs and measured acceptance
 
@@ -210,8 +215,9 @@ comments only.
 |---|---|---|---|
 | 1295 | `w51-force-soak` | **SKIPPED**, `wait=164.24 s`, `run=0.0`, `error="ticket 1295 was skipped (serving=1296)"` — FIFO burst race, **no Godot run** | `app/.godot_queue/results/00001295.json` |
 | 1298 | `w51-force-soak2` | **FAILED**, `wait=93.56 s`, `run=370.52 s`, `exit=1`, but stdout is only the Godot banner: **two GDScript parse errors in my first edit** (`Cannot infer the type of "uid2"` at `ai.gd:609`; `Cannot infer the type of "food_budget"` at `ai.gd:625`), so `main.gd` never loaded and the CLI watchdog forced exit at 360 s. **No C3AITrace row, no simulation.** | `app/.godot_queue/results/00001298.json`, `.../00001298_w51-force-soak2/stderr.txt` |
-| — | `w51-syntax-smoke` | short 3 s compile/trace probe before re-running the soak | PENDING |
-| — | final 300 s soak | PENDING | — |
+| 1308 | `w51-syntax-smoke` | **FAILED** `run=43.76 s`, stdout = Godot banner only, stderr 0 bytes, no trace rows; a 3 s probe made during heavy concurrent swarm edits (W5-2/W5-3/W5-7) — no sim evidence, not counted as a soak | `app/.godot_queue/results/00001308.json` |
+| 1315 | `w51-check-ai` | **OK** `run=5.77 s` — `--headless --path app --check-only --script res://scripts/ai.gd`, confirms both parse fixes compile | `app/.godot_queue/results/00001315.json` |
+| **1316** | **`w51-force-soak-final`** | **OK**, `wait=0.00 s`, `run=136.97 s`, `exit=0`, `stderr.txt` 0 bytes, stdout 623 lines = banner + **600 `C3AITrace` rows** (300 per player, t=0…299) | `app/.godot_queue/results/00001316.json`, `.../00001316_w51-force-soak-final/stdout.txt` |
 
 ### 4.2 Parse fix applied after job 1298
 
@@ -222,14 +228,71 @@ comments only.
 
 No logic change; both are explicit type annotations required by Godot 4.7.
 
-### 4.3 Measured acceptance
+### 4.3 Measured acceptance — job 1316 (the only clean soak)
 
-PENDING.
+Command (env prefix in PowerShell, exactly as tasked):
+
+```
+$env:C3_AI_TRACE='1'; python app\tools\godot_runner.py run --id w51-force-soak-final --timeout 400 -- --headless --path app -- --cli app/cli.json --cli-seconds 300 --timeout 360
+```
+
+`app/cli.json` was rewritten by the run: `"sim_seconds": 300.0`, `"winner": -1`,
+`player0_units: 38`, `player0_buildings: 7` — a complete, healthy 300 s CLI
+match, not an early exit.
+
+Verbatim `C3AITrace` rows (player 0 = AI; keys elided with `...` only where
+unchanged, quoted pairs byte-exact):
+
+```
+C3AITrace {"blds":{"cen":1},...,"food":800.0,"food_ok":true,...,"force":0.0,...,"gold":200.0,"iron":150.0,...,"military":0,...,"p":0,"peasants":8,"reserve":260.0,...,"stone":400.0,...,"t":0.0,"tier":"normal","wave":0,...}
+C3AITrace {"blds":{"bar":1,"cen":1,"mar":1,"mil":1,"mine_iron":1},...,"food":114.0,"food_ok":false,"food_workers":5,"force":20.0,...,"gold":63.0,"iron":40.0,...,"military":2,...,"p":0,"peasants":12,"reserve":262.0,...,"starving":true,"stone":0.0,...,"t":60.0,"tier":"normal","wave":0,...}
+C3AITrace {"blds":{"bar":1,"cen":1,"mar":1,"mil":1,"mine_iron":1},...,"food":190.0,"food_ok":false,"food_workers":6,"force":58.0,...,"gold":8.0,"iron":15.0,...,"military":9,...,"p":0,"peasants":13,"reserve":279.0,...,"starving":true,"stone":80.0,...,"t":120.0,"tier":"normal","wave":0,...}
+C3AITrace {"blds":{"bar":1,"cen":1,"mar":1,"mil":1,"mine_iron":1},...,"food":266.0,"food_ok":false,...,"force":74.0,...,"gold":2.0,"iron":5.0,...,"military":13,...,"p":0,"peasants":16,"reserve":295.0,...,"t":180.0,"tier":"normal","wave":0,...}
+C3AITrace {"blds":{"bar":1,"cen":1,"mar":1,"mil":1,"mine_coal":1,"mine_iron":1,"sto":1},...,"food":370.0,"food_ok":true,...,"force":84.0,...,"gold":2.0,"iron":105.0,...,"military":14,...,"p":0,"peasants":19,"reserve":304.0,...,"t":240.0,"tier":"normal","wave":0,...}
+C3AITrace {"blds":{"bar":1,"cen":1,"mar":1,"mil":1,"mine_coal":1,"mine_iron":1,"sto":1},...,"food":338.0,"food_ok":true,...,"force":84.0,...,"gold":2.0,"iron":282.0,...,"military":14,...,"p":0,"peasants":24,"reserve":316.0,...,"t":299.0,"tier":"normal","wave":0,...}
+```
+
+#### Scorecard (MEASURED, no PASS claimed)
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| Force ≥ effective `AI_ATTACK_FORCE` (120) | **FAIL** | max `force=84.0` at t=200…299; never ≥120 |
+| `wave >= 1` | **FAIL** | `wave=0` in all 600 rows |
+| 8 s sortie cadence | **UNVERIFIED** (again) | no sortie ever ordered |
+| Force recovery after W2-4's 40/46 stall | **PASS (partial, measured)** | 46 → 84 max (+83 %); `military` 7 → 14; growth 0→84 over 200 s vs +6 over 33 s before |
+| Donor C5 real-cost training gate | **PASS (measured)** | units ordered at `food_ok:false`/`starving:true` rows (t=60/120), impossible under old `ai_food_ok` gate |
+| Donor C9 melee-majority quota | **PASS (static + measured)** | force/unit rose to ~6 (mix of 10-force melee and 2-force ranged), not the old 2-force-only trickle |
+| Per-slot tier resolved to `normal` with empty array | **PASS (measured)** | `"tier":"normal"` in all rows; global/array fallback works, no crash |
+| Non-normal tier effects | **NOT MEASURED** | no fixture job authorised; static code only |
+
+#### Why force still stalls at 84 — diagnosed from the trace, not guessed
+
+1. **Gold mine never built.** `blds` contains `mine_iron` and (from t≈220)
+   `mine_coal`, but **never `mine_gold`**; `gold` falls 200 → 63 (t=60) → 8
+   (t=120) → **2 (t=180…299)** and never recovers. Every barracks combat unit
+   needs gold (pikeman 3, serdiuk 11, `data.gd:588-608`), and
+   `game.train_unit` (`game.gd:3826-3841`) refuses when gold < 3. The second
+   and third barracks also never appear (stone 0–80, `bar_stone=150/300` in
+   `ai.gd:443-445`), so throughput is capped at one building.
+2. **The real-cost fix did what it was asked, and exposed the next gate.** Iron
+   is plentiful late (282 at t=299) but unusable without gold. The pick loop
+   takes the **first** class-matching sid (`serdiuk`, gold 11) and does not
+   fall back to a cheaper affordable one (`archer`, gold 1) when
+   `train_unit` fails on cost; the existing `pick == ""` fallback only covers a
+   class the building cannot train at all.
+3. Food is no longer binding: `food_ok:true` from ~t=210 with food 338–394 and
+   a 12-worker food force, so the C5 gate is solved.
+
+No further code change was made after this soak; the coordinator's instruction
+was one clean soak and an honest verdict, and repeated re-submission during the
+wave-5 burst was explicitly discouraged. The remaining work is a **new ticket**
+(mine/build priority + affordability-aware sid fallback), not a hidden
+extension of this one.
 
 ## 5. Determinism note
 
 * No `random()`, `randi()` or new RNG stream was added or re-seeded. The only
-  existing RNG use is `_find_spot` (`ai.gd:557-559`) via the seeded `game.rng`;
+  existing RNG use is `_find_spot` (`ai.gd:545-566`) via the seeded `game.rng`;
   it is untouched in kind.
 * `food_budget` is derived from the per-tick resource snapshot and decremented
   in deterministic building-iteration order (`game.buildings_of(player)`);
@@ -272,5 +335,11 @@ PENDING.
    though donor normal cap is 3; I preserved the shipped order per the
    byte-identical constraint. Coordinator decision needed if parity is wanted.
 5. Job 1295 `w51-force-soak` was SKIPPED (0 s run, serving advanced to 1296
-   during the wave-5 job burst); it is not a simulation result. See §4 for the
-   one clean replacement run.
+   during the wave-5 job burst) and job 1298 `w51-force-soak2` failed at compile
+   time; neither is a simulation result. Only job **1316** is measured (§4).
+6. **Next-ticket blocker (measured, not fixed here):** gold mine is never built
+   and gold bottoms out at 2, so `train_unit` rejects every unit that costs
+   gold. Needs (a) mine/build stone priority so `mine_gold` appears, and/or
+   (b) an affordability-aware sid fallback inside the class match (`serdiuk`
+   gold 11 → `archer` gold 1), and/or (c) more barracks via stone income.
+   Any of these changes the 300 s golden trace and needs its own soak.

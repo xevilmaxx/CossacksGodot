@@ -1,0 +1,37 @@
+{
+	"checks": [
+		{
+			"detail": "SHORE_WASH_DEPTH=0.480000",
+			"name": "wash_depth_tuned",
+			"passed": true
+		},
+		{
+			"detail": "pale = SHORE_PALE.lerp(SHORE_SHALLOW, 0.40)",
+			"name": "pale_lerp_tuned",
+			"passed": true
+		},
+		{
+			"detail": "chunk=(1,0) shoreline=99",
+			"name": "water_chunk_found",
+			"passed": true
+		},
+		{
+			"detail": "bed=64x64 px=64",
+			"name": "bed_size_ok",
+			"passed": true
+		},
+		{
+			"detail": "distinct colours=108",
+			"name": "bed_not_flat",
+			"passed": true
+		},
+		{
+			"detail": "two bakes identical=true",
+			"name": "bed_deterministic",
+			"passed": true
+		}
+	],
+	"id": "t_shore_smoke",
+	"passed": true,
+	"unix_ms": 1795446091216.0
+}

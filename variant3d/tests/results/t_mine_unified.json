@@ -1,0 +1,72 @@
+{
+	"checks": [
+		{
+			"detail": "resolve_mine_sid('hou') == 'hou'",
+			"name": "other_sids_untouched",
+			"passed": true
+		},
+		{
+			"detail": "cursor over gold -> mine_gold",
+			"name": "preview_gold",
+			"passed": true
+		},
+		{
+			"detail": "",
+			"name": "legal_gold",
+			"passed": true
+		},
+		{
+			"detail": "placed gold -> mine_gold",
+			"name": "build_gold",
+			"passed": true
+		},
+		{
+			"detail": "cursor over iron -> mine_iron",
+			"name": "preview_iron",
+			"passed": true
+		},
+		{
+			"detail": "",
+			"name": "legal_iron",
+			"passed": true
+		},
+		{
+			"detail": "placed iron -> mine_iron",
+			"name": "build_iron",
+			"passed": true
+		},
+		{
+			"detail": "cursor over coal -> mine_coal",
+			"name": "preview_coal",
+			"passed": true
+		},
+		{
+			"detail": "",
+			"name": "legal_coal",
+			"passed": true
+		},
+		{
+			"detail": "placed coal -> mine_coal",
+			"name": "build_coal",
+			"passed": true
+		},
+		{
+			"detail": "Mines must be built on an ore deposit.",
+			"name": "no_deposit_rejected",
+			"passed": true
+		},
+		{
+			"detail": "mine buttons in build menu: [\"mine\"]",
+			"name": "one_mine_button",
+			"passed": true
+		},
+		{
+			"detail": "Mine  [N]  100 wood 100 stone  Time: 9s  - type follows the ore deposit",
+			"name": "mine_button_name",
+			"passed": true
+		}
+	],
+	"id": "t_mine_unified",
+	"passed": true,
+	"unix_ms": 1795447794312.0
+}

@@ -1,0 +1,196 @@
+default : section.begin
+   name = polartd
+   Decal : struct.begin
+      material.libmaterialname = polartd
+      SummerLibMaterialName = polartd
+      AutumnLibMaterialName = 
+      WinterLibMaterialName = polartdw
+      SpringLibMaterialName = 
+      width = 4
+      height = 4
+      selected = False
+      position : struct.begin
+         X = 0
+         Y = 0
+      struct.end
+      texoffset : struct.begin
+         X = 0
+         Y = 0
+      struct.end
+      scalefactor : struct.begin
+         X = 1
+         Y = 1
+      struct.end
+      texscale : struct.begin
+         X = 1
+         Y = 1
+      struct.end
+      texrollangle = 0
+      epsilon = 0.01
+      texrotateenable = True
+      texscaleenable = True
+      texoffsetenable = True
+      texoffsetbyrotate = True
+      texflipvertical = True
+   struct.end
+section.end
+section.begin {refkey=default}
+   name = bavacad
+   Decal.material.libmaterialname = bavacad
+   Decal.SummerLibMaterialName = bavacad
+   Decal.WinterLibMaterialName = bavacadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavartd
+   Decal.material.libmaterialname = bavartd
+   Decal.SummerLibMaterialName = bavartd
+   Decal.WinterLibMaterialName = bavartdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavba2d
+   Decal.material.libmaterialname = bavba2d
+   Decal.SummerLibMaterialName = bavba2d
+   Decal.WinterLibMaterialName = bavba2dw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavbard
+   Decal.material.libmaterialname = bavbard
+   Decal.SummerLibMaterialName = bavbard
+   Decal.WinterLibMaterialName = bavbardw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavblad
+   Decal.material.libmaterialname = bavblad
+   Decal.SummerLibMaterialName = bavblad
+   Decal.WinterLibMaterialName = bavbladw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavcend
+   Decal.material.libmaterialname = bavcend
+   Decal.SummerLibMaterialName = bavcend
+   Decal.WinterLibMaterialName = bavcendw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavdipd
+   Decal.material.libmaterialname = bavdipd
+   Decal.SummerLibMaterialName = bavdipd
+   Decal.WinterLibMaterialName = bavdipdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavhoud
+   Decal.material.libmaterialname = bavhoud
+   Decal.SummerLibMaterialName = bavhoud
+   Decal.WinterLibMaterialName = bavhoudw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavstad
+   Decal.material.libmaterialname = bavstad
+   Decal.SummerLibMaterialName = bavstad
+   Decal.WinterLibMaterialName = bavstadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = bavtemd
+   Decal.material.libmaterialname = bavtemd
+   Decal.SummerLibMaterialName = bavtemd
+   Decal.WinterLibMaterialName = bavtemdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxacad
+   Decal.material.libmaterialname = saxacad
+   Decal.SummerLibMaterialName = saxacad
+   Decal.WinterLibMaterialName = saxacadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxartd
+   Decal.material.libmaterialname = saxartd
+   Decal.SummerLibMaterialName = saxartd
+   Decal.WinterLibMaterialName = saxartdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxba2d
+   Decal.material.libmaterialname = saxba2d
+   Decal.SummerLibMaterialName = saxba2d
+   Decal.WinterLibMaterialName = saxba2dw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxbard
+   Decal.material.libmaterialname = saxbard
+   Decal.SummerLibMaterialName = saxbard
+   Decal.WinterLibMaterialName = saxbardw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxblad
+   Decal.material.libmaterialname = saxblad
+   Decal.SummerLibMaterialName = saxblad
+   Decal.WinterLibMaterialName = saxbladw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxcend
+   Decal.material.libmaterialname = saxcend
+   Decal.SummerLibMaterialName = saxcend
+   Decal.WinterLibMaterialName = saxcendw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxdipd
+   Decal.material.libmaterialname = saxdipd
+   Decal.SummerLibMaterialName = saxdipd
+   Decal.WinterLibMaterialName = saxdipdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxhoud
+   Decal.material.libmaterialname = saxhoud
+   Decal.SummerLibMaterialName = saxhoud
+   Decal.WinterLibMaterialName = saxhoudw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxstad
+   Decal.material.libmaterialname = saxstad
+   Decal.SummerLibMaterialName = saxstad
+   Decal.WinterLibMaterialName = saxstadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = saxtemd
+   Decal.material.libmaterialname = saxtemd
+   Decal.SummerLibMaterialName = saxtemd
+   Decal.WinterLibMaterialName = saxtemdw
+   Decal.width = 7
+   Decal.height = 7
+section.end

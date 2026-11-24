@@ -1,0 +1,141 @@
+{
+  "name": "winter_variant",
+  "size_px": [
+    512,
+    512
+  ],
+  "seed": 7,
+  "background": [
+    40,
+    44,
+    48
+  ],
+  "layers": [
+    {
+      "type": "block",
+      "name": "winter10",
+      "tile": true,
+      "opacity": 1.0
+    },
+    {
+      "type": "glaze",
+      "tint": [
+        0.8,
+        0.88,
+        1.0
+      ],
+      "white_floor": 246,
+      "strength": 0.35
+    },
+    {
+      "type": "sprite",
+      "name": "tree_spruce1",
+      "source": "hi",
+      "pos": [
+        0.4,
+        0.5
+      ],
+      "scale": 1.0,
+      "anchor": "foot",
+      "opacity": 1.0
+    }
+  ],
+  "reference": {
+    "image": "winter_snow_reference.jpg",
+    "box": [
+      120,
+      520,
+      420,
+      700
+    ],
+    "original_image": "3173885360_preview_Turkish battle 19 Light Infantry rush.jpg",
+    "image_size_px": [
+      1920,
+      1080
+    ],
+    "reference_note": "The renderer's _safe_name (terrain_piece_render.py:117,136-140) rejects spaces in filenames, so the read-only reference JPEG was copied under a safe name into a TEMP ref dir and --reference-dir was used only for the comparison tile. No repo asset was added.",
+    "crop_boxes_px": {
+      "snow_open": [
+        120,
+        520,
+        420,
+        700
+      ],
+      "rocks_snow": [
+        700,
+        430,
+        960,
+        620
+      ],
+      "conifers": [
+        1360,
+        600,
+        1700,
+        830
+      ],
+      "bare_tree": [
+        90,
+        330,
+        230,
+        480
+      ]
+    },
+    "measured": {
+      "snow_mean_hex": "#EFEFF9",
+      "snow_mean_rgb": [
+        239,
+        239,
+        249
+      ],
+      "snow_area_pct": 92.6,
+      "snow_cool_bias_pct": 100.0,
+      "rock_snow_mean_hex": "#948C93",
+      "legacy_hex_prior_doc": {
+        "snow": "#F0F0FB",
+        "rock_snow": "#B2AFB5",
+        "source": "docs/audit/TERRAIN_REFERENCE_IMAGES.md:59-60"
+      }
+    },
+    "donor": {
+      "preset": "grass1_winter",
+      "texture": "winter10.dds",
+      "texture_size_px": [
+        1024,
+        1024
+      ],
+      "snow_area_pct": 90.5,
+      "dominant_snow_hex": "#FFFFFF",
+      "snow_cool_bias_pct": 15.8,
+      "rock_accent_textures": [
+        "winter12.dds",
+        "winter13.dds",
+        "winter16.dds",
+        "winter20.dds"
+      ],
+      "rock_grey_hex": "#BDBEBD",
+      "dark_stone_hex": "#423C31",
+      "lighting_palette": "env/colors/statictables[6] winter, ShadowBlendingDiffuse #B4B4C8",
+      "tree_rule": "dogenerate.inc:1975-1982 deletes objects whose basename contains 'leaftree' in winter; conifers survive"
+    },
+    "variance": "V1: spec uses a single spruce sprite (generated-map mode); screenshot shows >=1 bare broadleaf per view (scenario mode).",
+    "source_doc": "docs/audit/PIECES/winter_variant.md",
+    "adaptation": {
+      "base": "grass1_winter -> winter10 (alias map winter_variant.md §1.2); NOT winter11 (gravel) or winter23-26 (green grass).",
+      "cool_glaze": "Upgraded renderer provides a real 'glaze' layer (terrain_piece_render.py:173-179,1090-1121) with white_floor: pixels >= floor are forced to exact #FFFFFF, lower pixels get the cool tint. The old water-tint proxy was REMOVED. Glaze is placed below the conifer sprite so the tree cue survives.",
+      "glaze_limitation": "Exact #FFFFFF and B>=R cool bias now coexist, but exact near-white hexes (#F7F7F7 etc.) are consumed by white_floor, and strict B>R is impossible on forced-white pixels (B=R). Both are reported; no threshold was relaxed.",
+      "tree": "tree_spruce1 only; leaftree objects are destroyed in donor winter generated maps -> 0 bare trees is correct for V1 generated-map mode."
+    },
+    "acceptance": {
+      "C1_snow_pct": [
+        85,
+        95
+      ],
+      "C2_white_exact_min_pct": 25,
+      "C2_nearwhite_hexes_min": 3,
+      "C2_cool_bias_min_pct": 80,
+      "C3_bare_trees_generated_mode": 0,
+      "C5_on_disk_rgb_identical_to_donor": true
+    }
+  },
+  "native_render": true
+}

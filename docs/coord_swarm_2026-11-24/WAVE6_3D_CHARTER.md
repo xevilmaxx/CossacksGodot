@@ -41,4 +41,15 @@ Runner is shared with wave 5 — expect FIFO waits; do NOT re-submit while pendi
 | G3-3 | ses_df2e93b48ffeb8ou93EfZyWtiX |
 | G3-4 | ses_df2e93b44ffegD2caM5jkc6Olb |
 
+## GOVERNING RULE (owner, added 2026-11-24)
+**Leverage existing DONOR code — do not invent.** The donor is a full 3D game;
+its scripts/formats/meshes are the source of truth for the 3D variant. Read
+`data\scripts`, `data\cameras`, `data\shaders`, `data\objects/*.osm`, `.oss`,
+`.aaf`, `light.cfg`/`env.cfg` with Python bytes+latin-1; translate donor constants
+and algorithms into Godot, cite donor path:line for every 3D decision. Private-use
+only: never run the donor, never copy donor binaries into the repo. Where donor
+truth is unreadable, mark UNVERIFIED rather than inventing a plausible value.
+**Scope: SINGLEPLAYER skirmish only** (owner charter D-12) — no campaign/DLC
+missions/cinematics/network. 2D shipping port untouched.
+
 Reports: `reports/G3*.md`. No full gate for this experiment; coordinator owns merge decisions. All 4 agents launched in parallel; shared runner is FIFO-contended with wave 5 — unique `g3*-` job ids, no re-submits while pending.

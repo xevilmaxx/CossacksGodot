@@ -1,0 +1,39 @@
+{
+  "passed": true,
+  "resources_gathered": {},
+  "shots_fired": 0,
+  "sim_seconds": 10.0,
+  "steps": [
+    {
+      "detail": "morale 70 near officer, routing false",
+      "passed": true,
+      "step": "morale",
+      "wall_ms": 135
+    },
+    {
+      "detail": "squad formed with 2 soldiers, line targets 2",
+      "passed": true,
+      "step": "squad",
+      "wall_ms": 0
+    },
+    {
+      "detail": "column set, then disbanded (squads left 0)",
+      "passed": true,
+      "step": "formation",
+      "wall_ms": 0
+    },
+    {
+      "detail": "formed bonus +2 (hold +7), lone +0",
+      "passed": true,
+      "step": "formation_bonus",
+      "wall_ms": 1
+    },
+    {
+      "detail": "2 losses refilled from nearby troops: yes",
+      "passed": true,
+      "step": "replenish",
+      "wall_ms": 0
+    }
+  ],
+  "version": 1
+}

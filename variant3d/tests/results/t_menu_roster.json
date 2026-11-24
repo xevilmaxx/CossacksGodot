@@ -1,0 +1,157 @@
+{
+	"checks": [
+		{
+			"detail": "PLAYER_COUNT=6 (want 6)",
+			"name": "player_count",
+			"passed": true
+		},
+		{
+			"detail": "TEAMS=[0, 0, 1, 1, 2, 2] (want [0,0,1,1,2,2])",
+			"name": "teams",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_AI=[false, true, true, true, true, true] (want 6 entries, slot0 human)",
+			"name": "ai_flags",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_NATIONS=[\"rus\", \"bav\", \"pol\", \"swe\", \"pru\", \"fra\"]",
+			"name": "nations",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_AI_DIFFICULTY=[\"normal\", \"normal\", \"normal\", \"normal\", \"normal\", \"normal\"]",
+			"name": "per_slot_difficulty",
+			"passed": true
+		},
+		{
+			"detail": "sim players=6 teams=[0, 0, 1, 1, 2, 2] ai=[false, true, true, true, true, true]",
+			"name": "sim_players",
+			"passed": true
+		},
+		{
+			"detail": "ally pairs with team=-1: 0 (want 0)",
+			"name": "ffa_not_allied",
+			"passed": true
+		},
+		{
+			"detail": "MAX_PLAYERS=12 (want 12)",
+			"name": "max_players_cap",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_COUNT=10 (want 10)",
+			"name": "ten_player_count",
+			"passed": true
+		},
+		{
+			"detail": "TEAMS=[0, 0, 1, 1, 2, 2, 3, 3, 0, 0] (want [0, 0, 1, 1, 2, 2, 3, 3, 0, 0])",
+			"name": "ten_player_teams",
+			"passed": true
+		},
+		{
+			"detail": "PLAYER_AI=[false, true, true, true, true, true, true, true, true, true] (want 10 entries, slot0 human)",
+			"name": "ten_player_ai",
+			"passed": true
+		},
+		{
+			"detail": "sim players=10 teams=[0, 0, 1, 1, 2, 2, 3, 3, 0, 0]",
+			"name": "ten_sim_players",
+			"passed": true
+		},
+		{
+			"detail": "start slots=12 (want 12)",
+			"name": "start_positions_12",
+			"passed": true
+		},
+		{
+			"detail": "map_starts=10 (want >=10)",
+			"name": "ten_start_slots",
+			"passed": true
+		},
+		{
+			"detail": "legacy count=3 teams=[0, 0, 1] ai=[]",
+			"name": "legacy_path",
+			"passed": true
+		},
+		{
+			"detail": "seed 777 -> rich / rich",
+			"name": "random_richness",
+			"passed": true
+		},
+		{
+			"detail": "4 players / 2 teams -> [0, 0, 1, 1]",
+			"name": "team_preset",
+			"passed": true
+		},
+		{
+			"detail": "Players options=11 range 2..12 (want 11 items, 2..12)",
+			"name": "player_items_12",
+			"passed": true
+		},
+		{
+			"detail": "shape=coastal->mediterranean relief=plateaus->mountains",
+			"name": "donor_shape_relief",
+			"passed": true
+		},
+		{
+			"detail": "food 800.000000 -> 20000.000000 (want 25x)",
+			"name": "donor_stock",
+			"passed": true
+		},
+		{
+			"detail": "peace=600 pop=100 capture=artillery_only cannons=no_cannons_towers_walls speed=2.0",
+			"name": "donor_rules",
+			"passed": true
+		},
+		{
+			"detail": "balloon=balloons century=never market=without_both adviser=with",
+			"name": "donor_ui_only_recorded",
+			"passed": true
+		},
+		{
+			"detail": "fullscreen=true parent_full=true right_col=true anchors=1.0/1.0",
+			"name": "ui_fullscreen_layout",
+			"passed": true
+		},
+		{
+			"detail": "column headers=[\"Player\", \"Nation\", \"Team\", \"AI\", \"Color\"] (want Player/Nation/Team/AI/Color)",
+			"name": "ui_roster_columns",
+			"passed": true
+		},
+		{
+			"detail": "right-column option rows=20, section headers=3",
+			"name": "ui_option_rows",
+			"passed": true
+		},
+		{
+			"detail": "rows after default=2, after Players=12 -> 12 (want 2 / 12)",
+			"name": "ui_roster_rows_12",
+			"passed": true
+		},
+		{
+			"detail": "emitted players=12, P1 team/ai=-1/false, P12 ai=true, allies=default",
+			"name": "ui_emit_roster",
+			"passed": true
+		},
+		{
+			"detail": "missing donor keys: []",
+			"name": "ui_emit_donor_keys",
+			"passed": true
+		},
+		{
+			"detail": "color(5)=(0.25, 0.85, 0.85, 1.0) color(8)=(1.0, 0.6, 0.1, 1.0) (modulo fallback)",
+			"name": "player_color_oob",
+			"passed": true
+		},
+		{
+			"detail": "world=12 menu=12 color(11)=(0.65, 0.42, 0.22, 1.0)",
+			"name": "player_colors_12",
+			"passed": true
+		}
+	],
+	"id": "t_menu_roster",
+	"passed": true,
+	"unix_ms": 1795510596279.0
+}

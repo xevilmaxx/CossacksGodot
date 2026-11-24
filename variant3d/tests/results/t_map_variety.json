@@ -1,0 +1,32 @@
+{
+	"checks": [
+		{
+			"detail": "seed 11111 vs 98765: terrain differs=true, layout summary differs=true (126155 vs 123669 bytes)",
+			"name": "different_seeds_different_layout",
+			"passed": true
+		},
+		{
+			"detail": "seed 11111 generated twice: byte-identical summary=true (126155 vs 126155 bytes)",
+			"name": "same_seed_byte_identical",
+			"passed": true
+		},
+		{
+			"detail": "same seed nowater2 water=0.0% vs islands water=75.0% (need >+10pt and >15%)",
+			"name": "map_type_changes_water",
+			"passed": true
+		},
+		{
+			"detail": "requested 110x90: got 110x90, terrain=9900 blocked=9900 tileblock=9900 (want 9900)",
+			"name": "map_size_option_respected",
+			"passed": true
+		},
+		{
+			"detail": "BFS<=25 tiles from each start: P0(food=true,stone=true,wood=true), P1(food=true,stone=true,wood=true), P2(food=true,stone=true,wood=true), P3(food=true,stone=true,wood=true)",
+			"name": "starts_have_reachable_resources",
+			"passed": true
+		}
+	],
+	"id": "t_map_variety",
+	"passed": true,
+	"unix_ms": 1795452826769.0
+}

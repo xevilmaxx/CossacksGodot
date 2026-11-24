@@ -1,0 +1,116 @@
+default : section.begin
+   name = polartd
+   Decal : struct.begin
+      material.libmaterialname = polartd
+      SummerLibMaterialName = polartd
+      AutumnLibMaterialName = 
+      WinterLibMaterialName = polartdw
+      SpringLibMaterialName = 
+      width = 4
+      height = 4
+      selected = False
+      position : struct.begin
+         X = 0
+         Y = 0
+      struct.end
+      texoffset : struct.begin
+         X = 0
+         Y = 0
+      struct.end
+      scalefactor : struct.begin
+         X = 1
+         Y = 1
+      struct.end
+      texscale : struct.begin
+         X = 1
+         Y = 1
+      struct.end
+      texrollangle = 0
+      epsilon = 0.01
+      texrotateenable = True
+      texscaleenable = True
+      texoffsetenable = True
+      texoffsetbyrotate = True
+      texflipvertical = True
+   struct.end
+section.end
+section.begin {refkey=default}
+   name = scoacad
+   Decal.material.libmaterialname = scoacad
+   Decal.SummerLibMaterialName = scoacad
+   Decal.WinterLibMaterialName = scoacadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scoartd
+   Decal.material.libmaterialname = scoartd
+   Decal.SummerLibMaterialName = scoartd
+   Decal.WinterLibMaterialName = scoartdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scoba2d
+   Decal.material.libmaterialname = scoba2d
+   Decal.SummerLibMaterialName = scoba2d
+   Decal.WinterLibMaterialName = scoba2dw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scobard
+   Decal.material.libmaterialname = scobard
+   Decal.SummerLibMaterialName = scobard
+   Decal.WinterLibMaterialName = scobardw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scoblad
+   Decal.material.libmaterialname = scoblad
+   Decal.SummerLibMaterialName = scoblad
+   Decal.WinterLibMaterialName = scobladw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scocend
+   Decal.material.libmaterialname = scocend
+   Decal.SummerLibMaterialName = scocend
+   Decal.WinterLibMaterialName = scocendw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scodipd
+   Decal.material.libmaterialname = scodipd
+   Decal.SummerLibMaterialName = scodipd
+   Decal.WinterLibMaterialName = scodipdw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scohoud
+   Decal.material.libmaterialname = scohoud
+   Decal.SummerLibMaterialName = scohoud
+   Decal.WinterLibMaterialName = scohoudw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scostad
+   Decal.material.libmaterialname = scostad
+   Decal.SummerLibMaterialName = scostad
+   Decal.WinterLibMaterialName = scostadw
+   Decal.width = 7
+   Decal.height = 7
+section.end
+section.begin {refkey=default}
+   name = scotemd
+   Decal.material.libmaterialname = scotemd
+   Decal.SummerLibMaterialName = scotemd
+   Decal.WinterLibMaterialName = scotemdw
+   Decal.width = 7
+   Decal.height = 7
+section.end

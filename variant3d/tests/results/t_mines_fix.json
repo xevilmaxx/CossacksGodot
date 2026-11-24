@@ -1,0 +1,32 @@
+{
+	"checks": [
+		{
+			"detail": "each player's 'cen' building sits at map_starts[i]",
+			"name": "hall_spawn_matches_map_starts",
+			"passed": true
+		},
+		{
+			"detail": "worst_nearest=16.0 tiles (limit 16)",
+			"name": "all_starts_served_within_16_tiles",
+			"passed": true
+		},
+		{
+			"detail": "max_dilated_overlaps=0 min_centre_sep=11.04 tiles",
+			"name": "zero_mine_footprint_intersection",
+			"passed": true
+		},
+		{
+			"detail": "baseline_map={ 1000: 19, 1001: 21, 1002: 21, 1003: 23, 1004: 17, 1005: 22, 1006: 18, 1007: 16 }",
+			"name": "ore_count_matches_pre_fix_baseline",
+			"passed": true
+		},
+		{
+			"detail": "ores=19 match=true",
+			"name": "same_seed_same_ore_layout",
+			"passed": true
+		}
+	],
+	"id": "t_mines_fix",
+	"passed": true,
+	"unix_ms": 1795449992847.0
+}

@@ -1,0 +1,91 @@
+{
+  "passed": true,
+  "steps": [
+    {
+      "detail": "skirmish setup tur vs rus applied, town hall present: yes",
+      "passed": true,
+      "step": "menu_shell"
+    },
+    {
+      "detail": "3 peasants in selection box, panel shown",
+      "passed": true,
+      "step": "select_box"
+    },
+    {
+      "detail": "attack-move ok, stand ok, engage ok, pause-toggle ok",
+      "passed": true,
+      "step": "order_keys"
+    },
+    {
+      "detail": "house site placed, builders on it 1",
+      "passed": true,
+      "step": "build_flow"
+    },
+    {
+      "detail": "train buttons listed, queue 0 -> 1, returned true",
+      "passed": true,
+      "step": "train_flow"
+    },
+    {
+      "detail": "formed yes, J=line K=column L=square, disbanded yes",
+      "passed": true,
+      "step": "squad_keys"
+    },
+    {
+      "detail": "rally flag set",
+      "passed": true,
+      "step": "rally_panel"
+    },
+    {
+      "detail": "100 wood -> 65 gold",
+      "passed": true,
+      "step": "market_panel"
+    },
+    {
+      "detail": "research buttons listed, bla_sword1 done",
+      "passed": true,
+      "step": "research_panel"
+    },
+    {
+      "detail": "owned peasant deleted, score kept 3340",
+      "passed": true,
+      "step": "delete_key"
+    },
+    {
+      "detail": "game speed set to 2x: yes",
+      "passed": true,
+      "step": "speed_pause"
+    },
+    {
+      "detail": "cursors 12 loaded, now default",
+      "passed": true,
+      "step": "cursor_ctx"
+    },
+    {
+      "detail": "Ctrl+1 stored, 1 recalled 2",
+      "passed": true,
+      "step": "groups"
+    },
+    {
+      "detail": "minimap bottom-left: yes",
+      "passed": true,
+      "step": "minimap_frustum"
+    },
+    {
+      "detail": "U unloads: yes",
+      "passed": true,
+      "step": "garrison_keys"
+    },
+    {
+      "detail": "hold_fire/engage/attack_ground live: yes",
+      "passed": true,
+      "step": "hotkeys_live"
+    },
+    {
+      "detail": "F5/F9 round-trip: yes",
+      "passed": true,
+      "step": "save_load_ui"
+    }
+  ],
+  "version": 1
+}

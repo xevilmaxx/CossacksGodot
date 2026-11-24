@@ -80,3 +80,51 @@ app/.godot_queue/
 
 # Rust build outputs (pure-Rust branch: cargo target dir, incremental caches)
 rustport/target/
+
+# --- 3D variant project (variant3d/, wave 7) -------------------------------
+# Separate Godot 4 project. Importer cache, FIFO runner state and all generated
+# shots/dumps are runtime artifacts - never commit them. The shots directory
+# itself is NOT excluded so a future curated !exception can still be added.
+variant3d/.godot/
+variant3d/.import/
+variant3d/.godot_queue/
+variant3d/shots/**
+variant3d/**/*_dump*.json
+variant3d/**/temp_*.json
+variant3d/**/*_tmp.json
+
+# 3D-conversion garbage in BOTH projects (app/ and variant3d/): Blender backups,
+# half-written glTF/GLB exports, temp dumps. Global patterns cover both trees.
+*.blend1
+*.blend2
+*.glb.tmp
+*.glb.part
+*.tmp.glb
+*.gltf.tmp
+
+# app/assets/models/glb/ is deliberately NOT ignored: V7-2 plans to COMMIT the
+# converted .glb meshes (Godot imports them as PackedScene, i.e. real 3D source
+# assets, not build artifacts). Ignore only the transient exports above.
+#
+# The 3D variant does NOT use 2D bake outputs (sprite sheets/atlases): those
+# PNGs are hardlinked leftovers from app/assets/models/anim and sprites*/.
+# They are ignored here so nobody re-adds them as "3D assets" - but clean_temp
+# must NEVER delete them (hardlinks / tracked app copies). Real 3D geometry
+# (models/obj, models/glb) and PBR textures (models/tex) stay trackable.
+variant3d/assets/models/anim/**/*.png
+variant3d/assets/models/anim/**/*.png.import
+variant3d/assets/models/sprites/**/*.png
+variant3d/assets/models/sprites/**/*.png.import
+variant3d/assets/models/sprites_hi/**/*.png
+variant3d/assets/models/sprites_hi/**/*.png.import
+
+# The legacy "obj/" rule above (C# build output) also matches real 3D mesh
+# folders. Re-include ONLY variant3d geometry; all 2D rules stay unchanged.
+!variant3d/assets/models/obj/
+!variant3d/assets/models/obj/**
+
+# DONOR ASSETS: C:\Games\Cossacks 3 is private-use - donor meshes/textures/
+# binaries must NEVER be committed. variant3d/assets is hardlinked from
+# app/assets; do NOT add a broad "variant3d/assets" ignore rule here, because
+# tracked source (obj/glb/tex, .import sidecars) must stay visible to git.
+# No git tracking changes were made from the hygiene lane (H1).

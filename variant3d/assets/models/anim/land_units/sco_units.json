@@ -1,0 +1,99 @@
+{
+ "sco_highlandersword": {
+  "cell": 160,
+  "actions": {
+   "walk": {
+    "frames": 12,
+    "duration": 0.8,
+    "loop": true,
+    "ortho": 3.583,
+    "center": [
+     0.0,
+     0.0,
+     1.318
+    ],
+    "ax": 0.5,
+    "ay": 1.0545,
+    "tool": null,
+    "bbox": [
+     31,
+     51,
+     130,
+     141
+    ],
+    "fig_h": 0.5625,
+    "foot": 0.8812,
+    "cx": 0.5031
+   },
+   "idle": {
+    "frames": 6,
+    "duration": 1.667,
+    "loop": true,
+    "ortho": 3.583,
+    "center": [
+     0.0,
+     0.0,
+     1.318
+    ],
+    "ax": 0.5,
+    "ay": 1.0545,
+    "tool": null,
+    "bbox": [
+     42,
+     54,
+     117,
+     142
+    ],
+    "fig_h": 0.55,
+    "foot": 0.8875,
+    "cx": 0.4969
+   },
+   "attack": {
+    "frames": 12,
+    "duration": 0.433,
+    "loop": false,
+    "ortho": 3.583,
+    "center": [
+     0.0,
+     0.0,
+     1.318
+    ],
+    "ax": 0.5,
+    "ay": 1.0545,
+    "tool": null,
+    "bbox": [
+     15,
+     10,
+     145,
+     145
+    ],
+    "fig_h": 0.8438,
+    "foot": 0.9062,
+    "cx": 0.5
+   },
+   "death": {
+    "frames": 8,
+    "duration": 1.6,
+    "loop": false,
+    "ortho": 4.277,
+    "center": [
+     0.0,
+     0.0,
+     0.76
+    ],
+    "ax": 0.5,
+    "ay": 0.7678,
+    "tool": null,
+    "bbox": [
+     8,
+     35,
+     152,
+     142
+    ],
+    "fig_h": 0.6687,
+    "foot": 0.8875,
+    "cx": 0.5
+   }
+  }
+ }
+}

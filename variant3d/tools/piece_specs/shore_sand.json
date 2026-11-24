@@ -1,0 +1,103 @@
+{
+  "name": "shore_sand",
+  "size_px": [512, 512],
+  "seed": 7,
+  "background": [40, 44, 48],
+  "source_doc": "docs/audit/PIECES/shore_sand.md",
+  "resample": "nearest",
+  "bands": {
+    "seed": 7, "direction": "right", "origin": 0.42,
+    "jitter_px": 2, "step_px": 2,
+    "sand": [26, 51], "wash": [30, 50]
+  },
+  "adaptation_notes_v2": [
+    "Upgraded renderer: the former tool-limited FAILs are now expressible. Shared bands geometry uses the doc's own band_px numbers verbatim (M1 sand 26-51, M7 wash 30-50).",
+    "A grass_rock1 base (brightness 1.4 to match the doc's lit dry-grass #6B6732) supplies the dry-grass endpoint that M1 measures; sandsea3 is masked to the sand band with a hard contour rim; wash + coast-band foam + shallow water are separate masked layers.",
+    "water.shallow opacity stays 0.35 (M8 verbatim). resample=nearest keeps the donor-scale grain (M6) without changing band widths; no acceptance number was weakened."
+  ],
+  "adaptation_notes": [
+    "Transcribed from shore_sand.md section 3 (machine-readable spec); no acceptance number changed.",
+    "Renderer requires water.sheet; diffusewaves2 is the existing water sheet convention (app/assets/terrain/water_png/diffusewaves2.png).",
+    "Renderer accepts a single reference image/box; section 3 images[0] (maxresdefault_1.jpg, src_px [300,150,512,288]) is used. All original reference fields are preserved under reference.detail.",
+    "The doc names sandsea3 as representative but notes the live donor table selects sandsea1/5/6 (3 distinct tiles); the render can express only the single named block, so M2 is measured honestly against that limitation.",
+    "Unknown keys (role, sectors, coast_fade, deep_fade, params, acceptance) are ignored by the renderer and retained for audit."
+  ],
+  "layers": [
+    {"type": "block", "name": "grass_rock1", "tile": true, "opacity": 1.0,
+     "brightness": 1.4, "role": "dry_grass"},
+    {"type": "block", "name": "sandsea3", "tile": true, "opacity": 1.0,
+     "mask": "band", "band": "sand", "contour": true, "contour_strength": 0.75,
+     "role": "wet_sand", "sectors": 8, "sector_deg": 45,
+     "angle_offset_deg": 180, "dy_fold": true},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "wash", "band": "wash",
+     "opacity": 0.8, "feather_px": 0, "coast_fade": 0.57},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "foam", "band": "wash",
+     "intensity": 1.0, "opacity": 0.7, "speck_scale": 1.0,
+     "foam_band": "coastfade*(1-coastfade2)"},
+    {"type": "water", "sheet": "diffusewaves2", "mode": "shallow", "band": "water",
+     "opacity": 0.35, "coast_fade": 0.57, "deep_fade": 1.07}
+  ],
+  "params": {
+    "orientation": {
+      "sectors": 8,
+      "sector_deg": 45,
+      "active_tiles": ["sandsea1", "sandsea5", "sandsea6"],
+      "sector_tile_map": {
+        "bR": "sandsea6", "bRB": "sandsea6", "bB": "sandsea1",
+        "bLB": "sandsea5", "bL": "sandsea6", "bLT": "sandsea6",
+        "bT": "sandsea1", "bRT": "sandsea5"
+      },
+      "height_gate": {"mask_b_gt": 0, "water_h": -0.25, "shore_h": -0.1}
+    },
+    "band_px": {
+      "sand": [26, 51],
+      "wash": [30, 50],
+      "edge_gradient": [3, 8],
+      "near_water_fraction": [0.05, 0.10]
+    },
+    "thresholds": {
+      "donor_water": -0.25,
+      "donor_wet_sand": -0.1,
+      "port_current_sand": -0.05
+    },
+    "shallow_water_opacity": 0.35,
+    "distinct_tiles": 3
+  },
+  "acceptance": {
+    "M1": {"metric": "sand band width px", "target": [26, 51], "unit": "px"},
+    "M2": {"metric": "distinct tile textures", "target": 3, "tiles": ["sandsea1", "sandsea5", "sandsea6"]},
+    "M3": {"metric": "edge gradient width tan->wash (10-90% luminance)", "target": [3, 8], "unit": "px"},
+    "M4": {"metric": "stair-step boundary x deviation per 64 px run", "target_max_px": 4},
+    "M5": {"metric": "wet-sand colour unlit", "target_hex_range": ["#7B7252", "#807856"], "tolerance_rgb": 8, "lit_hex": "#A89E7F", "lit_tolerance_rgb": 12},
+    "M6": {"metric": "sand-band grain std", "target_min_levels": 9, "donor_levels": [11, 14]},
+    "M7": {"metric": "wash band width px", "target": [30, 50], "unit": "px", "hex": ["#B9BAA7", "#BBC4BB"]},
+    "M8": {"metric": "shallow water opacity at shoreline", "target": 0.35, "foam_band": "coastfade*(1-coastfade2)"}
+  },
+  "reference": {
+    "image": "maxresdefault_1.jpg",
+    "box": [300, 150, 512, 288],
+    "detail": {
+      "donor_texture_dir": "C:/Games/Cossacks 3/data/terrain/tiles/textures",
+      "donor_script": "C:/Games/Cossacks 3/data/scripts/common.inc/texturemap.inc:474-529",
+      "images": [
+        {"file": "maxresdefault_1.jpg", "src_px": [300, 150, 512, 288],
+         "sand_profile_px": [320, 380], "wash_profile_px": [380, 420]},
+        {"file": "articolo-787.jpg", "src_px": [600, 0, 960, 50]}
+      ],
+      "palette": {
+        "sand_lit": "#A89E7F",
+        "wash_lit": "#B9BAA7",
+        "water_shallow_lit": "#696B65",
+        "water_dark_lit": "#3A4246",
+        "tile_unlit_sandsea1": "#807856",
+        "tile_unlit_sandsea5": "#7B7252",
+        "tile_unlit_sandsea6": "#7D7456"
+      },
+      "prior": [
+        "docs/audit/TERRAIN_DONOR_PIPELINE.md:3.3",
+        "docs/audit/TERRAIN_DONOR_ASSETS.md:3.2",
+        "docs/audit/TERRAIN_REFERENCE_IMAGES.md:3.4"
+      ]
+    }
+  }
+}

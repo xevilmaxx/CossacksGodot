@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "sources": {
+    "campaigns": "data/game/var/campaigns.cfg",
+    "battles": "data/game/var/battles.cfg",
+    "map_types": "data/game/var/generator.cfg TerrainTypes",
+    "start_options": "data/game/var/startingsettings.cfg comments",
+    "nations": "data/scripts/lib/country.script _country_GetSIDByID"
+  },
+  "nations": [
+    {
+      "id": "aus",
+      "name": "Austria"
+    },
+    {
+      "id": "fra",
+      "name": "France"
+    },
+    {
+      "id": "eng",
+      "name": "England"
+    },
+    {
+      "id": "spa",
+      "name": "Spain"
+    },
+    {
+      "id": "rus",
+      "name": "Russia"
+    },
+    {
+      "id": "ukr",
+      "name": "Ukraine"
+    },
+    {
+      "id": "pol",
+      "name": "Poland"
+    },
+    {
+      "id": "swe",
+      "name": "Sweden"
+    },
+    {
+      "id": "pru",
+      "name": "Prussia"
+    },
+    {
+      "id": "ven",
+      "name": "Venice"
+    },
+    {
+      "id": "tur",
+      "name": "Turkey"
+    },
+    {
+      "id": "alg",
+      "name": "Algeria"
+    },
+    {
+      "id": "net",
+      "name": "Netherlands"
+    },
+    {
+      "id": "den",
+      "name": "Denmark"
+    },
+    {
+      "id": "por",
+      "name": "Portugal"
+    },
+    {
+      "id": "pie",
+      "name": "Piedmont"
+    },
+    {
+      "id": "sax",
+      "name": "Saxony"
+    },
+    {
+      "id": "bav",
+      "name": "Bavaria"
+    },
+    {
+      "id": "hun",
+      "name": "Hungary"
+    },
+    {
+      "id": "swi",
+      "name": "Switzerland"
+    }
+  ],
+  "map_types": [
+    {
+      "id": "land",
+      "name": "Land",
+      "descr": "Open plains, no sea (generator TerrainTypes 0)"
+    },
+    {
+      "id": "mediterranean",
+      "name": "Mediterranean",
+      "descr": "Sea in the middle (generator 1)"
+    },
+    {
+      "id": "peninsulas",
+      "name": "Peninsulas",
+      "descr": "Long coastlines (generator 2)"
+    },
+    {
+      "id": "islands",
+      "name": "Islands",
+      "descr": "Scattered islands (generator 3)"
+    },
+    {
+      "id": "continents",
+      "name": "Continents",
+      "descr": "Two large landmasses (generator 4)"
+    },
+    {
+      "id": "continent",
+      "name": "Continent",
+      "descr": "One large landmass (generator 5)"
+    }
+  ],
+  "start_options": [
+    {
+      "id": "default",
+      "name": "Town + peasants",
+      "descr": "Town hall and 8 peasants, empty stores"
+    },
+    {
+      "id": "armysmall",
+      "name": "Small army",
+      "descr": "Town + small ready army, 1000 food"
+    },
+    {
+      "id": "armymedium",
+      "name": "Medium army",
+      "descr": "Town + medium ready army"
+    },
+    {
+      "id": "armylarge",
+      "name": "Large army",
+      "descr": "Town + large ready army"
+    },
+    {
+      "id": "towers",
+      "name": "Towers",
+      "descr": "Town + defensive towers"
+    },
+    {
+      "id": "cannons",
+      "name": "Cannons",
+      "descr": "Town + artillery park"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "tutcam",
+      "missions": [
+        "tutmis1",
+        "tutmis2"
+      ]
+    },
+    {
+      "id": "netcam",
+      "missions": [
+        "netmis1",
+        "netmis2",
+        "netmis3",
+        "netmis4",
+        "netmis5"
+      ]
+    },
+    {
+      "id": "scecam3",
+      "missions": [
+        "scemis9",
+        "scemis10",
+        "scemis11",
+        "scemis12"
+      ]
+    },
+    {
+      "id": "spacam",
+      "missions": []
+    },
+    {
+      "id": "turcam",
+      "missions": []
+    },
+    {
+      "id": "scocam",
+      "missions": []
+    },
+    {
+      "id": "prucam",
+      "missions": []
+    },
+    {
+      "id": "swecam",
+      "missions": [
+        "scecam2",
+        "scemis6",
+        "scemis7",
+        "scemis8"
+      ]
+    },
+    {
+      "id": "polcam",
+      "missions": []
+    },
+    {
+      "id": "scecam",
+      "missions": [
+        "scemis1",
+        "scemis3",
+        "scemis4",
+        "scemis2",
+        "scemis5"
+      ]
+    },
+    {
+      "id": "auscam",
+      "missions": [
+        "ausmis1",
+        "ausmis2",
+        "ausmis3",
+        "ausmis4",
+        "ausmis5"
+      ]
+    },
+    {
+      "id": "engcam",
+      "missions": [
+        "engmis1",
+        "engmis2",
+        "engmis3",
+        "engmis4",
+        "engmis5"
+      ]
+    },
+    {
+      "id": "ukrcam",
+      "missions": [
+        "ukrmis1",
+        "ukrmis2",
+        "ukrmis3",
+        "ukrmis4",
+        "ukrmis5"
+      ]
+    },
+    {
+      "id": "ruscam",
+      "missions": [
+        "rusmis1",
+        "rusmis2",
+        "rusmis3",
+        "rusmis4",
+        "rusmis5"
+      ]
+    },
+    {
+      "id": "fracam",
+      "missions": [
+        "framis1",
+        "framis2",
+        "framis3",
+        "framis4",
+        "framis5"
+      ]
+    },
+    {
+      "id": "boncam",
+      "missions": [
+        "bonmis1",
+        "bonmis2",
+        "bonmis3"
+      ]
+    },
+    {
+      "id": "celcam",
+      "missions": []
+    }
+  ],
+  "battles": [
+    {
+      "id": "battle1",
+      "name": "Historical battle 1",
+      "max_players": 8
+    },
+    {
+      "id": "battle2",
+      "name": "Historical battle 2",
+      "max_players": 8
+    },
+    {
+      "id": "battle3",
+      "name": "Historical battle 3",
+      "max_players": 8
+    },
+    {
+      "id": "battle4",
+      "name": "Historical battle 4",
+      "max_players": 8
+    },
+    {
+      "id": "battle5",
+      "name": "Historical battle 5",
+      "max_players": 8
+    },
+    {
+      "id": "battle6",
+      "name": "Historical battle 6",
+      "max_players": 8
+    },
+    {
+      "id": "battle7",
+      "name": "Historical battle 7",
+      "max_players": 8
+    },
+    {
+      "id": "battle8",
+      "name": "Historical battle 8",
+      "max_players": 8
+    }
+  ],
+  "generator_present": true
+}

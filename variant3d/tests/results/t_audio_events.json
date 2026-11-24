@@ -1,0 +1,32 @@
+{
+	"checks": [
+		{
+			"detail": "20/20 prefixes backed by .ogg; missing: none (of 325 files)",
+			"name": "event_prefix_files_exist",
+			"passed": true
+		},
+		{
+			"detail": "names_for() unresolved: none",
+			"name": "audio_names_for_resolves_events",
+			"passed": true
+		},
+		{
+			"detail": "unresolved walk sids: none",
+			"name": "walk_sound_prefixes_resolve",
+			"passed": true
+		},
+		{
+			"detail": "main.gd chop -> [\"workwood\"]; names_for=[\"workwood1\", \"workwood2\", \"workwood3\", \"workwood4\", \"workwood5\", \"workwood6\", \"workwood7\", \"workwood8\", \"workwood9\"]",
+			"name": "chop_event_maps_to_sound",
+			"passed": true
+		},
+		{
+			"detail": "21 nations, 21 themed, fallback=true; missing: []",
+			"name": "nation_theme_files_or_fallback",
+			"passed": true
+		}
+	],
+	"id": "t_audio_events",
+	"passed": true,
+	"unix_ms": 1795511002783.0
+}
