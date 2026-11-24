@@ -4,7 +4,7 @@ title: Donor config keys, class names and data filenames in cossacks.exe — str
 area: donor / decompilation / terrain research
 owner: DECOMP-04
 date: 2026-11-24
-status: AUDIT DONE — read-only, no unpacking, no edits
+status: AUDIT DONE + DEEP DIVE ON CODE CONSUMERS (section 8) — read-only, no unpacking, no edits
 tools: Craft Anything 0.6.1, native toolset, DECOMP session, target t_87f0f3c130b0
 ---
 
@@ -105,7 +105,7 @@ Also checked in data sections only: `water.dev` → 0 (`ev_42d47fbf77a4ca3e1efc5
 2. **The engine's terrain/appearance type vocabulary is in `.rsrc` metadata.** The Delphi unit/RTTI table gives `EXTerrain`, `XTerrainDataLite`, `sXTerrainData`, `XTerrainBorders`, `XTile`, `XTileSeason`, `XCliff`, `XSeason`, `XWorld`, `XMap`, `HXHeightField`, `XColorTable`, `XSkyDome`, `XEnvironment`, `XWater`/`XWaterShader`, `XClouds`, `XHorizonRender`, `OSWAtmosphere`, `XAir`, `XStars`, `XPHDR`, `XShadowMap`, `XLightShader`, `XMapGenerator`, `XMapCover`, `OSWTexture`/`OSWTextureCombiners`/`OSWProcTextures`. So the donor engine definitely has heightfield, colour-table, sky-dome, water-shader, cloud, season and texture-combiner abstractions — structurally consistent with our heightfield direction, but this is metadata, not decompiled behaviour.
 3. **The concrete data is external.** The absent terms are exactly the ones that would be *values/filenames*: `grass1`, `sand`, `rock`, `diffusewaves`, `terrainmesh`, `.hmap`, `.dds`, `.tga`, `water.dev`. Near-misses (`grass`, `Diffuse`, `wave`, `hmapTex`, `xdds`) show that the binary knows the *words* but not the *asset names*. Those names must be in `data/**` scripts/configs, which no binary string search can see.
 4. **Therefore: do not infer disuse from a zero-match.** A key absent from `native_strings_find` may still exist in `CODE`; a token absent from the whole file may still be a live key read from an external text file at runtime. Both absence classes are documented as observations about bytes only. The tools themselves report `data_sections_only`, `file_bytes_only` and `no_match` with "absence is not proof".
-5. **Limits:** no function was decompiled; no xref chain was resolved beyond one `SphereHeight` data reference; the `.bind` packing heuristic from DECOMP-01 is untested here (`core_packed_files_list` returned `not_supported` — "This file doesn't carry files in any way we recognise"; no evidence id because the call failed). No runtime unpacking, Frida, execution or asset extraction was performed.
+5. **Limits:** no function was decompiled; no xref chain was resolved beyond one `SphereHeight` data reference *(superseded by section 8: `sub_7ab704` was studied and shown to consume `SphereHeight`, `SphereHeightMin` and `DynFogDepth` as config look-up keys);* the `.bind` packing heuristic from DECOMP-01 is untested here (`core_packed_files_list` returned `not_supported` — "This file doesn't carry files in any way we recognise"; no evidence id because the call failed). No runtime unpacking, Frida, execution or asset extraction was performed.
 
 # 7. Evidence ledger (every analysis call)
 
@@ -122,3 +122,106 @@ Also checked in data sections only: `water.dev` → 0 (`ev_42d47fbf77a4ca3e1efc5
 - `native_function_find` at `0x853e0c`: `ev_e2ec6c6d111b50c5dcd37bbab1b0d11ef7636f9e08e2e7cc42b680a8aae1836f`.
 - `native_xrefs_list`: `0x7abc44` `ev_01a2cde3989fc5c297efe9c88676b9fdd198894a4a70e64593f8a316c6ea0249`; `0x853e0c` `ev_ef7f220359e627251e3fb7aed037dca009b7ebdef0a32295abfab35595d9ee72`.
 - `core_evidence_browse` (paging only): summary of `ev_c5eeb0c5…` `ev_2d80258572bd0251a94668efc2467f5bc39e2337ac61a51ff863fc209150a1b7`; 8 initial empty-row page calls `ev_3a5f5c96668e2bd6ec1575c34590e5e0b7c44b20cef26467280826b8ed5e04af`, `ev_3d6bdfb0d09fdcfaee863a691e5ca82287b5ff25553ec3f73600b346c1c033df`, `ev_dadbe68ee614766ba36cf88089734beccb3f4c08d5cab70057890f9f7a4f9e59`, `ev_7e17910ce95f32b33d5b65c06124558b36b1404c5c67ec13987504f32e001bc5`, `ev_8547722aa5892ba4725fe49c89a3059b03361f802179314c538c99d8c98c5db4`, `ev_37ab0aedf034cbbda92c0eaa4d486b198ebe85541c4374f365995e35316778d1`, `ev_41c2aafb8c2645eeff9560667126cfce0ca9e4579e4f93e3c5958c88ab8c2cb5`, `ev_267f02df1cf2264da3e485b1cc024bf507c2159688e1cd315877f7fe92d3ca42`; final row pages for all 15 hit groups are listed at the end of section 2.
+
+---
+
+# 8. DEEP DIVE — code consumers of `hmapTex`, `SphereHeight` and `DynFogDepth` (follow-up, same session)
+
+Read-only continuation. No target open/select, no unpacking, no runtime execution, no edits outside this report.
+
+## 8.1 Verdict
+
+| Key | Provable code consumer? | Consumer | Evidence |
+|---|---|---|---|
+| `hmapTex` (`0x853e0c`) | **Yes at instruction level; the containing function is NOT recovered.** `mov edx, 0x853e0c` immediately followed by `call 0x405454`. No function dossier for the containing block (function discovery misses the whole region), so what object receives the string is UNVERIFIED. | Unattributed initializer at `0x853bde`–`0x853be7`, calling `sub_405454` = `FUN_00405454` (Delphi ref-counted string assignment helper) | `ev_190898349c86f8d90a49007c79d2e593cc6278658a16928cb0c9371ae0dc6846`, `ev_cf7b42dd86b0261abebcacb0ea646d12092da5b46c61dd33f6e9be552c3a11fb`, `ev_9c4ff7ba1fa969cabab05fcedebdae7056860c44b7455c340e7e639b55516b1d` |
+| `SphereHeight` (`0x7abc44`) | **Yes, fully.** A real data xref from inside a recovered function with a complete dossier and pseudo-C. | `sub_7ab704` (`0x7ab704`), 9 blocks / 335 instructions / 57 calls, called from `sub_7aea0c` at `0x7aea3b` | `ev_01a2cde3989fc5c297efe9c88676b9fdd198894a4a70e64593f8a316c6ea0249`, `ev_e57a21ab1a1b4ae13f6775983d70523a06ef7467b29e22e6eabfe59e551bb196`, `ev_edf7b79d9d80009b30f6f7fc05a29b153533005bb9b4981a32c3db192acaacb3` |
+| `DynFogDepth` (`0x7ac0ac` hit) | **Yes, fully** for the `0x7ac0ac` occurrence; the other two occurrences have 0 xrefs. | `sub_7ab704` (`0x7ab704`), same config parser | `ev_751e5ab7ac25517676d6843560a14ae5488765e5a8230fe0de0d7845c0d3d653`, `ev_19fa1d6dded700a4cc09e6ae00ea3a2c948facfd5f140d625439bc9d4a7864d1`, `ev_0feed30b0a49be5690cc8ef65a7cfbbf6aea30bee658bb57b00afeaa740b51ee`, `ev_19d065d41ea0406aa624f3a3b82871341dd8e749b5cdebc8830d683117f7bba9` |
+
+This **corrects section 4's blanket statement** that none of these keys had code references. It remains true for the `.rsrc` RTTI class names.
+
+## 8.2 `hmapTex`: exact string and its instruction-level consumer
+
+`core_feature_find("hmapTex")` still reports 0 strings / 0 functions (`ev_eab32206dbca80e3b6115a716fe408ea66b320c4fd60812cf9e82816738ccf48`) because it only reads the data-section string table; `native_function_find("0x853e0c")` says "not inside any discovered function" (`ev_e2ec6c6d111b50c5dcd37bbab1b0d11ef7636f9e08e2e7cc42b680a8aae1836f`) and `native_address_show` reports no name/comment/function (`ev_f3d66f6948ab41edabc623cf0b5ed0fa5d930777f169677f0097fc3093dfedf1`). `native_xrefs_list` at the string address returns 0 references (`ev_a6532196e7464b5c3ba32dbc33d6b54ed8481150178e59cbc3c59bafb6e0c4e0`) and at `0x853e0b` 0 (`ev_4aecbf1bfdae2e33f145a6b88ef985af2d2e532d653bbb421044b35568840021`). Decoding the bytes at the string address as an instruction produces the nonsense `push 0x5470616d` (`0x68` is both `push` and ASCII `h`), `ev_7fcb5904110bb72344003b7dc72ecd7413f51b563a08b1d3f5484441e82a2acc` — a clear sign that the string itself must not be read as code.
+
+**The string is not part of a longer literal.** Whole-file `native_bytes_find("hmapTex")` gives exactly 1 match (`ev_1bd891e2e7f5ee82530ab7b7c0fe2c29c7d2914d191552d0dd1d38c44f4ec00d`). The 320-byte window at `0x853dc0` (`ev_20196da6116c175f32b10c36cd5bc357788189fce04cdd886010608eae86bd68`) shows a Delphi AnsiString constant: header `ff ff ff ff` (refcount −1) + `07 00 00 00` (length 7) immediately before `hmapTex` at `0x853e0c`, NUL terminator after it, next key `hmapW` at `0x853e1c`. Confirmed by typed reads: `i32 @0x853e04 = -1` (`ev_f49f1d24a879ce3298b018db19db5156d96e0ba38a09e8839d15809e71b6b75b`) and `i32 @0x853e08 = 7` (`ev_a29946353015d7469ff24afae9c5023546a7793fba47676df710e5fb56df37a0`).
+
+**The actual reference is an immediate operand in a nearby instruction**, which the xref graph does not index because the containing function was never discovered:
+
+- `0x853bdb` `lea eax, [ebx+0x54]` — `ev_d560126c6bc958f059d1bd8ae5e1f4673d55fc85baed2e7603b26ff294a56319`
+- `0x853bde` `mov edx, 0x853e0c` — instruction record explicitly lists `references: [{address: "0x853e0c"}]` — `ev_190898349c86f8d90a49007c79d2e593cc6278658a16928cb0c9371ae0dc6846`
+- `0x853be3` `call 0x405454` — `ev_cf7b42dd86b0261abebcacb0ea646d12092da5b46c61dd33f6e9be552c3a11fb`
+- The 4-byte pointer `0c 3e 85 00` occurs exactly once in the file, at `0x853bdf` (file offset 4,534,239): `ev_c9350527e8001df4369f4d4ff744ab21609fd422a33bd14b7831cc29d4e400be`. `native_data_show` types `0x853bdf` as `pointer → 0x853e0c` (`ev_7f2bd0044a43775af4854ff804d6da76be8e22697eff9a28902ca00d84c2d112`).
+- The surrounding 320-byte window at `0x853b40` (`ev_335ea2e25cd5e1ffbd2f841ac4606e0d5dcc288ee1b623e3431ea094083aa8b0`) is a long straight-line run of the same 13-byte pattern — `lea eax,[ebx+off] ; mov edx,<string constant>; call 0x405454` — for consecutive keys; e.g. pointer to `fogEnabled` at `0x853bd2` (`ev_3dce08f5684f619848b9cab37ce7fdcde93c4bf980d0511baa17c48a27bd0e37`), `hmapW` at `0x853bec` (`ev_fd19b7ab44aba12abf45cbcffb538c280ab0d93cc75e90106b18dcb1aeed4f72`), `shadowMap` at `0x853c2d` (`ev_9e05eb8146696ab4b5b4812fb5e3a7f5e06af894153606b3ec4c20a2ec25cc9e`).
+
+**What the callee does.** `0x405454` is `sub_405454` / `FUN_00405454` (`native_function_find` `ev_2b2c4e8865e4adb9c9d387c972bbb7207ca3bd48e5e0c2d74add3153cd1756f5`; complete study `ev_f8cfed49e0673cf56057abde6482d110b671f5b1ca42af4c730d799ef88ed6d5`, 9 blocks / 29 instructions / 3 calls / 1,390 incoming references — `ev_0ba5c79015459702dab82a7f38bd5ac6d2bcaa81a397f3cd25ba334e3d15b4c3`). Ghidra pseudo-C (`ev_9c4ff7ba1fa969cabab05fcedebdae7056860c44b7455c340e7e639b55516b1d`), condensed:
+
+```c
+void FUN_00405454(int *param_1, int param_2) {   // param_1 = dest field, param_2 = source string
+  if (param_2 != 0) {
+    if (*(uint *)(param_2 - 8) < 0x80000000)  AddRef(param_2);          // shared string
+    else {                                                              // refcount -1 constant
+      iVar2 = FUN_004054c4(*(uint *)(param_2 - 4));                     // allocate by length (7)
+      FUN_00403104(param_2, iVar2, *(uint *)(param_2 - 4));             // copy the 7 chars
+      param_2 = iVar2;
+    }
+  }
+  old = *param_1; *param_1 = param_2;                                   // store into dest
+  Release(old);
+}
+```
+
+So the provable action is **assigning the string constant `hmapTex` into a field at `[EBX+0x54]` of some object**, with Delphi string copy-on-write semantics. It is *not* a texture lookup or shader binding, and no such step is proven here.
+
+**Containing function UNVERIFIED.** `native_function_find` at `0x853bdf`, `0x853be3`, `0x853bd6`, `0x853bd0` and at `0x853000`/`0x853100`/`0x853300`/`0x853500`/`0x853900`/`0x853a00`/`0x853b00`/`0x853b20`/`0x853b40`/`0x853b60`/`0x853b80`/`0x853ba0`/`0x853bc0`/`0x853bd8`/`0x853c00`/`0x853f00`/`0x853e00`/`0x854000` returns "not inside any discovered function" (`ev_1820ada031d77018eebde440c32d2dc9d2bd9c3c67133624b710b3a71256c937`, `ev_31e9f1cd67446981c6e48bc2b35916ebbdba5bc3b2df9edab3532ab336b47734`, `ev_a0c6ad0a539f328286543d0d3152b9fc759620036e34d28df91858d76854dbc5`, `ev_60bf799c7b2802f75f2423380ef846bb9f57c8fc6b5006c8c9b36ee9bd9f51ab`, `ev_9fd02b423ddbebe101fd36a183531d33500b9ea9c3392b75ba25711e08381e0e`, `ev_d37ae8e41df1f39e908c81278176549f5c4db0d1a5ddc9b8821724fc7f9303d1`, `ev_685740f5aef465d62a1d922c29d063f5c1d3f1b1341f257f1603e971016926b9`, `ev_619fce4c81a83bb647f25037949ac151c1a08905e878bf529bddc21df47f3196`, `ev_9100d0263a29b32cf68315b31d5466bd74ab65030082f1351e79b7bfa6a89c40`, `ev_b4db600fbe6edec1eafd6d36bda8d4bf77f7c2927617e2404b343b6109c7545f`, `ev_712910dee32387beec6bdb362fde7d0abc8b24f70eb90d08db21771d3c415bb7`, `ev_5e9719b5638d9a82abd4feb1b077b633a57044846db87335145816896eb9456e`, `ev_2ea8979ac107a5bb07b4ac958d9883c1a3b812c89bf04a4448093ef3ddf6e28f`, `ev_874853c654cbe2c06e0a4da69527646ee5cd471c61fa7dfbe3665ac8ea583926`, `ev_d8b26257682945b0cd3882aec1c757491ed2bb021b8d74cbf40dfc648125b00b`, `ev_1f5f19ab32851802a482f2f94cceff0391f7a8ff1c55c939712ded1618c7ec0e`, `ev_4985c7038a37ab0fd0846b2200f1ea30c13e7653216565dd0dda493ede2705bc`, `ev_fe74d6d25b33c675b5a2ac1e2dd887abe61a6f04a1f6571a2c88b5c13deee5eb`, `ev_cbafac209ba0e09b8456084b61237335ddd3b570f42778bfead3434ab1222f7d`, `ev_f061de569952635c08525d6f5e97ec214ac4ae7b13e499406bd61ec7a9306e68`, `ev_c89ba91956b79fb8def99888fe6842ce5efe21a934c63a110c8218baa7f40047`). The nearest recovered function, `sub_853310` (`0x853310`–`0x853409`, 203 bytes, `ev_768756e99fc37ad91afccd07e59a3c2f3cda8fb0c92becea7e275bf4057a63fc`), ends long before this block. No `native_function_study` dossier can be produced for the containing initializer.
+
+**Water/fog implication (observation, not shader semantics).** The constants assigned in that same initializer are, in order, from the byte windows at `0x853d00` and `0x853dc0`: `waterAmount`, `fresnelPower`, `fresnelBias`, `hdrMultiplier`, `waveFreq`, `waveAmp`, `distFactor`, `bumpFactor`, `texScaleS`, `texScaleT`, `waveDir0`, `waveDir1`, `fogEnabled`, `hmapTex`, `hmapW`, `hmapH`, `hmapMin`, `hmapMax`, `shadowed`, `shadowMap`, `shadowSize`, `shadowColor`, `cameraModel`, `reflectionMap` (`ev_9824755fc4f3cbb7c3cc9fac9b8a1cd4939f2f6c0969af658ac564c2755367bb`, `ev_20196da6116c175f32b10c36cd5bc357788189fce04cdd886010608eae86bd68`). That is a coherent **water/effect parameter schema**, and `hmapTex` sits inside it with dimensions `hmapW`/`hmapH` and range `hmapMin`/`hmapMax`. It is reasonable to infer the object is a water-parameter descriptor, but **binding to a texture, heightfield sampling and any shader use are UNVERIFIED** — the only proven operation is string assignment.
+
+## 8.3 `SphereHeight` and `DynFogDepth`: a real config parser
+
+`sub_7ab704` at `0x7ab704` (`native_function_find` `ev_53e09e4a56d971512962e57b3ea194b285f13909f8c4e6b67eb5b842a9fbf66c`; complete `native_function_study` `ev_e57a21ab1a1b4ae13f6775983d70523a06ef7467b29e22e6eabfe59e551bb196`: **9 blocks, 335 instructions, 57 calls, 1 caller**; `native_function_callers_list` → `sub_7aea0c` calling at `0x7aea3b`, `ev_edf7b79d9d80009b30f6f7fc05a29b153533005bb9b4981a32c3db192acaacb3`). Its Ghidra pseudo-C is 194 lines (`ev_acad42c1706118176db3a00ab4cf524fcd835db55ff8928950dda150d9d77551`), of the form:
+
+```c
+void FUN_007ab704(int param_1, int param_2) {
+  iVar2 = FUN_008959f8(param_2, "RestrictInfo");          // named config section
+  if (iVar2) {
+    FUN_00896b1c(iVar2, "HeightTarget");     *(float *)(param_1+0x298) = (float)in_ST0;
+    FUN_00896b1c(iVar2, "HeightTargetMin");  *(float *)(param_1+0x200) = (float)in_ST1;
+    FUN_00896b1c(iVar2, "SphereHeight");     *(float *)(param_1+0x204) = (float)in_ST2;
+    FUN_00896b1c(iVar2, "SphereHeightMin");  *(float *)(param_1+0x208) = (float)in_ST3;
+    FUN_00896b1c(iVar2, "SphereLength");     *(float *)(param_1+0x20c) = (float)in_ST4;
+    FUN_00896b1c(iVar2, "SphereLengthMin");  *(float *)(param_1+0x210) = (float)in_ST5;
+  }
+  iVar2 = FUN_008959f8(param_2, "FreeRotationInfo");
+  if (iVar2) {
+    FUN_00896b1c(iVar2, "MinHeightMinAngle"); *(float *)(param_1+0x24c) = (float)in_ST0;
+    /* ... more angle/limit fields ... */
+  }
+  FUN_00896b1c(param_2, "MinFocalLength");   *(float *)(param_1+0x350) = (float)in_ST1;
+  FUN_00896b1c(param_2, "MaxFocalLength");   *(float *)(param_1+0x354) = (float)in_ST2;
+  uVar1 = FUN_008967b4(param_2, "DynFogDepth", 0, ...);   // boolean, default 0
+  *(byte *)(param_1+0x3bc) = uVar1;
+  FUN_00896b1c(param_2, "DynFogStart");     *(float *)(param_1+0x3c0) = (float)fVar7;
+  FUN_00896b1c(param_2, "DynFogEnd");       *(float *)(param_1+0x3c4) = (float)fVar8;
+  FUN_00896b1c(param_2, "DynFogDensity");   *(float *)(param_1+0x3c8) = (float)fVar3;
+  FUN_00896b1c(param_2, "DynFogPower");     *(float *)(param_1+0x3cc) = (float)fVar9;
+  FUN_00896b1c(param_2, "DynFogOffset");    *(float *)(param_1+0x3d0) = (float)fVar10;
+  FUN_004ce8bc(param_1);
+}
+```
+
+Direct instruction/xref evidence tying the exact binary addresses to that function:
+
+| String | Address | Reference | Evidence |
+|---|---|---|---|
+| `SphereHeight` | `0x7abc44` | `0x7ab75f`: `mov edx, 0x7abc44`, reference list contains `0x7abc44`, inside `sub_7ab704` | `ev_cda5b6bb62a4b6f08e6b61a77d0987b7476d96841a2fc9b9b22662b30c2e4201`; earlier xref `ev_01a2cde3989fc5c297efe9c88676b9fdd198894a4a70e64593f8a316c6ea0249` |
+| `SphereHeightMin` | `0x7abc5c` | `0x7ab777`: `mov edx, 0x7abc5c`; 1 xref from `sub_7ab704` | `ev_5d67678979cc9f5031184fda676e2ee431560e132a72fc7a1f181ef4a4193d77`, `ev_1f80b5a87678b43b0052a980c35d0274c9e61194e1064c386eb9fcd54bea1a80` |
+| `DynFogDepth` | `0x7ac0ac` | `0x7abb43`: `mov edx, 0x7ac0ac`; 1 xref from `sub_7ab704` | `ev_19fa1d6dded700a4cc09e6ae00ea3a2c948facfd5f140d625439bc9d4a7864d1`, `ev_751e5ab7ac25517676d6843560a14ae5488765e5a8230fe0de0d7845c0d3d653` |
+| `DynFogDepth` other copies | `0x5fe437`, `0x5fe46b` | 0 xrefs each — do NOT claim these are used | `ev_0feed30b0a49be5690cc8ef65a7cfbbf6aea30bee658bb57b00afeaa740b51ee`, `ev_19d065d41ea0406aa624f3a3b82871341dd8e749b5cdebc8830d683117f7bba9` |
+
+`native_function_study` reports "uses 0 strings" for `sub_7ab704` (`ev_e57a21ab1…`) because its string facet only indexes data-section strings; the names nevertheless appear in the decompiled body and are tied to concrete CODE addresses by the instruction records above.
+
+**What this establishes:** these keys are **look-up names passed to generic config readers** (`FUN_008959f8` section, `FUN_00896b1c` float, `FUN_008967b4` bool+default), and the returned values are written to typed fields of a camera/restriction object. `DynFogDepth` is read as a *boolean camera/DOF setting with default 0*, accompanied by `DynFogStart/End/Density/Power/Offset` floats — not as a terrain-fog shader parameter, and no shader semantics are proven. `SphereHeight`/`SphereHeightMin`/`MinHeightMinAngle`/`FocalLength` are similarly read as fields of a restriction/camera config. This is direct confirmation of the report's central interpretation: the binary carries the **key names and the parser**, while the **values come from external config/data files**.
+
+## 8.4 Deep-dive evidence ledger (new calls only)
+
+`core_feature_find("hmapTex")` `ev_eab32206dbca80e3b6115a716fe408ea66b320c4fd60812cf9e82816738ccf48`; `native_address_show(0x853e0c)` `ev_f3d66f6948ab41edabc623cf0b5ed0fa5d930777f169677f0097fc3093dfedf1`; `native_instruction_show(0x853e0c)` `ev_7fcb5904110bb72344003b7dc72ecd7413f51b563a08b1d3f5484441e82a2acc`; `native_xrefs_list(0x853e0c)` `ev_a6532196e7464b5c3ba32dbc33d6b54ed8481150178e59cbc3c59bafb6e0c4e0`; `native_xrefs_list(0x853e0b)` `ev_4aecbf1bfdae2e33f145a6b88ef985af2d2e532d653bbb421044b35568840021`; `native_bytes_show(0x853dc0,320)` `ev_20196da6116c175f32b10c36cd5bc357788189fce04cdd886010608eae86bd68`; `native_bytes_find(pattern 0C 3E 85 00)` `ev_c9350527e8001df4369f4d4ff744ab21609fd422a33bd14b7831cc29d4e400be`; `native_bytes_show(0x853b40,320)` `ev_335ea2e25cd5e1ffbd2f841ac4606e0d5dcc288ee1b623e3431ea094083aa8b0`; `native_data_show(0x853bdf,pointer)` `ev_7f2bd0044a43775af4854ff804d6da76be8e22697eff9a28902ca00d84c2d112`; `native_instruction_show(0x853bdb)` `ev_d560126c6bc958f059d1bd8ae5e1f4673d55fc85baed2e7603b26ff294a56319`; `native_instruction_show(0x853bde)` `ev_190898349c86f8d90a49007c79d2e593cc6278658a16928cb0c9371ae0dc6846`; `native_instruction_show(0x853be3)` `ev_cf7b42dd86b0261abebcacb0ea646d12092da5b46c61dd33f6e9be552c3a11fb`; `native_xrefs_list(0x853bdf)` `ev_3c42648abe490036af0659e9d815e8773005be2245d6cbc5c1fa46e46492aa9b`; `native_function_find(0x853bdf)` `ev_1820ada031d77018eebde440c32d2dc9d2bd9c3c67133624b710b3a71256c937`; `native_address_show(0x853bdf)` `ev_3209f99066350f8b8d16a9d903e5db99893bd74960af91dfeb9fac70f8aa34d7`; `native_bytes_find(pattern 1C 3E 85 00)` `ev_fd19b7ab44aba12abf45cbcffb538c280ab0d93cc75e90106b18dcb1aeed4f72`; `native_bytes_find(pattern F8 3D 85 00)` `ev_3dce08f5684f619848b9cab37ce7fdcde93c4bf980d0511baa17c48a27bd0e37`; `native_bytes_find(pattern 70 3E 85 00)` `ev_9e05eb8146696ab4b5b4812fb5e3a7f5e06af894153606b3ec4c20a2ec25cc9e`; `native_bytes_show(0x853bd0,64)` `ev_13a7c70a84940d16c76a7c8a8821fb784bb3bf687613973394262085f486435b`; `native_instruction_show(0x853bd0)` `ev_8e775962d610b235aed07182f00bb53b9511e4e173d3284b5efbf198108d4ef8`; `native_instruction_show(0x853bf0)` `ev_e98a1a7878135a12ae85030a7315d53c112e76687aacad56c6360ced8b7933ac`; `native_function_find(0x405454)` `ev_2b2c4e8865e4adb9c9d387c972bbb7207ca3bd48e5e0c2d74add3153cd1756f5`; `native_function_pseudocode(0x405454)` `ev_9c4ff7ba1fa969cabab05fcedebdae7056860c44b7455c340e7e639b55516b1d`; `native_function_study(sub_405454,complete)` `ev_f8cfed49e0673cf56057abde6482d110b671f5b1ca42af4c730d799ef88ed6d5`; `native_instruction_show(0x405454)` `ev_f75068ae98daf6c12b1e5a83f2e29b3c961a61e83a63b177b90dcf7cd9c75909`; `native_name_xrefs_list(sub_405454)` `ev_0ba5c79015459702dab82a7f38bd5ac6d2bcaa81a397f3cd25ba334e3d15b4c3`; `native_bytes_show(0x853d00,208)` `ev_9824755fc4f3cbb7c3cc9fac9b8a1cd4939f2f6c0969af658ac564c2755367bb`; `native_data_show(0x853e04,i32)` `ev_f49f1d24a879ce3298b018db19db5156d96e0ba38a09e8839d15809e71b6b75b`; `native_data_show(0x853e08,i32)` `ev_a29946353015d7469ff24afae9c5023546a7793fba47676df710e5fb56df37a0`; `native_function_show(sub_853310)` `ev_768756e99fc37ad91afccd07e59a3c2f3cda8fb0c92becea7e275bf4057a63fc`; `native_function_pseudocode(sub_7ab704)` `ev_acad42c1706118176db3a00ab4cf524fcd835db55ff8928950dda150d9d77551`; `native_function_study(sub_7ab704,complete)` `ev_e57a21ab1a1b4ae13f6775983d70523a06ef7467b29e22e6eabfe59e551bb196`; `native_function_find(0x7ab704)` `ev_53e09e4a56d971512962e57b3ea194b285f13909f8c4e6b67eb5b842a9fbf66c`; `native_instruction_show(0x7ab75f)` `ev_cda5b6bb62a4b6f08e6b61a77d0987b7476d96841a2fc9b9b22662b30c2e4201`; `native_instruction_show(0x7ab777)` `ev_5d67678979cc9f5031184fda676e2ee431560e132a72fc7a1f181ef4a4193d77`; `native_instruction_show(0x7abb43)` `ev_19fa1d6dded700a4cc09e6ae00ea3a2c948facfd5f140d625439bc9d4a7864d1`; `native_xrefs_list(0x7abc5c)` `ev_1f80b5a87678b43b0052a980c35d0274c9e61194e1064c386eb9fcd54bea1a80`; `native_xrefs_list(0x5fe437)` `ev_0feed30b0a49be5690cc8ef65a7cfbbf6aea30bee658bb57b00afeaa740b51ee`; `native_xrefs_list(0x5fe46b)` `ev_19d065d41ea0406aa624f3a3b82871341dd8e749b5cdebc8830d683117f7bba9`; `native_xrefs_list(0x7ac0ac)` `ev_751e5ab7ac25517676d6843560a14ae5488765e5a8230fe0de0d7845c0d3d653`; `native_function_callers_list(sub_7ab704)` `ev_edf7b79d9d80009b30f6f7fc05a29b153533005bb9b4981a32c3db192acaacb3`. The `native_function_find` negative probes for the `0x853b..` initializer block are listed inline in section 8.2.

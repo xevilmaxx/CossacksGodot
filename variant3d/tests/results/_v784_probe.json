@@ -1,0 +1,58 @@
+{
+	"checks": [
+		{
+			"detail": "res://scripts/water3d.gd",
+			"name": "module_load",
+			"passed": true
+		},
+		{
+			"detail": "mi=WaterPlane3D:<MeshInstance3D#27044873685>",
+			"name": "mesh_instance_exists",
+			"passed": true
+		},
+		{
+			"detail": "material=ShaderMaterial",
+			"name": "shader_material_exists",
+			"passed": true
+		},
+		{
+			"detail": "got=-0.25",
+			"name": "uniform_water_level_-0.25",
+			"passed": true
+		},
+		{
+			"detail": "got=-0.1",
+			"name": "uniform_shore_height_-0.1",
+			"passed": true
+		},
+		{
+			"detail": "got=2.96",
+			"name": "uniform_max_height_2.96",
+			"passed": true
+		},
+		{
+			"detail": "wave_noise=():<ImageTexture#-9223372009960897073>",
+			"name": "wave_noise_bound",
+			"passed": true
+		},
+		{
+			"detail": "height_tex=():<ImageTexture#-9223372009860233773>",
+			"name": "height_tex_fallback_bound",
+			"passed": true
+		},
+		{
+			"detail": "shader=(res://shaders/water3d.gdshader):<Shader#-9223372010111892019>",
+			"name": "shader_resource_bound",
+			"passed": true
+		},
+		{
+			"detail": "vertices=4",
+			"name": "plane_has_4_vertices",
+			"passed": true
+		}
+	],
+	"id": "_v784_probe",
+	"passed": true,
+	"passes": 10,
+	"total": 10
+}

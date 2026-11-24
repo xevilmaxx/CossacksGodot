@@ -419,12 +419,12 @@
       "roughness_proxy": 210
     }
   ],
-  "output_file": "app\\assets\\terrain\\heightmap\\splat_albedo.png",
+  "output_file": "variant3d\\assets\\terrain\\heightmap\\splat_albedo.png",
   "output_size": [
-    320,
-    320
+    1280,
+    1280
   ],
-  "texels_per_cell": 1,
+  "texels_per_cell": 4,
   "tool": "heightmap_splat.py",
   "tool_version": "1.0.0",
   "water_block": "sandsea6"

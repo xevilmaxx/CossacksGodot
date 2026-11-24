@@ -101,6 +101,7 @@ func _terrain_material(splat: Texture2D) -> Material:
 	var mat := StandardMaterial3D.new()
 	if splat != null:
 		mat.albedo_texture = splat
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR  # V7-82: 4x splat texels stay smooth, no mip chain in tool PNG
 	# Splat A is normalised height DATA (G3-4), not opacity: never blend it.
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 	mat.roughness = 1.0

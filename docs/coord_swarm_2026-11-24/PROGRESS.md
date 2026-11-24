@@ -247,6 +247,104 @@ historical failures" once the background job finishes (avoid spool race).
   t_render_mode PASS, seam_missing=false. (Gate run before V7-81 camera fix;
   V7-81 will re-verify its own selftest.)
 
+### V7-83 donor map importer LANDED
+- NEW `variant3d/tools/import_donor_map.py` (stdlib-only, read-only) + report.
+  Decodes TerrainMapBegin/End float32[320x320] grid into the schema
+  heightmap_splat.py expects; --verify compares vs g32_dump.json without
+  writing donor data into the repo. Temp generated JSON consumed by splat tool
+  in a temp dir then deleted. No donor bytes copied, no git.
+- Measured bonmis1: 102,400 cells, bounds -2.964000/+2.964000 (mean -0.072741),
+  16,274 exact matches vs g32 (15.8926%), max abs error 5.928 m. engmis4:
+  bounds identical (mean +0.252345), 40,327 matches (39.3818%), max 5.302495 m.
+  Bounds delta vs local dump 0.000000000 — same format/bounds, DIFFERENT maps.
+- `tileblock` emitted as explicitly labelled NEUTRAL ZERO placeholder (required
+  by load_dump); tile-index + named-coordinate structures parsed as opaque
+  counts, SEMANTICS UNVERIFIED. Corrected DECOMP-06:119: TerrainMapEnd prefix
+  is 13 bytes, not 16.
+- Implication: real per-cell tile indices must come from the 37-byte records
+  decoded by DEEPDEC-05 before A3 integration can use donor truth.
+
+### DEEPDEC SWARM + donor-representation terrain tasks launched
+- User asked for DEEP decompilation with multiple agents. Charter
+  `DEEPDEC_CHARTER.md`; 10 audit-only agents: camera, terrain render, water,
+  fog/light/sky, map serialization, models/animation, FX/audio, UI/minimap,
+  AI/economy, cross-cutting function catalog.
+- HARD RULES: donor read-only; shared target t_87f0f3c130b0; no target
+  open/select; whole-file native_bytes_find (string search is data-only);
+  evidence id per finding; NO Frida/runtime/unpacking; no source/git edits.
+- TERRAIN2-06 feasibility: TRUE donor-representation port is feasible with
+  shipped data — per-cell integer tile index present (g32_dump.json:1,
+  game.gd:53,1610), 124-name index dictionary, smoothing rules, 320x320 detail
+  bitmaps, 25-deg face metadata, 112 full-res block PNGs. NOT bit-exact:
+  zero shipped vf/vs face ids, gl_EyePlane values, tile->face promotion rule
+  engine-side, standalone alpha/alphavert PNGs absent (only indirect 64² dmask).
+- Dispatched V7-85 (new tile atlas tool + donor alpha masks) and V7-86 (new
+  tile-index spatial shader with eye-plane UVs) in NEW files only; A3
+  (world3d_terrain.gd integration) queued until V7-82 frees that file.
+
+### DECOMP-04 §8 — hmapTex consumer + water descriptor PROVEN
+- hmapTex at 0x853e0c is a standalone Delphi AnsiString (refcount -1, length 7,
+  NUL-terminated; ev_20196da6..., ev_f49f1d24..., ev_a2994635...), referenced by
+  `mov edx,0x853e0c` at 0x853bde -> call 0x405454 (ev_19089834...,
+  ev_cf7b42dd...); sole in-file pointer 0x853bdf (ev_c9350527...). Callee
+  sub_405454 is a ref-counted Delphi string-assignment helper. NO containing
+  function discovered (native_function_find "not inside any discovered
+  function" around 0x853b00-0x854000) -> no texture lookup/binding proven.
+- SAME initializer assigns a coherent water descriptor: waterAmount,
+  fresnelPower/Bias, hdrMultiplier, waveFreq/Amp, distFactor, bumpFactor,
+  texScaleS/T, waveDir0/1, fogEnabled, hmapTex, hmapW/H/Min/Max,
+  shadowed/shadowMap/shadowSize/shadowColor, cameraModel, reflectionMap
+  (ev_9824755f..., ev_335ea2e2...). hmapTex is a water heightmap PARAMETER name;
+  binding still UNVERIFIED.
+- CONTRAST: SphereHeight/SphereHeightMin/DynFogDepth DO have a real consumer:
+  sub_7ab704 (9 blocks/335 instructions, ev_e57a21ab..., pseudo-C
+  ev_acad42c1...) reads them as config keys with default DynFogDepth=0 and
+  DynFogStart/End/Density/Power/Offset. Other two DynFogDepth copies have 0 xrefs.
+- V7-84 dispatched: new `water3d.gd` + `water3d.gdshader` only (no terrain file
+  edits), donor water literals/uniforms, probe, no visual parity claim.
+
+### DECOMP-06 donor .map relief IS READABLE (prior UNREADABLE was wrong)
+- Craft Anything triage called .map "unknown"; core_packed_files_list refused it;
+  byte-search + read-only Python decoded the structure:
+  - `TerrainMapBegin … TerrainMapEnd` section with PLAIN UNCOMPRESSED
+    float32[320x320] height grid (409,600 B), bounds EXACTLY ±2.964 m =
+    donor cMaxHeight=2.96 (texturemap.inc:29-31), already the schema
+    heightmap_splat.py expects (base64 LE f32).
+  - Anchor: TerrainMapBegin, then the SECOND `40 01 00 00 40 01 00 00` header;
+    grid starts 8 bytes later (0xa68acd bonmis1.map, 0xa3353c engmis4.map).
+  - Also decoded 102,400 x 37-byte tile/attribute grid (4 tile-index bytes,
+    four constant 1.0f weights) and 8,777 sparse 31-byte named coordinate
+    records — semantics PARTLY UNVERIFIED.
+  - NOT the source of g32_dump.json (17,354 / 41,496 exact matches, mostly
+    shared zeros/clamps): format recoverable ≠ visual parity.
+- V7-83 dispatched: standalone read-only `variant3d/tools/import_donor_map.py`
+  with --verify vs g32_dump.json; no donor data written into repo.
+
+### TERRAIN2-01 DONOR PIPELINE — MAJOR CORRECTION
+- Donor has NO SPLAT WEIGHTS. ONE INTEGER TILE INDEX per cell, chosen by slope
+  aspect: texturemap.inc:426-445,474-511 computes dirX=lh-rh, dirY=th-bh, 8
+  x 45-deg sectors, writes sandsea*/rock* via MapGetTileIndexByTileBlock ->
+  SetTileIndex; base tiles from tile_lowground/highground.bmp by h<0.1 and
+  r div 2 (loadtextureterrainfrombitmap.inc:4-42), weighted neighbour
+  transitions from tilesmooth_scripts.cfg:1-35.
+- Cliff striations = 25-deg TILLED FACE TILES with alpha masks (tiles.lib:119-136
+  rockNvf AngleX=0/AngleZ=25, rockNvs AngleX=25/AngleZ=0; reftile.mat:120-169
+  alphavert.bmp UV scale 0.125 tmmEyeLinear), NOT per-vertex normals. Ground
+  shader has tangentSpace=false (shaders.lib:19); only Blinn-Phong normal use
+  (hf.pvl.sm.vert:15). No ground normal maps.
+- Terrain albedo UVs are EYE-PLANE PROJECTED (shaders.lib:30 texGen=true;
+  hf.pvl.sm.vert:26-33 dot(realpos, gl_EyePlaneS/T[0])), not 0..1 map UVs.
+- Water: 2x2-cell WaterFieldAdd(...,-0.5) patches (generatemap.inc:646-708);
+  shader discards height>level, blends depth/waves/reflection/3-tap shadow/
+  nautic foam/particles (water.dev.frag:167-232). -0.25 IS donor literal
+  (texturemap.inc:30); our "donor literal UNVERIFIED" comment is stale.
+- terrainmesh1..4 = FOUR DISTINCT RELIEF PROPS with one LOD slot each
+  (actors.lib:1200-1225), not 4 LODs of one mesh. Default FogMode=0
+  (colors.lib:36) + DynFogDepth=False (camera.cfg:59); override only for
+  screenshot camera (docreate.inc:296-320) — do not unconditionally add fog.
+- TERRAIN2-06 architecture agent dispatched for a donor-representation port;
+  V7-82 splat fix explicitly downgraded to PORT APPROXIMATION interim polish.
+
 ### DECOMP-02 RTTI class names decoded + DECOMP-03 vertex layout
 - DECOMP-02: RTTI strings carry a leading Delphi metadata flag byte; corrected
   names XTerrain 0x95864a, XTerrainDataLite 0x9587c3, XTerrainData 0x958b76,
