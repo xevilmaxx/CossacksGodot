@@ -63,6 +63,23 @@ extends Node3D
 #     NOT DONOR PARITY. Donor snow{1..4}.bmp are private-use and stay uncopied.
 #   NO construction dust: DFX-01 §7.4 proves that class is sound-only in the donor.
 #   No selection-ring / marquee-overlay code is touched by this addition.
+#
+# FX-IMPACT-01 — DONOR-GROUNDED VOLLEY SMOKE / MUZZLE FLASH / ARROW TRAIL:
+#   Three ADDITIVE FX kinds (`volley_smoke`, `muzzle_flash`, `arrow_trail`) built
+#     from the literal constants decoded by DFX-01 §7.1/§7.2/§7.3. Every donor
+#     number is cited `path:line` below. No donor→Godot unit conversion was
+#     recovered (DFX-01 §6/§9), so every Godot size/time derived from a donor
+#     key is labelled `PORT APPROXIMATION`; donor literal keys themselves are
+#     `LITERAL KEY / SEMANTICS UNVERIFIED`.
+#   Face-camera billboards replace the old solid BoxMesh for the new trail kind
+#     (donor `MarkStyle = msFaceCamera`, source.pfx:1745). The legacy `trail`
+#     kind is deliberately left byte-identical; the billboard is opt-in via
+#     `use_donor_arrow_trail` so no existing caller changes behaviour.
+#   Draw passes are plain white/grey untextured quads only: donor sprite sheets
+#     (musketsmoke.dds, musketflash.dds, bullettrail.bmp, ...) are private-use
+#     and are NOT copied. NO construction dust (absent in donor, DFX-01 §7.4).
+#   NO donor FX parity is claimed, NO positional audio, NO sim edit, and the
+#     FX-WEATHER-01 snow root, selection rings and marquee code are untouched.
 
 const Data = preload("res://scripts/data.gd")
 
@@ -82,6 +99,10 @@ const LIFE := {
 	"rout": 1.2,
 	"chop": 0.35,
 	"trail": 0.22,
+	# FX-IMPACT-01 — additive kinds (donor anchors cited at the constants below).
+	"volley_smoke": 1.6,    # PORT life world.gd:3567; donor AlphaTime 1.5 UNVERIFIED
+	"muzzle_flash": 0.35,   # PORT life world.gd:3564; donor 4f/10fps=0.4 s UNVERIFIED
+	"arrow_trail": 0.2,     # source.pfx:1740 `TimeLimit = 0.2` literal (unit UNVERIFIED)
 }
 const DEFAULT_LIFE: float = 0.35
 const FALLBACK_FX_CAP: int = 220   # data.gd:117 (quality-tier default)
@@ -156,10 +177,74 @@ const SNOW_MOVE_DIR: Vector3 = Vector3(0.0, -1.0, 0.0)           # particles.sno
 # :15,55,95,135) is RECORDED but NOT reproduced — no Godot equivalent is claimed.
 const SNOW_PORT_LIFETIME: float = 8.0     # PORT ONLY: donor weather cfg has no lifetime key (DFX-01 §6)
 
+# --- FX-IMPACT-01 — donor-grounded impact FX constants ----------------------
+# THREE EFFECT CLASSES, all additive. Donor numbers are LITERAL KEYS read
+# read-only by DFX-01 (path:line); no consumer converting them to Godot metres
+# or seconds was recovered (DFX-01 §6, §9), so any Godot-side value derived from
+# them is a PORT APPROXIMATION, NOT DONOR PARITY.
+#
+# (1) VOLLEY SMOKE — donor `shotmusket` composition, DFX-01 §7.1. There is no
+#     dedicated "volley" key: each musket shot independently emits the 5-layer
+#     composition (fx.tree:4-63); N shooters = N compositions (DFX-01 §7.1).
+const IMPACT_SMOKE_END_FRAME: int = 127          # source.pfx:41 `EndFrame = 127`
+const IMPACT_SMOKE_FRAME_W: int = 256            # source.pfx:42 `FrameWidth = 256`
+const IMPACT_SMOKE_FRAME_H: int = 128            # source.pfx:43 `FrameHeight = 128`
+const IMPACT_SMOKE_PIXEL_RATIO: float = 175.0    # source.pfx:51 `PixelRatio = 175`
+const IMPACT_SMOKE_ALPHA_TIME: float = 1.5       # source.pfx:61 `AlphaTime = 1.5`
+const IMPACT_SMOKE_ALPHA_POWER: float = 1.5      # source.pfx:62 `AlphaPower = 1.5`
+const IMPACT_SMOKE_TINT_GREY: float = 0.3137255  # material.mat:17-37 (=80/255) shared smoke tint
+const IMPACT_SMOKE_OFFSET: Vector3 = Vector3(-0.1, -1.5, 0.775)  # source.pfx:54-57
+# Up-smoke layer (DFX-01 §7.1 "Up-smoke layer"): donor PixelRatio 600, EndFrame 63.
+const IMPACT_SMOKE_UP_PIXEL_RATIO: float = 600.0 # source.pfx:258-294; fx.tree:40-46
+const IMPACT_SMOKE_UP_END_FRAME: int = 63         # source.pfx:258-294; fx.tree:40-46
+# PORT APPROXIMATION quads (donor PixelRatio has no recovered metre conversion):
+const IMPACT_SMOKE_QUAD_M: float = 1.4            # PA of PixelRatio 175; frame ratio 256:128 kept
+const IMPACT_SMOKE_UP_QUAD_M: float = 2.0         # PA of up-smoke PixelRatio 600
+const IMPACT_SMOKE_ALPHA: float = 0.55            # PORT choice; donor diffuse alpha tint UNVERIFIED
+#
+# (2) MUZZLE FLASH — donor `musketflash`, DFX-01 §7.2.
+const IMPACT_FLASH_FRAMES: int = 4               # source.pfx:112-114,125-127,138-140,151-153
+const IMPACT_FLASH_FRAME_RATE: float = 10.0      # source.pfx:169 `FrameRate = 10`
+const IMPACT_FLASH_INTERVAL: int = 100           # source.pfx:164 `Interval = 100`
+const IMPACT_FLASH_PIXEL_RATIO: float = 350.0    # source.pfx:167 `PixelRatio = 350`
+const IMPACT_FLASH_ON_END_HIDE: bool = true      # source.pfx:176 `OnEndFrameHide = True` (no alpha fade)
+const IMPACT_FLASH_OFFSET: Vector3 = Vector3(-0.1, -1.0, 0.775)  # source.pfx:170-173
+# Recorded but NOT reproduced: randanimation=1 / randmirrorv=2 (fx.tree:28-29).
+# This module has no RNG (V7-15 header); frame/mirror randomisation is absent.
+const IMPACT_FLASH_RAND_ANIMATION: int = 1       # fx.tree:28 (RECORDED, not reproduced)
+const IMPACT_FLASH_RAND_MIRROR_V: int = 2        # fx.tree:29 (RECORDED, not reproduced)
+# PORT APPROXIMATIONS:
+const IMPACT_FLASH_QUAD_M: float = 0.7           # PA of PixelRatio 350; unit UNVERIFIED
+const IMPACT_FLASH_FRAME_SECONDS: float = 0.1    # DERIVED 1/FrameRate; UNVERIFIED frame->second mapping
+const IMPACT_FLASH_PORT_LIFE: float = 0.35       # PORT world.gd:3564
+#
+# (3) ARROW / PROJECTILE TRAIL — donor `bullettrail`, DFX-01 §7.3. All projectiles
+#     including arrows use it (weapon.script:281-287); only OSTRELA uses
+#     firearrowtrail (weapon.script:286,437).
+const IMPACT_TRAIL_TIME_LIMIT: float = 0.2       # source.pfx:1740 `TimeLimit = 0.2` (same as TRAIL_TIME_LIMIT)
+const IMPACT_TRAIL_ALPHA: float = 0.2            # source.pfx:1742 `Alpha = 0.2` (bullettrail)
+const IMPACT_TRAIL_FIREARROW_ALPHA: float = 0.3  # source.pfx:2315 `Alpha = 0.3` (firearrowtrail)
+const IMPACT_TRAIL_WIDTH: float = 0.1            # source.pfx:1746 `MarkWidth = 0.1`
+const IMPACT_TRAIL_FRAG_WIDTH: float = 0.05      # source.pfx:1783 `MarkWidth = 0.05` (fragtrail)
+const IMPACT_TRAIL_MIN_DISTANCE: float = 0.05    # source.pfx:1741 `MinDistance = 0.05`
+const IMPACT_TRAIL_VERT_LIMIT: int = 150         # source.pfx:1739 `VertLimit = 150` (RECORDED, not reproduced)
+const IMPACT_TRAIL_ALPHA_FADE: bool = true       # source.pfx:1743 `AlphaFade = True`
+const IMPACT_TRAIL_MARK_STYLE: String = "msFaceCamera"  # source.pfx:1745 -> billboard quad
+const IMPACT_TRAIL_ZWRITE: bool = false          # source.pfx:1748 `ZWrite = False` -> depth draw disabled
+const IMPACT_TRAIL_DIFFUSE_ALPHA: float = 1.0    # source.pfx:1759-1763 `Diffuse(1,1,1,1)`
+# PORT APPROXIMATION streak length: donor has no length key; reuse the existing
+# port streak (world.gd-trailed value) so the billboard has a finite ribbon.
+const IMPACT_TRAIL_STREAK_M: float = TRAIL_STREAK_M
+
 # --- public state ----------------------------------------------------------
 var game = null
 var consume_events: bool = true    # set false if main.gd already forwards add_fx
 var emit_arrow_trails: bool = true
+# FX-IMPACT-01 opt-in wiring. Both default FALSE so every pre-existing caller
+# keeps its exact behaviour; a future integration ticket (foreign-owned files)
+# may enable them without editing this module.
+var emit_donor_shot_fx: bool = false     # shot events also spawn muzzle_flash + volley_smoke
+var use_donor_arrow_trail: bool = false  # projectiles use the face-camera arrow_trail instead of the solid-box trail
 # Subtract from map-origin sim pos to centre the scene (see ORIGIN CONVENTION).
 # Pre-V7-73 this was never assigned; bind() now derives it from the bound game.
 var world_offset: Vector2 = Vector2.ZERO
@@ -169,6 +254,8 @@ var fx_items: Array = []
 var stats: Dictionary = {
 	"spawned": 0, "expired": 0, "events_consumed": 0,
 	"rally_active": 0, "ghost_shown": 0,
+	# FX-IMPACT-01 (additive telemetry; no existing key changed)
+	"impact_fx_spawned": 0, "impact_last_kind": "",
 	# FIX-SELECTVIS: measured ring/owner-colour counts for probes + reports.
 	"selection_rings": 0, "selection_entries": 0, "selection_owner_colors": [],
 }
@@ -405,6 +492,30 @@ func add_fx(pos, kind, life := -1.0) -> Dictionary:
 	return item
 
 
+# FX-IMPACT-01 — donor-key entry point. Accepts the literal donor effect/source
+# keys (DFX-01 §5.2/§7.1-7.3) and maps them to the three additive port kinds.
+# This is a THIN ADAPTER, not a donor translation: visual fidelity is a PORT
+# APPROXIMATION and no donor art is loaded. Unknown keys return {} (no-op),
+# matching the donor's `GetOrCreate` lookup of an absent key -> -1 (pfx.script:353-360).
+func add_impact_fx(kind, pos, life := -1.0) -> Dictionary:
+	var k: String = str(kind)
+	var mapped: String = ""
+	match k:
+		"shotmusket", "musketsmoke", "volley_smoke":
+			mapped = "volley_smoke"
+		"musketflash", "shotmusket_flash", "muzzle_flash":
+			mapped = "muzzle_flash"
+		"bullettrail", "firearrowtrail", "fragtrail", "arrow_trail":
+			mapped = "arrow_trail"
+	if mapped.is_empty():
+		return {}
+	var item: Dictionary = add_fx(pos, mapped, life)
+	if not item.is_empty():
+		stats["impact_fx_spawned"] = int(stats.get("impact_fx_spawned", 0)) + 1
+		stats["impact_last_kind"] = mapped
+	return item
+
+
 # Translucent green (ok) / red (blocked) 3D footprint. PORT primitives:
 # no donor ghost config was readable; colour follows world.gd:3509.
 func draw_ghost(sid, pos, ok: bool) -> void:
@@ -569,6 +680,12 @@ func _consume_events() -> void:
 			continue
 		add_fx(ev.get("pos"), kind, -1.0)
 		stats["events_consumed"] = int(stats.get("events_consumed", 0)) + 1
+		# FX-IMPACT-01 opt-in: a donor shot is a 5-layer composition — at minimum
+		# a muzzle flash + volley smoke (fx.tree:4-63). Default OFF; no change to
+		# the legacy single `shot` FX unless a caller enables the flag.
+		if emit_donor_shot_fx and kind == "shot":
+			add_impact_fx("muzzle_flash", ev.get("pos"), -1.0)
+			add_impact_fx("shotmusket", ev.get("pos"), -1.0)
 	_events_seen = evs.size()
 
 

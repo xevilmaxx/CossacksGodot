@@ -254,6 +254,31 @@ const ATLAS_MODE_SINGLE := "single"  # coordinator update: DEFAULT (original PNG
 const ATLAS_MODE_SPLIT := "split"    # lossless byte parts -> user:// cache
 const ATLAS_MODE_ARRAY := "array"    # 121-layer Texture2DArray
 
+# --- SP-6 / SEASON-PLAN-01 §4.3 — season -> atlas selection (INDEX-PRESERVING) ---
+# Donor season is a SET swap at the SAME preset index (terrain.lib:12-15,
+# terrain.presets:2-6/134-263; via DENV-01), so tile indices stay unchanged and
+# DALPHA-02's index-preserving shader needs NO edit (SEASON-PLAN-01 B4/B5).
+# Enum values are from SP-1 (data.gd:227 SEASON_ENUM): summer=0, winter=2,
+# desert=3. Value 1 is UNVERIFIED (dmscript.global:237 gc_MaxSeasonCount=3
+# implies 0/1/2; DENV-01 Q5 / SEASON-PLAN-01 B7) and has NO entry — no guessed
+# art. All donor swap logic lives in ';'-prefixed .inc/.script lines, so donor
+# RUNTIME activity is UNVERIFIED (SEASON-PLAN-01 B6, DENV-01 Q6): this is donor
+# INTENT implemented as a PORT APPROXIMATION, not a "donor runs this" claim.
+const DATA_SCRIPT = preload("res://scripts/data.gd")  # SP-1 BIOME / SEASON_ENUM
+const SUMMER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_atlas.png"  # tile_atlas_loader.gd:66 (V7-85)
+const WINTER_MANIFEST_PATH := "res://assets/terrain/atlas/tile_index_winter_atlas.manifest.json"  # SP-4, SEASON_PLAN_01.md:189
+const WINTER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_winter_atlas.png"  # SP-4, SEASON_PLAN_01.md:189
+const DESERT_REMAP_PATH := "res://assets/terrain/atlas/desert_remap.json"  # SP-3 landed at atlas/ (SP_03 O1)
+const SEASON_DEFAULT_NAME := "summer"  # map.script:250 gen.season=0; terrain.lib:12 seasons.Summer=Summer
+const SEASON_ATLAS: Dictionary = {
+	"summer": {"enum": 0, "manifest_path": V785_MANIFEST_PATH, "atlas_path": SUMMER_ATLAS_PATH},
+	"winter": {"enum": 2, "manifest_path": WINTER_MANIFEST_PATH, "atlas_path": WINTER_ATLAS_PATH},
+	# Desert has NO separate donor preset section (DENV-01 §4 / SEASON-PLAN-01 §4.3):
+	# the Summer atlas/manifest stays bound and SP-3's name remap is applied to
+	# tile ids BEFORE UV2.x. No second atlas is ever accumulated (B2 memory).
+	"desert": {"enum": 3, "manifest_path": V785_MANIFEST_PATH, "atlas_path": SUMMER_ATLAS_PATH},
+}
+
 # PORT-TUNED art floor (not a donor value): a tiny emission keeps the terrain
 # legible in a standalone no-light probe. V7-60 leaves this value UNCHANGED —
 # the donor-grounded light/sky rig lives in this module (see _make_environment).
@@ -280,6 +305,15 @@ var _atlas_grid := Vector2.ZERO             # (cols, rows) from V7-85 manifest
 var _atlas_info: Dictionary = {}
 var _atlas_mode_loaded: String = ""
 var _manifest: Dictionary = {}
+# SP-6 — season selection / provenance (no mesh state).
+var season: String = SEASON_DEFAULT_NAME   # public: "summer" (default) | "winter" | "desert"
+var _season_resolved: String = SEASON_DEFAULT_NAME
+var _season_manifest_path: String = V785_MANIFEST_PATH
+var _season_atlas_path: String = SUMMER_ATLAS_PATH
+var _season_fallback: String = ""          # non-empty when Winter art was absent
+var _desert_remap: Dictionary = {}         # SP-3 source tile id -> packed atlas id
+var _desert_remap_entries: int = 0
+var _desert_remap_cells: int = 0
 var _tile_indices := PackedByteArray()
 var _tile_index_source: String = ""
 var _tile_index_hist: Dictionary = {}
@@ -349,6 +383,67 @@ func _read_json(res_path: String) -> Dictionary:
 	f.close()
 	var parsed: Variant = JSON.parse_string(text)
 	return parsed if parsed is Dictionary else {}
+
+
+# ---------------------------------------------------------------------------
+# SP-6 — season selection. An explicit `season` field wins; otherwise follow
+# the port's live string selector BIOME (data.gd:199 <- config.gd:546), which
+# SP-1 maps to the donor enum SEASON_ENUM {summer:0,winter:2,desert:3}
+# (data.gd:227). Unknown values normalize to Summer; no value-1 path exists.
+# ---------------------------------------------------------------------------
+func _effective_season() -> String:
+	var s: String = season.strip_edges().to_lower()
+	if s.is_empty() or s == SEASON_DEFAULT_NAME:
+		var b: String = str(DATA_SCRIPT.BIOME).strip_edges().to_lower()
+		if b == "winter" or b == "desert":
+			return b
+		return SEASON_DEFAULT_NAME
+	return s if SEASON_ATLAS.has(s) else SEASON_DEFAULT_NAME
+
+
+func _season_file_exists(res_path: String) -> bool:
+	# res:// works in-editor; globalize_path() covers an exported build.
+	return (FileAccess.file_exists(res_path)
+		or FileAccess.file_exists(ProjectSettings.globalize_path(res_path)))
+
+
+func _select_season_atlas(s: String) -> Dictionary:
+	var chosen: Dictionary = SEASON_ATLAS.get(s, SEASON_ATLAS[SEASON_DEFAULT_NAME])
+	var mp: String = str(chosen.get("manifest_path", V785_MANIFEST_PATH))
+	var ap: String = str(chosen.get("atlas_path", SUMMER_ATLAS_PATH))
+	# SP-4's Winter atlas may still be building: never crash on a missing file.
+	# Fall back to the Summer pair for BOTH paths so the index dictionary and
+	# the bound texture always agree (index-preserving contract). Desert has no
+	# separate atlas by design, so it never takes this branch.
+	if not (_season_file_exists(mp) and _season_file_exists(ap)):
+		if not (mp == V785_MANIFEST_PATH and ap == SUMMER_ATLAS_PATH):
+			_season_fallback = ("SP-4 winter manifest/atlas absent — SP-6 fell back "
+				+ "to the V7-85 Summer pair (index-preserving; winter art UNVERIFIED)")
+			mp = V785_MANIFEST_PATH
+			ap = SUMMER_ATLAS_PATH
+	return {"manifest_path": mp, "atlas_path": ap}
+
+
+func _load_desert_remap() -> void:
+	# SP-3's 11 DIRECT pairs (source_index -> packed atlas index) from
+	# atlas/desert_remap.json. The single height-gated rock8 row is
+	# DATA_ONLY_NOT_EXECUTED and deliberately NOT loaded: SP-6 is index-only
+	# (SEASON_PLAN_01 Q2 / SP_03 §5), so a rock8 cell keeps its Summer index.
+	_desert_remap = {}
+	_desert_remap_entries = 0
+	var d := _read_json(DESERT_REMAP_PATH)
+	var rv: Variant = d.get("remap", null)
+	if not (rv is Dictionary):
+		return
+	for k in (rv as Dictionary).keys():
+		var e: Variant = (rv as Dictionary)[k]
+		if not (e is Dictionary):
+			continue
+		var src: Variant = (e as Dictionary).get("source_index", null)
+		var dst: Variant = (e as Dictionary).get("atlas_index", null)
+		if src is int and dst is int:
+			_desert_remap[int(src)] = int(dst)
+	_desert_remap_entries = _desert_remap.size()
 
 
 # ---------------------------------------------------------------------------
@@ -465,7 +560,23 @@ func _load_atlas() -> bool:
 	_atlas_grid = Vector2.ZERO
 	_atlas_info = {}
 	_atlas_mode_loaded = ""
-	_manifest = _read_json(V785_MANIFEST_PATH)
+	# SP-6 — select both paths from the season, never accumulate two atlases.
+	_season_resolved = _effective_season()
+	_season_fallback = ""
+	var sel: Dictionary = _select_season_atlas(_season_resolved)
+	_season_manifest_path = str(sel.get("manifest_path", V785_MANIFEST_PATH))
+	_season_atlas_path = str(sel.get("atlas_path", SUMMER_ATLAS_PATH))
+	_manifest = _read_json(_season_manifest_path)
+	if _manifest.is_empty() and _season_manifest_path != V785_MANIFEST_PATH:
+		# Defensive: a manifest that exists but fails to parse is treated like an
+		# absent Winter asset — fall back, label it, never crash.
+		_season_fallback = ("selected manifest unreadable — SP-6 fell back to the "
+			+ "V7-85 Summer pair (index-preserving)")
+		_season_manifest_path = V785_MANIFEST_PATH
+		_season_atlas_path = SUMMER_ATLAS_PATH
+		_manifest = _read_json(V785_MANIFEST_PATH)
+	# SP-3 data is loaded for every season but only consumed by Desert in build().
+	_load_desert_remap()
 	var loader_script := load(TILE_ATLAS_LOADER_PATH) as Script
 	if loader_script == null or not loader_script.can_instantiate():
 		push_error("world3d_terrain: cannot load " + TILE_ATLAS_LOADER_PATH)
@@ -474,7 +585,18 @@ func _load_atlas() -> bool:
 	# Instantiate the loader in the requested mode (default "single"). V7-91's
 	# loader owns auto-fallback single -> split -> array with a warning; this
 	# module never second-guesses that choice, it only reports it in stats.
-	_atlas_loader = loader_script.new(atlas_mode)
+	# SP-6 passes the SP-5 overrides (manifest_path + single_atlas_path) so the
+	# loader reads the selected manifest PNG pair. For Summer the values equal
+	# the loader defaults, so the original no-config call is preserved verbatim.
+	var use_season_paths: bool = (_season_manifest_path != V785_MANIFEST_PATH
+		or _season_atlas_path != SUMMER_ATLAS_PATH)
+	if use_season_paths:
+		_atlas_loader = loader_script.new(atlas_mode, {
+			"manifest_path": _season_manifest_path,
+			"single_atlas_path": _season_atlas_path,
+		})
+	else:
+		_atlas_loader = loader_script.new(atlas_mode)
 	if _atlas_loader == null:
 		return false
 	if not bool(_atlas_loader.call("load")):
@@ -1019,6 +1141,15 @@ func invalidate() -> void:
 	_water_fallback_cells = 0
 	# RELIEF-01 (no mesh state; keep a rebuild from stacking stamp ledgers).
 	_relief_applied = []
+	# SP-6 (no mesh state; rebuild must not carry a stale season selection).
+	# The public `season` field is intentionally persistent across rebuilds.
+	_season_resolved = SEASON_DEFAULT_NAME
+	_season_manifest_path = V785_MANIFEST_PATH
+	_season_atlas_path = SUMMER_ATLAS_PATH
+	_season_fallback = ""
+	_desert_remap = {}
+	_desert_remap_entries = 0
+	_desert_remap_cells = 0
 
 
 # EXACT CONTRACT: one full-grid ArrayMesh from the base64 dump height[] grid.

@@ -140,7 +140,7 @@ func _spot(sid: String, near: Vector2) -> Vector2:
 		r += step_m
 		radii.append(r)
 	for rr in radii:
-		var n: int = 8 if rr <= 24.0 else maxi(8, int(round(TAU * rr / 4.0)))
+		var n: int = 16 if rr <= 24.0 else maxi(16, int(round(TAU * rr / 4.0)))
 		for k in n:
 			var a: float = TAU * float(k) / float(n) + rr
 			var p: Vector2 = near + Vector2(cos(a), sin(a)) * rr

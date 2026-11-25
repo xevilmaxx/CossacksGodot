@@ -122,7 +122,7 @@ assertion was weakened.
 | `desert_remap_targets_resolve` | every SP-3 source/target index matches `presets_summer.json` **and** the packed manifest layout; height-gated record is resolved but labelled `DATA_ONLY_NOT_EXECUTED` (excluded from the UV2 expectation) | `SP_03_desert_remap.md:116-135`; `SEASON_PLAN_01.md:188,231-232` |
 | `tileblock_index_preserved` | stub `tileblock` is byte-identical after all three builds | `SEASON_PLAN_01.md:164,191` ("tileblock indices unchanged; Summer dumps byte-identical") |
 | `uv2_x_summer_winter_identical` | Summer and Winter `UV2.x` arrays equal element-for-element | `SEASON_PLAN_01.md:161-166` (1:1 rename at same preset index), `:211` B4 (shader index-preserving) |
-| `uv2_x_desert_remap_consistent` | every Desert `UV2.x` equals SP-3's index remap of the Summer value at that cell; mismatches = 0 | `SEASON_PLAN_01.md:149,168-170` (desert is a per-cell name remap before UV2 assignment) |
+| `uv2_x_desert_remap_consistent` | every Desert `UV2.x` equals SP-3's **11 direct** index remap of the Summer value at that cell; mismatches = 0. The height-gated row is data-only, so a `rock8` cell is expected to keep its Summer index | `SEASON_PLAN_01.md:149,168-170`; `SP_03_desert_remap.md:79-85,153-154` (SP-6 index-only, no height gating) |
 | `no_script_errors_internal` | no internal error path (load/build/parse/abort) fired | `TEST_P0_report.md:160-163`; cannot be a full stderr claim in GDScript |
 | `script_error_scan_external` | `null` / `PENDING_EXTERNAL_SCAN` — operator must run `smallmap_capture.py scan-stderr` on the runner `stderr.txt` | `TEST_01.md:92`, `TEST_P0_report.md:89,160-163`; never faked as PASS |
 | `<id>_capture_image` | `SubViewport` texture non-blank; no CPU fallback | `main.gd:1815-1853`; `V770_viewport_capture.md:29-35` |
@@ -152,9 +152,9 @@ is the authoritative gate result.
 | Ticket | File / hook | State on disk | Atom behaviour |
 |---|---|---|---|
 | SP-1 | `data.gd:227` `SEASON_ENUM` | **present** | `C3Data.BIOME` used as the season selector; enum not re-declared |
-| SP-2 | `assets/terrain/structs/presets_winter.json` | **absent** | Winter → `PENDING_DEP` (`missing` lists the file) |
-| SP-3 | `assets/terrain/structs/desert_remap.json` | **absent** | Desert → `PENDING_DEP` |
-| SP-4 | `assets/terrain/atlas/tile_index_winter_atlas.manifest.json` + `.png` | **absent** | Winter → `PENDING_DEP` (27 `winterN.png` source blocks are present, `blocks/winter0..26`; only the packed atlas is missing) |
+| SP-2 | `assets/terrain/atlas/winter_aliases.json` (NOT the planned `structs/presets_winter.json`) | **present** (124 `entries`, 23 winter + 12 desert-reuse PNG targets) | Consumed directly by `winter_entries_index_and_names` / `winter_names_resolve`; does **not** by itself unblock Winter |
+| SP-3 | `assets/terrain/atlas/desert_remap.json` (NOT the planned `structs/desert_remap.json`; see `SP_03` O1) | **present** (11 direct + 1 height-gated records) | Consumed by `desert_remap_parsed` / `desert_remap_targets_resolve`; does **not** by itself unblock Desert |
+| SP-4 | `assets/terrain/atlas/tile_index_winter_atlas.manifest.json` + `.png` | **absent** | Winter → `PENDING_DEP` (27 `winterN.png` source blocks are present, `blocks/winter0..26`; only the packed atlas is missing — `ATLAS_01_transport.md:66`) |
 | SP-5 | `tile_atlas_loader.gd:77,86,99-118,313,405` `manifest_path` | **present** | Exercised directly by `sp5_manifest_override_api` with the Summer path; no winter asset needed |
 | SP-6 | render hook in `world3d_terrain.gd` (BIOME → manifest/atlas table, desert remap before UV2) | **absent** (no `BIOME` / `desert_remap` in that file) | Winter and Desert → `PENDING_DEP`; the atom asserts the hook via `stats` atlas path and UV2 behaviour once landed |
 | SP-7 | prop `w` | not probed (out of scope for a terrain-overlay atom) | no prop assertions |
@@ -163,10 +163,11 @@ Detection uses `FileAccess.file_exists` for files and a text probe for code
 hooks, exactly as the task directs. A missing dependency produces **no build,
 no PNG, no fake PASS**: the relevant checks are recorded as `PENDING_DEP` with
 `passed: null`, and the overall verdict becomes `PENDING_DEP` with
-`passed: false`. Once SP-2/3/4/6 land, the same atom runs all three variants
-without edits; if a required file exists but the remap/name schema differs
-from the recorded shape, that is a **FAIL** (integration defect), not a
-silent downgrade.
+`passed: false`. The data-only tickets SP-2/SP-3 landed at `atlas/` paths with
+concrete schemas — the atom was aligned to those bytes, not to the proposed
+plan paths. Once SP-4/SP-6 land, the same atom runs all three variants without
+edits; if a required file exists but the schema differs from the recorded
+shape, that is a **FAIL** (integration defect), not a silent downgrade.
 
 ---
 
@@ -180,10 +181,11 @@ result**:
   `[0,123]` / atlas mode `single` / V785 manifest resolves / stats path is the
   V785 manifest. This mirrors the measured 64² baseline (`TEST_01.md:148-154`,
   `TEST_MATRIX.md:33-35`). **Expected, not run — do not report as a pass.**
-- **Winter**: expected `PENDING_DEP` — SP-2 dictionary, SP-4 winter
-  manifest/PNG and SP-6 selection hook are absent. No winter PNG captured.
-- **Desert**: expected `PENDING_DEP` — SP-3 remap file and SP-6 remap hook are
-  absent. No desert PNG captured.
+- **Winter**: expected `PENDING_DEP` — SP-2 data is present, but the SP-4
+  winter manifest/PNG and the SP-6 selection hook are absent. No winter PNG
+  captured.
+- **Desert**: expected `PENDING_DEP` — SP-3 data is present, but the SP-6
+  remap hook is absent. No desert PNG captured.
 - **Headless run**: expected verdict `SKIP_CAPTURE`, `passed: false`, Summer
   structural checks still evaluated. Never a PASS.
 - **Windowed run**: expected verdict `PENDING_DEP`, only the Summer PNG written
@@ -219,19 +221,21 @@ result**:
 
 ## 8. Open questions
 
-1. **SP-2 schema**: exact name spelling (`grass1_winter` vs `winterN` aliases)
-   and how `alpha0a/b/c` reuse is expressed. Parser reads a JSON array of
-   names and resolves each through the Winter manifest `layout` — if SP-2
-   lands as an object with metadata, the 124-name check will FAIL and the
-   owning ticket must reconcile the schema (no weakening here).
-2. **SP-3 schema**: the atom accepts a bare name→name Dictionary or an Array
-   of entries with `from/to`, `source/target`, `summer/desert`, `name/remap`,
-   `src/dst` pairs; non-string metadata is skipped. Conditional/height-gated
-   entries are UNVERIFIED data and are not simulated by the test.
-3. **SP-6 activation**: whether the renderer hook reads `C3Data.BIOME` directly
-   or a separate config key. The atom sets `C3Data.BIOME` and verifies the
-   *effect* through `stats` + UV2; if SP-6 uses another selector, the atom
-   should be extended by its owner — not satisfied by editing shared code.
+1. **SP-2 schema (resolved, but watch drift)**: the atom reads the landed
+   `entries[]` structure with contiguous indices and `name + "_winter"` aliases
+   (`SP_02` §4/§8). If SP-2 revises the schema, the atom FAILS rather than
+   silently skipping — by design. `alpha0a/b/c` are flagged `shared_alpha` and
+   remain donor alias carriers only, never fabricated atlas cells (SP-02 Q3).
+2. **SP-3 schema (resolved, but watch drift)**: the atom reads the landed
+   `remap` (11 direct) + `height_gated` (1) records and asserts exact counts.
+   The `rock8` height gate, `koef=0.8`, mine `s` and env destruction stay
+   `DATA_ONLY_NOT_EXECUTED`; if a future SP-6 *does* apply the gate, the UV2
+   consistency expectation must be extended by the owning ticket.
+3. **SP-6 activation and data path**: whether the renderer hook reads
+   `C3Data.BIOME` directly or another selector, and whether it reads SP-2/SP-3
+   from `atlas/` (where they landed) or the `structs/` paths in the plan. The
+   atom sets `C3Data.BIOME` and verifies the *effect* through `stats` + UV2;
+   path drift would be an integration FAIL, not an excuse to weaken a check.
 4. **Desert index-preservation interpretation**: "index-preserving" is read
    as (a) tileblock bytes unchanged, (b) Summer/Winter UV2 identical, (c)
    Desert UV2 a strict 1:1 function of Summer UV2 via SP-3. If COORD intends

@@ -39,9 +39,54 @@ const AI_TIER_EFFECTS := {
 	"impossible": {"max_level_att": 7, "max_level_def": 7, "divers": 4, "mine_maxlevel": 5},
 }
 
+# CONFIG-CORE-01: global opt-in switches for the main features. Seeded into
+# DEFAULT as the new top-level "features" table, so a later config.json
+# `features` object merges key by key. Every value below is today's verified
+# behaviour; no consumer reads these yet (separate wiring tickets).
+const FEATURES_DEFAULTS := {
+	"selection": {
+		"world_epsilon_m": 0.005,       # DSEL-01: data\gui\menu.inc\onmousemove.inc:32
+		"attack_epsilon_m": 0.25,       # DSEL-01: onmousemove.inc:33-34 (attack/guard)
+		"marquee_color": [1, 1, 0, 1],  # DSEL-01: brushes\selection.cfg:3-14 (yellow)
+		"marquee_width_px": 1,          # DSEL-01: brushes\selection.cfg:3-14 LineWidth=1
+		"double_click_s": 0.5,          # DSEL-01: data\gui\menu.cfg:33 KeyDoubleDelay
+	},
+	"terrain": {
+		"texgen_mode": "world_xz",           # TRN-SHADER A1; PORT APPROX (RV-TRN-01 verdict A)
+		"m_per_tile": 2.0,                   # DTRN-01/DEC-05: dmscript.global:171 gc_meters_to_tile=2
+		"lighting": "donor",                 # DENV-01: env\lights\light.cfg:17 lsParallel; TRN-SHADER B1
+		"alpha_patch_mode": "donor_approx",  # DALPHA-02: tile->patch index UNVERIFIED, PORT APPROX
+		"relief_stamps": false,              # RELIEF-01: opt-in dump marker, default off
+		"tile_diversity": true,              # current port behaviour (V3D-02 F3; unchanged)
+	},
+	"water": {
+		"surface_y": -0.25,     # TRN-WATER PORT APPROX placeholder; DTRN-03 §9
+		"alpha_confine": true,  # TRN-WATER: donor water-cell alpha gate kept
+		"shore_prox": false,    # TRN-WATER: inert port-art multiplier removed
+	},
+	"weather": {
+		"snow": false,  # FX-WEATHER-01: clouds.weather:3 Weather=40 < snow band 70..100
+	},
+	"camera": {
+		"fov_deg": 17.27,  # PORT APPROX / UNVERIFIED (RV-CAM-01); camera3d.gd:65
+	},
+	"hud": {
+		"minimap_size": 240,               # DEC-08: initminimap.inc:5-7 cMinimapSize=240
+		"minimap_inset": -8,               # DEC-08: initminimap.inc:5-7 cMinimapOffsetX/Y=-8
+		"minimap_corner": "bottom_right",  # DEC-08: initminimap.inc:17 (right/bottom anchor)
+	},
+	"render": {
+		"fog": false,  # DENV-01 §3.9 FogMode ambiguity; keep donor config fog off
+	},
+	"gameplay": {
+		"fog_of_war": false,  # CFG-01: display.fog_of_war default false (unchanged)
+	},
+}
+
 # The base values. config.json is merged over this, so a file that only
 # changes one line still works.
 const DEFAULT := {
+	"features": FEATURES_DEFAULTS,
 	"display": {
 		"window_width": 1280,
 		"window_height": 720,
@@ -365,6 +410,77 @@ func section(name: String) -> Dictionary:
 	# nested table; data.get() treated the whole string as one literal key.
 	var v: Variant = value(name, {})
 	return v if v is Dictionary else {}
+
+# ------------------------------------------------------------ feature readers
+# CONFIG-CORE-01: typed accessors for features.*. Every one goes through
+# value() (get-with-fallback), so a missing key - or no `features` section at
+# all - yields the donor-verified default in FEATURES_DEFAULTS. No consumer
+# outside config.gd reads these yet; wiring is a separate ticket.
+
+func feature_selection_world_epsilon_m() -> float:
+	return num("features.selection.world_epsilon_m", 0.005)
+
+func feature_selection_attack_epsilon_m() -> float:
+	return num("features.selection.attack_epsilon_m", 0.25)
+
+func feature_selection_marquee_color() -> Array:
+	var v: Variant = value("features.selection.marquee_color", [1, 1, 0, 1])
+	return v if v is Array else [1, 1, 0, 1]
+
+func feature_selection_marquee_width_px() -> int:
+	return int(num("features.selection.marquee_width_px", 1))
+
+func feature_selection_double_click_s() -> float:
+	return num("features.selection.double_click_s", 0.5)
+
+func feature_terrain_texgen_mode() -> String:
+	return text("features.terrain.texgen_mode", "world_xz")
+
+func feature_terrain_m_per_tile() -> float:
+	return num("features.terrain.m_per_tile", 2.0)
+
+func feature_terrain_lighting() -> String:
+	return text("features.terrain.lighting", "donor")
+
+func feature_terrain_alpha_patch_mode() -> String:
+	return text("features.terrain.alpha_patch_mode", "donor_approx")
+
+func feature_terrain_relief_stamps() -> bool:
+	return flag("features.terrain.relief_stamps", false)
+
+func feature_terrain_tile_diversity() -> bool:
+	return flag("features.terrain.tile_diversity", true)
+
+func feature_water_surface_y() -> float:
+	return num("features.water.surface_y", -0.25)
+
+func feature_water_alpha_confine() -> bool:
+	return flag("features.water.alpha_confine", true)
+
+func feature_water_shore_prox() -> bool:
+	return flag("features.water.shore_prox", false)
+
+func feature_weather_snow() -> bool:
+	return flag("features.weather.snow", false)
+
+func feature_camera_fov_deg() -> float:
+	# PORT APPROX / UNVERIFIED (RV-CAM-01) - not a donor-grounded value.
+	return num("features.camera.fov_deg", 17.27)
+
+func feature_hud_minimap_size() -> int:
+	return int(num("features.hud.minimap_size", 240))
+
+func feature_hud_minimap_inset() -> int:
+	return int(num("features.hud.minimap_inset", -8))
+
+func feature_hud_minimap_corner() -> String:
+	return text("features.hud.minimap_corner", "bottom_right")
+
+func feature_render_fog() -> bool:
+	return flag("features.render.fog", false)
+
+func feature_gameplay_fog_of_war() -> bool:
+	return flag("features.gameplay.fog_of_war", false)
 
 # ------------------------------------------------------------------ applying
 # Puts the settings into the game data. Everything else in the game reads

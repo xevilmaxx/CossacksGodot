@@ -239,7 +239,8 @@ cannon-class `1100-1200`, explosions `1150`; `arrow*` `DefVolume=0.15`
 (`units.snd:96`), `sabre*`/`bayonetbloodhit*` `0.3`, `deathinf/cav` `0.6`,
 `deathart` `0.4`, `workwood*` `0.5`, `workconstruct*` `0.2`,
 `walkinfmetal*` `0.85`; `bldwwa/bldwga` `0.3` and the six `selectpeasant*`
-plus `drummer/bagpiper/officer1/2` switch to `svgSFX` (`interface.snd:133-233`).
+plus `drummer/bagpiper/officer1/2` switch to `svgSFX`
+(`interface.snd:132-158,210-233`).
 `DefFrequency` is best read as a **frequency group** (see §4.3), not a pitch in Hz.
 
 ### 4.3 Loudness / frequency constants and radii (observed)

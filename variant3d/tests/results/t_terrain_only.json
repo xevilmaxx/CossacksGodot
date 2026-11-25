@@ -116,19 +116,31 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "non_black_fraction=0.99374674479167 (expected >0.9; smallmap_capture.py:26)",
+			"detail": "non_black_fraction=0.99373589409722 (expected >0.9; smallmap_capture.py:26)",
 			"name": "non_black_fraction",
 			"passed": true,
 			"status": "PASS"
 		},
 		{
-			"detail": "full_width_dark_rows=720 (expected 0; smallmap_capture.py:27-28)",
+			"detail": "full_width_dark_rows=720 RECORDED_NOT_APPLICABLE (no water layer in P0; diagnostic only, not a pass/fail gate)",
 			"name": "full_width_dark_rows",
+			"passed": null,
+			"status": "RECORDED_NOT_APPLICABLE"
+		},
+		{
+			"detail": "mean_luma=13.271 (strict >=40; current dark frame=13.271 fails; PORT APPROX — no donor GPU A/B exists)",
+			"name": "ground_mean_luma",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "max_luma=27.413 (strict >=100; current dark frame=28.4 fails; PORT APPROX — no donor GPU A/B exists)",
+			"name": "ground_max_luma",
 			"passed": false,
 			"status": "FAIL"
 		}
 	],
-	"fails": 1,
+	"fails": 2,
 	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
 	"id": "t_terrain_only",
 	"measured": {
@@ -151,11 +163,12 @@
 		"mesh_triangles": 7938,
 		"mesh_vertices": 4096,
 		"png_metrics": {
-			"bytes": 988242,
+			"bytes": 987980,
 			"full_width_dark_rows": 720,
 			"height": 720,
-			"mean_luma": 13.2712799571661,
-			"non_black_fraction": 0.993746744791667,
+			"max_luma": 27.4128001459418,
+			"mean_luma": 13.2707037475694,
+			"non_black_fraction": 0.993735894097222,
 			"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
 			"width": 1280
 		},
@@ -181,8 +194,8 @@
 	"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
 	"skip_reason": "",
-	"skipped_or_skip_capture": 0,
+	"skipped_or_skip_capture": 1,
 	"structural_ok": false,
-	"unix_ms": 1795598661942.0,
+	"unix_ms": 1795599430830.0,
 	"verdict": "FAIL"
 }

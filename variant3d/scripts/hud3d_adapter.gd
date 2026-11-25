@@ -35,6 +35,24 @@ extends Node
 # PAINTER CONTRACT: this file supplies four mapped ground corners and their
 #   AABB. hud.gd:_mm_paint_box still strokes the AABB (PORT APPROXIMATION;
 #   donor quad-vs-AABB frustum shape is UNVERIFIED per DEC_08 §9 Q2).
+#
+# MINIMAP-QUAD-01 (additive, PORT APPROXIMATION): the adapter now ALSO exposes
+#   the four corners as an ordered frustum POLYGON and strokes a true 4-edge
+#   quad into the HUD minimap image (stroke_minimap_quad / get_minimap_quad).
+#   Donor truth (read-only path:line):
+#     initminimap.inc:29-39 — SetMiniMapFrustumVisible(true) at :37 (frustum on).
+#     classes.script:6030-6040 — GetCameraFrustumQuadrangle(lt,rt,rb,lb)
+#       supplies the four GROUND corners in screen order TL,TR,BR,BL; also
+#       DSEL_02 claim 12 (EXE API @0x1fdf..) and claim 15 (engine-drawn box).
+#     misc.script:2017,2025 — CENTRED world coords, so the mapping is
+#       u=(x+halfW)/mapW, v=(z+halfH)/mapH (already applied in get_minimap_corners).
+#     DEC_08 §5.2 :4,:16-27 and §9 Q2 — FrustumVisible=True but frustum line-style
+#       Visible=False; the exact engine frustum shape is UNVERIFIED.
+#   We stroke corner 0->1->2->3->0 (LT->RT->RB->LB), a true 4-edge polygon.
+#   Quad-vs-AABB shape under the oblique (-32 deg) camera is UNVERIFIED for the
+#   port projection, so this is a PORT APPROXIMATION of the donor engine
+#   primitive, NOT a parity claim. get_minimap_box() is left byte-identical so
+#   CAM-RV-01's AABB (12,11,40,34) assertion stays valid.
 
 const Data = preload("res://scripts/data.gd")
 
@@ -117,6 +135,76 @@ func get_minimap_corners() -> PackedVector2Array:
 			clampf(u * float(mw), 0.0, float(mw - 1)),
 			clampf(v * float(mh), 0.0, float(mh - 1))))
 	return out
+
+
+# MINIMAP-QUAD-01: the four mapped corners as an ORDERED frustum polygon —
+# TL -> TR -> BR -> BL, i.e. donor GetCameraFrustumQuadrangle(lt,rt,rb,lb)
+# (classes.script:6030-6040). A closed stroke connects 0->1->2->3->0.
+# Values live in the same MINIMAP IMAGE (tile) pixel space as get_minimap_box();
+# no int()/clamp is applied here so the polygon stays faithful — the pixel
+# stroke rounds at plot time. Empty when the camera has no finite corners.
+func get_minimap_quad() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p in get_minimap_corners():
+		out.append(p)
+	return out
+
+
+# MINIMAP-QUAD-01 (PORT APPROXIMATION): stroke a true 4-edge frustum polygon
+# into the HUD minimap VIEW image, restoring the old border from the clean image
+# when restore=true (same clear-then-draw contract as hud.gd:_mm_paint_box:
+# 1516-1526). Buffers are pulled from the bound hud, so this stays self-contained
+# in the adapter and hud.gd is untouched (foreign owner: MMJUMP-02).
+# Returns false (no draw) when hud/buffers are unavailable or the corners are not
+# a complete quad. Donor citations are in the file header above.
+# To display it INSTEAD of the AABB, the hud.gd:_draw_minimap_viewport_box owner
+# should call stroke_minimap_quad(false) in place of _mm_paint_box(box,false)
+# (and stroke_minimap_quad(true) for the restore); that call site is left open by
+# this ticket because hud.gd is not owned here.
+func stroke_minimap_quad(restore: bool = false) -> bool:
+	var view_img = hud.get("minimap_view_img") if hud != null else null
+	var clean_img = hud.get("minimap_img") if hud != null else null
+	if view_img == null or clean_img == null:
+		return false
+	var quad := get_minimap_quad()
+	if quad.size() != 4:
+		return false
+	var w := clean_img.get_width()
+	var h := clean_img.get_height()
+	var col := Color(1.0, 1.0, 1.0, 0.9)
+	for i in 4:
+		var a: Vector2 = quad[i]
+		var b: Vector2 = quad[(i + 1) % 4]
+		_plot_quad_line(view_img, clean_img, a, b, col, restore, w, h)
+	return true
+
+
+# Bresenham line plot in minimap pixel space; fractional corners are rounded to
+# the nearest plotted pixel. Off-image points are skipped (map-bounds guard).
+func _plot_quad_line(view_img, clean_img, a: Vector2, b: Vector2, col: Color,
+		restore: bool, w: int, h: int) -> void:
+	var x0 := roundi(a.x)
+	var y0 := roundi(a.y)
+	var x1 := roundi(b.x)
+	var y1 := roundi(b.y)
+	var dx := absi(x1 - x0)
+	var dy := absi(y1 - y0)
+	var sx := 1 if x0 < x1 else -1
+	var sy := 1 if y0 < y1 else -1
+	var err := dx - dy
+	while true:
+		if x0 >= 0 and y0 >= 0 and x0 < w and y0 < h:
+			view_img.set_pixel(x0, y0,
+				clean_img.get_pixel(x0, y0) if restore else col)
+		if x0 == x1 and y0 == y1:
+			break
+		var e2 := 2 * err
+		if e2 > -dy:
+			err -= dy
+			x0 += sx
+		if e2 < dx:
+			err += dx
+			y0 += sy
 
 
 func screen_to_world(screen) -> Vector2:

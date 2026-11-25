@@ -24,6 +24,9 @@
 #     testbridge.gd:277-308; main.gd:1156-1193,1801-1862.
 #   PNG metric mirror (READ-ONLY): smallmap_capture.py:21-39 (non-black > 8,
 #     luma = 0.2126R+0.7152G+0.0722B, row dark when >90% pixels luma<20).
+#   P0-GATE-01: full_width_dark_rows is now a RECORDED diagnostic (inapplicable
+#     to a water-free frame); strict ground_mean_luma / ground_max_luma gates
+#     added. Thresholds are PORT APPROX — no donor GPU A/B exists.
 #   Terrain module contract: world3d_terrain.gd:93-95,624-874 (one mesh,
 #     UV2.x=tile id, UV2.y=face mode, WATER_LEVEL=-0.25, atlas shadow_enabled=0,
 #     WaterPlane created by _make_water3d at :762-764).
@@ -83,6 +86,10 @@ const CHECK_NAMES := [
 	"capture_saved",
 	"non_black_fraction",
 	"full_width_dark_rows",
+	# P0-GATE-01: new strict, applicable ground-visibility gates. The
+	# full_width_dark_rows row predicate stays as a RECORDED diagnostic only.
+	"ground_mean_luma",
+	"ground_max_luma",
 ]
 
 # Minimal local fallback stub, deliberately the same shape as the shared
@@ -366,6 +373,7 @@ func _image_metrics(img: Image) -> Dictionary:
 	var non_black := 0
 	var dark_rows := 0
 	var luma_sum := 0.0
+	var max_luma := 0.0
 	for y in range(h):
 		var row_dark := 0
 		for x in range(w):
@@ -377,6 +385,8 @@ func _image_metrics(img: Image) -> Dictionary:
 				non_black += 1
 			var l := 0.2126 * r + 0.7152 * g + 0.0722 * b
 			luma_sum += l
+			if l > max_luma:
+				max_luma = l
 			if l < 20.0:
 				row_dark += 1
 		if float(row_dark) / float(maxi(w, 1)) > 0.90:
@@ -387,6 +397,9 @@ func _image_metrics(img: Image) -> Dictionary:
 		"height": h,
 		"non_black_fraction": float(non_black) / n,
 		"mean_luma": luma_sum / n,
+		# P0-GATE-01: whole-frame peak, used by the strict ground-visibility
+		# gate below. PORT APPROX — no donor GPU A/B exists (V3D_02 parity_guard).
+		"max_luma": max_luma,
 		"full_width_dark_rows": dark_rows,
 	}
 
@@ -663,7 +676,34 @@ func _capture_async() -> void:
 	_m["capture_source"] = "TerrainOnlyViewport (stub-owned, windowed GPU)"
 	check("non_black_fraction", float(ms["non_black_fraction"]) > 0.9,
 		"non_black_fraction=%s (expected >0.9; smallmap_capture.py:26)" % str(ms["non_black_fraction"]))
-	check("full_width_dark_rows", int(ms["full_width_dark_rows"]) == 0,
-		"full_width_dark_rows=%d (expected 0; smallmap_capture.py:27-28)" % int(ms["full_width_dark_rows"]))
+
+	# P0-GATE-01 — full_width_dark_rows is RECORDED ONLY here, not a hard gate.
+	# It was authored to detect water bands (V3D_02 P6/F6; DTRN_03 W2/M5), but
+	# P0 deliberately hides its only WaterPlane and has zero water cells, so
+	# every camera ray lands on ground (METRIC_01 §2) and every row is expected
+	# to satisfy the row predicate whenever the ground is dim. The value stays
+	# in _m["png_metrics"] as a diagnostic. This is NOT a weakening by lowering
+	# a threshold: the predicate is inapplicable to a water-free frame.
+	check("full_width_dark_rows", null,
+		"full_width_dark_rows=%d RECORDED_NOT_APPLICABLE (no water layer in P0; diagnostic only, not a pass/fail gate)" % int(ms["full_width_dark_rows"]),
+		"RECORDED_NOT_APPLICABLE")
+
+	# P0-GATE-01 — strict, APPLICABLE ground-visibility gate replacing the
+	# inapplicable water-row predicate. A whole-frame luma floor works on a
+	# ground-only frame, unlike a per-row water detector.
+	#
+	# PORT APPROX — no donor GPU A/B exists (V3D_02 parity_guard). The numbers
+	# are deliberately NOT calibrated to the current defect:
+	#   * PIXEL-01 measured the current frame at mean_luma=13.271 and peak
+	#     luma=28.4 (0 pixels >= 30), so both gates must FAIL on it.
+	#   * The recorded earlier 64² capture had mean_luma=44.181
+	#     (TERRAIN_SMALL_maps.md:138-142), which clears mean>=40 — evidence a
+	#     port-rendered frame can pass, but still PORT APPROX, not donor truth.
+	#   * mean>=40 is ~3x the current value; max>=100 forces real tonal range.
+	# Do not lower these to green-wash a dark frame (TEST_MATRIX.md:67-68).
+	check("ground_mean_luma", float(ms["mean_luma"]) >= 40.0,
+		"mean_luma=%.3f (strict >=40; current dark frame=13.271 fails; PORT APPROX — no donor GPU A/B exists)" % float(ms["mean_luma"]))
+	check("ground_max_luma", float(ms["max_luma"]) >= 100.0,
+		"max_luma=%.3f (strict >=100; current dark frame=28.4 fails; PORT APPROX — no donor GPU A/B exists)" % float(ms["max_luma"]))
 	_visual_checked = true
 	finish()

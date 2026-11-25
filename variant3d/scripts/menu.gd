@@ -63,8 +63,19 @@ var seed_val := Data.RANDOM_SEED
 # Teams already have rows below; these four complete the donor's six-option set.
 var terrain_type := "mediterranean"   # donor Map Shape; enum Data.MAP_TYPES (generator.cfg TerrainTypes)
 var richness := "med"        # donor Minerals/Richness: low / med / rich
+# CONFIG-UI-01: donor Season enum 0/2/3 (summer/winter/desert) is data.gd:227
+# (SEASON_ENUM), read from map.script:250 / miscext2.script:3318-3323 /
+# dogenerate.inc:4,2079. The string id stays canonical because main.gd:317
+# reads cfg.season into Data.BIOME; the enum is emitted alongside it.
 var season := "summer"       # donor Season; enum Data.BIOME = summer / winter / desert
 var relief := "low_mountains"  # donor Relief id; maps to sim "hills" (data.gd DONOR_RELIEF)
+# CONFIG-UI-01: two donor-cited environment toggles, using the same string-id
+# on/off pattern as the other lobby options. "off" is the shipped Weather=40
+# (clouds.weather:3); "on" is WeatherStart=70 (particles.snow.cfg:32,72,112,152),
+# the lowest value inside the donor snow band 70..100 (same files at :33,73,113,153).
+# No shader internals, eye planes, epsilon or FOV are exposed here.
+var weather := "off"         # off | on -> cfg.weather "off" | "snow", weather_value 40 | 70
+var fog_of_war := "off"      # off | on -> cfg.fog_of_war; display.fog_of_war (config.gd:51)
 var ui_us := 1.0
 var ui_vp := Vector2(1280, 720)
 # Shell hosts: the legacy centered card (main menu / battles / campaigns) and
@@ -82,6 +93,9 @@ var main_menu_active := true
 func _ready() -> void:
 	layer = 20
 	_load_data()
+	# CONFIG-UI-01: start from the config value already applied by main.gd
+	# (config.gd:51, :382 -> Data.FOG_OF_WAR). Shipped default stays OFF.
+	fog_of_war = "on" if Data.FOG_OF_WAR else "off"
 	_build()
 	_apply_scale()
 	if is_instance_valid(get_tree()) and is_instance_valid(get_tree().root) and not get_tree().root.size_changed.is_connected(_on_vp_resize):
@@ -693,6 +707,19 @@ func _show_skirmish() -> void:
 	options_body.add_child(_opt_row("Map shape", _terrain_types(), terrain_type, func(id: String): terrain_type = id; map_type = id))
 	options_body.add_child(_opt_row("Relief", _relief_types(), relief, func(id: String): relief = id))
 	options_body.add_child(_opt_row("Season", [{"id": "summer", "name": "Summer"}, {"id": "desert", "name": "Desert"}, {"id": "winter", "name": "Winter"}], season, func(id: String): season = id))
+	# CONFIG-UI-01: additive environment rows, inserted next to Season (the
+	# donor's only other map-options weather field). Donor citations:
+	#   Snow  - off = clouds.weather:3 Weather=40; on = particles.snow.cfg:32,72,112,152
+	#           WeatherStart=70, inside the 70..100 band at :33,73,113,153.
+	#   Fog   - display.fog_of_war, already defaulted OFF (config.gd:51, applied :382).
+	# Both use the standard _opt_row On/Off pattern; no section is rewritten.
+	options_body.add_child(_opt_row("Snow (weather)", [{"id": "off", "name": "Off"}, {"id": "on", "name": "On"}], weather, func(id: String): weather = id))
+	options_body.add_child(_opt_row("Fog of war", [{"id": "off", "name": "Off"}, {"id": "on", "name": "On"}], fog_of_war, func(id: String):
+		fog_of_war = id
+		# main.gd already consumes Data.FOG_OF_WAR (world.gd / hud.gd), so the
+		# toggle is live without touching foreign-owned files. Precedent: this
+		# script already writes Data.RANDOM_SEED from seed rows (:851, :881).
+		Data.FOG_OF_WAR = id == "on"))
 	# OWNER-SPEC: donor Map Size = Tiny | Normal | Large 2x | Huge 4x.
 	# Port metric mapping is an inference (generator takes raw tile counts):
 	# Tiny=240, Normal=320, Large 2x=400, Huge 4x=480.
@@ -899,6 +926,17 @@ func _emit_start(descr: String) -> void:
 		"opponents": opponents, "teams": teams_mode,
 		"map_type": map_type, "terrain_type": terrain_type,
 		"richness": richness, "season": season, "relief": relief,
+		# CONFIG-UI-01 additive environment keys (existing keys unchanged):
+		#   season_enum  = donor 0/2/3 from data.gd:227 (map.script:250,
+		#                  miscext2.script:3318-3323, dogenerate.inc:4,2079)
+		#   weather      = "off"/"snow" enum, matching gameplay.weather in t_weather.gd:123-126
+		#   weather_value= 40 (clouds.weather:3) / 70 (particles.snow.cfg:32),
+		#                  the donor Weather band input for set_weather() in world3d_fx.gd:240
+		#   fog_of_war   = bool mirror of config.gd:51 and Data.FOG_OF_WAR
+		"season_enum": int(Data.SEASON_ENUM.get(season, Data.SEASON_DEFAULT)),
+		"weather": "snow" if weather == "on" else "off",
+		"weather_value": 70 if weather == "on" else 40,
+		"fog_of_war": fog_of_war == "on",
 		"start_option": start_option,
 		"mission": mission_name, "descr": descr,
 		"difficulty": difficulty, "map_size": map_size, "seed": seed_val,

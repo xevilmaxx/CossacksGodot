@@ -1048,8 +1048,10 @@ func _initialize() -> void:
 		_make_variant("desert", "desert", SUMMER_MANIFEST_PATH),
 	]
 	_m["camera"] = "camera3d.gd (single instance, bound once, process disabled)"
-	_m["dependency_note"] = ("SP-1 SEASON_ENUM and SP-5 manifest_path are on disk; "
-		+ "SP-2/SP-3/SP-4/SP-6 are gated by FileAccess.file_exists / source probes.")
+	_m["dependency_note"] = ("SP-1, SP-2 (atlas/winter_aliases.json), SP-3 "
+		+ "(atlas/desert_remap.json) and SP-5 manifest_path are on disk; SP-4 "
+		+ "winter atlas files are gated by FileAccess.file_exists and the SP-6 "
+		+ "render hook by a source-text probe.")
 	_setup_done = true
 	_variant_index = -1
 	call_deferred("_advance_variant")

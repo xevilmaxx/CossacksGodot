@@ -32,16 +32,112 @@
 			"passed": true
 		},
 		{
-			"detail": "p0=(-246.7239, 548.4263) p1=(290.3547, 819.6598) click=(-141.1752, 640.7642) vp=(1280.0, 720.0)",
+			"detail": "p0=(395.262, 273.5391) p1=(917.0836, 457.8879) click=(512.0289, 337.3953) vp=(1280.0, 720.0)",
 			"expected_pre_fix_failure": false,
 			"name": "projected_pixels_in_viewport",
-			"passed": false
+			"passed": true
 		},
 		{
-			"detail": "real boot/configure failed; see preceding checks",
+			"detail": "unproject=(395.262, 273.5391) world_to_px=(395.262, 273.5391)",
 			"expected_pre_fix_failure": false,
-			"name": "boot_and_setup",
-			"passed": false
+			"name": "unproject_matches_world_to_px",
+			"passed": true
+		},
+		{
+			"detail": "|p1-p0|=553.43 px > 6.0 px (input_controller.gd:613,662-663)",
+			"expected_pre_fix_failure": false,
+			"name": "drag_crosses_port_6px_threshold",
+			"passed": true
+		},
+		{
+			"detail": "ground_point(p0)=(51.81041, 54.40713) ground_point(p1)=(76.11127, 71.21354)",
+			"expected_pre_fix_failure": false,
+			"name": "ground_endpoints_finite",
+			"passed": true
+		},
+		{
+			"detail": "world delta=24.3009 m > 0.005 m (DSEL-01 claim 1 / onmousemove.inc:32-34)",
+			"expected_pre_fix_failure": false,
+			"name": "drag_crosses_donor_0.005m_epsilon",
+			"passed": true
+		},
+		{
+			"detail": "input_ctl.drag_start=(395.262, 273.5391) p0=(395.262, 273.5391)",
+			"expected_pre_fix_failure": false,
+			"name": "drag_start_from_real_event",
+			"passed": true
+		},
+		{
+			"detail": "world.sel_rect mirror from input_controller.gd:1164-1172",
+			"expected_pre_fix_failure": false,
+			"name": "world_sel_active_during_drag",
+			"passed": true
+		},
+		{
+			"detail": "node=SelectionRectOverlay api=true visible=true rect=[P: (395.262, 273.5391), S: (917.0836, 457.8879)] expected=[P: (395.262, 273.5391), S: (917.0836, 457.8879)]",
+			"expected_pre_fix_failure": true,
+			"name": "overlay_rect_during_drag",
+			"passed": true
+		},
+		{
+			"detail": "node=SelectionRectOverlay api=true visible=false rect=[P: (0.0, 0.0), S: (0.0, 0.0)] expected=[P: (395.262, 273.5391), S: (917.0836, 457.8879)]",
+			"expected_pre_fix_failure": true,
+			"name": "overlay_hidden_after_release",
+			"passed": true
+		},
+		{
+			"detail": "selected=[10, 11] expected=[10,11]",
+			"expected_pre_fix_failure": false,
+			"name": "selected_ids_exact",
+			"passed": true
+		},
+		{
+			"detail": "e10.selected=true",
+			"expected_pre_fix_failure": false,
+			"name": "unit10_selected",
+			"passed": true
+		},
+		{
+			"detail": "e11.selected=true",
+			"expected_pre_fix_failure": false,
+			"name": "unit11_selected",
+			"passed": true
+		},
+		{
+			"detail": "e12.selected=false",
+			"expected_pre_fix_failure": false,
+			"name": "unit12_not_selected",
+			"passed": true
+		},
+		{
+			"detail": "building id=13 kind=building player=0 selected=false",
+			"expected_pre_fix_failure": false,
+			"name": "building_not_selected",
+			"passed": true
+		},
+		{
+			"detail": "building pos=(64.0, 64.0) in ground rect=[P: (51.81041, 54.40713), S: (76.11127, 71.21354)] yet not selected (kind filter)",
+			"expected_pre_fix_failure": false,
+			"name": "building_inside_rect_but_excluded_by_kind",
+			"passed": true
+		},
+		{
+			"detail": "cmd_calls={  }",
+			"expected_pre_fix_failure": false,
+			"name": "cmd_counter_zero_after_drag",
+			"passed": true
+		},
+		{
+			"detail": "selected=[10] expected=[10] (no click-pick regression)",
+			"expected_pre_fix_failure": false,
+			"name": "short_click_selects_single_unit",
+			"passed": true
+		},
+		{
+			"detail": "cmd_calls={  }",
+			"expected_pre_fix_failure": false,
+			"name": "cmd_counter_zero_after_click",
+			"passed": true
 		}
 	],
 	"donor_semantics": {
@@ -53,11 +149,14 @@
 	},
 	"id": "t_select_rect",
 	"measured": {
+		"camera_target_after_jump": "(64.0, 64.0)",
 		"click_px": [
-			-141.175155639648,
-			640.764221191406
+			512.028930664063,
+			337.395263671875
 		],
 		"config": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tests\\fixtures\\small_map_64.json",
+		"drag_px_distance": 553.427673339844,
+		"drag_world_delta_m": 24.3008575439453,
 		"entity_sim_positions": {
 			"10": [
 				58.0,
@@ -76,25 +175,75 @@
 				64.0
 			]
 		},
-		"headless": true,
+		"event_coord_scale": [
+			1.0,
+			1.0
+		],
+		"headless": false,
+		"measured_ground_rect": [
+			51.8104095458984,
+			54.4071273803711,
+			76.1112670898438,
+			71.2135391235352
+		],
+		"overlay_after": {
+			"found": true,
+			"has_api": true,
+			"node": "SelectionRectOverlay",
+			"rect": [
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"visible": false
+		},
+		"overlay_during": {
+			"found": true,
+			"has_api": true,
+			"node": "SelectionRectOverlay",
+			"rect": [
+				395.261993408203,
+				273.539093017578,
+				917.083557128906,
+				457.887908935547
+			],
+			"visible": true
+		},
 		"p0_px": [
-			-246.723937988281,
-			548.426330566406
+			395.261993408203,
+			273.539093017578
 		],
 		"p1_px": [
-			290.354736328125,
-			819.659790039063
+			917.083557128906,
+			457.887908935547
 		],
-		"screenshot_arg": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\s1inputfix_smallmap64.png",
+		"projection_viewport_px": [
+			1280.0,
+			720.0
+		],
+		"root_viewport_px": [
+			1280.0,
+			720.0
+		],
+		"screenshot_arg": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\s1inputfix_smallmap64_r2.png",
 		"viewport_px": [
 			1280.0,
 			720.0
+		],
+		"world_sel_active_after": false,
+		"world_sel_active_during": true,
+		"world_sel_rect_during": [
+			51.8104095458984,
+			54.4071273803711,
+			3.86607360839844,
+			36.1193771362305
 		]
 	},
-	"passed": false,
-	"passes": 5,
+	"passed": true,
+	"passes": 23,
 	"run_mode": "windowed_real_input",
 	"runner_declaration": "S1-INPUT-FIX: validated via variant runner, windowed real-input job s1inputfix-run; see docs/coord_swarm_2026-11-25/reports/S1_INPUT_FIX.md",
-	"total": 7,
-	"unix_ms": 1795598722517.0
+	"total": 23,
+	"unix_ms": 1795599197102.0
 }

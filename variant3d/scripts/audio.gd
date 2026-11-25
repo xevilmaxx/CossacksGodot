@@ -29,6 +29,19 @@ const AMB_SEA := "amb_sea"
 # Donor gui.script:3310,3328 - sea scan cell size and frustum-cell divisor.
 const AMBIENT_SEA_STEP := 4.0
 const AMBIENT_SEA_DIV := 200.0
+# AUDIO-SEL-01: donor selection feedback. Interface bank, cLoudFull (8000 =>
+# global), played NON-POSITIONALLY on unit-control rebuild
+# (gui\menu.inc\showunitcontrol.inc:1024-1027). Clips are among the 325 already
+# converted assets in res://assets/sounds (DEC_04 §8 325/325 Ogg census).
+const SELECT_PEASANT := "selectpeasant"
+const SELECT_PEASANT_VARIANTS := 6
+const SELECT_SHIP := "selectship"
+# Port ship sids (data.gd:1169-1250, all `naval: true`) plus generic caller
+# tokens; everything else is treated as a peasant/unit selection.
+const SHIP_SELECT_KINDS := [
+	"ship", "naval", "boat",
+	"yacht", "yachttur", "fishboat", "galley", "frigate", "xebec", "battleship",
+]
 
 var files: Array = []          # the names of all the sound files
 var cache: Dictionary = {}     # name -> AudioStream (loaded when first needed)
@@ -420,3 +433,45 @@ func building_sound(sid: String) -> Array:
 	if m.has(sid):
 		return [m[sid]]
 	return ["construct"]
+
+# ------------------------------------------------------------------ selection
+# AUDIO-SEL-01 — donor selection acknowledgement.
+#
+# Donor chain (read-only, all citations from DAUDIO-01 §3.1 / RV-SEL-01):
+#   * gui\menu.inc\showunitcontrol.inc:1024-1027 — on unit-control rebuild,
+#     `_sound_PlaySound(gc_sndlib_ind_interface, ...)` fires selectpeasant for
+#     peasants/units and selectship for ships.
+#   * dmscript.global:1276-1277 — gc_snd_ind_selectpeasant = 26,
+#     gc_snd_ind_selectship = 27 (namespace :1250-1343).
+#   * lib\sound.script:206-208 — both registered with cLoudFull; :98-102 gives
+#     cLoudFull = 8000 (the 8000 global/isometric radius used by
+#     `_sound_PlaySound`, sound.script:494-530), so this is a UI/global sound,
+#     NOT a world-positioned emitter.
+#   * sounds\interface\interface.snd:128-129 (selectship),
+#     :132-158 (selectpeasant1..6); bank wiring at data\sounds\sounds.slc:7-8
+#     (interface -> interface.snd); gc_sndlib_ind_interface = 1
+#     (dmscript.global:1245-1247).
+#   * data\resources\resource.lib:47 binds the visual selection brush
+#     (brushes\selection.cfg); it is cited for completeness — it is the
+#     rectangle style, not the sound.
+#
+# The port has no separate interface bank or listener/emitter objects. The
+# existing `play()` called WITHOUT an `at` position is its non-positional /
+# global path, so this API routes through it unchanged: no AudioStreamPlayer3D,
+# no new player pool, no change to any existing API or default.
+#
+# Pure resolver: deterministic, testable without audio being enabled. The donor
+# registers six peasant variants; selection size/index picks one (wrapping), so
+# repeated identical selections resolve identically.
+func selection_clip(kind: String, count: int) -> String:
+	var k := kind.to_lower()
+	if SHIP_SELECT_KINDS.has(k):
+		return SELECT_SHIP
+	var idx := ((maxi(count, 1) - 1) % SELECT_PEASANT_VARIANTS) + 1
+	return "%s%d" % [SELECT_PEASANT, idx]
+
+# Non-positional acknowledgement for a selection of `count` units of `kind`.
+# Integration is deliberately NOT wired here: the owning caller (unit-control /
+# selection rebuild site) must call this. See AUDIO_SEL_01.md, integration ticket.
+func play_selection(kind: String, count: int) -> void:
+	play([selection_clip(kind, count)])
