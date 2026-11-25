@@ -52,19 +52,19 @@ var pop_limit := 0
 var adviser := "default"
 var game_speed := "normal"
 var autosave := "off"
-var map_type := "land"
+var map_type := "mediterranean"
 var start_option := "default"
 var mode := "skirmish"
 var mission_name := ""
 var difficulty := "normal"
-var map_size := 320
+var map_size := 240          # CFG-01: Tiny, the smallest port skirmish size option
 var seed_val := Data.RANDOM_SEED
 # Donor skirmish map options (RC_TERRAIN §2.1 / GUIDE4 App.B02). Map Size and
 # Teams already have rows below; these four complete the donor's six-option set.
-var terrain_type := "land"   # donor Map Shape; enum Data.MAP_TYPES (generator.cfg TerrainTypes)
+var terrain_type := "mediterranean"   # donor Map Shape; enum Data.MAP_TYPES (generator.cfg TerrainTypes)
 var richness := "med"        # donor Minerals/Richness: low / med / rich
 var season := "summer"       # donor Season; enum Data.BIOME = summer / winter / desert
-var relief := "plain"        # donor Relief id (6 values in Data.DONOR_RELIEF)
+var relief := "low_mountains"  # donor Relief id; maps to sim "hills" (data.gd DONOR_RELIEF)
 var ui_us := 1.0
 var ui_vp := Vector2(1280, 720)
 # Shell hosts: the legacy centered card (main menu / battles / campaigns) and

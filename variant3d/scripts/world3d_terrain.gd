@@ -56,6 +56,21 @@ extends Node3D
 #
 # NO VISUAL / DONOR PARITY CLAIM: no GPU A/B was run by this agent. Every visual
 # effect remains a prediction from static donor text (TERRAIN2-06 §6).
+#
+# TRN-GEOM (2026-11-25) — donor-grounded face / environment / normal pass. All
+# edits are in THIS FILE ONLY (the shader and water files have other owners):
+#   * 25-degree face tilt literals rockNvf AngleX=0 AngleZ=25 / rockNvs
+#     AngleX=25 AngleZ=0 (tiles.lib:119-296,543-719; RV-TRN-01 §4.3) applied to
+#     promoted faces as vf/vs atlas-cell selection + a 25-degree normal tilt.
+#     The vf/vs PROMOTION rule is UNVERIFIED — label PORT APPROXIMATION.
+#   * exact donor cliff/shore aspect tables (texturemap.inc:474-529,559-591)
+#     and rock height overrides (:594-601), using only atlas art already on disk.
+#   * light.cfg ambient/diffuse/specular colours imported into the rig AND the
+#     unshaded shader's own lighting terms; fog stays OFF (colors.lib:23,34-43),
+#     shadows stay OFF (explicit A/B decision).
+#   * 1-cell normal stencil; TILE_M/height scale/mesh/topology and the live
+#     tile-index path are UNCHANGED. Relief-grid (.pattern) stamping is a
+#     SEPARATE ticket — not attempted here.
 
 # Donor citations (read-only text; singleplayer skirmish path):
 #   C:\Games\Cossacks 3\data\scripts\generatemap.inc:537-577 — bitmap -> engine
@@ -90,7 +105,7 @@ extends Node3D
 # Donor light colours are literal light.cfg:3-16 Ambient/Diffuse; the ENERGIES
 # below are port-side M0.6 compensation, not donor values.
 
-const TILE_M: float = 2.0                 # data.gd:23; donor cell size UNVERIFIED
+const TILE_M: float = 2.0                 # data.gd:23; donor-grounded: gc_meters_to_tile=2 (dmscript.global:171, DEC-05)
 const HEIGHT_SCALE: float = 1.0           # dump height[] is already metres (main.gd:698)
 const WATER_LEVEL: float = -0.25          # mapgen.gd:29 C3MapGen.WATER_DEEP; donor literal UNVERIFIED
 
@@ -101,6 +116,13 @@ const SUN_POS := Vector3(-0.344731152057648, 0.938701450824738, 0.0)  # light.cf
 const SUN_LIGHTVEC := Vector3(SUN_POS.x / 4.0, SUN_POS.z / 2.0, SUN_POS.y)  # water.dev.vert:22, then Z-up->Y-up
 const DONOR_AMBIENT := Color(0.196078434586525, 0.184313729405403, 0.129411771893501)  # light.cfg:3-8 (donor evidence)
 const DONOR_DIFFUSE := Color(0.811764717102051, 0.780392169952393, 0.694117665290833)  # light.cfg:11-16 (donor evidence)
+const DONOR_SPECULAR := Color(0.278431385755539, 0.266666680574417, 0.211764708161354)  # TRN-GEOM: light.cfg:20-23 (donor evidence)
+# TRN-GEOM — donor sky band colours, skydome.cfg:11-40 via DEC-03 §4.4 (observed
+# literals; the band->Godot-gradient MAPPING is a PORT APPROXIMATION: donor is a
+# 32/32 two-band dome, port is ProceduralSkyMaterial). upskydomeband startangle
+# -5 (horizon) carries the pale colour; stopangle 90 (zenith) the deep blue.
+const DONOR_SKY_HORIZON := Color(0.600000023841858, 0.776470601558685, 0.992156863212585)
+const DONOR_SKY_TOP := Color(0.0, 0.141176477074623, 0.807843148708344)
 # Port-side M0.6 art compensation (NOT donor values) — kept as cited in the rig.
 const EXPOSURE: float = 1.45
 const AMBIENT_ENERGY: float = 1.10
@@ -116,6 +138,27 @@ const SUN_ENERGY: float = 1.7
 # mode — never to invent a tile index. See _face_mode_at().
 const DONOR_CDIFF1: float = 0.5   # texturemap.inc:63
 const DONOR_CDIFF2: float = 0.55  # texturemap.inc:64
+
+# TRN-GEOM — donor face-tilt literals (RV-TRN-01 §4.3, §5 verdict C):
+#   rockNvf  AngleX=0  AngleZ=25  -> refkey verticalfront  (tiles.mat:142-210)
+#   rockNvs  AngleX=25 AngleZ=0   -> refkey verticalside   (tiles.mat:142-210)
+# 36 vf + 36 vs blocks, tiles.lib:119-296,543-719 (RV-TRN-01 correction #3).
+# The engine APPLICATION of 25 degrees is UNVERIFIED (names occur only in
+# terrain.presets/tiles.lib/tiles.mat, never in a script). Port applies the
+# literal as a normal tilt + vf/vs atlas-cell choice: PORT APPROXIMATION.
+const DONOR_FACE_TILT_DEG: float = 25.0
+# Donor face-alpha projection scale, reftile.mat:124-126 / :150-152. The
+# eye-linear planes themselves are ALREADY in the shader (read-only owner):
+# front S=(1,0,0,0) T=(0,0,1,0); side S=(0,1,0,0) T=(0,0,1,0).
+const DONOR_FACE_SCALE: float = 0.125
+
+# TRN-GEOM — donor rock-art height gates (texturemap.inc:594-601, DTRN-01 C13):
+# abs(h)>2.7 -> rock8, abs(h)>2.4 -> rock4, abs(h)<0.1 -> no cliff tile.
+const DONOR_ROCK8_H: float = 2.7
+const DONOR_ROCK4_H: float = 2.4
+const DONOR_ROCK_NONE_H: float = 0.1
+# Donor shore test cWaterShoreHeight (texturemap.inc:31, :469-470).
+const DONOR_SHORE_H: float = -0.1
 
 const SPLAT_PATH := "res://assets/terrain/heightmap/splat_albedo.png"
 const FALLBACK_BLOCK := "res://assets/terrain/blocks/grass1.png"
@@ -161,6 +204,15 @@ var _tile_index_hist: Dictionary = {}
 var _tile_index_out_of_atlas: int = 0
 var _face_hist: Dictionary = {}             # FIX-TERRAIN: face-mode cell counts
 var _water3d = null                         # V7-84 water3d.gd instance
+# TRN-GEOM — donor index dictionary (name<->index from the V7-85 manifest, whose
+# index_dictionary points at presets_summer.json:2-125 <- terrain.presets:2-6).
+var _tile_name_index: Dictionary = {}
+var _tile_index_name: Dictionary = {}
+var _face_tilt_cells: int = 0
+var _rock_override_cells: int = 0
+var _shore_sector_cells: int = 0
+var _water_tile_cells: int = 0          # BLK_WATER remapped off grass1 (TRN-WATER handoff)
+var _water_fallback_cells: int = 0      # BLK_WATER with no donor aspect -> sandsea1
 
 
 func bind(game) -> void:
@@ -311,8 +363,25 @@ func _tileindex_material() -> Material:
 	mat.set_shader_parameter("alpha_atlas", _alpha_tex)
 	mat.set_shader_parameter("alphavert_atlas", _alphavert_tex)
 	mat.set_shader_parameter("atlas_grid", _atlas_grid)
-	# No real shadow map is supplied; keep the shader default OFF.
+	# TRN-GEOM — import the donor light.cfg COLOURS into the shader's own
+	# (unshaded) Blinn-Phong terms. Parameters already exist at
+	# terrain_tileindex.gdshader:123-135; NO shader edit is made here (the shader
+	# has another owner). PORT APPROXIMATION: donor light PRODUCTS are engine-
+	# bound; the shader's previous 0.15686/0.78125/0.0 were MATERIAL literals.
+	mat.set_shader_parameter("ambient_rgb", Vector3(DONOR_AMBIENT.r, DONOR_AMBIENT.g, DONOR_AMBIENT.b))
+	mat.set_shader_parameter("diffuse_rgb", Vector3(DONOR_DIFFUSE.r, DONOR_DIFFUSE.g, DONOR_DIFFUSE.b))
+	mat.set_shader_parameter("specular_rgb", Vector3(DONOR_SPECULAR.r, DONOR_SPECULAR.g, DONOR_SPECULAR.b))
+	# TRN-SHADER handoff: the shader's `donor_sun_position` is the RAW donor
+	# light.cfg Position (x,y,z), not the transformed water.dev.vert vector.
+	# Bind SUN_POS verbatim so rig and shader cannot drift apart.
+	mat.set_shader_parameter("donor_sun_position", Vector3(SUN_POS.x, SUN_POS.y, SUN_POS.z))
+	# Donor face-alpha scale literal (reftile.mat:124-126,:150-152); the shader
+	# already defaults to it, binding explicitly so the value is auditable here.
+	mat.set_shader_parameter("face_scale", DONOR_FACE_SCALE)
+	# No real shadow map is supplied; keep the shader default OFF (explicit A/B).
 	mat.set_shader_parameter("shadow_enabled", 0.0)
+	# Fog default palette is FogMode=0 (colors.lib:23,34-43, DTRN-01 C20) — OFF.
+	mat.set_shader_parameter("fog_mode", 0.0)
 	# FIX-TERRAIN — MEASURED, DELIBERATELY NOT CHANGED.
 	# The donor bmTransparency mask is re-applied as Godot framebuffer ALPHA
 	# (V7-86). This is structurally wrong (no second base-tile pass in the port)
@@ -382,20 +451,142 @@ func _face_mode_at(height: PackedFloat32Array, w: int, h: int,
 	return 1 if absf(gy) >= absf(gx) else 2
 
 
-# Central difference over 2*TILE_M; one-sided at the grid borders. Donor
-# height[] is stepped, so a large dh across one cell gives a steep normal
-# without a separate wall mesh. Port analogue of donor hf.pvl.sm.vert normal
-# transform (shaders.lib:16-19), not a donor copy.
+# ---------------------------------------------------------------------------
+# TRN-GEOM — donor aspect / cliff / shore tile selection. All tables below are
+# transcribed from read-only donor text, NOT invented:
+#   signed angle  : texturemap.inc:433-448 (dirX=lh-rh, dirY=th-bh,
+#                   VectorAngle(1,0,0,dirX,0,dirY), negate when dirY<0)
+#   shore 8-sector: texturemap.inc:474-529 (cAngle=45, vecangle+=180)
+#   cliff sector  : texturemap.inc:559-591 (bRB/bLB/bR/bB/bT/bL -> rockN)
+#   height gates  : texturemap.inc:594-601
+# Names resolve through the V7-85 manifest layout (presets_summer.json:2-125).
+# The donor vf/vs PROMOTION rule remains UNVERIFIED (RV-TRN-01 verdict C).
+# ---------------------------------------------------------------------------
+func _donor_aspect_deg(height: PackedFloat32Array, w: int, h: int,
+		x: int, z: int) -> float:
+	var lh: float = height[z * w + maxi(0, x - 1)]
+	var rh: float = height[z * w + mini(w - 1, x + 1)]
+	var th: float = height[maxi(0, z - 1) * w + x]
+	var bh: float = height[mini(h - 1, z + 1) * w + x]
+	var dx: float = lh - rh
+	var dy: float = th - bh
+	if absf(dx) < 0.0001 and absf(dy) < 0.0001:
+		return -999.0   # donor's `len>0.01` guard fails -> no newtile
+	return rad_to_deg(atan2(dy, dx))
+
+
+func _donor_cliff_name(height: PackedFloat32Array, w: int, h: int,
+		x: int, z: int) -> String:
+	var c: float = height[z * w + x]
+	if absf(c) < DONOR_ROCK_NONE_H:      # texturemap.inc:600-601 -> no tile
+		return ""
+	if absf(c) > DONOR_ROCK8_H:          # texturemap.inc:594-595
+		return "rock8"
+	if absf(c) > DONOR_ROCK4_H:          # texturemap.inc:597-598
+		return "rock4"
+	var a: float = _donor_aspect_deg(height, w, h, x, z)
+	if a < -900.0:
+		return ""
+	var sector: String = "L"            # texturemap.inc:575 (else -> bL)
+	if a >= 22.5 and a <= 67.5:
+		sector = "RB"                   # :560-561
+	elif a >= 120.0 and a <= 170.0:
+		sector = "LB"                   # :563-564
+	elif a >= -45.0 and a <= 45.0:
+		sector = "R"                    # :566-567
+	elif a > 45.0 and a <= 135.0:
+		sector = "B"                    # :569-570 (45 belongs to bR)
+	elif a >= -135.0 and a < -45.0:
+		sector = "T"                    # :572-573
+	# Newtile assignment order is the donor's later-wins chain :578-591.
+	match sector:
+		"LB": return "rock7"            # :578
+		"B": return "rock1"             # :580
+		"L": return "rock3"             # :581
+		"RB": return "rock4"            # :591 (rock6 at :579 is commented out)
+		"R": return "rock4"             # :583 (rock2 at :582 is commented out)
+		"T": return "rock4"             # :590
+	return ""
+
+
+func _donor_shore_name(height: PackedFloat32Array, w: int, h: int,
+		x: int, z: int) -> String:
+	var a: float = _donor_aspect_deg(height, w, h, x, z)
+	if a < -900.0:
+		return ""
+	a += 180.0                          # texturemap.inc:476
+	var sector: String = "RT"           # :500-501 (else -> bRT)
+	if a >= -22.5 and a < 22.5:
+		sector = "R"                    # :479-480
+	elif a >= 22.5 and a < 67.5:
+		sector = "RB"                   # :482-483
+	elif a >= 67.5 and a < 112.5:
+		sector = "B"                    # :485-486
+	elif a >= 112.5 and a < 157.5:
+		sector = "LB"                   # :488-489
+	elif a >= 157.5 and a < 202.5:
+		sector = "L"                    # :491-492
+	elif a >= 202.5 and a < 247.5:
+		sector = "LT"                   # :494-495
+	elif a >= 247.5 and a < 292.5:
+		sector = "T"                    # :497-498
+	# Later-wins chain :504-511.
+	match sector:
+		"LB": return "sandsea5"         # :504
+		"RB": return "sandsea6"         # :505
+		"B": return "sandsea1"          # :506
+		"L": return "sandsea6"          # :507
+		"R": return "sandsea6"          # :508
+		"T": return "sandsea1"          # :509
+		"RT": return "sandsea5"         # :510
+		"LT": return "sandsea6"         # :511
+	return ""
+
+
+func _tile_index_for_name(tile_name: String) -> int:
+	if tile_name.is_empty():
+		return -1
+	var v: Variant = _tile_name_index.get(tile_name, null)
+	return int(v) if v is int else -1
+
+
+# TRN-GEOM — apply the donor face-tilt LITERAL as a normal rotation. Only the
+# NORMAL array changes: vertex count, index count and surface count are intact.
+# face 1 = rockNvf AngleX=0 AngleZ=25 -> rotate about Z.
+# face 2 = rockNvs AngleX=25 AngleZ=0 -> rotate about X.
+# ENGINE PATH UNVERIFIED: PORT APPROXIMATION, not donor parity.
+func _tilt_face_normal(n: Vector3, face: int) -> Vector3:
+	if face == 0:
+		return n
+	var a: float = deg_to_rad(DONOR_FACE_TILT_DEG)
+	var ca: float = cos(a)
+	var sa: float = sin(a)
+	if face == 1:
+		return Vector3(n.x * ca - n.y * sa, n.x * sa + n.y * ca, n.z).normalized()
+	return Vector3(n.x, n.y * ca - n.z * sa, n.y * sa + n.z * ca).normalized()
+
+
+# 1-cell forward difference (one-sided backward at the last row/column) instead
+# of the previous 2*TILE_M central stencil, per DTRN-02 Step 5: a 1-cell cliff
+# step is no longer averaged away. TILE_M stays 2.0 m (gc_meters_to_tile=2,
+# dmscript.global:171 via DEC-05) and no vertex/index is added. Port analogue
+# of donor hf.pvl.sm.vert normals (shaders.lib:16-19), not a donor copy.
 func _normal_at(height: PackedFloat32Array, w: int, h: int,
 		x: int, z: int) -> Vector3:
-	var x0: int = maxi(0, x - 1)
-	var x1: int = mini(w - 1, x + 1)
-	var z0: int = maxi(0, z - 1)
-	var z1: int = mini(h - 1, z + 1)
-	var dx: float = float(x1 - x0) * TILE_M
-	var dz: float = float(z1 - z0) * TILE_M
-	var dhdx: float = (height[z * w + x1] - height[z * w + x0]) / dx
-	var dhdz: float = (height[z1 * w + x] - height[z0 * w + x]) / dz
+	if w < 2 or h < 2:
+		return Vector3(0.0, 1.0, 0.0)
+	var xa: int = x + 1
+	var xb: int = x
+	if xa > w - 1:
+		xa = x
+		xb = x - 1
+	var za: int = z + 1
+	var zb: int = z
+	if za > h - 1:
+		za = z
+		zb = z - 1
+	var dhdx: float = (height[z * w + xa] - height[z * w + xb]) / TILE_M
+	var dhdz: float = (height[za * w + x] - height[zb * w + x]) / TILE_M
 	return Vector3(-dhdx, 1.0, -dhdz).normalized()
 
 
@@ -556,18 +747,25 @@ func _make_environment() -> void:
 	env.background_color = Color(0.62, 0.70, 0.66)
 	var sky := Sky.new()
 	var skymat := ProceduralSkyMaterial.new()
-	skymat.sky_top_color = Color(0.18, 0.30, 0.42)
-	skymat.sky_horizon_color = Color(0.36, 0.44, 0.38)
+	# TRN-GEOM — donor sky band colours, skydome.cfg:11-40 via DEC-03 §4.4.
+	# Donor has a two-band dome (startangle -5 = horizon pale, stopangle 90 =
+	# zenith deep blue) with a uniform pale lower band (:31-40). Mapping that
+	# dome onto Godot's gradient is a PORT APPROXIMATION — the COLOURS are the
+	# observed donor literals, not invented port values. Curves stay port-tuned.
+	skymat.sky_top_color = DONOR_SKY_TOP
+	skymat.sky_horizon_color = DONOR_SKY_HORIZON
 	skymat.sky_curve = 0.18
-	skymat.ground_bottom_color = Color(0.09, 0.12, 0.07)
-	skymat.ground_horizon_color = Color(0.17, 0.22, 0.14)
+	skymat.ground_bottom_color = DONOR_SKY_HORIZON
+	skymat.ground_horizon_color = DONOR_SKY_HORIZON
 	skymat.ground_curve = 0.10
 	sky.sky_material = skymat
 	env.sky = sky
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.tonemap_exposure = EXPOSURE
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.86, 0.88, 0.82)
+	# TRN-GEOM — was port-tuned Color(0.86,0.88,0.82); now the donor ambient
+	# literal light.cfg:3-6 (DEC-03 §4.3). Energy stays as M0.6 PORT APPROX.
+	env.ambient_light_color = DONOR_AMBIENT
 	env.ambient_light_energy = AMBIENT_ENERGY
 	var we := WorldEnvironment.new()
 	we.name = "WorldEnvironment"
@@ -576,6 +774,11 @@ func _make_environment() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.name = "DonorSun"
+	# TRN-GEOM — donor diffuse = sun colour (light.cfg:10-13, DEC-03 §4.3).
+	# Donor specular (light.cfg:20-23) has no Light3D colour slot; it is bound
+	# to the shader's `specular_rgb` in _tileindex_material() and to stats.
+	# Position/energy stay donor-grounded/port-compensated respectively.
+	sun.light_color = DONOR_DIFFUSE
 	sun.light_energy = SUN_ENERGY
 	# FIX-TERRAIN — EXPLICIT USER DECISION (this wave): shadows are DISABLED.
 	# The old shadow map combined a near-vertical donor sun, a 400 m frustum on
@@ -618,6 +821,14 @@ func invalidate() -> void:
 	_tile_index_out_of_atlas = 0
 	_face_hist = {}
 	_water3d = null
+	# TRN-GEOM state (so a rebuild cannot carry stale counts / name tables).
+	_tile_name_index = {}
+	_tile_index_name = {}
+	_face_tilt_cells = 0
+	_rock_override_cells = 0
+	_shore_sector_cells = 0
+	_water_tile_cells = 0
+	_water_fallback_cells = 0
 
 
 # EXACT CONTRACT: one full-grid ArrayMesh from the base64 dump height[] grid.
@@ -652,6 +863,20 @@ func build() -> bool:
 	var atlas_ready := _load_atlas()
 	var tiles_available: bool = not _tile_indices.is_empty()
 
+	# TRN-GEOM — donor tile-name dictionary from the V7-85 manifest layout
+	# (index_dictionary: presets_summer.json:2-125 <- data/terrain/tiles/
+	# terrain.presets:2-6). No name or index is invented. If a manifest layout
+	# is absent the donor-grounded overrides simply no-op (reported in stats).
+	var layout_v: Variant = _manifest.get("layout", [])
+	if layout_v is Array:
+		for entry in layout_v:
+			if entry is Dictionary:
+				var nm: String = str(entry.get("name", ""))
+				var ix: Variant = entry.get("index", null)
+				if not nm.is_empty() and ix is int:
+					_tile_name_index[nm] = int(ix)
+					_tile_index_name[int(ix)] = nm
+
 	# Splat stays loaded for the V7-82 fallback path and for stats provenance.
 	var splat_path := SPLAT_PATH
 	var splat := _load_png_texture(splat_path)
@@ -685,22 +910,81 @@ func build() -> bool:
 			verts[i] = Vector3((float(x) + 0.5 - cx) * TILE_M,
 				height[i] * HEIGHT_SCALE,
 				(float(z) + 0.5 - cz) * TILE_M)
-			norms[i] = _normal_at(height, w, h, x, z)
 			uvs[i] = Vector2((float(x) + 0.5) / float(w),
 				(float(z) + 0.5) / float(h))
 			# V7-86 CONTRACT: UV2.x = float(donor tile id), UV2.y = face mode.
-			# FIX-TERRAIN: UV2.y is now derived from donor-readable slope data
+			# FIX-TERRAIN: UV2.y is derived from donor-readable slope data
 			# (_face_mode_at, texturemap.inc:63-64/438-447/559-575). 0 = ground
 			# default (reftile.mat:1-108), 1 = verticalfront, 2 = verticalside.
-			# This is a PORT APPROXIMATION — NOT DONOR PARITY: vf/vs promotion
-			# is ENGINE/UNVERIFIED, so no tile id is altered here.
-			# PORT GUARD: the live game uses 255 = BLK_WATER (game.gd:52) and
-			# other out-of-atlas ids; clamp to the V7-85 named-cell range so the
-			# shader never samples an empty/overflow cell. Counted in stats.
-			var tid: int = int(_tile_indices[i]) if tiles_available else 0
+			# TRN-GEOM / TRN-WATER handoff: the live game's 255 = BLK_WATER
+			# (game.gd:52) used to clamp to 0 = grass1, giving a grass-coloured
+			# shoreline under the near-zero-alpha water band (DTRN-03 W2/F2).
+			# It is now mapped to donor shore art by the 8x45-deg sector table
+			# (texturemap.inc:463-472,503-511) instead of to grass1.
+			var raw_tid: int = int(_tile_indices[i]) if tiles_available else 0
+			var water_sentinel: bool = tiles_available and raw_tid > max_tile_id
+			var shore_gate: bool = water_sentinel or height[i] < DONOR_SHORE_H
+			var tid: int = raw_tid
 			if tid < 0 or tid > max_tile_id:
 				tid = 0
-			var face: int = _face_mode_at(height, w, h, x, z)
+			# Donor water/shore branch (:472-530) precedes the cliff branch
+			# (:556-610): do not promote water/shore cells to vf/vs cliff faces.
+			var face: int = 0 if shore_gate else _face_mode_at(height, w, h, x, z)
+
+			# TRN-GEOM — donor cliff tile selection on promoted cells only.
+			# _donor_cliff_name() applies the exact donor height gates
+			# (texturemap.inc:594-601) and 6-sector cliff table (:559-591).
+			# TRN-GEOM APPROX: mapping the port-promoted cell onto the donor
+			# vf/vs atlas cell is a PORT APPROXIMATION — the donor promotion
+			# rule is UNVERIFIED (RV-TRN-01 verdict C). Never alters mesh counts.
+			if face != 0:
+				var cliff_name: String = _donor_cliff_name(height, w, h, x, z)
+				if cliff_name.is_empty():
+					face = 0   # donor abs(h)<0.1 -> "no cliff tile"
+				else:
+					_rock_override_cells += 1
+					var face_name: String = cliff_name + ("vf" if face == 1 else "vs")
+					var face_idx: int = _tile_index_for_name(face_name)
+					if face_idx >= 0:
+						tid = face_idx
+						_face_tilt_cells += 1
+					else:
+						var base_idx: int = _tile_index_for_name(cliff_name)
+						if base_idx >= 0:
+							tid = base_idx   # vf/vs art absent -> base cliff tile
+			elif shore_gate and tiles_available:
+				# TRN-GEOM / TRN-WATER — donor 8-sector shore orientation
+				# (texturemap.inc:474-529,503-511): sandsea1=93, sandsea5=97,
+				# sandsea6=98 in the V7-85 atlas (64² atoms, DTRN_03). Names are
+				# resolved from the manifest dictionary, not hard-coded.
+				# Gate: BLK_WATER sentinel OR already-sandsea* art OR low sand*
+				# art. The donor mask B test (texturemap.inc:464) is not
+				# readable here -> PORT APPROX gate; the SECTOR TABLE is donor
+				# exact. No new art, no foam, no water-literal change.
+				var base_name: String = str(_tile_index_name.get(tid, ""))
+				if (water_sentinel or base_name.begins_with("sandsea")
+						or (height[i] < WATER_LEVEL and base_name.begins_with("sand"))):
+					var shore_name: String = _donor_shore_name(height, w, h, x, z)
+					var shore_idx: int = -1
+					if not shore_name.is_empty():
+						shore_idx = _tile_index_for_name(shore_name)
+					if water_sentinel:
+						if shore_idx < 0:
+							# Flat deep water has no donor aspect (len<=0.01 at
+							# :442); donor leaves its own water tile unchanged,
+							# but the port atlas has no water block. Fall back
+							# to sandsea1 (donor literal :506/:509) so no water
+							# cell ever samples grass1. PORT APPROXIMATION.
+							shore_idx = _tile_index_for_name("sandsea1")
+							_water_fallback_cells += 1
+						if shore_idx >= 0:
+							_water_tile_cells += 1
+					elif shore_idx >= 0 and shore_idx != tid:
+						_shore_sector_cells += 1
+					if shore_idx >= 0:
+						tid = shore_idx
+
+			norms[i] = _tilt_face_normal(_normal_at(height, w, h, x, z), face)
 			if face != 0:
 				var fk: String = str(face)
 				_face_hist[fk] = int(_face_hist.get(fk, 0)) + 1
@@ -793,7 +1077,9 @@ func build() -> bool:
 		"mesh_triangles": ntris,
 		"mesh_surfaces": mesh.get_surface_count(),
 		"terrain_draw_calls_expected": 1,
-		"normals": "central finite difference on height[] (one-sided at borders)",
+		"normals": ("TRN-GEOM 1-cell forward difference on height[] (backward at last "
+			+ "row/col); TILE_M=2.0 m donor-grounded by gc_meters_to_tile=2 "
+			+ "(dmscript.global:171, DEC-05); no vertex/index change"),
 		"uv": "cell-centre (x+0.5)/map_w, (z+0.5)/map_h; 0..1 over full map",
 		"albedo_path": splat_path,
 		"albedo_size": [albedo_size.x, albedo_size.y],
@@ -807,13 +1093,70 @@ func build() -> bool:
 		"tile_index_hist": _tile_index_hist.duplicate(true),
 		"atlas_mode": _atlas_mode_loaded,   # loader's CHOSEN mode after auto-fallback
 		"atlas_path": V785_MANIFEST_PATH + " (V7-85 manifest; V7-91 loader transport)",
-		"uv_model": ("V7-86 eye-plane dot(realpos,eye_plane_s/t) + texture_matrix + "
-			+ "fract repeat — PORT APPROXIMATION: donor gl_EyePlane*/TextureMatrix "
-			+ "values are engine-bound and UNVERIFIED (TERRAIN2-06 §6 #1)"),
+		"uv_model": ("TRN-SHADER world-ground XZ texgen: eye_plane_s=(1,0,0,0) "
+			+ "eye_plane_t=(0,0,1,0), identity texture_matrix, uv_repeat=(0.5,0.5) "
+			+ "in terrain_tileindex.gdshader:120-122,211 — PORT APPROXIMATION, "
+			+ "NOT donor parity: runtime gl_EyePlaneS/T[0] / TextureMatrix[0] remain "
+			+ "engine-bound and CONFIRMED_UNVERIFIED (RV-TRN-01 verdict A)"),
 		"face_model": ("UV2.y = donor cDiff1/cDiff2 slope + aspect axis "
 			+ "(texturemap.inc:63-64,438-447,559-575) -> 0 ground / 1 front / 2 side; "
-			+ "PORT APPROXIMATION — NOT DONOR PARITY: exact vf/vs promotion ENGINE/UNVERIFIED; "
-			+ "25-degree AngleX/AngleZ remains metadata only"),
+			+ "TRN-GEOM: promoted cells now select donor vf/vs atlas art and a "
+			+ "25-degree normal tilt. Exact vf/vs PROMOTION rule ENGINE/UNVERIFIED "
+			+ "(RV-TRN-01 verdict C) -> PORT APPROXIMATION, NOT DONOR PARITY"),
+		# TRN-GEOM — auditable evidence ledger; no visual-parity claim.
+		"face_tilt": {
+			"vf": "AngleX=0 AngleZ=25",      # tiles.lib:119-296,543-719
+			"vs": "AngleX=25 AngleZ=0",      # tiles.lib:119-296,543-719
+			"deg": DONOR_FACE_TILT_DEG,
+			"cite": "tiles.lib:119-296,543-719; tiles.mat:142-210; reftile.mat:120-170 (RV-TRN-01 §4.3)",
+			"engine_path": "UNVERIFIED — no readable donor script selects vf/vs",
+			"label": "PORT APPROXIMATION — normal tilt + vf/vs atlas cell; no mesh change",
+			"cells": _face_tilt_cells,
+		},
+		"face_alpha_planes": {
+			"front": "S=(1,0,0,0) T=(0,0,1,0)",
+			"side": "S=(0,1,0,0) T=(0,0,1,0)",
+			"scale": DONOR_FACE_SCALE,
+			"cite": "reftile.mat:120-170 (RV-TRN-01 §4.3)",
+			"status": ("ALREADY APPLIED in terrain_tileindex.gdshader:309-318 "
+				+ "(shader has another owner; VERIFIED read-only, not re-edited here)"),
+		},
+		"rock_height_overrides": {
+			"rock8_abs_h_gt": DONOR_ROCK8_H,
+			"rock4_abs_h_gt": DONOR_ROCK4_H,
+			"no_tile_abs_h_lt": DONOR_ROCK_NONE_H,
+			"cite": "texturemap.inc:594-601 (DTRN-01 C13)",
+			"cells": _rock_override_cells,
+		},
+		"sector_tiles": {
+			"cliff": "texturemap.inc:559-591 (6-sector bRB/bLB/bR/bB/bT/bL -> rock7/1/3/4)",
+			"shore": "texturemap.inc:463-472,474-529,503-511 (8 x 45 deg, vecangle+=180)",
+			"atlas_ids": "sandsea1=93 sandsea5=97 sandsea6=98 (V7-85 manifest / 64² atoms)",
+			"shore_cells_reoriented": _shore_sector_cells,
+			"label": ("DONOR-GROUNDED name tables; PORT GATE uses height + live "
+				+ "sandsea* family, not donor mask B (UNVERIFIED here)"),
+		},
+		# TRN-WATER handoff — no more BLK_WATER -> grass1 clamp.
+		"water_shore_tiles": {
+			"blk_water_sentinel": 255,       # game.gd:52
+			"water_cells_remapped": _water_tile_cells,
+			"no_aspect_fallback_cells": _water_fallback_cells,
+			"fallback_tile": "sandsea1 (texturemap.inc:506/:509; PORT APPROX for flat water)",
+			"cite": "DTRN_03 W2/F2; texturemap.inc:463-472,503-511; game.gd:52",
+			"water_literals_untouched": [-0.25, -0.1, 2.96, 0.57, 1.07],
+			"no_foam_or_new_texture": true,
+		},
+		"light_cols": {
+			"ambient": [DONOR_AMBIENT.r, DONOR_AMBIENT.g, DONOR_AMBIENT.b],
+			"diffuse": [DONOR_DIFFUSE.r, DONOR_DIFFUSE.g, DONOR_DIFFUSE.b],
+			"specular": [DONOR_SPECULAR.r, DONOR_SPECULAR.g, DONOR_SPECULAR.b],
+			"position": [SUN_POS.x, SUN_POS.y, SUN_POS.z],
+			"cite": "data/env/lights/light.cfg:3-6,10-13,20-23,26-29 (DEC-03 §4.3)",
+			"sky": "skydome.cfg:11-40 via DEC-03 §4.4; band->gradient mapping PORT APPROXIMATION",
+			"fog": "OFF (FogMode=0, colors.lib:23,34-43; DTRN-01 C20)",
+			"shadows": "OFF (explicit A/B decision; not re-enabled)",
+			"shader": "ambient_rgb/diffuse_rgb/specular_rgb uniforms set (shader owner unchanged)",
+		},
 		"tile_index": {
 			"source": _tile_index_source,
 			"cells": nverts if tiles_available else 0,
@@ -850,10 +1193,16 @@ func build() -> bool:
 			"height_source": "data/scripts/generatemap.inc:537-577 (bitmap->grid->smoothing)",
 			"camera_framing": "data/cameras/camera.cfg:32-35,44-45 (V7-5, not this module)",
 			"water_level": "variant3d/scripts/mapgen.gd:29 C3MapGen.WATER_DEEP (donor texturemap.inc:30; literal UNVERIFIED)",
-			"cell_size": "variant3d/scripts/data.gd:23 C3Data.TILE_M (donor metres UNVERIFIED)",
+			"cell_size": ("variant3d/scripts/data.gd:23 C3Data.TILE_M=2.0; donor-grounded "
+				+ "by gc_meters_to_tile=2 (dmscript.global:171, DEC-05)"),
 			"sun_position": "data/env/lights/light.cfg:26-29 (SUN_POS, donor Z-up)",
 			"sun_light_vector": "data/shaders/water/water.dev.vert:22 (x/4, z/2, y) then Z-up->Y-up",
 			"ambient_diffuse": "data/env/lights/light.cfg:3-16 (Ambient/Diffuse literals)",
+			"specular": "data/env/lights/light.cfg:20-23 (TRN-GEOM import)",
+			"sky_bands": "data/env/skydome/skydome.cfg:11-40 via DEC-03 §4.4 (mapping APPROX)",
+			"face_tilt": "data/terrain/tiles/tiles.lib:119-296,543-719 (AngleX/AngleZ=25 literals)",
+			"face_planes_scale": "data/terrain/ref/reftile.mat:120-170 (S/T planes, TextureScale=0.125)",
+			"cliff_shore_sectors": "data/scripts/common.inc/texturemap.inc:433-448,474-529,559-601",
 			"light_rig_port": "variant3d/scripts/heightmap_world3d.gd:114-147 (V7-60, translated)",
 			"tile_index": ("data/scripts/dmscript.global:2026-2035 (.tex); "
 				+ "variant3d/scripts/game.gd:53,1610-1689; main.gd:741; TERRAIN2-06:29-31,67-72"),

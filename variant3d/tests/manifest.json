@@ -1,7 +1,7 @@
 {
   "_readme": "Registry of small single-feature tests. One file per feature; see app/tests/README.md. Status: ready = runnable, pending = feature not landed yet, skip = deferred by charter.",
   "version": 1,
-  "result_dir": "app/tests/results",
+  "result_dir": "variant3d/tests/results",
   "tests": [
     {
       "id": "t_build_flow",
@@ -247,6 +247,87 @@
       "status": "ready",
       "owner": "V7-37",
       "timeout": 60
+    },
+    {
+      "id": "t_terrain_only",
+      "path": "res://tests/t_terrain_only.gd",
+      "feature": "smallmap 64x64 isolated terrain-only render (no trees/shore/mines), windowed PNG",
+      "status": "pending",
+      "owner": "TEST-P0",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_terrain_trees",
+      "path": "res://tests/t_terrain_trees.gd",
+      "feature": "smallmap 64x64 terrain + donor trees, windowed PNG",
+      "status": "pending",
+      "owner": "TEST-P1",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_terrain_shore",
+      "path": "res://tests/t_terrain_shore.gd",
+      "feature": "smallmap 64x64 terrain + shore/water transition, windowed PNG",
+      "status": "pending",
+      "owner": "TEST-P2",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_terrain_mines",
+      "path": "res://tests/t_terrain_mines.gd",
+      "feature": "smallmap 64x64 terrain + mine resource nodes, windowed PNG",
+      "status": "pending",
+      "owner": "TEST-P3",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_combo_trees_shore",
+      "path": "res://tests/t_combo_trees_shore.gd",
+      "feature": "smallmap 64x64 trees + shore combo, windowed PNG",
+      "status": "pending",
+      "owner": "TEST-C1",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_combo_trees_mines",
+      "path": "res://tests/t_combo_trees_mines.gd",
+      "feature": "smallmap 64x64 trees + mines combo, windowed PNG",
+      "status": "pending",
+      "owner": "TEST-C2",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_combo_shore_mines",
+      "path": "res://tests/t_combo_shore_mines.gd",
+      "feature": "smallmap 64x64 shore + mines combo, windowed PNG",
+      "status": "pending",
+      "owner": "TEST-C3",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_combo_all",
+      "path": "res://tests/t_combo_all.gd",
+      "feature": "smallmap 64x64 trees + shore + mines combo (last combo), windowed PNG",
+      "status": "pending",
+      "owner": "TEST-C4",
+      "timeout": 120,
+      "windowed": true
+    },
+    {
+      "id": "t_select_rect",
+      "path": "res://tests/t_select_rect.gd",
+      "feature": "smallmap 64x64 selection rectangle via real game boot, windowed PNG + selection list",
+      "status": "pending",
+      "owner": "TEST-S1",
+      "timeout": 120,
+      "windowed": true
     }
   ]
 }

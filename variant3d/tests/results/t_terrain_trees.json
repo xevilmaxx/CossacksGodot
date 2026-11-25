@@ -1,0 +1,269 @@
+{
+	"capture_status": "SKIP_CAPTURE",
+	"checks": [
+		{
+			"detail": "source=%s MAP=%dx%d res_nodes=%d height/tileblock/dump present=%s",
+			"name": "harness_stub_shape",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_terrain.gd missing=[]",
+			"name": "terrain_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_entities.gd missing=[]",
+			"name": "entities_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/camera3d.gd missing=[]",
+			"name": "camera_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() returned true",
+			"name": "build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "WaterPlane nodes=1 all_hidden=true (module-owned, hidden not deleted)",
+			"name": "water_plane_hidden",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 (expected 1)",
+			"name": "surface_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "vertices=4096 expected=4096",
+			"name": "vertex_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "triangles=7938 expected=7938",
+			"name": "triangle_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "UV2 entries=4096 expected=4096",
+			"name": "uv2_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "non-0/1/2 UV2.y=0 hist={ \"0\": 4096 }",
+			"name": "uv2_y_face_modes",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "perfectly flat 64x64 grid promoted=0 (expected 0)",
+			"name": "flat_grid_promoted",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "cells below -0.25 m = 0 (expected 0)",
+			"name": "no_water_cells",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "BLK_WATER cells=0",
+			"name": "no_water_tileblock",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "res_nodes=20 (expected 20 wood nodes)",
+			"name": "tree_nodes_bound",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "visible tree instances=20 expected=20; sids=[\"tree_pinedry2\", \"tree_firsmall1\", \"tree_pinesmall4\", \"tree_spruce4\", \"tree_fir\", \"tree_pinesmall2\", \"tree_spruce2\", \"tree_pine\", \"tree_oak\", \"tree_spruce1\", \"tree_pinesmall3\", \"tree_spruce3\", \"tree_pinesmall1\", \"tree_firsmall4\"]",
+			"name": "tree_instance_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "non-POOL_TREE sids=[\"tree_pinedry2\", \"tree_firsmall1\", \"tree_pinesmall4\", \"tree_spruce4\", \"tree_pinesmall2\", \"tree_pinesmall3\", \"tree_spruce3\", \"tree_pinesmall1\", \"tree_firsmall4\"] (stone/ore/stump/food/proxy forbidden); pools=[\"tree_spruce1\", \"tree_pine\", \"tree_fir\", \"tree_oak\", \"tree_spruce2\", \"tree_pinedry1\"]",
+			"name": "category_purity",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "unit/building/other batches=[] (P1 has no units/buildings)",
+			"name": "no_non_tree_batches",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "max |Y - height_at / height_at_world| = 0.0 m (eps=0.001), instances=20, worst=",
+			"name": "tree_height_snap",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "trees at/below -0.25 m = 0 (expected 0)",
+			"name": "trees_above_water",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "KNOWN_GAP: ENV_SCALE['tree']=0.5 collapses all species (world3d_entities.gd:113,:326-333); donor 0.341-0.76 + +/-15% jitter (DTRN_04 C3/C4) NOT asserted for parity",
+			"name": "donor_scale_ladder",
+			"passed": null,
+			"status": "KNOWN_GAP"
+		},
+		{
+			"detail": "KNOWN_GAP: resource _xf() yaw is always 0 (world3d_entities.gd:1094-1121); donor >=6 distinct 30-deg bins (DTRN_04 T4) NOT asserted",
+			"name": "donor_yaw_bins",
+			"passed": null,
+			"status": "KNOWN_GAP"
+		},
+		{
+			"detail": "NOT_ASSERTED: stub has no is_blocked(); DTRN_04 T6 reserved for real-game row",
+			"name": "donor_passability",
+			"passed": null,
+			"status": "NOT_ASSERTED"
+		},
+		{
+			"detail": "SECOND_AGENT_REQUIRED: silhouette/canopy/shadow review (DTRN_04 T10); no donor GPU A/B exists (V3D_02 parity_guard)",
+			"name": "donor_visual_review",
+			"passed": null,
+			"status": "SECOND_AGENT_REQUIRED"
+		},
+		{
+			"detail": "verify via smallmap_capture.py scan-stderr on runner stderr.txt (DTRN_04 T9)",
+			"name": "script_error_scan_external",
+			"passed": null,
+			"status": "EXTERNAL"
+		},
+		{
+			"detail": "DisplayServer.get_name()==headless: GPU readback skipped (TEST-01 Blockers 2)",
+			"name": "capture_image",
+			"passed": null,
+			"status": "SKIP_CAPTURE_HEADLESS"
+		},
+		{
+			"detail": "headless: no P1 PNG to diff",
+			"name": "png_differs_from_p0",
+			"passed": null,
+			"status": "SKIP_CAPTURE_HEADLESS"
+		},
+		{
+			"detail": "headless",
+			"name": "diff_confined_to_tree_footprints",
+			"passed": null,
+			"status": "SKIP_CAPTURE_HEADLESS"
+		},
+		{
+			"detail": "headless",
+			"name": "no_new_black_blocks",
+			"passed": null,
+			"status": "SKIP_CAPTURE_HEADLESS"
+		},
+		{
+			"detail": "headless",
+			"name": "no_full_width_dark_rows",
+			"passed": null,
+			"status": "SKIP_CAPTURE_HEADLESS"
+		},
+		{
+			"detail": "RENDER_TOTAL_DRAW_CALLS_IN_FRAME avg=0.0 last=0.0 samples=1 (windowed GPU if >0)",
+			"name": "draw_calls_recorded",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "process_ms_avg=0.0 frame_delta_ms_avg=0.0",
+			"name": "frame_time_recorded",
+			"passed": true,
+			"status": "PASS"
+		}
+	],
+	"env_scale_note": "ENV_SCALE['tree']=0.5 is a PORT APPROXIMATION; all POOL_TREE sids share one size (world3d_entities.gd:113,:326-333). Donor ladder 0.341-0.76 with +/-15% jitter (DTRN_04 C3/C4) is NOT asserted.",
+	"fails": 1,
+	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+	"id": "t_terrain_trees",
+	"measured": {
+		"api_missing_camera3d.gd": [],
+		"api_missing_world3d_entities.gd": [],
+		"api_missing_world3d_terrain.gd": [],
+		"cells_below_water_level": 0,
+		"display_server": "headless",
+		"entities_stats_resources": 20,
+		"flat_grid_promoted_cells": 0,
+		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+		"headless": true,
+		"input_categories": {},
+		"mesh_surfaces": 1,
+		"mesh_triangles": 7938,
+		"mesh_vertices": 4096,
+		"performance": {
+			"draw_calls_avg": 0.0,
+			"draw_calls_last": 0.0,
+			"frame_delta_ms_avg": 0.0,
+			"process_time_ms_avg": 0.0,
+			"samples": 1
+		},
+		"requested_p0_png": "",
+		"requested_png": "",
+		"terrain_stats_present": true,
+		"tree_batch_count": 14,
+		"tree_batch_instances": 20,
+		"tree_batch_sids": [
+			"tree_pinedry2",
+			"tree_firsmall1",
+			"tree_pinesmall4",
+			"tree_spruce4",
+			"tree_fir",
+			"tree_pinesmall2",
+			"tree_spruce2",
+			"tree_pine",
+			"tree_oak",
+			"tree_spruce1",
+			"tree_pinesmall3",
+			"tree_spruce3",
+			"tree_pinesmall1",
+			"tree_firsmall4"
+		],
+		"tree_height_snap": {
+			"below_water": 0,
+			"count": 20,
+			"max_err": 0.0,
+			"ok": true,
+			"worst": ""
+		},
+		"uv2_count": 4096,
+		"uv2_y_hist": {
+			"0": 4096
+		},
+		"water_3d_node_count": 1,
+		"water_plane_count": 1,
+		"water_tileblock_cells": 0
+	},
+	"p0_png_path": "",
+	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
+	"passed": false,
+	"passes": 21,
+	"png_path": "",
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"skip_reason": "headless or no comparable P0 PNG: state-only result, PNG diff not evaluated",
+	"skipped_or_notes": 10,
+	"structural_ok": false,
+	"unix_ms": 1795597149616.0,
+	"verdict": "FAIL"
+}

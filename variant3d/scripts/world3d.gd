@@ -268,10 +268,10 @@ func _update_view_rect() -> void:
 						for c in ca:
 							var xy := Vector2.ZERO
 							if c is Vector2:
-								# camera3d.gd:181-188 returns ground metres in
-								# MAP-ORIGIN sim space (camera3d.gd:89-90);
-								# no half-map shift (AUDIT3D-05 E9).
-								xy = c as Vector2
+								# camera3d.get_viewport_corners() returns CENTRED world metres
+								# (camera3d.gd:354-363, :435-438; hud3d_adapter.gd:57-62);
+								# shift to SIM map-origin metres before the view_scale multiply.
+								xy = (c as Vector2) + Vector2(ox, oz)
 							elif c is Vector3:
 								# Legacy centre-origin corner: preserve the
 								# existing re-centring onto map-origin metres.

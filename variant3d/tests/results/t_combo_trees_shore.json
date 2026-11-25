@@ -1,0 +1,340 @@
+{
+	"capture_status": "SKIP_CAPTURE",
+	"checks": [
+		{
+			"detail": "source=%s MAP=%dx%d res_nodes=%d",
+			"name": "harness_stub_shape",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_terrain.gd",
+			"name": "terrain_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_entities.gd",
+			"name": "entities_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/camera3d.gd",
+			"name": "camera_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() returned true",
+			"name": "build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 (expected 1)",
+			"name": "surface_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "vertices=4096 expected=4096",
+			"name": "vertex_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "triangles=7938 expected=7938",
+			"name": "triangle_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "UV2 entries=4096 expected=4096",
+			"name": "uv2_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "non-0/1/2 UV2.y=0 hist={ \"0\": 4070, \"1\": 13, \"2\": 13 }",
+			"name": "uv2_y_face_modes",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "perfectly flat 64x64 grid: promoted=0 (t_smallmap_terrain.gd:150-171)",
+			"name": "flat_grid_promoted",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "stats.grid=[16.0, 8.0] shader.atlas_grid=(16.0, 8.0) (expected [16,8] / (16,8))",
+			"name": "atlas_grid_manifest",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "material=ShaderMaterial tile/alpha/alphavert bound=true",
+			"name": "atlas_material_bound",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "shader shadow_enabled=0.0 (expected 0; world3d_terrain.gd:315)",
+			"name": "shader_shadow_disabled",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 vertices=4096 triangles=7938 uv2=4096; baseline={ \"surfaces\": 1.0, \"vertices\": 4096.0, \"triangles\": 7938.0, \"uv2\": 4096.0 }",
+			"name": "p0_mesh_counts_unchanged",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "res_nodes=20 wood=0 (expected 20)",
+			"name": "tree_res_nodes_exact",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "counts={  } (stone/mine/food must be 0)",
+			"name": "tree_category_purity",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "Batch_*_res visible instances=20 expected=20 keys=[\"res|tree_pinedry3\", \"res|tree_oak\", \"res|tree_spruce2\", \"res|tree_spruce4\", \"res|tree_firsmall1\", \"res|tree_firsmall3\", \"res|tree_pine\", \"res|tree_pinesmall2\", \"res|tree_pinesmall4\", \"res|tree_pinedry2\", \"res|tree_pinedry4\", \"res|tree_spruce1\", \"res|tree_spruce3\", \"res|tree_fir\"]",
+			"name": "tree_batch_instances_exact",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "max |tree.y - game.height_at(pos)|=0.0 m eps=0.0001",
+			"name": "tree_y_on_terrain",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "min tree y=0.52412545681 m WATER_LEVEL=-0.25; fixture rows z=20/44 are outside collar r=5.4",
+			"name": "trees_not_below_water",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "mine res_nodes=0 non-tree res sids=[\"tree_pinedry3\", \"tree_spruce4\", \"tree_firsmall1\", \"tree_firsmall3\", \"tree_pinesmall2\", \"tree_pinesmall4\", \"tree_pinedry2\", \"tree_pinedry4\", \"tree_spruce3\"] (expected 0 / [])",
+			"name": "no_mines_added",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "height < -0.25 m: 32 cells / 4096 = 0.0078 (expected >0 and <10%)",
+			"name": "water_cells_bounded",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "planes=1 Water3D=1 module=res://scripts/water3d.gd height_aware=true",
+			"name": "water_plane_single_height_aware",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "sandsea1/5/6 present=true sandrock*/rock* present=true hist={ \"0\": 4058, \"88\": 6, \"89\": 3, \"98\": 6, \"93\": 2, \"29\": 2, \"87\": 6, \"97\": 4, \"90\": 3, \"91\": 3, \"92\": 3 }",
+			"name": "shore_ids_in_uv2_hist",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "headless: GPU capture skipped",
+			"name": "capture_image",
+			"passed": null,
+			"status": "SKIPPED"
+		},
+		{
+			"detail": "headless: no PNG written",
+			"name": "capture_saved",
+			"passed": null,
+			"status": "SKIPPED"
+		},
+		{
+			"detail": "headless: no PNG metrics",
+			"name": "non_black_fraction",
+			"passed": null,
+			"status": "SKIPPED"
+		},
+		{
+			"detail": "headless: no PNG metrics",
+			"name": "full_width_dark_rows",
+			"passed": null,
+			"status": "SKIPPED"
+		}
+	],
+	"fails": 2,
+	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+	"id": "t_combo_trees_shore",
+	"measured": {
+		"atlas_grid": [
+			16.0,
+			8.0
+		],
+		"atlas_grid_shader_param": "(16.0, 8.0)",
+		"atlas_mode": "single",
+		"category_counts": {},
+		"display_server": "headless",
+		"flat_grid_promoted_cells": 0,
+		"headless": true,
+		"mesh_surfaces": 1,
+		"mesh_triangles": 7938,
+		"mesh_vertices": 4096,
+		"mine_nodes": 0,
+		"p0_baseline": {
+			"surfaces": 1.0,
+			"triangles": 7938.0,
+			"uv2": 4096.0,
+			"vertices": 4096.0
+		},
+		"requested_png": "",
+		"shader_shadow_enabled": "0.0",
+		"shore_sandrock_or_rock_present": true,
+		"shore_sandsea_present": true,
+		"terrain_stats_present": true,
+		"tree_batch_keys": "[\"res|tree_pinedry3\", \"res|tree_oak\", \"res|tree_spruce2\", \"res|tree_spruce4\", \"res|tree_firsmall1\", \"res|tree_firsmall3\", \"res|tree_pine\", \"res|tree_pinesmall2\", \"res|tree_pinesmall4\", \"res|tree_pinedry2\", \"res|tree_pinedry4\", \"res|tree_spruce1\", \"res|tree_spruce3\", \"res|tree_fir\"]",
+		"tree_cells": [
+			[
+				18,
+				20
+			],
+			[
+				21,
+				20
+			],
+			[
+				24,
+				20
+			],
+			[
+				27,
+				20
+			],
+			[
+				30,
+				20
+			],
+			[
+				33,
+				20
+			],
+			[
+				36,
+				20
+			],
+			[
+				39,
+				20
+			],
+			[
+				42,
+				20
+			],
+			[
+				45,
+				20
+			],
+			[
+				18,
+				44
+			],
+			[
+				21,
+				44
+			],
+			[
+				24,
+				44
+			],
+			[
+				27,
+				44
+			],
+			[
+				30,
+				44
+			],
+			[
+				33,
+				44
+			],
+			[
+				36,
+				44
+			],
+			[
+				39,
+				44
+			],
+			[
+				42,
+				44
+			],
+			[
+				45,
+				44
+			]
+		],
+		"tree_instances": 20,
+		"tree_min_y_m": 0.524125456809998,
+		"tree_sid_counts": {
+			"tree_fir": 1,
+			"tree_firsmall1": 1,
+			"tree_firsmall3": 1,
+			"tree_oak": 1,
+			"tree_pine": 1,
+			"tree_pinedry2": 1,
+			"tree_pinedry3": 1,
+			"tree_pinedry4": 1,
+			"tree_pinesmall2": 1,
+			"tree_pinesmall4": 1,
+			"tree_spruce1": 1,
+			"tree_spruce2": 1,
+			"tree_spruce3": 1,
+			"tree_spruce4": 1
+		},
+		"tree_y_max_error_m": 0.0,
+		"uv2_count": 4096,
+		"uv2_x_hist": {
+			"0": 4058,
+			"29": 2,
+			"87": 6,
+			"88": 6,
+			"89": 3,
+			"90": 3,
+			"91": 3,
+			"92": 3,
+			"93": 2,
+			"97": 4,
+			"98": 6
+		},
+		"uv2_y_hist": {
+			"0": 4070,
+			"1": 13,
+			"2": 13
+		},
+		"water_3d_node_count": 1,
+		"water_cells": 32,
+		"water_fraction": 0.0078125,
+		"water_height_aware": true,
+		"water_module": "res://scripts/water3d.gd",
+		"water_plane_count": 1
+	},
+	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
+	"passed": false,
+	"passes": 22,
+	"png_path": "",
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"skip_reason": "DisplayServer.get_name()==headless: state-only result, PNG not captured",
+	"skipped_or_skip_capture": 4,
+	"structural_ok": false,
+	"unix_ms": 1795597276218.0,
+	"verdict": "FAIL"
+}

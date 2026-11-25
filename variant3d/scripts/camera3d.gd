@@ -59,9 +59,18 @@ const DONOR_HEIGHT_MAX: float = 58.0  # camera.cfg:6 SphereHeight; :9 SphereLeng
 const DONOR_HEIGHT_MIN: float = 20.0  # camera.cfg:7 SphereHeightMin; :10 SphereLengthMin
 const DONOR_FOCAL: float = 400.0      # camera.cfg:44-45 Min/MaxFocalLength
 const DONOR_FOCAL_STEP: float = 5.0   # onmousewheel.inc:326,334 (CTRL screenshot zoom only)
-# PORT ASSUMPTION — NOT a donor literal. M0.6 "display sensor" V-FOV used to keep vertical
-# faces visible; A/B candidate 2.90 deg (36 mm sensor) still pending. G31:227,262-263;
-# terrain3d_sandbox.gd:24-36; SWARM_BOARD.md:415-420.
+# PORT APPROXIMATION / UNVERIFIED — NOT a donor literal and NOT a measured donor FOV.
+# Rationale (RV-CAM-01 "Verdict" + "Recommended value and label"; GAPS.md §1 Projection row):
+# 17.27 deg is the 16:9 VERTICAL FOV of a 216 mm HORIZONTAL sensor at donor focal f=400:
+#   H = 2*atan(216/(2*400)) = 30.219 deg; V = 2*atan(tan(H/2)/(16/9)) = 17.272 deg.
+# The donor declares GetCameraFieldOfViewByFocalLength(f, viewportdimension) (EXE 0x1fe0ef,
+# inverse 0x1fe158) but NO readable script calls it and NO sensor/film-gate constant exists
+# in data/** or as a float32 in the EXE -> numeric FOV is CONFIRMED_UNVERIFIED.
+# Do NOT substitute 5.15 deg or 30.22 deg: those are the HORIZONTAL FOVs of the 36 mm and
+# 216 mm cases (DEC-07 §8.3 "correction" is itself wrong), not V-FOV candidates.
+# Equally unverified secondary A/B candidate: 2.90 deg (36 mm horizontal -> 16:9 V).
+# Value kept byte-identical: it is the measured baseline (V790 fov=17.270000, selftest 29/29).
+# DSEL_02_donor_pick_math.md claim 2; RV_CAM_01_fov_resolution.md.
 const FOV_DEG_ASSUMED: float = 17.27
 # Donor clipping planes are UNVERIFIED (G31:40-63: no projection/clip keys in data/**).
 # These are port frustum-safety values, explicitly NOT donor numbers.
@@ -351,7 +360,18 @@ func _screen_to_surface(screen: Vector2) -> Vector2:
 	return p
 
 
-# Four GROUND corners in screen order TL, TR, BR, BL (metres, top-left map origin).
+# Four GROUND corners in screen order TL, TR, BR, BL, returned as Vector2(x=world X,
+# y=world Z) in CENTRED world metres (origin at map CENTRE), NOT SIM top-left map-origin
+# metres. They come straight from screen_to_world() (:266-275), which ray-hits the
+# centred Camera3D transform, so the half-map offset is NOT present in these values.
+# STALE COMMENT CORRECTED (DEC-08 / GAPS.md §1 "Minimap / HUD" row): this line used to say
+# "top-left map origin", contradicting clamp_pos() (:435-438) and hud3d_adapter.gd:57-62.
+# Both of those CONSUMERS add the half-map shift themselves — clamp_pos() adds _map_half()
+# at :438; the HUD adapter adds Vector2(mw,mh)*TILE_M*0.5 at hud3d_adapter.gd:62 — so the
+# returned Vector2 corners stay CENTRED (PLAY2-01 E5/E7, PLAY2FIX-NAVBOX). A consumer that
+# needs SIM metres must add _map_half() itself, exactly like the Vector3 branch does at
+# world3d.gd:279. Do NOT shift here: it would double-shift clamp_pos() and the minimap box.
+# See CAM_01_view_rect.md for the world3d.gd:268-274 Vector2-branch change request.
 # The HUD minimap box adapter projects these into minimap pixel space (contract :16).
 func get_viewport_corners() -> Array:
 	var vp: Vector2 = get_viewport().get_visible_rect().size

@@ -110,12 +110,72 @@ const BATCH_CAPACITY: int = 4096
 const HIDDEN_SCALE: float = 0.0001
 
 # Donor numbers, NOT port inventions: see header + V7-2 section 1.1.
+# DECOR-01: ENV_SCALE keeps its original three keys and values (public API used
+# by the 64² atoms). "tree" remains the LEGACY fallback for stumps and for any
+# tree sid with no explicit donor envscale group (oak - see below).
 const ENV_SCALE := {"mine": 0.3152, "stone": 0.329, "tree": 0.5}
-const POOL_TREE := ["tree_spruce1", "tree_pine", "tree_fir", "tree_oak",
-	"tree_spruce2", "tree_pinedry1"]
+
+# DECOR-01 — per-sid donor envscale ladder (DTRN-04 C3, DEC-03 §4.8).
+# Every value below is read from data\game\var\envscales.cfg (donor, READ-ONLY):
+#   fir group 0.5 (:161/:167/:173/:179/:185), firsmall 0.5 (:196..220),
+#   spruce1 0.5 (:371/:377/:383/:389), pine1 0.475 (:231),
+#   pinesmall1 0.55 (:266), pinesmall2.2 0.56 (:278),
+#   pinesmall3.3 0.61 (:284), pinesmall4.4 0.5 (:290),
+#   pinedry1 0.65 (:406), pinedry2.2 0.706 (:418),
+#   pinedry3.3 0.76 (:424), pinedry4.4 0.5 (:430).
+# Mapping is by the mesh's donor variant number: converted sid tree_X<N>
+# comes from X<N>.osm (manifest.json:models[i].mesh), so N matches the
+# envscales entry X<N>.N / X<N> (the extra ".1.1" entries, e.g. pinesmall1.1
+# 0.535 at :272 and pinedry1.1 0.618 at :412, have no converted mesh here and
+# are therefore NOT represented - open question in the report).
+# tree_oak has NO envscale group in the donor cfg (DTRN-04 §4.1 note), so it
+# deliberately stays on the legacy ENV_SCALE["tree"]=0.5 fallback: assigning
+# it a new number here would be an invention.
+const ENV_TREE_SCALE := {
+	"tree_fir": 0.5,
+	"tree_firsmall1": 0.5, "tree_firsmall2": 0.5,
+	"tree_firsmall3": 0.5, "tree_firsmall4": 0.5,
+	"tree_spruce1": 0.5, "tree_spruce2": 0.5,
+	"tree_spruce3": 0.5, "tree_spruce4": 0.5,
+	"tree_pine": 0.475,
+	"tree_pinesmall1": 0.55, "tree_pinesmall2": 0.56,
+	"tree_pinesmall3": 0.61, "tree_pinesmall4": 0.5,
+	"tree_pinedry1": 0.65, "tree_pinedry2": 0.706,
+	"tree_pinedry3": 0.76, "tree_pinedry4": 0.5,
+}
+
+# DECOR-01 — the THREE donor jitter bands from DEC-03 §4.8 (not one blanket
+# band): none 1/1 for field + 3 mines (envscales.cfg:8,19,25,31); tight
+# 0.95-1.05 for grass/grassforest/grasschamomile (:594-612, :623-641, :803);
+# wide 0.85-1.15 for the other 112 entries, including ALL trees (:162-164,
+# :196-199, :231-234, :266-292, :371-374, :406-430, :511-549).
+# Only the tree ("wide") path is wired in below; mine ("none") bypass and the
+# other res categories remain byte-identical to their pre-DECOR-01 behaviour.
+const ENV_JITTER_BANDS := {
+	"none": Vector2(1.0, 1.0),
+	"tight": Vector2(0.95, 1.05),
+	"wide": Vector2(0.85, 1.15),
+}
+const TREE_JITTER_BAND: String = "wide"
+
+# DECOR-01 — all 19 tree sids with a converted OBJ, albedo PNG and manifest
+# bbox on disk (measured, not invented): manifest.json:442-857 and
+# assets/models/obj/tree_*.obj. The donor tree-ish pool is 22 sids; the 4
+# tree_stump* sids stay in POOL_STUMP (separate category) and the 2
+# christmastree* sids are not wood-res sids, so neither is added here.
+const POOL_TREE := ["tree_spruce1", "tree_spruce2", "tree_spruce3", "tree_spruce4",
+	"tree_fir", "tree_firsmall1", "tree_firsmall2", "tree_firsmall3", "tree_firsmall4",
+	"tree_pine", "tree_pinesmall1", "tree_pinesmall2", "tree_pinesmall3", "tree_pinesmall4",
+	"tree_pinedry1", "tree_pinedry2", "tree_pinedry3", "tree_pinedry4", "tree_oak"]
 const POOL_ROCK := ["rock", "stone", "rock_stones1", "rock_stones2", "rock_stones3"]
 const POOL_BUSH := ["bush1", "bush2", "bush3", "bush4"]
 const POOL_STUMP := ["tree_stump1", "tree_stump2", "tree_stump3", "tree_stump4"]
+
+# DECOR-01 status labels. All are honest "not implemented / unverified" tags,
+# never a visual-parity claim.
+const TREE_YAW_STATUS: String = "UNVERIFIED - no authored per-object yaw reaches this module (game.gd:_add_res:509-510 sets only id/kind/type/pos/hits/max_hits/radius; pattern_gen.gd passes none); res-node yaw stays 0, no rotation invented"
+const TREE_STAND_STATUS: String = "OPEN - donor authored forest stands (DTRN-04 F3) need a decor array distinct from res_nodes and game.gd/pattern_gen.gd placement changes (other owners); not added here"
+const MINE_DISC_STATUS: String = "BLOCKED: no matching deposit-disc asset under assets/terrain/**. Donor olive/beige cracked disc (DTRN-05 C7) is already the low-Z region of the converted 2048² albedo assets/models/tex/mine_<ore>.png, applied to the 3D mine mesh by _default_material; a separate terrain apron PNG is not present and none was invented. No sparkle VFX / sway (DTRN-05 C8: none in donor)"
 
 # Exact V7-64 PORT_LABEL text (anim3d.gd:55), kept verbatim with the em dash.
 const PORT_LABEL: String = "PORT APPROXIMATION — NOT DONOR PARITY"
@@ -249,6 +309,12 @@ func bind(g) -> void:
 	for sid in _bbox.keys():
 		if ResourceLoader.exists(GLB_DIR + str(sid) + ".glb"):
 			glb_available += 1
+	# DECOR-01: measure the live tree pool against disk instead of assuming it.
+	var tree_pool_available: Array = []
+	for sid in POOL_TREE:
+		if _bbox.has(sid) and ResourceLoader.exists(OBJ_DIR + str(sid) + ".obj") \
+				and ResourceLoader.exists(TEX_DIR + str(sid) + ".png"):
+			tree_pool_available.append(sid)
 	stats = {
 		"module": "V7-14 world3d_entities",
 		"extends": "Node3D",
@@ -306,6 +372,20 @@ func bind(g) -> void:
 		"field_visual_decals": _field_decal_paths,
 		"field_visual_sow_step_m": FIELD_STEP_M,
 		"field_visual_target_span_m": FIELD_SPAN_M,
+		# DECOR-01 telemetry (structural/numeric/measurement only, no visual claim).
+		"decor_tree_pool_declared": POOL_TREE.size(),
+		"decor_tree_pool_resolvable": tree_pool_available.size(),
+		"decor_tree_pool_sids": tree_pool_available,
+		"decor_tree_ladder_sids": ENV_TREE_SCALE.size(),
+		"decor_tree_ladder": "envscales.cfg:158-585 per-sid ladder; 0.475..0.76 bases; all tree jitter wide 0.85..1.15 (:162-164)",
+		"decor_tree_jitter_band": TREE_JITTER_BAND,
+		"decor_tree_jitter_range": [ENV_JITTER_BANDS[TREE_JITTER_BAND].x, ENV_JITTER_BANDS[TREE_JITTER_BAND].y],
+		"decor_jitter_bands": {"none": [1.0, 1.0], "tight": [0.95, 1.05], "wide": [0.85, 1.15]},
+		"decor_tree_yaw": TREE_YAW_STATUS,
+		"decor_forest_stand": TREE_STAND_STATUS,
+		"decor_mine_scale": ENV_SCALE["mine"],
+		"decor_mine_jitter_band": "none",
+		"decor_mine_ground_disc": MINE_DISC_STATUS,
 	}
 	push_warning("world3d_entities: " + ANIM_STATUS)
 
@@ -331,6 +411,34 @@ func _env_group(sid: String) -> String:
 	if sid.begins_with("tree"):
 		return "tree"
 	return ""
+
+
+# DECOR-01: donor per-sid envscale factor. Returns the donor value only for the
+# 18 tree sids that have an explicit envscales.cfg entry; stumps and oak
+# deliberately fall through to the unchanged legacy ENV_SCALE["tree"] = 0.5.
+func _env_scale_factor(sid: String) -> float:
+	if ENV_TREE_SCALE.has(sid):
+		return float(ENV_TREE_SCALE[sid])
+	return float(ENV_SCALE.get(_env_group(sid), 1.0))
+
+
+# DECOR-01: deterministic position hash in [0,1). Same no-RNG policy as
+# _pick_sid(): integer arithmetic only, so two identical-seed runs agree.
+func _hash01(p: Vector2) -> float:
+	var ix: int = int(absf(p.x) * 100.0)
+	var iy: int = int(absf(p.y) * 100.0)
+	var h: int = (ix * 73856093 + iy * 19349663) & 0x7FFFFFFF
+	return float(h % 100000) / 100000.0
+
+
+# DECOR-01: scale multiplier for one instance inside its donor band.
+# "none" (mines/field) returns exactly 1.0 - the existing jitter bypass is
+# preserved, not redone. "wide" is the tree band: 0.85..1.15 at envscales.cfg:162-164.
+func _jitter_factor(band: String, p: Vector2) -> float:
+	var r: Vector2 = ENV_JITTER_BANDS.get(band, ENV_JITTER_BANDS["wide"])
+	if is_equal_approx(r.x, r.y):
+		return 1.0
+	return r.x + (r.y - r.x) * _hash01(p)
 
 
 func _default_material(sid: String, kind: String) -> Material:
@@ -720,9 +828,13 @@ func _mesh_info(sid: String, kind: String) -> Dictionary:
 		native_h = 1.0
 	# bbox-derived scale. Env scale is the donor per-instance multiplier, not
 	# a new size guess; field is exempt (ground patch caveat, V7-2 2.3).
+	# DECOR-01: tree sids get the per-sid donor envscale ladder (0.475..0.76,
+	# envscales.cfg:158-585) instead of the old blanket 0.5; non-tree sids keep
+	# the exact pre-ticket values. Per-instance jitter is applied in _xf()
+	# because this mesh cache is shared by all instances of one sid.
 	var factor: float = 1.0
 	if kind == "res":
-		factor = float(ENV_SCALE.get(_env_group(sid), 1.0))
+		factor = _env_scale_factor(sid)
 	var target_h: float = native_h * factor
 	var scale: float = target_h / native_h
 	var src_mesh: Mesh = null
@@ -1116,7 +1228,15 @@ func _xf(id: int) -> Transform3D:
 		# PORT APPROXIMATION retained: donor yaw itself is a renderer transform
 		# (V7-2 3.3.3; V7-1 C4: zero turn actions in 246 .aaf); visual UNVERIFIED.
 		yaw = PI / 2.0 - float(ed.get("face", 0.0))
+	# DECOR-01: DECOR tree jitter is per instance, so it lives here rather than
+	# in the sid-shared _mesh_cache. Donor trees sit in the "wide" 0.85..1.15
+	# band (envscales.cfg:162-164; DEC-03 §4.8); mines stay in "none" 1/1 and
+	# are deliberately untouched - no jitter is applied to non-wood res nodes.
+	# Resource yaw is intentionally left at 0: no authored per-object rotation
+	# reaches this module (see TREE_YAW_STATUS); no rotation is invented.
 	var s := HIDDEN_SCALE if _is_hidden(ed) else 1.0
+	if str(ed.get("kind", "")) == "res" and str(ed.get("type", "")) == "wood":
+		s *= _jitter_factor(TREE_JITTER_BAND, p)
 	var basis := Basis().rotated(Vector3.UP, yaw).scaled(Vector3(s, s, s))
 	return Transform3D(basis, _world_pos(p))
 

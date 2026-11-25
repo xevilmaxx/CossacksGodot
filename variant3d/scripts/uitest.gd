@@ -303,8 +303,10 @@ func _s_groups(steps: Array) -> void:
 
 func _s_minimap_frustum(steps: Array) -> void:
 	var par: Control = hud.minimap_rect.get_parent()
-	var ok: bool = hud.minimap_rect != null and par != null and par.anchor_left == 0.0
-	steps.append({"step": "minimap_frustum", "passed": ok, "detail": "minimap bottom-left: %s" % ("yes" if ok else "no")})
+	# HUD-01 donor truth: minimap is bottom-RIGHT 240x240, -8/-8 inset
+	# (initminimap.inc:5-7,17,29-35; showunitcontrol.inc:109-110,586).
+	var ok: bool = hud.minimap_rect != null and par != null and par.anchor_left == 1.0
+	steps.append({"step": "minimap_frustum", "passed": ok, "detail": "minimap bottom-right: %s" % ("yes" if ok else "no")})
 
 func _s_garrison_keys(steps: Array) -> void:
 	var peas := _peas()

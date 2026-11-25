@@ -1,0 +1,30 @@
+{
+	"checks": [
+		{
+			"detail": "no GPU canvas; SKIPPED_HEADLESS is not a PASS and writes no PNG",
+			"name": "headless_guard",
+			"passed": false
+		}
+	],
+	"harness": {
+		"mode": "embedded_fallback",
+		"note": "",
+		"path": "res://tests/fixtures/_smallmap_harness.gd"
+	},
+	"id": "t_combo_all",
+	"ladder_position": "C4 — LAST combination row; the only combo that may feed final visual review",
+	"measured": {},
+	"passed": false,
+	"passes": 0,
+	"png": "C:/Users/Maxym.Oboyshev/AppData/Roaming/Godot/app_userdata/CossacksGodot - 3D Skirmish Variant/t_combo_all.png",
+	"script_error_note": "external-only: python variant3d\\tools\\smallmap_capture.py scan-stderr <runner stderr.txt>",
+	"status": "SKIPPED_HEADLESS",
+	"toggles": {
+		"mines": true,
+		"shore": true,
+		"trees": true
+	},
+	"total": 1,
+	"unix_ms": 1795597395300.0,
+	"visual_parity": "UNVERIFIED — no donor GPU A/B frame; second-agent capture re-check required"
+}

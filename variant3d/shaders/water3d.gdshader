@@ -21,8 +21,16 @@ shader_type spatial;
 render_mode blend_mix, cull_disabled, unshaded;
 
 // ---- Donor-derived uniforms (values set in water3d.gd) --------------------
-uniform float water_level;        // -0.25  texturemap.inc:30 (cWaterHeight)
-uniform float shore_height;       // -0.1   texturemap.inc:31 (cWaterShoreHeight)
+// TRN-WATER: cWaterHeight/cWaterShoreHeight are SCRIPT-STAGE CLASSIFICATION
+// literals (texturemap.inc:30-31), NOT the water plane's surface Y.
+uniform float water_level;        // -0.25  texturemap.inc:30 (cWaterHeight) — classification threshold
+// TRN-WATER DECOUPLING: donor WATER_LEVEL = gl_TexCoord[1].z is the water PLANE
+// vertex Y (water.dev.vert:18), engine-supplied and UNVERIFIED (RV-TRN-03 §2).
+// The port placeholder is the only donor-readable number (-0.25), so the
+// coarse swell stays zero under shipped constants (DTRN-03 C16); an A/B value
+// is a labelled PORT APPROXIMATION, never a recovered donor value.
+uniform float water_surface_y;    // PORT APPROX placeholder -0.25 for gl_TexCoord[1].z
+uniform float shore_height;       // -0.1   texturemap.inc:31 — INERT in the shipped fragment
 uniform float max_height;         // 2.96   texturemap.inc:29 (cMaxHeight)
 uniform float coast_fade_depth;   // 0.57   water.dev.frag:37
 uniform float deep_fade_depth;    // 1.07   water.dev.frag:168 (0.5+0.57)
@@ -146,18 +154,32 @@ void vertex() {
 
 void fragment() {
 	// donor mainImage() — water.dev.frag:162-235.
-	float WATER_LEVEL = water_level;                      // donor gl_TexCoord[1].z (:167)
+	// TRN-WATER: stop feeding the -0.25 CLASSIFICATION literal as the surface Y.
+	// Donor WATER_LEVEL comes from gl_TexCoord[1].z (:167; water.dev.vert:18),
+	// which is the plane vertex Y — engine-supplied, UNVERIFIED, and distinct
+	// from cWaterHeight (texturemap.inc:30). water_surface_y owns that role now.
+	float WATER_LEVEL = water_surface_y;                  // donor gl_TexCoord[1].z (:167)
 	float deepwater_fadedepth = 0.5 + coast_fade_depth;   // (:168)
 	float height = height_map(v_height_uv);               // (:170)
 
-	// With the donor -0.25 literal this is clamp(-2.25,0,1)=0, so the coarse
-	// swell term (:95) stays at zero. Kept donor-faithful; the 2D app's 1.0 is
-	// a port choice and is NOT copied here.
+	// With the -0.25 placeholder surface Y this is clamp(-2.25,0,1)=0, so the
+	// coarse swell term (:95) stays at zero — a derived donor consequence
+	// (DTRN-03 C16), not a retune to the 2D app's 1.0. A labelled A/B surface
+	// Y > 0.8333 restores it; never presented as recovered donor truth.
 	float waveheight = clamp(WATER_LEVEL * 3.0 - 1.5, 0.0, 1.0); // (:174)
 	float level = WATER_LEVEL + 0.2 * water_map(v_height_uv * 15.0 + vec2(time * 0.1), waveheight); // (:175)
 	if (height > level) {
 		discard;                                          // donor fragColor=vec4(0.0) (:176-182)
 	}
+
+	// TRN-WATER PORT GUARD — confine water alpha to ACTUAL water cells so low
+	// land is not tinted (V3D_02 P6/F6 "full-width dark rows"). Donor classifies
+	// a water cell as mask.B>0 AND height < cWaterHeight=-0.25
+	// (texturemap.inc:30,463-472); its own fragment coverage test is
+	// height>level (:176-183). Gate here so an animated `level` perturbation
+	// can never leak water tint onto dry cells. The donor ramp below is intact:
+	// gate = 1 inside water cells, 0 outside; shoreline alpha stays 0.
+	float water_cell = 1.0 - step(water_level, height);   // PORT GUARD (not donor)
 
 	vec2 uv = v_height_uv;
 	vec2 dif = vec2(0.0, 0.01);                           // (:186)
@@ -206,18 +228,22 @@ void fragment() {
 	watercolor /= (1.0 + specular1 * 1.25);               // (:225) divisor, not multiplier
 	watercolor += watershade * specular2 * spec_color;    // (:226)
 
-	// PORT ART (not a donor fragment equation): donor cWaterShoreHeight (-0.1,
-	// texturemap.inc:31) is a script-stage shore CLASSIFICATION literal; the
-	// shipped fragment never reads it. It is exposed and used only to bound a
-	// shoreline band multiplier near the waterline so the literal is traceable.
-	// shore_prox ~= 1 for all rendered fragments (height <= level ~= -0.25).
-	float shore_prox = 1.0 - smoothstep(water_level, shore_height, level);
-	// donor foam (:227). nautic()/particles() are donor; shore_prox is port art.
-	watercolor += watershade * shore_prox * coastfade * (1.0 - coastfade2)
+	// donor foam (:227), VERBATIM. TRN-WATER REMOVED the former `shore_prox`
+	// multiplier: RV-TRN-03 §5.2 proved it INERT (=1 for every rendered fragment
+	// under the shipped -0.25 constants) and it was PORT ART absent from the
+	// shipped fragment. Foam is 0 at depth 0 and >=1.07 m, peaks ~0.535 m
+	// (DTRN-03 §3.3). No foam texture and no new term is introduced; shore_height
+	// (-0.1, texturemap.inc:31) is a classification literal the donor fragment
+	// never reads, so it is not used here (retained as an inert uniform below).
+	watercolor += watershade * coastfade * (1.0 - coastfade2)
 		* (vec3(0.5, 0.6, 0.7) * nautic(uv) + vec3(particles(uv)));
 
 	rescolor = mix(rescolor, watercolor, coastfade);      // (:229)
-	float alpha = coastfade2;                             // (:230) alpha 0 at waterline
+	// donor resalpha = coastfade2 (:230) — exact ramp: alpha 0 at the waterline,
+	// 1 at 1.07 m. TRN-WATER multiplies by the water-cell gate only: inside a
+	// water cell the ramp is bit-for-bit the donor equation; outside it alpha is
+	// hard 0 so low land is never tinted. No alpha floor (2D's 0.35 is NOT copied).
+	float alpha = coastfade2 * water_cell;                 // (:230) + PORT GUARD
 
 	// donor fogmap() modes 2/3 — water.dev.frag:237-253; mode 1 needs
 	// gl_Fog.end/scale, not exposed here, and is left unported. Off by default

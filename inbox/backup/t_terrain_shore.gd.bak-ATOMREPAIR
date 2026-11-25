@@ -1,0 +1,942 @@
+# TEST-P2 / t_terrain_shore.gd — ISOLATED terrain + shore 64x64 atom.
+#
+# Owns ONLY this file (plus docs/coord_swarm_2026-11-25/reports/TEST_P2_report.md).
+# No source, shader, asset, config, manifest, fixture, gate-file or git edit.
+# AUTHORING ONLY: this file was never executed by this agent; no Godot job was
+# submitted and no runner ticket was taken (docs/COMMANDS.md runner monopoly).
+#
+# Design sources:
+#   TEST-01 §"Test ladder" row P2 + §"Scaffolding needed"
+#     (docs/coord_swarm_2026-11-25/reports/TEST_01_smallmap_harness.md:214,
+#      :228-255) — same stub 64² map as P0, bounded water basin, windowed PNG.
+#   TEST_MATRIX.md:20 (P2 shore mask/sand-rock selection) + :29-46 (V3D_02
+#     refinement) + :42 T2 — one height-aware water plane, shore ids in UV2,
+#     dark rows = 0, water animation, land above water not tinted.
+#   V3D_02 T2 (V3D_02_terrain_render_audit.md:146) — exact assertion set.
+#   DTRN-03 §6.1/§6.2
+#     (docs/coord_swarm_2026-11-25/reports/DTRN_03_donor_shore_water.md:466-488)
+#     — S1–S5 structural checks and M5–M7 pixel/depth checks; §4.3 W1/W3/W2
+#     (:395-397) are the EXPECTED PRE-FIX FAILURES below; §5 F1/F3 (:418-433).
+#   RV_TRN_03_water_bindings.md was NOT present at authoring time (glob: 0 hits);
+#     all binding reachability here is read from the shipped code directly.
+#   Water port: water3d.gd:19-29,138-264; water3d.gdshader:147-235;
+#     world3d_terrain.gd:491-545,624-848 (water setup, bind_height_grid hook).
+#   Stub + dynamic load pattern: t_terrain3d.gd:12-14,41-46,106-127,161-204;
+#     t_pick3d.gd:48-71. Helper loaded dynamically, never by class_name
+#     (TEST-01 Blockers 10). The shared helper (tests/fixtures/
+#     _smallmap_harness.gd:118-128) was found on disk during authoring; the
+#     embedded local stub remains the fallback if it is missing in a fresh
+#     checkout. No atom edits the helper (single-owner file).
+#   Windowed readback / camera precedent: t_terrain_only.gd:319-382,418-482,
+#     597-643 (P0, READ-ONLY); terrain3d_sandbox.gd:139-151; testbridge.gd:277-308.
+#   PNG metric mirror (READ-ONLY): smallmap_capture.py:21-39 (non-black > 8,
+#     luma = 0.2126R+0.7152G+0.0722B, dark row when >90% pixels luma<20).
+#
+# Fixture: deterministic IN-MEMORY 64² height grid — NOT the real-boot
+# `small_map_64.json` path. One bounded basin (height < -0.25 = WATER_LEVEL),
+# a wet sandsea band [-0.25,-0.1), a sandrock collar and one rock sector.
+# No trees, no mines, no units: res_nodes = [].
+#
+# ALL visual statements are PORT APPROX / internal consistency only. No donor
+# GPU A/B frame exists (TEST_MATRIX.md:57); do not claim donor parity.
+extends SceneTree
+
+const TERRAIN_PATH := "res://scripts/world3d_terrain.gd"
+const WATER_PATH := "res://scripts/water3d.gd"
+const WATER_SHADER_PATH := "res://shaders/water3d.gdshader"
+const CAMERA_PATH := "res://scripts/camera3d.gd"
+const HARNESS_PATH := "res://tests/fixtures/_smallmap_harness.gd"
+const OUT_PATH := "res://tests/results/t_terrain_shore.json"
+
+const GRID_W := 64
+const GRID_H := 64
+const CELLS := GRID_W * GRID_H
+const TILE_M := 2.0                 # data.gd:23
+const WATER_LEVEL := -0.25          # water3d.gd:19; world3d_terrain.gd:95
+const SHORE_HEIGHT := -0.1          # water3d.gd:20
+const BLK_WATER := 255              # game.gd:52
+const NAMED_CELLS := 124            # V7-85 atlas manifest atlas.named_cells
+const WINDOW_SIZE := Vector2i(1280, 720)   # data.gd:113-114; TEST-01 Blocker 3
+const CAPTURE_FRAMES := 10          # TEST_MATRIX.md:32
+const ANIMATION_SECONDS := 1.0      # TEST_MATRIX.md:42 (two frames 1 s apart)
+const PIXEL_EPS := 3.0              # 0..255: ignore sub-3-level quantisation noise
+const DEFAULT_PNG := ("C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/"
+	+ "test01_smallmap/smallmap64_terrain_shore.png")
+const DEFAULT_PNG_T1 := ("C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/"
+	+ "test01_smallmap/smallmap64_terrain_shore_t1.png")
+
+# Donor-atlas tile ids (assets/terrain/structs/tileblocks.json array order,
+# cross-checked against tile_index_atlas.manifest.json index fields).
+const SANDSEA_IDS := [93, 97, 98]      # sandsea1 / sandsea5 / sandsea6
+const SANDROCK_IDS := [87, 88, 89, 90, 91, 92]  # sandrock1..6
+const ROCK_IDS := [29, 32, 33]         # rock4 / rock7 / rock8
+# game.gd:1735 donor 8x45° shore sector table bLB→sandsea5 etc.
+const SANDSEA_BY_SECTOR := [98, 98, 93, 97, 98, 98, 93, 97]
+
+const CHECK_NAMES := [
+	"harness_stub_shape",
+	"terrain_module_api",
+	"camera_module_api",
+	"build_ok",
+	"exactly_one_water_plane",
+	"height_aware_true",
+	"water_cell_count",
+	"mesh_surface_count",
+	"mesh_vertex_count",
+	"mesh_triangle_count",
+	"uv2_count",
+	"shore_ids_in_uv2_histogram",
+	"donor_literals_exact",
+	"wave_texture_diffusewaves0",
+	"foam_not_added_by_test",
+	"no_trees_no_mines",
+	"donor_coarse_swell_present",
+	"no_port_art_shore_prox",
+	"no_water_cell_tile0_clamp",
+	"windowed_capture_available",
+	"capture_image",
+	"capture_saved",
+	"png_full_width_dark_rows",
+	"sample_coverage",
+	"water_alpha_confined_to_cells",
+	"water_animation_delta",
+]
+const CAPTURE_CHECK_NAMES := [
+	"windowed_capture_available", "capture_image", "capture_saved",
+	"png_full_width_dark_rows", "sample_coverage",
+	"water_alpha_confined_to_cells", "water_animation_delta",
+]
+
+# Minimal fallback stub, same shape as the shared helper contract in
+# TEST-01:230-239 (and as P0's LocalStubGame). Extends the real C3Game so a
+# typed bind() would also work (t_terrain3d.gd:37-46).
+class LocalStubGame extends C3Game:
+	var cmd_calls: Dictionary = {}
+	var dump: Dictionary = {}
+	var res_dirty: int = 0
+	var entities: Array = []
+	var units: Array = []
+	var buildings: Array = []
+	var res_nodes: Array = []
+
+	func _bump(m: String) -> void:
+		cmd_calls[m] = int(cmd_calls.get(m, 0)) + 1
+
+	func total_cmd_calls() -> int:
+		var n := 0
+		for v in cmd_calls.values():
+			n += int(v)
+		return n
+
+	func pick_radius(_e: Dictionary) -> float:
+		return 1.0
+
+	func resolve_mine_sid(_res: Dictionary) -> String:
+		return ""
+
+	# SIM metres, top-left origin; same bilinear recipe as game.gd:1893-1907.
+	func height_at(p: Vector2) -> float:
+		if height.size() != MAP_W * MAP_H:
+			return 0.0
+		var fx := clampf(p.x / TILE_M - 0.5, 0.0, float(MAP_W - 1))
+		var fz := clampf(p.y / TILE_M - 0.5, 0.0, float(MAP_H - 1))
+		var x0 := int(fx)
+		var z0 := int(fz)
+		var x1: int = mini(x0 + 1, MAP_W - 1)
+		var z1: int = mini(z0 + 1, MAP_H - 1)
+		var tx: float = fx - float(x0)
+		var tz: float = fz - float(z0)
+		var h00: float = height[z0 * MAP_W + x0]
+		var h10: float = height[z0 * MAP_W + x1]
+		var h01: float = height[z1 * MAP_W + x0]
+		var h11: float = height[z1 * MAP_W + x1]
+		return h00 + (h10 - h00) * tx + (h01 - h00) * tz + (h00 - h10 - h01 + h11) * tx * tz
+
+	func cmd_move(_a = null, _b = null, _c = null) -> void:
+		_bump("cmd_move")
+
+	func cmd_gather(_a = null, _b = null, _c = null) -> void:
+		_bump("cmd_gather")
+
+	func cmd_build(_a = null, _b = null, _c = null) -> void:
+		_bump("cmd_build")
+
+var _id := "t_terrain_shore"
+var _checks: Array[Dictionary] = []
+var _ok := true
+var _finished := false
+var _setup_done := false
+var _capturing := false
+var _headless := false
+var _png_path := DEFAULT_PNG
+var _png_t1_path := DEFAULT_PNG_T1
+var _view: SubViewport = null
+var _terrain: Node = null
+var _camera: Camera3D = null
+var _game: Object = null
+var _heights := PackedFloat32Array()
+var _tileblock := PackedByteArray()
+var _harness_source := ""
+var _frame := 0
+var _capture_stage := 0          # 0 idle, 1 first frame pending, 2 running
+var _water_plane: Node = null
+var _water_node: Node = null
+var _sample_water: Array[int] = []
+var _sample_land: Array[int] = []
+var _img_a: Image = null
+var _img_b: Image = null
+var _img_c: Image = null
+var _m: Dictionary = {}
+
+
+# Variant condition; only explicit false flips _ok. `status` distinguishes a
+# real FAIL from a donor-truth EXPECTED_PRE_FIX_FAILURE or an UNVERIFIED probe.
+func check(name: String, cond, detail: String = "", status: String = "") -> void:
+	var st := status
+	if st == "":
+		st = "PASS" if cond == true else ("FAIL" if cond == false else "SKIPPED")
+	_checks.append({"name": name, "passed": cond, "status": st, "detail": detail})
+	if cond == false:
+		_ok = false
+	print("T_TERRAIN_SHORE %s %s - %s" % [st, name, detail])
+
+
+func _fail_remaining(from_index: int, tag: String, reason: String) -> void:
+	for i in range(from_index, CHECK_NAMES.size()):
+		var n := CHECK_NAMES[i]
+		var st := "UNVERIFIED" if CAPTURE_CHECK_NAMES.has(n) else "FAIL"
+		check(n, false, tag + ": " + reason, st)
+
+
+func _verdict() -> String:
+	var has_hard := false
+	var has_unverified := false
+	var has_expected := false
+	for c in _checks:
+		if c.get("passed") != false:
+			continue
+		var st := str(c.get("status", "FAIL"))
+		if st == "UNVERIFIED" or st == "SKIPPED":
+			has_unverified = true
+		elif st == "EXPECTED_PRE_FIX_FAILURE":
+			has_expected = true
+		else:
+			has_hard = true
+	if has_hard:
+		return "FAIL"
+	if has_unverified:
+		return "UNVERIFIED"
+	if has_expected:
+		return "EXPECTED_PRE_FIX_FAILURE"
+	return "PASS"
+
+
+func finish() -> void:
+	if _finished:
+		return
+	_finished = true
+	var verdict := _verdict()
+	var passes := 0
+	var fails := 0
+	var soft := 0
+	for c in _checks:
+		if c.get("passed") == true:
+			passes += 1
+		elif c.get("passed") == false:
+			fails += 1
+		else:
+			soft += 1
+	var out := {
+		"id": _id,
+		"passed": verdict == "PASS",
+		"verdict": verdict,
+		"checks": _checks,
+		"passes": passes,
+		"fails": fails,
+		"soft_checks": soft,
+		"measured": _m,
+		"harness_source": _harness_source,
+		"grid": {"w": GRID_W, "h": GRID_H, "cells": CELLS},
+		"png_path": _png_path,
+		"png_t1_path": _png_t1_path,
+		"display_server": DisplayServer.get_name(),
+		"expected_pre_fix_note": ("DTRN-03 W1/W2/W3: surface Y = -0.25 => waveheight 0; "
+			+ "port-art shore_prox foam multiplier; water cells clamped to grass1. "
+			+ "These are donor-truth assertions, deliberately NOT weakened."),
+		"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+		"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (TEST_MATRIX.md:57)",
+		"no_foam_added_by_test": true,
+		"unix_ms": Time.get_unix_time_from_system() * 1000.0,
+	}
+	var abs_dir := ProjectSettings.globalize_path(OUT_PATH.get_base_dir())
+	DirAccess.make_dir_recursive_absolute(abs_dir)
+	var abs_path := ProjectSettings.globalize_path(OUT_PATH)
+	var f := FileAccess.open(abs_path, FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(out, "\t"))
+		f.close()
+	else:
+		push_error("t_terrain_shore: cannot write result: " + abs_path)
+	print("T_TERRAIN_SHORE RESULT_JSON: " + abs_path)
+	print("T_TERRAIN_SHORE RESULT: %s %d/%d" % [verdict, passes, passes + fails])
+	# Bare quit() from _initialize() hangs Godot 4.7 (tests/README.md:3-33).
+	call_deferred("quit", 0 if _ok else 1)
+
+
+func _failsafe() -> void:
+	if _finished or _setup_done:
+		return
+	_fail_remaining(0, "ABORTED", "test aborted before setup completed")
+	finish()
+
+
+func _arg_value(flag: String) -> String:
+	for src in [OS.get_cmdline_user_args(), OS.get_cmdline_args()]:
+		var args := PackedStringArray(src)
+		for i in range(args.size()):
+			if str(args[i]) == flag and i + 1 < args.size():
+				return str(args[i + 1])
+	return ""
+
+
+# ---------------------------------------------------------------------------
+# Deterministic basin: water r<3.0 cells (~28 cells, well under 10% of 4096),
+# wet sandsea band 3.0..3.8, sandrock collar 3.8..4.7, one rock sector
+# 4.7..5.4, otherwise dry grass at ~0.55 m. Relief steps are << cDiff1=0.5
+# (world3d_terrain.gd:117-118) so face promotion is not a confounding factor.
+# ---------------------------------------------------------------------------
+func _sector(dx: float, dz: float) -> int:
+	var ang: float = atan2(dz, dx)
+	return int(floor((ang + PI) / (PI / 4.0))) % 8
+
+
+func _make_grid() -> void:
+	_heights.resize(CELLS)
+	_tileblock.resize(CELLS)
+	var cx := float(GRID_W) * 0.5 - 0.5
+	var cz := float(GRID_H) * 0.5 - 0.5
+	var water := 0
+	var grass := 0
+	for z in range(GRID_H):
+		for x in range(GRID_W):
+			var i := z * GRID_W + x
+			var dx := float(x) - cx
+			var dz := float(z) - cz
+			var r: float = sqrt(dx * dx + dz * dz)
+			var s := _sector(dx, dz)
+			var h: float
+			var tid: int
+			if r < 3.0:
+				h = -0.55                       # below WATER_LEVEL (-0.25)
+				tid = BLK_WATER                 # game.gd:52
+				water += 1
+			elif r < 3.8:
+				h = -0.18                       # wet shore [-0.25, -0.1)
+				tid = int(SANDSEA_BY_SECTOR[s])
+			elif r < 4.7:
+				h = 0.02                        # dry land above the shore
+				tid = int(SANDROCK_IDS[s % SANDROCK_IDS.size()])
+			elif r < 5.4 and s == 0:
+				h = 0.08
+				tid = int(ROCK_IDS[0])          # rock4 cliff face sector
+			else:
+				h = 0.55 + 0.02 * sin(float(x) * 0.13) + 0.01 * cos(float(z) * 0.11)
+				tid = 0                         # grass1
+				grass += 1
+			_heights[i] = h
+			_tileblock[i] = tid
+	_m["water_cells"] = water
+	_m["grass_cells"] = grass
+	_m["water_cell_fraction"] = float(water) / float(CELLS)
+
+
+# TEST-01:230-239 / P0:268-295: try the shared helper via dynamic load(),
+# embed a local stub of the same shape when it has not landed yet.
+func _make_stub_game() -> Object:
+	if ResourceLoader.exists(HARNESS_PATH):
+		var helper: Object = load(HARNESS_PATH)
+		if helper != null and helper.has_method("make_stub_game"):
+			var g: Object = helper.call("make_stub_game", GRID_W, GRID_H,
+				_heights, [], _tileblock)
+			if g != null and is_instance_valid(g) and int(g.get("MAP_W")) == GRID_W \
+					and int(g.get("MAP_H")) == GRID_H \
+					and (g.get("height") is PackedFloat32Array) \
+					and (g.get("tileblock") is PackedByteArray):
+				_harness_source = "shared:" + HARNESS_PATH
+				return g
+	var local := LocalStubGame.new()
+	local.MAP_W = GRID_W
+	local.MAP_H = GRID_H
+	local.height = _heights
+	local.tileblock = _tileblock
+	local.res_nodes = []
+	local.height_b64 = Marshalls.raw_to_base64(_heights.to_byte_array())
+	local.dump = {
+		"map_w": GRID_W,
+		"map_h": GRID_H,
+		"height": local.height_b64,
+		"tileblock": Marshalls.raw_to_base64(_tileblock),
+	}
+	_harness_source = "embedded_local_stub"
+	return local
+
+
+func _find_named(root: Node, wanted: String) -> Array[Node]:
+	var found: Array[Node] = []
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n.name == wanted:
+			found.append(n)
+		for c in n.get_children():
+			stack.append(c)
+	return found
+
+
+func _find_terrain_mesh(root: Node) -> MeshInstance3D:
+	var best: MeshInstance3D = null
+	var best_verts := -1
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D:
+			var mi := n as MeshInstance3D
+			var m: Mesh = mi.mesh
+			if m is ArrayMesh and m.get_surface_count() > 0:
+				var arr: Array = m.surface_get_arrays(0)
+				var vs: Variant = arr[Mesh.ARRAY_VERTEX] if arr.size() > Mesh.ARRAY_VERTEX else null
+				var count: int = (vs as PackedVector3Array).size() if vs is PackedVector3Array else 0
+				if count > best_verts:
+					best_verts = count
+					best = mi
+		for c in n.get_children():
+			stack.append(c)
+	return best
+
+
+func _uniform_float(mat: Material, key: String) -> Variant:
+	if mat is ShaderMaterial:
+		return (mat as ShaderMaterial).get_shader_parameter(key)
+	return null
+
+
+func _float_eq(a: Variant, expected: float) -> bool:
+	if a is float:
+		return absf(float(a) - expected) <= 1e-6
+	if a is int:
+		return absf(float(int(a)) - expected) <= 1e-6
+	return false
+
+
+# ---------------------------------------------------------------------------
+# Project a cell centre (world X/Z, terrain Y) into the capture SubViewport.
+# Mirrors world3d_terrain.gd:685-688 and camera3d.gd:258-260, but uses the
+# actual cell height rather than the Y=0 projection helper.
+# ---------------------------------------------------------------------------
+func _cell_px(i: int) -> Vector2:
+	var x := i % GRID_W
+	var z := i / GRID_W
+	var wx := (float(x) + 0.5 - float(GRID_W) * 0.5) * TILE_M
+	var wz := (float(z) + 0.5 - float(GRID_H) * 0.5) * TILE_M
+	if _camera == null:
+		return Vector2(-1.0, -1.0)
+	# Water pixels live on the flat plane (water3d.gd:181-204), not on the
+	# submerged bed; project water cells at the plane height so the sampled
+	# pixel actually contains the water shader fragment.
+	var y := WATER_LEVEL if _heights[i] < WATER_LEVEL else _heights[i]
+	return _camera.unproject_position(Vector3(wx, y, wz))
+
+
+func _collect_samples() -> void:
+	_sample_water = []
+	_sample_land = []
+	var w := WINDOW_SIZE.x
+	var h := WINDOW_SIZE.y
+	for z in range(GRID_H):
+		var cx := float(GRID_W) * 0.5 - 0.5
+		var cz := float(GRID_H) * 0.5 - 0.5
+		for x in range(GRID_W):
+			var i := z * GRID_W + x
+			var dx := float(x) - cx
+			var dz := float(z) - cz
+			var r: float = sqrt(dx * dx + dz * dz)
+			if r > 5.2:
+				continue
+			var p := _cell_px(i)
+			if p.x < 8.0 or p.y < 8.0 or p.x > float(w - 8) or p.y > float(h - 8):
+				continue
+			if r < 2.4:
+				_sample_water.append(i)
+			elif r >= 3.8 and _heights[i] > SHORE_HEIGHT:
+				_sample_land.append(i)
+	_m["water_sample_cells"] = _sample_water.size()
+	_m["land_sample_cells"] = _sample_land.size()
+
+
+func _rgb_at(img: Image, p: Vector2) -> Vector3:
+	var x := int(round(p.x))
+	var y := int(round(p.y))
+	if x < 0 or y < 0 or x >= img.get_width() or y >= img.get_height():
+		return Vector3(-1.0, -1.0, -1.0)
+	var c := img.get_pixel(x, y)
+	return Vector3(c.r * 255.0, c.g * 255.0, c.b * 255.0)
+
+
+func _delta_above(a: Vector3, b: Vector3, eps: float) -> bool:
+	if a.x < 0.0 or b.x < 0.0:
+		return false
+	return absf(a.x - b.x) > eps or absf(a.y - b.y) > eps or absf(a.z - b.z) > eps
+
+
+func _image_metrics(img: Image) -> Dictionary:
+	var w := img.get_width()
+	var h := img.get_height()
+	var non_black := 0
+	var dark_rows := 0
+	var luma_sum := 0.0
+	for y in range(h):
+		var row_dark := 0
+		for x in range(w):
+			var c := img.get_pixel(x, y)
+			var r := c.r * 255.0
+			var g := c.g * 255.0
+			var b := c.b * 255.0
+			if r > 8.0 or g > 8.0 or b > 8.0:
+				non_black += 1
+			var l := 0.2126 * r + 0.7152 * g + 0.0722 * b
+			luma_sum += l
+			if l < 20.0:
+				row_dark += 1
+		if float(row_dark) / float(maxi(w, 1)) > 0.90:
+			dark_rows += 1
+	var n := float(maxi(w * h, 1))
+	return {
+		"width": w,
+		"height": h,
+		"non_black_fraction": float(non_black) / n,
+		"mean_luma": luma_sum / n,
+		"full_width_dark_rows": dark_rows,
+	}
+
+
+func _save_png(img: Image, path: String) -> int:
+	var abs_png := path
+	if not abs_png.is_absolute_path() and not abs_png.begins_with("user://"):
+		abs_png = ProjectSettings.globalize_path("res://").get_base_dir().path_join(abs_png)
+	var dir := abs_png.get_base_dir()
+	if dir != "" and not DirAccess.dir_exists_absolute(dir):
+		DirAccess.make_dir_recursive_absolute(dir)
+	return img.save_png(abs_png)
+
+
+func _wait_seconds(sec: float) -> void:
+	var timer := Timer.new()
+	timer.wait_time = sec
+	timer.one_shot = true
+	root.add_child(timer)
+	timer.start()
+	await timer.timeout
+	timer.queue_free()
+
+
+func _read_capture() -> Image:
+	if _view == null:
+		return null
+	_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	await RenderingServer.frame_post_draw
+	if _finished:
+		return null
+	var tex := _view.get_texture()
+	var img: Image = tex.get_image() if tex != null else null
+	if img == null or img.is_empty():
+		return null
+	return img
+
+
+# ---------------------------------------------------------------------------
+# Async windowed capture: A at t0 (water on), B at t0+1 s (water on),
+# C with the single WaterPlane hidden. A/C isolates water alpha coverage;
+# A/B measures the water-only animation delta with a fixed camera.
+# ---------------------------------------------------------------------------
+func _capture_sequence() -> void:
+	_capturing = true
+	_collect_samples()
+	_img_a = await _read_capture()
+	if _img_a == null:
+		check("capture_image", false,
+			"blank SubViewport texture — no CPU fallback (main.gd:1846-1853)", "FAIL")
+		finish()
+		return
+	check("capture_image", true,
+		"water-on SubViewport texture %dx%d" % [_img_a.get_width(), _img_a.get_height()])
+
+	await _wait_seconds(ANIMATION_SECONDS)
+	if _finished:
+		return
+	_img_b = await _read_capture()
+	if _img_b == null:
+		check("water_animation_delta", false, "second frame blank at t+1 s", "UNVERIFIED")
+		finish()
+		return
+
+	if _water_plane != null and is_instance_valid(_water_plane):
+		_water_plane.visible = false
+	elif _water_node != null and is_instance_valid(_water_node):
+		_water_node.visible = false
+	_img_c = await _read_capture()
+	if _img_c == null:
+		check("water_alpha_confined_to_cells", false,
+			"water-off comparison frame blank", "UNVERIFIED")
+		finish()
+		return
+
+	var err_a := _save_png(_img_a, _png_path)
+	var err_b := _save_png(_img_b, _png_t1_path)
+	check("capture_saved", err_a == OK,
+		"save_png A err=%d B err=%d paths=%s | %s" % [err_a, err_b, _png_path, _png_t1_path])
+
+	var ms := _image_metrics(_img_a)
+	ms["capture_source"] = "stub-owned SubViewport, windowed GPU (no CPU fallback)"
+	ms["png_bytes"] = FileAccess.get_file_as_bytes(_png_path).size() if err_a == OK else -1
+	_m["png_metrics"] = ms
+	check("png_full_width_dark_rows", int(ms["full_width_dark_rows"]) == 0,
+		"full_width_dark_rows=%d (expected 0; smallmap_capture.py:27-28)" % int(ms["full_width_dark_rows"]))
+
+	var samples_ok := _sample_water.size() > 0 and _sample_land.size() > 0
+	check("sample_coverage", samples_ok,
+		"visible water=%d land=%d cell centres (fixed camera3d.gd framing)" % [
+			_sample_water.size(), _sample_land.size()],
+		"PASS" if samples_ok else "UNVERIFIED")
+
+	var land_changed := 0
+	var water_changed := 0
+	for i in _sample_land:
+		if _delta_above(_rgb_at(_img_a, _cell_px(i)), _rgb_at(_img_c, _cell_px(i)), PIXEL_EPS):
+			land_changed += 1
+	for i in _sample_water:
+		if _delta_above(_rgb_at(_img_a, _cell_px(i)), _rgb_at(_img_c, _cell_px(i)), PIXEL_EPS):
+			water_changed += 1
+	_m["water_on_off_diff"] = {
+		"land_samples_changed": land_changed,
+		"water_samples_changed": water_changed,
+		"pixel_epsilon_0_255": PIXEL_EPS,
+	}
+	check("water_alpha_confined_to_cells", samples_ok and land_changed == 0 and water_changed > 0,
+		"land changed=%d/%d (need 0), water changed=%d/%d (need >0); "
+			+ "water.dev.frag:176-183 discard, DTRN-03 M6" % [
+				land_changed, _sample_land.size(), water_changed, _sample_water.size()],
+		"PASS" if samples_ok and water_changed > 0 else "UNVERIFIED")
+
+	var animated := 0
+	var max_delta := 0.0
+	for i in _sample_water:
+		var ca := _rgb_at(_img_a, _cell_px(i))
+		var cb := _rgb_at(_img_b, _cell_px(i))
+		if ca.x < 0.0 or cb.x < 0.0:
+			continue
+		var d := maxf(absf(ca.x - cb.x), maxf(absf(ca.y - cb.y), absf(ca.z - cb.z)))
+		max_delta = maxf(max_delta, d)
+		if d > PIXEL_EPS:
+			animated += 1
+	_m["animation_diff"] = {
+		"seconds": ANIMATION_SECONDS,
+		"water_samples_changed": animated,
+		"max_channel_delta_0_255": max_delta,
+		"pixel_epsilon_0_255": PIXEL_EPS,
+	}
+	# No measurable 1 s delta is NOT faked into a PASS: it is an UNVERIFIED
+	# animation probe (sub-threshold motion / sub-pixel framing), per the task.
+	check("water_animation_delta", samples_ok and animated > 0,
+		"t0 vs t+1 s: changed water samples=%d/%d max_delta=%s; water3d.gd:95-99"
+			% [animated, _sample_water.size(), str(max_delta)],
+		"PASS" if samples_ok and animated > 0 else "UNVERIFIED")
+	finish()
+
+
+func _initialize() -> void:
+	if _finished:
+		return
+	call_deferred("_failsafe")
+
+	_headless = DisplayServer.get_name() == "headless"
+	var png := _arg_value("--png")
+	if png == "":
+		png = _arg_value("--screenshot")
+	if png != "":
+		_png_path = png
+	var png_t1 := _arg_value("--png-t1")
+	if png_t1 != "":
+		_png_t1_path = png_t1
+	_m["headless"] = _headless
+	_m["requested_png"] = _png_path
+
+	_make_grid()
+	_game = _make_stub_game()
+	_m["harness_source"] = _harness_source
+	var shape_ok: bool = (_game != null and is_instance_valid(_game)
+		and int(_game.get("MAP_W")) == GRID_W and int(_game.get("MAP_H")) == GRID_H
+		and (_game.get("height") is PackedFloat32Array)
+		and (_game.get("tileblock") is PackedByteArray)
+		and (_game.get("res_nodes") is Array))
+	check("harness_stub_shape", shape_ok,
+		"source=%s MAP=%dx%d height/tileblock/res_nodes present=%s" % [
+			_harness_source,
+			str(_game.get("MAP_W")) if _game != null else "<none>",
+			str(_game.get("MAP_H")) if _game != null else "<none>", str(shape_ok)])
+	if not shape_ok:
+		_fail_remaining(1, "STUB_SHAPE", "harness stub does not expose the expected shape")
+		_setup_done = true
+		finish()
+		return
+
+	# Windowed-only GPU target; headless never attempts a 3D readback
+	# (main.gd:1156-1158,1790-1800; t_forest_bake_render.gd:36-41).
+	if not _headless:
+		get_root().size = WINDOW_SIZE
+		_view = SubViewport.new()
+		_view.name = "TerrainShoreViewport"
+		_view.world_3d = World3D.new()
+		_view.size = WINDOW_SIZE
+		_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+		get_root().add_child(_view)
+	var parent: Node = _view if _view != null else get_root()
+
+	var terrain_script := load(TERRAIN_PATH) as Script
+	var terrain_api := terrain_script != null and terrain_script.can_instantiate()
+	var terrain_missing: Array[String] = []
+	if terrain_api:
+		var probe: Object = terrain_script.new()
+		for meth in ["bind", "build", "invalidate", "has_chunk_or_fallback", "height_at_world"]:
+			if not probe.has_method(meth):
+				terrain_missing.append(meth)
+		probe.free()
+	terrain_api = terrain_api and terrain_missing.is_empty()
+	check("terrain_module_api", terrain_api,
+		"script=%s missing=%s" % [TERRAIN_PATH, str(terrain_missing)])
+	var camera_script := load(CAMERA_PATH) as Script
+	var camera_api := camera_script != null and camera_script.can_instantiate()
+	var camera_missing: Array[String] = []
+	if camera_api:
+		var probe2: Object = camera_script.new()
+		for meth in ["bind", "world_to_px", "screen_to_world"]:
+			if not probe2.has_method(meth):
+				camera_missing.append(meth)
+		probe2.free()
+	camera_api = camera_api and camera_missing.is_empty()
+	check("camera_module_api", camera_api,
+		"script=%s missing=%s" % [CAMERA_PATH, str(camera_missing)])
+	if not terrain_api or not camera_api:
+		_fail_remaining(3, "MODULE_MISSING", "terrain/camera script or API unavailable")
+		_setup_done = true
+		finish()
+		return
+
+	# Bind only terrain + camera; no entities/FX/picking, no main.tscn boot.
+	_terrain = terrain_script.new() as Node
+	_terrain.name = "HeightmapTerrainModule"
+	parent.add_child(_terrain)
+	_terrain.call("bind", _game)
+	var built := bool(_terrain.call("build"))
+	check("build_ok", built, "world3d_terrain.build() returned " + str(built))
+	if not built:
+		_fail_remaining(4, "SETUP_FAILED", "build() returned false")
+		_setup_done = true
+		finish()
+		return
+
+	var planes := _find_named(_terrain, "WaterPlane")
+	var water_nodes := _find_named(_terrain, "Water3D")
+	_water_plane = planes[0] if planes.size() == 1 else null
+	_water_node = water_nodes[0] if water_nodes.size() == 1 else null
+	_m["water_plane_count"] = planes.size()
+	_m["water_3d_node_count"] = water_nodes.size()
+	check("exactly_one_water_plane", planes.size() == 1 and water_nodes.size() == 1,
+		"WaterPlane=%d Water3D=%d (one plane, no constant-quad fallback stack; "
+			+ "world3d_terrain.gd:762-764, DTRN-03 S1)" % [planes.size(), water_nodes.size()])
+
+	var water_stats: Dictionary = {}
+	if _water_node != null and is_instance_valid(_water_node):
+		var ws: Variant = _water_node.get("stats")
+		water_stats = ws if ws is Dictionary else {}
+	var height_aware := bool(water_stats.get("height_aware", false))
+	var ts: Variant = _terrain.get("stats")
+	var terrain_stats: Dictionary = ts if ts is Dictionary else {}
+	var stats_water: Variant = terrain_stats.get("water", {})
+	var stats_water_d: Dictionary = stats_water if stats_water is Dictionary else {}
+	height_aware = height_aware and bool(stats_water_d.get("height_aware", false))
+	_m["height_aware"] = height_aware
+	_m["water_stats"] = water_stats
+	check("height_aware_true", height_aware,
+		"water3d.stats.height_aware and terrain.stats.water.height_aware both true "
+			+ "(water3d.gd:248-264, DTRN-03 S1)")
+
+	var below := 0
+	for i in range(CELLS):
+		if _heights[i] < WATER_LEVEL:
+			below += 1
+	_m["cells_below_water_level"] = below
+	check("water_cell_count", below > 0 and below * 10 < CELLS,
+		"cells < %.2f m: %d / %d (need >0 and <10%%)" % [WATER_LEVEL, below, CELLS])
+
+	var camera := camera_script.new() as Camera3D
+	_camera = camera
+	_camera.name = "DonorCamera"
+	parent.add_child(_camera)
+	_camera.call("bind", _game)
+	# Freeze framing: camera3d._process() edge-scrolls on mouse position
+	# (camera3d.gd:484-581); a fixed capture must not pan mid-run.
+	_camera.set_process(false)
+	_camera.make_current()
+
+	var mi := _terrain.get_node_or_null("HeightmapTerrain") as MeshInstance3D
+	var mesh: Mesh = mi.mesh if mi != null else null
+	var surfaces := mesh.get_surface_count() if mesh != null else -1
+	var arrays: Array = mesh.surface_get_arrays(0) if surfaces > 0 else []
+	var vv: Variant = arrays[Mesh.ARRAY_VERTEX] if arrays.size() > Mesh.ARRAY_VERTEX else null
+	var iv: Variant = arrays[Mesh.ARRAY_INDEX] if arrays.size() > Mesh.ARRAY_INDEX else null
+	var uv2v: Variant = arrays[Mesh.ARRAY_TEX_UV2] if arrays.size() > Mesh.ARRAY_TEX_UV2 else null
+	var vertices: int = (vv as PackedVector3Array).size() if vv is PackedVector3Array else -1
+	var triangles: int = ((iv as PackedInt32Array).size() / 3) if iv is PackedInt32Array else -1
+	var uv2_count: int = (uv2v as PackedVector2Array).size() if uv2v is PackedVector2Array else -1
+	_m["mesh_surfaces"] = surfaces
+	_m["mesh_vertices"] = vertices
+	_m["mesh_triangles"] = triangles
+	_m["uv2_count"] = uv2_count
+	check("mesh_surface_count", surfaces == 1, "surfaces=%d (expected 1)" % surfaces)
+	check("mesh_vertex_count", vertices == CELLS,
+		"vertices=%d expected=%d" % [vertices, CELLS])
+	check("mesh_triangle_count", triangles == (GRID_W - 1) * (GRID_H - 1) * 2,
+		"triangles=%d expected=%d" % [triangles, (GRID_W - 1) * (GRID_H - 1) * 2])
+	check("uv2_count", uv2_count == CELLS, "UV2 entries=%d expected=%d" % [uv2_count, CELLS])
+
+	# UV2.x = donor tile id (world3d_terrain.gd:691-708); sandsea1/5/6 and
+	# sandrock/rock ids must be reachable in the collar (DTRN-03 S5/M8).
+	var hist := {}
+	if uv2v is PackedVector2Array:
+		var uv2: PackedVector2Array = uv2v
+		for i in range(uv2.size()):
+			var key := str(int(uv2[i].x))
+			hist[key] = int(hist.get(key, 0)) + 1
+	_m["uv2_x_hist"] = hist
+	var has_sandsea := false
+	for tid in SANDSEA_IDS:
+		if hist.has(str(tid)):
+			has_sandsea = true
+	var has_sandrock_or_rock := false
+	for tid in SANDROCK_IDS + ROCK_IDS:
+		if hist.has(str(tid)):
+			has_sandrock_or_rock = true
+	check("shore_ids_in_uv2_histogram", has_sandsea and has_sandrock_or_rock,
+		"sandsea1/5/6 present=%s sandrock*/rock* present=%s hist=%s" % [
+			str(has_sandsea), str(has_sandrock_or_rock), str(hist)])
+	var grass_count := int(_m.get("grass_cells", 0))
+	var zero_excess := int(hist.get("0", 0)) - grass_count
+	_m["tile0_excess_over_grass"] = zero_excess
+	check("no_water_cell_tile0_clamp", zero_excess == 0,
+		"UV2.x=0 count=%d minus grass cells=%d => %d; BLK_WATER clamps to grass1 "
+			+ "(world3d_terrain.gd:697-702) — DTRN-03 W2/F2, expected pre-fix failure"
+			% [int(hist.get("0", 0)), grass_count, zero_excess],
+		"EXPECTED_PRE_FIX_FAILURE")
+
+	# Donor literals read back from the live water material, with the stats
+	# dictionary as a fallback (DTRN-03 S2; water3d.gd:147-168,214-222).
+	var wmat: Material = null
+	if _water_plane is MeshInstance3D:
+		wmat = (_water_plane as MeshInstance3D).material_override
+	_m["water_material"] = wmat.get_class() if wmat != null else "<none>"
+	var literals := {
+		"water_level": _uniform_float(wmat, "water_level"),
+		"shore_height": _uniform_float(wmat, "shore_height"),
+		"max_height": _uniform_float(wmat, "max_height"),
+		"coast_fade_depth": _uniform_float(wmat, "coast_fade_depth"),
+		"deep_fade_depth": _uniform_float(wmat, "deep_fade_depth"),
+		"tex_scale_s": _uniform_float(wmat, "tex_scale_s"),
+		"tex_scale_t": _uniform_float(wmat, "tex_scale_t"),
+	}
+	var expected := {
+		"water_level": -0.25, "shore_height": -0.1, "max_height": 2.96,
+		"coast_fade_depth": 0.57, "deep_fade_depth": 1.07,
+		"tex_scale_s": 0.1, "tex_scale_t": 0.01,
+	}
+	for k in expected.keys():
+		if literals[k] == null and water_stats.has("donor_literals"):
+			var dl: Variant = water_stats.get("donor_literals")
+			if dl is Dictionary and (dl as Dictionary).has(k):
+				literals[k] = (dl as Dictionary)[k]
+	_m["donor_literals_readback"] = literals
+	var literals_ok := true
+	for k in expected.keys():
+		if not _float_eq(literals[k], float(expected[k])):
+			literals_ok = false
+	check("donor_literals_exact", literals_ok,
+		"-0.25 / -0.1 / 2.96 / 0.57 / 1.07 / 0.1 / 0.01 from material or stats: %s"
+			% str(literals))
+
+	var wave_path := str(water_stats.get("wave_tex_path", ""))
+	_m["wave_tex_path"] = wave_path
+	check("wave_texture_diffusewaves0", wave_path.ends_with("diffusewaves0.png"),
+		"wave_noise=%s (water3d.gd:77-81; DTRN-03 S3)" % wave_path)
+
+	var particle := _uniform_float(wmat, "particle_amount")
+	if particle == null:
+		particle = 30.0
+	_m["particle_amount"] = particle
+	check("foam_not_added_by_test", _float_eq(particle, 30.0),
+		"particle_amount=%s unchanged (this atom writes no shader parameter; "
+			+ "DTRN-03 C22/F3 forbids inventing foam)" % str(particle))
+
+	var rn: Array = _game.get("res_nodes") as Array if _game.get("res_nodes") is Array else []
+	var entities: Array = _game.get("entities") as Array if _game.get("entities") is Array else []
+	_m["res_nodes_count"] = rn.size()
+	_m["entities_count"] = entities.size()
+	check("no_trees_no_mines", rn.is_empty() and entities.is_empty(),
+		"res_nodes=%d entities=%d (isolated shore row: no trees/mines/units)"
+			% [rn.size(), entities.size()])
+
+	# DTRN-03 C28/W1/F1: surface Y is the -0.25 classification literal, so
+	# waveheight = clamp(-0.25*3-1.5,0,1) = 0 and the donor coarse swell is absent.
+	var waveheight: Variant = water_stats.get("waveheight_from_donor_literal", null)
+	if waveheight == null:
+		waveheight = clampf(WATER_LEVEL * 3.0 - 1.5, 0.0, 1.0)
+	_m["waveheight_from_donor_literal"] = waveheight
+	check("donor_coarse_swell_present", not _float_eq(waveheight, 0.0),
+		"waveheight=%s with surface Y=-0.25 (DTRN-03 W1/F1, water3d.gd:19,231, "
+			+ "water3d.gdshader:156) — expected pre-fix failure" % str(waveheight),
+		"EXPECTED_PRE_FIX_FAILURE")
+
+	# DTRN-03 C29/W3/F3: shore_prox is labelled PORT ART in the shipped shader.
+	var shader_abs := ProjectSettings.globalize_path(WATER_SHADER_PATH)
+	var shader_text := ""
+	if FileAccess.file_exists(shader_abs):
+		shader_text = FileAccess.get_file_as_string(shader_abs)
+	var has_shore_prox := shader_text.contains("shore_prox")
+	_m["shader_has_shore_prox"] = has_shore_prox
+	check("no_port_art_shore_prox", not has_shore_prox,
+		"water3d.gdshader:209-217 shore_prox=%s (PORT ART multiplier absent in donor "
+			+ "water.dev.frag:227) — expected pre-fix failure" % str(has_shore_prox),
+		"EXPECTED_PRE_FIX_FAILURE")
+
+	_setup_done = true
+	if _headless:
+		check("windowed_capture_available", false,
+			"DisplayServer.get_name()==headless: no 3D PNG (main.gd:1157-1158,1790-1800)",
+			"UNVERIFIED")
+		for n in ["capture_image", "capture_saved", "png_full_width_dark_rows",
+				"sample_coverage", "water_alpha_confined_to_cells", "water_animation_delta"]:
+			check(n, false, "headless: windowed GPU readback not attempted", "UNVERIFIED")
+		finish()
+		return
+	check("windowed_capture_available", true,
+		"SubViewport %dx%d, fixed camera, no headless CPU fallback" % [
+			WINDOW_SIZE.x, WINDOW_SIZE.y])
+	_capture_stage = 1
+
+
+func _process(_delta: float) -> bool:
+	if _finished or _capture_stage != 1 or _capturing:
+		return false
+	_frame += 1
+	if _frame >= CAPTURE_FRAMES:
+		_capture_stage = 2
+		_capture_sequence()
+	return false

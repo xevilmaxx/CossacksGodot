@@ -1,0 +1,241 @@
+{
+	"capture_status": "SKIP_CAPTURE",
+	"checks": [
+		{
+			"detail": "source=%s MAP=%dx%d res_nodes=%d expected=%d",
+			"name": "harness_stub_shape",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_terrain.gd missing=[]",
+			"name": "terrain_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_entities.gd missing=[]",
+			"name": "entities_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/camera3d.gd missing=[]",
+			"name": "camera_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() returned true",
+			"name": "build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "entities bound; fed=29 expected=29",
+			"name": "entities_bind_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "WaterPlane nodes=1 visible=0 (module-owned, hidden not deleted)",
+			"name": "no_water_plane_present",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 (expected 1)",
+			"name": "surface_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "vertices=4096 expected=4096",
+			"name": "vertex_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "triangles=7938 expected=7938",
+			"name": "triangle_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "UV2 entries=4096 expected=4096",
+			"name": "uv2_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "non-0/1/2 UV2.y=0 hist={ \"0\": 4096 }",
+			"name": "uv2_y_face_modes",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "UV2.x!=grass id 0: 0 cells (all-grass stub)",
+			"name": "uv2_x_ground_only",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "flat 64x64 grid promoted=0 (expected 0; t_smallmap_terrain.gd:150-171)",
+			"name": "flat_grid_promoted",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "stats.grid=[16.0, 8.0] shader.atlas_grid=(16.0, 8.0)",
+			"name": "atlas_grid_manifest",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "shader shadow_enabled=0.0 (expected 0; world3d_terrain.gd:315)",
+			"name": "shader_shadow_disabled",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "height < -0.25 m: 0 cells (expected 0)",
+			"name": "no_water_cells",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "BLK_WATER=255 cells=0 (expected 0)",
+			"name": "no_water_tileblock",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "wood nodes=20 expected=20",
+			"name": "tree_node_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "ore nodes gold=3/3 iron=3/3 coal=3/3",
+			"name": "ore_node_counts",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "types={ \"wood\": 20, \"stone\": 0, \"gold\": 3, \"iron\": 3, \"coal\": 3, \"food\": 0, \"bush\": 0, \"stump\": 0 } (stone/food/bush/stump must all be 0)",
+			"name": "category_purity",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "helper.count_categories={  }",
+			"name": "harness_category_crosscheck",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "Batch_*_res tree instances=19 expected=20",
+			"name": "tree_instance_count",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "ore instances mine_gold=3/3 mine_iron=3/3 mine_coal=3/3",
+			"name": "ore_instance_counts",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "non tree/ore batches: stone=0 bush=0 stump=0 field=0 other=1",
+			"name": "non_tree_ore_instance_purity",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "entities.stats.resources=29 expected=29",
+			"name": "entity_stats_total",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "instances with |Y - height_at_world(XZ)| > 0.0010 m: 0, worst=0.000000 m",
+			"name": "y_matches_terrain",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "min tree/ore distance=19.799 m (expected > 10.5 m; game.gd:2350-2351,2355-2356)",
+			"name": "tree_ore_separation",
+			"passed": true,
+			"status": "PASS"
+		}
+	],
+	"fails": 3,
+	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+	"id": "t_combo_trees_mines",
+	"measured": {
+		"atlas_grid": [
+			16.0,
+			8.0
+		],
+		"atlas_grid_shader_param": "(16.0, 8.0)",
+		"cells_below_water_level": 0,
+		"display_server": "headless",
+		"entities_stats_resources": 29,
+		"flat_grid_promoted_cells": 0,
+		"harness_categories": {},
+		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+		"headless": true,
+		"instances": {
+			"batches": 15,
+			"bush": 0,
+			"coal": 3,
+			"field": 0,
+			"gold": 3,
+			"iron": 3,
+			"other": 1,
+			"stone": 0,
+			"stump": 0,
+			"tree": 19
+		},
+		"mesh_surfaces": 1,
+		"mesh_triangles": 7938,
+		"mesh_vertices": 4096,
+		"min_tree_ore_distance_m": 19.7989902496338,
+		"requested_png": "",
+		"resource_node_types": {
+			"bush": 0,
+			"coal": 3,
+			"food": 0,
+			"gold": 3,
+			"iron": 3,
+			"stone": 0,
+			"stump": 0,
+			"wood": 20
+		},
+		"resources_fed": 29,
+		"shader_shadow_enabled": "0.0",
+		"uv2_count": 4096,
+		"uv2_y_hist": {
+			"0": 4096
+		},
+		"visible_water_planes": 0,
+		"water_3d_node_count": 1,
+		"water_level_m": -0.25,
+		"water_plane_count": 1,
+		"water_tileblock_cells": 0,
+		"y_check": {
+			"bad": 0,
+			"worst_err_m": 0.0000000596046447753906
+		}
+	},
+	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
+	"passed": false,
+	"passes": 25,
+	"png_path": "",
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"skip_reason": "DisplayServer.get_name()==headless: state-only result, PNG not captured",
+	"structural_ok": false,
+	"unix_ms": 1795597295340.0,
+	"verdict": "FAIL"
+}

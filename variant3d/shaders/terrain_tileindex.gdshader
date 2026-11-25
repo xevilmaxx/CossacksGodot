@@ -13,8 +13,11 @@ shader_type spatial;
 //
 // WHAT THIS SHADER IS: ONE per-cell integer tile index (donor
 // TMapTerrainDataTile `.tex`, dmscript.global:2026-2035) selecting a cell of a
-// donor-block atlas; donor alpha/alphavert masks; eye-plane projected UVs;
-// donor vertex-packed Blinn-Phong, 3-/9-tap PCF and fog equations.
+// donor-block atlas; donor alpha/alphavert masks; TRN-SHADER world-ground XZ
+// texgen at 2 m/cell (donor gc_meters_to_tile=2, dmscript.global:171) replacing
+// the old camera-swimming eye-plane defaults; the real donor sun
+// (light.cfg:2-31) replacing the zero headlight; donor vertex-packed
+// Blinn-Phong, 3-/9-tap PCF and fog equations.
 //
 // WHAT THIS SHADER IS NOT: bit-exact donor parity. Every substitute is marked
 // PORT APPROXIMATION, PORT SUBSTITUTE or PORT GUARD. Visual parity is
@@ -25,11 +28,14 @@ shader_type spatial;
 // One Godot `blend_mix` pass is a PORT APPROXIMATION of the donor's multi-pass
 // fixed-function blend (ENGINE, TERRAIN2-01 UNVERIFIED #4).
 //
-// `unshaded` is a PORT decision: this shader now reproduces the DONOR's own
-// lighting/fog (hf.pvl.sm.vert:18-23,37-45; hf.pvl.smx3.frag:17,34-46) and
-// writes a FINAL colour at hf.pvl.smx3.frag:50. Godot lighting must not shade
-// ALBEDO a second time. The donor has no `unshaded` flag — this is not a donor
-// configuration value.
+// `unshaded` CHOICE (TRN-SHADER, V3D-02 F2): KEPT. This shader reproduces the
+// DONOR's own final colour — per-vertex Blinn-Phong packed at
+// hf.pvl.sm.vert:37-38 and combined at hf.pvl.smx3.frag:17, then PCF (:20-30)
+// and fog (:34-46), with the final write at hf.pvl.smx3.frag:50. The donor sun
+// is now consumed INSIDE this shader (donor_sun_position, light.cfg:26-31), so
+// Godot lighting must NOT shade ALBEDO a second time. The donor has no
+// `unshaded` flag — this is a PORT render-mode decision, not a donor value.
+// Shadows stay OFF (shadow_enabled=0): explicit prior A/B decision, unchanged.
 //
 // `cull_disabled` is a PORT GUARD for the existing mesh winding, not donor
 // behaviour: donor is `FaceCulling = fcCull` (reftile.mat:18), while the port
@@ -85,24 +91,35 @@ uniform sampler2D shadow_map : filter_nearest, repeat_enable;
 uniform vec2 atlas_grid;                 // (cols, rows); NO donor default
 
 // ----------------------------------------------------------------------------
-// Eye-plane texture generation (DEEPDEC-02 §3.2, hf.pvl.sm.vert:9,25-33):
-//   realpos = gl_ModelViewMatrix * gl_Vertex               :9
-//   s = dot(realpos, gl_EyePlaneS[0])                       :30  (:28 in DEC-02 numbering)
-//   t = dot(realpos, gl_EyePlaneT[0])                       :31  (:29)
-//   gl_TexCoord[0] = gl_TextureMatrix[0] * gl_TexCoord[0]   :32  (:30)
+// Ground texgen — STABLE WORLD-GROUND XZ (TRN-SHADER; V3D-02 P2/F1).
+// Donor equation shape is retained (DEEPDEC-02 §3.2, hf.pvl.sm.vert:9,25-33):
+//   realpos = gl_ModelViewMatrix * gl_Vertex               :9  (kept for masks)
+//   s = dot(POSITION, gl_EyePlaneS[0])                      :30
+//   t = dot(POSITION, gl_EyePlaneT[0])                      :31
+//   gl_TexCoord[0] = gl_TextureMatrix[0] * gl_TexCoord[0]   :32
 //   texGen = true                                           shaders.lib:30
-// READ-ONLY DONOR TRUTH: the exact face planes are S=(1,0,0,0),T=(0,0,1,0)
-// (front, reftile.mat:130-141) and S=(0,1,0,0),T=(0,0,1,0) (side,
-// reftile.mat:156-167), tmmEyeLinear (:129/:155).
+// CHANGED: POSITION is now `MODEL_MATRIX * VERTEX` (WORLD space), not
+// eye-space `realpos`. The old defaults made t = eye-space Y (height mixed
+// with view depth) -> camera-swimming art at a 1 m repeat (V3D-02 P2).
+// World X/Z is the ground plane of the port mesh (world3d_terrain.gd:664-729;
+// donor is Z-up, Godot Y-up, TERRAIN2-01 §2.5).
 //
-// PORT APPROXIMATION: runtime gl_EyePlaneS/T[0] and gl_TextureMatrix[0] VALUES
-// are engine-bound and NOT readable (DEEPDEC-02 UNVERIFIED #4/#6;
-// TERRAIN2-06 UNVERIFIED #1). Identity-like plane defaults are NEUTRAL
-// substitutes, NOT donor measurements; A3 must override them.
+// DONOR-GROUNDED SCALE: `gc_meters_to_tile = 2` (read verbatim this agent at
+// data\scripts\dmscript.global:171) => ONE atlas cell per 2 m of ground;
+// `uv_repeat = 0.5` below is exactly 1/2 m. The donor `fract()` repeat and
+// nearest filtering intent are kept (hf.pvl.smx3.frag:13; reftile.mat:29-37).
+//
+// PORT APPROXIMATION — NOT DONOR PARITY: the donor runtime
+// gl_EyePlaneS/T[0] and gl_TextureMatrix[0] VALUES for the ground refkey are
+// engine-bound and CONFIRMED_UNVERIFIED (RV-TRN-01 verdict A / §5;
+// hf.pvl.sm.vert:921,976; reftile.mat:34,38-48 writes tmmUser S/T=(1,0,0,0),
+// TextureScale=1 instead). These world-plane values are STABLE SUBSTITUTES,
+// never a recovered donor literal. The face alpha planes are different: those
+// ARE recovered donor literals (see fragment()).
 // ----------------------------------------------------------------------------
-uniform vec4 eye_plane_s = vec4(1.0, 0.0, 0.0, 0.0);        // APPROX
-uniform vec4 eye_plane_t = vec4(0.0, 1.0, 0.0, 0.0);        // APPROX
-uniform mat4 texture_matrix = mat4(1.0);                    // APPROX (identity)
+uniform vec4 eye_plane_s = vec4(1.0, 0.0, 0.0, 0.0);        // PORT APPROX: world X
+uniform vec4 eye_plane_t = vec4(0.0, 0.0, 1.0, 0.0);        // PORT APPROX: world Z
+uniform mat4 texture_matrix = mat4(1.0);                    // APPROX (engine value UNVERIFIED)
 
 // Donor-cited constant. `TextureScale X/Y/Z = 0.125` on BOTH face refkeys:
 // verticalfront reftile.mat:124-126; verticalside reftile.mat:150-152.
@@ -110,23 +127,32 @@ uniform mat4 texture_matrix = mat4(1.0);                    // APPROX (identity)
 uniform float face_scale = 0.125;
 
 // ----------------------------------------------------------------------------
-// Exact donor vertex-lighting parameters (DEEPDEC-02 §3.2, hf.pvl.sm.vert).
-// The DONOR expressions use engine-bound gl_FrontLightModelProduct /
-// gl_FrontLightProduct / gl_FrontMaterial / gl_LightSource. We expose their
-// resulting TERMS as uniforms. Values below are the readable donor MATERIAL
-// literals (reftile.mat), not the unreadable light-product energies.
+// TRN-SHADER — REAL DONOR SUN (V3D-02 P3/F2), replacing the `light_position_eye
+// = 0` headlight. Every value below was re-read verbatim this agent from
+// `data\env\lights\light.cfg`:
+//   Position X/Y/Z/W = -0.344731152057648 / 0.938701450824738 / 0 / 1 (:26-31)
+//   Ambient  RGB     = 0.196078434586525 / 0.184313729405403 / 0.129411771893501 (:2-7)
+//   Diffuse  RGB     = 0.811764717102051 / 0.780392169952393 / 0.694117665290833 (:9-14)
+// Donor `LightStyle = lsParallel` (light.cfg:17): the vector is a CONSTANT
+// DIRECTION, never an eye-space point to subtract `realpos` from (that was
+// the headlight). Donor Z-up -> Godot Y-up uses the already-cited port mapping
+// `lightVector = (LightPos.x/4, LightPos.z/2, LightPos.y)` (water.dev.vert:22;
+// world3d_terrain.gd:100-101). The /4,/2 weights and the engine's own
+// modelview treatment of gl_LightSource[0].position are PORT APPROXIMATION /
+// UNVERIFIED (RV-TRN-01 A; DEEPDEC-02 #4/#7). The former material energies
+// (ambient 0.15686 reftile.mat:52-56/:80-84; diffuse 0.78125 :58-62/:86-90)
+// are deliberately NOT used as defaults now that the light colours are known.
+// No visual parity is claimed: a prior raw-swap A/B measured only +0.9 luma.
 // ----------------------------------------------------------------------------
-uniform vec3 light_position_eye = vec3(0.0);
-// PORT SUBSTITUTE for `gl_LightSource[0].position.xyz` (hf.pvl.sm.vert:13).
-// No eye-space value is readable (DEEPDEC-02 UNVERIFIED #4/#7); neutral 0.
+uniform vec3 donor_sun_position = vec3(-0.344731152057648, 0.938701450824738, 0.0);
+// Donor light.cfg:26-31 Position.xyz. W=1 in the donor config; `lsParallel`
+// (light.cfg:17) is why it is consumed as a direction here, not a point.
 
-uniform vec3 ambient_rgb = vec3(0.15686);
-// Donor material Ambient 0.15686 (reftile.mat:52-56, :80-84). The donor term
-// is sceneColor + FrontLightProduct[0].ambient (:18); energies are APPROX.
+uniform vec3 ambient_rgb = vec3(0.196078434586525, 0.184313729405403, 0.129411771893501);
+// Donor light.cfg:2-7 Ambient (was the material ambient 0.15686).
 
-uniform vec3 diffuse_rgb = vec3(0.78125);
-// Donor material Diffuse 0.78125 (reftile.mat:58-62, :86-90); donor term is
-// FrontLightProduct[0].diffuse (:19); energies are APPROX.
+uniform vec3 diffuse_rgb = vec3(0.811764717102051, 0.780392169952393, 0.694117665290833);
+// Donor light.cfg:9-14 Diffuse (was the material diffuse 0.78125).
 
 uniform vec3 specular_rgb = vec3(0.0);
 // Donor front-material Specular = 0 (reftile.mat:98-102, :70-74), so the
@@ -182,9 +208,13 @@ uniform float fog_use_abs_z = 0.0;
 // ----------------------------------------------------------------------------
 // PORT APPROXIMATION knobs (no donor constant exists for any of them).
 // ----------------------------------------------------------------------------
-uniform vec2 uv_repeat = vec2(1.0);
-// Multiplier on fract(s,t). Donor `TextureScale = 1` (terrain.lib:5-10) has no
-// metres-per-tile; port TILE_M = 2.0 is port-only (world3d_terrain.gd:50).
+uniform vec2 uv_repeat = vec2(0.5, 0.5);
+// TRN-SHADER: 0.5 = 1 / 2 m — donor `gc_meters_to_tile = 2`
+// (dmscript.global:171, read verbatim). Multiplier on fract(s,t) AFTER the
+// world-ground XZ projection, so one atlas cell repeats every 2 m of ground.
+// The old (1,1) on eye-space realpos gave a camera-dependent 1 m repeat.
+// NOTE: donor `TextureScale = 1` (terrain.lib:5-10) is a different quantity;
+// no donor TextureMatrix scale was ever readable (RV-TRN-01 verdict A).
 
 uniform vec2 alpha_uv_scale = vec2(1.0);
 // Donor mask UV is a SECOND per-vertex coordinate set:
@@ -237,15 +267,26 @@ varying vec4 v_shadow;    // donor gl_TexCoord[3] (projective shadow coord)
 varying float v_fog_depth;// donor gl_TexCoord[0].w (fog distance)
 
 void vertex() {
-	// hf.pvl.sm.vert:9 — gl_ModelViewMatrix * gl_Vertex (eye space).
+	// hf.pvl.sm.vert:9 — gl_ModelViewMatrix * gl_Vertex (eye space). Kept for
+	// the recovered face-alpha eye planes and fog; NOT for ground texgen.
 	vec4 realpos = VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
 	v_eye = realpos.xyz;
+
+	// TRN-SHADER — stable WORLD position for RGB texgen (donor model matrix).
+	vec4 worldpos = MODEL_MATRIX * vec4(VERTEX, 1.0);
 
 	// hf.pvl.sm.vert:12-15 — donor Blinn-Phong inputs. `NORMAL` is object
 	// space in Godot's vertex(); VIEW_MATRIX*MODEL_MATRIX is the PORT ANALOGUE
 	// of gl_NormalMatrix (inverse-transpose is engine-side, UNVERIFIED).
 	vec3 e = normalize(-realpos.xyz);                 // :12 eye=vec3(0) at :4
-	vec3 l = normalize(light_position_eye - realpos.xyz); // :13
+	// lsParallel (light.cfg:17): constant donor sun DIRECTION, no subtraction
+	// of realpos — this is what removes the old zero-position headlight.
+	// Z-up -> Y-up: water.dev.vert:22 / world3d_terrain.gd:101. VIEW_MATRIX
+	// rotates the world direction into the same eye space as `n` (PORT APPROX
+	// of the engine's gl_LightSource modelview transform, UNVERIFIED).
+	vec3 sun_world = normalize(vec3(donor_sun_position.x / 4.0,
+		donor_sun_position.z / 2.0, donor_sun_position.y));
+	vec3 l = normalize((VIEW_MATRIX * vec4(sun_world, 0.0)).xyz); // :13
 	vec3 h = normalize(l + e);                        // :14
 	vec3 n = normalize((VIEW_MATRIX * MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz); // :15
 
@@ -257,12 +298,15 @@ void vertex() {
 	v_packed = ambient_rgb + diffuse;                               // :18 + :37
 	v_specular = pow(max(dot(h, n), 0.0), shininess) * specular_rgb; // :22, :38
 
-	// hf.pvl.sm.vert:30-32 — eye-plane dot products (texGen=true, shaders.lib:30).
-	vec2 st = vec2(dot(realpos, eye_plane_s), dot(realpos, eye_plane_t));
+	// hf.pvl.sm.vert:30-32 — texGen dot products (texGen=true, shaders.lib:30).
+	// TRN-SHADER: WORLD-ground XZ, not eye-space realpos; 2 m/cell via
+	// uv_repeat=0.5 (donor gc_meters_to_tile=2, dmscript.global:171).
+	vec2 st = vec2(dot(worldpos, eye_plane_s), dot(worldpos, eye_plane_t));
 	// hf.pvl.sm.vert:32; r/q set to (0,1). Donor leaves them untouched =>
 	// PORT APPROXIMATION of undefined fixed-function state.
 	v_st = (texture_matrix * vec4(st, 0.0, 1.0)).xy;
-	v_alpha_uv = fract(v_st) * alpha_uv_scale;
+	// Flat alpha mask uses the same 2 m phase; 64² sub-rect is picked in fragment.
+	v_alpha_uv = fract(v_st * uv_repeat) * alpha_uv_scale;
 
 	// hf.pvl.sm.vert:35 — shadow coordinate (both engine matrices folded).
 	v_shadow = shadow_matrix * realpos;
@@ -286,6 +330,46 @@ vec3 tile_rgb(float idx, vec2 local_uv) {
 	return texture(tile_atlas, uv).rgb;         // donor hf.pvl.smx3.frag:13
 }
 
+// TRN-SHADER — donor alpha-atlas SUB-RECT sampling (V3D-02 P4/F4).
+// DONOR-GROUNDED GEOMETRY: alpha.bmp is 512x256 = 8 cols x 4 rows of 64x64
+// patches. Seam deltas jump 64..185 only at x/y multiples of 64 and are ~8
+// inside (RV-TRN-01 §4.1, pixel decode; DTRN-06 C15), matching the commented
+// `AlphaRows=8, AlphaCols=4, AlphaTileSize=64` (reftile.lib:10-12).
+// PORT APPROXIMATION — donor engine rule UNVERIFIED (DALPHA-01 §5 item 5, §6).
+// DONOR-GROUNDED STRUCTURE ONLY. Which patch a tile selects is engine-side
+// (`tsDouble`/`ttExtended`, reftile.lib:3-12; TileXOffset=0.1/TileYOffset=0.2
+// :5-6) and NOT statically readable: 17,237-file scan + packed .bind proof
+// (DALPHA-01 §4). We now use the report's derived structure instead of the
+// old arbitrary `5 + mod(tile,22)`:
+//   * row = boundary direction, measured dark-edge rank N/W/E/S = 0/1/2/3
+//     (DALPHA-01 §3.4 / §6.2, DERIVED — not a donor enum);
+//   * columns 0-3 / 4-7 are two organic variants of the same four roles
+//     (DALPHA-01 §3.3 / §6.5, INFERRED); `variant` is the column within the half;
+//   * the opposite tile's mask is the 180-degree counterpart
+//     (r,c) <-> (3-r,3-c) within the same half (DALPHA-01 §3.3 / §6.3, DERIVED),
+//     only approximately complementary (MAD 9.8-17.6), never asserted exact.
+// The port mesh carries ONE tile id per cell (UV2.x) and no neighbour
+// direction, so a deterministic decomposition of the tile id stands in for
+// direction / half / variant / opposite tile. Constant patches
+// (0,0)/(4,0)=255 and (3,3)/(7,3)=0 are donor-authored "no transition"/"full
+// cut" roles (§6.4), not a pinning bug. NO donor parity is claimed; the exact
+// tile-pair -> patch rule remains CONFIRMED_UNVERIFIED. Sampling below is the
+// donor-grounded ((c+u)/8, (r+v)/4) of §6.1 with the 2 m fract phase as (u,v).
+vec2 alpha_patch_uv(float tile, vec2 local) {
+	float id = floor(abs(tile));
+	float dir = mod(id, 4.0);                           // tile-id stand-in for boundary direction
+	float row = dir;                                    // N/W/E/S = 0/1/2/3 (DALPHA-01 §3.4)
+	float variant = mod(floor(id / 4.0), 4.0);          // 4 column variants within the half
+	float half = mod(floor(id / 16.0), 2.0);            // 0 -> cols 0-3, 1 -> cols 4-7
+	float opposite = mod(floor(id / 64.0), 2.0);        // stable stand-in for the opposite tile
+	row = mix(row, 3.0 - row, opposite);                // counterpart (r,c) -> (3-r,3-c), §6.3
+	variant = mix(variant, 3.0 - variant, opposite);    // local column counterpart in same half
+	vec2 cell = vec2(half * 4.0 + variant, row);
+	// Half-texel inset from the 64² sub-rect border (donor AlphaTileSize=64).
+	vec2 t = clamp(local, 0.0078125, 0.9921875);       // 0.5/64 .. 1-0.5/64
+	return (cell + t) / vec2(8.0, 4.0);
+}
+
 // PORT SUBSTITUTE for donor `shadow2DProj(texShadow, coord).r < 0.999`
 // (hf.pvl.smx3.frag:26-28, hf.pvl.smx9.frag:25-33). Projective divide + guard.
 float shadow_tap(vec2 delta) {
@@ -296,7 +380,8 @@ float shadow_tap(vec2 delta) {
 
 void fragment() {
 	// Donor hf.pvl.smx3.frag:13 — RGB from texUnit0 at gl_TexCoord[0].xy.
-	// fract() is the PORT APPROX repeat period (TERRAIN2-06 §3.4 (b)).
+	// TRN-SHADER: `v_st` is world-ground XZ; fract(v_st*0.5) repeats one
+	// atlas cell per 2 m (donor gc_meters_to_tile=2, dmscript.global:171).
 	vec3 rgb = tile_rgb(v_tile, fract(v_st * uv_repeat));
 
 	// Donor hf.pvl.smx3.frag:14 — alpha from texUnit1 at gl_TexCoord[1].xy.
@@ -306,6 +391,8 @@ void fragment() {
 		// Face refkeys swap texUnit1 to alphavert (reftile.mat:122, :148;
 		// tiles.mat:142-213). RGB deliberately stays the base rock/sand block:
 		// rock1vf/rock1vs bind the SAME rock1.dds (tiles.mat:142-148).
+		// TRN-SHADER: face-alpha eye planes RESTORED as the recovered donor
+		// literals (RV-TRN-01 verdict C / §4.3; reftile.mat:130-141,156-167).
 		// READ-ONLY DONOR PLANES: front S=(1,0,0,0), T=(0,0,1,0)
 		// (reftile.mat:130-141); side S=(0,1,0,0), T=(0,0,1,0)
 		// (reftile.mat:156-167); tmmEyeLinear (:129/:155); scale 0.125
@@ -319,8 +406,10 @@ void fragment() {
 	} else {
 		// Flat tiles: Texture2Name=alpha (reftile.mat:6), bmTransparency (:17),
 		// tmmUser s/t planes (1,0,0,0)/(1,0,0,0) (:39-50, engine expansion
-		// UNVERIFIED). PORT APPROX: MultiTexCoord1 -> fract(s,t).
-		a = texture(alpha_atlas, v_alpha_uv).a;
+		// UNVERIFIED). TRN-SHADER: sample ONE donor 64² sub-rect of the 8x4
+		// alpha grid instead of the whole atlas; tile->patch index is
+		// UNVERIFIED (see alpha_patch_uv above).
+		a = texture(alpha_atlas, alpha_patch_uv(v_tile, v_alpha_uv)).a;
 	}
 
 	// Donor hf.pvl.smx3.frag:17 — albedo * packed(ambient+diffuse) + specular.

@@ -69,17 +69,19 @@ const DEFAULT := {
 	},
 	"gameplay": {
 		"mode": "skirmish",
-		"map_width_tiles": 320,
-		"map_height_tiles": 320,
+		# CFG-01: Tiny (240) is the port's smallest donor-backed skirmish size.
+		"map_width_tiles": 240,
+		"map_height_tiles": 240,
 		"random_seed": 20261113,
-		"nation0": "ukr",
-		"nation1": "rus",
-		"map_type": "land",
+		"nation0": "rus",
+		"nation1": "bav",
+		"map_type": "mediterranean",
 		# P-19/P-14: exact PORT-MENU keys/defaults (menu.gd:34-37, :435).
-		"terrain_type": "land",
+		"terrain_type": "mediterranean",
 		"richness": "med",
 		"season": "summer",
-		"relief": "plains",
+		# CFG-01: low_mountains/highlands resolve to sim "hills" (data.gd DONOR_RELIEF).
+		"relief": "hills",
 		"start_option": "default",
 		"start_resources": {"food": 800, "wood": 800, "stone": 400, "gold": 200, "iron": 150, "coal": 150},
 		"start_peasants": 8,
@@ -212,7 +214,7 @@ const DEFAULT := {
 			"mine_iron": "Iron Mine",
 			"mine_coal": "Coal Mine",
 		},
-		"player": ["Ukraine", "Russia"],
+		"player": ["Russia", "Bavaria"],
 	},
 }
 
@@ -402,8 +404,8 @@ func apply() -> void:
 	Data.CAMERA_ZOOM_STEP = num("camera.zoom_step", 1.15)
 
 	var gp := section("gameplay")
-	Data.MAP_W = maxi(16, int(num("gameplay.map_width_tiles", 320)))
-	Data.MAP_H = maxi(16, int(num("gameplay.map_height_tiles", 320)))
+	Data.MAP_W = maxi(16, int(num("gameplay.map_width_tiles", 240)))
+	Data.MAP_H = maxi(16, int(num("gameplay.map_height_tiles", 240)))
 	Data.RANDOM_SEED = int(num("gameplay.random_seed", 20261113))
 	Data.START_PEASANTS = maxi(0, int(num("gameplay.start_peasants", 8)))
 	Data.BUILD_QUEUE_LIMIT = maxi(1, int(num("gameplay.build_queue_limit", 10)))
@@ -424,13 +426,13 @@ func apply() -> void:
 	Data.DEPOSITS = deps
 	var army: Variant = section("gameplay").get("battle_army", {})
 	Data.BATTLE_ARMY = army if army is Dictionary else {}
-	Data.MAP_TYPE = text("gameplay.terrain_type", text("gameplay.map_type", "land"))
+	Data.MAP_TYPE = text("gameplay.terrain_type", text("gameplay.map_type", "mediterranean"))
 	Data.BIOME = text("gameplay.season", text("gameplay.biome", "summer"))
 	Data.RICHNESS = text("gameplay.richness", "med")
-	Data.RELIEF = text("gameplay.relief", "plains")
+	Data.RELIEF = text("gameplay.relief", "hills")
 	Data.START_OPTION = text("gameplay.start_option", "default")
-	var n0 := text("gameplay.nation0", "ukr")
-	var n1 := text("gameplay.nation1", "rus")
+	var n0 := text("gameplay.nation0", "rus")
+	var n1 := text("gameplay.nation1", "bav")
 	# T-MENU-ROSTER / T-MENU-MORE-PLAYERS: a saved config may carry the full
 	# 2..12 roster. Prefer it, otherwise the legacy nation0/nation1 keys still
 	# seed the two-slot default.
@@ -466,8 +468,8 @@ func apply() -> void:
 
 	# T-MENU-ROSTER DEEP: full donor option set for saved configs. Unknown ids
 	# fall back to the donor default instead of corrupting the sim.
-	Data.DONOR_MAP_SHAPE = _donor_id("map_shape", Data.DONOR_MAP_SHAPES.keys(), "land")
-	Data.DONOR_RELIEF_TYPE = _donor_id("relief_type", Data.DONOR_RELIEF.keys(), "plain")
+	Data.DONOR_MAP_SHAPE = _donor_id("map_shape", Data.DONOR_MAP_SHAPES.keys(), "mediterranean")
+	Data.DONOR_RELIEF_TYPE = _donor_id("relief_type", Data.DONOR_RELIEF.keys(), "low_mountains")
 	Data.DONOR_RES_START = _donor_id("resource_start", Data.DONOR_RES_START_MULT.keys(), "normal")
 	Data.DONOR_RES_MINES = _donor_id("resource_mines", Data.DONOR_MINERALS, "med")
 	Data.BALLOON_MODE = _donor_id("balloon", Data.DONOR_BALLOON, "default")
@@ -550,7 +552,7 @@ func apply() -> void:
 	Data.UNIT_NAMES = _copy(un) if un is Dictionary else {}
 	Data.BUILDING_NAMES = _copy(bn) if bn is Dictionary else {}
 	var pl: Array = names.get("player", [])
-	Data.PLAYER_NAMES = pl if pl is Array else ["Ukraine", "Russia"]
+	Data.PLAYER_NAMES = pl if pl is Array else ["Russia", "Bavaria"]
 
 	# hotkeys
 	var hk_def: Dictionary = _copy(DEFAULT.get("controls", {}).get("hotkeys", {}))

@@ -5,13 +5,14 @@ test_all.py - run the small single-feature test registry and aggregate results.
 Why: the 29-step monolithic self-test could only be edited by one worker and
 could only report one verdict. Each feature now owns one test script in
 app/tests/ with its own result JSON, so many agents can author tests in
-parallel without touching each other's files.
+parallel without touching each other's files. This copy reads the variant3d
+registry and drives the variant3d Godot project/queue (not app/).
 
 Usage:
-  python app/tools/test_all.py --list
-  python app/tools/test_all.py --only t_upgrades t_squads
-  python app/tools/test_all.py                    # all status=ready tests
-  python app/tools/test_all.py --include-pending  # also attempt not-yet-landed tests
+  python variant3d\tools\test_all.py --list
+  python variant3d\tools\test_all.py --only t_upgrades t_squads
+  python variant3d\tools\test_all.py                    # all status=ready tests
+  python variant3d\tools\test_all.py --include-pending  # also attempt not-yet-landed tests
 
 Every Godot launch goes through godot_runner.py (FIFO lock + hard timeout).
 """
@@ -25,9 +26,9 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "app" / "tests" / "manifest.json"
-RESULTS = ROOT / "app" / "tests" / "results"
-RUNNER = ROOT / "app" / "tools" / "godot_runner.py"
+MANIFEST = ROOT / "variant3d" / "tests" / "manifest.json"
+RESULTS = ROOT / "variant3d" / "tests" / "results"
+RUNNER = ROOT / "variant3d" / "tools" / "godot_runner.py"
 
 
 def load_manifest() -> dict:
@@ -41,7 +42,7 @@ def run_one(test: dict) -> dict:
     argv = [sys.executable, str(RUNNER), "run", "--id", f"manifest-{tid}",
             "--timeout", str(timeout + 30), "--"]
     argv += ([] if windowed else ["--headless"])
-    argv += ["--path", "app", "--script", test["path"]]
+    argv += ["--path", "variant3d", "--script", test["path"]]
     if windowed:
         argv += ["--timeout", str(timeout)]
     started = time.time()

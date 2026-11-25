@@ -121,15 +121,39 @@ func _sim(seconds: float) -> void:
 		game.tick(0.25)
 
 func _spot(sid: String, near: Vector2) -> Vector2:
-	# buildable point near the requested one: visual footprints are much
-	# bigger than the old gameplay radii, so fixed offsets can land inside
-	# another building's visual disc. Try a ring of candidates instead.
-	for r in [6.0, 10.0, 14.0, 18.0, 24.0]:
-		for k in 8:
-			var a: float = TAU * float(k) / 8.0 + float(r)
-			var p: Vector2 = near + Vector2(cos(a), sin(a)) * float(r)
-			if bool(game.can_place(0, sid, p).get("ok", false)):
-				return p
+	# Buildable point near the requested one. Visual footprints are much
+	# bigger than the old gameplay radii, so a fixed offset can land inside
+	# another building's drawn box (or let the NEW box swallow the builder,
+	# leaving it with no walkable step). Try rings of candidates instead.
+	# MAP-SMALL-01: the historic 6/10/14/18/24 m ring stays FIRST, so a site
+	# it could find is still preferred. Only when that ring has no usable
+	# tile do we extend outward, with the limit and step derived from the
+	# generated map's metre extent (Data.TILE_M = 2.0): 160 m / 8 m at 320²
+	# (640 m), 120 m / 6 m at 240² (480 m). can_place() remains the same
+	# legality check, the builder-ink test only rejects sites that would
+	# strand the caller, and the INF-on-failure assertion is unchanged.
+	var span_m: float = float(mini(game.MAP_W, game.MAP_H)) * Data.TILE_M
+	var radii: Array[float] = [6.0, 10.0, 14.0, 18.0, 24.0]
+	var step_m: float = maxf(6.0, span_m * 0.0125)
+	var r: float = 24.0
+	while r < span_m * 0.25:
+		r += step_m
+		radii.append(r)
+	for rr in radii:
+		var n: int = 8 if rr <= 24.0 else maxi(8, int(round(TAU * rr / 4.0)))
+		for k in n:
+			var a: float = TAU * float(k) / float(n) + rr
+			var p: Vector2 = near + Vector2(cos(a), sin(a)) * rr
+			if not bool(game.can_place(0, sid, p).get("ok", false)):
+				continue
+			# The drawn sprite box is impassable (game.gd:159-189). A site
+			# whose box covers the builder cannot be worked: every 0.4 m
+			# step out of it is blocked, so the build order gives up with
+			# zero progress. Reject it; another ring candidate is tried.
+			var ink: Rect2 = game.bld_block_rect_for(0, sid, p)
+			if ink.grow(0.6).has_point(near):
+				continue
+			return p
 	return Vector2.INF
 
 # True when the active --self-only token set (empty / "all", comma-separated

@@ -1,0 +1,25 @@
+{
+	"capture_path": "real main.tscn boot + --config small_map_64.json + --screenshot menu-skip flag; headless; no PNG assertion",
+	"checks": [
+		{
+			"detail": "need --config <small_map_64.json> and --screenshot <path> user args (menu skip)",
+			"expected_pre_fix_failure": false,
+			"name": "boot_and_setup",
+			"passed": false
+		}
+	],
+	"donor_semantics": {
+		"drag_crosses_both": true,
+		"drag_start": "first LMB-held move (DSEL-01 claim 3)",
+		"port_screen_threshold_px": 6.0,
+		"shift": "add / spmAdd (DSEL-01 claim 4) — port drag ignores Shift (claim 27); declared divergence, not asserted here",
+		"world_epsilon_m": 0.005
+	},
+	"id": "t_select_rect",
+	"measured": {},
+	"passed": false,
+	"passes": 0,
+	"runner_declaration": "AUTHORING ONLY — no Godot run, no runner ticket submitted by author",
+	"total": 1,
+	"unix_ms": 1795597402067.0
+}

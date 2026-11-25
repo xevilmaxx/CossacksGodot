@@ -1,0 +1,206 @@
+{
+	"capture_status": "SKIP_CAPTURE",
+	"checks": [
+		{
+			"detail": "source=%s MAP=%dx%d height/tileblock present=%s res_nodes=%d",
+			"name": "harness_stub_shape",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_terrain.gd missing=[]",
+			"name": "terrain_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/camera3d.gd missing=[]",
+			"name": "camera_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_entities.gd missing=[]",
+			"name": "entities_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() returned true",
+			"name": "build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surf=1 verts=4096 tris=7938 uv2=4096 (P0 1/4096/7938/4096)",
+			"name": "p0_mesh_counts_unchanged",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "cells=149 (3.6377% of 4096), expected >0 and <10%",
+			"name": "water_cells_bounded",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "planes=1 Water3D=1 module=res://scripts/water3d.gd height_aware=true",
+			"name": "single_height_aware_water_plane",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "sandsea1/5/6 (93/97/98) cells=168 hist={ \"93\": 42, \"97\": 42, \"98\": 84 } out_of_atlas=0",
+			"name": "shore_ids_present",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "mines with height <= -0.25 m: 0 of 6 (C3: mines not in water)",
+			"name": "ore_height_above_water",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "gold=2 iron=2 coal=2 expected={ \"gold\": 2, \"iron\": 2, \"coal\": 2 } stats.resources=6 units=0 buildings=0",
+			"name": "ore_counts_exact",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "wood=0 stone=0 food=0 mine=6; foreign_batches=[] (expected only mine_* )",
+			"name": "ore_category_purity",
+			"passed": true,
+			"status": "PASS"
+		}
+	],
+	"fails": 0,
+	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+	"id": "t_combo_shore_mines",
+	"measured": {
+		"api_missing_camera": [],
+		"api_missing_entities": [],
+		"api_missing_terrain": [],
+		"display_server": "headless",
+		"entities_stats": {
+			"buildings": 0,
+			"resources": 6,
+			"units": 0
+		},
+		"foreign_res_batches": [],
+		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+		"headless": true,
+		"mesh_surfaces": 1,
+		"mesh_triangles": 7938,
+		"mesh_vertices": 4096,
+		"mine_instance_counts": {
+			"coal": 2,
+			"gold": 2,
+			"iron": 2
+		},
+		"mine_total_instances": 6,
+		"ore_below_water": 0,
+		"ore_heights": {
+			"100": {
+				"above_water": true,
+				"cell": [
+					6,
+					6
+				],
+				"height_m": 1.01988458633423,
+				"type": "gold"
+			},
+			"101": {
+				"above_water": true,
+				"cell": [
+					50,
+					10
+				],
+				"height_m": 1.49126601219177,
+				"type": "gold"
+			},
+			"102": {
+				"above_water": true,
+				"cell": [
+					10,
+					52
+				],
+				"height_m": 1.52608859539032,
+				"type": "iron"
+			},
+			"103": {
+				"above_water": true,
+				"cell": [
+					54,
+					54
+				],
+				"height_m": 1.49284684658051,
+				"type": "iron"
+			},
+			"104": {
+				"above_water": true,
+				"cell": [
+					4,
+					40
+				],
+				"height_m": 1.49484300613403,
+				"type": "coal"
+			},
+			"105": {
+				"above_water": true,
+				"cell": [
+					58,
+					28
+				],
+				"height_m": 1.48664081096649,
+				"type": "coal"
+			}
+		},
+		"p0_baseline": {
+			"source": "TEST_MATRIX.md:33-34; TEST_01.md:148-154,212",
+			"surfaces": 1,
+			"triangles": 7938,
+			"uv2_count": 4096,
+			"vertices": 4096
+		},
+		"requested_png": "",
+		"res_node_categories": {
+			"food": 0,
+			"mine": 6,
+			"stone": 0,
+			"wood": 0
+		},
+		"res_node_total": 6,
+		"shore_id_cells": 168,
+		"shore_id_hist": {
+			"93": 42,
+			"97": 42,
+			"98": 84
+		},
+		"tile_index_hist_top": "{ \"source\": \"dump.tileblock base64 (main.gd:741)\", \"cells\": 4096, \"hist\": { \"0\": 3779, \"93\": 42, \"98\": 84, \"255\": 149, \"97\": 42 }, \"out_of_atlas_cells_clamped\": 149, \"uv2\": \"x=float(donor tile id 0..123), y=face mode 0/1/2 from donor slope+aspect (PORT APPROXIMATION)\", \"face_hist\": { \"0\": 4096 }, \"transport\": \"PORT APPROXIMATION (donor has no vertex attribute)\" }",
+		"unexpected_res_batches": [],
+		"uv2_count": 4096,
+		"uv2_x_max": 98.0,
+		"uv2_x_min": 0.0,
+		"uv2_x_out_of_atlas": 0,
+		"water_3d_node_count": 1,
+		"water_cell_fraction": 0.036376953125,
+		"water_cells": 149,
+		"water_height_aware": true,
+		"water_level_from_stats": -0.25,
+		"water_level_m": -0.25,
+		"water_module": "res://scripts/water3d.gd",
+		"water_plane_count": 1,
+		"water_tileblock_cells": 149
+	},
+	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
+	"passed": false,
+	"passes": 12,
+	"png_path": "",
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"skip_reason": "DisplayServer.get_name()==headless or no PNG user arg: state-only result",
+	"skipped_or_skip_capture": 0,
+	"structural_ok": true,
+	"unix_ms": 1795597363245.0,
+	"verdict": "SKIP_CAPTURE"
+}

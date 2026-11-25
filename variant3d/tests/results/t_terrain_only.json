@@ -1,0 +1,154 @@
+{
+	"capture_status": "SKIP_CAPTURE",
+	"checks": [
+		{
+			"detail": "source=%s MAP=%dx%d height/tileblock/res_nodes present=%s",
+			"name": "harness_stub_shape",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_terrain.gd missing=[]",
+			"name": "terrain_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/camera3d.gd missing=[]",
+			"name": "camera_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() returned true",
+			"name": "build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 (expected 1)",
+			"name": "surface_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "vertices=4096 expected=4096",
+			"name": "vertex_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "triangles=7938 expected=7938",
+			"name": "triangle_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "UV2 entries=4096 expected=4096",
+			"name": "uv2_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "non-0/1/2 UV2.y=0 hist={ \"0\": 4096 }",
+			"name": "uv2_y_face_modes",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "perfectly flat 64x64 grid: promoted=0 (expected 0; t_smallmap_terrain.gd:150-171)",
+			"name": "flat_grid_promoted",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "res_nodes=0 (expected 0 — no trees/mines/units in P0)",
+			"name": "res_nodes_empty",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "height < -0.25 m: 0 cells (expected 0)",
+			"name": "no_water_cells",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "BLK_WATER=255 cells=0 (expected 0)",
+			"name": "no_water_tileblock",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "stats.grid=[16.0, 8.0] shader.atlas_grid=(16.0, 8.0) (expected [16,8] / (16,8))",
+			"name": "atlas_grid_manifest",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "material=ShaderMaterial tile/alpha/alphavert bound=true",
+			"name": "atlas_material_bound",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "shader shadow_enabled=0.0 (expected 0; world3d_terrain.gd:315)",
+			"name": "shader_shadow_disabled",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "WaterPlane nodes=1 all_hidden=true (module-owned, hidden not deleted)",
+			"name": "water_plane_hidden",
+			"passed": true,
+			"status": "PASS"
+		}
+	],
+	"fails": 0,
+	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+	"id": "t_terrain_only",
+	"measured": {
+		"atlas_grid": [
+			16.0,
+			8.0
+		],
+		"atlas_grid_shader_param": "(16.0, 8.0)",
+		"atlas_mode": "single",
+		"cells_below_water_level": 0,
+		"display_server": "headless",
+		"flat_grid_promoted_cells": 0,
+		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+		"headless": true,
+		"height_max_m": 1.54998576641083,
+		"height_min_m": 1.45000541210175,
+		"material_model": "V7-86 terrain_tileindex.gdshader ShaderMaterial; UV2.x=donor tile id, UV2.y=donor-slope face mode (0/1/2); atlas_grid from V7-85 manifest; shadow_enabled=0; V7-86 mask blend retained (measured removal darkens); shader owns blend/cull",
+		"mesh_surfaces": 1,
+		"mesh_triangles": 7938,
+		"mesh_vertices": 4096,
+		"requested_png": "",
+		"res_nodes_count": 0,
+		"shader_shadow_enabled": "0.0",
+		"terrain_stats_present": true,
+		"uv2_count": 4096,
+		"uv2_x_max": 0.0,
+		"uv2_x_min": 0.0,
+		"uv2_x_out_of_atlas": 0,
+		"uv2_y_hist": {
+			"0": 4096
+		},
+		"water_3d_node_count": 1,
+		"water_level_m": -0.25,
+		"water_plane_count": 1,
+		"water_tileblock_cells": 0
+	},
+	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
+	"passed": false,
+	"passes": 17,
+	"png_path": "",
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"skip_reason": "DisplayServer.get_name()==headless: state-only result, PNG not captured",
+	"skipped_or_skip_capture": 0,
+	"structural_ok": true,
+	"unix_ms": 1795597130453.0,
+	"verdict": "SKIP_CAPTURE"
+}

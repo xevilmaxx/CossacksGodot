@@ -67,7 +67,7 @@
       "step": "groups"
     },
     {
-      "detail": "minimap bottom-left: yes",
+      "detail": "minimap bottom-right: yes",
       "passed": true,
       "step": "minimap_frustum"
     },

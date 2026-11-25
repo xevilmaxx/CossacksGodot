@@ -16,8 +16,15 @@ extends Node3D
 # bindings listed in docs/coord_swarm_2026-11-24/reports/V784_donor_water_shader.md.
 
 # ---- Donor literals (exact values the probe reads back) --------------------
-const WATER_LEVEL: float = -0.25           # texturemap.inc:30 cWaterHeight
-const WATER_SHORE_HEIGHT: float = -0.1     # texturemap.inc:31 cWaterShoreHeight
+const WATER_LEVEL: float = -0.25           # texturemap.inc:30 cWaterHeight (CLASSIFICATION)
+const WATER_SHORE_HEIGHT: float = -0.1     # texturemap.inc:31 cWaterShoreHeight (INERT in shipped fragment)
+# TRN-WATER: the donor's WATER_LEVEL in water.dev.frag:167 is gl_TexCoord[1].z,
+# i.e. the water PLANE's vertex Y (water.dev.vert:18) — engine-supplied and
+# UNVERIFIED (RV-TRN-03 §2), NOT the -0.25 tile-classification literal. Decouple
+# the two: this is a PORT APPROXIMATION placeholder (the only donor-readable
+# number) so waveheight stays 0 under shipped constants (DTRN-03 C16). A labelled
+# A/B may pass a different surface Y; it is never recovered donor truth.
+const WATER_SURFACE_Y: float = -0.25       # PORT APPROX placeholder for gl_TexCoord[1].z
 const MAX_HEIGHT: float = 2.96             # texturemap.inc:29 cMaxHeight
 const COAST_FADE: float = 0.57             # water.dev.frag:37 coast2water_fadedepth
 const DEEP_FADE: float = 1.07              # water.dev.frag:168 0.5 + 0.57
@@ -145,7 +152,10 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 	_material = ShaderMaterial.new()
 	_material.shader = shader
 	# Donor literals -> uniforms (the probe asserts the first three).
-	_material.set_shader_parameter("water_level", WATER_LEVEL)
+	_material.set_shader_parameter("water_level", WATER_LEVEL)          # classification threshold
+	# TRN-WATER: separate plane surface Y (donor gl_TexCoord[1].z), no longer the
+	# -0.25 classification literal. Default keeps waveheight=0 (DTRN-03 C16).
+	_material.set_shader_parameter("water_surface_y", WATER_SURFACE_Y)
 	_material.set_shader_parameter("shore_height", WATER_SHORE_HEIGHT)
 	_material.set_shader_parameter("max_height", MAX_HEIGHT)
 	_material.set_shader_parameter("coast_fade_depth", COAST_FADE)
@@ -181,11 +191,13 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 	# Existing 4-vertex plane geometry, verbatim from world3d_terrain.gd:175-192.
 	var half_x: float = float(w) * TILE_M * 0.5
 	var half_z: float = float(h) * TILE_M * 0.5
+	# TRN-WATER: the plane Y is the surface Y (donor gl_TexCoord[1].z), not the
+	# cWaterHeight classification literal; shader and geometry stay in sync.
 	var v := PackedVector3Array([
-		Vector3(-half_x, WATER_LEVEL, -half_z),
-		Vector3(half_x, WATER_LEVEL, -half_z),
-		Vector3(half_x, WATER_LEVEL, half_z),
-		Vector3(-half_x, WATER_LEVEL, half_z)])
+		Vector3(-half_x, WATER_SURFACE_Y, -half_z),
+		Vector3(half_x, WATER_SURFACE_Y, -half_z),
+		Vector3(half_x, WATER_SURFACE_Y, half_z),
+		Vector3(-half_x, WATER_SURFACE_Y, half_z)])
 	var uv := PackedVector2Array([
 		Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)])
 	var ind := PackedInt32Array([0, 3, 1, 1, 3, 2])
@@ -229,6 +241,16 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 		# clamp(-0.25*3-1.5,0,1)=0: the donor swell term is zeroed under the
 		# -0.25 threshold literal. Kept donor-faithful, not retuned to the 2D app's 1.0.
 		"waveheight_from_donor_literal": clampf(WATER_LEVEL * 3.0 - 1.5, 0.0, 1.0),
+		# TRN-WATER audit trail: surface Y decoupled from the classification literal.
+		"water_surface_y": WATER_SURFACE_Y,
+		"water_surface_y_source": ("PORT APPROXIMATION placeholder = classification literal -0.25; "
+			+ "donor gl_TexCoord[1].z plane Y UNVERIFIED (water.dev.vert:18; RV-TRN-03 §2). "
+			+ "waveheight=0 under this default (DTRN-03 C16); A/B >0.8333 restores swell."),
+		"waveheight_from_surface_y": clampf(WATER_SURFACE_Y * 3.0 - 1.5, 0.0, 1.0),
+		"water_alpha_gate": ("PORT GUARD: alpha = coastfade2 * (1 - step(water_level, height)); "
+			+ "donor ramp coastfade/coastfade2 unchanged (texturemap.inc:30; water.dev.frag:198-199,230)"),
+		"shore_prox": ("REMOVED — RV-TRN-03 §5.2 proved it INERT (=1) under shipped "
+			+ "literals; PORT ART absent from the donor fragment (water.dev.frag:227)"),
 	}
 	return true
 
@@ -245,6 +267,16 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 # Until then the neutral height texture keeps full coverage (current port look).
 # The donor hmapTex literal binding itself is UNVERIFIED (DECOMP-04 §8) — this
 # is a port substitute, not a recovered donor binding.
+#
+# TRN-WATER CROSS-OWNER NOTE (NOT editable in this file): the near-zero-alpha
+# waterline currently reveals grass1 because the terrain module clamps BLK_WATER
+# (game.gd:52,255) to atlas tile 0 / grass1 in its UV2 build
+# (world3d_terrain.gd:697-702 — owned by another builder). The donor paints
+# oriented wet-sand sandsea1/5/6 on masked water cells
+# (texturemap.inc:463-472,503-511; DEC-05 §5.1 ids 93/97/98), with sandrock*
+# also present in the port atlas. The terrain owner must remap those water cells
+# to a donor shore id instead of tile 0; this water module cannot do it. See
+# docs/coord_swarm_2026-11-25/reports/TRN_WATER_implementation.md.
 func bind_height_grid(height: PackedFloat32Array, gw: int, gh: int) -> bool:
 	if _material == null or gw <= 0 or gh <= 0 or height.size() < gw * gh:
 		return false

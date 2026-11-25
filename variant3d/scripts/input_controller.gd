@@ -28,6 +28,12 @@ var _pick_screen: Vector2 = Vector2.INF
 var selected_ids: Array = []
 var drag_start := Vector2.INF
 var dragging := false
+# SEL-01: donor drag state. onmousemove.inc:141-147 records the ground anchor on
+# the FIRST LMB-held MOVE (not on press); :152 compares axis-wise X/Z deltas.
+var _sel_ground_start := Vector2.INF
+var _drag_current := Vector2.INF
+# SEL-01: viewport-pixel marquee overlay, created by bind_3d() only.
+var sel_rect_overlay = null
 var attack_move_mode := false
 var ghost_sid := ""
 var hotkeys: Dictionary = {}      # action -> key
@@ -67,6 +73,50 @@ var _hint_hold_ms := 0
 # W4-2: wheel-delta accumulator. Input translation only (no tween/easing):
 # coalesce fractional high-resolution wheel deltas into whole notch requests.
 var _wheel_accum := 0.0
+
+# --- SEL-01: viewport-pixel selection marquee (labelled PORT APPROXIMATION) ---
+# Donor outline: RGBA(1,1,0,1), 1 px solid, no fill, AntiAliased=False
+# (data\brushes\selection.cfg:3-14, bound at data\resources\resource.lib:47;
+# confirmed by RV-SEL-01 §"Visual (authoritative, exact)"). The donor's native
+# inside-box predicate is engine-side/UNVERIFIED, so this outline approximates
+# the donor visual; it is NOT donor parity. It draws the authoritative screen
+# pixels already held here - never world.sel_rect (SIM metres) projected through
+# camera3d.world_to_px(), which expects centred metres (PLAY2FIX_navbox.md:14-29).
+class SelectionRectPainter extends Node2D:
+	var rect_px: Rect2 = Rect2()
+
+	func _draw() -> void:
+		if not rect_px.has_area():
+			return
+		# selection.cfg:3-14 - yellow, width 1, solid outline, no fill, no AA.
+		draw_rect(rect_px, Color(1, 1, 0, 1), false, 1.0, false)
+
+
+class SelectionRectOverlay extends CanvasLayer:
+	var selection_rect: Rect2 = Rect2()
+	var _painter: SelectionRectPainter = null
+
+	func _init() -> void:
+		name = "SelectionRectOverlay"
+		set_meta("sel_rect_overlay", true)
+		layer = 10
+		visible = false
+
+	func _ready() -> void:
+		_painter = SelectionRectPainter.new()
+		_painter.name = "SelectionRectPainter"
+		add_child(_painter)
+
+	func get_selection_rect() -> Rect2:
+		return selection_rect
+
+	func set_selection_rect(r: Rect2) -> void:
+		selection_rect = r
+		visible = r.has_area()
+		if _painter != null and is_instance_valid(_painter):
+			_painter.rect_px = r
+			_painter.queue_redraw()
+
 
 func bind(g: C3Game, w, h: C3HUD, cam) -> void:
 	game = g
@@ -124,6 +174,34 @@ func bind_3d(cam) -> void:
 	camera = cam
 	picking.bind(game, cam)
 	render_mode = "3d"
+	_ensure_selection_rect_overlay()
+
+# SEL-01: the marquee lives entirely in this file (world3d.gd / hud.gd stay
+# untouched). CanvasLayer + Node2D have no mouse_filter and never consume input.
+func _ensure_selection_rect_overlay() -> void:
+	if render_mode != "3d":
+		return
+	if sel_rect_overlay != null and is_instance_valid(sel_rect_overlay):
+		return
+	sel_rect_overlay = SelectionRectOverlay.new()
+	add_child(sel_rect_overlay)
+
+func _show_selection_rect(r: Rect2) -> void:
+	if sel_rect_overlay == null or not is_instance_valid(sel_rect_overlay):
+		return
+	sel_rect_overlay.call("set_selection_rect", r)
+
+func _hide_selection_rect() -> void:
+	if sel_rect_overlay == null or not is_instance_valid(sel_rect_overlay):
+		return
+	sel_rect_overlay.call("set_selection_rect", Rect2())
+
+# Donor epsilon: 0.005 m default, 0.25 m in attack-point / guard mode
+# (data\gui\menu.inc\onmousemove.inc:32-34, :152). This script's equivalents
+# are attack_ground_mode (:42) and guard_mode (:51). SEL-01 also raises the
+# double-click window 0.35 s -> 0.5 s (data\gui\menu.cfg:33, KeyDoubleDelay).
+func _selection_epsilon_m() -> float:
+	return 0.25 if (attack_ground_mode or guard_mode) else 0.005
 
 # FIX-SEL: attach the route overlay to the world's FX layer. 2D (Node2D world)
 # keeps the original Node2D + draw-signal path byte-for-byte; 3D (Node3D world)
@@ -551,6 +629,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and _mm_dragging:
 			_mm_dragging = false
+			# SEL-01: a world drag that ends over the minimap still releases the
+			# marquee (donor onmousedown.inc:364-365 clears the selection state).
+			drag_start = Vector2.INF
+			dragging = false
+			_sel_ground_start = Vector2.INF
+			_hide_selection_rect()
 			return
 		var pw := _screen_to_world(mb.position)
 		if mb.button_index == MOUSE_BUTTON_LEFT:
@@ -607,13 +691,21 @@ func _unhandled_input(event: InputEvent) -> void:
 					return
 				drag_start = mb.position
 				dragging = false
+				_drag_current = mb.position
+				_sel_ground_start = Vector2.INF
+				_hide_selection_rect()
 			else:
 				if drag_start == Vector2.INF:
 					return
-				var moved := (mb.position - drag_start).length() > 6.0
+				# SEL-01: donor's click/drag split is driven by the world-ground
+				# epsilon crossed on LMB-held motion (onmousemove.inc:152), not by
+				# the old 6 screen-pixel test. `dragging` is set only by that test.
+				var moved := dragging
 				if moved:
 					var a := _screen_to_world(drag_start)
 					var bp := _screen_to_world(mb.position)
+					# Donor keeps the WORLD ground rect (S-25-06): no screen-space
+					# select_in_rect() was introduced by this ticket.
 					var rect := Rect2(minf(a.x, bp.x), minf(a.y, bp.y), absf(a.x - bp.x), absf(a.y - bp.y))
 					var arr: Array = []
 					for e in game.entities:
@@ -621,11 +713,26 @@ func _unhandled_input(event: InputEvent) -> void:
 							continue
 						if rect.has_point(e.pos):
 							arr.append(e)
+					if Input.is_key_pressed(KEY_SHIFT):
+						# donor onmousemove.inc:156-157 - Shift => spmAdd: union
+						# the rect result with what was already selected. No
+						# Ctrl-remove here: donor's spmRemove branch is commented
+						# out at onmousemove.inc:159-161.
+						var seen: Dictionary = {}
+						var merged: Array = []
+						for e0 in get_selected():
+							seen[int(e0.id)] = true
+							merged.append(e0)
+						for e1 in arr:
+							if not seen.has(int(e1.id)):
+								seen[int(e1.id)] = true
+								merged.append(e1)
+						arr = merged
 					_set_selection(arr)
 				else:
 					var e := _pick(pw, false)
 					var now := Time.get_ticks_msec() / 1000.0
-					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < 0.35:
+					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < 0.5:
 						# double click: all same-type units on screen (original behaviour)
 						var arr2: Array = []
 						# V7-52: explicit type guard for the untyped `world` seam (V71:197).
@@ -645,6 +752,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					last_click_sid = str(e.sid) if not e.is_empty() else ""
 				drag_start = Vector2.INF
 				dragging = false
+				_sel_ground_start = Vector2.INF
+				_drag_current = Vector2.INF
+				_hide_selection_rect()
 		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
 			_right_order(pw)
 	elif event is InputEventMouseMotion:
@@ -659,8 +769,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				_mm_dragging = false
 			return
-		if drag_start != Vector2.INF and (event.position - drag_start).length() > 6.0:
-			dragging = true
+		if drag_start != Vector2.INF and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+			_drag_current = event.position
+			var saved_pick_screen := _pick_screen
+			var gp := _screen_to_world(event.position)
+			# Donor onmousemove.inc:141-147: the anchor is recorded on the FIRST
+			# LMB-held MOVE, not on press. The port decides click-vs-drag on that
+			# same event, so for this first sample the previous ground point is
+			# the press pixel (PORT APPROXIMATION of donor's multi-event stream);
+			# later moves compare against the first-move anchor, as donor does.
+			var ref: Vector2 = _screen_to_world(drag_start) if _sel_ground_start == Vector2.INF else _sel_ground_start
+			if _sel_ground_start == Vector2.INF:
+				_sel_ground_start = gp
+			var eps := _selection_epsilon_m()
+			# onmousemove.inc:152 - axis-wise world X/Z delta (gp.y is ground Z).
+			if absf(gp.x - ref.x) > eps or absf(gp.y - ref.y) > eps:
+				dragging = true
+			_pick_screen = saved_pick_screen
 	elif event is InputEventKey and event.pressed and not event.echo:
 		_handle_key(event as InputEventKey)
 
@@ -1179,6 +1304,15 @@ func _process(_dt: float) -> void:
 		if render_mode == "3d" and picking != null and hud != null \
 				and hud.build_ghost_sid != "" and world.has_method("set_build_ghost_pos"):
 			world.set_build_ghost_pos(_screen_to_world(get_viewport().get_mouse_position()))
+	# SEL-01: draw the marquee in viewport pixels from the authoritative screen
+	# pixels already held here (drag_start / last LMB-held mouse position).
+	# NEVER project world.sel_rect: it holds SIM metres while
+	# camera3d.world_to_px() expects centred metres (PLAY2FIX_navbox.md:14-29).
+	if dragging and drag_start != Vector2.INF:
+		var cur := _drag_current if is_finite(_drag_current.x) and is_finite(_drag_current.y) else get_viewport().get_mouse_position()
+		_show_selection_rect(Rect2(drag_start, cur).abs())
+	else:
+		_hide_selection_rect()
 	if patrol_mode and patrol_a != Vector2.INF:
 		_route_redraw()
 	# build ghost hint uses the message line, not the units/score label.

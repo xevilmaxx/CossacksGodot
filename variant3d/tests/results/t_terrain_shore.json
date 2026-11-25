@@ -1,0 +1,310 @@
+{
+	"checks": [
+		{
+			"detail": "source=%s MAP=%dx%d height/tileblock/res_nodes present=%s",
+			"name": "harness_stub_shape",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/world3d_terrain.gd missing=[]",
+			"name": "terrain_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "script=res://scripts/camera3d.gd missing=[]",
+			"name": "camera_module_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() returned true",
+			"name": "build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "WaterPlane=%d Water3D=%d (one plane, no constant-quad fallback stack; world3d_terrain.gd:762-764, DTRN-03 S1)",
+			"name": "exactly_one_water_plane",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "water3d.stats.height_aware and terrain.stats.water.height_aware both true (water3d.gd:248-264, DTRN-03 S1)",
+			"name": "height_aware_true",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "cells < -0.25 m: 32 / 4096 (need >0 and <10%)",
+			"name": "water_cell_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 (expected 1)",
+			"name": "mesh_surface_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "vertices=4096 expected=4096",
+			"name": "mesh_vertex_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "triangles=7938 expected=7938",
+			"name": "mesh_triangle_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "UV2 entries=4096 expected=4096",
+			"name": "uv2_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "sandsea1/5/6 present=true sandrock*/rock* present=true hist={ \"0\": 4058, \"88\": 6, \"89\": 3, \"98\": 6, \"93\": 2, \"29\": 2, \"87\": 6, \"97\": 4, \"90\": 3, \"91\": 3, \"92\": 3 }",
+			"name": "shore_ids_in_uv2_histogram",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "UV2.x=0 count=%d minus grass cells=%d => %d; BLK_WATER clamps to grass1 (world3d_terrain.gd:697-702) — DTRN-03 W2/F2, expected pre-fix failure",
+			"name": "no_water_cell_tile0_clamp",
+			"passed": false,
+			"status": "EXPECTED_PRE_FIX_FAILURE"
+		},
+		{
+			"detail": "-0.25 / -0.1 / 2.96 / 0.57 / 1.07 / 0.1 / 0.01 from material or stats: { \"water_level\": -0.25, \"shore_height\": -0.1, \"max_height\": 2.96, \"coast_fade_depth\": 0.57, \"deep_fade_depth\": 1.07, \"tex_scale_s\": 0.1, \"tex_scale_t\": 0.01 }",
+			"name": "donor_literals_exact",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "wave_noise=res://assets/terrain/water_png/diffusewaves0.png (water3d.gd:77-81; DTRN-03 S3)",
+			"name": "wave_texture_diffusewaves0",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "particle_amount=%s unchanged (this atom writes no shader parameter; DTRN-03 C22/F3 forbids inventing foam)",
+			"name": "foam_not_added_by_test",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "res_nodes=0 entities=0 (isolated shore row: no trees/mines/units)",
+			"name": "no_trees_no_mines",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "waveheight=%s with surface Y=-0.25 (DTRN-03 W1/F1, water3d.gd:19,231, water3d.gdshader:156) — expected pre-fix failure",
+			"name": "donor_coarse_swell_present",
+			"passed": false,
+			"status": "EXPECTED_PRE_FIX_FAILURE"
+		},
+		{
+			"detail": "water3d.gdshader:209-217 shore_prox=%s (PORT ART multiplier absent in donor water.dev.frag:227) — expected pre-fix failure",
+			"name": "no_port_art_shore_prox",
+			"passed": false,
+			"status": "EXPECTED_PRE_FIX_FAILURE"
+		},
+		{
+			"detail": "DisplayServer.get_name()==headless: no 3D PNG (main.gd:1157-1158,1790-1800)",
+			"name": "windowed_capture_available",
+			"passed": false,
+			"status": "UNVERIFIED"
+		},
+		{
+			"detail": "headless: windowed GPU readback not attempted",
+			"name": "capture_image",
+			"passed": false,
+			"status": "UNVERIFIED"
+		},
+		{
+			"detail": "headless: windowed GPU readback not attempted",
+			"name": "capture_saved",
+			"passed": false,
+			"status": "UNVERIFIED"
+		},
+		{
+			"detail": "headless: windowed GPU readback not attempted",
+			"name": "png_full_width_dark_rows",
+			"passed": false,
+			"status": "UNVERIFIED"
+		},
+		{
+			"detail": "headless: windowed GPU readback not attempted",
+			"name": "sample_coverage",
+			"passed": false,
+			"status": "UNVERIFIED"
+		},
+		{
+			"detail": "headless: windowed GPU readback not attempted",
+			"name": "water_alpha_confined_to_cells",
+			"passed": false,
+			"status": "UNVERIFIED"
+		},
+		{
+			"detail": "headless: windowed GPU readback not attempted",
+			"name": "water_animation_delta",
+			"passed": false,
+			"status": "UNVERIFIED"
+		}
+	],
+	"display_server": "headless",
+	"expected_pre_fix_note": "DTRN-03 W1/W2/W3: surface Y = -0.25 => waveheight 0; port-art shore_prox foam multiplier; water cells clamped to grass1. These are donor-truth assertions, deliberately NOT weakened.",
+	"fails": 10,
+	"grid": {
+		"cells": 4096,
+		"h": 64,
+		"w": 64
+	},
+	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+	"id": "t_terrain_shore",
+	"measured": {
+		"cells_below_water_level": 32,
+		"donor_literals_readback": {
+			"coast_fade_depth": 0.57,
+			"deep_fade_depth": 1.07,
+			"max_height": 2.96,
+			"shore_height": -0.1,
+			"tex_scale_s": 0.1,
+			"tex_scale_t": 0.01,
+			"water_level": -0.25
+		},
+		"entities_count": 0,
+		"grass_cells": 4026,
+		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+		"headless": true,
+		"height_aware": true,
+		"mesh_surfaces": 1,
+		"mesh_triangles": 7938,
+		"mesh_vertices": 4096,
+		"particle_amount": 30.0,
+		"requested_png": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_smallmap/smallmap64_terrain_shore.png",
+		"res_nodes_count": 0,
+		"shader_has_shore_prox": true,
+		"tile0_excess_over_grass": 32,
+		"uv2_count": 4096,
+		"uv2_x_hist": {
+			"0": 4058,
+			"29": 2,
+			"87": 6,
+			"88": 6,
+			"89": 3,
+			"90": 3,
+			"91": 3,
+			"92": 3,
+			"93": 2,
+			"97": 4,
+			"98": 6
+		},
+		"water_3d_node_count": 1,
+		"water_cell_fraction": 0.0078125,
+		"water_cells": 32,
+		"water_material": "ShaderMaterial",
+		"water_plane_count": 1,
+		"water_stats": {
+			"binary_caution": "0x853ad4 = string-key assignments; 0x853eb8 f32 1.9999998807907104 is an enable bitmask, NOT a shader constant. No numeric descriptor default is provable in cossacks.exe (DEEPDEC-03 §2.3).",
+			"donor_literals": {
+				"coast_fade_depth": 0.57,
+				"deep_fade_depth": 1.07,
+				"max_height": 2.96,
+				"shore_height": -0.1,
+				"tex_scale_s": 0.1,
+				"tex_scale_t": 0.01,
+				"water_level": -0.25
+			},
+			"donor_water_lib_proven": {
+				"BumpFactor": 1,
+				"CustomTexCoord": true,
+				"DeepColor": [
+					0.0,
+					0.0,
+					0.1255,
+					0.5
+				],
+				"DistFactor": 1,
+				"FresnelBias": 1,
+				"FresnelPower": 1,
+				"HeightMapEnable": true,
+				"LayerCount": 1,
+				"MaxAlpha": 1.1,
+				"MaxDepth": 1,
+				"MinAlpha": 0,
+				"MinDepth": 0,
+				"Offset": 0.495,
+				"ReflectionAmount": 1,
+				"ShadowMapEnable": true,
+				"ShallowColor": [
+					0.0,
+					0.0,
+					0.0,
+					0.5
+				],
+				"Speed": 1.0,
+				"WaterAmount": 1,
+				"WaveAmp": 0,
+				"WaveDir0": [
+					-1.0,
+					0.0
+				],
+				"WaveDir1": [
+					-0.7,
+					0.7
+				],
+				"WaveFreq": 0
+			},
+			"grid": {
+				"h": 64,
+				"w": 64
+			},
+			"height_aware": true,
+			"height_grid": {
+				"h": 64,
+				"w": 64
+			},
+			"hmap_min_max": "PORT APPROXIMATION -max_height/+max_height; binary defaults UNVERIFIED (DEEPDEC-03 §2.3)",
+			"module": "res://scripts/water3d.gd",
+			"plane_triangles": 2,
+			"plane_vertices": 4,
+			"shader": "res://shaders/water3d.gdshader",
+			"shore_prox": "REMOVED — RV-TRN-03 §5.2 proved it INERT (=1) under shipped literals; PORT ART absent from the donor fragment (water.dev.frag:227)",
+			"visual_parity_claimed": false,
+			"water_alpha_gate": "PORT GUARD: alpha = coastfade2 * (1 - step(water_level, height)); donor ramp coastfade/coastfade2 unchanged (texturemap.inc:30; water.dev.frag:198-199,230)",
+			"water_lib_keys_commented_in_fragment": [
+				"deepColor",
+				"shallowColor",
+				"reflectionAmount",
+				"waterAmount",
+				"fresnelPower",
+				"fresnelBias",
+				"distFactor",
+				"bumpFactor"
+			],
+			"water_surface_y": -0.25,
+			"water_surface_y_source": "PORT APPROXIMATION placeholder = classification literal -0.25; donor gl_TexCoord[1].z plane Y UNVERIFIED (water.dev.vert:18; RV-TRN-03 §2). waveheight=0 under this default (DTRN-03 C16); A/B >0.8333 restores swell.",
+			"wave_tex_path": "res://assets/terrain/water_png/diffusewaves0.png",
+			"waveheight_from_donor_literal": 0.0,
+			"waveheight_from_surface_y": 0.0
+		},
+		"wave_tex_path": "res://assets/terrain/water_png/diffusewaves0.png",
+		"waveheight_from_donor_literal": 0.0
+	},
+	"no_foam_added_by_test": true,
+	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (TEST_MATRIX.md:57)",
+	"passed": false,
+	"passes": 16,
+	"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_smallmap/smallmap64_terrain_shore.png",
+	"png_t1_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_smallmap/smallmap64_terrain_shore_t1.png",
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"soft_checks": 0,
+	"unix_ms": 1795597245435.0,
+	"verdict": "UNVERIFIED"
+}

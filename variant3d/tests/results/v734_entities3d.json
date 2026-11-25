@@ -52,5 +52,5 @@
 	"passed": true,
 	"sprite_check_method": "structural source scan (comment-stripped) + runtime node scan; no runtime ResourceLoader interception in GDScript",
 	"status": "DONE",
-	"unix_ms": 1795519241810.0
+	"unix_ms": 1795596684938.0
 }

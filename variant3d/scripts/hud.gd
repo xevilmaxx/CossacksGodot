@@ -291,32 +291,39 @@ func _apply_scale() -> void:
 	if is_instance_valid(top_center):
 		top_center.offset_top = _ms(8.0)
 		top_center.offset_bottom = _ms(8.0) + _ms(64.0)
-	var mm := minf(_ms(200.0), ui_vp.x * 0.20)
+	# HUD-01: donor 240x240 minimap, bottom-RIGHT with a -8 edge inset
+	# (initminimap.inc:5-7,17,33). The port's ui_us still scales for small
+	# windows; 0.25 only guards very narrow viewports.
+	var mm := minf(_ms(240.0), ui_vp.x * 0.25)
 	if is_instance_valid(minimap_rect):
 		minimap_rect.custom_minimum_size = Vector2(mm, mm)
-	# Bottom strip partition (never overlaps): the minimap texture can be
-	# larger than mm (map is 160-320px), so the rect must ignore texture
-	# size and the panel gets explicit bounds: width = mm + style padding
-	# (14+14 margins + 2 border), height = mm + (10+10 + 2). The selection
-	# panel starts at the minimap's right edge plus a gap, by construction.
+	# Bottom strip partition (never overlaps): the minimap owns the donor's
+	# right-hand 240px slot. Selection + orders panels are clipped to the width
+	# remaining to its left. The panel gets explicit bounds because the map
+	# texture (160-320px) must not drive the widget size.
 	if is_instance_valid(sel_panel) and is_instance_valid(cmd_panel):
 		var cmd_w: float = minf(_ms(332.0), ui_vp.x * 0.34)
 		var mm_pad_w := 30.0
 		var mm_pad_h := 22.0
-		var mm_right: float = _ms(4.0) + mm + mm_pad_w
+		var mm_inset := _ms(8.0)   # donor cMinimapOffsetX/Y = -8
 		if is_instance_valid(minimap_panel):
-			minimap_panel.offset_left = _ms(4.0)
-			minimap_panel.offset_right = mm_right
-			minimap_panel.offset_top = -(mm + mm_pad_h)
-			minimap_panel.offset_bottom = 0.0
-		var mm_edge: float = mm_right + _ms(8.0)
-		sel_panel.offset_left = mm_edge
-		sel_panel.offset_right = ui_vp.x - cmd_w - _ms(24.0)
+			# Right/bottom anchors: offsets are relative to those viewport edges.
+			minimap_panel.offset_right = -mm_inset
+			minimap_panel.offset_left = -mm_inset - mm - mm_pad_w
+			minimap_panel.offset_top = -mm_inset - mm - mm_pad_h
+			minimap_panel.offset_bottom = -mm_inset
+		# Free width left of the minimap, minus a gap.
+		var strip_right: float = ui_vp.x - mm_inset - mm - mm_pad_w - _ms(8.0)
+		var cmd_left: float = strip_right - cmd_w
+		sel_panel.offset_left = _ms(4.0)
+		sel_panel.offset_right = maxf(_ms(44.0), cmd_left - _ms(8.0))
 		sel_panel.offset_bottom = 0.0
 		var roomy: bool = build_menu_open or build_bar.get_child_count() > 5
 		sel_panel.offset_top = -_ms(250.0 if roomy else 150.0)
-		cmd_panel.offset_left = -(cmd_w + _ms(8.0))
-		cmd_panel.offset_right = -_ms(8.0)
+		# cmd_panel stays right-anchored; its right edge now stops at the
+		# minimap's left edge instead of the viewport's right edge.
+		cmd_panel.offset_right = -(ui_vp.x - strip_right)
+		cmd_panel.offset_left = cmd_panel.offset_right - cmd_w
 		cmd_panel.offset_bottom = 0.0
 		var ncmd := cmd_bar.get_child_count()
 		cmd_panel.visible = ncmd > 0
@@ -1375,9 +1382,11 @@ func _build_minimap() -> void:
 	minimap_tex = ImageTexture.create_from_image(minimap_view_img)
 	minimap_rect = TextureRect.new()
 	minimap_rect.texture = minimap_tex
-	minimap_rect.custom_minimum_size = Vector2(200, 200)
-	minimap_rect.set_meta("uimw", 200.0)
-	minimap_rect.set_meta("uimh", 200.0)
+	# HUD-01: donor minimap is bottom-RIGHT 240x240 (initminimap.inc:17,33;
+	# showunitcontrol.inc:109-110,586 reserves the 289px right-hand strip).
+	minimap_rect.custom_minimum_size = Vector2(240, 240)
+	minimap_rect.set_meta("uimw", 240.0)
+	minimap_rect.set_meta("uimh", 240.0)
 	minimap_rect.stretch_mode = TextureRect.STRETCH_SCALE
 	minimap_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	minimap_rect.anchor_left = 0.0
@@ -1387,14 +1396,17 @@ func _build_minimap() -> void:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	panel.add_child(minimap_rect)
-	panel.anchor_left = 0.0
-	panel.anchor_right = 0.0
+	# The parent panel is the layout anchor; the TextureRect is container-laid-out.
+	panel.anchor_left = 1.0
+	panel.anchor_right = 1.0
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = 4
-	panel.offset_top = -212
-	panel.offset_right = 234
-	panel.offset_bottom = 0
+	# Initial offsets mirror _apply_scale(): -8 from the right/bottom edges
+	# (donor cMinimapOffsetX/Y = -8, initminimap.inc:5-7,29-35).
+	panel.offset_left = -(240 + 30 + 8)
+	panel.offset_top = -(240 + 22 + 8)
+	panel.offset_right = -8
+	panel.offset_bottom = -8
 	minimap_panel = panel
 	add_child(panel)
 	minimap_rect.gui_input.connect(_on_minimap_input)

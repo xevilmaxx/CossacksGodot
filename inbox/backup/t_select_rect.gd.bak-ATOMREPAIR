@@ -1,0 +1,578 @@
+# T-SELECT-RECT — REAL-input drag-rectangle atom for variant3d (TEST-S1).
+#
+# Owns ONLY this file. No game code, config, manifest, fixture, gate or git edit.
+# AUTHORING ONLY: no Godot process was started by the author; this atom has NOT
+# been run. It is deliberately allowed to FAIL pre-fix on the overlay checks.
+#
+# What it proves (unlike uitest.gd:115-123, which calls _set_selection directly):
+#   * InputEventMouseButton(press) -> InputEventMouseMotion(left mask) ->
+#     InputEventMouseButton(release) travels through C3Input._unhandled_input()
+#     (input_controller.gd:528,556-663) and produces a real box selection.
+#   * The 6 screen-pixel port threshold (input_controller.gd:613,662-663) and
+#     the donor's 0.005 m world-ground epsilon (DSEL-01 claim 1;
+#     onmousemove.inc:32-34) are both crossed by the synthetic drag; both are
+#     MEASURED and asserted, not assumed.
+#   * Donor Shift=add (DSEL-01 claim 4) is recorded as an expectation in the
+#     result JSON; the port's drag branch ignores Shift (input_controller.gd:624,
+#     DSEL-01 claim 27) so it is a declared divergence, not silently dropped.
+#   * cmd_* side effects are counted through a C3Game subclass spy installed on
+#     input_ctl.game only; the sim itself stays the real booted game.
+#   * A CanvasLayer selection-rect overlay with Rect2 == Rect2(p0,p1).abs()
+#     during drag, hidden after release, is ASSERTED. Pre-fix this fails
+#     (EXPECTED_FAILURE) because world3d.gd:126-127 stores sel_rect/sel_active
+#     with no draw consumer (V3D-01 break point 1; DSEL-01 claim 28). The
+#     assertion is retained, never weakened or deleted.
+#
+# Capture path: real 64x64 game boot via res://scenes/main.tscn with --config
+# <small_map_64.json> and a --screenshot path used ONLY as the menu-skip flag
+# (main.gd:206,230-244,1096-1097). Headless: main's screenshot saver is disabled
+# after boot; no PNG is the assertion surface. A self-owned SubViewport was
+# rejected: it would duplicate main's proven boot/capture seam and still would
+# not draw the missing marquee (V3D-01 section 4).
+#
+# Launch form (NOT run by the author; one Godot at a time, Windows `python`):
+#   python variant3d\tools\godot_runner.py run --id <ticket>-S1 --timeout 40 -- \
+#     --headless --path variant3d --script res://tests/t_select_rect.gd -- \
+#     --config <ABS>\variant3d\tests\fixtures\small_map_64.json \
+#     --screenshot <temp>\smallmap64_select_rect.png
+# Exit via call_deferred("quit", 0/1); result at res://tests/results/t_select_rect.json.
+extends SceneTree
+
+const MAIN_SCENE := "res://scenes/main.tscn"
+const DEFAULT_FIXTURE := "res://tests/fixtures/small_map_64.json"
+const OUT_DIR := "res://tests/results"
+const Data = preload("res://scripts/data.gd")
+
+# DSEL-01 claim 1 / onmousemove.inc:32-34 (donor) vs input_controller.gd:613,662-663 (port).
+const DONOR_EPSILON_M := 0.005
+const PORT_DRAG_PX := 6.0
+
+var _id := "t_select_rect"
+var _checks: Array[Dictionary] = []
+var _ok := true
+var _finished := false
+var _stage := 0
+var _stage_frames := 0
+
+var _cfg_arg := ""
+var _shot_arg := ""
+var _abs_config := ""
+var _main: Node = null
+var _game = null            # C3Game, real booted sim
+var _spy = null             # CmdSpy, C3Game subclass, installed on input_ctl only
+var _world = null
+var _cam = null
+var _hud = null
+var _ictl = null
+var _picker = null
+
+var _u10: Dictionary = {}
+var _u11: Dictionary = {}
+var _u12: Dictionary = {}
+var _bld: Dictionary = {}
+
+var _p0 := Vector2.INF
+var _p1 := Vector2.INF
+var _p_click := Vector2.INF
+var _g0 := Vector2.INF
+var _g1 := Vector2.INF
+var _overlay_during: Dictionary = {}
+var _overlay_after: Dictionary = {}
+var _m: Dictionary = {}
+
+# ---------------------------------------------------------------------------
+# cmd_* spy. Extends C3Game so the typed `var game: C3Game` on C3Input
+# (input_controller.gd:9) accepts it. Only cmd_* methods are overridden; every
+# non-cmd field is copied by reference from the real booted game, so the drag
+# and pick paths still operate on the live sim dictionaries.
+# Signatures mirror game.gd:2152,2839-2999,3124,3157,4187-4247.
+# ---------------------------------------------------------------------------
+class CmdSpy extends C3Game:
+	var calls: Dictionary = {}
+
+	func _bump(n: String) -> void:
+		calls[n] = int(calls.get(n, 0)) + 1
+
+	func total() -> int:
+		var n := 0
+		for v in calls.values():
+			n += int(v)
+		return n
+
+	func cmd_sow(mill: Dictionary) -> int:
+		_bump("cmd_sow")
+		return 0
+
+	func cmd_move(e: Dictionary, pos: Vector2) -> void:
+		_bump("cmd_move")
+
+	func cmd_attack(e: Dictionary, target: Dictionary) -> void:
+		_bump("cmd_attack")
+
+	func cmd_attack_move(e: Dictionary, pos: Vector2) -> void:
+		_bump("cmd_attack_move")
+
+	func cmd_gather(e: Dictionary, res_node: Dictionary) -> void:
+		_bump("cmd_gather")
+
+	func cmd_resow(e: Dictionary, node: Dictionary) -> void:
+		_bump("cmd_resow")
+
+	func cmd_build(e: Dictionary, site: Dictionary) -> void:
+		_bump("cmd_build")
+
+	func cmd_stand_ground(e: Dictionary) -> void:
+		_bump("cmd_stand_ground")
+
+	func cmd_no_stand_ground(e: Dictionary) -> void:
+		_bump("cmd_no_stand_ground")
+
+	func cmd_hold_fire(e: Dictionary, on: bool) -> void:
+		_bump("cmd_hold_fire")
+
+	func cmd_engage(e: Dictionary) -> void:
+		_bump("cmd_engage")
+
+	func cmd_stop(e: Dictionary) -> void:
+		_bump("cmd_stop")
+
+	func cmd_guard(e: Dictionary, target: Dictionary) -> void:
+		_bump("cmd_guard")
+
+	func cmd_cancel_guard(e: Dictionary) -> void:
+		_bump("cmd_cancel_guard")
+
+	func cmd_patrol(e: Dictionary, a: Vector2, b: Vector2) -> void:
+		_bump("cmd_patrol")
+
+	func cmd_attack_ground(e: Dictionary, pos: Vector2) -> void:
+		_bump("cmd_attack_ground")
+
+	func cmd_enter(e: Dictionary, b: Dictionary) -> void:
+		_bump("cmd_enter")
+
+	func cmd_unload(b: Dictionary) -> void:
+		_bump("cmd_unload")
+
+	func cmd_replenish(off: Dictionary) -> int:
+		_bump("cmd_replenish")
+		return 0
+
+	func cmd_form_size(off: Dictionary, size: int) -> void:
+		_bump("cmd_form_size")
+
+	func cmd_make_gate(w: Dictionary) -> void:
+		_bump("cmd_make_gate")
+
+	func cmd_gate_toggle(g: Dictionary) -> void:
+		_bump("cmd_gate_toggle")
+
+	func cmd_repair(pe: Dictionary, b: Dictionary) -> void:
+		_bump("cmd_repair")
+
+	func cmd_delete(e: Dictionary) -> void:
+		_bump("cmd_delete")
+
+
+func check(name: String, cond: bool, detail: String = "", expected_pre_fix_failure: bool = false) -> void:
+	_checks.append({
+		"name": name,
+		"passed": cond,
+		"detail": detail,
+		"expected_pre_fix_failure": expected_pre_fix_failure,
+	})
+	if not cond:
+		_ok = false
+	print("T_SELECT_RECT %s %s - %s%s" % ["PASS" if cond else "FAIL", name, detail,
+		" [EXPECTED_FAILURE_PRE_FIX]" if expected_pre_fix_failure else ""])
+
+
+func _arg_value(flag: String) -> String:
+	for src in [OS.get_cmdline_user_args(), OS.get_cmdline_args()]:
+		var args := PackedStringArray(src)
+		for i in range(args.size()):
+			if str(args[i]) == flag and i + 1 < args.size():
+				return str(args[i + 1])
+	return ""
+
+
+func _resolve_config(given: String) -> String:
+	if given.is_absolute_path():
+		return given if FileAccess.file_exists(given) else ""
+	var by_res := ProjectSettings.globalize_path("res://").path_join(given)
+	if FileAccess.file_exists(by_res):
+		return by_res
+	if FileAccess.file_exists(given):
+		return given
+	return ""
+
+
+func _goto(s: int) -> void:
+	_stage = s
+	_stage_frames = 0
+
+
+func _finish() -> void:
+	if _finished:
+		return
+	_finished = true
+	var passes := 0
+	for c in _checks:
+		if bool(c.get("passed", false)):
+			passes += 1
+	var out := {
+		"id": _id,
+		"passed": _ok,
+		"passes": passes,
+		"total": _checks.size(),
+		"checks": _checks,
+		"measured": _m,
+		"capture_path": "real main.tscn boot + --config small_map_64.json + --screenshot menu-skip flag; headless; no PNG assertion",
+		"donor_semantics": {
+			"world_epsilon_m": DONOR_EPSILON_M,
+			"drag_start": "first LMB-held move (DSEL-01 claim 3)",
+			"shift": "add / spmAdd (DSEL-01 claim 4) — port drag ignores Shift (claim 27); declared divergence, not asserted here",
+			"port_screen_threshold_px": PORT_DRAG_PX,
+			"drag_crosses_both": true,
+		},
+		"runner_declaration": "AUTHORING ONLY — no Godot run, no runner ticket submitted by author",
+		"unix_ms": Time.get_unix_time_from_system() * 1000.0,
+	}
+	var abs_dir := ProjectSettings.globalize_path(OUT_DIR)
+	DirAccess.make_dir_recursive_absolute(abs_dir)
+	var path := "%s/%s.json" % [abs_dir, _id]
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(out, "\t"))
+		f.close()
+	else:
+		push_error("t_select_rect: cannot write " + path)
+	print("T_SELECT_RECT RESULT_JSON: " + path)
+	print("T_SELECT_RECT RESULT: %s %d/%d" % ["PASS" if _ok else "FAIL", passes, _checks.size()])
+	print("T_SELECT_RECT STDERR_SCAN_REQUIRED (runner stderr.txt)")
+	call_deferred("quit", 0 if _ok else 1)
+
+
+func _abort(reason: String) -> void:
+	check("boot_and_setup", false, reason)
+	_finish()
+
+
+func _initialize() -> void:
+	if DisplayServer.get_name() != "headless":
+		_abort("headless guard: run with --headless (no GPU/window needed)")
+		return
+	_cfg_arg = _arg_value("--config")
+	_shot_arg = _arg_value("--screenshot")
+	if _cfg_arg == "" or _shot_arg == "":
+		_abort("need --config <small_map_64.json> and --screenshot <path> user args (menu skip)")
+		return
+	_abs_config = _resolve_config(_cfg_arg)
+	if _abs_config == "":
+		_abort("config fixture not found: " + _cfg_arg)
+		return
+	_m["config"] = _abs_config
+	_m["screenshot_arg"] = _shot_arg
+	_m["headless"] = true
+	var packed := load(MAIN_SCENE) as PackedScene
+	if packed == null:
+		_abort("cannot load " + MAIN_SCENE)
+		return
+	_main = packed.instantiate()
+	root.add_child(_main)
+	_goto(0)  # wait for scene _ready / full 3D boot before inspecting
+
+
+func _clear_entities() -> void:
+	_game.entities.clear()
+	_game.by_id.clear()
+	_game.live_units.clear()
+	_game.live_blds.clear()
+	_game.grid.clear()
+	_game.events.clear()
+	for p in _game.players:
+		p["entities"] = []
+	for key in ["officers", "drummers", "priests"]:
+		var arr = _game.get(key)
+		if arr is Array:
+			arr.clear()
+
+
+func _project_sim(sim: Vector2) -> Vector2:
+	# camera3d.world_to_px()/unproject_position() take CENTRED world metres;
+	# e.pos is SIM top-left metres. One subtraction, as in camera3d.gd:222-229,246.
+	var half := Vector2(float(_game.get("MAP_W")), float(_game.get("MAP_H"))) * Data.TILE_M * 0.5
+	var centred := sim - half
+	return _cam.unproject_position(Vector3(centred.x, 0.0, centred.y))
+
+
+func _configure() -> bool:
+	_game = _main.get("game")
+	_cam = _main.get("camera")
+	_world = _main.get("world")
+	_hud = _main.get("hud")
+	_ictl = _main.get("input_ctl")
+	var boot_ok := (_game != null and _cam != null and _world != null
+		and _hud != null and _ictl != null
+		and str(_main.get("render_mode")).to_lower() == "3d"
+		and int(_game.get("MAP_W")) == 64 and int(_game.get("MAP_H")) == 64)
+	check("boot_real_64_3d_game", boot_ok,
+		"render_mode=%s MAP=%sx%s" % [str(_main.get("render_mode")),
+		str(_game.get("MAP_W")) if _game != null else "?", str(_game.get("MAP_H")) if _game != null else "?"])
+	if not boot_ok:
+		return false
+
+	# --screenshot hides the HUD (main.gd:1096-1097); restore it for real input.
+	_hud.visible = true
+	check("hud_visible", bool(_hud.visible), "hud.visible restored after --screenshot boot")
+	# Stop the savers/AI so main cannot quit or retarget the camera mid-drag.
+	_main.set("screenshot_frames", 1000000)
+	_main.set("screenshot_done", true)
+	var ais = _main.get("ais")
+	if ais is Array:
+		ais.clear()
+	_main.set("speed", 0.0)
+
+	_clear_entities()
+	_game.next_id = 10
+	var half := Vector2(float(_game.get("MAP_W")), float(_game.get("MAP_H"))) * Data.TILE_M * 0.5
+	var box_a := half + Vector2(-12.0, -8.0)
+	var box_b := half + Vector2(12.0, 8.0)
+	var sim10 := half + Vector2(-6.0, -2.0)
+	var sim11 := half + Vector2(4.0, 4.0)
+	var sim12 := half + Vector2(40.0, 40.0)
+	var sim_bld := half + Vector2(0.0, 0.0)
+	_u10 = _game.spawn("peasant", 0, sim10)
+	_u11 = _game.spawn("peasant", 0, sim11)
+	_u12 = _game.spawn("peasant", 0, sim12)
+	# "Neutral" here means non-unit: player 0 is used deliberately so exclusion
+	# proves the kind=="unit" filter, not the player==0 filter (DSEL-01 claim 27).
+	_bld = _game.spawn("cen", 0, sim_bld)
+	var ids := []
+	for e in _game.entities:
+		ids.append(int(e.id))
+	ids.sort()
+	check("test_entities_exact", ids == [10, 11, 12, 13],
+		"ids=%s (3 friendly units + 1 non-unit building)" % str(ids))
+	_m["entity_sim_positions"] = {
+		"10": [sim10.x, sim10.y], "11": [sim11.x, sim11.y],
+		"12": [sim12.x, sim12.y], "13_building": [sim_bld.x, sim_bld.y],
+	}
+
+	# cmd spy: typed C3Game subclass, only cmd_* overridden; all live state shared.
+	_spy = CmdSpy.new()
+	_spy.entities = _game.entities
+	_spy.by_id = _game.by_id
+	_spy.players = _game.players
+	_spy.res_nodes = _game.res_nodes
+	_spy.grid = _game.grid
+	_spy.live_units = _game.live_units
+	_spy.live_blds = _game.live_blds
+	_spy.next_id = _game.next_id
+	_spy.bld_dirty = _game.bld_dirty
+	_spy.MAP_W = _game.MAP_W
+	_spy.MAP_H = _game.MAP_H
+	_ictl.game = _spy
+	check("cmd_spy_installed", _ictl.game == _spy, "input_ctl.game is CmdSpy subclass of C3Game")
+
+	_picker = _ictl.get("picking")
+	check("picking3d_bound", _picker != null, "bind_3d() must create the picking3d adapter")
+	if _picker == null:
+		return false
+	_p0 = _project_sim(box_a)
+	_p1 = _project_sim(box_b)
+	_p_click = _project_sim(sim10)
+	var vp: Vector2 = Vector2(_cam.get_viewport().size)
+	_m["viewport_px"] = [vp.x, vp.y]
+	_m["p0_px"] = [_p0.x, _p0.y]
+	_m["p1_px"] = [_p1.x, _p1.y]
+	_m["click_px"] = [_p_click.x, _p_click.y]
+	var pixels_ok := (_p0.is_finite() and _p1.is_finite() and _p_click.is_finite()
+		and _p0.x > 8.0 and _p0.y > 8.0 and _p0.x < vp.x - 8.0 and _p0.y < vp.y - 8.0
+		and _p1.x > 8.0 and _p1.y > 8.0 and _p1.x < vp.x - 8.0 and _p1.y < vp.y - 8.0
+		and _p_click.x > 8.0 and _p_click.y > 8.0 and _p_click.x < vp.x - 8.0 and _p_click.y < vp.y - 8.0)
+	check("projected_pixels_in_viewport", pixels_ok,
+		"p0=%s p1=%s click=%s vp=%s" % [str(_p0), str(_p1), str(_p_click), str(vp)])
+	if not pixels_ok:
+		return false
+	# camera3d.world_to_px() must agree with the direct unproject call.
+	var via_helper := _cam.world_to_px(box_a - half)
+	check("unproject_matches_world_to_px", via_helper.distance_to(_p0) < 0.5,
+		"unproject=%s world_to_px=%s" % [str(_p0), str(via_helper)])
+
+	var px_dist := (_p1 - _p0).length()
+	check("drag_crosses_port_6px_threshold", px_dist > PORT_DRAG_PX,
+		"|p1-p0|=%.2f px > %.1f px (input_controller.gd:613,662-663)" % [px_dist, PORT_DRAG_PX])
+	var g0v: Variant = _picker.call("ground_point", _p0)
+	var g1v: Variant = _picker.call("ground_point", _p1)
+	check("ground_endpoints_finite", g0v is Vector2 and g1v is Vector2
+		and (g0v as Vector2).is_finite() and (g1v as Vector2).is_finite(),
+		"ground_point(p0)=%s ground_point(p1)=%s" % [str(g0v), str(g1v)])
+	if not (g0v is Vector2 and g1v is Vector2):
+		return false
+	_g0 = g0v
+	_g1 = g1v
+	var world_delta := maxf(absf(_g1.x - _g0.x), absf(_g1.y - _g0.y))
+	_m["measured_ground_rect"] = [_g0.x, _g0.y, _g1.x, _g1.y]
+	_m["drag_px_distance"] = px_dist
+	_m["drag_world_delta_m"] = world_delta
+	check("drag_crosses_donor_0.005m_epsilon", world_delta > DONOR_EPSILON_M,
+		"world delta=%.4f m > %.3f m (DSEL-01 claim 1 / onmousemove.inc:32-34)" % [world_delta, DONOR_EPSILON_M])
+	return true
+
+
+func _send_mouse_button(p: Vector2, pressed: bool) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.position = p
+	ev.global_position = p
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = pressed
+	ev.shift_pressed = false  # donor Shift=add recorded in JSON; port drag ignores it
+	Input.parse_input_event(ev)
+
+
+func _send_mouse_motion(p: Vector2, left_held: bool) -> void:
+	var ev := InputEventMouseMotion.new()
+	ev.position = p
+	ev.global_position = p
+	if left_held:
+		ev.button_mask = MOUSE_BUTTON_MASK_LEFT
+	Input.parse_input_event(ev)
+
+
+func _overlay_probe() -> Dictionary:
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		var lname := str(n.name).to_lower()
+		var tagged := bool(n.get_meta("sel_rect_overlay", false))
+		var named := lname.contains("select") and lname.contains("rect")
+		if n is CanvasLayer and (tagged or named):
+			var has_api := (n.has_method("get_selection_rect") or n.has_method("selection_rect")
+				or n.has_method("get_rect") or n.get("selection_rect") is Rect2)
+			var r: Rect2 = Rect2()
+			if n.has_method("get_selection_rect"):
+				r = n.call("get_selection_rect")
+			elif n.has_method("selection_rect"):
+				r = n.call("selection_rect")
+			elif n.has_method("get_rect"):
+				r = n.call("get_rect")
+			elif n.get("selection_rect") is Rect2:
+				r = n.get("selection_rect")
+			return {"found": true, "node": n.name, "has_api": has_api, "visible": n.visible,
+				"rect": [r.position.x, r.position.y, r.size.x, r.size.y]}
+		for c in n.get_children():
+			stack.append(c)
+	return {"found": false, "node": "", "has_api": false, "visible": false, "rect": [0.0, 0.0, 0.0, 0.0]}
+
+
+func _probe_rect(probe: Dictionary) -> Rect2:
+	var a = probe.get("rect", [])
+	if a is Array and (a as Array).size() == 4:
+		return Rect2(float(a[0]), float(a[1]), float(a[2]), float(a[3]))
+	return Rect2()
+
+
+func _assert_overlay(probe: Dictionary, want_visible: bool, label: String) -> void:
+	var expected := Rect2(_p0, _p1).abs()
+	var got := _probe_rect(probe)
+	var found := bool(probe.get("found", false))
+	var api := bool(probe.get("has_api", false))
+	var visible := bool(probe.get("visible", false))
+	var ok := found and api
+	if want_visible:
+		ok = ok and visible and got.is_equal_approx(expected)
+	else:
+		# Hidden may mean invisible Control, empty rect, or the node being freed.
+		ok = (not found) or (ok and (not visible or got.is_empty()))
+	check(label, ok, "node=%s api=%s visible=%s rect=%s expected=%s" % [
+		str(probe.get("node", "")), str(api), str(visible), str(got), str(expected)], true)
+
+
+func _selected_ids() -> Array:
+	var out := []
+	for e in _game.entities:
+		if bool(e.get("selected", false)):
+			out.append(int(e.id))
+	out.sort()
+	return out
+
+
+func _assert_drag_result() -> void:
+	var ids := _selected_ids()
+	check("selected_ids_exact", ids == [10, 11],
+		"selected=%s expected=[10,11]" % str(ids))
+	check("unit10_selected", bool(_u10.get("selected", false)), "e10.selected=%s" % str(_u10.get("selected", false)))
+	check("unit11_selected", bool(_u11.get("selected", false)), "e11.selected=%s" % str(_u11.get("selected", false)))
+	check("unit12_not_selected", not bool(_u12.get("selected", false)), "e12.selected=%s" % str(_u12.get("selected", false)))
+	check("building_not_selected", not bool(_bld.get("selected", false)),
+		"building id=%s kind=%s player=%s selected=%s" % [str(_bld.id), str(_bld.kind),
+		str(_bld.player), str(_bld.get("selected", false))])
+	var ground_rect := Rect2(_g0, _g1).abs()
+	check("building_inside_rect_but_excluded_by_kind", ground_rect.has_point(_bld.pos),
+		"building pos=%s in ground rect=%s yet not selected (kind filter)" % [str(_bld.pos), str(ground_rect)])
+	check("cmd_counter_zero_after_drag", _spy.total() == 0, "cmd_calls=%s" % str(_spy.calls))
+
+
+func _assert_click_result() -> void:
+	var ids := _selected_ids()
+	check("short_click_selects_single_unit", ids == [10],
+		"selected=%s expected=[10] (no click-pick regression)" % str(ids))
+	check("cmd_counter_zero_after_click", _spy.total() == 0, "cmd_calls=%s" % str(_spy.calls))
+
+
+func _process(_dt: float) -> bool:
+	if _finished:
+		return false
+	_stage_frames += 1
+	match _stage:
+		0:  # real game boot
+			if _stage_frames >= 3:
+				if not _configure():
+					_abort("real boot/configure failed; see preceding checks")
+				else:
+					_goto(1)
+		1:  # press at p0
+			if _stage_frames >= 2:
+				_send_mouse_button(_p0, true)
+				_goto(2)
+		2:  # motion at p1 with left button mask
+			if _stage_frames >= 2:
+				check("drag_start_from_real_event", (_ictl.drag_start - _p0).length() < 0.5,
+					"input_ctl.drag_start=%s p0=%s" % [str(_ictl.drag_start), str(_p0)])
+				_send_mouse_motion(_p1, true)
+				_goto(3)
+		3:  # overlay during drag, then release
+			if _stage_frames >= 2:
+				_overlay_during = _overlay_probe()
+				_m["overlay_during"] = _overlay_during
+				_m["world_sel_rect_during"] = [_world.sel_rect.position.x, _world.sel_rect.position.y,
+					_world.sel_rect.size.x, _world.sel_rect.size.y]
+				_m["world_sel_active_during"] = bool(_world.sel_active)
+				check("world_sel_active_during_drag", bool(_world.sel_active),
+					"world.sel_rect mirror from input_controller.gd:1164-1172")
+				_send_mouse_button(_p1, false)
+				_goto(4)
+		4:  # overlay after release + drag assertions
+			if _stage_frames >= 2:
+				_overlay_after = _overlay_probe()
+				_m["overlay_after"] = _overlay_after
+				_m["world_sel_active_after"] = bool(_world.sel_active)
+				_assert_overlay(_overlay_during, true, "overlay_rect_during_drag")
+				_assert_overlay(_overlay_after, false, "overlay_hidden_after_release")
+				_assert_drag_result()
+				_send_mouse_motion(_p_click, false)
+				_goto(5)
+		5:  # short click press
+			if _stage_frames >= 1:
+				_send_mouse_button(_p_click, true)
+				_goto(6)
+		6:  # short click release
+			if _stage_frames >= 2:
+				_send_mouse_button(_p_click, false)
+				_goto(7)
+		7:  # finish
+			if _stage_frames >= 2:
+				_assert_click_result()
+				_finish()
+	return false
