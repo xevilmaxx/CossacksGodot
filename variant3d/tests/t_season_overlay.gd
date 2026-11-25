@@ -197,7 +197,7 @@ func _res_exists(path: String) -> bool:
 	return FileAccess.file_exists(_res_path(path))
 
 
-func _read_json_variant(path: String):
+func _read_json_variant(path: String) -> Variant:
 	if not _res_exists(path):
 		return null
 	var f := FileAccess.open(_res_path(path), FileAccess.READ)

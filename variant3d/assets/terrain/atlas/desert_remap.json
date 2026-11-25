@@ -3,9 +3,9 @@
   "task": "SP-3 — Desert tile-name remap data (indices 111-122 already packed)",
   "schema_version": 1,
   "status": "DELIVERED__DATA_ONLY__NO_CODE_EDIT__NO_RUNNER_JOB__NO_DONOR_COPY",
-  "scope": "Read-only data file. Stores the donor _misc_SetDesert Summer-name -> Desert-name remap as labelled index data. No art, no new ids, no shader/loader/renderer edit, no donor file read/copied/executed, no Godot job.",
+  "scope": "Read-only data file. Stores the donor _misc_SetDesert Summer-name -> Desert-name remap as labelled index data. SP-03 created it without donor access; DESERT-REMAP-02 extended it after a read-only donor re-read (see extension). No art, no new ids, no shader/loader/renderer edit, no donor file copied/executed, no Godot job.",
   "visual_parity_claim": false,
-  "donor_access": "Donor was NOT opened for this ticket. All donor path:line facts are cited second-hand from DENV-01, DEC-05 and SEASON-PLAN-01, which read the donor read-only in earlier passes.",
+  "donor_access": "SP-03 did not open the donor; its original path:line facts were second-hand from DENV-01, DEC-05 and SEASON-PLAN-01. DESERT-REMAP-02 re-read the donor read-only this pass — see extension.donor_access.",
   "source": {
     "donor_function": "_misc_SetDesert",
     "donor_path": "scripts\\lib\\miscext.script:1429-1543",
@@ -61,7 +61,48 @@
     "rock1":   { "target": "desert2",  "atlas_index": 112, "source_index": 17, "target_source_png": "desert2.png",  "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
     "rock7":   { "target": "desert4",  "atlas_index": 114, "source_index": 23, "target_source_png": "desert4.png",  "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
     "rock9":   { "target": "test23",   "atlas_index": 107, "source_index": 25, "target_source_png": "test23.png",   "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX", "note": "Target is an already-packed Summer-set tile (index 107), not a desertN id; listed here exactly as donor text states." },
-    "alpha0a": { "target": "alpha0c",  "atlas_index": 123, "source_index": 86, "target_source_png": null,         "donor_line": "scripts\\lib\\miscext.script:1501", "label": "DONOR_INDEX", "note": "Index-only alias. Both alpha0a (86) and alpha0c (123) are manifest EMPTY cells with no shipped PNG; no art fabricated. DEC-05:435: alpha0c resolves to grass1.dds as an alias material, not a distinct texture." }
+    "alpha0a": { "target": "alpha0c",  "atlas_index": 123, "source_index": 86, "target_source_png": null,         "donor_line": "scripts\\lib\\miscext.script:1501", "label": "DONOR_INDEX", "note": "Index-only alias. Both alpha0a (86) and alpha0c (123) are manifest EMPTY cells with no shipped PNG; no art fabricated. DEC-05:435: alpha0c resolves to grass1.dds as an alias material, not a distinct texture." },
+
+    "grass3":       { "target": "test22",    "atlas_index": 106, "source_index": 2,  "target_source_png": "test22.png",    "donor_line": "scripts\\lib\\miscext.script:1449", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Target is an already-packed Summer-set tile (index 106), not a desertN id; listed exactly as donor text states." },
+    "grass5":       { "target": "test22",    "atlas_index": 106, "source_index": 4,  "target_source_png": "test22.png",    "donor_line": "scripts\\lib\\miscext.script:1450", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Target is an already-packed Summer-set tile (index 106), not a desertN id; listed exactly as donor text states." },
+    "test2":        { "target": "ground1",   "atlas_index": 10,  "source_index": 73, "target_source_png": "ground1.png",   "donor_line": "scripts\\lib\\miscext.script:1455", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor maps test2/test1/test3 to ground1 (:1455-1457) while ground1 itself maps to test16 (:1454); the donor loop uses oldnam once per cell, so no chained remap is implied." },
+    "test1":        { "target": "ground1",   "atlas_index": 10,  "source_index": 72, "target_source_png": "ground1.png",   "donor_line": "scripts\\lib\\miscext.script:1456", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. See test2 note: donor mapping is single-pass on oldnam, not chained." },
+    "test3":        { "target": "ground1",   "atlas_index": 10,  "source_index": 74, "target_source_png": "ground1.png",   "donor_line": "scripts\\lib\\miscext.script:1457", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. See test2 note: donor mapping is single-pass on oldnam, not chained." },
+    "grass_ground1": { "target": "desert11", "atlas_index": 121, "source_index": 14, "target_source_png": "desert11.png", "donor_line": "scripts\\lib\\miscext.script:1468", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor has a //-commented alternative to test23 at :1467; the live case is desert11." },
+    "grass_ground2": { "target": "sandsea5", "atlas_index": 97,  "source_index": 15, "target_source_png": "sandsea5.png", "donor_line": "scripts\\lib\\miscext.script:1469", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "grass_ground3": { "target": "desert11", "atlas_index": 121, "source_index": 16, "target_source_png": "desert11.png", "donor_line": "scripts\\lib\\miscext.script:1471", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor has a //-commented alternative to test22 at :1470; the live case is desert11." },
+    "rock3":        { "target": "sandrock6", "atlas_index": 92,  "source_index": 19, "target_source_png": "sandrock6.png", "donor_line": "scripts\\lib\\miscext.script:1473", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "rock4":        { "target": "sandrock6", "atlas_index": 92,  "source_index": 20, "target_source_png": "sandrock6.png", "donor_line": "scripts\\lib\\miscext.script:1474", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "rock5":        { "target": "test22",    "atlas_index": 106, "source_index": 21, "target_source_png": "test22.png",    "donor_line": "scripts\\lib\\miscext.script:1475", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Target is an already-packed Summer-set tile (index 106), not a desertN id." },
+    "rock8":        { "target": "test22",    "atlas_index": 106, "source_index": 24, "target_source_png": "test22.png",    "donor_line": "scripts\\lib\\miscext.script:1477", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. This is the donor BASE case; the separate height-gated override at :1504-1505 (rock8 -> desert2 when 0.1<h<2.9 and (h>1.8 or h<1)) remains in height_gated below and is not executed here." },
+    "test0":        { "target": "sandsea5", "atlas_index": 97,  "source_index": 71, "target_source_png": "sandsea5.png", "donor_line": "scripts\\lib\\miscext.script:1480", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "test4":        { "target": "sandsea5", "atlas_index": 97,  "source_index": 75, "target_source_png": "sandsea5.png", "donor_line": "scripts\\lib\\miscext.script:1482", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "test6":        { "target": "sandsea6", "atlas_index": 98,  "source_index": 77, "target_source_png": "sandsea6.png", "donor_line": "scripts\\lib\\miscext.script:1483", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "test9":        { "target": "desert6",  "atlas_index": 116, "source_index": 80, "target_source_png": "desert6.png",  "donor_line": "scripts\\lib\\miscext.script:1484", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "test12":       { "target": "sandsea5", "atlas_index": 97,  "source_index": 83, "target_source_png": "sandsea5.png", "donor_line": "scripts\\lib\\miscext.script:1485", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "test13":       { "target": "sandsea6", "atlas_index": 98,  "source_index": 84, "target_source_png": "sandsea6.png", "donor_line": "scripts\\lib\\miscext.script:1486", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "test14":       { "target": "desert11", "atlas_index": 121, "source_index": 85, "target_source_png": "desert11.png", "donor_line": "scripts\\lib\\miscext.script:1487", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02." },
+    "sandrock2":    { "target": "sandsea6", "atlas_index": 98,  "source_index": 88, "target_source_png": "sandsea6.png", "donor_line": "scripts\\lib\\miscext.script:1490", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'seashore' group (:1489)." },
+    "sandrock3":    { "target": "sandsea5", "atlas_index": 97,  "source_index": 89, "target_source_png": "sandsea5.png", "donor_line": "scripts\\lib\\miscext.script:1491", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'seashore' group (:1489)." },
+    "sandrock4":    { "target": "sandsea5", "atlas_index": 97,  "source_index": 90, "target_source_png": "sandsea5.png", "donor_line": "scripts\\lib\\miscext.script:1492", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'seashore' group (:1489)." },
+    "grass10":      { "target": "sandsea1", "atlas_index": 93,  "source_index": 9,  "target_source_png": "sandsea1.png", "donor_line": "scripts\\lib\\miscext.script:1495", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'empty' group (:1494)." },
+    "test11":       { "target": "sandsea1", "atlas_index": 93,  "source_index": 82, "target_source_png": "sandsea1.png", "donor_line": "scripts\\lib\\miscext.script:1496", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'empty' group (:1494)." },
+    "grass6":       { "target": "sandsea1", "atlas_index": 93,  "source_index": 5,  "target_source_png": "sandsea1.png", "donor_line": "scripts\\lib\\miscext.script:1497", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'empty' group (:1494)." },
+    "grass9":       { "target": "sandsea1", "atlas_index": 93,  "source_index": 8,  "target_source_png": "sandsea1.png", "donor_line": "scripts\\lib\\miscext.script:1498", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'empty' group (:1494)." },
+    "test5":        { "target": "sandsea1", "atlas_index": 93,  "source_index": 76, "target_source_png": "sandsea1.png", "donor_line": "scripts\\lib\\miscext.script:1499", "label": "DONOR_INDEX", "note": "Added DESERT-REMAP-02. Donor 'empty' group (:1494)." }
+  },
+  "extension": {
+    "task": "DESERT-REMAP-02 — extend the port desert remap from 11 to all 38 donor case pairs",
+    "date": "2026-11-25",
+    "donor_access": "Fresh read-only re-read this pass: C:\\Games\\Cossacks 3\\data\\scripts\\lib\\miscext.script:1429-1543 (bytes/latin-1; never executed, unpacked or copied). All 38 live case lines :1448-1501 were re-extracted with exact path:line citations. //-commented alternatives at :1458-1460, :1467, :1470 and :1478 were excluded.",
+    "before": { "direct_cases": 11, "height_gated_cases": 1 },
+    "after": { "direct_cases": 38, "height_gated_cases": 1, "donor_case_pairs_covered": 38 },
+    "added_cases": 27,
+    "count_note": "DSEASON-01 §4 rank 1 lists 26 missing families plus the separate base rock8->test22 case (:1477); counting rock8 gives 27 added direct cases. 11 + 27 = 38 donor case pairs.",
+    "schema_preserved": true,
+    "no_destinations_invented": true,
+    "art_verification": "All 27 added targets resolve in presets_summer.json and in the atlas manifest layout with status OK and a source_png present on disk under variant3d/assets/terrain/blocks/. No new art, id or index was invented.",
+    "data_only_fields_untouched": ["dry_land_height_scale_koef", "mine_basename_suffix", "env_objects_except_stones_and_field_destroyed", "desert_tiles_generator_weights"]
   },
   "height_gated": [
     {
@@ -120,16 +161,20 @@
   ],
   "validation": {
     "json_parse": "PASS (python json.load)",
-    "source_keys_in_presets_summer": "11/11 direct + 1 height-gated = 12/12 present",
-    "targets_in_presets_summer_and_manifest_layout": "12/12 resolve to a packed atlas index",
+    "source_keys_in_presets_summer": "38/38 direct + 1 height-gated = 39/39 present",
+    "targets_in_presets_summer_and_manifest_layout": "39/39 resolve to a packed atlas index",
+    "desert_remap02_added_cases": "27/27 added targets resolve in presets_summer.json + manifest layout and have source_png art on disk",
+    "unresolved_added_targets": 0,
+    "pre_existing_unverified_target": "alpha0a -> alpha0c (index 123 EMPTY cell, source_png null) — unchanged from SP-3",
+    "donor_case_pairs_covered": "38/38 in remap; 1 additional height-gated override retained in height_gated",
     "desert_indices_contiguous_111_to_122": true,
     "no_new_ids": true,
     "target_categories": {
       "desert_111_to_122": ["desert2", "desert4", "desert6", "desert11"],
-      "sandsea_93_to_98": ["sandsea5"],
+      "sandsea_93_to_98": ["sandsea1", "sandsea5", "sandsea6"],
       "alpha0c_123": ["alpha0c"],
-      "other_packed_summer_set_tiles": ["test16 (100)", "test23 (107)"],
-      "note": "test16 and test23 are packed Summer-set indices already present in presets_summer.json and the atlas manifest; they satisfy 'packed atlas index' but are outside the parenthetical enumeration in SEASON-PLAN-01 SP-3 acceptance."
+      "other_packed_summer_set_tiles": ["ground1 (10)", "sandrock6 (92)", "test16 (100)", "test22 (106)", "test23 (107)"],
+      "note": "ground1, sandrock6, test16, test22 and test23 are packed Summer-set indices already present in presets_summer.json and the atlas manifest; they satisfy 'packed atlas index' but are outside the parenthetical enumeration in SEASON-PLAN-01 SP-3 acceptance. Recorded exactly as donor text states; no destination invented."
     }
   },
   "unverified": [
@@ -137,6 +182,7 @@
     "Whether donor applies this remap via the shipped build at all; this file encodes donor intent only.",
     "The height gate, koef=0.8, mine suffix s, env-object destruction and generator weights are stored as data only and are not executed by this ticket.",
     "alpha0a/alpha0c are EMPTY manifest cells; no shipped PNG, so the alpha remap is index-only (PORT APPROXIMATION for atlas packing).",
-    "No donor GPU A/B or visual-parity test; parity stays UNVERIFIED."
+    "No donor GPU A/B or visual-parity test; parity stays UNVERIFIED.",
+    "The 27 added pairs are donor-active plain-script case text; native EXE execution remains UNVERIFIED. No donor parity is claimed for the extended table."
   ]
 }

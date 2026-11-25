@@ -208,10 +208,18 @@ emitted hard `ERROR:` lines even though the null result was later handled.
 but `variant3d/assets/models/anim/` is under `.gdignore`, so Godot **never
 imports** `mill_rotor.png`; its leftover `.import` advertises a `.ctex` that can
 never exist. Removing `.gdignore` would pull ~1,800 dead 2D bake PNGs into the
-import set, so that was explicitly **not** done. Incident: the first rotor
-parse smoke `motionanim01-rotor-smoke` (ticket **448**) was **CANCELLED by
-QA-PARITY-01's cleanup mistake**, not by a code failure; it is not evidence of a
-parse result or regression. No work was reverted because of it.
+import set, so that was explicitly **not** done.
+
+**Runner incident (QA-PARITY-01 cleanup), all non-code skips:**
+- `motionanim01-rotor-smoke` ticket **448** — CANCELLED/skipped (`serving=464`).
+- `motionanim01-rotor-smoke-r2` ticket **458** — skipped (`serving=461`) on
+  re-submission, so it also parsed nothing.
+- `rotorasset01-import` ticket **462** — skipped (`serving=475`) on the first
+  import attempt, so no import ran.
+
+None of these three is a parse result, a regression, or a reason to revert.
+Each was re-submitted once under a fresh id (`motionanim01-rotor-smoke-r3`,
+`rotorasset01-import-r2`); FIFO waits are normal and no slow job was duplicated.
 
 ### 8.1 Robustness fix (owned file only)
 
@@ -243,9 +251,27 @@ parse result or regression. No work was reverted because of it.
   `.gdignore` was not edited and no other asset was added.
 - **Incident:** `motionanim01-rotor-smoke` (ticket **448**) was CANCELLED by
   QA-PARITY-01's cleanup, not by code; it is excluded from parse evidence.
-- Runner-only validation: `python variant3d\tools\godot_runner.py run --id motionanim01-rotor-smoke-r2 --timeout 120 -- --headless --path variant3d --check-only --script res://scripts/world3d_entities.gd` (re-submitted once after the cancellation; FIFO wait is normal).
-- Targeted import: `python variant3d\tools\godot_runner.py run --id rotorasset01-import --timeout 900 --max-wait 1800 -- --headless --path variant3d --import`.
-- Result / generated `.ctex` / stderr `SCRIPT ERROR` count: _to be recorded after the runner jobs return._
+- Runner-only validation (final code): `python variant3d\tools\godot_runner.py run --id motionanim01-rotor-smoke-r3 --timeout 120 -- --headless --path variant3d --check-only --script res://scripts/world3d_entities.gd`
+  → ticket **476**, `wait 0.00 s`, `run 9.47 s`, `exit 0`, `status ok`
+  (`variant3d/.godot_queue/results/00000476.json`); stdout is only the Godot
+  banner, stderr empty. `smallmap_capture.py scan-stderr` on
+  `00000476_motionanim01-rotor-smoke-r3/stderr.txt` → **`script_error_lines: 0`**.
+  Tickets 448/458 are excluded (cleanup skips, see incident above).
+- Targeted import: `python variant3d\tools\godot_runner.py run --id rotorasset01-import-r2 --timeout 900 --max-wait 1800 -- --headless --path variant3d --import`
+  → ticket **478**, `wait 10.17 s`, `run 48.71 s`, `exit 0`, `status ok`
+  (`variant3d/.godot_queue/results/00000478.json`). stdout shows
+  `reimport | mill_rotor.png` and `[ DONE ]`; **stderr is empty**,
+  `script_error_lines: 0`, and there are **zero** lines matching both
+  `mill_rotor` and `ERROR` in stdout or stderr. Ticket 462 was a cleanup skip;
+  the import was re-submitted once under a new id.
+- Generated cache verified on disk:
+  `variant3d/.godot/imported/mill_rotor.png-4a48061f0d7ba5177d0860e82ddc4369.ctex`,
+  **28,242 B**, written 2026-11-25. The source copy
+  `variant3d/assets/models/tex/mill_rotor.png` is 36,081 B with its generated
+  `mill_rotor.png.import` (952 B); no `.uid` was generated. This is **not**
+  BLOCKED: the real ctex now exists and the graceful white-quad fallback is
+  retained anyway.
+- Short windowed boot (error-line check): _to be recorded when the job returns._
 - MOTION-ANIM-01 speed gate, yaw clamp, frozen-sim refresh and DECOR-01's 19-tree
   pool / scale ladder / jitter bands were re-checked after the rotor edit: the
   43-line DECOR block is byte-identical to the backup and all four in-flight

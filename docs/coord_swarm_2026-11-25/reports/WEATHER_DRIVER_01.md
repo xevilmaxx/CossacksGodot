@@ -4,10 +4,11 @@ task: "Wire the menu/config weather value to the donor-snow API (additive helper
 owner: WEATHER-DRIVER-01 (integration builder, subagent)
 swarm: coord_swarm_2026-11-25
 date: 2026-11-25
-status: PENDING_SMOKE_RESULT
+status: DONE__SMOKE_CLEAN__NO_CALLER_WIRED__DRIVER_UNVERIFIED
 scope: "variant3d/scripts/world3d_fx.gd + this report only (plus the mandated backup copy). Donor READ-ONLY. No main.gd, config.gd, config.json, menu.gd, test, manifest or app/** edit. No gates, no ladder, no direct godot invocation."
 labels: [OBSERVED, DERIVED, UNVERIFIED]
 backup: "inbox/backup/world3d_fx.gd.bak-WEATHERDRIVER (59,781 B; SHA-256 FFABE3F86BDF2D67E54C3C9AB11F4DD2AD2B630E3AC357FE9936AC4281B6FC28, identical to the pre-edit source)"
+smoke: "variant runner --id weatherdriver01-smoke, ticket 479 (--headless --path variant3d --check-only --script res://scripts/world3d_fx.gd) -> status=ok exit=0, stderr 0 B, SCRIPT ERROR == 0; ticket 488 (--headless --path variant3d --script res://tests/t_fx3d.gd) -> status=ok exit=0, T_FX3D PASS 13/13 checks, stderr 0 B, SCRIPT ERROR == 0"
 ---
 
 # WEATHER-DRIVER-01 — menu/config weather value -> gated donor-snow API
@@ -116,7 +117,37 @@ does not edit `main.gd`, does not change `config.json` and does not add the
 
 ## 7. Validation — variant runner only
 
-_Pending smoke result; filled in when the queued job returns._
+Both prescribed commands were run through
+`variant3d/tools/godot_runner.py` with `--id weatherdriver01-smoke` (Windows
+`python`; no direct `godot`, no gates, no ladder, no test edits). Parsed result
+files: `variant3d/.godot_queue/results/00000479.json` and `00000488.json`.
+
+| Ticket | argv (after `--`) | wait / run | status / exit | stdout / stderr | `SCRIPT ERROR` |
+|---:|---|---|---|---|---|
+| 450 | `--headless --path variant3d --check-only --script res://scripts/world3d_fx.gd` | — / — | **skipped / 1** | queue flake only | n/a — no Godot run |
+| **479** | `--headless --path variant3d --check-only --script res://scripts/world3d_fx.gd` | 48.61 s / 10.88 s | **ok / 0** | 75 B / **0 B** | **0** |
+| **488** | `--headless --path variant3d --script res://tests/t_fx3d.gd` | 242.54 s / 4.86 s | **ok / 0** | 1005 B / **0 B** | **0** |
+
+- **Ticket 450 (not accepted):** the first submission was skipped by the FIFO
+  queue (`ticket 450 was skipped (serving=461)`) before any Godot process ran —
+  an environment flake of the kind recorded in CONFIG-UI-01 §5 (ticket 422).
+  The queue was confirmed clear (`pending=0`, `godot.lock=free`) and the job was
+  re-run; tickets 479 and 488 are the accepted results.
+- **Ticket 479 (accepted, parse smoke):** `--check-only` parses/validates the
+  script. stdout is only the Godot version banner
+  (`Godot Engine v4.7.2.stable.official.ed1daf0bf …`), stderr is **0 bytes**,
+  so `SCRIPT ERROR == 0`. `--check-only` executes no test, so it carries no
+  numeric pass count; it is a parse check, not a visual A/B or a gate.
+- **Ticket 488 (accepted, pass count):** the `t_fx3d.gd` atom reports
+  **`T_FX3D PASS 13/13 checks`** — `MODULE_LOADS`, `MODULE_IS_NODE3D`,
+  `CALLABLE_BIND/SYNC/ADD_FX/DRAW_GHOST/DRAW_RALLY`, `API_SURFACE`,
+  `FX_ADDS_NODES`, `FX_LIFETIME_EXPIRY_REMOVES_NODES`, `GHOST_RALLY_CALLS`,
+  `NO_2D_SPRITE_SHEET_LOADS`, `NO_ERRORS` all PASS. stderr **0 bytes**,
+  `SCRIPT ERROR == 0`. This confirms the additive helper did not regress the
+  FX module's 10-node baseline or any existing API. The atom does **not** call
+  `set_weather_from_config()` (no test file was edited), so the helper's runtime
+  resolution is UNVERIFIED here — only its syntax and module integration are
+  smoke-covered.
 
 ## 8. Open questions
 

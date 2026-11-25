@@ -104,6 +104,16 @@ Status legend: **RESOLVED** = old claim refuted or replaced by cited readable ev
 
 | 57 | CFG-01's "config.json `map_type: land` is superseded by `terrain_type`" was refuted by CFG-02 / QA-AUDIT F-05 | `reports/CFG_02_no_menu_defaults.md`, `reports/QA_AUDIT_01_implementation_claims.md` | **Refuted in turn by DEFAULTS-VERIFY-01:** `config.gd:545` reads `gameplay.terrain_type`; `load_all()` merges config.json over a DEFAULT that already sets `terrain_type: mediterranean` and `relief: hills`, so `map_type: land` is present but not applied and CFG-01 is right **in effect**. All 7 requested defaults resolve on both interactive and menu-skipping paths. The cited `config.gd:429` was stale (now `:545`). | `reports/DEFAULTS_VERIFY_01.md` (two-file double verification of each default; artifact caveat) | 2 files per setting + DEFAULT-merge trace | RESOLVED |
 
+| 58 | DEC-01 root-file inventory is 22 | `decomp/DEC_01_binaries_rtti.md` D1E01 | Independent whole-root walk found **24** non-hidden/non-system root files; DEC-01's 16-row table omits `ogg.dll`, `openal32.dll`, `steamclient.dll`, `steamwrap.dll`, `unins000.dat/.exe`, `vorbis.dll`, `vorbisfile.dll` | `reports/INVENTORY_01_counts.md` C1 (`pathlib` walk, 76 claims re-counted) | raw-byte/path walk | RESOLVED |
+| 59 | DEC-06 map field-4 is 64 in 53 maps / 25920 in 27 | `decomp/DEC_06_map_formats.md §5.1` prose | Full 87-map header scan gives **55 / 32**, matching DEC-06's own cross-tab; the prose numbers were wrong | `reports/INVENTORY_01_counts.md` C2 | 87-map header scan | RESOLVED |
+| 60 | DEC-08 "corrected" `.inc` count from 455 to 313 | `decomp/DEC_08_ui_strings.md §7 C6` | Both are right at different scopes: whole-donor total **455** = 313 under `data/` + 142 under root `scripts/editor.inc/`; `DE_AUDIO_UI`'s 455 was not wrong | `reports/INVENTORY_01_counts.md` C3 | boundary-safe prefix counts | RESOLVED |
+
+**Duplicate-chain notice (QA-DOCS-01 C9):** rows **14/51** (frame-0 bind pose) and **28/52**
+(FogMode/sky labels) describe the same reversals at different depths. Row **51** and row **52**
+are the authoritative, later statements; rows 14 and 28 remain as the original claim trail and
+must not be cited as separate corrections. Future edits should merge them rather than add a
+third row.
+
 ## Claims that stay UNVERIFIED
 
 These values were not recovered by any amount of script, config, byte or image reading.
@@ -158,7 +168,7 @@ bridge and sky/sun precedence (`DENV_01 §7 #1–#3`), `.map` 37-byte record fie
 
 ## Summary
 
-57 indexed corrections across binaries, scripts, configs, terrain, maps, cameras,
+60 indexed corrections across binaries, scripts, configs, terrain, maps, cameras,
 animation, water, audio, atlas transport, UI and stale-doc arbitration. The largest reversals are: the `.exe`
 entry is in `CODE`, not `.bind` (row 1); `[*]=;` is live code (row 6); DEC-07's FOV
 "correction" was itself an axis misreading (row 7); frame 0 **is** the bind pose for

@@ -95,9 +95,15 @@ regression result and was not reverted against. Per the coordination notice it
 was replaced by a new unique id, submitted once (no re-submit of a slow queue
 job).
 
-Validation result: __VALIDATION_TBD__
+| Field | Observed result |
+|---|---|
+| Ticket / id / status / exit | **464** / `configwirer-smoke-r2` / `ok` / **0** |
+| Wait / run | 1178.37 s (shared FIFO) / 17.07 s |
+| Result file | `variant3d\.godot_queue\results\00000464.json` (+ `00000464_configwirer-smoke-r2\`) |
+| stdout | 75 B — Godot 4.7.2 banner only, no parse/compile error |
+| stderr | **0 B → `SCRIPT ERROR` occurrences = 0** |
 
-`--check-only --script res://scripts/main.gd` is a parse/compile check of the
+**`SCRIPT ERROR == 0` — confirmed.** `--check-only --script res://scripts/main.gd` is a parse/compile check of the
 edited file; it does not execute `_dump_map()`, so it proves the gate introduces
 no script error but does not prove a runtime marker is emitted. A functional
 dump-content assertion remains an open question.
@@ -135,9 +141,16 @@ No existing key was renamed, reordered in meaning, or given a new value.
 
 - `configwirer-smoke` (ticket 449) was cancelled externally by QA-PARITY-01's
   cleanup mistake — **not** a parse/regression failure. Work was not reverted.
+  The runner later reported `[runner] ticket 449 skipped: ticket 449 waited >
+  1800s for its turn` (exit 1), confirming it never ran Godot.
 - `configwirer-smoke-r2` was submitted once through the variant runner per the
   coordination notice; queue FIFO wait is expected and the job was never
   re-submitted while slow.
+- A concurrent swarm commit (`49aa81f7 step`) swept the already-written
+  `main.gd` edit and the backup into HEAD while this job was queued; this agent
+  did **not** run `git add` / `git commit`. That is why `git status` shows only
+  this report as modified while the on-disk diff against the backup above is
+  unchanged.
 
 ## 8. Summary
 

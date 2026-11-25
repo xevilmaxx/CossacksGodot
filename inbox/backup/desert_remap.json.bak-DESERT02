@@ -1,0 +1,142 @@
+{
+  "id": "DESERT-REMAP-01",
+  "task": "SP-3 — Desert tile-name remap data (indices 111-122 already packed)",
+  "schema_version": 1,
+  "status": "DELIVERED__DATA_ONLY__NO_CODE_EDIT__NO_RUNNER_JOB__NO_DONOR_COPY",
+  "scope": "Read-only data file. Stores the donor _misc_SetDesert Summer-name -> Desert-name remap as labelled index data. No art, no new ids, no shader/loader/renderer edit, no donor file read/copied/executed, no Godot job.",
+  "visual_parity_claim": false,
+  "donor_access": "Donor was NOT opened for this ticket. All donor path:line facts are cited second-hand from DENV-01, DEC-05 and SEASON-PLAN-01, which read the donor read-only in earlier passes.",
+  "source": {
+    "donor_function": "_misc_SetDesert",
+    "donor_path": "scripts\\lib\\miscext.script:1429-1543",
+    "season": 3,
+    "season_evidence": [
+      "scripts\\lib\\map.script:250 (gen.season default 0)",
+      "scripts\\dmscript.global:237 (gc_MaxSeasonCount = 3)",
+      "scripts\\dogenerate.inc:4,2079 (desert branch gen.season = 3)",
+      "data\\env\\colors\\colors.lib:98-101 (desert colour table 7)"
+    ],
+    "direct_remap_lines": "scripts\\lib\\miscext.script:1447-1502",
+    "height_gate_lines": "scripts\\lib\\miscext.script:1504-1505",
+    "height_scale_lines": "scripts\\lib\\miscext.script:1513-1520",
+    "mine_suffix_lines": "scripts\\lib\\miscext.script:1531-1534",
+    "env_destroy_lines": "scripts\\lib\\miscext.script:1536-1537",
+    "generator_weights_lines": "data\\game\\var\\generator.cfg:1629-1655",
+    "citations_from": [
+      "docs/coord_swarm_2026-11-25/reports/DENV_01_environment.md:424-445",
+      "docs/coord_swarm_2026-11-25/reports/DENV_01_environment.md:474-494",
+      "docs/coord_swarm_2026-11-25/reports/SEASON_PLAN_01.md:148-157",
+      "docs/coord_swarm_2026-11-25/reports/SEASON_PLAN_01.md:188",
+      "docs/coord_swarm_2026-11-25/decomp/DEC_05_terrain_formats.md:417-439"
+    ]
+  },
+  "port_reference": {
+    "base_dictionary": "variant3d/assets/terrain/structs/presets_summer.json",
+    "atlas_manifest": "variant3d/assets/terrain/atlas/tile_index_atlas.manifest.json",
+    "dictionary_entries": 124,
+    "atlas_named_cells": 124,
+    "atlas_grid": [16, 8],
+    "atlas_packing_label": "APPROX_ATLAS_PACKING (donor tsDouble/ttExtended is engine-side, UNVERIFIED)",
+    "desert_ids_packed_at": [111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122],
+    "sandsea_ids_packed_at": [93, 94, 95, 96, 97, 98],
+    "alpha0c_index": 123,
+    "note": "All target indices below already exist in presets_summer.json and in the manifest layout (donor_evidence points at presets_summer.json lines). No new index is introduced."
+  },
+  "labels": [
+    "DONOR_INDEX",
+    "DONOR_ART",
+    "APPROX_ATLAS_PACKING",
+    "PORT_APPROXIMATION",
+    "UNVERIFIED_RUNTIME_GATED",
+    "DATA_ONLY_NOT_EXECUTED"
+  ],
+  "remap": {
+    "grass1":  { "target": "sandsea5", "atlas_index": 97,  "source_index": 0,  "target_source_png": "sandsea5.png", "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX", "note": "Shoreline family; DEC-05:434 ids 93-98 sandsea1..6." },
+    "grass7":  { "target": "desert6",  "atlas_index": 116, "source_index": 6,  "target_source_png": "desert6.png",  "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
+    "grass8":  { "target": "desert6",  "atlas_index": 116, "source_index": 7,  "target_source_png": "desert6.png",  "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
+    "ground1": { "target": "test16",   "atlas_index": 100, "source_index": 10, "target_source_png": "test16.png",   "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX", "note": "Target is an already-packed Summer-set tile (index 100), not a desertN id; listed here exactly as donor text states." },
+    "grass2":  { "target": "desert11", "atlas_index": 121, "source_index": 1,  "target_source_png": "desert11.png", "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
+    "test7":   { "target": "desert11", "atlas_index": 121, "source_index": 78, "target_source_png": "desert11.png", "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
+    "test8":   { "target": "desert11", "atlas_index": 121, "source_index": 79, "target_source_png": "desert11.png", "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
+    "rock1":   { "target": "desert2",  "atlas_index": 112, "source_index": 17, "target_source_png": "desert2.png",  "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
+    "rock7":   { "target": "desert4",  "atlas_index": 114, "source_index": 23, "target_source_png": "desert4.png",  "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX" },
+    "rock9":   { "target": "test23",   "atlas_index": 107, "source_index": 25, "target_source_png": "test23.png",   "donor_line": "scripts\\lib\\miscext.script:1447-1502", "label": "DONOR_INDEX", "note": "Target is an already-packed Summer-set tile (index 107), not a desertN id; listed here exactly as donor text states." },
+    "alpha0a": { "target": "alpha0c",  "atlas_index": 123, "source_index": 86, "target_source_png": null,         "donor_line": "scripts\\lib\\miscext.script:1501", "label": "DONOR_INDEX", "note": "Index-only alias. Both alpha0a (86) and alpha0c (123) are manifest EMPTY cells with no shipped PNG; no art fabricated. DEC-05:435: alpha0c resolves to grass1.dds as an alias material, not a distinct texture." }
+  },
+  "height_gated": [
+    {
+      "source": "rock8",
+      "source_index": 24,
+      "target": "desert2",
+      "atlas_index": 112,
+      "target_source_png": "desert2.png",
+      "condition": "0.1 < h < 2.9 and (h > 1.8 or h < 1)",
+      "donor_line": "scripts\\lib\\miscext.script:1504-1505",
+      "label": "UNVERIFIED_RUNTIME_GATED",
+      "note": "Stored as labelled data only; SP-6 does not apply height gating. Donor runtime activity of the ';'-prefixed script lines is UNVERIFIED."
+    }
+  ],
+  "data_only_not_executed": {
+    "dry_land_height_scale_koef": {
+      "value": 0.8,
+      "donor_line": "scripts\\lib\\miscext.script:1513-1520",
+      "label": "UNVERIFIED_RUNTIME_GATED + DATA_ONLY_NOT_EXECUTED",
+      "note": "SP-6 is index-only; no mesh height scaling in this ticket."
+    },
+    "mine_basename_suffix": {
+      "value": "s",
+      "example": "minegold -> minegolds",
+      "donor_line": "scripts\\lib\\miscext.script:1531-1534",
+      "label": "DATA_ONLY_NOT_EXECUTED",
+      "note": "Object naming rule, not a tile-index change."
+    },
+    "env_objects_except_stones_and_field_destroyed": {
+      "exceptions": ["stones*", "field"],
+      "donor_line": "scripts\\lib\\miscext.script:1536-1537",
+      "label": "DATA_ONLY_NOT_EXECUTED"
+    },
+    "desert_tiles_generator_weights": {
+      "d_tls_1": 1000,
+      "d_tls_2": 0,
+      "d_tls_3": 1000,
+      "d_tls_4": 100,
+      "donor_line": "data\\game\\var\\generator.cfg:1629-1655",
+      "label": "DATA_ONLY_NOT_EXECUTED",
+      "note": "Generation context only; d_tls_2 disabled (weight 0)."
+    }
+  },
+  "scope_clarifications": [
+    {
+      "topic": "prop material suffix w",
+      "finding": "The 'w' suffix (fir1 -> fir1w, field1 -> field1w, plantsatlas -> plantsatlasw, UseableWinterMaterials) is a WINTER prop-material rule, not a desert one. Desert uses desert* props plus 'desert' frequency keys in generator patterns.",
+      "label": "observed via DENV-01:483; SEASON_PLAN_01:155-157",
+      "note": "Do not apply the 'w' suffix to desert remap data; winter prop art is absent in the port (SEASON-PLAN-01 B1b)."
+    },
+    {
+      "topic": "two suffixes not conflated",
+      "finding": "Tile preset aliases append _winter (terrain.presets:138); prop materials append w; the cloud field season=2 maps to neither and is UNVERIFIED.",
+      "label": "observed via DENV-01:492-494; SEASON_PLAN_01:155-157"
+    }
+  ],
+  "validation": {
+    "json_parse": "PASS (python json.load)",
+    "source_keys_in_presets_summer": "11/11 direct + 1 height-gated = 12/12 present",
+    "targets_in_presets_summer_and_manifest_layout": "12/12 resolve to a packed atlas index",
+    "desert_indices_contiguous_111_to_122": true,
+    "no_new_ids": true,
+    "target_categories": {
+      "desert_111_to_122": ["desert2", "desert4", "desert6", "desert11"],
+      "sandsea_93_to_98": ["sandsea5"],
+      "alpha0c_123": ["alpha0c"],
+      "other_packed_summer_set_tiles": ["test16 (100)", "test23 (107)"],
+      "note": "test16 and test23 are packed Summer-set indices already present in presets_summer.json and the atlas manifest; they satisfy 'packed atlas index' but are outside the parenthetical enumeration in SEASON-PLAN-01 SP-3 acceptance."
+    }
+  },
+  "unverified": [
+    "Donor runtime activity of _misc_SetDesert and its ';'-prefixed script lines (DENV-01 Q6; SEASON-PLAN-01 B6/B8 reference).",
+    "Whether donor applies this remap via the shipped build at all; this file encodes donor intent only.",
+    "The height gate, koef=0.8, mine suffix s, env-object destruction and generator weights are stored as data only and are not executed by this ticket.",
+    "alpha0a/alpha0c are EMPTY manifest cells; no shipped PNG, so the alpha remap is index-only (PORT APPROXIMATION for atlas packing).",
+    "No donor GPU A/B or visual-parity test; parity stays UNVERIFIED."
+  ]
+}

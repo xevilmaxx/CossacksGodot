@@ -227,14 +227,11 @@ planes/blend passes UNVERIFIED; raw-byte reads beat Craft Anything string index 
 
 ## 12. Open questions
 
-**Closed as CONFIRMED_INFEASIBLE by `../reports/DBIND_01_wus_bind.md`:** native eye-plane
-values, numeric FOV/focal→FOV body, and the native selection inside-box predicate — the packed
-`.bind` payload has no recognizable container/compression/XOR structure and Craft Anything
-refuses it, so no value can be recovered. Keep the labelled PORT APPROXIMATIONs.
-
-**Closed (three constants, CONFIRMED_INFEASIBLE):** native ground eye planes / texture matrix,
-numeric FOV / focal→FOV body, and the native selection inside-box predicate. Keep the labelled
-PORT APPROXIMATIONs (`FOV_DEG_ASSUMED=17.27`, world-XZ texgen, script-side selection spec).
+**Closed as CONFIRMED_INFEASIBLE by `../reports/DBIND_01_wus_bind.md` (three constants):** native
+ground eye planes / texture matrix, numeric FOV/focal→FOV body, and the native selection
+inside-box predicate — the packed `.bind` payload has no recognizable container/compression/XOR
+structure and Craft Anything refuses it, so no value can be recovered. Keep the labelled PORT
+APPROXIMATIONs (`FOV_DEG_ASSUMED=17.27`, world-XZ texgen, script-side selection spec).
 
 Still open (unchanged): `bmTransparency` pass count and blend factors; `hmapTex`/reflection
 engine bindings; donor sprite vertex count semantics; mission/trigger details (D-12 deferred).

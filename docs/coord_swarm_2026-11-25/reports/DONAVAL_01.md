@@ -15,7 +15,7 @@ labels: observed / derived / inferred / UNVERIFIED used per claim; engine-side s
 
 ## 0. Verdict up front
 
-- **Donor naval truth is fully readable** and now re-read fresh: 7 core ship hulls + `chaika`/`ferry`, 6 animated crew `.oss`, a large previously-unlisted attached-parts set (sails/flags/paddles/ladder), all `.dds` skins including an **alternate `xebeca.dds`**, exact stat/speed/radius constants, and shore/water spawn rules with `path:line`.
+- **Donor naval truth is fully readable** and now re-read fresh: 7 core ship hulls + `chaika`/`ferry`, 6 animated crew `.oss`, a large previously-unlisted attached-parts set (sails/flags/paddles/ladder), all `.dds` skins including the **shared `xebeca.dds` ship-atlas material**, exact stat/speed/radius constants, and shore/water spawn rules with `path:line`.
 - **7 corrections** to prior claims are logged in §3 — the material-presence question is closed, crew counts are scope-dependent (5 core / 6 incl. ferry), the gold-stop rule has a locale/script contradiction, the `not … < 4` precedence is **UNVERIFIED**, ship radii are larger than the port estimates, and a `convert_models.py` comment asserting "no shipyard/dock .osm anywhere" is factually false.
 - **The 3D variant ships static hull meshes but no naval entity simulation.** `variant3d/scripts/world3d_entities.gd` has no water-media branch, no ship spawn, no ship movement/collision, and only the mill gets a sail child (`world3d_entities.gd:1412-1415`). `water3d.gd` ports the surface shader but its waveheight is 0 under shipped constants (`water3d.gd:24-45`). Gap ranking in §5.2. **No parity claim.**
 
@@ -102,10 +102,12 @@ Each part has its own `.actor` (e.g. `yacht_sail.actor` 604 B, `yacht_flag1.acto
 | `battleship.dds`, `chaika.dds`, `ferry.dds`, `frigate.dds`, `galley.dds`, `xebec.dds` | 5,592,560 each | full-size ship atlases |
 | `fishboat.dds` | 1,398,256 | smaller atlas |
 | `yacht.dds`, `yachttur.dds` | 2,796,368 each | |
-| **`xebeca.dds`** | **2,796,344** | **alternate xebec skin variant — distinct from `xebec.dds`** |
+| **`xebeca.dds`** | **2,796,344** | **shared ship-atlas material — NOT an alternate xebec skin** (see below) |
 | `misflagman.dds` | 349,680 | flagship-flag material |
 
-Winter shipyard variants exist in prop text: `data\objects\buildings\eurpor.prop:16-18` `UseSeasonMaterial = True`, summer `eurpor`, winter `eurporw`. **UNVERIFIED:** DDS pixel contents, mip layout, which nation/state selects `xebeca.dds` (no plaintext script reference found), and any visual parity.
+**`xebeca.dds` resolved (observed, second-pass follow-up):** registered as `Material.Name = xebeca` with `Material.Texture.image = .\data\materials\units\xebeca.dds` and `Material.FaceCulling = fcNoCull` at `data\materials\units\units.mat:434-442`. It is the **default/useable material for every ship attach part** — `data\objects\units\attach\<ship>a.prop:23-36` (`battleshipa`, `chaikaa`, `fishboata`, `galleya`, `xebeca`, `yachta`, `yachttura`, meshes 0–6), and the `DefaultMaterialName` of `<ship>.prop:81` for battleship/chaika/fishboat/galley/xebec/yacht/yachttur; `chaika.prop:83-89`, `fishboat.prop:83-89` and `yacht.prop:83-89` bind *all* seven meshes to `xebeca`, while `battleship.prop:83-89` uses `battleship`/`battleshipa` for its own meshes. `data\objects\units\attach\xebeca.prop:4-10` even defines `xebeca` as a ship attach object (`DefaultMeshName = xebeca.mesh`). **Inference:** the per-family `<ship>.dds` textures the static hull; the shared `xebeca.dds` textures the common attach/rigging meshes. No nation/state switch was found in plaintext — the choice is prop-driven, not script-driven.
+
+Winter shipyard variants exist in prop text: `data\objects\buildings\eurpor.prop:16-18` `UseSeasonMaterial = True`, summer `eurpor`, winter `eurporw` (also `ruspor.prop:18`; materials registered at `data\materials\buildings\buildings.mat:928-929,948-949`). **UNVERIFIED:** DDS pixel contents, mip layout, and any visual parity — only filenames, registration and prop bindings were read.
 
 ### 2.5 AAF / ACL actions (fresh full read, text)
 

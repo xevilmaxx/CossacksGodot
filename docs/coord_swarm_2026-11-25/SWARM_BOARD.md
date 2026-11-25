@@ -11,6 +11,29 @@ status: living
 Only COORD edits the **State** column. Workers own exactly one output file each. Shared
 code is READ-ONLY until an integration ticket grants exclusive ownership.
 
+## 🔴 LIVE SESSION STATUS — authoritative real-time check (OpenCode session DB)
+
+Read directly from `C:\Users\Maxym.Oboyshev\.local\share\opencode\opencode.db`,
+`session_v2 WHERE parent_id = <current session>`, columns `time_busy`, `time_idle`,
+`idle_outcome`, `time_updated` (check script: temp `session_status_check.py`).
+**140 direct child sessions; 135 are IDLE/DONE (terminated), 5 are BUSY/RUNNING.**
+
+| Session id | Ticket | State | `time_busy` | `time_updated` |
+|---|---|---|---|---|
+| ses_dede47f36ffeaGALXfX3VRRfEG | AUDIO-SEL-02 | **BUSY / RUNNING** | 10:48:42 | 11:23:08 |
+| ses_deddede28ffePAlAptFGEy4kzn | PERF-3D-01 | **BUSY / RUNNING** | 10:54:51 | 11:25:27 |
+| ses_dedd5c6b9ffebY8CjZ2LHhmm8U | SEASON-TEST-PATH-01 | **BUSY / RUNNING** | 11:04:47 | 11:26:48 |
+| ses_dedc825dfffe65At77RG2CJO98 | PROP-W-PLAN-01 | **BUSY / RUNNING** | 11:19:40 | 11:26:46 |
+| ~~ses_dedc5f56fffehXY13hwbbbUbV1~~ | QA-DOCS-02 | **TERMINATED** (report landed; refresh at 11:28) | 11:22:04 | 11:26:55 |
+
+**Refresh at 11:28: only 4 sessions remain BUSY/RUNNING** — AUDIO-SEL-02, PERF-3D-01,
+SEASON-TEST-PATH-01, PROP-W-PLAN-01. Every other session id in this board is TERMINATED (`time_idle` set, `idle_outcome`
+`succeeded` or `interrupted`) — including workers whose last message said "waiting for the
+runner" or whose report was written while a background shell was still finishing. Their
+per-phase rows below are historical records, not live work. DEC-02 and DEC-03 ended
+`interrupted` by explicit cancellation after their complete reports landed; that is a
+terminated state, not a running one. Do not re-spawn these workers to ask for status.
+
 ## Batch A — deep analysis (donor primary, 2D secondary)
 
 | ID | Micro-task (one aspect) | Output report | Session id | State | Evidence |
@@ -35,8 +58,8 @@ code is READ-ONLY until an integration ticket grants exclusive ownership.
 | ID | Micro-task | Output | Session id | State |
 |---|---|---|---|---|
 | DEC-01 | PE binaries, packer, RTTI, `.cdx` | `decomp/DEC_01_binaries_rtti.md` | ses_dee4f6ffcffeeGKaHVkmSMCxCG | **DONE** (~400 lines) | `.cdx` = `.exe` with only 3 bytes at `0x128` changed (entry → `.bind` +0x310); correction: `cossacks.exe` entry is in `CODE`, not `.bind`; CODEX/WUS runtime; C++Builder + Delphi proof; 112 RTTI names, 0 code xrefs |
-| DEC-02 | Full `data\scripts` catalog + decompiled logic | `decomp/DEC_02_scripts.md` | ses_dee4f6ffaffervR4Ohf2PqdtmR | **REPORT DELIVERED** (85 KB, 1,090 lines; agent finalizing) | all 222 donor scripts (4.37 MB) enumerated; 19 files ASCII code + **CP1251 Russian comments**; 16 deep records; formation bonuses consumed (closes DB-01); **no numeric morale** (disband count<0.25×base; port constants invented); famine donor = difficulty death roll; market mean-reverting with exact bands; no donor patrol hotkey |
-| DEC-03 | Full config key/value truth (envscales/formations/hotkeys/light/env) | `decomp/DEC_03_configs.md` | ses_dee4f6ff7ffemIl1UwfIe9qQyz | **REPORT DELIVERED** (791 lines; agent finalizing) | 77 cfg/ini inventoried; hotkeys 243 lines but only 55 bindings (prior "243 bindings" wrong); formations 149 IDs / 46 nonzero (not 43); envscales 122 objects / 3 jitter bands (not one); formations fully imported in port; **light/sky colours NOT imported — top visual gap** |
+| DEC-02 | Full `data\scripts` catalog + decompiled logic | `decomp/DEC_02_scripts.md` | ses_dee4f6ffaffervR4Ohf2PqdtmR | **DONE — TERMINATED** (agent cancelled after report; 85 KB, 1,090 lines) | all 222 donor scripts (4.37 MB) enumerated; 19 files ASCII code + **CP1251 Russian comments**; 16 deep records; formation bonuses consumed (closes DB-01); **no numeric morale** (disband count<0.25×base; port constants invented); famine donor = difficulty death roll; market mean-reverting with exact bands; no donor patrol hotkey |
+| DEC-03 | Full config key/value truth (envscales/formations/hotkeys/light/env) | `decomp/DEC_03_configs.md` | ses_dee4f6ff7ffemIl1UwfIe9qQyz | **DONE — TERMINATED** (agent cancelled after report; 791 lines) | 77 cfg/ini inventoried; hotkeys 243 lines but only 55 bindings (prior "243 bindings" wrong); formations 149 IDs / 46 nonzero (not 43); envscales 122 objects / 3 jitter bands (not one); formations fully imported in port; **light/sky colours NOT imported — top visual gap** |
 | DEC-04 | Anim/sound formats `.oss/.osm/.aaf`/ACL/audio | `decomp/DEC_04_anim_formats.md` | ses_dee4f6fe3ffemAdgSLjU4qedRY | **DONE** (689 lines, 12 sections) | `.oss` 24-byte header, 335/335 exact size closure, fps 30, no parent table/bone strings; **frame 0 is NOT bind pose for multi-bone files** (major correction to DEEPDEC-06); `.osm` IDP2 v8 + 130/3897 extra frames; `.aaf` 246/246 parse, all rows `morph`; 325/325 Ogg; "733/733 verts" = OBJ vt count, not skin verts |
 | DEC-05 | Terrain formats `terrainmesh*.osm`/heightmap/`.dds`/tile-blend | `decomp/DEC_05_terrain_formats.md` | ses_dee4f6fddffdFfiMII3qGDjWMd | **DONE** (634 lines) | **new donor constant `gc_meters_to_tile = 2` (`dmscript.global:171`) → port `TILE_M=2.0` IS donor-grounded** (corrects DTRN-01 C6); `.map` has per-cell 37-byte terrain records (102,400×), partially corrects "no donor tile-index file"; `heightmapwaves0.tga` alpha all 255 → cannot be `hmapTex.w`; TGA masks are RLE; donor has no `terrain/heightmap/**` or `terrain/blocks/**` |
 | DEC-06 | Map/editor formats `.map/.aix/.cdx` | `decomp/DEC_06_map_formats.md` | ses_dee4f6fd7ffeewoYhWbCn5IvFQ | **DONE** (511 lines) | `.map` = flat 7-bit Delphi stream, full schema + gMap/gScenario blobs; 87-map survey 320²×80/384²×3/512²×3/640²×1; `.aix` all ASCII, 173-entry editor registry; `.cdx` = PE entry redirect (DA_PE "6 PE" refuted — 19 found); skirmish seed chain documented; DD "CLOSED grid" refuted |
@@ -85,7 +108,7 @@ and separate `observed`/`derived`/`inferred`/`UNVERIFIED`.
 | ID | Exclusive file | Output | Session id | State | Gate |
 |---|---|---|---|---|---|
 | SEL-01 | `variant3d/scripts/input_controller.gd` | `reports/SEL_01_implementation.md` | ses_dee320891ffeci11ijTxdkwgTX | **DONE** | yellow 1 px solid marquee overlay; world epsilon 0.005 m (0.25 attack/guard); Shift=add; double-click 0.5 s; click-pick/cmd_* untouched; selftest 29/29 (337), uitest 17/17 (318), 12/12 real-drag probe (329); S1 parse errors routed to ATOM-REPAIR |
-| CFG-01 | `variant3d/scripts/config.gd`, `data.gd`, `menu.gd` (only if needed) | `reports/CFG_01_skirmish_defaults.md` | ses_dee421bccffeq8fPJi27IKDgF1 | RUNNING | owner directive |
+<!-- CFG-01 duplicate row removed (2026-11-25 docs audit C2): authoritative DONE row above. -->
 | FIX-TRN / DECOR / INT | — | — | — | RESERVED | piece captures + remaining re-verification |
 
 ## Batch G — execution (READ-ONLY on code; runner jobs only)
@@ -114,7 +137,7 @@ Full gates are run **once** by COORD after all merges (decision S-25-12).
 | UITEST-ANCHOR | `variant3d/scripts/uitest.gd` | ses_dee1320f7ffeIUo66o34JffNGk | **DONE** | `anchor_left 0.0 → 1.0` with donor citations, one hunk 4+/2-, no weakening; uitest ticket 366 **17/17**, step `minimap bottom-right: yes` |
 | VID-CAP-01 | NEW `variant3d/tests/t_motion_capture.gd` only | `reports/VID_CAP_01_capture.md` | ses_dee12de5effeqwB6klTsBPohuB | **DONE** | job 408 ok, `CAPTURE_OK PASS 10/10`, 16 GPU frames + `frames.json` + contact sheet + MP4 in temp; sim 0.500→6.125 s, fixed camera, 16/16 distinct frames; no analysis/parity claim |
 | VID-AN-01 | analyse motion sequence with muse-spark 1.3 (default variant) | `reports/VID_AN_01_motion_analysis.md` | ses_dedf51429ffeix3FIKnPL9K1W3 | **DONE** | 16 PNGs + `frames.json`: translation FAIL (stall ~14 m short), squad FAIL (1/4 moves), pose FAIL(data), direction FAIL (91°/166° snaps), contact PASS, uniqueness PASS; donor parity UNVERIFIED; routed to MOTION-ANIM-01 + `game.gd` ticket |
-| MOTION-ANIM-01 | presentation-side motion fixes in `world3d_entities.gd` | `reports/MOTION_ANIM_01.md` | ses_dedf02a91ffe4WC7rm8cJUkFU7 | RUNNING |
+| MOTION-ANIM-01 | presentation-side motion fixes in `world3d_entities.gd` | `reports/MOTION_ANIM_01.md` | ses_dedf02a91ffe4WC7rm8cJUkFU7 | **REPORT DELIVERED** (rotor import finalizing) |
 | FX-IMPACT-01 | volley smoke / muzzle flash / arrow trails in `world3d_fx.gd` | `reports/FX_IMPACT_01.md` | ses_dedf02a90ffeQT9Cvr4vrlF236 | **DONE** | donor-cited tints/AlphaPower/MarkWidth, face-camera billboards, opt-in flags default false so callers unchanged; snow/selection/legacy FX byte-identical; smoke 428 ok + `t_fx3d` 13/13 job 434; unit mappings UNVERIFIED |
 | LIGHT-02 | independent donor light-space re-derivation | `reports/LIGHT_02_light_space.md` | ses_dedec4470ffeHwtSyDtjqStFu4 | **DONE** | donor light = Y-up world direction; correct `l = normalize((VIEW_MATRIX*vec4(P,0)).xyz)`, flat dot=0.938701; TERRAIN-DARK-FIX axis correct (keep), `/4,/2` compression APPROX; `world3d_terrain.gd:138 SUN_LIGHTVEC` still un-swapped → SP-6 follow-up |
 | MINIMAP-QUAD-01 | 4-edge frustum quad in `hud3d_adapter.gd` (box unchanged) | `reports/MINIMAP_QUAD_01.md` | ses_dedf02a90ffdT7nAiMWDUbpMQj | RUNNING |
@@ -144,7 +167,7 @@ Read-only; one report each; these target the details still UNVERIFIED after the 
 | DOC-02 | build authoritative donor corrections index | `CORRECTIONS.md` | ses_dee0b2404ffen2r14sdeaDhHJn | **DONE** (50 rows: 32 RESOLVED / 12 PARTIAL / 1 UNVERIFIED / 1 INFEASIBLE + 4 caveats) | canonical `CORRECTIONS.md` at swarm root; duplicate chains merged; 8 engine-side values listed as unresolved with DBIND-01 proof |
 | RELIEF-01 | stamp 1–2 donor relief grids into `world3d_terrain.gd` (APPROX blend) | `reports/RELIEF_01_stamping.md` | ses_dee041eacffe8AmziUdnw7vNtf | **DONE** (purely additive +219/−0) | opt-in `dump["relief_stamps"]` reader + `apply_relief_grid()`, two DPATTERN Appendix A1/A2 coarse grids, additive-clamp labelled APPROX; all mesh invariants intact; smoke ticket 402 ok / SCRIPT ERROR 0 / 6/6; no marker producer → RELIEF-02 |
 | RELIEF-02 | supply the producer-side `relief_stamps` marker (or prove blocked) | `reports/RELIEF_02_stamp_marker.md` | ses_dedfb1ccaffeAMoWKZXzQpo2jT | **DONE — PARTIAL** | `main.gd` now derives `dump["relief_stamps"]` from real `game.pattern_stamps`; `plt2` donor-grounded (`generator.cfg:588`, `pattern.lib:6805-6806`), `k_ravine_1` **BLOCKED** (absent from donor_patterns.json; `ravine_medium` disabled at `dogenerate.inc:1760`) — no marker invented; smoke 415 SCRIPT ERROR 0 | owns `main.gd` only; must not invent a marker or touch `game.gd` |
-| SEASON-PLAN-01 | plan winter/desert tile-set swap (no code) | `reports/SEASON_PLAN_01.md` | ses_dee041eabffe0LyhMiLlEYwnWk | RUNNING |
+| SEASON-PLAN-01 | plan winter/desert tile-set swap (no code) | `reports/SEASON_PLAN_01.md` | ses_dee041eabffe0LyhMiLlEYwnWk | **DONE** (295 lines) |
 | S1-INPUT-FIX | fix S1 atom's headless guard + input stretch scaling | `reports/S1_INPUT_FIX.md` | ses_dee041eaaffemOMKnaLzAzkZ4m | **DONE** | inverted headless guard (no fake PASS), root-window→projection coord transform, additive camera setup; windowed job 414 **PASS 23/23**, SCRIPT ERROR 0; 24/24 checks, 4/4 markers, 7/7 assert sites unchanged |
 
 ## Batch K — sustained 15–20 agents (owner directive 2026-11-25)
@@ -166,13 +189,13 @@ Read-only; one report each; these target the details still UNVERIFIED after the 
 
 | ID | Output / file | Session id | State |
 |---|---|---|---|
-| SP-1 | `variant3d/scripts/data.gd` (season enum) | ses_dedfd74ffffeHTsJ5EnxBF077b | RUNNING |
+| SP-1 | `variant3d/scripts/data.gd` (season enum) | ses_dedfd74ffffeHTsJ5EnxBF077b | **DONE — TERMINATED** (+16/−0, smoke 410 ok) |
 | SP-2 | `variant3d/assets/terrain/atlas/winter_aliases.json` (new) | ses_dedfd74feffeDibklORyzBNNHS | **DONE** | 124 entries, indices 0–123 contiguous, order matches summer; 112→`winterN.png` (23 distinct), 12→reused desert PNG; all 27 winter PNGs inventoried, 4 deliberately unmapped; JSON valid, 8 invariants PASS; no parity claimed |
 | SP-3 | `variant3d/assets/terrain/atlas/desert_remap.json` (new) | ses_dedfd74fbffetHME2e1XnbkU8z | **DONE** | 11 direct pairs + 1 height-gated `rock8`, donor-cited; JSON parse PASS, 12/12 source/target keys resolve; desert1..12 contiguous at 111–122; no art fabricated; runtime swap activity UNVERIFIED |
 | SP-5 | `variant3d/scripts/tile_atlas_loader.gd` (optional manifest_path) | ses_dedfd74f0ffeOdmHGXEFUlnH6Z | **DONE** | optional `manifest_path` config key + field, used by `_load_grid()`/`_load_array()`; default path and single→split→array fallback byte-identical; smoke ticket 409 ok / SCRIPT ERROR 0 |
 | SP-8 | `variant3d/tests/t_season_overlay.gd` (new atom, authoring only) | ses_dedfd74edffe3O0J5raV8YZZfW | **DONE** (1,057 lines) | three-variant dump-driven test; asserts manifest/UV2/tileblock parity + PNGs; `PENDING_DEP` until SP-4/SP-6; no runner/PASS claim |
-| SP-4 | Winter atlas build tool + PNG + manifest (new files) | `reports/SP_04_winter_atlas.md` | ses_dedf28b67ffekBGYYokxLXUXeD | RUNNING |
-| SP-6 | `variant3d/scripts/world3d_terrain.gd` season hook | `reports/SP_06_renderer_hook.md` | ses_dedf28b63ffeWAnI54lgoZm6sz | RUNNING |
+| SP-4 | Winter atlas build tool + PNG + manifest (new files) | `reports/SP_04_winter_atlas.md` | ses_dedf28b67ffekBGYYokxLXUXeD | **DONE** (independent QA-WINTER-01 CONFIRMED) |
+| SP-6 | `variant3d/scripts/world3d_terrain.gd` season hook | `reports/SP_06_renderer_hook.md` | ses_dedf28b63ffeWAnI54lgoZm6sz | **REPORT DELIVERED** (final sun smoke queued) |
 | SP-7 | prop material `w` suffix in `world3d_entities.gd` | — | HELD (lower value; decide after SP-4/SP-6) |
 
 ## Batch M — global configurability (owner directive 2026-11-25)
@@ -181,11 +204,11 @@ Read-only; one report each; these target the details still UNVERIFIED after the 
 |---|---|---|---|---|
 | CONFIG-PLAN-01 | inventory all main features → JSON schema + UI subset | `reports/CONFIG_PLAN_01.md` | ses_deedf5ff08ffeOFoV2MzvR7dt58 | **DONE** (459 lines) | **55 features** inventoried with file:line + donor citation/APPROX + proposed `features.*` key/default/UI flag/owner; one additive nested schema with zero-break migration; UI subset = 3 present + 3 new; disjoint sequencing ladder MAP-SMALL→CORE→leaf readers→UI→COORD |
 | CONFIG-CORE-01 | `variant3d/scripts/config.gd` feature defaults/readers | `reports/CONFIG_CORE_01.md` | ses_deedf5ff05ffddK8fAUfsQIvPd6 | **DONE** (+116/−0) | `FEATURES_DEFAULTS` 21 keys + new `"features"` top-level key + 21 typed getters; all defaults behaviour-preserving with donor/APPROX comments; `apply()` and every consumer untouched; smoke 419 ok / SCRIPT ERROR 0 |
-| CONFIG-UI-01 | `variant3d/scripts/menu.gd` small donor-meaningful UI set | `reports/CONFIG_UI_01.md` | ses_deedf5ff02ffeQ59UJJmvCiT7bF | RUNNING |
+| CONFIG-UI-01 | `variant3d/scripts/menu.gd` small donor-meaningful UI set | `reports/CONFIG_UI_01.md` | ses_deedf5ff02ffeQ59UJJmvCiT7bF | **DONE** (smoke 426 ok) |
 | TERRAIN-DARK-01 | read-only diagnosis of near-black P0 terrain frame | `reports/TERRAIN_DARK_01.md` | ses_deedf5feeeffeY56zj3NrEhFbUO | **DONE** | dominant cause = donor-light axis mismatch in shader `:287-289` (flat ground dot(l,n)=0, diffuse=0); empty atlas cells/mask-alpha/texgen/camera refuted; owner file = shader; P0-GATE-01 records instrument fix separately |
-| TERRAIN-DARK-FIX | correct donor light-space mapping in `terrain_tileindex.gdshader` | `reports/TERRAIN_DARK_FIX.md` | ses_dedec4474ffee1ghS4x7WOLRug | RUNNING |
-| LIGHT-02 | independent donor re-derivation of light-space mapping | `reports/LIGHT_02_light_space.md` | ses_dedec4470ffeHwtSyDtjqStFu4 | RUNNING |
-| CONFIG-WIRE-SEL | `variant3d/scripts/input_controller.gd` reads selection feature getters | `reports/CONFIG_WIRE_SEL.md` | ses_deded55fcffdeHoLLuv7C1Ha64 | RUNNING |
+| TERRAIN-DARK-FIX | correct donor light-space mapping in `terrain_tileindex.gdshader` | `reports/TERRAIN_DARK_FIX.md` | ses_dedec4474ffee1ghS4x7WOLRug | **REPORT DELIVERED** (job 441 P0 gates PASS; final LIGHT-02 patch re-capture queued) |
+<!-- LIGHT-02 duplicate row removed (docs audit C3): authoritative DONE row above. -->
+| CONFIG-WIRE-SEL | `variant3d/scripts/input_controller.gd` reads selection feature getters | `reports/CONFIG_WIRE_SEL.md` | ses_deded55fcffdeHoLLuv7C1Ha64 | **DONE** (windowed drag 23/23) |
 | CONFIG-WIRE-WATER | `variant3d/scripts/water3d.gd` reads water feature getters | `reports/CONFIG_WIRE_WATER.md` | ses_deded55f7ffeItZoma2Ojf4IW9 | **DONE** (+26/−1) | three water getters with identical defaults, uniform/plane/coastfade lines byte-identical, 2 audit fields; smoke 433 ok / SCRIPT ERROR 0; non-default alpha_confine/shore_prox need future shader work |
 | CONFIG-WIRE-HUD | `variant3d/scripts/hud.gd` reads minimap feature getters | `reports/CONFIG_WIRE_HUD.md` | ses_deded55f6fferXnzSP83DKAw1Z | **DONE** | three getter helpers with identical defaults, byte-identical panel partition/input/jump APIs; smoke 432 ok + uitest 440 **17/17** incl. bottom-right minimap; non-default corners remain a follow-up |
 | CONFIG-WIRE-CAM | `variant3d/scripts/camera3d.gd` reads FOV getter | `reports/CONFIG_WIRE_CAM.md` | ses_deded55efffeih9fn1P7IwOwyu | **DONE** (+7/−0) | `fov = cfg.feature_camera_fov_deg()` inside existing null-guarded block, default 17.27 unchanged, PORT APPROX label kept; both jump APIs byte-identical (CAM-RV-01/MMJUMP-02 intact); smoke 429 ok / SCRIPT ERROR 0 |
@@ -210,13 +233,34 @@ Disjoint file grants only. Reserved slots:
 - No code edits, no Godot runner jobs, no donor copies during Batch A/B.
 - Backups before any future edit: `inbox\backup\<name>.bak-<TICKET>`.
 
+## Batch S — real-time status refill (4 → 20 live agents)
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| RECHECK-P0-01 | ses_dedbf5c9dffe4mdGt2dTO77GT1 | second-agent P0 capture re-check | RUNNING |
+| RECHECK-S1-01 | ses_dedbf5c9cffeJGUuUd4kuM4BPJ | second-agent S1 selection re-check | RUNNING |
+| QA-CONFIGJSON-01 | ses_dedbf5c99ffdcLRYgQ7OuQj3Zf | verify 21 JSON features keys vs config.gd defaults | RUNNING |
+| QA-BOARDLIVE-01 | ses_dedbf5c7fffdEM7oUSBra4zAKe | board live-session list vs OpenCode DB | RUNNING |
+| QA-LINKS-02 | ses_dedbf5c7bffdpJAj2a51MOZJ02 | LINKS_01 missing/stale citations re-check | RUNNING |
+| DBUILD-02 | ses_dedbf5c78ffePdQ3lag7ysrYYr | independent donor building-stage verification | RUNNING |
+| DONAVAL-02 | ses_dedbf5c76ffeCAAq15b0by5BNk | independent donor naval correction verification | RUNNING |
+| QA-ATOM-STALE-02 | ses_dedbf5c74ffeDLQM3IjgeRqqcQ | stale atom result JSONs after DARKROW-ALL | RUNNING |
+| BUILD-STAGES-01 | ses_dedbedb1effe077PkS0kvUcbKo | donor construction stages in `world3d_entities.gd` | RUNNING |
+| FIELD-WINTER-01 | ses_dedbedb1dffeTXMw40zNTmaHX1 | standalone winter field-decal module (new file) | RUNNING |
+| MORALE-PLAN-01 | ses_dedbedb1affeEuwiV0mWCxioor | plan removal of invented morale/famine constants | RUNNING |
+| FINAL-CHECKLIST-01 | ses_dedbedaf9ffejr3WE6IIQbhDuF | final sign-off checklist | RUNNING |
+| QA-CLEAN-02 | ses_dedbedaf1ffeK1luRvYOin2v5Y | variant CLEAN gate quiescent re-check | RUNNING |
+| DENV-02 | ses_dedbedae6ffeRQKk1qsDCty2Xk | independent FogMode/sky-label verification | RUNNING |
+| DANIM-02 | ses_dedbedae2ffeMiBmZSUTxXJ7z7 | independent AAF catalog / frame-0 verification | RUNNING |
+| QA-DOCLIVE-01 | ses_dedbedadfffezftdXZw2t7S4St | living docs after latest reconciliation | RUNNING |
+
 ## Batch R — documentation QA and config completion
 
 | ID | Scope | Output | Session id | State |
 |---|---|---|---|---|
 | README-UPDATE-01 | refresh swarm README with late-wave findings | `README.md`, `reports/README_UPDATE_01.md` | ses_deddede29ffep3WHPBG8kRHQYW | **DONE** | 57-row corrections index, measured gate table, owner errors, P0 darkness, config pipeline, winter/LFS, donor map sizes; honesty guard kept |
-| DECOMP-SUMMARY-UPDATE | refresh decomp summary + evidence index | `decomp/SUMMARY.md`, `decomp/EVIDENCE_INDEX.md` | ses_dedd30374ffe4Cebn5GF8S3Q8I | RUNNING |
-| INVENTORY-01 | independent re-count of donor inventories | `reports/INVENTORY_01_counts.md` | ses_dedd0b783ffeXGxtcSZa3SbA9o | RUNNING |
+| DECOMP-SUMMARY-UPDATE | refresh decomp summary + evidence index | `decomp/SUMMARY.md`, `decomp/EVIDENCE_INDEX.md` | ses_dedd30374ffe4Cebn5GF8S3Q8I | **DONE — TERMINATED** (13 new labelled subsections + 14 evidence rows) |
+| INVENTORY-01 | independent re-count of donor inventories | `reports/INVENTORY_01_counts.md` | ses_dedd0b783ffeXGxtcSZa3SbA9o | **DONE — TERMINATED** (duplicate of authoritative Batch O row) |
 | LINKS-01 | verify every report path cited by living docs exists | `reports/LINKS_01.md` | ses_dedd0b77affePHsOgnl49CI27l | RUNNING |
 
 ## Batch O — final small tickets (owner: keep 15–20 agents)
@@ -226,25 +270,29 @@ Disjoint file grants only. Reserved slots:
 | AUDIO-SEL-02 | wire `audio.play_selection` at selection rebuild | `reports/AUDIO_SEL_02.md` | ses_dede47f36ffeaGALXfX3VRRfEG | RUNNING |
 | CONFIG-WIRE-RELIEF | config gate for `dump["relief_stamps"]` in `main.gd` | `reports/CONFIG_WIRE_RELIEF.md` | ses_dede47f35ffeJtm9VwqT6yGQNB | RUNNING |
 | WEATHER-DRIVER-01 | connect menu weather value → `world3d_fx.set_weather` | `reports/WEATHER_DRIVER_01.md` | ses_dede47f33ffejvS2MRfuAE33S6 | RUNNING |
-| CONFIG-DOC-01 | cold-readable config pipeline status | `CONFIG_PIPELINE.md` | ses_dede47f22ffehRBaIR2lYIXvrQ | RUNNING |
+<!-- CONFIG-DOC-01 duplicate row removed (docs audit C4): authoritative DONE row above. -->
 | QA-PARITY-01 | re-verify integrated selftest/uitest/clean after all edits | `reports/QA_PARITY_01.md` | ses_dede47f21ffeN0cMxpshIcpAOZ | RUNNING |
 | QA-CONFIG-01 | audit 21 feature getters naming/default/ownership | `reports/QA_CONFIG_01_getters.md` | ses_dede47f1effe4T2v9tVefZ0qDy | **DONE** | all 21 getters exist, all 19 call lines exact; 13 WIRED / 1 PENDING / 1 UI_EMITTED / 6 READER_ONLY at audit time; no `features` object in config.json; no default drift; naming/fog-namespace issues filed |
 | CONFIG-DOC-01 | cold-readable config pipeline status | `CONFIG_PIPELINE.md` | ses_dede47f22ffehRBaIR2lYIXvrQ | **DONE** (32 KB) | 21-key status table (snapshot 7 WIRED/2 READER_ONLY/2 UI_ONLY/10 PENDING), 34 unwired remainder, menu subset with snow PORT-UI-ONLY, ownership ladder, risks; reconciles conflicting counts by snapshot time |
 | MAPSIZE-01 | donor map sizes 256/320/480/640 in `menu.gd` | `reports/MAPSIZE_01.md` | ses_dede3a392ffe6P3B6Ttaon7o44 | RUNNING |
 | DEFAULTS-VERIFY-01 | verify requested skirmish defaults (read-only) | `reports/DEFAULTS_VERIFY_01.md` | ses_dede3a38effe0Qb4qFvKwoJxy3 | **DONE** | all 7 requested settings resolve on BOTH paths: rus/bav, 240², mediterranean, hills, fog off, summer, 2 players/FFA; `map_type: land` present but **not applied** (DEFAULT merge sets `terrain_type`), so CFG-01 right in effect; CFG-02/QA-AUDIT F-05 refutation was wrong; config 320→240 came from MAP-SMALL-01 commit f9dd8d16 but its report never landed and integrated selftest is 28/29 |
 | CONFIG-COUNT-01 | reconcile 7-vs-13 wired counts to current state | `CONFIG_COUNT_RECONCILED.md` | ses_deddede2dffelwKbQHsVHAMSe2 | **DONE** | authoritative **11 WIRED / 2 READER_ONLY / 2 UI_ONLY / 6 PENDING**; 7→13 delta decomposed exactly (HUD +3, relief +1, water vocabulary +2, mirror labels); **`config.json` has NO `features` object** → all getters return defaults, nothing user-tunable yet → MAP-SMALL-01 pinged to add it |
-| README-UPDATE-01 | refresh swarm README with late-wave findings | `README.md` | ses_deddede29ffep3WHPBG8kRHQYW | RUNNING |
+| README-UPDATE-01 | refresh swarm README with late-wave findings | `README.md` | ses_deddede29ffep3WHPBG8kRHQYW | **DONE — TERMINATED** (duplicate of authoritative Batch R row) |
 | PERF-3D-01 | measure 3D sync/render hotpaths vs prior baselines | `reports/PERF_3D_01.md` | ses_deddede28ffePAlAptFGEy4kzn | RUNNING |
 | FINAL-GATE-PLAN-01 | exact ordered final-gate sequence + prerequisites | `reports/FINAL_GATE_PLAN_01.md` | ses_deddede23ffeu28mj7uzC2iIEH | **DONE** (243 lines) | prerequisites with session ids, ordered ladder P0→C4→S1 + final gate commands, failure policy, current-status snapshot; flagged dark-row asserts in sibling atoms → DARKROW-ALL-01 |
 | DARKROW-ALL-01 | consistent dark-row applicability fix in P1–C4 atoms | `reports/DARKROW_ALL_01.md` | ses_deddb4a21ffeMNC2rRgf4X3t4F | RUNNING |
 | CAPTURE-RECHECK-01 | second-agent capture re-check protocol | `CAPTURE_RECHECK.md` | ses_deddb4a1effeYYHgxFscIgnOeM | **DONE** (218 lines) | per-row artifact paths + exact `smallmap_capture.py` commands, P0→S1 criteria tables, image rules (no donor parity, metrics never override visuals), `RECHECK_<ROW>.md` recording, COORD-only ladder advance, failure attribution |
-| QA-2D-GATES-01 | verify `app/` 2D gates still green | `reports/QA_2D_GATES_01.md` | ses_dedd673d5fferCfjOZUq5RuWOa | RUNNING |
+| QA-2D-GATES-01 | verify `app/` 2D gates still green | `reports/QA_2D_GATES_01.md` | ses_dedd673d5fferCfjOZUq5RuWOa | **DONE — CONFIRMED_GREEN** | selftest 29/29 (1348), uitest 17/17 (1349), CLEAN exit 0; 2D never intentionally edited today; no runner-state mutation |
+| INVENTORY-01 | independent re-count of donor inventories | `reports/INVENTORY_01_counts.md` | ses_dedd0b783ffeXGxtcSZa3SbA9o | **DONE** | 76 claims re-counted: 72 exact + 1 scope note + 3 mismatches (root files 24 not 22; map field 55/32 not 53/27; `.inc` 455 whole-donor vs 313 under data/) → CORRECTIONS rows 58–60 |
 | QA-WINTER-01 | independent verification of Winter atlas artifacts | `reports/QA_WINTER_01.md` | ses_deddad2fcffermyYWpkQC3rlTF | **DONE** | all artifact checks CONFIRMED (SHA/dims/124 indices/121 sources/12 pixel spot-checks); SP-6 path aligned in `world3d_terrain.gd:272-273`, SP-8 atom still swapped → SEASON-TEST-PATH-01; LFS stale-pointer precondition REFUTED (HEAD/index now hold new pointer); remote LFS UNVERIFIED |
 | SEASON-TEST-PATH-01 | align SP-8 atom Winter atlas paths | `reports/SEASON_TEST_PATH_01.md` | ses_dedd5c6b9ffebY8CjZ2LHhmm8U | RUNNING |
-| DSEASON-01 | donor winter/desert/field-crop visual truth | `reports/DSEASON_01_season_visuals.md` | ses_deddad2fbffekgmOL40gKn3638 | RUNNING |
+| DSEASON-01 | donor winter/desert/field-crop visual truth | `reports/DSEASON_01_season_visuals.md` | ses_deddad2fbffekgmOL40gKn3638 | **DONE** | season swap = set/name/material not tint; winter preset uses shared `alpha0a/b/c`; **`_misc_SetDesert` has 38 active pairs vs port 11** → DESERT-REMAP-02; prop `w` art absent; donor winter field decal `envfieldd→envfielddw` not drawn; water/sky/fog season colours UNVERIFIED |
+| DESERT-REMAP-02 | extend desert remap to all 38 donor pairs | `reports/DESERT_REMAP_02.md` | ses_dedc825e3ffeCybE4oju7Ds2Az | RUNNING |
+| PROP-W-PLAN-01 | plan missing winter prop-material art | `reports/PROP_W_PLAN_01.md` | ses_dedc825dfffe65At77RG2CJO98 | RUNNING |
+| SP8-STATUS-01 | audit stale season-overlay atom + re-run spec | `reports/SP8_STATUS_01.md` | ses_dedc825deffegTIEqiL78uxsGw | RUNNING |
 | GDIGNORE-01 | audit `.gdignore` stale imports / risky loads | `reports/GDIGNORE_01.md` | ses_deddad2f8ffemvAjexPoHMQOBy | **DONE** (138 lines) | 5 markers (not 3) excluding 5,192 files/~892.6 MiB; **2,097 stale `.import`/ctex** (anim 1,849 + sprites 179 + sprites_hi 69) systemic; six `world.gd` load sites reproduce rotor pattern (dormant in 3d, live under 2d override); mitigations proposed, no edits |
 | RUN-GUIDE-01 | owner-facing launch/verify/troubleshoot guide | `RUN_GUIDE.md` | ses_deddad2e4ffecqus42qS3DYz5R | **DONE** (143 lines, 9 sections) | launch/gates/capture commands, expected PORT APPROX warnings vs genuine failures, current defaults, troubleshooting table; flags stale README `--stay` claim and reports selftest currently 28/29 (`build`) |
-| QA-DOCS-01 | audit today's reports for evidence/cold-readability | `reports/QA_DOCS_01.md` | ses_deddad2e3ffe4Cyl6fHeoh0yfz | RUNNING |
+| QA-DOCS-01 | audit today's reports for evidence/cold-readability | `reports/QA_DOCS_01.md` | ses_deddad2e3ffe4Cyl6fHeoh0yfz | **DONE — TERMINATED** (169 lines; 3 BLOCKERs fixed in living docs) |
 | DONAVAL-01 | donor naval/ship assets truth (skirmish scope) | `reports/DONAVAL_01.md` | ses_deddad2dfffeiq7NfEV7bZUays | **DONE** (282 lines) | 9 hull `.osm`, 6 crew `.oss`, sails/flags/paddles, 10 skins incl. alternate xebeca; 7 corrections (skins present, crew 5/6, tiers=production gates, radii 1.31–3.38 m, `convert_models.py` shipyard claim false); new construction/port-scan behaviours; port has no naval entity layer/production/stats/AI |
 | QA-ATOM-RESULTS-01 | audit atom result JSONs + manifest consistency | `reports/QA_ATOM_RESULTS_01.md` | ses_dedcdf2c3ffeeNnd0m5fmCmM6R | RUNNING |
 | LFS-PLAN-01 | winter atlas LFS/clone-size plan (read-only, no git changes) | `reports/LFS_PLAN_01.md` | ses_dede3a38bffee774616xhEtemx | **DONE** | `.gitattributes:1` already LFS-tracks `*.png`, git-lfs 3.4.1 installed; owner `git add` rewrites pointer to new oid (no track edit); recommended LFS option; **fallback trap**: Winter single-load failure silently uses Summer art because `SPLIT_MANIFEST` is Summer-only; path mismatch remains SP-6's |

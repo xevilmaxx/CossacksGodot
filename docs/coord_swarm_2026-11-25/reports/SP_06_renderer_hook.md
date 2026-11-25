@@ -233,19 +233,23 @@ the worktree blob equals HEAD (`12667ae5…`). **This worker did not run `git ad
 |---|---:|---|---|---:|---:|---:|---:|
 | `sp06-smoke` | 431 | `--headless --path variant3d --check-only --script res://scripts/world3d_terrain.gd` | `ok` | 0 | 0 B | **0** | 0 |
 | `sp06-smoke-pathfix` | 443 | same (after SP-4 filename correction) | `ok` | 0 | 0 B | **0** | 0 |
-| `sp06-sun-smoke` | PENDING | same (after LIGHT-02 one-line fix) | PENDING | — | — | — | — |
+| `sp06-sun-smoke` | 457 | same (after LIGHT-02 one-line fix) | **skipped** (queue waited 1,632 s; `serving=458`) | null | 0 B | n/a | n/a |
+| `sp06-sun-smoke-r2` | 480 | same (retry, `--max-wait 5400`) | `ok` | 0 | 0 B | **0** | 0 |
 
 Ticket details and independent records are in §12 and the runner spools below. Runner spools:
 `variant3d/.godot_queue/results/00000431_sp06-smoke/`,
-`00000443_sp06-smoke-pathfix/`, plus the third job's spool; result JSONs
-`00000431.json`, `00000443.json`, and the third ticket's JSON.
-Godot `4.7.2.stable.official.ed1daf0bf`; stdout is the 75-byte banner only.
+`00000443_sp06-smoke-pathfix/`, `00000457_sp06-sun-smoke/` (skipped, no run),
+`00000480_sp06-sun-smoke-r2/`; result JSONs `00000431.json`, `00000443.json`,
+`00000457.json`, `00000480.json`. Godot `4.7.2.stable.official.ed1daf0bf`; stdout is the
+75-byte banner only on each executed job.
 
-**Validation pass count: 2 of 2 completed smoke jobs PASS** (`SCRIPT ERROR == 0`, exit 0,
-stderr 0 B each); the third job is still queued. No test atom was executed, so **no test
-assertion count is claimed** — running `t_terrain3d.gd` would write another owner's tracked
-`tests/results/t_terrain3d.json`, which this ticket's ownership forbids. `--check-only`
-parses/validates; it does not execute a runtime atlas load (SP-8 remains the runtime atom).
+**Validation pass count: 3 of 3 executed smoke jobs PASS** (`SCRIPT ERROR == 0`, exit 0,
+stderr 0 B each); one additional submission (`sp06-sun-smoke`, ticket 457) was **skipped by
+the queue** after a 1,632 s wait and is not counted as a pass or a failure. No test atom was
+executed, so **no test assertion count is claimed** — running `t_terrain3d.gd` would write
+another owner's tracked `tests/results/t_terrain3d.json`, which this ticket's ownership
+forbids. `--check-only` parses/validates; it does not execute a runtime atlas load (SP-8
+remains the runtime atom).
 
 ---
 
@@ -324,16 +328,33 @@ stat value is preserved. The LIGHT-02 follow-up changed exactly one line (`SUN_L
 `reports/LIGHT_02_light_space.md` cited inline.
 
 Backups: `world3d_terrain.gd.bak-SP06` and `.bak-SP06SUN`. Validation: variant-runner
-headless `--check-only` jobs `sp06-smoke` (ticket 431) and `sp06-smoke-pathfix` (443) both
-`ok`, exit 0, stderr 0 B, `SCRIPT ERROR == 0`; third job `sp06-sun-smoke` pending in the
-queue (结果见最终补充). No shader edit, no index change beyond SP-3's labelled remap, no
+headless `--check-only` jobs `sp06-smoke` (431), `sp06-smoke-pathfix` (443) and the retry
+`sp06-sun-smoke-r2` (480) all `ok`, exit 0, stderr 0 B, `SCRIPT ERROR == 0` (3/3 pass;
+one queue-skipped submission at ticket 457 is recorded in §12). No shader edit, no index change beyond SP-3's labelled remap, no
 mesh-invariant change, RELIEF-01 blocks byte-identical, `get_minimap_box`/CAM-RV-01
 unaffected, no test weakened, no donor copy, no git add/commit by this worker, no LFS
 action. **No other file was edited. No visual-parity claim is made.**
 
 ---
 
-## 12. Final validation supplement
+## 12. Final validation supplement (LIGHT-02 smoke)
 
-(pending queued runner job `sp06-sun-smoke`; will be filled with ticket id / exit / stderr /
-`SCRIPT ERROR` count on completion.)
+| Field | Value |
+|---|---|
+| Submitted job | `sp06-sun-smoke` — ticket **457**, `--timeout 180 --max-wait 1800` |
+| Submission outcome | `skipped`: waited 1,632.09 s, `run=0`, `exit=null`, error `ticket 457 was skipped (serving=458)` — **not a code failure**, queue congestion (status snapshot at that time: max wait 1,825 s) |
+| Retry job | `sp06-sun-smoke-r2` — ticket **480**, `--timeout 180 --max-wait 5400` |
+| Retry argv | `--headless --path variant3d --check-only --script res://scripts/world3d_terrain.gd` |
+| Wait / run | 58.26 s / 6.49 s |
+| Status / exit | `ok` / `0` |
+| stdout | 75 B — `Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org` |
+| stderr | **0 B** ⇒ `SCRIPT ERROR == 0`, `Parse Error == 0` |
+| Result JSON | `variant3d/.godot_queue/results/00000480.json` |
+| Spool | `variant3d/.godot_queue/results/00000480_sp06-sun-smoke-r2/` |
+
+**Verdict: `SCRIPT ERROR == 0` — PASS (3/3 executed jobs).** The LIGHT-02 one-line
+`SUN_LIGHTVEC` change parses cleanly under Godot 4.7.2 `--check-only`. No test atom, no
+runtime atlas load, no donor A/B, no visual-parity claim; no other file was edited by this
+worker.
+
+*End of SP-06. One owned code file, two backups, one report; no other file edited.*

@@ -181,7 +181,13 @@ No code was changed by COORD directly; owners fix their own files.
 | S-25-14 | CFG-02 240² change **reverted**: map size itself breaks 3 selftest steps. MAP-SMALL-01 may scale only `_spot()`'s search geometry, never a pass criterion | Evidence-based revert (26/29 at 240 vs 29/29 at 320); owner still wants the smaller default, so fix the harness geometry instead of gaming the seed/test |
 | S-25-15 | MMJUMP-01 **blocked by design**, not by capability: the primary minimap click lives in `hud.gd` (outside its grant), and a `jump_to_world`-only change would contradict CAM-RV-01's 20/20 confirmed centre-click assertion. A properly-scoped ticket must own `hud.gd` + `camera3d.gd` + the re-verify atom together and update that expectation to donor semantics **without weakening it** | Donor jump preserves the camera offset (`control.script:574-613`), so the clicked point is not necessarily centred; the centre assertion is a port approximation, not donor truth |
 
-## Gates status (LIVE — supersedes the earlier snapshot; DOC-03 flagged the old table stale)
+## Gates status (PER-JOB artifacts vs INTEGRATED state — audit-corrected, 2026-11-25)
+
+> **Governance note (QA-DOCS-01 C1):** "LIVE" was too strong. The per-job results below are
+> real and verified by QA-AUDIT-01, but the **integrated** `variant3d/selftest.json` was
+> separately measured at 26/29 (HEAD) / 28/29 (worktree) by the same audit. A per-job 29/29
+> does not imply the integrated tree is green; only the final gate reserved to COORD can
+> claim that. 2D `app/` gates were independently re-run and CONFIRMED_GREEN by QA-2D-GATES-01.
 
 | Gate | Prior result | This session (measured) |
 |---|---|---|
