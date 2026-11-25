@@ -110,7 +110,7 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "save_png(C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/p0fresh01/p0_final_formula.png) err=0",
+			"detail": "save_png(C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/g04/p0_64.png) err=0",
 			"name": "capture_saved",
 			"passed": true,
 			"status": "PASS"
@@ -128,13 +128,13 @@
 			"status": "RECORDED_NOT_APPLICABLE"
 		},
 		{
-			"detail": "mean_luma=91.432 (strict >=40; current dark frame=13.271 fails; PORT APPROX — no donor GPU A/B exists)",
+			"detail": "mean_luma=92.134 (strict >=40; current dark frame=13.271 fails; PORT APPROX — no donor GPU A/B exists)",
 			"name": "ground_mean_luma",
 			"passed": true,
 			"status": "PASS"
 		},
 		{
-			"detail": "max_luma=155.163 (strict >=100; current dark frame=28.4 fails; PORT APPROX — no donor GPU A/B exists)",
+			"detail": "max_luma=119.160 (strict >=100; current dark frame=28.4 fails; PORT APPROX — no donor GPU A/B exists)",
 			"name": "ground_max_luma",
 			"passed": true,
 			"status": "PASS"
@@ -163,16 +163,16 @@
 		"mesh_triangles": 7938,
 		"mesh_vertices": 4096,
 		"png_metrics": {
-			"bytes": 2129263,
+			"bytes": 923061,
 			"full_width_dark_rows": 0,
 			"height": 720,
-			"max_luma": 155.163005127713,
-			"mean_luma": 91.4320785333257,
+			"max_luma": 119.160202112764,
+			"mean_luma": 92.1340289917431,
 			"non_black_fraction": 1.0,
-			"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/p0fresh01/p0_final_formula.png",
+			"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/g04/p0_64.png",
 			"width": 1280
 		},
-		"requested_png": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/p0fresh01/p0_final_formula.png",
+		"requested_png": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/g04/p0_64.png",
 		"res_nodes_count": 0,
 		"shader_shadow_enabled": "0.0",
 		"terrain_stats_present": true,
@@ -191,11 +191,11 @@
 	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
 	"passed": true,
 	"passes": 22,
-	"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/p0fresh01/p0_final_formula.png",
+	"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/g04/p0_64.png",
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
 	"skip_reason": "",
 	"skipped_or_skip_capture": 1,
 	"structural_ok": true,
-	"unix_ms": 1795603272261.0,
+	"unix_ms": 1795615467703.0,
 	"verdict": "PASS"
 }

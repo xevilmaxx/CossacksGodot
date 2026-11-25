@@ -71,6 +71,13 @@ var _pattern_build: Dictionary = {}
 # RELIEF-LIVE-FIX-01: cells written by a donor-grid stamp.  Read by the global
 # height clamp below so the donor cap is not re-quantised by the port's dither.
 var _relief_donor_mask: PackedByteArray = PackedByteArray()
+# B03-RELIEF: every cell whose HEIGHT was written by _shape_stamp_relief
+# (donor-grid branch OR analytic fallback), plus the near_start protection ring.
+# The gradient/collision pass uses it to keep relief terraces from being painted
+# as rock ART (the owner's concentric maze).  `blocked[]` is still applied there,
+# so walkability is byte-identical; only the terrain=5 art paint is suppressed.
+# PORT APPROXIMATION — the donor's cliff-promotion rule is UNVERIFIED (RV-TRN-01).
+var _relief_stamp_mask: PackedByteArray = PackedByteArray()
 # LEGACY port amplitude constants, retained ONLY for the pre-existing analytic
 # fallback/domes.  HEIGHT-GEN-DEEP-01 §4.3 corrects the donor truth: the live
 # amplitudes at R=96 / R=48 are +0.495937258 / -0.557929397 (h=A_class*R/255);
@@ -844,12 +851,14 @@ func _gen_patterns() -> void:
 					if dc <= 1.6:
 						terrain[ii] = 5
 				"hill":
-					# P-47: the old height[ii] += 0.25 ran AFTER the collision
-					# pass in _gen_base, so newly steep tiles were never painted
-					# rock/blocked (seed 9 cliff ring = 0%). Keep only the
-					# terrain paint; never mutate height post-collision.
-					if dc <= 2.2:
-						terrain[ii] = 5
+					# B03-RELIEF: height-only relief. The old terrain[ii]=5 here
+					# painted donor hill footprints as ROCK ART (the concentric
+					# maze the owner reported); relief HEIGHT is already written
+					# by _shape_stamp_relief() in _gen_base (donor grid or the
+					# analytic fallback), so no post-collision height write and
+					# no terrain paint is needed. No rng draw in this branch, so
+					# removing the paint cannot shift any downstream stream.
+					pass
 				"decor":
 					if rng.randf() < 0.10:
 						_add_res("bush", Vector2((float(tx) + 0.5) * TILE,
@@ -948,6 +957,8 @@ func _shape_stamp_relief() -> void:
 	var relief_grid_cells := 0
 	_relief_donor_mask = PackedByteArray()
 	_relief_donor_mask.resize(MAP_W * MAP_H)
+	_relief_stamp_mask = PackedByteArray()
+	_relief_stamp_mask.resize(MAP_W * MAP_H)
 	# Buildable ring: a stamp CENTRE may sit outside the pattern-gen keep-clear
 	# while its 48-100-tile footprint still reaches a town.  Flatten that ring
 	# here (before collision) so no start/town/build spot is ever steepened or
@@ -964,6 +975,9 @@ func _shape_stamp_relief() -> void:
 			for x0 in range(maxi(0, int(sx0 - protect)), mini(MAP_W, int(sx0 + protect) + 1)):
 				if Vector2(float(x0) - sx0, float(y0) - sy0).length() <= protect:
 					near_start[y0 * MAP_W + x0] = 1
+					# B03-RELIEF: the start keep-clear ring may border a relief
+					# terrace; suppress rock ART on the step at that boundary too.
+					_relief_stamp_mask[y0 * MAP_W + x0] = 1
 	for sv in (_pattern_build.get("stamps", []) as Array):
 		var st: Object = sv
 		var kind := str(st.kind)
@@ -1054,6 +1068,7 @@ func _shape_stamp_relief() -> void:
 					var gmax: float = donor_meta.get("max", RELIEF_PLATEAU)
 					height[i] = clampf(height[i] + gv0 * gscale, maxf(gmin, RELIEF_RAVINE), minf(gmax, RELIEF_PLATEAU))
 					_relief_donor_mask[i] = 1
+					_relief_stamp_mask[i] = 1
 					relief_grid_cells += 1
 					continue
 				if kind == "hill":
@@ -1100,6 +1115,26 @@ func _shape_stamp_relief() -> void:
 				# (plateau.md P10).  Clamp the additive result to the donor
 				# [-2.964, +2.964] band; ravine's negative amp hits the floor.
 				height[i] = clampf(height[i] + amp * f, RELIEF_RAVINE, RELIEF_PLATEAU)
+				_relief_stamp_mask[i] = 1
+	# B03-RELIEF: dilate one cell (8-neighbourhood). The gradient pass sees a
+	# |dh|>0.5 STEP from an un-stamped cell adjacent to a relief terrace; that
+	# outside cell would otherwise still be painted as a rock-ART ring. Only the
+	# mask grows - no height, blocked, terrain, rng or tileblock write here.
+	var _rm_dil := PackedByteArray()
+	_rm_dil.resize(MAP_W * MAP_H)
+	for y in MAP_H:
+		for x in MAP_W:
+			if _relief_stamp_mask[_t(x, y)] == 0:
+				continue
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					var nx: int = x + dx
+					var ny: int = y + dy
+					if nx >= 0 and ny >= 0 and nx < MAP_W and ny < MAP_H:
+						_rm_dil[_t(nx, ny)] = 1
+	for ri in _rm_dil.size():
+		if _rm_dil[ri] != 0:
+			_relief_stamp_mask[ri] = 1
 	# RELIEF-LIVE-FIX-01 audit ledger (dump meta only; no height/tile effect).
 	map_meta["relief_grid"] = {
 		"label": "PORT APPROXIMATION — donor engine blend UNVERIFIED (DPATTERN_01 §5.2)",
@@ -1260,7 +1295,16 @@ func _gen_base() -> void:
 			if x + 1 < MAP_W and y + 1 < MAP_H and absf(height[i + MAP_W + 1] - h0) > 0.55:
 				steep = true
 			if steep:
-				terrain[i] = 5
+				# B03-RELIEF: relief stamps own HEIGHT only. Their terraced rims
+				# (and the near_start step that borders them) must not be painted
+				# as rock ART - that is the owner's concentric maze. The stamp
+				# mask covers both donor-grid and analytic-fallback cells; the
+				# 2-pattern _relief_donor_mask alone would miss the analytic rims
+				# that make most rings. Real donor rock/stone collision OUTSIDE
+				# relief stamps is unchanged. `blocked[]` is still applied to
+				# EVERY steep cell, so walkability/start protection are intact.
+				if _relief_stamp_mask[i] == 0:
+					terrain[i] = 5
 				set_blocked_tile(x, y, true)
 	# Starts can land in shallow water on a mask edge: snap to the nearest land.
 	for si in starts.size():
@@ -1910,7 +1954,7 @@ func _load_detail_bitmaps() -> void:
 	tile_low_im = _load_image_tex("res://assets/terrain/structs/tile_lowground.png")
 	tile_high_im = _load_image_tex("res://assets/terrain/structs/tile_highground.png")
 
-func _apply_detail_pass() -> void:
+func _apply_detail_pass(brng: RandomNumberGenerator) -> void:
 	# donor loadtextureterrainfrombitmap.inc: h < 0.1 reads tile_lowground,
 	# else tile_highground; tex = R div 2; only cells still on block 0 change.
 	_load_detail_bitmaps()
@@ -1933,6 +1977,21 @@ func _apply_detail_pass() -> void:
 			var sx: int = clampi(int(float(x) / float(MAP_W) * float(iw)), 0, iw - 1)
 			var sy: int = clampi(int(float(y) / float(MAP_H) * float(ih)), 0, ih - 1)
 			var tex: int = int(im.get_pixel(sx, sy).r * 255.0) / 2
+			# B03-P1 (PORT APPROXIMATION, A04 §6 P1): the donor writes its two
+			# transition ids verbatim from the bitmap, which paints ~15% of the
+			# map one dark atlas cell. Re-roll ONLY those two through the donor
+			# lists that already contain them (RV-TRN-02 §7: Item 2 J=5
+			# test7/grass8/test6 cfg:267; Item 1 J=4 grass1/grass2/test8 cfg:155)
+			# using the port's existing weighted picker. No new id, no mask edit,
+			# no synthetic dither/noise field (charter S-25-09).
+			if tex == _blk("test7"):
+				var pick7 := _tb_pick(2, 5, brng)
+				if pick7 >= 0:
+					tex = pick7
+			elif tex == _blk("test8"):
+				var pick8 := _tb_pick(1, 4, brng)
+				if pick8 >= 0:
+					tex = pick8
 			if tex >= 0 and tex < tbl_names.size():
 				tileblock[i] = tex
 
@@ -2021,7 +2080,31 @@ func _assign_tileblocks() -> void:
 	# bitmaps (R div 2), picked by height.  Donor order is TextureMap ->
 	# bitmap base -> SmoothTiles (DTRN-01 §4 / RV-TRN-02 §4.4), so the
 	# detail tiles are reconciled too instead of being left as final cells.
-	_apply_detail_pass()
+	_apply_detail_pass(brng)
+	# B03-P2 (PORT APPROXIMATION, A04 §6 P2): restore the donor's
+	# SetupTiledPatterns('tiles') background-detail pass structurally. The tls_*
+	# masks are real donor decal footprints placed by pattern_gen.gd:230-251 and
+	# stored on kind=="tile" stamps, but game.gd:838-839 drops them (they are
+	# thin decals, not terrain recolour). Paint their exact donor mask cells with
+	# the nearest existing donor id, ground1 (Item 9 J=0 cfg:818 / donor
+	# texturemap.inc:622-642 worked ground). No new stamp, no RNG draw, no change
+	# to terrain/blocked - the mapgen stream stays byte-identical; the 3-pass
+	# donor smoothing below reconciles the new borders with donor rules and the
+	# final mine-apron authority still wins. P3 (full 25-unit donor grid) is
+	# deliberately NOT attempted: it touches pattern_gen.gd and the stamp RNG.
+	for ps in pattern_stamps:
+		var pst: Object = ps
+		if str(pst.kind) != "tile":
+			continue
+		for pc in (pst.cells as Array):
+			var pcc: Vector2i = pc
+			var px: int = int(pst.x) + pcc.x
+			var py: int = int(pst.y) + pcc.y
+			if px < 0 or py < 0 or px >= MAP_W or py >= MAP_H:
+				continue
+			var pti := _t(px, py)
+			if tileblock[pti] != BLK_WATER:
+				tileblock[pti] = _blk("ground1")
 	# 4) exact 3-pass SmoothTileMap (donor smoothtiles.inc:191-237): three
 	# passes, horizontal then vertical, over the FINAL tile field before UV2.
 	# TRN-DATA: the donor rule table now covers all 118 active lists.
@@ -2140,7 +2223,22 @@ func _tb_pick(li: int, gi: int, brng: RandomNumberGenerator) -> int:
 		var p := float(td.get("prob", 0.0))
 		acc += p
 		if p > 0.0 and r < acc:
-			return _blk(str(td.get("name", "")))
+			var nm := str(td.get("name", ""))
+			# B03-P3 (PORT APPROXIMATION, A03 §2/§4): the donor lists that emit
+			# grass_ground1/2/3 (Item 4/5/6 J=3, 0.64/0.0028/0.36, and Item 8 J=2)
+			# stay verbatim in DONOR_SMOOTH_RULES; only the ART chosen for those
+			# three draws is redirected to clean donor ids (A03: grass9 = best
+			# isotropic/seamless; test8/test7 = good isotropic/seamless). No new
+			# id, no extra RNG draw, no luminance/noise/dither field. The donor
+			# does not swap art by quality, so this is an explicit port-level
+			# substitution, not donor parity (UNVERIFIED).
+			if nm == "grass_ground1":
+				return _blk("grass9")
+			if nm == "grass_ground2":
+				return _blk("test8")
+			if nm == "grass_ground3":
+				return _blk("test7")
+			return _blk(nm)
 	return -1
 
 func _tb_smooth_pair(x1: int, y1: int, x2: int, y2: int, brng: RandomNumberGenerator) -> void:

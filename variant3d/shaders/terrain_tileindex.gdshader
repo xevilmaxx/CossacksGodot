@@ -51,13 +51,13 @@ render_mode blend_mix, unshaded, cull_disabled;
 //
 // Filtering mirrors reftile.mat:29-37 (tfIsotropic, maNearest,
 // miNearestMipmapLinear) and reftilealpha.mat:29-36 / :138-146 (maNearest,
-// miNearest — no mipmaps on masks).
-// PORT APPROXIMATION: Godot 4 has no single hint for donor's mixed
-// nearest-mag / nearest-mipmap-linear-min; `filter_nearest_mipmap` is the
-// closest expressible hint. A3 may set the remaining filter flags on the
-// Texture2D itself if a closer match is needed.
-// ----------------------------------------------------------------------------
-uniform sampler2D tile_atlas : filter_nearest_mipmap, repeat_enable;
+// miNearest — no mipmaps on masks). B01 changes only the PORT hint below.
+// B01 PORT APPROXIMATION (F04 §5 P0-4; Charter §2 item 3): tile_atlas now uses
+// `filter_linear_mipmap` instead of `filter_nearest_mipmap`, so nearest
+// magnification of the repeating cell cannot band at shallow cameras. This is
+// NOT donor parity: donor maNearest/miNearestMipmapLinear stays the cited
+// intent (reftile.mat:29-37); no anisotropic claim (A08 §7 #4, reftile.mat:24).
+uniform sampler2D tile_atlas : filter_linear_mipmap, repeat_enable;
 // V7-85 asset: donor block atlas, one preset per cell. Cell = preset index
 // (presets_summer.json:2-125), row-major from top-left, grid in `atlas_grid`.
 // RGB only: no normal map — donor tangentSpace=false (shaders.lib:19) and
@@ -262,7 +262,7 @@ uniform float mask_to_alpha = 1.0;
 // ----------------------------------------------------------------------------
 
 varying vec2 v_st;        // donor gl_TexCoord[0].xy (after texture matrix)
-varying vec2 v_alpha_uv;  // PORT APPROX of donor gl_TexCoord[1].xy
+varying vec2 v_alpha_uv;  // PORT APPROX gl_TexCoord[1].xy; UNWRAPPED phase (A06-F2)
 varying float v_tile;     // integer-valued float index from UV2.x
 varying float v_face;     // 0 / 1 / 2
 varying vec3 v_eye;       // donor realpos.xyz, for eye-linear face masks
@@ -312,8 +312,8 @@ void vertex() {
 	// hf.pvl.sm.vert:32; r/q set to (0,1). Donor leaves them untouched =>
 	// PORT APPROXIMATION of undefined fixed-function state.
 	v_st = (texture_matrix * vec4(st, 0.0, 1.0)).xy;
-	// Flat alpha mask uses the same 2 m phase; 64² sub-rect is picked in fragment.
-	v_alpha_uv = fract(v_st * uv_repeat) * alpha_uv_scale;
+	// A06-F2: unwrapped 2 m phase; fract() moved to fragment so mask is not per-cell constant.
+	v_alpha_uv = v_st * uv_repeat * alpha_uv_scale;
 
 	// hf.pvl.sm.vert:35 — shadow coordinate (both engine matrices folded).
 	v_shadow = shadow_matrix * realpos;
@@ -325,16 +325,16 @@ void vertex() {
 	v_face = face_mode_override >= 0.0 ? face_mode_override : UV2.y;
 }
 
-// Atlas cell lookup. PORT APPROXIMATION: whole-preset-per-cell packing
-// (TERRAIN2-06 §3.2); donor tsDouble/ttExtended sub-tiles are engine-side
-// (reftile.lib:3-12). No tile-name -> id table is embedded: the id comes
-// verbatim from UV2.x / presets_summer.json:2-125.
+// Atlas cell lookup. PORT APPROX (TERRAIN2-06 §3.2; reftile.lib:3-12); id = UV2.x / presets_summer.json:2-125.
 vec3 tile_rgb(float idx, vec2 local_uv) {
 	float cols = max(atlas_grid.x, 1.0);       // PORT GUARD against unset grid
-	float col = mod(idx, cols);
-	float row = floor(idx / cols);
-	vec2 uv = (vec2(col, row) + local_uv) / atlas_grid;
-	return texture(tile_atlas, uv).rgb;         // donor hf.pvl.smx3.frag:13
+	vec2 cell = vec2(mod(idx, cols), floor(idx / cols));
+	// B01 REVISION (owner verdict g04): per-cell mirror variant REMOVED — 2 m axis-aligned
+	// flips read as a chessboard. No lattice variant; tile-ID diversity belongs to B03.
+	vec2 warp = 0.125 * vec2(sin(dot(v_st, vec2(0.13, 0.07))), cos(dot(v_st, vec2(0.09, 0.11))));
+	vec2 inset = 0.5 / max(vec2(textureSize(tile_atlas, 0)) / max(atlas_grid, vec2(1.0)), vec2(1.0)); // A06-F2 half-texel inset
+	vec2 uv = mix(inset, 1.0 - inset, fract(local_uv + warp)); // continuous warp only; no luminance field (S-25-09)
+	return textureGrad(tile_atlas, (cell + uv) / atlas_grid, dFdx(v_st * uv_repeat) / atlas_grid, dFdy(v_st * uv_repeat) / atlas_grid).rgb; // donor hf.pvl.smx3.frag:13; A06-F2 unwrapped gradients
 }
 
 // TRN-SHADER — donor alpha-atlas SUB-RECT sampling (V3D-02 P4/F4).
@@ -395,28 +395,28 @@ void fragment() {
 	float a;
 	int face = int(v_face + 0.5);
 	if (face == 1 || face == 2) {
-		// Face refkeys swap texUnit1 to alphavert (reftile.mat:122, :148;
-		// tiles.mat:142-213). RGB deliberately stays the base rock/sand block:
-		// rock1vf/rock1vs bind the SAME rock1.dds (tiles.mat:142-148).
-		// TRN-SHADER: face-alpha eye planes RESTORED as the recovered donor
-		// literals (RV-TRN-01 verdict C / §4.3; reftile.mat:130-141,156-167).
-		// READ-ONLY DONOR PLANES: front S=(1,0,0,0), T=(0,0,1,0)
-		// (reftile.mat:130-141); side S=(0,1,0,0), T=(0,0,1,0)
-		// (reftile.mat:156-167); tmmEyeLinear (:129/:155); scale 0.125
-		// (:124-126/:150-152). Donor is Z-up, Godot Y-up: donor T(Z,height)
-		// -> v_eye.y, donor side S(Y) -> v_eye.z (world3d_terrain.gd:57-58,
-		// TERRAIN2-01 §2.5 INFERRED). Axis conversion is PORT APPROXIMATION.
+		// Face refkeys swap texUnit1 to alphavert (reftile.mat:122,:148; tiles.mat:142-213);
+		// RGB stays base rock/sand: rock1vf/vs bind SAME rock1.dds (tiles.mat:142-148).
+		// Face-alpha eye planes RESTORED (RV-TRN-01 C/§4.3; reftile.mat:130-141,156-167):
+		// front S=X,T=height; side S=Y(donor),T=height; tmmEyeLinear (:129/:155), scale .125
+		// (:124-126/:150-152). Donor Z-up->Godot Y-up: T(Z)->v_eye.y, S(Y)->v_eye.z
+		// (world3d_terrain.gd:57-58, TERRAIN2-01 §2.5 INFERRED). Axis swap PORT APPROX.
 		vec2 mask_uv = (face == 1)
 			? vec2(v_eye.x, v_eye.y) * face_scale   // S=X,          T=height
 			: vec2(v_eye.z, v_eye.y) * face_scale;  // S=Y (donor),  T=height
 		a = texture(alphavert_atlas, mask_uv).a;
 	} else {
-		// Flat tiles: Texture2Name=alpha (reftile.mat:6), bmTransparency (:17),
-		// tmmUser s/t planes (1,0,0,0)/(1,0,0,0) (:39-50, engine expansion
-		// UNVERIFIED). TRN-SHADER: sample ONE donor 64² sub-rect of the 8x4
-		// alpha grid instead of the whole atlas; tile->patch index is
-		// UNVERIFIED (see alpha_patch_uv above).
-		a = texture(alpha_atlas, alpha_patch_uv(v_tile, v_alpha_uv)).a;
+		// Flat tiles: alpha (reftile.mat:6/:17/:39-50, UNVERIFIED); one 64² sub-rect (:365-378).
+		// B01/A02-P1 GUARD (PORT APPROX): (3,3)/(7,3) constant-0 sentinels (DALPHA-01 §6.4;
+		// A02-E4 mean 0/255) would make :427 pure black; bypass via the same id decomposition.
+		float sid = floor(abs(v_tile));
+		float sop = mod(floor(sid / 64.0), 2.0);
+		float srow = mix(mod(sid, 4.0), 3.0 - mod(sid, 4.0), sop);
+		float sv = mod(floor(sid / 4.0), 4.0);
+		float scol = mod(floor(sid / 16.0), 2.0) * 4.0 + mix(sv, 3.0 - sv, sop);
+		a = texture(alpha_atlas, alpha_patch_uv(v_tile, fract(v_alpha_uv))).a; // A06-F2: fragment-stage wrap
+		// A02-P4 PORT APPROX: compress mask contrast (no dither/noise, S-25-09).
+		a = mix(mix(1.0, clamp(a, 0.35, 1.0), 0.5), 1.0, step(2.5, scol) * step(2.5, srow));
 	}
 
 	// Donor hf.pvl.smx3.frag:17 — albedo * packed(ambient+diffuse) + specular.

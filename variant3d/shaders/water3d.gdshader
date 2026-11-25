@@ -71,7 +71,7 @@ const mat2 M = mat2(vec2(0.72, -1.60), vec2(1.60, 0.72)); // water.dev.frag:83
 
 // donor noise(p) = texture2D(waveMap, p*(1./256.)).x — water.dev.frag:65-68
 float noise(vec2 p) {
-	return texture(wave_noise, fract(p * (1.0 / 256.0))).r;
+	return texture(wave_noise, p * (1.0 / 256.0)).r; // fract dropped: wave_noise repeat_enable wraps (water.dev.frag:65-68)
 }
 
 // donor height_map(): hmapMin + v.w*(hmapMax-hmapMin) — water.dev.frag:70-75.
@@ -167,6 +167,16 @@ void fragment() {
 	// (DTRN-03 C16), not a retune to the 2D app's 1.0. A labelled A/B surface
 	// Y > 0.8333 restores it; never presented as recovered donor truth.
 	float waveheight = clamp(WATER_LEVEL * 3.0 - 1.5, 0.0, 1.0); // (:174)
+	// T-WATER-FAST (PORT APPROX, uniform-gated early dry discard): with
+	// waveheight==0 the swell term (:95) is 0 and the 9-loop f <= 0 (:104),
+	// so level <= WATER_LEVEL. A dry cell hits the existing :171 discard
+	// anyway — skip its 12-fetch water_map. The waveheight<=0.0 gate is
+	// MANDATORY: a labelled A/B surface Y > 0.8333 makes waveheight > 0,
+	// when level may exceed WATER_LEVEL and shallow water must survive.
+	// No early-Z claim is made (P05 §3.3).
+	if (waveheight <= 0.0 && height > WATER_LEVEL) {
+		discard;                                          // donor fragColor=vec4(0.0) (:176-182)
+	}
 	float level = WATER_LEVEL + 0.2 * water_map(v_height_uv * 15.0 + vec2(time * 0.1), waveheight); // (:175)
 	if (height > level) {
 		discard;                                          // donor fragColor=vec4(0.0) (:176-182)
@@ -235,8 +245,16 @@ void fragment() {
 	// (DTRN-03 §3.3). No foam texture and no new term is introduced; shore_height
 	// (-0.1, texturemap.inc:31) is a classification literal the donor fragment
 	// never reads, so it is not used here (retained as an inert uniform below).
-	watercolor += watershade * coastfade * (1.0 - coastfade2)
-		* (vec3(0.5, 0.6, 0.7) * nautic(uv) + vec3(particles(uv)));
+	// T-WATER-FAST precedent (water_overlay.gdshader:261-269): nautic()/particles()
+	// are 6 noise taps feeding only this band-multiplied foam add. Gate them so
+	// deep water (band == 0) skips the work — output unchanged. PORT APPROX
+	// fast path, not donor parity. watershade is the literal 1.0 at :225, so
+	// the factored product is bit-identical to the original expression.
+	float foam_band = watershade * coastfade * (1.0 - coastfade2);
+	if (foam_band > 0.0) {
+		watercolor += foam_band
+			* (vec3(0.5, 0.6, 0.7) * nautic(uv) + vec3(particles(uv))); // water.dev.frag:227
+	}
 
 	rescolor = mix(rescolor, watercolor, coastfade);      // (:229)
 	// donor resalpha = coastfade2 (:230) — exact ramp: alpha 0 at the waterline,

@@ -522,7 +522,11 @@ func _probe_rect(probe: Dictionary) -> Rect2:
 
 
 func _assert_overlay(probe: Dictionary, want_visible: bool, label: String) -> void:
-	var expected := Rect2(_p0, _p1).abs()
+	# B05: Godot's Rect2(position, size) takes the SECOND argument as a SIZE,
+	# not an end point. The old expectation Rect2(_p0, _p1) encoded the same
+	# off-screen marquee bug as the game (p1 used as a size), so a 23/23 green
+	# could never catch it. Correct expectation ends at the cursor.
+	var expected := Rect2(_p0, _p1 - _p0).abs()
 	var got := _probe_rect(probe)
 	var found := bool(probe.get("found", false))
 	var api := bool(probe.get("has_api", false))
@@ -558,7 +562,8 @@ func _assert_drag_result() -> void:
 	check("building_not_selected", not bool(_bld.get("selected", false)),
 		"building id=%s kind=%s player=%s selected=%s" % [str(_bld.id), str(_bld.kind),
 		str(_bld.player), str(_bld.get("selected", false))])
-	var ground_rect := Rect2(_g0, _g1).abs()
+	# G03: same Rect2(position, size) misuse as :525 — use the drag delta.
+	var ground_rect := Rect2(_g0, _g1 - _g0).abs()
 	check("building_inside_rect_but_excluded_by_kind", ground_rect.has_point(_bld.pos),
 		"building pos=%s in ground rect=%s yet not selected (kind filter)" % [str(_bld.pos), str(ground_rect)])
 	check("cmd_counter_zero_after_drag", _spy.total() == 0, "cmd_calls=%s" % str(_spy.calls))

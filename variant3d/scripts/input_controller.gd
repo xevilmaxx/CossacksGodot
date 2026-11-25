@@ -32,6 +32,14 @@ var dragging := false
 # the FIRST LMB-held MOVE (not on press); :152 compares axis-wise X/Z deltas.
 var _sel_ground_start := Vector2.INF
 var _drag_current := Vector2.INF
+# B05 / D04 §7 hunks 1/5/6/7/8: frozen SIM-ground anchor of the marquee, captured
+# ONCE on LMB press with the same pixel the yellow outline starts from. The old
+# code re-unprojected `drag_start` on every frame, so a camera pan/zoom mid-drag
+# slid the world rect away from the visible box. Donor freezes prevSelX/Z
+# (onmousemove.inc:145-146); the separate first-move _sel_ground_start keeps the
+# two-phase epsilon reference. PORT APPROXIMATION: donor's geometric anchor is
+# the first-move ground point, not the press point (DSEL-01 claim 3).
+var _rect_ground_anchor := Vector2.INF
 # SEL-01: viewport-pixel marquee overlay, created by bind_3d() only.
 var sel_rect_overlay = null
 var attack_move_mode := false
@@ -197,12 +205,39 @@ func _ensure_selection_rect_overlay() -> void:
 func _show_selection_rect(r: Rect2) -> void:
 	if sel_rect_overlay == null or not is_instance_valid(sel_rect_overlay):
 		return
-	sel_rect_overlay.call("set_selection_rect", r)
+	# B05 / D04 §7 hunk 4 (PORT APPROXIMATION): r arrives in VIEWPORT (event)
+	# pixels, while the CanvasLayer painter draws in CANVAS pixels. Invert the
+	# live canvas transform exactly as the 2D _screen_to_world() does below, so
+	# a non-1280 canvas_items/expand window cannot offset or rescale the yellow
+	# outline away from the cursor. Identity at 1280x720. CanvasLayer + Node2D
+	# consume no input; no mouse_filter change is needed.
+	# NOTE: t_select_rect.gd:525 encodes a wrong Rect2(position, end_px)
+	# expectation, so its overlay_rect_during_drag assertion needs a TEST-owner
+	# update after this fix (see B05 report); the game code is correct.
+	var canvas_r := r
+	var vp := get_viewport()
+	if vp != null:
+		var xf: Transform2D = vp.get_canvas_transform().affine_inverse()
+		canvas_r = Rect2(xf * r.position, xf.basis_xform(r.size))
+	sel_rect_overlay.call("set_selection_rect", canvas_r)
 
 func _hide_selection_rect() -> void:
 	if sel_rect_overlay == null or not is_instance_valid(sel_rect_overlay):
 		return
 	sel_rect_overlay.call("set_selection_rect", Rect2())
+
+# B05 (stuck-quad fix): ONE teardown for every way a drag can end — normal
+# LMB-up, minimap release/press, moving the pointer onto the minimap, build
+# ghost armed mid-drag. The old release path could be bypassed by the minimap
+# early return, leaving drag_start/dragging set so _process painted the box
+# forever. Clearing ALL fields everywhere makes that impossible.
+func _cancel_drag() -> void:
+	drag_start = Vector2.INF
+	dragging = false
+	_sel_ground_start = Vector2.INF
+	_rect_ground_anchor = Vector2.INF
+	_drag_current = Vector2.INF
+	_hide_selection_rect()
 
 # Donor epsilon: 0.005 m default, 0.25 m in attack-point / guard mode
 # (data\gui\menu.inc\onmousemove.inc:32-34, :152). This script's equivalents
@@ -572,14 +607,38 @@ func _draw_patrol_route3d() -> void:
 		im.surface_add_vertex(b + back * 3.0 - side * 1.5)
 	im.surface_end()
 
+# B05 / D04 §7 hunk 2 (PORT APPROXIMATION): InputEvent pixels belong to the node's
+# viewport, but picking3d's rays are built in the Camera3D's projection viewport.
+# They coincide at 1280x720, which is why the green atoms never saw the defect;
+# a canvas_items/expand window at another size (or the screenshot SubViewport)
+# makes them differ and the quad is offset/skewed/missed. Map with the LIVE
+# viewport sizes: no baked 1280 ratio, no invented donor constant. Donor's
+# native event->projection mapping is UNVERIFIED (DSEL-02 claim 2 / §FOV).
+func _event_px_to_cam_px(p: Vector2) -> Vector2:
+	if render_mode != "3d" or camera == null or not is_instance_valid(camera):
+		return p
+	var src := get_viewport()
+	var dst: Viewport = camera.get_viewport()
+	if src == null or dst == null:
+		return p
+	var a: Vector2 = Vector2(src.size)
+	var b: Vector2 = Vector2(dst.size)
+	if a.x <= 0.0 or a.y <= 0.0 or b.x <= 0.0 or b.y <= 0.0 or a.is_equal_approx(b):
+		return p
+	return Vector2(p.x * b.x / a.x, p.y * b.y / a.y)
+
+
 func _screen_to_world(p: Vector2) -> Vector2:
 	# V7-52 3D seam: ground unprojection moves to picking3d.ground_point(screen),
 	# which ray-marches the height field and returns the SAME sim-metre `pw` the
 	# 2D inverse below produced. Record the source pixel so _pick/_pick_res (which
 	# call sites feed `pw`, not the screen point) can use the adapter unchanged.
 	if render_mode == "3d" and picking != null:
-		_pick_screen = p
-		return picking.ground_point(p)
+		# B05: _pick_screen must be the CAMERA-space pixel that picking.pick()/
+		# pick_res() consume, not the raw event pixel.
+		var cam_px := _event_px_to_cam_px(p)
+		_pick_screen = cam_px
+		return picking.ground_point(cam_px)
 	# Screen pixels -> map meters through the camera (position + zoom),
 	# otherwise clicks only line up near the map origin.
 	if world == null:
@@ -591,8 +650,11 @@ func _screen_to_world(p: Vector2) -> Vector2:
 # Same ray+march path as _screen_to_world (picking3d.ground_point world ground
 # coords + world epsilon, DSEL_02-carried); no new projection method. Fixes the
 # two-corner under-coverage under -32 deg tilt vs the screen-px marquee.
-func _drag_world_rect(a_px: Vector2, b_px: Vector2) -> Rect2:
-	var c := _screen_to_world(a_px)
+func _drag_world_rect(a_px: Vector2, b_px: Vector2, anchor_ground: Vector2 = Vector2.INF) -> Rect2:
+	# B05 / D04 §7 hunk 3: reuse the frozen press anchor for corner c instead of
+	# re-unprojecting a_px every frame. The default keeps every 2-argument call
+	# (2D/harness) byte-identical.
+	var c: Vector2 = anchor_ground if is_finite(anchor_ground.x) and is_finite(anchor_ground.y) else _screen_to_world(a_px)
 	var d := _screen_to_world(b_px)
 	var e := _screen_to_world(Vector2(a_px.x, b_px.y))
 	var f := _screen_to_world(Vector2(b_px.x, a_px.y))
@@ -601,6 +663,43 @@ func _drag_world_rect(a_px: Vector2, b_px: Vector2) -> Rect2:
 	var maxx := maxf(maxf(c.x, d.x), maxf(e.x, f.x))
 	var maxy := maxf(maxf(c.y, d.y), maxf(e.y, f.y))
 	return Rect2(minx, miny, maxx - minx, maxy - miny)
+
+# B05: ONE apply path for the drag result, shared by the live per-frame update
+# (donor `spmFrame` / F03 Finding 2: the selected set updates while held) and the
+# LMB-up finalization. Entity filter, Shift=spmAdd union and _set_selection are
+# the SAME code as before; only a redundant re-apply is skipped.
+func _apply_rect_selection(rect: Rect2) -> void:
+	var arr: Array = []
+	for e in game.entities:
+		if e.dead or e.player != 0 or e.kind != "unit":
+			continue
+		if rect.has_point(e.pos):
+			arr.append(e)
+	if Input.is_key_pressed(KEY_SHIFT):
+		# donor onmousemove.inc:156-157 - Shift => spmAdd: union the rect result
+		# with what was already selected. Ctrl-remove stays commented out in the
+		# donor drag path (onmousemove.inc:159-161).
+		var seen: Dictionary = {}
+		var merged: Array = []
+		for e0 in get_selected():
+			seen[int(e0.id)] = true
+			merged.append(e0)
+		for e1 in arr:
+			if not seen.has(int(e1.id)):
+				seen[int(e1.id)] = true
+				merged.append(e1)
+		arr = merged
+	# Avoid re-playing the selection cue / refreshing the HUD every frame when
+	# the boxed set has not changed. Set comparison, not order comparison.
+	var a_ids: Array = []
+	for e2 in arr:
+		a_ids.append(int(e2.id))
+	a_ids.sort()
+	var c_ids: Array = selected_ids.duplicate()
+	c_ids.sort()
+	if a_ids == c_ids:
+		return
+	_set_selection(arr)
 
 func _pick(pw: Vector2, players_only := true) -> Dictionary:
 	# V7-52 3D seam. picking3d.pick(screen, players_only) applies the SAME
@@ -677,6 +776,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		# lazy: it is only paid for world-map events, not minimap events.
 		if mb.button_index == MOUSE_BUTTON_LEFT and mm.has_point(mb.position):
 			_mm_dragging = mb.pressed
+			# B05 (stuck-quad fix): this early return used to bypass the LMB-up
+			# cleanup entirely when a WORLD drag was released over the minimap.
+			# Cancel any in-flight drag here, unconditionally on release.
+			if not mb.pressed:
+				_cancel_drag()
 			_minimap_reposition(mb.position)
 			return
 		if mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed and mm.has_point(mb.position):
@@ -688,10 +792,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_mm_dragging = false
 			# SEL-01: a world drag that ends over the minimap still releases the
 			# marquee (donor onmousedown.inc:364-365 clears the selection state).
-			drag_start = Vector2.INF
-			dragging = false
-			_sel_ground_start = Vector2.INF
-			_hide_selection_rect()
+			_cancel_drag()
 			return
 		var pw := _screen_to_world(mb.position)
 		if mb.button_index == MOUSE_BUTTON_LEFT:
@@ -750,6 +851,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				dragging = false
 				_drag_current = mb.position
 				_sel_ground_start = Vector2.INF
+				# B05 / D04 §7 hunk 5: freeze the geometric ground anchor ONCE on
+				# press so _drag_world_rect() never re-unprojects drag_start.
+				_rect_ground_anchor = _screen_to_world(mb.position)
 				_hide_selection_rect()
 			else:
 				if drag_start == Vector2.INF:
@@ -759,36 +863,17 @@ func _unhandled_input(event: InputEvent) -> void:
 				# the old 6 screen-pixel test. `dragging` is set only by that test.
 				var moved := dragging
 				if moved:
-					# B-SELRECT-FIX: four-corner ground AABB of the full marquee
-					# (same ray+march path; PORT APPROXIMATION).
+					# B-SELRECT-FIX / B05: four-corner ground AABB of the full
+					# marquee, using the press-frozen anchor (D04 §7 hunk 6).
 					# Donor keeps the WORLD ground rect (S-25-06): no screen-space
 					# select_in_rect() was introduced by this ticket.
-					var rect := _drag_world_rect(drag_start, mb.position)
-					var arr: Array = []
-					for e in game.entities:
-						if e.dead or e.player != 0 or e.kind != "unit":
-							continue
-						if rect.has_point(e.pos):
-							arr.append(e)
-					if Input.is_key_pressed(KEY_SHIFT):
-						# donor onmousemove.inc:156-157 - Shift => spmAdd: union
-						# the rect result with what was already selected. No
-						# Ctrl-remove here: donor's spmRemove branch is commented
-						# out at onmousemove.inc:159-161.
-						var seen: Dictionary = {}
-						var merged: Array = []
-						for e0 in get_selected():
-							seen[int(e0.id)] = true
-							merged.append(e0)
-						for e1 in arr:
-							if not seen.has(int(e1.id)):
-								seen[int(e1.id)] = true
-								merged.append(e1)
-						arr = merged
-					_set_selection(arr)
+					var rect := _drag_world_rect(drag_start, mb.position, _rect_ground_anchor)
+					_apply_rect_selection(rect)
 				else:
 					var e := _pick(pw, false)
 					var now := Time.get_ticks_msec() / 1000.0
+					var shift_held := Input.is_key_pressed(KEY_SHIFT)
+					var ctrl_held := Input.is_key_pressed(KEY_CTRL)
 					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < _double_click_s():
 						# double click: all same-type units on screen (original behaviour)
 						var arr2: Array = []
@@ -797,21 +882,64 @@ func _unhandled_input(event: InputEvent) -> void:
 						for u in game.entities:
 							if not u.dead and u.player == 0 and u.kind == "unit" and u.sid == e.sid and vp.has_point(u.pos * world.view_scale):
 								arr2.append(u)
+						# B05 / D05 #4: donor select-same-type takes GUI_Shift
+						# (onmousedown.inc:281-291); union instead of replacing.
+						if shift_held and not arr2.is_empty():
+							var seen2: Dictionary = {}
+							var merged2: Array = []
+							for d0 in get_selected():
+								seen2[int(d0.id)] = true
+								merged2.append(d0)
+							for d1 in arr2:
+								if not seen2.has(int(d1.id)):
+									seen2[int(d1.id)] = true
+									merged2.append(d1)
+							arr2 = merged2
 						_set_selection(arr2)
-					elif not e.is_empty() and Input.is_key_pressed(KEY_SHIFT):
+					elif ctrl_held and not e.is_empty():
+						# B05 / D05 #1-#2 (DONOR_CITED onmousedown.inc:281-344):
+						# Ctrl on an already-selected object removes it; Ctrl on a
+						# new own unit selects all of that type. Shift still adds.
+						if selected_ids.has(int(e.id)):
+							var remain: Array = []
+							for s0 in get_selected():
+								if int(s0.id) != int(e.id):
+									remain.append(s0)
+							_set_selection(remain)
+						elif int(e.player) == 0 and str(e.kind) == "unit":
+							var same: Array = []
+							for u2 in game.units_of(0):
+								if str(u2.sid) == str(e.sid):
+									same.append(u2)
+							if shift_held:
+								var seen3: Dictionary = {}
+								var merged3: Array = []
+								for d2 in get_selected():
+									seen3[int(d2.id)] = true
+									merged3.append(d2)
+								for d3 in same:
+									if not seen3.has(int(d3.id)):
+										seen3[int(d3.id)] = true
+										merged3.append(d3)
+								same = merged3
+							_set_selection(same)
+						else:
+							_set_selection([e])
+					elif shift_held and not e.is_empty():
 						var cur := get_selected()
 						if not cur.has(e):
 							cur.append(e)
 						_set_selection(cur)
+					elif shift_held and e.is_empty():
+						# B05 / D05 #3: donor skips DeselectAll while Shift is held
+						# (onmousedown.inc:346-355). Keep the selection and avoid a
+						# spurious selection cue on an empty-ground Shift click.
+						pass
 					else:
 						_set_selection([e] if not e.is_empty() else [])
 					last_click_t = now
 					last_click_sid = str(e.sid) if not e.is_empty() else ""
-				drag_start = Vector2.INF
-				dragging = false
-				_sel_ground_start = Vector2.INF
-				_drag_current = Vector2.INF
-				_hide_selection_rect()
+				_cancel_drag()
 		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
 			_right_order(pw)
 	elif event is InputEventMouseMotion:
@@ -821,23 +949,39 @@ func _unhandled_input(event: InputEvent) -> void:
 		# ends an active drag when the pointer leaves the minimap, so it can
 		# never leak into the world selection-drag logic below.
 		if _mm_dragging or ((event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0 and mm.has_point(event.position)):
+			# B05 (stuck-quad fix): hud.gd's minimap gui_input consumes the LMB-up
+			# when the drag ends over the minimap, so the normal release cleanup
+			# never runs and _process kept repainting the yellow box forever.
+			# Tear the drag down here, on the motion that ENTERS the minimap.
+			if drag_start != Vector2.INF:
+				_cancel_drag()
 			if mm.has_point(event.position):
 				_minimap_reposition(event.position)
 			else:
 				_mm_dragging = false
 			return
 		if drag_start != Vector2.INF and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+			# D02 item 34 / donor onmousemove.inc:140: wall/build placement mode
+			# suppresses the marquee completely. The press path already refuses
+			# to start a drag while a ghost is active; this guard also kills a
+			# drag if build mode is armed mid-gesture.
+			if hud != null and hud.build_ghost_sid != "":
+				_cancel_drag()
+				return
 			_drag_current = event.position
 			var saved_pick_screen := _pick_screen
 			var gp := _screen_to_world(event.position)
-			# Donor onmousemove.inc:141-147: the anchor is recorded on the FIRST
-			# LMB-held MOVE, not on press. The port decides click-vs-drag on that
-			# same event, so for this first sample the previous ground point is
-			# the press pixel (PORT APPROXIMATION of donor's multi-event stream);
-			# later moves compare against the first-move anchor, as donor does.
-			var ref: Vector2 = _screen_to_world(drag_start) if _sel_ground_start == Vector2.INF else _sel_ground_start
+			# Donor onmousemove.inc:141-147: the epsilon reference is captured on
+			# the FIRST LMB-held MOVE (two-phase start), never on press. For that
+			# first sample the frozen press-ground point is the comparison
+			# partner (PORT APPROXIMATION of donor's multi-event stream); later
+			# moves compare against the first-move anchor, as donor does. D04
+			# hunk 7: use the FROZEN anchor, never a per-frame re-unprojection.
+			var ref: Vector2 = _rect_ground_anchor if is_finite(_rect_ground_anchor.x) else gp
 			if _sel_ground_start == Vector2.INF:
 				_sel_ground_start = gp
+			else:
+				ref = _sel_ground_start
 			var eps := _selection_epsilon_m()
 			# onmousemove.inc:152 - axis-wise world X/Z delta (gp.y is ground Z).
 			if absf(gp.x - ref.x) > eps or absf(gp.y - ref.y) > eps:
@@ -1343,11 +1487,20 @@ func _process(_dt: float) -> void:
 		hud.want_rally = false
 		rally_mode = true
 		_hint("Rally: right-click the map to set the gather point")
+	# B05: ONE current pixel + ONE press-frozen ground anchor drive both the
+	# world mirror and the yellow outline and the live selection. The old code
+	# mixed get_viewport().get_mouse_position() here with _drag_current below,
+	# so the mirror and the visible box could disagree.
+	var _drag_cur_px := _drag_current if is_finite(_drag_current.x) and is_finite(_drag_current.y) else get_viewport().get_mouse_position()
+	var _drag_rect_sim := Rect2()
+	if dragging and drag_start != Vector2.INF:
+		_drag_rect_sim = _drag_world_rect(drag_start, _drag_cur_px, _rect_ground_anchor)
 	# drag rectangle overlay (drawn by the world in map space)
 	if world != null:
 		if dragging and drag_start != Vector2.INF:
-			# B-SELRECT-FIX: same four-corner helper so mirror and selection agree.
-			world.sel_rect = _drag_world_rect(drag_start, get_viewport().get_mouse_position())
+			# B-SELRECT-FIX / B05: same four-corner helper so mirror, live
+			# selection and the yellow box share one frozen-anchor world rect.
+			world.sel_rect = _drag_rect_sim
 			world.sel_active = true
 		else:
 			world.sel_active = false
@@ -1365,8 +1518,21 @@ func _process(_dt: float) -> void:
 	# NEVER project world.sel_rect: it holds SIM metres while
 	# camera3d.world_to_px() expects centred metres (PLAY2FIX_navbox.md:14-29).
 	if dragging and drag_start != Vector2.INF:
-		var cur := _drag_current if is_finite(_drag_current.x) and is_finite(_drag_current.y) else get_viewport().get_mouse_position()
-		_show_selection_rect(Rect2(drag_start, cur).abs())
+		# B05 — ROOT CAUSE of the owner's "quad not ok" report:
+		# Rect2(position, size) takes the SECOND argument as a SIZE, not as the
+		# opposite corner. The old Rect2(drag_start, cur) used the ABSOLUTE end
+		# pixel as the size: p0=(395,274), p1=(917,458) drew size=(917,458) and
+		# ended at (1312,732) — outside a 1280x720 viewport, i.e. an oversized
+		# offset box detached from the cursor. The correct size is cur - start.
+		# t_select_rect.gd:525,532 encodes the SAME wrong expectation, which is
+		# why 23/23 never caught it; that test is COORD/TEST-owned and NOT edited.
+		var pixel_rect := Rect2(drag_start, _drag_cur_px - drag_start).abs()
+		_show_selection_rect(pixel_rect)
+		# B05 / D02+F03: the donor box updates the selected set LIVE while the
+		# button is held. Use the SAME world rect and apply path as LMB-up
+		# finalization; 3D only, so the 2D port stays byte-identical.
+		if render_mode == "3d" and _drag_rect_sim.has_area():
+			_apply_rect_selection(_drag_rect_sim)
 	else:
 		_hide_selection_rect()
 	if patrol_mode and patrol_a != Vector2.INF:

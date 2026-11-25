@@ -282,7 +282,7 @@ func _load_single() -> bool:
 	var img := _load_image_at(single_atlas_path)
 	if img == null:
 		return _soft_fail("single atlas unavailable: " + last_error)
-	_atlas_texture = ImageTexture.create_from_image(img)
+	_atlas_texture = ImageTexture.create_from_image(_prepare_atlas_image(img))
 	if _atlas_texture == null:
 		return _soft_fail("ImageTexture.create_from_image failed for " + single_atlas_path)
 	_load_masks()
@@ -329,6 +329,30 @@ func _load_image_at(path: String) -> Image:
 	if abs_err != OK:
 		last_error = "cannot load image %s (res err %d, abs err %d)" % [path, err, abs_err]
 		return null
+	return img
+
+
+# B02 / F04 P0-4 — give the shader-facing atlas a real mip chain.
+# The atlas image is decoded with Image.load(), NOT load()/CompressedTexture2D,
+# so the .import `mipmaps/generate` flag never reaches this runtime texture:
+# ImageTexture.create_from_image() wraps only the base level. Yet the sampler
+# declares a *mipmap* filter on `tile_atlas` (terrain_tileindex.gdshader:60:
+# `filter_nearest_mipmap` at ticket time, B01 now `filter_linear_mipmap`),
+# i.e. it *expects* mip levels. With none present the GPU has nothing to
+# minify with and samples a 1024² cell repeated every 2 m with no LOD
+# filtering — the classic moiré / diagonal streaks of Charter §2 item 3
+# (F04_quality_reviews §5 P0-4; §4 item 13 says post-process AA cannot fix it).
+# Generating the chain on the CPU attaches real mips to the SAME base pixels:
+# level 0 is byte-identical, so the single -> split -> array fallback, the
+# 16x8 manifest grid and the index mapping are all unchanged. This is the
+# texture-side half of P0-4: B01's `filter_linear_mipmap` hint needs these mips.
+# Cost: ~33% extra VRAM and a one-time CPU build for the 16384x8192 atlas.
+func _prepare_atlas_image(img: Image) -> Image:
+	if img.has_mipmaps():
+		return img  # custom/DDS source already carries mips — leave it untouched
+	var err := img.generate_mipmaps(false)
+	if err != OK:
+		push_warning("TileAtlasLoader: atlas mipmap generation failed (error %d); texture stays base-level only" % err)
 	return img
 
 
@@ -389,7 +413,7 @@ func _load_split() -> bool:
 	var err := img.load(ProjectSettings.globalize_path(CACHE_FILE))
 	if err != OK:
 		return _fail("Image.load_from_file failed (error %d)" % err)
-	_atlas_texture = ImageTexture.create_from_image(img)
+	_atlas_texture = ImageTexture.create_from_image(_prepare_atlas_image(img))
 	if _atlas_texture == null:
 		return _fail("ImageTexture.create_from_image failed")
 	_load_masks()
