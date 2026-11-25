@@ -431,6 +431,18 @@ func _nation_name(i: int, pn: Variant) -> String:
 		return str(pn[i])
 	return "Player %d" % (i + 1)
 
+# Nation-aware sid for BATTLE_ARMY starting units. Mirrors train_unit()'s
+# two-source nation lookup (players[].nation, then Data.PLAYER_NATIONS) with
+# bounds guards; read-only, no entity-field or state change. Identity when
+# Data.resolve_sid has no mapping (e.g. bav has no NATION_UNITS key).
+func _spawn_sid(player: int, sid: String) -> String:
+	var nat := ""
+	if player >= 0 and player < players.size():
+		nat = str(players[player].get("nation", ""))
+	if nat == "" and player >= 0 and player < Data.PLAYER_NATIONS.size():
+		nat = str(Data.PLAYER_NATIONS[player])
+	return Data.resolve_sid(nat, sid)
+
 func set_objectives(texts: Array) -> void:
 	objectives = []
 	for t in texts:
@@ -2736,7 +2748,7 @@ func _spawn_starts() -> void:
 			for sid in army:
 				for k in int(round(float(army[sid]) * scale)):
 					var a := TAU * ring / maxf(1.0, float(total))
-					spawn(sid, i, c + Vector2(cos(a), sin(a)) * (cr + 3.0 + (ring % 4) * 1.5))
+					spawn(_spawn_sid(i, sid), i, c + Vector2(cos(a), sin(a)) * (cr + 3.0 + (ring % 4) * 1.5))
 					ring += 1
 
 # Pick a free tile for a starting villager in direction `a` (given in the

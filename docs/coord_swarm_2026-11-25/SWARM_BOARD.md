@@ -252,9 +252,108 @@ Disjoint file grants only. Reserved slots:
 | DANIM-02 | ses_dedbedae2ffeMiBmZSUTxXJ7z7 | independent AAF catalog / frame-0 verification | RUNNING |
 | QA-DOCLIVE-01 | ses_dedbedadfffezftdXZw2t7S4St | living docs after latest reconciliation | RUNNING |
 | GATE-FAIL-01 | ses_dedbb6506ffeTpu8SKK3Bt4lkC | diagnose banner-only gate startup failures | RUNNING |
-| QA-RUNNER-ARTIFACTS-01 | ses_dedbb6505ffe0cw9EmKYeTG6zY | audit runner result records in failed gate window | RUNNING |
+| QA-RUNNER-ARTIFACTS-01 | ses_dedbb6505ffe0cw9EmKYeTG6zY | audit runner result records in failed gate window | **DONE — TERMINATED** | 46 tickets: 19 skipped / 10 ok / 10 failed / 7 NO_RECORD; 17 overtake skips at serving 461/465/475, 2 max-wait; 9 green ids CONFIRMED, 420/455/482 actually FAILED, 452/453 SKIPPED |
 | README-FINAL-01 | ses_dedbb6501ffe1KC3EJCm7QQShu | refresh README with final reconciliations | RUNNING |
 | SESSION-STATUS-FINAL-01 | ses_dedbb64faffevvN1Imbet9JkuQ | live/terminated agent count after refill | RUNNING |
+
+## Batch T — UI/loading wave and latest small tickets (DB-tracked 11:44:52)
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| RECHECK-P0-FINAL-01 | ses_dedb263caffeB8vCUuZTlH981S | second-agent P0 re-check | **DONE** — P0 CONFIRMED_PASS, COORD may advance |
+| BUILD-STAGES-01 | ses_dedbedb1effe077PkS0kvUcbKo | donor construction stages in `world3d_entities.gd` | **DONE** — stage logic, base-mesh APPROX, smoke 503 ok |
+| QA-RUNNER-ARTIFACTS-01 | ses_dedbb6505ffe0cw9EmKYeTG6zY | failed-gate window audit | **DONE** — 19 skipped / 10 ok / 10 failed / 7 NO_RECORD |
+| QA-UX-DOC-01 | ses_dedb412e9ffdNPzyYOjvAVhtV0 | UX/loading requirement coverage | **DONE** — 3 BLOCKERs (no acceptance table/tracking/probe) |
+| SESSION-COUNT-02 | ses_dedb4114cffeXAplRGWQu4rtT2 | live/terminated count | **DONE** — 180 / 20 BUSY / 160 IDLE at 11:44:52 |
+| DANIM-02 | ses_dedbedae2ffeMiBmZSUTxXJ7z7 | independent AAF/frame-0 check | **DONE** — 43 clip rows correct, 335/335 identity |
+| PW-1 | ses_dedb8f593ffeWDu1dbADp9AvHh | 79-entry winter prop map | **DONE** — 18/18 validator checks |
+| UI-TOPBAR-01 | ses_dedb5cfdbffe9rh6Oh2C7HL1zS | responsive top bar + speed dropdown (`hud.gd`) | **DONE — TERMINATED** | `hud.gd` +179/−34, width-driven normal/compact/tiny/ultra, one OptionButton, smoke 513 ok; minimap/camera BYTE-IDENTICAL; 17/17 UNVERIFIED (3 uitest attempts failed for foreign reasons); no weakening |
+| LOAD-ASYNC-01 | ses_dedb5890affedzB6Lq8J5wNje9 | non-blocking load (`main.gd`) | RUNNING |
+| HUD-LAYOUT-01 | ses_dedb52b4cffeblhZ66JpqnZBbj | `t_hud_layout.gd` atom (new) | RUNNING |
+| UX-LOAD-DOC-01 | ses_dedb52b3dffeq7UoNBwvUrai4D | `UX_LOADING.md` | **DONE — TERMINATED** (201 lines, 8 sections) | R1–R7 requirement/evidence/owner/test table, 5 checklists, exact runner commands, failure policy; all rows PENDING until fix owners land |
+| LOAD-PROBE-01 | ses_dedb412e9ffe8KZdustXtfybVD | `t_load_usability.gd` atom (new) | **DONE — TERMINATED** (578 lines, authoring only) | headless proxy calls real `_apply_menu_cfg()`+`_do_async_load()`, samples per-frame stalls and overlay-hide bindings, probes input/order/camera and post-hide stability; verdict MEASUREMENT_ONLY__NO_PASS_CLAIM; no runner job |
+| QA-FINAL-02 | ses_dedb412e6ffeIL2yEUPB88PBxj | audit FINAL_CHECKLIST | RUNNING |
+| UITOP-DONOR-01 | ses_dedb410ddffee5Z0et9eK34902 | donor resource-panel/speed truth | RUNNING |
+| DARKROW-REPAIR-01 | ses_dedb39c7fffesXI0oQRGvC8haL | fix `_m` parse error in P1–C4 atoms | **DONE — TERMINATED / REDUNDANT** | DARKROW-ALL already fixed `_m` and rechecked 501; all 7 atoms parse (475/486/493/501/505/506/507); no source edit retained; stale `t_terrain_mines.json` false-green → P3-RESULT-CLEAN-01 |
+| P3-RESULT-CLEAN-01 | ses_dedaa929cffeYeWHGSvh5MkRaq | quarantine stale false-green P3 result JSON | RUNNING |
+| FAULT-DOC-01 | ses_dedaa9296ffeyuoq7pml3eXFrx | owner-fault index (terrain/nation/anim/UI/load) | RUNNING |
+| MORALE-02 | ses_dedb39c25ffe2xKgTC1YfnxTvY | label-and-gate invented morale (`data.gd`) | RUNNING |
+| RUNNER-FIX-01 | ses_dedb2bfb7ffeGYKFTfArhGNZvs | prepare runner mutual-exclusion patch (NOT applied) | RUNNING |
+| QUEUE-DRAIN-01 | ses_dedb263a5ffeD4TCQiwc1cKQ5S | exact COORD-only final-gate sequence | **DONE — TERMINATED** (559 lines) | quiet queue observed (pending 0 / lock free / 0 Godot) but CLEAN still DIRTY with **17** unacked (new ticket 494 timed-out); 14 skips have verified supersedes, 452/453/494 deferred until fresh gates; full (a)–(h) commands + stop policy |
+| BUILD-ART-01 | ses_dedaff9f1ffejPpOUO7ebnSLro | plan stage/scaffold OBJ conversion | RUNNING |
+| SEASON-DESERT-01 | ses_dedb0f7b1ffenO3dHyk26Fqb6v | re-baseline 38-pair desert atom assertions | RUNNING |
+| README-FINAL-01 | ses_dedbb6501ffe1KC3EJCm7QQShu | README final reconciliation | RUNNING |
+| LINKS-FIX-01 | ses_dedb76937ffeZ7vR60RbEwA6FI | stale "absent" doc claims | **DONE — TERMINATED** | 3/4 stale groups corrected in owned docs; 6 orphan reports now cited in CONFIG_PIPELINE §1.1; README-only TERRAIN-DARK-FIX claim handed off; no verdict promotion |
+| CLEAN-ACK-PLAN-01 | ses_dedb7155dffeO2V3LwwGWuwxPR | ack commands for 16 skipped jobs | RUNNING |
+| BUILD-STEP-FIX-01 | ses_dedb6bb3dffe9gXQE3haVeunHp | integrated `build` step at 240² | RUNNING |
+
+## Batch U — owner terrain/nation/animation faults (new directive)
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| TERRAIN-MARKS-01 | ses_dedad374cffeuB2gR1wtX0Mn4l | diagnose white marks / missing hills on generated map | RUNNING |
+| NATION-DONOR-01 | ses_dedad374bffeoa00TVjmw4h396 | donor nation→unit/building/ship model mapping truth | **DONE — TERMINATED** (259 lines) | nation in unit sid; Russia/Ukraine share `rus*` common buildings, Bavaria `eur*` (`bavmil/bavpor` absent); ships family-keyed; port probes nonexistent prefixed OBJs (0/172) and base art is Ukrainian-derived; config-pass refuted as primary cause |
+| NATION-FLOW-01 | ses_dedad3748ffdCUdfTh5DVBQ8xl | trace menu/config → game → entity sid nation value | RUNNING |
+| NATION-MODEL-01 | ses_dedad36a5ffeWEolNmXHw5gRb0 | fix nation-based mesh selection in `world3d_entities.gd` | RUNNING |
+| BUILD-ANIM-DIAG-01 | ses_dedad36a4ffeepl6ZZBhiWx4z4 | diagnose wrong peasant building animation | RUNNING |
+| BUILD-ANIM-01 | ses_dedad36a0ffemPtLg8hEaT0m5j | fix build action mapping in `anim3d.gd` | RUNNING |
+
+## Batch V — verification/planning refill (11 → 20 live)
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| QA-PATCH-VERIFY-01 | ses_deda1f2aafferuc6rt7Bo4rMX1 | verify applied runner patch vs approved diff | RUNNING |
+| QA-GATE-READY-02 | ses_deda1f2a9ffe19gC3OywFrl8nO | fresh final-gate readiness | RUNNING |
+| NATION-DATA-01 | ses_deda1f2a2ffem2UIrpVyBEPDM1 | plan rus/bav NATION_UNITS data | RUNNING |
+| NATION-SPAWN-01 | ses_deda1f289ffekK7dLLS85R5Zei | plan nation-aware spawn sids | RUNNING |
+| NAVAL-NATION-01 | ses_deda1f1c1ffdofVF07BacRyFG4 | plan naval nation art mapping | RUNNING |
+| QA-UI-FIXES-01 | ses_deda1f1b0ffeyhYNjSlIM1bcg8 | verify top-bar/async-load landings | RUNNING |
+| QA-RELIEF-ON-01 | ses_deda1f1adffer4w08Mf4gQo1mk | verify relief-stamps config flip | RUNNING |
+| QA-SKIN-CONSTRUCT-01 | ses_deda1f1a9ffehEiHeZcB4SJjAB | verify construct skin export | **DONE — TERMINATED** | CODE-LEVEL PASS (one additive hunk, frames `[186,188,191,193,196,198]`), EXPORT-LEVEL NOT PASS (generated JSON still 7/5 actions, no construct) → BUILD-SKIN-02 |
+| CORRECTIONS-REFRESH-01 | ses_deda3bd5affeOAhkz1zv9sFeyu | apply corrections index repairs | **DONE — TERMINATED** | 63 rows (46 R / 15 P / 1 CU / 1 CI), 0 reversals, contiguous ids, summary synced; rows 61–63 added |
+| README-COUNT-01 | ses_ded9ec140ffejf6RYgDWB2Pwn6 | sync README corrections count to 63 | RUNNING |
+| QA-LADDER-01 | ses_deda1f1a5ffe0s36ZCXs2cB85a | ladder row status after P0/stale-result changes | RUNNING |
+| BUILD-ART-BATCH-01 | ses_deda076c9ffeGrLeyHmjrVWtkl | generate 108 stage/scaffold OBJs + manifest 172→280 | RUNNING |
+| BUILD-SKIN-02 | ses_deda02916ffeiagMOXQfTZ5S5h | regenerate skin JSON with `construct` frames | **DONE — TERMINATED** | 55 exported/7 skipped, 56 JSONs backed up; peasant `construct` frames `[186,188,191,193,196,198]`, donor `peaukr.aaf:17`; 54/55 skins byte-identical; QA_SKIN_REGEN_01 JSON EXPORT PASS 9/9 |
+
+## Batch X — final implementation/runtime checks (20-live refill)
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| NATION-SPAWN-IMPL-01 | ses_ded99b6fbffe5YkoyCEpjSGOIO | nation sid resolution for BATTLE_ARMY in `game.gd` | RUNNING |
+| HUD-LAYOUT-RUN-01 | ses_ded9948b4ffdihVZGPzw4gbpvf | run `t_hud_layout.gd` atom | RUNNING |
+| LOAD-PROBE-RUN-01 | ses_ded9948acffeUhYcFSDE1ndsVw | run `t_load_usability.gd` probe | RUNNING |
+| RELIEF-VISUAL-01 | ses_ded9948acffdBy47HgCPgAEC6k | real generated-map capture with relief stamps on | RUNNING |
+| QA-DESERT-FIX-01 | ses_ded9948a0ffdBoQFS42ZHXWjGU | verify desert float-index consumer fix | RUNNING |
+| BUILD-STAGE-INTEGRATION-01 | ses_ded99489affee09KLS0Rxr5VYL | plan stage OBJ runtime hookup | RUNNING |
+| QA-SPEED-01 | ses_ded994896ffeQ5hhZ4xdQrikIz | verify speed dropdown + donor divergence | RUNNING |
+| STAGE-IMPORT-01 | ses_ded965563ffeTd4GzdVLeZkySd | Godot import sidecars for 108 new stage OBJs | RUNNING |
+| SPEED-PLAN-01 | ses_ded9519d4fferiNLXZSykZmclx | plan donor speed-label/factor alignment | **DONE — TERMINATED** | donor labels Normal/Fast/Very Fast (factors 7/10/14, meaning UNVERIFIED); minimal 4-file plan (data.gd rename, hud.gd labels, main.gd refs, atom literal); blocked on data.gd owner until NATION-DATA-IMPL-01 lands |
+| QA-STAGE-IMPORT-01 | ses_ded9519ceffeDeIcl54s5DuNEj | verify stage import sidecars | **DONE — TERMINATED** | DO NOT PROMOTE: 108 stage OBJs present but 0/108 `.import` sidecars, scaffold PNG no sidecar, 0 stage `.mesh`, import job 534 still queued; runtime load UNVERIFIED |
+| NATION-DATA-IMPL-01 | ses_ded92c978ffeaCikHZ0mrllHvt | add Bavaria unit map to `data.gd` | RUNNING |
+| RELIEF-LIVE-DIAG-01 | ses_ded925739ffexlkv9OmJ0wU5xr | diagnose live terrain relief/white marks in `game.gd` | RUNNING |
+| QA-CONFIG-RESTORE-01 | ses_ded925737ffeWz7EJH80lLaxL5 | verify 21-key features restoration | RUNNING |
+| QA-ATOM-RUNS-01 | ses_ded925736ffem9kFCbTFIvOb1n | verify HUD/load atom run results | RUNNING |
+
+## Batch Y — targeted verification refill
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| QA-RELIEF-LIVE-01 | ses_ded8f1739ffeeLgNg98xhCjp6a | verify live relief root-cause ranking | RUNNING |
+| QA-NATION-IMPL-01 | ses_ded8f1738ffeIkuAkIwdA7REWV | verify nation data/spawn/mesh fixes | RUNNING |
+| QA-CONFIG-JSON-02 | ses_ded8f1737ffedGe5hJqGWWv29N | verify 21-key config restoration | RUNNING |
+| QA-SPEED-ALIGN-01 | ses_ded8f1729ffebIdVoWdFsoXqcT | check speed alignment applied | RUNNING |
+| OWNER-FAULTS-UPDATE-01 | ses_ded8f1725ffeleiFAq0aGePdYe | refresh owner-fault index | RUNNING |
+
+## Batch W — asset/fault verification refill
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| DESERT-CONSUMER-FIX-01 | ses_ded9c45f4ffe3Z4JWZzJG3Llab | accept 38 float-typed remap pairs in `world3d_terrain.gd` | RUNNING |
+| QA-BUILD-ART-01 | ses_ded9bdeb3ffembA3TykFuvZeT7 | verify 108 stage OBJ batch | RUNNING |
+| QA-RELIEF-DUMP-01 | ses_ded9bde89ffe84iY31WXA2ocy5 | verify relief dump probe | **DONE — TERMINATED** | RUNTIME UNVERIFIED: config flag true but no dump artifact; job 521 timed-out (190s > 180s hard timeout); only smoke 520 parse-ok; `k_ravine_1` BLOCKED, no visual hill A/B; corrected quoted-path probe 527 pending |
+| QA-SKIN-REGEN-01 | ses_ded9bde88ffelcB0cv70MZkW6t | verify construct skin JSON | RUNNING |
+| SESSION-COUNT-05 | ses_ded9bde82ffev3B2QRfQKLu4RM | live/terminated count | RUNNING |
 
 ## Batch R — documentation QA and config completion
 
@@ -280,7 +379,7 @@ Disjoint file grants only. Reserved slots:
 | DEFAULTS-VERIFY-01 | verify requested skirmish defaults (read-only) | `reports/DEFAULTS_VERIFY_01.md` | ses_dede3a38effe0Qb4qFvKwoJxy3 | **DONE** | all 7 requested settings resolve on BOTH paths: rus/bav, 240², mediterranean, hills, fog off, summer, 2 players/FFA; `map_type: land` present but **not applied** (DEFAULT merge sets `terrain_type`), so CFG-01 right in effect; CFG-02/QA-AUDIT F-05 refutation was wrong; config 320→240 came from MAP-SMALL-01 commit f9dd8d16 but its report never landed and integrated selftest is 28/29 |
 | CONFIG-COUNT-01 | reconcile 7-vs-13 wired counts to current state | `CONFIG_COUNT_RECONCILED.md` | ses_deddede2dffelwKbQHsVHAMSe2 | **DONE** | authoritative **11 WIRED / 2 READER_ONLY / 2 UI_ONLY / 6 PENDING**; 7→13 delta decomposed exactly (HUD +3, relief +1, water vocabulary +2, mirror labels); **`config.json` has NO `features` object** → all getters return defaults, nothing user-tunable yet → MAP-SMALL-01 pinged to add it |
 | README-UPDATE-01 | refresh swarm README with late-wave findings | `README.md` | ses_deddede29ffep3WHPBG8kRHQYW | **DONE — TERMINATED** (duplicate of authoritative Batch R row) |
-| PERF-3D-01 | measure 3D sync/render hotpaths vs prior baselines | `reports/PERF_3D_01.md` | ses_deddede28ffePAlAptFGEy4kzn | RUNNING |
+| PERF-3D-01 | measure 3D sync/render hotpaths vs prior baselines | `reports/PERF_3D_01.md` | ses_deddede28ffePAlAptFGEy4kzn | **DONE** | current `sync_ms` 276.77 / 272.56 (jobs 477/500) ≈**2.04× regression** vs ticket 395 window 1 (134.54, different mode); top suspect `world3d_entities.gd` per-unit pose work + 19-tree jitter (inferred); per-stage attribution BLOCKED (no hook) |
 | FINAL-GATE-PLAN-01 | exact ordered final-gate sequence + prerequisites | `reports/FINAL_GATE_PLAN_01.md` | ses_deddede23ffeu28mj7uzC2iIEH | **DONE** (243 lines) | prerequisites with session ids, ordered ladder P0→C4→S1 + final gate commands, failure policy, current-status snapshot; flagged dark-row asserts in sibling atoms → DARKROW-ALL-01 |
 | DARKROW-ALL-01 | consistent dark-row applicability fix in P1–C4 atoms | `reports/DARKROW_ALL_01.md` | ses_deddb4a21ffeMNC2rRgf4X3t4F | RUNNING |
 | CAPTURE-RECHECK-01 | second-agent capture re-check protocol | `CAPTURE_RECHECK.md` | ses_deddb4a1effeYYHgxFscIgnOeM | **DONE** (218 lines) | per-row artifact paths + exact `smallmap_capture.py` commands, P0→S1 criteria tables, image rules (no donor parity, metrics never override visuals), `RECHECK_<ROW>.md` recording, COORD-only ladder advance, failure attribution |
@@ -291,7 +390,8 @@ Disjoint file grants only. Reserved slots:
 | DSEASON-01 | donor winter/desert/field-crop visual truth | `reports/DSEASON_01_season_visuals.md` | ses_deddad2fbffekgmOL40gKn3638 | **DONE** | season swap = set/name/material not tint; winter preset uses shared `alpha0a/b/c`; **`_misc_SetDesert` has 38 active pairs vs port 11** → DESERT-REMAP-02; prop `w` art absent; donor winter field decal `envfieldd→envfielddw` not drawn; water/sky/fog season colours UNVERIFIED |
 | DESERT-REMAP-02 | extend desert remap to all 38 donor pairs | `reports/DESERT_REMAP_02.md` | ses_dedc825e3ffeCybE4oju7Ds2Az | RUNNING |
 | PROP-W-PLAN-01 | plan missing winter prop-material art | `reports/PROP_W_PLAN_01.md` | ses_dedc825dfffe65At77RG2CJO98 | **DONE — TERMINATED** | 79 donor `w` materials (72 DDS + 7 aliases), 321 props / 74 consumed; port 0/79 art; PW-1…PW-5 ticket ladder |
-| PW-1 | 79-entry winter prop name map JSON | `reports/PW_01_material_map.md` | ses_dedb8f593ffeWDu1dbADp9AvHh | RUNNING |
+| PW-1 | 79-entry winter prop name map JSON | `reports/PW_01_material_map.md` | ses_dedb8f593ffeWDu1dbADp9AvHh | **DONE — TERMINATED** | 79 entries, 72 DDS + 7 aliases, 321 props/74 names, port 0/79; 18/18 validator checks; no art copied |
+| DANIM-02 | independent AAF catalog / frame-0 verification | `reports/DANIM_02.md` | ses_dedbedae2ffeMiBmZSUTxXJ7z7 | **DONE — TERMINATED** | AAF 246/1434/62 CONFIRMED; frame-0 identity 335/335 CONFIRMED; DEC-04 misread reproduced bit-for-bit; clip table 43 CORRECT / 0 WRONG |
 | PW-VERIFY-01 | independent recount of prop-winter claims | `reports/PW_VERIFY_01.md` | ses_dedb8f583ffeUzlq4aITt2b3HA | RUNNING |
 | SP8-STATUS-01 | audit stale season-overlay atom + re-run spec | `reports/SP8_STATUS_01.md` | ses_dedc825deffegTIEqiL78uxsGw | RUNNING |
 | GDIGNORE-01 | audit `.gdignore` stale imports / risky loads | `reports/GDIGNORE_01.md` | ses_deddad2f8ffemvAjexPoHMQOBy | **DONE** (138 lines) | 5 markers (not 3) excluding 5,192 files/~892.6 MiB; **2,097 stale `.import`/ctex** (anim 1,849 + sprites 179 + sprites_hi 69) systemic; six `world.gd` load sites reproduce rotor pattern (dormant in 3d, live under 2d override); mitigations proposed, no edits |

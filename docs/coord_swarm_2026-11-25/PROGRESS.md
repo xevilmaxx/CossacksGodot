@@ -101,6 +101,27 @@ implementation tickets, then one final whole-system gate.
       (`wall`/`shell`/`farm_cap`), worktree 28/29 (`build`), while `config.json` is committed at
       240² without a landed MAP-SMALL-01 report. The individual 29/29 results are valid only
       for their own job artifacts — exactly why the final whole-system gate is reserved to the end.
+### 2026-11-25 — RUNNER PATCH APPLIED (COORD)
+At a quiet-queue moment (`pending=0`, free lock), the validated mutual-exclusion patch from
+`reports/RUNNER_FIX_01.md` was extracted to a UTF-8/LF temp diff, `git apply --check` passed,
+and `git apply` succeeded (backup `inbox/backup/godot_runner.py.bak-RUNNERFIX01`).
+`python -m py_compile` passed; `godot_runner.py status` still reports correct spool/queue state.
+The patch adds owner-gated atomic lock claim/release, per-job spawned-PID kill sets,
+dead-holder-only SERVING advance, and stale = age **and** dead owner. Queue refilled with
+4 pending jobs immediately after, so solo final-gate runs remain deferred to the queue-drain
+plan. No CLEAN or final-gate claim made.
+
+### 2026-11-25 — OWNER UX/LOADING DIRECTIVE (new work)
+Owner reported: the top HUD bar with resources overflows the screen; the game-speed buttons
+should be a dropdown; loading freezes the Windows window (cannot move it) and after the
+loading screen disappears something is still loading and blocks normal use. Requirement:
+the bar must never overflow and should adapt to viewport/resolution, and when the loading
+screen finishes the game must be fully usable. Dispatched disjoint owners:
+`UI-TOPBAR-01` (`hud.gd`: responsive bar + speed dropdown), `LOAD-ASYNC-01` (`main.gd`:
+time-sliced/worker-thread loading, overlay hidden only when ready), `HUD-LAYOUT-01` (new
+`tests/t_hud_layout.gd` atom for 1024/1280/1920 widths), `UX-LOAD-DOC-01` (`UX_LOADING.md`
+requirements/acceptance table). No test weakening; gates owned by their agents.
+
 ### 2026-11-25 — OWNER RUNTIME REPORT (real windowed game, not a gate)
 The owner ran the game and reported: flat-root morph warning (expected, labelled PORT APPROX),
 `hud3d_adapter.gd:172-173` parse errors (`w`/`h` inferred type) cascading to `hud.gd:207`

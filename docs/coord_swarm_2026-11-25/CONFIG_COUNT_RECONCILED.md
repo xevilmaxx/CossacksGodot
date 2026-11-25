@@ -6,7 +6,7 @@ owner: CONFIG-COUNT-01 (read-only reconciliation worker)
 status: COMPLETE__RECONCILED__NO_CODE_EDITS__NO_RUNNER_JOBS
 scope: "Exactly one new file: docs/coord_swarm_2026-11-25/CONFIG_COUNT_RECONCILED.md. Read-only on all sources; no code, config, test, asset, backup or runner job was created or edited."
 labels: [observed, derived, inferred, UNVERIFIED]
-snapshot: "Current working tree = HEAD 49aa81f7 (2026-11-25 10:55:05 +0100) plus concurrent uncommitted edits by other swarm workers (e.g. SWARM_BOARD.md, selftest.gd, world3d_entities.gd). None of those edits touches config.gd, config.json, or any of the six getter-consuming files; a re-grep at the end of this task returned the same 42-match census. Source call sites and config.json were read from the working tree, not from a stale report."
+snapshot: "Current working tree = HEAD 49aa81f7 (2026-11-25 10:55:05 +0100) plus concurrent uncommitted edits by other swarm workers (e.g. SWARM_BOARD.md, selftest.gd, world3d_entities.gd). None of those edits touches config.gd, config.json, or any of the six getter-consuming files; a re-grep at the end of this task returned the same 42-match census. Source call sites and config.json were read from the working tree, not from a stale report. Post-snapshot re-read (LINKS-FIX-01, 2026-11-25): reports/CONFIG_WIRE_RELIEF.md is now on disk while board :218 still says RUNNING; the 11/2/2/6 count and all verdicts are unchanged by that file landing."
 source_convention: "config.gd = variant3d/scripts/config.gd; config.json = variant3d/config.json; consumer paths = variant3d/scripts/<file>.gd. Report paths are relative to docs/coord_swarm_2026-11-25/ unless printed in full."
 label_legend: "observed = literal read with path:line or a directly read report; derived = arithmetic/enumeration/absence proof from observed; inferred = plausible but unproven; UNVERIFIED = no accessible evidence (missing report or runtime probe)."
 status_vocabulary: "WIRED / READER_ONLY / UI_ONLY / PENDING as defined in CONFIG_PIPELINE.md §0 — see §0 below. QA-CONFIG-01 used a DIFFERENT vocabulary for READER_ONLY and UI_EMITTED; that is the main source of the apparent conflict."
@@ -91,7 +91,7 @@ Statuses use the §0 vocabulary. "Getter" line numbers are in `config.gd`.
 | 7 | `features.terrain.m_per_tile` | `2.0` | `feature_terrain_m_per_tile()` `:439-440` | **NONE** | **PENDING** | Def `:56` + getter `:439-440` [observed]; absence proof [derived]; `_copy()` coerces `2.0`→int `2` in raw `data` (QA check d) — getter returns float `2.0` |
 | 8 | `features.terrain.lighting` | `"donor"` | `feature_terrain_lighting()` `:442-443` | **NONE** | **PENDING** | Def `:57` + getter `:442-443`; absence proof [derived]; unvalidated mode string |
 | 9 | `features.terrain.alpha_patch_mode` | `"donor_approx"` | `feature_terrain_alpha_patch_mode()` `:445-446` | **NONE** | **PENDING** | Def `:58` + getter `:445-446`; absence proof [derived]; tile→patch index UNVERIFIED |
-| 10 | `features.terrain.relief_stamps` | `false` | `feature_terrain_relief_stamps()` `:448-449` | `main.gd:758-759` (dynamic) → `dump["relief_stamps"]` gate `:771-772` | **WIRED** ⚠ | Def `:59` + getter `:448-449`; dynamic call read directly [observed]; **report `CONFIG_WIRE_RELIEF.md` absent, smoke UNVERIFIED, board `:218` RUNNING** — see §6 |
+| 10 | `features.terrain.relief_stamps` | `false` | `feature_terrain_relief_stamps()` `:448-449` | `main.gd:758-759` (dynamic) → `dump["relief_stamps"]` gate `:771-772` | **WIRED** ⚠ | Def `:59` + getter `:448-449`; dynamic call read directly [observed]; **`reports/CONFIG_WIRE_RELIEF.md` now on disk (report status DONE; smoke UNVERIFIED at runtime), board `:218` still RUNNING** — see §6 |
 | 11 | `features.terrain.tile_diversity` | `true` | `feature_terrain_tile_diversity()` `:451-452` | **NONE** | **PENDING** | Def `:60` + getter `:451-452`; absence proof [derived]; plan proposes different keys (`smoothing_source`/`diversity_top5_target`) |
 | 12 | `features.water.surface_y` | `-0.25` | `feature_water_surface_y()` `:454-455` | `water3d.gd:165` → uniform + plane verts (`:270`) | **WIRED** | Def `:63` + getter `:454-455`; call read directly [observed]; `CONFIG_WIRE_WATER.md`; PORT APPROX label intact |
 | 13 | `features.water.alpha_confine` | `true` | `feature_water_alpha_confine()` `:457-458` | `water3d.gd:166` → `stats["water_alpha_confine_config"]` `:277` | **READER_ONLY** | Def `:64` + getter `:457-458`; call `:166` + audit sink `:277` read directly [observed]; shader has no uniform (`CONFIG_WIRE_WATER.md:113-117`) |
@@ -141,7 +141,7 @@ it also counts `water.alpha_confine` and `water.shore_prox` as WIRED. [derived]
 |---:|---|---|---|---|---|---|
 | 1–5 | 5 `selection.*` | WIRED | WIRED | WIRED | none | CONFIG-WIRE-SEL landed before both; report in `49aa81f7` 10:55; board `:188` still stale `RUNNING` |
 | 6–9, 11 | 5 `terrain.*` no-call rows | PENDING | READER_ONLY | PENDING | **vocabulary only** (both mean "no call site") | no ticket — CONFIG-RENDER-A still pending (`CONFIG_PLAN_01.md:346`) |
-| 10 | `terrain.relief_stamps` | PENDING | WIRED | WIRED ⚠ | **code change**: dynamic call added to `main.gd:758-759` | CONFIG-WIRE-RELIEF; call + `main.gd.bak-CONFIGWIRER` present by QA time; report still absent; board `:218` RUNNING |
+| 10 | `terrain.relief_stamps` | PENDING | WIRED | WIRED ⚠ | **code change**: dynamic call added to `main.gd:758-759` | CONFIG-WIRE-RELIEF; call + `main.gd.bak-CONFIGWIRER` present by QA time; report now on disk (`reports/CONFIG_WIRE_RELIEF.md`); board `:218` RUNNING |
 | 12 | `water.surface_y` | WIRED | WIRED | WIRED | none | CONFIG-WIRE-WATER landed before both; report in `49aa81f7` |
 | 13–14 | `water.alpha_confine`, `water.shore_prox` | READER_ONLY | WIRED | READER_ONLY | **vocabulary only**: QA counts the `water3d.gd:166,167` calls; CONFIG-DOC-01 requires runtime effect | CONFIG-WIRE-WATER; both land in `stats` only (`:277,278`), no shader uniform |
 | 15 | `weather.snow` | UI_ONLY | PENDING | UI_ONLY ⚠ | **vocabulary only**: uncalled helper vs menu emission | FX-WEATHER-01 created helper `world3d_fx.gd:366-385`; WEATHER-DRIVER-01 RUNNING, no report |
@@ -202,7 +202,7 @@ jobs were `--check-only` parse checks. [observed; `CONFIG_PIPELINE.md:302-305`]
 
 | Row(s) | In-flight ticket | Board state | Current evidence | How the number can move |
 |---|---|---|---|---|
-| 10 `terrain.relief_stamps` | CONFIG-WIRE-RELIEF | `SWARM_BOARD.md:218` **RUNNING** | call site `main.gd:758-759` + backup present; report `CONFIG_WIRE_RELIEF.md` **absent** | If the gate is reverted, 11 → **10 WIRED**; if the report lands, status stays WIRED but UNVERIFIED clears |
+| 10 `terrain.relief_stamps` | CONFIG-WIRE-RELIEF | `SWARM_BOARD.md:218` **RUNNING** (stale) | call site `main.gd:758-759` + backup present; report `reports/CONFIG_WIRE_RELIEF.md` **on disk** (re-read 2026-11-25) | If the gate is reverted, 11 → **10 WIRED**; the report has landed, so the remaining caveats are the board State and the lack of a runtime probe, not a missing report |
 | 15 `weather.snow` | WEATHER-DRIVER-01 | `SWARM_BOARD.md:219` **RUNNING** | helper `world3d_fx.gd:366-385` has **zero callers** (grep proof) | When a caller lands, 2 UI_ONLY → **1**, WIRED 11 → **12** (or 13 if QA's water vocabulary is used) |
 | 21 `gameplay.fog_of_war` | CONFIG-FOG-01 (proposed, not a ticket) | no board row | three namespaces (QA F-03) | A namespace decision could make the getter live (UI_ONLY→WIRED) or remove it from the schema (21-row table shrinks) |
 | 19 `minimap_corner` | HUD follow-up inside CONFIG-WIRE-HUD | report landed | only bottom-right offsets implemented (`CONFIG_WIRE_HUD.md:72-76`) | Status stays WIRED; **effectiveness** of non-default values remains incomplete |
@@ -217,7 +217,7 @@ WIRED under QA-CONFIG-01's vocabulary. [derived / inferred]
 
 ## 7. Open questions
 
-1. Will `CONFIG_WIRE_RELIEF.md` land, or will the `main.gd` gate be reverted? Row 10's WIRED status rests on a call site with no report. [UNVERIFIED]
+1. `reports/CONFIG_WIRE_RELIEF.md` has landed — will the `main.gd` gate be reverted? Row 10's WIRED status rests on a call site that now has a report, but its board row still says RUNNING and no runtime probe proves a non-default value. [UNVERIFIED]
 2. Will WEATHER-DRIVER-01 call `set_weather_from_config()` from `main.gd`/`world3d.gd`, and will the contract be `cfg.weather` (string) or `cfg.weather_value` (40/70)? (QA §6 Q5) [UNVERIFIED]
 3. Which `fog_of_war` namespace wins: `display.fog_of_war`, `features.gameplay.fog_of_war`, or the menu's top-level bool? (QA §6 Q4) [UNVERIFIED]
 4. Are the shipped 21 `features.*` names canonical, or will `CONFIG_PLAN_01`'s proposed names be adopted with a migration? Both earlier reports recommend "shipped names". [inferred]

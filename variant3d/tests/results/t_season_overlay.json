@@ -1,0 +1,348 @@
+{
+	"capture_status": "SKIP_CAPTURE",
+	"checks": [
+		{
+			"detail": "presets_summer.json entries=124",
+			"name": "summer_dictionary",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "source=shared:res://tests/fixtures/_smallmap_harness.gd MAP=64x64 dump shape present=true",
+			"name": "harness_stub_shape",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "TileAtlasLoader.new('single', {'manifest_path':…,'single_atlas_path':…}) exposes both overrides (tile_atlas_loader.gd:77,86,99-118)",
+			"name": "sp5_manifest_override_api",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "terrain=true camera=true",
+			"name": "terrain_camera_scripts",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "all required dependency files/hooks present for summer",
+			"name": "summer_dependency_state",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() -> true",
+			"name": "summer_build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "manifest=res://assets/terrain/atlas/tile_index_atlas.manifest.json parsed=true named_cells=124 layout=124",
+			"name": "summer_manifest_resolves",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "grid=[16.0, 8.0] expected=[16, 8] (SEASON_PLAN_01.md:189)",
+			"name": "summer_manifest_grid",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "stats atlas_path/manifest=res://assets/terrain/atlas/tile_index_atlas.manifest.json (V7-85 manifest; V7-91 loader transport) res://assets/terrain/atlas/tile_index_atlas.manifest.json expected-to-contain=res://assets/terrain/atlas/tile_index_atlas.manifest.json",
+			"name": "summer_atlas_selection",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 uv2=4096 expected=4096",
+			"name": "summer_uv2_entry_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "out-of-range/non-integral UV2.x=0 range=[0.0,123.0] named=124",
+			"name": "summer_uv2_x_in_range",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "all required dependency files/hooks present for winter",
+			"name": "winter_dependency_state",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() -> true",
+			"name": "winter_build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "manifest=res://assets/terrain/atlas/tile_index_atlas_winter.manifest.json parsed=true named_cells=124 layout=124",
+			"name": "winter_manifest_resolves",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "grid=[16.0, 8.0] expected=[16, 8] (SEASON_PLAN_01.md:189)",
+			"name": "winter_manifest_grid",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "stats atlas_path/manifest=res://assets/terrain/atlas/tile_index_atlas_winter.manifest.json (SP-4 winter manifest; SP-6 season selection) res://assets/terrain/atlas/tile_index_atlas_winter.manifest.json expected-to-contain=res://assets/terrain/atlas/tile_index_atlas_winter.manifest.json",
+			"name": "winter_atlas_selection",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 uv2=4096 expected=4096",
+			"name": "winter_uv2_entry_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "out-of-range/non-integral UV2.x=0 range=[0.0,123.0] named=124",
+			"name": "winter_uv2_x_in_range",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "SP-2 entries=124 expected=124 (SP_02 report §4 / §8)",
+			"name": "winter_dict_124_entries",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "indices 0..123 contiguous, names == presets_summer order, winter_alias == name+'_winter': true",
+			"name": "winter_entries_index_and_names",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "unresolved SP-2 source_png=0 (expected 0; SP_02 report §8)",
+			"name": "winter_names_resolve",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "all required dependency files/hooks present for desert",
+			"name": "desert_dependency_state",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "world3d_terrain.build() -> true",
+			"name": "desert_build_ok",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "manifest=res://assets/terrain/atlas/tile_index_atlas.manifest.json parsed=true named_cells=124 layout=124",
+			"name": "desert_manifest_resolves",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "grid=[16.0, 8.0] expected=[16, 8] (SEASON_PLAN_01.md:189)",
+			"name": "desert_manifest_grid",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "stats atlas_path/manifest=res://assets/terrain/atlas/tile_index_atlas.manifest.json (V7-85 manifest; V7-91 loader transport) res://assets/terrain/atlas/tile_index_atlas.manifest.json expected-to-contain=res://assets/terrain/atlas/tile_index_atlas.manifest.json",
+			"name": "desert_atlas_selection",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "surfaces=1 uv2=4096 expected=4096",
+			"name": "desert_uv2_entry_count",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "out-of-range/non-integral UV2.x=0 range=[0.0,123.0] named=124",
+			"name": "desert_uv2_x_in_range",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "SP-3/DESERT-REMAP-02 direct=38 (expected 38, donor-grounded 38) height_gated=1 (expected 1, DATA_ONLY_NOT_EXECUTED)",
+			"name": "desert_remap_parsed",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "unresolved SP-3 source/target records=0 (expected 0; 38 direct + 1 gated)",
+			"name": "desert_remap_targets_resolve",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "dump tileblock byte-identical after all variants=true (same input for every season)",
+			"name": "tileblock_index_preserved",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "summer/winter UV2.x array equality (index-preserving atlas swap; B4)",
+			"name": "uv2_x_summer_winter_identical",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "desert UV2.x != SP-3 remap(summer UV2.x) at 1252 cells (expected 0)",
+			"name": "uv2_x_desert_remap_consistent",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "internal error paths fired=false (external scan still required)",
+			"name": "no_script_errors_internal",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "run: python variant3d\\tools\\smallmap_capture.py scan-stderr <runner stderr.txt>",
+			"name": "script_error_scan_external",
+			"passed": null,
+			"status": "PENDING_EXTERNAL_SCAN"
+		}
+	],
+	"fails": 1,
+	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+	"headless": true,
+	"id": "t_season_overlay",
+	"measured": {
+		"camera": "camera3d.gd (single instance, bound once, process disabled)",
+		"dependency_note": "SP-1, SP-2 (atlas/winter_aliases.json), SP-3 (atlas/desert_remap.json) and SP-5 manifest_path are on disk; SP-4 winter atlas files are gated by FileAccess.file_exists and the SP-6 render hook by a source-text probe.",
+		"desert_atlas_mode": "single",
+		"desert_consumer_remap_entries": 0,
+		"desert_mesh_surfaces": 1,
+		"desert_remap_direct_pairs": 38,
+		"desert_remap_height_gated_pairs": 1,
+		"desert_remap_indices": {
+			"0": 97,
+			"1": 121,
+			"10": 100,
+			"14": 121,
+			"15": 97,
+			"16": 121,
+			"17": 112,
+			"19": 92,
+			"2": 106,
+			"20": 92,
+			"21": 106,
+			"23": 114,
+			"24": 106,
+			"25": 107,
+			"4": 106,
+			"5": 93,
+			"6": 116,
+			"7": 116,
+			"71": 97,
+			"72": 10,
+			"73": 10,
+			"74": 10,
+			"75": 97,
+			"76": 93,
+			"77": 98,
+			"78": 121,
+			"79": 121,
+			"8": 93,
+			"80": 116,
+			"82": 93,
+			"83": 97,
+			"84": 98,
+			"85": 121,
+			"86": 123,
+			"88": 98,
+			"89": 97,
+			"9": 93,
+			"90": 97
+		},
+		"desert_remap_unresolved": [],
+		"desert_uv2_entries": 4096,
+		"desert_uv2_mismatches": 1252,
+		"desert_uv2_out_of_range": 0,
+		"desert_uv2_x_max": 123.0,
+		"desert_uv2_x_min": 0.0,
+		"display_server": "headless",
+		"fixture": "res://tests/fixtures/small_map_64.json",
+		"fixture_h": 64,
+		"fixture_seed": 20261113,
+		"fixture_w": 64,
+		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
+		"headless": true,
+		"sp5_manifest_path": "res://assets/terrain/atlas/tile_index_atlas.manifest.json",
+		"sp5_single_atlas_path": "res://assets/terrain/atlas/tile_index_atlas.png",
+		"summer_atlas_mode": "single",
+		"summer_mesh_surfaces": 1,
+		"summer_names": 124,
+		"summer_uv2_entries": 4096,
+		"summer_uv2_out_of_range": 0,
+		"summer_uv2_x_max": 123.0,
+		"summer_uv2_x_min": 0.0,
+		"tileblock_distinct_ids": 124,
+		"tileblock_max": 123,
+		"tileblock_min": 0,
+		"winter_atlas_mode": "single",
+		"winter_entries": 124,
+		"winter_kinds": {
+			"DESERT_REUSE": 12,
+			"WINTER_PNG": 112
+		},
+		"winter_mesh_surfaces": 1,
+		"winter_png_missing": [],
+		"winter_uv2_entries": 4096,
+		"winter_uv2_out_of_range": 0,
+		"winter_uv2_x_max": 123.0,
+		"winter_uv2_x_min": 0.0
+	},
+	"parity_label": "PORT APPROXIMATION — internal consistency only; no donor GPU A/B (TEST_MATRIX.md:46,73-75); flat TERRAIN_TINT is legacy art, not the donor swap (SEASON_PLAN_01.md:215 B9)",
+	"passed": false,
+	"passes": 33,
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"skip_reason": "DisplayServer.get_name()==headless: 3D PNG not available; state-only result",
+	"skipped_or_pending": 1,
+	"unix_ms": 1795604618094.0,
+	"variants": [
+		{
+			"atlas_mode": "single",
+			"biome": "summer",
+			"capture_status": "SKIP_CAPTURE",
+			"id": "summer",
+			"manifest": "res://assets/terrain/atlas/tile_index_atlas.manifest.json",
+			"missing": [],
+			"png_path": "",
+			"status": "BUILT",
+			"uv2_out_of_range": 0
+		},
+		{
+			"atlas_mode": "single",
+			"biome": "winter",
+			"capture_status": "SKIP_CAPTURE",
+			"id": "winter",
+			"manifest": "res://assets/terrain/atlas/tile_index_atlas_winter.manifest.json",
+			"missing": [],
+			"png_path": "",
+			"status": "BUILT",
+			"uv2_out_of_range": 0
+		},
+		{
+			"atlas_mode": "single",
+			"biome": "desert",
+			"capture_status": "SKIP_CAPTURE",
+			"id": "desert",
+			"manifest": "res://assets/terrain/atlas/tile_index_atlas.manifest.json",
+			"missing": [],
+			"png_path": "",
+			"status": "BUILT",
+			"uv2_out_of_range": 0
+		}
+	],
+	"verdict": "FAIL"
+}

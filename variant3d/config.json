@@ -13,6 +13,45 @@
   "gameplay.render_mode: port-side renderer switch. This is the 3D variant project, so it defaults to 3d here; the 2D shipping port in app/ keeps 2d. No donor key exists.",
   "camera.start_zoom: starting camera zoom. 0.3448276 = donor SphereHeight 58 m maximum distance (docreate.inc:82), i.e. the most zoomed-out donor-legal start; smaller is not donor-grounded."
  ],
+ "features": {
+  "selection": {
+   "world_epsilon_m": 0.005,
+   "attack_epsilon_m": 0.25,
+   "marquee_color": [1, 1, 0, 1],
+   "marquee_width_px": 1,
+   "double_click_s": 0.5
+  },
+  "terrain": {
+   "texgen_mode": "world_xz",
+   "m_per_tile": 2.0,
+   "lighting": "donor",
+   "alpha_patch_mode": "donor_approx",
+   "relief_stamps": true,
+   "tile_diversity": true
+  },
+  "water": {
+   "surface_y": -0.25,
+   "alpha_confine": true,
+   "shore_prox": false
+  },
+  "weather": {
+   "snow": false
+  },
+  "camera": {
+   "fov_deg": 17.27
+  },
+  "hud": {
+   "minimap_size": 240,
+   "minimap_inset": -8,
+   "minimap_corner": "bottom_right"
+  },
+  "render": {
+   "fog": false
+  },
+  "gameplay": {
+   "fog_of_war": false
+  }
+ },
  "display": {
   "window_width": 1280,
   "window_height": 720,

@@ -69,8 +69,16 @@ SKIN_CITE = "variant3d/tools/bake_sprites.py:118-143 (qmat + skin)"
 # Actions worth shipping. "idle"/"walk"/"death" are the only ones the shipped
 # renderer asks for (world3d_entities.gd:506-511); the rest are real donor AAF
 # entries exported for completeness. All are taken from each unit's OWN AAF.
+# "construct" is the peasant build action: donor
+# data/animations/aaf/peaukr.aaf:17 = "construct",186,198,morph (inclusive 186..198,
+# 13 frames @ 30 fps = 0.433 s); selected by gc_statetag_action_build ->
+# gc_anim_construct (data/scripts/dmscript.global:13, :926;
+# data/scripts/lib/unit.script:10877) and bound in
+# data/animations/acl/peasant.acl:2245-2252. No range is hard-coded here:
+# read_aaf derives first/last/donor citation from each unit's own AAF (:118-137,
+# :210-218), so sids without "construct" are skipped (:208-209).
 DEFAULT_ACTIONS = ("idle", "idle0", "walk", "walk0", "death",
-                   "attack0", "attack1")
+                   "attack0", "attack1", "construct")
 SCHEMA = "c3_skin_v1"
 
 

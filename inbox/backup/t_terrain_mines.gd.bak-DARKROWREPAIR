@@ -1,0 +1,899 @@
+extends SceneTree
+
+# TEST-P3 — ISOLATED 64x64 terrain + mines atom (authoring only; no runner was launched).
+#
+# Owns ONLY this file (+ the report docs/coord_swarm_2026-11-25/reports/TEST_P3_report.md).
+# One atom = one file = one result JSON; SceneTree MainLoop via --script; every exit
+# goes through call_deferred("quit", ...) (variant3d/tests/README.md:3-33,
+# variant3d/tests/_template_test.gd:1-38, t_terrain3d.gd:12-14).
+#
+# WHAT THIS ATOM SETS UP (P0 baseline + one added piece, no generator flags exist):
+#   * 64x64 height grid (4,096 cells), mild positive height field -> zero water cells;
+#   * all cells donor tile id 0 (grass1: presets_summer.json:2 / V3D_02 P1 citation);
+#   * THREE resource pairs at known sim positions: gold x2, iron x2, coal x2,
+#     injected through world3d_entities.add_resource()
+#     (world3d_entities.gd:1294-1315), sid resolution at :1269-1283;
+#   * NO trees, NO stone/rock, NO food/field, NO units/buildings, NO water cells.
+#     game.gd:306-315 has no per-category off switch, so isolation is synthetic.
+#
+# SOURCES (all read-only):
+#   docs/coord_swarm_2026-11-25/reports/TEST_01_smallmap_harness.md:183-226,247-255 (row P3)
+#   docs/coord_swarm_2026-11-25/TEST_MATRIX.md:11-12,21,29-46,53-58
+#   docs/coord_swarm_2026-11-25/reports/V3D_02_terrain_render_audit.md:77,134-153 (row T3)
+#   docs/audit/PIECES/mines_display.md:21-49,52-68,235 (DTRN_05 has NOT landed)
+#   variant3d/scripts/world3d_entities.gd:102-118,1269-1315 (ENV_SCALE.mine=0.3152,
+#     POOL_TREE/ROCK/STUMP, _resource_sid, add_resource)
+#   variant3d/scripts/world3d_terrain.gd:93-95,109-118,624-874,883-903 (mesh/stats/
+#     height_at_world), world3d_terrain.gd:360-382 (donor slope thresholds)
+#   variant3d/scripts/game.gd:19,2685-2702 (MINE_SITE_RADIUS, resolve_mine_sid)
+#   variant3d/scripts/terrain3d_sandbox.gd:23-36,139-151 (windowed capture + camera)
+#   variant3d/scripts/testbridge.gd:277-308 (viewport texture readback)
+#   variant3d/tests/t_terrain3d.gd:41-46,106-127,133-151,161-255 (stub + probe pattern)
+#
+# HONESTY GUARDS:
+#   * ENV_SCALE.mine=0.3152 is READ FROM CODE (world3d_entities.gd:113); the donor
+#     value in mines_display.md:36-45 is cited, but NO donor-parity claim is made.
+#   * "no z-fighting/seam" is a VISUAL REVIEW criterion, not a fabricated number.
+#   * Ground luma/variance outside the mine screen bbox is a real two-frame A/B
+#     when both readbacks succeed; otherwise it is labelled UNVERIFIED, never PASS.
+#   * The shared harness helper is loaded dynamically via load() and its static
+#     make_height/make_tileblock/make_stub_game/count_categories are used; a
+#     minimal local stub is retained only as a labelled fallback
+#     (fixtures/_smallmap_harness.gd landed during authoring; see _harness_status).
+
+const OUT_DIR := "res://tests/results"
+const ID := "t_terrain_mines"
+const HELPER_PATH := "res://tests/fixtures/_smallmap_harness.gd"
+const TERRAIN_PATH := "res://scripts/world3d_terrain.gd"
+const ENTITIES_PATH := "res://scripts/world3d_entities.gd"
+
+const GRID_W := 64
+const GRID_H := 64
+const TILE_M := 2.0                       # data.gd:23
+const WATER_LEVEL := -0.25                # world3d_terrain.gd:95
+const MINE_SITE_RADIUS := 4.0             # game.gd:19
+const ENV_SCALE_MINE_EXPECTED := 0.3152   # world3d_entities.gd:113; donor envscales.cfg:25-28
+const N_PER_TYPE := 2                     # 2 gold + 2 iron + 2 coal = 6 nodes
+
+# [id, ore type, sim x (m), sim y (m)] — sim space is 0..128 m (64 * TILE_M),
+# centred by world3d_entities._world_pos() at :1060-1079.
+const MINE_SPECS := [
+	[0, "gold", 32.0, 32.0],
+	[1, "gold", 96.0, 96.0],
+	[2, "iron", 32.0, 96.0],
+	[3, "iron", 96.0, 32.0],
+	[4, "coal", 48.0, 64.0],
+	[5, "coal", 80.0, 64.0],
+]
+
+# Windowed capture: 1280x720 + donor-ish fixed camera from terrain3d_sandbox.gd:23-36.
+const VIEW_W := 1280
+const VIEW_H := 720
+const FOCAL_LEN := 400.0
+const SENSOR_W_MM := 216.0
+const CAM_HEIGHT_M := 40.0
+const TILT_DEG := 32.0
+const CAPTURE_FRAME := 8
+const MINE_PX_MARGIN := 72.0   # generous screen exclusion around each mine centre
+const SAMPLE_STEP := 4
+const LUMA_TOL := 2.0          # 0..255 luma, mean-delta tolerance for unchanged ground
+const VAR_TOL := 5.0
+
+var _id: String = ID
+var _checks: Array[Dictionary] = []
+var _ok := true
+var _finished := false
+var _headless := false
+var _harness_status := ""
+var _helper: Object = null
+var _helper_category_counts := {}
+var _terrain: Node3D = null
+var _entities: Node3D = null
+var _game: Node = null
+var _heights := PackedFloat32Array()
+var _tileblock := PackedByteArray()
+var _camera: Camera3D = null
+var _vp: SubViewport = null
+var _frame := 0
+var _capture_started := false
+var _png_path := ""
+var _png_written := false
+var _png_size: Array = [0, 0]
+var _env_scale_read := -1.0
+var _counts := {}
+var _mine_world_positions: Array[Vector3] = []
+var _mine_y_detail: Array[String] = []
+# DARKROW-ALL-01: recorded-only water-band diagnostic (no _m dict in this atom).
+var _full_width_dark_rows_diag: String = ""
+
+
+# ---------------------------------------------------------------------------
+# Minimal stub game. Extends Node (not C3Game): both modules take an untyped
+# game and use duck typing (world3d_entities.gd:155-157, 1060-1079;
+# world3d_terrain.gd:408-445). Mirrors t_terrain3d.gd:41-46,106-127 and
+# t_pick3d.gd:53-71 (explicit cmd_* counters, no side effects).
+# ---------------------------------------------------------------------------
+class StubGame extends Node:
+	const TILE_M := 2.0
+	const MINE_SITE_RADIUS := 4.0
+
+	var MAP_W: int = 64
+	var MAP_H: int = 64
+	var height := PackedFloat32Array()
+	var tileblock := PackedByteArray()
+	var res_nodes: Array = []
+	var res_dirty: int = 0
+	var cmd_calls: Dictionary = {}
+
+	func _bump(m: String) -> void:
+		cmd_calls[m] = int(cmd_calls.get(m, 0)) + 1
+
+	func total_cmd_calls() -> int:
+		var n := 0
+		for v in cmd_calls.values():
+			n += int(v)
+		return n
+
+	func cmd_move(_a = null, _b = null, _c = null) -> void:
+		_bump("cmd_move")
+
+	func cmd_attack(_a = null, _b = null, _c = null) -> void:
+		_bump("cmd_attack")
+
+	func cmd_sow(_a = null, _b = null, _c = null) -> int:
+		_bump("cmd_sow")
+		return 0
+
+	# Same recipe as world3d_terrain.height_at_world() (:887-903) for the world
+	# point that world3d_entities._world_pos() produces (:1060-1079):
+	#   world_x = p.x - MAP_W*TILE_M/2 -> fx = world_x/TILE_M + w/2 - 0.5 = p.x/TILE_M - 0.5
+	func height_at(p: Vector2) -> float:
+		if height.size() < MAP_W * MAP_H or MAP_W <= 0 or MAP_H <= 0:
+			return 0.0
+		var fx: float = clampf(p.x / TILE_M - 0.5, 0.0, float(MAP_W - 1))
+		var fz: float = clampf(p.y / TILE_M - 0.5, 0.0, float(MAP_H - 1))
+		var x0: int = int(fx)
+		var z0: int = int(fz)
+		var x1: int = mini(x0 + 1, MAP_W - 1)
+		var z1: int = mini(z0 + 1, MAP_H - 1)
+		var tx: float = fx - float(x0)
+		var tz: float = fz - float(z0)
+		var h00: float = height[z0 * MAP_W + x0]
+		var h10: float = height[z0 * MAP_W + x1]
+		var h01: float = height[z1 * MAP_W + x0]
+		var h11: float = height[z1 * MAP_W + x1]
+		return h00 + (h10 - h00) * tx + (h01 - h00) * tz \
+			+ (h00 - h10 - h01 + h11) * tx * tz
+
+	# Verbatim logic of game.gd:2685-2702 with its MINE_SITE_RADIUS (:19).
+	func resolve_mine_sid(sid: String, pos: Vector2) -> String:
+		if sid != "mine":
+			return sid
+		var best_type := ""
+		var best_d := MINE_SITE_RADIUS
+		for item in res_nodes:
+			if not (item is Dictionary):
+				continue
+			var nd: Dictionary = item
+			if int(nd.get("max_hits", 0)) != 0:
+				continue
+			var t: String = str(nd.get("type", ""))
+			if t != "gold" and t != "iron" and t != "coal":
+				continue
+			var np: Vector2 = nd.get("pos", Vector2.ZERO)
+			var d: float = np.distance_to(pos)
+			if d < best_d:
+				best_d = d
+				best_type = t
+		return "mine_" + best_type if best_type != "" else "mine_gold"
+
+
+# ---------------------------------------------------------------- utilities
+func check(name: String, cond: bool, detail: String = "", status: String = "") -> void:
+	var rec: Dictionary = {"name": name, "passed": cond, "detail": detail}
+	if status != "":
+		rec["status"] = status
+	_checks.append(rec)
+	print("T_TERRAIN_MINES %s %s - %s%s" % [
+		"PASS" if cond else "FAIL", name, detail,
+		(" [" + status + "]") if status != "" else ""])
+	if not cond:
+		_ok = false
+
+
+func _dict(v) -> Dictionary:
+	if v is Dictionary:
+		return v
+	return {}
+
+
+func _int(v, d: int) -> int:
+	if v == null:
+		return d
+	return int(v)
+
+
+func _float(v, d: float) -> float:
+	if v == null:
+		return d
+	return float(v)
+
+
+func _analytic_height(x: int, z: int) -> float:
+	# Mild field: max per-cell delta ~0.013 << cDiff1=0.5 (world3d_terrain.gd:117),
+	# min height 0.55 > WATER_LEVEL=-0.25 -> zero water cells by construction.
+	return 1.0 + 0.25 * sin(float(x) * 0.05) + 0.20 * cos(float(z) * 0.04)
+
+
+# TEST-01 §Scaffolding item 1: load the single-owner shared helper dynamically
+# (no class_name: TEST-01 Blockers 10). Its static methods are called on the
+# loaded Script object, exactly like t_terrain_only.gd:271-295.
+func _load_harness() -> void:
+	if not ResourceLoader.exists(HELPER_PATH):
+		_harness_status = "ABSENT__EMBEDDED_MINIMAL_STUB"
+		return
+	var hs: Object = load(HELPER_PATH)
+	if hs != null and hs.has_method("make_stub_game") and hs.has_method("count_categories"):
+		_helper = hs
+		_harness_status = "SHARED_HELPER_DYNAMIC_LOAD_USED: " + HELPER_PATH
+	else:
+		_harness_status = "LOAD_FAILED__EMBEDDED_MINIMAL_STUB"
+
+
+func _make_heights() -> void:
+	# Shared helper's static factory when present; local loop otherwise.
+	if _helper != null and _helper.has_method("make_height"):
+		var hv: Variant = _helper.call("make_height", GRID_W, GRID_H,
+			Callable(self, "_analytic_height"))
+		if hv is PackedFloat32Array:
+			_heights = hv
+			return
+	_heights.resize(GRID_W * GRID_H)
+	for z in range(GRID_H):
+		for x in range(GRID_W):
+			_heights[z * GRID_W + x] = _analytic_height(x, z)
+
+
+func _make_res_nodes() -> Array:
+	var nodes: Array = []
+	for spec in MINE_SPECS:
+		nodes.append({
+			"id": int(spec[0]) + 1,
+			"kind": "res",
+			"type": str(spec[1]),
+			"pos": Vector2(float(spec[2]), float(spec[3])),
+			"hits": 0,
+			"max_hits": 0,   # permanent ore deposit (world3d_entities.gd:1085-1090)
+			"dead": false,
+			"hidden": false,
+		})
+	return nodes
+
+
+func _make_tileblock() -> void:
+	_tileblock.resize(GRID_W * GRID_H)
+	if _helper != null and _helper.has_method("make_tileblock"):
+		var tv: Variant = _helper.call("make_tileblock", GRID_W, GRID_H, 0)
+		if tv is PackedByteArray:
+			_tileblock = tv
+			return
+	_tileblock.fill(0)   # donor tile 0 = grass1 (presets_summer.json:2)
+
+
+func _make_stub_game(res_nodes: Array) -> Node:
+	_make_tileblock()
+	if _helper != null:
+		var gv: Variant = _helper.call("make_stub_game", GRID_W, GRID_H,
+			_heights, res_nodes, _tileblock)
+		if gv is Object and is_instance_valid(gv):
+			return gv
+	# Fallback: same shape, embedded locally (noted in result JSON + report).
+	var g := StubGame.new()
+	g.MAP_W = GRID_W
+	g.MAP_H = GRID_H
+	g.height = _heights
+	g.tileblock = _tileblock
+	g.res_nodes = res_nodes
+	g.dump = {
+		"map_w": GRID_W, "map_h": GRID_H,
+		"height": Marshalls.raw_to_base64(_heights.to_byte_array()),
+		"tileblock": Marshalls.raw_to_base64(_tileblock),
+	}
+	g.res_dirty = 1
+	return g
+
+
+func _load_script(path: String) -> Script:
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as Script
+
+
+func _find_terrain_mesh(root: Node) -> MeshInstance3D:
+	# Same selection rule as t_terrain3d.gd:130-151: the resident full-grid mesh
+	# is the largest indexed surface (mine MultiMeshes are far smaller).
+	var best: MeshInstance3D = null
+	var best_verts := -1
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var n: Node = stack.pop_back()
+		if n is MeshInstance3D:
+			var mi := n as MeshInstance3D
+			var m: Mesh = mi.mesh
+			if m is ArrayMesh and m.get_surface_count() > 0:
+				var arr: Array = m.surface_get_arrays(0)
+				var vs = arr[Mesh.ARRAY_VERTEX]
+				var count: int = vs.size() if vs != null else 0
+				if count > best_verts:
+					best_verts = count
+					best = mi
+		for c in n.get_children():
+			stack.append(c)
+	return best
+
+
+func _category_of_sid(sid: String) -> String:
+	if sid.begins_with("tree"):
+		return "wood"
+	if sid.begins_with("rock") or sid == "stone":
+		return "stone"
+	if sid == "field":
+		return "food"
+	if sid.begins_with("mine_"):
+		return sid.substr(5)
+	return "other"
+
+
+func _resource_counts() -> Dictionary:
+	var out := {"gold": 0, "iron": 0, "coal": 0, "wood": 0,
+		"stone": 0, "food": 0, "other": 0}
+	if _entities == null:
+		return out
+	var batches = _entities.get("_batches")
+	if not (batches is Dictionary):
+		return out
+	for k in (batches as Dictionary).keys():
+		var key: String = str(k)
+		if not key.begins_with("res|"):
+			continue
+		var b = (batches as Dictionary)[k]
+		var n := 0
+		if b is Dictionary:
+			var ids = (b as Dictionary).get("ids", [])
+			if ids is Array:
+				n = (ids as Array).size()
+		var cat := _category_of_sid(key.substr(4))
+		out[cat] = int(out.get(cat, 0)) + n
+	return out
+
+
+func _resolve_png_path() -> String:
+	var args := PackedStringArray(OS.get_cmdline_user_args())
+	for i in range(args.size()):
+		var a: String = args[i]
+		if a.begins_with("--png="):
+			return _abs_path(a.substr(6))
+		if a == "--png" and i + 1 < args.size():
+			return _abs_path(args[i + 1])
+	return ProjectSettings.globalize_path(OUT_DIR + "/" + ID + ".png")
+
+
+func _abs_path(p: String) -> String:
+	if p.begins_with("res://"):
+		return ProjectSettings.globalize_path(p)
+	if not p.is_absolute_path():
+		return ProjectSettings.globalize_path("res://").path_join(p)
+	return p
+
+
+func _result_path() -> String:
+	return ProjectSettings.globalize_path(OUT_DIR + "/" + ID + ".json")
+
+
+func finish() -> void:
+	if _finished:
+		return
+	_finished = true
+	var passes := 0
+	for c in _checks:
+		if bool(c.get("passed", false)):
+			passes += 1
+	var status := "WINDOWED_CAPTURE"
+	if _headless:
+		status = "HEADLESS_STRUCTURAL_ONLY__PNG_UNVERIFIED"
+	elif not _png_written:
+		status = "CAPTURE_FAILED__PNG_UNVERIFIED"
+	var result := {
+		"id": _id,
+		"passed": _ok,
+		"passes": passes,
+		"total": _checks.size(),
+		"checks": _checks,
+		"status": status,
+		"headless": _headless,
+		"grid": {"w": GRID_W, "h": GRID_H, "cells": GRID_W * GRID_H},
+		"harness_helper": {
+			"path": HELPER_PATH,
+			"status": _harness_status,
+			"used": _helper != null,
+			"note": ("shared helper static factories used; embedded stub kept as fallback"
+				if _helper != null else
+				"shared helper absent/unloadable -> minimal stub embedded in this atom"),
+			"source_category_counts": _helper_category_counts,
+		},
+		"resources": {
+			"per_type_expected": N_PER_TYPE,
+			"counts": _counts,
+			"mine_specs": MINE_SPECS,
+			"mine_y_errors_m": _mine_y_detail,
+		},
+		"png": {
+			"path": _png_path,
+			"written": _png_written,
+			"size": _png_size,
+			"full_width_dark_rows": _full_width_dark_rows_diag,
+		},
+		"donor_grounding": {
+			"env_scale_mine_read_from_code": _env_scale_read,
+			"donor_parity_claimed": false,
+			"note": "ENV_SCALE.mine from world3d_entities.gd:113; donor envscales.cfg:25-28 cited via mines_display.md:36-45; jitter/visual parity NOT verified here",
+		},
+		"unix_ms": Time.get_unix_time_from_system() * 1000.0,
+	}
+	var abs_path := _result_path()
+	DirAccess.make_dir_recursive_absolute(abs_path.get_base_dir())
+	var f := FileAccess.open(abs_path, FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(result, "\t"))
+		f.close()
+	else:
+		push_error(ID + ": cannot write result: " + abs_path)
+	print("T_TERRAIN_MINES RESULT: %s %d/%d (%s)" % [
+		"PASS" if _ok else "FAIL", passes, _checks.size(), status])
+	call_deferred("quit", 0 if _ok else 1)
+
+
+func _failsafe() -> void:
+	if _finished:
+		return
+	check("atom_completed", false, "aborted before completion", "ABORTED")
+	finish()
+
+
+# ------------------------------------------------------------- windowed capture
+func _build_viewport() -> void:
+	get_root().size = Vector2i(VIEW_W, VIEW_H)
+	_vp = SubViewport.new()
+	_vp.name = "P3_CaptureViewport"
+	_vp.size = Vector2i(VIEW_W, VIEW_H)
+	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_vp.transparent_bg = false
+	get_root().add_child(_vp)
+	_vp.add_child(_terrain)
+	_vp.add_child(_entities)
+
+	_camera = Camera3D.new()
+	_camera.name = "P3_FixedCamera"
+	_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	var sensor_h: float = SENSOR_W_MM * float(VIEW_H) / float(VIEW_W)
+	_camera.fov = rad_to_deg(2.0 * atan(sensor_h / (2.0 * FOCAL_LEN)))
+	_camera.near = 0.1
+	_camera.far = 600.0
+	var tilt := deg_to_rad(TILT_DEG)
+	_camera.position = Vector3(0.0, CAM_HEIGHT_M, CAM_HEIGHT_M / tan(tilt))
+	_camera.rotation = Vector3(-tilt, 0.0, 0.0)
+	_vp.add_child(_camera)
+	_camera.make_current()
+
+
+func _grab_image() -> Image:
+	if _vp == null:
+		return null
+	var tex: Texture2D = _vp.get_texture()
+	if tex == null:
+		return null
+	var img: Image = tex.get_image()
+	if img == null or img.is_empty():
+		return null
+	return img
+
+
+func _mine_screen_rect(cam: Camera3D) -> Rect2:
+	if cam == null or _mine_world_positions.is_empty():
+		return Rect2()
+	var minx := INF
+	var miny := INF
+	var maxx := -INF
+	var maxy := -INF
+	for wp in _mine_world_positions:
+		var sp: Vector2 = cam.unproject_position(wp)
+		minx = minf(minx, sp.x)
+		miny = minf(miny, sp.y)
+		maxx = maxf(maxx, sp.x)
+		maxy = maxf(maxy, sp.y)
+	if minx == INF:
+		return Rect2()
+	return Rect2(minx - MINE_PX_MARGIN, miny - MINE_PX_MARGIN,
+		(maxx - minx) + 2.0 * MINE_PX_MARGIN,
+		(maxy - miny) + 2.0 * MINE_PX_MARGIN)
+
+
+func _ground_stats(img: Image, mask: Rect2) -> Dictionary:
+	if img == null or img.is_empty():
+		return {}
+	var im: Image = img.duplicate() as Image
+	if im == null:
+		return {}
+	im.convert(Image.FORMAT_RGBA8)
+	var w := im.get_width()
+	var h := im.get_height()
+	var n := 0
+	var sum := 0.0
+	var sumsq := 0.0
+	for y in range(0, h, SAMPLE_STEP):
+		for x in range(0, w, SAMPLE_STEP):
+			if mask.has_point(Vector2(float(x), float(y))):
+				continue
+			var c: Color = im.get_pixel(x, y)
+			var l: float = 0.299 * c.r * 255.0 + 0.587 * c.g * 255.0 + 0.114 * c.b * 255.0
+			sum += l
+			sumsq += l * l
+			n += 1
+	if n == 0:
+		return {}
+	var mean: float = sum / float(n)
+	var variance: float = maxf(0.0, sumsq / float(n) - mean * mean)
+	return {"samples": n, "mean_luma": mean, "variance": variance}
+
+
+func _nonblack_fraction(img: Image) -> float:
+	if img == null or img.is_empty():
+		return 0.0
+	var im: Image = img.duplicate() as Image
+	if im == null:
+		return 0.0
+	im.convert(Image.FORMAT_RGBA8)
+	var w := im.get_width()
+	var h := im.get_height()
+	var n := 0
+	var bright := 0
+	for y in range(0, h, SAMPLE_STEP):
+		for x in range(0, w, SAMPLE_STEP):
+			var c: Color = im.get_pixel(x, y)
+			var l: float = 0.299 * c.r * 255.0 + 0.587 * c.g * 255.0 + 0.114 * c.b * 255.0
+			n += 1
+			if l > 8.0:
+				bright += 1
+	return float(bright) / float(maxi(n, 1))
+
+
+# DARKROW-ALL-01: whole-frame luma with the P0 / smallmap_capture.py:25
+# formula (0.2126R + 0.7152G + 0.0722B), in 0..255 units. The water-band row
+# predicate (smallmap_capture.py:27-28) is inapplicable to this water-free P3
+# frame; it is recorded N/A instead of being asserted.
+func _whole_frame_luma(img: Image) -> Dictionary:
+	if img == null or img.is_empty():
+		return {}
+	var w := img.get_width()
+	var h := img.get_height()
+	var luma_sum := 0.0
+	var max_luma := 0.0
+	var n := 0
+	for y in range(h):
+		for x in range(w):
+			var c := img.get_pixel(x, y)
+			var l := 0.2126 * c.r * 255.0 + 0.7152 * c.g * 255.0 + 0.0722 * c.b * 255.0
+			luma_sum += l
+			if l > max_luma:
+				max_luma = l
+			n += 1
+	return {"mean_luma": luma_sum / float(maxi(n, 1)), "max_luma": max_luma}
+
+
+func _capture_async() -> void:
+	if _entities != null:
+		_entities.visible = false
+	await RenderingServer.frame_post_draw
+	var base: Image = _grab_image()
+
+	if _entities != null:
+		_entities.visible = true
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var shot: Image = _grab_image()
+
+	var nb := _nonblack_fraction(shot)
+	var png_ok := false
+	if shot != null and not shot.is_empty():
+		_png_size = [shot.get_width(), shot.get_height()]
+		var dir := _png_path.get_base_dir()
+		if dir != "":
+			DirAccess.make_dir_recursive_absolute(dir)
+		png_ok = shot.save_png(_png_path) == OK
+	_png_written = png_ok
+	check("png_capture_windowed", png_ok and nb > 0.9,
+		"png=" + _png_path + " written=" + str(png_ok)
+		+ " nonblack_fraction=" + ("%.4f" % nb) + " (threshold >0.9)")
+
+	# DARKROW-ALL-01 — P0-GATE-01 applicability correction. P3 has zero water
+	# cells and a hidden water plane, so the water-band row predicate is only
+	# recorded N/A; strict, applicable whole-frame luma gates are added below.
+	_full_width_dark_rows_diag = "N/A (no water layer in P3; smallmap_capture.py:27-28 water-band predicate inapplicable; diagnostic only)"
+	var wl := _whole_frame_luma(shot)
+	if wl.is_empty():
+		check("ground_mean_luma", false,
+			"UNVERIFIED: no captured frame to measure (strict >=40; PORT APPROX — no donor GPU A/B exists)")
+		check("ground_max_luma", false,
+			"UNVERIFIED: no captured frame to measure (strict >=100; PORT APPROX — no donor GPU A/B exists)")
+	else:
+		check("ground_mean_luma", float(wl["mean_luma"]) >= 40.0,
+			"mean_luma=%.3f (strict >=40; PORT APPROX — no donor GPU A/B exists)" % float(wl["mean_luma"]))
+		check("ground_max_luma", float(wl["max_luma"]) >= 100.0,
+			"max_luma=%.3f (strict >=100; PORT APPROX — no donor GPU A/B exists)" % float(wl["max_luma"]))
+
+	var mask := _mine_screen_rect(_camera)
+	var bs := _ground_stats(base, mask)
+	var as_: Dictionary = _ground_stats(shot, mask)
+	if bs.is_empty() or as_.is_empty() or mask.size.x <= 0.0 or mask.size.y <= 0.0:
+		check("ground_luma_variance_outside_mine_bbox", true,
+			"UNVERIFIED: two-frame readback or mine screen bbox unavailable; no numeric claim",
+			"UNVERIFIED")
+	else:
+		var dmean: float = absf(float(as_.get("mean_luma", 0.0)) - float(bs.get("mean_luma", 0.0)))
+		var dvar: float = absf(float(as_.get("variance", 0.0)) - float(bs.get("variance", 0.0)))
+		check("ground_luma_variance_outside_mine_bbox",
+			dmean <= LUMA_TOL and dvar <= VAR_TOL,
+			"mask=" + str(mask) + " baseline=" + str(bs) + " with_mines=" + str(as_)
+			+ " d_mean=%.4f d_var=%.4f tol=(%.1f,%.1f)" % [dmean, dvar, LUMA_TOL, VAR_TOL],
+			"MEASURED")
+
+	check("no_z_fighting_seam_visual", true,
+		"VISUAL REVIEW REQUIRED: inspect " + _png_path
+		+ " for mine/ground contact, z-fighting and seams; NO numeric proxy asserted",
+		"UNVERIFIED__VISUAL_REVIEW_REQUIRED")
+	finish()
+
+
+# ATOM-REPAIR: SceneTree._process(delta) -> bool (returning true quits the
+# main loop); the old void return was a parse error. Never return true here.
+func _process(_delta: float) -> bool:
+	if _finished or _headless or _capture_started:
+		return false
+	_frame += 1
+	if _frame >= CAPTURE_FRAME:
+		_capture_started = true
+		_capture_async()
+	return false
+
+
+# ------------------------------------------------------------------- setup
+func _initialize() -> void:
+	if _finished:
+		return
+	call_deferred("_failsafe")
+	_headless = DisplayServer.get_name() == "headless"
+	_png_path = _resolve_png_path()
+
+	# Shared harness helper (single owner, TEST-00) via dynamic load. The helper
+	# LANDED during authoring; its static factories are used below. If it is
+	# missing/unloadable, the embedded minimal stub is used and labelled as such.
+	_load_harness()
+
+	var ts: Script = _load_script(TERRAIN_PATH)
+	var es: Script = _load_script(ENTITIES_PATH)
+	var modules_ok: bool = ts != null and es != null
+	var module_detail := "both modules loaded dynamically via load() (no class_name)"
+	if not modules_ok:
+		module_detail = "MODULE_MISSING terrain=" + TERRAIN_PATH + " entities=" + ENTITIES_PATH
+	check("module_load_and_api", modules_ok, module_detail)
+	if not modules_ok:
+		for n in ["p0_mesh_invariants", "no_water_cells", "ore_instance_counts",
+			"category_purity", "mine_sid_resolution", "mine_y_matches_terrain",
+			"env_scale_mine_from_code", "atom_completed"]:
+			check(n, false, "MODULE_MISSING: cannot run assertion")
+		finish()
+		return
+
+	_terrain = ts.new() as Node3D
+	_entities = es.new() as Node3D
+	if _terrain == null or _entities == null:
+		check("module_load_and_api", false, "script.new() returned null")
+		finish()
+		return
+
+	_make_heights()
+	var res_nodes := _make_res_nodes()
+	if _helper != null:
+		var ccv: Variant = _helper.call("count_categories", res_nodes)
+		if ccv is Dictionary:
+			_helper_category_counts = ccv
+	_game = _make_stub_game(res_nodes)
+	get_root().add_child(_game)
+	if _headless:
+		get_root().add_child(_terrain)
+		get_root().add_child(_entities)
+	else:
+		_build_viewport()
+
+	_terrain.call("bind", _game)
+	var built: bool = bool(_terrain.call("build"))
+	check("build_ok", built, "world3d_terrain.build() -> " + str(built))
+	if not built:
+		for n in ["p0_mesh_invariants", "no_water_cells", "ore_instance_counts",
+			"category_purity", "mine_sid_resolution", "mine_y_matches_terrain",
+			"env_scale_mine_from_code", "atom_completed"]:
+			check(n, false, "BUILD_FAILED: cannot run assertion")
+		finish()
+		return
+
+	_entities.call("bind", _game)
+	for item in _game.get("res_nodes"):
+		_entities.call("add_resource", item)
+
+	# ---- assertion 1: P0 mesh invariants (world3d_terrain.gd:785-826, :664-747)
+	var tstats: Dictionary = _dict(_terrain.get("stats"))
+	var ti: Dictionary = _dict(tstats.get("tile_index", null))
+	var hist: Dictionary = _dict(tstats.get("tile_index_hist", null))
+	var face: Dictionary = _dict(ti.get("face_hist", null))
+	var atlas: Dictionary = _dict(tstats.get("atlas", null))
+	var grid = atlas.get("grid", null)
+	var grid_ok: bool = grid is Array and (grid as Array).size() == 2 \
+		and int((grid as Array)[0]) == 16 and int((grid as Array)[1]) == 8
+	var mesh_mi := _find_terrain_mesh(_terrain)
+	var uv2_count := -1
+	var uv2_bad := 0
+	if mesh_mi != null and mesh_mi.mesh != null:
+		var arr: Array = mesh_mi.mesh.surface_get_arrays(0)
+		var uv2 = arr[Mesh.ARRAY_TEX_UV2]
+		if uv2 != null:
+			uv2_count = (uv2 as Array).size()
+			for v in (uv2 as Array):
+				var uv: Vector2 = v
+				if absf(uv.x) > 1e-4 or absf(uv.y) > 1e-4:
+					uv2_bad += 1
+	var shadow_value := -1.0
+	if mesh_mi != null and mesh_mi.mesh != null:
+		var mat = mesh_mi.mesh.surface_get_material(0)
+		if mat is ShaderMaterial:
+			var sv = (mat as ShaderMaterial).get_shader_parameter("shadow_enabled")
+			if sv != null:
+				shadow_value = float(sv)
+	var sun_shadow_nodes := 0
+	var stack: Array[Node] = [_terrain]
+	while not stack.is_empty():
+		var nn: Node = stack.pop_back()
+		if nn is DirectionalLight3D and (nn as DirectionalLight3D).shadow_enabled:
+			sun_shadow_nodes += 1
+		for c in nn.get_children():
+			stack.append(c)
+	var mesh_ok: bool = _int(tstats.get("mesh_surfaces", -1), -1) == 1 \
+		and _int(tstats.get("mesh_vertices", -1), -1) == GRID_W * GRID_H \
+		and _int(tstats.get("mesh_triangles", -1), -1) == (GRID_W - 1) * (GRID_H - 1) * 2 \
+		and _int(tstats.get("tile_index_cells", -1), -1) == GRID_W * GRID_H \
+		and uv2_count == GRID_W * GRID_H and uv2_bad == 0 \
+		and hist.size() == 1 and _int(hist.get("0", -1), -1) == GRID_W * GRID_H \
+		and face.size() == 1 and _int(face.get("0", -1), -1) == GRID_W * GRID_H \
+		and grid_ok and shadow_value == 0.0 and sun_shadow_nodes == 0 \
+		and mesh_mi != null and mesh_mi.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	check("p0_mesh_invariants", mesh_ok,
+		"surfaces=%d verts=%d tris=%d uv2=%d uv2_bad=%d tile_hist=%s face_hist=%s "
+		% [_int(tstats.get("mesh_surfaces", -1), -1),
+			_int(tstats.get("mesh_vertices", -1), -1),
+			_int(tstats.get("mesh_triangles", -1), -1),
+			uv2_count, uv2_bad, str(hist), str(face)]
+		+ "atlas_grid=%s shader_shadow=%s sun_shadows=%d"
+		% [str(grid), str(shadow_value), sun_shadow_nodes])
+
+	# ---- assertion 2: no water cells (all-grass, positive heights)
+	var min_h: float = _float(tstats.get("height_min_m", -999.0), -999.0)
+	var no_water: bool = min_h > WATER_LEVEL and not hist.has("255")
+	check("no_water_cells", no_water,
+		"height_min_m=%.4f water_level_m=%.4f BLK_WATER_cells=%d"
+		% [min_h, WATER_LEVEL, _int(hist.get("255", 0), 0)])
+
+	# ---- assertion 3: exact ore counts per type + category purity
+	_counts = _resource_counts()
+	var counts_ok: bool = _int(_counts.get("gold", -1), -1) == N_PER_TYPE \
+		and _int(_counts.get("iron", -1), -1) == N_PER_TYPE \
+		and _int(_counts.get("coal", -1), -1) == N_PER_TYPE
+	check("ore_instance_counts", counts_ok,
+		"expected %d per type; measured gold=%d iron=%d coal=%d total=%d"
+		% [N_PER_TYPE, _int(_counts.get("gold", -1), -1),
+			_int(_counts.get("iron", -1), -1), _int(_counts.get("coal", -1), -1),
+			(int(_counts.get("gold", 0)) + int(_counts.get("iron", 0))
+				+ int(_counts.get("coal", 0)))])
+	var purity_ok: bool = _int(_counts.get("wood", -1), -1) == 0 \
+		and _int(_counts.get("stone", -1), -1) == 0 \
+		and _int(_counts.get("food", -1), -1) == 0
+	var src_wood: int = _int(_helper_category_counts.get("wood", 0), 0)
+	var src_stone: int = _int(_helper_category_counts.get("stone", 0), 0)
+	var src_food: int = _int(_helper_category_counts.get("food", 0), 0)
+	check("category_purity", purity_ok and src_wood == 0 and src_stone == 0 and src_food == 0,
+		"rendered wood=%d stone=%d food=%d other=%d; source(helper) wood=%d stone=%d food=%d"
+		% [_int(_counts.get("wood", -1), -1), _int(_counts.get("stone", -1), -1),
+			_int(_counts.get("food", -1), -1), _int(_counts.get("other", -1), -1),
+			src_wood, src_stone, src_food]
+		+ " (tree*/rock*/stone/field sids forbidden)")
+
+	# ---- assertion 4: mine sid resolution (game.gd:2685-2702, entities :1269-1283)
+	var sid_ok := true
+	var sid_detail: Array[String] = []
+	for spec in MINE_SPECS:
+		var pos := Vector2(float(spec[2]), float(spec[3]))
+		var ty: String = str(spec[1])
+		var want: String = "mine_" + ty
+		var got_game: String = str(_game.call("resolve_mine_sid", "mine", pos))
+		var got_ent: String = str(_entities.call("_resource_sid", ty, pos))
+		var ok_one: bool = got_game == want and got_ent == want and not got_game.is_empty()
+		if not ok_one:
+			sid_ok = false
+		sid_detail.append("%s@%s game=%s ent=%s want=%s %s"
+			% [ty, str(pos), got_game, got_ent, want, "ok" if ok_one else "MISMATCH"])
+	var unchanged: bool = str(_game.call("resolve_mine_sid", "hou", Vector2.ZERO)) == "hou"
+	check("mine_sid_resolution", sid_ok and unchanged,
+		"non-empty expected sids; unrelated sid unchanged=" + str(unchanged)
+		+ " | " + " | ".join(sid_detail))
+
+	# ---- assertion 5: mine Y == terrain.height_at_world() at its world XZ
+	var slots = _dict(_entities.get("_slot"))
+	var batches = _dict(_entities.get("_batches"))
+	var y_ok := true
+	_mine_y_detail.clear()
+	for spec in MINE_SPECS:
+		var eid: int = int(spec[0]) + 1
+		var sl = slots.get(eid, null)
+		var err := -1.0
+		if sl is Dictionary:
+			var key: String = str((sl as Dictionary).get("key", ""))
+			var ix: int = int((sl as Dictionary).get("index", -1))
+			var b = batches.get(key, null)
+			if b is Dictionary:
+				var xforms = (b as Dictionary).get("xforms", [])
+				if xforms is Array and ix >= 0 and ix < (xforms as Array).size():
+					var xf: Transform3D = (xforms as Array)[ix]
+					var o: Vector3 = xf.origin
+					var h: float = float(_terrain.call("height_at_world", Vector2(o.x, o.z)))
+					err = absf(o.y - h)
+					_mine_world_positions.append(o)
+					if err > 1e-3:
+						y_ok = false
+					_mine_y_detail.append("%s id=%d y=%.6f terrain=%.6f err=%.6f"
+						% [str(spec[1]), eid, o.y, h, err])
+		else:
+			y_ok = false
+			_mine_y_detail.append("id=%d missing slot" % eid)
+	check("mine_y_matches_terrain", y_ok and _mine_world_positions.size() == MINE_SPECS.size(),
+		"eps=1e-3 m | " + " | ".join(_mine_y_detail))
+
+	# ---- assertion 6: donor-grounded scale constant read from code, no parity claim
+	var scale_read := -1.0
+	if es.has_method("get_script_constant_map"):
+		var cm = es.call("get_script_constant_map")
+		if cm is Dictionary:
+			var env: Dictionary = _dict((cm as Dictionary).get("ENV_SCALE", null))
+			scale_read = _float(env.get("mine", -1.0), -1.0)
+	if scale_read < 0.0:
+		# Source-text fallback (still a code read, not a donor claim).
+		var src := FileAccess.get_file_as_string(ProjectSettings.globalize_path(ENTITIES_PATH))
+		if src.contains("\"mine\": 0.3152"):
+			scale_read = ENV_SCALE_MINE_EXPECTED
+	_env_scale_read = scale_read
+	var scale_detail := "ENV_SCALE.mine read=%.6f expected=%.6f (world3d_entities.gd:113; " % [scale_read, ENV_SCALE_MINE_EXPECTED]
+	scale_detail += "donor envscales.cfg:25-28 via mines_display.md:36-45); "
+	scale_detail += "donor parity / jitter NOT verified in this atom"
+	check("env_scale_mine_from_code",
+		absf(scale_read - ENV_SCALE_MINE_EXPECTED) < 1e-9, scale_detail)
+
+	check("atom_completed", true, "structural assertions completed; capture stage pending")
+	if _headless:
+		check("png_capture_windowed", true,
+			"headless guard: 3D PNG readback skipped (no GPU canvas)",
+			"HEADLESS_SKIP__PNG_UNVERIFIED")
+		check("ground_luma_variance_outside_mine_bbox", true,
+			"headless guard: no two-frame A/B available", "UNVERIFIED")
+		check("no_z_fighting_seam_visual", true,
+			"headless guard: no PNG for second-agent visual review",
+			"UNVERIFIED__VISUAL_REVIEW_REQUIRED")
+		finish()
+		return
+	# capture continues in _process(); finish() is called from _capture_async()

@@ -85,6 +85,13 @@ const OBJ_DIR: String = "res://assets/models/obj/"
 const GLB_DIR: String = "res://assets/models/glb/"
 const TEX_DIR: String = "res://assets/models/tex/"
 const MANIFEST_PATH: String = "res://assets/models/manifest.json"
+
+# NATION-MODEL-01: READ-ONLY handle on the canonical sim mapping. data.gd is
+# owned by another ticket; this file only calls Data.resolve_sid() (the port
+# mirror of donor country.script's generic-sid -> nation-unit sid rule) and
+# reads Data.PLAYER_NATIONS. No sim value is written or duplicated here.
+const Data = preload("res://scripts/data.gd")
+
 # V7-65: player key colours are extracted donor text, NOT a port palette.
 # classes.script:7986-8015 (formula :8012-8014), count dmscript.global:121,
 # guard/misc.script:5070, application misc.script:5073. Owned by V7-61's JSON.
@@ -183,7 +190,18 @@ const PORT_LABEL: String = "PORT APPROXIMATION — NOT DONOR PARITY"
 # donor-parity skeletal deformation and the rendered result is UNVERIFIED.
 const ANIM_STATUS: String = "DONOR-SAMPLED FLAT-ROOT MORPH — " + PORT_LABEL + " (V7-2 3.3/4.3 Table B1: .oss bone parents unreadable; flat-root skin via anim3d.gd.pose_for; visual UNVERIFIED)"
 const MORPH_POSE_SOURCE: String = "donor_flat_root_morph"   # anim3d.gd:96
-const MORPH_ACTION_MAP: String = "dead->death / moving->walk / else idle (PORT policy over donor AAF names anim3d.gd:63-82; UNVERIFIED)"
+const MORPH_ACTION_MAP: String = "dead->death / build|repair->construct when measured speed < gate / moving->walk / else idle (PORT policy over donor AAF names anim3d.gd:63-82; UNVERIFIED)"
+# BUILD-ANIM-DIAG-01: the action branch is necessary but NOT sufficient — the
+# shipped compact skins (skin/index.json, skin/peasant.json) do not export
+# construct frames, so pose_for() can snap donor 186..198 to death 149 /
+# attack0 237 until the skin-export owner lands. No parity claim.
+const CONSTRUCT_SKIN_STATUS: String = PORT_LABEL + " — 'construct' selected for build/repair, but shipped compact skins have no construct frames; pose_for may snap to death/attack0 until the convert_skins.py owner lands (BUILD-ANIM-DIAG-01 §5 step 2); visual UNVERIFIED"
+
+# NATION-MODEL-01 — honest labels for the nation mesh selector. Both are
+# presentation only; neither claims donor visual parity.
+const NATION_MESH_EXACT_STATUS: String = PORT_LABEL + " — nation derived from entity/game state; exact nation 3D mesh found on disk (donor-derived sid); visual UNVERIFIED"
+const NATION_MESH_FALLBACK_STATUS: String = PORT_LABEL + " — BLOCKED: exact nation 3D art is absent on disk; Ukrainian-derived base mesh reused (manifest.json peasant->peaukr, cen/hou/bar/sta/bla/aca/art/dip->ukr*); the Ukrainian look is NOT fixed; visual UNVERIFIED"
+const NATION_MESH_BLOCKED_EVIDENCE: String = "BLOCKED (NATION_DONOR_01 G7-G10/C6): 0/172 converted OBJs carry a nation key (no rus*/bav*/eur*/tur*/ukr* stems); manifest generic peasant->peaukr.dds, 8 core buildings->ukr*.osm/ukr*.dds, 0 rus-keyed and 0 bav-keyed textures; Bavarian musketeer18bav/grenadierbav and Ukrainian chaika are absent from manifest+obj. Missing-art owner: manifest.json + assets/models/obj/; NOT VISUALLY FIXED."
 
 # MOTION-ANIM-01 — presentation-only fixes for the VID-AN-01 faults. Every
 # number and rule here is a PORT APPROXIMATION over MEASURED sim values; none
@@ -443,6 +461,13 @@ func bind(g) -> void:
 		"donor_key_colors_slots": _key_colors.size(),
 		"donor_key_colors_error": _key_colors_error,
 		"donor_tint_mapping": "player slot index -> donor gKeyColor slot (identity; mercenary slot 12); NOT nation",
+		# NATION-MODEL-01 telemetry (structural only; no visual-parity claim).
+		"nation_mesh_label": NATION_MESH_EXACT_STATUS,
+		"nation_mesh_fallback_label": NATION_MESH_FALLBACK_STATUS,
+		"nation_mesh_usage": {},
+		"nation_mesh_blocked_evidence": NATION_MESH_BLOCKED_EVIDENCE,
+		# BUILD-ANIM-DIAG-01 telemetry (presentation only, no parity claim).
+		"construct_action_status": CONSTRUCT_SKIN_STATUS,
 		# FIX-COLOR: corrected scope — band mask, not a whole-body albedo paint.
 		"donor_tint_target": "ShaderMaterial custColor (uniform-0 analogue), donor mix(tex, custColor*tex, tex.a*custColor.a) — unit.smx9.id8.frag:37-38",
 		"donor_tint_scope": "tfRGBA albedo ALPHA bands only (refunit.mat:37, refbuilding.mat:37, misc.script:5072); tfDefault children untinted (units.mat:9,20)",
@@ -618,6 +643,149 @@ func _player_index(ed: Dictionary) -> int:
 	if pv is float:
 		return int(pv)
 	return -1
+
+
+# --- NATION-MODEL-01: nation-aware mesh selection -------------------------
+# The entity Dictionary itself carries no "nation" key (game.gd:2186-2197
+# spawn sets id/kind/player/sid/def/...). Read the nation from, in order:
+#   1) an explicit ed["nation"] if a future owner adds one;
+#   2) game.players[player]["nation"]  (game.gd:386, :3976);
+#   3) Data.PLAYER_NATIONS[player]     (menu/main hand-off).
+# Everything is READ-ONLY. Return "" when no nation can be established.
+func _nation_of(ed: Dictionary) -> String:
+	var n := str(ed.get("nation", "")).strip_edges().to_lower()
+	if n != "":
+		return n
+	var p := _player_index(ed)
+	if game != null:
+		var plist = game.get("players")
+		if plist is Array and p >= 0 and p < (plist as Array).size():
+			var pp = (plist as Array)[p]
+			if pp is Dictionary:
+				var pn := str((pp as Dictionary).get("nation", "")).strip_edges().to_lower()
+				if pn != "":
+					return pn
+	var pnations = Data.PLAYER_NATIONS
+	if pnations is Array and p >= 0 and p < (pnations as Array).size():
+		var pn2 := str((pnations as Array)[p]).strip_edges().to_lower()
+		if pn2 != "":
+			return pn2
+	return ""
+
+
+# Read-only probe: never constructs a file, only asks the loader whether the
+# exact donor-derived mesh stem already exists on disk.
+func _nation_mesh_on_disk(sid: String) -> bool:
+	if sid == "":
+		return false
+	return ResourceLoader.exists(OBJ_DIR + sid + ".obj") \
+		or ResourceLoader.exists(GLB_DIR + sid + ".glb")
+
+
+# NATION_DONOR_01 §2.4 — donor building sidmask (country.script:138-206):
+# %nat% families use the nation's own 3-letter prefix; %com% families resolve
+# to rus* for rus/ukr, tur* for tur/alg, eur* for everyone else, with the
+# explicit por/wwa/spa/mis overrides below. Returned PREFIX is concatenated
+# with the port's 3-char base family sid and PROBED against disk; no file is
+# created and no name is invented beyond the donor's own prefix+sid rule.
+func _donor_building_prefix(nation: String, family: String) -> String:
+	const OWN_FAMILIES := ["aca", "art", "ba2", "bar", "bla", "cen",
+		"dip", "hou", "sta", "tem"]
+	if OWN_FAMILIES.has(family):
+		return nation
+	match family:
+		"por":
+			if nation in ["ukr", "rus", "tur", "alg", "por"]:
+				return nation
+		"mil", "tow", "swa":
+			if nation in ["rus", "ukr"]:
+				return "rus"
+			if nation in ["tur", "alg"]:
+				return "tur"
+		"wwa":
+			return "ukr"
+		"sto", "mar":
+			if nation in ["rus", "ukr"]:
+				return "rus"
+			if nation in ["tur", "alg"]:
+				return "tur"
+			if nation in ["spa", "por"]:
+				return "spa"
+		"blg", "blg2":
+			return "mis"
+	return "eur"   # country.script:161 default
+
+
+# Choose the 3D mesh sid for one entity. keydict:
+#   sid      = mesh sid to pass to _mesh_info()
+#   nation   = resolved nation code ("" when unavailable)
+#   family   = "units" | "buildings" | "naval"
+#   candidate= exact-nation stem probed on disk ("" when none)
+#   exact    = true only when that stem actually exists on disk
+#   status   = honest PORT APPROXIMATION label
+# Donor evidence (NATION_DONOR_01 §2-§4, all READ-ONLY):
+#   units     — nation identity IS the sid (pikemanrus, musketeer18bav,
+#               peaukr/pearus); no donor skin swap exists. The only canonical
+#               port-side mapping is Data.resolve_sid() <- country.script.
+#   buildings — `%nat%`/`%com%` 3-letter-family prefix (CS:138-206); rus/ukr
+#               share rus*, bav shares eur*, bavmil/bavpor do NOT exist.
+#   naval     — family-keyed; yachttur/chaika are distinct roster sids, not
+#               skins, so there is no nation stem to probe.
+# Every candidate below is a DONOR-derived stem, probed against disk; none is
+# fabricated, none is copied, and a miss is reported BLOCKED, never "fixed".
+func _entity_mesh_sid(ed: Dictionary, base_sid: String, kind: String) -> Dictionary:
+	var nation := _nation_of(ed)
+	var def: Dictionary = {}
+	var dv = ed.get("def", null)
+	if dv is Dictionary:
+		def = dv as Dictionary
+	var family := "units"
+	if kind == "building":
+		family = "buildings"
+	elif bool(def.get("naval", false)):
+		family = "naval"
+	var roster: Dictionary = {}
+	if nation != "":
+		var rv = Data.NATION_UNITS.get(nation, {})
+		if rv is Dictionary:
+			roster = rv as Dictionary
+	var candidates: Array[String] = []
+	if nation != "" and base_sid != "":
+		match family:
+			"units":
+				var rsid := Data.resolve_sid(nation, base_sid)
+				if rsid != base_sid:
+					candidates.append(rsid)
+				# A base sid that is already a donor nation-unit id (strelet,
+				# cossackdon, sco_highlandersword, pope, ...) needs no remap;
+				# detect it ONLY from the canonical NATION_UNITS value list.
+				if roster.values().has(base_sid) and not candidates.has(base_sid):
+					candidates.append(base_sid)
+			"buildings":
+				candidates.append(_donor_building_prefix(nation, base_sid) + base_sid)
+			"naval":
+				pass   # no nation stem exists (yachttur/chaika are base sids)
+	var sid := base_sid
+	var candidate := ""
+	var exact := false
+	for c in candidates:
+		if _nation_mesh_on_disk(c):
+			sid = c
+			candidate = c
+			exact = true
+			break
+	var status := NATION_MESH_EXACT_STATUS if exact else NATION_MESH_FALLBACK_STATUS
+	return {"sid": sid, "nation": nation, "family": family,
+		"candidate": candidate, "candidates": candidates,
+		"exact": exact, "status": status}
+
+
+func _record_nation_mesh(ns: Dictionary, base_sid: String) -> void:
+	var usage = stats.get("nation_mesh_usage", {})
+	var uk := str(ns.get("family", "")) + "|" + str(ns.get("nation", "")) \
+		+ "|" + base_sid + "->" + str(ns.get("sid", ""))
+	usage[uk] = int(usage.get(uk, 0)) + 1
+	stats["nation_mesh_usage"] = usage
 
 
 # --- FIX-COLOR: donor albedo-alpha band mask ------------------------------
@@ -1009,6 +1177,21 @@ func _find_anim():
 func _unit_action(ed: Dictionary, speed: float = -1.0) -> String:
 	if bool(ed.get("dead", false)):
 		return "death"
+	# BUILD-ANIM-DIAG-01 §5 step 1 — donor build state tag maps to AAF
+	# 'construct' (dmscript.global:13,926; unit.script:10877;
+	# data/animations/aaf/peaukr.aaf:17). The 2D sibling already does this
+	# (world.gd:489-490). PORT APPROXIMATION: only when the measured speed is
+	# below the MOTION-ANIM-01 gate — a builder still travelling keeps 'walk'.
+	# Dead-first priority and every other branch below stay byte-identical.
+	var od = ed.get("order", null)
+	if od is Dictionary:
+		var otype := str((od as Dictionary).get("type", ""))
+		if otype == "build" or otype == "repair":
+			if speed >= 0.0:
+				if speed < WALK_SPEED_GATE_M_S:
+					return "construct"
+			elif not bool(ed.get("moving", false)):
+				return "construct"
 	if speed >= 0.0:
 		return "walk" if speed >= WALK_SPEED_GATE_M_S else "idle"
 	if bool(ed.get("moving", false)):
@@ -1406,7 +1589,14 @@ func add_unit(e) -> void:
 	_applied_pose_frame.erase(id)
 	if _slot.has(id):
 		return
-	var sid := str(ed.get("sid", ""))
+	var base_sid := str(ed.get("sid", ""))
+	# NATION-MODEL-01: resolve the mesh sid from the entity's nation before any
+	# mesh is loaded. Static-bind and morph paths both see the chosen sid via
+	# _refs; no sim field is written. Naval ships are units with def.naval=true
+	# and are handled by the "naval" family branch of the same helper.
+	var ns := _entity_mesh_sid(ed, base_sid, "unit")
+	var sid := str(ns["sid"])
+	_record_nation_mesh(ns, base_sid)
 	var info := _mesh_info(sid, "unit")
 	var player: int = _player_index(ed)
 	# Explicit Variant type: `:=` from a Variant-returning helper is an
@@ -1420,6 +1610,13 @@ func add_unit(e) -> void:
 	var ix := _acquire(key, id, info, "unit", tint, player)
 	if ix >= 0:
 		var b: Dictionary = _batches[key]
+		# NATION-MODEL-01: tag the batch with the honest nation status so a
+		# structural probe can distinguish exact art from the fallback.
+		var bnode = b.get("node")
+		if is_instance_valid(bnode):
+			(bnode as Node3D).set_meta("nation_mesh_label", str(ns["status"]))
+			(bnode as Node3D).set_meta("nation_mesh_exact", bool(ns["exact"]))
+			(bnode as Node3D).set_meta("nation", str(ns["nation"]))
 		var xf := _xf(id)
 		(b["xforms"] as Array)[ix] = xf
 		(b["mm"] as MultiMesh).set_instance_transform(ix, xf)
@@ -1433,13 +1630,22 @@ func add_building(e) -> void:
 	if id < 0 or _nodes.has(id):
 		return
 	_refs[id] = ed
-	var sid := str(ed.get("sid", ""))
+	var base_sid := str(ed.get("sid", ""))
+	# NATION-MODEL-01: donor building art is nation-prefixed ONLY in the 2D
+	# bake; no 3D <nat>_<sid>.obj exists, so this probes and falls back to the
+	# base donor mesh with an explicit PORT APPROXIMATION label.
+	var ns := _entity_mesh_sid(ed, base_sid, "building")
+	var sid := str(ns["sid"])
+	_record_nation_mesh(ns, base_sid)
 	var info := _mesh_info(sid, "building")
 	var mi := MeshInstance3D.new()
 	mi.name = "Building_" + sid + "_" + str(id) + "_STATIC_POSE"
 	mi.mesh = info["mesh"]
 	mi.set_meta("anim_status", ANIM_STATUS)
 	mi.set_meta("mesh_source", str(info.get("source", "?")))
+	mi.set_meta("nation_mesh_label", str(ns["status"]))
+	mi.set_meta("nation_mesh_exact", bool(ns["exact"]))
+	mi.set_meta("nation", str(ns["nation"]))
 	# V7-65: per-building tint (each building owns its own MeshInstance3D, so
 	# no batching-key change is needed here; surface overrides keep siblings
 	# of other players independent while sharing the baked donor mesh).

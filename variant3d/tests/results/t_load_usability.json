@@ -1,0 +1,115 @@
+{
+	"checks": [
+		{
+			"citation": "main.gd:173-182,206,230-246; config.gd:523-525; small_map_64.json:10-15",
+			"detail": "render_mode=3d map=64x64 seed=20261113",
+			"id": "real_64_game_boot",
+			"met_criterion": true,
+			"status": "OBSERVED"
+		},
+		{
+			"citation": "tests/README.md:77-78; TEST_01_smallmap_harness.md:79; t_forest_bake_render.gd:36-41",
+			"detail": "display_server=headless; probe is headless-only",
+			"id": "headless_guard",
+			"met_criterion": true,
+			"status": "OBSERVED"
+		},
+		{
+			"citation": "main.gd:458-501,530-645 (_show_loading/_set_loading/_do_async_load)",
+			"detail": "overlay_frames=0 stage_transitions=15 first=Preparing... last=<none>",
+			"id": "staged_overlay_observed",
+			"met_criterion": false,
+			"status": "UNVERIFIED"
+		},
+		{
+			"citation": "main.gd:521-528,550-576; PROGRESS.md:104-113; UX_LOADING.md:54-55",
+			"detail": "Exact per-stage stall UNVERIFIED (requires instrumentation inside main.gd/_loading_tick, owned by LOAD-ASYNC-01). Proxies: max_inter_frame_gap_loading_us=0, max_stage_to_stage_us=23262030",
+			"id": "a_longest_main_thread_stall",
+			"met_criterion": null,
+			"status": "UNVERIFIED"
+		},
+		{
+			"citation": "main.gd:512-519,576-645",
+			"detail": "No overlay-hidden transition observed; cannot check binding order.",
+			"id": "b_bindings_before_overlay_hide",
+			"met_criterion": null,
+			"status": "UNVERIFIED"
+		},
+		{
+			"citation": "input_controller.gd:297-315,387-400",
+			"detail": "No live player-0 unit found for a selection/order probe.",
+			"id": "c_input_response",
+			"met_criterion": null,
+			"status": "UNVERIFIED"
+		},
+		{
+			"citation": "input_controller.gd:297-315,387-400",
+			"detail": "No live player-0 unit found for an order probe.",
+			"id": "c_order_response",
+			"met_criterion": null,
+			"status": "UNVERIFIED"
+		},
+		{
+			"citation": "main.gd:605,643-645; camera3d.gd:444-452,511-519",
+			"detail": "apply_external_target -> _target/global_position changed at frame -1 (window=30)",
+			"id": "c_camera_response",
+			"met_criterion": false,
+			"status": "OBSERVED"
+		},
+		{
+			"citation": "main.gd:512-519,643-645; tests/README.md:3-33; UX_LOADING.md:71,92-97",
+			"detail": "No deferred-stage API exists to inspect. Proxies over %d frames: violations=%d, max_inter_frame_gap_post_us=%d (heuristic ceiling %d)",
+			"id": "d_no_deferred_heavy_stage",
+			"met_criterion": null,
+			"status": "UNVERIFIED"
+		},
+		{
+			"citation": "TEST_01_smallmap_harness.md:89-92,298; t_smallmap_terrain.gd:19-20,72",
+			"detail": "GDScript cannot read runner stderr; scan the job stderr with smallmap_capture.py scan-stderr and require script_error_lines == 0.",
+			"id": "e_no_hard_engine_errors",
+			"met_criterion": null,
+			"status": "UNVERIFIED"
+		},
+		{
+			"citation": "docs/coord_swarm_2026-11-25/CHARTER.md:75-86",
+			"detail": "verdict=MEASUREMENT_ONLY__NO_PASS_CLAIM; this atom is not a gate.",
+			"id": "no_pass_claim",
+			"met_criterion": true,
+			"status": "OBSERVED"
+		}
+	],
+	"gate_claim": "NONE",
+	"id": "t_load_usability",
+	"limitations": [
+		"Async overlay is reached by calling main.gd's private handlers, not by a real Start click.",
+		"Assertion (a) exact per-stage main-thread stall requires instrumentation in main.gd (LOAD-ASYNC-01).",
+		"Inter-frame gaps are wall-clock proxies, not isolated main-thread busy time.",
+		"Assertion (d) has no literal observable; only bounded stability proxies were measured.",
+		"Assertion (e) needs an external runner stderr scan (no GDScript stderr API).",
+		"Windowed window-freeze/paint responsiveness cannot be reproduced headless; UNVERIFIED."
+	],
+	"measured": {
+		"boot_game_before_async": false,
+		"boot_map_tiles": [
+			64,
+			64
+		],
+		"boot_mode": "atom-forced _do_async_load via Object.call (proxy for menu Start)",
+		"boot_render_mode": "3d",
+		"boot_seed": 20261113,
+		"display_server": "headless",
+		"fixture": "res://tests/fixtures/small_map_64.json",
+		"frames": 1742,
+		"headless": true,
+		"max_stage_to_stage_us": 23262030,
+		"source_revision_note": "main.gd read-only; LOAD-ASYNC-01 owns it and may change stage layout"
+	},
+	"notes": [
+		"Async load driven by Object.call('_apply_menu_cfg') + Object.call('_do_async_load'); a real Start-button click / chosen signal is NOT exercised (main.gd:251-268).",
+		"wall-cap reached before completion; remaining assertions UNVERIFIED"
+	],
+	"pass_claim": false,
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"unix_ms": 1795605663650.0,
+	"verdict": "MEASUREMENT_ONLY__NO_PASS_CLAIM"
+}

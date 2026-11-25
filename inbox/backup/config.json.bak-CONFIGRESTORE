@@ -1,0 +1,838 @@
+{
+ "_readme": [
+  "Cossacks 3 singleplayer port - the global settings of the whole game.",
+  "This file is read when the game starts, before anything is built.",
+  "Change a number here, save the file, start the game: the new number is used.",
+  "Every key is optional - a key you delete keeps the number from the original game.",
+  "The units and buildings take their numbers from the original game's own data files",
+  "(data/scripts/lib/unit.script, weapon.script); the sources are in MECHANICS.md.",
+  "Start the game with --dump-config to see the settings it is running with.",
+  "display.unit_scale: unit sprite size relative to donor-scale buildings (1.25 default).",
+  "display.show_centroids: flat round anchor disks under buildings and trees (false = hidden).",
+  "display.units_opaque: solid, normally-coloured unit figures (true default).",
+  "gameplay.render_mode: port-side renderer switch. This is the 3D variant project, so it defaults to 3d here; the 2D shipping port in app/ keeps 2d. No donor key exists.",
+  "camera.start_zoom: starting camera zoom. 0.3448276 = donor SphereHeight 58 m maximum distance (docreate.inc:82), i.e. the most zoomed-out donor-legal start; smaller is not donor-grounded."
+ ],
+ "features": {
+  "terrain": {
+   "relief_stamps": true
+  }
+ },
+ "display": {
+  "window_width": 1280,
+  "window_height": 720,
+  "fullscreen": false,
+  "vsync": true,
+  "pixels_per_meter": 16.0,
+  "fog_of_war": false,
+  "unit_scale": 1.25,
+  "show_centroids": false,
+  "units_opaque": true
+ },
+ "camera": {
+  "pitch_degrees": -32.0,
+  "min_height": 20.0,
+  "max_height": 58.0,
+  "edge_margin": 8.0,
+  "corner_margin": 24.0,
+  "key_scroll_speed": 96.0,
+  "mouse_scroll_speed": 64.0,
+  "zoom_step": 1.15,
+  "start_zoom": 0.3448276
+ },
+ "gameplay": {
+  "mode": "skirmish",
+  "render_mode": "3d",
+  "map_width_tiles": 320,
+  "map_height_tiles": 320,
+  "random_seed": 20261113,
+  "start_resources": {
+   "food": 800,
+   "wood": 800,
+   "stone": 400,
+   "gold": 200,
+   "iron": 150,
+   "coal": 150
+  },
+  "start_peasants": 8,
+  "build_queue_limit": 10,
+  "max_builders_sent": 8,
+  "victory": "destroy_all",
+  "score_limit": 5000,
+  "max_tick_seconds": 0.25,
+  "deposits": {
+   "gold": 40000,
+   "iron": 30000,
+   "coal": 30000
+  },
+  "battle_army": {
+   "pikeman": 16,
+   "serdiuk": 12,
+   "archer": 8,
+   "cossack": 8,
+   "officer": 1,
+   "cannon": 2
+  },
+  "nation0": "rus",
+  "nation1": "bav",
+  "map_type": "land",
+  "start_option": "default"
+ },
+ "economy": {
+  "gather": {
+   "food": {
+    "hits": 22,
+    "carry": 45,
+    "interval": 1.25
+   },
+   "wood": {
+    "hits": 14,
+    "carry": 28,
+    "interval": 1.25
+   },
+   "stone": {
+    "hits": 20,
+    "carry": 40,
+    "interval": 1.25
+   }
+  },
+  "build_progress_per_hit": 0.359375,
+  "build_hit_interval": 1.25,
+  "max_builders": 30,
+  "mine_income_per_second": 1.664,
+  "delivery_radius_m": 6.0,
+  "upkeep_divisor": 625.0,
+  "personal_space": 0.35,
+  "formation_spacing": 1.2,
+  "morale_base": 70.0,
+  "morale_rout_threshold": 25.0,
+  "officer_damage_bonus": 0.15,
+  "drummer_speed_bonus": 0.12,
+  "priest_heal_per_second": 5.0,
+  "artillery_deploy_seconds": 2.0,
+  "famine_grace_seconds": 120.0,
+  "famine_drain_per_second": 0.3,
+  "market_rate": 0.65
+ },
+ "ai": {
+  "enabled": true,
+  "think_interval": 1.0,
+  "food_threshold": 260.0,
+  "wood_threshold": 260.0,
+  "stone_threshold": 160.0,
+  "attack_force": 120.0,
+  "max_peasants": 40
+ },
+ "audio": {
+  "enabled": true,
+  "master_volume_db": 0.0,
+  "ambient_volume_db": -12.0
+ },
+ "controls": {
+  "hotkeys": {
+   "attack_move": "A",
+   "stand_ground": "S",
+   "no_stand_ground": "C",
+   "guard": "G",
+   "patrol": "Q",
+   "stop": "Ctrl+S",
+   "select_all": "Ctrl+A",
+   "select_idle_peasants": "Ctrl+P",
+   "select_all_buildings": "Ctrl+B",
+   "select_same_type": "Z",
+   "pause": "Space",
+   "build": {
+    "cen": "C",
+    "hou": "H",
+    "bla": "L",
+    "bar": "B",
+    "aca": "E",
+    "sta": "S",
+    "art": "R",
+    "mil": "I",
+    "sto": "O",
+    "mar": "M",
+    "tow": "T",
+    "mine": "N",
+    "wal": "W",
+    "dip": "D",
+    "bar18": "K"
+   },
+   "squad_form": "F",
+   "squad_disband": "Shift+F",
+   "squad_line": "J",
+   "squad_column": "K",
+   "squad_square": "L",
+   "hold_fire": "D",
+   "feuer_frei": "E",
+   "engage": "V",
+   "attack_ground": "R",
+   "unload": "U",
+   "select_all_peasants": "Ctrl+`",
+   "select_idle_mines": "Ctrl+M",
+   "add_same_type": "Shift+Z",
+   "minimap_toggle": "Alt+M"
+  }
+ },
+ "names": {
+  "units": {
+   "peasant": "Peasant",
+   "pikeman": "Pikeman, 17th century",
+   "roundshier": "Roundshier",
+   "serdiuk": "Serdiuk",
+   "archer": "Archer",
+   "officer": "Officer, 17th century",
+   "officer18": "Officer, 18th century",
+   "drummer": "Drummer",
+   "priest": "Priest",
+   "cossack": "Sich Cossack",
+   "dragoon": "Dragoon, 18th century",
+   "cannon": "Cannon",
+   "grenadier": "Grenadier",
+   "musk18": "Musketeer, 18th century",
+   "howitzer": "Howitzer",
+   "mortar": "Mortar"
+  },
+  "buildings": {
+   "cen": "Town Hall",
+   "hou": "Dwelling",
+   "bar": "Barracks",
+   "sta": "Stable",
+   "bla": "Blacksmith",
+   "aca": "Academy",
+   "sto": "Storehouse",
+   "mil": "Mill",
+   "mar": "Market",
+   "art": "Artillery Depot",
+   "tow": "Tower",
+   "mine": "Mine",
+   "mine_gold": "Gold Mine",
+   "mine_iron": "Iron Mine",
+   "mine_coal": "Coal Mine",
+   "wal": "Stone Wall"
+  },
+  "player": [
+   "Russia",
+   "Bavaria"
+  ]
+ },
+ "units": {
+  "peasant": {
+   "hp": 75,
+   "speed": 1.5,
+   "score": 20,
+   "aiforce": 1,
+   "price": {
+    "food": 100
+   },
+   "build_time": 12.5,
+   "search": 11.25,
+   "eat": {
+    "food": 32
+   },
+   "weapons": [
+    {
+     "kind": "sword",
+     "dmg": 20,
+     "min": 0.375,
+     "max": 2.4375,
+     "cd": 1.25
+    }
+   ],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.35
+  },
+  "pikeman": {
+   "hp": 90,
+   "speed": 1.2,
+   "score": 10,
+   "aiforce": 10,
+   "price": {
+    "food": 25,
+    "gold": 3,
+    "iron": 20
+   },
+   "build_time": 4.5,
+   "search": 26.25,
+   "eat": {
+    "food": 30
+   },
+   "weapons": [
+    {
+     "kind": "pike",
+     "dmg": 8,
+     "min": 1.3125,
+     "max": 3.75,
+     "cd": 1.25
+    }
+   ],
+   "prot": [
+    3,
+    2,
+    4,
+    210,
+    6,
+    40
+   ],
+   "radius": 0.35
+  },
+  "roundshier": {
+   "hp": 100,
+   "speed": 1.2,
+   "score": 7,
+   "aiforce": 10,
+   "price": {
+    "food": 20,
+    "gold": 3,
+    "iron": 25
+   },
+   "build_time": 4.0,
+   "search": 22.5,
+   "eat": {
+    "food": 30
+   },
+   "weapons": [
+    {
+     "kind": "sword",
+     "dmg": 6,
+     "min": 0.9375,
+     "max": 2.25,
+     "cd": 1.25
+    }
+   ],
+   "prot": [
+    3,
+    3,
+    7,
+    225,
+    16,
+    80
+   ],
+   "radius": 0.35
+  },
+  "serdiuk": {
+   "hp": 85,
+   "speed": 1.2,
+   "score": 12,
+   "aiforce": 2,
+   "price": {
+    "food": 60,
+    "gold": 11,
+    "iron": 5
+   },
+   "build_time": 11.0,
+   "search": 33.75,
+   "eat": {
+    "food": 30
+   },
+   "weapons": [
+    {
+     "kind": "bullet",
+     "dmg": 12,
+     "min": 15.0,
+     "max": 33.75,
+     "cd": 4.0625,
+     "cost": {
+      "iron": 3,
+      "coal": 6
+     },
+     "splash": 0.0
+    }
+   ],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.35
+  },
+  "archer": {
+   "hp": 40,
+   "speed": 1.2,
+   "score": 15,
+   "aiforce": 2,
+   "price": {
+    "food": 20,
+    "wood": 2,
+    "gold": 1
+   },
+   "build_time": 1.5,
+   "search": 30.0,
+   "eat": {
+    "food": 30
+   },
+   "weapons": [
+    {
+     "kind": "arrow",
+     "dmg": 15,
+     "min": 15.0,
+     "max": 30.0,
+     "cd": 2.34375,
+     "cost": {
+      "wood": 1
+     },
+     "splash": 0.75
+    }
+   ],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.35
+  },
+  "cossack": {
+   "hp": 250,
+   "speed": 3.6,
+   "score": 35,
+   "aiforce": 25,
+   "cavalry": "fast",
+   "price": {
+    "food": 130,
+    "iron": 2
+   },
+   "build_time": 13.5,
+   "search": 30.0,
+   "eat": {
+    "food": 60
+   },
+   "weapons": [
+    {
+     "kind": "sword",
+     "dmg": 13,
+     "min": 0.75,
+     "max": 2.4375,
+     "cd": 1.0
+    }
+   ],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.5
+  },
+  "dragoon": {
+   "hp": 225,
+   "speed": 2.1,
+   "score": 40,
+   "aiforce": 15,
+   "cavalry": "hard",
+   "price": {
+    "food": 70,
+    "gold": 60,
+    "iron": 7
+   },
+   "build_time": 22.5,
+   "search": 33.75,
+   "eat": {
+    "food": 45
+   },
+   "weapons": [
+    {
+     "kind": "bullet",
+     "dmg": 19,
+     "min": 15.0,
+     "max": 33.75,
+     "cd": 5.3125,
+     "cost": {
+      "iron": 4,
+      "coal": 5
+     },
+     "splash": 0.0
+    }
+   ],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.5
+  },
+  "officer": {
+   "hp": 125,
+   "speed": 1.2,
+   "score": 10,
+   "aiforce": 5,
+   "price": {
+    "food": 50,
+    "gold": 150,
+    "iron": 30
+   },
+   "build_time": 10.0,
+   "search": 18.75,
+   "eat": {
+    "gold": 60
+   },
+   "weapons": [
+    {
+     "kind": "pike",
+     "dmg": 30,
+     "min": 1.3125,
+     "max": 2.4375,
+     "cd": 1.25
+    }
+   ],
+   "prot": [
+    2,
+    2,
+    5,
+    200,
+    10,
+    30
+   ],
+   "radius": 0.35
+  },
+  "officer18": {
+   "hp": 140,
+   "speed": 1.2,
+   "score": 12,
+   "aiforce": 6,
+   "price": {
+    "food": 60,
+    "gold": 180,
+    "iron": 40
+   },
+   "build_time": 11.25,
+   "search": 18.75,
+   "eat": {
+    "gold": 70
+   },
+   "weapons": [
+    {
+     "kind": "pike",
+     "dmg": 32,
+     "min": 1.3125,
+     "max": 2.4375,
+     "cd": 1.25
+    }
+   ],
+   "prot": [
+    2,
+    2,
+    5,
+    200,
+    10,
+    30
+   ],
+   "radius": 0.35
+  },
+  "drummer": {
+   "hp": 60,
+   "speed": 1.32,
+   "score": 8,
+   "aiforce": 3,
+   "price": {
+    "food": 30,
+    "gold": 20
+   },
+   "build_time": 6.25,
+   "search": 15.0,
+   "eat": {
+    "food": 20
+   },
+   "weapons": [],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.35
+  },
+  "priest": {
+   "hp": 50,
+   "speed": 1.1,
+   "score": 8,
+   "aiforce": 2,
+   "price": {
+    "food": 40,
+    "gold": 50
+   },
+   "build_time": 7.5,
+   "search": 15.0,
+   "eat": {
+    "food": 20
+   },
+   "weapons": [],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.35
+  },
+  "cannon": {
+   "hp": 9000,
+   "speed": 0.75,
+   "score": 50,
+   "aiforce": 1,
+   "artillery": true,
+   "shield": 75,
+   "price": {
+    "wood": 250,
+    "gold": 400,
+    "iron": 400
+   },
+   "build_time": 75.0,
+   "search": 18.75,
+   "eat": {
+    "gold": 300
+   },
+   "weapons": [
+    {
+     "kind": "cannonball",
+     "dmg": 1800,
+     "min": 20.625,
+     "max": 81.0,
+     "cd": 10.9375,
+     "cost": {
+      "iron": 20,
+      "coal": 40
+     },
+     "splash": 1.3125
+    }
+   ],
+   "prot": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "radius": 0.6
+  }
+ },
+ "buildings": {
+  "cen": {
+   "hp": 5300,
+   "build_time": 15.625,
+   "cost": {
+    "wood": 700
+   },
+   "radius": 3.0,
+   "farm": 200,
+   "stores": [
+    "food",
+    "wood",
+    "stone"
+   ],
+   "trains": [
+    "peasant"
+   ],
+   "score": 1000,
+   "capture": true,
+   "drop": true
+  },
+  "hou": {
+   "hp": 4150,
+   "build_time": 3.125,
+   "cost": {
+    "wood": 120
+   },
+   "radius": 1.5,
+   "farm": 25,
+   "score": 100
+  },
+  "bar": {
+   "hp": 20000,
+   "build_time": 9.375,
+   "cost": {
+    "wood": 150,
+    "stone": 150
+   },
+   "radius": 2.5,
+   "farm": 75,
+   "trains": [
+    "pikeman",
+    "roundshier",
+    "serdiuk",
+    "archer",
+    "officer",
+    "drummer",
+    "priest"
+   ],
+   "score": 500
+  },
+  "sta": {
+   "hp": 10000,
+   "build_time": 15.625,
+   "cost": {
+    "wood": 3200,
+    "stone": 850,
+    "gold": 850
+   },
+   "radius": 2.5,
+   "trains": [
+    "cossack",
+    "dragoon"
+   ],
+   "score": 500
+  },
+  "bla": {
+   "hp": 4500,
+   "build_time": 6.25,
+   "cost": {
+    "wood": 100,
+    "stone": 30,
+    "iron": 640
+   },
+   "radius": 2.0,
+   "score": 500
+  },
+  "aca": {
+   "hp": 65000,
+   "build_time": 4.6875,
+   "cost": {
+    "wood": 1350,
+    "stone": 1200
+   },
+   "radius": 2.5,
+   "score": 500
+  },
+  "sto": {
+   "hp": 10000,
+   "build_time": 3.125,
+   "cost": {
+    "wood": 50,
+    "stone": 20
+   },
+   "radius": 1.5,
+   "stores": [
+    "wood",
+    "stone"
+   ],
+   "score": 30,
+   "drop": true
+  },
+  "mil": {
+   "hp": 20000,
+   "build_time": 9.375,
+   "cost": {
+    "wood": 30,
+    "stone": 150
+   },
+   "radius": 2.0,
+   "stores": [
+    "food"
+   ],
+   "score": 20,
+   "drop": true
+  },
+  "mar": {
+   "hp": 4000,
+   "build_time": 23.4375,
+   "cost": {
+    "wood": 450
+   },
+   "radius": 2.0,
+   "score": 500
+  },
+  "art": {
+   "hp": 40000,
+   "build_time": 24.59375,
+   "cost": {
+    "wood": 100,
+    "stone": 1000,
+    "coal": 1400
+   },
+   "radius": 2.5,
+   "trains": [
+    "cannon"
+   ],
+   "score": 500
+  },
+  "mine_gold": {
+   "hp": 2500,
+   "build_time": 9.375,
+   "cost": {
+    "wood": 100,
+    "stone": 100
+   },
+   "radius": 1.6,
+   "mine": "gold",
+   "slots": 5,
+   "produce": 13,
+   "score": 500
+  },
+  "mine_iron": {
+   "hp": 2500,
+   "build_time": 9.375,
+   "cost": {
+    "wood": 100,
+    "stone": 100
+   },
+   "radius": 1.6,
+   "mine": "iron",
+   "slots": 5,
+   "produce": 13,
+   "score": 500
+  },
+  "mine_coal": {
+   "hp": 2500,
+   "build_time": 9.375,
+   "cost": {
+    "wood": 100,
+    "stone": 100
+   },
+   "radius": 1.6,
+   "mine": "coal",
+   "slots": 5,
+   "produce": 13,
+   "score": 500
+  },
+  "tow": {
+   "hp": 20000,
+   "build_time": 123.03125,
+   "cost": {
+    "wood": 100,
+    "stone": 100,
+    "gold": 150
+   },
+   "radius": 1.6,
+   "weapons": [
+    {
+     "kind": "cannonball",
+     "dmg": 1000,
+     "min": 20.625,
+     "max": 56.25,
+     "cd": 12.5,
+     "cost": {
+      "iron": 10,
+      "coal": 30
+     },
+     "splash": 1.3125
+    }
+   ],
+   "eat": {
+    "gold": 500
+   },
+   "score": 500
+  }
+ }
+}

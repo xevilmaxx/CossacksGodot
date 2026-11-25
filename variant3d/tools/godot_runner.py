@@ -142,21 +142,30 @@ def load_job(ticket: int) -> dict | None:
 
 
 def claim_godot_lock(ticket: int) -> bool:
-    """O_EXCL exclusivity, refreshed with the serving ticket's timestamp."""
-    try:
-        fd = os.open(GODOT_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        os.write(fd, f"{ticket} {time.time():.3f}".encode())
-        os.close(fd)
-        return True
-    except FileExistsError:
-        return False
+    """Atomically claim the mutex; only the serving ticket may hold it."""
+    with spinner_lock():
+        if read_int(SERVING) != ticket or GODOT_LOCK.exists():
+            return False
+        try:
+            fd = os.open(GODOT_LOCK, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            # ticket, timestamp, owner pid -> makes stale checks verifiable.
+            os.write(fd, f"{ticket} {time.time():.3f} {os.getpid()}".encode())
+            os.close(fd)
+            return True
+        except FileExistsError:
+            return False
 
 
-def release_godot_lock() -> None:
-    try:
-        GODOT_LOCK.unlink()
-    except OSError:
-        pass
+def release_godot_lock(ticket: int | None = None) -> None:
+    """Unlink godot.lock; with `ticket`, only if that ticket still owns it."""
+    with spinner_lock():
+        owner = godot_lock_owner()
+        if owner is None or (ticket is not None and owner[0] != ticket):
+            return
+        try:
+            GODOT_LOCK.unlink()
+        except OSError:
+            pass
 
 
 def godot_lock_age() -> float:
@@ -165,6 +174,15 @@ def godot_lock_age() -> float:
         return time.time() - float(parts[1])
     except (OSError, ValueError, IndexError):
         return 0.0
+
+
+def godot_lock_owner() -> tuple[int, float] | None:
+    """Parse the lock as (owner ticket, timestamp); None = no valid lock."""
+    try:
+        parts = GODOT_LOCK.read_text(encoding="utf-8").split()
+        return int(parts[0]), float(parts[1])
+    except (OSError, ValueError, IndexError):
+        return None
 
 
 def advance_serving(expected: int) -> bool:
@@ -240,9 +258,10 @@ def godot_pids() -> set[int]:
     return {int(x) for x in out.split() if x.strip().isdigit()}
 
 
-def reap_spawned_godot(before: set[int]) -> None:
-    """Kill Godot children left alive after a job (WinGet shim exits first)."""
-    for pid in godot_pids() - before:
+def reap_spawned_godot(spawned: set[int]) -> None:
+    """Kill ONLY Godot PIDs this job spawned; never another job's child."""
+    live = godot_pids()
+    for pid in spawned & live:
         try:
             if sys.platform == "win32":
                 subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"],
@@ -320,13 +339,13 @@ def wait_for_turn(ticket: int, max_wait: float) -> None:
         # godot_lock_age() is 0.0 and the old check could never reclaim it —
         # serving stayed pinned forever (the 2026-11-21 wedge on ticket 47).
         holder = load_job(serving)
-        lock_free = not GODOT_LOCK.exists()
-        lock_stale = godot_lock_age() > STALE_SEC
+        lock_present = GODOT_LOCK.exists()
+        lock_owner = godot_lock_owner()          # (owner ticket, timestamp) or None
+        lock_age = godot_lock_age() if lock_present else 0.0
         holder_pid = int(holder.get("pid", 0)) if holder else 0
-        # Reclaim ONLY when the holder is genuinely gone (or its lock is
-        # demonstrably stale). Age alone is NOT proof of death: a live waiter
-        # can sit in the FIFO queue longer than STALE_SEC and must not be
-        # skipped (2026-11-21: agentQ's tickets 48/84 were wrongly skipped).
+        # Reclaim ONLY when the holder is genuinely gone. Age alone is NOT
+        # proof of death: a live job may run > STALE_SEC (max run 605 s seen),
+        # and a live waiter may queue longer than STALE_SEC (2026-11-21).
         # T-PERF-TOOL: pid_alive() spawns `tasklist` (~1 s on Windows); with a
         # 0.15 s poll that cost dominates a waiting job. Throttle it to ~2 s.
         now = time.time()
@@ -334,12 +353,28 @@ def wait_for_turn(ticket: int, max_wait: float) -> None:
             last_pid_check = now
             holder_alive = pid_alive(holder_pid) if holder_pid else False
         dead_holder = holder is None or (holder_pid != 0 and not holder_alive)
-        if dead_holder or (lock_stale and not lock_free):
-            if not lock_free:
+        # A stale lock is old AND its recorded owner is gone. Never release a
+        # live owner's lock: that let a second job start (RUNNER-FIX-01).
+        owner_pid = 0
+        if lock_owner is not None:
+            owner_job = load_job(lock_owner[0])
+            owner_pid = int(owner_job.get("pid", 0)) if owner_job else 0
+        owner_dead = False
+        if lock_present and (dead_holder or lock_age > STALE_SEC):
+            owner_dead = (lock_owner is None or owner_pid == 0
+                          or not pid_alive(owner_pid))
+        lock_stale = lock_present and lock_age > STALE_SEC and owner_dead
+        if dead_holder:
+            # Advance past a DEAD holder only; never past a pending live ticket.
+            if lock_present and (lock_owner is None or lock_owner[0] == serving
+                                 or owner_dead):
                 release_godot_lock()
             if advance_serving(serving):
                 job_path(serving).unlink(missing_ok=True)
             continue
+        if lock_stale:
+            # Owner is gone: free the mutex but keep the live holder's turn.
+            release_godot_lock()
         time.sleep(POLL_SEC)
 
 
@@ -394,13 +429,25 @@ def cmd_run(ns: argparse.Namespace) -> int:
 
     started = time.time()
     result["status"] = "running"
-    pids_before = godot_pids()  # T-PERF-TOOL: reap children left by the shim
+    pids_before = godot_pids()      # baseline used ONLY to identify our children
+    spawned_pids: set[int] = set()  # PIDs this job owns and may kill
     print(f"[runner] ticket {ticket} '{ns.id}' START (waited {result['wait']:.2f}s)", flush=True)
     try:
         with open(out_file, "wb") as fo, open(err_file, "wb") as fe:
             proc = subprocess.Popen([GODOT, *argv], stdout=fo, stderr=fe)
+            launched = time.time()
+            # The WinGet shim can exit before the real Godot child appears.
+            # Sample our delta in a short, exclusive launch window so cleanup
+            # never mistakes another job's child for ours.
+            spawned_pids.add(proc.pid)
+            settle_end = launched + 2.0
+            while time.time() < settle_end:
+                spawned_pids |= godot_pids() - pids_before
+                if spawned_pids - {proc.pid}:
+                    break
+                time.sleep(0.1)
             try:
-                code = proc.wait(timeout=ns.timeout)
+                code = proc.wait(timeout=max(0.0, ns.timeout - (time.time() - launched)))
                 result["exit"] = code
                 result["status"] = "ok" if code == 0 else "failed"
             except subprocess.TimeoutExpired:
@@ -414,14 +461,15 @@ def cmd_run(ns: argparse.Namespace) -> int:
         result.update(status="error", error=repr(e), exit=-1)
     finally:
         result["run"] = time.time() - started
-        release_godot_lock()
+        # Only the owning ticket may delete the lock it actually acquired.
+        release_godot_lock(ticket)
         # CRITICAL: advance the serving ticket BEFORE any cleanup that can fail.
         # On Windows an antivirus or another reader can briefly hold the job
         # file open; if unlink() raised here, now_serving would never advance
         # and every later ticket would wait forever (real starvation).
         advance_serving(ticket)
         try:
-            reap_spawned_godot(pids_before)
+            reap_spawned_godot(spawned_pids)
         except Exception:  # noqa: BLE001 - cleanup must never stall the queue
             pass
         for attempt in range(10):

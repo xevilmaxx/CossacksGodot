@@ -428,7 +428,7 @@ func _select_season_atlas(s: String) -> Dictionary:
 
 
 func _load_desert_remap() -> void:
-	# SP-3's 11 DIRECT pairs (source_index -> packed atlas index) from
+	# 38 donor DIRECT pairs (source_index -> packed atlas index) from
 	# atlas/desert_remap.json. The single height-gated rock8 row is
 	# DATA_ONLY_NOT_EXECUTED and deliberately NOT loaded: SP-6 is index-only
 	# (SEASON_PLAN_01 Q2 / SP_03 §5), so a rock8 cell keeps its Summer index.
@@ -444,7 +444,11 @@ func _load_desert_remap() -> void:
 			continue
 		var src: Variant = (e as Dictionary).get("source_index", null)
 		var dst: Variant = (e as Dictionary).get("atlas_index", null)
-		if src is int and dst is int:
+		# DESERT-CONSUMER-FIX-01: JSON.parse_string returns float for every JSON
+		# number, so the strict `is int` test loaded 0 of 38 donor pairs. Accept
+		# both forms (as the relief stamp reader does) and int()-cast below;
+		# donor source/atlas index semantics are unchanged.
+		if (src is int or src is float) and (dst is int or dst is float):
 			_desert_remap[int(src)] = int(dst)
 	_desert_remap_entries = _desert_remap.size()
 
@@ -1620,7 +1624,7 @@ func build() -> bool:
 			"file": DESERT_REMAP_PATH,
 			"direct_entries": _desert_remap_entries,
 			"cells_remapped": _desert_remap_cells,
-			"cite": ("miscext.script:1447-1502 (11 direct pairs); rock8 :1504-1505 "
+			"cite": ("miscext.script:1447-1502 (38 direct pairs); rock8 :1504-1505 "
 				+ "DATA_ONLY_NOT_EXECUTED"),
 			"height_koef": ("0.8 DATA_ONLY_NOT_EXECUTED (miscext.script:1513-1520; "
 				+ "SP-6 is index-only)"),

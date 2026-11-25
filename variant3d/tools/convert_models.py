@@ -297,6 +297,90 @@ def building_models(game: str) -> list:
     return out
 
 
+def stage_models(game: str) -> list:
+    """BUILD-ART-CONV-01 — additive donor construction-stage / scaffold table.
+
+    108 entries for the 12 non-wall building sids: 48 parent stages, 48
+    attach stages and 12 base scaffolds. No new format work: read_osm(),
+    write_obj() and convert_texture() already handle these IDP2 files.
+
+    Donor sources (read-only, relative to ``C:\\Games\\Cossacks 3\\data\\``):
+      * Stage mesh slots ``<base>1.mesh`` .. ``<base>4.mesh`` ->
+        ``<base>1.osm`` .. ``<base>4.osm``: ``actors/buildings/ukr/ukrcen.actor:5-18``
+        (lines 6/10/14/18 are the four LoadFromFile paths); all 12 families
+        repeat this pattern at the same lines.
+      * Parent stages reuse the base building material (no scaffold PNG):
+        ``objects/buildings/ukrcen.prop:13-43`` (DefaultMaterialName = ukrcen
+        at :14, :20, :24, :28, :32, :36, :40); same single material in all
+        12 mapped props.
+      * Scaffold auto-child with slots ``<base>a``, ``<base>1a`` ..
+        ``<base>4a`` and ``DefaultMaterialName = scaffold``:
+        ``objects/buildings/engcen.prop:72-112`` (:86-97); the other 11 props
+        carry the same child (e.g. ``ukrcen.prop:88-97``).
+      * Visual stage 0..3 -> suffix 1..4, wall fold ``1+stage div 3`` and
+        child ``<actor><stage>a.mesh``: ``scripts/units/building.inc/ontagstates.inc:240-259``.
+      * Completion switches the child to ``<base>a.mesh``: same file ``:112-127``.
+      * ``scaffold`` material texture: ``materials/buildings/buildings.mat:528-529``
+        -> ``materials/buildings/constructor/scaffold.dds`` (winter
+        ``scaffoldw`` at :1546-1547 is not used).
+
+    ``wal``/``gat`` and the ``_death1``/``_death2`` stages are deliberately
+    excluded (BUILD_ART_01.md sections 3.2/3.3; donor mapping is UNVERIFIED).
+    """
+    actors = os.path.join(game, "data", "actors", "buildings")
+    mats = os.path.join(game, "data", "materials", "buildings")
+    scaffold_dds = os.path.join(mats, "constructor", "scaffold.dds")
+    # port sid -> (actor folder, actor base, texture folder, texture base).
+    # These are exactly the 12 non-wall rows of building_models()'s table;
+    # the mapped building PNG is reused for parent stages via tex_name.
+    table = {
+        "cen": ("ukr", "ukrcen", "ukr", "ukrcen"),
+        "hou": ("ukr", "ukrhou", "ukr", "ukrhou"),
+        "bar": ("ukr", "ukrbar", "ukr", "ukrbar"),
+        "sta": ("ukr", "ukrsta", "ukr", "ukrsta"),
+        "bla": ("ukr", "ukrbla", "ukr", "ukrbla"),
+        "aca": ("ukr", "ukraca", "ukr", "ukraca"),
+        "art": ("ukr", "ukrart", "ukr", "ukrart"),
+        "dip": ("ukr", "ukrdip", "ukr", "ukrdip"),
+        "sto": ("commoneur", "eursto", "commoneur", "eursto"),
+        "mil": ("commoneur", "eurmil", "commoneur", "eurmil"),
+        "mar": ("commoneur", "eurmar", "commoneur", "eurmar"),
+        "tow": ("commoneur", "eurtow", "commoneur", "eurtow"),
+    }
+    out = []
+    for sid, (af, ab, tf, tb) in table.items():
+        # 48 parent stages: 12 sids x 4, same albedo as the base building.
+        for i in range(1, 5):
+            stage_sid = "%s%d" % (sid, i)
+            out.append({
+                "sid": stage_sid, "kind": "building",
+                "obj_name": stage_sid, "tex_name": sid,
+                "mesh": os.path.join(actors, af, "%s%d.osm" % (ab, i)),
+                "texture": os.path.join(mats, tf, tb + ".dds"),
+                "directions": 1,
+            })
+        # 48 attach stages: 12 sids x 4, all share one scaffold PNG.
+        for i in range(1, 5):
+            stage_sid = "%s%da" % (sid, i)
+            out.append({
+                "sid": stage_sid, "kind": "building",
+                "obj_name": stage_sid, "tex_name": "scaffold",
+                "mesh": os.path.join(actors, af, "attach", "%s%da.osm" % (ab, i)),
+                "texture": scaffold_dds,
+                "directions": 1,
+            })
+        # 12 base scaffolds: the donor's completion-state child mesh.
+        scaffold_sid = sid + "a"
+        out.append({
+            "sid": scaffold_sid, "kind": "building",
+            "obj_name": scaffold_sid, "tex_name": "scaffold",
+            "mesh": os.path.join(actors, af, "attach", "%sa.osm" % ab),
+            "texture": scaffold_dds,
+            "directions": 1,
+        })
+    return out
+
+
 def ship_models(game: str) -> list:
     """V7-63 — naval hulls live as IDP2 .osm under data/actors/units.
 
@@ -418,6 +502,10 @@ def main() -> int:
                     help="the installed game folder (default: $COSSACKS3_DIR "
                          "or C:\\Games\\Cossacks 3)")
     ap.add_argument("--out", required=True, help="the folder inside the project")
+    ap.add_argument("--include-stages", action="store_true",
+                    help="BUILD-ART-CONV-01: also convert the 108 donor "
+                         "construction-stage / scaffold OSMs (opt-in; the "
+                         "default run is byte-identical to the base pipeline)")
     args = ap.parse_args()
 
     # expanduser makes ~/: Linux/macOS paths work; Path.resolve is cross-platform.
@@ -430,6 +518,9 @@ def main() -> int:
 
     models = (unit_models(game) + building_models(game) + ship_models(game)
               + env_models(game))
+    if args.include_stages:
+        # Additive only: base entries keep their original sid/name/texture.
+        models = models + stage_models(game)
     manifest = {"game": game, "models": []}
     ok = 0
     for m in models:
@@ -441,9 +532,11 @@ def main() -> int:
             print("MISSING texture %s" % m["texture"])
             continue
         mesh = read_mesh(m["mesh"])
-        obj_name = sid + ".obj"
-        mtl_name = sid + ".mtl"
-        tex_name = sid + ".png"
+        # BUILD-ART-CONV-01: per-entry output overrides. Defaults keep the
+        # original names, so a run without --include-stages is unchanged.
+        obj_name = m.get("obj_name", sid) + ".obj"
+        mtl_name = m.get("obj_name", sid) + ".mtl"
+        tex_name = m.get("tex_name", sid) + ".png"
         write_obj(os.path.join(obj_dir, obj_name), mesh, mtl_name)
         write_mtl(os.path.join(obj_dir, mtl_name), os.path.join("..", "tex", tex_name))
         convert_texture(m["texture"], os.path.join(tex_dir, tex_name),

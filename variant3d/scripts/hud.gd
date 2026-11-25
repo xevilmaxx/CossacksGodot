@@ -105,8 +105,13 @@ var audio_click: AudioStreamPlayer
 var hint_label: Label
 var speed_cb: Callable
 var menu_cb: Callable
-var speed_buttons: Array = []
+var speed_buttons: Array = []  # UI-TOPBAR-01: kept for API readers, now empty
 var speed_label: Label
+# UI-TOPBAR-01: the four speed buttons collapse into one popup. The selected
+# item's metadata is the speed float handed to _on_speed()/speed_cb.
+var speed_menu: OptionButton
+var top_bar: HBoxContainer
+var res_icons: Array = []
 var obj_panel: PanelContainer
 var obj_box: VBoxContainer
 var trade_amount := 100.0
@@ -162,7 +167,9 @@ var prog_entries: Array = []  # {label, e}
 var dyn_buttons: Array = []   # {b, kind, e, sid, uid}
 var cmd_panel: PanelContainer
 var cmd_bar: GridContainer
-var top_center: CenterContainer
+# UI-TOPBAR-01: full-width strip (was a CenterContainer that sized the panel
+# to its content and let a wide resource row spill off small viewports).
+var top_center: Control
 
 func bind(g: C3Game, w) -> void:
 	game = g
@@ -310,11 +317,13 @@ func _apply_scale() -> void:
 			c.offset_top = _ms(float(o[2]))
 			c.offset_bottom = _ms(float(o[3]))
 	# Layout zones (never overlap, at any size):
-	# - top strip: centered bar + corner FPS (bar clips instead of spilling)
+	# - top strip: full-width, responsive bar (UI-TOPBAR-01) + corner FPS
 	# - bottom strip, partitioned left->right: minimap | selection | orders
-	if is_instance_valid(top_center):
-		top_center.offset_top = _ms(8.0)
-		top_center.offset_bottom = _ms(8.0) + _ms(64.0)
+	# UI-TOPBAR-01: recompute the top bar from the ACTUAL viewport width
+	# (ui_vp, refreshed by _calc_us() on every root resize) — no fixed 1280
+	# assumption. Must run after the generic meta pass above so its compact
+	# overrides win.
+	_layout_top()
 	# HUD-01: donor 240x240 minimap, bottom-RIGHT with a -8 edge inset
 	# (initminimap.inc:5-7,17,33). The port's ui_us still scales for small
 	# windows; 0.25 only guards very narrow viewports.
@@ -379,21 +388,22 @@ func _apply_scale() -> void:
 		obj_panel.position = Vector2(_ms(8.0), _ms(84.0))
 
 func _build_top() -> void:
-	# centered bar like the original: a full-width strip that only forwards
-	# clicks to its children, so map orders still work underneath it
-	top_center = CenterContainer.new()
+	# UI-TOPBAR-01: a full-width strip that is sized by the viewport, not by
+	# its content. IGNORE on the strip AND panel keeps map clicks/orders alive
+	# in the empty parts of the band; the actual buttons still take clicks.
+	top_center = Control.new()
 	top_center.anchor_right = 1.0
-	top_center.offset_top = 8
-	top_center.offset_bottom = 72
 	top_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(top_center)
 	top_panel = PanelContainer.new()
-	top_panel.custom_minimum_size = Vector2(0, 0)
+	top_panel.anchor_right = 1.0
+	top_panel.anchor_bottom = 1.0
+	top_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	top_panel.clip_contents = true
-	var bar := HBoxContainer.new()
-	bar.add_theme_constant_override("separation", 10)
-	top_panel.add_child(bar)
-	top_panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
+	top_panel.add_theme_stylebox_override("panel", _top_style())
+	top_bar = HBoxContainer.new()
+	top_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_panel.add_child(top_bar)
 	for i in 6:
 		var ic := TextureRect.new()
 		ic.texture = atlas(icons_tex, Data.RES_ICONS[i])
@@ -401,45 +411,49 @@ func _build_top() -> void:
 		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		# donor showresourcepanel.inc:141-144 resourcehintN hit rect + hint
 		ic.tooltip_text = RES_TOOLTIPS[i]
-		bar.add_child(ic)
+		top_bar.add_child(ic)
+		res_icons.append(ic)
 		var l := _mklbl("0", 17, Color(1, 0.97, 0.9))
-		bar.add_child(l)
+		top_bar.add_child(l)
 		res_labels.append(l)
 	# Idle villagers + unused mine slots are donor GUI BUTTONS
 	# (showresourcepanel.inc:219-243, eventresourcepanel.inc:35-36). Both use
 	# the select handlers already wired in input_controller.gd.
 	var eco_sep := VSeparator.new()
-	bar.add_child(eco_sep)
+	top_bar.add_child(eco_sep)
 	eco_label = _mkbtn("idle 0", 12, 26, 78)
 	eco_label.tooltip_text = "Select all idle peasants"
 	eco_label.pressed.connect(_on_select_idle_peasants)
-	bar.add_child(eco_label)
+	top_bar.add_child(eco_label)
 	mines_btn = _mkbtn("slots 0", 12, 26, 78)
 	mines_btn.tooltip_text = "Select all unoccupied mines"
 	mines_btn.pressed.connect(_on_select_idle_mines)
-	bar.add_child(mines_btn)
+	top_bar.add_child(mines_btn)
 	var sep := VSeparator.new()
-	bar.add_child(sep)
+	top_bar.add_child(sep)
 	status_label = _mklbl("", 15, Color(0.8, 0.85, 1))
-	bar.add_child(status_label)
-	# game speed + menu, like the original's top-right controls
+	# Absorb slack / truncate instead of widening the row on narrow screens.
+	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_label.clip_text = true
+	top_bar.add_child(status_label)
+	# game speed + menu, like the original's top-right controls. UI-TOPBAR-01:
+	# the four speed buttons become ONE OptionButton (donor speeds + pause);
+	# labels/tooltips/hotkeys and the speed_label readout stay as before.
 	var sep2 := VSeparator.new()
-	bar.add_child(sep2)
-	for sp in [["II", 0.0], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0]]:
-		var sb := _mkbtn(sp[0], 14, 30, 40)
-		sb.tooltip_text = "Game speed %s (Space pauses)" % sp[0]
-		sb.pressed.connect(_on_speed.bind(float(sp[1])))
-		bar.add_child(sb)
-		speed_buttons.append(sb)
+	top_bar.add_child(sep2)
+	speed_menu = _mkoption([["II", 0.0], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0]], 1)
+	speed_menu.tooltip_text = "Game speed (Space pauses)"
+	speed_menu.item_selected.connect(_on_speed_idx)
+	top_bar.add_child(speed_menu)
 	var mb := _mkbtn("Menu", 14, 30, 60)
 	mb.tooltip_text = "Back to the singleplayer menu"
 	mb.pressed.connect(_on_menu)
-	bar.add_child(mb)
+	top_bar.add_child(mb)
 	speed_label = _mklbl("1x", 14, Color(1, 0.9, 0.5))
-	bar.add_child(speed_label)
+	top_bar.add_child(speed_label)
 	settings_label = _mklbl(_settings_text(), 11, Color(0.65, 0.68, 0.75))
 	settings_label.tooltip_text = "Settings file in use (--dump-config shows all values)"
-	bar.add_child(settings_label)
+	top_bar.add_child(settings_label)
 	top_center.add_child(top_panel)
 	# FPS: bare 3-digit number, upper right corner (engine fps only — if the
 	# number is high but play feels slow, the cost is sim, not rendering)
@@ -462,6 +476,130 @@ func _build_top() -> void:
 	fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	add_child(fps_label)
 	_build_objectives()
+
+# UI-TOPBAR-01: tighter than the shared panel style so the band can be shorter
+# than the old 64 px strip; still the same dark parchment look.
+func _top_style() -> StyleBoxFlat:
+	var s := ConfigScript.ui_panel_style().duplicate() as StyleBoxFlat
+	s.content_margin_left = 8.0
+	s.content_margin_right = 8.0
+	s.content_margin_top = 3.0
+	s.content_margin_bottom = 3.0
+	return s
+
+func _mkoption(items: Array, selected: int) -> OptionButton:
+	var ob := OptionButton.new()
+	ob.set_meta("uifs", 14)
+	ob.set_meta("uimh", 30)
+	ob.set_meta("uimw", 72)
+	for it in items:
+		ob.add_item(str(it[0]))
+		var idx: int = ob.item_count - 1
+		ob.set_item_metadata(idx, float(it[1]))
+	ob.selected = selected
+	ConfigScript.ui_style_button(ob)
+	return ob
+
+func _top_fs(base: int, k: float) -> int:
+	return maxi(10, int(round(float(_fs(base)) * k)))
+
+# UI-TOPBAR-01: responsive top bar driven by the ACTUAL viewport width.
+# ui_vp is refreshed in _calc_us() on every root size_changed, so resizing,
+# windowed mode and fullscreen all pick the right mode; nothing assumes 1280.
+# Modes (normal / compact / tiny / ultra) only shrink non-critical elements;
+# all six resources, their deficit tints, idle/mine buttons, speed, FPS and
+# messages stay present. The panel is full-width and clips, so the row can
+# never spill off-screen.
+func _layout_top() -> void:
+	if not is_instance_valid(top_center) or not is_instance_valid(top_panel) or not is_instance_valid(top_bar):
+		return
+	var w := ui_vp.x
+	var compact: bool = w < 1000.0
+	var tiny: bool = w < 700.0
+	var ultra: bool = w < 560.0
+	var band: float = 42.0
+	var pad: float = 8.0
+	var sep_px: int = 10
+	var icon_w: float = 36.0
+	var icon_h: float = 31.0
+	var font_k := 1.0
+	var eco_w: float = 78.0
+	var menu_w: float = 72.0
+	if compact:
+		band = 38.0
+		pad = 5.0
+		sep_px = 6
+		icon_w = 26.0
+		icon_h = 23.0
+		font_k = 0.84
+		eco_w = 60.0
+		menu_w = 56.0
+	if tiny:
+		band = 36.0
+		pad = 3.0
+		sep_px = 3
+		icon_w = 20.0
+		icon_h = 18.0
+		font_k = 0.72
+		eco_w = 46.0
+		menu_w = 48.0
+	if ultra:
+		band = 34.0
+		pad = 2.0
+		sep_px = 2
+		icon_w = 16.0
+		icon_h = 14.0
+		font_k = 0.66
+		eco_w = 38.0
+		menu_w = 42.0
+	top_center.offset_top = _ms(6.0)
+	top_center.offset_bottom = _ms(6.0 + band)
+	top_panel.offset_left = _ms(pad)
+	top_panel.offset_right = -_ms(pad)
+	top_bar.add_theme_constant_override("separation", maxi(2, int(round(_ms(float(sep_px))))))
+	# Rules are decoration, not information.
+	for c in top_bar.get_children():
+		if c is VSeparator:
+			c.visible = not compact
+	for i in 6:
+		if i < res_icons.size() and is_instance_valid(res_icons[i]):
+			res_icons[i].custom_minimum_size = Vector2(_ms(icon_w), _ms(icon_h))
+		if i < res_labels.size() and is_instance_valid(res_labels[i]):
+			res_labels[i].add_theme_font_size_override("font_size", _top_fs(17, font_k))
+	if is_instance_valid(status_label):
+		status_label.visible = not ultra
+		status_label.add_theme_font_size_override("font_size", _top_fs(15, font_k))
+	if is_instance_valid(speed_label):
+		speed_label.add_theme_font_size_override("font_size", _top_fs(14, font_k))
+	var eco_h: float = 22.0 if compact else 26.0
+	if is_instance_valid(eco_label):
+		eco_label.custom_minimum_size = Vector2(_ms(eco_w), _ms(eco_h))
+		eco_label.add_theme_font_size_override("font_size", _top_fs(12, font_k))
+	if is_instance_valid(mines_btn):
+		mines_btn.custom_minimum_size = Vector2(_ms(eco_w), _ms(eco_h))
+		mines_btn.add_theme_font_size_override("font_size", _top_fs(12, font_k))
+	if is_instance_valid(speed_menu):
+		speed_menu.custom_minimum_size = Vector2(_ms(menu_w), _ms(eco_h + 4.0))
+		speed_menu.add_theme_font_size_override("font_size", _top_fs(14, font_k))
+	# Non-critical extras fold away first; FPS and messages are separate nodes
+	# and are never touched here.
+	if is_instance_valid(settings_label):
+		settings_label.visible = not compact
+		if settings_label.visible:
+			settings_label.add_theme_font_size_override("font_size", _top_fs(11, font_k))
+
+func _speed_index(sp: float) -> int:
+	if speed_menu == null:
+		return 1
+	for i in speed_menu.item_count:
+		if absf(float(speed_menu.get_item_metadata(i)) - sp) < 0.01:
+			return i
+	return 1
+
+func _on_speed_idx(idx: int) -> void:
+	if speed_menu == null or idx < 0 or idx >= speed_menu.item_count:
+		return
+	_on_speed(float(speed_menu.get_item_metadata(idx)))
 
 func _build_objectives() -> void:
 	obj_panel = PanelContainer.new()
@@ -491,6 +629,13 @@ func refresh_objectives() -> void:
 func refresh_speed(sp: float, paused: bool) -> void:
 	if speed_label != null:
 		speed_label.text = "PAUSED" if paused else "%.0fx" % sp
+	# UI-TOPBAR-01: the dropdown mirrors external speed changes (Space/CLI).
+	# A programmatic selected assignment does not emit item_selected, so no
+	# feedback loop into speed_cb.
+	if speed_menu != null:
+		var want := 0 if paused else _speed_index(sp)
+		if speed_menu.selected != want:
+			speed_menu.selected = want
 
 func _on_speed(sp: float) -> void:
 	audio_click.play()

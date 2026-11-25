@@ -1,0 +1,730 @@
+{
+	"capture_status": "SKIP_CAPTURE",
+	"checks": [
+		{
+			"detail": "mode=3d map=64x64 seed=20261113 expected=64x64/20261113 3d (t_smallmap_terrain.gd:235-247)",
+			"name": "real_64_boot",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "main.hud=bound (main.gd:1110-1112)",
+			"name": "hud_bound",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "root.size=(1024.0, 576.0) expected=(1024, 576) (testbridge.gd:103-105)",
+			"name": "viewport_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.ui_vp=(1280.0, 720.0) expected=(1024, 576) (hud.gd:232-234,273-275; config.gd:751-754)",
+			"name": "hud_scale_viewport_1024x576",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "hud._on_vp_resize present (hud.gd:273-275)",
+			"name": "resize_hook_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.top_panel (hud.gd:17,398-403)",
+			"name": "top_panel_present_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "top_panel x=[8.0,1298.0] vp.width=1024.0 (PROGRESS.md:105-108; hud.gd:554-557)",
+			"name": "top_panel_right_in_viewport_1024x576",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "top_panel.clip_contents=true (hud.gd:402)",
+			"name": "top_panel_clip_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "labels=6 icons_with_hint=3 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
+			"name": "six_resource_entries_1024x576",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "OptionButton/MenuButton count=1 expected 1 (hud.gd:112,444,490-500)",
+			"name": "single_speed_widget_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "options=[\"II\", \"1x\", \"2x\", \"4x\"] expected=[\"II\", \"1x\", \"2x\", \"4x\"] (hud.gd:444,495-498)",
+			"name": "speed_options_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "metadata=[0.0, 1.0, 2.0, 4.0] expected=[0.0, 1.0, 2.0, 4.0] seconds (hud.gd:496-498,598-601)",
+			"name": "speed_option_metadata_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "leftover speed Buttons=0 expected 0 (pre-fix hud.gd speed_buttons loop)",
+			"name": "no_legacy_speed_buttons_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.minimap_rect/minimap_panel (hud.gd:48-49,1555-1595)",
+			"name": "minimap_nodes_present_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "_mm_size=240 meta=(240,240) expected 240 (hud.gd:283-287,1560-1563; HUD_01_minimap.md:52-61)",
+			"name": "minimap_declared_240_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "rendered minimap=242.0x242.0 (ui_us scale documented at hud.gd:327-333)",
+			"name": "minimap_square_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "anchors=(1.0,1.0,1.0,1.0) rect={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } vp=(1024.0, 576.0) (hud.gd:1579-1595; HUD_01_minimap.md:54-56)",
+			"name": "minimap_bottom_right_1024x576",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "minimap={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } top={ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 } (hud.gd:319-321,327-350)",
+			"name": "minimap_no_topbar_overlap_1024x576",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "offenders=14 first=[{ \"name\": &\"@Control@12\", \"class\": \"Control\", \"x\": 0.0, \"y\": 6.0, \"right\": 1280.0, \"bottom\": 48.0 }, { \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 }, { \"name\": &\"@HBoxContainer@13\", \"class\": \"HBoxContainer\", \"x\": 16.0, \"y\": 9.0, \"right\": 1290.0, \"bottom\": 47.0 }, { \"name\": &\"@OptionButton@42\", \"class\": \"OptionButton\", \"x\": 962.0, \"y\": 9.0, \"right\": 1034.0, \"bottom\": 47.0 }, { \"name\": &\"@Button@43\", \"class\": \"Button\", \"x\": 1044.0, \"y\": 9.0, \"right\": 1107.0, \"bottom\": 47.0 }, { \"name\": &\"@Label@44\", \"class\": \"Label\", \"x\": 1117.0, \"y\": 18.0, \"right\": 1133.0, \"bottom\": 38.0 }] (PROGRESS.md:105-108; hud.gd:402,554-557)",
+			"name": "no_unclipped_control_outside_viewport_1024x576",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "clipped children outside their panel=0 RECORDED_NOT_GATE (hud.gd:402)",
+			"name": "clipped_overflow_children_1024x576",
+			"passed": null,
+			"status": "RECORDED_NOT_GATE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_image_1024x576",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_saved_1024x576",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_nonblank_1024x576",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "root.size=(1280.0, 720.0) expected=(1280, 720) (testbridge.gd:103-105)",
+			"name": "viewport_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.ui_vp=(1280.0, 720.0) expected=(1280, 720) (hud.gd:232-234,273-275; config.gd:751-754)",
+			"name": "hud_scale_viewport_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud._on_vp_resize present (hud.gd:273-275)",
+			"name": "resize_hook_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.top_panel (hud.gd:17,398-403)",
+			"name": "top_panel_present_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "top_panel x=[8.0,1298.0] vp.width=1280.0 (PROGRESS.md:105-108; hud.gd:554-557)",
+			"name": "top_panel_right_in_viewport_1280x720",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "top_panel.clip_contents=true (hud.gd:402)",
+			"name": "top_panel_clip_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "labels=6 icons_with_hint=3 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
+			"name": "six_resource_entries_1280x720",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "OptionButton/MenuButton count=1 expected 1 (hud.gd:112,444,490-500)",
+			"name": "single_speed_widget_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "options=[\"II\", \"1x\", \"2x\", \"4x\"] expected=[\"II\", \"1x\", \"2x\", \"4x\"] (hud.gd:444,495-498)",
+			"name": "speed_options_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "metadata=[0.0, 1.0, 2.0, 4.0] expected=[0.0, 1.0, 2.0, 4.0] seconds (hud.gd:496-498,598-601)",
+			"name": "speed_option_metadata_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "leftover speed Buttons=0 expected 0 (pre-fix hud.gd speed_buttons loop)",
+			"name": "no_legacy_speed_buttons_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.minimap_rect/minimap_panel (hud.gd:48-49,1555-1595)",
+			"name": "minimap_nodes_present_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "_mm_size=240 meta=(240,240) expected 240 (hud.gd:283-287,1560-1563; HUD_01_minimap.md:52-61)",
+			"name": "minimap_declared_240_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "rendered minimap=242.0x242.0 (ui_us scale documented at hud.gd:327-333)",
+			"name": "minimap_square_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "anchors=(1.0,1.0,1.0,1.0) rect={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } vp=(1280.0, 720.0) (hud.gd:1579-1595; HUD_01_minimap.md:54-56)",
+			"name": "minimap_bottom_right_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "minimap={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } top={ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 } (hud.gd:319-321,327-350)",
+			"name": "minimap_no_topbar_overlap_1280x720",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "offenders=3 first=[{ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 }, { \"name\": &\"@HBoxContainer@13\", \"class\": \"HBoxContainer\", \"x\": 16.0, \"y\": 9.0, \"right\": 1290.0, \"bottom\": 47.0 }, { \"name\": &\"@Label@45\", \"class\": \"Label\", \"x\": 1143.0, \"y\": 20.0, \"right\": 1290.0, \"bottom\": 36.0 }] (PROGRESS.md:105-108; hud.gd:402,554-557)",
+			"name": "no_unclipped_control_outside_viewport_1280x720",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "clipped children outside their panel=0 RECORDED_NOT_GATE (hud.gd:402)",
+			"name": "clipped_overflow_children_1280x720",
+			"passed": null,
+			"status": "RECORDED_NOT_GATE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_image_1280x720",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_saved_1280x720",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_nonblank_1280x720",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "root.size=(1920.0, 1080.0) expected=(1920, 1080) (testbridge.gd:103-105)",
+			"name": "viewport_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.ui_vp=(1280.0, 720.0) expected=(1920, 1080) (hud.gd:232-234,273-275; config.gd:751-754)",
+			"name": "hud_scale_viewport_1920x1080",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "hud._on_vp_resize present (hud.gd:273-275)",
+			"name": "resize_hook_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.top_panel (hud.gd:17,398-403)",
+			"name": "top_panel_present_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "top_panel x=[8.0,1298.0] vp.width=1920.0 (PROGRESS.md:105-108; hud.gd:554-557)",
+			"name": "top_panel_right_in_viewport_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "top_panel.clip_contents=true (hud.gd:402)",
+			"name": "top_panel_clip_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "labels=6 icons_with_hint=3 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
+			"name": "six_resource_entries_1920x1080",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "OptionButton/MenuButton count=1 expected 1 (hud.gd:112,444,490-500)",
+			"name": "single_speed_widget_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "options=[\"II\", \"1x\", \"2x\", \"4x\"] expected=[\"II\", \"1x\", \"2x\", \"4x\"] (hud.gd:444,495-498)",
+			"name": "speed_options_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "metadata=[0.0, 1.0, 2.0, 4.0] expected=[0.0, 1.0, 2.0, 4.0] seconds (hud.gd:496-498,598-601)",
+			"name": "speed_option_metadata_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "leftover speed Buttons=0 expected 0 (pre-fix hud.gd speed_buttons loop)",
+			"name": "no_legacy_speed_buttons_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "hud.minimap_rect/minimap_panel (hud.gd:48-49,1555-1595)",
+			"name": "minimap_nodes_present_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "_mm_size=240 meta=(240,240) expected 240 (hud.gd:283-287,1560-1563; HUD_01_minimap.md:52-61)",
+			"name": "minimap_declared_240_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "rendered minimap=242.0x242.0 (ui_us scale documented at hud.gd:327-333)",
+			"name": "minimap_square_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "anchors=(1.0,1.0,1.0,1.0) rect={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } vp=(1920.0, 1080.0) (hud.gd:1579-1595; HUD_01_minimap.md:54-56)",
+			"name": "minimap_bottom_right_1920x1080",
+			"passed": false,
+			"status": "FAIL"
+		},
+		{
+			"detail": "minimap={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } top={ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 } (hud.gd:319-321,327-350)",
+			"name": "minimap_no_topbar_overlap_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "offenders=0 first=[] (PROGRESS.md:105-108; hud.gd:402,554-557)",
+			"name": "no_unclipped_control_outside_viewport_1920x1080",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "clipped children outside their panel=0 RECORDED_NOT_GATE (hud.gd:402)",
+			"name": "clipped_overflow_children_1920x1080",
+			"passed": null,
+			"status": "RECORDED_NOT_GATE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_image_1920x1080",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_saved_1920x1080",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		},
+		{
+			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"name": "capture_nonblank_1920x1080",
+			"passed": null,
+			"status": "SKIP_CAPTURE"
+		}
+	],
+	"config": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tests\\fixtures\\small_map_64.json",
+	"fails": 11,
+	"fixture": [
+		64,
+		64,
+		20261113
+	],
+	"headless": true,
+	"id": "t_hud_layout",
+	"measured": {
+		"1024x576": {
+			"clipped_overflow_count": 0,
+			"hud_ui_vp": [
+				1280.0,
+				720.0
+			],
+			"minimap_declared_slot": [
+				240,
+				240
+			],
+			"minimap_panel_rect": {
+				"bottom": 712.0,
+				"class": "PanelContainer",
+				"name": "@PanelContainer@57",
+				"right": 1272.0,
+				"x": 1002.0,
+				"y": 450.0
+			},
+			"minimap_render_px": [
+				242.0,
+				242.0
+			],
+			"minimap_scaled_min": [
+				240.0,
+				240.0
+			],
+			"resource_hints_found": 3,
+			"resource_labels": [
+				"799  (0)",
+				"800  (0)",
+				"400  (0)",
+				"200  (0)",
+				"150  (0)",
+				"150  (0)"
+			],
+			"speed_options": [
+				"II",
+				"1x",
+				"2x",
+				"4x"
+			],
+			"speed_widgets": 1,
+			"top_panel_rect": {
+				"bottom": 50.0,
+				"class": "PanelContainer",
+				"name": "@PanelContainer@46",
+				"right": 1298.0,
+				"x": 8.0,
+				"y": 6.0
+			},
+			"unclipped_offenders": [
+				{
+					"bottom": 48.0,
+					"class": "Control",
+					"name": "@Control@12",
+					"right": 1280.0,
+					"x": 0.0,
+					"y": 6.0
+				},
+				{
+					"bottom": 50.0,
+					"class": "PanelContainer",
+					"name": "@PanelContainer@46",
+					"right": 1298.0,
+					"x": 8.0,
+					"y": 6.0
+				},
+				{
+					"bottom": 47.0,
+					"class": "HBoxContainer",
+					"name": "@HBoxContainer@13",
+					"right": 1290.0,
+					"x": 16.0,
+					"y": 9.0
+				},
+				{
+					"bottom": 47.0,
+					"class": "OptionButton",
+					"name": "@OptionButton@42",
+					"right": 1034.0,
+					"x": 962.0,
+					"y": 9.0
+				},
+				{
+					"bottom": 47.0,
+					"class": "Button",
+					"name": "@Button@43",
+					"right": 1107.0,
+					"x": 1044.0,
+					"y": 9.0
+				},
+				{
+					"bottom": 38.0,
+					"class": "Label",
+					"name": "@Label@44",
+					"right": 1133.0,
+					"x": 1117.0,
+					"y": 18.0
+				},
+				{
+					"bottom": 36.0,
+					"class": "Label",
+					"name": "@Label@45",
+					"right": 1290.0,
+					"x": 1143.0,
+					"y": 20.0
+				},
+				{
+					"bottom": 44.0,
+					"class": "Label",
+					"name": "@Label@47",
+					"right": 1268.0,
+					"x": 1158.0,
+					"y": 10.0
+				},
+				{
+					"bottom": 720.0,
+					"class": "PanelContainer",
+					"name": "@PanelContainer@53",
+					"right": 654.0,
+					"x": 4.0,
+					"y": 570.0
+				},
+				{
+					"bottom": 710.0,
+					"class": "VBoxContainer",
+					"name": "@VBoxContainer@50",
+					"right": 640.0,
+					"x": 18.0,
+					"y": 580.0
+				},
+				{
+					"bottom": 600.0,
+					"class": "HBoxContainer",
+					"name": "@HBoxContainer@51",
+					"right": 640.0,
+					"x": 18.0,
+					"y": 580.0
+				},
+				{
+					"bottom": 600.0,
+					"class": "Label",
+					"name": "@Label@61",
+					"right": 318.0,
+					"x": 18.0,
+					"y": 580.0
+				},
+				{
+					"bottom": 712.0,
+					"class": "PanelContainer",
+					"name": "@PanelContainer@57",
+					"right": 1272.0,
+					"x": 1002.0,
+					"y": 450.0
+				},
+				{
+					"bottom": 702.0,
+					"class": "TextureRect",
+					"name": "@TextureRect@56",
+					"right": 1258.0,
+					"x": 1016.0,
+					"y": 460.0
+				}
+			],
+			"viewport": [
+				1024.0,
+				576.0
+			]
+		},
+		"1280x720": {
+			"clipped_overflow_count": 0,
+			"hud_ui_vp": [
+				1280.0,
+				720.0
+			],
+			"minimap_declared_slot": [
+				240,
+				240
+			],
+			"minimap_panel_rect": {
+				"bottom": 712.0,
+				"class": "PanelContainer",
+				"name": "@PanelContainer@57",
+				"right": 1272.0,
+				"x": 1002.0,
+				"y": 450.0
+			},
+			"minimap_render_px": [
+				242.0,
+				242.0
+			],
+			"minimap_scaled_min": [
+				240.0,
+				240.0
+			],
+			"resource_hints_found": 3,
+			"resource_labels": [
+				"799  (0)",
+				"800  (0)",
+				"400  (0)",
+				"200  (0)",
+				"150  (0)",
+				"150  (0)"
+			],
+			"speed_options": [
+				"II",
+				"1x",
+				"2x",
+				"4x"
+			],
+			"speed_widgets": 1,
+			"top_panel_rect": {
+				"bottom": 50.0,
+				"class": "PanelContainer",
+				"name": "@PanelContainer@46",
+				"right": 1298.0,
+				"x": 8.0,
+				"y": 6.0
+			},
+			"unclipped_offenders": [
+				{
+					"bottom": 50.0,
+					"class": "PanelContainer",
+					"name": "@PanelContainer@46",
+					"right": 1298.0,
+					"x": 8.0,
+					"y": 6.0
+				},
+				{
+					"bottom": 47.0,
+					"class": "HBoxContainer",
+					"name": "@HBoxContainer@13",
+					"right": 1290.0,
+					"x": 16.0,
+					"y": 9.0
+				},
+				{
+					"bottom": 36.0,
+					"class": "Label",
+					"name": "@Label@45",
+					"right": 1290.0,
+					"x": 1143.0,
+					"y": 20.0
+				}
+			],
+			"viewport": [
+				1280.0,
+				720.0
+			]
+		},
+		"1920x1080": {
+			"clipped_overflow_count": 0,
+			"hud_ui_vp": [
+				1280.0,
+				720.0
+			],
+			"minimap_declared_slot": [
+				240,
+				240
+			],
+			"minimap_panel_rect": {
+				"bottom": 712.0,
+				"class": "PanelContainer",
+				"name": "@PanelContainer@57",
+				"right": 1272.0,
+				"x": 1002.0,
+				"y": 450.0
+			},
+			"minimap_render_px": [
+				242.0,
+				242.0
+			],
+			"minimap_scaled_min": [
+				240.0,
+				240.0
+			],
+			"resource_hints_found": 3,
+			"resource_labels": [
+				"799  (0)",
+				"800  (0)",
+				"400  (0)",
+				"200  (0)",
+				"150  (0)",
+				"150  (0)"
+			],
+			"speed_options": [
+				"II",
+				"1x",
+				"2x",
+				"4x"
+			],
+			"speed_widgets": 1,
+			"top_panel_rect": {
+				"bottom": 50.0,
+				"class": "PanelContainer",
+				"name": "@PanelContainer@46",
+				"right": 1298.0,
+				"x": 8.0,
+				"y": 6.0
+			},
+			"unclipped_offenders": [],
+			"viewport": [
+				1920.0,
+				1080.0
+			]
+		}
+	},
+	"parity_label": "PORT APPROX — internal layout consistency only; no donor GPU A/B frame",
+	"passed": false,
+	"passes": 42,
+	"png_user_args": [
+		"",
+		"",
+		""
+	],
+	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
+	"skipped_or_skip_capture": 12,
+	"structural_ok": false,
+	"unix_ms": 1795605528792.0,
+	"verdict": "FAIL",
+	"viewports": [
+		"(1024, 576)",
+		"(1280, 720)",
+		"(1920, 1080)"
+	]
+}

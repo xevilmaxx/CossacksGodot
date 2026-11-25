@@ -78,9 +78,24 @@ static var AI_ATTACK_FORCE := 260.0
 static var AI_MAX_PEASANTS := 40
 static var AI_DIFFICULTY := "normal"
 
-# --- video-observed battle feel (see MECHANICS.md "Video pass"): volley smoke,
-# officer/drummer auras, morale routing, priests, artillery dispersion and
-# deploy, famine, market commission. All estimated, tunable in config.json.
+# --- PORT APPROXIMATION — INVENTED, NO DONOR EQUIVALENT -----------------------
+# DEC-02 §7.8 (decomp/DEC_02_scripts.md:984-986) and DFORM-01 "Morale verdict"
+# (reports/DFORM_01_formations_morale.md:149-218) proved the donor has NO numeric
+# morale: whole-tree scans of 2,559 files / 373 code files return 0 code hits for
+# morale/rout/panic/flee/veteran/experience (the only `fear` is an AI target-
+# selection bool at progresswarai.inc:2799-2832). Donor squad disband is a COUNT
+# fraction — count < basecount*0.25, rank-and-file, human-only
+# (dmscript.global:156; progress.inc:5-35,174-175; lib/squad.script:98-107);
+# shooter "retreat" is a move-order mode (gc_obj_order_move_mode_runaway=2,
+# runawaydelay=1.3, runawaydist=3.5; dmscript.global:198-199,657;
+# lib/unit.script:7175-7238). The MORALE_* values and officer/drummer aura
+# bonuses below (this block, data.gd:84-95) are PORT INVENTIONS from the wiki
+# "video pass" estimate (MECHANICS.md "Video pass"; RB S13), not donor values.
+# PRIEST_HEAL_* in the same block is likewise a video-pass estimate, not an
+# asserted donor-exact stat. LABEL ONLY — values, defaults and every consumer
+# stay byte-identical. The `0.25` match in MORALE_ROUT_THRESHOLD=25.0 is a
+# coincidental decimal match, NOT donor provenance. Do not delete/retune here:
+# rout feeds ai.gd:855-860 and the selftest `morale` step (selftest.gd:397-407).
 static var MORALE_BASE := 70.0
 static var MORALE_ROUT_THRESHOLD := 25.0
 static var MORALE_OFFICER_RADIUS := 12.0
@@ -97,8 +112,24 @@ static var ARTILLERY_DEPLOY_S := 2.0      # cannon must stand still this long
 static var ARROW_DISPERSION_PX := 175.0   # weapon.script archer dispersion
 static var CANNON_DISPERSION_PX := 225.0  # unit.script cannon dispersion
 static var TOWER_DISPERSION_PX := 100.0   # unit.script tower dispersion
+# --- PORT APPROXIMATION — INVENTED, WRONG MODEL (NO DONOR GRACE/HP-DRAIN) ------
+# DEC-02 D-10 (decomp/DEC_02_scripts.md:702-713, :934) and DFORM-01
+# (reports/DFORM_01_formations_morale.md:202-211): donor famine EXISTS but is a
+# PROBABILITY DEATH ROLL — roll := floor(random*32768), die if < 50 (hard/online),
+# < 12 (normal) or < 5 (easy), gated by gProfile.bFamine
+# (unit.inc/nothing.inc:450-496; lib/misc.script:494-498). There is no grace timer
+# and no HP drain in the donor. The two constants below are a PORT INVENTION and
+# a WRONG MODEL, kept only to preserve current behaviour: famine death interacts
+# with the OR-based victory rule (game.gd:5681) and AI survival. LABEL ONLY —
+# replacement with the donor roll is MORALE-04, not this ticket.
 static var FAMINE_GRACE_S := 120.0        # no deaths before this long starving
 static var FAMINE_DRAIN_PER_S := 0.3      # hp/s per unit after the grace
+# MORALE-02 quarantine gate — additive marker only (INVENTED mechanics).
+# PORT_MORALE_FAMINE_ENABLED is intentionally NOT read by any consumer yet:
+# wiring it from config is MORALE-03; retiring the invented morale/famine
+# behaviour behind it is MORALE-04..06. Changing this value ALONE has NO effect
+# on gameplay or any gate — it is a quarantine marker, not a live switch.
+static var PORT_MORALE_FAMINE_ENABLED := true
 static var MARKET_RATE := 0.65            # 100 of one res buys 65 of another
 static var MARKET_DRIFT := 0.02          # rate slips this much per 100 traded
 # PORT-CONTROL hand-off: post-trade rate recovery. INFERRED - no donor cadence
@@ -262,6 +293,7 @@ const NATIONS := {
 # UNITS_BASE above; stats estimated, marked so in mechanics.json).
 const NATION_UNITS := {
 	"rus": {"serdiuk": "strelet", "musketeer": "strelet", "cossack": "cossackdon", "dragoon": "cossackdon", "priest": "pope"},
+	"bav": {"serdiuk": "musketeer", "cossack": "hussar"},
 	"ukr": {"priest": "pope"},
 	"pol": {"cossack": "wingedhussar"},
 	"tur": {"serdiuk": "jannisary", "musketeer": "jannisary", "cossack": "sipahi", "dragoon": "sipahi", "priest": "mullah"},
@@ -554,6 +586,15 @@ const FORMATION_BONUSES := {
 static func formation_bonuses(fid: String) -> Array:
 	return FORMATION_BONUSES.get(fid, [0, 0, 0, 0])
 
+# --- PORT APPROXIMATION — INVENTED, NO DONOR EQUIVALENT -----------------------
+# DEC-02 §6 (decomp/DEC_02_scripts.md:932) and DFORM-01
+# (reports/DFORM_01_formations_morale.md:210): `experience`/`veteran` have 0 donor
+# code hits; donor formation bonus tuples are fixed per formations.cfg and are
+# snapshotted onto the squad at set-time (lib/player.script:809-812). No donor XP
+# raises formation bonuses. RB S13 (docs/research/RB_MECHANICS.md:231-238) is
+# UNVERIFIED against donor plaintext. The SQUAD_XP_* constants below are a PORT
+# INVENTION. LABEL ONLY — removal is MORALE-05, not this ticket; values, defaults
+# and every consumer stay byte-identical here.
 # RB G-13: surviving squads harden with kills. XP accumulates on the squad dict
 # for the whole match and adds at most SQUAD_XP_CAP points to EACH donor tuple
 # field (bounded - no runaway scaling). 2 kills per point by default.

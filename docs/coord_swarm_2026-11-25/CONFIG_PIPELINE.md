@@ -8,7 +8,7 @@ scope: "Exactly one new file: docs/coord_swarm_2026-11-25/CONFIG_PIPELINE.md. Ev
 labels: [observed, derived, inferred, UNVERIFIED, PORT_APPROXIMATION]
 source_convention: "Report paths are relative to docs/coord_swarm_2026-11-25/reports/ unless a different folder is printed. `config.gd` = variant3d/scripts/config.gd; `config.json` = variant3d/config.json."
 label_legend: "observed = literal read with file:line or report path; derived = arithmetic/enumeration from observed; inferred = plausible but unproven; UNVERIFIED = no accessible evidence; PORT APPROX = port substitute, never donor fact."
-snapshot: "Working tree read on 2026-11-25. SWARM_BOARD.md is a snapshot and is stale for several CONFIG lanes; where a landed report contradicts the board, the report and the source file are authoritative (noted per row)."
+snapshot: "Working tree read on 2026-11-25. SWARM_BOARD.md is a snapshot and is stale for several CONFIG lanes; where a landed report contradicts the board, the report and the source file are authoritative (noted per row). Post-snapshot re-read (LINKS-FIX-01, 2026-11-25): reports/CONFIG_WIRE_RELIEF.md is now on disk although board :218 still says RUNNING; the 7/2/2/10 freeze, the file-ownership table and all verdicts are unchanged by that path landing."
 ---
 
 # CONFIG-DOC-01 — global configurability: cold-readable pipeline status
@@ -50,9 +50,32 @@ and a citation. Status vocabulary used in §2:
 | `docs/audit/CONFIG_EFFICIENCY.md`, `docs/audit/CONFIG_VERIFY.md` (both 2026-11-21) | older **2D `app/`** audit; precedent for "declared-but-unused" keys, not part of this 3D chain | observed (out-of-scope evidence) |
 | `docs/coord_swarm_2026-11-24/reports/W55_visual_ab.md:27,133-137,149` | no donor same-frame screenshot; visual A/B verdicts UNVERIFIED | observed |
 
-No other `CONFIG*` file exists in `reports/` (directory listing checked): only the six
-files above. The two `docs/audit/CONFIG_*` files are older 2D audits and are **not**
-additional 3D pipeline reports. Label: observed.
+At snapshot time the `CONFIG*` set was the six files above; a later re-read (LINKS-FIX-01,
+2026-11-25) also finds `reports/CONFIG_WIRE_HUD.md` and `reports/CONFIG_WIRE_RELIEF.md` on
+disk. That is a path fact only — it does not promote either ticket to DONE/PASS. The two
+`docs/audit/CONFIG_*` files are older 2D audits and are **not** additional 3D pipeline
+reports. Label: observed.
+
+### 1.1 Additional report pointers (added by LINKS-FIX-01, 2026-11-25)
+
+The following six reports exist in `docs/coord_swarm_2026-11-25/reports/` but are hidden
+behind the ellipsis ranges in `README.md` §6 (or omitted from its implementation list), so
+they are listed here explicitly for a cold reader. This is a **pointer list only**: no gate,
+verdict or status is promoted by being cited. [observed — file existence; orphan status from
+`reports/QA_LINKS_02.md` Table B]
+
+| Report | Explicit path |
+|---|---|
+| SP-05 loader override | `reports/SP_05_loader_override.md` |
+| TEST-P1 | `reports/TEST_P1_report.md` |
+| TEST-P2 | `reports/TEST_P2_report.md` |
+| TEST-C2 | `reports/TEST_C2_report.md` |
+| TEST-C3 | `reports/TEST_C3_report.md` |
+| TRN-DATA implementation | `reports/TRN_DATA_implementation.md` |
+
+Evidence: 2026-11-25 directory listing of `docs/coord_swarm_2026-11-25/reports/`; the six
+orphans and their `README.md` §6 ellipsis ranges are recorded in
+`docs/coord_swarm_2026-11-25/reports/QA_LINKS_02.md` Table B. [observed]
 
 ---
 
@@ -307,8 +330,10 @@ defaults exist; global JSON override does not." [observed + derived]
    exists but has no caller; `WEATHER-DRIVER-01` is RUNNING. [observed]
 4. **Board vs reports.** `SWARM_BOARD.md:184,188` mark CONFIG-UI-01 and CONFIG-WIRE-SEL
    RUNNING although their reports have landed; the reports and source files win.
-   Conversely CONFIG-WIRE-HUD, CONFIG-WIRE-RELIEF and WEATHER-DRIVER-01 have **no landed
-   report** and are not claimed as done here. [observed]
+   Conversely CONFIG-WIRE-HUD and WEATHER-DRIVER-01 have **no landed
+   report** at this snapshot and are not claimed as done here. `reports/CONFIG_WIRE_RELIEF.md`
+   was absent then but is on disk at the LINKS-FIX-01 re-read (2026-11-25); no done/PASS
+   claim is made for it here. [observed]
 5. **"34" is derived, not a row count.** See §3.1 for the reconciliation. [derived]
 6. **No donor file was read for this task; no visual-parity claim is made.** Donor
    citations are inherited from the cited reports, not re-verified here. [UNVERIFIED for

@@ -151,6 +151,10 @@ var loading_stage: Label = null
 var loading_pct: Label = null
 var loading_active := false
 var loading_gen := 0
+# LOAD-ASYNC-01: explicit, testable readiness flag. Set ONLY after every stage
+# that gates usability (sim, world/terrain, camera, HUD, input, 3D hooks, audio,
+# warm world sync and the first drawn frame) has finished behind the overlay.
+var load_ready := false
 var end_panel: PanelContainer = null
 var last_cfg: Dictionary = {}
 var seed_arg := -1
@@ -457,6 +461,7 @@ func _apply_menu_post(cfg: Dictionary) -> void:
 # player sees how much is left until the match is playable.
 func _show_loading() -> void:
 	_hide_loading()
+	load_ready = false
 	loading_layer = CanvasLayer.new()
 	loading_layer.layer = 30
 	add_child(loading_layer)
@@ -547,7 +552,10 @@ func _do_async_load(cfg: Dictionary) -> void:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 		DisplayServer.window_set_vsync_mode(
 			DisplayServer.VSYNC_ENABLED if Data.VSYNC else DisplayServer.VSYNC_DISABLED)
-	# --- sim stages (each awaits so the bar repaints between them) ---
+	# --- sim stages: each heavy call is ONE synchronous block, so yield a
+	# process frame after every stage. The Windows message pump can then
+	# repaint/move the window between stages instead of freezing for the whole
+	# load. No stage is skipped or reordered; only the yields are added. ---
 	game = C3Game.new()
 	add_child(game)
 	if not await _loading_tick(0.06, "Starting simulation...", gen):
@@ -583,7 +591,7 @@ func _do_async_load(cfg: Dictionary) -> void:
 		world = C3WorldScript.new()
 		world.bind(game)
 		add_child(world)
-	if not await _loading_tick(0.94, "Building interface...", gen):
+	if not await _loading_tick(0.92, "Wiring camera...", gen):
 		return
 	if render_mode == "3d":
 		camera = make_camera3d()
@@ -609,6 +617,8 @@ func _do_async_load(cfg: Dictionary) -> void:
 			camera.position = homes[0].pos * world.view_scale
 		else:
 			camera.position = Vector2(20, 20) * Data.TILE_M * world.view_scale
+	if not await _loading_tick(0.94, "Building interface...", gen):
+		return
 	hud = C3HUDScript.new()
 	add_child(hud)
 	hud.bind(game, world)
@@ -624,6 +634,8 @@ func _do_async_load(cfg: Dictionary) -> void:
 		get_tree().reload_current_scene()
 	hud.refresh_selection([])
 	hud.refresh_objectives()
+	if not await _loading_tick(0.96, "Wiring input...", gen):
+		return
 	input_ctl = C3InputScript.new()
 	add_child(input_ctl)
 	input_ctl.bind(game, world, hud, camera)
@@ -633,6 +645,8 @@ func _do_async_load(cfg: Dictionary) -> void:
 	if not homes2.is_empty():
 		input_ctl._set_selection([homes2[0]])
 	_create_ai_brains(journey_mode)
+	if not await _loading_tick(0.98, "Starting audio...", gen):
+		return
 	audio = C3AudioScript.new()
 	add_child(audio)
 	var can_play := not is_headless
@@ -640,8 +654,25 @@ func _do_async_load(cfg: Dictionary) -> void:
 		audio.start_music(str(game.players[0].get("nation", "ukr")))
 	audio.set_meta("can_play", can_play)
 	_apply_menu_post_objectives(cfg)
+	# LOAD-ASYNC-01: one extra presentation-only world sync behind the overlay.
+	# It materialises any entity/FX state the composed modules build lazily on
+	# their first sync; dt=0 advances no sim time and no animation phase. The
+	# normal _process() sync (with real dt) still runs on later frames as before.
+	if world != null and is_instance_valid(world):
+		world.sync(0.0)
 	if not await _loading_tick(1.0, "Ready!", gen):
 		return
+	# LOAD-ASYNC-01: hold the overlay for one fully drawn frame after the last
+	# stage, so any first-draw shader/texture work stays behind it.
+	if not is_headless:
+		await RenderingServer.frame_post_draw
+		if gen != loading_gen:
+			return
+	# LOAD-ASYNC-01: every usability gate is now closed. No labelled deferred
+	# stage remains in this loader: sim, terrain/world, camera+focus, HUD,
+	# input+3D hooks, AI, audio, objectives, warm world sync and one drawn frame
+	# are all complete before the overlay is removed.
+	load_ready = true
 	_hide_loading()
 
 func _apply_menu_post_loadsave(cfg: Dictionary) -> void:

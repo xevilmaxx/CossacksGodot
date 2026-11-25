@@ -3,7 +3,7 @@ title: DONOR DECOMPILATION — consolidated findings (2026-11-25)
 area: donor decompilation
 owner: COORD (aggregates DEC-01…DEC-08, RV re-verifications + Batch I late deep dives)
 updated: 2026-11-25
-refreshed_with: late deep dives (Batch I) — DALPHA, DPATTERN, DFX, DANIM, DBIND, DENV, DFORM, DUNIT, DAUDIO, DMAPGEN, DBUILD, LIGHT-02; DSEASON-01 / DONAVAL-01 not landed
+refreshed_with: late deep dives (Batch I) — DALPHA, DPATTERN, DFX, DANIM, DBIND, DENV, DFORM, DUNIT, DAUDIO, DMAPGEN, DBUILD, LIGHT-02; DSEASON-01 / DONAVAL-01 were not landed at refresh time, but their reports are on disk as of the LINKS-FIX-01 re-read (2026-11-25) — see §13 note
 corrections_authority: ../CORRECTIONS.md (57 rows) — authoritative; §9 here is the decomp-lane convenience copy
 status: lane closed — summary refreshed 2026-11-25 with the late deep dives
 ---
@@ -251,7 +251,9 @@ ghost appearance and port F2 ordering (DBUILD-01 §8). None grants a visual-pari
 Twelve reports landed after DEC-01…08 closed the lane. This section only **summarises** their
 verdicts; every bullet carries a report path and a label `[observed]` / `[derived]` /
 `[inferred]` / `[UNVERIFIED]`. `DSEASON_01` and `DONAVAL_01` were not present in `../reports/`
-at refresh time and are **not** summarised — do not infer their contents. For reversals,
+at refresh time; a later re-read (LINKS-FIX-01, 2026-11-25) finds both on disk at
+`../reports/DSEASON_01_season_visuals.md` and `../reports/DONAVAL_01.md`. They are still
+**not** summarised here — do not infer their contents from this section. For reversals,
 `../CORRECTIONS.md` (57 rows) is authoritative. **No donor visual-parity claim is made.**
 
 ### 13.1 `../reports/DALPHA_01_alpha_subrect.md` — alpha sub-rects

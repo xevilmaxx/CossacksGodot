@@ -42,14 +42,14 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
   XZ texgen, labelled PORT APPROX), unshaded headlight (donor sun now bound), alpha
   sub-rect sampling and water bands. Batch H builders `TRN-SHADER`, `TRN-WATER`,
   `TRN-GEOM`, `DECOR-01`, `HUD-01` landed with clean targeted smokes; `TRN-DATA` is now DONE
-  (118/118 lists + 282 TileName, determinism 5/5 job 423 — `SWARM_BOARD.md:111`).
+  (118/118 lists + 282 TileName, determinism 5/5 job 423 — `SWARM_BOARD.md:134`).
   **No donor A/B frame exists, so visual parity stays UNVERIFIED.**
 - **Donor decompilation.** `decomp/` lane **CLOSED**: 8 reports `DEC_01…DEC_08` (~440 KB),
   consolidated in `decomp/SUMMARY.md`, evidence ids in `decomp/EVIDENCE_INDEX.md`.
-  `CORRECTIONS.md` is the canonical index: **60 rows** (DOC-03 snapshot 50; rows 51–60
-  landed since — `CORRECTIONS.md:98-109`; summary `:169-180`, duplicate-chain notice
-  `:111-115`), with the status legend at `:38-41` and the 8-value UNVERIFIED section at
-  `:117-139`. Three engine-side
+  `CORRECTIONS.md` is the canonical index: **63 rows** (DOC-03 snapshot 50; rows 51–63
+  landed since — `CORRECTIONS.md:98-112`; rows 61–63 = Winter LFS pointer, donor Y-up light
+  space, naval stale-doc refutations; summary `:172-185`, duplicate-chain notice `:114-118`),
+  with the status legend at `:38-41` and the 8-value UNVERIFIED section at `:120-142`. Three engine-side
   values are CONFIRMED_INFEASIBLE (`DBIND_01`). Batch I/K/O deep dives resolve the rest
   (alpha grid, relief grids, AAF clips, PFX, environment, formations, `.bind`, atlas
   transport, map sizes, audio, defaults).
@@ -69,14 +69,15 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
   integrated selftest is 26/29 at HEAD / 28/29 in the worktree
   (`reports/QA_AUDIT_01_implementation_claims.md:47-57`); **the final whole-system gate has
   not been run.**
-- **OWNER runtime errors (live windowed game, not a gate).** `PROGRESS.md:104-115` records
-  the flat-root morph warning (labelled PORT APPROX), `hud3d_adapter.gd:172-173` inferred-type
-  parse errors cascading to `hud.gd:207` (`GDScript.new()`), and repeated
-  `mill_rotor.png/.ctex` load errors from `world3d_entities.gd:1430/1458`. Owner-assigned
-  fixes: `MINIMAP-QUAD-01` explicit types (`SWARM_BOARD.md:120`, still RUNNING);
-  `ASSET-IMPORT-01` cache regeneration (job 444 ok but target ctex still absent —
-  `reports/ASSET_IMPORT_01.md:9,141`); `MOTION-ANIM-01` rotor fallback + spin audit
-  (`reports/MOTION_ANIM_01.md:191-230`). The `hud.gd` error was a cascade, not a second bug.
+- **OWNER runtime errors (live windowed game, not a gate; original report).**
+  `PROGRESS.md:104-115` records the flat-root morph warning (labelled PORT APPROX),
+  `hud3d_adapter.gd:172-173` inferred-type parse errors cascading to `hud.gd:207`
+  (`GDScript.new()`), and repeated `mill_rotor.png/.ctex` load errors from
+  `world3d_entities.gd:1430/1458`. Those were the owner-assigned fixes
+  (`MINIMAP-QUAD-01`, `ASSET-IMPORT-01`, `MOTION-ANIM-01`); their **current outcomes** are
+  in the "rotor fixed" bullet later in §0 — the rotor hard-error path and cache are fixed,
+  and the minimap report has landed with no gates. The `hud.gd` error was a cascade, not a
+  second bug.
 - **P0 dark terrain — root cause and new gate.** `reports/TERRAIN_DARK_01.md` measured a
   near-black P0 frame (mean luma 13.271); `reports/LIGHT_02_light_space.md:212-246`
   re-derived donor `light.cfg Position` as a **Y-up world direction** and showed the old
@@ -87,12 +88,15 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
   (PORT APPROX); job 421 failed as designed (20 passes / 2 gate fails, `SCRIPT ERROR 0`,
   `reports/P0_GATE_01.md:134-174`).
 - **Muse-spark motion findings and routed fixes.** Per `VIDEO_QA_PROTOCOL.md:11-15,30-46`,
-  `VID-CAP-01` captured 16 distinct windowed frames (job 408, `PASS 10/10`);
+  `VID-CAP-01` captured 16 windowed frames (job 408, `PASS 10/10`) with **10 distinct
+  signatures** in its own JSON — the "16/16 distinct" wording is a claim error
+  (`reports/QA_ATOM_RESULTS_01.md:88-91`);
   `reports/VID_AN_01_motion_analysis.md:101-125` reports translation FAIL (~14 m stall),
   squad FAIL (1/4 moves), pose FAIL at data level (visual pop UNDETERMINED), direction FAIL
   (91°/166° snaps), contact PASS (coarse), uniqueness PASS — donor parity UNVERIFIED.
   `MOTION-ANIM-01` landed the presentation-side speed gate, yaw clamp and frozen-pose refresh
-  plus the rotor fallback (`reports/MOTION_ANIM_01.md:20-35,191-230`, parse-only job 435);
+  (`reports/MOTION_ANIM_01.md:20-35,107-122`, parse-only job 435); its rotor follow-up is now
+  fixed (port PNG copy + import job 478 + `BACK→FORWARD` PORT APPROX spin — `:191-305`; see §0);
   SIM stall and squad propagation are routed to a `game.gd` ticket (`:138-147`).
 - **Config pipeline (not "all features configurable").** `CONFIG_PIPELINE.md:63-104,321-324`
   counts 21 `features.*` getters: **7 WIRED / 2 READER_ONLY / 2 UI_ONLY / 10 PENDING** at its
@@ -116,8 +120,8 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
   (new oid `5d0dd8f…`), with **no git action taken**. Open: renderer/test constants use
   `tile_index_winter_atlas.*` while artifacts are `tile_index_atlas_winter.*`
   (`SP_04 §7.2`, `LFS_PLAN_01:152-160`); a failed Winter single-load silently falls back to
-  Summer (`:188`). Runtime swap is UNVERIFIED: SP-4 and SP-6 are RUNNING, SP-8's atom is
-  authored but `PENDING_DEP` (`SWARM_BOARD.md:173-175`).
+  Summer (`:188`). Runtime swap is UNVERIFIED: SP-4 is DONE, SP-6 is REPORT DELIVERED, and
+  SP-8's atom remains `PENDING_DEP` (`SWARM_BOARD.md:196-198`; `reports/QA_DOCS_02.md:43`).
 - **Donor map-size mismatch.** `reports/DMAPGEN_01_skirmish_options.md:59-75` gives donor
   Tiny 256 / Normal 320 / Large 480 / Huge 640 with Normal as default; the port dropdown is
   240/320/400/480 (`menu.gd:726`), so port Tiny 240 is an accepted approximation, not donor
@@ -192,16 +196,21 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
 ## 1. How to resume (authoritative read order)
 
 1. `CHARTER.md` — governing rules, goals, gates, ownership, scope guard.
-2. `CORRECTIONS.md` — the **57-row** donor corrections index (`:100-105,159-170`); cite the
-   authority row, never the superseded claim; keep `PORT APPROXIMATION` labels.
+2. `CORRECTIONS.md` — the **63-row** donor corrections index (rows 1–63 at `:47-112`,
+   duplicate-chain notice `:114-118`, summary `:172-185`); cite the authority row, never
+   the superseded claim; keep `PORT APPROXIMATION` labels.
 3. `GAPS.md` — exists / missing / how-to-fix, plus the 12-item prior-failure watchlist;
    its §2 lighting and P0-dark rows now carry the LIGHT-02 / TERRAIN-DARK-FIX findings
    (`GAPS.md:35,42`).
 4. `SWARM_BOARD.md` — ticket table (scope, owner, state, evidence). **Only COORD edits the
    State column**; this is the freshest per-ticket status. Note Batches M/O contain late
-   rows (config, atlas, LFS) that post-date DOC-03's original index.
+   rows (config, atlas, LFS) that post-date DOC-03's original index. Its §"LIVE SESSION
+   STATUS" (`:14-35`) is a **point-in-time DB snapshot, already STALE** per
+   `reports/QA_BOARDLIVE_01.md:109-131`; read that report before acting on any State cell.
 5. `PROGRESS.md` — coordinator log, decisions S-25-01…S-25-15, gate-status snapshot and
-   the OWNER RUNTIME REPORT (`:104-115`).
+   the OWNER RUNTIME REPORT (`:104-115`). Its gate table is reconciled as per-job vs
+   integrated (`PROGRESS.md:184-190`; `reports/QA_DOCS_02.md:39`) but the bold
+   "29/29 repeatedly" at `:194` still needs a scope qualifier (`:76`).
 6. `CONFIG_PIPELINE.md` — status freeze for the 21 `features.*` getters, unwired remainder
    and menu subset; read before quoting any "global config" claim (`:296-315`).
 
@@ -216,21 +225,30 @@ time**; `CHARTER.md`/`CORRECTIONS.md`/`VIDEO_QA_PROTOCOL.md` are `status: living
 `GAPS.md`/`TEST_MATRIX.md`/`PLAN_IMPLEMENTATION.md` are `status: draft`,
 `CONFIG_PIPELINE.md` is a status freeze of its own working-tree read (`:11`), and
 `decomp/SUMMARY.md` is `status: lane closed`. `PROGRESS.md` §"Gates status" was flagged stale
-by DOC-03 and is now **explicitly contradicted** by QA-AUDIT-01 for the integrated selftest
-(`PROGRESS.md:188` claims 29/29 repeatedly; `reports/QA_AUDIT_01_implementation_claims.md:47-57`
-measures 26/29 HEAD / 28/29 worktree). `VIDEO_QA_PROTOCOL.md:54-56` "Current queue" is also
-stale — both VID-CAP-01 and VID-AN-01 have landed. Likewise `SWARM_BOARD.md` marks
-CONFIG-UI-01 / CONFIG-WIRE-SEL RUNNING although their reports exist
-(`CONFIG_PIPELINE.md:213-214,308-311`). Re-read `SWARM_BOARD.md`/`PROGRESS.md` before acting;
-this README is a point-in-time snapshot and RUNNING tickets will land later.
+by DOC-03; that finding is now **reconciled, not merely contradicted**: its heading and
+governance note separate per-job 29/29 artifacts from the integrated 26/29 HEAD /
+28/29 worktree measurement (`PROGRESS.md:184-190`; `reports/QA_DOCS_02.md:39`;
+`reports/QA_AUDIT_01_implementation_claims.md:47-57`), though the bold "29/29 repeatedly"
+at `PROGRESS.md:194` still needs the scope qualifier (`QA_DOCS_02.md:76`). `CONFIG_PIPELINE.md`
+is likewise a freeze predating QA-CONFIGJSON-01's `features` object (`QA_CONFIGJSON_01.md:89-98`).
+`VIDEO_QA_PROTOCOL.md:54-56` "Current queue" is stale — both VID-CAP-01 and VID-AN-01 have
+landed. `SWARM_BOARD.md` marks CONFIG-UI-01 / CONFIG-WIRE-SEL RUNNING although their reports
+exist (`CONFIG_PIPELINE.md:213-214,308-311`), and QA-DOCS-02 found **11 report-landed tickets
+still plain RUNNING** at 11:26:46 plus README-UPDATE-01 (`:43,49-73`) — lower bounds, because
+files were landing during that audit. Re-read `SWARM_BOARD.md`/`PROGRESS.md` before acting;
+this README is a **point-in-time snapshot** and tickets/reports will land later.
 
-**Post-snapshot landings (observed during this edit, not promoted to PASS):** `SP-06`
-renderer hook delivered with no gates (`reports/SP_06_renderer_hook.md` frontmatter),
-`WEATHER-DRIVER-01` at `PENDING_SMOKE_RESULT` (`reports/WEATHER_DRIVER_01.md`),
-`AUDIO-SEL-02` at `PENDING_VALIDATION` (`reports/AUDIO_SEL_02.md`), and read-only
-`QA-WINTER-01` / `GDIGNORE-01` audits (`reports/QA_WINTER_01.md`, `reports/GDIGNORE_01.md`).
-These post-date the §0/§3 tables; their own status labels must be re-read before use, and
-none changes the gate verdicts above.
+**Post-README-UPDATE-01 landings (snapshot; none promoted to PASS without a runner
+result):** `SP-06` renderer hook delivered with no gates (`reports/SP_06_renderer_hook.md`
+frontmatter); `WEATHER-DRIVER-01` now `DONE__SMOKE_CLEAN__NO_CALLER_WIRED__DRIVER_UNVERIFIED`
+with parse job 479 and FX atom 13/13 job 488 (`reports/WEATHER_DRIVER_01.md:7,118-150`);
+`AUDIO-SEL-02` still `PENDING_VALIDATION` (`reports/AUDIO_SEL_02.md`; `QA_DOCS_02.md:58`);
+`QA-PARITY-01` `COMPLETE__GATES_NOT_EXECUTED__INTEGRATED_PARTIAL` (`QA_DOCS_02.md:61`);
+`MINIMAP-QUAD-01` `IMPLEMENTED__PARSE_REPAIR_CLEAN__NO_GATES` (`QA_DOCS_02.md:55`); and
+read-only audits `QA-WINTER-01`, `GDIGNORE-01`, `QA_DOCS_02`, `QA_ATOM_RESULTS_01`,
+`QA_BOARDLIVE_01`, plus `MAPSIZE_01`, `QA_CONFIGJSON_01`, `DESERT_REMAP_02`, `GATE_READY_01`
+and MOTION-ANIM-01 §8. Their own status labels must be re-read before use; none changes the
+FINAL **NOT_READY** verdict (`reports/GATE_READY_01.md:192-219`).
 
 ## 2. Folder map
 
@@ -242,7 +260,7 @@ none changes the gate verdicts above.
 | `GAPS.md` | Aggregated exists/missing/how-to-fix + 12 prior-failure anti-patterns. |
 | `TEST_MATRIX.md` | P0→P3→C1→C4→S1→FINAL ladder, 64² fixture, sequential protocol. |
 | `PLAN_IMPLEMENTATION.md` | Atomic one-file-per-builder implementation tickets and gating. |
-| `CORRECTIONS.md` | Canonical **57-row** donor corrections index; status legend (`:38-41,159-170`). |
+| `CORRECTIONS.md` | Canonical **63-row** donor corrections index; status legend `:38-41`, rows `:47-112`, duplicate chain `:114-118`, summary `:172-185`. |
 | `CONFIG_PIPELINE.md` | CONFIG-DOC-01 status freeze: 21 getters, 34/43 unwired remainder, menu subset (`:296-340`). |
 | `VIDEO_QA_PROTOCOL.md` | Frame-sequence/MP4 capture & muse-spark analysis protocol (queue at `:54-56` stale). |
 | `README.md` | This file — cold-readable entry point (DOC-03 base + README-UPDATE-01 refresh). |
@@ -250,7 +268,7 @@ none changes the gate verdicts above.
 | `decomp/SUMMARY.md` | Consolidated donor findings, 14 prior-doc corrections, ranked port implications. |
 | `decomp/EVIDENCE_INDEX.md` | Evidence ids / `path:offset` index for all decomp lanes. |
 | `decomp/DEC_0x_*.md` | One deep donor decompilation record per aspect (8 files). |
-| `reports/<TICKET>.md` | One cold-readable report per analysis/implementation/test worker (**99 at this README edit**, including `README_UPDATE_01.md`; count drifts as RUNNING tickets land). |
+| `reports/<TICKET>.md` | One cold-readable report per worker (**snapshot: 133 → 134 `.md` files across two polls during README-FINAL-01; this report adds one more**; count drifts as tickets land — `reports/QA_DOCS_02.md:10,83`). |
 
 ## 3. Current state — green gates vs pending rows
 
@@ -259,16 +277,17 @@ none changes the gate verdicts above.
 | Item | Evidence |
 |---|---|
 | variant selftest **29/29** (per-job, not integrated) | tickets 312 (`CFG-01`), 337 (`SEL-01`); 320² control 322 — valid only for those job artifacts (`QA_AUDIT_01:47-57`) |
-| variant uitest **17/17** | tickets 313 (`CFG-01`), 318 (`SEL-01`), 325 (240²), 366 (`UITEST-ANCHOR`), 440 (`CONFIG-WIRE-HUD`, `SWARM_BOARD.md:190`) |
-| CLEAN history | `CLEAN-01` DONE — **NOT CLEAN** verdict honestly recorded; `CLEAN-02` fixed `assert_clean.py:34` to read variant spool; gate signing deferred to COORD after drain (`SWARM_BOARD.md:156-157`) |
+| variant uitest **17/17** | tickets 313 (`CFG-01`), 318 (`SEL-01`), 325 (240²), 366 (`UITEST-ANCHOR`), 440 (`CONFIG-WIRE-HUD`, `SWARM_BOARD.md:213`) |
+| CLEAN history | `CLEAN-01` DONE — **NOT CLEAN** verdict honestly recorded; `CLEAN-02` fixed `assert_clean.py:34` to read variant spool; gate signing deferred to COORD after drain (`SWARM_BOARD.md:179-180`) |
 | `SEL-01` real-drag probe **12/12** | job 329 — ids `[10,11]`, building excluded, short click `[10]`, Shift-add `[10,11,12]`, marquee shown then hidden |
 | `CAM-RV-01` runtime view-rect **20/20** | job 381 — byte-identical half-map shift; no-shift/double-shift counterfactuals refuted (`reports/CAM_RV_01_view_rect_runtime.md:179-197`) |
 | **S1 selection atom 23/23** | job 414 windowed real input, `SCRIPT ERROR 0`, all 24 `check()` calls and 4 `expected_pre_fix_failure` markers retained (`reports/S1_INPUT_FIX.md:153-176,193-206`) — atom-level only, not the full ladder |
-| VID-CAP-01 **10/10**, VID-AN-01 delivered | job 408, 16 distinct GPU frames + contact sheet + MP4 (`SWARM_BOARD.md:115`); analysis verdicts at `reports/VID_AN_01_motion_analysis.md:101-125` |
-| `ATOM-REPAIR` / harness / Batch H / FX smokes | atoms load jobs 364–375, cast fix 384, `SCRIPT ERROR 0`; 342/343/358/361, CAM 339/356, DALPHA-02 382 (6/6), `t_fx3d` 13/13 job 434 (`SWARM_BOARD.md:96-97,118`) |
+| VID-CAP-01 **10/10**, VID-AN-01 delivered | job 408, 16 GPU frames + contact sheet + MP4 (`SWARM_BOARD.md:138`); only **10 distinct signatures** in its JSON (`reports/QA_ATOM_RESULTS_01.md:88-91`); analysis verdicts at `reports/VID_AN_01_motion_analysis.md:101-125` |
+| `ATOM-REPAIR` / harness / Batch H / FX smokes | atoms load jobs 364–375, cast fix 384, `SCRIPT ERROR 0`; 342/343/358/361, CAM 339/356, DALPHA-02 382 (6/6), `t_fx3d` 13/13 job 434 (`SWARM_BOARD.md:119-120,141`) |
 | Winter atlas build checks | self-check 16/16 + re-check 16/16 + 8/8 pixel spot-check, Summer hashes unchanged (`reports/SP_04_winter_atlas.md:119-144`) — structural, not a GPU A/B |
 | Donor decomp lane **CLOSED** | 8 `DEC_0x_*.md` reports + `decomp/SUMMARY.md` (`status: lane closed`, `:1-15`) |
-| `CORRECTIONS.md` published | **57** indexed corrections, duplicate chains merged (`:100-105,159-170`) |
+| `CORRECTIONS.md` published | **63** indexed corrections (rows 1–63 at `:47-112`, incl. rows 61–63: Winter LFS pointer / donor Y-up light space / naval stale-doc refutations), duplicate chains merged (`:114-118`), summary `:174` |
+| `config.json` `features` section verified | 21 leaves / 8 groups, **21/21 MATCH** vs `config.gd:46-84` defaults; `features` is the sole additive change; structural, no runner job (`reports/QA_CONFIGJSON_01.md:29-59,73-85,130-135`) |
 
 ### Pending / NOT passed
 
@@ -277,21 +296,29 @@ none changes the gate verdicts above.
 | **P0** terrain only | NOT PASS | Two stops: job 321 parse errors, then job 404 (`TEST_RUN_02`: 20 passes / 1 fail, `full_width_dark_rows=720`). Axis-correct `TERRAIN-DARK-FIX` landed (`reports/LIGHT_02_light_space.md:239-246`); strict new gates still fail `mean_luma=13.271` / `max_luma=27.413` (job 421, `reports/P0_GATE_01.md:134-174`). No rerun. |
 | **P1–C4** trees / shore / mines / combos | NOT RUN | Protocol: stop at first failing row; no rerun hoping for green. Author atoms are not PASS claims. |
 | **S1** selection atom | **PASS 23/23** (atom only) | Job 414 (`reports/S1_INPUT_FIX.md:153-176`); still not a ladder row — per `TEST_MATRIX.md:58` a second agent must re-check any capture, and Shift=add remains a declared divergence (`:220-224` of the report). `TEST_RUN_02_selection_log.md` not landed. |
-| **Integrated selftest** | NOT GREEN | HEAD 26/29 (`wall`/`shell`/`farm_cap`), worktree 28/29 (`build`); `reports/QA_AUDIT_01_implementation_claims.md:47-57`, `reports/DEFAULTS_VERIFY_01.md:92`. `QA-PARITY-01` RUNNING; ordered plan at `reports/FINAL_GATE_PLAN_01.md:53-90`. |
-| **F0** donor A/B baseline | NOT ESTABLISHED | Blocks every parity claim; metrics never override visual review (`CORRECTIONS.md:122`). |
-| **FINAL** (29/29 + 17/17 + clean + owner visual) | PENDING / RESERVED | COORD only, last, once; 2D `app/**` gates must stay untouched and green. Prerequisites in `reports/FINAL_GATE_PLAN_01.md:53-105`. |
+| **Integrated selftest** | NOT GREEN — **28/29 `build`** at latest read | HEAD 26/29 (`wall`/`shell`/`farm_cap`), worktree 28/29 (`build`) (`reports/QA_AUDIT_01_implementation_claims.md:47-57`); current `variant3d/selftest.json` `passed:false`, 28/29, single `build` failure (mtime 10:57:24, `reports/GATE_READY_01.md:181-188`), independently seen pre-change in `reports/MAPSIZE_01.md:76-83`. `uitest.json` 17/17 is stale (`GATE_READY_01.md:184`). `QA-PARITY-01`'s report says GATES_NOT_EXECUTED (`reports/QA_DOCS_02.md:61`); ordered plan at `reports/FINAL_GATE_PLAN_01.md:53-90`. |
+| **F0** donor A/B baseline | NOT ESTABLISHED | Blocks every parity claim; metrics never override visual review (`CORRECTIONS.md:132`; `reports/GATE_READY_01.md:216-219`). |
+| **FINAL** (29/29 + 17/17 + clean + owner visual) | **NOT_READY — DO NOT RUN** | Read-only verdict `reports/GATE_READY_01.md:192-219,251-264`: queue churn (`pending 1→7`, live Godot, `assert_clean.py` DIRTY/exit 1 twice), 16 unacked `skipped` jobs (`:105-113`), integrated selftest 28/29 `build`, P0 final-formula re-capture PENDING (`:204-207`), ladder stopped at P0 (`:208-211`), donor A/B absent (`:216-219`). COORD only, last, once; 2D `app/**` gates were confirmed green by QA-2D-GATES-01 but not re-run in that report (`GATE_READY_01.md:221-225`). Prerequisites in `reports/FINAL_GATE_PLAN_01.md:53-105`. |
 | `CFG-02` / MAP-SMALL-01 | CODE LANDED, REPORT MISSING | 240² committed via `f9dd8d16`, report absent; defaults resolve but integrated selftest non-green (`reports/DEFAULTS_VERIFY_01.md:92,97-104`). |
-| `TRN-DATA` (`game.gd`) | DONE (per report) | 118/118 lists + 282 TileName embedded, determinism 5/5 job 423; selftest 28/29 on concurrent rotor `.ctex` race (`SWARM_BOARD.md:111`). |
-| OWNER runtime errors | PARTLY ADDRESSED | Minimap parse/quad owner `MINIMAP-QUAD-01` RUNNING (`SWARM_BOARD.md:120`); rotor target ctex still absent after job 444 (`reports/ASSET_IMPORT_01.md:141`); `MOTION-ANIM-01` fallback is parse-only (job 435, `reports/MOTION_ANIM_01.md:107-122`). |
-| Config pipeline | INCOMPLETE | 21 getters but only 7 WIRED; `config.json` has no `features` key; Snow menu row PORT-UI-ONLY with uncalled driver (`CONFIG_PIPELINE.md:102-104,223,286,306-307`). |
-| Winter atlas / LFS | BUILT, NOT WIRED | SP-4 artifact built; SP-6/SP-7 open, path-name mismatch and silent Summer fallback unresolved (`reports/SP_04_winter_atlas.md:146-166`; `reports/LFS_PLAN_01.md:152-160,188`). No git action taken. |
-| Late-wave RUNNING tickets | RUNNING (board snapshot) | `SEASON-PLAN-01`, `SP-1`, `SP-4`, `SP-6`, `CONFIG-WIRE-RELIEF`, `WEATHER-DRIVER-01`, `MAPSIZE-01`, `AUDIO-SEL-02`, `QA-PARITY-01`, `PERF-3D-01`, `MINIMAP-QUAD-01` (`SWARM_BOARD.md:117-119,169-176,184-192,217-229`). Board-stale: `CONFIG-UI-01`, `CONFIG-WIRE-SEL`, `MOTION-ANIM-01`, `FINAL-GATE-PLAN-01` have reports on disk (`CONFIG_PIPELINE.md:213-214,308-311`; `reports/` listing). |
+| `TRN-DATA` (`game.gd`) | DONE (per report) | 118/118 lists + 282 TileName embedded, determinism 5/5 job 423 (`SWARM_BOARD.md:134`); the integrated selftest is still 28/29 at `build` — the earlier "rotor `.ctex` race" label is superseded by the direct `build` measurement (`reports/GATE_READY_01.md:181-188`; `reports/MAPSIZE_01.md:76-83`). |
+| OWNER runtime errors | ROTOR FIXED; MINIMAP REPORT LANDED, NO GATES | Rotor hard errors fixed by port-to-port PNG copy + import job 478 (real 28,242-B ctex) + one-shot white-quad fallback; spin `BACK→FORWARD` is **PORT APPROX** against the 2D donor-bake proxy, donor 3-D spin UNVERIFIED (`reports/MOTION_ANIM_01.md:224-240,242-305`). Job 489's exit 1 is pre-existing warnings, not rotor error (`:274-287`). `MINIMAP-QUAD-01` report now on disk with `IMPLEMENTED__PARSE_REPAIR_CLEAN__NO_GATES` (`reports/MINIMAP_QUAD_01.md:6`; `reports/QA_DOCS_02.md:55`); `hud.gd:207` was a cascade (`PROGRESS.md:104-115`). |
+| Config pipeline | INCOMPLETE (wire state); JSON SECTION PRESENT 21/21 | 21 getters but only 7 WIRED at the freeze (`CONFIG_PIPELINE.md:63-104`); `config.json` NOW has a 21-key `features` object matching all defaults (`reports/QA_CONFIGJSON_01.md:29-59,89-98`) — the old "no `features` key" claim is stale. Snow menu row remains PORT-UI-ONLY: additive driver exists but no caller owns `main.gd`/`world3d.gd` (`reports/WEATHER_DRIVER_01.md:26-31,107-116,174-184`; `CONFIG_PIPELINE.md:223,306-307`). |
+| Winter atlas / LFS | BUILT, NOT WIRED | SP-4 built (QA-WINTER-01 CONFIRMED), SP-6 report delivered, SP-7 HELD, SP-8 atom still swapped/`PENDING_DEP`; renderer path aligned but silent Summer fallback unresolved (`SWARM_BOARD.md:196-199,289`; `reports/SP_04_winter_atlas.md:146-166`; `reports/LFS_PLAN_01.md:152-160,188`). No git action taken. |
+| Ticket states (DB snapshots) | MOSTLY TERMINATED; board State lags | `SWARM_BOARD.md:14-35` counted 140 children / 135 terminated / 4 still BUSY at 11:28; later `reports/QA_BOARDLIVE_01.md:19-50,94-101,109-114,152-158` counted 156 / 137 terminated / 19 BUSY at 11:32:51 and ruled the live section **STALE** (15 live workers absent, 14 phase-level rows already terminated). `reports/QA_DOCS_02.md:43,49-73` found 11 report-landed tickets still plain RUNNING plus README-UPDATE-01. Do not re-spawn terminated workers (`SWARM_BOARD.md:35`). |
+| `MAPSIZE-01` | **REVERTED — no delivered change** | Both gates failed at runner startup (jobs 455/482, banner-only, no report); `menu.gd` restored byte-identically; donor 256/320/480/640 still unmatched by port 240/320/400/480 (`reports/MAPSIZE_01.md:11-17,58-74,94-106,134-145`; `SWARM_BOARD.md:281`). |
+| Desert remap (`DESERT-REMAP-02`) | DATA ONLY — 11 → 38 pairs | JSON parse PASS, 38/38 donor pairs/sources/targets, 37/38 targets with art (`alpha0c` pre-existing EMPTY), 0 invented destinations; runtime EXE activity and SP-6 consumption UNVERIFIED (`reports/DESERT_REMAP_02.md:127-145,157-191`). Board still RUNNING (`:292`) — stale. |
+| Atom result JSONs | STALE / ONE FALSE GREEN | 7 stale JSONs, P3 `passed:true` from headless skip rows, CAM-RV-01 PASS without canonical JSON, VID claim 16/16 distinct vs 10 distinct signatures (`reports/QA_ATOM_RESULTS_01.md:57,70-91,115-120`). Not fixes; no atom was edited by this README. |
 
 **Honesty rule:** report files authored ≠ tests passed; "green" above means a recorded
 runner result/job id in the living docs, not an inference from a report's existence.
-Donor visual parity remains **UNVERIFIED** (no donor GPU A/B, `CORRECTIONS.md:122`), and
-the final whole-system gate has **not** been run. A PASS on an atom (S1 23/23, CAM-RV-01
-20/20) is scoped to that atom's scenario — it is not a whole-system PASS.
+Data-only JSON edits (e.g. 21/21 `features` parity, 11→38 desert pairs) are not runtime
+proof, and `passed:true` result JSONs can be stale or headless-skip false greens
+(`reports/QA_CONFIGJSON_01.md:120-126`; `reports/DESERT_REMAP_02.md:157-173`;
+`reports/QA_ATOM_RESULTS_01.md:70-81`). Donor visual parity remains **UNVERIFIED** (no
+donor GPU A/B, `CORRECTIONS.md:132`), and the final whole-system gate has **not** been
+run — its current verdict is **NOT_READY** (`reports/GATE_READY_01.md:192-219`). A PASS on
+an atom (S1 23/23, CAM-RV-01 20/20) is scoped to that atom's scenario — it is not a
+whole-system PASS.
 
 ## 4. Ownership discipline (binding)
 
@@ -323,11 +350,18 @@ indices, metres-per-cell or eye-plane literals; FIFO runner only, no direct `god
 re-verify stale docs/artifacts before acting; never weaken a test; do not "fix" what is
 already correct (V3D_02 §"already correct" 1–12, DTRN_01 §6.1); keep drag/click and
 `cmd_*` mutually exclusive; donor is 3D perspective, not 2D. Late-wave additions: do not
-call `features.*` "globally configurable" while `config.json` has no `features` section
-(`CONFIG_PIPELINE.md:286,298-301`); do not call parse-only `--check-only` smokes runtime proof
-(`:302-305`); do not claim Winter art loads while the path constants disagree
-(`reports/SP_04_winter_atlas.md:158-166`); do not revert TERRAIN-DARK-FIX's correct axis swap
-(`reports/LIGHT_02_light_space.md:239-246`).
+call `features.*` "globally configurable" — the 21-key `features` object now exists and
+matches defaults 21/21, but only 7 getters are wired and no non-default override is
+runtime-proven (`reports/QA_CONFIGJSON_01.md:29-59,89-98,120-126`;
+`CONFIG_PIPELINE.md:63-104`); do not repeat the now-stale "no `features` section" claim
+(`QA_CONFIGJSON_01.md:89-98`); do not call parse-only `--check-only` smokes runtime proof
+(`CONFIG_PIPELINE.md:302-305`; `reports/WEATHER_DRIVER_01.md:136-150`); do not claim Winter art
+loads while the path constants disagree (`reports/SP_04_winter_atlas.md:158-166`); do not
+revert TERRAIN-DARK-FIX's correct axis swap (`reports/LIGHT_02_light_space.md:239-246`); do
+not claim donor 3-D rotor spin parity (only the 2D-bake proxy, PORT APPROX —
+`reports/MOTION_ANIM_01.md:234-240,296-300`); do not claim the 38-pair desert remap runs at
+runtime (`reports/DESERT_REMAP_02.md:157-173`); do not re-spawn terminated workers for status
+(`SWARM_BOARD.md:35`, `reports/QA_BOARDLIVE_01.md:131`).
 
 ## 6. Report pointer index (by topic)
 
@@ -349,9 +383,11 @@ call `features.*` "globally configurable" while `config.json` has no `features` 
   `reports/MMJUMP_02_minimap_jump.md` — donor-offset API added, CAM-RV-01 20/20 intact.
 - `reports/S1_INPUT_FIX.md` — S1 atom **PASS 23/23** (job 414, windowed real input);
   `reports/TEST_S1_report.md` is the original authored atom (no PASS claim there).
-  Owner-error follow-ups: `MINIMAP-QUAD-01` is **RUNNING with no report on disk**
-  (`SWARM_BOARD.md:120`), and `reports/ASSET_IMPORT_01.md` records the rotor cache miss
-  (target ctex still absent — `ASSET_IMPORT_01.md:141`; `PROGRESS.md:104-115`).
+  Owner-error follow-ups: `reports/MINIMAP_QUAD_01.md:3-8` now exists with
+  `IMPLEMENTED__PARSE_REPAIR_CLEAN__NO_GATES` (board State still RUNNING — `QA_DOCS_02.md:55`);
+  `reports/ASSET_IMPORT_01.md:141` records the original rotor cache miss, but the
+  MOTION-ANIM-01 follow-up since generated a real ctex and removed the hard-error path
+  (`reports/MOTION_ANIM_01.md:224-305`). `PROGRESS.md:104-115` has the original owner report.
 
 ### Terrain
 - `reports/DTRN_01_donor_terrain_pipeline.md` — textures/atlas/blend/shaders; no normal map.
@@ -373,9 +409,10 @@ call `features.*` "globally configurable" while `config.json` has no `features` 
   water-band predicate), `reports/TERRAIN_DARK_01.md` (root-cause diagnosis),
   `reports/LIGHT_02_light_space.md:212-246` (Y-up donor sun, axis swap correct, `/4,/2` APPROX,
   `SUN_LIGHTVEC` follow-up), `reports/P0_GATE_01.md:134-224` (replacement luma gates, job 421
-  fails as designed). `TERRAIN-DARK-FIX` is **RUNNING with no report on disk**
-  (`SWARM_BOARD.md:186`), while LIGHT-02 re-derived the same landed shader edit independently
-  (`SWARM_BOARD.md:119`).
+  fails as designed). `reports/TERRAIN_DARK_FIX.md` now exists (board `:209`
+  **REPORT DELIVERED**; final-formula P0 re-capture still PENDING —
+  `reports/GATE_READY_01.md:144,204-207`), while LIGHT-02 re-derived the same landed shader
+  edit independently (`SWARM_BOARD.md:142`).
 
 ### Decomp (`decomp/`)
 - `decomp/README.md`, `decomp/SUMMARY.md`, `decomp/EVIDENCE_INDEX.md`,
@@ -403,18 +440,24 @@ call `features.*` "globally configurable" while `config.json` has no `features` 
   `reports/CONFIG_CORE_01.md` — 21 defaults + 21 typed getters (smoke 419, parse-only).
 - `CONFIG_PIPELINE.md:59-104,211-230,296-340` — the cold-readable status freeze: key table,
   menu subset (**Snow PORT-UI-ONLY**), ownership ladder, 11 risks, honesty constraints.
-- `reports/QA_CONFIG_01_getters.md` — getter audit (21 exist; counts reconciled by snapshot);
+- `reports/QA_CONFIG_01_getters.md` — getter audit (21 exist; its "no `features` object" note
+  at `:126` is a stale snapshot); `reports/QA_CONFIGJSON_01.md:29-59,89-98,130-135` — the
+  `features` section now present with **21/21 MATCH**, sole addition vs backup;
   `reports/CONFIG_WIRE_SEL.md`, `CONFIG_WIRE_CAM.md`, `CONFIG_WIRE_WATER.md`,
-  `CONFIG_WIRE_HUD.md` — leaf consumers; `reports/CONFIG_UI_01.md` — menu rows.
+  `CONFIG_WIRE_HUD.md` — leaf consumers; `reports/CONFIG_UI_01.md` — menu rows;
+  `reports/WEATHER_DRIVER_01.md:7,26-31,107-116,118-150` — additive Snow driver, parse/FX
+  smokes clean, no caller wired, runtime resolution UNVERIFIED.
 - `reports/DEFAULTS_VERIFY_01.md:91-105` — D1 raw `land` key, D2 MAP-SMALL-01 report gap,
   D4 port Tiny 240 vs donor 256, and REC-GATE-03 (re-run gates after all merges).
 
 ### Season, atlas transport and LFS (late wave)
 - `reports/SEASON_PLAN_01.md` + `reports/SP_01_season_enum.md` … `SP_08_season_test.md` —
-  index-preserving season swap plan and tickets; `SP-1/4/6` still RUNNING per
-  `SWARM_BOARD.md:169-176`.
+  index-preserving season swap plan and tickets; SP-1/4 are DONE and SP-6 is REPORT
+  DELIVERED per the current board (`SWARM_BOARD.md:192-198`; `reports/QA_DOCS_02.md:43`).
 - `reports/SP_02_winter_dictionary.md` — 124-entry winter alias table;
-  `reports/SP_03_desert_remap.md` — 11 pairs + height-gated `rock8`;
+  `reports/SP_03_desert_remap.md` — original 11 pairs + height-gated `rock8`;
+  `reports/DESERT_REMAP_02.md:41-94,127-145,177-191` — **11 → 38** donor case pairs,
+  data-only, 37/38 art, no runtime/parity claim;
   `reports/SP_04_winter_atlas.md:101-144` — built atlas + verification; `:146-166` — path
   mismatch and LFS decision ownership; `:203-208` — SP-6/SP-8 remainder.
 - `reports/ATLAS_01_transport.md` — split parts concatenate byte-identically; big PNG **is**
@@ -425,10 +468,13 @@ call `features.*` "globally configurable" while `config.json` has no `features` 
 ### Motion / video QA (late wave)
 - `VIDEO_QA_PROTOCOL.md:11-15,30-52` — capture and analysis rules; its "Current queue" at
   `:54-56` is stale (both tickets landed).
-- `reports/VID_CAP_01_capture.md` — 16 windowed GPU frames + MP4, job 408 `PASS 10/10`;
+- `reports/VID_CAP_01_capture.md` — 16 windowed GPU frames + MP4, job 408 `PASS 10/10`
+  (only 10 distinct signatures per `reports/QA_ATOM_RESULTS_01.md:88-91`);
   `reports/VID_AN_01_motion_analysis.md:101-125` — frame-numbered verdicts and routed fixes.
-- `reports/MOTION_ANIM_01.md:20-35,107-147,191-230` — landed presentation-side fixes and
-  rotor fallback (parse-only job 435); SIM stall/squad propagation left to `game.gd`.
+- `reports/MOTION_ANIM_01.md:20-35,107-147` — landed presentation-side fixes (parse-only job
+  435); `:191-305` — rotor fix: port PNG copy + import job 478, one-shot white-quad fallback,
+  `BACK→FORWARD` spin marked PORT APPROX, donor 3-D direction UNVERIFIED; SIM stall/squad
+  propagation left to `game.gd` (`:138-147`).
 - `reports/DANIM_01_action_ranges.md`, `decomp/DEC_04_anim_formats.md` — donor AAF ranges
   and pose payloads; still no donor footage, so motion parity stays UNVERIFIED.
 
@@ -436,7 +482,9 @@ call `features.*` "globally configurable" while `config.json` has no `features` 
 - `reports/DMAPGEN_01_skirmish_options.md:59-75` — donor sizes 256/320/480/640, default 320;
   `:212-270` — 64-bit seed chain and stage reseeds absent in port.
 - `reports/DEFAULTS_VERIFY_01.md:114-118` — all 7 requested defaults resolve on both paths;
-  `MAPSIZE-01` is **RUNNING with no report on disk** (`SWARM_BOARD.md:224`).
+  `reports/MAPSIZE_01.md:11-17,58-74,94-106,134-145` — donor sizes attempted then
+  **REVERTED** (jobs 455/482 failed at startup, banner-only); port still 240/320/400/480
+  (`SWARM_BOARD.md:281`).
 
 ### Implementations / defaults
 - `reports/SEL_01_implementation.md` — selection fix (green).
@@ -455,13 +503,37 @@ call `features.*` "globally configurable" while `config.json` has no `features` 
   `reports/DANIM_01_action_ranges.md`, `reports/DBIND_01_wus_bind.md`,
   `reports/DPATTERN_01_relief_grids.md`, `reports/DALPHA_01_alpha_subrect.md`.
 
+### Final reconciliation (README-FINAL-01 — snapshots, not new PASS claims)
+- `reports/QA_CONFIGJSON_01.md:29-59,89-98,130-135` — `features` section present, 21/21
+  MATCH; earlier "no `features` object" claims are stale; JSON parity ≠ runtime override.
+- `reports/MAPSIZE_01.md:11-17,58-74,94-106,134-145` — donor sizes attempted then reverted
+  (startup gate failures); donor sizes still unmatched.
+- `reports/MOTION_ANIM_01.md:191-305` — rotor hard errors fixed (port PNG copy + import job
+  478 + fallback), spin fixed as PORT APPROX via 2D donor-bake proxy.
+- `reports/DESERT_REMAP_02.md:41-94,127-145,157-191` — remap extended 11 → 38, data only.
+- `reports/WEATHER_DRIVER_01.md:7,26-31,107-116,118-150` — additive Snow driver, no caller
+  wired; runtime driver UNVERIFIED.
+- `reports/GATE_READY_01.md:43-133,179-219,251-264` — **FINAL NOT_READY**; integrated
+  selftest 28/29 `build`; queue DIRTY and unacked skipped jobs.
+- `reports/QA_DOCS_02.md:35-47,71-76,86-93` — corrections count **63** (the report predates
+  rows 61–63), three QA-DOCS-01 BLOCKERs (2 closed, 1 partial), remaining README/board stale items.
+- `reports/QA_ATOM_RESULTS_01.md:57,70-101,115-120` — stale result JSONs, P3 false green,
+  VID "16/16 distinct" contradicting 10 distinct signatures.
+- `reports/QA_BOARDLIVE_01.md:19-50,80-114,150-158` + `SWARM_BOARD.md:14-35` — session-DB
+  method, STALE live section, most workers terminated; do not re-spawn them.
+- `reports/README_FINAL_01.md` — sections changed in this edit and the full source list.
+
 ---
 
-**Bottom line for a cold reader:** read the authority docs in §1 (including
-`CONFIG_PIPELINE.md`), trust `SWARM_BOARD.md`/`PROGRESS.md` for freshest ticket state but
-`reports/QA_AUDIT_01_implementation_claims.md:47-57` for the integrated selftest, and treat
-every report as evidence **not** a whole-system PASS. Measured atom wins (S1 23/23, CAM-RV-01
-20/20, VID-CAP 10/10) are scenario-scoped. Do not run the FINAL gate or claim donor visual
-parity until F0 A/B, the P0→C4→S1 ladder, the integrated 29/29+17/17+CLEAN re-verification
-and the late-wave owner-error fixes are all green (`reports/FINAL_GATE_PLAN_01.md:53-105`).
-Donor visual parity stays UNVERIFIED; the final whole-system gate has not been run.
+**Bottom line for a cold reader:** read the authority docs in §1 (`CONFIG_PIPELINE.md`
+is a freeze superseded on the `features` question by `reports/QA_CONFIGJSON_01.md:89-98`);
+treat `SWARM_BOARD.md` as a **stale snapshot** whose live-session section was checked against
+the OpenCode DB and found STALE (`reports/QA_BOARDLIVE_01.md:109-114`), and use
+`reports/GATE_READY_01.md:181-219` — not the old "29/29 repeatedly" line — for the
+integrated selftest (28/29 `build`) and the **FINAL = NOT_READY** verdict. Every report is
+evidence **not** a whole-system PASS; report authored ≠ tests passed, data-only JSON edits
+≠ runtime proof, and atom wins (S1 23/23, CAM-RV-01 20/20, VID-CAP 10/10) are scenario-scoped.
+Do not run the FINAL gate or claim donor visual parity until F0 A/B, the P0→C4→S1 ladder,
+the integrated 29/29+17/17+CLEAN re-verification and the owner-error fixes are all green
+(`reports/FINAL_GATE_PLAN_01.md:53-105`; `reports/GATE_READY_01.md:192-219`). Donor visual
+parity stays UNVERIFIED; the final whole-system gate has not been run.

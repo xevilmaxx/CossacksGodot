@@ -71,6 +71,10 @@ const CAPTURE_FRAMES := 10          # TEST_MATRIX.md:32
 const WINDOW_SIZE := Vector2i(1280, 720)  # data.gd:113-114
 const EXPECTED_GRID := [16, 8]      # V7-85 manifest / SP-4 spec (SEASON_PLAN_01.md:189)
 const FALLBACK_NAMED := 124         # V7-85 named_cells (manifest atlas block)
+# SEASON-DESERT-01: donor-grounded desert baseline after DESERT-REMAP-02
+# (DESERT_REMAP_02.md:49-93 §2 and :162-169 §4; desert_remap.json extension.after).
+const EXPECTED_DESERT_DIRECT_PAIRS := 38
+const EXPECTED_DESERT_GATED_PAIRS := 1
 
 const STATUS_READY := "READY"
 const STATUS_PENDING := "PENDING_DEP"
@@ -454,8 +458,12 @@ func _layout_name_to_index(man: Dictionary) -> Dictionary:
 	for e in layout:
 		if e is Dictionary:
 			var nm := str((e as Dictionary).get("name", ""))
-			if nm != "" and (e as Dictionary).get("index") is int:
-				out[nm] = int((e as Dictionary).get("index"))
+			# Godot JSON.parse_string returns float for every JSON number (observed:
+			# manifest grid [16,8] reads back as [16.0,8.0]). Accept either numeric
+			# form before int()-casting, as the desert record loop below already does.
+			var iv: Variant = (e as Dictionary).get("index", null)
+			if nm != "" and (iv is int or iv is float):
+				out[nm] = int(iv)
 	return out
 
 
@@ -507,9 +515,11 @@ func _check_winter_dictionary(_v: Dictionary) -> void:
 		"unresolved SP-2 source_png=%d (expected 0; SP_02 report §8)" % unresolved.size())
 
 
-# SP-3 landed as atlas/desert_remap.json with `remap` (11 direct name->record
-# pairs) and `height_gated` (1 record). The height gate is DATA_ONLY_NOT_EXECUTED
-# per SP_03 §3.1, so only the 11 direct pairs enter the UV2 consistency map.
+# SP-3 landed as atlas/desert_remap.json; DESERT-REMAP-02 extended `remap` to
+# 38 donor-grounded direct name->record pairs (DESERT_REMAP_02.md:49-93 §2,
+# :162-169 §4) plus `height_gated` (1 record). The height gate is
+# DATA_ONLY_NOT_EXECUTED per SP_03 §3.1, so only the 38 direct pairs enter the
+# UV2 consistency map.
 func _check_desert_remap(v: Dictionary) -> void:
 	var parsed: Variant = _read_json_variant(DESERT_REMAP_PATH)
 	var remap: Dictionary = {}
@@ -519,6 +529,18 @@ func _check_desert_remap(v: Dictionary) -> void:
 		remap = rv if rv is Dictionary else {}
 		var gv: Variant = (parsed as Dictionary).get("height_gated", [])
 		gated = gv if gv is Array else []
+	# Re-baseline against the 38-pair donor remap: the JSON declares its own
+	# extension.after counts, which must agree with the embedded donor-grounded
+	# constants. A shrunken remap or shifted declaration fails; no bar is lowered.
+	var expected_direct := EXPECTED_DESERT_DIRECT_PAIRS
+	var expected_gated := EXPECTED_DESERT_GATED_PAIRS
+	if parsed is Dictionary:
+		var ext_v: Variant = (parsed as Dictionary).get("extension", null)
+		if ext_v is Dictionary:
+			var after_v: Variant = (ext_v as Dictionary).get("after", null)
+			if after_v is Dictionary:
+				expected_direct = int((after_v as Dictionary).get("direct_cases", -1))
+				expected_gated = int((after_v as Dictionary).get("height_gated_cases", -1))
 	var name_to_idx := _layout_name_to_index(_read_json_dict(SUMMER_MANIFEST_PATH))
 	var idx_map := {}
 	var unresolved: Array[String] = []
@@ -564,11 +586,24 @@ func _check_desert_remap(v: Dictionary) -> void:
 	_m["desert_remap_height_gated_pairs"] = gated.size()
 	_m["desert_remap_indices"] = idx_map
 	_m["desert_remap_unresolved"] = unresolved
-	check("desert_remap_parsed", remap.size() == 11 and gated.size() == 1,
-		"SP-3 direct=%d (expected 11) height_gated=%d (expected 1, DATA_ONLY_NOT_EXECUTED)" % [
-			remap.size(), gated.size()])
+	# Evidence only (no new check, no threshold change): what the SP-6 consumer
+	# actually loaded from this same JSON, for the UV2 consistency verdict below.
+	var consumer_entries := -1
+	var stats_v: Variant = v.get("stats", null)
+	if stats_v is Dictionary:
+		var rs: Variant = (stats_v as Dictionary).get("desert_remap", null)
+		if rs is Dictionary:
+			consumer_entries = int((rs as Dictionary).get("direct_entries", -1))
+	_m["desert_consumer_remap_entries"] = consumer_entries
+	check("desert_remap_parsed", (remap.size() == expected_direct
+		and expected_direct == EXPECTED_DESERT_DIRECT_PAIRS
+		and gated.size() == expected_gated
+		and expected_gated == EXPECTED_DESERT_GATED_PAIRS),
+		("SP-3/DESERT-REMAP-02 direct=%d (expected %d, donor-grounded 38) "
+		+ "height_gated=%d (expected %d, DATA_ONLY_NOT_EXECUTED)") % [
+			remap.size(), expected_direct, gated.size(), expected_gated])
 	check("desert_remap_targets_resolve", unresolved.is_empty(),
-		"unresolved SP-3 source/target records=%d (expected 0)" % unresolved.size())
+		"unresolved SP-3 source/target records=%d (expected 0; 38 direct + 1 gated)" % unresolved.size())
 
 
 # --------------------------------------------------------------------- building
