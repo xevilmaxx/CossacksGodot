@@ -588,4 +588,291 @@ in this implementation step. Whether the rendered frame actually loses the rings
 checkerboard is **UNVERIFIED** until G04's matched-camera capture and a second-agent visual
 read; **no donor parity and no gate PASS is claimed** (CHARTER §3/§5).
 
-*End of Y08 report (analysis + follow-up + Y08-IMPL). Read-only report ownership; no runner job, no Godot process, no donor parity claim.*
+---
+
+## 12. COORD follow-up (Y08b) — neutralise the last visible exceptions, READ-ONLY proposal
+
+### 12.1 Mandate and answer
+
+COORD: the Branch-A capture `...\y08\realmap.png` (matched camera, 0 script errors) still shows
+the same rings around starts/mines and the blocky field. Produce a **minimal fix that makes
+the VISIBLE tile ids of mine worked ground / deposit aprons / start keep-clear equal `test8`
+while every gameplay array stays byte-identical**. Report only; await grant before applying.
+
+**Answer:** three one-site edits in `game.gd`, all **tileblock-only**. The remaining rings are
+exactly the exceptions Branch A kept (E21): mine aprons (`mine_mask != 0`, also `terrain 1`),
+the start keep-clear disc, and the road/shore/rock roles. Remove `mine_mask` from the final
+authority's skip list and write `meadow_id` there instead; make `_finalize_mine_tiles()`'s
+late `g1` write use `test8`; and make the start keep-clear write apply to the whole disc
+(water-guarded) instead of only `terrain==2` cells. `blocked[]`, `terrain[]`, `height[]`,
+`mine_mask`, `can_place`, deposit snapping, start protection, RNG and all gates are untouched.
+The field checker is **texture-level** (E20) and is Branch B's separate A/B — this proposal
+does not touch the shader.
+
+### 12.2 New evidence (all OBSERVED unless labelled)
+
+| ID | Label | Evidence |
+|---|---|---|
+| E19 | OBSERVED | `y08/realmap.png` opened directly, 1280×720, `script_error_lines=0`, camera `(144.1104,58,-88.57262)` — matches y07/g04 exactly (`Y08_capture_log.md:46-86`). Concentric bands still wrap every deposit/start; tan/grey mine aprons and field checker persist. |
+| E20 | OBSERVED | Pixel-aligned y07→y08 diff on clean field crops: `(1000,600)-(1270,700)`, `(470,0)-(660,80)`, left/right deposit crops → **zero changed pixels** (`frac_any=0.000`, `max diff=0`); mean Y 76.04/63.10/81.15/82.14 and light/dark ratios identical in both frames. Branch A changed **no** open-field pixel: the field was already all `test8`; its checker is **inside the atlas cell at 2 m repeat** (Branch B territory). Whole image does change (21.7 % of pixels), concentrated in forest/start/deposit bands: `top_left` 21.3 %, `bottom_mid` 8.3 %, `center_start` 0.7 %. |
+| E21 | OBSERVED | Code trace of the surviving exceptions after Branch A: `game.gd:2155-2156` skips `mine_mask!=0` (apron keeps `ground1` from `:2141-2143`); `:2158-2159` skips `terrain 1/3/4/5`; `_finalize_mine_tiles():382-385` writes `ground1` again **after** `_assign_tileblocks()`; `:395-398` writes `g0` only where `terrain==2`. These four writes are the only remaining per-cell colour sources near deposits/starts. |
+| E22 | OBSERVED | Horizontal luma scan through the right deposit (y=420, x=930–1280) oscillates ≈60→100→60 luma across the band stack; through the left deposit (y=180) ≈55→125→54 — the rings are large-amplitude id changes, not fine grain. |
+| E23 | OBSERVED | Gameplay reads of `tileblock`: `world.gd:1195-1205` `_art_name()` is a **visual/winter art-name lookup only**; `game.gd:4211-4245` `can_place()` uses `res_nodes`/spatial grid/`terrain`, not `tileblock`. `mine_mask` is read for mask/smoothing (`game.gd:611-635`, `:2087`, `:2287`, `:2409`) and never derived from `tileblock`. Grep over `variant3d/tests/**/*.gd` and `tools/*.py` finds **no assertion** that apron tileblock equals `ground1` (T2GEN P0-1 is a terrain/mask/parity role, `game.gd:54-57`). |
+| E24 | OBSERVED | Winter alias maps `test8`→`winter21` (`WINTER_ART:1831`); `winter_block_for()` at `:1852-1856` is unchanged, so re-id'd cells still alias correctly. |
+
+### 12.3 Exact unified diff (PROPOSAL ONLY — apply after COORD grants `game.gd`)
+
+```diff
+diff --git a/variant3d/scripts/game.gd b/variant3d/scripts/game.gd
+--- a/variant3d/scripts/game.gd
++++ b/variant3d/scripts/game.gd
+@@ -380,6 +380,6 @@ func _finalize_mine_tiles() -> void:
+ 	if tileblock.size() != MAP_W * MAP_H:
+ 		return
+-	var g1 := _blk("ground1")
++	var g1 := _blk("test8")  # Y08b PORT APPROX: visible worked ground = meadow id; mine_mask/terrain untouched
+ 	for mi in mine_mask.size():
+ 		if mine_mask[mi] != 0:
+ 			tileblock[mi] = g1
+@@ -393,6 +393,6 @@ func _finalize_mine_tiles() -> void:
+ 				if Vector2(float(xx) - sc.x, float(yy) - sc.y).length() <= 16.05:
+ 					var ci := _t(xx, yy)
+ 					if terrain[ci] == 2:
+ 						terrain[ci] = 0
+-						if tileblock.size() == MAP_W * MAP_H:
+-							tileblock[ci] = g0
++				if tileblock.size() == MAP_W * MAP_H and int(tileblock[ci]) != BLK_WATER:
++					tileblock[ci] = g0  # Y08b: whole start disc visible as meadow id; water kept
+ 		# Keep every start walkable: stamp relief / collision can otherwise
+ 		# enclose an AI home slot with rock, breaking scan_map reachability.
+@@ -2146,7 +2146,7 @@ func _assign_tileblocks() -> void:
+ 	# the mine apron, so no per-cell colour ring, spot or checkerboard survives
+ 	# into UV2.x. Exceptions are only donor-required roles: water, shore/sand,
+-	# rock/cliff, worked road/apron. _blk() draws no RNG; no terrain/height/
++	# rock/cliff and roads. Mine worked ground is now visible-meadow too. _blk() draws no RNG; no terrain/height/
+ 	# blocked write. Placement BEFORE the winter alias keeps season art intact.
+ 	var meadow_id := _blk("test8")
+@@ -2152,8 +2152,9 @@ func _assign_tileblocks() -> void:
+ 	for i in tileblock.size():
+ 		if int(tileblock[i]) == BLK_WATER:   # 255, game.gd:52
+ 			continue
+-		if mine_mask[i] != 0:                # real worked ground wins
+-			continue
++		if mine_mask[i] != 0:                # Y08b: VISIBLE id only; mask/terrain untouched
++			tileblock[i] = meadow_id
++			continue
+ 		var role: int = int(terrain[i])
+ 		if role == 1 or role == 3 or role == 4 or role == 5:
+ 			continue  # road / water / shore-sand / rock-cliff
+```
+
+Net effect: **7 insertions, 6 deletions** (net +1 line), four hunks in one file. No RNG token, no new id
+outside the 124-name table, no shader/atlas/test/config change.
+
+**What each hunk does (DERIVED):**
+- `g1`: `_finalize_mine_tiles()` runs *after* `_assign_tileblocks()`; without this change it
+  would re-paint every apron `ground1` after the final authority. Now both agree on `test8`.
+- Start disc: the write is lifted out of `if terrain[ci]==2` and water-guarded; `terrain[ci]=0`
+  remains gated exactly as before, so walkability/`blocked` semantics are unchanged.
+- Final authority: a `mine_mask` cell (terrain 1 dirt disc, including the feathered rim that
+  made the concentric bands) now receives `meadow_id`. `mine_mask` itself is **not** changed.
+- `terrain 1` roads with `mine_mask==0`, `terrain 4` shore/sand and `terrain 5` rock/cliff keep
+  their donor-required art; `BLK_WATER` still wins.
+
+### 12.4 Backup command and baseline
+
+```powershell
+Copy-Item -LiteralPath 'variant3d\scripts\game.gd' -Destination 'inbox\backup\game.gd.bak-Y08B' -Force
+Get-FileHash -LiteralPath 'variant3d\scripts\game.gd','inbox\backup\game.gd.bak-Y08B' -Algorithm SHA256
+```
+Pre-edit baseline (OBSERVED this turn): **257,818 bytes**, SHA-256
+`0009F025446BFC62706FCDF5B07B33539FF628CE87AF33193954B384A12EA64C` — the exact post-Branch-A
+state. `inbox/backup/game.gd.bak-Y08B` does not exist yet (`Test-Path` = False). Do **not**
+overwrite `game.gd.bak-Y08` (pre-Branch-A baseline) or any earlier backup.
+
+Rollback (if granted and applied):
+```powershell
+Copy-Item -LiteralPath 'inbox\backup\game.gd.bak-Y08B' -Destination 'variant3d\scripts\game.gd' -Force
+```
+Both hashes must return to `0009F025…EA64C`.
+
+### 12.5 Invariant proof (DERIVED from the diff)
+
+| Invariant | Status | Proof |
+|---|---|---|
+| `blocked[]` / `height[]` / `terrain[]` | **byte-identical** | no write added or removed; `terrain[ci]=0` still gated by `terrain[ci]==2`; the separate walkability loop (`:401-408`) and its `terrain=5→0` branch untouched. |
+| `mine_mask` | byte-identical | only read (`mine_mask[mi]!=0`); never written in any hunk; `_paint_terrain`/`_mark_mine_mask` untouched. |
+| `can_place` / deposit snapping / start protection | unchanged | E23: `can_place()` uses `res_nodes`+spatial grid+`terrain`, not `tileblock`; `_snap_free_point` and `map_starts` untouched; start keep-clear still runs on the same disc and still clears `blocked` the same way. |
+| Roads / shore / rock roles | preserved | `terrain 1` with `mine_mask==0`, `terrain 4`, `terrain 5` still skip the normalisation; their donor art (`_apply_shore_cliffs`, road pick) unchanged. |
+| RNG stream | byte-identical | every hunk is a lookup/value substitution; zero `randf`/`randi` added, removed or reordered; all `_tb_pick` draws, Y04/Y07 guards, `_stamp_grass_spots()` and `_smooth_tilemap()` unchanged. |
+| Determinism | preserved | same seed → same bytes; `t_map_variety same_seed_byte_identical` holds. Frozen tileblock hash is not a valid gate. |
+| `tileblock` contract | intact | `PackedByteArray`, size `MAP_W*MAP_H`, uint8 79 valid; `BLK_WATER=255` guarded in both the final authority and the new start-disc write. |
+| Mine apron gameplay | intact | terrain=1 and `mine_mask` stay exactly as before; only the *visible* art name changes (`world.gd:_art_name`, E23). T2GEN P0-1's terrain/mask parity role preserved. |
+| Season / winter | intact | normalisation still before the winter alias (`:2165`); `test8`→`winter21` via `WINTER_ART:1831`; all re-id'd cells alias correctly. |
+| B03/Y03/Y05/Y07 + collision-only gradient | intact | no change to `:2008`, guards, spot pass, smoother, or the single stone-quarry `terrain=5` write (`:852`). |
+| Z08 relief | intact | no mesh/prop/`world3d.gd` write; relief stays from props + real height. |
+| Guards / gates | honoured | no threshold lowered, assertion deleted or expected-failure flipped. |
+| S-25-09 | honoured | no noise/dither/hash/luminance field; data-only visibility change. |
+| Donor parity | none claimed | universal-meadow visible id for worked ground is **PORT APPROX**; no donor GPU A/B frame exists. |
+
+### 12.6 Acceptance (matched-camera capture + metrics; G04 owns the runner)
+
+Branches: `B1` = current y08 frame (post-Branch-A, matched camera), `B1b` = this proposal.
+Same seed 20261113, same camera `(144.1104,58,-88.57262)`, same `--screenshot-frames 10`.
+
+1. **No rings around mines/starts** — C04/G05 R1–R6 visual read: zero nested stepped bands at
+   every deposit and start; horizontal luma scans of §12.2 E22 lose their ≈60↔100 oscillation
+   and approach the surrounding meadow level; radial luma profiles at ring centres flatten.
+2. **No new checker from this change** — clean field crops (E20) must stay pixel-identical to
+   B1 (this proposal touches only exception cells); `BV32`/`tile_repeat` there must not worsen.
+   The residual texture-level checker remains Branch B's separate A/B — do not attribute it here.
+3. **Exceptions still readable** — roads, shore/sand, rock/cliff remain visibly distinct;
+   mine/resource entities still sit on their deposits; no new seam/black row;
+   `non_black_fraction=1.0`, `full_width_dark_rows=0`, `script_error_lines=0`.
+4. **Gameplay dump probe** — optional `--dump-map`: `blocked`, `terrain`, `height`, `mine_mask`
+   byte-identical to the B1 same-seed dump; tileblock near deposits/starts dominated by 79;
+   no out-of-atlas id. Gates: selftest 29/29, uitest 17/17, `t_render_mode`, `t_map_variety` 5/5
+   incl. `same_seed_byte_identical`, `assert_clean CLEAN`, 2D `app/` untouched.
+5. **Epistemic** — metrics are movement indicators only, never thresholds or donor parity.
+   Whether the rings actually disappear is **UNVERIFIED** until G04 captures and a second agent
+   reads. Donor parity stays **UNVERIFIED** (CHARTER §3/§5).
+
+### 12.7 What NOT to do
+
+1. Do not change `mine_mask`, `terrain`, `height`, `blocked`, `res_nodes` or `map_starts` to
+   chase the rings — E23 proves they are gameplay sources, not the visible id.
+2. Do not remove the road/shore/rock exceptions or the water guard; donor-type art and water
+   rendering depend on them.
+3. Do not revert Branch A (`game.gd.bak-Y08`), Y05's `:2008`, Y07's guards, B03's collision-only
+   gradient or the Z08 relief path.
+4. Do not edit the shader for the rings — the field checker is texture-level (E20) and belongs
+   to Branch B's separate A/B; no synthetic field (S-25-09).
+
+### 12.8 Status
+
+**READ-ONLY PROPOSAL ONLY.** No hunk in §12.3 was applied; no backup was created; no Godot
+process, runner job, queue mutation, donor file or other repo file was touched. Awaiting
+COORD's explicit ownership grant for `game.gd`. **No donor parity and no gate PASS claimed.**
+
+### 12.9 APPLIED — Y08b-IMPL (COORD exclusive-ownership grant for `game.gd`)
+
+Status: **APPLIED**. Exactly §12.3's three sites were applied to `variant3d/scripts/game.gd`;
+no other repo file was edited by this step (report section only). No runner job, no Godot
+process, no queue/lock/counter mutation, no shader/atlas/asset/config/test/donor/git write.
+
+**Backup (taken BEFORE the first edit):**
+
+| Item | Value |
+|---|---|
+| Command | `Copy-Item -LiteralPath 'variant3d\scripts\game.gd' -Destination 'inbox\backup\game.gd.bak-Y08b' -Force` |
+| Pre-edit `game.gd` | **257,818 bytes**, SHA-256 `0009F025446BFC62706FCDF5B07B33539FF628CE87AF33193954B384A12EA64C` — exactly §12.4's baseline, so no intervening edit existed |
+| `inbox/backup/game.gd.bak-Y08b` | **257,818 bytes**, SHA-256 **identical**; did not exist beforehand; `bak-Y08`, `bak-Y05`, `bak-Y04`, `bak-Y03`, `bak-L01`, `bak-B03*` untouched |
+| Post-edit `game.gd` | **258,079 bytes**, SHA-256 `E6295C02C4E235D98F4792C79668DC1F80D6A492BC3DF69EB077290E6BE17865` |
+
+**Exact applied diff (verbatim `git diff --no-index -- inbox/backup/game.gd.bak-Y08b variant3d/scripts/game.gd`):**
+
+```diff
+diff --git a/inbox/backup/game.gd.bak-Y08b b/variant3d/scripts/game.gd
+index 6d6bac8e..0a747b41 100644
+--- a/inbox/backup/game.gd.bak-Y08b
++++ b/variant3d/scripts/game.gd
+@@ -379,7 +379,7 @@ func _finalize_mine_tiles() -> void:
+ 			_mark_mine_mask(n.pos, 3.0 * TILE)
+ 	if tileblock.size() != MAP_W * MAP_H:
+ 		return
+-	var g1 := _blk("ground1")
++	var g1 := _blk("test8")  # Y08b PORT APPROX: visible worked ground = meadow id; mine_mask/terrain untouched
+ 	for mi in mine_mask.size():
+ 		if mine_mask[mi] != 0:
+ 			tileblock[mi] = g1
+@@ -394,8 +394,8 @@ func _finalize_mine_tiles() -> void:
+ 					var ci := _t(xx, yy)
+ 					if terrain[ci] == 2:
+ 						terrain[ci] = 0
+-						if tileblock.size() == MAP_W * MAP_H:
+-							tileblock[ci] = g0
++				if tileblock.size() == MAP_W * MAP_H and int(tileblock[ci]) != BLK_WATER:
++					tileblock[ci] = g0  # Y08b: whole start disc visible as meadow id; water kept
+ 		# Keep every start walkable: stamp relief / collision can otherwise
+ 		# enclose an AI home slot with rock, breaking scan_map reachability.
+ 		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
+@@ -2146,13 +2146,14 @@ func _assign_tileblocks() -> void:
+ 	# patch (0,0) constant 1.0) AFTER smoothing, forest borders, L01 spots and
+ 	# the mine apron, so no per-cell colour ring, spot or checkerboard survives
+ 	# into UV2.x. Exceptions are only donor-required roles: water, shore/sand,
+-	# rock/cliff, worked road/apron. _blk() draws no RNG; no terrain/height/
++	# rock/cliff and roads. Mine worked ground is now visible-meadow too. _blk() draws no RNG; no terrain/height/
+ 	# blocked write. Placement BEFORE the winter alias keeps season art intact.
+ 	var meadow_id := _blk("test8")
+ 	for i in tileblock.size():
+ 		if int(tileblock[i]) == BLK_WATER:   # 255, game.gd:52
+ 			continue
+-		if mine_mask[i] != 0:                # real worked ground wins
++		if mine_mask[i] != 0:                # Y08b: VISIBLE id only; mask/terrain untouched
++			tileblock[i] = meadow_id
+ 			continue
+ 		var role: int = int(terrain[i])
+ 		if role == 1 or role == 3 or role == 4 or role == 5:
+```
+
+Three sites / three diff hunks: `g1` (`:382`), start-disc write (`:397-398`), final-authority
+comment + `mine_mask` branch (`:2149`, `:2155-2156`). `git diff --no-index --numstat` →
+**6 insertions, 5 deletions** (net +1 line). §12.3's "7/6" estimate counted the unchanged
+`continue` line as removed/re-added; the **resulting source is exactly the §12.3 final state**.
+No whitespace errors reported by `git diff --no-index --check`.
+
+**Static verification (no Godot, OBSERVED):**
+- `var g1 := _blk("test8")` at `:382`; `var g0 := _blk("test8")` at `:388`; water-guarded
+  start write at `:397-398`; `var meadow_id` at `:2151`; `tileblock[i] = meadow_id` twice
+  (`:2155` mine branch, `:2160` ordinary branch).
+- Zero `randf(`/`randi(` tokens in the `_finalize_mine_tiles()` region (375–405) and in the
+  final-authority region (2144–2162).
+- Y05 `:2008` `test8`, four Y07 guards (`:2333/2337/2341/2345`), `_stamp_grass_spots()` `:2130`,
+  `_smooth_tilemap()` `:2134` and winter alias `:2166` all present in the expected order.
+- Exactly one executable `terrain[…] = 5` write (stone-quarry disc `:852`).
+- Comment/string-stripped bracket balance: `()` 3740/3740, `[]` 1356/1356, `{}` 257/257.
+
+**Invariants (DERIVED; re-check with the optional dump probe):**
+
+| Invariant | Status | Proof |
+|---|---|---|
+| `blocked[]` / `height[]` / `terrain[]` | byte-identical | no write added/removed; `terrain[ci]=0` still gated by `terrain[ci]==2`; walkability loop `:401-408` untouched. |
+| `mine_mask` | byte-identical | only read; `_paint_terrain`/`_mark_mine_mask` untouched. |
+| `can_place` / deposit snapping / start protection | unchanged | E23: gameplay uses `res_nodes`/spatial grid/`terrain`, not `tileblock`; `map_starts` and the blocked-clearance loop untouched. |
+| Roads / shore / rock / water | preserved | `terrain 1` with `mine_mask==0`, `4`, `5` still skip; new start write is `BLK_WATER`-guarded. |
+| RNG stream | byte-identical | three sites are lookups/value substitutions; zero RNG tokens added, removed or reordered; all `_tb_pick` draws/guards/spot pass/smoother verbatim. |
+| Determinism | preserved | same seed → same bytes; `t_map_variety same_seed_byte_identical` holds. Frozen tileblock hash is not a valid gate. |
+| `tileblock` contract | intact | `PackedByteArray`, size `MAP_W*MAP_H`, uint8 79 valid; `BLK_WATER=255` never written. |
+| Mine apron gameplay | intact | terrain=1 + `mine_mask` unchanged; only the visible art name changes (`world.gd:_art_name`, E23); T2GEN P0-1 terrain/mask role preserved. |
+| Season / winter | intact | normalisation still before winter alias `:2166`; `test8`→`winter21` (`WINTER_ART:1831`). |
+| B03/Y03/Y05/Y07/Y08 Branch A + collision-only gradient | intact | no change to `:2008`, guards, spot pass, smoother, `:852`, or the Branch-A block other than the two §12.3 lines. |
+| Z08 relief | intact | no mesh/prop/`world3d.gd` write. |
+| Guards / gates / S-25-09 | honoured | no threshold lowered, assertion deleted, expected-failure flipped, or synthetic field added. |
+| Donor parity | none claimed | visible-id substitution is **PORT APPROX**; no donor GPU A/B frame exists. |
+
+**G04 gate list (Y08b-IMPL runs none):**
+1. selftest **29/29**; uitest **17/17**; `t_render_mode` green; `t_map_variety` **5/5** incl.
+   `same_seed_byte_identical`; `assert_clean CLEAN`; `script_error_lines == 0`,
+   `non_black_fraction == 1.0`, `full_width_dark_rows == 0`; 2D `app/` untouched.
+2. Matched-camera `--seed 20261113` capture (camera `(144.1104,58,-88.57262)`, unique id),
+   C04/G05 R1–R6 read: **no concentric rings around mines/starts**, clean field crops
+   (E20) unchanged, roads/shore/rock still distinct, no new seam/black row.
+3. C01 `terrain_ab_metric.py` on the identical crop — movement indicators only, never
+   thresholds or donor parity; compare against the y08 (B1) frame.
+4. Optional `--dump-map`: `blocked`/`terrain`/`height`/`mine_mask` byte-identical to the B1
+   same-seed dump; tileblock near deposits/starts dominated by 79; no out-of-atlas id.
+
+**Rollback:**
+```powershell
+Copy-Item -LiteralPath 'inbox\backup\game.gd.bak-Y08b' -Destination 'variant3d\scripts\game.gd' -Force
+Get-FileHash -LiteralPath 'variant3d\scripts\game.gd','inbox\backup\game.gd.bak-Y08b' -Algorithm SHA256
+```
+Both hashes must return `0009F025446BFC62706FCDF5B07B33539FF628CE87AF33193954B384A12EA64C`
+(257,818 bytes), restoring the exact post-Branch-A state.
+
+**Epistemic status:** no Godot, runner job, queue mutation, donor file read/copy or other
+source edit occurred in this implementation step. Whether the rings actually disappear is
+**UNVERIFIED** until G04's matched-camera capture and a second-agent visual read. **No donor
+parity and no gate PASS claimed** (CHARTER §3/§5).
+
+*End of Y08 report (analysis + follow-up + Y08-IMPL + Y08b proposal + Y08b-IMPL). Stay available.*

@@ -379,7 +379,7 @@ func _finalize_mine_tiles() -> void:
 			_mark_mine_mask(n.pos, 3.0 * TILE)
 	if tileblock.size() != MAP_W * MAP_H:
 		return
-	var g1 := _blk("ground1")
+	var g1 := _blk("test8")  # Y08b PORT APPROX: visible worked ground = meadow id; mine_mask/terrain untouched
 	for mi in mine_mask.size():
 		if mine_mask[mi] != 0:
 			tileblock[mi] = g1
@@ -394,8 +394,8 @@ func _finalize_mine_tiles() -> void:
 					var ci := _t(xx, yy)
 					if terrain[ci] == 2:
 						terrain[ci] = 0
-						if tileblock.size() == MAP_W * MAP_H:
-							tileblock[ci] = g0
+				if tileblock.size() == MAP_W * MAP_H and int(tileblock[ci]) != BLK_WATER:
+					tileblock[ci] = g0  # Y08b: whole start disc visible as meadow id; water kept
 		# Keep every start walkable: stamp relief / collision can otherwise
 		# enclose an AI home slot with rock, breaking scan_map reachability.
 		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
@@ -2146,13 +2146,14 @@ func _assign_tileblocks() -> void:
 	# patch (0,0) constant 1.0) AFTER smoothing, forest borders, L01 spots and
 	# the mine apron, so no per-cell colour ring, spot or checkerboard survives
 	# into UV2.x. Exceptions are only donor-required roles: water, shore/sand,
-	# rock/cliff, worked road/apron. _blk() draws no RNG; no terrain/height/
+	# rock/cliff and roads. Mine worked ground is now visible-meadow too. _blk() draws no RNG; no terrain/height/
 	# blocked write. Placement BEFORE the winter alias keeps season art intact.
 	var meadow_id := _blk("test8")
 	for i in tileblock.size():
 		if int(tileblock[i]) == BLK_WATER:   # 255, game.gd:52
 			continue
-		if mine_mask[i] != 0:                # real worked ground wins
+		if mine_mask[i] != 0:                # Y08b: VISIBLE id only; mask/terrain untouched
+			tileblock[i] = meadow_id
 			continue
 		var role: int = int(terrain[i])
 		if role == 1 or role == 3 or role == 4 or role == 5:
