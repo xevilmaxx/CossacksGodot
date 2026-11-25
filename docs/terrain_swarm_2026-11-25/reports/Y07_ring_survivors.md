@@ -4,8 +4,8 @@ ticket: "URGENT — surviving concentric rings after Y04 guards + Y05 banding fi
 title: "Y07 — the surviving ring producer is the stale Y04 guard id, not a new stamp"
 agent: "Y07 (read-only analysis subagent)"
 created: 2026-11-25
-status: DELIVERED__READ_ONLY__ONE_REPORT_ONLY__NO_RUNNER__NO_GODOT__NO_CODE_EDIT
-scope: "Exactly one new file — this report. No .gd/.gdshader/asset/config/test/JSON/result/donor edit, no runner job, no Godot process, no queue/lock/counter mutation. Image/crop decodes were read-only; no scratch file was written."
+status: DELIVERED__Y07_IMPL_APPLIED__FOUR_GUARD_LINES__NO_RUNNER__NO_GODOT__GATES_WITH_G04
+scope: "Analysis phase wrote one report only (image/crop decodes read-only). Under COORD's Y07-IMPL exclusive-ownership grant exactly four one-line guard edits were applied to variant3d/scripts/game.gd at :2315/:2319/:2323/:2327, plus one pre-edit backup inbox/backup/game.gd.bak-Y07, and this report was updated with §8. No runner job, no Godot process, no queue/lock/counter mutation, no .gdshader/asset/config/test/JSON/result/donor edit. No donor parity claim."
 root: "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3"
 labels: [OBSERVED, DERIVED, UNVERIFIED, "PORT APPROXIMATION"]
 parity_guard: "NO DONOR PARITY CLAIM. No donor file, donor screenshot or donor GPU A/B frame was read or executed for an attribution claim. All donor references are structural citations inherited from prior in-repo reports; every visual expectation here is internal consistency only."
@@ -126,7 +126,7 @@ disc would not remove the rings — it would only move the boundaries.
 
 ---
 
-## 4. Minimal fix (PROPOSAL ONLY — no edit applied by Y07)
+## 4. Minimal fix (proposed in analysis; applied under the Y07-IMPL grant — see §8)
 
 **One file:** `variant3d/scripts/game.gd`. **Four one-line edits** in
 `_tb_smooth_pair()` at current `:2315`, `:2319`, `:2323`, `:2327`. Keep every
@@ -251,10 +251,133 @@ A strictly smaller variant — swap `grass9`→`test8` in the four lines — is 
 
 ## 7. Scope statement
 
-Under this read-only Y07 ticket only this report was written. No runner job was
-submitted, no Godot process launched, no queue/lock/counter mutated, no `.gd`,
-`.gdshader`, asset, config, test, JSON, result or donor file edited. The diff in §4 is
-a **proposal only**, awaiting COORD's ownership grant and G04's runner. **No donor
-parity claim is made.**
+Analysis phase (Y07) wrote one report only and performed no code edit, runner job,
+Godot launch, queue/lock/counter mutation, donor read or scratch-file write. Under
+COORD's subsequent **Y07-IMPL exclusive-ownership grant**, exactly four one-line guard
+edits were applied to `variant3d/scripts/game.gd`, one pre-edit backup was created, and
+this report was updated with §8. No `.gdshader`, asset, config, test, JSON, result or
+donor file was edited in either phase; no runner job or Godot process was started.
+**No donor parity claim is made.**
 
-*End of Y07. One report, no code edit, no runner, no donor-parity claim.*
+---
+
+## 8. APPLIED — Y07-IMPL (COORD exclusive-ownership grant)
+
+Status: **APPLIED**. Exactly the four one-line guard edits of §4 were applied at
+current `game.gd:2315`, `:2319`, `:2323`, `:2327`. No explanatory comment was added —
+the grant specified four one-line edits only. No Godot process, runner job, queue/lock/
+counter mutation, donor access or other source edit occurred. Donor parity remains
+**UNVERIFIED**.
+
+### 8.1 Backup and hashes (OBSERVED)
+
+- Backup created **before** the first edit: `inbox/backup/game.gd.bak-Y07` (`Test-Path`
+  was `False` beforehand; no existing backup overwritten — `.bak-Y03`, `.bak-Y04`,
+  `.bak-Y05`, `.bak-L01`, `.bak-B03*` all left intact).
+- Pre-edit `game.gd` and backup SHA-256, **identical**:
+  `248160354F1762E97FD73E2CCE7879D947681DA8F27286FBA06964DCE5847CF2`. This is exactly
+  Y05 §9.1's post-edit hash, proving no intervening `game.gd` edit existed.
+- Pre-edit size: **256,610 bytes**, mtime 2026-11-25 16:28:20.
+- Post-edit `game.gd` SHA-256:
+  `B9D07265B250BC458D4FEA703452D1CD7F6FCC7B45C4DD888C19F10FD212D890`.
+- Post-edit size: **256,802 bytes** (+192 = four added `and int(tileblock[_t(…)]) !=
+  _blk("test8")` fragments), mtime 2026-11-25 16:42:55.
+
+### 8.2 Exact applied diff (verbatim `git diff --no-index -- inbox/backup/game.gd.bak-Y07 variant3d/scripts/game.gd`)
+
+```diff
+diff --git "a/inbox\\backup\\game.gd.bak-Y07" "b/variant3d\\scripts\\game.gd"
+index c183794d..26191113 100644
+--- "a/inbox\\backup\\game.gd.bak-Y07"
++++ "b/variant3d\\scripts\\game.gd"
+@@ -2312,19 +2312,19 @@ func _tb_smooth_pair(x1: int, y1: int, x2: int, y2: int, brng: RandomNumberGener
+ 		return
+ 	if bi1 - bi2 == 2:
+ 		var ni := _tb_pick(best, int((bi1 + bi2) / 2), brng)
+-		if ni >= 0 and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
++		if ni >= 0 and int(tileblock[_t(x1, y1)]) != _blk("test8") and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
+ 			tileblock[_t(x1, y1)] = ni
+ 	elif bi2 - bi1 == 2:
+ 		var ni2 := _tb_pick(best, int((bi1 + bi2) / 2), brng)
+-		if ni2 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
++		if ni2 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("test8") and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
+ 			tileblock[_t(x2, y2)] = ni2
+ 	elif bi1 < bi2:
+ 		var ni3 := _tb_pick(best, bi1 + 1, brng)
+-		if ni3 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
++		if ni3 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("test8") and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
+ 			tileblock[_t(x2, y2)] = ni3
+ 	else:
+ 		var ni4 := _tb_pick(best, bi2 + 1, brng)
+-		if ni4 >= 0 and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
++		if ni4 >= 0 and int(tileblock[_t(x1, y1)]) != _blk("test8") and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
+ 			tileblock[_t(x1, y1)] = ni4
+```
+
+`git diff --no-index --numstat` → **4 insertions, 4 deletions**, one hunk. No other
+line changed relative to the backup.
+
+### 8.3 Invariants verified after the edit (OBSERVED / DERIVED)
+
+| Item | Status | Evidence |
+|---|---|---|
+| Exactly four lines changed | OBSERVED | §8.2 diff; numstat `4 4`; one hunk |
+| All four `_tb_pick` calls kept, same order/arguments | OBSERVED | `:2314`, `:2318`, `:2322`, `:2326` verbatim in the diff context |
+| `brng` stream byte-identical | DERIVED | no draw added/removed; `_blk()` is a pure dictionary lookup (Y03 §10.3, Y05 §9.4) |
+| Y05 neutralisation intact | OBSERVED | `tex = _blk("test8")` still at `:2008` |
+| Y03 P1 draws intact | OBSERVED | `_tb_pick(2,5)` `:1990`, `_tb_pick(1,4)` `:1994` |
+| Y03 guarded write intact | OBSERVED | `if tex >= 0 and tex < tbl_names.size()` / `tileblock[i] = tex` at `:2009-2010` |
+| L01 spot pass intact | OBSERVED | `_stamp_grass_spots(brng)` call `:2130`; function at `:2359` with `_tb_pick(7,1)` at `:2360`; `grass9` spot cells keep their exclusion |
+| Y04 guards intact, **widened not weakened** | OBSERVED | same four sites; `ni >= 0` checks unchanged; both `grass9` and `test8` exclusions present |
+| `_smooth_tilemap(brng,3)` intact | OBSERVED | call at `:2134`; driver `:2330-2337` |
+| B03 `terrain=5` removal intact (collision-only gradient) | OBSERVED | grep finds exactly one `terrain[ii] = 5` at `:852` (stone stamp); `set_blocked_tile` still at `:1224` and `:1310` |
+| Mine apron authority intact | OBSERVED | `:2049`, `:2088`, `:2121`, `:2143`; `_finalize_mine_tiles()` `:372` with `ground1` at `:382`/`:385`; `mine_mask` early-return `:2270-2271` unchanged |
+| `terrain` / `height` / `blocked` | DERIVED | no write added or removed anywhere in the diff; collision/start protection/walkability byte-identical |
+| `tileblock` contract | DERIVED | `PackedByteArray` size/type, uint8 ids, `ni >= 0` checks and `_blk()` validity unchanged; no out-of-atlas id |
+| Static syntax (no Godot) | OBSERVED | comment/string-stripped bracket counts: `()` 3735/3735, `[]` 1350/1350, `{}` 257/257 — all balanced |
+| Guardrails | DERIVED | no threshold lowered, no assertion deleted, no synthetic field; PORT APPROXIMATION, no donor parity |
+
+### 8.4 Gate list for G04 (Y07 runs none — one Godot at a time)
+
+1. `variant3d` selftest — expect **29/29**.
+2. `variant3d` uitest — expect **17/17**.
+3. `t_render_mode` — green.
+4. `t_map_variety` — **5/5**, including `same_seed_byte_identical`. Do **not** use a
+   frozen tileblock hash (B03 R1 / TRN-DATA precedent).
+5. `assert_clean` — **CLEAN**; 2D `app/` gates untouched; `script_error_lines == 0`,
+   `full_width_dark_rows == 0`, `non_black_fraction == 1.0`.
+6. Matched-camera windowed seed-20261113 real-map + 64² P0 captures with unique ids;
+   C04/G05 R1–R6 read: expect zero nested stepped bands around town/deposits, L01 spots
+   still present, aprons intact, no new seams/black rows. C01 metrics (`tile_repeat`,
+   `coherence`, `band_peak_deg`, row/col luma ratio) are **movement indicators only**,
+   never thresholds or parity claims.
+7. Decisive read-only probe (new unique id, `--dump-map`): decode `tileblock`, confirm
+   non-`test8`/non-`grass9` transition ids collapse in the meadow and radial profiles
+   at the historical ring centres lose their peaks; `terrain==5` stays at the
+   stone-disc level; `blocked[]` byte-identical to the same-seed pre-fix dump.
+
+G04 should record paths, timestamps, camera and result JSON fields verbatim.
+
+### 8.5 Rollback
+
+```powershell
+Copy-Item -LiteralPath 'inbox\backup\game.gd.bak-Y07' -Destination 'variant3d\scripts\game.gd' -Force
+Get-FileHash -LiteralPath 'variant3d\scripts\game.gd','inbox\backup\game.gd.bak-Y07' -Algorithm SHA256
+```
+
+Both hashes must return to
+`248160354F1762E97FD73E2CCE7879D947681DA8F27286FBA06964DCE5847CF2` (256,610 bytes:
+the post-Y05 state with Y03 + L01 + Y04 + Y05 intact).
+No other file is involved.
+
+### 8.6 Epistemic status
+
+No Godot process, runner job, queue mutation, donor file read/copy or other source edit
+occurred in this implementation step. Whether the rings are actually gone in the
+rendered frame is **UNVERIFIED** until G04's matched-camera capture and the dump probe
+(§8.4 items 6–7). **No donor parity claim.**
+
+---
+
+*End of Y07 (analysis + Y07-IMPL). One report, four-line `game.gd` hunk, one backup;
+no runner, no Godot, no donor-parity claim.*

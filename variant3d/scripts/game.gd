@@ -2312,19 +2312,19 @@ func _tb_smooth_pair(x1: int, y1: int, x2: int, y2: int, brng: RandomNumberGener
 		return
 	if bi1 - bi2 == 2:
 		var ni := _tb_pick(best, int((bi1 + bi2) / 2), brng)
-		if ni >= 0 and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
+		if ni >= 0 and int(tileblock[_t(x1, y1)]) != _blk("test8") and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
 			tileblock[_t(x1, y1)] = ni
 	elif bi2 - bi1 == 2:
 		var ni2 := _tb_pick(best, int((bi1 + bi2) / 2), brng)
-		if ni2 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
+		if ni2 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("test8") and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
 			tileblock[_t(x2, y2)] = ni2
 	elif bi1 < bi2:
 		var ni3 := _tb_pick(best, bi1 + 1, brng)
-		if ni3 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
+		if ni3 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("test8") and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
 			tileblock[_t(x2, y2)] = ni3
 	else:
 		var ni4 := _tb_pick(best, bi2 + 1, brng)
-		if ni4 >= 0 and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
+		if ni4 >= 0 and int(tileblock[_t(x1, y1)]) != _blk("test8") and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
 			tileblock[_t(x1, y1)] = ni4
 
 func _smooth_tilemap(brng: RandomNumberGenerator, passes: int = 3) -> void:
