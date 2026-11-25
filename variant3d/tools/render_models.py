@@ -61,6 +61,70 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
+# --- CLEAN-02 — additive bucket-map path resolution -------------------------
+# FOLD-06 added an additive `assets` map to every manifest entry:
+#   m["assets"]["obj"] = "res://assets/models/obj/<bucket>/<sid>.obj"
+#   m["assets"]["tex"] = "res://assets/models/tex/<bucket>/<sid>.png"
+# These point into the retained bucket trees and are the ONLY paths this bake
+# tool opens. The old absolute flat fields (m["obj"] / m["texture_png"]) were
+# moved into quarantine by CLEAN-01: they are read ONLY to label a diagnostic
+# when a bucket path is missing, and are NEVER used for rendering.
+
+def manifest_res_root(manifest_path: str) -> str:
+    """Return the Godot project root that ``res://`` maps to.
+
+    The shipped manifest always lives at ``<res_root>/assets/models/manifest.json``.
+    Deriving the root from the manifest path keeps the existing CLI unchanged
+    (no new flag) and works from any working directory.
+    """
+    abs_manifest = os.path.abspath(manifest_path)
+    suffix = os.path.join("assets", "models", "manifest.json")
+    norm = abs_manifest.replace("/", os.sep)
+    if norm.lower().endswith(suffix.lower()):
+        return abs_manifest[: -len(suffix)]
+    # Generic fallback: nearest ancestor that actually holds the manifest.
+    d = os.path.dirname(abs_manifest)
+    while True:
+        if os.path.isfile(os.path.join(d, "assets", "models", "manifest.json")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    return os.getcwd()
+
+
+def res_to_fs(res_path: str, res_root: str) -> str:
+    """Translate a Godot ``res://`` path into a filesystem path for Blender."""
+    if res_path.startswith("res://"):
+        return os.path.normpath(os.path.join(res_root, res_path[len("res://"):]))
+    return res_path
+
+
+def resolve_model_paths(m: dict, res_root: str):
+    """Return (obj_fs_path, tex_fs_path) from the FOLD-06 additive bucket map.
+
+    Primary (and only render) source: ``m["assets"]["obj"]`` / ``["tex"]``.
+    If either mapped file is absent, the legacy flat fields are consulted ONLY
+    to print a labelled diagnostic -- CLEAN-01 quarantined those originals, so
+    this tool must never fall back to and render from them.
+    """
+    assets = m.get("assets") or {}
+    obj_res = assets.get("obj", "")
+    tex_res = assets.get("tex", "")
+    obj = res_to_fs(obj_res, res_root) if obj_res else ""
+    tex = res_to_fs(tex_res, res_root) if tex_res else ""
+    if obj and tex and os.path.isfile(obj) and os.path.isfile(tex):
+        return obj, tex
+    # Diagnostic only -- the flat fields are never opened. Quoting them here
+    # makes a migration miss loud without reintroducing the quarantined art.
+    print("SKIP %s (bucket-mapped obj/tex missing from res:// tree; "
+          "legacy flat fields are DIAGNOSTIC ONLY and quarantined by CLEAN-01 "
+          "-- never used: obj=%s tex=%s)" % (
+              m.get("sid", "?"), m.get("obj", ""), m.get("texture_png", "")))
+    return None
+
+
 # --- Donor-derived blue lift (asset fix for verdict_decor palette FAILs) -----
 # The donor env textures already contain the correct blue in their lit texels
 # (measured from the byte-identical port tex PNGs, top-35%-luminance blue mean):
@@ -386,6 +450,7 @@ def main() -> int:
         return 0
     with open(args.manifest, "r", encoding="utf-8") as f:
         manifest = json.load(f)
+    res_root = manifest_res_root(args.manifest)
     os.makedirs(args.out, exist_ok=True)
     only = set(x for x in args.only.split(",") if x)
 
@@ -398,14 +463,15 @@ def main() -> int:
         sid = m["sid"]
         if only and sid not in only:
             continue
-        if not os.path.exists(m["obj"]) or not os.path.exists(m["texture_png"]):
-            print("SKIP %s (missing obj or texture)" % sid)
+        paths = resolve_model_paths(m, res_root)
+        if paths is None:
             continue
-        objs = import_obj(m["obj"])
+        obj_path, tex_path = paths
+        objs = import_obj(obj_path)
         if not objs:
             print("SKIP %s (no mesh imported)" % sid)
             continue
-        mat = make_material(m["texture_png"])
+        mat = make_material(tex_path)
         assign_material(objs, mat, sid)
         lo, hi = mesh_bounds(objs)
         size = max(hi.x - lo.x, hi.y - lo.y, hi.z - lo.z)

@@ -385,7 +385,7 @@ func _finalize_mine_tiles() -> void:
 			tileblock[mi] = g1
 	# T2GEN: final 7-tile start keep-clear for forest (some groves are placed
 	# after _gen_finish by spawn provisioning).
-	var g0 := _blk("grass1")
+	var g0 := _blk("test8")  # Y08 PORT APPROX: same normalised meadow id; terrain 2->0 and blocked cleanup unchanged
 	for st in map_starts:
 		var sc := Vector2(float(st.x) / TILE, float(st.y) / TILE)
 		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
@@ -2141,6 +2141,23 @@ func _assign_tileblocks() -> void:
 	for mi in mine_mask.size():
 		if mine_mask[mi] != 0:
 			tileblock[mi] = _blk("ground1")
+	# Y08 (PORT APPROXIMATION): FINAL AUTHORITY. Collapse every ordinary land
+	# cell to ONE clean donor id (test8 idx 79; A03 §4 isotropic/seamless, alpha
+	# patch (0,0) constant 1.0) AFTER smoothing, forest borders, L01 spots and
+	# the mine apron, so no per-cell colour ring, spot or checkerboard survives
+	# into UV2.x. Exceptions are only donor-required roles: water, shore/sand,
+	# rock/cliff, worked road/apron. _blk() draws no RNG; no terrain/height/
+	# blocked write. Placement BEFORE the winter alias keeps season art intact.
+	var meadow_id := _blk("test8")
+	for i in tileblock.size():
+		if int(tileblock[i]) == BLK_WATER:   # 255, game.gd:52
+			continue
+		if mine_mask[i] != 0:                # real worked ground wins
+			continue
+		var role: int = int(terrain[i])
+		if role == 1 or role == 3 or role == 4 or role == 5:
+			continue  # road / water / shore-sand / rock-cliff
+		tileblock[i] = meadow_id
 	# T2GEN P2-5: expose the winter art selection without touching the tile
 	# index table or world.gd's tint.  This block is a no-op on Summer maps;
 	# TRN-DATA changes the tileblock bytes but leaves every other seed output
