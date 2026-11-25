@@ -104,6 +104,9 @@ const CHECK_NAMES := [
 	"capture_saved",
 	"non_black_fraction",
 	"full_width_dark_rows",
+	# DARKROW-ALL-01: strict, applicable whole-frame luma gates (P0-GATE-01).
+	"ground_mean_luma",
+	"ground_max_luma",
 ]
 
 # Minimal local fallback stub, same shape as the shared helper
@@ -176,11 +179,18 @@ var _capturing := false
 var _m: Dictionary = {}
 
 
-func check(name: String, cond: bool, detail: String = "") -> void:
-	_checks.append({"name": name, "passed": cond, "status": "PASS" if cond else "FAIL", "detail": detail})
-	if not cond:
+# DARKROW-ALL-01: `cond` is Variant and `status` optional so a record-only
+# diagnostic (P0-GATE-01) can carry JSON null, as in the sibling atoms. For
+# every pre-existing call (bool cond, no status) the emitted status is exactly
+# PASS/FAIL as before; _ok still flips only on explicit false.
+func check(name: String, cond, detail: String = "", status: String = "") -> void:
+	var st := status
+	if st == "":
+		st = "PASS" if cond == true else ("FAIL" if cond == false else "SKIPPED")
+	_checks.append({"name": name, "passed": cond, "status": st, "detail": detail})
+	if cond == false:
 		_ok = false
-	print("T_COMBO_TREES_MINES %s %s - %s" % ["PASS" if cond else "FAIL", name, detail])
+	print("T_COMBO_TREES_MINES %s %s - %s" % [st, name, detail])
 
 
 func _fail_remaining(from_index: int, tag: String, reason: String) -> void:
@@ -201,11 +211,14 @@ func finish() -> void:
 	var verdict := _verdict()
 	var passes := 0
 	var fails := 0
+	var skips := 0
 	for c in _checks:
-		if bool(c.get("passed", false)):
+		if c.get("passed") == true:
 			passes += 1
-		else:
+		elif c.get("passed") == false:
 			fails += 1
+		else:
+			skips += 1
 	var out := {
 		"id": _id,
 		# No full PASS is claimed on the headless/skip path.
@@ -215,6 +228,8 @@ func finish() -> void:
 		"structural_ok": _ok,
 		"passes": passes,
 		"fails": fails,
+		# DARKROW-ALL-01: record-only diagnostics are neither PASS nor FAIL.
+		"skipped_or_notes": skips,
 		"checks": _checks,
 		"measured": _m,
 		"harness_source": _harness_source,
@@ -483,6 +498,7 @@ func _image_metrics(img: Image) -> Dictionary:
 	var non_black := 0
 	var dark_rows := 0
 	var luma_sum := 0.0
+	var max_luma := 0.0
 	for y in range(h):
 		var row_dark := 0
 		for x in range(w):
@@ -494,6 +510,8 @@ func _image_metrics(img: Image) -> Dictionary:
 				non_black += 1
 			var l := 0.2126 * r + 0.7152 * g + 0.0722 * b
 			luma_sum += l
+			if l > max_luma:
+				max_luma = l
 			if l < 20.0:
 				row_dark += 1
 		if float(row_dark) / float(maxi(w, 1)) > 0.90:
@@ -504,6 +522,9 @@ func _image_metrics(img: Image) -> Dictionary:
 		"height": h,
 		"non_black_fraction": float(non_black) / n,
 		"mean_luma": luma_sum / n,
+		# DARKROW-ALL-01: whole-frame peak for the strict ground-visibility
+		# gate. PORT APPROX — no donor GPU A/B exists (V3D_02 parity_guard).
+		"max_luma": max_luma,
 		"full_width_dark_rows": dark_rows,
 	}
 
@@ -847,7 +868,17 @@ func _capture_async() -> void:
 	_m["capture_source"] = "ComboTreesMinesViewport (stub-owned, windowed GPU)"
 	check("non_black_fraction", float(ms["non_black_fraction"]) > 0.9,
 		"non_black_fraction=%s (expected >0.9; smallmap_capture.py:26)" % str(ms["non_black_fraction"]))
-	check("full_width_dark_rows", int(ms["full_width_dark_rows"]) == 0,
-		"full_width_dark_rows=%d (expected 0; smallmap_capture.py:27-28)" % int(ms["full_width_dark_rows"]))
+	# DARKROW-ALL-01 — P0-GATE-01 applicability correction. C2 is ground+trees
+	# +mines with no water layer; the water-band row predicate is recorded, not
+	# a pass/fail gate. The value stays in _m["png_metrics"] for auditability.
+	check("full_width_dark_rows", null,
+		"full_width_dark_rows=%d RECORDED_NOT_APPLICABLE (no water layer in C2; diagnostic only, not a pass/fail gate)" % int(ms["full_width_dark_rows"]),
+		"RECORDED_NOT_APPLICABLE")
+	# Strict, applicable whole-frame luma gates (P0-GATE-01). PORT APPROX —
+	# no donor GPU A/B exists. Thresholds are NOT lowered to fit a dark frame.
+	check("ground_mean_luma", float(ms["mean_luma"]) >= 40.0,
+		"mean_luma=%.3f (strict >=40; PORT APPROX — no donor GPU A/B exists)" % float(ms["mean_luma"]))
+	check("ground_max_luma", float(ms["max_luma"]) >= 100.0,
+		"max_luma=%.3f (strict >=100; PORT APPROX — no donor GPU A/B exists)" % float(ms["max_luma"]))
 	_visual_checked = true
 	finish()

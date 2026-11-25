@@ -100,6 +100,9 @@ const CHECK_NAMES := [
 	"diff_confined_to_tree_footprints",
 	"no_new_black_blocks",
 	"no_full_width_dark_rows",
+	# DARKROW-ALL-01: strict, applicable whole-frame luma gates (P0-GATE-01).
+	"ground_mean_luma",
+	"ground_max_luma",
 	"draw_calls_recorded",
 	"frame_time_recorded",
 	# Donor-grounded observations, deliberately NOT asserted (KNOWN_GAP / note).
@@ -645,6 +648,8 @@ func _compare_png(p1_path: String, p0_path: String) -> void:
 	var changed_out := 0
 	var new_black := 0
 	var dark_rows := 0
+	var luma_sum := 0.0
+	var max_luma := 0.0
 	for y in range(h):
 		var row_dark := 0
 		for x in range(w):
@@ -661,6 +666,9 @@ func _compare_png(p1_path: String, p0_path: String) -> void:
 					changed_out += 1
 			var l1 := 0.2126 * a.r * 255.0 + 0.7152 * a.g * 255.0 + 0.0722 * a.b * 255.0
 			var l0 := 0.2126 * b.r * 255.0 + 0.7152 * b.g * 255.0 + 0.0722 * b.b * 255.0
+			luma_sum += l1
+			if l1 > max_luma:
+				max_luma = l1
 			if l1 < 8.0 and l0 >= 8.0:
 				new_black += 1
 			if l1 < 20.0:
@@ -678,6 +686,8 @@ func _compare_png(p1_path: String, p0_path: String) -> void:
 		"changed_outside_fraction": out_frac,
 		"new_black_pixels": new_black, "new_black_fraction": black_frac,
 		"full_width_dark_rows": dark_rows,
+		"mean_luma": luma_sum / total,
+		"max_luma": max_luma,
 		"footprint_radius_px": r, "threshold_0_255": DIFF_THRESHOLD,
 		"mask_model": "complement of dilated per-tree silhouette circles (PORT APPROX)",
 	}
@@ -691,8 +701,18 @@ func _compare_png(p1_path: String, p0_path: String) -> void:
 	check("no_new_black_blocks", black_frac <= MAX_NEW_BLACK_FRACTION,
 		"new_black=%d fraction=%.5f (cap %.4f) — no opaque black rectangles" % [
 			new_black, black_frac, MAX_NEW_BLACK_FRACTION])
-	check("no_full_width_dark_rows", dark_rows == 0,
-		"full_width_dark_rows=%d (expected 0; smallmap_capture.py:27-28)" % dark_rows)
+	# DARKROW-ALL-01 — P0-GATE-01 applicability correction. P1 is ground+trees
+	# with no water layer; the row predicate was authored to detect water bands
+	# (V3D_02 P6/F6; DTRN_03 W2/M5), so it is recorded, not a pass/fail gate.
+	check("no_full_width_dark_rows", null,
+		"full_width_dark_rows=%d RECORDED_NOT_APPLICABLE (no water layer in P1; diagnostic only, not a pass/fail gate)" % dark_rows,
+		"RECORDED_NOT_APPLICABLE")
+	# Strict, applicable whole-frame luma gates (P0-GATE-01). PORT APPROX —
+	# no donor GPU A/B exists. Thresholds are NOT lowered to fit a dark frame.
+	check("ground_mean_luma", luma_sum / total >= 40.0,
+		"mean_luma=%.3f (strict >=40; PORT APPROX — no donor GPU A/B exists)" % (luma_sum / total))
+	check("ground_max_luma", max_luma >= 100.0,
+		"max_luma=%.3f (strict >=100; PORT APPROX — no donor GPU A/B exists)" % max_luma)
 	_visual_checked = true
 
 
@@ -907,6 +927,8 @@ func _initialize() -> void:
 		check("diff_confined_to_tree_footprints", null, "headless", "SKIP_CAPTURE_HEADLESS")
 		check("no_new_black_blocks", null, "headless", "SKIP_CAPTURE_HEADLESS")
 		check("no_full_width_dark_rows", null, "headless", "SKIP_CAPTURE_HEADLESS")
+		check("ground_mean_luma", null, "headless", "SKIP_CAPTURE_HEADLESS")
+		check("ground_max_luma", null, "headless", "SKIP_CAPTURE_HEADLESS")
 		finish()
 		return
 	if _png_path == "":
@@ -917,6 +939,8 @@ func _initialize() -> void:
 		check("diff_confined_to_tree_footprints", null, "no P1 PNG", "SKIP_CAPTURE_NO_PATH")
 		check("no_new_black_blocks", null, "no P1 PNG", "SKIP_CAPTURE_NO_PATH")
 		check("no_full_width_dark_rows", null, "no P1 PNG", "SKIP_CAPTURE_NO_PATH")
+		check("ground_mean_luma", null, "no P1 PNG", "SKIP_CAPTURE_NO_PATH")
+		check("ground_max_luma", null, "no P1 PNG", "SKIP_CAPTURE_NO_PATH")
 		finish()
 		return
 	_project_tree_centres()

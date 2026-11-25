@@ -100,11 +100,15 @@ const CHECK_NAMES := [
 	"sample_coverage",
 	"water_alpha_confined_to_cells",
 	"water_animation_delta",
+	# DARKROW-ALL-01: strict, applicable whole-frame luma gates (P0-GATE-01).
+	"ground_mean_luma",
+	"ground_max_luma",
 ]
 const CAPTURE_CHECK_NAMES := [
 	"windowed_capture_available", "capture_image", "capture_saved",
 	"png_full_width_dark_rows", "sample_coverage",
 	"water_alpha_confined_to_cells", "water_animation_delta",
+	"ground_mean_luma", "ground_max_luma",
 ]
 
 # Minimal fallback stub, same shape as the shared helper contract in
@@ -496,6 +500,7 @@ func _image_metrics(img: Image) -> Dictionary:
 	var non_black := 0
 	var dark_rows := 0
 	var luma_sum := 0.0
+	var max_luma := 0.0
 	for y in range(h):
 		var row_dark := 0
 		for x in range(w):
@@ -507,6 +512,8 @@ func _image_metrics(img: Image) -> Dictionary:
 				non_black += 1
 			var l := 0.2126 * r + 0.7152 * g + 0.0722 * b
 			luma_sum += l
+			if l > max_luma:
+				max_luma = l
 			if l < 20.0:
 				row_dark += 1
 		if float(row_dark) / float(maxi(w, 1)) > 0.90:
@@ -517,6 +524,9 @@ func _image_metrics(img: Image) -> Dictionary:
 		"height": h,
 		"non_black_fraction": float(non_black) / n,
 		"mean_luma": luma_sum / n,
+		# DARKROW-ALL-01: whole-frame peak for the strict ground-visibility
+		# gate. PORT APPROX — no donor GPU A/B exists (V3D_02 parity_guard).
+		"max_luma": max_luma,
 		"full_width_dark_rows": dark_rows,
 	}
 
@@ -603,6 +613,13 @@ func _capture_sequence() -> void:
 	_m["png_metrics"] = ms
 	check("png_full_width_dark_rows", int(ms["full_width_dark_rows"]) == 0,
 		"full_width_dark_rows=%d (expected 0; smallmap_capture.py:27-28)" % int(ms["full_width_dark_rows"]))
+	# DARKROW-ALL-01: water-bearing row — the dark-row assert above stays STRICT
+	# (applicable here). Add P0-GATE-01's strict whole-frame luma gates; do not
+	# weaken either. PORT APPROX — no donor GPU A/B exists.
+	check("ground_mean_luma", float(ms["mean_luma"]) >= 40.0,
+		"mean_luma=%.3f (strict >=40; PORT APPROX — no donor GPU A/B exists)" % float(ms["mean_luma"]))
+	check("ground_max_luma", float(ms["max_luma"]) >= 100.0,
+		"max_luma=%.3f (strict >=100; PORT APPROX — no donor GPU A/B exists)" % float(ms["max_luma"]))
 
 	var samples_ok := _sample_water.size() > 0 and _sample_land.size() > 0
 	check("sample_coverage", samples_ok,
@@ -924,7 +941,8 @@ func _initialize() -> void:
 			"DisplayServer.get_name()==headless: no 3D PNG (main.gd:1157-1158,1790-1800)",
 			"UNVERIFIED")
 		for n in ["capture_image", "capture_saved", "png_full_width_dark_rows",
-				"sample_coverage", "water_alpha_confined_to_cells", "water_animation_delta"]:
+				"sample_coverage", "water_alpha_confined_to_cells", "water_animation_delta",
+				"ground_mean_luma", "ground_max_luma"]:
 			check(n, false, "headless: windowed GPU readback not attempted", "UNVERIFIED")
 		finish()
 		return

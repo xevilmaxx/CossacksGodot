@@ -210,6 +210,15 @@ Disjoint file grants only. Reserved slots:
 - No code edits, no Godot runner jobs, no donor copies during Batch A/B.
 - Backups before any future edit: `inbox\backup\<name>.bak-<TICKET>`.
 
+## Batch R — documentation QA and config completion
+
+| ID | Scope | Output | Session id | State |
+|---|---|---|---|---|
+| README-UPDATE-01 | refresh swarm README with late-wave findings | `README.md`, `reports/README_UPDATE_01.md` | ses_deddede29ffep3WHPBG8kRHQYW | **DONE** | 57-row corrections index, measured gate table, owner errors, P0 darkness, config pipeline, winter/LFS, donor map sizes; honesty guard kept |
+| DECOMP-SUMMARY-UPDATE | refresh decomp summary + evidence index | `decomp/SUMMARY.md`, `decomp/EVIDENCE_INDEX.md` | ses_dedd30374ffe4Cebn5GF8S3Q8I | RUNNING |
+| INVENTORY-01 | independent re-count of donor inventories | `reports/INVENTORY_01_counts.md` | ses_dedd0b783ffeXGxtcSZa3SbA9o | RUNNING |
+| LINKS-01 | verify every report path cited by living docs exists | `reports/LINKS_01.md` | ses_dedd0b77affePHsOgnl49CI27l | RUNNING |
+
 ## Batch O — final small tickets (owner: keep 15–20 agents)
 
 | ID | Scope | Output | Session id | State |
@@ -223,16 +232,19 @@ Disjoint file grants only. Reserved slots:
 | CONFIG-DOC-01 | cold-readable config pipeline status | `CONFIG_PIPELINE.md` | ses_dede47f22ffehRBaIR2lYIXvrQ | **DONE** (32 KB) | 21-key status table (snapshot 7 WIRED/2 READER_ONLY/2 UI_ONLY/10 PENDING), 34 unwired remainder, menu subset with snow PORT-UI-ONLY, ownership ladder, risks; reconciles conflicting counts by snapshot time |
 | MAPSIZE-01 | donor map sizes 256/320/480/640 in `menu.gd` | `reports/MAPSIZE_01.md` | ses_dede3a392ffe6P3B6Ttaon7o44 | RUNNING |
 | DEFAULTS-VERIFY-01 | verify requested skirmish defaults (read-only) | `reports/DEFAULTS_VERIFY_01.md` | ses_dede3a38effe0Qb4qFvKwoJxy3 | **DONE** | all 7 requested settings resolve on BOTH paths: rus/bav, 240², mediterranean, hills, fog off, summer, 2 players/FFA; `map_type: land` present but **not applied** (DEFAULT merge sets `terrain_type`), so CFG-01 right in effect; CFG-02/QA-AUDIT F-05 refutation was wrong; config 320→240 came from MAP-SMALL-01 commit f9dd8d16 but its report never landed and integrated selftest is 28/29 |
-| CONFIG-COUNT-01 | reconcile 7-vs-13 wired counts to current state | `CONFIG_COUNT_RECONCILED.md` | ses_deddede2dffelwKbQHsVHAMSe2 | RUNNING |
+| CONFIG-COUNT-01 | reconcile 7-vs-13 wired counts to current state | `CONFIG_COUNT_RECONCILED.md` | ses_deddede2dffelwKbQHsVHAMSe2 | **DONE** | authoritative **11 WIRED / 2 READER_ONLY / 2 UI_ONLY / 6 PENDING**; 7→13 delta decomposed exactly (HUD +3, relief +1, water vocabulary +2, mirror labels); **`config.json` has NO `features` object** → all getters return defaults, nothing user-tunable yet → MAP-SMALL-01 pinged to add it |
 | README-UPDATE-01 | refresh swarm README with late-wave findings | `README.md` | ses_deddede29ffep3WHPBG8kRHQYW | RUNNING |
 | PERF-3D-01 | measure 3D sync/render hotpaths vs prior baselines | `reports/PERF_3D_01.md` | ses_deddede28ffePAlAptFGEy4kzn | RUNNING |
 | FINAL-GATE-PLAN-01 | exact ordered final-gate sequence + prerequisites | `reports/FINAL_GATE_PLAN_01.md` | ses_deddede23ffeu28mj7uzC2iIEH | **DONE** (243 lines) | prerequisites with session ids, ordered ladder P0→C4→S1 + final gate commands, failure policy, current-status snapshot; flagged dark-row asserts in sibling atoms → DARKROW-ALL-01 |
 | DARKROW-ALL-01 | consistent dark-row applicability fix in P1–C4 atoms | `reports/DARKROW_ALL_01.md` | ses_deddb4a21ffeMNC2rRgf4X3t4F | RUNNING |
-| CAPTURE-RECHECK-01 | second-agent capture re-check protocol | `CAPTURE_RECHECK.md` | ses_deddb4a1effeYYHgxFscIgnOeM | RUNNING |
-| QA-WINTER-01 | independent verification of Winter atlas artifacts | `reports/QA_WINTER_01.md` | ses_deddad2fcffermyYWpkQC3rlTF | RUNNING |
+| CAPTURE-RECHECK-01 | second-agent capture re-check protocol | `CAPTURE_RECHECK.md` | ses_deddb4a1effeYYHgxFscIgnOeM | **DONE** (218 lines) | per-row artifact paths + exact `smallmap_capture.py` commands, P0→S1 criteria tables, image rules (no donor parity, metrics never override visuals), `RECHECK_<ROW>.md` recording, COORD-only ladder advance, failure attribution |
+| QA-2D-GATES-01 | verify `app/` 2D gates still green | `reports/QA_2D_GATES_01.md` | ses_dedd673d5fferCfjOZUq5RuWOa | RUNNING |
+| QA-WINTER-01 | independent verification of Winter atlas artifacts | `reports/QA_WINTER_01.md` | ses_deddad2fcffermyYWpkQC3rlTF | **DONE** | all artifact checks CONFIRMED (SHA/dims/124 indices/121 sources/12 pixel spot-checks); SP-6 path aligned in `world3d_terrain.gd:272-273`, SP-8 atom still swapped → SEASON-TEST-PATH-01; LFS stale-pointer precondition REFUTED (HEAD/index now hold new pointer); remote LFS UNVERIFIED |
+| SEASON-TEST-PATH-01 | align SP-8 atom Winter atlas paths | `reports/SEASON_TEST_PATH_01.md` | ses_dedd5c6b9ffebY8CjZ2LHhmm8U | RUNNING |
 | DSEASON-01 | donor winter/desert/field-crop visual truth | `reports/DSEASON_01_season_visuals.md` | ses_deddad2fbffekgmOL40gKn3638 | RUNNING |
-| GDIGNORE-01 | audit `.gdignore` stale imports / risky loads | `reports/GDIGNORE_01.md` | ses_deddad2f8ffemvAjexPoHMQOBy | RUNNING |
-| RUN-GUIDE-01 | owner-facing launch/verify/troubleshoot guide | `RUN_GUIDE.md` | ses_deddad2e4ffecqus42qS3DYz5R | RUNNING |
+| GDIGNORE-01 | audit `.gdignore` stale imports / risky loads | `reports/GDIGNORE_01.md` | ses_deddad2f8ffemvAjexPoHMQOBy | **DONE** (138 lines) | 5 markers (not 3) excluding 5,192 files/~892.6 MiB; **2,097 stale `.import`/ctex** (anim 1,849 + sprites 179 + sprites_hi 69) systemic; six `world.gd` load sites reproduce rotor pattern (dormant in 3d, live under 2d override); mitigations proposed, no edits |
+| RUN-GUIDE-01 | owner-facing launch/verify/troubleshoot guide | `RUN_GUIDE.md` | ses_deddad2e4ffecqus42qS3DYz5R | **DONE** (143 lines, 9 sections) | launch/gates/capture commands, expected PORT APPROX warnings vs genuine failures, current defaults, troubleshooting table; flags stale README `--stay` claim and reports selftest currently 28/29 (`build`) |
 | QA-DOCS-01 | audit today's reports for evidence/cold-readability | `reports/QA_DOCS_01.md` | ses_deddad2e3ffe4Cyl6fHeoh0yfz | RUNNING |
-| DONAVAL-01 | donor naval/ship assets truth (skirmish scope) | `reports/DONAVAL_01.md` | ses_deddad2dfffeiq7NfEV7bZUays | RUNNING |
+| DONAVAL-01 | donor naval/ship assets truth (skirmish scope) | `reports/DONAVAL_01.md` | ses_deddad2dfffeiq7NfEV7bZUays | **DONE** (282 lines) | 9 hull `.osm`, 6 crew `.oss`, sails/flags/paddles, 10 skins incl. alternate xebeca; 7 corrections (skins present, crew 5/6, tiers=production gates, radii 1.31–3.38 m, `convert_models.py` shipyard claim false); new construction/port-scan behaviours; port has no naval entity layer/production/stats/AI |
+| QA-ATOM-RESULTS-01 | audit atom result JSONs + manifest consistency | `reports/QA_ATOM_RESULTS_01.md` | ses_dedcdf2c3ffeeNnd0m5fmCmM6R | RUNNING |
 | LFS-PLAN-01 | winter atlas LFS/clone-size plan (read-only, no git changes) | `reports/LFS_PLAN_01.md` | ses_dede3a38bffee774616xhEtemx | **DONE** | `.gitattributes:1` already LFS-tracks `*.png`, git-lfs 3.4.1 installed; owner `git add` rewrites pointer to new oid (no track edit); recommended LFS option; **fallback trap**: Winter single-load failure silently uses Summer art because `SPLIT_MANIFEST` is Summer-only; path mismatch remains SP-6's |

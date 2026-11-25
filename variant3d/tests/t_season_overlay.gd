@@ -56,8 +56,8 @@ const SUMMER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_atlas.png"
 # SP-2/SP-3 LANDED at atlas/ (not the structs/ paths proposed in SEASON_PLAN_01):
 # see SP_02_winter_dictionary.md:10 and SP_03_desert_remap.md:9 / O1.
 const WINTER_DICT_PATH := "res://assets/terrain/atlas/winter_aliases.json"            # SP-2
-const WINTER_MANIFEST_PATH := "res://assets/terrain/atlas/tile_index_winter_atlas.manifest.json"  # SP-4
-const WINTER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_winter_atlas.png"   # SP-4
+const WINTER_MANIFEST_PATH := "res://assets/terrain/atlas/tile_index_atlas_winter.manifest.json"  # SP-4
+const WINTER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_atlas_winter.png"   # SP-4
 const DESERT_REMAP_PATH := "res://assets/terrain/atlas/desert_remap.json"             # SP-3
 const BLOCKS_DIR := "res://assets/terrain/blocks/"
 

@@ -482,6 +482,7 @@ func _image_metrics(img: Image) -> Dictionary:
 	var samples := 0
 	var non_black := 0
 	var luma_sum := 0.0
+	var max_luma := 0.0
 	var row_hits := PackedInt32Array()
 	var col_hits := PackedInt32Array()
 	row_hits.resize(h)
@@ -497,6 +498,8 @@ func _image_metrics(img: Image) -> Dictionary:
 			var lum := 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
 			samples += 1
 			luma_sum += lum
+			if lum > max_luma:
+				max_luma = lum
 			if c.r > U8_8 or c.g > U8_8 or c.b > U8_8:
 				non_black += 1
 			if lum < U8_20:
@@ -518,6 +521,9 @@ func _image_metrics(img: Image) -> Dictionary:
 		"non_black_fraction": float(non_black) / float(maxi(1, samples)),
 		"mean_luma_0_1": mean_luma,
 		"mean_luma_0_255": mean_luma * 255.0,
+		# DARKROW-ALL-01: whole-frame peak (0..255) for the strict
+		# ground-visibility gate. PORT APPROX — no donor GPU A/B exists.
+		"max_luma_0_255": max_luma * 255.0,
 		"full_width_dark_rows": dark_rows,
 		"full_height_dark_cols": dark_cols,
 		"sample_stride": SAMPLE_STEP,
@@ -990,10 +996,18 @@ func _initialize() -> void:
 	var dark_cols := int(metrics.get("full_height_dark_cols", -1))
 	var mluma01 := float(metrics.get("mean_luma_0_1", 0.0))
 	var mluma255 := float(metrics.get("mean_luma_0_255", 0.0))
+	var max_luma255 := float(metrics.get("max_luma_0_255", 0.0))
 	check("nonblack_over_090", nonblack > 0.9,
 		"non-black=%.4f (expected >0.9)" % nonblack)
 	check("full_width_dark_rows_zero", dark_rows == 0,
 		"dark rows=%d (smallmap_capture.py:27-28)" % dark_rows)
+	# DARKROW-ALL-01: water-bearing row (shore present) — the dark-row assert
+	# above stays STRICT. Add P0-GATE-01's strict whole-frame luma gates too;
+	# neither is weakened. PORT APPROX — no donor GPU A/B exists.
+	check("ground_mean_luma", mluma255 >= 40.0,
+		"mean_luma=%.3f (strict >=40; PORT APPROX — no donor GPU A/B exists)" % mluma255)
+	check("ground_max_luma", max_luma255 >= 100.0,
+		"max_luma=%.3f (strict >=100; PORT APPROX — no donor GPU A/B exists)" % max_luma255)
 	check("no_full_height_dark_cols", dark_cols == 0,
 		"full-height dark cols=%d (vertical seam guard)" % dark_cols)
 	check("mean_luma_recorded", is_finite(mluma01) and mluma01 > 0.0,

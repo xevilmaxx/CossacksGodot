@@ -564,6 +564,29 @@ func _nonblack_fraction(img: Image) -> float:
 	return float(bright) / float(maxi(n, 1))
 
 
+# DARKROW-ALL-01: whole-frame luma with the P0 / smallmap_capture.py:25
+# formula (0.2126R + 0.7152G + 0.0722B), in 0..255 units. The water-band row
+# predicate (smallmap_capture.py:27-28) is inapplicable to this water-free P3
+# frame; it is recorded N/A instead of being asserted.
+func _whole_frame_luma(img: Image) -> Dictionary:
+	if img == null or img.is_empty():
+		return {}
+	var w := img.get_width()
+	var h := img.get_height()
+	var luma_sum := 0.0
+	var max_luma := 0.0
+	var n := 0
+	for y in range(h):
+		for x in range(w):
+			var c := img.get_pixel(x, y)
+			var l := 0.2126 * c.r * 255.0 + 0.7152 * c.g * 255.0 + 0.0722 * c.b * 255.0
+			luma_sum += l
+			if l > max_luma:
+				max_luma = l
+			n += 1
+	return {"mean_luma": luma_sum / float(maxi(n, 1)), "max_luma": max_luma}
+
+
 func _capture_async() -> void:
 	if _entities != null:
 		_entities.visible = false
@@ -588,6 +611,22 @@ func _capture_async() -> void:
 	check("png_capture_windowed", png_ok and nb > 0.9,
 		"png=" + _png_path + " written=" + str(png_ok)
 		+ " nonblack_fraction=" + ("%.4f" % nb) + " (threshold >0.9)")
+
+	# DARKROW-ALL-01 — P0-GATE-01 applicability correction. P3 has zero water
+	# cells and a hidden water plane, so the water-band row predicate is only
+	# recorded N/A; strict, applicable whole-frame luma gates are added below.
+	_m["full_width_dark_rows"] = "N/A (no water layer in P3; smallmap_capture.py:27-28 water-band predicate inapplicable; diagnostic only)"
+	var wl := _whole_frame_luma(shot)
+	if wl.is_empty():
+		check("ground_mean_luma", false,
+			"UNVERIFIED: no captured frame to measure (strict >=40; PORT APPROX — no donor GPU A/B exists)")
+		check("ground_max_luma", false,
+			"UNVERIFIED: no captured frame to measure (strict >=100; PORT APPROX — no donor GPU A/B exists)")
+	else:
+		check("ground_mean_luma", float(wl["mean_luma"]) >= 40.0,
+			"mean_luma=%.3f (strict >=40; PORT APPROX — no donor GPU A/B exists)" % float(wl["mean_luma"]))
+		check("ground_max_luma", float(wl["max_luma"]) >= 100.0,
+			"max_luma=%.3f (strict >=100; PORT APPROX — no donor GPU A/B exists)" % float(wl["max_luma"]))
 
 	var mask := _mine_screen_rect(_camera)
 	var bs := _ground_stats(base, mask)

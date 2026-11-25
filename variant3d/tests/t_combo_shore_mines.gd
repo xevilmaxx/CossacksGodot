@@ -121,12 +121,17 @@ const CHECK_NAMES := [
 	"capture_saved",
 	"non_black_fraction",
 	"full_width_dark_rows",
+	# DARKROW-ALL-01: strict, applicable whole-frame luma gates (P0-GATE-01).
+	"ground_mean_luma",
+	"ground_max_luma",
 ]
 
-# These four are never evaluated when setup aborts or the run is headless:
-# report them UNVERIFIED, never as a measured FAIL (sibling t_terrain_shore.gd:104-107).
+# These capture checks are never evaluated when setup aborts or the run is
+# headless: report them UNVERIFIED, never as a measured FAIL
+# (sibling t_terrain_shore.gd:104-107).
 const CAPTURE_CHECK_NAMES := [
 	"capture_image", "capture_saved", "non_black_fraction", "full_width_dark_rows",
+	"ground_mean_luma", "ground_max_luma",
 ]
 
 # Embedded fallback with the SAME shape as res://tests/fixtures/_smallmap_harness.gd
@@ -454,6 +459,7 @@ func _image_metrics(img: Image) -> Dictionary:
 	var non_black := 0
 	var dark_rows := 0
 	var luma_sum := 0.0
+	var max_luma := 0.0
 	for y in range(h):
 		var row_dark := 0
 		for x in range(w):
@@ -465,6 +471,8 @@ func _image_metrics(img: Image) -> Dictionary:
 				non_black += 1
 			var l := 0.2126 * r + 0.7152 * g + 0.0722 * b
 			luma_sum += l
+			if l > max_luma:
+				max_luma = l
 			if l < 20.0:
 				row_dark += 1
 		if float(row_dark) / float(maxi(w, 1)) > 0.90:
@@ -475,6 +483,9 @@ func _image_metrics(img: Image) -> Dictionary:
 		"height": h,
 		"non_black_fraction": float(non_black) / n,
 		"mean_luma": luma_sum / n,
+		# DARKROW-ALL-01: whole-frame peak for the strict ground-visibility
+		# gate. PORT APPROX — no donor GPU A/B exists (V3D_02 parity_guard).
+		"max_luma": max_luma,
 		"full_width_dark_rows": dark_rows,
 	}
 
@@ -802,5 +813,12 @@ func _capture_async() -> void:
 		"non_black_fraction=%s (expected >0.9; smallmap_capture.py:26)" % str(ms["non_black_fraction"]))
 	check("full_width_dark_rows", int(ms["full_width_dark_rows"]) == 0,
 		"full_width_dark_rows=%d (expected 0; smallmap_capture.py:27-28)" % int(ms["full_width_dark_rows"]))
+	# DARKROW-ALL-01: water-bearing row (shore present) — the dark-row assert
+	# above stays STRICT. Add P0-GATE-01's strict whole-frame luma gates too;
+	# neither is weakened. PORT APPROX — no donor GPU A/B exists.
+	check("ground_mean_luma", float(ms["mean_luma"]) >= 40.0,
+		"mean_luma=%.3f (strict >=40; PORT APPROX — no donor GPU A/B exists)" % float(ms["mean_luma"]))
+	check("ground_max_luma", float(ms["max_luma"]) >= 100.0,
+		"max_luma=%.3f (strict >=100; PORT APPROX — no donor GPU A/B exists)" % float(ms["max_luma"]))
 	_visual_checked = true
 	finish()
