@@ -29,7 +29,7 @@ landing_note: "The restore landed DURING this audit: first read showed the 1-lea
 | `reports/RELIEF_ENABLE_01.md` | `:56-72` documented the 1-leaf deviation; `:78-99` backup SHA `BD80C2D1…` and +5-line insertion proof | observed |
 | `reports/QA_RELIEF_ON_01.md` | `:226-238` "exactly one change" / "only leaf" audit of the pre-restore state | observed |
 | `reports/QA_CONFIGJSON_01.md`, `reports/MAP_SMALL_01_report.md` | historical 21-key/240² and mandatory-revert context | observed |
-| `git status --short`, `git diff --numstat` | `M variant3d/config.json`, 39 insertions / 0 deletions vs HEAD; `?? inbox/backup/config.json.bak-CONFIGRESTORE`; `variant3d/scripts/config.gd` unmodified | observed |
+| `git status --short`, `git diff --numstat`, `git show --stat` | At first observation `M variant3d/config.json` (+39/−0 vs HEAD) and untracked backup; commit `2411a752` then landed both (39-line config change plus the backup); final status is clean for both paths, with only this report untracked. `variant3d/scripts/config.gd` unmodified. | observed |
 
 Tooling: `python` 3.14 (Windows) with `json.load`, a GDScript-literal-to-JSON extraction of `FEATURES_DEFAULTS`, recursive flatten/deep-diff, SHA-256 and CRLF counts. No Godot binary, runner job, or repo file other than this report was written. [observed]
 
@@ -40,7 +40,8 @@ Tooling: `python` 3.14 (Windows) with `json.load`, a GDScript-literal-to-JSON ex
 | First read, before 12:19:48 | `features` = 1 leaf only (`terrain.relief_stamps: true`); no `bak-CONFIGRESTORE`; no owner report | observed |
 | 12:19:48 | Pre-restore backup created; matches the 1-leaf state byte-for-byte (SHA prefix `bd80c2d1…`) | observed |
 | 12:20:00 | `variant3d/config.json` rewritten with the 21-leaf block; re-read confirms it | observed |
-| At report time | Owner report `reports/CONFIG_RESTORE_01.md` still absent | observed / UNVERIFIED |
+| Before report write | Commit `2411a752` captured `variant3d/config.json` (+39 lines) and `inbox/backup/config.json.bak-CONFIGRESTORE`; working tree clean for both | observed |
+| At report time | Owner report `reports/CONFIG_RESTORE_01.md` still absent (not in `2411a752` either) | observed / UNVERIFIED |
 
 The conditional in the task ("if the restore has not landed, report 1 leaf and mark UNVERIFIED") therefore applied at T0 but **not** at T1: the restore landed, so the file-level state is verified below. Runtime claims are still not promoted. [derived + inferred]
 
