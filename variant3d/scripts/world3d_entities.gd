@@ -114,6 +114,9 @@ const TILE_M: float = 2.0
 const MAP_DEFAULT: float = 160.0  # game.gd:35-36 MAP_W/MAP_H default 160
 
 const BATCH_CAPACITY: int = 4096
+# P11: initial allocated instance slots per MultiMesh; grows by doubling.
+# BATCH_CAPACITY remains the unchanged hard ceiling (mass-army contract).
+const BATCH_INITIAL_CAPACITY: int = 64
 const HIDDEN_SCALE: float = 0.0001
 
 # Donor numbers, NOT port inventions: see header + V7-2 section 1.1.
@@ -357,6 +360,14 @@ var _donor_texture_paths: Dictionary = {}   # sid -> donor DDS absolute path
 var _band_mask_cache: Dictionary = {}       # sid -> {"image":Image,"texture":ImageTexture}
 var _band_mask_stats: Dictionary = {}       # sid -> measured mask/vertex/face counts
 
+# P11 DRAW-CALL/INSTANCE: one Shader + one ShaderMaterial per
+# (sid, kind, tint RGBA, base material identity). _tinted_material() used to
+# create a NEW Shader and ShaderMaterial for every batch and every building
+# stage swap; sharing keeps custColor per player slot while removing repeated
+# shader parse/material allocation. No art, tint value or label is changed.
+var _tint_shader: Shader = null
+var _tint_material_cache: Dictionary = {}  # key -> ShaderMaterial (shared)
+
 
 # ---------------------------------------------------------------- bind / stats
 func bind(g) -> void:
@@ -370,6 +381,9 @@ func bind(g) -> void:
 	_donor_texture_paths.clear()
 	_band_mask_cache.clear()
 	_band_mask_stats.clear()
+	# P11: shared materials belong to the previous game meshes; rebuild.
+	_tint_material_cache.clear()
+	_tint_shader = null
 	# MOTION-ANIM-01: per-unit presentation mirrors are rebuilt from the new game.
 	_motion_sample.clear()
 	_face_smooth.clear()
@@ -981,18 +995,26 @@ func _tinted_material(base: Material, tint: Color, sid: String, kind: String) ->
 	var bm: Material = base
 	if bm == null:
 		bm = _default_material(sid, kind)
+	# P11: key includes the base material identity so two sids/kinds or two
+	# distinct imported albedo materials can never share the wrong texture.
+	var ck := str(sid) + "|" + kind + "|" + str(tint.r) + "," + str(tint.g) \
+		+ "," + str(tint.b) + "," + str(tint.a) + "|" + str(bm.get_instance_id())
+	if _tint_material_cache.has(ck):
+		return _tint_material_cache[ck] as Material
 	var albedo: Texture2D = null
 	if bm is StandardMaterial3D:
 		albedo = (bm as StandardMaterial3D).albedo_texture
 	if albedo == null and ResourceLoader.exists(TEX_DIR + sid + ".png"):
 		albedo = load(TEX_DIR + sid + ".png") as Texture2D
-	var sh := Shader.new()
-	sh.code = TINT_SHADER_CODE
+	if _tint_shader == null:
+		_tint_shader = Shader.new()
+		_tint_shader.code = TINT_SHADER_CODE
 	var m := ShaderMaterial.new()
-	m.shader = sh
+	m.shader = _tint_shader
 	m.set_shader_parameter("albedo_tex", albedo)
 	m.set_shader_parameter("mask_tex", mask)
 	m.set_shader_parameter("custColor", tint)
+	_tint_material_cache[ck] = m
 	return m
 
 
@@ -1414,7 +1436,10 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 			var sm: Material = fmesh.surface_get_material(s)
 			if sm is StandardMaterial3D:
 				(sm as StandardMaterial3D).vertex_color_use_as_albedo = true
-	mm.instance_count = BATCH_CAPACITY
+	# P11: allocate only the initial buffer; use_colors is toggled above while
+	# instance_count is still 0, which Godot 4.7 requires.
+	var cap: int = mini(BATCH_INITIAL_CAPACITY, BATCH_CAPACITY)
+	mm.instance_count = cap
 	mm.visible_instance_count = 0
 	var mmi := MultiMeshInstance3D.new()
 	var is_morph: bool = not pose.is_empty()
@@ -1435,7 +1460,35 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 	# MultiMesh.get_instance_transform() return identity for every slot, so a
 	# mirror is needed for O(1) swap-removal and headless verification.
 	return {"node": mmi, "mm": mm, "ids": [], "xforms": [], "class": cls,
-		"key": key, "morph": is_morph}
+		"key": key, "morph": is_morph, "capacity": cap}
+
+
+# P11: grow the allocated instance buffer geometrically, never past the
+# unchanged BATCH_CAPACITY ceiling. Node name, batch key, slot indices,
+# visible_instance_count and the CPU xform mirror are all untouched; existing
+# slots are rewritten from the mirror because it is authoritative under the
+# headless dummy RenderingServer.
+func _grow_batch(b: Dictionary, needed: int) -> void:
+	var mm: MultiMesh = b["mm"]
+	var cap: int = int(b.get("capacity", BATCH_CAPACITY))
+	if needed <= cap or cap >= BATCH_CAPACITY:
+		return
+	var new_cap: int = cap
+	while new_cap < needed and new_cap < BATCH_CAPACITY:
+		new_cap = mini(new_cap * 2, BATCH_CAPACITY)
+	mm.instance_count = new_cap
+	b["capacity"] = new_cap
+	var xforms: Array = b["xforms"]
+	var ids: Array = b["ids"]
+	for i in range(xforms.size()):
+		mm.set_instance_transform(i, xforms[i])
+	# MILLFIX F2 field colours are read-only here: re-apply from the existing
+	# per-field mirror so a resize is byte-identical on the next render.
+	if str(b.get("key", "")) == "res|field":
+		for i in range(xforms.size()):
+			var fv = _field_visual.get(int(ids[i]))
+			if fv is Dictionary:
+				mm.set_instance_color(i, (fv as Dictionary).get("color", Color(1, 1, 1, 1)))
 
 
 # V7-65: `tint` / `player` are INTERNAL batching-key extensions only; the six
@@ -1453,6 +1506,9 @@ func _acquire(key: String, id: int, info: Dictionary, cls: String,
 			_apply_tint((b as Dictionary)["node"], info["mesh"], tint,
 				str(info.get("sid", "")), str(info.get("kind", cls)))
 	var ids: Array = b["ids"]
+	# P11: grow only when the allocated buffer is full; hard ceiling unchanged.
+	if ids.size() >= int((b as Dictionary).get("capacity", BATCH_CAPACITY)):
+		_grow_batch(b as Dictionary, ids.size() + 1)
 	if ids.size() >= BATCH_CAPACITY:
 		push_warning("world3d_entities: batch full " + key + " (cap " + str(BATCH_CAPACITY) + ")")
 		return -1
@@ -2271,6 +2327,14 @@ func sync(dt: float) -> void:
 	stats["tinted_batches"] = tinted_batches
 	stats["tinted_buildings"] = tinted_buildings
 	stats["batches"] = _batches.size()
+	# P11 structural telemetry (NOT a frame-time or draw-call measurement).
+	var allocated_slots := 0
+	for key in _batches.keys():
+		allocated_slots += int((_batches[key] as Dictionary).get("capacity", BATCH_CAPACITY))
+	stats["batch_instance_slots_allocated"] = allocated_slots
+	stats["batch_instance_slots_ceiling"] = BATCH_CAPACITY * _batches.size()
+	stats["tint_materials_shared"] = _tint_material_cache.size()
+	stats["batch_optimization_label"] = PORT_LABEL + " — P11 adaptive MultiMesh capacity + shared tint material; frame-time/draw-call gain UNVERIFIED"
 	stats["units"] = units
 	stats["resources"] = ress
 	stats["buildings"] = _nodes.size()

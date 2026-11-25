@@ -359,7 +359,7 @@ func _apply_menu_cfg(cfg: Dictionary) -> void:
 	Data.CAPTURE_ENABLED = Data.CAPTURE_MODE == "default"
 	# Game speed is wired only when the command line did not force one.
 	if speed == 1.0:
-		speed = clampf(float(Data.DONOR_GAME_SPEED.get(Data.GAME_SPEED, 1.0)), 0.1, 8.0)
+		speed = clampf(float(Data.DONOR_GAME_SPEED.get(Data.GAME_SPEED, 1.0)), 0.1, 64.0)  # S02: uniform cap
 	autosave_acc = 0.0
 
 	Data.START_OPTION = str(cfg.get("startingunits", cfg.get("start_option", "default")))
@@ -719,7 +719,7 @@ func _menu_nation_name(sid: String, i: int) -> String:
 	return "Player %d" % (i + 1)
 
 func set_speed(s: float) -> void:
-	speed = clampf(s, 0.0, 8.0)
+	speed = clampf(s, 0.0, 64.0)  # S02: dropdown now offers up to x64
 	if hud != null and hud.has_method("refresh_speed"):
 		hud.refresh_speed(speed, game.paused if game != null else false)
 

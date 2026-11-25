@@ -123,6 +123,24 @@ var _shipped_count: int = 0
 var _shipped_bytes: int = 0
 var _shipped_error: String = ""
 
+# P10 (INFERRED): per-frame caches. Keyed only by immutable inputs; cleared by
+# _clear_frame_caches() whenever _skins changes. Cached morph Dictionaries and
+# verts are shared READ-ONLY (world3d_entities.gd:2077-2124,
+# t_motion_capture.gd:234-244). No label, clip table or test is touched.
+var _range_cache: Dictionary = {}   # "sid|action" -> resolved AAF/shipped row
+var _morph_cache: Dictionary = {}   # "sid|frame"  -> _morph_fields() result
+var _morph_keys: Array[String] = [] # FIFO eviction order for _morph_cache
+var _skin_scratch: Dictionary = {}  # sid -> {"mats":Array,"poss":Array}
+const MORPH_CACHE_MAX: int = 512    # INFERRED cap; speed benefit UNVERIFIED
+
+# P10: invalidate every frame cache when the skin set changes. Called only on
+# register/unregister/shipped-load (rare), never from the per-frame path.
+func _clear_frame_caches() -> void:
+	_range_cache.clear()
+	_morph_cache.clear()
+	_morph_keys.clear()
+	_skin_scratch.clear()
+
 
 # ---------------------------------------------------------------------------
 # EXACT CONTRACT API (V73_ATOMIC_CONTRACT.md:17 — signatures unchanged)
@@ -162,7 +180,7 @@ func play(e, action, t):
 	var donor_cite: String = str(row[4]) if row.size() >= 5 else "data/animations/aaf/peaukr.aaf:%d" % line
 	var frame: int = _frame_at(first, last, t)
 
-	var morph := _morph_fields(skin, frame)
+	var morph := _morph_fields(skin, frame, sid)
 	var sample_frame: int = int(morph.get("sample_frame", frame))
 	var pose: Dictionary = {
 		"action": donor_action,
@@ -307,6 +325,7 @@ func register_skin(sid, skin: Dictionary) -> bool:
 	if not _valid_skin(norm):
 		return false
 	_skins[key] = norm
+	_clear_frame_caches()
 	return true
 
 
@@ -317,6 +336,7 @@ func has_skin(sid) -> bool:
 
 func unregister_skin(sid) -> void:
 	_skins.erase(str(sid))
+	_clear_frame_caches()
 
 
 func skin_info(sid) -> Dictionary:
@@ -407,7 +427,13 @@ func capabilities() -> Dictionary:
 # bind vertex i == OBJ vertex i. If ref_frame >= 0, subtract the bone-0 root
 # translation delta the same way bake_sprites.bake_unit does (:310-342); the
 # default (-1) leaves the raw skin output untouched.
+# P10: public signature unchanged; sid="" keeps original per-call buffers for
+# tool/probe callers. The registered-skin hot path passes a sid so the impl
+# reuses scratch buffers instead of allocating per bone per frame.
 func skin_vertices(skin: Dictionary, fr: int, ref_frame: int = -1) -> PackedVector3Array:
+	return _skin_vertices_impl(skin, fr, ref_frame, "")
+
+func _skin_vertices_impl(skin: Dictionary, fr: int, ref_frame: int, sid: String) -> PackedVector3Array:
 	var empty := PackedVector3Array()
 	if skin.is_empty() or not _valid_skin(skin):
 		last_error = "skin_vertices: invalid skin"
@@ -420,14 +446,27 @@ func skin_vertices(skin: Dictionary, fr: int, ref_frame: int = -1) -> PackedVect
 	var nf: int = int(skin.get("frame_count", k))
 	var frame: int = _nearest_local(skin, fr) if compact else clampi(fr, 0, k - 1)
 	var anim: PackedFloat32Array = skin["anim"]
-	var mats: Array[PackedFloat32Array] = []
-	var poss: Array[Vector3] = []
-	mats.resize(bones)
-	poss.resize(bones)
+	# P10: reuse one flat matrix buffer + one position buffer per sid.
+	# P10-prec: the matrix buffer MUST be a PackedFloat32Array so each
+	# coefficient is rounded to float32 exactly as _qmat() did. Reading it
+	# back from the scratch Dictionary may copy-on-write, so store it back
+	# once per sample (one packed-array copy, not B per-bone allocations).
+	var mats: PackedFloat32Array = PackedFloat32Array()
+	var poss: Array = []
+	if sid != "" and _skin_scratch.has(sid):
+		var sc: Dictionary = _skin_scratch[sid]
+		mats = sc.get("mats", PackedFloat32Array())
+		poss = sc.get("poss", [])
+	if mats.size() != bones * 9:
+		mats.resize(bones * 9)
+	if poss.size() != bones:
+		poss.resize(bones)
 	for bi in range(bones):
 		var base := (bi * nf + frame) * 7
 		poss[bi] = Vector3(anim[base], anim[base + 1], anim[base + 2])
-		mats[bi] = _qmat(anim[base + 3], anim[base + 4], anim[base + 5], anim[base + 6])
+		_qmat_into(mats, bi * 9, anim[base + 3], anim[base + 4], anim[base + 5], anim[base + 6])
+	if sid != "":
+		_skin_scratch[sid] = {"mats": mats, "poss": poss}
 	var rx := 0.0
 	var ry := 0.0
 	if ref_frame >= 0:
@@ -450,11 +489,11 @@ func skin_vertices(skin: Dictionary, fr: int, ref_frame: int = -1) -> PackedVect
 		for j in range(w_off[i], w_off[i + 1]):
 			var bi: int = w_bone[j]
 			var w: float = w_val[j]
-			var m: PackedFloat32Array = mats[bi]
+			var mo: int = bi * 9
 			var p: Vector3 = poss[bi]
-			sx += w * (m[0] * vv.x + m[1] * vv.y + m[2] * vv.z + p.x)
-			sy += w * (m[3] * vv.x + m[4] * vv.y + m[5] * vv.z + p.y)
-			sz += w * (m[6] * vv.x + m[7] * vv.y + m[8] * vv.z + p.z)
+			sx += w * (mats[mo] * vv.x + mats[mo + 1] * vv.y + mats[mo + 2] * vv.z + p.x)
+			sy += w * (mats[mo + 3] * vv.x + mats[mo + 4] * vv.y + mats[mo + 5] * vv.z + p.y)
+			sz += w * (mats[mo + 6] * vv.x + mats[mo + 7] * vv.y + mats[mo + 8] * vv.z + p.z)
 		out[i] = Vector3(sx - rx, sy - ry, sz)
 	return out
 
@@ -506,7 +545,7 @@ func pose_for(e, action, t) -> Dictionary:
 	var line: int = int(row[2])
 	var frame: int = _frame_at(first, last, t)
 	var donor_cite: String = str(row[4]) if row.size() >= 5 else "data/animations/aaf/peaukr.aaf:%d" % line
-	var morph := _morph_fields(skin, frame)
+	var morph := _morph_fields(skin, frame, sid)
 	var sample_frame: int = int(morph.get("sample_frame", frame))
 	var out: Dictionary = {
 		"ok": true,
@@ -531,7 +570,13 @@ func pose_for(e, action, t) -> Dictionary:
 
 
 # Produce the morph fields once, shared by play() and pose_for().
-func _morph_fields(skin: Dictionary, frame: int) -> Dictionary:
+# P10: morph output is a pure function of (skin, frame). Repeated frames are
+# served from cache with zero skinning (idle / single-frame clips / off-screen
+# units re-synced at the same donor clock).
+func _morph_fields(skin: Dictionary, frame: int, sid: String = "") -> Dictionary:
+	var ck := sid + "|" + str(frame)
+	if sid != "" and _morph_cache.has(ck):
+		return _morph_cache[ck] as Dictionary
 	if skin.is_empty():
 		return {
 			"pose_source": POSE_SOURCE_TIMING,
@@ -544,8 +589,9 @@ func _morph_fields(skin: Dictionary, frame: int) -> Dictionary:
 		}
 	var k: int = int(skin["k"])
 	var src_frame: int = _nearest_exported_frame(skin, frame) if bool(skin.get("compact", false)) else frame
-	var verts := skin_vertices(skin, src_frame)
-	return {
+	var verts := _skin_vertices_impl(skin, src_frame, -1, sid) if sid != "" \
+			else skin_vertices(skin, src_frame)
+	var morph := {
 		"pose_source": POSE_SOURCE_MORPH,
 		"skin_registered": true,
 		"vertex_count": verts.size(),
@@ -554,6 +600,12 @@ func _morph_fields(skin: Dictionary, frame: int) -> Dictionary:
 		"sample_frame": src_frame,
 		"skin_math": str(skin.get("skin_math", SKIN_CITE)),
 	}
+	if sid != "":
+		_morph_cache[ck] = morph
+		_morph_keys.append(ck)
+		if _morph_keys.size() > MORPH_CACHE_MAX:
+			_morph_cache.erase(_morph_keys.pop_front())
+	return morph
 
 
 # ---------------------------------------------------------------------------
@@ -601,6 +653,21 @@ func _qmat(x: float, y: float, z: float, w: float) -> PackedFloat32Array:
 	var m21 := 2.0 * (y * z + x * w)
 	var m22 := 1.0 - 2.0 * (x * x + y * y)
 	return PackedFloat32Array([m00, m10, m20, m01, m11, m21, m02, m12, m22])
+
+# P10: byte-identical twin of _qmat's nine expressions and their flattening
+# order ([m00,m10,m20,m01,m11,m21,m02,m12,m22]). dst is a PackedFloat32Array,
+# so each assignment rounds to float32 exactly like _qmat()'s constructor;
+# the flat buffer is reused per sid (one COW copy per sample, not B arrays).
+func _qmat_into(dst: PackedFloat32Array, off: int, x: float, y: float, z: float, w: float) -> void:
+	dst[off] = 1.0 - 2.0 * (y * y + z * z)
+	dst[off + 1] = 2.0 * (x * y + z * w)
+	dst[off + 2] = 2.0 * (x * z - y * w)
+	dst[off + 3] = 2.0 * (x * y - z * w)
+	dst[off + 4] = 1.0 - 2.0 * (x * x + z * z)
+	dst[off + 5] = 2.0 * (y * z + x * w)
+	dst[off + 6] = 2.0 * (x * z + y * w)
+	dst[off + 7] = 2.0 * (y * z - x * w)
+	dst[off + 8] = 1.0 - 2.0 * (x * x + y * y)
 
 
 # Python round() is half-to-even for nonnegative frame indices.
@@ -763,6 +830,10 @@ func _ensure_shipped_skins() -> void:
 			_shipped_bytes += int((item as Dictionary).get("bytes", 0))
 		else:
 			_shipped_error = "last failure " + file_name + ": " + last_error
+	# P10 (defensive, P03 §4-A): the shipped-skin loop replaced/extended the
+	# skin set on this first load. _load_shipped_skin() already clears per skin;
+	# clear once more here so no cache entry can outlive the load.
+	_clear_frame_caches()
 
 
 # Load one c3_skin_v1 asset and register it under its real roster sid. Uses the
@@ -885,6 +956,7 @@ func _load_shipped_skin(path: String) -> bool:
 	if not _valid_skin(skin):
 		return false
 	_skins[sid] = skin
+	_clear_frame_caches()
 	return true
 
 
@@ -916,6 +988,10 @@ func _nearest_exported_frame(skin: Dictionary, donor_frame: int) -> int:
 # donor AAF ranges (converter read them from data/animations/aaf/<base>.aaf);
 # unregistered/legacy skins keep the V7-18 peaukr table unchanged.
 func _action_range_for(sid: String, action: String) -> Array:
+	var ck := sid + "|" + action
+	if _range_cache.has(ck):
+		return _range_cache[ck] as Array
+	var out: Array = []
 	if _skins.has(sid):
 		var skin: Dictionary = _skins[sid] as Dictionary
 		if bool(skin.get("compact", false)):
@@ -927,11 +1003,14 @@ func _action_range_for(sid: String, action: String) -> Array:
 				var colon: int = donor_path.rfind(":")
 				if colon >= 0:
 					line = int(donor_path.substr(colon + 1))
-				return [int(a["first"]), int(a["last"]), line,
+				out = [int(a["first"]), int(a["last"]), line,
 					str(a.get("kind", "morph")), donor_path]
-	if not AAF_ACTIONS.has(action):
-		return []
-	return (AAF_ACTIONS[action] as Array).duplicate()
+	if out.is_empty() and AAF_ACTIONS.has(action):
+		# P10: duplicate ONCE per (sid, action), not once per frame. Callers
+		# (play/pose_for) only read row[0..4]; the const table is never exposed.
+		out = (AAF_ACTIONS[action] as Array).duplicate()
+	_range_cache[ck] = out
+	return out
 
 
 func _unknown(requested: String, aliased: bool) -> Dictionary:

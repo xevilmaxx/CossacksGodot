@@ -18,13 +18,14 @@ owner_directives:
 
 ## 0. Verdict in one paragraph
 
-**OBSERVED:** `_sow_field_ring()` (`variant3d/scripts/game.gd:2528-2566`) still sows a
+**OBSERVED:** `_sow_field_ring()` (`variant3d/scripts/game.gd:2549-2587`, snapshot
+at final write) still sows a
 7×7 rotated lattice and rejects candidates within `1.5 * TILE = 3.0 m`
-(`:2554`) of **any** `food` node — including fields sown earlier in the same loop.
+(`:2575`) of **any** `food` node — including fields sown earlier in the same loop.
 F2-01 (`:103-108`) derived that this leaves a 3.3962 m minimum centre spacing while
-the 3D footprint is only 2.4015 m (`world3d_entities.gd:266-273`, `:2199-2202`,
-`:2242-2247`), so fields cannot touch; and the per-stage `rel` factor
-(`:2223-2239`) shrinks XZ further whenever growth < 1. **PROPOSED (PORT APPROX):**
+the 3D footprint is only 2.4015 m (`world3d_entities.gd:269-276`, `:2254-2258`,
+`:2298-2304`), so fields cannot touch; and the per-stage `rel` factor
+(`:2279-2295`) shrinks XZ further whenever growth < 1. **PROPOSED (PORT APPROX):**
 replace the 49-site lattice with **exactly four patches at fixed N/E/S/W offsets
 of 7.2 m** from the mill centre, each an axis-aligned **7.3 m square** (a 0.10 m
 square overlap = 0.141 m along the 45° contact line at each inner corner); keep
@@ -32,7 +33,10 @@ the footprint at full span for **every** growth stage and let only stalk height
 follow `rel`. **PROPOSED hard rule:** a candidate whose footprint touches a live
 building `block_rect`, a stone/wood/ore/food node, a blocked/rock/water/shore/road
 tile, or the rotor/mill central clearing is **skipped outright** — never nudged,
-never shrunk. No RNG draw is added anywhere. **UNVERIFIED:** no visual result —
+never shrunk. No RNG draw is added anywhere. F2-02 (landed during authoring) shows the donor achieves contact differently —
+49 nodes at 1.6981 *cells* with `1.3×` decals, not four patches — so the quad is
+an owner-directed **PORT APPROX** substitute, not donor parity (§9 item 3).
+**UNVERIFIED:** no visual result —
 this ticket ran no Godot and produced no capture; every pixel claim is a gate for
 G04/F2-05, not a measured outcome.
 
@@ -50,25 +54,31 @@ G04/F2-05, not a measured outcome.
   **49-node 7×7 cluster** with `size = 1.6981` *map cells*, `1.3×` decal scale
   and `1.528`-cell food clearance. The owner's quad directive overrides the
   node count; the four-patch decomposition is therefore explicitly **PORT APPROX**.
-- **Live-tree warning:** `variant3d/scripts/game.gd` was edited by another owner
-  while this report was authored; all `game.gd` line numbers below were re-checked
-  against the tree *at final-write time* (P-50 block now `:2517-2526`, sower
-  `:2528-2566`). Re-verify with `grep -n "func _sow_field_ring"` before applying;
-  if the line numbers have moved again, use the context lines, not the `@@` offsets.
+- **Live-tree warning:** `variant3d/scripts/game.gd` was edited repeatedly by
+  another owner while this report was authored; the `game.gd` line numbers below
+  were re-checked at final-write time (P-50 block `:2538-2547`, sower
+  `:2549-2587`, `_blk` `:2000`, `can_place` `:4030`; the `@@` headers use these
+  final values). They **will drift** if that
+  owner keeps editing. Before applying: `grep -n "func _sow_field_ring\|const SOW_ROW"
+  variant3d/scripts/game.gd` and regenerate offsets (`git diff --recount`, or use
+  the context lines instead of the `@@` numbers). The **added source lines** are
+  the deliverable; the offsets are a convenience.
 - **This report is the only file written.** No `.gd`, asset, config, test, fixture,
   gate or result JSON was edited. No `inbox/backup/*` was created (no edit occurred).
 - **Files COORD must grant exclusively after G04 finishes:**
   1. `variant3d/scripts/game.gd` — F2-03 owns the sim seeding function and the new
      helper. **F2-04 also proposes `game.gd` (mine snap at `place_building`
-     `:4136-4160` in the current tree); the hunks are disjoint (`:2517-2566` vs
+     `:4136-4160` in the current tree); the hunks are disjoint (`:2536-2585` vs
      `:4136-4160`) but COORD must serialise the two grants, not run them
      concurrently.**
   2. `variant3d/scripts/world3d_entities.gd` — F2-03 owns only constants
-     `:266-273` and the field part of `sync()` `:2190-2253`. This file is a shared
-     contest with **M03** (rotor: `:247-253`, `:1685-1782`, `:2153-2188`) and **P11**
-     (batches: `:1400-1472`, `:1506`, `:2271`). F2-03 does **not** touch any rotor
-     or batch line; COORD merges, with `FIELD_SPAN_M` kept as an alias so P11's
-     `_field_visual["color"]` consumer stays valid (P11 proposal :185-192).
+     `:269-276` and the field part of `sync()` `:2246-2309`. This file is a shared
+     contest with **M03** (rotor: `:250-256`, attach ~`:1740`, spin loop ~`:2210`)
+     and **P11** (batches / `_grow_batch` at `:1471`, now LANDED — backup
+     `inbox/backup/world3d_entities.gd.bak-P11` exists). F2-03 does **not** touch
+     any rotor or batch line; COORD merges with the **already-applied** P11 edit,
+     and `FIELD_SPAN_M` stays as an alias so P11's `_field_visual["color"]`
+     consumer (proposal :185-192) remains valid.
 - **Explicitly NOT owned / NOT edited:** `variant3d/scripts/winter_field_decal.gd`
   (authoring-only, inert — `:1-5`), `variant3d/scripts/world.gd`,
   `app/scripts/**` (2D `app/` gate stays untouched), `manifest.json`, all tests.
@@ -80,20 +90,20 @@ G04/F2-05, not a measured outcome.
 
 | # | Fact | Source | Label |
 |---|---|---|---|
-| E1 | Field nodes are `food` resources created **only** by `_sow_field_ring`; 7×7 rotated sites, `step = 1.6981 * TILE * 0.5 = 1.6981 m`, clash `1.5 * TILE = 3.0 m` vs `food/wood/stone` | `game.gd:2517-2566`, `:575-587` | OBSERVED |
-| E2 | Minimum accepted spacing 3.3962 m vs 3D footprint 2.4015 m → ~0.995 m gap; growth `rel` makes it worse | F2-01 `:103-108` + `world3d_entities.gd:270`, `:2223-2242` | DERIVED |
-| E3 | Donor field mesh bbox x span **58.51857 m**, y span 51.92523 m; `field` exempt from env scaling | `variant3d/assets/models/manifest.json:1601-1615`, `world3d_entities.gd:1127-1129` | OBSERVED |
-| E4 | 3D scale = `FIELD_SPAN_M / native_span * rel`, uniform on X/Y/Z; ripe `rel=1` → 2.4015 m | `world3d_entities.gd:2199-2202`, `:2242-2247`, MILLFIX report `:94` | OBSERVED + DERIVED |
+| E1 | Field nodes are `food` resources created **only** by `_sow_field_ring`; 7×7 rotated sites, `step = 1.6981 * TILE * 0.5 = 1.6981 m`, clash `1.5 * TILE = 3.0 m` vs `food/wood/stone` | `game.gd:2536-2585`, `:575-587` | OBSERVED |
+| E2 | Minimum accepted spacing 3.3962 m vs 3D footprint 2.4015 m → ~0.995 m gap; growth `rel` makes it worse | F2-01 `:103-108` + `world3d_entities.gd:273`, `:2279-2298` | DERIVED |
+| E3 | Donor field mesh bbox x span **58.51857 m**, y span 51.92523 m; `field` exempt from env scaling | `variant3d/assets/models/manifest.json:1601-1615`, `world3d_entities.gd:1149-1151` | OBSERVED |
+| E4 | 3D scale = `FIELD_SPAN_M / native_span * rel`, uniform on X/Y/Z; ripe `rel=1` → 2.4015 m | `world3d_entities.gd:2254-2258`, `:2298-2304`, MILLFIX report `:94` | OBSERVED + DERIVED |
 | E5 | Mill body has **no yaw**, donor front points local +X; rotor hub local `(0.173, 5.235, 0)` is mid-depth; billboarded sail half-span 6.352 m, local X extent `[-3.003, +3.349]` m | M01 `:20-34`, `:77-90`, `:139-148` | OBSERVED + DERIVED |
-| E6 | Mill sim radius 2.0 m; `blocked` circle stamped at build; buildings also carry authored `block_rect` (mill `ukr_mil` ortho 6.627, ink `[44,18,277,320]`, cx 0.4989, foot 1.0) | `data.gd:1330`, `game.gd:2465-2468` (build stamp), `:1881-1909` | OBSERVED |
-| E7 | Authoritative footprint sets: `_block_rects` `[Rect2,id]` cached by `bld_dirty`; `blocked` byte grid; `tileblock` names incl. road `test1/test2/test3`, `BLK_WATER=255`; resource spatial hash `_res_grid` | `game.gd:160-194`, `:43`, `:52-53`, `:523-566`, `:3084-3098`, `:1979-1980` | OBSERVED |
+| E6 | Mill sim radius 2.0 m; `blocked` circle stamped at build; buildings also carry authored `block_rect` (mill `ukr_mil` ortho 6.627, ink `[44,18,277,320]`, cx 0.4989, foot 1.0) | `data.gd:1330`, `game.gd:2486-2489` (build stamp), `:1883-1911` | OBSERVED |
+| E7 | Authoritative footprint sets: `_block_rects` `[Rect2,id]` cached by `bld_dirty`; `blocked` byte grid; `tileblock` names incl. road `test1/test2/test3`, `BLK_WATER=255`; resource spatial hash `_res_grid` | `game.gd:160-194`, `:43`, `:52-53`, `:523-566`, `:3084-3098`, `:2000-2001` | OBSERVED |
 | E8 | `can_place` already refuses buildings on food/stone/wood (`"Cornfield - pick open dirt."`, `"Stone field - pick open dirt."`) and uses `my_r + n.radius` / `+0.3` | `game.gd:4030-4102` (esp. `:4080`, `:4086-4088`, `:4095`) | OBSERVED |
-| E9 | Roads are walkable `terrain=1` + road tileblock; water `terrain=3`, shore `4`, cliff `5`; `_sow_field_ring` skips 3/4/5 but **not** roads | `game.gd:2368-2389`, `:2011-2020`, `:2547-2550`, F2-01 `:64`, `:68` | OBSERVED |
-| E10 | No RNG draw in `_sow_field_ring`; `rng` is one continuous stream seeded once (`:259`); determinism-sensitive passes explicitly avoid extra draws | `game.gd:2528-2566`, `:259`, `:841-851` | OBSERVED |
+| E9 | Roads are walkable `terrain=1` + road tileblock; water `terrain=3`, shore `4`, cliff `5`; `_sow_field_ring` skips 3/4/5 but **not** roads | `game.gd:2387-2408`, `:2030-2041`, `:2566-2569`, F2-01 `:64`, `:68` | OBSERVED |
+| E10 | No RNG draw in `_sow_field_ring`; `rng` is one continuous stream seeded once (`:259`); determinism-sensitive passes explicitly avoid extra draws | `game.gd:2547-2585`, `:259`, `:841-851` | OBSERVED |
 | E11 | Donor screenshot shows a **rotated rectangular field with a square dirt clearing cut out for the mill**; decal alpha bbox 477×475 inside 512² (~93%), summer/winter pair existing on disk | `docs/audit/PIECES/field_crops.md:43-52`, `:90-97`, `:31-41`, `winter_field_decal.gd:64-68` | OBSERVED (screenshot/pixels) |
 | E12 | QA atom A currently asserts ≥7 fields, min pairwise span ∈ [1.5, 3.6] m, `pairs >= 7` — incompatible with a four-patch quad | `F2_05_qa.md:88-92`, `:122-124`, `:448-449`, `:481-483` | OBSERVED (proposal text) |
 | E13 | Mill mesh 3D half-extents ≈2.602 m (X) / 2.397 m (Z) after bbox centring | M01 `:79`, `:141-144`; `manifest.json:1202-1218` | DERIVED |
-| E14 | `FIELD_MILL_RADIUS = 18.0 m` governs regrow adoption, not size | `game.gd:212`, `:2596-2610`; F2-01 `:117` | OBSERVED |
+| E14 | `FIELD_MILL_RADIUS = 18.0 m` governs regrow adoption, not size | `game.gd:212`, `:2615-2629`; F2-01 `:117` | OBSERVED |
 | E15 | F2-02 donor truth: 49 nodes at `size = 1.6981` **map cells**, 45° rotation, `1.3×` decal scale, food clearance `1.528` cells < spacing; one contiguous rectangle with a square mill clearing | `F2_02_donor_fields_mines.md:98-99`, `:198-220`, `:388-396` | OBSERVED (donor text / image crop) |
 
 **INFERRED:** the owner's "quad all around the mill" matches E11's central dirt
@@ -166,17 +176,17 @@ consumption. Exact check order (also the order in the diff):
    never moved (M03 owns that separately).
 3. **Per-cell terrain / water / shore / road / blocked** — iterate every tile
    overlapped by the 7.3 m rect via `tile_of()` (`:526-527`). Reject `terrain ∈
-   {3,4,5}` (water / sand-shore / cliff, `:2549`), `blocked[i] != 0` (rock, forest,
-   building circles; `:529-532`, `:544-557`, `:2465-2468`), `tileblock[i] ==
+   {3,4,5}` (water / sand-shore / cliff, `:2568`), `blocked[i] != 0` (rock, forest,
+   building circles; `:529-532`, `:544-557`, `:2486-2489`), `tileblock[i] ==
    BLK_WATER` (`:52`) or any road id resolved from `tbl_idx` for
-   `test1/test2/test3` (`:1758`, `:1979-1980`, `:2011-2020`, `:2368-2389`).
+   `test1/test2/test3` (`:1777`, `:2000-2001`, `:2030-2041`, `:2387-2408`).
    Road IDs are only compared when `tbl_idx` contains the name, so a stub with an
    empty name table cannot reject everything.
 4. **Buildings** — `_block_rects_ensure()` (`:176-194`) then every non-dead
    `[Rect2,id]`; skip **only** `id == mill.id`; reject if
    `br.grow(0.3).intersects(rect)`. For any building with no authored `block_rect`
    (walls/gates/mines), fall back to a rect-vs-circle test with
-   `block_r + 0.3` (`:1881-1888`, `:4095`). Nothing in `can_place`,
+   `block_r + 0.3` (`:1883-1890`, `:4095`). Nothing in `can_place`,
    `bld_block_rect` or `_block_rects` is written.
 5. **Resources / stones** — `_res_grid_ensure()` (`:3084-3098`) over cells within
    `h + 2.5` m; skip `bush`/`stump` and depleted `max_hits!=0` nodes exactly as
@@ -187,7 +197,7 @@ consumption. Exact check order (also the order in the diff):
    other resource — the outcome is one boolean reject with no partial
    acceptance and no fallback size.**
 6. **Gold** — only after all geometry checks; `pay_cost(...)` and `_add_res(...)`
-   at `:2559-2562`.
+   at `:2578-2581`.
 
 **Deterministic RNG behaviour:** `_sow_field_ring()` and the helper contain **zero**
 calls to `rng`, `gen_rng`, `randi*`, `randf*` or any seeded helper. The cached
@@ -210,7 +220,7 @@ Paths are relative to the workspace root. hunks use current-tree line numbers.
 ```diff
 --- a/variant3d/scripts/game.gd
 +++ b/variant3d/scripts/game.gd
-@@ -2517,10 +2517,17 @@
+@@ -2538,10 +2538,17 @@
  # P-50: donor _unit_DoSeedWheat (unit.script:6470-6570). cRow=7 -> 7x7 grid
  # rotated 45 degrees (up to 49 tiles), size 1.6981 donor units; collision,
  # water and nearby resource skips (unit.script:6504-6548). Each field costs
@@ -229,7 +239,7 @@ Paths are relative to the workspace root. hunks use current-tree line numbers.
  # the explicit cap keeps repeated 60 s re-seeds from ever stacking fields.
 -const MAX_FIELDS_PER_MILL := 49
 +const MAX_FIELDS_PER_MILL := FIELD_QUAD_COUNT
-@@ -2528,39 +2535,104 @@
+@@ -2549,39 +2556,104 @@
  func _sow_field_ring(mill: Dictionary) -> int:
  	if mill.is_empty() or str(mill.sid) != "mil" or not bool(mill.get("finished", false)):
  		return 0
@@ -368,7 +378,7 @@ Paths are relative to the workspace root. hunks use current-tree line numbers.
 ```diff
 --- a/variant3d/scripts/world3d_entities.gd
 +++ b/variant3d/scripts/world3d_entities.gd
-@@ -266,8 +266,11 @@
+@@ -269,8 +269,11 @@
 -# MILLFIX F2: field stage tints/scale are the EXACT 2D numbers from
 -# app/scripts/world.gd:2588-2613; sow spacing is game.gd:2120 (1.6981 m,
 -# diagonal neighbour sqrt(2)*step) replacing the 58.5 m donor field bbox.
@@ -386,7 +396,7 @@ Paths are relative to the workspace root. hunks use current-tree line numbers.
  const FIELD_DECAL_WINTER: String = "res://assets/terrain/deco_png/envfielddw.png"
 -const FIELD_STATUS: String = PORT_LABEL + " — stage tint/scale from game.field_state()/field_growth01(); donor decal 3D UV mapping UNVERIFIED"
 +const FIELD_STATUS: String = PORT_LABEL + " — F2-03 quad offsets/span are PORT APPROX non-donor spacing; stage tint from game.field_state()/field_growth01(); donor decal 3D UV mapping UNVERIFIED"
-@@ -2190,6 +2193,7 @@
+@@ -2246,6 +2249,7 @@
  	# MILLFIX F2: per-field visual state, read-only on the sim. game.field_state()
  	# / field_growth01() are the SAME methods the HUD and 2D renderer use
  	# (game.gd:2210-2228, world.gd:2550-2559). Tints and relative scales below
@@ -394,13 +404,13 @@ Paths are relative to the workspace root. hunks use current-tree line numbers.
 -	# footprint replaces the 58.5 m donor bbox with the sow-step span
 -	# (game.gd:2120). No res_nodes mutation, no res_dirty bump, no new node.
 +	# footprint replaces the 58.5 m donor bbox with the PORT APPROX quad patch
-+	# span (FIELD_QUAD_SPAN_M; sites at game.gd:2503). No res_nodes mutation,
++	# span (FIELD_QUAD_SPAN_M; sites at game.gd:2547). No res_nodes mutation,
 +	# no res_dirty bump, no new node. XZ stays fixed; only Y follows `rel`.
-@@ -2242,12 +2246,18 @@
+@@ -2298,12 +2302,18 @@
 -			var s := field_scale * rel
 +			# F2-03: footprint stays at the full 7.3 m patch span at EVERY stage,
 +			# so the four patches keep their shared contact while growing;
-+			# only stalk height (Y) follows the 2D stage factor `rel` (:2223-2239).
++			# only stalk height (Y) follows the 2D stage factor `rel` (:2279-2295).
 +			var sxz := field_scale
 +			var sy := field_scale * rel
  			var xf: Transform3D = _xf(fid)
@@ -420,9 +430,9 @@ Paths are relative to the workspace root. hunks use current-tree line numbers.
  	stats["field_visual_label"] = FIELD_STATUS
 ```
 
-**Diff notes for the applier:** `field_scale` at `:2199-2202` is intentionally
+**Diff notes for the applier:** `field_scale` at `:2254-2258` is intentionally
 unchanged — it reads the `FIELD_SPAN_M` alias, which now equals
-`FIELD_QUAD_SPAN_M`. `_xf()` (`:1551-1593`) leaves resource yaw at 0, so the
+`FIELD_QUAD_SPAN_M`. `_xf()` (`:1607-1649`) leaves resource yaw at 0, so the
 independent XZ/Y basis scaling cannot introduce rotation. Keep both
 `FIELD_QUAD_*` constant sets (game.gd and world3d_entities.gd) in sync; COORD is
 the single integrator.
@@ -482,7 +492,7 @@ saving. **Do not run Godot in this step** — G04 owns the runner.
 | 7 | `t_entities3d` / `t_terrain_mines` structural gates | unchanged; no `anim/` substring introduced, no forbidden `field` sid change |
 | 8 | RNG determinism atom | `game.rng.get_state()` and `gen_rng.get_state()` identical before/after `_on_building_finished(mill)`; repeat on seeds 9 and 1004 → identical field-centre list |
 | 9 | Rejection atom | with a real `hou` placed on a quad centre and a `gold/iron/coal` deposit / `stone` node inside another, `fields.size()` drops to 2 with **no shifted centre**; `can_place` and `blocked` unchanged |
-| 10 | Building/placement regression | `can_place` still refuses "Cornfield - pick open dirt." / "Stone field - pick open dirt." (`game.gd:4043-4044`); walls/gates/mines placement unchanged |
+| 10 | Building/placement regression | `can_place` still refuses "Cornfield - pick open dirt." / "Stone field - pick open dirt." (`game.gd:4086-4088`); walls/gates/mines placement unchanged |
 
 ### 7.3 Required F2-05 atom deltas (author-only proposal; NOT applied here)
 
@@ -542,17 +552,29 @@ F2-05's Atom B (mine snap) is unaffected by this ticket.
 2. Donor 3-D field placement rule / exact 7.2 m × 7.3 m patch size: **UNVERIFIED**;
    the only donor anchor is the screenshot's central clearing (`field_crops.md
    :90-97`) and the decal bbox — exact sizes are PORT APPROX.
-3. F2-02 had not landed; if it reports a donor cSeedWheat spacing/footprint,
-   COORD must reconcile it with §3 before applying.
+3. **F2-02 landed during authoring and conflicts with the owner's quad shape.**
+   F2-02 `:98-99`, `:198-220` reports donor `size = 1.6981` **map cells** (i.e.
+   3.3962 m at `TILE_M = 2`), a 7×7 = 49-node cluster, `1.3×` decal scale and a
+   1.528-cell food clearance that is *smaller* than the 1.6981-cell spacing —
+   donor siblings are deliberately packed. The port's `step = 1.6981 * TILE *
+   0.5 = 1.6981 m` is **half a donor cell**, which is the root unit mismatch
+   behind F2-01's gap. A donor-faithful alternative would be
+   `step = 1.6981 * TILE = 3.3962 m` (neighbour span 4.803 m, visual span 4.803 m)
+   with 49 nodes — **not** four patches. The owner directive explicitly asks for
+   four patches around the mill, so this proposal keeps the quad and labels its
+   size/offset **PORT APPROX**, preserving donor art and the touching-coverage
+   outcome but **not** donor node count or spacing. COORD must confirm that
+   interpretation before integration; if the owner instead wants donor
+   node-count parity, use F2-02's knobs and discard §3/§5 of this report.
 4. The 2-D `block_rect` of the mill extends to −6.254 m in sim Y
-   (`game.gd:1878-1881`, E6); the south patch is deliberately allowed because the
+   (`game.gd:1924-1928`, E6); the south patch is deliberately allowed because the
    owning mill is excluded. Physical 3-D clearance is 1.15 m (E13), but the
    2-D ghost/placement semantics around that exclusion are **UNVERIFIED** without
    a capture — gate 4/§7.1 must look at it.
 5. Road tile ids are resolved from `tbl_idx`; if a map variant omits
    `test1/test2/test3`, road rejection is not active (documented limitation,
    not a silent fallback). `tileblock` road painting is observed at
-   `game.gd:1986-1995`.
+   `game.gd:2030-2041`.
 6. Cross-variant sim hash parity breaks by design (3-D only fix); accept as a
    tracked divergence, not a regression hidden by a weakened test.
 7. F2-04 also owns `game.gd`; M03/P11 also own `world3d_entities.gd`. Both grants

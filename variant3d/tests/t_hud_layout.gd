@@ -57,9 +57,10 @@ const PNG_FLAGS := ["--png-1024x576", "--png-1280x720", "--png-1920x1080"]
 
 # Pixel slack only for float/container rounding, never for a real overflow.
 const EPS := 2.0
-# hud.gd:444 / :495-498 — donor speed set plus pause, item metadata in seconds.
-const SPEED_LABELS := ["II", "1x", "2x", "4x"]
-const SPEED_META := [0.0, 1.0, 2.0, 4.0]
+# hud.gd:444 / :495-498 — pause + port speeds, item metadata in seconds.
+# S02: x8/x16/x32/x64 are OWNER-DIRECTIVE extensions; x16/x32/x64 UNVERIFIED vs donor.
+const SPEED_LABELS := ["II", "1x", "2x", "4x", "8x", "16x", "32x", "64x"]
+const SPEED_META := [0.0, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
 # hud.gd:124-130 (RES_TOOLTIPS) + data.gd:25 (six resources in this order).
 # HUD-LAYOUT-REPAIR-01: gold/iron/coal now read "produced at", matching the
 # current donor-cited literals at hud.gd:128-130 (hud.gd itself is NOT edited).

@@ -4,7 +4,7 @@ ticket: TERRAIN-SWARM-2026-11-25 / B03 (IMPLEMENTATION, exclusive owner)
 title: "Raise large-scale tile diversity / kill repeated-texture read — game.gd only"
 owner: B03 (exclusive owner of variant3d/scripts/game.gd)
 created: 2026-11-25
-status: DELIVERED__NO_GODOT_JOB__COORD_GATES_PENDING__RELIEF_FIX_ADDED
+status: DELIVERED__NO_GODOT_JOB__COORD_GATES_PENDING__RELIEF_FIX_ADDED__L03_FINAL_FIX
 backup: inbox/backup/game.gd.bak-B03
 relief_backup: inbox/backup/game.gd.bak-B03-relief
 files_changed:
@@ -409,5 +409,60 @@ valid. Static bracket/quote balance check passes.
 
 **Not run:** Godot, runner jobs, or tests — per ticket order. Available for
 COORD's re-capture and further isolation.
+
+## 11. L03 follow-up — gradient pass made COLLISION-ONLY (final state)
+
+L03_realmap_regression.md §3 rank 1 refuted the sufficiency of §10's mask guard:
+the `|dh|>0.5/0.55` test fires on the **quantised 8-bit base-mask terraces**
+(`mapgen.gd:63-85`) and clamp bands (`game.gd:1069,1117,1254-1274`), most of
+which lie **outside** `_relief_stamp_mask`. A pre-B03 dump proves this: 1,494 /
+57,600 cells are `terrain==5`, plotting as thin arcs/partial rings around
+plateau/water features; `_apply_shore_cliffs()` + `_cliff_tile_for()` then write
+nested grey rock bands from the multiple `|h|` gates. The maze predates B03.
+
+**Final edit** (against `inbox/backup/game.gd.bak-B03-relief`, the same backup as
+§10 — no new backup was needed):
+
+```diff
+ 			if steep:
+-				terrain[i] = 5
++				# B03-RELIEF / L03 rank-1: this pass is COLLISION ONLY. It no
++				# longer writes terrain=5 at all: the |dh| test fires on the
++				# port's quantised 8-bit base-mask terraces (mapgen.gd:63-85)
++				# and the clamp bands (game.gd:1069/1117/1254-1274), most of
++				# which lie OUTSIDE _relief_stamp_mask. Every such terrace became
++				# a ring of grey rock ART (the owner's concentric maze), and
++				# _apply_shore_cliffs/_cliff_tile_for then painted several nested
++				# grey bands from the multiple height gates. Real cliff art still
++				# comes from genuine stone/hill stamps and the shore/cliff tables.
++				# set_blocked_tile stays for EVERY steep cell, so collision,
++				# walkability, start protection and blocked[] are unchanged.
++				# _relief_stamp_mask is retained (harmless, reusable data).
+ 				set_blocked_tile(x, y, true)
+```
+
+The mask declaration comment was updated to match (the mask is now retained
+provenance only; the gradient pass no longer consults it). `_relief_stamp_mask`
+itself, its population in `_shape_stamp_relief()`, the near_start marking and the
+one-cell dilation are all **kept**, per COORD — they are harmless and may be
+reused by a later relief ticket.
+
+**Why this is the right site:** L03 §4 explicitly names it the *primary one-site
+fix*, and Y01's data separates `terrain==5` (the maze) from `blocked[]` (the
+collision). `blocked[]` is byte-identical because `set_blocked_tile` still runs
+for every steep non-water/sand cell. `scan_map.py:246-248` measures `cliff` as
+`blocked / steep`, not rock paint, and `rock` has no pass threshold
+(`scan_map.py:478-493`), so the scan gate remains valid. No threshold was
+lowered, no assertion weakened, no RNG draw changed, no height/terrain write
+added elsewhere.
+
+Net effect vs the original B03 backup (`game.gd.bak-B03`): 11 hunks, 110 lines
+added, 10 removed. Static bracket/quote balance passes. No Godot/runner run.
+
+**Remaining risk (R12):** if a capture still shows grey rings, the next suspect
+is another `terrain=5` producer (`_apply_shore_cliffs`, `stone` stamp quarry
+scars) — **not** the B03 diversity hunks, which L03 §4.2 says to keep unless a
+checkerboard persists. COORD's re-capture will settle it. Donor parity remains
+UNVERIFIED (no GPU A/B).
 
 *End of B03 report.*

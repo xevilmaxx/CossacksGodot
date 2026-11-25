@@ -154,4 +154,31 @@ dropdown currently tops out at x8. Add higher multipliers safely.
 Read-only/proposal only while G04 runs gates. `hud.gd` is also P12's proposed file — COORD
 grants one owner after G04 finishes; no cross-touch.
 
-*End of Wave G/P/M/H/F2/S charter.*
+## Wave N — NATION OBJECT ASSOCIATIONS (owner directive, same session)
+
+Owner: *"initial hall object of Russian nation should be different; check association of 3D objects to nations correctness; also peasants are of different form."*
+
+| ID | Scope | Output |
+|---|---|---|
+| N01 | Audit building sid -> nation mapping in variant3d vs app 2D; find the Russian starting hall's actual mesh | `reports/N01_nation_building_audit.md` |
+| N02 | Donor truth: Russian starting hall sid/model, nation-specific peasant mesh/sid, nation object naming | `reports/N02_donor_nation_objects.md` |
+| N03 | Audit peasant unit mesh/sid per nation: are different nations using one form? | `reports/N03_peasant_forms.md` |
+| N04 | Ready-to-apply fix proposals (no edits until COORD grants) | `reports/N04_nation_fix.md` |
+| N05 | QA atom proposal + windowed capture for nation-specific hall and peasants | `reports/N05_nation_qa.md` |
+
+Read-only/proposal only; no runner jobs. 2D `app/` is the secondary reference, donor is primary.
+
+## Wave BLD — MINE FOOTPRINT + BUILDER TRAPPING (owner directives, same session)
+
+Owner: *"when building mine it +- should be same size of mine on the map — now it's about twice; and during building it traps builders inside and they cannot finish it — avoid builders being trapped in the building mesh during build; they can walk only around."*
+
+| ID | Scope | Output |
+|---|---|---|
+| BLD-01 | Audit mine ghost footprint/`can_place` radius vs the placed mine's actual mesh/collision footprint; find the ~2x mismatch | `reports/BLD_01_mine_footprint.md` |
+| BLD-02 | Audit builder work positions during construction: spawn points, pathing, collision mask, why they end up inside the mesh and stall | `reports/BLD_02_builder_trap.md` |
+| BLD-03 | Ready-to-apply fix proposals for both (no edits until COORD grants) | `reports/BLD_03_fix.md` |
+| BLD-04 | QA atom proposals for footprint size and builder completion | `reports/BLD_04_qa.md` |
+
+Read-only/proposals only; no runner jobs. Donor is primary; label PORT APPROX.
+
+*End of Wave G/P/M/H/F2/S/N/BLD charter.*

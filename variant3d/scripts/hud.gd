@@ -437,11 +437,14 @@ func _build_top() -> void:
 	status_label.clip_text = true
 	top_bar.add_child(status_label)
 	# game speed + menu, like the original's top-right controls. UI-TOPBAR-01:
-	# the four speed buttons become ONE OptionButton (donor speeds + pause);
+	# the four legacy speed buttons become ONE OptionButton (pause + port speeds);
 	# labels/tooltips/hotkeys and the speed_label readout stay as before.
 	var sep2 := VSeparator.new()
 	top_bar.add_child(sep2)
-	speed_menu = _mkoption([["II", 0.0], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0]], 1)
+	# S02 (owner directive): x8/x16/x32/x64 extend the old 1x/2x/4x set.
+	# x16/x32/x64 are PORT APPROX — NOT donor-verified; no donor GPU A/B exists.
+	speed_menu = _mkoption([["II", 0.0], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0],
+		["8x", 8.0], ["16x", 16.0], ["32x", 32.0], ["64x", 64.0]], 1)
 	speed_menu.tooltip_text = "Game speed (Space pauses)"
 	speed_menu.item_selected.connect(_on_speed_idx)
 	top_bar.add_child(speed_menu)

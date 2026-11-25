@@ -73,10 +73,10 @@ var _pattern_build: Dictionary = {}
 var _relief_donor_mask: PackedByteArray = PackedByteArray()
 # B03-RELIEF: every cell whose HEIGHT was written by _shape_stamp_relief
 # (donor-grid branch OR analytic fallback), plus the near_start protection ring.
-# The gradient/collision pass uses it to keep relief terraces from being painted
-# as rock ART (the owner's concentric maze).  `blocked[]` is still applied there,
-# so walkability is byte-identical; only the terrain=5 art paint is suppressed.
-# PORT APPROXIMATION — the donor's cliff-promotion rule is UNVERIFIED (RV-TRN-01).
+# Retained as harmless, reusable provenance data. L03 showed the base-mask
+# terraces outside this mask also produced the rock-art maze, so the gradient
+# pass now writes no terrain=5 at all and no longer consults this mask; collision
+# (set_blocked_tile) is unchanged. PORT APPROXIMATION — donor promotion UNVERIFIED.
 var _relief_stamp_mask: PackedByteArray = PackedByteArray()
 # LEGACY port amplitude constants, retained ONLY for the pre-existing analytic
 # fallback/domes.  HEIGHT-GEN-DEEP-01 §4.3 corrects the donor truth: the live
@@ -1295,16 +1295,18 @@ func _gen_base() -> void:
 			if x + 1 < MAP_W and y + 1 < MAP_H and absf(height[i + MAP_W + 1] - h0) > 0.55:
 				steep = true
 			if steep:
-				# B03-RELIEF: relief stamps own HEIGHT only. Their terraced rims
-				# (and the near_start step that borders them) must not be painted
-				# as rock ART - that is the owner's concentric maze. The stamp
-				# mask covers both donor-grid and analytic-fallback cells; the
-				# 2-pattern _relief_donor_mask alone would miss the analytic rims
-				# that make most rings. Real donor rock/stone collision OUTSIDE
-				# relief stamps is unchanged. `blocked[]` is still applied to
-				# EVERY steep cell, so walkability/start protection are intact.
-				if _relief_stamp_mask[i] == 0:
-					terrain[i] = 5
+				# B03-RELIEF / L03 rank-1: this pass is COLLISION ONLY. It no
+				# longer writes terrain=5 at all: the |dh| test fires on the
+				# port's quantised 8-bit base-mask terraces (mapgen.gd:63-85)
+				# and the clamp bands (game.gd:1069/1117/1254-1274), most of
+				# which lie OUTSIDE _relief_stamp_mask. Every such terrace became
+				# a ring of grey rock ART (the owner's concentric maze), and
+				# _apply_shore_cliffs/_cliff_tile_for then painted several nested
+				# grey bands from the multiple height gates. Real cliff art still
+				# comes from genuine stone/hill stamps and the shore/cliff tables.
+				# set_blocked_tile stays for EVERY steep cell, so collision,
+				# walkability, start protection and blocked[] are unchanged.
+				# _relief_stamp_mask is retained (harmless, reusable data).
 				set_blocked_tile(x, y, true)
 	# Starts can land in shallow water on a mask edge: snap to the nearest land.
 	for si in starts.size():
