@@ -4,7 +4,7 @@ title: "AUDIO-SEL-02 — wire the donor selection sound into the 3D selection re
 area: variant3d / input / audio / donor selection feedback
 owner: AUDIO-SEL-02 (small integration builder / subagent)
 date: 2026-11-25
-status: PENDING_VALIDATION
+status: IMPLEMENTED__VALIDATED__NO_BEHAVIOUR_CHANGE_WHEN_AUDIO_UNAVAILABLE
 scope: "Exactly two repo files in scope; only variant3d/scripts/input_controller.gd was edited plus this report. Backup outside the repo tree: inbox/backup/input_controller.gd.bak-AUDIOSEL02. Donor READ-ONLY; no donor binary run and no donor asset copied. audio.gd, hud.gd, config, tests, harness, fixtures, manifest and git state untouched."
 owns:
   - "variant3d/scripts/input_controller.gd"
@@ -12,7 +12,7 @@ owns:
 donor: "C:\\Games\\Cossacks 3 — read-only source/config reports consumed (AUDIO_SEL_01, SEL_01_implementation, CONFIG_WIRE_SEL, DAUDIO-01, RV-SEL-01, DSEL-01, DEC_04 §8); no donor file copied or executed."
 backup: "inbox/backup/input_controller.gd.bak-AUDIOSEL02 — 58428 B — SHA-256 BD626E700AF2F1AC2CADC99736750C05A34556043F3D87C619AB89658941BD81 (pre-edit, matches original)"
 labels: [DONOR_CITED, NO_BEHAVIOUR_CHANGE_WHEN_AUDIO_UNAVAILABLE, VARIANT_RUNNER_ONLY]
-validation: "pending"
+validation: "variant runner only, Windows python: ticket 487 audiosel02-smoke (headless --check-only --script res://scripts/input_controller.gd, ok/exit 0, stderr 0 B) and ticket 495 audiosel02-drag (windowed real-input t_select_rect.gd, ok/exit 0, PASS 23/23). SCRIPT ERROR == 0 in both. No gates, no ladder, no direct godot."
 ---
 
 # AUDIO-SEL-02 — selection acknowledgement wired into the 3D rebuild
@@ -83,10 +83,12 @@ Restore is a plain copy back over `variant3d/scripts/input_controller.gd`.
 
 ## 6. Before → after (only `variant3d/scripts/input_controller.gd`)
 
-`git diff --stat` for the owned file: **45 insertions, 3 deletions** versus HEAD;
-23 insertions / 3 deletions of those are the already-landed CONFIG-WIRE-SEL
-hunks. **This ticket's own change is 22 insertions, 0 deletions, one hunk**, at
-the end of `_set_selection()`.
+`git diff --no-index --numstat` of the owned file against its pre-edit backup:
+**22 insertions, 0 deletions, one hunk**, at the end of `_set_selection()`.
+Early in this ticket the diff against HEAD also showed the already-landed
+CONFIG-WIRE-SEL hunks (23 insertions / 3 deletions); HEAD was then moved by an
+unrelated `step` commit from another swarm agent, so the backup is the stable
+baseline. No change was made to the owned file after the runner jobs.
 
 | # | Before (pre-edit `:305-315`) | After (`:305-337`) | Change |
 |---|---|---|---|
@@ -101,6 +103,12 @@ The added block, in order:
 5. `var tree := get_tree()` guarded with `if tree != null:`; the main node is obtained via `tree.get_first_node_in_group("c3_main")` — the same null-checked seam already used in this file at `:1093/:1098/:1123` (`main.gd:170` registers the group).
 6. `var snd = m.get("audio")`, then `if snd != null and is_instance_valid(snd) and bool(snd.get_meta("can_play", false)) and snd.has_method("play_selection"):` — **main.gd's exact gate** (`main.gd:1675`, `:1756`) plus a method check for older audio instances.
 7. `snd.play_selection(kind, arr.size())` — routes through the existing AUDIO-SEL-01 API; `count` is the size of the applied selection (AUDIO-SEL-01 §7: "number of selected entities").
+
+Line numbers in the added code comments (`:1093/:1098/:1123`, `:1016`) and in
+§2 are **pre-edit** references, matching the convention used by SEL-01 and
+CONFIG-WIRE-SEL; after the 22 inserted lines the same sites are at `:1115`,
+`:1120`, `:1145` and `:1035`. The game file was not touched after the two runner
+jobs, so the validated bytes are the final bytes.
 
 **Byte-identical and untouched:** the drag/click split, LMB press/release
 branches, world-ground epsilon, Shift-add union (`spmAdd`), omitted Ctrl-remove,
@@ -126,7 +134,37 @@ signature, and every other repo file.
 
 ## 8. Validation — variant runner only, unique ids
 
-PENDING — see updated report after runner jobs finish.
+Windows `python`, no direct `godot`, no full gates, no ladder. Two successful jobs:
+
+| Ticket / id | Command form | Mode | Status / exit | wait / run | Result | `SCRIPT ERROR` |
+|---:|---|---|---|---|---|---:|
+| 487 | `audiosel02-smoke` | headless `--path variant3d --check-only --script res://scripts/input_controller.gd` | **`ok` / 0** | 296.33 s / 8.50 s | stdout 75 B (Godot banner); stderr **0 B** — parse/validation clean | **0** (explicitly counted: 0 bytes of stderr) |
+| 495 | `audiosel02-drag` | windowed `--path variant3d --script res://tests/t_select_rect.gd -- --config <ABS>\small_map_64.json --screenshot <Temp>\audiosel02_smallmap64.png` | **`ok` / 0** | 222.26 s / 60.27 s | **`PASS 23/23`**, `t_select_rect.json` `"passed": true`, `run_mode: windowed_real_input` | **0** |
+
+Artifacts: `variant3d\.godot_queue\results\00000487.json` +
+`00000487_audiosel02-smoke\{stdout,stderr}.txt`, and `00000495.json` +
+`00000495_audiosel02-drag\{stdout,stderr}.txt`. Test result:
+`variant3d/tests/results/t_select_rect.json`.
+
+Job 495's measured values are unchanged from the S1-INPUT-FIX / CONFIG-WIRE-SEL
+baselines: viewport 1280×720, `event_coord_scale=[1,1]`, world delta 24.3009 m
+> 0.005 m, overlay `Rect2(p0,p1).abs()` visible during drag and hidden/empty after
+release, selected `[10,11]`, short click `[10]`, `cmd_calls={}` both times. All 23
+checks PASS, including both retained `expected_pre_fix_failure` markers. `stderr`
+is 4,521 B of pre-existing, unrelated resource/RID-leak noise
+(`3 resources still in use at exit`, `RenderingServer::get_singleton() is null`,
+`Texture with GL ID of 63: leaked 5460 bytes`) — no `SCRIPT ERROR`, no
+`play_selection`/`Invalid call`/`Nonexistent function` line, no test failure.
+`--check-only` does not execute `load_all()` or fire the call, but it did parse the
+new `c3_main` group access, the `can_play` gate and the dynamic `play_selection`
+call.
+
+**Queue note (transparency):** the first submissions were tickets 451 and 465
+(`audiosel02-smoke`, `--max-wait 600`, then `3600`) and ticket 468
+(`audiosel02-drag`); all three were recorded `skipped` by the shared FIFO runner
+because other agents' queue maintenance advanced `now_serving` past them. They
+ran no Godot and produced no result. The successful jobs above are the unique ids
+`audiosel02-smoke` and `audiosel02-drag` as required.
 
 ## 9. Open questions
 
@@ -161,12 +199,22 @@ carries ship/naval tokens or sids else `"unit"`, `count = arr.size()`. The
 existing `c3_main` group seam and `main.gd`'s exact `can_play` gate are reused,
 so headless/audio-less runs are silent and all drag/click/Shift/overlay/`cmd_*`
 logic is byte-identical. Backup `input_controller.gd.bak-AUDIOSEL02` was taken
-before the edit (SHA-256 verified). Validation: PENDING.
+before the edit (SHA-256 verified). Runner jobs `audiosel02-smoke` (487, headless
+check-only, `ok`/0, stderr 0 B) and `audiosel02-drag` (495, windowed real-input
+`PASS 23/23`, `ok`/0) both recorded `SCRIPT ERROR == 0`. No behaviour change when
+audio is unavailable.
 
 **No other file was edited by this builder** — no `audio.gd`, `hud.gd`,
 `main.gd`, config, test, harness, fixture, manifest, asset, scene, shader or
 git state. Only the owned file and this report (plus the requested backup copy
-outside the repo's game tree).
+outside the repo's game tree). The concurrent modifications by other swarm
+agents visible in `git status` are not from this ticket.
+
+**Validation summary:** runner tickets **487** (`audiosel02-smoke`, headless
+`--check-only`, `ok`/exit 0, stderr 0 B) and **495** (`audiosel02-drag`, windowed
+real-input `t_select_rect.gd`, `ok`/exit 0, **PASS 23/23**) both recorded
+`SCRIPT ERROR == 0`. Parse is clean; the real-drag atom shows no selection or
+`cmd_*` regression. No audible A/B was performed.
 
 ---
 *AUDIO-SEL-02, 2026-11-25. Additive one-call integration; no behaviour change when audio is unavailable.*

@@ -3,10 +3,10 @@ title: COORD SWARM 2026-11-25 — cold-readable entry point
 area: coordination / variant3d
 owner: COORD
 author: DOC-03 (documentation micro-worker)
-refreshed_by: README-UPDATE-01 (late-wave facts added; DOC-03 base preserved)
+refreshed_by: README-FINAL-01 (final reconciliations; DOC-03 base + README-UPDATE-01 refresh preserved)
 updated: 2026-11-25
-status: living — in-day snapshot; RUNNING tickets may land after this file
-snapshot: "Late-wave read 2026-11-25 ~11:00 local; board/reports may land after this file"
+status: living — in-day snapshot; FINAL gate verdict NOT_READY; reports may land after this file
+snapshot: "Final reconciliation read 2026-11-25; latest cited snapshot QA_BOARDLIVE_01:36 at 11:32:51 local (DB MAX time_updated 11:32:50); board/reports may land after this file"
 authority: CHARTER.md → CORRECTIONS.md → GAPS.md → SWARM_BOARD.md → PROGRESS.md
 parent: docs/coord_swarm_2026-11-24/
 charter: skirmish-first, donor-is-truth
@@ -46,9 +46,10 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
   **No donor A/B frame exists, so visual parity stays UNVERIFIED.**
 - **Donor decompilation.** `decomp/` lane **CLOSED**: 8 reports `DEC_01…DEC_08` (~440 KB),
   consolidated in `decomp/SUMMARY.md`, evidence ids in `decomp/EVIDENCE_INDEX.md`.
-  `CORRECTIONS.md` is the canonical index: **57 rows** (DOC-03 snapshot 50; rows 51–57
-  landed since — `CORRECTIONS.md:100-105,159-170`), with the status legend at `:38-41`
-  and the 8-value UNVERIFIED section at `:107-129`. Three engine-side
+  `CORRECTIONS.md` is the canonical index: **60 rows** (DOC-03 snapshot 50; rows 51–60
+  landed since — `CORRECTIONS.md:98-109`; summary `:169-180`, duplicate-chain notice
+  `:111-115`), with the status legend at `:38-41` and the 8-value UNVERIFIED section at
+  `:117-139`. Three engine-side
   values are CONFIRMED_INFEASIBLE (`DBIND_01`). Batch I/K/O deep dives resolve the rest
   (alpha grid, relief grids, AAF clips, PFX, environment, formations, `.bind`, atlas
   transport, map sizes, audio, defaults).
@@ -96,8 +97,19 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
 - **Config pipeline (not "all features configurable").** `CONFIG_PIPELINE.md:63-104,321-324`
   counts 21 `features.*` getters: **7 WIRED / 2 READER_ONLY / 2 UI_ONLY / 10 PENDING** at its
   snapshot; plan remainder headline 34 (strictly 39 no-getter + 4 partial rows, `:118-129`).
-  Menu exposes 6 options and **Snow is PORT-UI-ONLY** — the driver is never called (`:223,306-307`);
-  `config.json` has no `features` section (`:286,298-301`) and smokes are parse-only (`:287,302-305`).
+  **Snapshot update (QA-CONFIGJSON-01):** `variant3d/config.json:16-54` NOW has a top-level
+  `features` object with 21 leaves in 8 groups, matching `FEATURES_DEFAULTS`
+  (`config.gd:46-84`) **21/21 MATCH, 0 mismatch / 0 missing / 0 extra**; `features` is the
+  sole addition vs `config.json.bak-CFGJSON`, map is still 240² / `map_type: land`
+  (`reports/QA_CONFIGJSON_01.md:29-59,73-85,130-135`). Earlier "no `features` object"
+  claims (`CONFIG_PIPELINE.md:298`, `reports/QA_CONFIG_01_getters.md:126`,
+  `CONFIG_COUNT_RECONCILED.md:176`) are **stale snapshots**, not current fact
+  (`QA_CONFIGJSON_01.md:89-98,102-114`). No value is overridden yet because JSON mirrors
+  the code defaults; a non-default runtime override is UNVERIFIED (`:98,120-126`). Menu
+  exposes 6 options and **Snow stays PORT-UI-ONLY** until a caller owning
+  `main.gd`/`world3d.gd` invokes the additive driver (`CONFIG_PIPELINE.md:223,306-307`;
+  `reports/WEATHER_DRIVER_01.md:7,26-31,107-116,174-184`). Smokes remain parse-only
+  (`CONFIG_PIPELINE.md:287,302-305`).
 - **Winter atlas + LFS plan.** `reports/SP_04_winter_atlas.md:101-144` built an index-preserving
   124,463,306-B winter PNG + 79,837-B manifest (16/16 self-check, 8/8 pixel spot-check, Summer
   hashes unchanged); `reports/LFS_PLAN_01.md:162-190` recommends owner-run LFS option (a)
@@ -111,6 +123,71 @@ the end. Singleplayer skirmish only (D-12); missions/campaigns/DLC/network defer
   240/320/400/480 (`menu.gd:726`), so port Tiny 240 is an accepted approximation, not donor
   literal (`reports/DEFAULTS_VERIFY_01.md:94`). All 7 requested defaults resolve, but the raw
   `map_type: land` key is a latent documentation trap (`:91-93`).
+- **FINAL gate verdict: NOT_READY (read-only snapshot — no gate was run here).**
+  `reports/GATE_READY_01.md:192-219` rules out running the final whole-system gate now:
+  two read-only polls show a churning queue (`now_serving 478→483`, `pending 1→7`,
+  `assert_clean.py --json` **DIRTY / exit 1** twice, one live Godot process, 16 unacked
+  `skipped` jobs — `:43-133`); integrated `variant3d/selftest.json` is **red at 28/29
+  with the single `build` failure** (`:183`, independently seen pre-change in
+  `reports/MAPSIZE_01.md:76-83`); `uitest.json` 17/17 is stale (`:184`); P0's final-formula
+  re-capture is PENDING (`:204-207`); the ladder never cleared P0 (`:208-211`); donor A/B
+  absent (`:216-219`). `GATE_READY_01.md:251-264` is the summary; its frontmatter carries
+  the point-in-time caveat (`:10`).
+- **Live worker state — OpenCode session DB method (snapshot).** `SWARM_BOARD.md:14-35`
+  reads `C:\Users\Maxym.Oboyshev\.local\share\opencode\opencode.db` with
+  `session_v2 WHERE parent_id = <COORD parent>`, columns `time_busy` / `time_idle` /
+  `idle_outcome` / `time_updated` (temp helper `session_status_check.py`): **140 direct
+  children, 135 IDLE/DONE (terminated), 5 BUSY/RUNNING**; its 11:28 refresh leaves **4
+  BUSY** (AUDIO-SEL-02, PERF-3D-01, SEASON-TEST-PATH-01, PROP-W-PLAN-01). A later DB
+  read supersedes those counts: `reports/QA_BOARDLIVE_01.md:19-50,80-114` (11:32:51,
+  parent `ses_dee54b600ffeIJcid56WLwoxnL`) found **156 children, 137 IDLE/DONE, 19
+  BUSY/RUNNING** and verdict **STALE** — most workers terminated in both snapshots,
+  15 of the 19 live workers are not on the board, and 14 phase-level rows that say
+  RUNNING/REPORT DELIVERED are already terminated (`QA_BOARDLIVE_01.md:94-101,152-158`).
+  The helper keys on the invoking session, so a subagent must query the COORD parent
+  explicitly (`:29-35,135-138`). **Do not re-spawn terminated workers for status**
+  (`SWARM_BOARD.md:35`, `QA_BOARDLIVE_01.md:131`); board State is COORD-only.
+- **MAPSIZE-01 — reverted, donor sizes still unmatched.** Donor Tiny 256 / Normal 320 /
+  Large 480 / Huge 640 (`donewgame.inc:42-49`, GUI order `showcustomgame.inc:243-246`)
+  was applied value-only to `menu.gd:60,723-726`, then restored byte-identically because
+  both variant gates failed at runner startup (jobs 455 and 482: `END failed`, exit 1,
+  banner-only stdout, empty stderr, no new result JSON —
+  `reports/MAPSIZE_01.md:11-17,19-37,44-74`). The pre-edit selftest snapshot was already
+  red at 28/29 `build` (`:76-83`); concurrent jobs failed identically (`:85-92`). A
+  transient auto-commit put the edit in HEAD briefly, then a later commit picked up the
+  revert (`:94-106`). Port sizes remain **240/320/400/480**; no test weakened, no seed
+  gamed (`:134-145`; `SWARM_BOARD.md:281` = **DONE — REVERTED**).
+- **OWNER runtime errors — rotor fixed; minimap parse-repair report landed, no gates.**
+  Root cause: `mill_rotor.png` sits under `.gdignore`, so its leftover `.import` advertises
+  a `.ctex` Godot never made; the old `exists()`→`load()` path emitted hard errors
+  (`reports/MOTION_ANIM_01.md:191-211`, `reports/ASSET_IMPORT_01.md:141`). MOTION-ANIM-01
+  now loads a **port-to-port copy** `assets/models/tex/mill_rotor.png` first, decodes via
+  `Image.load()` with a one-shot white-quad fallback, and flips spin `BACK → FORWARD`
+  (`MOTION_ANIM_01.md:224-232`). Import job 478 generated a real 28,242-B ctex and
+  produced zero rotor `ERROR:` lines; windowed boot job 489 reproduced none (its exit 1
+  is pre-existing warnings, not a rotor error — `:242-288`). Outcome: hard errors **FIXED**,
+  speed/pivot PASS unchanged, spin **FIXED as PORT APPROX** against the 2D donor-bake
+  proxy; donor `.oss` 3-D spin direction stays UNVERIFIED (`:234-240,289-305`). Separately,
+  `reports/MINIMAP_QUAD_01.md:3-8` exists with status
+  `IMPLEMENTED__PARSE_REPAIR_CLEAN__NO_GATES` (`reports/QA_DOCS_02.md:55`); the
+  `hud.gd:207` error was a cascade (`PROGRESS.md:104-115`).
+- **Desert remap — 11 → 38 donor case pairs (data only).**
+  `reports/DESERT_REMAP_02.md:17-23,41-94` extends
+  `variant3d/assets/terrain/atlas/desert_remap.json` from the 11 SP-3 pairs to **all 38
+  active `_misc_SetDesert` pairs** at `miscext.script:1447-1502` (27 added, 11 preserved);
+  validation is JSON parse PASS, 38/38 sources and targets resolve, 37/38 targets have
+  art (sole exception = pre-existing `alpha0c` EMPTY cell), 0 invented destinations
+  (`:127-145,147-155`). The height-gated `rock8 → desert2` override and all data-only
+  fields are untouched. **No runtime/gate/donor-parity claim**: native EXE activity is
+  UNVERIFIED and SP-6's consumption is unconfirmed (`:157-191`; board `:292` still says
+  RUNNING — stale).
+- **Atom-result audit — authored/passed JSON is not a ladder PASS.**
+  `reports/QA_ATOM_RESULTS_01.md:57,115-120` counts 13 authored units, 10 result JSONs,
+  4 `passed:true` and 7 stale results; P3's `passed:true` is a **false green** built from
+  headless skip rows (`:70-75`), P1/P2/P3/C1–C4 were edited after their JSONs (`:77-81`),
+  CAM-RV-01's 20/20 has no canonical result JSON (`:83-86`), and the VID-CAP claim of
+  "16/16 distinct" contradicts its own artifact: **16 frames, 10 distinct signatures**
+  (`:88-91`). These are audit findings, not fixes; no atom was edited by this README.
 
 ## 1. How to resume (authoritative read order)
 

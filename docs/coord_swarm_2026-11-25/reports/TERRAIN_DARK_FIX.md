@@ -11,9 +11,11 @@ backups:
   - "inbox/backup/terrain_tileindex.gdshader.bak-TERRAINDARKFIX2"
 labels_used: [observed, derived, inferred, UNVERIFIED, PORT APPROXIMATION]
 jobs:
-  smoke: "terraindarkfix-smoke / ticket 436 / exit 0 / 0-byte stderr / SCRIPT ERROR == 0 / PASS 6/6"
+  smoke_stage1: "terraindarkfix-smoke / ticket 436 / exit 0 / 0-byte stderr / SCRIPT ERROR == 0 / PASS 6/6"
   p0_fix1: "terraindarkfix-p0 / ticket 441 / exit 0 / mean_luma=98.680 / max_luma=172.139 / both gates PASS"
-  p0_fix2: "PENDING"
+  p0_fix2_attempts: "terraindarkfix2-p0 / ticket 456 SKIPPED (queue advanced past it by another builder, never ran); terraindarkfix2-p0-r2 / ticket 483 failed with 0 atom output (transient launch/import collision); terraindarkfix2-p0-r3 / ticket 496 exit 0 / both gates PASS"
+  smoke_final: "terraindarkfix2-smoke / ticket 491 / exit 0 / SCRIPT ERROR == 0 / PASS 6/6"
+  p0_fix2_final: "terraindarkfix2-p0-r3 / ticket 496 / exit 0 / mean_luma=91.424 / max_luma=154.448 / both gates PASS"
 parity_claim: false
 ---
 
@@ -152,9 +154,47 @@ Stderr contains only the same pre-existing non-script diagnostics as TEST-RUN-02
 (`validated_evaluate` format string at `t_terrain_only.gd:429`, `!is_inside_tree()`
 at `camera3d.gd:281-282`, 3 ObjectDB leaks); no `SCRIPT ERROR` line.
 
-### 4.3 Windowed P0 capture, final LIGHT-02 formula — PENDING
+### 4.3 Windowed P0 capture, final LIGHT-02 formula (`P.xyz` direct)
 
-PENDING_FIX2_P0
+Three submissions were needed; only the last executed the atom:
+
+| Job id | Ticket | Outcome |
+|---|---:|---|
+| `terraindarkfix2-p0` | 456 | **SKIPPED** — runner reported `ticket 456 was skipped (serving=461)`; waited 1638.9 s, `run=0.0`, no Godot launch, no PNG. Another builder's queue reset advanced `now_serving` past the waiting ticket (`godot_runner.py:305-343`). Not a code failure. |
+| `terraindarkfix2-p0-r2` | 483 | `failed`, exit 1 after 11.8 s, stdout only the engine banner (167 B), stderr 0 B, no result JSON, no PNG — transient launch/import collision: another builder rewrote `world3d_terrain.gd` at 10:53:39, 5 s after the final shader edit at 10:53:34. No gate was evaluated. |
+| **`terraindarkfix2-p0-r3`** | **496** | **`ok`, exit 0** — full atom output, PNG written, both new gates PASS. |
+
+A fresh headless smoke of the final code (`terraindarkfix2-smoke`, ticket 491)
+was also run after the transient failure: `ok`, exit 0, `SCRIPT ERROR == 0`,
+`T_TERRAIN3D RESULT: PASS 6/6` (the 2,125 B stderr held only pre-existing
+non-script diagnostics from other builders' concurrent work).
+
+Final P0 command (same form as TEST-RUN-02, unique id and PNG path):
+
+```
+python variant3d\tools\godot_runner.py run --id terraindarkfix2-p0-r3 --timeout 180 -- --path variant3d --script res://tests/t_terrain_only.gd -- --screenshot "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/terraindarkfix2-p0-r3/smallmap64_terrain_only.png" --png "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/terraindarkfix2-p0-r3/smallmap64_terrain_only.png"
+```
+
+| Metric | TEST-RUN-02 (dark, job 404) | Stage 1 (`x/4,y,z/2`, 441) | **Final (`P.xyz`, 496)** |
+|---|---:|---:|---:|
+| `mean_luma` | 13.271 | 98.680 | **91.424** |
+| `max_luma` | 28.4 | 172.139 | **154.448** |
+| `mean_rgb` | (14.045, 14.381, 0.001) | — | **(93.743, 96.775, 31.641)** |
+| `non_black_fraction` | 0.992807 | 1.0 | 0.999999 |
+| `full_width_dark_rows` | 720 (recorded only) | 0 (recorded only) | 0 (recorded only) |
+| `ground_mean_luma >= 40` | FAIL | PASS | **PASS** |
+| `ground_max_luma >= 100` | FAIL | PASS | **PASS** |
+| Atom result | PASS 20 / FAIL 1 | PASS 22/22, 1 skipped | **PASS 22/22 evaluated, 1 skipped** |
+| `SCRIPT ERROR` lines | 0 | 0 | **0** |
+
+The final luma is lower than stage 1 (91.424 vs 98.680) exactly in the
+direction predicted by the smaller donor-faithful `dot(l,n)` (0.938701 vs
+0.995812) — a qualitative consistency check, **not** a donor A/B. The PNG was
+independently re-read with the `smallmap_capture.py:25` luma formula
+(`python` + NumPy/PIL): `mean_luma=91.424`, `max_luma=154.448` — identical to
+the atom's values. Stderr of ticket 496 contains only the pre-existing
+non-script diagnostics (format string, `!is_inside_tree()`, ObjectDB leaks);
+no `SCRIPT ERROR` line. No gate, threshold or atom was changed.
 
 ## 5. Remaining APPROX / UNVERIFIED
 
@@ -191,7 +231,10 @@ fixture, any asset/config, `app/**`, the runner, or git state. **No test was
 weakened**: `ground_mean_luma >= 40` and `ground_max_luma >= 100` were used as
 written; `full_width_dark_rows` was neither edited nor relied upon as a gate.
 No normal map, dither, shadows, new textures or invented constants were added.
-Donor files were read only, never copied or executed.
+Donor files were read only, never copied or executed. Other builders' concurrent
+edits (notably `world3d_terrain.gd` at 10:53:39 and a tree commit `d1fb9e58 step`)
+were observed but not reverted, re-submitted or committed by this agent; the
+shader edit is present in that HEAD commit without any commit action from me.
 
 ## 7. Open questions
 
@@ -213,10 +256,12 @@ component (axis-correct, `dot=0.995812`) and made both new P0 gates pass
 (`mean_luma=98.680`, `max_luma=172.139`, ticket 441). LIGHT-02 then showed the
 underlying donor world is already Y-up and that the retained `/4`,`/2` are
 water-local art scales, so the final shader maps `Position.xyz` directly
-(`dot=0.938701`) and cites LIGHT-02 in code. Headless smoke ticket 436 is green
-with `SCRIPT ERROR == 0`; the final-formula P0 re-capture is pending. No other
-file was edited; no test was weakened; no donor parity is claimed; engine GL
-`w`/modelview binding and absolute luma remain UNVERIFIED.
+(`dot=0.938701`) and cites LIGHT-02 in code. Headless smoke tickets 436 and 491
+are green with `SCRIPT ERROR == 0`; the final-formula P0 re-capture (ticket 496,
+after a skipped ticket 456 and a transient no-output ticket 483) is green with
+`mean_luma=91.424`, `max_luma=154.448`, PASS 22/22 evaluated, both new gates
+PASS. No other file was edited; no test was weakened; no donor parity is
+claimed; engine GL `w`/modelview binding and absolute luma remain UNVERIFIED.
 
 ---
 

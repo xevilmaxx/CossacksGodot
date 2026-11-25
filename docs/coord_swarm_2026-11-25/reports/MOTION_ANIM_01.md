@@ -271,7 +271,42 @@ Each was re-submitted once under a fresh id (`motionanim01-rotor-smoke-r3`,
   `mill_rotor.png.import` (952 B); no `.uid` was generated. This is **not**
   BLOCKED: the real ctex now exists and the graceful white-quad fallback is
   retained anyway.
-- Short windowed boot (error-line check): _to be recorded when the job returns._
+- Short windowed boot (error-line check):
+  `python variant3d\tools\godot_runner.py run --id motionanim01-rotor-boot --timeout 240 --max-wait 900 -- --path variant3d -- --screenshot C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/rotor_boot_check.png --timeout 120`
+  → ticket **489**, `wait 221.27 s`, `run 134.31 s`, `exit 1`, `status failed`.
+  **This is not a rotor-texture result.** stdout is the Godot banner + OpenGL
+  line + the pre-existing exit-time `RID allocations … leaked` line; the other
+  stderr lines are pre-existing export warnings from `tile_atlas_loader.gd` /
+  `world3d_terrain.gd`, not from this ticket. Scans: zero `SCRIPT ERROR` lines,
+  and **zero stdout/stderr lines containing `mill_rotor` together with `ERROR`**.
+  There is one Godot **WARNING** for the new PNG
+  (`Loaded resource as image file, this will not work on export`) caused by
+  `Image.load()` on a `res://` path — the same pre-existing pattern used by
+  `tile_atlas_loader.gd:325`; it is not an engine `ERROR:` and the graceful
+  fallback still holds. No rotor `ERROR:` lines were reproduced after the
+  import, which is the owner-facing symptom that was fixed.
+
+### 8.4 Rotor outcome — fixed, with residual UNVERIFIED items
+
+- **Hard engine errors: FIXED.** The missing-`.ctex` path no longer calls
+  `ResourceLoader.load()`; the importable port copy is loaded first, the
+  original bake path second, and a one-shot labelled white-quad fallback if
+  both fail. Post-import job 478 produced zero `mill_rotor` `ERROR:` lines, and
+  windowed boot job 489 reproduced none either.
+- **Spin direction: FIXED as PORT APPROX**, via the minimal `BACK → FORWARD`
+  axis change backed by the 2D donor-bake proxy (`world.gd:199-208,640-654`). It
+  was **not** filed as an open ticket because a donor-cited, minimal correction
+  was available. Donor `.oss` **3D** spin direction remains UNVERIFIED, so this
+  is not a donor-parity claim. Speed and pivot were audited and left unchanged.
+- **Residual open item (not a blocker):** `Image.load()` on `res://` emits the
+  standard Godot export warning (also emitted by the project's existing
+  `tile_atlas_loader.gd:325`). Switching to `ResourceLoader.load()` of the now-
+  real `.ctex` could silence it, but that would reintroduce the hard-ERROR path
+  if the cache is removed, so it was deliberately not done in this ticket.
+- **Files touched by this follow-up:** the owned script, the granted new PNG
+  (`assets/models/tex/mill_rotor.png`) and its generated `.import`, the
+  generated `.godot/imported/*.ctex` cache, and this report. No donor file was
+  copied; `.gdignore` was not edited; no other file was edited by this ticket.
 - MOTION-ANIM-01 speed gate, yaw clamp, frozen-sim refresh and DECOR-01's 19-tree
   pool / scale ladder / jitter bands were re-checked after the rotor edit: the
   43-line DECOR block is byte-identical to the backup and all four in-flight

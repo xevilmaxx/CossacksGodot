@@ -103,6 +103,8 @@ var _env_scale_read := -1.0
 var _counts := {}
 var _mine_world_positions: Array[Vector3] = []
 var _mine_y_detail: Array[String] = []
+# DARKROW-ALL-01: recorded-only water-band diagnostic (no _m dict in this atom).
+var _full_width_dark_rows_diag: String = ""
 
 
 # ---------------------------------------------------------------------------
@@ -429,6 +431,7 @@ func finish() -> void:
 			"path": _png_path,
 			"written": _png_written,
 			"size": _png_size,
+			"full_width_dark_rows": _full_width_dark_rows_diag,
 		},
 		"donor_grounding": {
 			"env_scale_mine_read_from_code": _env_scale_read,
@@ -615,7 +618,7 @@ func _capture_async() -> void:
 	# DARKROW-ALL-01 — P0-GATE-01 applicability correction. P3 has zero water
 	# cells and a hidden water plane, so the water-band row predicate is only
 	# recorded N/A; strict, applicable whole-frame luma gates are added below.
-	_m["full_width_dark_rows"] = "N/A (no water layer in P3; smallmap_capture.py:27-28 water-band predicate inapplicable; diagnostic only)"
+	_full_width_dark_rows_diag = "N/A (no water layer in P3; smallmap_capture.py:27-28 water-band predicate inapplicable; diagnostic only)"
 	var wl := _whole_frame_luma(shot)
 	if wl.is_empty():
 		check("ground_mean_luma", false,

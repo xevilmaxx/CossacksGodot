@@ -11,28 +11,26 @@ status: living
 Only COORD edits the **State** column. Workers own exactly one output file each. Shared
 code is READ-ONLY until an integration ticket grants exclusive ownership.
 
-## 🔴 LIVE SESSION STATUS — authoritative real-time check (OpenCode session DB)
+## 🔴 LIVE SESSION STATUS — real-time method and snapshot
 
-Read directly from `C:\Users\Maxym.Oboyshev\.local\share\opencode\opencode.db`,
-`session_v2 WHERE parent_id = <current session>`, columns `time_busy`, `time_idle`,
-`idle_outcome`, `time_updated` (check script: temp `session_status_check.py`).
-**140 direct child sessions; 135 are IDLE/DONE (terminated), 5 are BUSY/RUNNING.**
+**Method:** read-only SQLite query on `C:\Users\Maxym.Oboyshev\.local\share\opencode\opencode.db`,
+`session_v2 WHERE parent_id = 'ses_dee54b600ffeIJcid56WLwoxnL'` (COORD), columns
+`time_busy`, `time_idle`, `idle_outcome`, `time_updated`. Terminated = `time_idle` set with
+`idle_outcome` `succeeded` or `interrupted`. The temp helper `session_status_check.py` uses
+the *invoking* process's `OPENCODE_SESSION_ID`, so a subagent running it sees `children: 0`
+— it must be run by COORD or with the parent id substituted (QA-BOARDLIVE-01, §method).
 
-| Session id | Ticket | State | `time_busy` | `time_updated` |
-|---|---|---|---|---|
-| ses_dede47f36ffeaGALXfX3VRRfEG | AUDIO-SEL-02 | **BUSY / RUNNING** | 10:48:42 | 11:23:08 |
-| ses_deddede28ffePAlAptFGEy4kzn | PERF-3D-01 | **BUSY / RUNNING** | 10:54:51 | 11:25:27 |
-| ses_dedd5c6b9ffebY8CjZ2LHhmm8U | SEASON-TEST-PATH-01 | **BUSY / RUNNING** | 11:04:47 | 11:26:48 |
-| ses_dedc825dfffe65At77RG2CJO98 | PROP-W-PLAN-01 | **BUSY / RUNNING** | 11:19:40 | 11:26:46 |
-| ~~ses_dedc5f56fffehXY13hwbbbUbV1~~ | QA-DOCS-02 | **TERMINATED** (report landed; refresh at 11:28) | 11:22:04 | 11:26:55 |
+**Snapshot 11:32:51 (QA-BOARDLIVE_01.md, DB `MAX time_updated` 11:32:50):**
+156 direct children; 137 IDLE/DONE (terminated), **19 BUSY/RUNNING** (including the
+verifier itself). The set moved 20 → 19 during that check. Earlier snapshots were
+11:26 (~4 busy) and 11:28 (4 busy) — counts are inherently perishable; re-run the query
+before acting on them rather than trusting a static list.
 
-**Refresh at 11:28: only 4 sessions remain BUSY/RUNNING** — AUDIO-SEL-02, PERF-3D-01,
-SEASON-TEST-PATH-01, PROP-W-PLAN-01. Every other session id in this board is TERMINATED (`time_idle` set, `idle_outcome`
-`succeeded` or `interrupted`) — including workers whose last message said "waiting for the
-runner" or whose report was written while a background shell was still finishing. Their
-per-phase rows below are historical records, not live work. DEC-02 and DEC-03 ended
-`interrupted` by explicit cancellation after their complete reports landed; that is a
-terminated state, not a running one. Do not re-spawn these workers to ask for status.
+**Termination convention:** every session id in the phase rows below that is not verified
+BUSY in a fresh query is TERMINATED — including workers whose last message said "waiting
+for the runner" or whose report landed while a background shell was still finishing.
+DEC-02 and DEC-03 ended `interrupted` by explicit cancellation after complete reports; that
+is a terminated state, not a running one. Do not re-spawn finished workers to ask status.
 
 ## Batch A — deep analysis (donor primary, 2D secondary)
 
@@ -239,7 +237,7 @@ Disjoint file grants only. Reserved slots:
 |---|---|---|---|
 | RECHECK-P0-01 | ses_dedbf5c9dffe4mdGt2dTO77GT1 | second-agent P0 capture re-check | RUNNING |
 | RECHECK-S1-01 | ses_dedbf5c9cffeJGUuUd4kuM4BPJ | second-agent S1 selection re-check | RUNNING |
-| QA-CONFIGJSON-01 | ses_dedbf5c99ffdcLRYgQ7OuQj3Zf | verify 21 JSON features keys vs config.gd defaults | RUNNING |
+| QA-CONFIGJSON-01 | ses_dedbf5c99ffdcLRYgQ7OuQj3Zf | verify 21 JSON features keys vs config.gd defaults | **DONE — TERMINATED** (21/21 MATCH; `features` sole addition; map 240²) |
 | QA-BOARDLIVE-01 | ses_dedbf5c7fffdEM7oUSBra4zAKe | board live-session list vs OpenCode DB | RUNNING |
 | QA-LINKS-02 | ses_dedbf5c7bffdpJAj2a51MOZJ02 | LINKS_01 missing/stale citations re-check | RUNNING |
 | DBUILD-02 | ses_dedbf5c78ffePdQ3lag7ysrYYr | independent donor building-stage verification | RUNNING |
@@ -253,6 +251,10 @@ Disjoint file grants only. Reserved slots:
 | DENV-02 | ses_dedbedae6ffeRQKk1qsDCty2Xk | independent FogMode/sky-label verification | RUNNING |
 | DANIM-02 | ses_dedbedae2ffeMiBmZSUTxXJ7z7 | independent AAF catalog / frame-0 verification | RUNNING |
 | QA-DOCLIVE-01 | ses_dedbedadfffezftdXZw2t7S4St | living docs after latest reconciliation | RUNNING |
+| GATE-FAIL-01 | ses_dedbb6506ffeTpu8SKK3Bt4lkC | diagnose banner-only gate startup failures | RUNNING |
+| QA-RUNNER-ARTIFACTS-01 | ses_dedbb6505ffe0cw9EmKYeTG6zY | audit runner result records in failed gate window | RUNNING |
+| README-FINAL-01 | ses_dedbb6501ffe1KC3EJCm7QQShu | refresh README with final reconciliations | RUNNING |
+| SESSION-STATUS-FINAL-01 | ses_dedbb64faffevvN1Imbet9JkuQ | live/terminated agent count after refill | RUNNING |
 
 ## Batch R — documentation QA and config completion
 
@@ -274,7 +276,7 @@ Disjoint file grants only. Reserved slots:
 | QA-PARITY-01 | re-verify integrated selftest/uitest/clean after all edits | `reports/QA_PARITY_01.md` | ses_dede47f21ffeN0cMxpshIcpAOZ | RUNNING |
 | QA-CONFIG-01 | audit 21 feature getters naming/default/ownership | `reports/QA_CONFIG_01_getters.md` | ses_dede47f1effe4T2v9tVefZ0qDy | **DONE** | all 21 getters exist, all 19 call lines exact; 13 WIRED / 1 PENDING / 1 UI_EMITTED / 6 READER_ONLY at audit time; no `features` object in config.json; no default drift; naming/fog-namespace issues filed |
 | CONFIG-DOC-01 | cold-readable config pipeline status | `CONFIG_PIPELINE.md` | ses_dede47f22ffehRBaIR2lYIXvrQ | **DONE** (32 KB) | 21-key status table (snapshot 7 WIRED/2 READER_ONLY/2 UI_ONLY/10 PENDING), 34 unwired remainder, menu subset with snow PORT-UI-ONLY, ownership ladder, risks; reconciles conflicting counts by snapshot time |
-| MAPSIZE-01 | donor map sizes 256/320/480/640 in `menu.gd` | `reports/MAPSIZE_01.md` | ses_dede3a392ffe6P3B6Ttaon7o44 | RUNNING |
+| MAPSIZE-01 | donor map sizes 256/320/480/640 in `menu.gd` | `reports/MAPSIZE_01.md` | ses_dede3a392ffe6P3B6Ttaon7o44 | **DONE — REVERTED** | donor sizes cited but both gates failed at startup (banner only, no report) while concurrent jobs failed identically; restored byte-identical; port sizes remain 240/320/400/480; gate startup failure needs diagnosis |
 | DEFAULTS-VERIFY-01 | verify requested skirmish defaults (read-only) | `reports/DEFAULTS_VERIFY_01.md` | ses_dede3a38effe0Qb4qFvKwoJxy3 | **DONE** | all 7 requested settings resolve on BOTH paths: rus/bav, 240², mediterranean, hills, fog off, summer, 2 players/FFA; `map_type: land` present but **not applied** (DEFAULT merge sets `terrain_type`), so CFG-01 right in effect; CFG-02/QA-AUDIT F-05 refutation was wrong; config 320→240 came from MAP-SMALL-01 commit f9dd8d16 but its report never landed and integrated selftest is 28/29 |
 | CONFIG-COUNT-01 | reconcile 7-vs-13 wired counts to current state | `CONFIG_COUNT_RECONCILED.md` | ses_deddede2dffelwKbQHsVHAMSe2 | **DONE** | authoritative **11 WIRED / 2 READER_ONLY / 2 UI_ONLY / 6 PENDING**; 7→13 delta decomposed exactly (HUD +3, relief +1, water vocabulary +2, mirror labels); **`config.json` has NO `features` object** → all getters return defaults, nothing user-tunable yet → MAP-SMALL-01 pinged to add it |
 | README-UPDATE-01 | refresh swarm README with late-wave findings | `README.md` | ses_deddede29ffep3WHPBG8kRHQYW | **DONE — TERMINATED** (duplicate of authoritative Batch R row) |
@@ -288,7 +290,9 @@ Disjoint file grants only. Reserved slots:
 | SEASON-TEST-PATH-01 | align SP-8 atom Winter atlas paths | `reports/SEASON_TEST_PATH_01.md` | ses_dedd5c6b9ffebY8CjZ2LHhmm8U | RUNNING |
 | DSEASON-01 | donor winter/desert/field-crop visual truth | `reports/DSEASON_01_season_visuals.md` | ses_deddad2fbffekgmOL40gKn3638 | **DONE** | season swap = set/name/material not tint; winter preset uses shared `alpha0a/b/c`; **`_misc_SetDesert` has 38 active pairs vs port 11** → DESERT-REMAP-02; prop `w` art absent; donor winter field decal `envfieldd→envfielddw` not drawn; water/sky/fog season colours UNVERIFIED |
 | DESERT-REMAP-02 | extend desert remap to all 38 donor pairs | `reports/DESERT_REMAP_02.md` | ses_dedc825e3ffeCybE4oju7Ds2Az | RUNNING |
-| PROP-W-PLAN-01 | plan missing winter prop-material art | `reports/PROP_W_PLAN_01.md` | ses_dedc825dfffe65At77RG2CJO98 | RUNNING |
+| PROP-W-PLAN-01 | plan missing winter prop-material art | `reports/PROP_W_PLAN_01.md` | ses_dedc825dfffe65At77RG2CJO98 | **DONE — TERMINATED** | 79 donor `w` materials (72 DDS + 7 aliases), 321 props / 74 consumed; port 0/79 art; PW-1…PW-5 ticket ladder |
+| PW-1 | 79-entry winter prop name map JSON | `reports/PW_01_material_map.md` | ses_dedb8f593ffeWDu1dbADp9AvHh | RUNNING |
+| PW-VERIFY-01 | independent recount of prop-winter claims | `reports/PW_VERIFY_01.md` | ses_dedb8f583ffeUzlq4aITt2b3HA | RUNNING |
 | SP8-STATUS-01 | audit stale season-overlay atom + re-run spec | `reports/SP8_STATUS_01.md` | ses_dedc825deffegTIEqiL78uxsGw | RUNNING |
 | GDIGNORE-01 | audit `.gdignore` stale imports / risky loads | `reports/GDIGNORE_01.md` | ses_deddad2f8ffemvAjexPoHMQOBy | **DONE** (138 lines) | 5 markers (not 3) excluding 5,192 files/~892.6 MiB; **2,097 stale `.import`/ctex** (anim 1,849 + sprites 179 + sprites_hi 69) systemic; six `world.gd` load sites reproduce rotor pattern (dormant in 3d, live under 2d override); mitigations proposed, no edits |
 | RUN-GUIDE-01 | owner-facing launch/verify/troubleshoot guide | `RUN_GUIDE.md` | ses_deddad2e4ffecqus42qS3DYz5R | **DONE** (143 lines, 9 sections) | launch/gates/capture commands, expected PORT APPROX warnings vs genuine failures, current defaults, troubleshooting table; flags stale README `--stay` claim and reports selftest currently 28/29 (`build`) |

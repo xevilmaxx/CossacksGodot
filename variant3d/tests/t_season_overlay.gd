@@ -197,7 +197,7 @@ func _res_exists(path: String) -> bool:
 	return FileAccess.file_exists(_res_path(path))
 
 
-func _read_json_variant(path: String) -> Variant:
+func _read_json_variant(path: String):
 	if not _res_exists(path):
 		return null
 	var f := FileAccess.open(_res_path(path), FileAccess.READ)
@@ -209,7 +209,7 @@ func _read_json_variant(path: String) -> Variant:
 
 
 func _read_json_dict(path: String) -> Dictionary:
-	var parsed := _read_json_variant(path)
+	var parsed: Variant = _read_json_variant(path)
 	return parsed if parsed is Dictionary else {}
 
 
@@ -242,7 +242,7 @@ func _load_fixture() -> void:
 	if path == "" or not FileAccess.file_exists(path):
 		path = FIXTURE_PATH
 	if _res_exists(path):
-		var parsed := _read_json_variant(path)
+		var parsed: Variant = _read_json_variant(path)
 		if parsed is Dictionary:
 			var gp: Variant = (parsed as Dictionary).get("gameplay", {})
 			if gp is Dictionary:
@@ -465,7 +465,7 @@ func _layout_name_to_index(man: Dictionary) -> Dictionary:
 # names in presets_summer order, every source_png on disk (23 winter PNGs +
 # 12 reused desert PNGs). No index is inferred from a winterN filename.
 func _check_winter_dictionary(_v: Dictionary) -> void:
-	var parsed := _read_json_variant(WINTER_DICT_PATH)
+	var parsed: Variant = _read_json_variant(WINTER_DICT_PATH)
 	var entries: Array = []
 	if parsed is Dictionary:
 		var ev: Variant = (parsed as Dictionary).get("entries", [])
@@ -511,7 +511,7 @@ func _check_winter_dictionary(_v: Dictionary) -> void:
 # pairs) and `height_gated` (1 record). The height gate is DATA_ONLY_NOT_EXECUTED
 # per SP_03 §3.1, so only the 11 direct pairs enter the UV2 consistency map.
 func _check_desert_remap(v: Dictionary) -> void:
-	var parsed := _read_json_variant(DESERT_REMAP_PATH)
+	var parsed: Variant = _read_json_variant(DESERT_REMAP_PATH)
 	var remap: Dictionary = {}
 	var gated: Array = []
 	if parsed is Dictionary:
@@ -976,7 +976,7 @@ func _initialize() -> void:
 	_m["headless"] = _headless
 
 	_load_fixture()
-	var summer_names := _read_json_variant(SUMMER_DICT_PATH)
+	var summer_names: Variant = _read_json_variant(SUMMER_DICT_PATH)
 	_names = summer_names if summer_names is Array else []
 	_m["summer_names"] = _names.size()
 	if _names.is_empty():
