@@ -154,7 +154,7 @@
 			512.028930664063,
 			337.395263671875
 		],
-		"config": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tests\\fixtures\\small_map_64.json",
+		"config": "res://tests/fixtures/small_map_64.json",
 		"drag_px_distance": 553.427673339844,
 		"drag_world_delta_m": 24.3008575439453,
 		"entity_sim_positions": {
@@ -226,7 +226,7 @@
 			1280.0,
 			720.0
 		],
-		"screenshot_arg": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\audiosel02_smallmap64.png",
+		"screenshot_arg": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/bselrect_probe.png",
 		"viewport_px": [
 			1280.0,
 			720.0
@@ -235,9 +235,9 @@
 		"world_sel_active_during": true,
 		"world_sel_rect_during": [
 			51.8104095458984,
-			54.4071273803711,
-			11.84765625,
-			19.8596725463867
+			54.3800582885742,
+			29.6265411376953,
+			45.339729309082
 		]
 	},
 	"passed": true,
@@ -245,5 +245,5 @@
 	"run_mode": "windowed_real_input",
 	"runner_declaration": "S1-INPUT-FIX: validated via variant runner, windowed real-input job s1inputfix-run; see docs/coord_swarm_2026-11-25/reports/S1_INPUT_FIX.md",
 	"total": 23,
-	"unix_ms": 1795602816379.0
+	"unix_ms": 1795612115215.0
 }

@@ -191,16 +191,25 @@ const PORT_LABEL: String = "PORT APPROXIMATION — NOT DONOR PARITY"
 const ANIM_STATUS: String = "DONOR-SAMPLED FLAT-ROOT MORPH — " + PORT_LABEL + " (V7-2 3.3/4.3 Table B1: .oss bone parents unreadable; flat-root skin via anim3d.gd.pose_for; visual UNVERIFIED)"
 const MORPH_POSE_SOURCE: String = "donor_flat_root_morph"   # anim3d.gd:96
 const MORPH_ACTION_MAP: String = "dead->death / build|repair->construct when measured speed < gate / moving->walk / else idle (PORT policy over donor AAF names anim3d.gd:63-82; UNVERIFIED)"
-# BUILD-ANIM-DIAG-01: the action branch is necessary but NOT sufficient — the
-# shipped compact skins (skin/index.json, skin/peasant.json) do not export
-# construct frames, so pose_for() can snap donor 186..198 to death 149 /
-# attack0 237 until the skin-export owner lands. No parity claim.
-const CONSTRUCT_SKIN_STATUS: String = PORT_LABEL + " — 'construct' selected for build/repair, but shipped compact skins have no construct frames; pose_for may snap to death/attack0 until the convert_skins.py owner lands (BUILD-ANIM-DIAG-01 §5 step 2); visual UNVERIFIED"
+# B_ANIM_DIAG2 refresh (2026-11-25): the shipped peasant skin NOW exports
+# construct frames [186,188,191,193,196,198] (skin/peasant.json:1
+# actions.construct, via convert_skins.py:80-81 DEFAULT_ACTIONS). A stationary
+# build/repair order therefore resolves 'construct' to real donor frames; the
+# old "no construct frames / snap to death 149 / attack0 237" claim is stale.
+# Gather/resow/carry/attack still have no branch and resolve to idle/walk.
+# No parity claim.
+const CONSTRUCT_SKIN_STATUS: String = PORT_LABEL + " — 'construct' selected for build/repair; shipped peasant skin exports construct frames [186,188,191,193,196,198] (skin/peasant.json:1 actions.construct, convert_skins.py:80-81); pose_for resolves construct without death/attack0 snap; gather/resow/carry/attack still resolve to idle/walk (no branch); visual UNVERIFIED"
 
 # NATION-MODEL-01 — honest labels for the nation mesh selector. Both are
 # presentation only; neither claims donor visual parity.
 const NATION_MESH_EXACT_STATUS: String = PORT_LABEL + " — nation derived from entity/game state; exact nation 3D mesh found on disk (donor-derived sid); visual UNVERIFIED"
 const NATION_MESH_FALLBACK_STATUS: String = PORT_LABEL + " — BLOCKED: exact nation 3D art is absent on disk; Ukrainian-derived base mesh reused (manifest.json peasant->peaukr, cen/hou/bar/sta/bla/aca/art/dip->ukr*); the Ukrainian look is NOT fixed; visual UNVERIFIED"
+# B-NATION-PLAN2 T2b: generic donor role substitutes (data.gd:296 bav
+# serdiuk->musketeer, cossack->hussar; donor generic musketeer U:771-785/C:2700,
+# hussar U:1347-1353/C:2754; bav uniques musketeer18bav/grenadierbav absent
+# NATION_DATA_01:94-95). On disk but NOT nation-unique art: exact=false.
+const NATION_MESH_ROLE_SUB_STATUS: String = PORT_LABEL + " — generic donor role substitute on disk, NOT nation-unique art (bav serdiuk->musketeer / cossack->hussar via data.gd:296; donor generic U:771-785/U:1347-1353; bav uniques absent); visual UNVERIFIED"
+const NATION_ROLE_SUB_SIDS: Array[String] = ["musketeer", "hussar"]
 const NATION_MESH_BLOCKED_EVIDENCE: String = "BLOCKED (NATION_DONOR_01 G7-G10/C6): 0/172 converted OBJs carry a nation key (no rus*/bav*/eur*/tur*/ukr* stems); manifest generic peasant->peaukr.dds, 8 core buildings->ukr*.osm/ukr*.dds, 0 rus-keyed and 0 bav-keyed textures; Bavarian musketeer18bav/grenadierbav and Ukrainian chaika are absent from manifest+obj. Missing-art owner: manifest.json + assets/models/obj/; NOT VISUALLY FIXED."
 
 # MOTION-ANIM-01 — presentation-only fixes for the VID-AN-01 faults. Every
@@ -746,6 +755,7 @@ func _entity_mesh_sid(ed: Dictionary, base_sid: String, kind: String) -> Diction
 	elif bool(def.get("naval", false)):
 		family = "naval"
 	var candidates: Array[String] = []
+	var role_sub := false
 	if nation != "" and base_sid != "":
 		match family:
 			"units":
@@ -758,6 +768,11 @@ func _entity_mesh_sid(ed: Dictionary, base_sid: String, kind: String) -> Diction
 				var rsid := Data.resolve_sid(nation, base_sid)
 				if rsid != base_sid:
 					candidates.append(rsid)
+					# B-NATION-PLAN2 T2b: generic donor role substitutes
+					# (data.gd:296 bav serdiuk->musketeer, cossack->hussar)
+					# are NOT nation-unique art; gated to exact=false below.
+					if NATION_ROLE_SUB_SIDS.has(rsid):
+						role_sub = true
 			"buildings":
 				candidates.append(_donor_building_prefix(nation, base_sid) + base_sid)
 			"naval":
@@ -772,6 +787,14 @@ func _entity_mesh_sid(ed: Dictionary, base_sid: String, kind: String) -> Diction
 			exact = true
 			break
 	var status := NATION_MESH_EXACT_STATUS if exact else NATION_MESH_FALLBACK_STATUS
+	# B-NATION-PLAN2 T2b role-substitution exactness: a disk hit on a generic
+	# role substitute (bav musketeer/hussar) keeps sid/candidate/candidates
+	# but is labelled role-substitute with exact=false, never exact nation art.
+	# Russian nation-coded remaps (strelet/cossackdon) are unaffected.
+	# Fallback-when-absent (:765) and naval/buildings branches untouched.
+	if role_sub and exact:
+		exact = false
+		status = NATION_MESH_ROLE_SUB_STATUS
 	return {"sid": sid, "nation": nation, "family": family,
 		"candidate": candidate, "candidates": candidates,
 		"exact": exact, "status": status}

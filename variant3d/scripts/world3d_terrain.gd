@@ -182,6 +182,11 @@ const DONOR_ROCK_NONE_H: float = 0.1
 # Donor shore test cWaterShoreHeight (texturemap.inc:31, :469-470).
 const DONOR_SHORE_H: float = -0.1
 
+# B-C-TERRAIN-AB — DUMP-ONLY provenance guard. A debug/stat cap so a large map
+# cannot bloat the stats dump; it bounds the per_cell dict only, never the mesh,
+# UV2, water or any sampling. PORT APPROXIMATION / diagnostic, not a donor value.
+const TILE_PROV_MAX: int = 8192
+
 # RELIEF-01 — donor-derived coarse relief grids. NUMBERS ONLY (no bytes shipped,
 # no donor asset copied). Each table is the 8x10 block-mean downsample from
 # DPATTERN-01 Appendix A (A1 k_ravine_1 :602-613, A2 plt2 :615-626), flattened
@@ -321,6 +326,11 @@ var _tile_indices := PackedByteArray()
 var _tile_index_source: String = ""
 var _tile_index_hist: Dictionary = {}
 var _tile_index_out_of_atlas: int = 0
+# B-C-TERRAIN-AB — DUMP-ONLY per-cell tile provenance (diagnostic; NEVER fed back
+# into UV2 / mesh / water / light / sim). Boundary cells only; see _decode_tile_indices.
+var _tile_prov: Dictionary = {}
+var _tile_prov_cells: int = 0
+var _tile_prov_dir_hist: Dictionary = {}
 var _face_hist: Dictionary = {}             # FIX-TERRAIN: face-mode cell counts
 var _water3d = null                         # V7-84 water3d.gd instance
 # TRN-GEOM — donor index dictionary (name<->index from the V7-85 manifest, whose
@@ -995,6 +1005,49 @@ func _decode_tile_indices(dump: Dictionary, w: int, h: int) -> void:
 		if tid >= int(_manifest.get("atlas", {}).get("named_cells", 124)):
 			_tile_index_out_of_atlas += 1
 
+	# B-C-TERRAIN-AB — DUMP-ONLY neighbour / boundary-direction provenance.
+	# Scans EVERY cell but stores an entry only at a tile-id boundary (at least
+	# one clamped-edge axis neighbour tid differs from the centre tid), since only
+	# those cells carry direction information for a future patch-rule A/B. Each
+	# entry keeps the 4 neighbour tile ids + a derived axis code. This data is
+	# exposed ONLY via stats and is NEVER read back into UV2 / mesh / water /
+	# light / sim. PORT APPROXIMATION — no donor tile->patch rule is inferred.
+	_tile_prov = {}
+	_tile_prov_cells = 0
+	_tile_prov_dir_hist = {}
+	for z in range(h):
+		for x in range(w):
+			var i: int = z * w + x
+			var c: int = int(_tile_indices[i])
+			var nl: int = int(_tile_indices[z * w + maxi(0, x - 1)])
+			var nr: int = int(_tile_indices[z * w + mini(w - 1, x + 1)])
+			var nt: int = int(_tile_indices[maxi(0, z - 1) * w + x])
+			var nb: int = int(_tile_indices[mini(h - 1, z + 1) * w + x])
+			var mask: int = 0
+			if nl != c:
+				mask |= 1
+			if nr != c:
+				mask |= 2
+			if nt != c:
+				mask |= 4
+			if nb != c:
+				mask |= 8
+			if mask == 0:
+				continue
+			var axis_x: bool = (mask & 3) != 0
+			var axis_z: bool = (mask & 12) != 0
+			var dir: int = 3 if (axis_x and axis_z) else (1 if axis_x else 2)
+			var dk: String = str(dir)
+			_tile_prov_dir_hist[dk] = int(_tile_prov_dir_hist.get(dk, 0)) + 1
+			if _tile_prov_cells < TILE_PROV_MAX:
+				_tile_prov[str(i)] = {
+					"tid": c,
+					"nb": [nl, nr, nt, nb],
+					"mask": mask,
+					"dir": dir,
+				}
+			_tile_prov_cells += 1
+
 
 # Keep the original constant water quad only as a fallback. The V7-84 module
 # replaces it in the normal path; never submit both surfaces at once.
@@ -1148,6 +1201,10 @@ func invalidate() -> void:
 	_water_fallback_cells = 0
 	# RELIEF-01 (no mesh state; keep a rebuild from stacking stamp ledgers).
 	_relief_applied = []
+	# B-C-TERRAIN-AB — dump-only provenance (no mesh state; rebuild resets it).
+	_tile_prov = {}
+	_tile_prov_cells = 0
+	_tile_prov_dir_hist = {}
 	# SP-6 (no mesh state; rebuild must not carry a stale season selection).
 	# The public `season` field is intentionally persistent across rebuilds.
 	_season_resolved = SEASON_DEFAULT_NAME
@@ -1453,8 +1510,25 @@ func build() -> bool:
 			"marker_field": "dump['relief_stamps'] (NOT in the current dump schema)",
 			"applied": relief_applied,
 			"stamps": _relief_applied.duplicate(true),
+			# B-C-TERRAIN-AB — appended (existing wording kept verbatim): the
+			# above full-grid / props / engine-blend items REMAIN not_done.
 			"not_done": ["full 26-grid float32 tables", "mountain terrainmesh props",
-				"exact donor engine blend", "2x collision sampler"],
+				"exact donor engine blend", "2x collision sampler",
+				"tile->patch boundary-direction rule (dump-only prov added; donor rule UNVERIFIED)"],
+		},
+		# B-C-TERRAIN-AB — DUMP-ONLY provenance, exposed via stats ONLY. Diagnostic
+		# for a future patch-rule A/B; never consumed by UV2/mesh/water/light/sim.
+		"prov": {
+			"label": ("PORT APPROXIMATION — dump-only neighbour / boundary-direction "
+				+ "provenance; derived axis code, no donor tile->patch rule inferred"),
+			"source": "tileblock uint8 (dump/live), clamped-edge 4-neighbour stencil",
+			"dir_codes": "0 none / 1 tid-boundary X-only / 2 Z-only / 3 both axes",
+			"cells_scanned": w * h,
+			"boundary_cells": _tile_prov_cells,
+			"dir_hist": _tile_prov_dir_hist.duplicate(true),
+			"per_cell_cap": TILE_PROV_MAX,
+			"per_cell": _tile_prov.duplicate(true),
+			"fed_back_into_render": false,
 		},
 		"mesh_vertices": nverts,
 		"mesh_triangles": ntris,

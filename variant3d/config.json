@@ -22,12 +22,7 @@
    "double_click_s": 0.5
   },
   "terrain": {
-   "texgen_mode": "world_xz",
-   "m_per_tile": 2.0,
-   "lighting": "donor",
-   "alpha_patch_mode": "donor_approx",
-   "relief_stamps": true,
-   "tile_diversity": true
+   "relief_stamps": true
   },
   "water": {
    "surface_y": -0.25,

@@ -474,3 +474,29 @@ void fragment() {
 	// The donor mask's modulation is now carried by RGB above (DTRN-01 C17).
 	ALPHA = 1.0;
 }
+
+// ============================================================================
+// B-SHADER-AB (Z3_VISUAL_BLEED.md §5.1/§5.3) — PUBLISHED A/B CONTRACT.
+// COMMENT-ONLY and additive: no shader behaviour, line or label above changed.
+// Every cited line above keeps its number; this block starts after :476.
+//
+// Exact uniform name for consumer binding by name (terrain-gd owner B):
+//     mask_to_alpha
+//   Declared at :235 as `uniform float mask_to_alpha = 1.0;`. B binds with
+//   set_shader_parameter("mask_to_alpha", <float>) — that exact spelling.
+// Range: 0.0 .. 1.0 (float). BOTH endpoints are runtime values of the SAME
+//   compiled shader program: no second variant, sampler, branch, patch rule,
+//   floor, art or donor claim is introduced here.
+//
+// A/B pair at IDENTICAL camera (verifier C):
+//   1.0 = SHIPPED DEFAULT, unchanged — `rgb = rgb * mix(1.0,a,1.0)
+//         * v_packed + v_specular` at :427 (mask folded into RGB); ALPHA=1.0
+//         at :475. This is the shipped mask-modulation path.
+//   0.0 = flat opaque terrain — `mix(1.0,a,0.0) == 1.0`, so no RGB mask
+//         modulation; ALPHA still 1.0 at :475. Only the mask factor differs.
+//
+// Default, albedo (:392), patch decomposition (:365-378), unshaded rationale
+// (:31-38) and all PORT APPROXIMATION / PORT GUARD / PORT SUBSTITUTE /
+// UNVERIFIED labels remain untouched. No donor GPU A/B is claimed here.
+// Procedure and validation record: reports/B_SHADER_AB.md.
+// ============================================================================

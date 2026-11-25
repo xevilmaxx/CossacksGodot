@@ -1043,13 +1043,16 @@ func _shape_stamp_relief() -> void:
 					# patterns; Smooth is not modelled (definition UNVERIFIED).
 					# The 8x10 table is mapped over the scaled donor footprint
 					# bbox; extent/placement are port approximations.
+					# Z2 §1.4 no-op tidy: the PORT ±2.964 bound is folded into
+					# the clamp bounds above (maxf/minf), so the composite loop
+					# applies no second clamp to donor cells.
 					var gu := 0.5 + float(x - cx) / (2.0 * hx)
 					var gv := 0.5 + float(y - cy) / (2.0 * hy)
 					var gv0 := _sample_relief_grid(donor_grid, gu, gv)
 					var gscale: float = donor_meta.get("scale", 1.0)
 					var gmin: float = donor_meta.get("min", RELIEF_RAVINE)
 					var gmax: float = donor_meta.get("max", RELIEF_PLATEAU)
-					height[i] = clampf(height[i] + gv0 * gscale, gmin, gmax)
+					height[i] = clampf(height[i] + gv0 * gscale, maxf(gmin, RELIEF_RAVINE), minf(gmax, RELIEF_PLATEAU))
 					_relief_donor_mask[i] = 1
 					relief_grid_cells += 1
 					continue
@@ -1217,15 +1220,14 @@ func _gen_base() -> void:
 		if terrain[hi] == 3:
 			continue
 		if _relief_donor_mask[hi] != 0:
-			# RELIEF-LIVE-FIX-01 clamp reconciliation.  A donor-grid cell was
-			# already clamped to that pattern's HeightFieldMin/Max at stamp
-			# time, so applying the port's ±2.964 stamp clamp AND the 0.03
-			# dither cap a second time would erase the donor cap shape.  Here
-			# a single PORT bound is applied (±2.964, matching observed baked
-			# .map grids but NOT a verified donor clamp — generatemap.inc has
-			# no height clamp; HEIGHT-GEN-DEEP-01 §5.4/§8 Q1).  No dither-as-
-			# shape on donor cells.  cMaxHeight=2.96 is a tile-class constant.
-			height[hi] = clampf(height[hi], RELIEF_RAVINE, RELIEF_PLATEAU)
+			# RELIEF-LIVE-FIX-01 clamp reconciliation (Z2 §1.4 no-op tidy).
+			# The single PORT ±2.964 bound is folded into the stamp clamp
+			# (maxf(gmin, RELIEF_RAVINE), minf(gmax, RELIEF_PLATEAU)), so no
+			# second clamp runs here; donor cells still skip the 0.03 dither
+			# cap below (no dither-as-shape on donor cells).  The donor clamp
+			# itself is UNVERIFIED — generatemap.inc has no height clamp
+			# (HEIGHT-GEN-DEEP-01 §5.4/§8 Q1).  cMaxHeight=2.96 is a
+			# tile-class constant.
 			continue
 		# Donor heights are quantised from an 8-bit mask R channel.  Dither the
 		# cap by ~2 R-levels so ~60% of saturated plateau cells read exactly

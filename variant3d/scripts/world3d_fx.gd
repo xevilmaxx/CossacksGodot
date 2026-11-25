@@ -268,6 +268,14 @@ var stats: Dictionary = {
 var _root: Node3D = null
 var _ghost_root: Node3D = null
 var _ghost_mesh: MeshInstance3D = null
+# B-GHOST-FIX — transparent stage-0 building preview (PORT APPROXIMATION, NOT DONOR PARITY).
+# `_ghost_mesh` (Footprint BoxMesh) is kept ONLY as a fallback when the sid has
+# no stage-0/base art. The primary node below shows the actual building mesh
+# resolved through the entities module's baked provider (read-only call, no edit
+# to world3d_entities.gd); ghost tint/pulse/transparency come from _ghost_mat.
+var _ghost_building: MeshInstance3D = null
+var _ghost_building_sid: String = ""
+var _ghost_mesh_cache: Dictionary = {}
 var _ghost_mat: StandardMaterial3D = null
 var _ghost_active: bool = false
 var _ghost_ok: bool = true
@@ -582,7 +590,102 @@ func draw_ghost(sid, pos, ok: bool) -> void:
 	_ghost_root.visible = true
 	var r: float = _building_radius(s)
 	_ghost_mesh.scale = Vector3(r * 2.0, 1.0, r * 2.0)
+	# Swap the transparent building mesh on sid change; footprint BoxMesh stays
+	# ONLY as the no-art fallback (labelled). The provider mesh is already
+	# bbox-normalised (world3d_entities.gd:1810-1815) so the building node keeps
+	# scale 1; the footprint keeps the radius scaling as a ground indicator.
+	_ghost_swap_building_mesh(s)
 	stats["ghost_shown"] = int(stats.get("ghost_shown", 0)) + 1
+
+
+# B-GHOST-FIX helpers — read-only reuse of the entities baked mesh provider.
+# No edit to world3d_entities.gd. Donor cites carried from DBUILD_01 only
+# (ghost dummy + blink); everything else here is port-side and UNVERIFIED.
+func _ghost_entities_provider():
+	var parent: Node = get_parent()
+	if parent == null:
+		return null
+	# world3d.gd owns `entities` (var at :131, bound at :640-641) as a sibling
+	# of this FX module (both add_child'd at :604-606).
+	if parent.get("entities") != null:
+		return parent.get("entities")
+	return null
+
+
+func _ghost_swap_building_mesh(s: String) -> void:
+	if _ghost_building == null or not is_instance_valid(_ghost_building):
+		return
+	if s == _ghost_building_sid and _ghost_building.mesh != null:
+		return
+	_ghost_building_sid = s
+	var mesh: Mesh = _ghost_resolve_mesh(s)
+	if mesh != null:
+		_ghost_building.mesh = mesh
+		_ghost_building.scale = Vector3.ONE
+		_ghost_building.visible = true
+		_ghost_mesh.visible = false
+	else:
+		_ghost_building.mesh = null
+		_ghost_building.visible = false
+		# Fallback only: flat footprint box when the sid has no art.
+		_ghost_mesh.visible = true
+
+
+func _ghost_resolve_mesh(sid: String) -> Mesh:
+	if sid.is_empty():
+		return null
+	if _ghost_mesh_cache.has(sid):
+		return _ghost_mesh_cache[sid] as Mesh
+	# 1) Read-only call into the sibling entities module: already-baked,
+	# bbox-normalised stage-0 mesh. Stage-0 = suffix "1" (donor
+	# floor(progress*4), DBUILD_01 §2.2 carried cite); resolver at
+	# world3d_entities.gd:1796-1821, suffix rule at :1782-1788.
+	var provider = _ghost_entities_provider()
+	if provider != null and provider.has_method("_stage_mesh_info"):
+		var stage_info: Dictionary = provider.call("_stage_mesh_info", sid, "1", false)
+		if not stage_info.is_empty() and stage_info.get("mesh") is Mesh:
+			_ghost_mesh_cache[sid] = stage_info["mesh"]
+			stats["ghost_mesh_source"] = str(stage_info.get("source", "stage_obj"))
+			return stage_info["mesh"] as Mesh
+		# Fallback within the provider: finished base mesh
+		# (world3d_entities.gd:1087-1137, MeshInstance3D at :1638-1640).
+		if provider.has_method("_mesh_info"):
+			var base_info: Dictionary = provider.call("_mesh_info", sid, "building")
+			if not base_info.is_empty() and base_info.get("mesh") is Mesh:
+				_ghost_mesh_cache[sid] = base_info["mesh"]
+				stats["ghost_mesh_source"] = str(base_info.get("source", "base_obj"))
+				return base_info["mesh"] as Mesh
+	# 2) Standalone fallback (no provider, e.g. isolated parse probe):
+	# minimal mesh-file lookup duplicated from world3d_entities.gd:1111-1127
+	# (GLB dir :85, OBJ dir :84). No Z-up->Y-up bake is duplicated here, so
+	# this path is PORT APPROXIMATION and UNVERIFIED vs the baked mesh.
+	for path in ["res://assets/models/obj/" + sid + "1.obj",
+			"res://assets/models/obj/" + sid + ".obj",
+			"res://assets/models/glb/" + sid + ".glb"]:
+		if ResourceLoader.exists(path):
+			var loaded = load(path)
+			var m: Mesh = null
+			if loaded is Mesh:
+				m = loaded as Mesh
+			elif loaded is PackedScene:
+				var inst: Node = (loaded as PackedScene).instantiate()
+				m = _ghost_first_mesh(inst)
+				inst.free()
+			if m != null:
+				_ghost_mesh_cache[sid] = m
+				stats["ghost_mesh_source"] = "direct_load_fallback_unbaked"
+				return m
+	return null
+
+
+func _ghost_first_mesh(n: Node) -> Mesh:
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		return (n as MeshInstance3D).mesh
+	for child in n.get_children():
+		var m: Mesh = _ghost_first_mesh(child)
+		if m != null:
+			return m
+	return null
 
 
 # Pole + pennant in player colour. PROCEDURAL PRIMITIVE — the donor
@@ -782,13 +885,26 @@ func _ensure_roots() -> void:
 		_ghost_root.visible = false
 		add_child(_ghost_root)
 		_ghost_mat = _material(GHOST_OK, false)
+		# Multi-face building mesh needs no depth write so self-occlusion does
+		# not punch opaque holes in the transparent ghost (cf. snow/impact
+		# materials which already use DEPTH_DRAW_DISABLED, :846/:903). Scoped
+		# to the ghost material only; other FX materials are untouched.
+		_ghost_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 		var bm := BoxMesh.new()
 		bm.size = Vector3(1.0, 0.05, 1.0)
 		_ghost_mesh = MeshInstance3D.new()
 		_ghost_mesh.name = "Footprint"
 		_ghost_mesh.mesh = bm
 		_ghost_mesh.material_override = _ghost_mat
+		_ghost_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_ghost_root.add_child(_ghost_mesh)
+		# Primary ghost node: actual stage-0 building mesh, transparent via the
+		# shared _ghost_mat (GHOST_OK/GHOST_BAD + pulse in _update_ghost).
+		_ghost_building = MeshInstance3D.new()
+		_ghost_building.name = "GhostBuildingStage0"
+		_ghost_building.material_override = _ghost_mat
+		_ghost_building.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_ghost_root.add_child(_ghost_building)
 	if _rally_root == null:
 		_rally_root = Node3D.new()
 		_rally_root.name = "Rally3D"

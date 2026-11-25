@@ -52,12 +52,14 @@ const FEATURES_DEFAULTS := {
 		"double_click_s": 0.5,          # DSEL-01: data\gui\menu.cfg:33 KeyDoubleDelay
 	},
 	"terrain": {
-		"texgen_mode": "world_xz",           # TRN-SHADER A1; PORT APPROX (RV-TRN-01 verdict A)
-		"m_per_tile": 2.0,                   # DTRN-01/DEC-05: dmscript.global:171 gc_meters_to_tile=2
-		"lighting": "donor",                 # DENV-01: env\lights\light.cfg:17 lsParallel; TRN-SHADER B1
-		"alpha_patch_mode": "donor_approx",  # DALPHA-02: tile->patch index UNVERIFIED, PORT APPROX
+		# P1-3 / B-D-DEAD-FLAGS: five defs-only keys removed (zero consumers).
+		#   texgen_mode      -> shader=A (TRN-SHADER A1; PORT APPROX / RV-TRN-01 A)
+		#   m_per_tile       -> terrain-gd=B (DTRN-01/DEC-05; Data.TILE_M=2.0 is used)
+		#   lighting         -> shader=A (DENV-01; TRN-SHADER B1)
+		#   alpha_patch_mode -> shader=A (DALPHA-02 UNVERIFIED; the live uniform is
+		#                       mask_to_alpha, shader :235-246 — NOT wired here)
+		#   tile_diversity   -> terrain-gd=B (V3D-02 F3; behaviour unconditional)
 		"relief_stamps": false,              # RELIEF-01: opt-in dump marker, default off
-		"tile_diversity": true,              # current port behaviour (V3D-02 F3; unchanged)
 	},
 	"water": {
 		"surface_y": -0.25,     # TRN-WATER PORT APPROX placeholder; DTRN-03 §9
@@ -416,6 +418,9 @@ func section(name: String) -> Dictionary:
 # value() (get-with-fallback), so a missing key - or no `features` section at
 # all - yields the donor-verified default in FEATURES_DEFAULTS. No consumer
 # outside config.gd reads these yet; wiring is a separate ticket.
+# P1-3 / B-D-DEAD-FLAGS: 5 dead terrain accessors removed with their keys;
+# 16 remain (was 21). texgen_mode/lighting/alpha_patch_mode -> shader=A;
+# m_per_tile/tile_diversity -> terrain-gd=B. relief_stamps kept (used in main.gd).
 
 func feature_selection_world_epsilon_m() -> float:
 	return num("features.selection.world_epsilon_m", 0.005)
@@ -433,23 +438,8 @@ func feature_selection_marquee_width_px() -> int:
 func feature_selection_double_click_s() -> float:
 	return num("features.selection.double_click_s", 0.5)
 
-func feature_terrain_texgen_mode() -> String:
-	return text("features.terrain.texgen_mode", "world_xz")
-
-func feature_terrain_m_per_tile() -> float:
-	return num("features.terrain.m_per_tile", 2.0)
-
-func feature_terrain_lighting() -> String:
-	return text("features.terrain.lighting", "donor")
-
-func feature_terrain_alpha_patch_mode() -> String:
-	return text("features.terrain.alpha_patch_mode", "donor_approx")
-
 func feature_terrain_relief_stamps() -> bool:
 	return flag("features.terrain.relief_stamps", false)
-
-func feature_terrain_tile_diversity() -> bool:
-	return flag("features.terrain.tile_diversity", true)
 
 func feature_water_surface_y() -> float:
 	return num("features.water.surface_y", -0.25)

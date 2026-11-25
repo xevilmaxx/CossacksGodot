@@ -1,0 +1,1424 @@
+extends Node3D
+
+# V7-15 — spatial FX / ghost / rally layer. NEW FILE; no sim or 2D file is edited.
+#
+# API (exact, per docs/coord_swarm_2026-11-24/V73_ATOMIC_CONTRACT.md:14):
+#   bind(game), sync(dt), add_fx(pos, kind, life),
+#   draw_ghost(sid, pos, ok:bool), draw_rally(pos, player:int)
+# V7-73 — additive, backward-compatible origin surface (no existing call changes):
+#   bind(game, world_offset) — optional 2nd arg (Vector2); default derives from game
+#   set_world_offset(offset) — public setter; shifts already-live FX nodes by the delta
+#
+# ORIGIN CONVENTION (V7-73, fixes AUDIT3D-06 G9; evidence at
+# docs/coord_swarm_2026-11-24/reports/AUDIT3D_06_fx_anim_audio.md:47,102):
+#   Sim positions are map-origin metres; the 3D scene is centred on origin.
+#   world3d_entities.gd:63-65,541 maps p -> (p.x - MAP_W*0.5*TILE_M, y,
+#   p.y - MAP_H*0.5*TILE_M). world3d_terrain.gd:307-314 centres vertices with
+#   (x+0.5-w/2)*TILE_M; its +0.5 is a cell-CENTRE term (terrain vertices sit at
+#   cell centres), whereas FX/entity sim positions are POINTS, so FX follows the
+#   entity point transform. TILE_M = data.gd:23 / game.gd:16 = 2.0. With
+#   config.json:39-40 (320x320 tiles) the half extent is (320, 320) metres.
+#   bind() now derives that offset from game.MAP_W/MAP_H: no edit to world3d.gd
+#   (owned by V7-62) is needed. No donor art or 2D bake involved.
+#
+# DONOR EVIDENCE POLICY (WAVE7 charter :29-38, V7-1 inventory §2.4 :156-176):
+#   readable donor keys are CITED as `path:line`; their runtime mapping is NOT
+#   proven. `C:\Games\Cossacks 3\data\pfx\source.pfx` is private-use, read-only,
+#   and V7-2 reports PFX semantics as UNMAPPED. Every number taken from it is
+#   therefore labelled `LITERAL KEY / SEMANTICS UNVERIFIED`. Port-side precedents
+#   from app/variant3d world.gd are cited separately and are NOT donor truth.
+#
+# No RNG: all drift/flicker is a deterministic function of (age, spawn index).
+# No water re-bake: the spatial water shader plane is owned by world3d.gd
+#   (`_make_water`, world3d.gd:345-406); this module never touches terrain/water.
+#
+# FIX-SELECTVIS — SELECTION RING / OWNER INDICATOR (additive, no sim edit):
+#   2D semantics translated, NOT the 2D sprites:
+#     app/scripts/world.gd:3011-3041 selected BUILDING aura (squashed
+#       player-tinted glow, dark under-ring, tinted donor ring_sel, pulse);
+#     app/scripts/world.gd:3252-3254 selected UNIT player ring;
+#     app/scripts/world.gd:2845,2969-2972 building flag colour;
+#     AUDIT3D_02_colors.md:46-47,103-108 (G1/G3: no player colour rendered in
+#       3D; draw_rally had no caller before V7-76), COMPLETENESS_02_vs_2d.md:81,127.
+#   The donor's glow is engine-side (gGuiUpdateHighlights / SetHighlightRenderSettings)
+#   with private-use textures, so every mesh here is a PROCEDURAL STAND-IN:
+#   `PORT APPROXIMATION — NOT DONOR PARITY`. No sprite sheet, no 2D bake, no RNG.
+#   Owner colour is read from the same 13-slot donor key-colour JSON as the
+#   rally pennant (`_player_color`, donor_key_colors.json slots 0..12).
+#   New public API: sync_selection(entries) — driven by world3d.gd from the
+#   existing selected_ids / selected mirror (V7-76 ghost/rally pattern).
+#
+# FX-WEATHER-01 — GATED DONOR SNOW PARTICLE LAYER (default OFF, no donor art copied):
+#   Donor family `data\env\pfx\particles.snow.cfg` (ASCII OSW config, 4 emitters
+#     snow1..snow4) + `data\env\clouds\clouds.weather`, read-only and cited as
+#     path:line on the constants below. DFX-01 §5.7/§7.6 and DENV-01 §2.8/§5.3
+#     rank the weather/cloud layer a top-three visual gap, BUT with the shipped
+#     default Weather=40 < WeatherStart=70 the snow band is INACTIVE (derived).
+#     This module therefore installs a DISABLED, emitter-capable Node3D layer and
+#     exposes set_weather()/snow_active() so a future weather/season ticket can
+#     switch it on and calibrate the unmapped units.
+#   Every donor number here is a LITERAL KEY / SEMANTICS UNVERIFIED: no consumer
+#     converting Speed/Height/Width to Godot units was recovered (DFX-01 §6, §9).
+#   The draw pass is a plain untextured white billboard quad — PORT APPROXIMATION,
+#     NOT DONOR PARITY. Donor snow{1..4}.bmp are private-use and stay uncopied.
+#   NO construction dust: DFX-01 §7.4 proves that class is sound-only in the donor.
+#   No selection-ring / marquee-overlay code is touched by this addition.
+#
+# FX-IMPACT-01 — DONOR-GROUNDED VOLLEY SMOKE / MUZZLE FLASH / ARROW TRAIL:
+#   Three ADDITIVE FX kinds (`volley_smoke`, `muzzle_flash`, `arrow_trail`) built
+#     from the literal constants decoded by DFX-01 §7.1/§7.2/§7.3. Every donor
+#     number is cited `path:line` below. No donor→Godot unit conversion was
+#     recovered (DFX-01 §6/§9), so every Godot size/time derived from a donor
+#     key is labelled `PORT APPROXIMATION`; donor literal keys themselves are
+#     `LITERAL KEY / SEMANTICS UNVERIFIED`.
+#   Face-camera billboards replace the old solid BoxMesh for the new trail kind
+#     (donor `MarkStyle = msFaceCamera`, source.pfx:1745). The legacy `trail`
+#     kind is deliberately left byte-identical; the billboard is opt-in via
+#     `use_donor_arrow_trail` so no existing caller changes behaviour.
+#   Draw passes are plain white/grey untextured quads only: donor sprite sheets
+#     (musketsmoke.dds, musketflash.dds, bullettrail.bmp, ...) are private-use
+#     and are NOT copied. NO construction dust (absent in donor, DFX-01 §7.4).
+#   NO donor FX parity is claimed, NO positional audio, NO sim edit, and the
+#     FX-WEATHER-01 snow root, selection rings and marquee code are untouched.
+
+const Data = preload("res://scripts/data.gd")
+# WEATHER-DRIVER-01: active C3Config instance for the additive weather-driver
+# helper below (same static-active access pattern as hud.gd:_mm_size). No config
+# file, getter or default is edited by this module.
+const ConfigScript = preload("res://scripts/config.gd")
+
+# TILE_M / cell size: game.gd:16 (`const TILE := 2.0`), world3d.gd:12. Read-only.
+const TILE_M: float = 2.0
+
+# Port FX lifetimes (world.gd:3563-3579, :3559). These are PORT values, not
+# donor values; donor PFX has only interval/pixel-ratio keys (see below).
+const LIFE := {
+	"shot": 0.35,
+	"smoke": 1.6,
+	"explode": 0.8,
+	"crater": 0.8,
+	"fire": 0.9,
+	"heal": 0.9,
+	"capture": 1.2,
+	"rout": 1.2,
+	"chop": 0.35,
+	"trail": 0.22,
+	# FX-IMPACT-01 — additive kinds (donor anchors cited at the constants below).
+	"volley_smoke": 1.6,    # PORT life world.gd:3567; donor AlphaTime 1.5 UNVERIFIED
+	"muzzle_flash": 0.35,   # PORT life world.gd:3564; donor 4f/10fps=0.4 s UNVERIFIED
+	"arrow_trail": 0.2,     # source.pfx:1740 `TimeLimit = 0.2` literal (unit UNVERIFIED)
+}
+const DEFAULT_LIFE: float = 0.35
+const FALLBACK_FX_CAP: int = 220   # data.gd:117 (quality-tier default)
+
+# Donor PFX literal keys — SEMANTICS UNVERIFIED (V7-2: PFX semantics UNMAPPED):
+#   source.pfx:41-62   musketsmoke: EndFrame 127, FrameWidth 256,
+#       FrameHeight 128, Interval 10, PixelRatio 175, AlphaTime 1.5,
+#       AlphaPower 1.5, OnEndFrameState FreeToPool.
+#   source.pfx:105-177 musketflash: 4 frames, Interval 100, FrameRate 10,
+#       PixelRatio 350, OnEndFrameHide = True.
+#   source.pfx:385-411 cannonsmoke: EndFrame 127, PixelRatio 120,
+#       AlphaTime 1.5, AlphaPower 1.5.
+#   source.pfx:1322-1415 cannonexp: EndFrame 255, PixelRatio 30,
+#       AlphaTime 1.2, AlphaPower 1.0.
+#   source.pfx:1739-1746 bullettrail: VertLimit 150, TimeLimit 0.2,
+#       MinDistance 0.05, Alpha 0.2, AlphaFade True, MarkStyle msFaceCamera,
+#       MarkWidth 0.1.
+# The two trail constants below quote those keys literally; the Godot-side
+# interpretation (metres vs pixels, seconds vs frames) is UNVERIFIED.
+const TRAIL_TIME_LIMIT: float = 0.2   # source.pfx:1740 `TimeLimit = 0.2`
+const TRAIL_ALPHA: float = 0.2        # source.pfx:1742 `Alpha = 0.2`
+const TRAIL_WIDTH_M: float = 0.1      # source.pfx:1746 `MarkWidth = 0.1`
+const TRAIL_STREAK_M: float = 1.2     # PORT approximation (no donor length key)
+
+# Colour precedents are PORT, not donor art:
+#   world.gd:3509 green/red build ghost; world.gd:3655-3668 smoke/fire.
+# The old invented PLAYER_COLORS literal (copied from world.gd:2172-2179) is
+# REMOVED in V7-65. Player-coloured FX (rally pennant via _player_color) now
+# read the same donor key-colour JSON as the 3D entity tints; NON-player FX
+# colours (_kind_color, green/red build ghost, rally wood/finial/foot) are
+# deliberately left unchanged.
+const GHOST_OK := Color(0.20, 1.00, 0.30, 0.45)   # world.gd:3509 — non-player FX
+const GHOST_BAD := Color(1.00, 0.25, 0.20, 0.45)  # world.gd:3509 — non-player FX
+
+const KEY_COLORS_PATH: String = "res://data/donor_key_colors.json"
+# Donor slot -> Color(rgb_godot_float, alpha 1.0). Loaded in bind() from JSON;
+# alpha 1.0 is a port choice (donor alpha UNVERIFIED, V7-61 §5).
+var PLAYER_COLORS: Array = []
+var _key_colors_loaded: bool = false
+var _key_colors_error: String = ""
+
+# Event names are sim-agnostic and come from main.gd:1518-1554 `_consume_events`
+# (which forwards only shot/smoke/heal/rout/crater/explode/chop to add_fx).
+const EVENT_FX := {
+	"shot": "shot", "smoke": "smoke", "heal": "heal", "rout": "rout",
+	"crater": "crater", "explode": "explode", "chop": "chop",
+	"fire": "fire", "capture": "capture",
+}
+
+const RALLY_TTL: float = 2.0   # PORT choice: clear markers not redrawn for 2 s (no donor key)
+
+# --- FX-WEATHER-01 — donor snow constants (LITERAL KEY / SEMANTICS UNVERIFIED) --
+# Observed donor literals, cited as `path:line`. No donor→Godot unit conversion is
+# provable (DFX-01 §6/§9), so feeding them straight into Godot is a PORT
+# APPROXIMATION that a future enabling ticket must calibrate visually.
+const SNOW_WEATHER_DEFAULT: int = 40      # clouds.weather:3 `Weather = 40` (observed)
+const SNOW_WEATHER_MIN: int = 0           # clouds.weather:21 `weatherrandomstart = 0`
+const SNOW_WEATHER_MAX: int = 99          # clouds.weather:22 `weatherrandomend = 99`
+const SNOW_WEATHER_START: int = 70        # particles.snow.cfg:32,72,112,152 `WeatherStart = 70`
+const SNOW_WEATHER_END: int = 100         # particles.snow.cfg:33,73,113,153 `WeatherEnd = 100`
+const SNOW_MONTH_START: int = 1           # particles.snow.cfg:34,74,114,154 `MonthStart = 1`
+const SNOW_MONTH_END: int = 12            # particles.snow.cfg:35,75,115,155 `MonthEnd = 12`
+# Full-precision literals are recorded in DENV-01 §2.8; rounded values here are
+# the same numbers quoted in DFX-01 §7.6.
+const SNOW_SPEEDS: Array = [0.041, 0.061, 0.08, 0.1]             # particles.snow.cfg:36,76,116,156 `Speed`
+const SNOW_COUNTS: Array = [100, 100, 100, 200]                  # particles.snow.cfg:37,77,117,157 `Count`
+const SNOW_SIZES: Array = [0.0015, 0.002, 0.00251, 0.003]        # particles.snow.cfg:4-5,44-45,84-85,124-125 `Height`/`Width`
+const SNOW_ALPHA: float = 0.5             # particles.snow.cfg:6,46,86,126 `AlphaChannel = 0.5`
+const SNOW_CUBE_EXTENTS: Vector3 = Vector3(0.5, 0.5, 0.5)        # particles.snow.cfg:17-26 etc CreatingCubeStart/End (+/-0.5)
+const SNOW_MOVE_DIR: Vector3 = Vector3(0.0, -1.0, 0.0)           # particles.snow.cfg:27-31 etc `MoveDirection = (0,-1,0)`
+# Donor spiral motion (SpiralRotatingRadius ~0.1 :14,54,94,134; Speed 20/15/13/13
+# :15,55,95,135) is RECORDED but NOT reproduced — no Godot equivalent is claimed.
+const SNOW_PORT_LIFETIME: float = 8.0     # PORT ONLY: donor weather cfg has no lifetime key (DFX-01 §6)
+
+# --- FX-IMPACT-01 — donor-grounded impact FX constants ----------------------
+# THREE EFFECT CLASSES, all additive. Donor numbers are LITERAL KEYS read
+# read-only by DFX-01 (path:line); no consumer converting them to Godot metres
+# or seconds was recovered (DFX-01 §6, §9), so any Godot-side value derived from
+# them is a PORT APPROXIMATION, NOT DONOR PARITY.
+#
+# (1) VOLLEY SMOKE — donor `shotmusket` composition, DFX-01 §7.1. There is no
+#     dedicated "volley" key: each musket shot independently emits the 5-layer
+#     composition (fx.tree:4-63); N shooters = N compositions (DFX-01 §7.1).
+const IMPACT_SMOKE_END_FRAME: int = 127          # source.pfx:41 `EndFrame = 127`
+const IMPACT_SMOKE_FRAME_W: int = 256            # source.pfx:42 `FrameWidth = 256`
+const IMPACT_SMOKE_FRAME_H: int = 128            # source.pfx:43 `FrameHeight = 128`
+const IMPACT_SMOKE_PIXEL_RATIO: float = 175.0    # source.pfx:51 `PixelRatio = 175`
+const IMPACT_SMOKE_ALPHA_TIME: float = 1.5       # source.pfx:61 `AlphaTime = 1.5`
+const IMPACT_SMOKE_ALPHA_POWER: float = 1.5      # source.pfx:62 `AlphaPower = 1.5`
+const IMPACT_SMOKE_TINT_GREY: float = 0.3137255  # material.mat:17-37 (=80/255) shared smoke tint
+const IMPACT_SMOKE_OFFSET: Vector3 = Vector3(-0.1, -1.5, 0.775)  # source.pfx:54-57
+# Up-smoke layer (DFX-01 §7.1 "Up-smoke layer"): donor PixelRatio 600, EndFrame 63.
+const IMPACT_SMOKE_UP_PIXEL_RATIO: float = 600.0 # source.pfx:258-294; fx.tree:40-46
+const IMPACT_SMOKE_UP_END_FRAME: int = 63         # source.pfx:258-294; fx.tree:40-46
+# PORT APPROXIMATION quads (donor PixelRatio has no recovered metre conversion):
+const IMPACT_SMOKE_QUAD_M: float = 1.4            # PA of PixelRatio 175; frame ratio 256:128 kept
+const IMPACT_SMOKE_UP_QUAD_M: float = 2.0         # PA of up-smoke PixelRatio 600
+const IMPACT_SMOKE_ALPHA: float = 0.55            # PORT choice; donor diffuse alpha tint UNVERIFIED
+#
+# (2) MUZZLE FLASH — donor `musketflash`, DFX-01 §7.2.
+const IMPACT_FLASH_FRAMES: int = 4               # source.pfx:112-114,125-127,138-140,151-153
+const IMPACT_FLASH_FRAME_RATE: float = 10.0      # source.pfx:169 `FrameRate = 10`
+const IMPACT_FLASH_INTERVAL: int = 100           # source.pfx:164 `Interval = 100`
+const IMPACT_FLASH_PIXEL_RATIO: float = 350.0    # source.pfx:167 `PixelRatio = 350`
+const IMPACT_FLASH_ON_END_HIDE: bool = true      # source.pfx:176 `OnEndFrameHide = True` (no alpha fade)
+const IMPACT_FLASH_OFFSET: Vector3 = Vector3(-0.1, -1.0, 0.775)  # source.pfx:170-173
+# Recorded but NOT reproduced: randanimation=1 / randmirrorv=2 (fx.tree:28-29).
+# This module has no RNG (V7-15 header); frame/mirror randomisation is absent.
+const IMPACT_FLASH_RAND_ANIMATION: int = 1       # fx.tree:28 (RECORDED, not reproduced)
+const IMPACT_FLASH_RAND_MIRROR_V: int = 2        # fx.tree:29 (RECORDED, not reproduced)
+# PORT APPROXIMATIONS:
+const IMPACT_FLASH_QUAD_M: float = 0.7           # PA of PixelRatio 350; unit UNVERIFIED
+const IMPACT_FLASH_FRAME_SECONDS: float = 0.1    # DERIVED 1/FrameRate; UNVERIFIED frame->second mapping
+const IMPACT_FLASH_PORT_LIFE: float = 0.35       # PORT world.gd:3564
+#
+# (3) ARROW / PROJECTILE TRAIL — donor `bullettrail`, DFX-01 §7.3. All projectiles
+#     including arrows use it (weapon.script:281-287); only OSTRELA uses
+#     firearrowtrail (weapon.script:286,437).
+const IMPACT_TRAIL_TIME_LIMIT: float = 0.2       # source.pfx:1740 `TimeLimit = 0.2` (same as TRAIL_TIME_LIMIT)
+const IMPACT_TRAIL_ALPHA: float = 0.2            # source.pfx:1742 `Alpha = 0.2` (bullettrail)
+const IMPACT_TRAIL_FIREARROW_ALPHA: float = 0.3  # source.pfx:2315 `Alpha = 0.3` (firearrowtrail)
+const IMPACT_TRAIL_WIDTH: float = 0.1            # source.pfx:1746 `MarkWidth = 0.1`
+const IMPACT_TRAIL_FRAG_WIDTH: float = 0.05      # source.pfx:1783 `MarkWidth = 0.05` (fragtrail)
+const IMPACT_TRAIL_MIN_DISTANCE: float = 0.05    # source.pfx:1741 `MinDistance = 0.05`
+const IMPACT_TRAIL_VERT_LIMIT: int = 150         # source.pfx:1739 `VertLimit = 150` (RECORDED, not reproduced)
+const IMPACT_TRAIL_ALPHA_FADE: bool = true       # source.pfx:1743 `AlphaFade = True`
+const IMPACT_TRAIL_MARK_STYLE: String = "msFaceCamera"  # source.pfx:1745 -> billboard quad
+const IMPACT_TRAIL_ZWRITE: bool = false          # source.pfx:1748 `ZWrite = False` -> depth draw disabled
+const IMPACT_TRAIL_DIFFUSE_ALPHA: float = 1.0    # source.pfx:1759-1763 `Diffuse(1,1,1,1)`
+# PORT APPROXIMATION streak length: donor has no length key; reuse the existing
+# port streak (world.gd-trailed value) so the billboard has a finite ribbon.
+const IMPACT_TRAIL_STREAK_M: float = TRAIL_STREAK_M
+
+# --- public state ----------------------------------------------------------
+var game = null
+var consume_events: bool = true    # set false if main.gd already forwards add_fx
+var emit_arrow_trails: bool = true
+# FX-IMPACT-01 opt-in wiring. Both default FALSE so every pre-existing caller
+# keeps its exact behaviour; a future integration ticket (foreign-owned files)
+# may enable them without editing this module.
+var emit_donor_shot_fx: bool = false     # shot events also spawn muzzle_flash + volley_smoke
+var use_donor_arrow_trail: bool = false  # projectiles use the face-camera arrow_trail instead of the solid-box trail
+# Subtract from map-origin sim pos to centre the scene (see ORIGIN CONVENTION).
+# Pre-V7-73 this was never assigned; bind() now derives it from the bound game.
+var world_offset: Vector2 = Vector2.ZERO
+var _offset_pinned: bool = false   # explicit bind arg / setter wins over re-derivation
+var height_bias: float = 0.0
+var fx_items: Array = []
+var stats: Dictionary = {
+	"spawned": 0, "expired": 0, "events_consumed": 0,
+	"rally_active": 0, "ghost_shown": 0,
+	# FX-IMPACT-01 (additive telemetry; no existing key changed)
+	"impact_fx_spawned": 0, "impact_last_kind": "",
+	# FIX-SELECTVIS: measured ring/owner-colour counts for probes + reports.
+	"selection_rings": 0, "selection_entries": 0, "selection_owner_colors": [],
+}
+
+# --- private state ---------------------------------------------------------
+var _root: Node3D = null
+var _ghost_root: Node3D = null
+var _ghost_mesh: MeshInstance3D = null
+var _ghost_mat: StandardMaterial3D = null
+var _ghost_active: bool = false
+var _ghost_ok: bool = true
+var _ghost_sid: String = ""
+var _rally_root: Node3D = null
+var _rally_markers: Dictionary = {}
+# FIX-SELECTVIS: one flat ring + owner pip per selected entity, keyed by sim id.
+var _selection_root: Node3D = null
+var _selection_markers: Dictionary = {}
+var _selection_positions: Dictionary = {}   # id -> Vector2, for world_offset shifts
+var _time: float = 0.0
+var _events_seen: int = 0
+var _spawn_index: int = 0
+# FX-WEATHER-01: weather state is persistent layer state, not a transient FX item.
+var _weather_root: Node3D = null
+var _snow_emitters: Array = []
+var _weather_value: int = SNOW_WEATHER_DEFAULT   # 40 -> below the 70..100 snow band
+var _weather_month: int = SNOW_MONTH_START       # 1, inside MonthStart/End 1..12
+
+
+# --- PUBLIC API ------------------------------------------------------------
+
+# `world_offset` is optional: bind(game) keeps the V73 contract signature and
+# derives the centred origin from game.MAP_W/MAP_H; bind(game, offset) accepts an
+# explicit Vector2 (V7-73 integration handoff surface).
+func bind(g, world_offset_override = null) -> void:
+	game = g
+	_events_seen = 0
+	_apply_world_offset(world_offset_override)
+	_load_player_colors()
+	stats["donor_key_colors_path"] = KEY_COLORS_PATH
+	stats["donor_key_colors_loaded"] = _key_colors_loaded
+	stats["donor_key_colors_slots"] = PLAYER_COLORS.size()
+	stats["donor_key_colors_error"] = _key_colors_error
+	_ensure_roots()
+	_apply_snow_gate()   # FX-WEATHER-01: default Weather=40 keeps snow OFF
+
+
+# V7-73 public setter, safe to call after bind(): existing FX/ghost/rally nodes
+# are shifted by the delta so a late integration call cannot leave stale FX.
+# Pass a finite Vector2 in the SAME convention as world3d_entities.gd:541, i.e.
+# Vector2(MAP_W, MAP_H) * 0.5 * TILE_M (map-origin metres, not tiles).
+func set_world_offset(offset: Vector2, shift_existing: bool = true) -> void:
+	if not _finite(offset.x) or not _finite(offset.y):
+		push_error("world3d_fx: non-finite world_offset ignored")
+		return
+	var delta: Vector2 = offset - world_offset
+	world_offset = offset
+	_offset_pinned = true
+	stats["world_offset"] = [offset.x, offset.y]
+	stats["world_offset_source"] = "setter"
+	if shift_existing and (not is_zero_approx(delta.x) or not is_zero_approx(delta.y)):
+		_shift_created_nodes(-delta)
+
+
+# --- FX-WEATHER-01 — small gated weather API -------------------------------
+# Donor band WeatherStart=70 / WeatherEnd=100 (particles.snow.cfg:32-33 etc) on
+# the 0..99 scale (clouds.weather:21-22). Shipped default Weather=40
+# (clouds.weather:3) means OFF: call set_weather(>=70) to enable from a future
+# weather/season ticket. Values are clamped, never guessed from a port default.
+func set_weather(value: int) -> void:
+	_weather_value = clampi(value, SNOW_WEATHER_MIN, SNOW_WEATHER_MAX)
+	_apply_snow_gate()
+
+
+# MonthStart/End = 1/12 for all four emitters (particles.snow.cfg:34-35 etc),
+# so every month is inside the band in the shipped donor data.
+func set_weather_month(month: int) -> void:
+	_weather_month = clampi(month, 1, 12)
+	_apply_snow_gate()
+
+
+func snow_active() -> bool:
+	return _snow_band_ok()
+
+
+# --- WEATHER-DRIVER-01 — thin menu/config -> gated-snow driver helper --------
+# Additive bridge between the value the skirmish menu emits and the existing
+# set_weather(int) gate. It is NOT called by this module and does NOT edit
+# main.gd: a future integration ticket owning main.gd/world3d.gd must call it
+# after the config is loaded (or pass the cfg.weather_value it received from
+# the menu). Until then the Snow row stays PORT-UI-ONLY.
+#
+# Resolution order (all donor literals, no invented intensity):
+#   1. explicit `weather_value` int/float -> used as the donor Weather input
+#      (CONFIG-UI-01 emits 40 = clouds.weather:3, or 70 = particles.snow.cfg:32).
+#   2. explicit `weather_value` String -> "snow" maps to SNOW_WEATHER_START (70),
+#      anything else (e.g. "off") maps to SNOW_WEATHER_DEFAULT (40). This accepts
+#      CONFIG-UI-01's `cfg.weather` enum directly (t_weather.gd:123-126).
+#   3. no argument -> CONFIG-CORE-01's features.weather.snow getter via the
+#      active config: true -> SNOW_WEATHER_START (70), false/missing -> 40.
+# Default (no arg, no config) is 40 < WeatherStart 70 => snow stays OFF.
+# set_weather() clamps 0..99 and re-applies the band/month gate; nothing here
+# changes the donor constants, emitters, FX impacts or selection rings.
+# ENGINE-SIDE WEATHER DRIVER UNVERIFIED; NO DONOR PARITY CLAIM.
+func set_weather_from_config(weather_value = null) -> int:
+	var resolved: int = SNOW_WEATHER_DEFAULT   # clouds.weather:3 Weather=40 -> OFF
+	var source: String = "default_off"
+	if weather_value is int or weather_value is float:
+		resolved = int(weather_value)
+		source = "explicit_weather_value"
+	elif weather_value is String:
+		if str(weather_value) == "snow":
+			resolved = SNOW_WEATHER_START        # particles.snow.cfg:32 WeatherStart=70
+		source = "explicit_weather_enum"
+	else:
+		var cfg: Object = ConfigScript.active
+		if cfg != null and cfg.has_method("feature_weather_snow") \
+				and bool(cfg.call("feature_weather_snow")):
+			resolved = SNOW_WEATHER_START        # particles.snow.cfg:32 WeatherStart=70
+			source = "config_features_weather_snow"
+	set_weather(resolved)   # existing gated API: clamp 0..99 + re-apply band/month gate
+	stats["weather_driver_value"] = resolved
+	stats["weather_driver_source"] = source
+	return resolved
+
+
+# Resolve the origin from the bound game unless an explicit offset was given.
+# MAP_W/MAP_H are ints on game.gd:35-36 (config.json:39-40 sets both to 320);
+# Dictionary stubs expose the same keys. Missing/invalid values keep ZERO and
+# are reported in stats rather than guessed from a port default.
+func _apply_world_offset(override = null) -> void:
+	if override is Vector2:
+		var v: Vector2 = override
+		if _finite(v.x) and _finite(v.y):
+			world_offset = v
+			_offset_pinned = true
+			stats["world_offset_source"] = "explicit_bind_arg"
+			stats["world_offset"] = [v.x, v.y]
+			return
+		stats["world_offset_source"] = "invalid_explicit_ignored"
+	if _offset_pinned:
+		# An explicit bind arg / setter call outranks later re-derivation.
+		stats["world_offset_source"] = "pinned_retained"
+		stats["world_offset"] = [world_offset.x, world_offset.y]
+		return
+	var w := _map_tiles(game, "MAP_W")
+	var h := _map_tiles(game, "MAP_H")
+	if w > 0 and h > 0:
+		world_offset = Vector2(float(w), float(h)) * (0.5 * TILE_M)
+		stats["world_offset_source"] = "game.MAP_W/MAP_H"
+	else:
+		world_offset = Vector2.ZERO
+		stats["world_offset_source"] = "unavailable_zero"
+	stats["world_offset"] = [world_offset.x, world_offset.y]
+
+
+func _map_tiles(g, key: String) -> int:
+	if g == null:
+		return -1
+	var v = g.get(key)
+	if v is int or v is float:
+		return int(v)
+	return -1
+
+
+# Shift only XZ; Y is height_bias/height_at driven and must not be touched.
+func _shift_created_nodes(shift: Vector2) -> void:
+	for item in fx_items:
+		var n = item.get("node")
+		if n is Node3D and is_instance_valid(n):
+			(n as Node3D).position.x += shift.x
+			(n as Node3D).position.z += shift.y
+	if _ghost_root != null and is_instance_valid(_ghost_root):
+		_ghost_root.position.x += shift.x
+		_ghost_root.position.z += shift.y
+	for key in _rally_markers.keys():
+		var m: Dictionary = _rally_markers[key]
+		var rn = m.get("node")
+		if rn is Node3D and is_instance_valid(rn):
+			(rn as Node3D).position.x += shift.x
+			(rn as Node3D).position.z += shift.y
+	# FIX-SELECTVIS: selection markers store their map-origin Vector2 so a late
+	# world_offset change re-places them exactly like FX/rally (V7-73).
+	for key in _selection_markers.keys():
+		var sm: Dictionary = _selection_markers[key]
+		var sn = sm.get("node")
+		var sp = _selection_positions.get(key, null)
+		if sn is Node3D and is_instance_valid(sn) and (_valid_pos(sp)):
+			var np3: Vector3 = world_pos(sp)
+			if _finite3(np3):
+				(sn as Node3D).position = np3
+	# FX-WEATHER-01: the weather root is a child of _root, not an fx_item. The
+	# donor particle manager is camera-relative (AutoOffsetFromCamera=True,
+	# particles.lib:11) and must not be shifted with sim FX. Camera-follow is an
+	# OPEN integration item (no camera reference is owned by this module).
+
+
+# V7-65: exact donor formula output (rgb_godot_float), NOT the old invented
+# 2D palette. Missing/malformed JSON => push_error and NO player-coloured FX
+# (a transparent marker), never a fallback palette.
+func _load_player_colors() -> void:
+	PLAYER_COLORS.clear()
+	_key_colors_loaded = false
+	_key_colors_error = ""
+	if not FileAccess.file_exists(KEY_COLORS_PATH):
+		_key_colors_error = "missing file " + KEY_COLORS_PATH
+		push_error("world3d_fx: donor key colours unavailable (" + _key_colors_error + "); rally pennant left TRANSPARENT - no fallback palette")
+		return
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(KEY_COLORS_PATH))
+	if not (parsed is Dictionary) or not (parsed as Dictionary).has("slots") \
+			or not ((parsed as Dictionary)["slots"] is Array):
+		_key_colors_error = "malformed JSON or missing slots array"
+		push_error("world3d_fx: donor key colours unavailable (" + _key_colors_error + "); rally pennant left TRANSPARENT - no fallback palette")
+		return
+	for entry in ((parsed as Dictionary)["slots"] as Array):
+		if not (entry is Dictionary):
+			continue
+		var d := entry as Dictionary
+		var idx := int(d.get("index", -1))
+		var rgb = d.get("rgb_godot_float", [])
+		if idx < 0 or not (rgb is Array) or (rgb as Array).size() < 3:
+			continue
+		var arr = rgb
+		var c := Color(float(arr[0]), float(arr[1]), float(arr[2]), 1.0)
+		if PLAYER_COLORS.size() <= idx:
+			PLAYER_COLORS.resize(idx + 1)
+		PLAYER_COLORS[idx] = c
+	_key_colors_loaded = PLAYER_COLORS.size() > 0
+	if not _key_colors_loaded:
+		_key_colors_error = "no usable slot entries"
+		push_error("world3d_fx: donor key colours unavailable (" + _key_colors_error + "); rally pennant left TRANSPARENT - no fallback palette")
+
+
+func sync(dt) -> void:
+	var d: float = maxf(0.0, float(dt))
+	_time += d
+	if consume_events:
+		_consume_events()
+	if emit_arrow_trails:
+		_emit_arrow_trails()
+	_update_fx(d)
+	_update_rally()
+	_update_ghost()
+	_update_selection()   # FIX-SELECTVIS: deterministic pulse only; set reconcile is in sync_selection()
+
+
+# Exact signature per contract: add_fx(pos, kind, life). `life` <= 0 means
+# "use the port lifetime table" so a caller may pass -1 / 0 as a sentinel.
+func add_fx(pos, kind, life := -1.0) -> Dictionary:
+	_ensure_roots()
+	var k: String = str(kind)
+	var span: float = float(life)
+	if span <= 0.0:
+		span = float(LIFE.get(k, DEFAULT_LIFE))
+	if span <= 0.0:
+		span = DEFAULT_LIFE
+	var p3: Vector3 = world_pos(pos)
+	if not _finite3(p3):
+		return {}
+	_spawn_index += 1
+	var holder := Node3D.new()
+	holder.name = "FX_%s_%d" % [k, _spawn_index]
+	holder.position = p3
+	_root.add_child(holder)
+
+	var item: Dictionary = {
+		"kind": k, "pos": pos, "life": span, "age": 0.0,
+		"node": holder, "mat": null, "light": null,
+		"base_alpha": 1.0, "light_energy": 0.0, "base_y": p3.y,
+		"pr": null, "index": _spawn_index,
+	}
+	_build_visual(item, k)
+	fx_items.append(item)
+	_enforce_cap()
+	stats["spawned"] = int(stats.get("spawned", 0)) + 1
+	return item
+
+
+# FX-IMPACT-01 — donor-key entry point. Accepts the literal donor effect/source
+# keys (DFX-01 §5.2/§7.1-7.3) and maps them to the three additive port kinds.
+# This is a THIN ADAPTER, not a donor translation: visual fidelity is a PORT
+# APPROXIMATION and no donor art is loaded. Unknown keys return {} (no-op),
+# matching the donor's `GetOrCreate` lookup of an absent key -> -1 (pfx.script:353-360).
+func add_impact_fx(kind, pos, life := -1.0) -> Dictionary:
+	var k: String = str(kind)
+	var mapped: String = ""
+	match k:
+		"shotmusket", "musketsmoke", "volley_smoke":
+			mapped = "volley_smoke"
+		"musketflash", "shotmusket_flash", "muzzle_flash":
+			mapped = "muzzle_flash"
+		"bullettrail", "firearrowtrail", "fragtrail", "arrow_trail":
+			mapped = "arrow_trail"
+	if mapped.is_empty():
+		return {}
+	var item: Dictionary = add_fx(pos, mapped, life)
+	if not item.is_empty():
+		stats["impact_fx_spawned"] = int(stats.get("impact_fx_spawned", 0)) + 1
+		stats["impact_last_kind"] = mapped
+	return item
+
+
+# Translucent green (ok) / red (blocked) 3D footprint. PORT primitives:
+# no donor ghost config was readable; colour follows world.gd:3509.
+func draw_ghost(sid, pos, ok: bool) -> void:
+	_ensure_roots()
+	var s: String = str(sid)
+	if s.is_empty() or not _valid_pos(pos):
+		_ghost_active = false
+		_ghost_root.visible = false
+		return
+	_ghost_active = true
+	_ghost_sid = s
+	_ghost_ok = bool(ok)
+	var p3: Vector3 = world_pos(pos)
+	if not _finite3(p3):
+		_ghost_active = false
+		_ghost_root.visible = false
+		return
+	_ghost_root.position = p3
+	_ghost_root.visible = true
+	var r: float = _building_radius(s)
+	_ghost_mesh.scale = Vector3(r * 2.0, 1.0, r * 2.0)
+	stats["ghost_shown"] = int(stats.get("ghost_shown", 0)) + 1
+
+
+# Pole + pennant in player colour. PROCEDURAL PRIMITIVE — the donor
+# `rallypoint.dds` is private-use and stays uncopied (see world.gd:3602-3604).
+func draw_rally(pos, player: int) -> void:
+	_ensure_roots()
+	var p3: Vector3 = world_pos(pos)
+	if not _finite3(p3):
+		return
+	var key := Vector2(roundf(p3.x * 2.0) * 0.5, roundf(p3.z * 2.0) * 0.5)
+	if _rally_markers.has(key):
+		var old: Dictionary = _rally_markers[key]
+		old["seen"] = _time
+		_set_rally_color(old, int(player))
+	else:
+		_rally_markers[key] = _make_rally(p3, int(player))
+	stats["rally_active"] = _rally_markers.size()
+
+
+# FIX-SELECTVIS — PUBLIC SELECTION API (V7-76 ghost/rally pattern):
+# `entries` is an Array of Dictionaries, one per currently selected entity:
+#   {"id": int, "pos": Vector2|Vector3, "player": int,
+#    "kind": "unit"|"building", "radius": float}
+# Set semantics, NOT TTL: an id absent from `entries` has its ring removed in
+# the SAME call (2D clears the aura the frame e.selected goes false). This is
+# driven by world3d.gd from the read-only selected_ids / selected mirror; no
+# sim state is written here and no donor texture is loaded.
+func sync_selection(entries) -> void:
+	_ensure_roots()
+	var want: Dictionary = {}
+	if entries is Array:
+		for raw in (entries as Array):
+			if not (raw is Dictionary):
+				continue
+			var d := raw as Dictionary
+			var id := int(d.get("id", -1))
+			if id < 0 or want.has(id):
+				continue
+			var pos = d.get("pos", null)
+			if not _valid_pos(pos):
+				continue
+			want[id] = d
+	# Remove first: ids that left the selection lose their node immediately.
+	for id in _selection_markers.keys():
+		if want.has(id):
+			continue
+		_free_selection_marker(int(id))
+	# Add / refresh. Owner colour is re-resolved every call from the 13 donor
+	# slots so a capture (player change) recolours the pip on the next sync.
+	var colors: Array = []
+	for id in want.keys():
+		var d: Dictionary = want[id]
+		var p3: Vector3 = world_pos(d.get("pos"))
+		if not _finite3(p3):
+			continue
+		var player := int(d.get("player", -1))
+		var kind := str(d.get("kind", ""))
+		var radius := maxf(0.25, float(d.get("radius", 0.5)))
+		var marker = _selection_markers.get(id, null)
+		if marker == null:
+			marker = _make_selection_marker(id, p3, player, kind, radius)
+			_selection_markers[id] = marker
+		else:
+			var m: Dictionary = marker
+			(m.get("node") as Node3D).position = p3
+			_set_selection_color(m, player)
+			_scale_selection_marker(m, radius)
+		_selection_positions[id] = d.get("pos")
+		colors.append([_player_color(player).r, _player_color(player).g, _player_color(player).b])
+	stats["selection_entries"] = want.size()
+	stats["selection_rings"] = _selection_markers.size()
+	stats["selection_owner_colors"] = colors
+
+
+func clear_all() -> void:
+	for item in fx_items:
+		_free_item(item)
+	fx_items.clear()
+	for key in _rally_markers.keys():
+		var m: Dictionary = _rally_markers[key]
+		var n = m.get("node")
+		if n != null and is_instance_valid(n):
+			n.queue_free()
+	_rally_markers.clear()
+	for key in _selection_markers.keys():
+		_free_selection_marker(int(key))
+	_selection_markers.clear()
+	_selection_positions.clear()
+	stats["selection_rings"] = 0
+	stats["selection_entries"] = 0
+	stats["selection_owner_colors"] = []
+	_ghost_active = false
+	if _ghost_root != null:
+		_ghost_root.visible = false
+	stats["rally_active"] = 0
+	# FX-WEATHER-01: the snow layer is persistent weather state, not a transient
+	# FX item, so clear_all() deliberately leaves its gate/state untouched.
+
+
+# --- coordinate helper -----------------------------------------------------
+
+# Map positions are Vector2 metres (game.gd:16 TILE=2.0, game.height_at at
+# game.gd:1893-1907). Vector3 callers are passed through unchanged so the
+# integration owner can feed already-transformed scene coordinates.
+func world_pos(p) -> Vector3:
+	if p is Vector3:
+		return p
+	if not (p is Vector2):
+		return Vector3.ZERO
+	var v2: Vector2 = p
+	var h: float = height_bias
+	if game != null and game.has_method("height_at"):
+		h += float(game.call("height_at", v2))
+	return Vector3(v2.x - world_offset.x, h, v2.y - world_offset.y)
+
+
+# --- event stream (peek, never clear or edit the sim) ----------------------
+
+# game.gd:2823 appends {"type","pos","kind","extra"} to game.events. main.gd
+# clears that array in its own _consume_events (main.gd:1514-1564). This module
+# peeks with a high-water index and NEVER clears: if main clears first there is
+# nothing to see, so integration should call fx.sync() before main consumes,
+# or set consume_events=false and forward add_fx() itself. Open question Q3.
+func _consume_events() -> void:
+	if game == null:
+		return
+	var evs = game.get("events")
+	if not (evs is Array):
+		return
+	if evs.size() < _events_seen:
+		_events_seen = 0
+	for i in range(_events_seen, evs.size()):
+		var ev = evs[i]
+		if not (ev is Dictionary):
+			continue
+		var kind: String = str(EVENT_FX.get(str(ev.get("type", "")), ""))
+		if kind.is_empty():
+			continue
+		if not _valid_pos(ev.get("pos", null)):
+			continue
+		add_fx(ev.get("pos"), kind, -1.0)
+		stats["events_consumed"] = int(stats.get("events_consumed", 0)) + 1
+		# FX-IMPACT-01 opt-in: a donor shot is a 5-layer composition — at minimum
+		# a muzzle flash + volley smoke (fx.tree:4-63). Default OFF; no change to
+		# the legacy single `shot` FX unless a caller enables the flag.
+		if emit_donor_shot_fx and kind == "shot":
+			add_impact_fx("muzzle_flash", ev.get("pos"), -1.0)
+			add_impact_fx("shotmusket", ev.get("pos"), -1.0)
+	_events_seen = evs.size()
+
+
+# Mirrors world.gd:3545-3561 `_emit_arrow_trails`; reads game.projectiles only.
+# Donor trail timing/width come from source.pfx:1740/1746 (literal, UNVERIFIED).
+func _emit_arrow_trails() -> void:
+	if game == null:
+		return
+	var prs = game.get("projectiles")
+	if not (prs is Array):
+		return
+	# FX-IMPACT-01 opt-in: default keeps the legacy solid-box `trail` exactly as
+	# before. When enabled, emit the face-camera billboard `arrow_trail` (donor
+	# MarkStyle msFaceCamera, source.pfx:1745) at the donor TimeLimit/Alpha.
+	var trail_kind: String = "arrow_trail" if use_donor_arrow_trail else "trail"
+	var trail_life: float = IMPACT_TRAIL_TIME_LIMIT if use_donor_arrow_trail else TRAIL_TIME_LIMIT
+	var trail_alpha: float = IMPACT_TRAIL_ALPHA if use_donor_arrow_trail else TRAIL_ALPHA
+	for pr in prs:
+		if not (pr is Dictionary):
+			continue
+		if str(pr.get("kind", "")) not in ["arrow", "firearrow"]:
+			continue
+		var seen := false
+		for item in fx_items:
+			if str(item.get("kind", "")) == trail_kind and item.get("pr") == pr:
+				seen = true
+				break
+		if seen:
+			continue
+		var pos = pr.get("pos", null)
+		if not _valid_pos(pos):
+			continue
+		var item: Dictionary = add_fx(pos, trail_kind, trail_life)
+		if not item.is_empty():
+			item["pr"] = pr
+			item["base_alpha"] = trail_alpha
+
+
+# --- node construction -----------------------------------------------------
+
+func _ensure_roots() -> void:
+	if _root == null:
+		_root = Node3D.new()
+		_root.name = "FX3D"
+		add_child(_root)
+	if _ghost_root == null:
+		_ghost_root = Node3D.new()
+		_ghost_root.name = "BuildGhost3D"
+		_ghost_root.visible = false
+		add_child(_ghost_root)
+		_ghost_mat = _material(GHOST_OK, false)
+		var bm := BoxMesh.new()
+		bm.size = Vector3(1.0, 0.05, 1.0)
+		_ghost_mesh = MeshInstance3D.new()
+		_ghost_mesh.name = "Footprint"
+		_ghost_mesh.mesh = bm
+		_ghost_mesh.material_override = _ghost_mat
+		_ghost_root.add_child(_ghost_mesh)
+	if _rally_root == null:
+		_rally_root = Node3D.new()
+		_rally_root.name = "Rally3D"
+		add_child(_rally_root)
+	if _selection_root == null:
+		_selection_root = Node3D.new()
+		_selection_root.name = "Selection3D"
+		add_child(_selection_root)
+	# FX-WEATHER-01: one Node3D weather root UNDER the FX layer (_root/FX3D).
+	if _weather_root == null:
+		_weather_root = Node3D.new()
+		_weather_root.name = "WeatherSnow3D"
+		_root.add_child(_weather_root)
+		_build_snow_emitters()
+		_apply_snow_gate()
+
+
+# Donor weather band, 0..99 scale (clouds.weather:21-22). Month band 1..12
+# (particles.snow.cfg:34-35) covers every month in the shipped config.
+func _snow_band_ok() -> bool:
+	return _weather_value >= SNOW_WEATHER_START \
+		and _weather_value <= SNOW_WEATHER_END \
+		and _weather_month >= SNOW_MONTH_START \
+		and _weather_month <= SNOW_MONTH_END
+
+
+# Gate the whole layer: hidden + not emitting while Weather=40 < WeatherStart=70
+# (derived from clouds.weather:3 and particles.snow.cfg:32-33).
+func _apply_snow_gate() -> void:
+	var active: bool = _snow_band_ok()
+	if _weather_root != null and is_instance_valid(_weather_root):
+		_weather_root.visible = active
+	for emitter in _snow_emitters:
+		if emitter is GPUParticles3D and is_instance_valid(emitter):
+			(emitter as GPUParticles3D).emitting = active
+	stats["snow_weather"] = _weather_value
+	stats["snow_month"] = _weather_month
+	stats["snow_band"] = [SNOW_WEATHER_START, SNOW_WEATHER_END]
+	stats["snow_active"] = active
+	stats["snow_emitter_count"] = _snow_emitters.size()
+	stats["snow_status"] = "PORT APPROXIMATION — NOT DONOR PARITY; unit mapping UNVERIFIED"
+
+
+# Four donor emitters snow1..snow4 (particles.snow.cfg:2,42,82,122), each a
+# GPUParticles3D + ParticleProcessMaterial. Draw pass is a plain white billboard
+# quad — NO donor snow*.bmp copied: PORT APPROXIMATION, NOT DONOR PARITY.
+# Donor spiral motion (SpiralRotatingRadius/Speed :14-15 etc) is NOT reproduced.
+func _build_snow_emitters() -> void:
+	_snow_emitters.clear()
+	var sprite_mat := StandardMaterial3D.new()
+	sprite_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	sprite_mat.albedo_color = Color(1.0, 1.0, 1.0, SNOW_ALPHA)  # :6,46,86,126
+	sprite_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sprite_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED  # btBillboard :16,56,96,136
+	sprite_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED  # NoZWrite=True :7,47,87,127
+	sprite_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for i in range(4):
+		var emitter := GPUParticles3D.new()
+		emitter.name = "Snow%d" % (i + 1)   # donor snow1..snow4
+		# Flake size is the donor Height/Width literal, applied to the draw-pass
+		# quad directly (no particle-size property in Godot 4.7). Unit UNVERIFIED.
+		var quad := QuadMesh.new()
+		quad.size = Vector2(float(SNOW_SIZES[i]), float(SNOW_SIZES[i]))
+		quad.material = sprite_mat
+		var ppm := ParticleProcessMaterial.new()
+		ppm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+		ppm.emission_box_extents = SNOW_CUBE_EXTENTS   # CreatingCubeStart/End (+/-0.5)
+		ppm.direction = SNOW_MOVE_DIR                 # MoveDirection (0,-1,0)
+		ppm.spread = 0.0
+		ppm.gravity = Vector3.ZERO                    # donor has no gravity field
+		var speed: float = float(SNOW_SPEEDS[i])
+		ppm.initial_velocity_min = speed
+		ppm.initial_velocity_max = speed
+		emitter.process_material = ppm
+		emitter.lifetime = SNOW_PORT_LIFETIME         # PORT ONLY, no donor lifetime key
+		emitter.amount = int(SNOW_COUNTS[i])          # Count 100/100/100/200
+		emitter.draw_pass_1 = quad
+		emitter.emitting = false                      # gated OFF until Weather >= 70
+		_weather_root.add_child(emitter)
+		_snow_emitters.append(emitter)
+
+
+func _material(col: Color, additive: bool) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = col
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.emission_enabled = true
+	m.emission = Color(col.r, col.g, col.b)
+	m.emission_energy_multiplier = 0.35
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if additive:
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	return m
+
+
+# FX-IMPACT-01 — face-camera billboard material (donor msFaceCamera,
+# source.pfx:1745). Plain untextured quad: NO donor sprite sheet is copied.
+# `no_depth_write` mirrors donor trail `ZWrite = False` (source.pfx:1748).
+# PORT APPROXIMATION — NOT DONOR PARITY (no donor art / shader port).
+func _impact_material(col: Color, additive: bool, no_depth_write: bool) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = col
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.emission_enabled = true
+	m.emission = Color(col.r, col.g, col.b)
+	m.emission_energy_multiplier = 0.35
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED   # msFaceCamera
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if no_depth_write:
+		m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	if additive:
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	return m
+
+
+func _add_mesh(holder: Node3D, mesh: Mesh, mat: Material,
+		p: Vector3, rot: Vector3) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = p
+	mi.rotation = rot
+	holder.add_child(mi)
+	return mi
+
+
+func _add_light(holder: Node3D, col: Color, energy: float, range_m: float) -> OmniLight3D:
+	var l := OmniLight3D.new()
+	l.light_color = col
+	l.light_energy = energy
+	l.omni_range = range_m
+	l.shadow_enabled = false
+	holder.add_child(l)
+	return l
+
+
+func _kind_color(k: String) -> Color:
+	match k:
+		"shot":
+			return Color(1.0, 0.90, 0.50, 0.95)   # world.gd:3653
+		"smoke":
+			return Color(0.85, 0.85, 0.82, 0.55)  # world.gd:3657
+		"explode":
+			return Color(1.0, 0.60, 0.20, 0.90)   # world.gd:3660
+		"crater":
+			return Color(0.15, 0.12, 0.09, 0.80)  # world.gd:3663
+		"fire":
+			return Color(1.0, 0.45, 0.10, 0.85)   # world.gd:3666
+		"heal":
+			return Color(0.40, 1.00, 0.50, 0.80)  # world.gd:3669
+		"capture":
+			return Color(1.0, 1.0, 1.0, 0.85)     # world.gd:3672
+		"rout":
+			return Color(1.0, 0.30, 0.20, 0.85)   # world.gd:3674
+		"chop":
+			return Color(0.70, 0.60, 0.30, 0.80)  # world.gd:3676
+		"trail":
+			return Color(1.0, 0.88, 0.62, TRAIL_ALPHA)  # world.gd:3685
+		# FX-IMPACT-01 — additive kinds (donor-tinted where a key is readable):
+		"volley_smoke":
+			# material.mat:17-37 shared smoke tint 0.3137255 (=80/255) grey;
+			# alpha is a PORT choice (donor diffuse alpha UNVERIFIED).
+			return Color(IMPACT_SMOKE_TINT_GREY, IMPACT_SMOKE_TINT_GREY,
+				IMPACT_SMOKE_TINT_GREY, IMPACT_SMOKE_ALPHA)
+		"muzzle_flash":
+			return Color(1.0, 1.0, 1.0, 1.0)  # material.mat:63-81 tint (1,1,1,1)
+		"arrow_trail":
+			return Color(IMPACT_TRAIL_DIFFUSE_ALPHA, IMPACT_TRAIL_DIFFUSE_ALPHA,
+				IMPACT_TRAIL_DIFFUSE_ALPHA, IMPACT_TRAIL_ALPHA)  # source.pfx:1742,1759-1763
+	return Color(1.0, 1.0, 1.0, 0.6)
+
+
+func _build_visual(item: Dictionary, k: String) -> void:
+	var holder: Node3D = item["node"]
+	var col: Color = _kind_color(k)
+	var additive: bool = k in ["shot", "explode", "fire", "heal"]
+	var mat := _material(col, additive)
+	item["mat"] = mat
+	item["base_alpha"] = col.a
+	match k:
+		"shot":
+			var sm := SphereMesh.new()
+			sm.radius = 0.35
+			sm.height = 0.7
+			_add_mesh(holder, sm, mat, Vector3(0, 1.2, 0), Vector3.ZERO)
+			item["light"] = _add_light(holder, Color(1, 0.85, 0.45), 3.0, 6.0)
+			item["light_energy"] = 3.0
+		"smoke":
+			var qm := PlaneMesh.new()
+			qm.size = Vector2(1.4, 1.4)
+			_add_mesh(holder, qm, mat, Vector3(0, 1.4, 0), Vector3.ZERO)
+			_add_mesh(holder, qm, mat, Vector3(0, 1.4, 0), Vector3(0, PI * 0.5, 0))
+		"explode":
+			var sm2 := SphereMesh.new()
+			sm2.radius = 0.8
+			sm2.height = 1.6
+			_add_mesh(holder, sm2, mat, Vector3(0, 0.9, 0), Vector3.ZERO)
+			item["light"] = _add_light(holder, Color(1, 0.5, 0.15), 5.0, 12.0)
+			item["light_energy"] = 5.0
+		"crater":
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 1.2
+			cyl.bottom_radius = 1.2
+			cyl.height = 0.05
+			_add_mesh(holder, cyl, mat, Vector3(0, 0.03, 0), Vector3.ZERO)
+		"fire":
+			var qm2 := PlaneMesh.new()
+			qm2.size = Vector2(0.7, 1.0)
+			_add_mesh(holder, qm2, mat, Vector3(0, 0.7, 0), Vector3.ZERO)
+			_add_mesh(holder, qm2, mat, Vector3(0, 0.7, 0), Vector3(0, PI * 0.5, 0))
+			item["light"] = _add_light(holder, Color(1, 0.45, 0.1), 2.0, 5.0)
+			item["light_energy"] = 2.0
+		"heal":
+			var tm := TorusMesh.new()
+			tm.inner_radius = 0.6
+			tm.outer_radius = 0.75
+			_add_mesh(holder, tm, mat, Vector3(0, 0.15, 0), Vector3.ZERO)
+		"capture":
+			var b := BoxMesh.new()
+			b.size = Vector3(0.9, 0.5, 0.04)
+			_add_mesh(holder, b, mat, Vector3(0.5, 1.9, 0), Vector3.ZERO)
+		"rout", "chop":
+			var qm3 := PlaneMesh.new()
+			qm3.size = Vector2(0.6, 0.6)
+			_add_mesh(holder, qm3, mat, Vector3(0, 1.1, 0), Vector3.ZERO)
+		"trail":
+			var tb := BoxMesh.new()
+			tb.size = Vector3(TRAIL_WIDTH_M, TRAIL_WIDTH_M, TRAIL_STREAK_M)
+			_add_mesh(holder, tb, mat, Vector3.ZERO, Vector3.ZERO)
+		# --- FX-IMPACT-01 (additive kinds; legacy branches above untouched) ---
+		"volley_smoke":
+			# PORT APPROXIMATION — NOT DONOR PARITY. Donor `shotmusket` is a
+			# 5-layer animatedsprite composition (fx.tree:4-63) with private-use
+			# DDS sheets; two plain face-camera quads stand in for its smoke and
+			# up-smoke layers (source.pfx:41-62 / :258-294). Donor Position
+			# (-0.1,-1.5,0.775, source.pfx:54-57) is RECORDED but not applied:
+			# donor→Godot axis mapping is UNVERIFIED, so local placement is PORT.
+			var smoke_mat := _impact_material(col, false, false)
+			item["mat"] = smoke_mat
+			var sq := QuadMesh.new()
+			sq.size = Vector2(IMPACT_SMOKE_QUAD_M,
+				IMPACT_SMOKE_QUAD_M * float(IMPACT_SMOKE_FRAME_H) / float(IMPACT_SMOKE_FRAME_W))
+			_add_mesh(holder, sq, smoke_mat, Vector3(0, 1.2, 0), Vector3.ZERO)
+			var upq := QuadMesh.new()
+			upq.size = Vector2(IMPACT_SMOKE_UP_QUAD_M, IMPACT_SMOKE_UP_QUAD_M * 0.5)
+			_add_mesh(holder, upq, smoke_mat, Vector3(0, 1.9, 0), Vector3.ZERO)
+		"muzzle_flash":
+			# PORT APPROXIMATION — NOT DONOR PARITY. Donor = 4 single-frame
+			# animations (source.pfx:112-153) with OnEndFrameHide (source.pfx:176)
+			# and white tint (material.mat:63-81). No donor sheet is copied: one
+			# additive face-camera quad + alpha HOLD (no fade) stands in. The
+			# randanimation/randmirrorv codes (fx.tree:28-29) are NOT reproduced
+			# because this module has no RNG.
+			var flash_mat := _impact_material(col, true, false)
+			item["mat"] = flash_mat
+			var fq := QuadMesh.new()
+			fq.size = Vector2(IMPACT_FLASH_QUAD_M, IMPACT_FLASH_QUAD_M * 0.5)
+			_add_mesh(holder, fq, flash_mat, Vector3(0, 1.2, 0), Vector3.ZERO)
+		"arrow_trail":
+			# PORT APPROXIMATION — NOT DONOR PARITY. Donor `MarkStyle =
+			# msFaceCamera` (source.pfx:1745) => billboard quad, NOT the legacy
+			# solid BoxMesh. Width = literal MarkWidth 0.1 (source.pfx:1746);
+			# streak length is a PORT value (donor has no length key);
+			# ZWrite=False (source.pfx:1748) maps to depth-draw-disabled.
+			var trail_mat := _impact_material(col, false, not IMPACT_TRAIL_ZWRITE)
+			item["mat"] = trail_mat
+			var tq := QuadMesh.new()
+			tq.size = Vector2(IMPACT_TRAIL_WIDTH, IMPACT_TRAIL_STREAK_M)
+			item["mesh"] = _add_mesh(holder, tq, trail_mat, Vector3.ZERO, Vector3.ZERO)
+
+
+func _make_rally(p3: Vector3, player: int) -> Dictionary:
+	var holder := Node3D.new()
+	holder.name = "RallyP%d" % player
+	holder.position = p3
+	_rally_root.add_child(holder)
+
+	# Pole: wood tone copied from world.gd:3623 (port primitive, not donor art).
+	var wood := _material(Color(0.55, 0.42, 0.25, 1.0), false)
+	var pole_mesh := CylinderMesh.new()
+	pole_mesh.top_radius = 0.05
+	pole_mesh.bottom_radius = 0.06
+	pole_mesh.height = 1.6
+	_add_mesh(holder, pole_mesh, wood, Vector3(0, 0.8, 0), Vector3.ZERO)
+
+	var finial_mat := _material(Color(0.95, 0.85, 0.45, 1.0), false)  # world.gd:3629
+	var fin := SphereMesh.new()
+	fin.radius = 0.09
+	fin.height = 0.18
+	_add_mesh(holder, fin, finial_mat, Vector3(0, 1.68, 0), Vector3.ZERO)
+
+	var dark := _material(Color(0.0, 0.0, 0.0, 0.35), false)  # world.gd:3619
+	var foot := CylinderMesh.new()
+	foot.top_radius = 0.45
+	foot.bottom_radius = 0.45
+	foot.height = 0.05
+	_add_mesh(holder, foot, dark, Vector3(0, 0.03, 0), Vector3.ZERO)
+
+	var flag_mat := _material(_player_color(player), false)
+	var flag := PlaneMesh.new()
+	flag.size = Vector2(0.9, 0.5)
+	_add_mesh(holder, flag, flag_mat, Vector3(0.50, 1.35, 0), Vector3.ZERO)
+	return {"node": holder, "mat": flag_mat, "player": player, "seen": _time}
+
+
+func _set_rally_color(m: Dictionary, player: int) -> void:
+	if int(m.get("player", -1)) == player:
+		return
+	m["player"] = player
+	var c: Color = _player_color(player)
+	var mat: StandardMaterial3D = m.get("mat")
+	if mat != null:
+		mat.albedo_color = c
+		mat.emission = Color(c.r, c.g, c.b)
+
+
+# --- FIX-SELECTVIS: selection ring / owner indicator -----------------------
+# PROCEDURAL STAND-IN — `PORT APPROXIMATION — NOT DONOR PARITY`.
+# The 2D aura is a squashed, player-tinted set of draw calls using the private
+# `ring_sel.png` / `ring_p0.png` overlays (app/scripts/world.gd:210-211,319-320,
+# :3011-3041) and a per-player unit ring (world.gd:3252-3254). No donor texture
+# is readable/copiable here, so the equivalent 3D feedback is geometry: a flat
+# TorusMesh ring in the donor key colour, a thin dark under-ring for contrast
+# on light terrain, and a small owner-colour disc at the centre. Same semantics,
+# different pixels: selection is visible and ownership is distinguishable.
+
+func _make_selection_marker(id: int, p3: Vector3, player: int, kind: String,
+		radius: float) -> Dictionary:
+	var holder := Node3D.new()
+	holder.name = "SelRing_%d" % id
+	holder.position = p3
+	_selection_root.add_child(holder)
+
+	var c: Color = _player_color(player)
+	var ring_mat := _material(Color(c.r, c.g, c.b, 0.92), false)
+	var under_mat := _material(Color(0.05, 0.04, 0.03, 0.80), false)  # world.gd:3032
+	var pip_mat := _material(Color(c.r, c.g, c.b, 1.0), false)
+
+	var ring_mesh := TorusMesh.new()
+	var under_mesh := TorusMesh.new()
+	var pip_mesh := CylinderMesh.new()
+	pip_mesh.height = 0.05
+
+	var ring := _add_mesh(holder, ring_mesh, ring_mat, Vector3(0, 0.08, 0), Vector3.ZERO)
+	ring.name = "Ring"
+	var under := _add_mesh(holder, under_mesh, under_mat, Vector3(0, 0.055, 0), Vector3.ZERO)
+	under.name = "UnderRing"
+	var pip := _add_mesh(holder, pip_mesh, pip_mat, Vector3(0, 0.14, 0), Vector3.ZERO)
+	pip.name = "OwnerPip"
+
+	# Buildings 2D ring radius = def.radius*view_scale+9 (world.gd:3017);
+	# units use def.radius*view_scale*UNIT_SCALE*1.7+2 (world.gd:3244-3245).
+	# Here `radius` is already sim metres, so add a modest screen-space margin.
+	var m: Dictionary = {
+		"node": holder, "id": id, "player": player, "kind": kind,
+		"ring_mat": ring_mat, "under_mat": under_mat, "pip_mat": pip_mat,
+		"ring_mesh": ring_mesh, "under_mesh": under_mesh, "pip_mesh": pip_mesh,
+		"ring": ring, "under": under, "pip": pip,
+	}
+	_scale_selection_marker(m, radius)
+	return m
+
+
+# Resize the three procedural meshes to the entity footprint. TorusMesh is
+# generated in the XZ plane so it already hugs the ground (no rotation needed).
+func _scale_selection_marker(m: Dictionary, radius: float) -> void:
+	var outer := clampf(radius * 1.25, 0.45, 12.0)
+	var rm: TorusMesh = m.get("ring_mesh")
+	if rm != null:
+		rm.inner_radius = outer * 0.78
+		rm.outer_radius = outer
+	var um: TorusMesh = m.get("under_mesh")
+	if um != null:
+		um.inner_radius = outer * 0.96
+		um.outer_radius = outer * 1.10
+	var pm: CylinderMesh = m.get("pip_mesh")
+	if pm != null:
+		var pr := clampf(outer * 0.20, 0.10, 0.40)
+		pm.top_radius = pr
+		pm.bottom_radius = pr
+
+
+# Owner colour always comes from the 13 donor slots; capture/player changes
+# recolour the ring and pip on the next sync (no fallback palette — V7-65).
+func _set_selection_color(m: Dictionary, player: int) -> void:
+	if int(m.get("player", -1)) == player:
+		return
+	m["player"] = player
+	var c: Color = _player_color(player)
+	var ring_mat: StandardMaterial3D = m.get("ring_mat")
+	if ring_mat != null:
+		ring_mat.albedo_color = Color(c.r, c.g, c.b, ring_mat.albedo_color.a)
+		ring_mat.emission = Color(c.r, c.g, c.b)
+	var pip_mat: StandardMaterial3D = m.get("pip_mat")
+	if pip_mat != null:
+		pip_mat.albedo_color = c
+		pip_mat.emission = Color(c.r, c.g, c.b)
+
+
+func _free_selection_marker(id: int) -> void:
+	var m = _selection_markers.get(id, null)
+	if m is Dictionary:
+		var n = (m as Dictionary).get("node")
+		if n != null and is_instance_valid(n):
+			# Immediate (not queue_free): 2D clears the aura the very frame the
+			# selection flag flips; a queued node would linger for one frame and
+			# would also be invisible to a synchronous integration probe.
+			(n as Node3D).free()
+	_selection_markers.erase(id)
+	_selection_positions.erase(id)
+
+
+# Deterministic pulse only (world.gd:3019 uses the same sin(anim_t*3 + id*0.7)).
+# No RNG; the ring's base alpha is restored before apply so it cannot drift.
+func _update_selection() -> void:
+	for id in _selection_markers.keys():
+		var m: Dictionary = _selection_markers[id]
+		var mat: StandardMaterial3D = m.get("ring_mat")
+		if mat == null:
+			continue
+		var pulse: float = 0.82 + 0.18 * sin(_time * 3.0 + float(id) * 0.7)
+		mat.albedo_color.a = 0.92 * pulse
+		mat.emission_energy_multiplier = 0.35 * pulse
+	stats["selection_rings"] = _selection_markers.size()
+
+
+# --- per-frame animation ---------------------------------------------------
+
+func _update_fx(dt: float) -> void:
+	var keep: Array = []
+	for item in fx_items:
+		var age: float = float(item.get("age", 0.0)) + dt
+		item["age"] = age
+		var life: float = maxf(0.001, float(item.get("life", DEFAULT_LIFE)))
+		var k: float = clampf(age / life, 0.0, 1.0)
+		var node = item.get("node")
+		if node == null or not is_instance_valid(node):
+			continue
+		var idx: float = float(item.get("index", 0))
+		match str(item.get("kind", "")):
+			"smoke":
+				node.position.y = float(item.get("base_y", 0.0)) + k * 1.6
+				var s: float = 1.0 + k * 1.4
+				node.scale = Vector3(s, s, s)
+			"explode":
+				var s2: float = 1.0 + k * 2.2
+				node.scale = Vector3(s2, s2, s2)
+			"heal":
+				var s3: float = 0.6 + k * 2.0
+				node.scale = Vector3(s3, 1.0, s3)
+			"fire":
+				var f: float = 0.85 + 0.15 * sin(age * 14.0 + idx)
+				node.scale = Vector3(f, f, f)
+			"trail":
+				_orient_trail(item, node)
+			# FX-IMPACT-01 — per-kind motion (all PORT APPROXIMATIONS):
+			"volley_smoke":
+				node.position.y = float(item.get("base_y", 0.0)) + k * 0.8
+			"muzzle_flash":
+				pass   # static face-camera quad; alpha HOLD below, no drift
+			"arrow_trail":
+				_orient_impact_trail(item, node)
+		var mat: StandardMaterial3D = item.get("mat")
+		if mat != null:
+			var c: Color = mat.albedo_color
+			var base_a: float = float(item.get("base_alpha", 1.0))
+			var alpha: float = base_a * (1.0 - k)
+			var ks: String = str(item.get("kind", ""))
+			if ks == "volley_smoke":
+				# AlphaPower = 1.5 (source.pfx:62) is a donor-grounded fade CURVE;
+				# AlphaTime→seconds is UNVERIFIED (DFX-01 §6), so the curve over a
+				# PORT life is a PORT APPROXIMATION, not donor parity.
+				alpha = base_a * pow(1.0 - k, IMPACT_SMOKE_ALPHA_POWER)
+			elif ks == "muzzle_flash":
+				# OnEndFrameHide = True (source.pfx:176): hold, then cut on expiry.
+				# No donor frame→second mapping exists -> PORT APPROXIMATION.
+				alpha = base_a
+			# arrow_trail keeps the generic linear fade: AlphaFade = True
+			# (source.pfx:1743), base alpha = literal Alpha 0.2 (:1742).
+			c.a = alpha
+			mat.albedo_color = c
+			mat.emission_energy_multiplier = 0.35 * (1.0 - k)
+		var light: OmniLight3D = item.get("light")
+		if light != null and is_instance_valid(light):
+			light.light_energy = float(item.get("light_energy", 0.0)) * (1.0 - k)
+		if age < life:
+			keep.append(item)
+		else:
+			_free_item(item)
+			stats["expired"] = int(stats.get("expired", 0)) + 1
+	fx_items = keep
+
+
+func _orient_trail(item: Dictionary, node: Node3D) -> void:
+	var pr = item.get("pr")
+	if not (pr is Dictionary):
+		return
+	if not (pr.has("pos") and pr.has("target") and pr.has("t") and pr.has("total")):
+		return
+	if not (pr.get("pos") is Vector2 and pr.get("target") is Vector2):
+		return
+	var head2: Vector2 = (pr["target"] as Vector2).lerp(
+		pr["pos"] as Vector2, 1.0 - float(pr["t"]) / maxf(0.01, float(pr["total"])))
+	var dir2: Vector2 = (pr["target"] as Vector2) - (pr["pos"] as Vector2)
+	if dir2.length_squared() < 0.01:
+		dir2 = Vector2.RIGHT
+	dir2 = dir2.normalized()
+	var tail2: Vector2 = head2 - dir2 * TRAIL_STREAK_M
+	var a: Vector3 = world_pos(tail2)
+	var b: Vector3 = world_pos(head2)
+	node.position = (a + b) * 0.5
+	if node.is_inside_tree() and a.distance_to(b) > 0.001:
+		node.look_at(b, Vector3.UP)
+
+
+# FX-IMPACT-01 — face-camera trail placement. The donor trail is a msFaceCamera
+# ribbon (source.pfx:1745) sampled at MinDistance 0.05 (source.pfx:1741) with a
+# 0.2 s TimeLimit (:1740). This module owns no camera reference, so the port
+# places a billboarded quad at the world-space head/tail midpoint and scales its
+# length by the segment; screen-space ribbon alignment is NOT reproduced.
+# PORT APPROXIMATION — NOT DONOR PARITY. No solid BoxMesh is used here.
+func _orient_impact_trail(item: Dictionary, node: Node3D) -> void:
+	var pr = item.get("pr")
+	if not (pr is Dictionary):
+		return
+	if not (pr.has("pos") and pr.has("target") and pr.has("t") and pr.has("total")):
+		return
+	if not (pr.get("pos") is Vector2 and pr.get("target") is Vector2):
+		return
+	var start2: Vector2 = pr["pos"] as Vector2
+	var end2: Vector2 = pr["target"] as Vector2
+	var head2: Vector2 = end2.lerp(start2, 1.0 - float(pr["t"]) / maxf(0.01, float(pr["total"])))
+	var dir2: Vector2 = end2 - start2
+	if dir2.length_squared() < 0.01:
+		dir2 = Vector2.RIGHT
+	var tail2: Vector2 = head2 - dir2.normalized() * IMPACT_TRAIL_STREAK_M
+	var a: Vector3 = world_pos(tail2)
+	var b: Vector3 = world_pos(head2)
+	node.position = (a + b) * 0.5
+	var mi = item.get("mesh")
+	if mi is MeshInstance3D and is_instance_valid(mi):
+		var q: QuadMesh = (mi as MeshInstance3D).mesh as QuadMesh
+		if q != null:
+			var seg: float = a.distance_to(b)
+			q.size = Vector2(IMPACT_TRAIL_WIDTH,
+				clampf(minf(IMPACT_TRAIL_STREAK_M, seg), IMPACT_TRAIL_MIN_DISTANCE, IMPACT_TRAIL_STREAK_M))
+
+
+func _update_rally() -> void:
+	var stale: Array = []
+	for key in _rally_markers.keys():
+		var m: Dictionary = _rally_markers[key]
+		if _time - float(m.get("seen", 0.0)) <= RALLY_TTL:
+			continue
+		var n = m.get("node")
+		if n != null and is_instance_valid(n):
+			n.queue_free()
+		stale.append(key)
+	for key in stale:
+		_rally_markers.erase(key)
+	stats["rally_active"] = _rally_markers.size()
+
+
+func _update_ghost() -> void:
+	if _ghost_root == null:
+		return
+	_ghost_root.visible = _ghost_active
+	if not _ghost_active or _ghost_mat == null:
+		return
+	var c: Color = GHOST_OK if _ghost_ok else GHOST_BAD
+	var pulse: float = 0.85 + 0.15 * sin(_time * 4.0)
+	c.a *= pulse
+	_ghost_mat.albedo_color = c
+	_ghost_mat.emission = Color(c.r, c.g, c.b)
+
+
+# --- small helpers ---------------------------------------------------------
+
+func _enforce_cap() -> void:
+	var cap: int = FALLBACK_FX_CAP
+	if Data != null:
+		cap = int(Data.FX_CAP)
+	if cap <= 0:
+		cap = FALLBACK_FX_CAP
+	while fx_items.size() > cap:
+		var old: Dictionary = fx_items.pop_front()
+		_free_item(old)
+
+
+func _free_item(item: Dictionary) -> void:
+	var n = item.get("node")
+	if n != null and is_instance_valid(n):
+		n.queue_free()
+	item["node"] = null
+	item["mat"] = null
+	item["light"] = null
+
+
+func _finite(x: float) -> bool:
+	return not is_nan(x) and not is_inf(x)
+
+
+func _finite3(v: Vector3) -> bool:
+	return _finite(v.x) and _finite(v.y) and _finite(v.z)
+
+
+func _valid_pos(p) -> bool:
+	if p is Vector2:
+		var v: Vector2 = p
+		return _finite(v.x) and _finite(v.y)
+	if p is Vector3:
+		return _finite3(p)
+	return false
+
+
+# Donor guard misc.script:5070: only slots 0..12 exist; no wrapi() fallback to
+# a made-up colour. On load failure the pennant material is transparent.
+func _player_color(p: int) -> Color:
+	if not _key_colors_loaded:
+		return Color(0.0, 0.0, 0.0, 0.0)
+	if p < 0 or p >= PLAYER_COLORS.size():
+		return Color(0.0, 0.0, 0.0, 0.0)
+	return PLAYER_COLORS[p]
+
+
+func _building_radius(sid: String) -> float:
+	if Data != null and Data.BUILDINGS.has(sid):
+		var d = Data.BUILDINGS[sid]
+		if d is Dictionary and d.has("radius"):
+			return maxf(0.25, float(d.radius))
+	return 1.5

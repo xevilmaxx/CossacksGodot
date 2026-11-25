@@ -1,4 +1,4 @@
-# Mouse + keyboard control: selection, orders, build placement, hotkeys.
+﻿# Mouse + keyboard control: selection, orders, build placement, hotkeys.
 # Bindings follow the original data/game/var/hotkeys.cfg.
 extends Node
 class_name C3Input
@@ -62,8 +62,8 @@ var route_node: Node2D = null
 # stays byte-identical.
 var route_mesh_node: MeshInstance3D = null
 # T-NAV-RESPONSIVE: minimap geometry is cached. It only changes when the
-# viewport resizes or hud.gd resizes/rebuilds its TextureRect — never on mouse
-# events — so the per-event path does no Control/layout math or allocations.
+# viewport resizes or hud.gd resizes/rebuilds its TextureRect â€” never on mouse
+# events â€” so the per-event path does no Control/layout math or allocations.
 var _mm_rect := Rect2()
 var _mm_rect_dirty := true
 var _mm_dragging := false
@@ -77,7 +77,7 @@ var _wheel_accum := 0.0
 # --- SEL-01: viewport-pixel selection marquee (labelled PORT APPROXIMATION) ---
 # Donor outline: RGBA(1,1,0,1), 1 px solid, no fill, AntiAliased=False
 # (data\brushes\selection.cfg:3-14, bound at data\resources\resource.lib:47;
-# confirmed by RV-SEL-01 §"Visual (authoritative, exact)"). The donor's native
+# confirmed by RV-SEL-01 Â§"Visual (authoritative, exact)"). The donor's native
 # inside-box predicate is engine-side/UNVERIFIED, so this outline approximates
 # the donor visual; it is NOT donor parity. It draws the authoritative screen
 # pixels already held here - never world.sel_rect (SIM metres) projected through
@@ -167,8 +167,8 @@ func bind(g: C3Game, w, h: C3HUD, cam) -> void:
 # V7-52 PUBLIC HANDOFF for main.gd (V7-50). Call AFTER bind(game, world, hud, cam).
 # `cam` is the Camera3D returned by make_camera3d(); the 3D world is the Node3D
 # already passed as `world`. This method ONLY wires the picking adapter and flips
-# render_mode — it does not touch any cmd_*, hotkey, group or build-ghost code.
-# Loading is dynamic (no class_name), per V712 report §5.
+# render_mode â€” it does not touch any cmd_*, hotkey, group or build-ghost code.
+# Loading is dynamic (no class_name), per V712 report Â§5.
 func bind_3d(cam) -> void:
 	var PickingScript = load("res://scripts/picking3d.gd")
 	if PickingScript == null:
@@ -372,7 +372,7 @@ func _minimap_reposition(screen_pos: Vector2) -> void:
 	# dynamically so the 2D Camera2D path below stays byte-identical and is still the
 	# default (render_mode defaults to "2d" at :21). The old fallback wrote a Vector2
 	# into Camera3D.global_position and scaled metres by 16 px/m, bypassing _target and
-	# the clamp memo — a 3D no-op that snaps back on the next _apply_transform().
+	# the clamp memo â€” a 3D no-op that snaps back on the next _apply_transform().
 	if render_mode == "3d":
 		camera.call("jump_to_world", wp)
 		return
@@ -507,7 +507,7 @@ func begin_guard() -> void:
 func _draw_patrol_route() -> void:
 	if world == null or route_node == null or patrol_a == Vector2.INF:
 		return
-	# V7-52: explicit type guards — `world` is untyped (V71:197 relaxed-typing
+	# V7-52: explicit type guards â€” `world` is untyped (V71:197 relaxed-typing
 	# seam), so `:=` cannot infer these members; the values/behaviour are unchanged.
 	var a: Vector2 = world.world_to_px(patrol_a)
 	var end_world := patrol_b
@@ -587,6 +587,21 @@ func _screen_to_world(p: Vector2) -> Vector2:
 	var xform := get_viewport().get_canvas_transform().affine_inverse()
 	return (xform * p) / world.view_scale
 
+# B-SELRECT-FIX (PORT APPROXIMATION): ground AABB of all FOUR marquee corners.
+# Same ray+march path as _screen_to_world (picking3d.ground_point world ground
+# coords + world epsilon, DSEL_02-carried); no new projection method. Fixes the
+# two-corner under-coverage under -32 deg tilt vs the screen-px marquee.
+func _drag_world_rect(a_px: Vector2, b_px: Vector2) -> Rect2:
+	var c := _screen_to_world(a_px)
+	var d := _screen_to_world(b_px)
+	var e := _screen_to_world(Vector2(a_px.x, b_px.y))
+	var f := _screen_to_world(Vector2(b_px.x, a_px.y))
+	var minx := minf(minf(c.x, d.x), minf(e.x, f.x))
+	var miny := minf(minf(c.y, d.y), minf(e.y, f.y))
+	var maxx := maxf(maxf(c.x, d.x), maxf(e.x, f.x))
+	var maxy := maxf(maxf(c.y, d.y), maxf(e.y, f.y))
+	return Rect2(minx, miny, maxx - minx, maxy - miny)
+
 func _pick(pw: Vector2, players_only := true) -> Dictionary:
 	# V7-52 3D seam. picking3d.pick(screen, players_only) applies the SAME
 	# radius/fallback rule as the 2D loop below (V7-68): `true` restricts the
@@ -599,7 +614,7 @@ func _pick(pw: Vector2, players_only := true) -> Dictionary:
 			return {}
 		return picking.pick(_pick_screen, players_only)
 	# T-PERF-RENDER: single pass. The old code scanned all entities twice on
-	# every miss (the common case: clicking empty ground) — once for the
+	# every miss (the common case: clicking empty ground) â€” once for the
 	# radius test, once for the 2 m fallback. Both best-candidates are tracked
 	# in one loop with identical hit semantics.
 	var best: Dictionary = {}
@@ -623,7 +638,7 @@ func _pick(pw: Vector2, players_only := true) -> Dictionary:
 		return fb
 	return best
 
-# W4-2: pure input translation — a wheel event becomes one or more camera
+# W4-2: pure input translation â€” a wheel event becomes one or more camera
 # zoom requests. No interpolation, easing, clamp or cursor math is computed
 # here; camera.gd (W4-1) owns all of that. The accumulator only coalesces
 # fractional high-resolution wheel deltas into whole notches, which removes
@@ -744,11 +759,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				# the old 6 screen-pixel test. `dragging` is set only by that test.
 				var moved := dragging
 				if moved:
-					var a := _screen_to_world(drag_start)
-					var bp := _screen_to_world(mb.position)
+					# B-SELRECT-FIX: four-corner ground AABB of the full marquee
+					# (same ray+march path; PORT APPROXIMATION).
 					# Donor keeps the WORLD ground rect (S-25-06): no screen-space
 					# select_in_rect() was introduced by this ticket.
-					var rect := Rect2(minf(a.x, bp.x), minf(a.y, bp.y), absf(a.x - bp.x), absf(a.y - bp.y))
+					var rect := _drag_world_rect(drag_start, mb.position)
 					var arr: Array = []
 					for e in game.entities:
 						if e.dead or e.player != 0 or e.kind != "unit":
@@ -941,7 +956,7 @@ func _deposit_near(mine: Dictionary) -> Dictionary:
 # node is inserted with NO filtering, which keeps the _pick_res filters and the
 # strict nearest rule byte-for-byte identical to the old brute-force scan.
 # (game's own _res_grid is private and skips depleted nodes, so it cannot be
-# reused without changing behaviour — notably for depleted food nodes.)
+# reused without changing behaviour â€” notably for depleted food nodes.)
 const _PICK_RES_GRID_M := 16.0
 var _pick_res_grid: Dictionary = {}       # Vector2i cell -> Array of res node dicts
 var _pick_res_ver := -1                   # game.res_dirty value this grid was built at
@@ -1074,7 +1089,7 @@ func _handle_key(k: InputEventKey) -> void:
 				_set_selection(arr)
 				if k.shift_pressed and camera != null:
 					# E18 (AUDIT3D-05): the Camera3D branch must not take the
-					# 2D Camera2D write — `arr[0].pos * world.view_scale` is a
+					# 2D Camera2D write â€” `arr[0].pos * world.view_scale` is a
 					# Vector2 assigned to a Vector3 global_position, and it
 					# bypasses `_target`/clamp_pos() so the next
 					# _apply_transform() snaps back. Route through the same
@@ -1331,9 +1346,8 @@ func _process(_dt: float) -> void:
 	# drag rectangle overlay (drawn by the world in map space)
 	if world != null:
 		if dragging and drag_start != Vector2.INF:
-			var a := _screen_to_world(drag_start)
-			var bp := _screen_to_world(get_viewport().get_mouse_position())
-			world.sel_rect = Rect2(minf(a.x, bp.x), minf(a.y, bp.y), absf(a.x - bp.x), absf(a.y - bp.y))
+			# B-SELRECT-FIX: same four-corner helper so mirror and selection agree.
+			world.sel_rect = _drag_world_rect(drag_start, get_viewport().get_mouse_position())
 			world.sel_active = true
 		else:
 			world.sel_active = false

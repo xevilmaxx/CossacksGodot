@@ -12,22 +12,38 @@ const CIRCLE2 := Vector2(12.0, 15.0)
 const CIRCLE3 := Vector2(22.0, 18.0)
 const MINE_RINGS := [[14.0, 22.0], [32.0, 42.0], [50.0, 62.0]]
 
-# TDR-1 §3.5 / dogenerate.inc:1625-1649.  The donor's "relieftype" is a set of
-# per-family FREQUENCIES, not a height multiplier.  plains=hills-heavy type 0,
-# hills=type 1, mountains=mountain-heavy type 3.  Counts are floor(W*H*freq),
-# with donor's "freq>0 -> at least one" rule (misc.script:3686-3704).
+# TDR-1 §3.5 / dogenerate.inc:1621-1650.  The donor's "relieftype" is a set of
+# per-family FREQUENCIES, one triple per tier id 0-4 (NOT a height multiplier).
+# Legacy string keys keep working: plains->id 0, hills->id 1, mountains->id 3.
+# PORT APPROXIMATION: donor multiplies every tier value by problarge
+# (dogenerate.inc:1737-1739) and by the non-640 size modifier below; both
+# multipliers are engine-computed and UNVERIFIED, so RELIEF_PROBLARGE is a
+# documented ≡1 placeholder (Z1-RELIEF-COUNTS §3.3).
+const RELIEF_PROBLARGE := 1.0
+const RELIEF_PROBHUGE := 1.0
 const RELIEF_PRESETS := {
+	0: {"plt": 0.000010, "mnt": 0.000020, "hil": 0.000075},  # id 0 Plain, dogenerate.inc:1626-1628
+	1: {"plt": 0.000020, "mnt": 0.000002, "hil": 0.000125},  # id 1 Low Mountains, dogenerate.inc:1631-1633
+	2: {"plt": 0.000075, "mnt": 0.000075, "hil": 0.000030},  # id 2 High Mountains, dogenerate.inc:1636-1638
+	3: {"plt": 0.000055, "mnt": 0.000120, "hil": 0.000050},  # id 3 Highlands, dogenerate.inc:1641-1643
+	4: {"plt": 0.000090, "mnt": 0.000035, "hil": 0.000035},  # id 4 Plateaus, dogenerate.inc:1646-1648
 	"plains": {"plt": 0.000010, "mnt": 0.000020, "hil": 0.000075},
 	"hills": {"plt": 0.000020, "mnt": 0.000002, "hil": 0.000125},
 	"mountains": {"plt": 0.000055, "mnt": 0.000120, "hil": 0.000050},
 }
 # family, frequency key, divisor, stamp kind.  Divisors are the literal
-# dogenerate.inc:1757-1765 expressions (plateau*/1.5 etc.).  plain_huge uses
-# pln_huge = (plain/2)*probhuge ~ plt/12; it is a broad, low plateau.
+# dogenerate.inc:1757-1765 expressions (mountains mnt/1, plateau_big plt/3,
+# ravine_big plt/1.5, plateau plt/3, plateau_small plt/3, hills_dark/light
+# hil/2; ravine_medium is //-disabled in the donor and stays absent).
+# PORT APPROXIMATION: plain_huge has NO divisor in the donor; the old plt/12
+# was port-invented.  Donor uses pln_huge = (plain/2)*probhuge with
+# plain = 0.0001/2 = 5e-5 (dogenerate.inc:1727,1731); probhuge is UNVERIFIED
+# so RELIEF_PROBHUGE ≡ 1 is a labelled placeholder (Z1-RELIEF-COUNTS §3.3).
+const RELIEF_PLAIN_HUGE_FREQ := 0.00005
 const RELIEF_RECIPES := [
 	["mountains", "mnt", 1.0, "mountain"],
 	["plateau_big", "plt", 3.0, "plateau"],
-	["plain_huge", "plt", 12.0, "plain"],
+	["plain_huge", "plt", 12.0, "plain"],  # divisor UNUSED: freq comes from RELIEF_PLAIN_HUGE_FREQ (see above)
 	["ravine_big", "plt", 1.5, "ravine"],
 	["plateau", "plt", 3.0, "plateau"],
 	["plateau_small", "plt", 3.0, "plateau"],
@@ -59,7 +75,12 @@ class Stamp:
 
 static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		terrain: PackedByteArray, water_id: int, biome: String,
-		relief: String = "plains", richness: String = "med") -> Dictionary:
+		relief: Variant = "plains", richness: String = "med",
+		stage_seed: int = -1) -> Dictionary:
+	# stage_seed is the P1-1 hook (MAPGEN-RECON-01 P1-1): a stage key derived
+	# from game.gd:_reseed_stage("patterns") for the relief sub-stream.  While
+	# -1 (legacy) every draw stays on the single shared rng stream, so current
+	# callers (game.gd, string relief tiers) are byte-identical.  Unused now.
 	var data := load_data()
 	if data.is_empty():
 		return {"stamps": [], "occupied": PackedByteArray()}
@@ -538,14 +559,33 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					break
 		return done
 
-	var preset: Dictionary = RELIEF_PRESETS.get(relief, RELIEF_PRESETS["plains"])
+	# Donor size modifier for non-640 maps: 640/((W+H)/2) applied to all four
+	# probs (dogenerate.inc:1718-1725).  It is 1.0 exactly when W+H == 1280
+	# (e.g. 640x640); at 240x240 it is 640/240 = 2.667 (derived).
+	var size_mod := 640.0 / (float(map_w + map_h) * 0.5)
+	var preset: Dictionary = {}
+	if RELIEF_PRESETS.has(relief):
+		preset = RELIEF_PRESETS[relief]
+	else:
+		preset = RELIEF_PRESETS["plains"]
 	for r in RELIEF_RECIPES:
-		var freq := float(preset.get(str(r[1]), 0.0)) / float(r[2])
-		if freq <= 0.0:
+		var freq_fam: float
+		if str(r[0]) == "plain_huge":
+			freq_fam = RELIEF_PLAIN_HUGE_FREQ * RELIEF_PROBHUGE * size_mod
+		else:
+			freq_fam = float(preset.get(str(r[1]), 0.0)) / float(r[2]) * RELIEF_PROBLARGE * size_mod
+		if freq_fam <= 0.0:
 			continue
-		var needed := int(float(map_w * map_h) * freq)
-		if needed < 1:
-			needed = 1
+		# Donor _misc_SetupPatternsByType (misc.script:3695-3700): needed is
+		# floor(W*H*freq); only when that is 0 with freq>0, fall back to
+		# round(W*H*freq), which may stay 0 (no placement).  The old hard
+		# "needed<1 -> 1" clamp is DELETED: it over-placed at tiny sizes
+		# (Z1-RELIEF-COUNTS §3.3).
+		var needed := int(floor(float(map_w * map_h) * freq_fam))
+		if needed == 0:
+			needed = int(round(float(map_w * map_h) * freq_fam))
+		if needed <= 0:
+			continue
 		stamp_relief.call(str(r[0]), needed, str(r[3]))
 
 	# --- T-MINES-FIX: final mine-layout authority -----------------------------
