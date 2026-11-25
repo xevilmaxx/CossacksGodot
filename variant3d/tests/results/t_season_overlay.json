@@ -164,7 +164,7 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "out-of-range/non-integral UV2.x=0 range=[0.0,123.0] named=124",
+			"detail": "out-of-range/non-integral UV2.x=0 range=[3.0,123.0] named=124",
 			"name": "desert_uv2_x_in_range",
 			"passed": true,
 			"status": "PASS"
@@ -194,10 +194,10 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "desert UV2.x != SP-3 remap(summer UV2.x) at 1252 cells (expected 0)",
+			"detail": "desert UV2.x != SP-3 remap(summer UV2.x) at 0 cells (expected 0)",
 			"name": "uv2_x_desert_remap_consistent",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
 			"detail": "internal error paths fired=false (external scan still required)",
@@ -212,7 +212,7 @@
 			"status": "PENDING_EXTERNAL_SCAN"
 		}
 	],
-	"fails": 1,
+	"fails": 0,
 	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
 	"headless": true,
 	"id": "t_season_overlay",
@@ -220,7 +220,7 @@
 		"camera": "camera3d.gd (single instance, bound once, process disabled)",
 		"dependency_note": "SP-1, SP-2 (atlas/winter_aliases.json), SP-3 (atlas/desert_remap.json) and SP-5 manifest_path are on disk; SP-4 winter atlas files are gated by FileAccess.file_exists and the SP-6 render hook by a source-text probe.",
 		"desert_atlas_mode": "single",
-		"desert_consumer_remap_entries": 0,
+		"desert_consumer_remap_entries": 38,
 		"desert_mesh_surfaces": 1,
 		"desert_remap_direct_pairs": 38,
 		"desert_remap_height_gated_pairs": 1,
@@ -266,10 +266,10 @@
 		},
 		"desert_remap_unresolved": [],
 		"desert_uv2_entries": 4096,
-		"desert_uv2_mismatches": 1252,
+		"desert_uv2_mismatches": 0,
 		"desert_uv2_out_of_range": 0,
 		"desert_uv2_x_max": 123.0,
-		"desert_uv2_x_min": 0.0,
+		"desert_uv2_x_min": 3.0,
 		"display_server": "headless",
 		"fixture": "res://tests/fixtures/small_map_64.json",
 		"fixture_h": 64,
@@ -304,11 +304,11 @@
 	},
 	"parity_label": "PORT APPROXIMATION — internal consistency only; no donor GPU A/B (TEST_MATRIX.md:46,73-75); flat TERRAIN_TINT is legacy art, not the donor swap (SEASON_PLAN_01.md:215 B9)",
 	"passed": false,
-	"passes": 33,
+	"passes": 34,
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
 	"skip_reason": "DisplayServer.get_name()==headless: 3D PNG not available; state-only result",
 	"skipped_or_pending": 1,
-	"unix_ms": 1795604618094.0,
+	"unix_ms": 1795605993528.0,
 	"variants": [
 		{
 			"atlas_mode": "single",
@@ -344,5 +344,5 @@
 			"uv2_out_of_range": 0
 		}
 	],
-	"verdict": "FAIL"
+	"verdict": "SKIP_CAPTURE"
 }

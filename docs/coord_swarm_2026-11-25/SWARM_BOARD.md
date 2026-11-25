@@ -344,6 +344,8 @@ Disjoint file grants only. Reserved slots:
 | QA-CONFIG-JSON-02 | ses_ded8f1737ffedGe5hJqGWWv29N | verify 21-key config restoration | RUNNING |
 | QA-SPEED-ALIGN-01 | ses_ded8f1729ffebIdVoWdFsoXqcT | check speed alignment applied | RUNNING |
 | OWNER-FAULTS-UPDATE-01 | ses_ded8f1725ffeleiFAq0aGePdYe | refresh owner-fault index | RUNNING |
+| HUD-LAYOUT-REPAIR-01 | ses_ded8ac65dffe1sPKd4ME67DYVP | fix HUD atom tooltip drift + headless resize | RUNNING |
+| LOAD-PROBE-REPAIR-01 | ses_ded8a5be1ffescfQgRv0hSlI2s | fix load probe format/overlay/camera capture | RUNNING |
 
 ## Batch W — asset/fault verification refill
 

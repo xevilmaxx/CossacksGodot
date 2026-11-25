@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://t6lapfilutyf"
+path="res://.godot/imported/bla2.obj-9bb65b0feadf8fefe30bc0bbbbea170d.mesh"
+
+[deps]
+
+files=["res://.godot/imported/bla2.obj-9bb65b0feadf8fefe30bc0bbbbea170d.mesh"]
+
+source_file="res://assets/models/obj/bla2.obj"
+dest_files=["res://.godot/imported/bla2.obj-9bb65b0feadf8fefe30bc0bbbbea170d.mesh", "res://.godot/imported/bla2.obj-9bb65b0feadf8fefe30bc0bbbbea170d.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

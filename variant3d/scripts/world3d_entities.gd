@@ -744,23 +744,19 @@ func _entity_mesh_sid(ed: Dictionary, base_sid: String, kind: String) -> Diction
 		family = "buildings"
 	elif bool(def.get("naval", false)):
 		family = "naval"
-	var roster: Dictionary = {}
-	if nation != "":
-		var rv = Data.NATION_UNITS.get(nation, {})
-		if rv is Dictionary:
-			roster = rv as Dictionary
 	var candidates: Array[String] = []
 	if nation != "" and base_sid != "":
 		match family:
 			"units":
+				# "exact" is claimed ONLY for a real generic->nation remap.
+				# A base sid that is already nation-coded (strelet,
+				# sco_highlandersword, ...) keeps its correct mesh but is
+				# conservatively labelled fallback: another owner may map a
+				# nation to a GENERIC sid (data.gd bav:296), and calling that
+				# "exact nation art" would be a false claim.
 				var rsid := Data.resolve_sid(nation, base_sid)
 				if rsid != base_sid:
 					candidates.append(rsid)
-				# A base sid that is already a donor nation-unit id (strelet,
-				# cossackdon, sco_highlandersword, pope, ...) needs no remap;
-				# detect it ONLY from the canonical NATION_UNITS value list.
-				if roster.values().has(base_sid) and not candidates.has(base_sid):
-					candidates.append(base_sid)
 			"buildings":
 				candidates.append(_donor_building_prefix(nation, base_sid) + base_sid)
 			"naval":
