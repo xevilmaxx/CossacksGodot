@@ -524,6 +524,15 @@ func _skip_capture(want: Vector2i) -> void:
 	check("capture_nonblank_" + tag, null, why, "SKIP_CAPTURE")
 
 
+# Content-based nonblank metrics, mirroring the project's proven detectors:
+#   smallmap_capture.py:24-26 — luma 0.2126R+0.7152G+0.0722B; non-black means
+#     any 8-bit channel > 8.0 (0..255 scale).
+#   BLANK-CHECK-01:210-228 (main.gd:1932-1968) — lit fraction, symmetric luma
+#     range and distinct sampled colours; mini()/maxi() are int-only, so the
+#     extrema use explicit float comparisons.
+# HUD-CAPTURE-FIX-01: Image.get_pixel() returns 0..1 floats, so the old
+# `l > 8.0` test was unreachable and forced non_black_fraction to 0. Luma here
+# stays normalised 0..1; only the channel test is scaled to 0..255.
 func _image_metrics(img: Image) -> Dictionary:
 	var w := img.get_width()
 	var h := img.get_height()
@@ -531,21 +540,31 @@ func _image_metrics(img: Image) -> Dictionary:
 	var total := 0
 	var nonblack := 0
 	var luma_sum := 0.0
+	var luma_min := 1.0
 	var luma_max := 0.0
+	var colours := {}
 	for y in range(0, h, step):
 		for x in range(0, w, step):
 			var c := img.get_pixel(x, y)
 			var l := 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
 			total += 1
 			luma_sum += l
-			luma_max = maxf(luma_max, l)
-			if l > 8.0:
+			if c.r * 255.0 > 8.0 or c.g * 255.0 > 8.0 or c.b * 255.0 > 8.0:
 				nonblack += 1
+			if l < luma_min:
+				luma_min = l
+			if l > luma_max:
+				luma_max = l
+			colours["%d_%d_%d" % [int(c.r * 255.0), int(c.g * 255.0), int(c.b * 255.0)]] = true
 	return {
 		"width": w, "height": h,
+		"samples": total,
 		"non_black_fraction": float(nonblack) / float(maxi(1, total)),
 		"mean_luma": luma_sum / float(maxi(1, total)),
+		"min_luma": luma_min,
 		"max_luma": luma_max,
+		"luma_range": luma_max - luma_min,
+		"distinct_colours": colours.size(),
 	}
 
 
@@ -585,13 +604,29 @@ func _capture_async(want: Vector2i, idx: int) -> void:
 		"save_png(%s) err=%d exists=%s" % [abs_png, err, str(exists)])
 	if err != OK or not exists:
 		return
-	var metrics := _image_metrics(img)
+	# HUD-CAPTURE-FIX-01: score the saved PNG itself, not the pre-save texture,
+	# so the guard reads the actual artifact a reviewer would open. This is a
+	# readback of the same GPU frame — no CPU map substitution (main.gd:1875-1882).
+	var png_img: Image = Image.load_from_file(abs_png)
+	if png_img == null or png_img.is_empty():
+		check("capture_nonblank_" + tag, false,
+			"cannot reload saved PNG for nonblank guard: %s (loud blank-frame guard)" % abs_png)
+		return
+	var metrics := _image_metrics(png_img)
+	metrics["source"] = "saved_png"
 	metrics["png_path"] = abs_png
 	metrics["bytes"] = FileAccess.get_file_as_bytes(abs_png).size()
 	var measured: Dictionary = _m.get(tag, {})
 	measured["png_metrics"] = metrics
 	_m[tag] = measured
-	check("capture_nonblank_" + tag, float(metrics["non_black_fraction"]) > 0.0,
-		"non_black_fraction=%.4f mean_luma=%.2f (loud blank-frame guard, main.gd:1875-1882)" % [
-			float(metrics["non_black_fraction"]), float(metrics["mean_luma"])])
+	# Three symmetric gates (smallmap_capture.py:26; BLANK-CHECK-01:210-228):
+	# reject a near-black frame, a flat/uniform frame and a near-monochrome frame.
+	var nbf := float(metrics["non_black_fraction"])
+	var lrange := float(metrics["luma_range"])
+	var ncolours := int(metrics["distinct_colours"])
+	var nonblank := nbf >= 0.02 and lrange > 0.02 and ncolours >= 4
+	check("capture_nonblank_" + tag, nonblank,
+		"non_black_fraction=%.4f(>=0.02) luma_range=%.4f(>0.02) distinct_colours=%d(>=4) mean_luma=%.4f max_luma=%.4f samples=%d source=%s (loud blank-frame guard, smallmap_capture.py:26; BLANK-CHECK-01:210-228)" % [
+			nbf, lrange, ncolours, float(metrics["mean_luma"]),
+			float(metrics["max_luma"]), int(metrics["samples"]), str(metrics["source"])])
 	_captures_ok += 1

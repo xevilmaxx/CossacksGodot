@@ -71,8 +71,13 @@ var _pattern_build: Dictionary = {}
 # RELIEF-LIVE-FIX-01: cells written by a donor-grid stamp.  Read by the global
 # height clamp below so the donor cap is not re-quantised by the port's dither.
 var _relief_donor_mask: PackedByteArray = PackedByteArray()
-# Donor height constants (generatemap.inc:4-6).  Profile shape is port-authored
-# because the donor's per-cell height records are UNVERIFIED (TDR-2 §2.2).
+# LEGACY port amplitude constants, retained ONLY for the pre-existing analytic
+# fallback/domes.  HEIGHT-GEN-DEEP-01 §4.3 corrects the donor truth: the live
+# amplitudes at R=96 / R=48 are +0.495937258 / -0.557929397 (h=A_class*R/255);
+# the larger +1.31733 / -2.964 values require the `//`-DISABLED multipliers at
+# generatemap.inc:571-572.  These constants are NOT used as donor truth by the
+# RELIEF-LIVE-FIX-01 grid path (that uses verbatim pattern.lib Min/Max/Scale).
+# Donor has no script height clamp; the final clamp is UNVERIFIED (§5.4/§8 Q1).
 const RELIEF_PLATEAU := 2.964
 const RELIEF_HILL := 2.964 / 2.25
 const RELIEF_RAVINE := -2.964
@@ -1100,7 +1105,7 @@ func _shape_stamp_relief() -> void:
 		"candidates": relief_grid_candidates,
 		"applied_cells": relief_grid_cells,
 		"blend": "h = clamp(h_base + donor8x10*HeightFieldScale, HeightFieldMin, HeightFieldMax)",
-		"clamp_reconcile": "donor Min/Max at stamp; single cMaxHeight=2.964 ceiling for donor cells",
+		"clamp_reconcile": "donor Min/Max at stamp; single PORT +-2.964 bound on donor cells (donor clamp UNVERIFIED)",
 		"row_flip": "UNVERIFIED",
 	}
 
@@ -1216,8 +1221,10 @@ func _gen_base() -> void:
 			# already clamped to that pattern's HeightFieldMin/Max at stamp
 			# time, so applying the port's ±2.964 stamp clamp AND the 0.03
 			# dither cap a second time would erase the donor cap shape.  Here
-			# only the donor baked-map ceiling is enforced (cMaxHeight=2.96 /
-			# ±2.964, DTRN-02 C10/C13); no dither-as-shape on donor cells.
+			# a single PORT bound is applied (±2.964, matching observed baked
+			# .map grids but NOT a verified donor clamp — generatemap.inc has
+			# no height clamp; HEIGHT-GEN-DEEP-01 §5.4/§8 Q1).  No dither-as-
+			# shape on donor cells.  cMaxHeight=2.96 is a tile-class constant.
 			height[hi] = clampf(height[hi], RELIEF_RAVINE, RELIEF_PLATEAU)
 			continue
 		# Donor heights are quantised from an 8-bit mask R channel.  Dither the

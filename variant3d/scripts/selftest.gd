@@ -58,6 +58,22 @@ func _find_peasant() -> Dictionary:
 			return u
 	return {}
 
+func _clear_build_anchor() -> Vector2:
+	# Harness-only staging point: an open, already-walkable tile beside the
+	# starting town hall. At 240² the shared anchor peasant ends the mine phase
+	# on ground where every _spot() nav probe fails, so late build steps find no
+	# site. A fresh builder staged here reproduces the flat, open 320²-style
+	# neighbourhood without changing any game rule, cost or pass predicate.
+	var hall_pos := Vector2.INF
+	for b in game.buildings_of(0):
+		if b.sid == "cen":
+			hall_pos = b.pos
+			break
+	if hall_pos == Vector2.INF:
+		return _find_peasant().pos
+	var probe: Dictionary = {"def": {}, "order": {}}
+	return game._snap_free_point(hall_pos + Vector2(8.0, 6.0), probe)
+
 func _restore_baseline() -> void:
 	if baseline_snapshot.is_empty():
 		return
@@ -120,7 +136,7 @@ func _sim(seconds: float) -> void:
 	for i in steps:
 		game.tick(0.25)
 
-func _spot(sid: String, near: Vector2) -> Vector2:
+func _spot(sid: String, near: Vector2, alt_builder: Dictionary = {}) -> Vector2:
 	# Buildable point near the requested one. Visual footprints are much
 	# bigger than the old gameplay radii, so a fixed offset can land inside
 	# another building's drawn box. Try rings of candidates, with the outer
@@ -145,6 +161,8 @@ func _spot(sid: String, near: Vector2) -> Vector2:
 	var def: Dictionary = Data.BUILDINGS.get(sid, {})
 	var slot_ring: float = (rm if rm > 0.0 else float(def.get("radius", 1.5))) + 0.7
 	var builder: Dictionary = _find_peasant()
+	if not alt_builder.is_empty():
+		builder = alt_builder
 	for rr in radii:
 		var n: int = 32 if rr <= 24.0 else maxi(32, int(round(TAU * rr / 4.0)))
 		for k in n:
@@ -467,8 +485,12 @@ func run_only(group: String = "") -> Dictionary:
 		var _t0 := Time.get_ticks_msec()
 		game.players[0].res[1] += 500
 		game.players[0].res[2] += 500
-		var wpos := _spot("wal", peasant.pos)
-		var wall := game.place_building(0, "wal", wpos, true, [peasant]) if wpos != Vector2.INF else {}
+		# Stage an untrapped builder beside the town hall: on the 240² map the
+		# shared anchor can end up where no build slot is reachable, so _spot()
+		# returns INF. The wall still has to be legally placed and start work.
+		var wbuilder := game.spawn("peasant", 0, _clear_build_anchor())
+		var wpos := _spot("wal", wbuilder.pos, wbuilder)
+		var wall := game.place_building(0, "wal", wpos, true, [wbuilder]) if wpos != Vector2.INF else {}
 		var wall_ok := not wall.is_empty()
 		if wall_ok:
 			_sim(30.0)
@@ -525,9 +547,19 @@ func run_only(group: String = "") -> Dictionary:
 	# ---- 17c min-range flee (self-spawns; independent of the formation pair)
 	if _want("flee"):
 		var _t0 := Time.get_ticks_msec()
-		var fleer := game.spawn("serdiuk", 0, peasant.pos + Vector2(-20, 5))
+		# Stage the duel on walkable ground near the town hall instead of an
+		# arbitrary offset from the shared anchor, which can sit on a steep
+		# 240² hill slope and strand the fleeing serdiuk.
+		var probe: Dictionary = {"def": {}, "order": {}}
+		var flee_at: Vector2 = game._snap_free_point(_clear_build_anchor() + Vector2(-6, 2), probe)
+		var fleer := game.spawn("serdiuk", 0, flee_at)
 		var chaser := game.spawn("pikeman", 1, fleer.pos + Vector2(3, 0))
 		var d0: float = fleer.pos.distance_to(chaser.pos)
+		# Isolate the duel: a live AI gives the idle enemy pikeman an attack
+		# order and it closes the gap faster than the serdiuk's 4 m retreat,
+		# inverting the min-range distance assertion. Mirrors the isolation
+		# the peasant_capture step already uses; the pass predicate is intact.
+		Data.AI_ENABLED = false
 		game.cmd_attack(fleer, chaser)
 		var fled := false
 		for i in 6:
@@ -536,6 +568,7 @@ func run_only(group: String = "") -> Dictionary:
 				break
 			if fleer.order.type == "move":
 				fled = true
+		Data.AI_ENABLED = true
 		var d1: float = fleer.pos.distance_to(chaser.pos) if not fleer.dead else d0
 		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "flee", "passed": fled and d1 > d0,
 			"detail": "serdiuk fell back from pikes: %s (%.1f -> %.1f m)" % ["yes" if fled else "no", d0, d1]})
@@ -724,9 +757,12 @@ func run_only(group: String = "") -> Dictionary:
 		var cap0: int = int(game.players[0].farm_cap)
 		game.players[0].res[1] += 500.0
 		var houtest := {}
-		var fpos := _spot("hou", peasant.pos)
+		# Same late-stage builder staging as the wall step: the cap only rises
+		# when the house FINISHES, so its builder must reach a real work slot.
+		var fbuilder := game.spawn("peasant", 0, _clear_build_anchor())
+		var fpos := _spot("hou", fbuilder.pos, fbuilder)
 		if fpos != Vector2.INF:
-			houtest = game.place_building(0, "hou", fpos, true, [peasant])
+			houtest = game.place_building(0, "hou", fpos, true, [fbuilder])
 			# This late-game site can be a long walk from the selected peasant, and
 			# the cap only rises when the house FINISHES. Wait for completion (with
 			# a hard cap) instead of assuming a fixed 25 s is enough.

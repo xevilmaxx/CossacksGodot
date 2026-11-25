@@ -514,9 +514,15 @@ func _layout_top() -> void:
 	if not is_instance_valid(top_center) or not is_instance_valid(top_panel) or not is_instance_valid(top_bar):
 		return
 	var w := ui_vp.x
-	var compact: bool = w < 1000.0
-	var tiny: bool = w < 700.0
-	var ultra: bool = w < 560.0
+	# MINIMAP-TIP-01: width thresholds tightened (was 1000/700/560). At 1024 and
+	# 1280 the normal-mode row's content minimum forced top_panel wider than the
+	# viewport (+109 px / +26 px in job 548's t_hud_layout.json). Compact now
+	# hides separators and the long settings label at both narrow sizes; tiny
+	# (1024) shrinks the icons/buttons further. Minimap geometry and the single
+	# OptionButton speed set are NOT touched (t_hud_layout.gd assertions stand).
+	var compact: bool = w < 1500.0
+	var tiny: bool = w < 1100.0
+	var ultra: bool = w < 800.0
 	var band: float = 42.0
 	var pad: float = 8.0
 	var sep_px: int = 10
@@ -527,7 +533,7 @@ func _layout_top() -> void:
 	var menu_w: float = 72.0
 	if compact:
 		band = 38.0
-		pad = 5.0
+		pad = 4.0  # MINIMAP-TIP-01: was 5.0; more usable width at narrow sizes
 		sep_px = 6
 		icon_w = 26.0
 		icon_h = 23.0
@@ -536,7 +542,7 @@ func _layout_top() -> void:
 		menu_w = 56.0
 	if tiny:
 		band = 36.0
-		pad = 3.0
+		pad = 2.0  # MINIMAP-TIP-01: was 3.0
 		sep_px = 3
 		icon_w = 20.0
 		icon_h = 18.0

@@ -60,17 +60,38 @@ static func pick(type: String, seed: int) -> Dictionary:
 	r.seed = (int(seed) ^ int(type.hash())) + 104729
 	return list[r.randi() % list.size()]
 
+# RCODE-FIX-01: exact donor 8-code decode (port approximation of the authored
+# bitmap sampler; no bands, no invented ramp).  Donor generatemap.inc:342-370
+# decodes the byte with `ir = floor(fr*255)` and classes ONLY the exact codes
+# 255/191 (plateau), 96/112 (hill), 48/88 (ravine); everything else,
+# including 64 and 250-254, is cRNone.  Height is class x fr
+# (generatemap.inc:569-573: cPlateauHeight*fr / cHillHeight*fr /
+# cRavineHeight*fr); the `//*(255/cRColorHill)` / `//*(255/cRColorRavine)`
+# suffixes on :571-572 are //-disabled, so the live amplitudes at R=96 and
+# R=48 are +0.495937 and -0.557929, NOT +1.317333 / -2.964.
+# roundi() recovers the authored 8-bit byte from the float channel: exact
+# code bytes round-trip; the port's multi-pixel cell average is a pre-existing
+# port approximation, not a donor class (HEIGHT-GEN-DEEP-01 §6 row 3).
 static func relief(v: float) -> float:
-	# v is the mask's red channel in 0..255 (plateau/hill/ravine colour codes).
-	if v >= 250.0:
-		return C_PLATEAU
-	if absf(v - 96.0) <= 12.0:
-		return C_HILL
-	if absf(v - 48.0) <= 12.0:
-		return C_RAVINE
-	if v > 0.0:
-		return C_PLATEAU * (v / 255.0) * 0.5
-	return 0.0
+	var code := roundi(v)
+	match code:
+		255, 191:
+			return C_PLATEAU * (float(code) / 255.0)
+		96, 112:
+			return C_HILL * (float(code) / 255.0)
+		48, 88:
+			return C_RAVINE * (float(code) / 255.0)
+		_:
+			return 0.0
+
+# Donor `bsmooth` flag (generatemap.inc:354,358,362,367): true for the three
+# smooth relief codes and for code 64.  The donor then calls
+# SmoothTerrain(realx,-realy,False,3) on those cells (:587-592); its native
+# kernel is UNVERIFIED, so this port exposes the flag as data only and does
+# NOT invent a smoothing operator here (follow-up: wire the flag downstream).
+static func relief_smooth(v: float) -> bool:
+	var code := roundi(v)
+	return code == 64 or code == 88 or code == 112 or code == 191
 
 static func _starts_from_mask(m: Dictionary, w: int, h: int, tile: float) -> Array:
 	var raw: Array = m.get("starts", [])
@@ -128,12 +149,16 @@ static func build(map_type: String, seed: int, w: int, h: int, tile: float,
 	height.resize(w * h)
 	var forest := PackedFloat32Array()
 	forest.resize(w * h)
+	# RCODE-FIX-01: donor bsmooth flag carried as data, no kernel invented.
+	var smooth := PackedByteArray()
+	smooth.resize(w * h)
 	if m.is_empty():
 		for i in height.size():
 			height[i] = 0.0
 			forest[i] = 0.0
 		return {"height": height, "forest": forest,
-			"starts": _starts_from_mask({}, w, h, tile), "mask": {}, "water": 0.0}
+			"starts": _starts_from_mask({}, w, h, tile), "mask": {}, "water": 0.0,
+			"relief_smooth": smooth}
 	var path := "res://assets/terrain/masks/" + str(m.get("file", ""))
 	# Export-safe: masks are imported as Texture2D (CompressedTexture2D).
 	# Image.load() on res:// works in-editor but warns and fails on export
@@ -149,7 +174,8 @@ static func build(map_type: String, seed: int, w: int, h: int, tile: float,
 				height[i] = 0.0
 				forest[i] = 0.0
 			return {"height": height, "forest": forest,
-				"starts": _starts_from_mask({}, w, h, tile), "mask": {}, "water": 0.0}
+				"starts": _starts_from_mask({}, w, h, tile), "mask": {}, "water": 0.0,
+				"relief_smooth": smooth}
 		return build("land", seed + 1, w, h, tile, quality, depth + 1)
 	var im: Image = mtex.get_image()
 	if im.get_format() != Image.FORMAT_RGB8:
@@ -185,6 +211,7 @@ static func build(map_type: String, seed: int, w: int, h: int, tile: float,
 			var i := y * w + x
 			var hw: float = C_WATER * (cb / 255.0) * (1.0 + (cr / 255.0) * 3.5)
 			height[i] = hw + relief(cr)
+			smooth[i] = 1 if relief_smooth(cr) else 0
 			forest[i] = cg / 255.0
 			if height[i] < WATER_DEEP:
 				water += 1
@@ -208,4 +235,4 @@ static func build(map_type: String, seed: int, w: int, h: int, tile: float,
 				height[i] = src[i] + (avg - src[i]) * 0.5
 	return {"height": height, "forest": forest,
 		"starts": _starts_from_mask(m, w, h, tile), "mask": m,
-		"water": float(water) / float(w * h)}
+		"water": float(water) / float(w * h), "relief_smooth": smooth}

@@ -3,7 +3,7 @@ id: BLANK-CHECK-01
 title: "Fix `_is_blank()` so a bright sky corner stops rejecting a valid olive terrain frame; final windowed 3D PNG now written"
 agent: "BLANK-CHECK-01 (implementation builder), coord swarm 2026-11-25"
 date: 2026-11-25
-status: DELIVERED__VALIDATED__FINAL_PNG_WRITTEN
+status: DELIVERED__VALIDATED__FINAL_PNG_WRITTEN__POSTHIDE_FOLLOWUP_BLOCKED
 scope: "Exactly two files edited/created in the repo: variant3d/scripts/main.gd (only the `_is_blank()` body) and this report. One backup file created in inbox/backup/ as mandated. No tests, config, assets, world3d_terrain.gd, app/**, queue mutation or direct godot invocation."
 exclusive_output: "docs/coord_swarm_2026-11-25/reports/BLANK_CHECK_01.md"
 root: "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3"
@@ -281,4 +281,72 @@ files appear in `git status` and are not from this ticket. LOAD-ASYNC-01 staged-
 
 ---
 
-*End of BLANK CHECK 01. Capture mechanics only; no donor parity claim; no ladder advancement.*
+## 8. COORD follow-up — post-hide gap (`LOAD_PROBE_REPAIR_01.md`)
+
+### 8.1 Question and method
+
+`reports/LOAD_PROBE_REPAIR_01.md:136-141,226-232` measured `stability_violations=11`
+and `max_gap_post_us=33,515,827` (~33.52 s vs a 250,000 µs heuristic) after the
+overlay hid at frame 29, and asked this `main.gd` owner to move/yield/slice any
+post-hide heavy work — or report **BLOCKED** with evidence if the gap is asset /
+Godot-internal rather than `main.gd` logic.
+
+Read-only code triage located all post-hide work reachable from this file:
+`main.gd:1587-1743` (`_process`: sim steps, `world.sync(dt)` at `:1671`,
+`_consume_events()` at `:1713`) and the loader tail `main.gd:657-676`
+(`world.sync(0.0)`, two process-frame yields, `load_ready`, `_hide_loading()`).
+The atom's ticket-547 stderr backtrace does show one lazy asset decode *after*
+hide — `main.gd:1671` → `world3d.gd:689 sync` → `_reconcile_entities` →
+`add_building` → `_attach_rotor` → `_rotor_material` → `Image.load(mill_rotor.png)`
+(36,081 B, `variant3d/assets/models/tex/mill_rotor.png`) — but its cost is not
+measurable from `t_load_usability.gd` alone.
+
+To avoid guessing, temporary timing prints (no logic change) were added to
+`main.gd` after a byte-identical backup (`inbox/backup/main.gd.bak-POSTHIDE01`,
+SHA-256 `72CC28D444CA9A6214B3FF7C17A9D0440140AA246B4F10FD9DB649293D3F7E17`),
+one diagnostic runner job was submitted, and then **all instrumentation was
+removed by restoring that backup**. Final `main.gd` hash is the same
+`72CC28D…F7E17`; `git diff -- variant3d/scripts/main.gd` is **empty** (the
+blank-check change has been committed by another worker into HEAD), and a text
+scan finds **zero** `POSTHIDE_DIAG`/`_ld_post_diag`/`_ld_post_n`/`_warm_t`/`_diag_t0`
+occurrences. No debug code ships.
+
+### 8.2 Measurements (all via variant runner, unique ids, headless atom, same fixture)
+
+| Ticket / id | Code state | `max_gap_post_us` | post-hide violations | run time | Notes |
+|---|---|---:|---:|---:|---|
+| 547 `loadproberepair01-run` (baseline, `LOAD_PROBE_REPAIR_01.md:116-141`) | clean, pre-follow-up | **33,515,827** (~33.52 s) | 11 | 91.88 s | cold first run after concurrent asset/skin work; `max_gap_loading_us=21,481,301`, overlay lifetime 41.20 s |
+| 557 `blankcheck01-posthide-diag` | temporary prints only | **49,797** (~49.8 ms) | 0 | 26.64 s | instrumented `world.sync()` 3,140–25,297 µs; whole `_process()` 3,645–26,853 µs; no 33 s frame anywhere |
+| 566 `blankcheck01-posthide-clean` | restored, clean final | **22,615** (~22.6 ms) | 0 | 30.72 s | stdout has no diagnostic lines; `SCRIPT ERROR == 0`; atom verdict unchanged |
+
+The ticket-557 per-frame printout (`00000557_blankcheck01-posthide-diag/stdout.txt`)
+is the direct location evidence: every one of the first ~50 post-hide frames costs
+milliseconds inside `main.gd`, with inter-frame gaps 13,460–50,102 µs — all well
+under the 250,000 µs ceiling. The 33.52 s baseline gap is **not reproducible** with
+the same logic on a subsequent run, and the whole baseline run was ~3× slower
+(loading gaps 21.48 s vs 10.49–13.33 s, overlay lifetime 41.20 s vs 19.01–23.44 s).
+That pattern points to one-off cold-cache / engine asset-import cost (first decode
+of shipped skins, OBJ topology, PNG textures after concurrent asset regeneration),
+not a deterministic `main.gd` boot stage. Moving or slicing deterministic stages
+to "fix" a non-reproducing cold-start cost would be a fake fix.
+
+### 8.3 Verdict — **BLOCKED (no code fix applied)**
+
+- **No `main.gd` change was made for the post-hide gap.** The blank-check fix
+  (§1-5) remains intact and validated; the file was restored byte-for-byte to its
+  validated state after diagnostics.
+- The 33.52 s spike is attributed **inferred, not proven** to cold-cache / Godot
+  asset-import cost outside `main.gd`: identical logic produced 49.8 ms and 22.6 ms
+  on later runs, and direct instrumentation bounded all `main.gd` post-hide work
+  to ≤27 ms/frame. A precise cold-cache attribution would require engine-side
+  resource-load tracing, which this ticket cannot perform (no direct `godot`, no
+  other file ownership).
+- `d_no_deferred_heavy_stage` and (a) stay `UNVERIFIED / null` in the atom; no
+  PASS, gate claim or "clean stderr" claim is made. Windowed R3/R5 responsiveness
+  is still UNVERIFIED — headless cannot answer it.
+- No queue mutation, no direct `godot`, no other repo file edited by this worker
+  beyond `main.gd`, this report, and the mandated backup files.
+
+---
+
+*End of BLANK CHECK 01. Capture mechanics only; post-hide gap BLOCKED (cold-cache/Godot-internal, no fake fix); no donor parity claim; no ladder advancement.*

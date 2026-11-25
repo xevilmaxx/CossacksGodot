@@ -346,7 +346,7 @@ Disjoint file grants only. Reserved slots:
 | OWNER-FAULTS-UPDATE-01 | ses_ded8f1725ffeleiFAq0aGePdYe | refresh owner-fault index | RUNNING |
 | HUD-LAYOUT-REPAIR-01 | ses_ded8ac65dffe1sPKd4ME67DYVP | fix HUD atom tooltip drift + headless resize | RUNNING |
 | LOAD-PROBE-REPAIR-01 | ses_ded8a5be1ffescfQgRv0hSlI2s | fix load probe format/overlay/camera capture | RUNNING |
-| BLANK-CHECK-01 | ses_ded882c4affe3Kgh5f4gZ2cpTq | fix `_is_blank()` false rejection of olive frame | RUNNING |
+| BLANK-CHECK-01 | ses_ded882c4affe3Kgh5f4gZ2cpTq | fix `_is_blank()` false rejection of olive frame | **DONE — TERMINATED** | content-based detector, final PNG written (job 549); post-hide 33.5 s spike BLOCKED as one-off cold cache (clean re-run max gap 22.6 ms, 0 violations); `main.gd` restored byte-identical, zero diagnostic tokens |
 | WHITE-MARKS-PIX-01 | ses_ded87c3caffeVgigeaPI51T4G0 | pixel/tile-id analysis of reproduced white marks | RUNNING |
 | QA-WHITE-MARKS-01 | ses_ded87c3c9ffeOloNvKFuVFDf6R | independent verification of white-marks fault | RUNNING |
 | FINAL-CHECK-REFRESH-02 | ses_ded87c3c8ffeq4XUwC4VBXCqKQ | refresh FINAL_CHECKLIST with newest closures | RUNNING |
@@ -408,15 +408,43 @@ Disjoint file grants only. Reserved slots:
 | QA-ATOM-RESULTS-01 | audit atom result JSONs + manifest consistency | `reports/QA_ATOM_RESULTS_01.md` | ses_dedcdf2c3ffeeNnd0m5fmCmM6R | RUNNING |
 | LFS-PLAN-01 | winter atlas LFS/clone-size plan (read-only, no git changes) | `reports/LFS_PLAN_01.md` | ses_dede3a38bffee774616xhEtemx | **DONE** | `.gitattributes:1` already LFS-tracks `*.png`, git-lfs 3.4.1 installed; owner `git add` rewrites pointer to new oid (no track edit); recommended LFS option; **fallback trap**: Winter single-load failure silently uses Summer art because `SPLIT_MANIFEST` is Summer-only; path mismatch remains SP-6's |
 
+## Batch AB — cursor-tip, HUD width, mask bleed
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| HUD-CAPTURE-FIX-01 | ses_ded718d5affedFg5DLDREIhcb1 | fix HUD atom nonblank guard | **DONE — TERMINATED** | nonblank guard replaced with proven content-based metric, `_check_size` byte-identical, validation job queued/running; no weakening |
+| HUD-LAYOUT-REPAIR-01 | ses_ded8ac65dffe1sPKd4ME67DYVP | fix HUD atom drift + headless resize | **DONE — TERMINATED** | 3 tooltip literals fixed, real viewport-base retarget (ui_vp correct at 3 sizes), job 548 55/7/3; remaining 4 layout FAILs are REAL top-panel overflow at 1024/1280 → hud.gd owner; 3 capture failures were atom metric bug (HUD-CAPTURE-FIX) |
+| RCODE-FIX-01 | ses_ded6c6016ffekmUVaN8qV6g5fa | exact donor R-code decode in `mapgen.gd` | **DONE — TERMINATED** | exact 8-code decode + `relief_smooth` data key, 6 divergent codes corrected (max error 8.7e-8), smoke 558 + probe 564 PASS, determinism identical, no smoothing kernel invented, no parity claim |
+| SELFTEST-ALL-FIX-01 | ses_ded75cb85ffeXbyTVeEgii5m4S | all 29 steps at 240² (harness geometry) | **DONE — TERMINATED / 29/29** | ticket 567 ok, selftest 29/29 at 240²; wall/shell/farm_cap/flee fixed by harness staging, no assertion/threshold/seed change; diagnostics removed byte-identically |
+| MAP240-APPLY-01 | ses_ded556584ffeQ6ryjwOHcZGbQq | set 240² default + fresh gates | **DONE — TERMINATED / GREEN** | 240×240 default applied (2 value lines), full 21-key features + relief true preserved; ticket 568 selftest **29/29**, 569 uitest **17/17**, both ok exit 0, queue free; no weakening; 2D untouched |
+| CLEAN-FINAL-01 | ses_ded4ec211ffeEaWKf7vZqDoaq5 | ack remaining 8 with evidence + clean verdict | **DONE — TERMINATED** | 6 evidence-backed acks; 516/538 left unacked by owner (no argv-identical supersede) then acked by COORD policy with honest retirement reasons; final `assert_clean` exit 0 CLEAN, 0 processes, free lock |
+| COORD-FINAL | (current session) | sign functional gates at end of day | **SIGNED — FUNCTIONAL ONLY** | 568 29/29 · 569 17/17 · assert_clean CLEAN exit 0; visual donor A/B + P1–C4 rows still UNVERIFIED |
+| FINAL-AUDIT-01 | ses_ded4e63eaffeQNS3oWMcqnKVa7 | whole-tree sign-off audit (read-only) | RUNNING |
+| MINIMAP-TIP-DIAG-01 | ses_ded727789ffeHfL9Qb8F2Jhf22 | donor click→arrow-tip vs center diagnosis | **DONE — TERMINATED** | donor deliberately offsets camera target by boom (32.09/54.59/92.91 m at h=20/34.06/58); `crDefault` hotspot (0,0)=arrow tip, GUI X/Y is tip world point; port primary click already calls offset API, plain `jump_to_world()` centers and stays byte-identical; which "arrow" is open; no parity without A/B |
+| MINIMAP-TIP-01 | ses_ded72776dffeR0mlRpufSUqUMZ | cursor-tip mapping + narrow-width top bar | **DONE — TERMINATED** | no speculative camera change (donor already offsets boom; `jump_to_world()` byte-identical); real fix `hud.gd:_layout_top` thresholds 1000/700/560→1500/1100/800 + pads; windowed HUD-layout atom ticket 562 **PASS 62/62**, 0 unclipped offenders at all sizes; tip landing UNVERIFIED |
+| MASK-ALPHA-FIX-01 | ses_ded70f8b4ffeJfCdyT6f0SscE8 | stop sky bleed through terrain alpha mask | **DONE — TERMINATED** | 3 shader hunks: mask folded into RGB combine, `ALPHA=1.0`; smoke 556 6/6; real-map 563 final PNG; near-white **44,381→6,989 (−84.25%)**, exact cyan below sky strip **~32,744→0**; donor blend engine-side UNVERIFIED, no parity claim |
+| HUD-CAPTURE-FIX-01 | ses_ded718d5affedFg5DLDREIhcb1 | fix HUD atom nonblank guard | **DONE — TERMINATED** | content-based guard reloads saved PNG, 3 gates PASS at all sizes, job 554 58/4/3; 4 remaining FAILs are real top-bar overflow; SCRIPT ERROR 2 from concurrent selftest.gd `slot` bug (owner notified) |
+| RELIEF-SEED-SCAN-01 | ses_ded6a8bf1ffeWHSfm7v3f5g5wn | find seed that actually places donor relief stamp | **DONE — TERMINATED** | offline seed **20261150** / relief `plains` → `plt2` at (54,33), candidates 1 / applied_cells 443; alternates 20261168/20261181; replay validated 8/8 stamp counts on baseline seed; runtime UNVERIFIED |
+| RELIEF-SEED-PROBE-01 | ses_ded600a2effeOZFZwYwRy16sjJ | runtime dump probe for seed 20261150 | **DONE — TERMINATED / CONFIRMED** | job 565 ok, SCRIPT ERROR 0; `plt2` at (54,33), candidates 1 / applied_cells 443, height+tileblock SHA changed (cell-level writes), min/max unchanged as predicted; visual A/B / donor parity still UNVERIFIED |
+| PALE-TILES-DEEP-01 | ses_ded837a94ffeSMzceWm3VhZt7O | donor pale tile art / white marks deep dive | **DONE — TERMINATED** (543 lines) | 3 passes over 112 DDS: no summer family pale (L 66–119, minRGB>180=0%); winter-white absent from frame; bands = olive→sky mix α≈0.27–0.31 from one-pass `blend_mix` mask-as-alpha at shader:469; 786/3413 flat cells hit constant/low alpha patches; not tile albedo, not relief |
+
+## Batch AC — final gate cleanup
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| QA-GATE-READY-03 | ses_ded85b8ffffe8l6oUhEo26pwla | fresh final-gate readiness | **DONE — TERMINATED** | NOT_READY with 11 blockers (selftest 28/29, DIRTY, 21 unacked, ladder unrun, no owner visual/A-B) |
+| CLEAN-ACK-EXEC-01 | ses_ded541c59ffeKY5AflBATHsphF | ack 14 resolved historical skips | **DONE — TERMINATED** | 14/14 acks exit 0 with verified `ok` supersedes; unacked 22→8, acknowledged 18→32; DIRTY remains queue-dependent + 8 out-of-scope entries |
+
 ## Batch AA — fix verification refill
 
 | ID | Session id | Scope | State |
 |---|---|---|---|
-| QA-BLANK-FIX-01 | ses_ded78f69dffeHBqZq9JNYZDSQA | verify `main.gd` blank-check replacement | RUNNING |
+| QA-BLANK-FIX-01 | ses_ded78f69dffeHBqZq9JNYZDSQA | verify `main.gd` blank-check replacement | **DONE — TERMINATED** | content-based symmetric criterion CONFIRMED (non-black/luma-range/distinct-colours), olive frame PASSES, black/uniform/two-colour controls FAIL, final PNG written by job 549 (non-black 0.999136, luma 114.972, 0 dark rows); no parity claim |
 | QA-RELIEF-FIX-01 | ses_ded78f69dffdYTPLJrfd4tLDfN | verify donor-grid relief in `game.gd` | RUNNING |
-| QA-BUILD-ART-C-01 | ses_ded78f699ffe5iTb4ZimipC4bB | verify stage mesh runtime integration | RUNNING |
+| QA-BUILD-ART-C-01 | ses_ded78f699ffe5iTb4ZimipC4bB | verify stage mesh runtime integration | **DONE — TERMINATED** | NOT_VERIFIED__TICKET_IN_FLIGHT: 4 partial hunks (bbox/tint/labels) in HEAD, C4/C6 not observed, selector/rotor/nation/build/tree/motion byte-identical, no test edits, no parity claim |
+| PATTERN-STAMP-DEEP-01 | ses_ded837aabffddkfZI25InbqAeY | donor relief pattern grid stamping deep dive | **DONE — TERMINATED** (526 lines) | patterns = float32 height deformation (5 decoded, zero mountain props); mountains = separate `terrainmeshN` props; blend native UNVERIFIED; no donor pattern writes pale tile ids — detail bitmaps do (`test7/8` bright speckles); 12 port mismatches with owners |
 | QA-HUD-REPAIR-01 | ses_ded78f66dffe6dKfruXx2Np35x | verify HUD atom repair | RUNNING |
-| QA-LOAD-REPAIR-01 | ses_ded78f669ffetlSZrqnXO7HFll | verify load probe repair | **DONE — TERMINATED** | repaired atom job 547 ok, overlay 28 frames/hide at 29, all bindings present, input/order/camera respond, 15 stage transitions; verdict MEASUREMENT_ONLY retained; **11 post-hide violations, max gap 33.5 s** → main.gd follow-up |
+| QA-LOAD-REPAIR-01 | ses_ded78f669ffetlSZrqnXO7HFll | verify load probe repair | **DONE — TERMINATED** | confirmed `%d` fix, overlay first-frame sampling (28 frames, hide at 29), camera request/response, stability reached at 60 frames; 11 violations / 33.5 s breach reported honestly; no criterion relaxed; MEASUREMENT_ONLY retained |
 | BUILD-STEP-FIX-01 | ses_dedb6bb3dffe9gXQE3haVeunHp | fix `build` selftest step at 240² | **DONE — TERMINATED** | root cause `_spot()` clearance 2.2m vs real slot 5.44m; fix made `build` green, but ticket 546 still 25/29 (`wall`,`shell`,`farm_cap`,`flee`); no weakening, wider harness scope needed |
 | SELFTEST-ALL-FIX-01 | ses_ded75cb85ffeXbyTVeEgii5m4S | fix remaining 4 steps at 240² (harness geometry) | RUNNING |
 
@@ -428,9 +456,9 @@ Disjoint file grants only. Reserved slots:
 | PATTERN-STAMP-DEEP-01 | ses_ded837aabffddkfZI25InbqAeY | donor relief pattern grid stamping | RUNNING |
 | RCODE-DEEP-01 | ses_ded837a9bffeYmWl0s7Ixk0Ee1 | donor R-code decode vs port relief() | RUNNING |
 | PALE-TILES-DEEP-01 | ses_ded837a94ffeSMzceWm3VhZt7O | donor pale tile art / white marks | RUNNING |
-| RELIEF-LIVE-FIX-01 | ses_ded82909fffepIVj8kwz08Eghk | live donor-grid relief in `game.gd` | RUNNING |
+| RELIEF-LIVE-FIX-01 | ses_ded82909fffepIVj8kwz08Eghk | live donor-grid relief in `game.gd` | **DONE — TERMINATED** | +134/−6: verbatim 8×10 `plt2`/`k_ravine_1` grids + donor scale/min/max, bilinear stamp into `game.height`, analytic fallback unchanged; smoke 550/dump 551 ok, SCRIPT ERROR 0; **runtime BLOCKED** (seed 20261113 gives `relief_stamps: []`, applied_cells=0, height unchanged); protected blocks byte-identical; no parity claim |
 | QA-TERRAIN-DEEP-01 | ses_ded7e947dffew1KSLzC6c8tT7B | cross-check donor terrain deep dives | **DONE — TERMINATED** | INCOMPLETE_INPUT: four Batch-Z deep dives not landed at 11:46:13Z; consensus table from five landed support reports; 8 staleness conflicts logged (line drift ~40–55, live owner `game.gd`, flag now true) |
 | QA-NATION-MODEL-01 | ses_ded7e9478ffeR1fBlcubpD4At9 | verify nation model integration/probe | RUNNING |
 | NATION-MODEL-01 | ses_dedad36a5ffeWEolNmXHw5gRb0 | nation mesh selection + build-action in `world3d_entities.gd` | **DONE — TERMINATED** | +205/−3; donor building prefix rule; unit selectors fixed, buildings/naval BLOCKED (0 nation-keyed OBJs), Ukrainian look NOT visually fixed; build/repair→construct branch; smoke 543 + probe 544 ok; protected blocks byte-identical |
-| BUILD-ART-C-01 | ses_ded7a7ed3ffeVKh7QK500EOKfH | runtime integration of stage meshes in `world3d_entities.gd` | RUNNING |
+| BUILD-ART-C-01 | ses_ded7a7ed3ffeVKh7QK500EOKfH | runtime integration of stage meshes in `world3d_entities.gd` | **DONE — TERMINATED** | +24/−11, 5 hunks; per-stage bbox + tint re-apply + honest labels; smoke 552 ok; probe 553 ok **14/14** — 280/280 meshes load as Mesh, stage swap + scaffold tints verified; no visual/parity claim; completion scaffold/death stages out of scope |
 | NATION-DATA-IMPL-01 | ses_ded92c978ffeaCikHZ0mrllHvt | add Bavaria unit map to `data.gd` | **DONE — TERMINATED** | one donor-grounded line (`serdiuk→musketeer`, `cossack→hussar`), byte-proof 1 insert/0 deletes/replaces, `rus`+morale banners byte-identical, smoke 542 ok/parse-only; runtime mesh proof UNVERIFIED |

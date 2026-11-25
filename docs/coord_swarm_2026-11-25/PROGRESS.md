@@ -101,6 +101,25 @@ implementation tickets, then one final whole-system gate.
       (`wall`/`shell`/`farm_cap`), worktree 28/29 (`build`), while `config.json` is committed at
       240² without a landed MAP-SMALL-01 report. The individual 29/29 results are valid only
       for their own job artifacts — exactly why the final whole-system gate is reserved to the end.
+### 2026-11-25 — VARIANT FUNCTIONAL GATE SIGNED (COORD)
+- `variant3d/selftest.json`: **29/29 PASS** at the delivered 240×240 default — job/ticket
+  **568** `map240apply01-selftest`, `status=ok`, exit 0, run 86.78 s.
+- `variant3d/uitest.json`: **17/17 PASS** — job/ticket **569** `map240apply01-uitest`,
+  `status=ok`, exit 0, run 146.17 s.
+- `python variant3d\tools\godot_runner.py status`: `now_serving=570`, `next_ticket=570`,
+  `pending=0`, `godot.lock=free`, 0 live Godot processes.
+- `python variant3d\tools\assert_clean.py --json`: **exit 0, `"verdict":"CLEAN"`**,
+  reasons `[]`, history total 500 / **acknowledged 40** / failures `[]`.
+- The last two unacked diagnostic timeouts (516 build-step diag, 538 nation-sid dump) were
+  acked by COORD with explicit policy reasons recording that they were *retired diagnostics*,
+  not passes; their underlying outcomes are covered by the green integrated gates and
+  static verification. No job was cancelled/reset; no code changed after gates 568/569.
+- **Scope of this sign-off:** functional gates only. Donor visual parity is still
+  **UNVERIFIED** (no GPU A/B); owner visual review unsigned; piece rows P1–C4 have no fresh
+  windowed captures and no `RECHECK_<ROW>.md`; S1's 23/23 has no drag PNG. The terrain mask
+  fix measured an 84% reduction of sky-bleed pixels but no donor A/B. See `FINAL_CHECKLIST.md`
+  and `FINAL_AUDIT_01.md` (when landed) for the full acceptance distinction.
+
 ### 2026-11-25 — RUNNER PATCH APPLIED (COORD)
 At a quiet-queue moment (`pending=0`, free lock), the validated mutual-exclusion patch from
 `reports/RUNNER_FIX_01.md` was extracted to a UTF-8/LF temp diff, `git apply --check` passed,

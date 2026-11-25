@@ -233,15 +233,17 @@ uniform float face_mode_override = -1.0;
 // the per-vertex path is live; the override stays a diagnostic escape hatch.
 
 uniform float mask_to_alpha = 1.0;
-// FIX-TERRAIN — DIAGNOSTIC KNOB, SHIPPED VALUE UNCHANGED.
+// MASK-ALPHA-FIX-01 — DIAGNOSTIC KNOB, SHIPPED VALUE KEPT AT 1.0.
 // Donor `bmTransparency` (reftile.mat:17) blends texUnit1.a over a SECOND
-// base-tile pass; the port has no base pass, so re-applying the whole-mask
-// intensity as Godot ALPHA is structurally wrong. HOWEVER a real OpenGL A/B
-// (fixterrain_ab_before/after.png) MEASURED that removing it DARKENS the port
-// frame (luma 42.735 -> 38.425) because the bright port sky is behind the
-// semi-transparent ground. This agent therefore LEFT the shipped value at
-// 1.0 (V7-86 behaviour) instead of guessing a new art direction.
-// 1.0 = shipped; 0.0 = diagnostic "no framebuffer mask blend". No parity claim.
+// base-tile pass (DTRN-01 C17; hf.pvl.smx3.frag:13-17); the port has only ONE
+// blend_mix pass. FIX-TERRAIN wrote the whole-mask intensity to framebuffer
+// ALPHA, so low-mask transition cells became semi-transparent and let the
+// bright port sky bleed through (WHITE_MARKS_PIX_01: 89.16 % of near-white px
+// are exactly the rendered sky cyan, in 11,738 isolated components). The port
+// now keeps terrain OPAQUE and folds the same mask into RGB as a shading
+// factor in fragment() instead. This is a PORT APPROXIMATION of the donor
+// multi-pass blend (ENGINE/UNVERIFIED, DTRN-01 C17); the exact donor mask
+// semantics are UNVERIFIED. 1.0 = shipped mask modulation; 0.0 = no modulation.
 
 // ----------------------------------------------------------------------------
 // VERTEX ATTRIBUTE CONTRACT (transport only; donor has no such stream).
@@ -419,7 +421,10 @@ void fragment() {
 
 	// Donor hf.pvl.smx3.frag:17 — albedo * packed(ambient+diffuse) + specular.
 	// gl_Color affects DIFFUSE only (hf.pvl.sm.vert:20-21), never raw albedo.
-	rgb = rgb * v_packed + v_specular;
+	// MASK-ALPHA-FIX-01: fold the donor mask into the albedo instead of writing
+	// it to framebuffer ALPHA (DTRN-01 C17, donor multi-pass -> one opaque pass).
+	// Low-mask cells now shade darker terrain, never sky-coloured gaps.
+	rgb = rgb * mix(1.0, a, mask_to_alpha) * v_packed + v_specular;
 
 	// Donor hf.pvl.smx3.frag:20-30 / hf.pvl.smx9.frag:20-35 — PCF shadow.
 	if (shadow_enabled > 0.5) {
@@ -465,6 +470,7 @@ void fragment() {
 	// metadata whose path into geometry/texgen is UNVERIFIED (DEEPDEC-02 #5;
 	// TERRAIN2-06 UNVERIFIED #2) and is deliberately NOT applied.
 	ALBEDO = rgb;
-	// FIX-TERRAIN: see mask_to_alpha above — PORT SUBSTITUTE, not donor parity.
-	ALPHA = mix(1.0, a, mask_to_alpha);
+	// MASK-ALPHA-FIX-01: terrain stays OPAQUE — no sky bleed through mask gaps.
+	// The donor mask's modulation is now carried by RGB above (DTRN-01 C17).
+	ALPHA = 1.0;
 }

@@ -117,6 +117,8 @@ are the authoritative, later statements; rows 14 and 28 remain as the original c
 must not be cited as separate corrections. Future edits should merge them rather than add a
 third row.
 
+| 64 | Donor hill/ravine amplitudes are +1.317 / -2.964 and height uses noise layers | `TERRAIN_DONOR_PIPELINE.md`, `DTRN_02` | **Refuted by HEIGHT_GEN_DEEP_01:** the `(255/cRColorHill)` / `(255/cRColorRavine)` multipliers at `generatemap.inc:571-572` are `//`-disabled; live amplitudes at R=96/R=48 are **+0.496 / -0.558**; height is `h=-1.1*fb*(1+3.5*fr)+A_class*fr` with NO noise/frequency/per-cell RNG (`:567-574`), seed only picks the mask bitmap (`:190,216`). Port `mapgen.gd:67` also mis-bands R=88. | `reports/HEIGHT_GEN_DEEP_01.md` (full 1,059-line read + 3 `.map` re-decodes with 8-bit quantisation fingerprints) | fresh full read + independent map decode | RESOLVED |
+
 ## Claims that stay UNVERIFIED
 
 These values were not recovered by any amount of script, config, byte or image reading.
@@ -171,7 +173,7 @@ bridge and sky/sun precedence (`DENV_01 §7 #1–#3`), `.map` 37-byte record fie
 
 ## Summary
 
-63 indexed corrections across binaries, scripts, configs, terrain, maps, cameras,
+64 indexed corrections across binaries, scripts, configs, terrain, maps, cameras,
 animation, water, audio, atlas transport, light space, naval scope, winter-atlas git state, inventory counts, UI and stale-doc arbitration.
 Status tally: 46 RESOLVED, 15 PARTIAL, 1 CONFIRMED_UNVERIFIED, 1 CONFIRMED_INFEASIBLE.
 The largest reversals are: the `.exe`

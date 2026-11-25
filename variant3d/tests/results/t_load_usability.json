@@ -23,7 +23,7 @@
 		},
 		{
 			"citation": "main.gd:521-528,550-576; PROGRESS.md:104-113; UX_LOADING.md:54-55",
-			"detail": "Exact per-stage stall UNVERIFIED (requires instrumentation inside main.gd/_loading_tick, owned by LOAD-ASYNC-01). Proxies: max_inter_frame_gap_loading_us=21481301, max_stage_to_stage_us=21481471",
+			"detail": "Exact per-stage stall UNVERIFIED (requires instrumentation inside main.gd/_loading_tick, owned by LOAD-ASYNC-01). Proxies: max_inter_frame_gap_loading_us=13327930, max_stage_to_stage_us=13328025",
 			"id": "a_longest_main_thread_stall",
 			"met_criterion": null,
 			"status": "UNVERIFIED"
@@ -58,7 +58,7 @@
 		},
 		{
 			"citation": "main.gd:512-519,643-645; tests/README.md:3-33; UX_LOADING.md:71,92-97",
-			"detail": "No deferred-stage API exists to inspect. Proxies over 30 frames: violations=11, max_inter_frame_gap_post_us=33515827 (heuristic ceiling 250000)",
+			"detail": "No deferred-stage API exists to inspect. Proxies over 30 frames: violations=0, max_inter_frame_gap_post_us=22615 (heuristic ceiling 250000)",
 			"id": "d_no_deferred_heavy_stage",
 			"met_criterion": null,
 			"status": "UNVERIFIED"
@@ -119,8 +119,8 @@
 		"boot_seed": 20261113,
 		"camera_request_issued": true,
 		"camera_target_before": [
-			103.73950958252,
-			41.4356422424316
+			104.232322692871,
+			41.4356307983398
 		],
 		"camera_target_requested": [
 			72.0,
@@ -153,17 +153,17 @@
 			"world_hud": true
 		},
 		"load_ready_seen_at_hide": true,
-		"max_gap_loading_us": 21481301,
-		"max_gap_post_us": 33515827,
-		"max_stage_to_stage_us": 21481471,
+		"max_gap_loading_us": 13327930,
+		"max_gap_post_us": 22615,
+		"max_stage_to_stage_us": 13328025,
 		"order_dest_requested": [
 			128.0,
 			15.3614625930786
 		],
-		"overlay_first_us": 5443043,
+		"overlay_first_us": 3191268,
 		"overlay_flag_active_frames": 0,
-		"overlay_hidden_us": 46638551,
-		"overlay_lifetime_us": 41195508,
+		"overlay_hidden_us": 26626443,
+		"overlay_lifetime_us": 23435175,
 		"overlay_stage_valid_frames": 28,
 		"overlay_visible_frames": 28,
 		"probe_unit_created_by_atom": false,
@@ -175,97 +175,97 @@
 			"window": 30
 		},
 		"source_revision_note": "main.gd read-only; LOAD-ASYNC-01 owns it and may change stage layout",
-		"stability_violations": 11,
+		"stability_violations": 0,
 		"stage_log": [
 			{
 				"bar": 2.0,
 				"frame": 1,
 				"stage": "Preparing...",
-				"us": 5443043
+				"us": 3191268
 			},
 			{
 				"bar": 6.0,
 				"frame": 3,
 				"stage": "Starting simulation...",
-				"us": 5451017
+				"us": 3198058
 			},
 			{
 				"bar": 14.0,
 				"frame": 5,
 				"stage": "Shaping land and water...",
-				"us": 5471762
+				"us": 3210863
 			},
 			{
 				"bar": 34.0,
 				"frame": 7,
 				"stage": "Growing forests...",
-				"us": 6278619
+				"us": 3750397
 			},
 			{
 				"bar": 52.0,
 				"frame": 9,
 				"stage": "Placing stone and mines...",
-				"us": 6285466
+				"us": 3757271
 			},
 			{
 				"bar": 66.0,
 				"frame": 11,
 				"stage": "Raising towns...",
-				"us": 6299697
+				"us": 3771069
 			},
 			{
 				"bar": 76.0,
 				"frame": 13,
 				"stage": "Painting terrain...",
-				"us": 6320994
+				"us": 3802938
 			},
 			{
 				"bar": 86.0,
 				"frame": 15,
 				"stage": "Mustering armies...",
-				"us": 15707081
+				"us": 10575123
 			},
 			{
 				"bar": 90.0,
 				"frame": 17,
 				"stage": "Loading art...",
-				"us": 15838569
+				"us": 10635189
 			},
 			{
 				"bar": 92.0,
 				"frame": 19,
 				"stage": "Wiring camera...",
-				"us": 37320040
+				"us": 23963214
 			},
 			{
 				"bar": 94.0,
 				"frame": 21,
 				"stage": "Building interface...",
-				"us": 37476418
+				"us": 24019450
 			},
 			{
 				"bar": 96.0,
 				"frame": 23,
 				"stage": "Wiring input...",
-				"us": 37582981
+				"us": 24067758
 			},
 			{
 				"bar": 98.0,
 				"frame": 25,
 				"stage": "Starting audio...",
-				"us": 37819864
+				"us": 24170599
 			},
 			{
 				"bar": 100.0,
 				"frame": 27,
 				"stage": "Ready!",
-				"us": 46563553
+				"us": 26612279
 			},
 			{
 				"bar": -1.0,
 				"frame": 29,
 				"stage": "<none>",
-				"us": 46638551
+				"us": 26626443
 			}
 		]
 	},
@@ -274,6 +274,6 @@
 	],
 	"pass_claim": false,
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
-	"unix_ms": 1795607262024.0,
+	"unix_ms": 1795609319675.0,
 	"verdict": "MEASUREMENT_ONLY__NO_PASS_CLAIM"
 }
