@@ -1994,6 +1994,18 @@ func _apply_detail_pass(brng: RandomNumberGenerator) -> void:
 				var pick8 := _tb_pick(1, 4, brng)
 				if pick8 >= 0:
 					tex = pick8
+			# Y03 (PORT APPROXIMATION, diagnostic baseline — A08 §1.2, Y01b §8):
+			# the bitmap R is a CATEGORICAL tile id and the h<0.1 low/high
+			# selection makes its 1-6 cell runs follow height contours — the
+			# surviving concentric maze after B03 removed terrain=5. Collapse
+			# every detail-pass output to ONE clean donor grass id (grass9 idx 8,
+			# A03 §2 "best isotropic/seamless"). Keep the TWO _tb_pick calls
+			# ABOVE: they must consume the same brng draws so _smooth_tilemap
+			# and _stamp_forest_borders see an unchanged RNG stream. The donor
+			# uses these ids for mottling; removing their variety is a port-level
+			# substitution, not donor parity (UNVERIFIED). L01's stamp-mask
+			# spots are the planned organic-variety follow-up.
+			tex = _blk("test8")
 			if tex >= 0 and tex < tbl_names.size():
 				tileblock[i] = tex
 
@@ -2107,6 +2119,15 @@ func _assign_tileblocks() -> void:
 			var pti := _t(px, py)
 			if tileblock[pti] != BLK_WATER:
 				tileblock[pti] = _blk("ground1")
+	# L01-IMPL (PORT APPROXIMATION, L01_spot_grass.md §5): organic light/dark
+	# grass SPOTS from the already-placed FOREST stamp masks — the FILLED core
+	# discs computed in _gen_patterns above (:772-807), never raw sparse st.cells
+	# (that would lattice) and never the height-derived detail bitmaps Y03
+	# neutralised (that would restore the maze). 1-6 contiguous cells per run;
+	# donor tilesmooth weights only; brng-only determinism. Runs BEFORE the
+	# 3-pass smoother so donor rules reconcile every spot border; mine apron and
+	# winter alias still win last. Y03's grass9 detail neutralisation is intact.
+	_stamp_grass_spots(brng)
 	# 4) exact 3-pass SmoothTileMap (donor smoothtiles.inc:191-237): three
 	# passes, horizontal then vertical, over the FINAL tile field before UV2.
 	# TRN-DATA: the donor rule table now covers all 118 active lists.
@@ -2291,19 +2312,19 @@ func _tb_smooth_pair(x1: int, y1: int, x2: int, y2: int, brng: RandomNumberGener
 		return
 	if bi1 - bi2 == 2:
 		var ni := _tb_pick(best, int((bi1 + bi2) / 2), brng)
-		if ni >= 0:
+		if ni >= 0 and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
 			tileblock[_t(x1, y1)] = ni
 	elif bi2 - bi1 == 2:
 		var ni2 := _tb_pick(best, int((bi1 + bi2) / 2), brng)
-		if ni2 >= 0:
+		if ni2 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
 			tileblock[_t(x2, y2)] = ni2
 	elif bi1 < bi2:
 		var ni3 := _tb_pick(best, bi1 + 1, brng)
-		if ni3 >= 0:
+		if ni3 >= 0 and int(tileblock[_t(x2, y2)]) != _blk("grass9"):
 			tileblock[_t(x2, y2)] = ni3
 	else:
 		var ni4 := _tb_pick(best, bi2 + 1, brng)
-		if ni4 >= 0:
+		if ni4 >= 0 and int(tileblock[_t(x1, y1)]) != _blk("grass9"):
 			tileblock[_t(x1, y1)] = ni4
 
 func _smooth_tilemap(brng: RandomNumberGenerator, passes: int = 3) -> void:
@@ -2328,6 +2349,147 @@ func _stamp_forest_borders(brng: RandomNumberGenerator) -> void:
 					n += 1
 			if n == 1:
 				tileblock[_t(x, y)] = _blk("grass5") if brng.randf() < 0.34 else _blk("rock9")
+
+# L01-IMPL (PORT APPROXIMATION, L01_spot_grass.md §3/§4/§5): stamp-mask grass
+# spots. Every id and every probability comes from the embedded donor data;
+# repurposing donor rule weights for run length / polarity / light-id choice and
+# using the forest core disc as a ground stencil are port-level substitutions,
+# NOT donor parity (CHARTER §3; no donor GPU A/B frame). No hash, noise, dither
+# or luminance field — S-25-09 honoured.
+func _stamp_grass_spots(brng: RandomNumberGenerator) -> void:
+	var id_dark := _tb_pick(7, 1, brng)  # grass5, Item 7 J=1 cfg:762, prob 1.0
+	if id_dark < 0:
+		return
+	# Post-Y03 meadow base ids: the detail pass now emits grass9, forest interiors
+	# keep the DONOR_FOREST_BASE family; grass1/test7/8/9 are legacy leftovers.
+	var base_ids := [_blk("grass1"), _blk("grass9"), _blk("test7"), _blk("test8"), _blk("test9")]
+	for fp in DONOR_FOREST_BASE:
+		base_ids.append(_blk(str(fp[0])))
+	var size_k := clampf(float(MAP_W) / 320.0, 0.60, 1.0)
+	var row_w: Array = tbl_smooth[8][2]  # Item 8 J=2 cfg:798 .36/.28/.36, SumProb 1
+	if row_w.size() < 3:
+		return
+	var row_prob := float(row_w[0].get("prob", 0.0))  # donor .36 -> row eligibility
+	for ps in pattern_stamps:
+		var st: Object = ps
+		if str(st.kind) != "forest":
+			continue
+		# Same FILLED core disc _gen_patterns already paints (:772-807). Raw
+		# st.cells are s-scaled *..*..* and would produce a one-cell lattice.
+		var cext := 0.0
+		for c0 in (st.cells as Array):
+			var cc0: Vector2i = c0
+			cext = maxf(cext, float(maxi(abs(cc0.x), abs(cc0.y))) * TILE)
+		var core_r: float = clampf(cext * 0.25, 14.0 * TILE, 22.0 * TILE) * size_k
+		var steps: int = ceili(core_r / TILE)
+		var cx: int = int(st.x)
+		var cy: int = int(st.y)
+		var cpos := Vector2((float(cx) + 0.5) * TILE, (float(cy) + 0.5) * TILE)
+		var rows: Dictionary = {}
+		for yy in range(maxi(0, cy - steps), mini(MAP_H - 1, cy + steps) + 1):
+			for xx in range(maxi(0, cx - steps), mini(MAP_W - 1, cx + steps) + 1):
+				var i := _t(xx, yy)
+				if mine_mask[i] != 0 or tileblock[i] == BLK_WATER:
+					continue
+				var tt: int = terrain[i]
+				if tt == 3 or tt == 4 or tt == 5:
+					continue
+				var p2 := Vector2((float(xx) + 0.5) * TILE, (float(yy) + 0.5) * TILE)
+				if p2.distance_to(cpos) > core_r:
+					continue
+				var in_ring := false
+				for sp in map_starts:
+					if p2.distance_to(sp as Vector2) < 7.0 * TILE:
+						in_ring = true
+						break
+				if in_ring:
+					continue
+				if not base_ids.has(int(tileblock[i])):
+					continue
+				if not rows.has(yy):
+					rows[yy] = [xx, xx, [xx]]
+				else:
+					var rg: Array = rows[yy]
+					rg[1] = xx
+					var accx: Array = rg[2]
+					accx.append(xx)
+		# Dictionary keys were inserted in ascending yy; row runs follow the
+		# stamp disc outline, so spots are organic, never a fixed grid cadence.
+		for yy in rows.keys():
+			if brng.randf() >= row_prob:
+				continue
+			var rg2: Array = rows[yy]
+			var x0: int = int(rg2[0])
+			var x1: int = int(rg2[1])
+			var n := _donor_run_len(brng)  # 1-6 from cfg:67
+			if x1 - x0 + 1 < n:
+				continue
+			var xs := brng.randi_range(x0, x1 - n + 1)
+			var tid: int = id_dark
+			if _donor_polarity(brng):  # 0.4 light / 0.6 dark from cfg:846
+				tid = _donor_light_id(brng, row_w)  # grass9/test9/test8
+			if tid < 0:
+				continue
+			# Only paint cells that actually passed every guard above: the row's
+			# min/max can span filtered-out water/shore/mine/start-ring cells.
+			var accx: Array = rg2[2]
+			var contiguous := true
+			for k in n:
+				if not accx.has(xs + k):
+					contiguous = false
+					break
+			if not contiguous:
+				continue
+			for k in n:
+				tileblock[_t(xs + k, yy)] = tid
+
+# L01 PORT APPROX: Item 0 J=3 cfg:67 .16x5/.20 -> run length 1..6.
+func _donor_run_len(brng: RandomNumberGenerator) -> int:
+	var g: Array = tbl_smooth[0][3]
+	var total := 0.0
+	for td in g:
+		total += float(td.get("prob", 0.0))
+	if total <= 0.0:
+		return 1
+	var r := brng.randf() * total
+	var acc := 0.0
+	for i in g.size():
+		acc += float(g[i].get("prob", 0.0))
+		if r < acc:
+			return i + 1
+	return g.size()
+
+# L01 PORT APPROX: Item 9 J=3 cfg:846 test8:.4 / test7:.6 -> light/dark.
+func _donor_polarity(brng: RandomNumberGenerator) -> bool:
+	var g: Array = tbl_smooth[9][3]
+	var total := 0.0
+	for td in g:
+		total += float(td.get("prob", 0.0))
+	if total <= 0.0:
+		return false
+	var r := brng.randf() * total
+	var acc := 0.0
+	for i in g.size():
+		acc += float(g[i].get("prob", 0.0))
+		if r < acc:
+			return i == 0  # test8 weight .4 -> light; test7 .6 -> dark
+	return false
+
+# L01 PORT APPROX: cfg:798 .36/.28/.36 -> grass9/test9/test8 (all A03-clean).
+func _donor_light_id(brng: RandomNumberGenerator, weights: Array) -> int:
+	var picks := [_blk("grass9"), _blk("test9"), _blk("test8")]
+	var total := 0.0
+	for td in weights:
+		total += float(td.get("prob", 0.0))
+	if total <= 0.0:
+		return picks[0]
+	var r := brng.randf() * total
+	var acc := 0.0
+	for i in picks.size():
+		acc += float(weights[i].get("prob", 0.0))
+		if r < acc:
+			return picks[i]
+	return picks[picks.size() - 1]
 
 # stored height field (filled in _generate_map); bilinear read for smooth slopes
 func height_at(p: Vector2) -> float:

@@ -110,6 +110,10 @@ const ENTITIES_SCRIPT := "res://scripts/world3d_entities.gd"
 const FX_SCRIPT := "res://scripts/world3d_fx.gd"
 const FOG_SCRIPT := "res://scripts/world3d_fog.gd"
 const ANIM_SCRIPT := "res://scripts/anim3d.gd"
+# Z08 — HEIGHT WAVE relief props: static per-sid MultiMesh layer. New sibling
+# module; no edit to pattern_gen.gd / game.gd / world3d_terrain.gd, so no stamp,
+# RNG, height[] or blocked[] stream is touched.
+const RELIEF_SCRIPT := "res://scripts/world3d_relief.gd"
 
 # --- FULL 2D WORLD CONTRACT: DATA MEMBERS (V71 §3 :184-195) -------------------
 var game = null                      # untyped: C3Game object OR dictionary test double
@@ -132,6 +136,7 @@ var entities = null  # world3d_entities.gd : bind/sync/add_*/remove
 var fx = null        # world3d_fx.gd       : bind/sync/add_fx/draw_*/
 var fog = null       # world3d_fog.gd      : bind/sync + fog_* arrays
 var anim = null      # anim3d.gd           : bind(game, entities)/play
+var relief = null    # world3d_relief.gd   : bind(game, terrain) -> static prop MultiMeshes (Z08)
 
 var stats: Dictionary = {}
 var anim_t: float = 0.0
@@ -606,6 +611,7 @@ func bind(g, h = null) -> void:
 		fx = _instantiate(FX_SCRIPT)
 		fog = _instantiate(FOG_SCRIPT)
 		anim = _instantiate(ANIM_SCRIPT)
+		relief = _instantiate(RELIEF_SCRIPT)
 		# fx_layer is a real Node3D the input seam can attach route overlays to.
 		if fx != null:
 			fx_layer = fx as Node3D
@@ -637,6 +643,11 @@ func bind(g, h = null) -> void:
 		terrain.bind(game)
 		if _has_height_source(game):
 			terrain.build()   # ONE full-grid mesh; no chunk scheduling
+	# Z08: relief props are STATIC — build once here, after terrain.height_at_world
+	# is live, from the already-generated game.pattern_stamps. Read-only on all
+	# sim state; no per-frame work in sync().
+	if relief != null:
+		relief.bind(game, terrain)
 	if entities != null:
 		entities.bind(game)
 		_reconcile_entities()   # V7-62: seed meshes from the live sim collections
@@ -668,12 +679,16 @@ func bind(g, h = null) -> void:
 			"fx": fx != null,
 			"fog": fog != null,
 			"anim": anim != null,
+			"relief": relief != null,
 		},
 		"view_scale": view_scale,
 		"fx_events_forwarded_only": true,
 		"fog_arrays_aliased": fog != null,
 		"entity_feed": "V7-62 game.entities + game.res_nodes -> add_*/remove",
 		"contract": "V71_mechanics_inventory.md:180-199 / V73_ATOMIC_CONTRACT.md:24",
+		# Z08 observability — derived prop counts + PORT APPROX labels. The
+		# module's own stats carries per-prop descriptors for QA reconciliation.
+		"relief_props": relief.stats if relief != null else {},
 	}
 
 

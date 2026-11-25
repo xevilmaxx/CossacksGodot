@@ -13,7 +13,8 @@ files_created:
   - docs/terrain_swarm_2026-11-25/reports/P10_impl.md
 godot_jobs_run: 0
 runner_jobs_submitted: 0
-head: 032f2678833f623af4b0774d670e6b83764aee9c
+head_baseline: 032f2678833f623af4b0774d670e6b83764aee9c
+committed_at: 3418d1e116ea163c87bbb692735249ebc13eff8b
 backup_sha256: 54FACBB3DF19E358E13D6C9BB3417A4A87579C1FBFAEC803FF25BA01C314C381
 new_file_sha256: 3C7FCD2D88778743685B5CC12FA6C9215655E0FE9BD07BD065D321060914D407
 prec_backup_sha256: 4A229A24C37AD8AF20B9B68E54B52FEC1E87A2DB5BDB0B1F5F773F186C3922A6
@@ -111,7 +112,14 @@ because of context distance; 15 proposal hunks + splitting = 16. The precision
 remediation (§6.1) modifies two of those hunks in place; it adds no new hunk and
 touches no other region. No other change exists in the file.
 
-### 3.1 Exact diff (verbatim `git diff --` output, regenerated stdout-only)
+### 3.1 Exact diff (verbatim, baseline `032f2678` → landed file)
+
+The block below is the exact patch relative to the baseline HEAD `032f2678…`
+(byte-identical to `.bak-P10`). COORD committed the landed file at
+`3418d1e1 step` during this follow-up, so a live `git diff` against the
+*current* HEAD is empty. The patch was reproduced from
+`git diff 032f2678 3418d1e1 -- variant3d/scripts/anim3d.gd` and verified
+byte-for-byte against that command (OBSERVED).
 
 ```diff
 diff --git a/variant3d/scripts/anim3d.gd b/variant3d/scripts/anim3d.gd
@@ -477,11 +485,13 @@ gates are the handoff acceptance list; each must be run by G04 only:
 | 7 | `t_anim_metrics` | pass (schema unchanged) | PENDING G04 |
 | 8 | `assert_clean` | **CLEAN**, no leaked nodes/errors | PENDING G04 |
 | 9 | `t_render_mode` (repeat after the full set) | PASS / `seam_missing=false` | PENDING G04 |
-| 10 | **verts byte-identity digest check** | digest of `skin_vertices(skin, fr)` on forced cache miss for several `(sid, fr)` pairs equal to `.bak-P10` baseline — see §6 risk | PENDING G04 |
+| 10 | **verts byte-identity digest check** | digest of `skin_vertices(skin, fr)` on forced cache miss for several `(sid, fr)` pairs equal to `.bak-P10` baseline — see §6.3 static argument | PENDING G04 |
 | 11 | windowed P0 + real-map capture | DONOR-SAMPLED status text byte-identical; `donor_morph_pose_samples` unchanged; no new seams/dark rows; `SCRIPT ERROR=0` | PENDING G04 |
 
-Rollback for any failure: restore `inbox/backup/anim3d.gd.bak-P10` in full; do **not**
-hand-patch hunks to force a gate green (`L04_perf_integration.md:302-305`).
+Rollback for any failure: restore `inbox/backup/anim3d.gd.bak-P10` in full (or
+`.bak-P10-prec` to drop only the precision remediation); do **not** hand-patch hunks to
+force a gate green (`L04_perf_integration.md:302-305`). Note the byte digests must be
+computed against the **original baseline** `.bak-P10`, not the post-P10 backup.
 
 ## 8. UNVERIFIED / open register
 

@@ -92,6 +92,17 @@ var _last_res_text: Array = []
 var _last_eco_text := ""
 var _last_mines_text := ""
 var _last_status_text := "\n"
+# P12: the CanvasLayer viewport is stable for the HUD's lifetime; cache it at
+# bind() instead of calling get_viewport() on every _process frame.
+var _vp: Viewport = null
+# P12: minimap-box change gate. The 3D adapter ray-casts four camera corners
+# per call, so a still camera must not pay that cost every frame. Sentinels
+# force the first draw; _on_vp_resize()/bind_3d() invalidate on projection or
+# camera changes. force=true (minimap ticks) always bypasses the gate.
+var _mm_box_cam_xform := Transform3D()
+var _mm_box_cam_fov := -1.0
+var _mm_box_cam2_pos := Vector2.INF
+var _mm_box_cam2_zoom := Vector2.ZERO
 var fps_label: Label
 var fps_t := 0.0
 var fps_ema := 60.0
@@ -174,6 +185,7 @@ var top_center: Control
 func bind(g: C3Game, w) -> void:
 	game = g
 	world = w
+	_vp = get_viewport()  # P12: cached for the per-frame minimap box painter
 	ui_us = _calc_us()
 	icons_tex = load("res://assets/ui/icons.bmp")
 	units_tex = load("res://assets/ui/iconsunits.bmp")
@@ -218,6 +230,9 @@ func bind_3d(cam) -> void:
 	_hud3d_adapter.bind(cam, self)
 	_bound_cam3d = cam
 	_render_mode_3d = true
+	# P12: a rebound camera invalidates the minimap box change signature.
+	_mm_box_cam_fov = -1.0
+	_mm_box_cam2_pos = Vector2.INF
 
 func atlas(src: Texture2D, region: Rect2) -> AtlasTexture:
 	var at := AtlasTexture.new()
@@ -273,6 +288,9 @@ func _reg(c: Control, fs := 0, mh := 0, mw := 0) -> Control:
 func _on_vp_resize() -> void:
 	ui_us = _calc_us()
 	_apply_scale()
+	# P12: projection size changed even if the camera transform did not.
+	_mm_box_cam_fov = -1.0
+	_mm_box_cam2_pos = Vector2.INF
 
 # CONFIG-WIRE-HUD: minimap geometry now reads the global feature config through
 # the typed getters CONFIG-CORE-01 added to config.gd. Reads go through the
@@ -1450,11 +1468,14 @@ func _process(dt: float) -> void:
 		fps_t = 0.5
 		fps_label.text = "%03d" % int(Performance.get_monitor(Performance.TIME_FPS))
 	eco_t -= dt
-	if eco_t <= 0.0:
+	# P12: all formatted read-outs below are polled on this existing 0.5 s
+	# cadence instead of being rebuilt (and dirty-checked) every frame.
+	var readouts_due := eco_t <= 0.0
+	if readouts_due:
 		eco_t = 0.5
 		_recompute_eco()
 		_cached_ucount = game.unit_count(0) + game.queue_count(0)
-	for i in 6:
+	for i in (6 if readouts_due else 0):  # P12: no string work on idle frames
 		var rname: String = str(Data.RES_NAMES[i])
 		var stock: int = int(game.players[0].res[i])
 		var stock_s: String = RES_STOCK_CAP_TEXT if stock > RES_STOCK_CAP else str(stock)
@@ -1481,7 +1502,7 @@ func _process(dt: float) -> void:
 		if deficit != bool(res_deficit[i]):
 			res_deficit[i] = deficit
 			res_labels[i].add_theme_color_override("font_color", Color(1, 0.42, 0.38) if deficit else Color(1, 0.97, 0.9))
-	if eco_label != null:
+	if readouts_due and eco_label != null:
 		var et := "idle %d" % idle_count
 		if et != _last_eco_text:
 			_last_eco_text = et
@@ -1491,15 +1512,15 @@ func _process(dt: float) -> void:
 		if warn != eco_warn:
 			eco_warn = warn
 			eco_label.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if warn else Color(0.8, 0.85, 1))
-	if mines_btn != null:
+	if readouts_due and mines_btn != null:
 		var mt := "slots %d" % free_slots_count
 		if mt != _last_mines_text:
 			_last_mines_text = mt
 			mines_btn.text = mt
 		mines_btn.disabled = free_slots_count <= 0
-	var ucount := _cached_ucount  # throttled on eco_t (~0.5 s); other fields stay live
+	var ucount := _cached_ucount  # P12: refreshed with the read-out poll (~0.5 s)
 	# the hint line carries placement text; the status line keeps units/score
-	if hint_label == null or hint_label.text == "":
+	if readouts_due and (hint_label == null or hint_label.text == ""):
 		var st := "units %d/%d    score %d    %s" % [ucount, game.players[0].farm_cap,
 			game.players[0].score, ("PAUSED" if game.paused else "")]
 		if st != _last_status_text:
@@ -1613,7 +1634,9 @@ func _on_minimap_input(ev: InputEvent) -> void:
 	# orders are NOT consumed here: they fall through to the unchanged block below.
 	if _render_mode_3d and _minimap_jump_3d(ev, world_pos):
 		return
-	var cam := get_viewport().get_camera_2d() as C3Camera
+	# P12: reuse the viewport cached at bind() (event-driven path).
+	var vp_node: Viewport = _vp if _vp != null and is_instance_valid(_vp) else get_viewport()
+	var cam := vp_node.get_camera_2d() as C3Camera
 	if ev is InputEventMouseButton and ev.pressed:
 		get_viewport().set_input_as_handled()
 		if ev.button_index == MOUSE_BUTTON_LEFT and cam:
@@ -1669,12 +1692,34 @@ func _cam3d_jump(world_pos: Vector2) -> bool:
 func _draw_minimap_viewport_box(force: bool = false) -> void:
 	if minimap_img == null or minimap_view_img == null or minimap_tex == null or game == null:
 		return
+	# P12: the viewport does not change between frames; the old code called
+	# get_viewport() twice per frame here and looked up the 2D camera even in 3D.
+	var vp_node: Viewport = _vp if _vp != null and is_instance_valid(_vp) else get_viewport()
+	var cam = null
+	if not _render_mode_3d and vp_node != null:
+		cam = vp_node.get_camera_2d()
 	var x0 := 0
 	var y0 := 0
 	var x1 := game.MAP_W - 1
 	var y1 := game.MAP_H - 1
-	var cam := get_viewport().get_camera_2d()
 	if _render_mode_3d and _hud3d_adapter != null:
+		# P12: get_minimap_box() casts four camera rays (camera3d.gd:397-404).
+		# An unchanged camera transform + fov cannot change the box, so skip the
+		# adapter call on still frames. force=true (minimap ticks) and every
+		# input-driven jump still recompute.
+		var cam3: Object = _bound_cam3d
+		var has_cam3 := cam3 != null and is_instance_valid(cam3)
+		var xf: Variant = null
+		var fv := -1.0
+		if has_cam3:
+			xf = cam3.get("global_transform")
+			fv = float(cam3.get("fov"))
+		if has_cam3 and not force:
+			if xf == _mm_box_cam_xform and is_equal_approx(fv, _mm_box_cam_fov):
+				return
+		if has_cam3:
+			_mm_box_cam_xform = xf
+			_mm_box_cam_fov = fv
 		# V7-53: 3D seam. The box source is the V7-17 adapter ONLY; the minimap
 		# image, its data/orders and _mm_paint_box below are unchanged.
 		# get_minimap_box(): position = inclusive (x0,y0), end = EXCLUSIVE.
@@ -1686,9 +1731,16 @@ func _draw_minimap_viewport_box(force: bool = false) -> void:
 		x1 = clampi(int(b3.end.x) - 1, 0, game.MAP_W - 1)
 		y1 = clampi(int(b3.end.y) - 1, 0, game.MAP_H - 1)
 	elif cam != null and world != null:
+		# P12: same gate for 2D — position + zoom fully determine the box.
+		var cp: Vector2 = cam.global_position
+		var cz: Vector2 = cam.zoom
+		if not force and cp == _mm_box_cam2_pos and cz == _mm_box_cam2_zoom:
+			return
+		_mm_box_cam2_pos = cp
+		_mm_box_cam2_zoom = cz
 		# view_rect is canvas pixels (metres * view_scale); screen = canvas * zoom
 		var pxm: float = Data.TILE_M * world.view_scale
-		var vp: Vector2 = get_viewport().get_visible_rect().size
+		var vp: Vector2 = vp_node.get_visible_rect().size
 		var extent: Vector2 = vp / maxf(cam.zoom.x, 0.0001)
 		var view_pos: Vector2 = cam.global_position - extent * 0.5
 		var view_end: Vector2 = view_pos + extent

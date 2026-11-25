@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cbky0rkdmvgef"
+path="res://.godot/imported/cuirassier.obj-f36b869d63ee6477328199351b46527a.mesh"
+
+[deps]
+
+files=["res://.godot/imported/cuirassier.obj-f36b869d63ee6477328199351b46527a.mesh"]
+
+source_file="res://assets/models/obj/shared/land_units/cuirassier.obj"
+dest_files=["res://.godot/imported/cuirassier.obj-f36b869d63ee6477328199351b46527a.mesh", "res://.godot/imported/cuirassier.obj-f36b869d63ee6477328199351b46527a.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

@@ -96,3 +96,39 @@ person who owns the game, on their own computer. Must not be shared.
 \
 
 See ../docs/WAIVERS.md for the two donor-asset waivers and the private-use compliance statement.
+
+## C01-ASSET — additive derived nation art + relief props (derived, not copied)
+Offline run: `tools/convert_models.py --nation-art --include-relief --manifest-name manifest_addendum.json`,
+then `tools/convert_skins.py --index-name index_nation.json`. The addendum entries
+were text-inserted into `assets/models/manifest.json` and `assets/models/skin/index.json`;
+all 280 pre-existing manifest entries and all pre-existing asset bytes were left untouched.
+- `data/actors/buildings/{rus,bav,pol,swe}/<nat>cen.osm` + matching
+  `data/materials/buildings/<nat>/<nat>cen.dds` -> `assets/models/obj/<nat>cen.obj`
+  (+ `.mtl`) and `assets/models/tex/<nat>cen.png` (first IDP2 frame -> OBJ; DDS -> PNG,
+  garbage alpha dropped because `kind="building"`). `ruscen` is the distinct Russian hall
+  (15,348 verts / 9,936 faces vs the Ukrainian-derived `cen.obj` 5,611 / 3,714).
+- `data/actors/units/pea{rus,ukr,pol,aus,eng,spa,tur,sco}.oss` with the matching
+  `data/materials/units/pea*.dds` -> `obj/pea*.obj` + `tex/pea*.png`; each nation's own
+  `data/animations/aaf/pea*.aaf` -> flat-root skin JSON under `assets/models/skin/`
+  via `tools/convert_skins.py` (per-nation ranges, e.g. `pearus k=486`).
+- N07 T0 signature units `data/actors/units/{pikemanrus,musketeer18bav,pikeman18swe}.oss`
+  (+ matching `.dds` and `.aaf`) -> `obj/*.obj`, `tex/*.png` and `skin/*.json`.
+- `data/actors/env/terrainmesh{1,2,3,4}.osm` + `data/materials/env/terrainmesh{1,2,3,4}.dds` ->
+  `assets/models/obj/terrainmeshN.obj` (+ `.mtl`) and `tex/terrainmeshN.png`
+  (2048x2048 RGBA, donor alpha preserved: `kind="relief"` -> `force_opaque=False`).
+  Placement truth was READ, not copied: `data/objects/env/terrainmeshN.prop`,
+  `data/actors/env/terrainmeshN.actor`, `data/actors/actors.lib:1200-1213`,
+  `data/pattern/pattern.lib` (112 `BaseName=terrainmeshN` records with per-object
+  Scaling/Position/Direction), `data/scripts/common.inc/dogenerate.inc:1984-1985`.
+  The OBJ keeps RAW donor units; authored per-object Scaling (0.3539-0.6562) is
+  placement data for a later instancing consumer, never baked into the mesh.
+- All files above are DERIVED OUTPUTS (vertex/UV/face lists and converted pixels, with
+  donor citations in `assets/models/manifest.json`), NOT verbatim donor files. Donor
+  `.osm/.oss/.dds/.aaf` binaries stay in the private install, are read only as bytes/text,
+  and are never copied into the repo or executed. For private use of the game owner on
+  their own machine only; never share, publish or redistribute (`README.md:220-224`,
+  `app/CREDITS.md:1-5`, `docs/WAIVERS.md` compliance statement).
+- Geometry is a STATIC bind pose / flat-root morph PORT APPROXIMATION (donor bone parent
+  hierarchy unreadable). Winter `terrainmeshNw.dds`, desert `terrainmeshdesertN.dds` and
+  `terrainplateau1..4.osm` are NOT converted. Visual donor parity is UNVERIFIED — no
+  donor GPU A/B frame exists; adding these assets alone does not make hills visible.

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cnjuw6b2htsr3"
+path="res://.godot/imported/mara.obj-3d0ffde2c3890903d91186d27675779f.mesh"
+
+[deps]
+
+files=["res://.godot/imported/mara.obj-3d0ffde2c3890903d91186d27675779f.mesh"]
+
+source_file="res://assets/models/obj/shared/buildings/mara.obj"
+dest_files=["res://.godot/imported/mara.obj-3d0ffde2c3890903d91186d27675779f.mesh", "res://.godot/imported/mara.obj-3d0ffde2c3890903d91186d27675779f.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://srq5bsme57dc"
+path="res://.godot/imported/cen4a.obj-e7e60a015ce15196002e7ad6ff107052.mesh"
+
+[deps]
+
+files=["res://.godot/imported/cen4a.obj-e7e60a015ce15196002e7ad6ff107052.mesh"]
+
+source_file="res://assets/models/obj/shared/buildings/cen4a.obj"
+dest_files=["res://.godot/imported/cen4a.obj-e7e60a015ce15196002e7ad6ff107052.mesh", "res://.godot/imported/cen4a.obj-e7e60a015ce15196002e7ad6ff107052.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

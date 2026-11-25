@@ -82,6 +82,8 @@ extends Node3D
 #     FX-WEATHER-01 snow root, selection rings and marquee code are untouched.
 
 const Data = preload("res://scripts/data.gd")
+# FOLD-06: same mapped-first / flat-fallback resolver as the entities module.
+const AssetPaths = preload("res://scripts/asset_paths.gd")
 # WEATHER-DRIVER-01: active C3Config instance for the additive weather-driver
 # helper below (same static-active access pattern as hud.gd:_mm_size). No config
 # file, getter or default is edited by this module.
@@ -675,9 +677,9 @@ func _ghost_resolve_mesh(sid: String) -> Mesh:
 	# Minimal mesh-file lookup duplicated from world3d_entities.gd:1110-1160
 	# / :1819-1844 (GLB dir :85, OBJ dir :84). No Z-up->Y-up bake is duplicated
 	# here, so this path is PORT APPROXIMATION and UNVERIFIED vs the baked mesh.
-	for path in ["res://assets/models/obj/" + sid + ".obj",
-			"res://assets/models/glb/" + sid + ".glb",
-			"res://assets/models/obj/" + sid + "4.obj"]:
+	for path in [AssetPaths.existing(sid, "obj"),
+			AssetPaths.existing(sid, "glb"),
+			AssetPaths.existing(sid, "obj", "4")]:
 		if ResourceLoader.exists(path):
 			var loaded = load(path)
 			var m: Mesh = null

@@ -2,6 +2,473 @@
   "game": "C:\\Games\\Cossacks 3",
   "models": [
     {
+      "sid": "ruscen",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\rus\\ruscen.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\rus\\ruscen.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\ruscen.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\ruscen.png",
+      "bbox": [
+        -6.54600715637207,
+        5.613785743713379,
+        -6.916341304779053,
+        6.135779857635498,
+        -0.003664474468678236,
+        8.12759017944336
+      ],
+      "verts": 15348,
+      "faces": 9936,
+      "bucket": "rus/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/rus/buildings/ruscen.obj",
+        "tex": "res://assets/models/tex/rus/buildings/ruscen.png"
+      }
+    },
+    {
+      "sid": "bavcen",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\bav\\bavcen.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\bav\\bavcen.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\bavcen.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\bavcen.png",
+      "bbox": [
+        -2.527268886566162,
+        4.387431621551514,
+        -2.2038445472717285,
+        2.2038445472717285,
+        -0.0007804870256222785,
+        13.62171459197998
+      ],
+      "verts": 11738,
+      "faces": 8676,
+      "bucket": "bav/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/bav/buildings/bavcen.obj",
+        "tex": "res://assets/models/tex/bav/buildings/bavcen.png"
+      }
+    },
+    {
+      "sid": "polcen",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\pol\\polcen.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\pol\\polcen.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\polcen.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\polcen.png",
+      "bbox": [
+        -3.290724754333496,
+        3.290724754333496,
+        -3.763780117034912,
+        3.7637805938720703,
+        -0.0041459170170128345,
+        18.092288970947266
+      ],
+      "verts": 14933,
+      "faces": 11598,
+      "bucket": "pol/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/pol/buildings/polcen.obj",
+        "tex": "res://assets/models/tex/pol/buildings/polcen.png"
+      }
+    },
+    {
+      "sid": "swecen",
+      "kind": "building",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\buildings\\swe\\swecen.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\buildings\\swe\\swecen.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\swecen.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\swecen.png",
+      "bbox": [
+        -6.283474445343018,
+        6.283474445343018,
+        -6.283475399017334,
+        6.283474445343018,
+        -1.1997222827631049e-05,
+        19.20719337463379
+      ],
+      "verts": 15862,
+      "faces": 11566,
+      "bucket": "swe/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/swe/buildings/swecen.obj",
+        "tex": "res://assets/models/tex/swe/buildings/swecen.png"
+      }
+    },
+    {
+      "sid": "pearus",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\pearus.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\pearus.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\pearus.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\pearus.png",
+      "bbox": [
+        -0.7173412442207336,
+        0.7208508253097534,
+        -0.2691120505332947,
+        0.34032589197158813,
+        0.0038509436417371035,
+        2.078381061553955
+      ],
+      "verts": 527,
+      "faces": 864,
+      "bucket": "rus/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/rus/land_units/pearus.obj",
+        "tex": "res://assets/models/tex/rus/land_units/pearus.png",
+        "skin": "res://assets/models/skin/rus/land_units/pearus.json"
+      }
+    },
+    {
+      "sid": "peaukr",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peaukr.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peaukr.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\peaukr.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\peaukr.png",
+      "bbox": [
+        -0.7172664999961853,
+        0.7172665596008301,
+        -0.22652101516723633,
+        0.2853986620903015,
+        0.006876183673739433,
+        1.9954692125320435
+      ],
+      "verts": 577,
+      "faces": 921,
+      "bucket": "ukr/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/ukr/land_units/peaukr.obj",
+        "tex": "res://assets/models/tex/ukr/land_units/peaukr.png",
+        "skin": "res://assets/models/skin/ukr/land_units/peaukr.json"
+      }
+    },
+    {
+      "sid": "peapol",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peapol.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peapol.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\peapol.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\peapol.png",
+      "bbox": [
+        -0.722821831703186,
+        0.7228220701217651,
+        -0.2546897232532501,
+        0.3117263615131378,
+        -0.000875726283993572,
+        1.9668229818344116
+      ],
+      "verts": 629,
+      "faces": 935,
+      "bucket": "pol/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/pol/land_units/peapol.obj",
+        "tex": "res://assets/models/tex/pol/land_units/peapol.png",
+        "skin": "res://assets/models/skin/pol/land_units/peapol.json"
+      }
+    },
+    {
+      "sid": "peaaus",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peaaus.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peaaus.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\peaaus.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\peaaus.png",
+      "bbox": [
+        -0.7263388633728027,
+        0.7251416444778442,
+        -0.18132208287715912,
+        0.16057062149047852,
+        -0.0024340273812413216,
+        2.106261730194092
+      ],
+      "verts": 714,
+      "faces": 1058,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/peaaus.obj",
+        "tex": "res://assets/models/tex/shared/land_units/peaaus.png",
+        "skin": "res://assets/models/skin/shared/land_units/peaaus.json"
+      }
+    },
+    {
+      "sid": "peaeng",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peaeng.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peaeng.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\peaeng.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\peaeng.png",
+      "bbox": [
+        -0.7315319776535034,
+        0.7315319180488586,
+        -0.24335017800331116,
+        0.25331345200538635,
+        -0.0001334629487246275,
+        2.1251487731933594
+      ],
+      "verts": 566,
+      "faces": 923,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/peaeng.obj",
+        "tex": "res://assets/models/tex/shared/land_units/peaeng.png",
+        "skin": "res://assets/models/skin/shared/land_units/peaeng.json"
+      }
+    },
+    {
+      "sid": "peaspa",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peaspa.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peaspa.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\peaspa.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\peaspa.png",
+      "bbox": [
+        -0.7295829057693481,
+        0.7296149134635925,
+        -0.24226023256778717,
+        0.21560491621494293,
+        0.0008080289117060602,
+        2.0066075325012207
+      ],
+      "verts": 557,
+      "faces": 960,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/peaspa.obj",
+        "tex": "res://assets/models/tex/shared/land_units/peaspa.png",
+        "skin": "res://assets/models/skin/shared/land_units/peaspa.json"
+      }
+    },
+    {
+      "sid": "peatur",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peatur.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peatur.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\peatur.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\peatur.png",
+      "bbox": [
+        -0.730165958404541,
+        0.7273479104042053,
+        -0.22049738466739655,
+        0.2777995467185974,
+        1.3310056601767428e-05,
+        1.9960899353027344
+      ],
+      "verts": 565,
+      "faces": 1039,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/peatur.obj",
+        "tex": "res://assets/models/tex/shared/land_units/peatur.png",
+        "skin": "res://assets/models/skin/shared/land_units/peatur.json"
+      }
+    },
+    {
+      "sid": "peasco",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peasco.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\peasco.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\peasco.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\peasco.png",
+      "bbox": [
+        -0.7295070290565491,
+        0.7298194766044617,
+        -0.19304601848125458,
+        0.16745850443840027,
+        -0.004732318688184023,
+        1.947142243385315
+      ],
+      "verts": 570,
+      "faces": 952,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/peasco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/peasco.png",
+        "skin": "res://assets/models/skin/sco/land_units/peasco.json"
+      }
+    },
+    {
+      "sid": "pikemanrus",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\pikemanrus.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\pikemanrus.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\pikemanrus.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\pikemanrus.png",
+      "bbox": [
+        -0.7377200722694397,
+        0.7358246445655823,
+        -0.2342621088027954,
+        0.3230496644973755,
+        -0.0019291858188807964,
+        3.267580032348633
+      ],
+      "verts": 612,
+      "faces": 876,
+      "bucket": "rus/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/rus/land_units/pikemanrus.obj",
+        "tex": "res://assets/models/tex/rus/land_units/pikemanrus.png",
+        "skin": "res://assets/models/skin/rus/land_units/pikemanrus.json"
+      }
+    },
+    {
+      "sid": "musketeer18bav",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\musketeer18bav.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\musketeer18bav.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\musketeer18bav.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\musketeer18bav.png",
+      "bbox": [
+        -0.795552134513855,
+        0.7350237965583801,
+        -1.6193023920059204,
+        0.6244757771492004,
+        -0.007870050147175789,
+        2.0061354637145996
+      ],
+      "verts": 699,
+      "faces": 987,
+      "bucket": "bav/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/bav/land_units/musketeer18bav.obj",
+        "tex": "res://assets/models/tex/bav/land_units/musketeer18bav.png",
+        "skin": "res://assets/models/skin/bav/land_units/musketeer18bav.json"
+      }
+    },
+    {
+      "sid": "pikeman18swe",
+      "kind": "unit",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\pikeman18swe.oss",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\units\\pikeman18swe.dds",
+      "directions": 8,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\pikeman18swe.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\pikeman18swe.png",
+      "bbox": [
+        -0.7238659262657166,
+        0.7236944437026978,
+        -0.1809292733669281,
+        0.6300922632217407,
+        -0.004683548118919134,
+        3.504580020904541
+      ],
+      "verts": 658,
+      "faces": 989,
+      "bucket": "swe/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/swe/land_units/pikeman18swe.obj",
+        "tex": "res://assets/models/tex/swe/land_units/pikeman18swe.png",
+        "skin": "res://assets/models/skin/swe/land_units/pikeman18swe.json"
+      }
+    },
+    {
+      "sid": "terrainmesh1",
+      "kind": "relief",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\terrainmesh1.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\terrainmesh1.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\terrainmesh1.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\terrainmesh1.png",
+      "bbox": [
+        -14.020532608032227,
+        13.887716293334961,
+        -13.523690223693848,
+        13.445695877075195,
+        0.07003044337034225,
+        7.4485321044921875
+      ],
+      "verts": 2662,
+      "faces": 5305,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/terrainmesh1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/terrainmesh1.png"
+      }
+    },
+    {
+      "sid": "terrainmesh2",
+      "kind": "relief",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\terrainmesh2.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\terrainmesh2.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\terrainmesh2.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\terrainmesh2.png",
+      "bbox": [
+        -13.227381706237793,
+        13.092061042785645,
+        -12.666378021240234,
+        12.953508377075195,
+        -0.025098413228988647,
+        8.034555435180664
+      ],
+      "verts": 2272,
+      "faces": 4532,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/terrainmesh2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/terrainmesh2.png"
+      }
+    },
+    {
+      "sid": "terrainmesh3",
+      "kind": "relief",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\terrainmesh3.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\terrainmesh3.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\terrainmesh3.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\terrainmesh3.png",
+      "bbox": [
+        -12.934804916381836,
+        12.987985610961914,
+        -12.839000701904297,
+        12.97647476196289,
+        0.010640978813171387,
+        9.550311088562012
+      ],
+      "verts": 2177,
+      "faces": 4323,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/terrainmesh3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/terrainmesh3.png"
+      }
+    },
+    {
+      "sid": "terrainmesh4",
+      "kind": "relief",
+      "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\terrainmesh4.osm",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\terrainmesh4.dds",
+      "directions": 1,
+      "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\terrainmesh4.obj",
+      "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\terrainmesh4.png",
+      "bbox": [
+        -12.669700622558594,
+        12.66971206665039,
+        -12.827607154846191,
+        12.82760238647461,
+        0.012505292892456055,
+        6.932950973510742
+      ],
+      "verts": 2509,
+      "faces": 5002,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/terrainmesh4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/terrainmesh4.png"
+      }
+    },
+    {
       "sid": "peasant",
       "kind": "unit",
       "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\units\\peaukr.oss",
@@ -18,7 +485,14 @@
         1.9954692125320435
       ],
       "verts": 577,
-      "faces": 921
+      "faces": 921,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/peasant.obj",
+        "tex": "res://assets/models/tex/shared/land_units/peasant.png",
+        "skin": "res://assets/models/skin/shared/land_units/peasant.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/peasant.png"
+      }
     },
     {
       "sid": "pikeman",
@@ -37,7 +511,14 @@
         3.5163779258728027
       ],
       "verts": 733,
-      "faces": 1062
+      "faces": 1062,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/pikeman.obj",
+        "tex": "res://assets/models/tex/shared/land_units/pikeman.png",
+        "skin": "res://assets/models/skin/shared/land_units/pikeman.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/pikeman.png"
+      }
     },
     {
       "sid": "roundshier",
@@ -56,7 +537,14 @@
         1.9702298641204834
       ],
       "verts": 710,
-      "faces": 1048
+      "faces": 1048,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/roundshier.obj",
+        "tex": "res://assets/models/tex/shared/land_units/roundshier.png",
+        "skin": "res://assets/models/skin/shared/land_units/roundshier.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/roundshier.png"
+      }
     },
     {
       "sid": "serdiuk",
@@ -75,7 +563,14 @@
         2.2614197731018066
       ],
       "verts": 787,
-      "faces": 1058
+      "faces": 1058,
+      "bucket": "ukr/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/ukr/land_units/serdiuk.obj",
+        "tex": "res://assets/models/tex/ukr/land_units/serdiuk.png",
+        "skin": "res://assets/models/skin/ukr/land_units/serdiuk.json",
+        "sprite": "res://assets/models/sprites/ukr/land_units/serdiuk.png"
+      }
     },
     {
       "sid": "archer",
@@ -94,7 +589,14 @@
         2.0079216957092285
       ],
       "verts": 713,
-      "faces": 979
+      "faces": 979,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/archer.obj",
+        "tex": "res://assets/models/tex/shared/land_units/archer.png",
+        "skin": "res://assets/models/skin/shared/land_units/archer.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/archer.png"
+      }
     },
     {
       "sid": "cossack",
@@ -113,7 +615,14 @@
         1.877014398574829
       ],
       "verts": 692,
-      "faces": 1031
+      "faces": 1031,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/cossack.obj",
+        "tex": "res://assets/models/tex/shared/land_units/cossack.png",
+        "skin": "res://assets/models/skin/shared/land_units/cossack.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/cossack.png"
+      }
     },
     {
       "sid": "dragoon",
@@ -132,7 +641,14 @@
         1.9336743354797363
       ],
       "verts": 814,
-      "faces": 1124
+      "faces": 1124,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/dragoon.obj",
+        "tex": "res://assets/models/tex/shared/land_units/dragoon.png",
+        "skin": "res://assets/models/skin/shared/land_units/dragoon.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/dragoon.png"
+      }
     },
     {
       "sid": "officer",
@@ -151,7 +667,14 @@
         2.0366976261138916
       ],
       "verts": 826,
-      "faces": 1021
+      "faces": 1021,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/officer.obj",
+        "tex": "res://assets/models/tex/shared/land_units/officer.png",
+        "skin": "res://assets/models/skin/shared/land_units/officer.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/officer.png"
+      }
     },
     {
       "sid": "cannon",
@@ -170,7 +693,14 @@
         1.3682241439819336
       ],
       "verts": 736,
-      "faces": 564
+      "faces": 564,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/cannon.obj",
+        "tex": "res://assets/models/tex/shared/land_units/cannon.png",
+        "skin": "res://assets/models/skin/shared/land_units/cannon.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/cannon.png"
+      }
     },
     {
       "sid": "officer18",
@@ -189,7 +719,14 @@
         2.0662038326263428
       ],
       "verts": 1021,
-      "faces": 1185
+      "faces": 1185,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/officer18.obj",
+        "tex": "res://assets/models/tex/shared/land_units/officer18.png",
+        "skin": "res://assets/models/skin/shared/land_units/officer18.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/officer.png"
+      }
     },
     {
       "sid": "drummer",
@@ -208,7 +745,14 @@
         2.027538537979126
       ],
       "verts": 682,
-      "faces": 908
+      "faces": 908,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/drummer.obj",
+        "tex": "res://assets/models/tex/shared/land_units/drummer.png",
+        "skin": "res://assets/models/skin/shared/land_units/drummer.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/officer.png"
+      }
     },
     {
       "sid": "priest",
@@ -227,7 +771,14 @@
         2.2306265830993652
       ],
       "verts": 768,
-      "faces": 973
+      "faces": 973,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/priest.obj",
+        "tex": "res://assets/models/tex/shared/land_units/priest.png",
+        "skin": "res://assets/models/skin/shared/land_units/priest.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/officer.png"
+      }
     },
     {
       "sid": "grenadier",
@@ -246,7 +797,14 @@
         2.2932305335998535
       ],
       "verts": 801,
-      "faces": 1044
+      "faces": 1044,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/grenadier.obj",
+        "tex": "res://assets/models/tex/shared/land_units/grenadier.png",
+        "skin": "res://assets/models/skin/shared/land_units/grenadier.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/roundshier.png"
+      }
     },
     {
       "sid": "musk18",
@@ -265,7 +823,14 @@
         2.718860626220703
       ],
       "verts": 809,
-      "faces": 1074
+      "faces": 1074,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/musk18.obj",
+        "tex": "res://assets/models/tex/shared/land_units/musk18.png",
+        "skin": "res://assets/models/skin/shared/land_units/musk18.json",
+        "sprite": "res://assets/models/sprites/ukr/land_units/serdiuk.png"
+      }
     },
     {
       "sid": "howitzer",
@@ -284,7 +849,14 @@
         1.6157065629959106
       ],
       "verts": 767,
-      "faces": 672
+      "faces": 672,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/howitzer.obj",
+        "tex": "res://assets/models/tex/shared/land_units/howitzer.png",
+        "skin": "res://assets/models/skin/shared/land_units/howitzer.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/cannon.png"
+      }
     },
     {
       "sid": "mortar",
@@ -303,7 +875,14 @@
         1.3299400806427002
       ],
       "verts": 808,
-      "faces": 790
+      "faces": 790,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/mortar.obj",
+        "tex": "res://assets/models/tex/shared/land_units/mortar.png",
+        "skin": "res://assets/models/skin/shared/land_units/mortar.json",
+        "sprite": "res://assets/models/sprites/shared/land_units/cannon.png"
+      }
     },
     {
       "sid": "musketeer",
@@ -322,7 +901,13 @@
         2.2246415615081787
       ],
       "verts": 890,
-      "faces": 1096
+      "faces": 1096,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/musketeer.obj",
+        "tex": "res://assets/models/tex/shared/land_units/musketeer.png",
+        "skin": "res://assets/models/skin/shared/land_units/musketeer.json"
+      }
     },
     {
       "sid": "strelet",
@@ -341,7 +926,13 @@
         2.1957247257232666
       ],
       "verts": 714,
-      "faces": 975
+      "faces": 975,
+      "bucket": "rus/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/rus/land_units/strelet.obj",
+        "tex": "res://assets/models/tex/rus/land_units/strelet.png",
+        "skin": "res://assets/models/skin/rus/land_units/strelet.json"
+      }
     },
     {
       "sid": "pikeman18",
@@ -360,7 +951,13 @@
         3.4994311332702637
       ],
       "verts": 700,
-      "faces": 964
+      "faces": 964,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/pikeman18.obj",
+        "tex": "res://assets/models/tex/shared/land_units/pikeman18.png",
+        "skin": "res://assets/models/skin/shared/land_units/pikeman18.json"
+      }
     },
     {
       "sid": "dragoon17",
@@ -379,7 +976,13 @@
         1.9607130289077759
       ],
       "verts": 726,
-      "faces": 996
+      "faces": 996,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/dragoon17.obj",
+        "tex": "res://assets/models/tex/shared/land_units/dragoon17.png",
+        "skin": "res://assets/models/skin/shared/land_units/dragoon17.json"
+      }
     },
     {
       "sid": "hussar",
@@ -398,7 +1001,13 @@
         2.0726001262664795
       ],
       "verts": 684,
-      "faces": 994
+      "faces": 994,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/hussar.obj",
+        "tex": "res://assets/models/tex/shared/land_units/hussar.png",
+        "skin": "res://assets/models/skin/shared/land_units/hussar.json"
+      }
     },
     {
       "sid": "wingedhussar",
@@ -417,7 +1026,13 @@
         2.4936256408691406
       ],
       "verts": 881,
-      "faces": 1199
+      "faces": 1199,
+      "bucket": "pol/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/pol/land_units/wingedhussar.obj",
+        "tex": "res://assets/models/tex/pol/land_units/wingedhussar.png",
+        "skin": "res://assets/models/skin/pol/land_units/wingedhussar.json"
+      }
     },
     {
       "sid": "cuirassier",
@@ -436,7 +1051,13 @@
         1.9224134683609009
       ],
       "verts": 833,
-      "faces": 1144
+      "faces": 1144,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/cuirassier.obj",
+        "tex": "res://assets/models/tex/shared/land_units/cuirassier.png",
+        "skin": "res://assets/models/skin/shared/land_units/cuirassier.json"
+      }
     },
     {
       "sid": "reiter",
@@ -455,7 +1076,13 @@
         2.1856555938720703
       ],
       "verts": 762,
-      "faces": 1111
+      "faces": 1111,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/reiter.obj",
+        "tex": "res://assets/models/tex/shared/land_units/reiter.png",
+        "skin": "res://assets/models/skin/shared/land_units/reiter.json"
+      }
     },
     {
       "sid": "lightcavalry",
@@ -474,7 +1101,13 @@
         2.0035910606384277
       ],
       "verts": 650,
-      "faces": 1013
+      "faces": 1013,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/lightcavalry.obj",
+        "tex": "res://assets/models/tex/shared/land_units/lightcavalry.png",
+        "skin": "res://assets/models/skin/shared/land_units/lightcavalry.json"
+      }
     },
     {
       "sid": "lightinfantry",
@@ -493,7 +1126,13 @@
         2.0202860832214355
       ],
       "verts": 659,
-      "faces": 1060
+      "faces": 1060,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/lightinfantry.obj",
+        "tex": "res://assets/models/tex/shared/land_units/lightinfantry.png",
+        "skin": "res://assets/models/skin/shared/land_units/lightinfantry.json"
+      }
     },
     {
       "sid": "tatar",
@@ -512,7 +1151,13 @@
         1.9616941213607788
       ],
       "verts": 720,
-      "faces": 1059
+      "faces": 1059,
+      "bucket": "tur/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/tur/land_units/tatar.obj",
+        "tex": "res://assets/models/tex/tur/land_units/tatar.png",
+        "skin": "res://assets/models/skin/tur/land_units/tatar.json"
+      }
     },
     {
       "sid": "sipahi",
@@ -531,7 +1176,13 @@
         2.1866800785064697
       ],
       "verts": 773,
-      "faces": 1145
+      "faces": 1145,
+      "bucket": "tur/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/tur/land_units/sipahi.obj",
+        "tex": "res://assets/models/tex/tur/land_units/sipahi.png",
+        "skin": "res://assets/models/skin/tur/land_units/sipahi.json"
+      }
     },
     {
       "sid": "jannisary",
@@ -550,7 +1201,13 @@
         2.371359348297119
       ],
       "verts": 777,
-      "faces": 1050
+      "faces": 1050,
+      "bucket": "tur/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/tur/land_units/jannisary.obj",
+        "tex": "res://assets/models/tex/tur/land_units/jannisary.png",
+        "skin": "res://assets/models/skin/tur/land_units/jannisary.json"
+      }
     },
     {
       "sid": "spakh",
@@ -569,7 +1226,13 @@
         2.082242965698242
       ],
       "verts": 718,
-      "faces": 1058
+      "faces": 1058,
+      "bucket": "tur/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/tur/land_units/spakh.obj",
+        "tex": "res://assets/models/tex/tur/land_units/spakh.png",
+        "skin": "res://assets/models/skin/tur/land_units/spakh.json"
+      }
     },
     {
       "sid": "mameluke",
@@ -588,7 +1251,13 @@
         2.2860660552978516
       ],
       "verts": 630,
-      "faces": 996
+      "faces": 996,
+      "bucket": "alg/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/alg/land_units/mameluke.obj",
+        "tex": "res://assets/models/tex/alg/land_units/mameluke.png",
+        "skin": "res://assets/models/skin/alg/land_units/mameluke.json"
+      }
     },
     {
       "sid": "vityaz",
@@ -607,7 +1276,13 @@
         2.055220365524292
       ],
       "verts": 726,
-      "faces": 1020
+      "faces": 1020,
+      "bucket": "rus/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/rus/land_units/vityaz.obj",
+        "tex": "res://assets/models/tex/rus/land_units/vityaz.png",
+        "skin": "res://assets/models/skin/rus/land_units/vityaz.json"
+      }
     },
     {
       "sid": "hetman",
@@ -626,7 +1301,13 @@
         2.1102778911590576
       ],
       "verts": 756,
-      "faces": 1124
+      "faces": 1124,
+      "bucket": "ukr/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/ukr/land_units/hetman.obj",
+        "tex": "res://assets/models/tex/ukr/land_units/hetman.png",
+        "skin": "res://assets/models/skin/ukr/land_units/hetman.json"
+      }
     },
     {
       "sid": "croat",
@@ -645,7 +1326,13 @@
         1.9608850479125977
       ],
       "verts": 653,
-      "faces": 1013
+      "faces": 1013,
+      "bucket": "aus/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/aus/land_units/croat.obj",
+        "tex": "res://assets/models/tex/aus/land_units/croat.png",
+        "skin": "res://assets/models/skin/aus/land_units/croat.json"
+      }
     },
     {
       "sid": "pandur",
@@ -664,7 +1351,13 @@
         2.072075366973877
       ],
       "verts": 662,
-      "faces": 1003
+      "faces": 1003,
+      "bucket": "aus/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/aus/land_units/pandur.obj",
+        "tex": "res://assets/models/tex/aus/land_units/pandur.png",
+        "skin": "res://assets/models/skin/aus/land_units/pandur.json"
+      }
     },
     {
       "sid": "chasseur",
@@ -683,7 +1376,13 @@
         2.292072296142578
       ],
       "verts": 677,
-      "faces": 934
+      "faces": 934,
+      "bucket": "fra/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/fra/land_units/chasseur.obj",
+        "tex": "res://assets/models/tex/fra/land_units/chasseur.png",
+        "skin": "res://assets/models/skin/fra/land_units/chasseur.json"
+      }
     },
     {
       "sid": "highlander",
@@ -702,7 +1401,13 @@
         1.9702768325805664
       ],
       "verts": 704,
-      "faces": 999
+      "faces": 999,
+      "bucket": "eng/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/eng/land_units/highlander.obj",
+        "tex": "res://assets/models/tex/eng/land_units/highlander.png",
+        "skin": "res://assets/models/skin/eng/land_units/highlander.json"
+      }
     },
     {
       "sid": "pope",
@@ -721,7 +1426,13 @@
         2.0281643867492676
       ],
       "verts": 613,
-      "faces": 851
+      "faces": 851,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/pope.obj",
+        "tex": "res://assets/models/tex/shared/land_units/pope.png",
+        "skin": "res://assets/models/skin/shared/land_units/pope.json"
+      }
     },
     {
       "sid": "padre",
@@ -740,7 +1451,13 @@
         1.9497488737106323
       ],
       "verts": 646,
-      "faces": 1003
+      "faces": 1003,
+      "bucket": "pie/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/pie/land_units/padre.obj",
+        "tex": "res://assets/models/tex/pie/land_units/padre.png",
+        "skin": "res://assets/models/skin/pie/land_units/padre.json"
+      }
     },
     {
       "sid": "mullah",
@@ -759,7 +1476,13 @@
         2.0499367713928223
       ],
       "verts": 659,
-      "faces": 893
+      "faces": 893,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/mullah.obj",
+        "tex": "res://assets/models/tex/shared/land_units/mullah.png",
+        "skin": "res://assets/models/skin/shared/land_units/mullah.json"
+      }
     },
     {
       "sid": "drummer18",
@@ -778,7 +1501,13 @@
         1.9990352392196655
       ],
       "verts": 740,
-      "faces": 999
+      "faces": 999,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/drummer18.obj",
+        "tex": "res://assets/models/tex/shared/land_units/drummer18.png",
+        "skin": "res://assets/models/skin/shared/land_units/drummer18.json"
+      }
     },
     {
       "sid": "multicannon",
@@ -797,7 +1526,13 @@
         1.6963436603546143
       ],
       "verts": 2528,
-      "faces": 2410
+      "faces": 2410,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/multicannon.obj",
+        "tex": "res://assets/models/tex/shared/land_units/multicannon.png",
+        "skin": "res://assets/models/skin/shared/land_units/multicannon.json"
+      }
     },
     {
       "sid": "cossackdon",
@@ -816,7 +1551,13 @@
         2.0126821994781494
       ],
       "verts": 612,
-      "faces": 986
+      "faces": 986,
+      "bucket": "rus/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/rus/land_units/cossackdon.obj",
+        "tex": "res://assets/models/tex/rus/land_units/cossackdon.png",
+        "skin": "res://assets/models/skin/rus/land_units/cossackdon.json"
+      }
     },
     {
       "sid": "hackapell",
@@ -835,7 +1576,13 @@
         2.0373222827911377
       ],
       "verts": 531,
-      "faces": 810
+      "faces": 810,
+      "bucket": "swe/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/swe/land_units/hackapell.obj",
+        "tex": "res://assets/models/tex/swe/land_units/hackapell.png",
+        "skin": "res://assets/models/skin/swe/land_units/hackapell.json"
+      }
     },
     {
       "sid": "cossackregister",
@@ -854,7 +1601,13 @@
         1.9831041097640991
       ],
       "verts": 800,
-      "faces": 1147
+      "faces": 1147,
+      "bucket": "ukr/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/ukr/land_units/cossackregister.obj",
+        "tex": "res://assets/models/tex/ukr/land_units/cossackregister.png",
+        "skin": "res://assets/models/skin/ukr/land_units/cossackregister.json"
+      }
     },
     {
       "sid": "bagpiper",
@@ -873,7 +1626,13 @@
         2.1577906608581543
       ],
       "verts": 1014,
-      "faces": 1332
+      "faces": 1332,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/bagpiper.obj",
+        "tex": "res://assets/models/tex/shared/land_units/bagpiper.png",
+        "skin": "res://assets/models/skin/shared/land_units/bagpiper.json"
+      }
     },
     {
       "sid": "sco_highlandersword",
@@ -892,7 +1651,13 @@
         1.970286250114441
       ],
       "verts": 786,
-      "faces": 1181
+      "faces": 1181,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/sco_highlandersword.obj",
+        "tex": "res://assets/models/tex/sco/land_units/sco_highlandersword.png",
+        "skin": "res://assets/models/skin/sco/land_units/sco_highlandersword.json"
+      }
     },
     {
       "sid": "pikemansco",
@@ -911,7 +1676,13 @@
         3.4801385402679443
       ],
       "verts": 664,
-      "faces": 1003
+      "faces": 1003,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/pikemansco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/pikemansco.png",
+        "skin": "res://assets/models/skin/sco/land_units/pikemansco.json"
+      }
     },
     {
       "sid": "swordsmansco",
@@ -930,7 +1701,13 @@
         1.970286250114441
       ],
       "verts": 786,
-      "faces": 1181
+      "faces": 1181,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/swordsmansco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/swordsmansco.png",
+        "skin": "res://assets/models/skin/sco/land_units/swordsmansco.json"
+      }
     },
     {
       "sid": "musketeersco",
@@ -949,7 +1726,13 @@
         1.9382983446121216
       ],
       "verts": 654,
-      "faces": 1014
+      "faces": 1014,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/musketeersco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/musketeersco.png",
+        "skin": "res://assets/models/skin/sco/land_units/musketeersco.json"
+      }
     },
     {
       "sid": "archersco",
@@ -968,7 +1751,13 @@
         1.9412308931350708
       ],
       "verts": 810,
-      "faces": 1186
+      "faces": 1186,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/archersco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/archersco.png",
+        "skin": "res://assets/models/skin/sco/land_units/archersco.json"
+      }
     },
     {
       "sid": "officersco",
@@ -987,7 +1776,13 @@
         2.1362712383270264
       ],
       "verts": 952,
-      "faces": 1187
+      "faces": 1187,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/officersco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/officersco.png",
+        "skin": "res://assets/models/skin/sco/land_units/officersco.json"
+      }
     },
     {
       "sid": "lancersco",
@@ -1006,7 +1801,13 @@
         1.878218412399292
       ],
       "verts": 689,
-      "faces": 985
+      "faces": 985,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/lancersco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/lancersco.png",
+        "skin": "res://assets/models/skin/sco/land_units/lancersco.json"
+      }
     },
     {
       "sid": "raidersco",
@@ -1025,7 +1826,13 @@
         2.0299298763275146
       ],
       "verts": 623,
-      "faces": 978
+      "faces": 978,
+      "bucket": "sco/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/sco/land_units/raidersco.obj",
+        "tex": "res://assets/models/tex/sco/land_units/raidersco.png",
+        "skin": "res://assets/models/skin/sco/land_units/raidersco.json"
+      }
     },
     {
       "sid": "framegun",
@@ -1044,7 +1851,13 @@
         1.3506064414978027
       ],
       "verts": 607,
-      "faces": 391
+      "faces": 391,
+      "bucket": "shared/land_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/land_units/framegun.obj",
+        "tex": "res://assets/models/tex/shared/land_units/framegun.png",
+        "skin": "res://assets/models/skin/shared/land_units/framegun.json"
+      }
     },
     {
       "sid": "cen",
@@ -1063,7 +1876,13 @@
         11.905742645263672
       ],
       "verts": 5611,
-      "faces": 3714
+      "faces": 3714,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen.obj",
+        "tex": "res://assets/models/tex/shared/buildings/cen.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/cen.png"
+      }
     },
     {
       "sid": "hou",
@@ -1082,7 +1901,13 @@
         5.507205009460449
       ],
       "verts": 2722,
-      "faces": 2298
+      "faces": 2298,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou.obj",
+        "tex": "res://assets/models/tex/shared/buildings/hou.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/hou.png"
+      }
     },
     {
       "sid": "bar",
@@ -1101,7 +1926,13 @@
         6.410475730895996
       ],
       "verts": 5773,
-      "faces": 3557
+      "faces": 3557,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bar.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/bar.png"
+      }
     },
     {
       "sid": "sta",
@@ -1120,7 +1951,13 @@
         6.8787736892700195
       ],
       "verts": 5422,
-      "faces": 3712
+      "faces": 3712,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sta.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/sta.png"
+      }
     },
     {
       "sid": "bla",
@@ -1139,7 +1976,13 @@
         2.620098352432251
       ],
       "verts": 9790,
-      "faces": 8059
+      "faces": 8059,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bla.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/bla.png"
+      }
     },
     {
       "sid": "aca",
@@ -1158,7 +2001,13 @@
         7.911116123199463
       ],
       "verts": 15541,
-      "faces": 11489
+      "faces": 11489,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca.obj",
+        "tex": "res://assets/models/tex/shared/buildings/aca.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/aca.png"
+      }
     },
     {
       "sid": "art",
@@ -1177,7 +2026,13 @@
         6.468920707702637
       ],
       "verts": 7870,
-      "faces": 5505
+      "faces": 5505,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art.obj",
+        "tex": "res://assets/models/tex/shared/buildings/art.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/art.png"
+      }
     },
     {
       "sid": "sto",
@@ -1196,7 +2051,13 @@
         2.473339080810547
       ],
       "verts": 1384,
-      "faces": 914
+      "faces": 914,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sto.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/sto.png"
+      }
     },
     {
       "sid": "mil",
@@ -1215,7 +2076,13 @@
         5.914005756378174
       ],
       "verts": 2949,
-      "faces": 2020
+      "faces": 2020,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mil.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/mil.png"
+      }
     },
     {
       "sid": "mar",
@@ -1234,7 +2101,13 @@
         4.6455488204956055
       ],
       "verts": 9175,
-      "faces": 8643
+      "faces": 8643,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mar.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/mar.png"
+      }
     },
     {
       "sid": "tow",
@@ -1253,7 +2126,13 @@
         9.379703521728516
       ],
       "verts": 1315,
-      "faces": 1132
+      "faces": 1132,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow.obj",
+        "tex": "res://assets/models/tex/shared/buildings/tow.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/tow.png"
+      }
     },
     {
       "sid": "dip",
@@ -1272,7 +2151,12 @@
         5.764489650726318
       ],
       "verts": 9881,
-      "faces": 7471
+      "faces": 7471,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip.obj",
+        "tex": "res://assets/models/tex/shared/buildings/dip.png"
+      }
     },
     {
       "sid": "wal",
@@ -1291,7 +2175,12 @@
         12.02014446258545
       ],
       "verts": 4800,
-      "faces": 3202
+      "faces": 3202,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/wal.obj",
+        "tex": "res://assets/models/tex/shared/buildings/wal.png"
+      }
     },
     {
       "sid": "gat",
@@ -1310,7 +2199,12 @@
         10.671483039855957
       ],
       "verts": 4530,
-      "faces": 2848
+      "faces": 2848,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/gat.obj",
+        "tex": "res://assets/models/tex/shared/buildings/gat.png"
+      }
     },
     {
       "sid": "mine_gold",
@@ -1329,7 +2223,13 @@
         0.3618934154510498
       ],
       "verts": 1065,
-      "faces": 1234
+      "faces": 1234,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mine_gold.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mine_gold.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/mine_gold.png"
+      }
     },
     {
       "sid": "mine_iron",
@@ -1348,7 +2248,13 @@
         0.3618934154510498
       ],
       "verts": 1065,
-      "faces": 1234
+      "faces": 1234,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mine_iron.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mine_iron.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/mine_iron.png"
+      }
     },
     {
       "sid": "mine_coal",
@@ -1367,7 +2273,13 @@
         0.3618934154510498
       ],
       "verts": 1065,
-      "faces": 1234
+      "faces": 1234,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mine_coal.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mine_coal.png",
+        "sprite": "res://assets/models/sprites/shared/buildings/mine_coal.png"
+      }
     },
     {
       "sid": "yacht",
@@ -1386,7 +2298,12 @@
         6.8033127784729
       ],
       "verts": 9364,
-      "faces": 7731
+      "faces": 7731,
+      "bucket": "shared/naval_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/naval_units/yacht.obj",
+        "tex": "res://assets/models/tex/shared/naval_units/yacht.png"
+      }
     },
     {
       "sid": "yachttur",
@@ -1405,7 +2322,12 @@
         5.878651142120361
       ],
       "verts": 2649,
-      "faces": 3898
+      "faces": 3898,
+      "bucket": "shared/naval_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/naval_units/yachttur.obj",
+        "tex": "res://assets/models/tex/shared/naval_units/yachttur.png"
+      }
     },
     {
       "sid": "fishboat",
@@ -1424,7 +2346,12 @@
         2.617985248565674
       ],
       "verts": 1577,
-      "faces": 1135
+      "faces": 1135,
+      "bucket": "shared/naval_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/naval_units/fishboat.obj",
+        "tex": "res://assets/models/tex/shared/naval_units/fishboat.png"
+      }
     },
     {
       "sid": "frigate",
@@ -1443,7 +2370,12 @@
         11.940046310424805
       ],
       "verts": 19008,
-      "faces": 15205
+      "faces": 15205,
+      "bucket": "shared/naval_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/naval_units/frigate.obj",
+        "tex": "res://assets/models/tex/shared/naval_units/frigate.png"
+      }
     },
     {
       "sid": "galley",
@@ -1462,7 +2394,12 @@
         7.536653995513916
       ],
       "verts": 7522,
-      "faces": 5294
+      "faces": 5294,
+      "bucket": "shared/naval_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/naval_units/galley.obj",
+        "tex": "res://assets/models/tex/shared/naval_units/galley.png"
+      }
     },
     {
       "sid": "battleship",
@@ -1481,7 +2418,12 @@
         11.258008003234863
       ],
       "verts": 17072,
-      "faces": 15671
+      "faces": 15671,
+      "bucket": "shared/naval_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/naval_units/battleship.obj",
+        "tex": "res://assets/models/tex/shared/naval_units/battleship.png"
+      }
     },
     {
       "sid": "xebec",
@@ -1500,7 +2442,12 @@
         9.91940975189209
       ],
       "verts": 9188,
-      "faces": 7550
+      "faces": 7550,
+      "bucket": "shared/naval_units",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/naval_units/xebec.obj",
+        "tex": "res://assets/models/tex/shared/naval_units/xebec.png"
+      }
     },
     {
       "sid": "tree_fir",
@@ -1519,7 +2466,14 @@
         6.1411261558532715
       ],
       "verts": 752,
-      "faces": 865
+      "faces": 865,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_fir.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_fir.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_fir.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_fir.png"
+      }
     },
     {
       "sid": "tree_oak",
@@ -1538,7 +2492,14 @@
         7.634304046630859
       ],
       "verts": 1697,
-      "faces": 2249
+      "faces": 2249,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_oak.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_oak.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_oak.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_oak.png"
+      }
     },
     {
       "sid": "tree_pine",
@@ -1557,7 +2518,14 @@
         7.647116661071777
       ],
       "verts": 1201,
-      "faces": 1516
+      "faces": 1516,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pine.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pine.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pine.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pine.png"
+      }
     },
     {
       "sid": "rock",
@@ -1576,7 +2544,13 @@
         5.157997131347656
       ],
       "verts": 187,
-      "faces": 336
+      "faces": 336,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock.png"
+      }
     },
     {
       "sid": "stone",
@@ -1595,7 +2569,13 @@
         2.0996041297912598
       ],
       "verts": 156,
-      "faces": 224
+      "faces": 224,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/stone.obj",
+        "tex": "res://assets/models/tex/shared/terrain/stone.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/stone.png"
+      }
     },
     {
       "sid": "field",
@@ -1614,7 +2594,13 @@
         18.796781539916992
       ],
       "verts": 546,
-      "faces": 544
+      "faces": 544,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/field.obj",
+        "tex": "res://assets/models/tex/shared/terrain/field.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/field.png"
+      }
     },
     {
       "sid": "tree_spruce1",
@@ -1633,7 +2619,14 @@
         6.884532928466797
       ],
       "verts": 863,
-      "faces": 1060
+      "faces": 1060,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_spruce1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_spruce1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_spruce1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_spruce1.png"
+      }
     },
     {
       "sid": "tree_spruce2",
@@ -1652,7 +2645,14 @@
         6.680449962615967
       ],
       "verts": 860,
-      "faces": 1055
+      "faces": 1055,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_spruce2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_spruce2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_spruce2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_spruce2.png"
+      }
     },
     {
       "sid": "tree_spruce3",
@@ -1671,7 +2671,14 @@
         6.884533405303955
       ],
       "verts": 863,
-      "faces": 1060
+      "faces": 1060,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_spruce3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_spruce3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_spruce3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_spruce3.png"
+      }
     },
     {
       "sid": "tree_spruce4",
@@ -1690,7 +2697,14 @@
         4.895437240600586
       ],
       "verts": 672,
-      "faces": 828
+      "faces": 828,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_spruce4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_spruce4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_spruce4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_spruce4.png"
+      }
     },
     {
       "sid": "tree_pinedry1",
@@ -1709,7 +2723,14 @@
         6.368880748748779
       ],
       "verts": 670,
-      "faces": 1032
+      "faces": 1032,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinedry1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinedry1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinedry1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinedry1.png"
+      }
     },
     {
       "sid": "tree_pinedry2",
@@ -1728,7 +2749,14 @@
         6.110640048980713
       ],
       "verts": 321,
-      "faces": 463
+      "faces": 463,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinedry2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinedry2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinedry2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinedry2.png"
+      }
     },
     {
       "sid": "tree_pinedry3",
@@ -1747,7 +2775,14 @@
         4.910889625549316
       ],
       "verts": 449,
-      "faces": 664
+      "faces": 664,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinedry3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinedry3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinedry3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinedry3.png"
+      }
     },
     {
       "sid": "tree_pinedry4",
@@ -1766,7 +2801,14 @@
         5.936027526855469
       ],
       "verts": 635,
-      "faces": 947
+      "faces": 947,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinedry4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinedry4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinedry4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinedry4.png"
+      }
     },
     {
       "sid": "tree_pinesmall1",
@@ -1785,7 +2827,14 @@
         5.3398308753967285
       ],
       "verts": 641,
-      "faces": 683
+      "faces": 683,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinesmall1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinesmall1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinesmall1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinesmall1.png"
+      }
     },
     {
       "sid": "tree_pinesmall2",
@@ -1804,7 +2853,14 @@
         3.1719112396240234
       ],
       "verts": 388,
-      "faces": 405
+      "faces": 405,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinesmall2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinesmall2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinesmall2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinesmall2.png"
+      }
     },
     {
       "sid": "tree_pinesmall3",
@@ -1823,7 +2879,14 @@
         2.3683528900146484
       ],
       "verts": 276,
-      "faces": 279
+      "faces": 279,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinesmall3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinesmall3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinesmall3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinesmall3.png"
+      }
     },
     {
       "sid": "tree_pinesmall4",
@@ -1842,7 +2905,14 @@
         4.248412609100342
       ],
       "verts": 462,
-      "faces": 478
+      "faces": 478,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_pinesmall4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_pinesmall4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_pinesmall4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_pinesmall4.png"
+      }
     },
     {
       "sid": "tree_firsmall1",
@@ -1861,7 +2931,14 @@
         3.494222640991211
       ],
       "verts": 504,
-      "faces": 588
+      "faces": 588,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_firsmall1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_firsmall1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_firsmall1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_firsmall1.png"
+      }
     },
     {
       "sid": "tree_firsmall2",
@@ -1880,7 +2957,14 @@
         3.9664149284362793
       ],
       "verts": 512,
-      "faces": 604
+      "faces": 604,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_firsmall2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_firsmall2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_firsmall2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_firsmall2.png"
+      }
     },
     {
       "sid": "tree_firsmall3",
@@ -1899,7 +2983,14 @@
         3.2426249980926514
       ],
       "verts": 447,
-      "faces": 504
+      "faces": 504,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_firsmall3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_firsmall3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_firsmall3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_firsmall3.png"
+      }
     },
     {
       "sid": "tree_firsmall4",
@@ -1918,7 +3009,14 @@
         3.9664149284362793
       ],
       "verts": 512,
-      "faces": 604
+      "faces": 604,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_firsmall4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_firsmall4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_firsmall4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_firsmall4.png"
+      }
     },
     {
       "sid": "tree_stump1",
@@ -1937,7 +3035,14 @@
         0.30253106355667114
       ],
       "verts": 24,
-      "faces": 22
+      "faces": 22,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_stump1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_stump1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_stump1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_stump1.png"
+      }
     },
     {
       "sid": "tree_stump2",
@@ -1956,7 +3061,14 @@
         1.168512225151062
       ],
       "verts": 578,
-      "faces": 747
+      "faces": 747,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_stump2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_stump2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_stump2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_stump2.png"
+      }
     },
     {
       "sid": "tree_stump3",
@@ -1975,7 +3087,14 @@
         0.49542170763015747
       ],
       "verts": 339,
-      "faces": 496
+      "faces": 496,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_stump3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_stump3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_stump3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_stump3.png"
+      }
     },
     {
       "sid": "tree_stump4",
@@ -1994,7 +3113,14 @@
         0.38977551460266113
       ],
       "verts": 194,
-      "faces": 228
+      "faces": 228,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/tree_stump4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/tree_stump4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/tree_stump4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/tree_stump4.png"
+      }
     },
     {
       "sid": "rock_stones1",
@@ -2013,7 +3139,14 @@
         2.0996041297912598
       ],
       "verts": 156,
-      "faces": 224
+      "faces": 224,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones1.png"
+      }
     },
     {
       "sid": "rock_stones2",
@@ -2032,7 +3165,14 @@
         2.023164749145508
       ],
       "verts": 121,
-      "faces": 170
+      "faces": 170,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones2.png"
+      }
     },
     {
       "sid": "rock_stones3",
@@ -2051,7 +3191,14 @@
         2.1024632453918457
       ],
       "verts": 39,
-      "faces": 66
+      "faces": 66,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones3.png"
+      }
     },
     {
       "sid": "rock_stones4",
@@ -2070,7 +3217,14 @@
         2.0672900676727295
       ],
       "verts": 119,
-      "faces": 182
+      "faces": 182,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones4.png"
+      }
     },
     {
       "sid": "rock_stones5",
@@ -2089,7 +3243,14 @@
         2.4590272903442383
       ],
       "verts": 163,
-      "faces": 250
+      "faces": 250,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones5.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones5.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones5.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones5.png"
+      }
     },
     {
       "sid": "rock_stones6",
@@ -2108,7 +3269,14 @@
         1.9623849391937256
       ],
       "verts": 67,
-      "faces": 100
+      "faces": 100,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones6.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones6.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones6.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones6.png"
+      }
     },
     {
       "sid": "rock_stones7",
@@ -2127,7 +3295,14 @@
         1.9639830589294434
       ],
       "verts": 218,
-      "faces": 321
+      "faces": 321,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones7.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones7.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones7.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones7.png"
+      }
     },
     {
       "sid": "rock_stones8",
@@ -2146,7 +3321,14 @@
         2.059499740600586
       ],
       "verts": 195,
-      "faces": 290
+      "faces": 290,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones8.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones8.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones8.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones8.png"
+      }
     },
     {
       "sid": "rock_stones9",
@@ -2165,7 +3347,14 @@
         3.0407509803771973
       ],
       "verts": 128,
-      "faces": 205
+      "faces": 205,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones9.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones9.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones9.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones9.png"
+      }
     },
     {
       "sid": "rock_stones10",
@@ -2184,7 +3373,14 @@
         2.0337016582489014
       ],
       "verts": 59,
-      "faces": 103
+      "faces": 103,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stones10.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stones10.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stones10.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stones10.png"
+      }
     },
     {
       "sid": "rock_smallstones1",
@@ -2203,7 +3399,14 @@
         1.6818664073944092
       ],
       "verts": 175,
-      "faces": 265
+      "faces": 265,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstones1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstones1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstones1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstones1.png"
+      }
     },
     {
       "sid": "rock_smallstones2",
@@ -2222,7 +3425,14 @@
         0.8800426125526428
       ],
       "verts": 220,
-      "faces": 329
+      "faces": 329,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstones2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstones2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstones2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstones2.png"
+      }
     },
     {
       "sid": "rock_smallstones3",
@@ -2241,7 +3451,14 @@
         1.0721917152404785
       ],
       "verts": 218,
-      "faces": 334
+      "faces": 334,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstones3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstones3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstones3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstones3.png"
+      }
     },
     {
       "sid": "rock_smallstones4",
@@ -2260,7 +3477,14 @@
         1.3045728206634521
       ],
       "verts": 160,
-      "faces": 241
+      "faces": 241,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstones4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstones4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstones4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstones4.png"
+      }
     },
     {
       "sid": "rock_smallstones5",
@@ -2279,7 +3503,14 @@
         2.486823320388794
       ],
       "verts": 246,
-      "faces": 373
+      "faces": 373,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstones5.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstones5.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstones5.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstones5.png"
+      }
     },
     {
       "sid": "rock_smallstones6",
@@ -2298,7 +3529,14 @@
         1.78566312789917
       ],
       "verts": 200,
-      "faces": 308
+      "faces": 308,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstones6.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstones6.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstones6.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstones6.png"
+      }
     },
     {
       "sid": "rock_landstone1",
@@ -2317,7 +3555,14 @@
         1.6818664073944092
       ],
       "verts": 175,
-      "faces": 265
+      "faces": 265,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_landstone1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_landstone1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_landstone1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_landstone1.png"
+      }
     },
     {
       "sid": "rock_landstone2",
@@ -2336,7 +3581,14 @@
         0.8800426125526428
       ],
       "verts": 220,
-      "faces": 329
+      "faces": 329,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_landstone2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_landstone2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_landstone2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_landstone2.png"
+      }
     },
     {
       "sid": "rock_landstone3",
@@ -2355,7 +3607,14 @@
         1.0721917152404785
       ],
       "verts": 218,
-      "faces": 334
+      "faces": 334,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_landstone3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_landstone3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_landstone3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_landstone3.png"
+      }
     },
     {
       "sid": "rock_landstone4",
@@ -2374,7 +3633,14 @@
         1.3045728206634521
       ],
       "verts": 160,
-      "faces": 241
+      "faces": 241,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_landstone4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_landstone4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_landstone4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_landstone4.png"
+      }
     },
     {
       "sid": "rock_sea1",
@@ -2393,7 +3659,14 @@
         8.030298233032227
       ],
       "verts": 302,
-      "faces": 558
+      "faces": 558,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_sea1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_sea1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_sea1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_sea1.png"
+      }
     },
     {
       "sid": "rock_sea2",
@@ -2412,7 +3685,14 @@
         4.752835273742676
       ],
       "verts": 472,
-      "faces": 586
+      "faces": 586,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_sea2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_sea2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_sea2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_sea2.png"
+      }
     },
     {
       "sid": "rock_sea3",
@@ -2431,7 +3711,14 @@
         2.83976674079895
       ],
       "verts": 645,
-      "faces": 1238
+      "faces": 1238,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_sea3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_sea3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_sea3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_sea3.png"
+      }
     },
     {
       "sid": "rock_sea4",
@@ -2450,7 +3737,14 @@
         4.335455417633057
       ],
       "verts": 655,
-      "faces": 1274
+      "faces": 1274,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_sea4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_sea4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_sea4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_sea4.png"
+      }
     },
     {
       "sid": "rock_sea5",
@@ -2469,7 +3763,14 @@
         3.336744785308838
       ],
       "verts": 1023,
-      "faces": 1958
+      "faces": 1958,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_sea5.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_sea5.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_sea5.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_sea5.png"
+      }
     },
     {
       "sid": "rock_sea6",
@@ -2488,7 +3789,14 @@
         3.531933546066284
       ],
       "verts": 1146,
-      "faces": 2219
+      "faces": 2219,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_sea6.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_sea6.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_sea6.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_sea6.png"
+      }
     },
     {
       "sid": "rock_smallstonesea1",
@@ -2507,7 +3815,14 @@
         1.6818664073944092
       ],
       "verts": 175,
-      "faces": 265
+      "faces": 265,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstonesea1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstonesea1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstonesea1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstonesea1.png"
+      }
     },
     {
       "sid": "rock_smallstonesea2",
@@ -2526,7 +3841,14 @@
         0.8800426125526428
       ],
       "verts": 220,
-      "faces": 329
+      "faces": 329,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstonesea2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstonesea2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstonesea2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstonesea2.png"
+      }
     },
     {
       "sid": "rock_smallstonesea3",
@@ -2545,7 +3867,14 @@
         1.0721917152404785
       ],
       "verts": 218,
-      "faces": 334
+      "faces": 334,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstonesea3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstonesea3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstonesea3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstonesea3.png"
+      }
     },
     {
       "sid": "rock_smallstonesea4",
@@ -2564,7 +3893,14 @@
         1.3045728206634521
       ],
       "verts": 160,
-      "faces": 241
+      "faces": 241,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstonesea4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstonesea4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstonesea4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstonesea4.png"
+      }
     },
     {
       "sid": "rock_smallstonesea5",
@@ -2583,7 +3919,14 @@
         2.486823320388794
       ],
       "verts": 246,
-      "faces": 373
+      "faces": 373,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstonesea5.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstonesea5.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstonesea5.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstonesea5.png"
+      }
     },
     {
       "sid": "rock_smallstonesea6",
@@ -2602,7 +3945,14 @@
         1.78566312789917
       ],
       "verts": 200,
-      "faces": 308
+      "faces": 308,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_smallstonesea6.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_smallstonesea6.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_smallstonesea6.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_smallstonesea6.png"
+      }
     },
     {
       "sid": "rock_stonessea1",
@@ -2621,7 +3971,14 @@
         2.671710968017578
       ],
       "verts": 138,
-      "faces": 170
+      "faces": 170,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea1.png"
+      }
     },
     {
       "sid": "rock_stonessea2",
@@ -2640,7 +3997,14 @@
         2.7069127559661865
       ],
       "verts": 130,
-      "faces": 176
+      "faces": 176,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea2.png"
+      }
     },
     {
       "sid": "rock_stonessea3",
@@ -2659,7 +4023,14 @@
         2.425985336303711
       ],
       "verts": 56,
-      "faces": 73
+      "faces": 73,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea3.png"
+      }
     },
     {
       "sid": "rock_stonessea4",
@@ -2678,7 +4049,14 @@
         2.306976318359375
       ],
       "verts": 127,
-      "faces": 173
+      "faces": 173,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea4.png"
+      }
     },
     {
       "sid": "rock_stonessea5",
@@ -2697,7 +4075,14 @@
         2.099604845046997
       ],
       "verts": 156,
-      "faces": 224
+      "faces": 224,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea5.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea5.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea5.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea5.png"
+      }
     },
     {
       "sid": "rock_stonessea6",
@@ -2716,7 +4101,14 @@
         2.177903890609741
       ],
       "verts": 74,
-      "faces": 103
+      "faces": 103,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea6.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea6.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea6.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea6.png"
+      }
     },
     {
       "sid": "rock_stonessea7",
@@ -2735,7 +4127,14 @@
         1.9531669616699219
       ],
       "verts": 208,
-      "faces": 260
+      "faces": 260,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea7.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea7.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea7.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea7.png"
+      }
     },
     {
       "sid": "rock_stonessea8",
@@ -2754,7 +4153,14 @@
         1.8909651041030884
       ],
       "verts": 117,
-      "faces": 163
+      "faces": 163,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea8.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea8.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea8.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea8.png"
+      }
     },
     {
       "sid": "rock_stonessea9",
@@ -2773,7 +4179,14 @@
         1.7545738220214844
       ],
       "verts": 93,
-      "faces": 124
+      "faces": 124,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea9.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea9.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea9.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea9.png"
+      }
     },
     {
       "sid": "rock_stonessea10",
@@ -2792,7 +4205,14 @@
         1.714246153831482
       ],
       "verts": 103,
-      "faces": 129
+      "faces": 129,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/rock_stonessea10.obj",
+        "tex": "res://assets/models/tex/shared/terrain/rock_stonessea10.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/rock_stonessea10.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/rock_stonessea10.png"
+      }
     },
     {
       "sid": "bush1",
@@ -2811,7 +4231,14 @@
         1.684622049331665
       ],
       "verts": 840,
-      "faces": 1140
+      "faces": 1140,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/bush1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/bush1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/bush1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/bush1.png"
+      }
     },
     {
       "sid": "bush2",
@@ -2830,7 +4257,14 @@
         1.6752361059188843
       ],
       "verts": 588,
-      "faces": 798
+      "faces": 798,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/bush2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/bush2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/bush2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/bush2.png"
+      }
     },
     {
       "sid": "bush3",
@@ -2849,7 +4283,14 @@
         1.6846225261688232
       ],
       "verts": 588,
-      "faces": 798
+      "faces": 798,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/bush3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/bush3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/bush3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/bush3.png"
+      }
     },
     {
       "sid": "bush4",
@@ -2868,7 +4309,14 @@
         1.6846225261688232
       ],
       "verts": 672,
-      "faces": 912
+      "faces": 912,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/bush4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/bush4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/bush4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/bush4.png"
+      }
     },
     {
       "sid": "flower1",
@@ -2887,7 +4335,14 @@
         3.4932096004486084
       ],
       "verts": 112,
-      "faces": 56
+      "faces": 56,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/flower1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/flower1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/flower1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/flower1.png"
+      }
     },
     {
       "sid": "plantain1",
@@ -2906,7 +4361,14 @@
         1.5451983213424683
       ],
       "verts": 111,
-      "faces": 96
+      "faces": 96,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/plantain1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/plantain1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/plantain1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/plantain1.png"
+      }
     },
     {
       "sid": "reed1",
@@ -2925,7 +4387,14 @@
         3.4025237560272217
       ],
       "verts": 328,
-      "faces": 366
+      "faces": 366,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/reed1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/reed1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/reed1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/reed1.png"
+      }
     },
     {
       "sid": "flower2",
@@ -2944,7 +4413,14 @@
         3.7242233753204346
       ],
       "verts": 192,
-      "faces": 96
+      "faces": 96,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/flower2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/flower2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/flower2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/flower2.png"
+      }
     },
     {
       "sid": "plantain2",
@@ -2963,7 +4439,14 @@
         1.7669141292572021
       ],
       "verts": 113,
-      "faces": 95
+      "faces": 95,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/plantain2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/plantain2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/plantain2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/plantain2.png"
+      }
     },
     {
       "sid": "reed2",
@@ -2982,7 +4465,14 @@
         3.3566994667053223
       ],
       "verts": 223,
-      "faces": 247
+      "faces": 247,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/reed2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/reed2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/reed2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/reed2.png"
+      }
     },
     {
       "sid": "flower3",
@@ -3001,7 +4491,14 @@
         3.8779282569885254
       ],
       "verts": 152,
-      "faces": 76
+      "faces": 76,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/flower3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/flower3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/flower3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/flower3.png"
+      }
     },
     {
       "sid": "plantain3",
@@ -3020,7 +4517,14 @@
         1.8650258779525757
       ],
       "verts": 91,
-      "faces": 76
+      "faces": 76,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/plantain3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/plantain3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/plantain3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/plantain3.png"
+      }
     },
     {
       "sid": "reed3",
@@ -3039,7 +4543,14 @@
         3.40252423286438
       ],
       "verts": 371,
-      "faces": 413
+      "faces": 413,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/reed3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/reed3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/reed3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/reed3.png"
+      }
     },
     {
       "sid": "fern1",
@@ -3058,7 +4569,14 @@
         1.8196691274642944
       ],
       "verts": 143,
-      "faces": 156
+      "faces": 156,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/fern1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/fern1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/fern1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/fern1.png"
+      }
     },
     {
       "sid": "fern2",
@@ -3077,7 +4595,14 @@
         1.5631372928619385
       ],
       "verts": 99,
-      "faces": 108
+      "faces": 108,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/fern2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/fern2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/fern2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/fern2.png"
+      }
     },
     {
       "sid": "fern3",
@@ -3096,7 +4621,14 @@
         1.6695218086242676
       ],
       "verts": 132,
-      "faces": 144
+      "faces": 144,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/fern3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/fern3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/fern3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/fern3.png"
+      }
     },
     {
       "sid": "fern4",
@@ -3115,7 +4647,14 @@
         1.8196691274642944
       ],
       "verts": 143,
-      "faces": 156
+      "faces": 156,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/fern4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/fern4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/fern4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/fern4.png"
+      }
     },
     {
       "sid": "christmastree",
@@ -3134,7 +4673,14 @@
         7.218406677246094
       ],
       "verts": 835,
-      "faces": 1000
+      "faces": 1000,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/christmastree.obj",
+        "tex": "res://assets/models/tex/shared/terrain/christmastree.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/christmastree.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/christmastree.png"
+      }
     },
     {
       "sid": "christmastreea",
@@ -3153,7 +4699,14 @@
         7.57476282119751
       ],
       "verts": 11459,
-      "faces": 21916
+      "faces": 21916,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/christmastreea.obj",
+        "tex": "res://assets/models/tex/shared/terrain/christmastreea.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/christmastreea.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/christmastreea.png"
+      }
     },
     {
       "sid": "gift1",
@@ -3172,7 +4725,14 @@
         1.6434446573257446
       ],
       "verts": 325,
-      "faces": 333
+      "faces": 333,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/gift1.obj",
+        "tex": "res://assets/models/tex/shared/terrain/gift1.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/gift1.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/gift1.png"
+      }
     },
     {
       "sid": "gift2",
@@ -3191,7 +4751,14 @@
         1.1202799081802368
       ],
       "verts": 252,
-      "faces": 252
+      "faces": 252,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/gift2.obj",
+        "tex": "res://assets/models/tex/shared/terrain/gift2.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/gift2.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/gift2.png"
+      }
     },
     {
       "sid": "gift3",
@@ -3210,7 +4777,14 @@
         1.2300045490264893
       ],
       "verts": 278,
-      "faces": 274
+      "faces": 274,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/gift3.obj",
+        "tex": "res://assets/models/tex/shared/terrain/gift3.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/gift3.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/gift3.png"
+      }
     },
     {
       "sid": "gift4",
@@ -3229,7 +4803,14 @@
         1.0755329132080078
       ],
       "verts": 307,
-      "faces": 333
+      "faces": 333,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/gift4.obj",
+        "tex": "res://assets/models/tex/shared/terrain/gift4.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/gift4.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/gift4.png"
+      }
     },
     {
       "sid": "gift5",
@@ -3248,7 +4829,14 @@
         1.5793228149414062
       ],
       "verts": 98,
-      "faces": 176
+      "faces": 176,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/gift5.obj",
+        "tex": "res://assets/models/tex/shared/terrain/gift5.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/gift5.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/gift5.png"
+      }
     },
     {
       "sid": "gift6",
@@ -3267,7 +4855,14 @@
         1.1984354257583618
       ],
       "verts": 98,
-      "faces": 176
+      "faces": 176,
+      "bucket": "shared/terrain",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/terrain/gift6.obj",
+        "tex": "res://assets/models/tex/shared/terrain/gift6.png",
+        "sprite": "res://assets/models/sprites/shared/terrain/gift6.png",
+        "sprite_hi": "res://assets/models/sprites_hi/shared/terrain/gift6.png"
+      }
     },
     {
       "sid": "cen1",
@@ -3288,7 +4883,12 @@
         4.7779340744018555
       ],
       "verts": 1702,
-      "faces": 1044
+      "faces": 1044,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/cen.png"
+      }
     },
     {
       "sid": "cen2",
@@ -3309,7 +4909,12 @@
         4.7779340744018555
       ],
       "verts": 2572,
-      "faces": 1710
+      "faces": 1710,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/cen.png"
+      }
     },
     {
       "sid": "cen3",
@@ -3330,7 +4935,12 @@
         7.185905456542969
       ],
       "verts": 4790,
-      "faces": 2898
+      "faces": 2898,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/cen.png"
+      }
     },
     {
       "sid": "cen4",
@@ -3351,7 +4961,12 @@
         11.905742645263672
       ],
       "verts": 7758,
-      "faces": 4470
+      "faces": 4470,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/cen.png"
+      }
     },
     {
       "sid": "cen1a",
@@ -3372,7 +4987,12 @@
         4.461809158325195
       ],
       "verts": 4293,
-      "faces": 2618
+      "faces": 2618,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "cen2a",
@@ -3393,7 +5013,12 @@
         4.461809158325195
       ],
       "verts": 6846,
-      "faces": 4311
+      "faces": 4311,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "cen3a",
@@ -3414,7 +5039,12 @@
         6.81498908996582
       ],
       "verts": 8917,
-      "faces": 5593
+      "faces": 5593,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "cen4a",
@@ -3435,7 +5065,12 @@
         6.81498908996582
       ],
       "verts": 10318,
-      "faces": 6668
+      "faces": 6668,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cen4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "cena",
@@ -3456,7 +5091,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/cena.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "hou1",
@@ -3477,7 +5117,12 @@
         1.9041317701339722
       ],
       "verts": 1289,
-      "faces": 862
+      "faces": 862,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/hou.png"
+      }
     },
     {
       "sid": "hou2",
@@ -3498,7 +5143,12 @@
         1.9041317701339722
       ],
       "verts": 1622,
-      "faces": 1086
+      "faces": 1086,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/hou.png"
+      }
     },
     {
       "sid": "hou3",
@@ -3519,7 +5169,12 @@
         4.020015239715576
       ],
       "verts": 2700,
-      "faces": 2031
+      "faces": 2031,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/hou.png"
+      }
     },
     {
       "sid": "hou4",
@@ -3540,7 +5195,12 @@
         5.447813510894775
       ],
       "verts": 3773,
-      "faces": 2941
+      "faces": 2941,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/hou.png"
+      }
     },
     {
       "sid": "hou1a",
@@ -3561,7 +5221,12 @@
         2.266618490219116
       ],
       "verts": 3524,
-      "faces": 2096
+      "faces": 2096,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "hou2a",
@@ -3582,7 +5247,12 @@
         2.266618490219116
       ],
       "verts": 3794,
-      "faces": 2416
+      "faces": 2416,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "hou3a",
@@ -3603,7 +5273,12 @@
         4.461809158325195
       ],
       "verts": 4292,
-      "faces": 2752
+      "faces": 2752,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "hou4a",
@@ -3624,7 +5299,12 @@
         4.461809158325195
       ],
       "verts": 4389,
-      "faces": 2978
+      "faces": 2978,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/hou4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "houa",
@@ -3645,7 +5325,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/houa.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bar1",
@@ -3666,7 +5351,12 @@
         1.7054163217544556
       ],
       "verts": 868,
-      "faces": 490
+      "faces": 490,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bar.png"
+      }
     },
     {
       "sid": "bar2",
@@ -3687,7 +5377,12 @@
         1.9650189876556396
       ],
       "verts": 1028,
-      "faces": 594
+      "faces": 594,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bar.png"
+      }
     },
     {
       "sid": "bar3",
@@ -3708,7 +5403,12 @@
         3.2202389240264893
       ],
       "verts": 1524,
-      "faces": 934
+      "faces": 934,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bar.png"
+      }
     },
     {
       "sid": "bar4",
@@ -3729,7 +5429,12 @@
         6.196390151977539
       ],
       "verts": 5770,
-      "faces": 3268
+      "faces": 3268,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bar.png"
+      }
     },
     {
       "sid": "bar1a",
@@ -3750,7 +5455,12 @@
         2.266618490219116
       ],
       "verts": 4419,
-      "faces": 2844
+      "faces": 2844,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bar2a",
@@ -3771,7 +5481,12 @@
         4.461809158325195
       ],
       "verts": 4658,
-      "faces": 2880
+      "faces": 2880,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bar3a",
@@ -3792,7 +5507,12 @@
         4.461809158325195
       ],
       "verts": 5115,
-      "faces": 3172
+      "faces": 3172,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bar4a",
@@ -3813,7 +5533,12 @@
         4.461809158325195
       ],
       "verts": 5620,
-      "faces": 3738
+      "faces": 3738,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bar4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bara",
@@ -3834,7 +5559,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bara.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sta1",
@@ -3855,7 +5585,12 @@
         2.315035343170166
       ],
       "verts": 1720,
-      "faces": 920
+      "faces": 920,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sta.png"
+      }
     },
     {
       "sid": "sta2",
@@ -3876,7 +5611,12 @@
         2.7126331329345703
       ],
       "verts": 2423,
-      "faces": 1429
+      "faces": 1429,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sta.png"
+      }
     },
     {
       "sid": "sta3",
@@ -3897,7 +5637,12 @@
         3.246912717819214
       ],
       "verts": 2835,
-      "faces": 1785
+      "faces": 1785,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sta.png"
+      }
     },
     {
       "sid": "sta4",
@@ -3918,7 +5663,12 @@
         6.437377452850342
       ],
       "verts": 5805,
-      "faces": 3460
+      "faces": 3460,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sta.png"
+      }
     },
     {
       "sid": "sta1a",
@@ -3939,7 +5689,12 @@
         2.266618490219116
       ],
       "verts": 2483,
-      "faces": 1488
+      "faces": 1488,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sta2a",
@@ -3960,7 +5715,12 @@
         4.461809158325195
       ],
       "verts": 3969,
-      "faces": 2423
+      "faces": 2423,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sta3a",
@@ -3981,7 +5741,12 @@
         4.461809158325195
       ],
       "verts": 4927,
-      "faces": 3098
+      "faces": 3098,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sta4a",
@@ -4002,7 +5767,12 @@
         4.461809158325195
       ],
       "verts": 3991,
-      "faces": 2537
+      "faces": 2537,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sta4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "staa",
@@ -4023,7 +5793,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/staa.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bla1",
@@ -4044,7 +5819,12 @@
         1.2850091457366943
       ],
       "verts": 3789,
-      "faces": 2876
+      "faces": 2876,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bla.png"
+      }
     },
     {
       "sid": "bla2",
@@ -4065,7 +5845,12 @@
         1.7717788219451904
       ],
       "verts": 4704,
-      "faces": 3674
+      "faces": 3674,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bla.png"
+      }
     },
     {
       "sid": "bla3",
@@ -4086,7 +5871,12 @@
         2.620098352432251
       ],
       "verts": 6042,
-      "faces": 4837
+      "faces": 4837,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bla.png"
+      }
     },
     {
       "sid": "bla4",
@@ -4107,7 +5897,12 @@
         2.620098352432251
       ],
       "verts": 9260,
-      "faces": 7243
+      "faces": 7243,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/bla.png"
+      }
     },
     {
       "sid": "bla1a",
@@ -4128,7 +5923,12 @@
         1.291961431503296
       ],
       "verts": 3341,
-      "faces": 2122
+      "faces": 2122,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bla2a",
@@ -4149,7 +5949,12 @@
         2.543220281600952
       ],
       "verts": 3725,
-      "faces": 2409
+      "faces": 2409,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bla3a",
@@ -4170,7 +5975,12 @@
         2.543220281600952
       ],
       "verts": 3993,
-      "faces": 2453
+      "faces": 2453,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "bla4a",
@@ -4191,7 +6001,12 @@
         2.543220281600952
       ],
       "verts": 4994,
-      "faces": 3213
+      "faces": 3213,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/bla4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "blaa",
@@ -4212,7 +6027,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/blaa.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "aca1",
@@ -4233,7 +6053,12 @@
         2.466304063796997
       ],
       "verts": 3343,
-      "faces": 2155
+      "faces": 2155,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/aca.png"
+      }
     },
     {
       "sid": "aca2",
@@ -4254,7 +6079,12 @@
         4.569252967834473
       ],
       "verts": 9133,
-      "faces": 6583
+      "faces": 6583,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/aca.png"
+      }
     },
     {
       "sid": "aca3",
@@ -4275,7 +6105,12 @@
         6.13694429397583
       ],
       "verts": 11950,
-      "faces": 9016
+      "faces": 9016,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/aca.png"
+      }
     },
     {
       "sid": "aca4",
@@ -4296,7 +6131,12 @@
         7.911116123199463
       ],
       "verts": 16920,
-      "faces": 12608
+      "faces": 12608,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/aca.png"
+      }
     },
     {
       "sid": "aca1a",
@@ -4317,7 +6157,12 @@
         2.266618490219116
       ],
       "verts": 6557,
-      "faces": 4164
+      "faces": 4164,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "aca2a",
@@ -4338,7 +6183,12 @@
         4.461809158325195
       ],
       "verts": 9004,
-      "faces": 5730
+      "faces": 5730,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "aca3a",
@@ -4359,7 +6209,12 @@
         6.66812801361084
       ],
       "verts": 11269,
-      "faces": 7042
+      "faces": 7042,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "aca4a",
@@ -4380,7 +6235,12 @@
         6.812119483947754
       ],
       "verts": 13475,
-      "faces": 8771
+      "faces": 8771,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/aca4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "acaa",
@@ -4401,7 +6261,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/acaa.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "art1",
@@ -4422,7 +6287,12 @@
         2.9460949897766113
       ],
       "verts": 1542,
-      "faces": 820
+      "faces": 820,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/art.png"
+      }
     },
     {
       "sid": "art2",
@@ -4443,7 +6313,12 @@
         2.9460949897766113
       ],
       "verts": 2124,
-      "faces": 1148
+      "faces": 1148,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/art.png"
+      }
     },
     {
       "sid": "art3",
@@ -4464,7 +6339,12 @@
         3.9050304889678955
       ],
       "verts": 2630,
-      "faces": 1547
+      "faces": 1547,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/art.png"
+      }
     },
     {
       "sid": "art4",
@@ -4485,7 +6365,12 @@
         6.468920707702637
       ],
       "verts": 4516,
-      "faces": 2629
+      "faces": 2629,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/art.png"
+      }
     },
     {
       "sid": "art1a",
@@ -4506,7 +6391,12 @@
         2.266618490219116
       ],
       "verts": 4182,
-      "faces": 2672
+      "faces": 2672,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "art2a",
@@ -4527,7 +6417,12 @@
         4.461809158325195
       ],
       "verts": 6232,
-      "faces": 3980
+      "faces": 3980,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "art3a",
@@ -4548,7 +6443,12 @@
         4.461809158325195
       ],
       "verts": 6291,
-      "faces": 3866
+      "faces": 3866,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "art4a",
@@ -4569,7 +6469,12 @@
         4.982724189758301
       ],
       "verts": 6611,
-      "faces": 4444
+      "faces": 4444,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/art4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "arta",
@@ -4590,7 +6495,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/arta.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "dip1",
@@ -4611,7 +6521,12 @@
         2.0481433868408203
       ],
       "verts": 1607,
-      "faces": 1885
+      "faces": 1885,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/dip.png"
+      }
     },
     {
       "sid": "dip2",
@@ -4632,7 +6547,12 @@
         3.8108158111572266
       ],
       "verts": 5187,
-      "faces": 3878
+      "faces": 3878,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/dip.png"
+      }
     },
     {
       "sid": "dip3",
@@ -4653,7 +6573,12 @@
         3.991506576538086
       ],
       "verts": 7731,
-      "faces": 6806
+      "faces": 6806,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/dip.png"
+      }
     },
     {
       "sid": "dip4",
@@ -4674,7 +6599,12 @@
         5.76448917388916
       ],
       "verts": 10350,
-      "faces": 7757
+      "faces": 7757,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/dip.png"
+      }
     },
     {
       "sid": "dip1a",
@@ -4695,7 +6625,12 @@
         2.266618490219116
       ],
       "verts": 4623,
-      "faces": 2964
+      "faces": 2964,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "dip2a",
@@ -4716,7 +6651,12 @@
         4.461809158325195
       ],
       "verts": 5315,
-      "faces": 3276
+      "faces": 3276,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "dip3a",
@@ -4737,7 +6677,12 @@
         4.997806549072266
       ],
       "verts": 7054,
-      "faces": 4307
+      "faces": 4307,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "dip4a",
@@ -4758,7 +6703,12 @@
         4.997806549072266
       ],
       "verts": 6996,
-      "faces": 4636
+      "faces": 4636,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dip4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "dipa",
@@ -4779,7 +6729,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/dipa.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sto1",
@@ -4800,7 +6755,12 @@
         1.9482744932174683
       ],
       "verts": 534,
-      "faces": 396
+      "faces": 396,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sto.png"
+      }
     },
     {
       "sid": "sto2",
@@ -4821,7 +6781,12 @@
         1.9482744932174683
       ],
       "verts": 872,
-      "faces": 632
+      "faces": 632,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sto.png"
+      }
     },
     {
       "sid": "sto3",
@@ -4842,7 +6807,12 @@
         2.3267064094543457
       ],
       "verts": 970,
-      "faces": 686
+      "faces": 686,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sto.png"
+      }
     },
     {
       "sid": "sto4",
@@ -4863,7 +6833,12 @@
         2.473339080810547
       ],
       "verts": 1340,
-      "faces": 878
+      "faces": 878,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/sto.png"
+      }
     },
     {
       "sid": "sto1a",
@@ -4884,7 +6859,12 @@
         1.4147679805755615
       ],
       "verts": 1201,
-      "faces": 672
+      "faces": 672,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sto2a",
@@ -4905,7 +6885,12 @@
         1.8251584768295288
       ],
       "verts": 2768,
-      "faces": 1752
+      "faces": 1752,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sto3a",
@@ -4926,7 +6911,12 @@
         1.8251584768295288
       ],
       "verts": 1811,
-      "faces": 1202
+      "faces": 1202,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "sto4a",
@@ -4947,7 +6937,12 @@
         3.592801809310913
       ],
       "verts": 2315,
-      "faces": 1566
+      "faces": 1566,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/sto4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "stoa",
@@ -4968,7 +6963,12 @@
         0.7059832811355591
       ],
       "verts": 737,
-      "faces": 956
+      "faces": 956,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/stoa.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mil1",
@@ -4989,7 +6989,12 @@
         2.002129316329956
       ],
       "verts": 761,
-      "faces": 453
+      "faces": 453,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mil.png"
+      }
     },
     {
       "sid": "mil2",
@@ -5010,7 +7015,12 @@
         2.0021297931671143
       ],
       "verts": 1242,
-      "faces": 734
+      "faces": 734,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mil.png"
+      }
     },
     {
       "sid": "mil3",
@@ -5031,7 +7041,12 @@
         4.957489967346191
       ],
       "verts": 2111,
-      "faces": 1323
+      "faces": 1323,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mil.png"
+      }
     },
     {
       "sid": "mil4",
@@ -5052,7 +7067,12 @@
         5.883222579956055
       ],
       "verts": 3603,
-      "faces": 2438
+      "faces": 2438,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mil.png"
+      }
     },
     {
       "sid": "mil1a",
@@ -5073,7 +7093,12 @@
         2.266618490219116
       ],
       "verts": 3469,
-      "faces": 2174
+      "faces": 2174,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mil2a",
@@ -5094,7 +7119,12 @@
         3.579094648361206
       ],
       "verts": 5068,
-      "faces": 3242
+      "faces": 3242,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mil3a",
@@ -5115,7 +7145,12 @@
         4.461810111999512
       ],
       "verts": 4778,
-      "faces": 2917
+      "faces": 2917,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mil4a",
@@ -5136,7 +7171,12 @@
         4.461810111999512
       ],
       "verts": 4990,
-      "faces": 3121
+      "faces": 3121,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mil4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mila",
@@ -5157,7 +7197,12 @@
         1.0502349138259888
       ],
       "verts": 2004,
-      "faces": 1976
+      "faces": 1976,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mila.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mar1",
@@ -5178,7 +7223,12 @@
         2.8170714378356934
       ],
       "verts": 2375,
-      "faces": 1859
+      "faces": 1859,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mar.png"
+      }
     },
     {
       "sid": "mar2",
@@ -5199,7 +7249,12 @@
         2.8170714378356934
       ],
       "verts": 3091,
-      "faces": 2313
+      "faces": 2313,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mar.png"
+      }
     },
     {
       "sid": "mar3",
@@ -5220,7 +7275,12 @@
         3.413064479827881
       ],
       "verts": 4033,
-      "faces": 3131
+      "faces": 3131,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mar.png"
+      }
     },
     {
       "sid": "mar4",
@@ -5241,7 +7301,12 @@
         4.645548343658447
       ],
       "verts": 6432,
-      "faces": 4760
+      "faces": 4760,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/mar.png"
+      }
     },
     {
       "sid": "mar1a",
@@ -5262,7 +7327,12 @@
         2.266618490219116
       ],
       "verts": 3649,
-      "faces": 2262
+      "faces": 2262,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mar2a",
@@ -5283,7 +7353,12 @@
         3.579094648361206
       ],
       "verts": 5822,
-      "faces": 3717
+      "faces": 3717,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mar3a",
@@ -5304,7 +7379,12 @@
         4.461809158325195
       ],
       "verts": 5026,
-      "faces": 3043
+      "faces": 3043,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mar4a",
@@ -5325,7 +7405,12 @@
         4.461809158325195
       ],
       "verts": 5231,
-      "faces": 3266
+      "faces": 3266,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mar4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "mara",
@@ -5346,7 +7431,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/mara.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "tow1",
@@ -5367,7 +7457,12 @@
         2.3091492652893066
       ],
       "verts": 418,
-      "faces": 254
+      "faces": 254,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow1.obj",
+        "tex": "res://assets/models/tex/shared/buildings/tow.png"
+      }
     },
     {
       "sid": "tow2",
@@ -5388,7 +7483,12 @@
         4.262073040008545
       ],
       "verts": 1301,
-      "faces": 893
+      "faces": 893,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow2.obj",
+        "tex": "res://assets/models/tex/shared/buildings/tow.png"
+      }
     },
     {
       "sid": "tow3",
@@ -5409,7 +7509,12 @@
         4.781044006347656
       ],
       "verts": 1272,
-      "faces": 1052
+      "faces": 1052,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow3.obj",
+        "tex": "res://assets/models/tex/shared/buildings/tow.png"
+      }
     },
     {
       "sid": "tow4",
@@ -5430,7 +7535,12 @@
         9.379703521728516
       ],
       "verts": 1711,
-      "faces": 1360
+      "faces": 1360,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow4.obj",
+        "tex": "res://assets/models/tex/shared/buildings/tow.png"
+      }
     },
     {
       "sid": "tow1a",
@@ -5451,7 +7561,12 @@
         -0.006389819085597992
       ],
       "verts": 8,
-      "faces": 12
+      "faces": 12,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow1a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "tow2a",
@@ -5472,7 +7587,12 @@
         4.4618096351623535
       ],
       "verts": 4170,
-      "faces": 2669
+      "faces": 2669,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow2a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "tow3a",
@@ -5493,7 +7613,12 @@
         4.4618096351623535
       ],
       "verts": 4060,
-      "faces": 2432
+      "faces": 2432,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow3a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "tow4a",
@@ -5514,7 +7639,12 @@
         4.4618096351623535
       ],
       "verts": 4275,
-      "faces": 2675
+      "faces": 2675,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/tow4a.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     },
     {
       "sid": "towa",
@@ -5535,7 +7665,18 @@
         2.0752739906311035
       ],
       "verts": 878,
-      "faces": 1264
+      "faces": 1264,
+      "bucket": "shared/buildings",
+      "assets": {
+        "obj": "res://assets/models/obj/shared/buildings/towa.obj",
+        "tex": "res://assets/models/tex/shared/buildings/scaffold.png"
+      }
     }
-  ]
+  ],
+  "extra_assets": {
+    "mill_rotor": {
+      "bucket": "shared/buildings",
+      "tex": "res://assets/models/tex/shared/buildings/mill_rotor.png"
+    }
+  }
 }

@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://dbsb5sdgu07ej"
+path="res://.godot/imported/peaukr.obj-5cad7816a8446d4f9e7325a87f62cecd.mesh"
+
+[deps]
+
+files=["res://.godot/imported/peaukr.obj-5cad7816a8446d4f9e7325a87f62cecd.mesh"]
+
+source_file="res://assets/models/obj/ukr/land_units/peaukr.obj"
+dest_files=["res://.godot/imported/peaukr.obj-5cad7816a8446d4f9e7325a87f62cecd.mesh", "res://.godot/imported/peaukr.obj-5cad7816a8446d4f9e7325a87f62cecd.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

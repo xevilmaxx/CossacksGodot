@@ -285,6 +285,10 @@ def main() -> int:
     ap.add_argument("--out", default="variant3d/assets/models/skin")
     ap.add_argument("--frames-per-action", type=int, default=6)
     ap.add_argument("--actions", default=",".join(DEFAULT_ACTIONS))
+    ap.add_argument("--index-name", default="index.json",
+                    help="C01-ASSET: index filename written under --out "
+                         "(default: index.json; an additive run must use a "
+                         "separate name, e.g. index_nation.json)")
     args = ap.parse_args()
 
     game = Path(args.game)
@@ -322,12 +326,13 @@ def main() -> int:
         "skipped": skipped,
         "failed": failed,
     }
-    with open(out_dir / "index.json", "w", encoding="utf-8") as fh:
+    index_path = out_dir / args.index_name
+    with open(index_path, "w", encoding="utf-8") as fh:
         json.dump(index, fh, separators=(",", ":"), ensure_ascii=False, indent=None)
 
     print("exported %d skins, %d skipped, %d failed; total %.2f MB -> %s"
           % (len(entries), len(skipped), len(failed),
-             index["total_bytes"] / 1e6, out_dir))
+             index["total_bytes"] / 1e6, index_path))
     for row in entries[:5]:
         print("  %-18s k=%4d b=%2d v=%4d frames=%2d actions=%s %7d B"
               % (row["sid"], row["k"], row["bones"], row["v"],

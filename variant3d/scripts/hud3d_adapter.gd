@@ -58,11 +58,27 @@ const Data = preload("res://scripts/data.gd")
 
 var cam: Object = null
 var hud: Object = null
+# P12: the game ref and MAP_W/MAP_H are fixed for a HUD's lifetime. Snapshot
+# them once at bind() so each camera-change box poll does no repeated dynamic
+# MAP_W/MAP_H reads. _sync_game() refreshes if hud.game is ever replaced.
+var _game: Object = null
+var _mw := 0
+var _mh := 0
 
 
 func bind(p_cam, p_hud) -> void:
 	cam = p_cam
 	hud = p_hud
+	_sync_game()
+
+
+func _sync_game() -> void:
+	var g = hud.get("game") if hud != null else null
+	if g == _game:
+		return
+	_game = g
+	_mw = int(g.MAP_W) if g != null else int(Data.MAP_W)
+	_mh = int(g.MAP_H) if g != null else int(Data.MAP_H)
 
 
 # Rect2 in MINIMAP PIXEL (tile) space.
@@ -71,9 +87,9 @@ func bind(p_cam, p_hud) -> void:
 #   Vector4i(int(b.position.x), int(b.position.y),
 #            int(b.end.x) - 1, int(b.end.y) - 1)
 func get_minimap_box() -> Rect2:
-	var g = hud.get("game") if hud != null else null
-	var mw := int(g.MAP_W) if g != null else int(Data.MAP_W)
-	var mh := int(g.MAP_H) if g != null else int(Data.MAP_H)
+	_sync_game()  # P12: cached game + map size (same values as before)
+	var mw := _mw
+	var mh := _mh
 	if mw <= 0 or mh <= 0:
 		return Rect2()
 	var pts := get_minimap_corners()
@@ -102,9 +118,9 @@ func get_minimap_box() -> Rect2:
 # No world_pos*view_scale anywhere. Empty when no finite camera corner exists.
 func get_minimap_corners() -> PackedVector2Array:
 	var out := PackedVector2Array()
-	var g = hud.get("game") if hud != null else null
-	var mw := int(g.MAP_W) if g != null else int(Data.MAP_W)
-	var mh := int(g.MAP_H) if g != null else int(Data.MAP_H)
+	_sync_game()  # P12: cached game + map size (same values as before)
+	var mw := _mw
+	var mh := _mh
 	if mw <= 0 or mh <= 0:
 		return out
 	if cam == null or not cam.has_method("get_viewport_corners"):

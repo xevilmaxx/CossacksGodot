@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cr17e5yicx14w"
+path="res://.godot/imported/christmastreea.obj-e6f8bbeb39f56142f91afb461722453d.mesh"
+
+[deps]
+
+files=["res://.godot/imported/christmastreea.obj-e6f8bbeb39f56142f91afb461722453d.mesh"]
+
+source_file="res://assets/models/obj/shared/terrain/christmastreea.obj"
+dest_files=["res://.godot/imported/christmastreea.obj-e6f8bbeb39f56142f91afb461722453d.mesh", "res://.godot/imported/christmastreea.obj-e6f8bbeb39f56142f91afb461722453d.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

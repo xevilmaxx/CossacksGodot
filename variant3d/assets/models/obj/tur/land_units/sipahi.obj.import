@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://bcgcqy8qwshvc"
+path="res://.godot/imported/sipahi.obj-8e363db28905a83d67cce07742778cfb.mesh"
+
+[deps]
+
+files=["res://.godot/imported/sipahi.obj-8e363db28905a83d67cce07742778cfb.mesh"]
+
+source_file="res://assets/models/obj/tur/land_units/sipahi.obj"
+dest_files=["res://.godot/imported/sipahi.obj-8e363db28905a83d67cce07742778cfb.mesh", "res://.godot/imported/sipahi.obj-8e363db28905a83d67cce07742778cfb.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

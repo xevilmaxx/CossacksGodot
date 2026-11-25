@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cce414u0o0lag"
+path="res://.godot/imported/gift2.obj-af539fe3b68755ec412c7d5c83c7279e.mesh"
+
+[deps]
+
+files=["res://.godot/imported/gift2.obj-af539fe3b68755ec412c7d5c83c7279e.mesh"]
+
+source_file="res://assets/models/obj/shared/terrain/gift2.obj"
+dest_files=["res://.godot/imported/gift2.obj-af539fe3b68755ec412c7d5c83c7279e.mesh", "res://.godot/imported/gift2.obj-af539fe3b68755ec412c7d5c83c7279e.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

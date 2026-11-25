@@ -496,6 +496,139 @@ def env_models(game: str) -> list:
     return out
 
 
+# --------------------------------------------------------------------------
+# C01-ASSET — additive nation / relief tables.
+#
+# Every function below is OPT-IN. A default invocation still calls only the
+# five original tables (unit/building/ship/env/stage) and produces the exact
+# same 280-entry manifest. The additive run writes a SEPARATE manifest name
+# and the asset owner text-inserts its entries into the shipped manifest so
+# all 280 existing entries and all 280 existing asset bytes stay untouched
+# (N06 §3, Z05 §4). No donor binary is copied into the repo: the same
+# read_mesh()/write_obj()/convert_texture() path derives OBJ/MTL/PNG from the
+# private install, which is only ever read.
+# --------------------------------------------------------------------------
+
+def nation_building_models(game: str) -> list:
+    """C01-ASSET / N07 T0 — additive nation-hall table (4 default nations).
+
+    Donor sources (read-only, private use):
+      data/actors/buildings/<nat>/<nat>cen.osm
+      data/materials/buildings/<nat>/<nat>cen.dds
+    N02 A2 / N07 §3.2 confirm a distinct hall mesh+albedo for all 21 nations;
+    the port only converts ukrcen (as the generic `cen`). `ruscen` is the
+    owner-mandated different Russian hall (15,348 verts/9,936 faces vs
+    ukrcen's 5,611/3,714 — N06 §1.1). bav/pol/swe are N07's other T0 starts.
+    """
+    actors = os.path.join(game, "data", "actors", "buildings")
+    mats = os.path.join(game, "data", "materials", "buildings")
+    # port sid -> (actor folder, actor base, texture folder, texture base)
+    table = {
+        "ruscen": ("rus", "ruscen", "rus", "ruscen"),
+        "bavcen": ("bav", "bavcen", "bav", "bavcen"),
+        "polcen": ("pol", "polcen", "pol", "polcen"),
+        "swecen": ("swe", "swecen", "swe", "swecen"),
+    }
+    return [{
+        "sid": sid, "kind": "building",
+        "mesh": os.path.join(actors, af, ab + ".osm"),
+        "texture": os.path.join(mats, tf, tb + ".dds"),
+        "directions": 1,
+    } for sid, (af, ab, tf, tb) in table.items()]
+
+
+def nation_peasant_models(game: str) -> list:
+    """C01-ASSET / N06 §1.2 — exact 8-nation peasant table.
+
+    The port previously mapped only `peasant -> peaukr`, so no nation-stemmed
+    peasant mesh existed on disk (N01/N03). Each `.oss` is a distinct donor
+    binary with its own bone/vertex/face counts; `convert_skins.py` reads each
+    nation's own AAF for action ranges (N06 B5: `pearus k=486`, others 483).
+    `peaukr` is a derived duplicate of the shipped `peasant.obj` (N06 B12);
+    the uniform 8-stem mapping is kept deliberately for a consistent sid map.
+    """
+    actors = os.path.join(game, "data", "actors", "units")
+    mats = os.path.join(game, "data", "materials", "units")
+    bases = ("pearus", "peaukr", "peapol", "peaaus",
+             "peaeng", "peaspa", "peatur", "peasco")
+    return [{
+        "sid": base, "kind": "unit",
+        "mesh": os.path.join(actors, base + ".oss"),
+        "texture": os.path.join(mats, base + ".dds"),
+        "directions": 8,
+    } for base in bases]
+
+
+def nation_signature_models(game: str) -> list:
+    """C01-ASSET / N07 §6.1 T0 — additive signature units for the 4 starts.
+
+    N07 T0 picks one donor-distinct signature unit per default nation:
+    Russia `pikemanrus`, Bavaria `musketeer18bav`, Sweden `pikeman18swe`.
+    Poland's signature `wingedhussar` is already converted in the base set,
+    so it is NOT re-emitted here. All three are real donor `.oss`+`.dds`+`.aaf`
+    triples; no shape or frame range is invented.
+    """
+    actors = os.path.join(game, "data", "actors", "units")
+    mats = os.path.join(game, "data", "materials", "units")
+    bases = ("pikemanrus", "musketeer18bav", "pikeman18swe")
+    return [{
+        "sid": base, "kind": "unit",
+        "mesh": os.path.join(actors, base + ".oss"),
+        "texture": os.path.join(mats, base + ".dds"),
+        "directions": 8,
+    } for base in bases]
+
+
+def relief_models(game: str) -> list:
+    """Z05 — additive donor relief-prop table (terrainmesh1..4 only).
+
+    Donor sources (read-only, private use):
+      data/actors/env/terrainmeshN.osm      (IDP2 version 8, first frame only)
+      data/materials/env/terrainmeshN.dds   (terrainmeshN.prop:14 summer albedo)
+    Geometry and pixels are DERIVED by the existing read_osm()/write_obj()/
+    convert_texture() path; no donor .osm/.dds is copied into the repo.
+
+    terrainplateau1..4 are deliberately excluded: no donor albedo, no .prop,
+    zero pattern.lib BaseName refs (Z05 §1.3). Per-object Scaling/Position/
+    Direction are placement data (pattern.lib), NOT mesh data — the OBJ stays
+    in RAW donor units (scale is left raw) and a later instancing consumer
+    applies the authored per-placement transform. kind="relief" keeps
+    force_opaque=False so the real donor alpha is preserved (Z05 §1.1).
+    """
+    actors = os.path.join(game, "data", "actors", "env")
+    mats = os.path.join(game, "data", "materials", "env")
+    table = {
+        "terrainmesh1": "terrainmesh1",
+        "terrainmesh2": "terrainmesh2",
+        "terrainmesh3": "terrainmesh3",
+        "terrainmesh4": "terrainmesh4",
+    }
+    return [{
+        "sid": sid, "kind": "relief",
+        "mesh": os.path.join(actors, base + ".osm"),
+        "texture": os.path.join(mats, base + ".dds"),
+        "directions": 1,
+    } for sid, base in table.items()]
+
+
+def load_bucket_map() -> dict:
+    """FOLD-06: read the shipped additive `bucket` map; no nation logic here.
+
+    A sid absent from the shipped manifest is written flat (with a warning), so
+    an additive C01-ASSET run cannot silently invent a bucket. The default
+    pipeline stays byte-identical unless --bucket-layout is requested.
+    """
+    path = Path(__file__).resolve().parents[1] / "assets" / "models" / "manifest.json"
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {str(m.get("sid", "")): str(m.get("bucket", ""))
+            for m in data.get("models", []) if m.get("bucket")}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--game", default=DEFAULT_GAME,
@@ -506,6 +639,21 @@ def main() -> int:
                     help="BUILD-ART-CONV-01: also convert the 108 donor "
                          "construction-stage / scaffold OSMs (opt-in; the "
                          "default run is byte-identical to the base pipeline)")
+    ap.add_argument("--nation-art", action="store_true",
+                    help="C01-ASSET: emit ONLY the additive nation halls, "
+                         "peasants and signature units (opt-in; never mixed "
+                         "with the 280 base entries)")
+    ap.add_argument("--include-relief", action="store_true",
+                    help="Z05: also convert the 4 donor terrainmeshN relief "
+                         "props (opt-in; scale stays raw in the OBJ)")
+    ap.add_argument("--manifest-name", default="manifest.json",
+                    help="C01-ASSET: manifest filename written under --out "
+                         "(default: manifest.json; an additive run must use a "
+                         "separate name, e.g. manifest_addendum.json)")
+    ap.add_argument("--bucket-layout", action="store_true",
+                    help="FOLD-06: write obj/tex into the manifest bucket tree "
+                         "and emit additive bucket/assets fields; default off "
+                         "keeps the flat 280-entry pipeline byte-identical")
     args = ap.parse_args()
 
     # expanduser makes ~/: Linux/macOS paths work; Path.resolve is cross-platform.
@@ -515,12 +663,26 @@ def main() -> int:
     tex_dir = os.path.join(out, "tex")
     os.makedirs(obj_dir, exist_ok=True)
     os.makedirs(tex_dir, exist_ok=True)
+    bucket_map = load_bucket_map() if args.bucket_layout else {}
+    if args.bucket_layout:
+        print("bucket-layout: %d sids from shipped manifest" % len(bucket_map))
 
     models = (unit_models(game) + building_models(game) + ship_models(game)
               + env_models(game))
     if args.include_stages:
         # Additive only: base entries keep their original sid/name/texture.
         models = models + stage_models(game)
+    if args.nation_art:
+        # C01-ASSET: an additive run emits ONLY the new nation sids. The asset
+        # owner text-inserts them into the shipped manifest so all 280
+        # existing entries and asset bytes stay byte-identical (N06 §3).
+        # Never mix the base tables into an additive manifest rewrite.
+        models = (nation_building_models(game) + nation_peasant_models(game)
+                  + nation_signature_models(game))
+    if args.include_relief:
+        # Z05: append the 4 relief props (after nation art when both flags
+        # are set, so one run derives the whole additive set).
+        models = models + relief_models(game)
     manifest = {"game": game, "models": []}
     ok = 0
     for m in models:
@@ -537,17 +699,36 @@ def main() -> int:
         obj_name = m.get("obj_name", sid) + ".obj"
         mtl_name = m.get("obj_name", sid) + ".mtl"
         tex_name = m.get("tex_name", sid) + ".png"
-        write_obj(os.path.join(obj_dir, obj_name), mesh, mtl_name)
-        write_mtl(os.path.join(obj_dir, mtl_name), os.path.join("..", "tex", tex_name))
-        convert_texture(m["texture"], os.path.join(tex_dir, tex_name),
+        bucket = bucket_map.get(sid, "") if args.bucket_layout else ""
+        if args.bucket_layout and not bucket:
+            print("WARN no shipped bucket for %s; writing flat" % sid)
+        if bucket:
+            dest_obj = os.path.join(obj_dir, *bucket.split("/"))
+            dest_tex = os.path.join(tex_dir, *bucket.split("/"))
+            os.makedirs(dest_obj, exist_ok=True)
+            os.makedirs(dest_tex, exist_ok=True)
+            # obj/<bucket> -> tex/<bucket>: three levels up to models/, then tex.
+            mtl_ref = os.path.join("..", "..", "..", "tex", *bucket.split("/"), tex_name)
+        else:
+            dest_obj, dest_tex = obj_dir, tex_dir
+            mtl_ref = os.path.join("..", "tex", tex_name)
+        write_obj(os.path.join(dest_obj, obj_name), mesh, mtl_name)
+        write_mtl(os.path.join(dest_obj, mtl_name), mtl_ref)
+        convert_texture(m["texture"], os.path.join(dest_tex, tex_name),
                         force_opaque=(m["kind"] in ("unit", "building")))
         verts = mesh["verts"]
         xs = [v[0] for v in verts]
         ys = [v[1] for v in verts]
         zs = [v[2] for v in verts]
         entry = dict(m)
-        entry["obj"] = os.path.join(obj_dir, obj_name)
-        entry["texture_png"] = os.path.join(tex_dir, tex_name)
+        entry["obj"] = os.path.join(dest_obj, obj_name)
+        entry["texture_png"] = os.path.join(dest_tex, tex_name)
+        if bucket:
+            entry["bucket"] = bucket
+            entry["assets"] = {
+                "obj": "res://assets/models/obj/%s/%s" % (bucket, obj_name),
+                "tex": "res://assets/models/tex/%s/%s" % (bucket, tex_name),
+            }
         entry["bbox"] = [min(xs), max(xs), min(ys), max(ys), min(zs), max(zs)]
         entry["verts"] = len(verts)
         entry["faces"] = len(mesh["faces"])
@@ -556,9 +737,10 @@ def main() -> int:
         print("OK %-12s %-8s verts=%-5d faces=%-5d bbox z %.2f..%.2f" % (
             sid, mesh["format"], len(verts), len(mesh["faces"]), min(zs), max(zs)))
 
-    with open(os.path.join(out, "manifest.json"), "w", encoding="utf-8") as f:
+    manifest_path = os.path.join(out, args.manifest_name)
+    with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
-    print("done: %d models, manifest at %s" % (ok, os.path.join(out, "manifest.json")))
+    print("done: %d models, manifest at %s" % (ok, manifest_path))
     return 0 if ok == len(models) else 1
 
 

@@ -10,6 +10,11 @@ extends Node2D
 class_name C3World
 
 const Data = preload("res://scripts/data.gd")
+# FOLD-07 — central asset path resolver (read-only here). Sprite lookups now
+# prefer the manifest `assets.sprite` / `assets.sprite_hi` bucket paths, with
+# the flat original kept ONLY as a diagnostic fallback while the copy-only
+# FOLD-06 migration is in place. This file does not edit the resolver.
+const AssetPaths = preload("res://scripts/asset_paths.gd")
 
 # Nation-first anim layout: every nation code that owns a `<nat>/{units,buildings}`
 # sheet tree. Anything without a recognised 3-letter prefix stays in `common`.
@@ -159,6 +164,10 @@ var anim_t := 0.0  # ambient animation clock (flags, water, idle bob)
 # .obj + .png by tools/render_models.py). Missing entries fall back to the
 # procedural shapes below, so the game never draws blank.
 var sprites: Dictionary = {}
+# FOLD-07 diagnostic only: count sprite keys that resolved through a flat
+# original because the manifest bucket path was absent. No shipped key relies
+# on this path; it exists so a migration miss is loud instead of silent.
+var _sprite_flat_fallbacks := 0
 # Animated original-model sheets (tools/bake_sprites.py): key -> {cell, actions}.
 var anim_index := {}
 var anim_tex := {}
@@ -379,8 +388,34 @@ func _load_env_tex(path: String) -> Texture2D:
 			return ImageTexture.create_from_image(img)
 	return load(path) as Texture2D
 
+# FOLD-07 — mapped sprite path via the central resolver. `res_for(sid, ext,
+# suffix)` returns the manifest `assets.sprite` / `assets.sprite_hi` bucket path
+# (the same resolver FOLD-06 uses for obj/tex); the suffix form inserts the
+# `_000..315` frame index before `.png`. Its generic legacy fallback is an OBJ
+# path, so a returned path is accepted only when it sits under a sprite root.
+func _mapped_sprite_path(key: String, ext: String, suffix: String = "") -> String:
+	var p := AssetPaths.res_for(key, ext, suffix)
+	var root := "res://assets/models/sprites/" if ext == "sprite" else "res://assets/models/sprites_hi/"
+	return p if p.begins_with(root) else ""
+
+# Resolve a model sprite with the mapped bucket path FIRST. The flat original
+# is consulted only as a diagnostic + last-resort fallback while the copy-only
+# FOLD-06 migration is in place; it is never preferred over a mapped file.
+func _sprite_res_path(key: String, ext: String, suffix: String = "") -> String:
+	var mapped := _mapped_sprite_path(key, ext, suffix)
+	if mapped != "" and _res_exists(mapped):
+		return mapped
+	var folder := "sprites" if ext == "sprite" else "sprites_hi"
+	var legacy := "res://assets/models/%s/%s%s.png" % [folder, key, suffix]
+	if _res_exists(legacy):
+		push_warning("world: sprite map miss for '%s%s' — flat original used only as diagnostic fallback (%s)" % [key, suffix, legacy])
+		_sprite_flat_fallbacks += 1
+		return legacy
+	return ""
+
 func _load_sprites() -> void:
 	sprites.clear()
+	_sprite_flat_fallbacks = 0
 	var sids: Array = []
 	for sid in Data.UNITS:
 		sids.append(SPRITE_ALIAS.get(sid, sid))
@@ -391,26 +426,31 @@ func _load_sprites() -> void:
 		if not sids.has(n):
 			sids.append(n)
 	# NOTE: probe with _res_exists (ResourceLoader.exists for exported .pck
-	# builds, FileAccess fallback for never-imported editor PNGs).
+	# builds, FileAccess fallback for never-imported editor PNGs). FOLD-07:
+	# mapped bucket path wins; the flat root is diagnostic only.
 	for key in sids:
 		var frames: Array = []
 		var has_dir := false
 		for d in 8:
-			var p := "res://assets/models/sprites/%s_%03d.png" % [key, d * 45]
-			if _res_exists(p):
+			var p := _sprite_res_path(key, "sprite", "_%03d" % (d * 45))
+			if p != "":
 				has_dir = true
 				frames.append(load(p) as Texture2D)
 			else:
 				frames.append(null)
 		if has_dir:
 			sprites[key] = frames
-		elif _res_exists("res://assets/models/sprites_hi/%s.png" % key):
+		else:
 			# 512 px CPU-Cycles rebake of the donor mesh (ASSET-2 env set).
 			# Prefer hi-res for EVERY env sid, not just tree_*; the low-res
 			# sprites/ copy stays as the fallback (rock/stone/field live there).
-			sprites[key] = [_load_env_tex("res://assets/models/sprites_hi/%s.png" % key)]
-		elif _res_exists("res://assets/models/sprites/%s.png" % key):
-			sprites[key] = [_load_env_tex("res://assets/models/sprites/%s.png" % key)]
+			var hi_p := _sprite_res_path(key, "sprite_hi")
+			if hi_p != "":
+				sprites[key] = [_load_env_tex(hi_p)]
+			else:
+				var low_p := _sprite_res_path(key, "sprite")
+				if low_p != "":
+					sprites[key] = [_load_env_tex(low_p)]
 	# Loud, explicit report: a missing env sid must never be mistaken for a
 	# successfully loaded prop (and never silently borrowed from another pool).
 	var missing: Array = []
@@ -420,7 +460,7 @@ func _load_sprites() -> void:
 			missing.append(key)
 	if not missing.is_empty():
 		push_warning("world: env sprite sids did not resolve: %s" % str(missing))
-	print("sprites: %d sets loaded (sids=%d)" % [sprites.size(), sids.size()])
+	print("sprites: %d sets loaded (sids=%d, flat_fallbacks=%d)" % [sprites.size(), sids.size(), _sprite_flat_fallbacks])
 
 func _unit_height(e: Dictionary) -> float:
 	if e.def.get("artillery", false):

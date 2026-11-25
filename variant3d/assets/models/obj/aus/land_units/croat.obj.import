@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://u3gaoad1jjkd"
+path="res://.godot/imported/croat.obj-90312efd91df59a6ab3d5e7c1330fd1c.mesh"
+
+[deps]
+
+files=["res://.godot/imported/croat.obj-90312efd91df59a6ab3d5e7c1330fd1c.mesh"]
+
+source_file="res://assets/models/obj/aus/land_units/croat.obj"
+dest_files=["res://.godot/imported/croat.obj-90312efd91df59a6ab3d5e7c1330fd1c.mesh", "res://.godot/imported/croat.obj-90312efd91df59a6ab3d5e7c1330fd1c.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

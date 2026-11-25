@@ -9,6 +9,7 @@ root: "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3"
 labels: [OBSERVED, DERIVED, UNVERIFIED]
 parity_guard: "NO DONOR PARITY CLAIM. All measurements are in-repo, internal-consistency only. No donor file was read, copied or executed by this agent."
 verdict: "PARTIALLY CONFIRMED / PARTIALLY REDIRECTED. CONFIRMED by data: terrain==5 is the carrier of the concentric maze, and its positions are position-locked across all available pre-swarm seed-20261113 dumps (IoU 0.996–1.000); the visible art changed via tileblock. REDIRECTED: the dominant producer of the maze cells is the HEIGHT-GRADIENT collision pass (game.gd:1240-1264, now :1275-1308), not the hill/stone dc discs at :846-852 — 99.5% of terrain==5 cells reproduce exactly from the dumped height array, radial ring-profile correlation 0.9996–1.0000."
+followup_verdict: "URGENT Y01b (post-B03): HYPOTHESIS SUBSTANTIALLY CONFIRMED. With terrain==5 gradient writes removed (only the stone quarry disc at game.gd:852 remains), the surviving maze is TILEBLOCK-based. _apply_detail_pass() (game.gd:1959-1998) height-gates tile_lowground/tile_highground at h<0.1, reads R/2 as a tile id, and paints cells still on grass1; the detail ids {grass_ground1=14, grass_ground3=16, test7=78, test8=79} occupy 58.6% of the map, form 1-6 cell runs, are strictly complementary to terrain==5 (0 overlap), and track height contours (radial corr up to |0.92|). B03-P3 redirects grass_ground1/2/3 -> grass9(8)/test8(79)/test7(78) — all still different from grass1(0), so the same height-following colour runs survive. NUANCE: the bitmap R is a categorical tile id (R=tex*2), NOT a continuous height field (corr(R,height)~0); height enters via the h<0.1 bitmap SELECTION. Exact post-B03 tileblock content is UNVERIFIED (no post-edit dump exists)."
 ---
 
 # Y01 — Maze data proof
@@ -246,8 +247,11 @@ constant of the generator.
    `realmap.png` is strong but **UNVERIFIED at cell level**.
 2. **No donor parity claim.** No donor file was read, copied or executed; no
    donor A/B frame exists. All facts are in-repo internal consistency.
-3. **No runner.** No Godot process, no new capture, no new dump. Nothing in this
-   report reflects the uncommitted `B03-RELIEF` edits (§3.3).
+3. **No runner.** No Godot process, no new capture, no new dump was produced by
+   this agent. §3.3 described the then-uncommitted `B03-RELIEF` edits at the time
+   of the first pass; §8 below re-reads the now-landed code and tests the
+   surviving-maze hypothesis against the on-disk dumps and the fresh capture
+   supplied by the owner. No runtime state of the fresh capture is measured.
 4. Exact cell-to-pixel transform for `realmap.png` (`camera_pos=(144.11,58,−88.57)`,
    `target=(384.11,58.61)`, from `G04_gate_log.md:248-251`) was not inverted; no
    pixel-level correlation was computed.
@@ -273,7 +277,7 @@ no code change — only a dump of the already-existing capture configuration.
 
 ---
 
-## 7. Summary
+## 7. Summary (first pass — pre-swarm data)
 
 - **OBSERVED:** four pre-swarm dump families (23–24 Nov) carry a decoded
   `terrain==5` mask; 6,967 rock cells at seed 20261113/320².
@@ -281,11 +285,169 @@ no code change — only a dump of the already-existing capture configuration.
   reproduces exactly from the dumped height via the collision pass
   (`game.gd:1240-1264`), with radial ring-profile correlation **0.9996–1.0000**.
   The hill/stone `dc` discs at `:846-852` contribute only **35 cells (0.5%)**.
-- **DERIVED:** `terrain` = positions, `height` = driver, `tileblock` = colour/art.
+- **DERIVED:** `terrain` = positions, `height` = driver, `tileblock` = colour/art
+  **in the pre-swarm tree** (superseded for the post-B03 tree by §8).
 - **OBSERVED/DERIVED:** owner's "position-locked, only colour changed" is
   **confirmed at array level**: rock mask IoU 0.996–1.000 across pre-swarm
   dumps, height bit-identical, tileblock 24.7% changed.
-- **UNVERIFIED:** exact 240² screenshot alignment, donor parity, and the effect
-  of concurrent uncommitted edits. **No donor parity claim; no Godot run.**
+- **UNVERIFIED:** exact 240² screenshot alignment, donor parity. **No donor
+  parity claim; no Godot run.**
 
-*End of Y01. This agent wrote only this report.*
+---
+
+## 8. URGENT follow-up — the surviving maze after B03 removed the `terrain=5` writes
+
+### 8.0 Input from owner (OBSERVED as a supplied artifact, not measured here)
+
+B03 has removed all `terrain=5` writes from the gradient pass; only the stone
+quarry disc at `game.gd:852` remains. Re-read of the current tree (OBSERVED)
+confirms the collision pass at `game.gd:1297-1310` now calls only
+`set_blocked_tile()` — the `terrain[i]=5` write is gone, and the
+`B03-RELIEF / L03 rank-1` comment at `:1298-1307` explicitly identifies the old
+terrace rings as the maze. A fresh capture supplied by the owner,
+`C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\l07c\realmap.png` (15:44,
+after the 15:28 code edit), **still shows the same concentric maze**. This agent
+viewed the PNG (read-only); no metadata, camera state or dump was extracted from
+it. Another source therefore survives.
+
+### 8.1 (a) `_apply_detail_pass` at current file:line (OBSERVED — source)
+
+`variant3d/scripts/game.gd:1959-1998`:
+
+- `:1960` donor `loadtextureterrainfrombitmap.inc`: `h < 0.1` reads
+  `tile_lowground`, else `tile_highground`; `tex = R div 2`; only cells still on
+  `grass1` change.
+- `:1965` `grass0 := _blk("grass1")`; `:1973` `if tileblock[i] != grass0: continue`.
+- `:1975-1981` `h = height[i]`; bitmap chosen by `h < 0.1`; source pixel
+  `sx = x/MAP_W*iw`, `sy = y/MAP_H*ih`; `tex = int(R*255)/2`.
+- `:1989-1996` B03-P1 re-rolls only `test7`/`test8` through `_tb_pick(2,5)` /
+  `_tb_pick(1,4)`; `:1997-1998` writes `tileblock[i] = tex`.
+- The bitmaps are loaded at `:1956-1957` from
+  `assets/terrain/structs/tile_lowground.png` / `tile_highground.png`.
+- Order in `_assign_tileblocks()`: base blocks `:2025-2077`, shore/cliffs
+  `:2079`, **detail pass `:2085`**, then 3 donor `SmoothTileMap` passes — so
+  the detail ids are reconciled into short runs, not left as raw bitmap pixels.
+- B03-P3 redirect is in `_tb_pick` at `:2229-2243`: `grass_ground1 -> grass9`,
+  `grass_ground2 -> test8`, `grass_ground3 -> test7`, with the explicit
+  `PORT APPROXIMATION` label and "no donor parity (UNVERIFIED)" at `:2235-2236`.
+
+### 8.2 (b) Concentric runs of grass_ground*/test* ids in the dumps (OBSERVED)
+
+Name→id mapping read from `assets/terrain/structs/presets_summer.json` (indexed
+by `tbl_idx`, `game.gd:1775-1779`): `grass1=0`, `grass8=7`, `grass9=8`,
+`ground1=10`, `grass_ground1=14`, `grass_ground2=15`, `grass_ground3=16`,
+`rock4=20`, `test6=77`, `test7=78`, `test8=79`.
+
+Decoded G32 `tileblock` (320², seed 20261113):
+
+| Id / group | Cells | % map | Cells also `terrain==5` |
+|---|---:|---:|---:|
+| `grass_ground1` (14) | 28,535 | 27.9% | 0 |
+| `grass_ground3` (16) | 15,962 | 15.6% | 0 |
+| `grass_ground2` (15) | 144 | 0.1% | 0 |
+| `test7` (78) | 6,691 | 6.5% | 0 |
+| `test8` (79) | 7,667 | 7.5% | 0 |
+| `grass9` (8) | 1 | 0.0% | 0 |
+| detail set `{14,15,16,78,79,8,7,77}` | **59,999** | **58.6%** | **0** |
+| rock set `17..24` | 10,612 | 10.4% | 6,959 / 6,967 (99.9%) |
+
+**OBSERVED:** the detail set and the rock set are **strictly complementary** —
+no cell carries both. Along radial rays the detail ids occur in short runs,
+e.g. centre (201.5,233.0), `r=4..49`, angle 0:
+`0 0 25 25 … 78 78 80 80 25 25 … 1 1 1 1 79 79 79 79 1 1 1 1 79 79 79 79 0 0 0 0 0 0`;
+angle 45 ends `… 78 14 14 16 14 16 14 14 14 14 14 16`. Runs of 1–6 identical
+ids are directly visible, exactly as the hypothesis states.
+
+**OBSERVED:** radial peak analysis of detail ids around centre (79.4,162.4)
+finds multiple concentric peaks — `grass_ground1` at `r=7,16,21,31,35,37,39,45`,
+`grass_ground3` at `r=4,12,17,19,26,28,32,36,38,43,47,49,51,56`. These are
+ring positions, not a single blob.
+
+### 8.3 (c) Correlation of those runs with height bands (OBSERVED + DERIVED)
+
+Cell-level `P(id)` by height band, non-rock land cells:
+
+| Height band | n | `test7` | `test8` | `grass_ground1+3` | `grass1` |
+|---|---:|---:|---:|---:|---:|
+| [−0.4,0.0) | 1,441 | 1.6% | 2.4% | 68.7% | 4.4% |
+| [0.0,0.1) | 64,219 | 5.3% | 9.1% | 46.2% | 23.9% |
+| [0.1,0.4) | 2,638 | 11.8% | 5.4% | 48.0% | 2.9% |
+| [0.4,0.8) | 4,310 | 13.5% | 6.7% | 36.5% | 2.4% |
+| [0.8,1.2) | 1,648 | 4.4% | 3.5% | 43.0% | 6.7% |
+| [1.2,2.0) | 3,289 | 3.1% | 2.2% | 35.8% | 6.0% |
+| [2.0,3.0) | 16,260 | 13.2% | 7.0% | 49.6% | 0.1% |
+
+The `h=0.1` discontinuity in the `test7`/`test8`/`grass1` columns is the
+signature of the bitmap gate at `game.gd:1976`.
+
+Radial-profile correlations (ring centres, 60 bins):
+
+| Centre | `test7` vs height | `test8` vs height | `grass_ground1+3` vs height | rock vs height |
+|---|---:|---:|---:|---:|
+| (201.5,233.0) | **+0.710** | **+0.569** | **−0.922** | +0.807 |
+| (124.8,64.6) | **+0.692** | −0.274 | **+0.649** | −0.497 |
+| (79.4,162.4) | +0.422 | +0.418 | +0.262 | −0.623 |
+
+**DERIVED:** the detail-id runs are height-contour-following to a comparable
+degree to the old rock rings (|r| up to 0.92). Because the detail set is
+strictly complementary to `terrain==5`, removing the gradient-pass rock paint
+frees exactly those ring cells to be painted by `_apply_detail_pass` with the
+height-following detail ids instead.
+
+**Important correction to the hypothesis (OBSERVED):** the bitmap R channel is
+**not** a continuous height field. `tile_lowground.png` is 320×320 with only 12
+distinct R values (`0,158,156,2,166,170,160,168,…`) and `tile_highground.png`
+has 10 (`156,158,160,170,166,14,2,168,…`). `R = tex*2` is a **categorical tile
+id**; `corr(R,height) ≈ −0.015 / +0.010`. `R/2` equals the dumped `tileblock` on
+44.9% / 33.6% of the eligible cells (the rest were pre-empted by earlier passes
+or changed by smoothing). Height enters through the **`h<0.1` bitmap selection**,
+not through R encoding height. The owner's mechanism is right in effect, wrong
+in detail.
+
+### 8.4 Decisive verdict
+
+- **CONFIRMED (DERIVED from OBSERVED source + dumps + supplied PNG):** the maze
+  that survives B03's `terrain=5` removal is **TILEBLOCK-based**, not
+  terrain-based. The carrier is the `_apply_detail_pass` id set
+  `{grass_ground1, grass_ground3, test7, test8}` (with `grass9` after B03-P3),
+  painted in 1–6 cell runs that follow height contours.
+- **CONFIRMED:** B03-P3's redirect does **not** remove the pattern. `grass9=8`,
+  `test8=79`, `test7=78` are all different from the base `grass1=0`
+  (`game.gd:2237-2242`), so each redirected draw remains visible colour
+  variation at the same height-following positions. B03-P1's re-roll
+  (`:1989-1996`) can change which of those ids appears, not whether a
+  non-grass1 id appears.
+- **ALTERNATIVE SOURCE ELIMINATED (OBSERVED):** `_apply_shore_cliffs()`
+  (`game.gd:2199-2210`) is the other height-driven tile painter, but it only
+  writes cliff ids when `terrain[_t(x,y)] == 5` (`:2207`). With the gradient
+  write gone, that branch is a no-op except on the tiny stone discs; it cannot
+  carry the surviving rings. This leaves `_apply_detail_pass` as the surviving
+  ring source.
+- **REFUTED:** the earlier first-pass claim (§5) that `tileblock` is *only*
+  downstream art with no originating role. In the post-B03 tree it is the
+  surviving origin of the visible rings.
+- **UNVERIFIED:** the exact `tileblock` array of the fresh `l07c` capture. No
+  post-B03 dump exists; the cell-level link from `l07c` pixels to specific ids
+  is inference from (i) the unchanged visual geometry in the supplied PNG and
+  (ii) the pre-swarm dump data, not a measurement of that run. The 240²-vs-320²
+  gap from §6 still applies.
+
+### 8.5 Exact probe to convert the inference into measurement (no runner used here)
+
+Capture a dump from the **same post-B03 windowed run** that writes `l07c`:
+
+```
+python variant3d\tools\godot_runner.py run --id y01b-postb03 -- --path variant3d \
+  -- --screenshot ".../l07c/realmap_postb03.png" --screenshot-frames 10 \
+     --seed 20261113 --dump-map ".../l07c/terrain_postb03.json" --timeout 600
+```
+
+Acceptance checks on that file, all read-only: (1) `terrain==5` count collapses
+to the stone-quarry discs only (no 6,967-cell ring mask); (2) ids
+`{8,78,79,14,15,16}` occupy tens of thousands of cells; (3) radial profiles of
+`test7`/`test8`/`grass9` around the ring centres correlate with `height` as in
+§8.3; (4) the runs are 1–6 cells long. No donor access, no code change.
+
+---
+
+*End of Y01 (including urgent follow-up Y01b). This agent wrote only this report.*

@@ -85,6 +85,8 @@ const OBJ_DIR: String = "res://assets/models/obj/"
 const GLB_DIR: String = "res://assets/models/glb/"
 const TEX_DIR: String = "res://assets/models/tex/"
 const MANIFEST_PATH: String = "res://assets/models/manifest.json"
+# FOLD-06: mapped bucket path first, untouched flat original as fallback.
+const AssetPaths = preload("res://scripts/asset_paths.gd")
 
 # NATION-MODEL-01: READ-ONLY handle on the canonical sim mapping. data.gd is
 # owned by another ticket; this file only calls Data.resolve_sid() (the port
@@ -215,6 +217,27 @@ const NATION_MESH_ROLE_SUB_STATUS: String = PORT_LABEL + " — generic donor rol
 const NATION_ROLE_SUB_SIDS: Array[String] = ["musketeer", "hussar"]
 const NATION_MESH_BLOCKED_EVIDENCE: String = "BLOCKED (NATION_DONOR_01 G7-G10/C6): 0/172 converted OBJs carry a nation key (no rus*/bav*/eur*/tur*/ukr* stems); manifest generic peasant->peaukr.dds, 8 core buildings->ukr*.osm/ukr*.dds, 0 rus-keyed and 0 bav-keyed textures; Bavarian musketeer18bav/grenadierbav and Ukrainian chaika are absent from manifest+obj. Missing-art owner: manifest.json + assets/models/obj/; NOT VISUALLY FIXED."
 
+# WAVE-N/N04 (c): donor's eight nation peasant bases
+# (country.script:2655-2662,2915-2922; N02 B1; N03 §1). PRESENTATION ONLY:
+# the sim sid stays "peasant"; a candidate is used only when its OBJ/GLB is
+# on disk (_nation_mesh_on_disk), never fabricated. Sharing is donor-correct
+# (bav/pru/sax/swi/aus -> peaaus, pol/hun -> peapol, ...).
+const NATION_PEASANT_SIDS: Dictionary = {
+	"aus": "peaaus", "bav": "peaaus", "pru": "peaaus", "sax": "peaaus", "swi": "peaaus",
+	"eng": "peaeng", "fra": "peaeng", "swe": "peaeng", "den": "peaeng", "net": "peaeng",
+	"pol": "peapol", "hun": "peapol",
+	"rus": "pearus",
+	"spa": "peaspa", "por": "peaspa", "pie": "peaspa", "ven": "peaspa",
+	"tur": "peatur", "alg": "peatur",
+	"ukr": "peaukr",
+	"sco": "peasco",
+}
+# WAVE-N/N04 (c): smallest explicit label for the remaining nation-art gap.
+# Finished hall OBJs exist for rus/bav/pol/swe, but the donor build-stage and
+# ghost meshes (<nat><sid>1..4 / <nat><sid>a) are NOT converted; the base
+# stage/ghost art stays nation-blind. No parity claim; visual UNVERIFIED.
+const NATION_STAGE_GHOST_BLOCKED_STATUS: String = PORT_LABEL + " — BLOCKED: nation-specific construction-stage/ghost art unavailable on disk; base stage/ghost mesh reused; NOT a nation stage render; visual UNVERIFIED"
+
 # MOTION-ANIM-01 — presentation-only fixes for the VID-AN-01 faults. Every
 # number and rule here is a PORT APPROXIMATION over MEASURED sim values; none
 # is a donor-authored animation constant and no donor parity is claimed.
@@ -245,7 +268,7 @@ const ROTOR_TEX_PATH: String = "res://assets/models/" + "anim/common/buildings/m
 # it and its stale .import advertises a .ctex that will never exist. tex/ is not
 # ignored (172 imported PNGs already live there), so this copy gets a real ctex.
 # No donor bytes are copied: source and target hashes are identical.
-const ROTOR_TEX_IMPORT_PATH: String = "res://assets/models/tex/mill_rotor.png"
+const ROTOR_TEX_IMPORT_PATH: String = "res://assets/models/tex/shared/buildings/mill_rotor.png"
 const ROTOR_META_PATH: String = "res://assets/models/" + "anim/buildings/mill_rotor.json"
 const MILL_HUB := Vector2(0.525, 0.21)        # app/scripts/world.gd:203
 const MILL_SPIN: float = 0.75                 # app/scripts/world.gd:204, rad/s
@@ -265,6 +288,22 @@ const ROTOR_FALLBACK_STATUS: String = PORT_LABEL + " — rotor texture unavailab
 # .oss spin direction itself remains UNVERIFIED: this is a PORT APPROX
 # correction against the only readable donor-rotor proxy, not donor parity.
 const ROTOR_SPIN_AXIS_STATUS: String = PORT_LABEL + " — screen-clockwise spin axis aligned to the donor-derived 2D bake; donor .oss 3D direction UNVERIFIED"
+# M03 (2026-11-25) — DONOR-PROVEN 3-D axle, read-only byte probe of the shipped
+# donor attach `eurmilanim.oss` (k=251, fps=30, b=1, v=1098): raw Z-up vertex
+# bbox x[-2.996233,2.996233] y[-1.897957,-1.040952] z[2.627196,8.619664] m.
+# Disc plane is donor XZ (slab only 0.857 m thick in donor Y) -> spin axis
+# donor Y -> Godot local Z. Disc centre donor (0, -1.469455, 5.623430);
+# axle TIP (front face of slab) donor y=-1.897957. Tower `eurmil.osm` bbox
+# is in manifest.json:1209-1216. `_bake_mesh()` (:1079-1081) maps donor
+# (x,y,z) -> ((x-cx), (z-z0), -(y-cy)) at scale 1.0 for buildings, so the
+# axle tip is local (-0.1764, +5.6263, +1.8947) m: on the tower's +Z face,
+# which is the default Camera3D side (camera3d.gd:262-282). Body yaw 0 is
+# therefore donor-grounded; no whole-mill rotation is applied.
+const MILL_ROTOR_HUB_DONOR := Vector3(0.0, -1.4694546, 5.6234299)
+const MILL_ROTOR_AXLE_TIP_DONOR_Y: float = -1.8979570865631104
+const MILL_TOWER_BBOX_LO := Vector3(-2.425523519515991, -2.4005842208862305, -0.002850709017366171)
+const MILL_TOWER_BBOX_HI := Vector3(2.778339147567749, 2.3941283226013184, 5.914005756378174)
+const ROTOR_MOUNT_STATUS: String = PORT_LABEL + " — hub/axis geometry DONOR-GROUNDED from eurmilanim.oss via _bake_mesh() to the local +Z tower face; fixed axle, body yaw 0; spin SIGN and the 2D-bake-on-quad stand-in stay PORT APPROX, visual UNVERIFIED"
 
 # MILLFIX F2: field stage tints/scale are the EXACT 2D numbers from
 # app/scripts/world.gd:2588-2613; sow spacing is game.gd:2120 (1.6981 m,
@@ -274,6 +313,15 @@ const FIELD_SPAN_M: float = FIELD_STEP_M * 1.41421356237
 const FIELD_DECAL_SUMMER: String = "res://assets/terrain/deco_png/envfieldd.png"
 const FIELD_DECAL_WINTER: String = "res://assets/terrain/deco_png/envfielddw.png"
 const FIELD_STATUS: String = PORT_LABEL + " — stage tint/scale from game.field_state()/field_growth01(); donor decal 3D UV mapping UNVERIFIED"
+# FCOL-03 — DONOR-GROUNDED crop-mesh emission: D:materials/env/env.mat:58-69
+# and :873-884 set field/fieldw Emission (232,218,195)/255 with Ambient=Diffuse=0
+# (FCOL-02 FC10). Season is carried by RGB pixels, not by this tint (FCOL-02 §5).
+const FIELD_EMISSION_WARM: Color = Color(232.0 / 255.0, 218.0 / 255.0, 195.0 / 255.0)
+# PORT APPROX starting energy, NOT a donor value: donor blue 195 * 0.22 ≈ 43,
+# the tight upper bound of FCOL-02 §7.2 golden B band (36..43). G04 must
+# calibrate against the capture; the donor's +45..51 L multiplier is UNVERIFIED.
+const FIELD_EMISSION_ENERGY: float = 0.22
+const FIELD_EMISSION_STATUS: String = PORT_LABEL + " — emission colour DONOR-GROUNDED (env.mat:58-69); energy 0.22 PORT APPROX; on-screen golden lift and donor parity UNVERIFIED"
 
 # BUILD-STAGES-01 — donor construction-stage presentation (no stage art shipped).
 # Donor truth (DBUILD-01 §2, line citations there): build progress is hp/maxhp
@@ -421,17 +469,17 @@ func bind(g) -> void:
 	# load() happens lazily in _mesh_info() and is recorded in _mesh_sources.
 	var obj_available: int = 0
 	for sid in _bbox.keys():
-		if ResourceLoader.exists(OBJ_DIR + str(sid) + ".obj"):
+		if ResourceLoader.exists(AssetPaths.existing(str(sid), "obj")):
 			obj_available += 1
 	var glb_available: int = 0
 	for sid in _bbox.keys():
-		if ResourceLoader.exists(GLB_DIR + str(sid) + ".glb"):
+		if ResourceLoader.exists(AssetPaths.existing(str(sid), "glb")):
 			glb_available += 1
 	# DECOR-01: measure the live tree pool against disk instead of assuming it.
 	var tree_pool_available: Array = []
 	for sid in POOL_TREE:
-		if _bbox.has(sid) and ResourceLoader.exists(OBJ_DIR + str(sid) + ".obj") \
-				and ResourceLoader.exists(TEX_DIR + str(sid) + ".png"):
+		if _bbox.has(sid) and ResourceLoader.exists(AssetPaths.existing(str(sid), "obj")) \
+				and ResourceLoader.exists(AssetPaths.existing(str(sid), "tex")):
 			tree_pool_available.append(sid)
 	# BUILD-STAGES-01: measure donor-named stage/scaffold OBJs on disk instead
 	# of assuming art. No asset is copied or generated by this module.
@@ -439,9 +487,9 @@ func bind(g) -> void:
 	var scaffold_obj_sids: Array = []
 	for sid in _bbox.keys():
 		var s := str(sid)
-		if ResourceLoader.exists(OBJ_DIR + s + "1.obj"):
+		if ResourceLoader.exists(AssetPaths.existing(s, "obj", "1")):
 			stage_obj_sids.append(s)
-		if ResourceLoader.exists(OBJ_DIR + s + "a.obj"):
+		if ResourceLoader.exists(AssetPaths.existing(s, "obj", "a")):
 			scaffold_obj_sids.append(s)
 	stats = {
 		"module": "V7-14 world3d_entities",
@@ -595,7 +643,7 @@ func _jitter_factor(band: String, p: Vector2) -> float:
 
 func _default_material(sid: String, kind: String) -> Material:
 	var mat := StandardMaterial3D.new()
-	var tex_path := TEX_DIR + sid + ".png"
+	var tex_path := AssetPaths.existing(sid, "tex")
 	if ResourceLoader.exists(tex_path):
 		var tex := load(tex_path) as Texture2D
 		if tex != null:
@@ -702,8 +750,8 @@ func _nation_of(ed: Dictionary) -> String:
 func _nation_mesh_on_disk(sid: String) -> bool:
 	if sid == "":
 		return false
-	return ResourceLoader.exists(OBJ_DIR + sid + ".obj") \
-		or ResourceLoader.exists(GLB_DIR + sid + ".glb")
+	return ResourceLoader.exists(AssetPaths.existing(sid, "obj")) \
+		or ResourceLoader.exists(AssetPaths.existing(sid, "glb"))
 
 
 # NATION_DONOR_01 §2.4 — donor building sidmask (country.script:138-206):
@@ -787,6 +835,17 @@ func _entity_mesh_sid(ed: Dictionary, base_sid: String, kind: String) -> Diction
 					# are NOT nation-unique art; gated to exact=false below.
 					if NATION_ROLE_SUB_SIDS.has(rsid):
 						role_sub = true
+				# WAVE-N/N04 (b): donor's eight nation peasant bases are
+				# PRESENTATION ONLY. Add the donor-derived stem as a candidate
+				# for base "peasant"; Data.resolve_sid() cannot do this (its
+				# UNITS trap: pea* have no UNITS_BASE row, N06 §4.3). The
+				# common disk probe below makes it inert if art is absent and
+				# leaves ed["sid"]/"peasant" (and all sim stats) untouched.
+				if base_sid == "peasant" and nation != "" \
+						and NATION_PEASANT_SIDS.has(nation):
+					var psid := str(NATION_PEASANT_SIDS[nation])
+					if psid != base_sid and not candidates.has(psid):
+						candidates.append(psid)
 			"buildings":
 				candidates.append(_donor_building_prefix(nation, base_sid) + base_sid)
 			"naval":
@@ -801,6 +860,12 @@ func _entity_mesh_sid(ed: Dictionary, base_sid: String, kind: String) -> Diction
 			exact = true
 			break
 	var status := NATION_MESH_EXACT_STATUS if exact else NATION_MESH_FALLBACK_STATUS
+	# WAVE-N/N04 (c): a nation hall can be exact while its stage/ghost art is
+	# not. Probe the donor-derived nation stage stem at bind time (never per
+	# frame) and make the remaining gap explicit; no stage/ghost mesh is invented.
+	if family == "buildings" and nation != "" and base_sid != "" \
+			and not _nation_mesh_on_disk(nation + base_sid + "1"):
+		status += " | " + NATION_STAGE_GHOST_BLOCKED_STATUS
 	# B-NATION-PLAN2 T2b role-substitution exactness: a disk hit on a generic
 	# role substitute (bav musketeer/hussar) keeps sid/candidate/candidates
 	# but is labelled role-substitute with exact=false, never exact nation art.
@@ -1004,8 +1069,9 @@ func _tinted_material(base: Material, tint: Color, sid: String, kind: String) ->
 	var albedo: Texture2D = null
 	if bm is StandardMaterial3D:
 		albedo = (bm as StandardMaterial3D).albedo_texture
-	if albedo == null and ResourceLoader.exists(TEX_DIR + sid + ".png"):
-		albedo = load(TEX_DIR + sid + ".png") as Texture2D
+	var albedo_path := AssetPaths.existing(sid, "tex")
+	if albedo == null and ResourceLoader.exists(albedo_path):
+		albedo = load(albedo_path) as Texture2D
 	if _tint_shader == null:
 		_tint_shader = Shader.new()
 		_tint_shader.code = TINT_SHADER_CODE
@@ -1153,7 +1219,7 @@ func _mesh_info(sid: String, kind: String) -> Dictionary:
 	var src_mesh: Mesh = null
 	var pre_normalised := false
 	var source := "donor_bbox_proxy"
-	var glb := GLB_DIR + sid + ".glb"
+	var glb := AssetPaths.existing(sid, "glb")
 	if ResourceLoader.exists(glb):
 		var packed = load(glb)
 		if packed is PackedScene:
@@ -1165,7 +1231,7 @@ func _mesh_info(sid: String, kind: String) -> Dictionary:
 		if src_mesh != null:
 			pre_normalised = true
 			source = "glb_assumed_yup"
-	var obj := OBJ_DIR + sid + ".obj"
+	var obj := AssetPaths.existing(sid, "obj")
 	if src_mesh == null and ResourceLoader.exists(obj):
 		src_mesh = load(obj) as Mesh
 		if src_mesh != null:
@@ -1281,7 +1347,7 @@ func _load_obj_topology(sid: String) -> Dictionary:
 	if _obj_topology.has(sid):
 		return _obj_topology[sid]
 	var result: Dictionary = {"verts": [], "uvs": [], "tris": []}
-	var path := OBJ_DIR + sid + ".obj"
+	var path := AssetPaths.existing(sid, "obj")
 	if not FileAccess.file_exists(path):
 		_obj_topology[sid] = result
 		return result
@@ -1433,9 +1499,29 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 		mm.use_colors = true
 		var fmesh: Mesh = info["mesh"]
 		for s in range(fmesh.get_surface_count()):
-			var sm: Material = fmesh.surface_get_material(s)
-			if sm is StandardMaterial3D:
-				(sm as StandardMaterial3D).vertex_color_use_as_albedo = true
+			# FCOL-03: keep the DONOR dark cut-out field.png albedo and the donor
+			# OBJ mesh/UVs; no art swap, no synthetic noise, no invented light.
+			# Donor crop meshes are unlit/emissive (env.mat:58-69): warm emission
+			# stops the 72.8%-black texels (FCOL_01 §3) rendering as opaque black.
+			# Emission COLOUR is DONOR-GROUNDED; ENERGY is PORT APPROX and must
+			# be calibrated by G04 against FCOL-02 §7.2 bands.
+			var src: Material = fmesh.surface_get_material(s)
+			var fm := StandardMaterial3D.new()
+			if src is StandardMaterial3D:
+				fm.albedo_texture = (src as StandardMaterial3D).albedo_texture
+			if fm.albedo_texture == null:
+				var tex_path := AssetPaths.existing("field", "tex")
+				if ResourceLoader.exists(tex_path):
+					fm.albedo_texture = load(tex_path) as Texture2D
+			fm.roughness = 1.0
+			fm.metallic = 0.0
+			fm.cull_mode = BaseMaterial3D.CULL_DISABLED
+			# Opaque: field stays exempt from alpha scissor (:646-648).
+			fm.vertex_color_use_as_albedo = true  # 2D stage tints still apply
+			fm.emission_enabled = true
+			fm.emission = FIELD_EMISSION_WARM
+			fm.emission_energy_multiplier = FIELD_EMISSION_ENERGY
+			fmesh.surface_set_material(s, fm)
 	# P11: allocate only the initial buffer; use_colors is toggled above while
 	# instance_count is still 0, which Godot 4.7 requires.
 	var cap: int = mini(BATCH_INITIAL_CAPACITY, BATCH_CAPACITY)
@@ -1517,7 +1603,12 @@ func _acquire(key: String, id: int, info: Dictionary, cls: String,
 	(b as Dictionary)["xforms"].append(Transform3D())
 	# Keep tint/player/pose on the slot so a frame change can re-acquire the
 	# matching batch without re-reading sim state or guessing a key.
+	# WAVE-N/N04 (a): persist the RESOLVED presentation sid on the slot.
+	# info["sid"] is the nation-resolved sid on both the static bind and the
+	# morph re-acquire path, so a frame change cannot silently revert sync()
+	# to the base sim sid. No sim field is written.
 	_slot[id] = {"key": key, "index": ix, "class": cls, "tint": tint,
+		"mesh_sid": str(info.get("sid", "")),
 		"player": player, "pose_source": str(pose.get("pose_source", "static_bind_pose")),
 		"frame": int(pose.get("frame", -1)), "action": str(pose.get("action", ""))}
 	var mm: MultiMesh = b["mm"]
@@ -1742,13 +1833,16 @@ func add_building(e) -> void:
 		_attach_rotor(id, mi)
 
 
-# MILLFIX F1 — donor-derived face-on rotor bake on a billboarded cutout quad.
-# Hub mapping (all donor numbers, no inventions):
-#   world.gd:651  hub = tl + sz*MILL_HUB, where tl = p - sz*(cx, foot)
-#   buildings.json ukr_mil:579,584-585,587 -> cx=0.4989, foot=ink[3]/cell=1.0
-#   => local X = (MILL_HUB.x - cx)*ortho = +0.173 m,
-#      local Y = (foot - MILL_HUB.y)*ortho = +5.235 m (tower cap; mesh is 5.917 m),
-#      local Z = 0 (billboard plane through tower centre).
+# MILLFIX F1 / M03 — donor-derived face-on rotor bake on a FIXED-AXLE cutout quad.
+# Superseded 2D-sheet hub (hx=+0.173, hy=+5.235, hz=0) is kept only in the
+# MILL_HUB/MILL_TOWER_* constants for the historical M04 atom; M01 §2.2/D1
+# showed hz=0 puts the sail plane through the tower mid-depth. M03 reads the
+# donor 3-D attach instead: eurmilanim.oss axle tip donor y=-1.897957 maps
+# through _bake_mesh() (:1079-1081) to local z=+1.8947 on the +Z tower face;
+# disc centre donor (0,-1.469455,5.623430) maps to local x=-0.1764, y=+5.6263.
+# Donor front is donor -Y -> local +Z = the default camera side, so NO whole-
+# mill yaw is added (M01 §2.4's -90 deg yaw is rejected: bake_mill_rotor.py:8-12
+# says the donor +X view is the EDGE-ON view, not the front).
 # Quad span = MILL_ROTOR_ORTHO (6.352 m), i.e. the full baked cell, NOT half.
 func _rotor_mesh() -> Mesh:
 	var half := MILL_ROTOR_ORTHO * 0.5
@@ -1827,9 +1921,17 @@ func _attach_rotor(id: int, parent: MeshInstance3D) -> void:
 	var rotor_mat := _rotor_material()
 	rotor.material_override = rotor_mat
 	rotor.set_meta("rotor_texture_status", rotor_mat.get_meta("rotor_texture_status", "?"))
-	var hx := (MILL_HUB.x - MILL_TOWER_CX) * MILL_TOWER_ORTHO
-	var hy := (MILL_TOWER_FOOT - MILL_HUB.y) * MILL_TOWER_ORTHO
-	rotor.position = Vector3(hx, hy, 0.0)
+	# M03 donor axle tip: disc centre from eurmilanim.oss, axle tip at the
+	# slab's donor -Y face so the quad clears the tower (tower face at hub
+	# height is donor y~-1.784 -> local z~+1.781; tip local z=+1.8947).
+	# _bake_mesh() mapping at :1079-1081, tower bbox at manifest.json:1209-1216.
+	var tower_ctr := (MILL_TOWER_BBOX_LO + MILL_TOWER_BBOX_HI) * 0.5
+	rotor.position = Vector3(
+		MILL_ROTOR_HUB_DONOR.x - tower_ctr.x,
+		MILL_ROTOR_HUB_DONOR.z - MILL_TOWER_BBOX_LO.z,
+		-(MILL_ROTOR_AXLE_TIP_DONOR_Y - tower_ctr.y))
+	rotor.set_meta("hub_source", ROTOR_MOUNT_STATUS)
+	rotor.set_meta("hub_local_m", [rotor.position.x, rotor.position.y, rotor.position.z])
 	rotor.set_meta("visual_status", ROTOR_STATUS)
 	rotor.set_meta("donor_source", ROTOR_TEX_PATH)
 	rotor.set_meta("donor_meta", ROTOR_META_PATH)
@@ -1879,7 +1981,7 @@ func _stage_mesh_info(sid: String, suffix: String, scaffold: bool) -> Dictionary
 		return cached as Dictionary
 	var out: Dictionary = {}
 	var art_sid := sid + suffix + ("a" if scaffold else "")
-	var path := OBJ_DIR + sid + suffix + ("a.obj" if scaffold else ".obj")
+	var path := AssetPaths.existing(sid, "obj", suffix + ("a" if scaffold else ""))
 	if ResourceLoader.exists(path):
 		var src := load(path) as Mesh
 		if src != null:
@@ -2108,7 +2210,10 @@ func sync(dt: float) -> void:
 			continue
 		var ed := e as Dictionary
 		var uid := int(id)
-		var sid := str(ed.get("sid", ""))
+		# WAVE-N/N04 (a): use the nation-resolved sid persisted on the slot by
+		# _acquire(); it drives has_skin, pose_for, _mesh_info, _morph_mesh and
+		# the batch key. Legacy slots without the field keep base-sid behaviour.
+		var sid := str((sl as Dictionary).get("mesh_sid", str(ed.get("sid", ""))))
 		var old_key := str((sl as Dictionary).get("key", ""))
 		# MOTION-ANIM-01: measure SIM displacement first, then pick the donor
 		# action from that measurement. This is the walk-while-stalled fix:
@@ -2130,7 +2235,10 @@ func sync(dt: float) -> void:
 			if pose_memo.has(memo_key):
 				pose = pose_memo[memo_key] as Dictionary
 			else:
-				var p = anim.call("pose_for", ed, action, _anim_t)
+				# WAVE-N/N04 (a): pose_for() accepts a sid String
+				# (anim3d.gd:685-690), so the resolved sid selects that
+				# nation's skin and AAF range; the sim entity is untouched.
+				var p = anim.call("pose_for", sid, action, _anim_t)
 				if p is Dictionary:
 					pose = p as Dictionary
 				pose_memo[memo_key] = pose
@@ -2212,35 +2320,32 @@ func sync(dt: float) -> void:
 	# rotation stays the authoritative angle: angle = _anim_t * MILL_SPIN,
 	# i.e. exactly the donor 0.75 rad/s of world.gd:204/652.
 	var rotor_spin := _anim_t * MILL_SPIN
-	var vp: Variant = get_viewport()
-	var cam: Variant = null
-	if vp != null and vp.has_method("get_camera_3d"):
-		cam = vp.call("get_camera_3d")
 	for id in _rotors.keys():
 		var rotor = _rotors[id]
 		if not is_instance_valid(rotor):
 			_rotors.erase(id)
 			continue
-		var face := Basis()
-		if cam != null:
-			var delta: Vector3 = cam.global_position - rotor.global_position
-			if delta.length_squared() > 0.0001:
-				var d := delta.normalized()
-				if absf(d.dot(Vector3.UP)) < 0.999:
-					var rx := Vector3.UP.cross(d).normalized()
-					var ry := d.cross(rx).normalized()
-					face = Basis(rx, ry, d)   # local +Z faces the camera
-		# MOTION-ANIM-01/ROTOR: local +Z (FORWARD) makes a positive spin screen-
-		# clockwise, matching the donor-derived 2D bake at world.gd:640-654.
-		# BACK spun the sail the other way; donor .oss 3D direction UNVERIFIED.
+	# M03: FIXED AXLE — no camera billboard. The donor attach mesh mounts the
+	# sail on donor -Y -> local +Z, which is the default Camera3D side
+	# (camera3d.gd:262-282); a camera-following basis would swing the sail
+	# through the tower when viewed from behind. Keep body yaw 0 (donor-
+	# grounded); do NOT apply M01 §2.4's -90 deg yaw. Spin axis stays local Z
+	# (donor slab thin in donor Y -> Godot Z: DONOR-PROVEN axis); the SIGN is
+	# PORT APPROX vs the 2D bake proxy. Do NOT flip to Vector3.BACK: M01 D3
+	# shows MOTION_ANIM_01.md:240's justification was wrong but the code right.
 		rotor.transform = Transform3D(
-			face * Basis().rotated(Vector3.FORWARD, rotor_spin), rotor.position)
+			Basis().rotated(Vector3.FORWARD, rotor_spin), rotor.position)
 		var re = _refs.get(int(id))
 		rotor.visible = re is Dictionary and bool((re as Dictionary).get("finished", true))
 	stats["mill_rotor_angle_rad"] = rotor_spin
 	stats["mill_rotor_count"] = _rotors.size()
 	stats["mill_rotor_label"] = ROTOR_STATUS
 	stats["mill_rotor_spin_axis_label"] = ROTOR_SPIN_AXIS_STATUS
+	stats["mill_rotor_mount_label"] = ROTOR_MOUNT_STATUS
+	stats["mill_rotor_hub_local_m"] = [
+		MILL_ROTOR_HUB_DONOR.x - (MILL_TOWER_BBOX_LO.x + MILL_TOWER_BBOX_HI.x) * 0.5,
+		MILL_ROTOR_HUB_DONOR.z - MILL_TOWER_BBOX_LO.z,
+		-(MILL_ROTOR_AXLE_TIP_DONOR_Y - (MILL_TOWER_BBOX_LO.y + MILL_TOWER_BBOX_HI.y) * 0.5)]
 	stats["mill_rotor_texture_fallback_used"] = _rotor_fallback_warned
 
 	# MILLFIX F2: per-field visual state, read-only on the sim. game.field_state()
@@ -2307,6 +2412,9 @@ func sync(dt: float) -> void:
 	stats["field_visual_span_scale"] = field_scale
 	stats["field_visual_target_span_m"] = FIELD_SPAN_M
 	stats["field_visual_label"] = FIELD_STATUS
+	stats["field_visual_emission_status"] = FIELD_EMISSION_STATUS
+	stats["field_visual_emission_rgb"] = [232.0 / 255.0, 218.0 / 255.0, 195.0 / 255.0]
+	stats["field_visual_emission_energy"] = FIELD_EMISSION_ENERGY
 	var units := 0
 	var ress := 0
 	var tinted_batches := 0
