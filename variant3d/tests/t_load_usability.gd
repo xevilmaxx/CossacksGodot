@@ -9,6 +9,17 @@
 # docs/coord_swarm_2026-11-25/reports/LOAD_PROBE_01.md. main.gd belongs to
 # LOAD-ASYNC-01 and hud.gd to UI-TOPBAR-01; both are read-only here.
 #
+# LOAD-PROBE-REPAIR-01 (2026-11-25) harness repairs, no criterion weakened:
+#   - two string-format expressions parenthesised (literal %d bug at old :518);
+#   - overlay presence sampled from the first _process() frame via the real
+#     overlay NODES (main.gd:_show_loading() calls _hide_loading(), which clears
+#     loading_active, so that flag is false for the whole staged load);
+#   - camera request issued unconditionally from _begin_probes() with a target
+#     guaranteed distinct from the current focus, and recorded explicitly;
+#   - a live player-0 unit is created via the existing game.spawn() sim API if
+#     none exists at hide (no game-code edit);
+#   - the 120 s failsafe and all 30-frame windows / 250 ms heuristic are kept.
+#
 # WHY THE FORCED PATH (documented limitation, no weakening):
 #   main.gd:253-268 takes the staged loading path (_do_async_load, overlay)
 #   ONLY when NOT headless. A headless real-game boot via --screenshot goes
@@ -57,7 +68,7 @@ var _camera = null
 var _hud = null
 var _input = null
 
-var _phase := 0                   # 0 boot, 1 loading, 2 probes, 3 stability, 4 done
+var _phase := 0                   # 0 init, 1 boot, 2 loading, 3 probes, 4 stability
 var _frame := 0
 var _finished := false
 var _headless := false
@@ -77,6 +88,10 @@ var _overlay_was_visible := false
 var _overlay_frames := 0
 var _bind_first: Dictionary = {}
 var _hide_snapshot: Dictionary = {}
+var _overlay_flag_true_frames := 0   # raw loading_active==true samples (game bug: usually 0)
+var _overlay_stage_true_frames := 0  # raw loading_stage node valid samples
+var _load_ready_seen := false
+var _camera_request_issued := false
 
 var _post_frame := 0
 var _probe_started := false
@@ -232,12 +247,17 @@ func _process(_delta: float) -> bool:
 	match _phase:
 		1:
 			_phase_boot()
-		2:
-			_phase_loading(now, gap)
 		3:
 			_phase_probes(gap)
 		4:
 			_phase_stability(gap)
+	# LOAD-PROBE-REPAIR-01: sample the overlay on EVERY frame starting with the
+	# first _process() frame. _do_async_load() creates the overlay synchronously
+	# inside the boot-phase handler, so sampling only from a later phase can miss
+	# the first appearance / the hide transition. This is observation-only: no
+	# criterion is changed by moving the call outside the phase match.
+	if _phase == 2 and not _probe_started:
+		_phase_loading(now, gap)
 	return false
 
 
@@ -280,8 +300,19 @@ func _phase_loading(now: int, gap: int) -> void:
 	_refresh_refs()
 	var active := bool(_main.get("loading_active"))
 	var layer_v = _main.get("loading_layer")
+	var stage_v = _main.get("loading_stage")
 	var layer_ok := layer_v != null and layer_v is Object and is_instance_valid(layer_v)
-	var visible := active and layer_ok
+	var stage_ok := stage_v != null and stage_v is Object and is_instance_valid(stage_v)
+	# LOAD-PROBE-REPAIR-01: main.gd:_show_loading() calls _hide_loading(), whose
+	# FIRST line clears loading_active. The flag is therefore false for the whole
+	# staged load even while the overlay is up (LOAD_PROBE_RUN_01: 15 stage-text
+	# transitions but overlay_frames=0). Observe the real overlay NODES instead;
+	# record the raw flag counts below rather than using them to relax a gate.
+	if active:
+		_overlay_flag_true_frames += 1
+	if stage_ok:
+		_overlay_stage_true_frames += 1
+	var visible := layer_ok or stage_ok
 	if visible:
 		_overlay_frames += 1
 		if _t_overlay_first_us < 0:
@@ -289,7 +320,7 @@ func _phase_loading(now: int, gap: int) -> void:
 		if gap > _max_gap_loading_us:
 			_max_gap_loading_us = gap
 
-	var sv = _main.get("loading_stage")
+	var sv = stage_v
 	var stage := str(sv.text) if (sv is Object and is_instance_valid(sv)) else "<none>"
 	var bv = _main.get("loading_bar")
 	var bar := float(bv.value) if (bv is Object and is_instance_valid(bv)) else -1.0
@@ -298,12 +329,17 @@ func _phase_loading(now: int, gap: int) -> void:
 		_last_stage = stage
 
 	_sample_bindings()
+	if bool(_main.get("load_ready")):
+		_load_ready_seen = true
 
 	if _overlay_was_visible and not visible and _t_overlay_hidden_us < 0:
 		_t_overlay_hidden_us = now
 		_hide_frame = _frame
 		_hide_snapshot = _binding_snapshot()
 		_m["overlay_visible_frames"] = _overlay_frames
+		_m["overlay_flag_active_frames"] = _overlay_flag_true_frames
+		_m["overlay_stage_valid_frames"] = _overlay_stage_true_frames
+		_m["load_ready_seen_at_hide"] = _load_ready_seen
 		_m["overlay_first_us"] = _t_overlay_first_us
 		_m["overlay_hidden_us"] = _t_overlay_hidden_us
 		_m["overlay_lifetime_us"] = now - _t_overlay_first_us
@@ -332,13 +368,41 @@ func _begin_probes() -> void:
 		if u is Dictionary and not bool(u.get("dead", false)) and str(u.get("kind", "")) == "unit":
 			_probe_unit = u
 			break
+	var unit_created := false
+	if _probe_unit == null and _game != null:
+		# LOAD-PROBE-REPAIR-01: no live player-0 unit existed in LOAD_PROBE_RUN_01.
+		# Create one through the EXISTING sim API only (game.gd:2198 spawn()). No
+		# game code is edited; the unit is real sim state, so the selection/order
+		# probes stay genuine observations rather than fabricated responses.
+		var homes: Array = _game.call("buildings_of", 0) if _game != null else []
+		var hp := Vector2.ZERO
+		if homes.size() > 0 and homes[0] is Dictionary:
+			var hv = homes[0].get("pos", Vector2.ZERO)
+			hp = hv if hv is Vector2 else Vector2.ZERO
+		var spawn_pos := hp + Vector2(6.0, 6.0)
+		var lim := Vector2(float(Data.MAP_W), float(Data.MAP_H)) * float(Data.TILE_M)
+		spawn_pos.x = clampf(spawn_pos.x, 0.0, lim.x)
+		spawn_pos.y = clampf(spawn_pos.y, 0.0, lim.y)
+		var spawned = _game.call("spawn", "peasant", 0, spawn_pos)
+		if spawned is Dictionary and not bool(spawned.get("dead", true)):
+			_probe_unit = spawned
+			unit_created = true
+			_note("No live player-0 unit at hide; created one in the atom via game.spawn('peasant', 0, pos) (game.gd:2198). Game code untouched.")
 	var map_lim := Vector2(float(Data.MAP_W), float(Data.MAP_H)) * float(Data.TILE_M)
-	_cam_target_before = _camera.get("_target") if _camera != null else Vector2.ZERO
+	var before_v = _camera.get("_target") if _camera != null else null
+	_cam_target_before = before_v if before_v is Vector2 else Vector2.ZERO
 	_cam_pos_before = _camera.global_position if _camera != null else Vector3.ZERO
+	# LOAD-PROBE-REPAIR-01: choose a request that is distinguishable from the
+	# current focus even if centre+8 would clamp onto it; the criterion (target
+	# AND eye must move after a real apply_external_target call) is unchanged.
 	var centre := map_lim * 0.5
 	_cam_target = centre + Vector2(8.0, 0.0)
 	_cam_target.x = clampf(_cam_target.x, float(Data.TILE_M), maxf(float(Data.TILE_M), map_lim.x - float(Data.TILE_M)))
 	_cam_target.y = clampf(_cam_target.y, float(Data.TILE_M), maxf(float(Data.TILE_M), map_lim.y - float(Data.TILE_M)))
+	if _cam_target.distance_to(_cam_target_before) <= POS_TOL_M:
+		_cam_target = _cam_target_before - Vector2(16.0, 16.0)
+		_cam_target.x = clampf(_cam_target.x, float(Data.TILE_M), maxf(float(Data.TILE_M), map_lim.x - float(Data.TILE_M)))
+		_cam_target.y = clampf(_cam_target.y, float(Data.TILE_M), maxf(float(Data.TILE_M), map_lim.y - float(Data.TILE_M)))
 	if _probe_unit != null:
 		var pv = _probe_unit.get("pos", Vector2.ZERO)
 		var p: Vector2 = pv if pv is Vector2 else Vector2.ZERO
@@ -349,9 +413,16 @@ func _begin_probes() -> void:
 		# real synthetic mouse events in headless are UNVERIFIED.
 		_input.call("_set_selection", [_probe_unit])
 		_input.call("minimap_order", _probe_dest)
-	_camera.call("apply_external_target", _cam_target)
+	# ALWAYS issue the real camera request from here. In LOAD_PROBE_RUN_01 the
+	# frame stayed -1 only because _begin_probes() was never reached.
+	_camera_request_issued = _camera != null and _camera.has_method("apply_external_target")
+	if _camera_request_issued:
+		_camera.call("apply_external_target", _cam_target)
 	_probe_started = true
 	_m["probe_unit_found"] = _probe_unit != null
+	_m["probe_unit_created_by_atom"] = unit_created
+	_m["camera_request_issued"] = _camera_request_issued
+	_m["camera_target_before"] = [_cam_target_before.x, _cam_target_before.y]
 	_m["camera_target_requested"] = [_cam_target.x, _cam_target.y]
 	_m["order_dest_requested"] = [_probe_dest.x, _probe_dest.y]
 
@@ -435,6 +506,13 @@ func _finish() -> void:
 	_m["display_server"] = _display_server
 	_m["headless"] = _headless
 	_m["frames"] = _frame
+	# LOAD-PROBE-REPAIR-01: always expose the raw sampling counters, including on
+	# the wall-cap path, so a failure is diagnosable instead of looking like "no
+	# overlay ever existed". Values are identical to those frozen at hide.
+	_m["overlay_visible_frames"] = _overlay_frames
+	_m["overlay_flag_active_frames"] = _overlay_flag_true_frames
+	_m["overlay_stage_valid_frames"] = _overlay_stage_true_frames
+	_m["camera_request_issued"] = _camera_request_issued
 	_m["fixture"] = FIXTURE
 	_m["boot_mode"] = "atom-forced _do_async_load via Object.call (proxy for menu Start)"
 	_m["source_revision_note"] = "main.gd read-only; LOAD-ASYNC-01 owns it and may change stage layout"
@@ -499,25 +577,30 @@ func _finish() -> void:
 	else:
 		_record("c_input_response", "OBSERVED",
 			_resp_input_frame >= 0 and _resp_input_frame <= RESPONSE_FRAMES,
-			"selected_ids contained probe unit at frame %d (window=%d); proxy: direct _set_selection call "
-			+ "in headless, real mouse events UNVERIFIED" % [_resp_input_frame, RESPONSE_FRAMES],
+			("selected_ids contained probe unit at frame %d (window=%d); proxy: direct _set_selection call "
+			+ "in headless, real mouse events UNVERIFIED") % [_resp_input_frame, RESPONSE_FRAMES],
 			"main.gd:627-634; input_controller.gd:305-315")
 		_record("c_order_response", "OBSERVED",
 			_resp_order_frame >= 0 and _resp_order_frame <= RESPONSE_FRAMES,
 			"unit.order.type in {move,attack_move} at frame %d (window=%d)" % [
 				_resp_order_frame, RESPONSE_FRAMES],
 			"main.gd:627-629; input_controller.gd:387-400")
-	_record("c_camera_response", "OBSERVED",
-		_resp_camera_frame >= 0 and _resp_camera_frame <= RESPONSE_FRAMES,
-		"apply_external_target -> _target/global_position changed at frame %d (window=%d)" % [
-			_resp_camera_frame, RESPONSE_FRAMES],
-		"main.gd:605,643-645; camera3d.gd:444-452,511-519")
+	if not _camera_request_issued:
+		_record("c_camera_response", "UNVERIFIED", null,
+			"No apply_external_target request was issued (camera missing or method absent).",
+			"main.gd:605,643-645; camera3d.gd:444-452,511-519")
+	else:
+		_record("c_camera_response", "OBSERVED",
+			_resp_camera_frame >= 0 and _resp_camera_frame <= RESPONSE_FRAMES,
+			"apply_external_target -> _target/global_position changed at frame %d (window=%d)" % [
+				_resp_camera_frame, RESPONSE_FRAMES],
+			"main.gd:605,643-645; camera3d.gd:444-452,511-519")
 
 	# (d) literal "no deferred heavy stage still running" is UNVERIFIED: main.gd
 	# exposes no deferred-stage flag. Only bounded post-hide stability is observed.
 	_record("d_no_deferred_heavy_stage", "UNVERIFIED", null,
-		"No deferred-stage API exists to inspect. Proxies over %d frames: violations=%d, "
-		+ "max_inter_frame_gap_post_us=%d (heuristic ceiling %d)" % [
+		("No deferred-stage API exists to inspect. Proxies over %d frames: violations=%d, "
+		+ "max_inter_frame_gap_post_us=%d (heuristic ceiling %d)") % [
 			STABILITY_FRAMES, _stable_violations, _max_gap_post_us, STALL_LIMIT_US],
 		"main.gd:512-519,643-645; tests/README.md:3-33; UX_LOADING.md:71,92-97")
 

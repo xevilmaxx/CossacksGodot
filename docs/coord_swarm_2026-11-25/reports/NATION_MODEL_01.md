@@ -3,7 +3,7 @@ id: NATION-MODEL-01
 owner: NATION-MODEL-01 (implementation builder subagent)
 swarm: coord_swarm_2026-11-25
 date: 2026-11-25
-status: IMPLEMENTED__DONOR_GROUNDED_SELECTOR__EXACT_ART_BLOCKED__BUILD_ACTION_ADDED__PARSE_SMOKE_OK
+status: IMPLEMENTED__DONOR_GROUNDED_SELECTOR__EXACT_ART_BLOCKED__BUILD_ACTION_ADDED__SMOKE_AND_PROBE_OK
 scope: "Edited ONLY variant3d/scripts/world3d_entities.gd and this report. Donor READ-ONLY (country.script + actor/prop/material paths cited, nothing copied or executed). No game.gd/data.gd/menu/config/main edit; no asset, test, manifest or converter edit."
 owns:
   - variant3d/scripts/world3d_entities.gd
@@ -48,7 +48,7 @@ parity_claim: none
 
 ## 3. Before → after (post-edit line numbers)
 
-Backup baseline `inbox/backup/world3d_entities.gd.bak-NATIONMODEL01`; final diff **+197 / −3** (3 deletions = the old `MORPH_ACTION_MAP` label and two `var sid := ed.get("sid")` lines; every other change is additive).
+Backup baseline `inbox/backup/world3d_entities.gd.bak-NATIONMODEL01`; final diff **+205 / −3** (3 deletions = the old `MORPH_ACTION_MAP` label and two `var sid := ed.get("sid")` lines; every other change is additive).
 
 | # | Before (backup) | After (live) | Change |
 |---|---|---|---|
@@ -59,9 +59,9 @@ Backup baseline `inbox/backup/world3d_entities.gd.bak-NATIONMODEL01`; final diff
 | 5 | No nation recovery helper | `:655-673` | `_nation_of(ed)`: explicit `ed["nation"]` → `game.players[player].nation` (`game.gd:386`) → `Data.PLAYER_NATIONS[player]`; never writes sim state. |
 | 6 | No on-disk probe | `:678-683` | `_nation_mesh_on_disk(sid)` probes `OBJ_DIR`/`GLB_DIR` only. |
 | 7 | No donor building prefix rule | `:691-727` | `_donor_building_prefix()` implements `country.script:138-206` (own families, por/wwa/sto/mar/tur/rus overrides, `eur` default). |
-| 8 | `add_unit` used `ed.sid` directly (`:1409-1410`) | `:736-781`, `:1597` | `_entity_mesh_sid()` picks donor-grounded candidates: unit roster sid via `resolve_sid()`, or a base sid already present in the nation's `NATION_UNITS` value list; building prefix+family; naval **no stem** (family-keyed). Result feeds `_mesh_info()` and the batch key. |
-| 9 | `add_building` used `ed.sid` directly (`:1436-1437`) | `:1637` | Same helper with `kind="building"`; per-node meta carries nation/exact/status. |
-| 10 | `_unit_action()` had no build branch (`:1009-1016`) | `:1177-1199` | Added dead-first build/repair→`construct` gated by measured speed (`< WALK_SPEED_GATE_M_S`); travelling builders keep `walk`; all other branches byte-identical. |
+| 8 | `add_unit` used `ed.sid` directly (`:1409-1410`) | `:736-777`, `:1593` | `_entity_mesh_sid()` picks donor-grounded candidates: unit roster sid via `resolve_sid()`; building donor prefix+family; naval **no stem** (family-keyed). `exact` is claimed only for a real generic→nation remap — a base sid mapping to a generic target is conservatively labelled fallback (see §8). Result feeds `_mesh_info()` and the batch key. |
+| 9 | `add_building` used `ed.sid` directly (`:1436-1437`) | `:1633` | Same helper with `kind="building"`; per-node meta carries nation/exact/status. |
+| 10 | `_unit_action()` had no build branch (`:1009-1016`) | `:1173-1195` | Added dead-first build/repair→`construct` gated by measured speed (`< WALK_SPEED_GATE_M_S`); travelling builders keep `walk`; all other branches byte-identical. |
 | 11 | No usage telemetry | `:783-788` | `_record_nation_mesh()` counts `family|nation|base->mesh` choices in `stats`. |
 | 12 | Rotor / stage / tree / motion blocks | unchanged | No edit inside those blocks (verified by diff: insertions only outside; `MORPH_ACTION_MAP` label and `_unit_action` branch are the two requested exceptions). |
 
@@ -69,7 +69,7 @@ Backup baseline `inbox/backup/world3d_entities.gd.bak-NATIONMODEL01`; final diff
 
 | Family | Behaviour | Status |
 |---|---|---|
-| **Units** | For `rus` `musketeer`→`strelet`, `serdiuk`→`strelet`, `cossack`→`cossackdon`; `ukr` `priest`→`pope`; `tur` `musketeer`→`jannisary`; `alg` `cossack`→`mameluke`; `swe` `cossack`→`hackapell`; `sco` `musketeer`→`sco_highlandersword`; base sids already nation-coded (`strelet`, `sco_highlandersword`, `pope`, …) recognised from `NATION_UNITS` values. | **Selector fixed** — real nation mesh chosen when the sim sid is still generic and the OBJ exists. Trained `rus` units arrive already resolved (identity) and are recognised via the value check. |
+| **Units** | For `rus` `musketeer`→`strelet`, `serdiuk`→`strelet`, `cossack`→`cossackdon`; `ukr` `priest`→`pope`; `tur` `musketeer`→`jannisary`; `alg` `cossack`→`mameluke`; `swe` `cossack`→`hackapell`; `sco` `musketeer`→`sco_highlandersword`. Identity maps (already-resolved `strelet`, `sco_highlandersword`, …) keep their correct mesh but are labelled fallback, never "exact". | **Selector fixed** — real nation mesh chosen when the sim sid is still generic and the OBJ exists; no false exact-nation claim for identity/generic mappings. |
 | **Buildings** | Donor prefix probes (`ruscen`, `bavbar`, `eurmil`, `eurpor`, `turbar`, `ukrpor`, …) run against disk. | **BLOCKED** — 0/172 original OBJs carry any nation prefix (checked: only `sco_highlandersword` has a nation-like stem). Always falls back to Ukrainian-derived `cen/hou/bar/sta/bla/aca/art/dip`. |
 | **Naval / ships** | No nation stem probed: hulls are family-keyed; `yachttur`/`chaika` are distinct base sids already handled by `add_unit` if present. | **BLOCKED for nation skins by donor design** — `yacht`→`yachttur` remap is not invented; `chaika` has no manifest/OBJ entry (NATION_DONOR_01 G12). |
 | **Bavaria** | No `NATION_UNITS` key (`data.gd:294-305`); `musketeer18bav`/`grenadierbav` absent from manifest+obj (G8); bav buildings probe `eur*`, none on disk. | **BLOCKED** — no bav-specific 3D art exists in the port. |
@@ -87,7 +87,27 @@ Backup baseline `inbox/backup/world3d_entities.gd.bak-NATIONMODEL01`; final diff
 
 ## 6. Validation (variant runner only; no direct `godot`)
 
-<!-- JOB_RESULTS -->
+All launches went through `python variant3d\tools\godot_runner.py run`; **no direct `godot` invocation**, no queue mutation, no cancelled/resubmitted queued job.
+
+| Ticket | id | argv | wait / run | status / exit | stdout / stderr | SCRIPT ERROR |
+|---:|---|---|---|---|---|---|
+| 522 | `nationmodel01-smoke` | `--headless --path variant3d --check-only --script res://scripts/world3d_entities.gd` | 344.31 s / 15.62 s | ok / 0 | 75 B banner / 0 B | **0** |
+| 525 | `nationmodel01-probe` | temp runtime probe (first draft) | 298.20 s / 10.38 s | **failed** / 1 | banner / 413 B | 1 — my temp script used `var act := inst.call(...)`, an inferred-declaration parse error; no repo script fault. Not resubmitted under the same id. |
+| 535 | `nationmodel01-smoke2` | same check-only argv | 477.06 s / 16.01 s | ok / 0 | 75 B banner / 0 B | **0** |
+| 536 | `nationmodel01-probe2` | corrected temp runtime probe | 493.35 s / 24.15 s | ok / 0 | banner + probe lines / 0 B | **0** |
+
+Ticket 536 observed (verbatim PROBE lines): `rus/musketeer→strelet exact=true`, `rus/cossack→cossackdon exact=true`, `rus/cen→cen` with candidate `ruscen` (missing→fallback), `bav/mil→mil` candidate `eurmil`, `bav/bar→bar` candidate `bavbar`, `rus/mil→mil` candidate `rusmil`, `tur/yacht` naval no nation stem. Actions: `build_still→construct`, `repair_still→construct`, `build_walking→walk`, `idle_still→idle`, `dead_builder→death`, `build_stub→construct`.
+
+**Probe-driven correction:** 536 reported `bav/musketeer→musketeer exact=true`. Cause: another owner had added `data.gd:296` `bav` values pointing at generic sids; the value-list heuristic mislabelled a generic base sid as exact nation art. The heuristic was removed (§3 row 8, §8 item 3b) and the final code re-validated below.
+
+| 543 | `nationmodel01-smoke3` | **final code** `--headless --path variant3d --check-only --script res://scripts/world3d_entities.gd` | 671.43 s / 24.97 s | **ok / 0** | 75 B banner / **0 B** | **0** |
+| 544 | `nationmodel01-probe3` | **final code** corrected temp runtime probe | 698.25 s / 27.75 s | **ok / 0** | banner + probe lines / **0 B** | **0** |
+
+Final-code probe (ticket 544, verbatim selections): `rus/musketeer→strelet exact=true`, `rus/cossack→cossackdon exact=true`, `bav/musketeer→musketeer exact=false` (false-exact bug removed), `rus/cen→cen` candidate `ruscen` exact=false, `bav/mil→mil` candidate `eurmil` exact=false, `bav/bar→bar` candidate `bavbar` exact=false, `rus/mil→mil` candidate `rusmil` exact=false, `tur/yacht` naval `candidates=[]` exact=false. Actions: `build_still=construct`, `repair_still=construct`, `build_walking=walk`, `idle_still=idle`, `dead_builder=death`, `build_stub=construct`.
+
+**Validation verdict:** final parse smoke and final runtime probe both `status=ok`, `exit=0`, `stderr=0 B`, `SCRIPT ERROR == 0`. `--check-only` parses/validates but executes no test; the temp probe executes the owned helpers only and writes no repo file. No visual/render assertion was made.
+
+**Integrity check (read-only Python, backup vs live):** `_attach_rotor`, `_rotor_mesh`, `_rotor_material`, `_build_progress01`, `_build_stage_suffix`, `_stage_mesh_info`, `_sync_building_stages`, `_resource_sid`, `_pick_sid`, `add_resource`, `_measure_speed`, `_smooth_face`, `_find_anim`, `_morph_mesh`, `_xf`, `sync`, `remove`, `_player_tint`, `_default_material`, `_bake_mesh` and `_mesh_info` are **byte-identical**; `_player_index` body is unchanged (only the new nation-helper comments now follow it). `add_unit`/`add_building` changed only at the two nation-resolution seams; `_unit_action` gained the requested build branch. Backup SHA-256 still matches the pre-edit snapshot.
 
 ## 7. Optional stage integration — reported as a separate ticket
 
@@ -98,6 +118,7 @@ Backup baseline `inbox/backup/world3d_entities.gd.bak-NATIONMODEL01`; final diff
 1. **UNVERIFIED** — visual result of any nation selector choice; no donor/port A/B capture or headless render was made.
 2. **UNVERIFIED** — whether a future nation-prefixed 3D mesh (e.g. `ruspeasant.obj`) would be legal donor art or an invention; no such asset was created and none is proposed.
 3. **UNVERIFIED** — captured-nation sids (`game.gd:3982-3987`) resolve through the same helper only if a matching mesh exists on disk; no special case was added.
+3b. **CHANGED UNDER THIS TICKET (other owner)** — `data.gd:296` now has a partial `bav` entry (`serdiuk→musketeer`, `cossack→hussar`) that maps to **generic** sids, not the donor's `musketeer18bav`/`grenadierbav`. An earlier runtime probe (ticket 536) exposed this as a false `exact=true` via a `NATION_UNITS` value-list heuristic; that heuristic was removed, so a generic target is now conservatively labelled fallback. `data.gd` was **not** edited by this ticket; the mapping's donor fidelity and 3D art remain UNVERIFIED and belong to the `data.gd` owner.
 4. **UNVERIFIED** — the V7-74 morph path in `sync()` still keys frames from the raw `ed.sid`; when a registered donor skin exists, a morph re-acquire may bypass the nation-resolved static key. Shipped runtime has no registered skin (file header), so this is latent only. Kept byte-identical per owner constraint.
 5. **UNVERIFIED** — `construct` pose frames until the skin-export owner lands; `pose_for` may snap 186..198 to death 149 / attack0 237.
 6. **UNVERIFIED** — whether `main.gd:275` `ukr` fallback ever fires (not primary cause; config path observed correct).

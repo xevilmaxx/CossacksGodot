@@ -333,7 +333,7 @@ Disjoint file grants only. Reserved slots:
 | NATION-DATA-IMPL-01 | ses_ded92c978ffeaCikHZ0mrllHvt | add Bavaria unit map to `data.gd` | RUNNING |
 | RELIEF-LIVE-DIAG-01 | ses_ded925739ffexlkv9OmJ0wU5xr | diagnose live terrain relief/white marks in `game.gd` | RUNNING |
 | QA-CONFIG-RESTORE-01 | ses_ded925737ffeWz7EJH80lLaxL5 | verify 21-key features restoration | RUNNING |
-| QA-ATOM-RUNS-01 | ses_ded925736ffem9kFCbTFIvOb1n | verify HUD/load atom run results | RUNNING |
+| QA-ATOM-RUNS-01 | ses_ded925736ffem9kFCbTFIvOb1n | verify HUD/load atom run results | **DONE — TERMINATED** | HUD FAIL 42/11/12 SKIP_CAPTURE, load MEASUREMENT_ONLY; only speed dropdown has positive runtime evidence; top-bar fit/window-movable/overlay-ready/no-post-load-blocking all UNVERIFIED; no promotion |
 
 ## Batch Y — targeted verification refill
 
@@ -346,6 +346,11 @@ Disjoint file grants only. Reserved slots:
 | OWNER-FAULTS-UPDATE-01 | ses_ded8f1725ffeleiFAq0aGePdYe | refresh owner-fault index | RUNNING |
 | HUD-LAYOUT-REPAIR-01 | ses_ded8ac65dffe1sPKd4ME67DYVP | fix HUD atom tooltip drift + headless resize | RUNNING |
 | LOAD-PROBE-REPAIR-01 | ses_ded8a5be1ffescfQgRv0hSlI2s | fix load probe format/overlay/camera capture | RUNNING |
+| BLANK-CHECK-01 | ses_ded882c4affe3Kgh5f4gZ2cpTq | fix `_is_blank()` false rejection of olive frame | RUNNING |
+| WHITE-MARKS-PIX-01 | ses_ded87c3caffeVgigeaPI51T4G0 | pixel/tile-id analysis of reproduced white marks | RUNNING |
+| QA-WHITE-MARKS-01 | ses_ded87c3c9ffeOloNvKFuVFDf6R | independent verification of white-marks fault | RUNNING |
+| FINAL-CHECK-REFRESH-02 | ses_ded87c3c8ffeq4XUwC4VBXCqKQ | refresh FINAL_CHECKLIST with newest closures | RUNNING |
+| OWNER-FAULTS-UPDATE-02 | ses_ded87c3c5ffedU6OIKid4vb25P | record reproduced white marks + UX atom results | RUNNING |
 
 ## Batch W — asset/fault verification refill
 
@@ -402,3 +407,30 @@ Disjoint file grants only. Reserved slots:
 | DONAVAL-01 | donor naval/ship assets truth (skirmish scope) | `reports/DONAVAL_01.md` | ses_deddad2dfffeiq7NfEV7bZUays | **DONE** (282 lines) | 9 hull `.osm`, 6 crew `.oss`, sails/flags/paddles, 10 skins incl. alternate xebeca; 7 corrections (skins present, crew 5/6, tiers=production gates, radii 1.31–3.38 m, `convert_models.py` shipyard claim false); new construction/port-scan behaviours; port has no naval entity layer/production/stats/AI |
 | QA-ATOM-RESULTS-01 | audit atom result JSONs + manifest consistency | `reports/QA_ATOM_RESULTS_01.md` | ses_dedcdf2c3ffeeNnd0m5fmCmM6R | RUNNING |
 | LFS-PLAN-01 | winter atlas LFS/clone-size plan (read-only, no git changes) | `reports/LFS_PLAN_01.md` | ses_dede3a38bffee774616xhEtemx | **DONE** | `.gitattributes:1` already LFS-tracks `*.png`, git-lfs 3.4.1 installed; owner `git add` rewrites pointer to new oid (no track edit); recommended LFS option; **fallback trap**: Winter single-load failure silently uses Summer art because `SPLIT_MANIFEST` is Summer-only; path mismatch remains SP-6's |
+
+## Batch AA — fix verification refill
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| QA-BLANK-FIX-01 | ses_ded78f69dffeHBqZq9JNYZDSQA | verify `main.gd` blank-check replacement | RUNNING |
+| QA-RELIEF-FIX-01 | ses_ded78f69dffdYTPLJrfd4tLDfN | verify donor-grid relief in `game.gd` | RUNNING |
+| QA-BUILD-ART-C-01 | ses_ded78f699ffe5iTb4ZimipC4bB | verify stage mesh runtime integration | RUNNING |
+| QA-HUD-REPAIR-01 | ses_ded78f66dffe6dKfruXx2Np35x | verify HUD atom repair | RUNNING |
+| QA-LOAD-REPAIR-01 | ses_ded78f669ffetlSZrqnXO7HFll | verify load probe repair | **DONE — TERMINATED** | repaired atom job 547 ok, overlay 28 frames/hide at 29, all bindings present, input/order/camera respond, 15 stage transitions; verdict MEASUREMENT_ONLY retained; **11 post-hide violations, max gap 33.5 s** → main.gd follow-up |
+| BUILD-STEP-FIX-01 | ses_dedb6bb3dffe9gXQE3haVeunHp | fix `build` selftest step at 240² | **DONE — TERMINATED** | root cause `_spot()` clearance 2.2m vs real slot 5.44m; fix made `build` green, but ticket 546 still 25/29 (`wall`,`shell`,`farm_cap`,`flee`); no weakening, wider harness scope needed |
+| SELFTEST-ALL-FIX-01 | ses_ded75cb85ffeXbyTVeEgii5m4S | fix remaining 4 steps at 240² (harness geometry) | RUNNING |
+
+## Batch Z — donor terrain deep dive + live relief fix
+
+| ID | Session id | Scope | State |
+|---|---|---|---|
+| HEIGHT-GEN-DEEP-01 | ses_ded837aabffejfLh3ybomrgH2n | donor height generation + R-code deep dive | RUNNING |
+| PATTERN-STAMP-DEEP-01 | ses_ded837aabffddkfZI25InbqAeY | donor relief pattern grid stamping | RUNNING |
+| RCODE-DEEP-01 | ses_ded837a9bffeYmWl0s7Ixk0Ee1 | donor R-code decode vs port relief() | RUNNING |
+| PALE-TILES-DEEP-01 | ses_ded837a94ffeSMzceWm3VhZt7O | donor pale tile art / white marks | RUNNING |
+| RELIEF-LIVE-FIX-01 | ses_ded82909fffepIVj8kwz08Eghk | live donor-grid relief in `game.gd` | RUNNING |
+| QA-TERRAIN-DEEP-01 | ses_ded7e947dffew1KSLzC6c8tT7B | cross-check donor terrain deep dives | **DONE — TERMINATED** | INCOMPLETE_INPUT: four Batch-Z deep dives not landed at 11:46:13Z; consensus table from five landed support reports; 8 staleness conflicts logged (line drift ~40–55, live owner `game.gd`, flag now true) |
+| QA-NATION-MODEL-01 | ses_ded7e9478ffeR1fBlcubpD4At9 | verify nation model integration/probe | RUNNING |
+| NATION-MODEL-01 | ses_dedad36a5ffeWEolNmXHw5gRb0 | nation mesh selection + build-action in `world3d_entities.gd` | **DONE — TERMINATED** | +205/−3; donor building prefix rule; unit selectors fixed, buildings/naval BLOCKED (0 nation-keyed OBJs), Ukrainian look NOT visually fixed; build/repair→construct branch; smoke 543 + probe 544 ok; protected blocks byte-identical |
+| BUILD-ART-C-01 | ses_ded7a7ed3ffeVKh7QK500EOKfH | runtime integration of stage meshes in `world3d_entities.gd` | RUNNING |
+| NATION-DATA-IMPL-01 | ses_ded92c978ffeaCikHZ0mrllHvt | add Bavaria unit map to `data.gd` | **DONE — TERMINATED** | one donor-grounded line (`serdiuk→musketeer`, `cossack→hussar`), byte-proof 1 insert/0 deletes/replaces, `rus`+morale banners byte-identical, smoke 542 ok/parse-only; runtime mesh proof UNVERIFIED |

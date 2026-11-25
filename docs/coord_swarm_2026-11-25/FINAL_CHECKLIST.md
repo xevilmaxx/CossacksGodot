@@ -4,13 +4,13 @@ title: "Sign-off checklist — 2026-11-25 3D variant work"
 area: coordination / sign-off
 owner: FINAL-CHECKLIST-01 (documentation worker; session ses_dedbedaf9ffejr3WE6IIQbhDuF)
 date: 2026-11-25
-status: READ_ONLY__ONE_REPORT_ONLY__NO_CODE_EDIT__NO_RUNNER_JOB__STALE_ITEMS_REFRESHED
-refreshed_by: "FINAL-CHECK-REFRESH-01 (documentation repair worker; this file + reports/FINAL_CHECK_REFRESH_01.md only)"
+status: READ_ONLY__TWO_FILES_ONLY__NO_CODE_EDIT__NO_RUNNER_JOB__FINAL_REFRESH_02_APPLIED
+refreshed_by: "FINAL-CHECK-REFRESH-02 (documentation repair worker; this file + reports/FINAL_CHECK_REFRESH_02.md only)"
 refresh_date: 2026-11-25
-scope: "Only this file and reports/FINAL_CHECK_REFRESH_01.md were written. No .gd/.gdshader/config/test/fixture/result-JSON/git/queue edit; no Godot job submitted, cancelled, reset, unwedged or acked; no donor access. Read-only operations only: live file reads (variant3d/selftest.json, variant3d/uitest.json, reports directory listing, the eight cited reports, README.md, SWARM_BOARD.md, PROGRESS.md), `python variant3d\\tools\\godot_runner.py status` (two polls) and `python variant3d\\tools\\assert_clean.py --json` (one poll)."
+scope: "Only this file and reports/FINAL_CHECK_REFRESH_02.md were written by this refresh. No .gd/.gdshader/config/test/fixture/result-JSON/git/queue edit; no Godot job submitted, cancelled, reset, unwedged or acked; no donor access. Read-only file reads only in this pass — the nine task-listed reports, README.md, SWARM_BOARD.md, CORRECTIONS.md and the prior FINAL_CHECK_REFRESH_01.md; no runner/clean poll was issued by this worker, all runner numbers are cited from the named reports."
 labels: [observed, derived, inferred, UNVERIFIED]
 verdict: NOT_READY_FOR_FINAL_GATE
-snapshot_caveat: "All runner numbers, session states and job ids are point-in-time snapshots from the cited docs/live reads; the queue is churning (R/GATE_READY_01.md:10,128-133; fresh polls below). Report mtimes at this read: QA_PARITY_01.md 11:23:46, QA_ATOM_RESULTS_01.md 11:22:30, GATE_READY_01.md 11:26:32, QA_DOCS_02.md 11:27:50, TERRAIN_DARK_FIX.md 11:38:09, MAP_SMALL_01_report.md 11:38:53, RECHECK_P0.md 11:36:47, RECHECK_S1.md 11:39:13, RECHECK_P0_FINAL.md 11:45:29, P0_FRESH_CAPTURE_01.md 11:42:31, README.md 11:52:23; only DARKROW_ALL_01.md remains ABSENT (observed). Fresh read-only polls at refresh: godot_runner.py status now_serving=515, next_ticket=516, pending=1 [515], godot.lock=HELD (33.2 s), max wait 1825.52 s; assert_clean.py --json DIRTY/exit 1 (1 Godot alive + 17 failed jobs, acknowledged=22). QA_FINAL_02.md:95-96 recorded a momentary drain (pending=0, lock free, 0 Godot) at 11:51:50; the queue has since churned. Conflicts are recorded explicitly, not resolved by assertion."
+snapshot_caveat: "All runner numbers, session states and job ids are point-in-time snapshots from the cited reports/live reads; the queue is churning. Newest read-only polls are in R/QA_GATE_READY_02.md:11,46-120: godot_runner.py status moved now_serving 516→521, next_ticket 523→524, pending 7 [516…522]→3 [521…523], lock HELD (237.2 s→38.2 s); assert_clean.py --json stayed DIRTY/exit 1 with 17→18 unacked failure-status jobs (16 skipped + ticket 494 timed-out + ticket 516 timed-out) and one live Godot (PID 8984→11292). Earlier FINAL-CHECK-REFRESH-01 poll: now_serving=515, next_ticket=516, pending=1 [515], lock HELD 33.2 s, 17 unacked; QA_FINAL_02.md:95-96 saw a momentary drain at 11:51:50 (pending=0, lock free, 0 Godot). Report mtimes at that earlier read: QA_PARITY_01.md 11:23:46, QA_ATOM_RESULTS_01.md 11:22:30, GATE_READY_01.md 11:26:32, QA_DOCS_02.md 11:27:50, TERRAIN_DARK_FIX.md 11:38:09, MAP_SMALL_01_report.md 11:38:53, RECHECK_P0.md 11:36:47, RECHECK_S1.md 11:39:13, RECHECK_P0_FINAL.md 11:45:29, P0_FRESH_CAPTURE_01.md 11:42:31, README.md 11:52:23; DARKROW_ALL_01.md was ABSENT at that read. Conflicts are recorded explicitly, not resolved by assertion. No fresh poll by this refresh."
 sources_read:
   - docs/coord_swarm_2026-11-25/reports/FINAL_GATE_PLAN_01.md
   - docs/coord_swarm_2026-11-25/reports/GATE_READY_01.md
@@ -29,7 +29,10 @@ sources_read:
   - docs/coord_swarm_2026-11-25/reports/RECHECK_P0.md, RECHECK_P0_FINAL.md, RECHECK_S1.md
   - docs/coord_swarm_2026-11-25/reports/MAP_SMALL_01_report.md, TERRAIN_DARK_FIX.md
   - docs/coord_swarm_2026-11-25/README.md, SWARM_BOARD.md, PROGRESS.md (re-read for citation drift)
-  - read-only `python variant3d\\tools\\godot_runner.py status` and `python variant3d\\tools\\assert_clean.py --json` polls (this refresh)
+  - read-only `python variant3d\\tools\\godot_runner.py status` and `python variant3d\\tools\\assert_clean.py --json` polls (FINAL-CHECK-REFRESH-01)
+  - docs/coord_swarm_2026-11-25/reports/FINAL_CHECK_REFRESH_01.md (prior refresh report, re-read)
+  - docs/coord_swarm_2026-11-25/reports/QA_GATE_READY_02.md, QA_2D_GATES_01.md, QA_SPEED_01.md, QA_ATOM_RUNS_01.md, RELIEF_VISUAL_01.md, QA_PATCH_VERIFY_01.md (new evidence, read this pass)
+  - docs/coord_swarm_2026-11-25/CORRECTIONS.md (re-read: 63 rows), README.md and SWARM_BOARD.md (corrections-count re-check)
 ---
 
 # FINAL-CHECKLIST-01 — sign-off checklist for today's 3D variant work
@@ -110,10 +113,12 @@ Every item carries a STATUS (`DONE` / `PARTIAL` / `OPEN`) and an evidence cite;
   **Label: observed + derived.** *Gate condition:* no in-flight edit may touch a file
   under test after the ladder starts (`R/FINAL_GATE_PLAN_01.md:62,94-96`).
 - [x] **A-6 — STATUS DONE.** No code/config/test/fixture/git/queue mutation by this
-  documentation worker; only this file and `reports/FINAL_CHECK_REFRESH_01.md` written.
-  Read-only runner/clean polls were used, never a submitted/cancelled/acked job.
-  **Evidence:** this file's frontmatter `scope`/`refreshed_by`; same discipline asserted by
-  `R/GATE_READY_01.md:32-39`, `R/QA_PARITY_01.md:7,126`, `R/QA_ATOM_RESULTS_01.md:120`.
+  documentation worker; only this file and `reports/FINAL_CHECK_REFRESH_02.md` written by
+  this refresh (FINAL-CHECK-REFRESH-01 wrote its own report in the prior pass). No runner
+  poll or job of any kind was issued in this pass — all gate numbers are cited from the
+  named reports.
+  **Evidence:** this file's frontmatter `scope`/`refreshed_by`; `R/FINAL_CHECK_REFRESH_01.md:8`;
+  `R/QA_GATE_READY_02.md:30-35`; `R/QA_PATCH_VERIFY_01.md:24-29`.
   **Label: observed (self) / derived (cross-worker pattern).**
 
 ## B. Targeted smokes green (job ids)
@@ -169,6 +174,18 @@ interpretation.**
   **Evidence:** `R/QA_PARITY_01.md:99-104`; `R/FINAL_GATE_PLAN_01.md:74,76`;
   `R/QA_DOCS_02.md:39,76`; `S/PROGRESS.md:186-190,205`; `R/QA_FINAL_02.md:94,207`.
   **Label: derived (citation drift: observed).**
+- [ ] **B-10 — STATUS PARTIAL.** HUD-layout and load-usability atoms *ran* once each but
+  neither produced a gate PASS: job `530` (`hudlayoutrun01-atom`) → `t_hud_layout.json`
+  **FAIL**, 42 passes / 11 fails / 12 skipped, `capture_status=SKIP_CAPTURE`, headless (no
+  PNG), scan-stderr `SCRIPT ERROR == 0`; job `531` (`loadprobe01-atom`) →
+  `t_load_usability.json` **`MEASUREMENT_ONLY__NO_PASS_CLAIM`**, `gate_claim:NONE`,
+  `pass_claim:false`, no capture, wall-cap at frame 1742, plus one probe-side formatting
+  `ERROR`. The speed dropdown is structurally PASS (4 rows × 3 viewports); top-bar fit and
+  load responsiveness remain UNVERIFIED. **No PASS promoted**; this is a per-job artifact
+  row, not a smoke green. The speed widget is static-only in `R/QA_SPEED_01.md:53-63,132-147`
+  (no windowed run, no owner report `UI_TOPBAR_01.md`).
+  **Evidence:** `R/QA_ATOM_RUNS_01.md:50-56,90-113,139-159`; `R/QA_SPEED_01.md:49-69,130-149`;
+  `S/SWARM_BOARD.md:324-325,336`. **Label: observed (doc) + derived.**
 
 ## C. Integrated selftest / uitest — current red/green and exact failures
 
@@ -180,13 +197,17 @@ interpretation.**
   HEAD 26/29 failure set has shifted. Gate requires fresh **29/29**, so this is NOT a gate.
   **Evidence:** `V/selftest.json:2,31-36` (live read); `R/QA_PARITY_01.md:71-77,103`;
   `R/GATE_READY_01.md:183`; `R/FINAL_GATE_PLAN_01.md:76,162-164,226`;
-  `S/PROGRESS.md:100-103`. **Label: observed (live) + derived.**
+  `S/PROGRESS.md:100-103`; newest confirmation `R/QA_GATE_READY_02.md:135,188,223-226`
+  (mtime 10:28:11 UTC, `build` still failing, no fresh 29/29).
+  **Label: observed (live) + derived.**
 - [ ] **C-2 — STATUS PARTIAL (GREEN ARTIFACT, NOT GATE).** Integrated
   `variant3d/uitest.json`: `"passed": true`, **17/17** steps (live read confirms 17
   `step` keys; `minimap_frustum` = `"minimap bottom-right: yes"` per QA-PARITY at
   `:69-72`). It predates the final job and must be re-proved by a fresh COORD job.
   **Evidence:** `V/uitest.json:2-88` (live read); `R/QA_PARITY_01.md:81`;
-  `R/GATE_READY_01.md:184,186-188`; `R/FINAL_GATE_PLAN_01.md:77,157,165`.
+  `R/GATE_READY_01.md:184,186-188`; `R/FINAL_GATE_PLAN_01.md:77,157,165`;
+  newest confirmation `R/QA_GATE_READY_02.md:136,189,227-229` (17/17, mtime 09:51:54 UTC,
+  stale, not re-proved by a fresh COORD job).
   **Label: observed + derived.**
 - [ ] **C-3 — STATUS OPEN.** QA-PARITY-01 verdict **PARTIAL**, not a green re-verification:
   its final jobs `453` (`qaparity01-selftest`) and `452` (`qaparity01-uitest`) were
@@ -215,38 +236,44 @@ interpretation.**
 
 - [ ] **D-1 — STATUS OPEN (target NOT met at refresh).** `godot_runner.py status` target:
   `pending = 0`, no held lock, bounded max wait. QA-FINAL-02.md:95 observed a momentary
-  drain at 11:51:50 (`pending=0`, lock free, max wait 1825.52 s), but a fresh poll at this
-  refresh shows the queue churned back: `now_serving=515`, `next_ticket=516`,
-  `pending=1 [515]`, `godot.lock=HELD (age 33.2 s)`, max wait 1825.52 s (bounded).
-  Earlier snapshots: pending **1→7**, `now_serving 478→483`, `next_ticket 479→490`,
-  lock HELD (0.9 s) then free. Marking DONE would inflate PASS, so the status stays OPEN.
-  **Evidence:** fresh read-only `godot_runner.py status` polls (2, this refresh);
-  `R/QA_FINAL_02.md:95,150`; `R/GATE_READY_01.md:49-59,78-90,122-133,196-199`;
-  `R/FINAL_GATE_PLAN_01.md:84,170`; `Q/` spool read in GATE-READY §1. **Label: observed.**
+  drain at 11:51:50 (`pending=0`, lock free, max wait 1825.52 s), but the newest read-only
+  polls in `R/QA_GATE_READY_02.md:46-58,114-120` show the queue churning: Poll A
+  `now_serving=516`, `next_ticket=523`, `pending=7 [516…522]`, lock HELD 237.2 s; Poll B
+  `now_serving=521`, `next_ticket=524`, `pending=3 [521…523]`, lock HELD 38.2 s (max wait
+  1825.52 s, bounded). Earlier FINAL-CHECK-REFRESH-01 poll: `pending=1 [515]`, lock HELD
+  33.2 s. Marking DONE would inflate PASS, so the status stays OPEN.
+  **Evidence:** `R/QA_GATE_READY_02.md:11,46-58,114-120,185`; `R/QA_FINAL_02.md:95,150`;
+  `R/GATE_READY_01.md:49-59,78-90,122-133,196-199`; `R/FINAL_GATE_PLAN_01.md:84,170`.
+  **Label: observed.**
 - [ ] **D-2 — STATUS OPEN (target NOT met at refresh).** Zero live Godot processes is the
-  target. QA-FINAL-02.md:96 saw `count=0` at 11:51:50, but a fresh `assert_clean.py --json`
-  at this refresh shows **1 Godot alive** (PID 22252, `--headless --path variant3d --
-  --ui-test variant3d/uitest.json`) alongside a held lock. Earlier snapshots had one alive
-  in both (PIDs 21684 screenshot job, 19436 empty command); lock HELD→free is not evidence
-  of a quiet queue. Marking DONE would inflate PASS, so the status stays OPEN.
-  **Evidence:** fresh read-only `assert_clean.py --json` (this refresh,
-  `checks.processes.count=1`); `R/QA_FINAL_02.md:96,151`;
+  target. QA-FINAL-02.md:96 saw `count=0` at 11:51:50, but the newest
+  `assert_clean.py --json` polls in `R/QA_GATE_READY_02.md:60-66,105-112` show **1 Godot
+  alive** in both (PID 8984, `--self-test … --self-only move,act,fight,build`; then PID
+  11292, `--dump-map …reliefenabl01_dump.json`) alongside a held lock. Earlier snapshots
+  had one alive too (PIDs 22252, 21684, 19436); lock HELD→free is not evidence of a quiet
+  queue. Marking DONE would inflate PASS, so the status stays OPEN.
+  **Evidence:** `R/QA_GATE_READY_02.md:60-66,105-112,185`; `R/QA_FINAL_02.md:96,151`;
   `R/GATE_READY_01.md:61-73,92-103,128-133,196-199`; `R/FINAL_GATE_PLAN_01.md:85,166`.
   **Label: observed + derived.**
 - [ ] **D-3 — STATUS OPEN.** `assert_clean.py --json` → `CLEAN`, exit 0 on the **variant**
   spool. Observed twice DIRTY/exit **1** in GATE-READY with "1 Godot process alive" +
-  "16 failed job(s)". Fresh poll at this refresh: **DIRTY, exit 1**, reasons
-  "1 Godot process(es) alive" + "**17 failed job(s)** in status.json" (count rose 16→17;
-  `R/QA_FINAL_02.md:97,173-175`). Not CLEAN, so OPEN holds.
-  **Evidence:** fresh read-only `assert_clean.py --json` (this refresh);
-  `R/QA_FINAL_02.md:97`; `R/GATE_READY_01.md:61-74,92-113,192-199`;
-  `R/FINAL_GATE_PLAN_01.md:85,166-169`. **Label: observed.**
-- [ ] **D-4 — STATUS OPEN.** No unacked `timed-out`/`error`/`skipped` jobs. Fresh poll:
-  `acknowledged=22`; **17** unacked failure-status jobs = **16 `skipped` + 1 `timed-out`
-  (ticket 494 `mapsmall01-json-uitest`, exit -9)** — count rose 16→17
-  (`R/QA_FINAL_02.md:98,205`). Tickets `296`/`300` remain unacked `failed` and are excluded
-  by D-13. **Evidence:** fresh read-only `assert_clean.py --json` (17 entries under
-  `checks.history.failures`, `acknowledged=22`); `R/QA_FINAL_02.md:98,205`;
+  "16 failed job(s)". Newest polls (`R/QA_GATE_READY_02.md:60-66,105-112,186`): **DIRTY,
+  exit 1**, reasons "1 Godot process(es) alive" + "**17 failed job(s)**" at Poll A, rising
+  to "**18 failed job(s)**" at Poll B; the earlier FINAL-CHECK-REFRESH-01 poll showed 17.
+  Not CLEAN, so OPEN holds.
+  **Evidence:** `R/QA_GATE_READY_02.md:60-66,105-112,186`; `R/QA_FINAL_02.md:97`;
+  `R/GATE_READY_01.md:61-74,92-113,192-199`; `R/FINAL_GATE_PLAN_01.md:85,166-169`.
+  **Label: observed.**
+- [ ] **D-4 — STATUS OPEN.** No unacked `timed-out`/`error`/`skipped` jobs. Newest polls:
+  `acknowledged=22` (failure-status scope); **17** unacked at Poll A = **16 `skipped` +
+  1 `timed-out` (ticket 494 `mapsmall01-json-uitest`, exit -9)**, rising to **18** at Poll B
+  with ticket **516** (`buildstep01-diag-240-r2`, `timed-out`, exit -9, run 304.999 s)
+  (`R/QA_GATE_READY_02.md:100-112,122-129,187`). Direct `status.json` parse there counts 18
+  unacked with 94 truthy `acknowledged` entries overall; `assert_clean.py:166-188` counts
+  only within failure statuses, hence its 22 — both readings are DIRTY. Tickets `296`/`300`
+  remain unacked `failed` and are excluded by D-13. Ack plans in `CLEAN_ACK_PLAN_01.md` /
+  `QUEUE_DRAIN_01.md` were prepared, **not executed**.
+  **Evidence:** `R/QA_GATE_READY_02.md:100-112,122-129,187`; `R/QA_FINAL_02.md:98,205`;
   `R/GATE_READY_01.md:105-113,200-201`; `R/FINAL_GATE_PLAN_01.md:86`.
   **Label: observed + derived.**
 - [ ] **D-5 — STATUS OPEN.** All in-flight builders released or explicitly deferred before
@@ -263,6 +290,19 @@ interpretation.**
   **Evidence:** `S/SWARM_BOARD.md:179-180`; `R/CLEAN_02_variant_gate.md:43-62,125-131`
   as cited at `R/FINAL_GATE_PLAN_01.md:85`; `R/CLEAN_01_variant_clean.md:260-283`.
   **Label: observed.**
+- [x] **D-8 — STATUS DONE (fidelity only; post-patch gate OPEN).** Runner patch verified
+  **APPLIED_AS_APPROVED**: the applied `godot_runner.py` is the approved post-image of
+  `RUNNER_FIX_01.md` §3 (7 hunks, index `69d599ff..9730aa49`), hunk-for-hunk and body-for-body
+  identical to the approved diff; backup/current blob hashes match the pre-/post-image;
+  re-application to a byte-copy reproduces the live content after LF normalization;
+  all five required mechanisms are present with no extra hunk; `py_compile` exits 0.
+  The only byte-level difference is a whole-file CRLF conversion. **This is a patch-fidelity
+  finding, not a runtime validation** — no solo post-patch gate was run, and the queue was
+  neither drained nor quiet at verification (`pending=4`, lock HELD). Runtime correctness
+  remains with COORD's §5 validation plan.
+  **Evidence:** `R/QA_PATCH_VERIFY_01.md:13,65-90,92-114,118-135,172-187,221-230`;
+  `R/QA_GATE_READY_02.md:159-167,195,259-261`; `S/PROGRESS.md:104-112`.
+  **Label: observed + derived (runtime: UNVERIFIED).**
 
 ## E. Piece→combo ladder status, row by row
 
@@ -273,7 +313,7 @@ Order rule and per-row capture criteria: `S/TEST_MATRIX.md:18-27,57-68`;
 
 | Row | STATUS | Exact state / failure | Evidence (path / job id) | Label |
 |---|:--:|---|---|---|
-| [ ] **E-P0** `t_terrain_only` | **PARTIAL** | Attempt 1 job `321`: END failed, exit 1, 4 `SCRIPT ERROR` parse lines, no JSON/PNG. Attempt 2 job `404` windowed: `verdict=FAIL`, `full_width_dark_rows=720`, `SCRIPT ERROR == 0`, PNG+stats exist. P0-GATE job `421` exit 1 as expected (13.271 / 27.413) with strict luma gates; stage-1 fix job `441` windowed PASS (22/0/1, `mean_luma=98.680`, `max_luma=172.139`). The "final re-capture PENDING / no `RECHECK_P0.md`" claim is now false: final-formula job `504` (`p0fresh01-capture`) = windowed `PASS 22/22 evaluated, 1 skipped`, `mean_luma=91.432`, `max_luma=155.163`, PNG 47 min after the shader edit; `RECHECK_P0_FINAL.md` = **P0 CONFIRMED_PASS** (11 PASS / 0 FAIL / 1 N/A), and `RECHECK_P0.md` also landed. PARTIAL retained only because COORD has not advanced the ladder row (row advancement is COORD-only) — no new PASS claim. | `S/PROGRESS.md:126-137`; `S/SWARM_BOARD.md:118,177-178,209`; `R/TEST_RUN_02_ladder_log.md:202-229`; `R/P0_GATE_01.md:81-105,134-174`; `R/TERRAIN_DARK_FIX.md:15-16,165,178-188`; `R/P0_FRESH_CAPTURE_01.md:59-64,67-73`; `R/RECHECK_P0.md:12-13,173`; `R/RECHECK_P0_FINAL.md:14,221-241`; `R/QA_FINAL_02.md:100,154,200` | observed + derived |
+| [ ] **E-P0** `t_terrain_only` | **PARTIAL** | Attempt 1 job `321`: END failed, exit 1, 4 `SCRIPT ERROR` parse lines, no JSON/PNG. Attempt 2 job `404` windowed: `verdict=FAIL`, `full_width_dark_rows=720`, `SCRIPT ERROR == 0`, PNG+stats exist. P0-GATE job `421` exit 1 as expected (13.271 / 27.413) with strict luma gates; stage-1 fix job `441` windowed PASS (22/0/1, `mean_luma=98.680`, `max_luma=172.139`). The "final re-capture PENDING / no `RECHECK_P0.md`" claim is now false: final-formula job `504` (`p0fresh01-capture`) = windowed `PASS 22/22 evaluated, 1 skipped`, `mean_luma=91.432`, `max_luma=155.163`, PNG 47 min after the shader edit; `RECHECK_P0_FINAL.md` = **P0 CONFIRMED_PASS** (11 PASS / 0 FAIL / 1 N/A), and `RECHECK_P0.md` also landed; `R/QA_GATE_READY_02.md:150-151,190` independently re-records the same CONFIRMED_PASS as PR-5 DONE (evidence). PARTIAL retained only because COORD has not advanced the ladder row (row advancement is COORD-only) — no new PASS claim. | `S/PROGRESS.md:126-137`; `S/SWARM_BOARD.md:118,177-178,209`; `R/TEST_RUN_02_ladder_log.md:202-229`; `R/P0_GATE_01.md:81-105,134-174`; `R/TERRAIN_DARK_FIX.md:15-16,165,178-188`; `R/P0_FRESH_CAPTURE_01.md:59-64,67-73`; `R/RECHECK_P0.md:12-13,173`; `R/RECHECK_P0_FINAL.md:14,221-241`; `R/QA_FINAL_02.md:100,154,200`; `R/QA_GATE_READY_02.md:150-151,190` | observed + derived |
 | [ ] **E-P1** `t_terrain_trees` | **OPEN** | Never executed as a row. Headless JSON `FAIL`/`SKIP_CAPTURE` 21/1/10; source 11:05:08 > JSON 10:08:38 → **stale**. Water-free dark-row assert applicability flagged. | `R/TEST_RUN_02_ladder_log.md:137-143,291-293`; `R/QA_ATOM_RESULTS_01.md:45,77-81`; `R/FINAL_GATE_PLAN_01.md:242-248`; `S/SWARM_BOARD.md:283` (DARKROW-ALL-01 RUNNING, report absent) | observed + inferred |
 | [ ] **E-P2** `t_terrain_shore` | **OPEN** | Never executed. Headless JSON `UNVERIFIED`, no `capture_status`, 16/10 (3 `EXPECTED_PRE_FIX_FAILURE` + 7 headless `UNVERIFIED`), stale. Water-band gate applies here when run. | `R/QA_ATOM_RESULTS_01.md:46`; `R/TEST_RUN_02_ladder_log.md:137-143`; `S/CAPTURE_RECHECK.md:129-143` | observed |
 | [ ] **E-P3** `t_terrain_mines` | **OPEN** | Never executed. **False green:** JSON `passed:true` (13/13) comes from headless skip rows (`png.written=false`, size `[0,0]`, `status=HEADLESS_STRUCTURAL_ONLY__PNG_UNVERIFIED`); `t_terrain_mines.gd:885-892` calls `check(...,true,...,non-PASS status)`. Source 11:06:57 > JSON 10:00:59 → stale. Must not be read as structural+visual PASS. | `R/QA_ATOM_RESULTS_01.md:47,70-75`; `S/CAPTURE_RECHECK.md:145-158` | observed + derived |
@@ -298,9 +338,10 @@ Order rule and per-row capture criteria: `S/TEST_MATRIX.md:18-27,57-68`;
   cleared), `RECHECK_S1.md` (11:39:13, image verdict UNVERIFIED / NO PNG) and
   `RECHECK_P0_FINAL.md` (11:45:29, **P0 CONFIRMED_PASS** on port gates). The snapshot's
   "4 BUSY" inference is stale (see A-5). P1, P2, P3, C1–C4 still have no second-agent
-  re-check, so the gate condition is not met and the item stays OPEN.
+  re-check, so the gate condition is not met and the item stays OPEN. `R/QA_GATE_READY_02.md:192`
+  (PR-7) independently confirms "P0/S1 only", with S1's image verdict UNVERIFIED (NO PNG).
   **Evidence:** `R/RECHECK_P0.md:12-13,173`; `R/RECHECK_S1.md:143-145`;
-  `R/RECHECK_P0_FINAL.md:14,221-241`; `R/QA_FINAL_02.md:105,153`;
+  `R/RECHECK_P0_FINAL.md:14,221-241`; `R/QA_FINAL_02.md:105,153`; `R/QA_GATE_READY_02.md:192`;
   reports-dir listing (observed); `S/SWARM_BOARD.md:23-27`;
   *Gate condition:* `S/TEST_MATRIX.md:75`. **Label: observed + derived.**
 - [ ] **F-3 — STATUS OPEN (deliverable).** For every row: PNG + result JSON + runner
@@ -321,40 +362,48 @@ Order rule and per-row capture criteria: `S/TEST_MATRIX.md:18-27,57-68`;
   `DEC_0x_*.md` reports on disk, `decomp/README.md` marks DONE, `decomp/SUMMARY.md` +
   `EVIDENCE_INDEX.md` hold findings and offsets. **Evidence:** `S/PROGRESS.md:75-79`;
   `S/SWARM_BOARD.md:56-71`. **Label: observed (doc).**
-- [x] **G-2 — STATUS DONE.** Canonical `CORRECTIONS.md` index: **60** indexed rows;
-  QA-DOCS-02's independent grep + manual pass give `COUNT=60 MIN=1 MAX=60`, no gaps or
-  duplicate ids. Board `:167` still says "50 rows" — stale, superseded by the later
-  verified count. **Evidence:** `S/CORRECTIONS.md:45-109,171`; `R/QA_DOCS_02.md:44,90`;
-  `S/SWARM_BOARD.md:165` (was `:167` — line drift, `R/QA_FINAL_02.md:109`).
+- [x] **G-2 — STATUS DONE.** Canonical `CORRECTIONS.md` index: **63** indexed rows (1–63).
+  Rows 1–60 were independently grep/manual counted by QA-DOCS-02 (`COUNT=60 MIN=1 MAX=60`,
+  no gaps or duplicate ids); rows 61–63 (Winter LFS pointer, donor Y-up light space, naval
+  stale-doc refutations) landed later and the summary is synced: **63 indexed corrections;
+  46 RESOLVED / 15 PARTIAL / 1 CONFIRMED_UNVERIFIED / 1 CONFIRMED_INFEASIBLE**. README now
+  also reports 63 (G-7). Board `:165` still says "50 rows" — stale, superseded by the later
+  verified count (board `:313` does say 63).
+  **Evidence:** `S/CORRECTIONS.md:45-112,174-176`; `R/QA_DOCS_02.md:44,90` (count 60 at its
+  snapshot); `README.md:49,199,263,289,518`; `S/SWARM_BOARD.md:165,313`.
   **Label: observed + derived (conflict recorded).**
 - [x] **G-3 — STATUS DONE.** Duplicate-chain notice for rows **14/51** and **28/52**;
   row 51 and row 52 are authoritative. **Evidence:** `S/CORRECTIONS.md:111-115`;
   `R/QA_DOCS_02.md:44`. **Label: observed.**
 - [x] **G-4 — STATUS DONE.** Inventory mismatch rows **58–60** present (root files 24,
-  map field 55/32, `.inc` 455 whole-donor vs 313 under `data/`) and cross-referenced.
-  **Evidence:** `S/CORRECTIONS.md:107-109`; `R/QA_DOCS_02.md:45`;
-  `S/SWARM_BOARD.md:242`. **Label: observed.**
+  map field 55/32, `.inc` 455 whole-donor vs 313 under `data/`) and cross-referenced;
+  they remain rows 58–60 of the now 63-row index (G-2).
+  **Evidence:** `S/CORRECTIONS.md:107-109,174`; `R/QA_DOCS_02.md:45`;
+  `S/SWARM_BOARD.md:242,394`. **Label: observed.**
 - [ ] **G-5 — STATUS PARTIAL.** QA-DOCS-02 BLOCKER roll-up: B1 CLOSED, B3 CLOSED,
   **B2 PARTIAL** (C2/C3/C4 duplicate rows CLOSED; C6 report-landed-but-RUNNING not closed:
   11 rows plus README-UPDATE-01 at `:236`). **Evidence:** `R/QA_DOCS_02.md:43,47,49-69,86-93`.
   **Label: observed + derived.** *Owner action:* COORD-only State column (`S/SWARM_BOARD.md:11`).
 - [ ] **G-6 — STATUS OPEN.** Duplicate ticket ids remain; only the cited line numbers
   drifted after the 11:51 board edit (`R/QA_FINAL_02.md:110,207`): `README-UPDATE-01`
-  (`S/SWARM_BOARD.md:305` DONE / `:324` DONE — TERMINATED; were `:217/:236/:280`),
-  `INVENTORY-01` (`:307` DONE — TERMINATED / `:330` DONE; were `:219/:242/:263`),
+  (`S/SWARM_BOARD.md:369` DONE / `:388` DONE — TERMINATED; were `:305/:324`, earlier
+  `:217/:236/:280`), `INVENTORY-01` (`:371` DONE — TERMINATED / `:394` DONE; were
+  `:307/:330`, earlier `:219/:242/:263`),
   `TEST-RUN-02` (`:119` RESERVED / `:176` DONE — STOPPED AT P0; were `:121/:155`).
   **Evidence:** `R/QA_DOCS_02.md:74`; `R/QA_ATOM_RESULTS_01.md:103-105`;
-  `S/SWARM_BOARD.md:119,176,305,307,324,330`; `R/QA_FINAL_02.md:110,207`.
+  `S/SWARM_BOARD.md:119,176,369,371,388,394`; `R/QA_FINAL_02.md:110,207`.
   **Label: observed (duplicates) + observed (citation drift).**
-- [x] **G-7 — STATUS DONE (closed by README rewrite).** The "README still says **57**"
-  claim is false: `README.md` (rewritten 11:47:37, re-read at 11:52:23) reports **60**
-  corrections in four places — `:49` "**60 rows**", `:199` "**60-row**", `:263`
-  "Canonical **60-row**", `:289` "**60** indexed corrections" — matching the authoritative
-  **60** (`S/CORRECTIONS.md:171`); the "explicitly contradicted" caution is gone. Board
-  `:305` still carries the stale "57-row corrections index" text, but that is a *board* lag
-  (tracked in G-6/A-5), not a README defect. **Evidence:** `README.md:49,199,263,289`;
-  `S/CORRECTIONS.md:171`; `R/QA_DOCS_02.md:75`; `R/QA_FINAL_02.md:111,202`;
-  `S/SWARM_BOARD.md:305`. **Label: observed.**
+- [x] **G-7 — STATUS DONE (closed by README rewrite; count re-synced to 63).** The
+  "README still says **57**" claim is false: `README.md` reports **63** corrections in four
+  places — `:49` "**63 rows** (DOC-03 snapshot 50; rows 51–63 landed since)", `:199`
+  "**63-row**", `:263` "Canonical **63-row**", `:289` "**63** indexed corrections" —
+  matching the authoritative **63** (`S/CORRECTIONS.md:174-176`; rows 61–63 added since
+  QA-DOCS-02 counted 60 at `R/QA_DOCS_02.md:44,90`); the "explicitly contradicted" caution is
+  gone. Board `:369` still carries the stale "57-row corrections index" text, but that is a
+  *board* lag (tracked in G-6/A-5), not a README defect.
+  **Evidence:** `README.md:49,199,263,289,518`; `S/CORRECTIONS.md:174-176`;
+  `R/QA_DOCS_02.md:75`; `R/QA_FINAL_02.md:111,202`; `S/SWARM_BOARD.md:369`.
+  **Label: observed.**
 - [x] **G-8 — STATUS DONE.** "Claims that stay UNVERIFIED" register is present: 8
   engine-side values, 3 `CONFIRMED_INFEASIBLE` (eye planes, FOV, native selection
   predicate); no invented values, no donor binary executed/copied. The caveat persists
@@ -366,8 +415,10 @@ Order rule and per-row capture criteria: `S/TEST_MATRIX.md:18-27,57-68`;
 
 - [ ] **H-1 — STATUS OPEN.** Owner visual review has not been signed: required by the
   matrix (`S/TEST_MATRIX.md:27,73-75`) and by the final acceptance list
-  (`R/FINAL_GATE_PLAN_01.md:171-173`), and no `RECHECK_<ROW>.md` exists (F-2).
-  **Evidence:** `S/CAPTURE_RECHECK.md:34-37,91`; `R/QA_ATOM_RESULTS_01.md:93-96`.
+  (`R/FINAL_GATE_PLAN_01.md:171-173`); only P0/S1 re-checks exist (F-2), none for P1–C4,
+  and S1's image verdict is UNVERIFIED (NO PNG).
+  **Evidence:** `S/CAPTURE_RECHECK.md:34-37,91`; `R/QA_ATOM_RESULTS_01.md:93-96`;
+  `R/QA_GATE_READY_02.md:192-193`.
   **Label: derived.** A green gate does **not** constitute owner visual review.
 - [ ] **H-2 — STATUS OPEN (evidence class UNVERIFIED).** Donor GPU A/B / rendered
   terrain, skin and water parity: **no matched donor frame exists**; donor execution was
@@ -391,6 +442,20 @@ Order rule and per-row capture criteria: `S/TEST_MATRIX.md:18-27,57-68`;
   `ASSET-IMPORT-01` landed with the target `.ctex` still absent.
   **Evidence:** `S/PROGRESS.md:104-115`; `S/SWARM_BOARD.md:143,215`;
   `R/FINAL_GATE_PLAN_01.md:62,75`. **Label: observed (report) + derived (unclosed).**
+- [ ] **H-6 — STATUS PARTIAL (finding landed, no gate).** White-marks symptom **reproduced**
+  in a real generated 64×64 windowed GPU frame with `features.terrain.relief_stamps = true`
+  (job `532` `reliefvisual01-boot`): raw sidecar 1280×720, mean luma 115.039, non-black
+  0.999145, 0 dark rows, 44,381 near-white pixels (4.8156 %) in stepped, grid-aligned
+  concentric bands across top-left/right/bottom; **no visible hills, ridges or elevation
+  shading**. `SCRIPT ERROR == 0`; the runner marked the job `failed`/exit 1 because
+  `main.gd`'s one-sided blank detector rejected the non-blank frame against a bright sky
+  corner, so the final PNG was not written (raw sidecar inspected instead). The flag gates
+  only `--dump-map` output and the flag-on dump for this seed carries `relief_stamps = []`;
+  donor-grid relief (`relief_grid.applied`) and a flag-on/flag-off pixel A/B remain
+  **UNVERIFIED**. No donor parity claimed — `PORT APPROX`.
+  **Evidence:** `R/RELIEF_VISUAL_01.md:10-18,45-64,87-99,127-175,216-246,271-287`;
+  `R/QA_GATE_READY_02.md:109-112`. **Label: observed + derived (attribution: inferred;
+  donor A/B: UNVERIFIED).**
 
 ## I. 2D gates
 
@@ -398,11 +463,17 @@ Order rule and per-row capture criteria: `S/TEST_MATRIX.md:18-27,57-68`;
   `variant3d/` only (S-25-08) and 2D gates are required to remain green.
   **Evidence:** `S/PROGRESS.md:175,197`; `S/TEST_MATRIX.md:66`;
   `R/FINAL_GATE_PLAN_01.md:78,229`. **Label: observed.**
-- [ ] **I-2 — STATUS PARTIAL.** 2D gates were independently confirmed green by
-  QA-2D-GATES-01: selftest **29/29** (job `1348`), uitest **17/17** (job `1349`),
-  CLEAN exit 0. They were **not re-run** by GATE-READY or by this checklist, so their
-  current-tree status is UNVERIFIED here; the final acceptance requires them green.
-  **Evidence:** `S/SWARM_BOARD.md:285`; `R/GATE_READY_01.md:221-225`;
+- [ ] **I-2 — STATUS PARTIAL (artifact CONFIRMED_GREEN; current tree UNVERIFIED).**
+  QA-2D-GATES-01's verdict is **CONFIRMED_GREEN**, scoped strictly to the 2D shipping
+  project (`app/`): fresh 2D runner jobs `qa2d-selftest` (ticket **1348**, `ok`, exit 0,
+  selftest **29/29**) and `qa2d-uitest` (ticket **1349**, `ok`, exit 0, uitest **17/17**),
+  plus `assert_clean.py --json` `CLEAN`/exit 0 with `processes.count=0`, free lock,
+  `history.total=256`, `failures=[]`, and `pending=0` with bounded max wait. No 2D gate was
+  weakened or hand-edited; `variant3d/` was not touched. These gates were **not re-run** by
+  GATE-READY-02 or by this checklist, so current-tree status is UNVERIFIED here; the final
+  acceptance requires them green.
+  **Evidence:** `R/QA_2D_GATES_01.md:24-28,82-94,104-109,164-173,216-225`;
+  `S/SWARM_BOARD.md:285`; `R/GATE_READY_01.md:221-225`;
   `R/FINAL_GATE_PLAN_01.md:78,171,229`; `S/PROGRESS.md:190,197`.
   **Label: observed (artifact) / UNVERIFIED (current tree).**
 - [x] **I-3 — STATUS DONE.** 2D `app/` tooling (`t_shore_smoke.gd`, `t_water.gd`,
@@ -422,50 +493,58 @@ Order rule and per-row capture criteria: `S/TEST_MATRIX.md:18-27,57-68`;
 | Section | DONE | PARTIAL | OPEN | Header outcome |
 |---|:--:|:--:|:--:|---|
 | A — ownership/backups | 4 | 2 | 0 | partially complete |
-| B — targeted smokes | 8 | 1 | 0 | all job-level smokes green per docs |
-| C — integrated selftest/uitest | 0 | 1 | 4 | **selftest RED 28/29 (`build`)**; uitest 17/17 stale |
-| D — queue CLEAN | 2 | 0 | 5 | **DIRTY / exit 1** (fresh poll too), 17 unacked (16 skipped + 1 timed-out); pending=1, lock HELD, 1 Godot |
-| E — ladder P0–C4/S1/FINAL | 0 | 3 | 8 | stopped at P0; P1–C4/S1 never run as rows |
+| B — targeted smokes | 8 | 2 | 0 | job-level artifacts green per docs; B-10 HUD/load atoms ran FAIL / MEASUREMENT_ONLY, not PASS |
+| C — integrated selftest/uitest | 0 | 1 | 4 | **selftest RED 28/29 (`build`)**; uitest 17/17 stale (QA-GATE-READY-02) |
+| D — queue CLEAN | 3 | 0 | 5 | **DIRTY / exit 1**; 17→18 unacked (16 skipped + 494 + 516 timed-out); pending 7→3, lock HELD, 1 Godot; runner patch D-8 APPLIED_AS_APPROVED |
+| E — ladder P0–C4/S1/FINAL | 0 | 3 | 8 | stopped at P0; P0 CONFIRMED_PASS re-affirmed; P1–C4/S1 never run as rows |
 | F — capture re-checks | 1 | 1 | 2 | protocol exists, 3 `RECHECK_*.md` landed (P0/S1 only); P1–C4 uncovered |
-| G — decomp/corrections docs | 6 | 1 | 1 | 60 corrections indexed in both README (rewritten) and CORRECTIONS.md; board lag only (G-7 closed) |
-| H — visual review / A/B | 1 | 1 | 3 | **owner review + donor A/B UNVERIFIED** |
-| I — 2D gates | 3 | 1 | 0 | per-job green; current-tree UNVERIFIED here |
-| **TOTAL** | **25** | **11** | **23** | **NOT_READY_FOR_FINAL_GATE** |
+| G — decomp/corrections docs | 6 | 1 | 1 | 63 corrections indexed in both README and CORRECTIONS.md; board lag only (G-7 re-synced) |
+| H — visual review / A/B | 1 | 2 | 3 | **owner review + donor A/B UNVERIFIED**; white marks reproduced (H-6), relief not visible |
+| I — 2D gates | 3 | 1 | 0 | **CONFIRMED_GREEN** at jobs 1348/1349; current tree UNVERIFIED here |
+| **TOTAL** | **26** | **13** | **23** | **NOT_READY_FOR_FINAL_GATE** |
 
-**Derived roll-up:** there are **23 OPEN** items and **11 PARTIAL** items. Per the
+**Derived roll-up:** there are **23 OPEN** items and **13 PARTIAL** items. Per the
 explicit authorisation rule above, **COORD must not run the FINAL gate until every OPEN
 item in A–I is closed** — specifically: integrated selftest fresh 29/29 (C-1/C-3/C-5;
-MAP-SMALL-01 reverted both owned files, so no 29/29 fix landed — `R/MAP_SMALL_01_report.md:6`),
-COORD ladder advancement of the now-confirmed P0 row (E-P0: job `504` `PASS 22/22` +
-`RECHECK_P0_FINAL.md` CONFIRMED_PASS, but no row advanced), a quiet CLEAN queue with zero
-unacked failure-status jobs (D-1…D-4: fresh poll `pending=1`, lock HELD, 1 Godot alive,
-DIRTY/exit 1, 17 unacked = 16 skipped + 1 timed-out), all in-flight builders released
-(A-5/D-5), every ladder row P1→C4/S1 windowed and green with a landed second-agent
-`RECHECK_<ROW>.md` (E/F — only P0 and S1 have re-checks), owner visual review (H-1/H-3)
-and the 2D current-tree re-check (I-2). G-7 has closed: README now reports 60, matching
-CORRECTIONS.md. Donor visual parity (H-2) remains **UNVERIFIED** by standing rule and is
-never converted to PASS by a green gate.
+`R/QA_GATE_READY_02.md:135,188` still `passed:false`, 28/29, `build`; MAP-SMALL-01 reverted
+both owned files, so no 29/29 fix landed — `R/MAP_SMALL_01_report.md:6`), COORD ladder
+advancement of the now-confirmed P0 row (E-P0: job `504` `PASS 22/22` +
+`RECHECK_P0_FINAL.md` CONFIRMED_PASS, re-affirmed by `R/QA_GATE_READY_02.md:150-151,190`,
+but no row advanced), a quiet CLEAN queue with zero unacked failure-status jobs
+(D-1…D-4: newest polls `pending` 7→3, lock HELD 237.2→38.2 s, 1 Godot alive, DIRTY/exit
+1, unacked 17→18 = 16 skipped + tickets 494 and 516 timed-out), all in-flight builders
+released (A-5/D-5), every ladder row P1→C4/S1 windowed and green with a landed
+second-agent `RECHECK_<ROW>.md` (E/F — only P0 and S1 have re-checks), owner visual review
+(H-1/H-3) and the 2D current-tree re-check (I-2). Newly landed evidence is recorded
+without promotion: the runner patch is `APPLIED_AS_APPROVED` (D-8) but no solo post-patch
+gate ran; the HUD/load atoms ran but returned FAIL / `MEASUREMENT_ONLY__NO_PASS_CLAIM`
+(B-10); the white-marks symptom is reproduced with no visible relief (H-6); the
+corrections index is 63 in both README and CORRECTIONS.md (G-2/G-7). Donor visual parity
+(H-2) remains **UNVERIFIED** by standing rule and is never converted to PASS by a green
+gate.
 
 **Labels on the roll-up:** counts are `derived` from the item statuses above; the rule
 that FINAL is COORD-only and last is `observed` (`S/SWARM_BOARD.md:122`;
 `S/TEST_MATRIX.md:27,65-66`; `R/FINAL_GATE_PLAN_01.md:206-207`); the queue, session and
-artifact numbers remain point-in-time `observed` snapshots (`R/GATE_READY_01.md:10,
-128-133`); donor parity is `UNVERIFIED` (`S/CORRECTIONS.md:132`).
+artifact numbers remain point-in-time `observed` snapshots (`R/QA_GATE_READY_02.md:11,
+46-120`; earlier `R/GATE_READY_01.md:10,128-133`); donor parity is `UNVERIFIED`
+(`S/CORRECTIONS.md:132`).
 
-**Refresh note (FINAL-CHECK-REFRESH-01):** targeted edits only — frontmatter
-`status`/`scope`/`snapshot_caveat`/`sources_read` (+ `refreshed_by`/`refresh_date`),
-A-5, A-6, B-9, C-5, D-1…D-4, E-P0, E-S1, F-1, F-2, G-2, G-6, G-7, the D/F/G summary
-header cells, the TOTAL row and the derived roll-up. §0 (citation shorthand, labels,
-governing-rules table and the FINAL-GATE AUTHORISATION blockquote) was preserved
-byte-identical as instructed; its stale "(§F)" clause is corrected by the §F item it
-cross-references. No status was weakened and no PASS invented: D-1/D-2 were **not**
-flipped to DONE because a fresh poll re-found `pending=1`, lock HELD and 1 live Godot;
-E-P0/E-S1/F-2 retain PARTIAL/OPEN because COORD has not advanced the ladder and P1–C4
-remain uncovered; **G-7 alone closed** (OPEN→DONE), hence 24→23 OPEN and 24→25 DONE.
-Per-item before→after with evidence is in `R/FINAL_CHECK_REFRESH_01.md`.
+**Refresh note (FINAL-CHECK-REFRESH-02):** targeted edits only — frontmatter
+`status`/`scope`/`snapshot_caveat`/`sources_read` (+ `refreshed_by`/`refresh_date`), A-6,
+B-10 (new), C-1/C-2 citations, D-1…D-4, D-8 (new), E-P0, F-2, G-2, G-4, G-6, G-7, H-1,
+H-6 (new), I-2, the B/D/E/G/H/I summary header cells, the TOTAL row and the derived
+roll-up. §0 (citation shorthand, labels, governing-rules table and the FINAL-GATE
+AUTHORISATION blockquote) was preserved byte-identical as instructed; its stale "(§F)"
+clause is still corrected by the §F item it cross-references. No status was weakened and
+no PASS invented: C-1/C-2, D-1…D-4, E-P0/E-S1, F-2, I-2 and H-6 were **not** promoted;
+B-10/D-8/H-6 record new evidence at honest scopes. Counters 25/11/23 → **26/13/23**
+(three new items: D-8 DONE, B-10 + H-6 PARTIAL). The earlier FINAL-CHECK-REFRESH-01 pass
+(24/11/24 → 25/11/23, G-7 closure only) is documented in `R/FINAL_CHECK_REFRESH_01.md`.
+Per-item before→after with evidence is in `R/FINAL_CHECK_REFRESH_02.md`.
 
 ---
 
-*End of FINAL-CHECKLIST-01 (stale items refreshed by FINAL-CHECK-REFRESH-01). This file
-and `reports/FINAL_CHECK_REFRESH_01.md` only; no code, test, config, fixture, result-JSON,
+*End of FINAL-CHECKLIST-01 (stale items refreshed by FINAL-CHECK-REFRESH-02). This file
+and `reports/FINAL_CHECK_REFRESH_02.md` only; no code, test, config, fixture, result-JSON,
 git or runner-state mutation; no donor access; no Godot job submitted.*

@@ -2,7 +2,7 @@
 id: NATION-SPAWN-IMPL-01
 owner: NATION-SPAWN-IMPL-01 implementation subagent
 date: 2026-11-25
-status: IN PROGRESS — code edit landed; smoke gate green; sid-dump probe queued
+status: DONE — code edit landed; parse smoke green; sid-dump probe attempted, timed out with no data (no re-submit)
 scope: "Exactly two repo files touched: variant3d/scripts/game.gd (edited) and this report (written). Backup written to inbox/backup/game.gd.bak-NATIONSPAWN01. NO other repo file edited — not data.gd, world3d_entities.gd, tests, config, app/**, board or any selftest/uitest artifact. Variant runner only; no direct godot invocation; no queue mutation; no re-submit."
 root: "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3"
 labels: [observed, derived, inferred, UNVERIFIED]
@@ -88,7 +88,13 @@ one-line spawn change at `@@ -2736,7 +2748,7 @@`. No third hunk exists. [observe
 `inbox/backup/game.gd.bak-NATIONSPAWN01`, 236,360 bytes — byte-identical in length to
 the pre-edit `variant3d/scripts/game.gd` (236,360 B). Created with `Copy-Item -Force`
 before any edit. Diffing this backup against the edited file produced exactly the two
-hunks in §2. [observed]
+hunks in §2; the edited file is 236,991 B. [observed]
+
+A **concurrent session** committed the worktree at HEAD `2101e66e` (`step`,
+2026-11-25 12:28:33 +0100), after this ticket's edit (file mtime 12:14:12). The
+committed `HEAD:variant3d/scripts/game.gd` already contains both hunks, so `git status`
+now reports `game.gd` clean — this ticket did **not** create that commit and did not
+stage, commit or mutate any queue/index state. [observed]
 
 ## 4. Validation — variant runner only
 
@@ -106,10 +112,38 @@ validates the script but does not execute `setup()` or the spawn loop
 syntactically valid and introduces no parse error; it does not by itself prove the
 sid histogram. [observed + derived]
 
-### 4.1 Per-player sid dump probe
+### 4.1 Per-player sid dump probe — attempted, INCONCLUSIVE (honest result)
 
-PENDING — job `nationspawn01-sid-dump` submitted; result to be recorded here on
-completion.
+A second, distinct job was submitted once to obtain the §4.1 dump of
+`game.serialize()` (which carries `players[].nation` and `entities[].sid`,
+`game.gd:5744-5779`) without editing any non-owned file:
+
+| Ticket | id | Command (after `python variant3d\tools\godot_runner.py run --id … --timeout … --`) | Result | Wait / run |
+|---:|---|---|---|---|
+| 538 | `nationspawn01-sid-dump` | `--headless --path variant3d --battle --dump-self-base C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/nationspawn01/selfbase.txt` | **timed-out / exit 1** | 393.18 s wait / 250.58 s run |
+
+Feasibility basis (why this was a legitimate attempt): `--battle` sets
+`start_mode = "battle"` (`main.gd:193-196`), which makes `game.setup("battle")` set
+`battle_mode = true` (`game.gd:356`) and therefore runs the modified `BATTLE_ARMY`
+branch (`game.gd:2741-2752`); `--dump-self-base` calls `game.setup(start_mode)` then
+writes `var_to_str({…, "base": game.serialize(), …})` (`main.gd:814-843`) to the
+requested path. Default config supplies `rus`/`bav` (`config.json:71-72`). No file in
+the repo was created or changed by this probe. [observed + derived]
+
+**Outcome:** the runner killed the process tree at its 240.0 s hard timeout
+(`stderr.txt` 45 B: `[runner] KILLED after 240.0s (hard timeout)`). `stdout.txt` is
+75 B (Godot 4.7.2 banner only); there is **no** `SELF-SNAPSHOT dump round-trip` line,
+and the requested dump file does not exist on disk. Therefore **no per-player sid
+histogram was obtained** — runtime confirmation of the resolved `rus` sids is
+**[UNVERIFIED]**. There were **0 bytes of Godot `SCRIPT ERROR` output** (the only
+stderr line is the runner's own kill notice), so this is a timeout of a full
+240×240 mapgen + serialize + round-trip under the chosen hard timeout, not a parse
+or runtime script failure. Per the no-re-submit instruction, this job was **not**
+retried and the queue was not mutated. [observed]
+
+The `bav` strict no-op (§5) remains a **static derivation from the resolver and
+`NATION_UNITS` literal**, not a measured before/after runtime dump — stated plainly
+rather than presented as verified runtime evidence. [observed + derived]
 
 ## 5. `bav` no-op proof
 
@@ -145,8 +179,11 @@ For `rus` (player 0 at default config `config.json:71-72`), `NATION_UNITS.rus`
 
 ## 7. Open questions
 
-1. The sid-dump probe result is pending; whether the resolved `rus` sids actually
-   appear in `game.serialize()` at runtime is **[UNVERIFIED]** until §4.1 is filled.
+1. The sid-dump probe (ticket 538) timed out before writing its file, so whether
+   the resolved `rus` sids actually appear in `game.serialize()` at runtime is
+   **[UNVERIFIED]**. Obtaining it would need a later owner-approved run with a longer
+   `--timeout` (the 240 s hard limit killed a full 240² mapgen + round-trip); this
+   ticket did not re-submit.
 2. `app/scripts/game.gd` is a separate mirror at different offsets
    (`NATION_SPAWN_01.md:99`, `:1988/:2504/:3775`). This ticket was granted exclusive
    ownership of `variant3d/scripts/game.gd` only; whether the mirror must be patched
@@ -160,14 +197,24 @@ For `rus` (player 0 at default config `config.json:71-72`), `NATION_UNITS.rus`
 5. Captured-nation override cannot affect starting spawns (`_spawn_starts()` runs at
    `:426-431` before capture logic at `:3982-3987`) — ordering derived, desirability
    a product question. **[UNVERIFIED]**.
+6. **Next `game.gd` owner ticket (hand-off note only; NOT started here):**
+   `reports/RELIEF_LIVE_DIAG_01.md` identifies `_shape_stamp_relief()` (`game.gd:870-993`,
+   called at `:1092`) as using analytic radial domes over footprints, not donor height
+   grids, with a later clamp (`game.gd:993`, `:1099-1109`) flattening caps; `test7`/`test8`
+   tile art on flat cells produces the pale marks. This ticket made no relief edit,
+   no diagnosis and no claim of fixing it; it is a separate follow-up owner's work.
+   **[observed, second-hand from the cited report and the coordinator hand-off]**
 
 ## 8. Summary
 
 One read-only helper (`game.gd:438-444`) mirroring `train_unit()`'s two-source nation
 lookup, applied at exactly one call site (`game.gd:2751`), makes `BATTLE_ARMY` starting
 sids nation-aware with an inherent identity fallback. `bav` is a strict no-op; `rus`
-resolves only `serdiuk→strelet` and `cossack→cossackdon`. Parse smoke `nationspawn01-smoke`
-(ticket 533) is `ok`/0 with 0 B stderr. No other repo file was edited. Sid-dump probe
-and its honest result are recorded in §4.1.
+resolves only `serdiuk→strelet` and `cossack→cossackdon` (static derivation). Parse
+smoke `nationspawn01-smoke` (ticket 533) is `ok`/0 with 0 B stderr. The sid-dump probe
+`nationspawn01-sid-dump` (ticket 538) was attempted once and **timed out with no dump
+file**, so runtime sid verification stays UNVERIFIED and was not re-submitted. Backup:
+`inbox/backup/game.gd.bak-NATIONSPAWN01`. **No other repo file was edited** — no
+`data.gd`, `world3d_entities.gd`, tests, config or `app/**`.
 
 *End of NATION-SPAWN-IMPL-01.*

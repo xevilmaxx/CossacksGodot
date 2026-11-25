@@ -68,11 +68,54 @@ var pattern_stamps: Array = []
 # shape height BEFORE the collision pass) and reused by _gen_patterns.  Caching
 # keeps the two passes identical without consuming any extra `rng` draws.
 var _pattern_build: Dictionary = {}
+# RELIEF-LIVE-FIX-01: cells written by a donor-grid stamp.  Read by the global
+# height clamp below so the donor cap is not re-quantised by the port's dither.
+var _relief_donor_mask: PackedByteArray = PackedByteArray()
 # Donor height constants (generatemap.inc:4-6).  Profile shape is port-authored
 # because the donor's per-cell height records are UNVERIFIED (TDR-2 §2.2).
 const RELIEF_PLATEAU := 2.964
 const RELIEF_HILL := 2.964 / 2.25
 const RELIEF_RAVINE := -2.964
+# RELIEF-LIVE-FIX-01 — donor-derived relief grids for the LIVE height path.
+# These 8x10 tables are the block MEANS decoded from the donor float32 height
+# windows in DPATTERN_01 Appendix A1/A2 (:595-626).  DPATTERN_01:599-600
+# explicitly labels them "debug/preview aids only — stamp from the full grid";
+# the full windows are not in the port, so using the coarse tables here is a
+# labelled PORT APPROXIMATION, not donor parity.  Every number is donor-authored
+# relief; no synthetic noise, dither-as-shape or invented hill is added.
+# Row order is file order; the file-row -> map-row sign is UNVERIFIED (§9 Q3).
+const RELIEF_GRID_W := 10
+const RELIEF_GRID_H := 8
+const RELIEF_GRID_K_RAVINE_1 = [
+	-0.056, -0.309, -0.251, -0.067, -0.190, -1.119, -0.714, -0.000, -0.000, -0.013,
+	-2.056, -2.251, -1.897, -0.629, -0.006, -0.121, -0.098, -0.001, -0.537, -2.300,
+	-2.947, -2.941, -2.916, -1.785, -0.011, -0.000,  0.000, -0.018, -0.809, -2.411,
+	-2.920, -2.384, -2.015, -1.071, -0.008, -0.000,  0.000,  0.162,  0.730, -2.255,
+	-0.352,  1.656,  0.740,  0.019,  0.000,  0.000,  0.000,  0.178,  2.249,  1.379,
+	 2.937,  2.730,  1.909,  0.227,  0.000,  0.000,  0.000,  0.001,  0.964,  2.763,
+	 1.258,  0.391,  0.098,  0.001,  0.000,  0.000,  0.000,  0.000,  0.007,  0.422,
+	 0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.025,  0.094,  0.100,  0.075,
+]
+const RELIEF_GRID_PLT2 = [
+	 0.032,  0.065,  0.061,  0.031, -0.001, -0.002, -0.000,  0.000, -0.001, -0.005,
+	 1.406,  2.451,  2.364,  1.313,  0.500,  0.163,  0.028,  0.001,  0.001,  0.212,
+	 2.914,  3.294,  3.096,  2.627,  1.492,  0.226,  0.039,  0.002,  0.018,  0.580,
+	 1.325,  3.033,  3.437,  3.392,  1.927,  0.188,  0.003,  0.000,  0.019,  0.305,
+	 2.699,  3.198,  3.176,  2.573,  1.144,  0.128,  0.013, -0.001,  0.017,  0.759,
+	 1.546,  2.625,  3.149,  2.309,  0.384,  0.061,  0.001,  0.001,  0.057,  0.457,
+	 0.296,  1.158,  1.478,  0.743,  0.167,  0.015,  0.000,  0.000,  0.004,  0.025,
+	 0.006,  0.019,  0.029,  0.026,  0.011,  0.000,  0.000,  0.000,  0.143,  0.086,
+]
+# Donor sculpt config transcribed verbatim (DPATTERN_01 §3/§4; pattern.lib):
+# k_ravine_1 scale 1 :549568, min/max :549585-549586, Smooth=False :549572;
+# plt2 scale 1, min/max :6805-6806.  Smooth passes are NOT emulated — the
+# smoothing definition is UNVERIFIED (DPATTERN_01 §5.2, §9 Q2).
+const RELIEF_GRID_META = {
+	"k_ravine_1": {"scale": 1.0, "min": -2.963627576828003, "max": 3.139820098876953,
+		"w": 46, "h": 63, "offset": 2866, "lib": "pattern.lib:549585-549586"},
+	"plt2": {"scale": 1.0, "min": -0.07325489819049835, "max": 3.6134116649627686,
+		"w": 42, "h": 55, "offset": 2266, "lib": "pattern.lib:6805-6806"},
+}
 # Staged-loading state: _generate_map runs in 4 chunks so the loading bar can
 # repaint between them (menu Start -> playing). Sync setup() just calls them
 # back-to-back; the async loader in main.gd awaits a frame between each.
@@ -867,13 +910,39 @@ func _generate_map() -> void:
 	# donor TextureMap -> SmoothTiles -> SmoothForestBorders.
 	_assign_tileblocks()
 
+func _sample_relief_grid(grid: Array, u: float, v: float) -> float:
+	# PORT APPROXIMATION — bilinear sample of a donor-derived 8x10 block-mean
+	# table (DPATTERN_01 Appendix A1/A2, :595-600).  u,v are 0..1 over the
+	# stamp footprint; file row order kept (row flip UNVERIFIED, §9 Q3).
+	var fx := clampf(u, 0.0, 1.0) * float(RELIEF_GRID_W - 1)
+	var fy := clampf(v, 0.0, 1.0) * float(RELIEF_GRID_H - 1)
+	var ix := int(fx)
+	var iy := int(fy)
+	var jx := mini(ix + 1, RELIEF_GRID_W - 1)
+	var jy := mini(iy + 1, RELIEF_GRID_H - 1)
+	var tx := fx - float(ix)
+	var ty := fy - float(iy)
+	var a: float = grid[iy * RELIEF_GRID_W + ix]
+	var b: float = grid[iy * RELIEF_GRID_W + jx]
+	var c: float = grid[jy * RELIEF_GRID_W + ix]
+	var d: float = grid[jy * RELIEF_GRID_W + jx]
+	return lerpf(lerpf(a, b, tx), lerpf(c, d, tx), ty)
+
+
 func _shape_stamp_relief() -> void:
 	# Donor relief is STAMPED multi-cell patterns (dogenerate.inc stage 9), not
 	# analytic domes.  The footprints are the real donor .pattern masks exported
-	# into donor_patterns.json; no shape is invented here.  Only the height
-	# profile is a port adaptation (the donor's per-cell height fields are
-	# undecoded).  Called strictly BEFORE the collision/cliff pass so every
-	# newly steep tile becomes rock + blocked (closes the P-47 ordering defect).
+	# into donor_patterns.json; no shape is invented here.  RELIEF-LIVE-FIX-01:
+	# where the stamp carries a decoded donor id (plt2 / k_ravine_1), the HEIGHT
+	# now comes from that donor's coarse grid too (DPATTERN_01 Appendix A,
+	# labelled PORT APPROXIMATION).  The analytic radial/taper profile remains
+	# ONLY as the fallback for stamps with no decoded donor grid.  Called
+	# strictly BEFORE the collision/cliff pass so every newly steep tile becomes
+	# rock + blocked (closes the P-47 ordering defect).
+	var relief_grid_candidates := 0
+	var relief_grid_cells := 0
+	_relief_donor_mask = PackedByteArray()
+	_relief_donor_mask.resize(MAP_W * MAP_H)
 	# Buildable ring: a stamp CENTRE may sit outside the pattern-gen keep-clear
 	# while its 48-100-tile footprint still reaches a town.  Flatten that ring
 	# here (before collision) so no start/town/build spot is ever steepened or
@@ -893,6 +962,21 @@ func _shape_stamp_relief() -> void:
 	for sv in (_pattern_build.get("stamps", []) as Array):
 		var st: Object = sv
 		var kind := str(st.kind)
+		# RELIEF-LIVE-FIX-01: donor id -> donor-derived coarse grid.  Only ids
+		# with a decoded window in DPATTERN_01 are eligible; no id is invented.
+		# k_ravine_1 is included for completeness but is not reachable from
+		# donor_patterns.json / pattern_gen.gd recipes (RELIEF-02 §5, BLOCKED).
+		var donor_name := str(st.get("name"))
+		var donor_grid: Array = []
+		var donor_meta: Dictionary = {}
+		if donor_name == "plt2":
+			donor_grid = RELIEF_GRID_PLT2
+			donor_meta = RELIEF_GRID_META["plt2"]
+		elif donor_name == "k_ravine_1":
+			donor_grid = RELIEF_GRID_K_RAVINE_1
+			donor_meta = RELIEF_GRID_META["k_ravine_1"]
+		if not donor_grid.is_empty():
+			relief_grid_candidates += 1
 		var amp := 0.0
 		var edge := 0.0
 		var rim_tiles := 3.0
@@ -947,6 +1031,23 @@ func _shape_stamp_relief() -> void:
 				var i := _t(x, y)
 				if terrain[i] == 3 or terrain[i] == 4 or near_start[i] != 0:
 					continue
+				if not donor_grid.is_empty():
+					# PORT APPROXIMATION (donor engine blend UNVERIFIED,
+					# DPATTERN_01 §5.2): h = clamp(h_base + grid*Scale + Offset,
+					# HeightFieldMin, HeightFieldMax).  Offset is 0 for these two
+					# patterns; Smooth is not modelled (definition UNVERIFIED).
+					# The 8x10 table is mapped over the scaled donor footprint
+					# bbox; extent/placement are port approximations.
+					var gu := 0.5 + float(x - cx) / (2.0 * hx)
+					var gv := 0.5 + float(y - cy) / (2.0 * hy)
+					var gv0 := _sample_relief_grid(donor_grid, gu, gv)
+					var gscale: float = donor_meta.get("scale", 1.0)
+					var gmin: float = donor_meta.get("min", RELIEF_RAVINE)
+					var gmax: float = donor_meta.get("max", RELIEF_PLATEAU)
+					height[i] = clampf(height[i] + gv0 * gscale, gmin, gmax)
+					_relief_donor_mask[i] = 1
+					relief_grid_cells += 1
+					continue
 				if kind == "hill":
 					var hx0 := x - cx
 					var hy0 := y - cy
@@ -991,6 +1092,17 @@ func _shape_stamp_relief() -> void:
 				# (plateau.md P10).  Clamp the additive result to the donor
 				# [-2.964, +2.964] band; ravine's negative amp hits the floor.
 				height[i] = clampf(height[i] + amp * f, RELIEF_RAVINE, RELIEF_PLATEAU)
+	# RELIEF-LIVE-FIX-01 audit ledger (dump meta only; no height/tile effect).
+	map_meta["relief_grid"] = {
+		"label": "PORT APPROXIMATION — donor engine blend UNVERIFIED (DPATTERN_01 §5.2)",
+		"tables": ["k_ravine_1", "plt2"],
+		"source": "DPATTERN_01 Appendix A1/A2 — 8x10 block means, debug/preview aids only",
+		"candidates": relief_grid_candidates,
+		"applied_cells": relief_grid_cells,
+		"blend": "h = clamp(h_base + donor8x10*HeightFieldScale, HeightFieldMin, HeightFieldMax)",
+		"clamp_reconcile": "donor Min/Max at stamp; single cMaxHeight=2.964 ceiling for donor cells",
+		"row_flip": "UNVERIFIED",
+	}
 
 func _gen_base() -> void:
 	# DONOR PIPELINE (data/scripts/common.inc/generatemap.inc -> dogenerate.inc):
@@ -1098,6 +1210,15 @@ func _gen_base() -> void:
 	# (flat fraction 24.91% -> ~55-65%).  Water depth is left untouched.
 	for hi in height.size():
 		if terrain[hi] == 3:
+			continue
+		if _relief_donor_mask[hi] != 0:
+			# RELIEF-LIVE-FIX-01 clamp reconciliation.  A donor-grid cell was
+			# already clamped to that pattern's HeightFieldMin/Max at stamp
+			# time, so applying the port's ±2.964 stamp clamp AND the 0.03
+			# dither cap a second time would erase the donor cap shape.  Here
+			# only the donor baked-map ceiling is enforced (cMaxHeight=2.96 /
+			# ±2.964, DTRN-02 C10/C13); no dither-as-shape on donor cells.
+			height[hi] = clampf(height[hi], RELIEF_RAVINE, RELIEF_PLATEAU)
 			continue
 		# Donor heights are quantised from an 8-bit mask R channel.  Dither the
 		# cap by ~2 R-levels so ~60% of saturated plateau cells read exactly

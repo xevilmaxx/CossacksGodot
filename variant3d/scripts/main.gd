@@ -1934,12 +1934,38 @@ func _is_blank(img: Image) -> bool:
 		return true
 	var w := mini(img.get_width(), 64)
 	var h := mini(img.get_height(), 64)
-	var first := img.get_pixel(0, 0)
-	for y in range(0, img.get_height(), maxi(1, img.get_height() / h)):
-		for x in range(0, img.get_width(), maxi(1, img.get_width() / w)):
-			if img.get_pixel(x, y).get_luminance() - first.get_luminance() > 0.02:
-				return false
-	return true
+	var step_x := maxi(1, img.get_width() / w)
+	var step_y := maxi(1, img.get_height() / h)
+	var n := 0
+	var lit := 0
+	var lmin := 1.0
+	var lmax := 0.0
+	var colours := {}
+	for y in range(0, img.get_height(), step_y):
+		for x in range(0, img.get_width(), step_x):
+			var p := img.get_pixel(x, y)
+			var l := p.get_luminance()
+			n += 1
+			if l > 0.02:
+				lit += 1
+			if l < lmin:
+				lmin = l
+			if l > lmax:
+				lmax = l
+			colours["%d_%d_%d" % [int(p.r * 255.0), int(p.g * 255.0), int(p.b * 255.0)]] = true
+	if n == 0:
+		return true
+	# BLANK-CHECK-01: judge the frame's own content, never its top-left pixel.
+	# A blank capture is either almost entirely unlit (black) or a flat uniform
+	# fill (clear colour / solid frame) with no real image content. All three
+	# tests are symmetric: a bright sky corner can no longer veto olive terrain.
+	if float(lit) / float(n) < 0.02:
+		return true
+	if lmax - lmin <= 0.02:
+		return true
+	if colours.size() < 4:
+		return true
+	return false
 
 # CPU map render used for headless screenshots and as a blank fallback.
 # No GPU, no window, no textures: pure Image fills, fast and cross-platform.

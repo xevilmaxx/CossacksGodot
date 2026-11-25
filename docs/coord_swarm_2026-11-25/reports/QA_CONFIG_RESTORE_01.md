@@ -21,7 +21,7 @@ landing_note: "The restore landed DURING this audit: first read showed the 1-lea
 | `variant3d/scripts/config.gd` | `:42-45` CONFIG-CORE-01 comment; `:46-84` `FEATURES_DEFAULTS` (21 leaves / 8 groups); `:88-89` `DEFAULT.features = FEATURES_DEFAULTS`; `:414-483` typed getter block (21 getters) | observed |
 | `variant3d/config.json` (pre-landing read) | `:16-20` — `features` held exactly one leaf, `terrain.relief_stamps: true`; 837 CRLF lines; SHA-256 prefix `bd80c2d1…` | observed (T0) |
 | `variant3d/config.json` (post-landing read) | `:16-54` — full 21-leaf `features` object; `:29` `relief_stamps: true`; `:80-81` `map_width_tiles/map_height_tiles = 320`; `:82` `map_type: "land"`; 15,163 bytes / 871 CRLF lines; SHA-256 prefix `0514f3ff…` | observed (T1) |
-| `inbox/backup/config.json.bak-CONFIGRESTORE` | `:16-20` — pre-restore 1-leaf `features`; 14,477 bytes / 837 CRLF lines; SHA-256 prefix `bd80c2d1…`; untracked file created 12:19:48 | observed |
+| `inbox/backup/config.json.bak-CONFIGRESTORE` | `:16-20` — pre-restore 1-leaf `features`; 14,477 bytes / 837 CRLF lines; SHA-256 prefix `bd80c2d1…`; created 12:19:48 (untracked at first observation, later committed in `2411a752`) | observed |
 | `inbox/backup/config.json.bak-CFGJSON` | `:16` start of `display` (no `features`); `:41-42` map 240×240; 14,409 bytes / 832 CRLF lines | observed |
 | `inbox/backup/config.json.bak-RELIEFENABLE`, `.bak-MAPSMALL01`, `.bak-CFG02` | all 14,409 bytes, 320×320, **no** `features` — corroborating snapshots | observed |
 | `reports/CONFIG_RESTORE_01.md` | **ABSENT** at every checked path (repo-wide filename search); owner report has not landed | observed / UNVERIFIED |
@@ -99,7 +99,7 @@ Result totals: **20 MATCH, 1 MISMATCH (intentional), 0 MISSING, 0 EXTRA**. The 2
 - Recursive deep diff of `current minus features` vs `bak-CONFIGRESTORE minus features`: **0 differences** — every pre-existing value, list and mapping is unchanged. [derived]
 - Line endings CRLF preserved: backup 837 lines → current 871 lines (+34), consistent with expanding the `features` object only. `git diff --numstat` shows +39 / −0 against HEAD (HEAD is the 832-line, no-`features` commit `83b77eaa`). [observed + derived]
 - Comparison against `bak-CFGJSON` shows exactly two differences, both map dimensions (`240 → 320`); that backup predates the MAP-SMALL-01 revert and is not the restore baseline. No other key differs there either. [derived]
-- `variant3d/scripts/config.gd` is unmodified (mtime 10:32:24, before the restore); `git status` shows only `variant3d/config.json` modified plus the new backup. [observed]
+- `variant3d/scripts/config.gd` is unmodified (mtime 10:32:24, before the restore); the config and its backup are now committed in `2411a752`, and final `git status` shows neither path as modified. [observed]
 
 ---
 
@@ -107,7 +107,7 @@ Result totals: **20 MATCH, 1 MISMATCH (intentional), 0 MISSING, 0 EXTRA**. The 2
 
 **FILE-LEVEL VERIFIED / PASS — do not promote beyond file level.** [observed + derived]
 
-- The CONFIG-RESTORE-01 edit landed at 12:20:00 and the 21-key block is present, JSON-valid, and mirrors `FEATURES_DEFAULTS` 20/21 exactly, with `terrain.relief_stamps: true` as the deliberate override carried over from RELIEF_ENABLE_01. [observed + derived]
+- The CONFIG-RESTORE-01 edit landed at 12:20:00 and was committed in `2411a752`; the 21-key block is present, JSON-valid, and mirrors `FEATURES_DEFAULTS` 20/21 exactly, with `terrain.relief_stamps: true` as the deliberate override carried over from RELIEF_ENABLE_01. [observed + derived]
 - 320² and `land` are intact; no pre-existing key changed relative to the pre-restore backup; no code, backup or harness file was touched by this QA. [derived]
 - **UNVERIFIED / not promoted:** `reports/CONFIG_RESTORE_01.md` (owner report) has not landed; no `--dump-config`/`--dump-map` probe was run; getter resolution, `dump["relief_stamps"]` emission, stamp placement and visual hills remain untested at runtime (inheriting `QA_RELIEF_ON_01:90-100,226-238`). No donor parity claim is made. [observed / UNVERIFIED]
 
@@ -121,7 +121,7 @@ Read-only audit — no edits made. Recommended follow-ups (owner: COORD / doc-re
 |---|---|---|---|
 | `reports/CONFIG_RESTORE_01.md` | File absent | Land the owner report; until then cite only this QA for file-level state | observed / UNVERIFIED |
 | `SWARM_BOARD.md:335` | QA-CONFIG-RESTORE-01 still `RUNNING` | Update to DONE (this QA delivered) once the coordinator accepts the verdict | inferred |
-| `SWARM_BOARD.md:366,370`; `CONFIG_COUNT_RECONCILED.md:176`; `CONFIG_PIPELINE.md:298` | "`config.json` has NO `features` object" / "the global JSON override does not" | Mark as historical snapshots: 21-key object present again at 320² (one intentional non-default leaf) | observed + derived |
+| `SWARM_BOARD.md:376,380`; `CONFIG_COUNT_RECONCILED.md:176`; `CONFIG_PIPELINE.md:298` | "`config.json` has NO `features` object" / "the global JSON override does not" | Mark as historical snapshots: 21-key object present again at 320² (one intentional non-default leaf) | observed + derived |
 | `reports/QA_RELIEF_ON_01.md:96,226-230` | "`relief_stamps` only in `config.json:18`" / "exactly one change — only leaf" | Annotate as pre-CONFIG-RESTORE snapshot; the leaf is now `config.json:29` inside a 21-key block | observed |
 | `reports/RELIEF_ENABLE_01.md:64-72,179-180` | Decision "do **not** re-apply the ... 21-key table" | Now superseded by CONFIG-RESTORE-01 — the block was re-applied *without* 240²; keep the old text as historical context | observed + inferred |
 | `reports/QA_CONFIGJSON_01.md:18,80-85,132-135` | 21 keys at **240²** (`config.json:16-54`, `:80-81`) | Current block is at `:16-54` but map is **320²** (`:80-81`); parity still 21/21 modulo the relief override | observed |
@@ -138,13 +138,13 @@ Read-only audit — no edits made. Recommended follow-ups (owner: COORD / doc-re
 4. `features.terrain.m_per_tile: 2.0` is exact in JSON, but the documented `_copy()` whole-float→int coercion (`QA_CONFIG_01_getters.md:74`) was not re-tested. [inherited / UNVERIFIED]
 5. `features.camera.fov_deg = 17.27` donor grounding stays `PORT APPROX / UNVERIFIED` (`config.gd:71,467`); this audit proves parity only. [observed / UNVERIFIED]
 6. Is 320² to be kept indefinitely, or replaced only after the build-step fix? Task says keep it until then; no ticket-state proof beyond that instruction. [inferred / UNVERIFIED]
-7. Who owns `variant3d/config.json` now (inherited from `QA_CONFIGJSON_01 §6 Q2`)? The file is uncommitted and its backup is untracked. [observed / UNVERIFIED]
+7. Who owns `variant3d/config.json` now (inherited from `QA_CONFIGJSON_01 §6 Q2`)? The restore is committed in `2411a752`, but future change ownership is not established here. [observed / UNVERIFIED]
 
 ---
 
 ## 7. Summary
 
-- The restore **landed during the audit**: 1 feature leaf at first read → **21 leaves** at `:16-54` after 12:20:00; backup `config.json.bak-CONFIGRESTORE` captured the 1-leaf pre-state. [observed]
+- The restore **landed during the audit**: 1 feature leaf at first read → **21 leaves** at `:16-54` after 12:20:00, committed in `2411a752`; backup `config.json.bak-CONFIGRESTORE` captured the 1-leaf pre-state. [observed]
 - Against `config.gd:46-84`: **20 MATCH, 1 intentional MISMATCH** (`terrain.relief_stamps: true` vs default `false`), **0 MISSING, 0 EXTRA**. [derived]
 - JSON parses; map remains **320×320 / land** at `:80-82`; deep diff vs the pre-restore backup excluding `features` is **empty** — no other pre-existing key changed. [observed + derived]
 - Owner report `reports/CONFIG_RESTORE_01.md` is **absent**; runtime dump, stamping and visuals remain **UNVERIFIED**. File-level PASS is not a runtime or donor-parity claim. [observed / UNVERIFIED]

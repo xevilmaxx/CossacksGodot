@@ -22,6 +22,8 @@
 #   variant3d/scripts/main.gd:171-172,199-244,1110-1132,1125-1126,1307-1310,1699-1701,1818-1884
 #       (user-arg parsing, fixture boot, HUD bind, screenshot-mode side effects)
 #   variant3d/scripts/testbridge.gd:103-105 (root.size resize precedent)
+#   variant3d/project.godot:18-19 (canvas_items stretch, 1280x720 base;
+#       HUD-LAYOUT-REPAIR-01 harness retargets content_scale_size per size)
 #   variant3d/tests/_template_test.gd:1-38 (one file / one verdict / deferred quit)
 #   variant3d/tests/t_smallmap_terrain.gd:42-111,174-231 (real-boot atom pattern)
 #   variant3d/tests/t_terrain_only.gd:175-246,648-679 (SKIP_CAPTURE + PNG guard pattern)
@@ -59,13 +61,15 @@ const EPS := 2.0
 const SPEED_LABELS := ["II", "1x", "2x", "4x"]
 const SPEED_META := [0.0, 1.0, 2.0, 4.0]
 # hud.gd:124-130 (RES_TOOLTIPS) + data.gd:25 (six resources in this order).
+# HUD-LAYOUT-REPAIR-01: gold/iron/coal now read "produced at", matching the
+# current donor-cited literals at hud.gd:128-130 (hud.gd itself is NOT edited).
 const RES_TOOLTIPS_EXPECTED := [
 	"Food is produced by peasants in the fields and by fish boats at the port.",
 	"Wood is cut in the forests then stored at storehouses or town halls. Wood is primarily used for building construction.",
 	"Peasants gather stone at stone quarries then store it at storehouses or town halls. Stone is used for construction and for walls and towers.",
-	"Gold is produced by gold mines which can be placed over gold deposits. It recruits and maintains mercenaries and pays for upgrades; without gold, mercenaries rebel.",
-	"Iron is produced by iron mines. It recruits armored units and pays for upgrades and ammunition; without iron, ranged units cannot fire.",
-	"Coal is produced by coal mines. It is used to produce ammunition for ranged units, artillery and ships; without coal, they cannot fire.",
+	"Gold is produced at gold mines which can be placed over gold deposits. It recruits and maintains mercenaries and pays for upgrades; without gold, mercenaries rebel.",
+	"Iron is produced at iron mines. It recruits armored units and pays for upgrades and ammunition; without iron, ranged units cannot fire.",
+	"Coal is produced at coal mines. It is used to produce ammunition for ranged units, artillery and ships; without coal, they cannot fire.",
 ]
 
 var _id := "t_hud_layout"
@@ -248,11 +252,26 @@ func _run_async() -> void:
 		return
 	var hud: Object = hud_v as Object
 	var original_size: Vector2i = root.size
+	var original_scale: Vector2i = root.content_scale_size
 	for i in range(VIEWPORTS.size()):
 		if _finished:
 			return
 		var want: Vector2i = VIEWPORTS[i]
+		# HUD-LAYOUT-REPAIR-01 resize mechanism - TEST-ONLY harness setup, no
+		# game code touched. project.godot:18-19 uses canvas_items stretch with
+		# a 1280x720 base, so get_viewport().get_visible_rect().size - the value
+		# hud._calc_us() reads (hud.gd:234-239) - stays 1280x720 for all three
+		# 16:9 sizes when only root.size changes (testbridge.gd:103-105). The
+		# three-size sweep must retarget the root viewport's logical base too,
+		# otherwise it silently measures one layout three times. In a windowed
+		# run the real DisplayServer window is resized as well, so the physical
+		# viewport and PNG capture follow; headless has no real window, so the
+		# logical override alone drives the sweep (capture stays SKIP_CAPTURE).
+		if not _headless and DisplayServer.get_name() != "headless":
+			DisplayServer.window_set_size(want)
 		root.size = want                     # testbridge.gd:103-105
+		root.content_scale_size = want       # test-only logical viewport override
+		await process_frame
 		await process_frame
 		if _finished:
 			return
@@ -269,6 +288,7 @@ func _run_async() -> void:
 		else:
 			await _capture_async(want, i)
 	root.size = original_size
+	root.content_scale_size = original_scale
 	finish()
 
 

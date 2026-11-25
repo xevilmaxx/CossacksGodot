@@ -16,49 +16,49 @@
 		},
 		{
 			"citation": "main.gd:458-501,530-645 (_show_loading/_set_loading/_do_async_load)",
-			"detail": "overlay_frames=0 stage_transitions=15 first=Preparing... last=<none>",
+			"detail": "overlay_frames=28 stage_transitions=15 first=Preparing... last=<none>",
 			"id": "staged_overlay_observed",
-			"met_criterion": false,
-			"status": "UNVERIFIED"
+			"met_criterion": true,
+			"status": "OBSERVED"
 		},
 		{
 			"citation": "main.gd:521-528,550-576; PROGRESS.md:104-113; UX_LOADING.md:54-55",
-			"detail": "Exact per-stage stall UNVERIFIED (requires instrumentation inside main.gd/_loading_tick, owned by LOAD-ASYNC-01). Proxies: max_inter_frame_gap_loading_us=0, max_stage_to_stage_us=23262030",
+			"detail": "Exact per-stage stall UNVERIFIED (requires instrumentation inside main.gd/_loading_tick, owned by LOAD-ASYNC-01). Proxies: max_inter_frame_gap_loading_us=21481301, max_stage_to_stage_us=21481471",
 			"id": "a_longest_main_thread_stall",
 			"met_criterion": null,
 			"status": "UNVERIFIED"
 		},
 		{
-			"citation": "main.gd:512-519,576-645",
-			"detail": "No overlay-hidden transition observed; cannot check binding order.",
+			"citation": "main.gd:512-519,576-645; world3d.gd:599-602; camera3d.gd:171-174; hud.gd:167-169,201-213; input_controller.gd:129-134,172-185; UX_LOADING.md:56,70",
+			"detail": "hide_frame=29 all_bound_at_hide=true missing_or_late=[]",
 			"id": "b_bindings_before_overlay_hide",
-			"met_criterion": null,
-			"status": "UNVERIFIED"
+			"met_criterion": true,
+			"status": "OBSERVED"
 		},
 		{
-			"citation": "input_controller.gd:297-315,387-400",
-			"detail": "No live player-0 unit found for a selection/order probe.",
+			"citation": "main.gd:627-634; input_controller.gd:305-315",
+			"detail": "selected_ids contained probe unit at frame 1 (window=30); proxy: direct _set_selection call in headless, real mouse events UNVERIFIED",
 			"id": "c_input_response",
-			"met_criterion": null,
-			"status": "UNVERIFIED"
+			"met_criterion": true,
+			"status": "OBSERVED"
 		},
 		{
-			"citation": "input_controller.gd:297-315,387-400",
-			"detail": "No live player-0 unit found for an order probe.",
+			"citation": "main.gd:627-629; input_controller.gd:387-400",
+			"detail": "unit.order.type in {move,attack_move} at frame 1 (window=30)",
 			"id": "c_order_response",
-			"met_criterion": null,
-			"status": "UNVERIFIED"
+			"met_criterion": true,
+			"status": "OBSERVED"
 		},
 		{
 			"citation": "main.gd:605,643-645; camera3d.gd:444-452,511-519",
-			"detail": "apply_external_target -> _target/global_position changed at frame -1 (window=30)",
+			"detail": "apply_external_target -> _target/global_position changed at frame 1 (window=30)",
 			"id": "c_camera_response",
-			"met_criterion": false,
+			"met_criterion": true,
 			"status": "OBSERVED"
 		},
 		{
 			"citation": "main.gd:512-519,643-645; tests/README.md:3-33; UX_LOADING.md:71,92-97",
-			"detail": "No deferred-stage API exists to inspect. Proxies over %d frames: violations=%d, max_inter_frame_gap_post_us=%d (heuristic ceiling %d)",
+			"detail": "No deferred-stage API exists to inspect. Proxies over 30 frames: violations=11, max_inter_frame_gap_post_us=33515827 (heuristic ceiling 250000)",
 			"id": "d_no_deferred_heavy_stage",
 			"met_criterion": null,
 			"status": "UNVERIFIED"
@@ -89,6 +89,26 @@
 		"Windowed window-freeze/paint responsiveness cannot be reproduced headless; UNVERIFIED."
 	],
 	"measured": {
+		"bind_first_frame": {
+			"camera": 21,
+			"camera_game": 21,
+			"camera_view_scale": 21,
+			"game": 3,
+			"hud": 23,
+			"hud_adapter_3d": 25,
+			"hud_game": 23,
+			"hud_world": 23,
+			"input": 25,
+			"input_camera": 25,
+			"input_game": 25,
+			"input_hud": 25,
+			"input_picking_3d": 25,
+			"input_render_mode_3d": 25,
+			"input_world": 25,
+			"world": 19,
+			"world_game": 19,
+			"world_hud": 23
+		},
 		"boot_game_before_async": false,
 		"boot_map_tiles": [
 			64,
@@ -97,19 +117,163 @@
 		"boot_mode": "atom-forced _do_async_load via Object.call (proxy for menu Start)",
 		"boot_render_mode": "3d",
 		"boot_seed": 20261113,
+		"camera_request_issued": true,
+		"camera_target_before": [
+			103.73950958252,
+			41.4356422424316
+		],
+		"camera_target_requested": [
+			72.0,
+			64.0
+		],
 		"display_server": "headless",
 		"fixture": "res://tests/fixtures/small_map_64.json",
-		"frames": 1742,
+		"frames": 60,
 		"headless": true,
-		"max_stage_to_stage_us": 23262030,
-		"source_revision_note": "main.gd read-only; LOAD-ASYNC-01 owns it and may change stage layout"
+		"hide_frame": 29,
+		"hide_snapshot": {
+			"all_bound": true,
+			"camera": true,
+			"camera_game": true,
+			"camera_view_scale": true,
+			"game": true,
+			"hud": true,
+			"hud_adapter_3d": true,
+			"hud_game": true,
+			"hud_world": true,
+			"input": true,
+			"input_camera": true,
+			"input_game": true,
+			"input_hud": true,
+			"input_picking_3d": true,
+			"input_render_mode_3d": true,
+			"input_world": true,
+			"world": true,
+			"world_game": true,
+			"world_hud": true
+		},
+		"load_ready_seen_at_hide": true,
+		"max_gap_loading_us": 21481301,
+		"max_gap_post_us": 33515827,
+		"max_stage_to_stage_us": 21481471,
+		"order_dest_requested": [
+			128.0,
+			15.3614625930786
+		],
+		"overlay_first_us": 5443043,
+		"overlay_flag_active_frames": 0,
+		"overlay_hidden_us": 46638551,
+		"overlay_lifetime_us": 41195508,
+		"overlay_stage_valid_frames": 28,
+		"overlay_visible_frames": 28,
+		"probe_unit_created_by_atom": false,
+		"probe_unit_found": true,
+		"response_frames": {
+			"camera": 1,
+			"input": 1,
+			"order": 1,
+			"window": 30
+		},
+		"source_revision_note": "main.gd read-only; LOAD-ASYNC-01 owns it and may change stage layout",
+		"stability_violations": 11,
+		"stage_log": [
+			{
+				"bar": 2.0,
+				"frame": 1,
+				"stage": "Preparing...",
+				"us": 5443043
+			},
+			{
+				"bar": 6.0,
+				"frame": 3,
+				"stage": "Starting simulation...",
+				"us": 5451017
+			},
+			{
+				"bar": 14.0,
+				"frame": 5,
+				"stage": "Shaping land and water...",
+				"us": 5471762
+			},
+			{
+				"bar": 34.0,
+				"frame": 7,
+				"stage": "Growing forests...",
+				"us": 6278619
+			},
+			{
+				"bar": 52.0,
+				"frame": 9,
+				"stage": "Placing stone and mines...",
+				"us": 6285466
+			},
+			{
+				"bar": 66.0,
+				"frame": 11,
+				"stage": "Raising towns...",
+				"us": 6299697
+			},
+			{
+				"bar": 76.0,
+				"frame": 13,
+				"stage": "Painting terrain...",
+				"us": 6320994
+			},
+			{
+				"bar": 86.0,
+				"frame": 15,
+				"stage": "Mustering armies...",
+				"us": 15707081
+			},
+			{
+				"bar": 90.0,
+				"frame": 17,
+				"stage": "Loading art...",
+				"us": 15838569
+			},
+			{
+				"bar": 92.0,
+				"frame": 19,
+				"stage": "Wiring camera...",
+				"us": 37320040
+			},
+			{
+				"bar": 94.0,
+				"frame": 21,
+				"stage": "Building interface...",
+				"us": 37476418
+			},
+			{
+				"bar": 96.0,
+				"frame": 23,
+				"stage": "Wiring input...",
+				"us": 37582981
+			},
+			{
+				"bar": 98.0,
+				"frame": 25,
+				"stage": "Starting audio...",
+				"us": 37819864
+			},
+			{
+				"bar": 100.0,
+				"frame": 27,
+				"stage": "Ready!",
+				"us": 46563553
+			},
+			{
+				"bar": -1.0,
+				"frame": 29,
+				"stage": "<none>",
+				"us": 46638551
+			}
+		]
 	},
 	"notes": [
-		"Async load driven by Object.call('_apply_menu_cfg') + Object.call('_do_async_load'); a real Start-button click / chosen signal is NOT exercised (main.gd:251-268).",
-		"wall-cap reached before completion; remaining assertions UNVERIFIED"
+		"Async load driven by Object.call('_apply_menu_cfg') + Object.call('_do_async_load'); a real Start-button click / chosen signal is NOT exercised (main.gd:251-268)."
 	],
 	"pass_claim": false,
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
-	"unix_ms": 1795605663650.0,
+	"unix_ms": 1795607262024.0,
 	"verdict": "MEASUREMENT_ONLY__NO_PASS_CLAIM"
 }

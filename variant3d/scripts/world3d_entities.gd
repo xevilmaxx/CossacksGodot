@@ -272,16 +272,17 @@ const FIELD_STATUS: String = PORT_LABEL + " — stage tint/scale from game.field
 # (ontagstates.inc:247-248); a separate stage-synced scaffold auto-child uses
 # <sid>a / <sid><1..4>a meshes with the `scaffold` material
 # (engcen.prop:72-112, ontagstates.inc:253-259).
-# No converted stage/scaffold OBJ exists in assets/models/obj/** today (only
-# the base <sid>.obj for cen/hou/sta/bar/tow); the 2D *_s1..s4 PNG bakes are
-# out of scope here (header: NO 2D BAKE PIPELINE). The selector therefore
-# follows the donor rule but binds the existing base donor mesh, labelled
-# PORT APPROXIMATION. No donor bytes were copied and no art is invented.
+# BUILD-ART-C-01: 108 converted stage/scaffold OBJs now exist under
+# assets/models/obj/** (BUILD_ART_BATCH_01.md, STAGE_IMPORT_01.md ticket 534).
+# The 2D *_s1..s4 PNG bakes are out of scope here (header: NO 2D BAKE
+# PIPELINE). Sids whose OBJ is absent still reuse the base donor mesh with an
+# explicit PORT APPROXIMATION label. No donor bytes are copied by this module,
+# no art is invented and the rendered result remains UNVERIFIED.
 const BUILD_STAGE_STEPS: int = 4                          # donor number, unit.script:6596
 const BUILD_WALL_MAX_STAGE: int = 2                       # donor number, ontagstates.inc:247-248
 const BUILD_STAGE_SUFFIXES: Array[String] = ["1", "2", "3", "4"]  # ontagstates.inc:240-251
-const BUILD_STAGE_LABEL: String = PORT_LABEL + " — donor floor(progress*4) / wall 1+stage div 3 selector; no stage OBJ, base donor mesh reused; visual UNVERIFIED"
-const BUILD_SCAFFOLD_LABEL: String = PORT_LABEL + " — donor stage-synced scaffold auto-child (engcen.prop:72-112); no scaffold OBJ, structural placeholder only; visual UNVERIFIED"
+const BUILD_STAGE_LABEL: String = PORT_LABEL + " — donor floor(progress*4) / wall 1+stage div 3 selector; converted <sid>1..4 OBJ bound when present (per-stage manifest bbox), base donor mesh reused otherwise; visual UNVERIFIED"
+const BUILD_SCAFFOLD_LABEL: String = PORT_LABEL + " — donor stage-synced scaffold auto-child (engcen.prop:72-112); converted <sid>1a..4a OBJ bound and visible when present, hidden structural placeholder otherwise; visual UNVERIFIED"
 
 # Deliberately UNTYPED: the integration seam passes the live C3Game (a Node)
 # but atomic tests bind a RefCounted stub. V7-1 §3 "relaxed Node typing".
@@ -494,7 +495,7 @@ func bind(g) -> void:
 		"build_stage_scaffold_label": BUILD_SCAFFOLD_LABEL,
 		"build_stage_obj_sids": stage_obj_sids,
 		"build_scaffold_obj_sids": scaffold_obj_sids,
-		"build_stage_art_status": "PORT APPROXIMATION — no stage OBJ, base donor mesh reused" if stage_obj_sids.is_empty() else "stage OBJ present for measured sids; per-stage bbox UNVERIFIED",
+		"build_stage_art_status": (PORT_LABEL + " — BLOCKED: no stage/scaffold OBJ on disk; base donor mesh reused; visual UNVERIFIED") if stage_obj_sids.is_empty() else (PORT_LABEL + " — converted stage/scaffold OBJ present for measured sids; per-stage manifest bbox applied on swap; visual UNVERIFIED"),
 		"field_visual_label": FIELD_STATUS,
 		"field_visual_visual": "UNVERIFIED",
 		"field_visual_decals": _field_decal_paths,
@@ -1789,18 +1790,22 @@ func _build_stage_suffix(ed: Dictionary) -> String:
 
 # Resolve a donor-named converted OBJ. Empty Dictionary means "no art": the
 # caller then reuses the base mesh with an explicit PORT APPROXIMATION label.
-# Stage/scaffold use the BASE sid bbox; per-stage bbox is UNVERIFIED.
+# BUILD-ART-C-01: centre with the manifest bbox of the resolved art sid
+# (<sid><suffix>[a]; suffix "" for the completion scaffold gives <sid>a),
+# falling back to the base sid bbox only when no stage entry is in the manifest.
 func _stage_mesh_info(sid: String, suffix: String, scaffold: bool) -> Dictionary:
 	var key := sid + "|" + suffix + "|" + ("scaffold" if scaffold else "stage")
 	if _stage_mesh_cache.has(key):
 		var cached = _stage_mesh_cache[key]
 		return cached as Dictionary
 	var out: Dictionary = {}
+	var art_sid := sid + suffix + ("a" if scaffold else "")
 	var path := OBJ_DIR + sid + suffix + ("a.obj" if scaffold else ".obj")
 	if ResourceLoader.exists(path):
 		var src := load(path) as Mesh
 		if src != null:
-			var bbox: Array = _bbox.get(sid, [])
+			var has_stage_bbox := _bbox.has(art_sid)
+			var bbox: Array = _bbox.get(art_sid, _bbox.get(sid, []))
 			var native_h := 1.0
 			if bbox.size() >= 6:
 				native_h = float(bbox[5]) - float(bbox[4])
@@ -1810,7 +1815,8 @@ func _stage_mesh_info(sid: String, suffix: String, scaffold: bool) -> Dictionary
 			out["source"] = "obj_scaffold_zup_bbox_normalised" if scaffold else "obj_stage_zup_bbox_normalised"
 			out["sid"] = sid
 			out["kind"] = "building"
-			out["bbox_note"] = "base sid bbox reused for stage/scaffold; per-stage bbox UNVERIFIED"
+			out["bbox_sid"] = art_sid if has_stage_bbox else sid
+			out["bbox_note"] = "per-stage manifest bbox" if has_stage_bbox else "base sid bbox fallback; per-stage bbox absent from manifest"
 	_stage_mesh_cache[key] = out
 	return out
 
@@ -1852,6 +1858,13 @@ func _sync_building_stages() -> void:
 				stage_approx += 1
 		if (mi as MeshInstance3D).mesh != chosen:
 			(mi as MeshInstance3D).mesh = chosen
+			# BUILD-ART-C-01: _apply_tint() writes surface overrides BY INDEX on
+			# the instance. A stage/base swap can change the surface count, so
+			# re-apply the donor slot tint on every real mesh change; otherwise
+			# the team colour is silently dropped. The base sid keeps the mask.
+			var tint: Variant = _player_tint(_player_index(e))
+			if tint is Color:
+				_apply_tint(mi, chosen, tint, sid, "building")
 		var stage_key := suffix if not finished else "finished"
 		(mi as MeshInstance3D).set_meta("build_stage_suffix", stage_key)
 		(mi as MeshInstance3D).set_meta("build_stage_progress01", _build_progress01(e))

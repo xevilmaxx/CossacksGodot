@@ -121,6 +121,11 @@ func _sim(seconds: float) -> void:
 		game.tick(0.25)
 
 func _spot(sid: String, near: Vector2) -> Vector2:
+	# Buildable point near the requested one. Visual footprints are much
+	# bigger than the old gameplay radii, so a fixed offset can land inside
+	# another building's drawn box. Try rings of candidates, with the outer
+	# limit derived from the generated map's metre extent so a smaller map
+	# behaves like 320². can_place() and the INF-on-failure result stand.
 	var span_m: float = float(mini(game.MAP_W, game.MAP_H)) * Data.TILE_M
 	var radii: Array[float] = [6.0, 10.0, 14.0, 18.0, 24.0]
 	var step_m: float = maxf(6.0, span_m * 0.0125)
@@ -128,32 +133,35 @@ func _spot(sid: String, near: Vector2) -> Vector2:
 	while r < span_m * 0.25:
 		r += step_m
 		radii.append(r)
-	var rejected_place := 0
-	var rejected_ink := 0
-	var rejected_nav := 0
+	# BUILD-STEP-FIX-01: the build order walks to _work_slot(site, block_r+0.7)
+	# (game.gd:4949), where block_r is the *visual* half-width for sprite
+	# buildings (game.gd:1707-1712: bld_rm, else def.radius) - for "hou" that
+	# is 4.739 m, not 1.5 m. Checking reachability at def.radius accepted a
+	# site whose real slot needed a long detour, so the fixed 25 s build
+	# window expired with the house still unfinished. Probe the exact slot
+	# the order will use, without changing the legality check or any pass
+	# criterion.
+	var rm: float = game.bld_rm(0, sid)
+	var def: Dictionary = Data.BUILDINGS.get(sid, {})
+	var slot_ring: float = (rm if rm > 0.0 else float(def.get("radius", 1.5))) + 0.7
+	var builder: Dictionary = _find_peasant()
 	for rr in radii:
 		var n: int = 32 if rr <= 24.0 else maxi(32, int(round(TAU * rr / 4.0)))
 		for k in n:
 			var a: float = TAU * float(k) / float(n) + rr
 			var p: Vector2 = near + Vector2(cos(a), sin(a)) * rr
 			if not bool(game.can_place(0, sid, p).get("ok", false)):
-				rejected_place += 1
 				continue
+			# The drawn sprite box is impassable (game.gd:159-189): reject a
+			# site that would strand the caller inside its own future box.
 			var ink: Rect2 = game.bld_block_rect_for(0, sid, p)
 			if ink.grow(Data.TILE_M + 0.75).has_point(near):
-				rejected_ink += 1
 				continue
-			var builder: Dictionary = _find_peasant()
-			var slot: Vector2 = Vector2.INF
 			if not builder.is_empty():
-				var def: Dictionary = Data.BUILDINGS.get(sid, {})
-				slot = game._work_slot(builder, p, float(def.get("radius", 1.5)) + 0.7)
+				var slot: Vector2 = game._work_slot(builder, p, slot_ring)
 				if not bool(game._nav_line_clear(builder, builder.pos, slot)):
-					rejected_nav += 1
 					continue
-			print("BUILDSTEP01DIAG SPOT sid=%s near=%v r=%.1f p=%v slot=%v" % [sid, near, rr, p, slot])
 			return p
-	print("BUILDSTEP01DIAG SPOTFAIL sid=%s near=%v place=%d ink=%d nav=%d" % [sid, near, rejected_place, rejected_ink, rejected_nav])
 	return Vector2.INF
 
 # True when the active --self-only token set (empty / "all", comma-separated
@@ -249,16 +257,8 @@ func run_only(group: String = "") -> Dictionary:
 		var house := game.place_building(0, "hou", hpos, true, [peasant]) if hpos != Vector2.INF else {}
 		var built := false
 		if not house.is_empty():
-			var prog_series: Array = []
-			for i in 100:
-				game.tick(0.25)
-				if i % 4 == 3:
-					prog_series.append(int(float(house.progress) * 100.0))
+			_sim(25.0)
 			built = house.finished
-			var rm_diag: float = game.bld_rm(0, "hou")
-			var slot_b: Vector2 = game._work_slot(peasant, house.pos, float(house.get("block_r", rm_diag)) + 0.7)
-			var ink_b: Rect2 = game.bld_block_rect_for(0, "hou", house.pos)
-			print("BUILDSTEP01DIAG BUILD2 hpos=" + str(hpos) + " peasant0=" + str(peasant.pos) + " house=" + str(house.pos) + " finished=" + str(house.finished) + " progress=" + str(house.progress) + " bt=" + str(house.def.build_time) + " order=" + str(peasant.order.type) + " stuck=" + str(peasant.get("stuck_t", 0.0)) + " rm=" + str(rm_diag) + " block_r=" + str(house.get("block_r", -1.0)) + " slot=" + str(slot_b) + " dslot=" + str(peasant.pos.distance_to(slot_b)) + " slotblocked=" + str(game._blocked_for(peasant, slot_b)) + " navclear=" + str(game._nav_line_clear(peasant, peasant.pos, slot_b)) + " ink=" + str(ink_b) + " inkhas=" + str(ink_b.has_point(peasant.pos)) + " prog=" + str(prog_series))
 		steps.append({"wall_ms": Time.get_ticks_msec() - _t0, "step": "build", "passed": built,
 			"detail": "house built in %.1f s of build time (cost 120 wood)" % (house.def.build_time if not house.is_empty() else 0.0)})
 

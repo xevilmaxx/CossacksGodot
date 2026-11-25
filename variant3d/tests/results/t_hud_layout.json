@@ -1,5 +1,5 @@
 {
-	"capture_status": "SKIP_CAPTURE",
+	"capture_status": "PASS",
 	"checks": [
 		{
 			"detail": "mode=3d map=64x64 seed=20261113 expected=64x64/20261113 3d (t_smallmap_terrain.gd:235-247)",
@@ -20,10 +20,10 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "hud.ui_vp=(1280.0, 720.0) expected=(1024, 576) (hud.gd:232-234,273-275; config.gd:751-754)",
+			"detail": "hud.ui_vp=(1024.0, 576.0) expected=(1024, 576) (hud.gd:232-234,273-275; config.gd:751-754)",
 			"name": "hud_scale_viewport_1024x576",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
 			"detail": "hud._on_vp_resize present (hud.gd:273-275)",
@@ -38,7 +38,7 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "top_panel x=[8.0,1298.0] vp.width=1024.0 (PROGRESS.md:105-108; hud.gd:554-557)",
+			"detail": "top_panel x=[6.4,1126.4] vp.width=1024.0 (PROGRESS.md:105-108; hud.gd:554-557)",
 			"name": "top_panel_right_in_viewport_1024x576",
 			"passed": false,
 			"status": "FAIL"
@@ -50,10 +50,10 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "labels=6 icons_with_hint=3 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
+			"detail": "labels=6 icons_with_hint=6 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
 			"name": "six_resource_entries_1024x576",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
 			"detail": "OptionButton/MenuButton count=1 expected 1 (hud.gd:112,444,490-500)",
@@ -92,25 +92,25 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "rendered minimap=242.0x242.0 (ui_us scale documented at hud.gd:327-333)",
+			"detail": "rendered minimap=194.0x194.0 (ui_us scale documented at hud.gd:327-333)",
 			"name": "minimap_square_1024x576",
 			"passed": true,
 			"status": "PASS"
 		},
 		{
-			"detail": "anchors=(1.0,1.0,1.0,1.0) rect={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } vp=(1024.0, 576.0) (hud.gd:1579-1595; HUD_01_minimap.md:54-56)",
+			"detail": "anchors=(1.0,1.0,1.0,1.0) rect={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 795.599975585938, \"y\": 355.600006103516, \"right\": 1017.59997558594, \"bottom\": 569.599975585938 } vp=(1024.0, 576.0) (hud.gd:1579-1595; HUD_01_minimap.md:54-56)",
 			"name": "minimap_bottom_right_1024x576",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "minimap={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } top={ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 } (hud.gd:319-321,327-350)",
+			"detail": "minimap={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 795.599975585938, \"y\": 355.600006103516, \"right\": 1017.59997558594, \"bottom\": 569.599975585938 } top={ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 6.40000009536743, \"y\": 4.80000019073486, \"right\": 1126.40002441406, \"bottom\": 48.7999992370605 } (hud.gd:319-321,327-350)",
 			"name": "minimap_no_topbar_overlap_1024x576",
 			"passed": true,
 			"status": "PASS"
 		},
 		{
-			"detail": "offenders=14 first=[{ \"name\": &\"@Control@12\", \"class\": \"Control\", \"x\": 0.0, \"y\": 6.0, \"right\": 1280.0, \"bottom\": 48.0 }, { \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 }, { \"name\": &\"@HBoxContainer@13\", \"class\": \"HBoxContainer\", \"x\": 16.0, \"y\": 9.0, \"right\": 1290.0, \"bottom\": 47.0 }, { \"name\": &\"@OptionButton@42\", \"class\": \"OptionButton\", \"x\": 962.0, \"y\": 9.0, \"right\": 1034.0, \"bottom\": 47.0 }, { \"name\": &\"@Button@43\", \"class\": \"Button\", \"x\": 1044.0, \"y\": 9.0, \"right\": 1107.0, \"bottom\": 47.0 }, { \"name\": &\"@Label@44\", \"class\": \"Label\", \"x\": 1117.0, \"y\": 18.0, \"right\": 1133.0, \"bottom\": 38.0 }] (PROGRESS.md:105-108; hud.gd:402,554-557)",
+			"detail": "offenders=3 first=[{ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 6.40000009536743, \"y\": 4.80000019073486, \"right\": 1126.40002441406, \"bottom\": 48.7999992370605 }, { \"name\": &\"@HBoxContainer@13\", \"class\": \"HBoxContainer\", \"x\": 14.3999996185303, \"y\": 7.80000019073486, \"right\": 1118.40002441406, \"bottom\": 45.7999992370605 }, { \"name\": &\"@Label@45\", \"class\": \"Label\", \"x\": 984.400024414063, \"y\": 19.7999992370605, \"right\": 1118.40002441406, \"bottom\": 33.7999992370605 }] (PROGRESS.md:105-108; hud.gd:402,554-557)",
 			"name": "no_unclipped_control_outside_viewport_1024x576",
 			"passed": false,
 			"status": "FAIL"
@@ -122,22 +122,22 @@
 			"status": "RECORDED_NOT_GATE"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "root texture 1024x576 expected 1024x576 (main.gd:1185-1202)",
 			"name": "capture_image_1024x576",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "save_png(C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1024x576.png) err=0 exists=true",
 			"name": "capture_saved_1024x576",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "non_black_fraction=0.0000 mean_luma=0.13 (loud blank-frame guard, main.gd:1875-1882)",
 			"name": "capture_nonblank_1024x576",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": false,
+			"status": "FAIL"
 		},
 		{
 			"detail": "root.size=(1280.0, 720.0) expected=(1280, 720) (testbridge.gd:103-105)",
@@ -176,10 +176,10 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "labels=6 icons_with_hint=3 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
+			"detail": "labels=6 icons_with_hint=6 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
 			"name": "six_resource_entries_1280x720",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
 			"detail": "OptionButton/MenuButton count=1 expected 1 (hud.gd:112,444,490-500)",
@@ -248,22 +248,22 @@
 			"status": "RECORDED_NOT_GATE"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "root texture 1280x720 expected 1280x720 (main.gd:1185-1202)",
 			"name": "capture_image_1280x720",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "save_png(C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1280x720.png) err=0 exists=true",
 			"name": "capture_saved_1280x720",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "non_black_fraction=0.0000 mean_luma=0.12 (loud blank-frame guard, main.gd:1875-1882)",
 			"name": "capture_nonblank_1280x720",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": false,
+			"status": "FAIL"
 		},
 		{
 			"detail": "root.size=(1920.0, 1080.0) expected=(1920, 1080) (testbridge.gd:103-105)",
@@ -272,10 +272,10 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "hud.ui_vp=(1280.0, 720.0) expected=(1920, 1080) (hud.gd:232-234,273-275; config.gd:751-754)",
+			"detail": "hud.ui_vp=(1920.0, 1080.0) expected=(1920, 1080) (hud.gd:232-234,273-275; config.gd:751-754)",
 			"name": "hud_scale_viewport_1920x1080",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
 			"detail": "hud._on_vp_resize present (hud.gd:273-275)",
@@ -290,7 +290,7 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "top_panel x=[8.0,1298.0] vp.width=1920.0 (PROGRESS.md:105-108; hud.gd:554-557)",
+			"detail": "top_panel x=[12.0,1908.0] vp.width=1920.0 (PROGRESS.md:105-108; hud.gd:554-557)",
 			"name": "top_panel_right_in_viewport_1920x1080",
 			"passed": true,
 			"status": "PASS"
@@ -302,10 +302,10 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "labels=6 icons_with_hint=3 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
+			"detail": "labels=6 icons_with_hint=6 expected 6/6 (hud.gd:124-130,407-418; data.gd:25-26)",
 			"name": "six_resource_entries_1920x1080",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
 			"detail": "OptionButton/MenuButton count=1 expected 1 (hud.gd:112,444,490-500)",
@@ -344,19 +344,19 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "rendered minimap=242.0x242.0 (ui_us scale documented at hud.gd:327-333)",
+			"detail": "rendered minimap=362.0x362.0 (ui_us scale documented at hud.gd:327-333)",
 			"name": "minimap_square_1920x1080",
 			"passed": true,
 			"status": "PASS"
 		},
 		{
-			"detail": "anchors=(1.0,1.0,1.0,1.0) rect={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } vp=(1920.0, 1080.0) (hud.gd:1579-1595; HUD_01_minimap.md:54-56)",
+			"detail": "anchors=(1.0,1.0,1.0,1.0) rect={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1518.0, \"y\": 686.0, \"right\": 1908.0, \"bottom\": 1068.0 } vp=(1920.0, 1080.0) (hud.gd:1579-1595; HUD_01_minimap.md:54-56)",
 			"name": "minimap_bottom_right_1920x1080",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "minimap={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1002.0, \"y\": 450.0, \"right\": 1272.0, \"bottom\": 712.0 } top={ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 8.0, \"y\": 6.0, \"right\": 1298.0, \"bottom\": 50.0 } (hud.gd:319-321,327-350)",
+			"detail": "minimap={ \"name\": &\"@PanelContainer@57\", \"class\": \"PanelContainer\", \"x\": 1518.0, \"y\": 686.0, \"right\": 1908.0, \"bottom\": 1068.0 } top={ \"name\": &\"@PanelContainer@46\", \"class\": \"PanelContainer\", \"x\": 12.0, \"y\": 9.0, \"right\": 1908.0, \"bottom\": 72.0 } (hud.gd:319-321,327-350)",
 			"name": "minimap_no_topbar_overlap_1920x1080",
 			"passed": true,
 			"status": "PASS"
@@ -374,61 +374,70 @@
 			"status": "RECORDED_NOT_GATE"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "root texture 1920x1080 expected 1920x1080 (main.gd:1185-1202)",
 			"name": "capture_image_1920x1080",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "save_png(C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1920x1080.png) err=0 exists=true",
 			"name": "capture_saved_1920x1080",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "SKIP_CAPTURE: DisplayServer.get_name()==headless; state-only result, no PNG claim (CAPTURE_RECHECK.md:57-60)",
+			"detail": "non_black_fraction=0.0000 mean_luma=0.12 (loud blank-frame guard, main.gd:1875-1882)",
 			"name": "capture_nonblank_1920x1080",
-			"passed": null,
-			"status": "SKIP_CAPTURE"
+			"passed": false,
+			"status": "FAIL"
 		}
 	],
 	"config": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tests\\fixtures\\small_map_64.json",
-	"fails": 11,
+	"fails": 7,
 	"fixture": [
 		64,
 		64,
 		20261113
 	],
-	"headless": true,
+	"headless": false,
 	"id": "t_hud_layout",
 	"measured": {
 		"1024x576": {
 			"clipped_overflow_count": 0,
 			"hud_ui_vp": [
-				1280.0,
-				720.0
+				1024.0,
+				576.0
 			],
 			"minimap_declared_slot": [
 				240,
 				240
 			],
 			"minimap_panel_rect": {
-				"bottom": 712.0,
+				"bottom": 569.599975585938,
 				"class": "PanelContainer",
 				"name": "@PanelContainer@57",
-				"right": 1272.0,
-				"x": 1002.0,
-				"y": 450.0
+				"right": 1017.59997558594,
+				"x": 795.599975585938,
+				"y": 355.600006103516
 			},
 			"minimap_render_px": [
-				242.0,
-				242.0
+				194.0,
+				193.999969482422
 			],
 			"minimap_scaled_min": [
-				240.0,
-				240.0
+				192.0,
+				192.0
 			],
-			"resource_hints_found": 3,
+			"png_metrics": {
+				"bytes": 79804,
+				"height": 576,
+				"max_luma": 0.976695687663555,
+				"mean_luma": 0.129024252893521,
+				"non_black_fraction": 0.0,
+				"png_path": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1024x576.png",
+				"width": 1024
+			},
+			"resource_hints_found": 6,
 			"resource_labels": [
 				"799  (0)",
 				"800  (0)",
@@ -445,125 +454,37 @@
 			],
 			"speed_widgets": 1,
 			"top_panel_rect": {
-				"bottom": 50.0,
+				"bottom": 48.7999992370605,
 				"class": "PanelContainer",
 				"name": "@PanelContainer@46",
-				"right": 1298.0,
-				"x": 8.0,
-				"y": 6.0
+				"right": 1126.40002441406,
+				"x": 6.40000009536743,
+				"y": 4.80000019073486
 			},
 			"unclipped_offenders": [
 				{
-					"bottom": 48.0,
-					"class": "Control",
-					"name": "@Control@12",
-					"right": 1280.0,
-					"x": 0.0,
-					"y": 6.0
-				},
-				{
-					"bottom": 50.0,
+					"bottom": 48.7999992370605,
 					"class": "PanelContainer",
 					"name": "@PanelContainer@46",
-					"right": 1298.0,
-					"x": 8.0,
-					"y": 6.0
+					"right": 1126.40002441406,
+					"x": 6.40000009536743,
+					"y": 4.80000019073486
 				},
 				{
-					"bottom": 47.0,
+					"bottom": 45.7999992370605,
 					"class": "HBoxContainer",
 					"name": "@HBoxContainer@13",
-					"right": 1290.0,
-					"x": 16.0,
-					"y": 9.0
+					"right": 1118.40002441406,
+					"x": 14.3999996185303,
+					"y": 7.80000019073486
 				},
 				{
-					"bottom": 47.0,
-					"class": "OptionButton",
-					"name": "@OptionButton@42",
-					"right": 1034.0,
-					"x": 962.0,
-					"y": 9.0
-				},
-				{
-					"bottom": 47.0,
-					"class": "Button",
-					"name": "@Button@43",
-					"right": 1107.0,
-					"x": 1044.0,
-					"y": 9.0
-				},
-				{
-					"bottom": 38.0,
-					"class": "Label",
-					"name": "@Label@44",
-					"right": 1133.0,
-					"x": 1117.0,
-					"y": 18.0
-				},
-				{
-					"bottom": 36.0,
+					"bottom": 33.7999992370605,
 					"class": "Label",
 					"name": "@Label@45",
-					"right": 1290.0,
-					"x": 1143.0,
-					"y": 20.0
-				},
-				{
-					"bottom": 44.0,
-					"class": "Label",
-					"name": "@Label@47",
-					"right": 1268.0,
-					"x": 1158.0,
-					"y": 10.0
-				},
-				{
-					"bottom": 720.0,
-					"class": "PanelContainer",
-					"name": "@PanelContainer@53",
-					"right": 654.0,
-					"x": 4.0,
-					"y": 570.0
-				},
-				{
-					"bottom": 710.0,
-					"class": "VBoxContainer",
-					"name": "@VBoxContainer@50",
-					"right": 640.0,
-					"x": 18.0,
-					"y": 580.0
-				},
-				{
-					"bottom": 600.0,
-					"class": "HBoxContainer",
-					"name": "@HBoxContainer@51",
-					"right": 640.0,
-					"x": 18.0,
-					"y": 580.0
-				},
-				{
-					"bottom": 600.0,
-					"class": "Label",
-					"name": "@Label@61",
-					"right": 318.0,
-					"x": 18.0,
-					"y": 580.0
-				},
-				{
-					"bottom": 712.0,
-					"class": "PanelContainer",
-					"name": "@PanelContainer@57",
-					"right": 1272.0,
-					"x": 1002.0,
-					"y": 450.0
-				},
-				{
-					"bottom": 702.0,
-					"class": "TextureRect",
-					"name": "@TextureRect@56",
-					"right": 1258.0,
-					"x": 1016.0,
-					"y": 460.0
+					"right": 1118.40002441406,
+					"x": 984.400024414063,
+					"y": 19.7999992370605
 				}
 			],
 			"viewport": [
@@ -597,7 +518,16 @@
 				240.0,
 				240.0
 			],
-			"resource_hints_found": 3,
+			"png_metrics": {
+				"bytes": 101646,
+				"height": 720,
+				"max_luma": 0.986179608666897,
+				"mean_luma": 0.12333554972792,
+				"non_black_fraction": 0.0,
+				"png_path": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1280x720.png",
+				"width": 1280
+			},
+			"resource_hints_found": 6,
 			"resource_labels": [
 				"799  (0)",
 				"800  (0)",
@@ -655,30 +585,39 @@
 		"1920x1080": {
 			"clipped_overflow_count": 0,
 			"hud_ui_vp": [
-				1280.0,
-				720.0
+				1920.0,
+				1080.0
 			],
 			"minimap_declared_slot": [
 				240,
 				240
 			],
 			"minimap_panel_rect": {
-				"bottom": 712.0,
+				"bottom": 1068.0,
 				"class": "PanelContainer",
 				"name": "@PanelContainer@57",
-				"right": 1272.0,
-				"x": 1002.0,
-				"y": 450.0
+				"right": 1908.0,
+				"x": 1518.0,
+				"y": 686.0
 			},
 			"minimap_render_px": [
-				242.0,
-				242.0
+				362.0,
+				362.0
 			],
 			"minimap_scaled_min": [
-				240.0,
-				240.0
+				360.0,
+				360.0
 			],
-			"resource_hints_found": 3,
+			"png_metrics": {
+				"bytes": 171689,
+				"height": 1080,
+				"max_luma": 0.973288629043102,
+				"mean_luma": 0.124504163558674,
+				"non_black_fraction": 0.0,
+				"png_path": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1920x1080.png",
+				"width": 1920
+			},
+			"resource_hints_found": 6,
 			"resource_labels": [
 				"799  (0)",
 				"800  (0)",
@@ -695,12 +634,12 @@
 			],
 			"speed_widgets": 1,
 			"top_panel_rect": {
-				"bottom": 50.0,
+				"bottom": 72.0,
 				"class": "PanelContainer",
 				"name": "@PanelContainer@46",
-				"right": 1298.0,
-				"x": 8.0,
-				"y": 6.0
+				"right": 1908.0,
+				"x": 12.0,
+				"y": 9.0
 			},
 			"unclipped_offenders": [],
 			"viewport": [
@@ -711,16 +650,16 @@
 	},
 	"parity_label": "PORT APPROX — internal layout consistency only; no donor GPU A/B frame",
 	"passed": false,
-	"passes": 42,
+	"passes": 55,
 	"png_user_args": [
-		"",
-		"",
-		""
+		"C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1024x576.png",
+		"C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1280x720.png",
+		"C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\hudlayoutrepair\\hud_1920x1080.png"
 	],
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
-	"skipped_or_skip_capture": 12,
+	"skipped_or_skip_capture": 3,
 	"structural_ok": false,
-	"unix_ms": 1795605528792.0,
+	"unix_ms": 1795607323948.0,
 	"verdict": "FAIL",
 	"viewports": [
 		"(1024, 576)",
