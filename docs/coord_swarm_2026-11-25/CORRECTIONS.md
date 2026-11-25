@@ -102,6 +102,8 @@ Status legend: **RESOLVED** = old claim refuted or replaced by cited readable ev
 | 55 | Donor selection sounds are positional unit sounds / order acknowledgements exist | prior audio assumptions | Selection clips `selectpeasant1..6` + `selectship` are interface-bank, played **non-positionally** via `_sound_PlaySound` on unit-control rebuild (`showunitcontrol.inc:1024-1027`); every `gc_snd_ind_order*` call is commented and constants undefined. All 325 port clips present; 59 live donor indices | `reports/DAUDIO_01_sound_events.md` (325/325 mapping, raw-byte census) | full-tree read + byte scan | RESOLVED |
 | 56 | Donor terrain height comes only from generator noise; relief patterns don't sculpt height | `TERRAIN_PORT_HILLS.md`, `PIECES/plateau.md` | Relief `.pattern` binaries embed w×h float32 grids after the occupancy mask; 26 decoded grids match `pattern.lib` literals **bit-exactly**; mountain patterns have all-zero grids and embed `terrainmeshN` props, so port needs props not taller bumps | `reports/DPATTERN_01_relief_grids.md` (offsets, RLEs, 8×10 downsamples) + `reports/DTRN_02_donor_terrain_geometry.md` | 2–3 passes per claim | RESOLVED |
 
+| 57 | CFG-01's "config.json `map_type: land` is superseded by `terrain_type`" was refuted by CFG-02 / QA-AUDIT F-05 | `reports/CFG_02_no_menu_defaults.md`, `reports/QA_AUDIT_01_implementation_claims.md` | **Refuted in turn by DEFAULTS-VERIFY-01:** `config.gd:545` reads `gameplay.terrain_type`; `load_all()` merges config.json over a DEFAULT that already sets `terrain_type: mediterranean` and `relief: hills`, so `map_type: land` is present but not applied and CFG-01 is right **in effect**. All 7 requested defaults resolve on both interactive and menu-skipping paths. The cited `config.gd:429` was stale (now `:545`). | `reports/DEFAULTS_VERIFY_01.md` (two-file double verification of each default; artifact caveat) | 2 files per setting + DEFAULT-merge trace | RESOLVED |
+
 ## Claims that stay UNVERIFIED
 
 These values were not recovered by any amount of script, config, byte or image reading.
@@ -156,7 +158,7 @@ bridge and sky/sun precedence (`DENV_01 §7 #1–#3`), `.map` 37-byte record fie
 
 ## Summary
 
-56 indexed corrections across binaries, scripts, configs, terrain, maps, cameras,
+57 indexed corrections across binaries, scripts, configs, terrain, maps, cameras,
 animation, water, audio, atlas transport, UI and stale-doc arbitration. The largest reversals are: the `.exe`
 entry is in `CODE`, not `.bind` (row 1); `[*]=;` is live code (row 6); DEC-07's FOV
 "correction" was itself an axis misreading (row 7); frame 0 **is** the bind pose for

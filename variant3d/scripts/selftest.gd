@@ -140,7 +140,7 @@ func _spot(sid: String, near: Vector2) -> Vector2:
 		r += step_m
 		radii.append(r)
 	for rr in radii:
-		var n: int = 16 if rr <= 24.0 else maxi(16, int(round(TAU * rr / 4.0)))
+		var n: int = 32 if rr <= 24.0 else maxi(32, int(round(TAU * rr / 4.0)))
 		for k in n:
 			var a: float = TAU * float(k) / float(n) + rr
 			var p: Vector2 = near + Vector2(cos(a), sin(a)) * rr
@@ -163,9 +163,6 @@ func _spot(sid: String, near: Vector2) -> Vector2:
 			if not builder.is_empty():
 				var def: Dictionary = Data.BUILDINGS.get(sid, {})
 				var slot: Vector2 = game._work_slot(builder, p, float(def.get("radius", 1.5)) + 0.7)
-				if sid == "hou" and rr <= 10.0:
-					var q := Vector2(clampf(near.x, ink.position.x, ink.end.x), clampf(near.y, ink.position.y, ink.end.y))
-					print("MAPSMALL-CAND r=%.1f p=%s rectdist=%.2f slot=%s slotdist=%.2f clear=%s" % [rr, str(p), near.distance_to(q), str(slot), near.distance_to(slot), str(game._nav_line_clear(builder, builder.pos, slot))])
 				if not bool(game._nav_line_clear(builder, builder.pos, slot)):
 					continue
 			return p

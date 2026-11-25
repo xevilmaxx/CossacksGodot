@@ -210,6 +210,12 @@ const YAW_CLAMP_STATUS: String = PORT_LABEL + " — PORT APPROX per-sync yaw cla
 # authorized single rotor bake; it is NOT new art and NOT a sprite sheet load.
 # The true donor .oss sail (eurmilanim.oss) remains a follow-up.
 const ROTOR_TEX_PATH: String = "res://assets/models/" + "anim/common/buildings/mill_rotor.png"
+# MOTION-ANIM-01/ROTOR — importable port-to-port COPY of the SAME shipped PNG.
+# The anim/ tree sits under assets/models/anim/.gdignore, so Godot never imports
+# it and its stale .import advertises a .ctex that will never exist. tex/ is not
+# ignored (172 imported PNGs already live there), so this copy gets a real ctex.
+# No donor bytes are copied: source and target hashes are identical.
+const ROTOR_TEX_IMPORT_PATH: String = "res://assets/models/tex/mill_rotor.png"
 const ROTOR_META_PATH: String = "res://assets/models/" + "anim/buildings/mill_rotor.json"
 const MILL_HUB := Vector2(0.525, 0.21)        # app/scripts/world.gd:203
 const MILL_SPIN: float = 0.75                 # app/scripts/world.gd:204, rad/s
@@ -414,6 +420,7 @@ func bind(g) -> void:
 		"mill_rotor_label": ROTOR_STATUS,
 		"mill_rotor_visual": "UNVERIFIED",
 		"mill_rotor_source": ROTOR_TEX_PATH,
+		"mill_rotor_import_path": ROTOR_TEX_IMPORT_PATH,
 		"mill_rotor_meta": ROTOR_META_PATH,
 		"mill_rotor_spin_rad_per_s": MILL_SPIN,
 		"mill_rotor_spin_axis_label": ROTOR_SPIN_AXIS_STATUS,
@@ -1449,15 +1456,20 @@ func _rotor_material() -> Material:
 	var tex: Texture2D = null
 	# MOTION-ANIM-01/ROTOR — the owner's live run showed that a .import file is
 	# NOT proof that Godot generated its .ctex: ResourceLoader.load() on the
-	# missing cache emitted hard engine ERROR lines from this path. Decode the
-	# SHIPPED donor PNG bytes through FileAccess/Image instead of the import
-	# pipeline, so a stale/missing cache can never produce engine ERRORs. This
-	# uses the same donor bake (ROTOR_TEX_PATH) and invents no art. The load
-	# result is checked before use; failure degrades to a plain white quad.
-	if FileAccess.file_exists(ROTOR_TEX_PATH):
-		var img := Image.new()
-		if img.load(ROTOR_TEX_PATH) == OK and not img.is_empty():
-			tex = ImageTexture.create_from_image(img)
+	# missing cache emitted hard engine ERROR lines from this path. Root cause:
+	# the original anim/ PNG sits under .gdignore and is never imported. Try the
+	# importable port copy in tex/ FIRST, then the original path as a fallback;
+	# decode bytes through FileAccess/Image instead of the import pipeline, so a
+	# stale/missing cache can never produce engine ERRORs. Both paths are the
+	# SAME shipped PNG and no art is invented. Every load result is checked
+	# before use; total failure degrades to a plain white quad.
+	for rotor_path in [ROTOR_TEX_IMPORT_PATH, ROTOR_TEX_PATH]:
+		if tex != null:
+			break
+		if FileAccess.file_exists(rotor_path):
+			var img := Image.new()
+			if img.load(rotor_path) == OK and not img.is_empty():
+				tex = ImageTexture.create_from_image(img)
 	if tex != null:
 		mat.albedo_texture = tex
 		# Donor bake has transparent corners; scissor keeps a hard sail

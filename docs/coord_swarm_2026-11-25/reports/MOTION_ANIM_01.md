@@ -204,13 +204,22 @@ code called `ResourceLoader.exists(ROTOR_TEX_PATH)` and then `load()`; a `.impor
 file alone made `exists()` true, so `load()` tried the missing `.ctex` and Godot
 emitted hard `ERROR:` lines even though the null result was later handled.
 
+**Root cause (ASSET-IMPORT-01, ticket 444):** the import job itself succeeded,
+but `variant3d/assets/models/anim/` is under `.gdignore`, so Godot **never
+imports** `mill_rotor.png`; its leftover `.import` advertises a `.ctex` that can
+never exist. Removing `.gdignore` would pull ~1,800 dead 2D bake PNGs into the
+import set, so that was explicitly **not** done. Incident: the first rotor
+parse smoke `motionanim01-rotor-smoke` (ticket **448**) was **CANCELLED by
+QA-PARITY-01's cleanup mistake**, not by a code failure; it is not evidence of a
+parse result or regression. No work was reverted because of it.
+
 ### 8.1 Robustness fix (owned file only)
 
 | Final line(s) | Before | After |
 |---|---|---|
 | `:213-226` | No rotor fallback label or spin-axis label. | `ROTOR_FALLBACK_STATUS` (`PORT_LABEL + missing cache → plain untextured white quad; visual UNVERIFIED`) and `ROTOR_SPIN_AXIS_STATUS` (PORT APPROX axis correction; donor `.oss` 3D direction UNVERIFIED). |
 | `:257-259` | No warning guard. | `_rotor_fallback_warned` — one labelled `push_warning` per process, even with many mills; deliberately not reset in `bind()` because this is an import/project state. |
-| `:1447-1479` | `ResourceLoader.exists()` → `load()` (engine ERROR on missing `.ctex`), then a direct-PNG retry via `ProjectSettings.globalize_path`; texture-less path still used alpha-scissor settings. | **No `load()` call for the rotor at all.** Check `FileAccess.file_exists(ROTOR_TEX_PATH)` and decode the same shipped donor PNG via `Image.load()`; check `== OK and not img.is_empty()` before `ImageTexture.create_from_image()`. On failure: `albedo_texture = null`, white `albedo_color`, `TRANSPARENCY_DISABLED`, one labelled `push_warning`. On success: unchanged alpha-scissor cutout. Material meta `rotor_texture_status` is `donor_png_bound` or `fallback_white_untextured`. |
+| `:1447-1479` | `ResourceLoader.exists()` → `load()` (engine ERROR on missing `.ctex`), then a direct-PNG retry via `ProjectSettings.globalize_path`; texture-less path still used alpha-scissor settings. | **No `load()` call for the rotor at all.** Try the new importable port copy `ROTOR_TEX_IMPORT_PATH = "res://assets/models/tex/mill_rotor.png"` **first**, then the original anim/ path as a fallback; for each, check `FileAccess.file_exists()` and decode via `Image.load()`, checking `== OK and not img.is_empty()` before `ImageTexture.create_from_image()`. On total failure: `albedo_texture = null`, white `albedo_color`, `TRANSPARENCY_DISABLED`, one labelled `push_warning`. On success: unchanged alpha-scissor cutout. Material meta `rotor_texture_status` is `donor_png_bound` or `fallback_white_untextured`. |
 | `:1488-1490` | Rotor meta did not record texture state. | `_attach_rotor()` copies the material meta onto the `MillRotor_<id>` node. Donor quad geometry, hub `(0.17296, 5.23533, 0) m`, donor source metas and `visible = finished` are untouched. |
 | `:1727-1732`, `:1738-1740` | `face * Basis().rotated(Vector3.BACK, rotor_spin)`. | `face * Basis().rotated(Vector3.FORWARD, rotor_spin)`; stats gain `mill_rotor_spin_axis_label` and `mill_rotor_texture_fallback_used`. |
 
@@ -226,8 +235,17 @@ emitted hard `ERROR:` lines even though the null result was later handled.
 
 - Backup before this follow-up: `inbox/backup/world3d_entities.gd.bak-MOTIONANIM01-ROTOR`, SHA-256
   `3FAB5C789C77ACDF10A81CDDDEE1907D8C49B728E3AD8CA28D3B79F01809BFEA` (identical to the post-MOTION-ANIM-01 file).
-- Runner-only validation: `python variant3d\tools\godot_runner.py run --id motionanim01-rotor-smoke --timeout 90 -- --headless --path variant3d --check-only --script res://scripts/world3d_entities.gd`.
-- Result: _to be recorded after the runner job returns._
+- **Asset copy (granted file):** `variant3d/assets/models/anim/common/buildings/mill_rotor.png`
+  → `variant3d/assets/models/tex/mill_rotor.png`, SHA-256
+  `E92CAE700C934CA78BFC201BCFE26A83BE5BF32360F0BB557EAEEC8318DC2949` on both,
+  36,081 B. This is a **port-to-port copy of an existing port PNG**, not a donor
+  copy: no donor file was read, executed, unpacked or copied for this follow-up.
+  `.gdignore` was not edited and no other asset was added.
+- **Incident:** `motionanim01-rotor-smoke` (ticket **448**) was CANCELLED by
+  QA-PARITY-01's cleanup, not by code; it is excluded from parse evidence.
+- Runner-only validation: `python variant3d\tools\godot_runner.py run --id motionanim01-rotor-smoke-r2 --timeout 120 -- --headless --path variant3d --check-only --script res://scripts/world3d_entities.gd` (re-submitted once after the cancellation; FIFO wait is normal).
+- Targeted import: `python variant3d\tools\godot_runner.py run --id rotorasset01-import --timeout 900 --max-wait 1800 -- --headless --path variant3d --import`.
+- Result / generated `.ctex` / stderr `SCRIPT ERROR` count: _to be recorded after the runner jobs return._
 - MOTION-ANIM-01 speed gate, yaw clamp, frozen-sim refresh and DECOR-01's 19-tree
   pool / scale ladder / jitter bands were re-checked after the rotor edit: the
   43-line DECOR block is byte-identical to the backup and all four in-flight
