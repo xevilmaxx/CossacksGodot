@@ -1406,6 +1406,181 @@ func _gen_finish() -> void:
 					if terrain[ci] == 2:
 						terrain[ci] = 0
 
+# TRN-DATA: complete donor transition rules from RV-TRN-02 §7 (all 1,864 lines of
+# gen/tilesmooth_scripts.cfg parsed). 118 ACTIVE lists across 22 Items (0-21),
+# 282 active TileName:Prob entries, 12 commented lists excluded. J is the index
+# of the ACTIVE list inside its Item, not the position inside the list. Winter
+# Items 11-21 mirror Summer 0-10 with `_winter` on every tile name.
+# Do not normalise the authored 0.64/0.0028/0.36 (SumProb 1.0028) anomaly.
+# Prob=0 entries are position-only hard separators; their SumProb=0 lists return -1.
+const DONOR_SMOOTH_RULES: Array = [
+	[ # Item 0 (Summer)
+		[["sandsea1", 1.0], ["sandsea2", 1.0], ["sandsea3", 1.0], ["sandsea4", 1.0]], # J=0 cfg:5 SumProb=4
+		[["sandsea5", 0.7], ["sandsea6", 0.3]], # J=1 cfg:25 SumProb=1
+		[["rock9", 0.0], ["rock8", 0.0], ["rock5", 0.0]], # J=2 cfg:51 SumProb=0
+		[["rock1", 0.16], ["rock2", 0.16], ["rock3", 0.16], ["rock6", 0.16], ["rock7", 0.16], ["rock4", 0.2]], # J=3 cfg:67 SumProb=1
+	],
+	[ # Item 1 (Summer)
+		[["sandsea1", 1.0], ["sandsea2", 1.0], ["sandsea3", 1.0], ["sandsea4", 1.0]], # J=0 cfg:99 SumProb=4
+		[["sandsea5", 0.7], ["sandsea6", 0.3]], # J=1 cfg:119 SumProb=1
+		[["sandrock1", 0.4], ["sandrock3", 0.6]], # J=2 cfg:131 SumProb=1
+		[["sandrock4", 0.6], ["sandrock2", 0.4]], # J=3 cfg:143 SumProb=1
+		[["grass1", 1.0], ["grass2", 1.0], ["test8", 1.0]], # J=4 cfg:155 SumProb=3
+		[["grass7", 0.25], ["test12", 0.25], ["test13", 0.25], ["test14", 0.25]], # J=5 cfg:171 SumProb=1
+	],
+	[ # Item 2 (Summer)
+		[["sandsea1", 1.0], ["sandsea2", 1.0], ["sandsea3", 1.0], ["sandsea4", 1.0]], # J=0 cfg:195 SumProb=4
+		[["sandsea5", 0.7], ["sandsea6", 0.3]], # J=1 cfg:215 SumProb=1
+		[["sandrock1", 0.4], ["sandrock3", 0.6]], # J=2 cfg:227 SumProb=1
+		[["sandrock4", 0.6], ["sandrock2", 0.4]], # J=3 cfg:239 SumProb=1
+		[["grass1", 1.0], ["grass2", 1.0], ["test8", 1.0]], # J=4 cfg:251 SumProb=3
+		[["test7", 1.0], ["grass8", 1.0], ["test6", 1.0]], # J=5 cfg:267 SumProb=3
+	],
+	[ # Item 3 (Summer)
+		[["sandsea1", 1.0], ["sandsea2", 1.0], ["sandsea3", 1.0], ["sandsea4", 1.0]], # J=0 cfg:287 SumProb=4
+		[["sandsea5", 0.7], ["sandsea6", 0.3]], # J=1 cfg:307 SumProb=1
+		[["sandrock1", 0.4], ["sandrock3", 0.6]], # J=2 cfg:319 SumProb=1
+		[["sandrock4", 0.6], ["sandrock2", 0.4]], # J=3 cfg:331 SumProb=1
+		[["grass1", 1.0], ["grass2", 1.0], ["test8", 1.0]], # J=4 cfg:343 SumProb=3
+		[["grass9", 1.0]], # J=5 cfg:359 SumProb=1
+		[["test9", 1.0]], # J=6 cfg:367 SumProb=1
+		[["grass3", 1.0]], # J=7 cfg:375 SumProb=1
+		[["grass4", 0.9], ["grass10", 0.1]], # J=8 cfg:383 SumProb=1
+	],
+	[ # Item 4 (Summer)
+		[["rock1", 0.16], ["rock2", 0.16], ["rock3", 0.16], ["rock6", 0.16], ["rock7", 0.16], ["rock4", 0.2]], # J=0 cfg:399 SumProb=1
+		[["rock8", 0.5], ["rock5", 0.5]], # J=1 cfg:427 SumProb=1
+		[["rock9", 1.0]], # J=2 cfg:439 SumProb=1
+		[["grass_ground1", 0.64], ["grass_ground2", 0.0028], ["grass_ground3", 0.36]], # J=3 cfg:447 SumProb=1.0028
+		[["grass1", 1.0], ["grass2", 1.0], ["test8", 1.0]], # J=4 cfg:464 SumProb=3
+		[["grass9", 1.0]], # J=5 cfg:480 SumProb=1
+		[["test9", 1.0]], # J=6 cfg:488 SumProb=1
+		[["grass3", 1.0]], # J=7 cfg:496 SumProb=1
+		[["grass4", 0.9], ["grass10", 0.1]], # J=8 cfg:504 SumProb=1
+	],
+	[ # Item 5 (Summer)
+		[["rock1", 0.16], ["rock2", 0.16], ["rock3", 0.16], ["rock6", 0.16], ["rock7", 0.16], ["rock4", 0.2]], # J=0 cfg:520 SumProb=1
+		[["rock8", 0.5], ["rock5", 0.5]], # J=1 cfg:548 SumProb=1
+		[["rock9", 1.0]], # J=2 cfg:560 SumProb=1
+		[["grass_ground1", 0.64], ["grass_ground2", 0.0028], ["grass_ground3", 0.36]], # J=3 cfg:568 SumProb=1.0028
+		[["grass1", 1.0], ["grass2", 1.0], ["test8", 1.0]], # J=4 cfg:585 SumProb=3
+		[["test7", 1.0]], # J=5 cfg:601 SumProb=1
+		[["grass8", 1.0]], # J=6 cfg:609 SumProb=1
+		[["test6", 1.0]], # J=7 cfg:617 SumProb=1
+	],
+	[ # Item 6 (Summer)
+		[["rock1", 0.16], ["rock2", 0.16], ["rock3", 0.16], ["rock6", 0.16], ["rock7", 0.16], ["rock4", 0.2]], # J=0 cfg:629 SumProb=1
+		[["rock8", 0.5], ["rock5", 0.5]], # J=1 cfg:657 SumProb=1
+		[["rock9", 1.0]], # J=2 cfg:669 SumProb=1
+		[["grass_ground1", 0.64], ["grass_ground2", 0.0028], ["grass_ground3", 0.36]], # J=3 cfg:677 SumProb=1.0028
+		[["grass1", 1.0], ["grass2", 1.0], ["test8", 1.0]], # J=4 cfg:694 SumProb=3
+		[["grass7", 0.25], ["test12", 0.25], ["test13", 0.25], ["test14", 0.25]], # J=5 cfg:710 SumProb=1
+	],
+	[ # Item 7 (Summer)
+		[["rock9", 1.0], ["test8", 0.0]], # J=0 cfg:734 SumProb=1
+		[["grass5", 1.0]], # J=1 cfg:762 SumProb=1
+		[["grass6", 1.0]], # J=2 cfg:770 SumProb=1
+	],
+	[ # Item 8 (Summer)
+		[["rock9", 1.0]], # J=0 cfg:782 SumProb=1
+		[["grass5", 1.0]], # J=1 cfg:790 SumProb=1
+		[["grass_ground1", 0.36], ["grass_ground2", 0.28], ["grass_ground3", 0.36]], # J=2 cfg:798 SumProb=1
+	],
+	[ # Item 9 (Summer)
+		[["ground1", 1.0]], # J=0 cfg:818 SumProb=1
+		[["test2", 1.0]], # J=1 cfg:826 SumProb=1
+		[["test1", 1.0], ["test3", 1.0]], # J=2 cfg:834 SumProb=2
+		[["test8", 0.4], ["test7", 0.6]], # J=3 cfg:846 SumProb=1
+		[["grass1", 1.0], ["grass2", 1.0], ["test8", 1.0]], # J=4 cfg:862 SumProb=3
+	],
+	[ # Item 11 (Winter)
+		[["sandsea1_winter", 1.0], ["sandsea2_winter", 1.0], ["sandsea3_winter", 1.0], ["sandsea4_winter", 1.0]], # J=0 cfg:935 SumProb=4
+		[["sandsea5_winter", 0.7], ["sandsea6_winter", 0.3]], # J=1 cfg:955 SumProb=1
+		[["rock9_winter", 0.0], ["rock8_winter", 0.0], ["rock5_winter", 0.0]], # J=2 cfg:981 SumProb=0
+		[["rock1_winter", 0.16], ["rock2_winter", 0.16], ["rock3_winter", 0.16], ["rock6_winter", 0.16], ["rock7_winter", 0.16], ["rock4_winter", 0.2]], # J=3 cfg:997 SumProb=1
+	],
+	[ # Item 12 (Winter)
+		[["sandsea1_winter", 1.0], ["sandsea2_winter", 1.0], ["sandsea3_winter", 1.0], ["sandsea4_winter", 1.0]], # J=0 cfg:1029 SumProb=4
+		[["sandsea5_winter", 0.7], ["sandsea6_winter", 0.3]], # J=1 cfg:1049 SumProb=1
+		[["sandrock1_winter", 0.4], ["sandrock3_winter", 0.6]], # J=2 cfg:1061 SumProb=1
+		[["sandrock4_winter", 0.6], ["sandrock2_winter", 0.4]], # J=3 cfg:1073 SumProb=1
+		[["grass1_winter", 1.0], ["grass2_winter", 1.0], ["test8_winter", 1.0]], # J=4 cfg:1085 SumProb=3
+		[["grass7_winter", 0.25], ["test12_winter", 0.25], ["test13_winter", 0.25], ["test14_winter", 0.25]], # J=5 cfg:1101 SumProb=1
+	],
+	[ # Item 13 (Winter)
+		[["sandsea1_winter", 1.0], ["sandsea2_winter", 1.0], ["sandsea3_winter", 1.0], ["sandsea4_winter", 1.0]], # J=0 cfg:1125 SumProb=4
+		[["sandsea5_winter", 0.7], ["sandsea6_winter", 0.3]], # J=1 cfg:1145 SumProb=1
+		[["sandrock1_winter", 0.4], ["sandrock3_winter", 0.6]], # J=2 cfg:1157 SumProb=1
+		[["sandrock4_winter", 0.6], ["sandrock2_winter", 0.4]], # J=3 cfg:1169 SumProb=1
+		[["grass1_winter", 1.0], ["grass2_winter", 1.0], ["test8_winter", 1.0]], # J=4 cfg:1181 SumProb=3
+		[["test7_winter", 1.0], ["grass8_winter", 1.0], ["test6_winter", 1.0]], # J=5 cfg:1197 SumProb=3
+	],
+	[ # Item 14 (Winter)
+		[["sandsea1_winter", 1.0], ["sandsea2_winter", 1.0], ["sandsea3_winter", 1.0], ["sandsea4_winter", 1.0]], # J=0 cfg:1217 SumProb=4
+		[["sandsea5_winter", 0.7], ["sandsea6_winter", 0.3]], # J=1 cfg:1237 SumProb=1
+		[["sandrock1_winter", 0.4], ["sandrock3_winter", 0.6]], # J=2 cfg:1249 SumProb=1
+		[["sandrock4_winter", 0.6], ["sandrock2_winter", 0.4]], # J=3 cfg:1261 SumProb=1
+		[["grass1_winter", 1.0], ["grass2_winter", 1.0], ["test8_winter", 1.0]], # J=4 cfg:1273 SumProb=3
+		[["grass9_winter", 1.0]], # J=5 cfg:1289 SumProb=1
+		[["test9_winter", 1.0]], # J=6 cfg:1297 SumProb=1
+		[["grass3_winter", 1.0]], # J=7 cfg:1305 SumProb=1
+		[["grass4_winter", 0.9], ["grass10_winter", 0.1]], # J=8 cfg:1313 SumProb=1
+	],
+	[ # Item 15 (Winter)
+		[["rock1_winter", 0.16], ["rock2_winter", 0.16], ["rock3_winter", 0.16], ["rock6_winter", 0.16], ["rock7_winter", 0.16], ["rock4_winter", 0.2]], # J=0 cfg:1329 SumProb=1
+		[["rock8_winter", 0.5], ["rock5_winter", 0.5]], # J=1 cfg:1357 SumProb=1
+		[["rock9_winter", 1.0]], # J=2 cfg:1369 SumProb=1
+		[["grass_ground1_winter", 0.64], ["grass_ground2_winter", 0.0028], ["grass_ground3_winter", 0.36]], # J=3 cfg:1377 SumProb=1.0028
+		[["grass1_winter", 1.0], ["grass2_winter", 1.0], ["test8_winter", 1.0]], # J=4 cfg:1394 SumProb=3
+		[["grass9_winter", 1.0]], # J=5 cfg:1410 SumProb=1
+		[["test9_winter", 1.0]], # J=6 cfg:1418 SumProb=1
+		[["grass3_winter", 1.0]], # J=7 cfg:1426 SumProb=1
+		[["grass4_winter", 0.9], ["grass10_winter", 0.1]], # J=8 cfg:1434 SumProb=1
+	],
+	[ # Item 16 (Winter)
+		[["rock1_winter", 0.16], ["rock2_winter", 0.16], ["rock3_winter", 0.16], ["rock6_winter", 0.16], ["rock7_winter", 0.16], ["rock4_winter", 0.2]], # J=0 cfg:1450 SumProb=1
+		[["rock8_winter", 0.5], ["rock5_winter", 0.5]], # J=1 cfg:1478 SumProb=1
+		[["rock9_winter", 1.0]], # J=2 cfg:1490 SumProb=1
+		[["grass_ground1_winter", 0.64], ["grass_ground2_winter", 0.0028], ["grass_ground3_winter", 0.36]], # J=3 cfg:1498 SumProb=1.0028
+		[["grass1_winter", 1.0], ["grass2_winter", 1.0], ["test8_winter", 1.0]], # J=4 cfg:1515 SumProb=3
+		[["test7_winter", 1.0]], # J=5 cfg:1531 SumProb=1
+		[["grass8_winter", 1.0]], # J=6 cfg:1539 SumProb=1
+		[["test6_winter", 1.0]], # J=7 cfg:1547 SumProb=1
+	],
+	[ # Item 17 (Winter)
+		[["rock1_winter", 0.16], ["rock2_winter", 0.16], ["rock3_winter", 0.16], ["rock6_winter", 0.16], ["rock7_winter", 0.16], ["rock4_winter", 0.2]], # J=0 cfg:1559 SumProb=1
+		[["rock8_winter", 0.5], ["rock5_winter", 0.5]], # J=1 cfg:1587 SumProb=1
+		[["rock9_winter", 1.0]], # J=2 cfg:1599 SumProb=1
+		[["grass_ground1_winter", 0.64], ["grass_ground2_winter", 0.0028], ["grass_ground3_winter", 0.36]], # J=3 cfg:1607 SumProb=1.0028
+		[["grass1_winter", 1.0], ["grass2_winter", 1.0], ["test8_winter", 1.0]], # J=4 cfg:1624 SumProb=3
+		[["grass7_winter", 0.25], ["test12_winter", 0.25], ["test13_winter", 0.25], ["test14_winter", 0.25]], # J=5 cfg:1640 SumProb=1
+	],
+	[ # Item 18 (Winter)
+		[["rock9_winter", 1.0], ["test8_winter", 0.0]], # J=0 cfg:1664 SumProb=1
+		[["grass5_winter", 1.0]], # J=1 cfg:1692 SumProb=1
+		[["grass6_winter", 1.0]], # J=2 cfg:1700 SumProb=1
+	],
+	[ # Item 19 (Winter)
+		[["rock9_winter", 1.0]], # J=0 cfg:1712 SumProb=1
+		[["grass5_winter", 1.0]], # J=1 cfg:1720 SumProb=1
+		[["grass_ground1_winter", 0.36], ["grass_ground2_winter", 0.28], ["grass_ground3_winter", 0.36]], # J=2 cfg:1728 SumProb=1
+	],
+	[ # Item 20 (Winter)
+		[["ground1_winter", 1.0]], # J=0 cfg:1748 SumProb=1
+		[["test2_winter", 1.0]], # J=1 cfg:1756 SumProb=1
+		[["test1_winter", 1.0], ["test3_winter", 1.0]], # J=2 cfg:1764 SumProb=2
+		[["test8_winter", 0.4], ["test7_winter", 0.6]], # J=3 cfg:1776 SumProb=1
+		[["grass1_winter", 1.0], ["grass2_winter", 1.0], ["test8_winter", 1.0]], # J=4 cfg:1792 SumProb=3
+	],
+]
+
+
+# TRN-DATA: forest interior base families = donor Item 1 J=5 list verbatim
+# (grass7 / test12 / test13 / test14 at 0.25 each, RV-TRN-02 §7 Item 1 J=5
+# cfg:171). These are donor-authored PROBABILITIES, not a synthetic field; the
+# former grass_ground1/3 pair are transition tiles and made top-5 = 73%.
+const DONOR_FOREST_BASE: Array = [["grass7", 0.25], ["test12", 0.25], ["test13", 0.25], ["test14", 0.25]]
+
 func _load_terrain_structs() -> void:
 	if not tbl_names.is_empty():
 		return
@@ -1414,9 +1589,24 @@ func _load_terrain_structs() -> void:
 		tbl_names = a1
 	for i in tbl_names.size():
 		tbl_idx[str(tbl_names[i])] = i
-	var a2 = JSON.parse_string(FileAccess.get_file_as_string("res://assets/terrain/structs/smooth_summer.json"))
-	if a2 is Array:
-		tbl_smooth = a2
+	# TRN-DATA: the 118-rule table is embedded above, not read from a JSON asset.
+	# Convert [name, prob] pairs to the same shape the donor-smoothing reader
+	# already consumes. Winter names resolve through the donor season alias
+	# (`*_winter` is the 1:1 Summer preset alias, winter_variant.md 1.1/1.2);
+	# Items 0-10 come first, so an equal-J match from a Winter row can never
+	# displace the identical Summer match (same-seed determinism preserved).
+	tbl_smooth.clear()
+	for item in DONOR_SMOOTH_RULES:
+		var item_lists: Array = []
+		for src_list in item:
+			var dst_list: Array = []
+			for pair in src_list:
+				var nm := str(pair[0])
+				if nm.ends_with("_winter"):
+					nm = nm.substr(0, nm.length() - 7)
+				dst_list.append({"name": nm, "prob": float(pair[1])})
+			item_lists.append(dst_list)
+		tbl_smooth.append(item_lists)
 
 # T2GEN P2-5: donor Winter preset is a 1:1 alias of the Summer preset with
 # `_winter` appended; tiles.mat resolves those 124 aliases to winter*.png
@@ -1647,12 +1837,18 @@ func _assign_tileblocks() -> void:
 					else:
 						b = _blk("test3")
 				2:
-					if r < 0.64:
-						b = _blk("grass_ground1")
-					elif r < 0.6428:
-						b = _blk("grass_ground2")
-					else:
-						b = _blk("grass_ground3")
+					# TRN-DATA: donor Item 1 J=5 family roulette (0.25 x4).
+					# One `r` draw as before, so every non-tileblock stream stays
+					# byte-identical for a given seed.
+					var total := 0.0
+					for fp in DONOR_FOREST_BASE:
+						total += float(fp[1])
+					var acc := 0.0
+					for fp in DONOR_FOREST_BASE:
+						acc += float(fp[1])
+						if r * total < acc:
+							b = _blk(str(fp[0]))
+							break
 				3:
 					b = BLK_WATER
 				4:
@@ -1678,15 +1874,16 @@ func _assign_tileblocks() -> void:
 			tileblock[_t(x, y)] = b
 	# 2) oriented shores + cliffs (donor texturemap.inc 8-sector tables)
 	_apply_shore_cliffs()
-	# 3) exact 3-pass SmoothTileMap (donor smoothtiles.inc)
-	_smooth_tilemap(brng, 3)
-	# 4) donor detail variety (loadtextureterrainfrombitmap.inc): cells still
+	# 3) donor detail variety (loadtextureterrainfrombitmap.inc): cells still
 	# on the default block get their TileBlock from the low/high-ground
-	# bitmaps (R div 2), picked by height.  This is the real meadow mottling.
-	# Single pass, exactly like the original (SmoothTiles ran BEFORE it, the
-	# bitmaps are authored to agree with their neighbours, so no second
-	# smooth/detail round that would quilt contrasting samples together).
+	# bitmaps (R div 2), picked by height.  Donor order is TextureMap ->
+	# bitmap base -> SmoothTiles (DTRN-01 §4 / RV-TRN-02 §4.4), so the
+	# detail tiles are reconciled too instead of being left as final cells.
 	_apply_detail_pass()
+	# 4) exact 3-pass SmoothTileMap (donor smoothtiles.inc:191-237): three
+	# passes, horizontal then vertical, over the FINAL tile field before UV2.
+	# TRN-DATA: the donor rule table now covers all 118 active lists.
+	_smooth_tilemap(brng, 3)
 	# 5) forest-border stamps (donor smoothforestborders.inc: grass5/rock9
 	# tiles + bushes at edge cells with exactly one forest neighbour)
 	_stamp_forest_borders(brng)

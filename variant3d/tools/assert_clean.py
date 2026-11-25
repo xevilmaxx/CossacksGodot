@@ -31,7 +31,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SPOOL = ROOT / "app" / ".godot_queue"
+SPOOL = ROOT / "variant3d" / ".godot_queue"
 GODOT_LOCK = SPOOL / "godot.lock"
 STATUS = SPOOL / "status.json"
 

@@ -94,8 +94,15 @@ implementation tickets, then one final whole-system gate.
       MP4 for motion cases, analysed by `opencode-go/muse-spark-1.3-contributor` at default
       variant (user: "#default will do fine"). VID-CAP-01 is capturing the first moving-unit
       sequence; muse-spark analysis follows when frames land.
-- [ ] Await ATOM-REPAIR, TRN-DATA, MAP-SMALL-01, UITEST-ANCHOR, VID-CAP-01, Batch I deep dives
-      and CAM-RV-01. Then restart the piece→combo ladder from P0, run S1, then the final gate once.
+- [x] **QA-AUDIT-01 independent diff/artifact audit:** 10 tickets CONFIRMED, 3 PARTIAL
+      (superseded claim / later foreign hunks / one refuted CFG-01 note), **no weakened tests,
+      no deleted `expected_pre_fix_failure` markers, no uncited donor constants, all 25 backups
+      verified**. It found the integrated state is NOT green: HEAD `selftest.json` 26/29
+      (`wall`/`shell`/`farm_cap`), worktree 28/29 (`build`), while `config.json` is committed at
+      240² without a landed MAP-SMALL-01 report. The individual 29/29 results are valid only
+      for their own job artifacts — exactly why the final whole-system gate is reserved to the end.
+- [ ] Await TRN-DATA, MAP-SMALL-01 and the remaining small tickets; reconcile the integrated
+      selftest to 29/29, restart the piece→combo ladder from P0, run S1, then the final gate once.
 - [x] **Batch I (owner directive: keep agent count high):** 6 new read-only donor deep dives
       launched while implementations run — DALPHA-01 (tile→alpha sub-rect), DPATTERN-01
       (relief height grids), DFX-01 (PFX/particles), DANIM-01 (AAF per-unit clips), DBIND-01
@@ -159,13 +166,16 @@ implementation tickets, then one final whole-system gate.
 | S-25-12 | **Batch H parallel implementation:** 8 disjoint builders edit simultaneously; each runs one targeted headless smoke check only; COORD runs the full gates ONCE after all merges | Owner asked for more agents/faster edits. Full 29/29+17/17 per builder would serialize 16 long jobs behind the FIFO runner and defeat parallelism; a single final gate still protects release quality. |
 | S-25-13 | No relief-grid/`.pattern` stamping in TRN-GEOM; no morale/famine/market changes in TRN-DATA; no locale/pop-cap changes in HUD-01 | Keep each diff minimal and reviewable; those are future tranches |
 | S-25-14 | CFG-02 240² change **reverted**: map size itself breaks 3 selftest steps. MAP-SMALL-01 may scale only `_spot()`'s search geometry, never a pass criterion | Evidence-based revert (26/29 at 240 vs 29/29 at 320); owner still wants the smaller default, so fix the harness geometry instead of gaming the seed/test |
+| S-25-15 | MMJUMP-01 **blocked by design**, not by capability: the primary minimap click lives in `hud.gd` (outside its grant), and a `jump_to_world`-only change would contradict CAM-RV-01's 20/20 confirmed centre-click assertion. A properly-scoped ticket must own `hud.gd` + `camera3d.gd` + the re-verify atom together and update that expectation to donor semantics **without weakening it** | Donor jump preserves the camera offset (`control.script:574-613`), so the clicked point is not necessarily centred; the centre assertion is a port approximation, not donor truth |
 
-## Gates status (snapshot — from prior docs, NOT re-measured this session)
+## Gates status (LIVE — supersedes the earlier snapshot; DOC-03 flagged the old table stale)
 
-| Gate | Prior result | This session |
+| Gate | Prior result | This session (measured) |
 |---|---|---|
-| variant selftest (3d) | 29/29 (jobs 254, 241, 212) | not re-run yet |
-| variant uitest | 17/17 (job 255) | not re-run yet |
-| t_render_mode | PASS, seam_missing=false (job 256) | not re-run yet |
-| 2D app gates | 29/29 / 17/17 / CLEAN | must remain untouched |
-| Donor visual A/B | **UNVERIFIED** (prior docs) | target of this session's piece tests |
+| variant selftest (3d) | 29/29 (jobs 254, 241, 212) | **29/29 repeatedly** — CFG-01 job 312, SEL-01 job 337, MAP-SMALL-01 240²/320² checks; final gate still reserved for COORD after all merges |
+| variant uitest | 17/17 (job 255) | **17/17** — CFG-01 job 313, SEL-01 job 318, UITEST-ANCHOR job 366 (minimap bottom-right) |
+| t_render_mode | PASS, seam_missing=false (job 256) | not re-run this session |
+| 2D app gates | 29/29 / 17/17 / CLEAN | untouched; must remain green |
+| Donor visual A/B | **UNVERIFIED** (prior docs) | still UNVERIFIED — no donor GPU frame exists; piece captures in progress |
+| 64² piece→combo ladder | never run | first attempt stopped at P0 parse errors (job 321); atoms repaired/harness fixed; TEST-RUN-02 restarted |
+| Variant CLEAN | not claimed | CLEAN-01 resolving historical unacked probe failures |

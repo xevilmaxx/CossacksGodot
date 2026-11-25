@@ -75,10 +75,13 @@ and evidence ids live in the eight `DEC_0x_*.md` records; `EVIDENCE_INDEX.md` in
 - `.oss`: no magic/version; 24-byte `<6i k,fps,b,v,fc,t>` header, tight LE sections, weight
   lists summed over all `v` lists; **335/335 exact size closure, zero slack**, fps=30.
   No parent table or bone strings confirmed three ways.
-- **Major correction to DEEPDEC-06:** frame 0 is **not** a bind pose for multi-bone files
-  (`peaukr` max|p|=0.099 m, `cossackdon` 2.37 m); only 175/335 files have frame-0 identity
-  (all 124 `b=1`, **0 of 22 `b=20`**). Shipped `skin` displaces bind verts 0.05–2.55 m,
-  not the claimed 1.6e−7 m.
+- **Correction to DEC-04 (which had itself "corrected" DEEPDEC-06):** DANIM-01 refuted
+  DEC-04's claim that frame 0 is not a bind pose. With two independent methods (sequential
+  `read_oss` + quaternion check; bone-major offset-seek census of all 335 `.oss`), frame 0 is
+  identity in **335/335** files (max |p|=1.09e−6 m, `peaukr` skin displacement at f0 1.52e−7 m),
+  confirming DEEPDEC-06 F4/F5. DEC-04's Method C misread a bone-major track array as
+  frame-major. Bone parents remain absent but pre-folded; flat-root sampled poses stay the
+  defensible donor-derived path with the approximation label.
 - `.osm`: `IDP2` v8, 17 int32, fixed 64-B `SkinBitMap` + 16-B `FRAME` header; **130/3,897**
   files have extra un-headered vertex frames.
 - `.aaf`: `AAF` magic, CRLF, inclusive ranges, 246/246 parse, 1,434 rows all `morph`;

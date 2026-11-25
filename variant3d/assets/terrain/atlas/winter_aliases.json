@@ -1,0 +1,1849 @@
+{
+  "id": "WINTER-ALIASES-01",
+  "schema_version": 1,
+  "generator": "SP-2 WINTER-DICT (hand-authored data file; donor READ-ONLY; no code, no runner job)",
+  "task": "SP-2 - Winter tile-alias dictionary for the 3D atlas",
+  "date": "2026-11-25",
+  "status": "PORT_DATA__DONOR_CITED_SECOND_HAND__NO_DONOR_COPY__NO_CODE_EDIT__NO_RUNNER_JOB",
+  "visual_parity_claim": false,
+  "labels": [
+    "DONOR_INDEX_CITED_SECOND_HAND",
+    "DONOR_ART_ALIAS_CITED_SECOND_HAND",
+    "PORT_APPROXIMATION",
+    "UNVERIFIED",
+    "NO_VISUAL_PARITY_CLAIM"
+  ],
+  "scope": "Data-only alias dictionary: Summer tile id/name -> Winter alias -> on-disk art filename. No preset index is invented and no .gd/.gdshader/test/asset/config file was edited.",
+  "donor_access": "Donor files were NOT opened this task. Every donor path:line fact below is a second-hand citation from DENV-01, DEC-05, SEASON_PLAN-01 and docs/audit/PIECES/winter_variant.md, which read the donor in earlier read-only passes.",
+  "rules": {
+    "alias_suffix": "_winter",
+    "alias_suffix_evidence": "data/scripts/common.inc/texturemap.inc:525-526,605-606 (append _winter when GetSeasonType=2); also :639-640,927-928,950-951 (DENV-01 §4.1)",
+    "winter_preset_section": "data/terrain/tiles/terrain.presets:134-263 (SetName=Winter, WaterSet=Winter, DefaultIndex=0)",
+    "season_set_selection": "data/terrain/tiles/terrain.lib:12-15 (Summer/Autumn/Spring -> Summer; Winter -> Winter); data/resource.lib:14-15 loads terrain.presets/terrain.lib (DENV-01 §3.1)",
+    "alpha_tiles_shared_in_preset": [
+      "alpha0a",
+      "alpha0b",
+      "alpha0c"
+    ],
+    "alpha_tiles_alias_note": "The donor Winter preset section keeps alpha0a/b/c unchanged, but tiles.mat carries alpha0a_winter/alpha0b_winter/alpha0c_winter -> winter0/winter1/winter1 (winter_variant.md:41,82). Both are represented: winter_alias always carries the _winter form; shared_alpha flags the preset exception.",
+    "desert_reuse": "desertN_winter -> desertN.dds unchanged; 12 reused textures, not snow art (winter_variant.md:43)",
+    "index_preserving": true,
+    "index_preserving_note": "Donor Winter is a 1:1 rename at the same preset index (SEASON_PLAN-01 §4.3). The numeric suffix in winterN.png is a TEXTURE FILENAME, not a preset index; no index was inferred from it. All indices here come from presets_summer.json.",
+    "two_suffixes_do_not_conflate": "Tile preset aliases append _winter (terrain.presets:138); prop materials append w (fir1w, field1w) per DENV-01 §4 - out of scope for SP-2."
+  },
+  "index_dictionary": {
+    "file": "variant3d/assets/terrain/structs/presets_summer.json",
+    "lines": "2-125",
+    "count": 124,
+    "donor_evidence": "data/terrain/tiles/terrain.presets:2-6 (Summer 124-entry section)"
+  },
+  "winter_index_dictionary": {
+    "donor_file": "data/terrain/tiles/terrain.presets",
+    "lines": "134-263",
+    "count": 124,
+    "on_disk_port_file": null,
+    "note": "No presets_winter.json exists on disk (SEASON_PLAN-01 §3.3). This JSON is the alias dictionary, not a second preset table; indices are identical to presets_summer.json."
+  },
+  "entries": [
+    {
+      "index": 0,
+      "name": "grass1",
+      "winter_alias": "grass1_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:2 (summer name at index 0)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 1,
+      "name": "grass2",
+      "winter_alias": "grass2_winter",
+      "source_png": "winter9.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:3 (summer name at index 1)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 2,
+      "name": "grass3",
+      "winter_alias": "grass3_winter",
+      "source_png": "winter2.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:4 (summer name at index 2)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 3,
+      "name": "grass4",
+      "winter_alias": "grass4_winter",
+      "source_png": "winter3.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:5 (summer name at index 3)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 4,
+      "name": "grass5",
+      "winter_alias": "grass5_winter",
+      "source_png": "winter4.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:6 (summer name at index 4)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 5,
+      "name": "grass6",
+      "winter_alias": "grass6_winter",
+      "source_png": "winter16.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:7 (summer name at index 5)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 6,
+      "name": "grass7",
+      "winter_alias": "grass7_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:8 (summer name at index 6)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 7,
+      "name": "grass8",
+      "winter_alias": "grass8_winter",
+      "source_png": "winter21.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:9 (summer name at index 7)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 8,
+      "name": "grass9",
+      "winter_alias": "grass9_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:10 (summer name at index 8)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 9,
+      "name": "grass10",
+      "winter_alias": "grass10_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:11 (summer name at index 9)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 10,
+      "name": "ground1",
+      "winter_alias": "ground1_winter",
+      "source_png": "winter11.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:12 (summer name at index 10)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 11,
+      "name": "grass_sand1",
+      "winter_alias": "grass_sand1_winter",
+      "source_png": "winter21.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:13 (summer name at index 11)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 12,
+      "name": "grass_sand2",
+      "winter_alias": "grass_sand2_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:14 (summer name at index 12)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 13,
+      "name": "grass_rock1",
+      "winter_alias": "grass_rock1_winter",
+      "source_png": "winter9.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:15 (summer name at index 13)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 14,
+      "name": "grass_ground1",
+      "winter_alias": "grass_ground1_winter",
+      "source_png": "winter5.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:16 (summer name at index 14)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 15,
+      "name": "grass_ground2",
+      "winter_alias": "grass_ground2_winter",
+      "source_png": "winter4.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:17 (summer name at index 15)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 16,
+      "name": "grass_ground3",
+      "winter_alias": "grass_ground3_winter",
+      "source_png": "winter5.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:18 (summer name at index 16)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 17,
+      "name": "rock1",
+      "winter_alias": "rock1_winter",
+      "source_png": "winter12.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:19 (summer name at index 17)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 18,
+      "name": "rock2",
+      "winter_alias": "rock2_winter",
+      "source_png": "winter13.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:20 (summer name at index 18)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 19,
+      "name": "rock3",
+      "winter_alias": "rock3_winter",
+      "source_png": "winter13.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:21 (summer name at index 19)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 20,
+      "name": "rock4",
+      "winter_alias": "rock4_winter",
+      "source_png": "winter17.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:22 (summer name at index 20)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 21,
+      "name": "rock5",
+      "winter_alias": "rock5_winter",
+      "source_png": "winter22.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:23 (summer name at index 21)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 22,
+      "name": "rock6",
+      "winter_alias": "rock6_winter",
+      "source_png": "winter15.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:24 (summer name at index 22)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 23,
+      "name": "rock7",
+      "winter_alias": "rock7_winter",
+      "source_png": "winter14.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:25 (summer name at index 23)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 24,
+      "name": "rock8",
+      "winter_alias": "rock8_winter",
+      "source_png": "winter16.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:26 (summer name at index 24)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 25,
+      "name": "rock9",
+      "winter_alias": "rock9_winter",
+      "source_png": "winter20.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:27 (summer name at index 25)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 26,
+      "name": "sand1",
+      "winter_alias": "sand1_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:28 (summer name at index 26)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 27,
+      "name": "sand2",
+      "winter_alias": "sand2_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:29 (summer name at index 27)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 28,
+      "name": "sand3",
+      "winter_alias": "sand3_winter",
+      "source_png": "winter20.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:30 (summer name at index 28)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 29,
+      "name": "sand4",
+      "winter_alias": "sand4_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:31 (summer name at index 29)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 30,
+      "name": "sand5",
+      "winter_alias": "sand5_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:32 (summer name at index 30)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 31,
+      "name": "sand6",
+      "winter_alias": "sand6_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:33 (summer name at index 31)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 32,
+      "name": "sand7",
+      "winter_alias": "sand7_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:34 (summer name at index 32)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 33,
+      "name": "sand8",
+      "winter_alias": "sand8_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:35 (summer name at index 33)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 34,
+      "name": "sand9",
+      "winter_alias": "sand9_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:36 (summer name at index 34)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 35,
+      "name": "sand1f",
+      "winter_alias": "sand1f_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:37 (summer name at index 35)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 36,
+      "name": "sand1s",
+      "winter_alias": "sand1s_winter",
+      "source_png": "winter25.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:38 (summer name at index 36)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "winter25 is green grass, 0% snow (winter_variant.md:86); donor aliases reach it"
+      ]
+    },
+    {
+      "index": 37,
+      "name": "sand2f",
+      "winter_alias": "sand2f_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:39 (summer name at index 37)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 38,
+      "name": "sand2s",
+      "winter_alias": "sand2s_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:40 (summer name at index 38)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 39,
+      "name": "sand3f",
+      "winter_alias": "sand3f_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:41 (summer name at index 39)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 40,
+      "name": "sand3s",
+      "winter_alias": "sand3s_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:42 (summer name at index 40)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 41,
+      "name": "sand4f",
+      "winter_alias": "sand4f_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:43 (summer name at index 41)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 42,
+      "name": "sand4s",
+      "winter_alias": "sand4s_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:44 (summer name at index 42)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 43,
+      "name": "sand5f",
+      "winter_alias": "sand5f_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:45 (summer name at index 43)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 44,
+      "name": "sand5s",
+      "winter_alias": "sand5s_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:46 (summer name at index 44)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 45,
+      "name": "sand6f",
+      "winter_alias": "sand6f_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:47 (summer name at index 45)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 46,
+      "name": "sand6s",
+      "winter_alias": "sand6s_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:48 (summer name at index 46)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 47,
+      "name": "sand7f",
+      "winter_alias": "sand7f_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:49 (summer name at index 47)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 48,
+      "name": "sand7s",
+      "winter_alias": "sand7s_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:50 (summer name at index 48)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 49,
+      "name": "sand8f",
+      "winter_alias": "sand8f_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:51 (summer name at index 49)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 50,
+      "name": "sand8s",
+      "winter_alias": "sand8s_winter",
+      "source_png": "winter2.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:52 (summer name at index 50)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 51,
+      "name": "sand9f",
+      "winter_alias": "sand9f_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:53 (summer name at index 51)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 52,
+      "name": "sand9s",
+      "winter_alias": "sand9s_winter",
+      "source_png": "winter2.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:54 (summer name at index 52)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 53,
+      "name": "rock1vf",
+      "winter_alias": "rock1vf_winter",
+      "source_png": "winter12.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:55 (summer name at index 53)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 54,
+      "name": "rock1vs",
+      "winter_alias": "rock1vs_winter",
+      "source_png": "winter12.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:56 (summer name at index 54)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 55,
+      "name": "rock2vf",
+      "winter_alias": "rock2vf_winter",
+      "source_png": "winter13.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:57 (summer name at index 55)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 56,
+      "name": "rock2vs",
+      "winter_alias": "rock2vs_winter",
+      "source_png": "winter13.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:58 (summer name at index 56)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 57,
+      "name": "rock3vf",
+      "winter_alias": "rock3vf_winter",
+      "source_png": "winter13.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:59 (summer name at index 57)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 58,
+      "name": "rock3vs",
+      "winter_alias": "rock3vs_winter",
+      "source_png": "winter13.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:60 (summer name at index 58)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 59,
+      "name": "rock4vf",
+      "winter_alias": "rock4vf_winter",
+      "source_png": "winter17.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:61 (summer name at index 59)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 60,
+      "name": "rock4vs",
+      "winter_alias": "rock4vs_winter",
+      "source_png": "winter17.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:62 (summer name at index 60)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 61,
+      "name": "rock5vf",
+      "winter_alias": "rock5vf_winter",
+      "source_png": "winter22.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:63 (summer name at index 61)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 62,
+      "name": "rock5vs",
+      "winter_alias": "rock5vs_winter",
+      "source_png": "winter22.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:64 (summer name at index 62)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 63,
+      "name": "rock6vf",
+      "winter_alias": "rock6vf_winter",
+      "source_png": "winter15.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:65 (summer name at index 63)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 64,
+      "name": "rock6vs",
+      "winter_alias": "rock6vs_winter",
+      "source_png": "winter15.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:66 (summer name at index 64)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 65,
+      "name": "rock7vf",
+      "winter_alias": "rock7vf_winter",
+      "source_png": "winter14.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:67 (summer name at index 65)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 66,
+      "name": "rock7vs",
+      "winter_alias": "rock7vs_winter",
+      "source_png": "winter14.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:68 (summer name at index 66)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 67,
+      "name": "rock8vf",
+      "winter_alias": "rock8vf_winter",
+      "source_png": "winter16.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:69 (summer name at index 67)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 68,
+      "name": "rock8vs",
+      "winter_alias": "rock8vs_winter",
+      "source_png": "winter16.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:70 (summer name at index 68)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 69,
+      "name": "rock9vf",
+      "winter_alias": "rock9vf_winter",
+      "source_png": "winter20.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:71 (summer name at index 69)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 70,
+      "name": "rock9vs",
+      "winter_alias": "rock9vs_winter",
+      "source_png": "winter20.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:72 (summer name at index 70)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 71,
+      "name": "test0",
+      "winter_alias": "test0_winter",
+      "source_png": "winter4.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:73 (summer name at index 71)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 72,
+      "name": "test1",
+      "winter_alias": "test1_winter",
+      "source_png": "winter6.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:74 (summer name at index 72)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 73,
+      "name": "test2",
+      "winter_alias": "test2_winter",
+      "source_png": "winter7.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:75 (summer name at index 73)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 74,
+      "name": "test3",
+      "winter_alias": "test3_winter",
+      "source_png": "winter8.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:76 (summer name at index 74)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 75,
+      "name": "test4",
+      "winter_alias": "test4_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:77 (summer name at index 75)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 76,
+      "name": "test5",
+      "winter_alias": "test5_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:78 (summer name at index 76)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 77,
+      "name": "test6",
+      "winter_alias": "test6_winter",
+      "source_png": "winter4.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:79 (summer name at index 77)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 78,
+      "name": "test7",
+      "winter_alias": "test7_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:80 (summer name at index 78)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 79,
+      "name": "test8",
+      "winter_alias": "test8_winter",
+      "source_png": "winter21.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:81 (summer name at index 79)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 80,
+      "name": "test9",
+      "winter_alias": "test9_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:82 (summer name at index 80)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 81,
+      "name": "test10",
+      "winter_alias": "test10_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:83 (summer name at index 81)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 82,
+      "name": "test11",
+      "winter_alias": "test11_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:84 (summer name at index 82)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 83,
+      "name": "test12",
+      "winter_alias": "test12_winter",
+      "source_png": "winter5.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:85 (summer name at index 83)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 84,
+      "name": "test13",
+      "winter_alias": "test13_winter",
+      "source_png": "winter5.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:86 (summer name at index 84)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 85,
+      "name": "test14",
+      "winter_alias": "test14_winter",
+      "source_png": "winter5.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:87 (summer name at index 85)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 86,
+      "name": "alpha0a",
+      "winter_alias": "alpha0a_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": true,
+      "donor_evidence": [
+        "presets_summer.json:88 (summer name at index 86)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "terrain.presets Winter section shares alpha0a/b/c unchanged (winter_variant.md:41)"
+      ]
+    },
+    {
+      "index": 87,
+      "name": "sandrock1",
+      "winter_alias": "sandrock1_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:89 (summer name at index 87)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 88,
+      "name": "sandrock2",
+      "winter_alias": "sandrock2_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:90 (summer name at index 88)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 89,
+      "name": "sandrock3",
+      "winter_alias": "sandrock3_winter",
+      "source_png": "winter19.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:91 (summer name at index 89)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 90,
+      "name": "sandrock4",
+      "winter_alias": "sandrock4_winter",
+      "source_png": "winter19.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:92 (summer name at index 90)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 91,
+      "name": "sandrock5",
+      "winter_alias": "sandrock5_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:93 (summer name at index 91)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 92,
+      "name": "sandrock6",
+      "winter_alias": "sandrock6_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:94 (summer name at index 92)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 93,
+      "name": "sandsea1",
+      "winter_alias": "sandsea1_winter",
+      "source_png": "winter19.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:95 (summer name at index 93)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 94,
+      "name": "sandsea2",
+      "winter_alias": "sandsea2_winter",
+      "source_png": "winter2.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:96 (summer name at index 94)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 95,
+      "name": "sandsea3",
+      "winter_alias": "sandsea3_winter",
+      "source_png": "winter2.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:97 (summer name at index 95)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 96,
+      "name": "sandsea4",
+      "winter_alias": "sandsea4_winter",
+      "source_png": "winter19.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:98 (summer name at index 96)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 97,
+      "name": "sandsea5",
+      "winter_alias": "sandsea5_winter",
+      "source_png": "winter19.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:99 (summer name at index 97)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 98,
+      "name": "sandsea6",
+      "winter_alias": "sandsea6_winter",
+      "source_png": "winter3.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:100 (summer name at index 98)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 99,
+      "name": "test15",
+      "winter_alias": "test15_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:101 (summer name at index 99)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 100,
+      "name": "test16",
+      "winter_alias": "test16_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:102 (summer name at index 100)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 101,
+      "name": "test17",
+      "winter_alias": "test17_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:103 (summer name at index 101)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 102,
+      "name": "test18",
+      "winter_alias": "test18_winter",
+      "source_png": "winter7.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:104 (summer name at index 102)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 103,
+      "name": "test19",
+      "winter_alias": "test19_winter",
+      "source_png": "winter8.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:105 (summer name at index 103)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 104,
+      "name": "test20",
+      "winter_alias": "test20_winter",
+      "source_png": "winter0.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:106 (summer name at index 104)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 105,
+      "name": "test21",
+      "winter_alias": "test21_winter",
+      "source_png": "winter25.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:107 (summer name at index 105)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "winter25 is green grass, 0% snow (winter_variant.md:86); donor aliases reach it"
+      ]
+    },
+    {
+      "index": 106,
+      "name": "test22",
+      "winter_alias": "test22_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:108 (summer name at index 106)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 107,
+      "name": "test23",
+      "winter_alias": "test23_winter",
+      "source_png": "winter25.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:109 (summer name at index 107)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "winter25 is green grass, 0% snow (winter_variant.md:86); donor aliases reach it"
+      ]
+    },
+    {
+      "index": 108,
+      "name": "test24",
+      "winter_alias": "test24_winter",
+      "source_png": "winter10.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:110 (summer name at index 108)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88"
+      ]
+    },
+    {
+      "index": 109,
+      "name": "test25",
+      "winter_alias": "test25_winter",
+      "source_png": "winter25.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:111 (summer name at index 109)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "winter25 is green grass, 0% snow (winter_variant.md:86); donor aliases reach it"
+      ]
+    },
+    {
+      "index": 110,
+      "name": "alpha0b",
+      "winter_alias": "alpha0b_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": true,
+      "donor_evidence": [
+        "presets_summer.json:112 (summer name at index 110)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "terrain.presets Winter section shares alpha0a/b/c unchanged (winter_variant.md:41)"
+      ]
+    },
+    {
+      "index": 111,
+      "name": "desert1",
+      "winter_alias": "desert1_winter",
+      "source_png": "desert1.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:113 (summer name at index 111)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 112,
+      "name": "desert2",
+      "winter_alias": "desert2_winter",
+      "source_png": "desert2.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:114 (summer name at index 112)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 113,
+      "name": "desert3",
+      "winter_alias": "desert3_winter",
+      "source_png": "desert3.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:115 (summer name at index 113)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 114,
+      "name": "desert4",
+      "winter_alias": "desert4_winter",
+      "source_png": "desert4.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:116 (summer name at index 114)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 115,
+      "name": "desert5",
+      "winter_alias": "desert5_winter",
+      "source_png": "desert5.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:117 (summer name at index 115)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 116,
+      "name": "desert6",
+      "winter_alias": "desert6_winter",
+      "source_png": "desert6.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:118 (summer name at index 116)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 117,
+      "name": "desert7",
+      "winter_alias": "desert7_winter",
+      "source_png": "desert7.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:119 (summer name at index 117)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 118,
+      "name": "desert8",
+      "winter_alias": "desert8_winter",
+      "source_png": "desert8.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:120 (summer name at index 118)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 119,
+      "name": "desert9",
+      "winter_alias": "desert9_winter",
+      "source_png": "desert9.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:121 (summer name at index 119)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 120,
+      "name": "desert10",
+      "winter_alias": "desert10_winter",
+      "source_png": "desert10.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:122 (summer name at index 120)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 121,
+      "name": "desert11",
+      "winter_alias": "desert11_winter",
+      "source_png": "desert11.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:123 (summer name at index 121)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 122,
+      "name": "desert12",
+      "winter_alias": "desert12_winter",
+      "source_png": "desert12.png",
+      "kind": "DESERT_REUSE",
+      "status": "OK_DESERT_REUSE",
+      "shared_alpha": false,
+      "donor_evidence": [
+        "presets_summer.json:124 (summer name at index 122)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "tiles.mat: desertN_winter -> desertN.dds unchanged (winter_variant.md:43)"
+      ]
+    },
+    {
+      "index": 123,
+      "name": "alpha0c",
+      "winter_alias": "alpha0c_winter",
+      "source_png": "winter1.png",
+      "kind": "WINTER_PNG",
+      "status": "OK",
+      "shared_alpha": true,
+      "donor_evidence": [
+        "presets_summer.json:125 (summer name at index 123)",
+        "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section) | data/scripts/common.inc/texturemap.inc:525-526,605-606 (_winter suffix when GetSeasonType=2) | data/terrain/tiles/tiles.mat alias resolution via docs/audit/PIECES/winter_variant.md:49-88",
+        "terrain.presets Winter section shares alpha0a/b/c unchanged (winter_variant.md:41)"
+      ]
+    }
+  ],
+  "coverage": {
+    "entry_count": 124,
+    "indices": "0-123 (identical to presets_summer.json; no invented index)",
+    "summer_ids_mapped": 124,
+    "winter_alias_names": 124,
+    "distinct_winter_png_referenced": 23,
+    "distinct_desert_png_reused": 12,
+    "distinct_textures_resolved": 35,
+    "winter_png_on_disk": 27,
+    "winter_png_referenced": 23,
+    "winter_png_deliberately_unmapped": 4,
+    "unreferenced_winter_png": [
+      "winter18.png",
+      "winter23.png",
+      "winter24.png",
+      "winter26.png"
+    ],
+    "winter_png_inventory": [
+      {
+        "file": "winter0.png",
+        "alias_count": 19,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter1.png",
+        "alias_count": 15,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter2.png",
+        "alias_count": 5,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter3.png",
+        "alias_count": 2,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter4.png",
+        "alias_count": 4,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter5.png",
+        "alias_count": 5,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter6.png",
+        "alias_count": 1,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter7.png",
+        "alias_count": 2,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter8.png",
+        "alias_count": 2,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter9.png",
+        "alias_count": 2,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter10.png",
+        "alias_count": 13,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter11.png",
+        "alias_count": 1,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter12.png",
+        "alias_count": 3,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter13.png",
+        "alias_count": 6,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter14.png",
+        "alias_count": 3,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter15.png",
+        "alias_count": 3,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter16.png",
+        "alias_count": 4,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter17.png",
+        "alias_count": 3,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter18.png",
+        "alias_count": 0,
+        "status": "UNMAPPED_DONOR_UNALIASED",
+        "note": "No tiles.mat alias (winter_variant.md:88); deliberately unmapped - no replacement invented (SEASON_PLAN-01 Q1/B1)"
+      },
+      {
+        "file": "winter19.png",
+        "alias_count": 5,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter20.png",
+        "alias_count": 4,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter21.png",
+        "alias_count": 3,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter22.png",
+        "alias_count": 3,
+        "status": "MAPPED"
+      },
+      {
+        "file": "winter23.png",
+        "alias_count": 0,
+        "status": "UNMAPPED_DONOR_UNALIASED",
+        "note": "No tiles.mat alias (winter_variant.md:88); deliberately unmapped - no replacement invented (SEASON_PLAN-01 Q1/B1)"
+      },
+      {
+        "file": "winter24.png",
+        "alias_count": 0,
+        "status": "UNMAPPED_DONOR_UNALIASED",
+        "note": "No tiles.mat alias (winter_variant.md:88); deliberately unmapped - no replacement invented (SEASON_PLAN-01 Q1/B1)"
+      },
+      {
+        "file": "winter25.png",
+        "alias_count": 4,
+        "status": "MAPPED",
+        "note": "Green grass, 0% snow (winter_variant.md:86); mapped only for sand1s/test21/test23/test25 - not a snow base"
+      },
+      {
+        "file": "winter26.png",
+        "alias_count": 0,
+        "status": "UNMAPPED_DONOR_UNALIASED",
+        "note": "No tiles.mat alias (winter_variant.md:88); deliberately unmapped - no replacement invented (SEASON_PLAN-01 Q1/B1)"
+      }
+    ],
+    "unmapped_reason": "winter18/23/24/26 have no tiles.mat alias (winter_variant.md:88; DENV-01 §3.3); substituting art would be invented, so they stay unmapped (SEASON_PLAN-01 Q1/B1)."
+  },
+  "limitations": [
+    "Unpacked winter art is on disk and was measured pixel-identical to donor DDS in an earlier pass (T6-T14, winter_variant.md §1.6 / Step 1), but no donor parity is claimed here for atlas transport or runtime.",
+    "Atlas packing is PORT APPROXIMATION: donor tsDouble/ttExtended is engine-side (DEC-05 §4.6, reftile.lib:3-12); SEASON_PLAN-01 §7 item 1.",
+    "Donor runtime activity of the season scripts is UNVERIFIED: all texturemap.inc/dogenerate.inc season lines carry the ';' prefix (DENV-01 Q6, SEASON_PLAN-01 B6).",
+    "No donor GPU A/B was run; visual parity stays UNVERIFIED (SEASON_PLAN-01 B3).",
+    "Duplication with game.gd:1617-1657 WINTER_ART is intentional to avoid a TRN-DATA co-edit; consolidation needs TRN-DATA coordination (SEASON_PLAN-01 B4/Q3).",
+    "Desert reuse entries are art aliases only; the _misc_SetDesert name remap (miscext.script:1447-1502) is SP-3 scope and is not encoded here."
+  ]
+}

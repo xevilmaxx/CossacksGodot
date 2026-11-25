@@ -214,8 +214,24 @@ const RICHNESS_CLUSTER_SCALE := {
 }
 const RELIEF_SCALE := {"plains": 1.0, "hills": 1.5, "mountains": 2.2}
 const RELIEF_DOME_DELTA := {"plains": 0, "hills": 1, "mountains": 2}
+# --- SP-1 SEASON / CLIMATE ENUM (donor season values; DATA ONLY) --------------
+# Donor season values, read-only from the shipped donor scripts (via DENV-01):
+#   scripts\lib\map.script:250          gen.season default = 0 (Summer)
+#   scripts\dmscript.global:237         gc_MaxSeasonCount = 3  (0/1/2 implied)
+#   scripts\lib\miscext2.script:3318-3323  UI toggle season 0 <-> 2
+#   scripts\dogenerate.inc:4, :2079     desert branch gen.season = 3
+#   scripts\lib\miscext.script:1549     SetSeasonType(season)
+# Season 1 is UNVERIFIED (DENV-01 Q5 / SEASON-PLAN-01 B7) and is deliberately NOT
+# encoded here. Additive data constants only: no behaviour change, no renames,
+# no new mechanics. The existing string BIOME (data.gd:199) is left untouched.
+const SEASON_ENUM := {"summer": 0, "winter": 2, "desert": 3}
+const SEASON_DEFAULT := 0  # summer/default: map.script:250 (gen.season=0); terrain.lib:12 (seasons.Summer=Summer)
 # Season tint exposed for world.gd (separate worker); never stored in map_meta
 # because map_meta is serialised into every --dump-map file.
+# LEGACY FLAT TINT / PORT APPROXIMATION: the donor winter/desert swap is a tile-SET
+# swap plus colors.lib lighting tables (DENV-01 §4/§5.2; SEASON-PLAN-01 B9), NOT a
+# colour multiply. Kept for the 2D sibling which consumes it; do not delete or
+# mistake this for the donor swap mechanism.
 const TERRAIN_TINT := {
 	"summer": Color(1.0, 1.0, 1.0, 1.0),
 	"winter": Color(0.86, 0.91, 1.0, 1.0),

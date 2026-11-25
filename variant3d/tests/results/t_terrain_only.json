@@ -1,5 +1,5 @@
 {
-	"capture_status": "SKIP_CAPTURE",
+	"capture_status": "PASS",
 	"checks": [
 		{
 			"detail": "source=%s MAP=%dx%d height/tileblock/res_nodes present=%s",
@@ -102,9 +102,33 @@
 			"name": "water_plane_hidden",
 			"passed": true,
 			"status": "PASS"
+		},
+		{
+			"detail": "SubViewport texture 1280x720",
+			"name": "capture_image",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "save_png(C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png) err=0",
+			"name": "capture_saved",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "non_black_fraction=0.99374674479167 (expected >0.9; smallmap_capture.py:26)",
+			"name": "non_black_fraction",
+			"passed": true,
+			"status": "PASS"
+		},
+		{
+			"detail": "full_width_dark_rows=720 (expected 0; smallmap_capture.py:27-28)",
+			"name": "full_width_dark_rows",
+			"passed": false,
+			"status": "FAIL"
 		}
 	],
-	"fails": 0,
+	"fails": 1,
 	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
 	"id": "t_terrain_only",
 	"measured": {
@@ -114,18 +138,28 @@
 		],
 		"atlas_grid_shader_param": "(16.0, 8.0)",
 		"atlas_mode": "single",
+		"capture_source": "TerrainOnlyViewport (stub-owned, windowed GPU)",
 		"cells_below_water_level": 0,
-		"display_server": "headless",
+		"display_server": "Windows",
 		"flat_grid_promoted_cells": 0,
 		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
-		"headless": true,
+		"headless": false,
 		"height_max_m": 1.54998576641083,
 		"height_min_m": 1.45000541210175,
 		"material_model": "V7-86 terrain_tileindex.gdshader ShaderMaterial; UV2.x=donor tile id, UV2.y=donor-slope face mode (0/1/2); atlas_grid from V7-85 manifest; shadow_enabled=0; V7-86 mask blend retained (measured removal darkens); shader owns blend/cull",
 		"mesh_surfaces": 1,
 		"mesh_triangles": 7938,
 		"mesh_vertices": 4096,
-		"requested_png": "",
+		"png_metrics": {
+			"bytes": 988242,
+			"full_width_dark_rows": 720,
+			"height": 720,
+			"mean_luma": 13.2712799571661,
+			"non_black_fraction": 0.993746744791667,
+			"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
+			"width": 1280
+		},
+		"requested_png": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
 		"res_nodes_count": 0,
 		"shader_shadow_enabled": "0.0",
 		"terrain_stats_present": true,
@@ -143,12 +177,12 @@
 	},
 	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
 	"passed": false,
-	"passes": 17,
-	"png_path": "",
+	"passes": 20,
+	"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
-	"skip_reason": "DisplayServer.get_name()==headless: state-only result, PNG not captured",
+	"skip_reason": "",
 	"skipped_or_skip_capture": 0,
-	"structural_ok": true,
-	"unix_ms": 1795597130453.0,
-	"verdict": "SKIP_CAPTURE"
+	"structural_ok": false,
+	"unix_ms": 1795598661942.0,
+	"verdict": "FAIL"
 }

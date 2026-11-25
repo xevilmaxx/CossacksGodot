@@ -53,6 +53,7 @@ var _ok := true
 var _finished := false
 var _stage := 0
 var _stage_frames := 0
+var _run_mode := "windowed_real_input"  # S1-INPUT-FIX: "headless_skip" | "windowed_real_input"
 
 var _cfg_arg := ""
 var _shot_arg := ""
@@ -227,7 +228,9 @@ func _finish() -> void:
 		"total": _checks.size(),
 		"checks": _checks,
 		"measured": _m,
-		"capture_path": "real main.tscn boot + --config small_map_64.json + --screenshot menu-skip flag; headless; no PNG assertion",
+		"capture_path": ("SKIP_CAPTURE (headless): real-input drag path needs windowed mode; no PNG assertion" if _run_mode == "headless_skip" else
+			"real main.tscn boot + --config small_map_64.json + --screenshot menu-skip flag; WINDOWED real input (CAM-RV-01 job 381 convention); no PNG assertion"),
+		"run_mode": _run_mode,
 		"donor_semantics": {
 			"world_epsilon_m": DONOR_EPSILON_M,
 			"drag_start": "first LMB-held move (DSEL-01 claim 3)",
@@ -235,7 +238,7 @@ func _finish() -> void:
 			"port_screen_threshold_px": PORT_DRAG_PX,
 			"drag_crosses_both": true,
 		},
-		"runner_declaration": "AUTHORING ONLY — no Godot run, no runner ticket submitted by author",
+		"runner_declaration": "S1-INPUT-FIX: validated via variant runner, windowed real-input job s1inputfix-run; see docs/coord_swarm_2026-11-25/reports/S1_INPUT_FIX.md",
 		"unix_ms": Time.get_unix_time_from_system() * 1000.0,
 	}
 	var abs_dir := ProjectSettings.globalize_path(OUT_DIR)
@@ -259,9 +262,18 @@ func _abort(reason: String) -> void:
 
 
 func _initialize() -> void:
-	if DisplayServer.get_name() != "headless":
-		_abort("headless guard: run with --headless (no GPU/window needed)")
+	# S1-INPUT-FIX (blocker 1): the real-input path needs a WINDOWED run. The old
+	# guard rejected windowed launches outright, so the drag path never ran.
+	# In headless the root viewport is 64x64 while camera3d.unproject_position()
+	# projects into the configured 1280x720 viewport, so Input.parse_input_event
+	# cannot deliver a real click to _unhandled_input (CAM-RV-01 report :159-166
+	# headless job 373; SEL-01 report :74 probe 324). Headless therefore emits an
+	# explicit SKIP_CAPTURE / passed=false result — NEVER a fake PASS.
+	if DisplayServer.get_name() == "headless":
+		_run_mode = "headless_skip"
+		_abort("SKIP_CAPTURE: real-input drag path requires windowed mode; headless root viewport is 64x64 while camera projection is 1280x720, so Input.parse_input_event cannot reach _unhandled_input (CAM-RV-01:159-166, SEL-01 probe 324). No fake PASS.")
 		return
+	_run_mode = "windowed_real_input"
 	_cfg_arg = _arg_value("--config")
 	_shot_arg = _arg_value("--screenshot")
 	if _cfg_arg == "" or _shot_arg == "":
@@ -273,7 +285,7 @@ func _initialize() -> void:
 		return
 	_m["config"] = _abs_config
 	_m["screenshot_arg"] = _shot_arg
-	_m["headless"] = true
+	_m["headless"] = DisplayServer.get_name() == "headless"  # S1-INPUT-FIX: windowed real-input path
 	var packed := load(MAIN_SCENE) as PackedScene
 	if packed == null:
 		_abort("cannot load " + MAIN_SCENE)
@@ -306,6 +318,28 @@ func _project_sim(sim: Vector2) -> Vector2:
 	return _cam.unproject_position(Vector3(centred.x, 0.0, centred.y))
 
 
+func _to_event_coord(p: Vector2) -> Vector2:
+	# S1-INPUT-FIX (blocker 2): Input.parse_input_event() delivers ev.position in
+	# ROOT-WINDOW viewport coordinates, while camera3d.unproject_position()
+	# returns pixels in the CAMERA's projection viewport (the 1280x720
+	# Screenshot3DViewport in windowed mode; main.gd:1180-1193). Convert between
+	# the two with the explicit stretch transform root_size / projection_size.
+	# CAM-RV-01 proved the windowed convention in job 381: root_viewport_px ==
+	# viewport_px == [1280,720], so this transform is the IDENTITY there and a
+	# verbatim click at (640,360) reached the real _unhandled_input (20/20).
+	# In headless the sizes differ (64x64 root vs 1280x720 projection), which is
+	# why the headless branch above skips instead of pretending to deliver input.
+	var proj: Vector2 = Vector2(_cam.get_viewport().size)
+	var win: Vector2 = Vector2(root.size)
+	_m["projection_viewport_px"] = [proj.x, proj.y]
+	_m["root_viewport_px"] = [win.x, win.y]
+	_m["event_coord_scale"] = [win.x / proj.x if proj.x > 0.0 else -1.0,
+		win.y / proj.y if proj.y > 0.0 else -1.0]
+	if proj.x <= 0.0 or proj.y <= 0.0 or win.x <= 0.0 or win.y <= 0.0:
+		return p
+	return Vector2(p.x * win.x / proj.x, p.y * win.y / proj.y)
+
+
 func _configure() -> bool:
 	_game = _main.get("game")
 	_cam = _main.get("camera")
@@ -332,6 +366,18 @@ func _configure() -> bool:
 	if ais is Array:
 		ais.clear()
 	_main.set("speed", 0.0)
+
+	# S1-INPUT-FIX (reuse CAM-RV-01 job 381 proven setup): main boots with the
+	# camera focused on the player's HOME building (main.gd:601-605), not map
+	# centre, so this atom's fixed SIM box projected off-screen in ticket 407
+	# (p0.x=-246.7, p1.y=819.7 vs vp 1280x720). Focus the map centre through the
+	# camera's public handoff and freeze edge-scroll so the measured pixels stay
+	# valid through the drag (CAM-RV-01 report :228-239; t_view_rect_rv.gd:232-237).
+	# Additive harness setup only — no assertion, marker or threshold is changed.
+	_cam.call("jump_to_world", Vector2(float(_game.get("MAP_W")), float(_game.get("MAP_H"))) * Data.TILE_M * 0.5)
+	_cam.edge_margin = 0.0
+	_cam.corner_margin = 0.0
+	_m["camera_target_after_jump"] = str(_cam.get("_target"))
 
 	_clear_entities()
 	_game.next_id = 10
@@ -423,8 +469,9 @@ func _configure() -> bool:
 
 func _send_mouse_button(p: Vector2, pressed: bool) -> void:
 	var ev := InputEventMouseButton.new()
-	ev.position = p
-	ev.global_position = p
+	var evp := _to_event_coord(p)  # S1-INPUT-FIX: stretch convention (identity windowed)
+	ev.position = evp
+	ev.global_position = evp
 	ev.button_index = MOUSE_BUTTON_LEFT
 	ev.pressed = pressed
 	ev.shift_pressed = false  # donor Shift=add recorded in JSON; port drag ignores it
@@ -433,8 +480,9 @@ func _send_mouse_button(p: Vector2, pressed: bool) -> void:
 
 func _send_mouse_motion(p: Vector2, left_held: bool) -> void:
 	var ev := InputEventMouseMotion.new()
-	ev.position = p
-	ev.global_position = p
+	var evp := _to_event_coord(p)  # S1-INPUT-FIX: stretch convention (identity windowed)
+	ev.position = evp
+	ev.global_position = evp
 	if left_held:
 		ev.button_mask = MOUSE_BUTTON_MASK_LEFT
 	Input.parse_input_event(ev)

@@ -71,6 +71,28 @@ extends Node3D
 #   * 1-cell normal stencil; TILE_M/height scale/mesh/topology and the live
 #     tile-index path are UNCHANGED. Relief-grid (.pattern) stamping is a
 #     SEPARATE ticket — not attempted here.
+#
+# RELIEF-01 (2026-11-25) — first small step toward donor relief-grid stamping.
+# ALL edits in THIS FILE ONLY. No donor binary copied; the two tables below are
+# NUMBERS transcribed from DPATTERN-01 Appendix A1/A2 (docs/coord_swarm_2026-11-25/
+# reports/DPATTERN_01_relief_grids.md:602-626), i.e. 8x10 block-mean downsamples
+# of the decoded float32 height windows of `k_ravine_1` (G=2866, offset 2866)
+# and `plt2` (G=2266, offset 2266). Stamping is OPT-IN: it fires only when the
+# input dump carries a `relief_stamps` marker array with a matching donor
+# pattern name. The current dump schema (main.gd:736-743) has NO such field, so
+# this is a no-op in every existing path — an integration ticket is recorded in
+# docs/coord_swarm_2026-11-25/reports/RELIEF_01_stamping.md. A public read-only
+# helper `apply_relief_grid()` is provided for explicit, testable opt-in use.
+# BLEND LABEL: PORT APPROXIMATION — DONOR ENGINE BLEND UNVERIFIED.
+#   The donor sculpt config exists only in pattern.lib (DPATTERN-01 §5.2, 9,520
+#   hits, zero script consumers), so the engine's Replace/Smooth/clamp order
+#   cannot be recovered here. The port uses the report's additive-clamp form:
+#     h = clamp(h + coarse*HeightFieldScale + Offset, HeightFieldMin, HeightFieldMax)
+#   with verified donor literals for scale/min/max. Mountain patterns have
+#   ALL-ZERO height grids and embed terrainmeshN props (DPATTERN-01 §4.6) —
+#   they are deliberately NOT in these tables; props are a separate ticket.
+# Mesh invariants are untouched: 1 surface, w*h verts, (w-1)*(h-1)*2 tris,
+# UV2 pair intact, atlas (16,8), face_hist contract, shadow OFF.
 
 # Donor citations (read-only text; singleplayer skirmish path):
 #   C:\Games\Cossacks 3\data\scripts\generatemap.inc:537-577 — bitmap -> engine
@@ -160,6 +182,66 @@ const DONOR_ROCK_NONE_H: float = 0.1
 # Donor shore test cWaterShoreHeight (texturemap.inc:31, :469-470).
 const DONOR_SHORE_H: float = -0.1
 
+# RELIEF-01 — donor-derived coarse relief grids. NUMBERS ONLY (no bytes shipped,
+# no donor asset copied). Each table is the 8x10 block-mean downsample from
+# DPATTERN-01 Appendix A (A1 k_ravine_1 :602-613, A2 plt2 :615-626), flattened
+# row-major: index = gy*RELIEF_COARSE_W + gx, gy=file-row band top->bottom,
+# gx=file-col band left->right. "-0.000" in the report is written 0.0 here
+# (identical float32 value). These are DEBUG/PREVIEW-GRADE means; the report
+# explicitly says to stamp from the full grid when fidelity is needed. The full
+# w*h float32 grids are NOT copied into this file — that is a later ticket.
+const RELIEF_COARSE_W: int = 10
+const RELIEF_COARSE_H: int = 8
+
+const RELIEF_K_RAVINE_1: Array = [
+	-0.056, -0.309, -0.251, -0.067, -0.190, -1.119, -0.714,  0.000,  0.000, -0.013,
+	-2.056, -2.251, -1.897, -0.629, -0.006, -0.121, -0.098, -0.001, -0.537, -2.300,
+	-2.947, -2.941, -2.916, -1.785, -0.011,  0.000,  0.000, -0.018, -0.809, -2.411,
+	-2.920, -2.384, -2.015, -1.071, -0.008,  0.000,  0.000,  0.162,  0.730, -2.255,
+	-0.352,  1.656,  0.740,  0.019,  0.000,  0.000,  0.000,  0.178,  2.249,  1.379,
+	 2.937,  2.730,  1.909,  0.227,  0.000,  0.000,  0.000,  0.001,  0.964,  2.763,
+	 1.258,  0.391,  0.098,  0.001,  0.000,  0.000,  0.000,  0.000,  0.007,  0.422,
+	 0.000,  0.000,  0.000,  0.000,  0.000,  0.000,  0.025,  0.094,  0.100,  0.075,
+]
+
+const RELIEF_PLT2: Array = [
+	 0.032,  0.065,  0.061,  0.031, -0.001, -0.002,  0.000,  0.000, -0.001, -0.005,
+	 1.406,  2.451,  2.364,  1.313,  0.500,  0.163,  0.028,  0.001,  0.001,  0.212,
+	 2.914,  3.294,  3.096,  2.627,  1.492,  0.226,  0.039,  0.002,  0.018,  0.580,
+	 1.325,  3.033,  3.437,  3.392,  1.927,  0.188,  0.003,  0.000,  0.019,  0.305,
+	 2.699,  3.198,  3.176,  2.573,  1.144,  0.128,  0.013, -0.001,  0.017,  0.759,
+	 1.546,  2.625,  3.149,  2.309,  0.384,  0.061,  0.001,  0.001,  0.057,  0.457,
+	 0.296,  1.158,  1.478,  0.743,  0.167,  0.015,  0.000,  0.000,  0.004,  0.025,
+	 0.006,  0.019,  0.029,  0.026,  0.011,  0.000,  0.000,  0.000,  0.143,  0.086,
+]
+
+# Per-pattern metadata: scale/min/max are the VERIFIED pattern.lib literals
+# cross-checked bit-exactly against the decoded windows (DPATTERN-01 §3/§4).
+# `src_offset` is traceability only — no donor bytes are shipped.
+# Blend label is mandatory on every consumer of these tables.
+const RELIEF_TABLES: Dictionary = {
+	"k_ravine_1": {
+		"table": RELIEF_K_RAVINE_1,
+		"family": "ravine_medium",          # generator.cfg:540 (//-disabled stamp, :1760)
+		"src_offset": 2866, "grid_w": 46, "grid_h": 63,
+		"scale": 1.0,                        # pattern.lib:549568
+		"min": -2.963627576828003,           # pattern.lib:549585 (exact float32)
+		"max": 3.139820098876953,            # pattern.lib:549586 (exact float32)
+		"cite": "DPATTERN-01 §4.1/:602-613; pattern.lib:549568,549585-549586",
+	},
+	"plt2": {
+		"table": RELIEF_PLT2,
+		"family": "plateau",                # generator.cfg:588
+		"src_offset": 2266, "grid_w": 42, "grid_h": 55,
+		"scale": 1.0,                        # DPATTERN-01 §3 inventory: scale 1
+		"min": -0.07325489819049835,         # pattern.lib:6805 (exact float32)
+		"max": 3.6134116649627686,           # pattern.lib:6806 (exact float32)
+		"cite": "DPATTERN-01 §3/§4.4/:615-626; pattern.lib:6805-6806 (scale 1 per §3)",
+	},
+}
+const RELIEF_BLEND_LABEL := ("PORT APPROXIMATION — donor engine blend UNVERIFIED "
+	+ "(DPATTERN-01 §5.2: sculpt config is pattern.lib-only, no plaintext consumer)")
+
 const SPLAT_PATH := "res://assets/terrain/heightmap/splat_albedo.png"
 const FALLBACK_BLOCK := "res://assets/terrain/blocks/grass1.png"
 
@@ -213,6 +295,8 @@ var _rock_override_cells: int = 0
 var _shore_sector_cells: int = 0
 var _water_tile_cells: int = 0          # BLK_WATER remapped off grass1 (TRN-WATER handoff)
 var _water_fallback_cells: int = 0      # BLK_WATER with no donor aspect -> sandsea1
+# RELIEF-01 — audit ledger for opt-in stamp calls (no mesh state).
+var _relief_applied: Array = []
 
 
 func bind(game) -> void:
@@ -265,6 +349,110 @@ func _read_json(res_path: String) -> Dictionary:
 	f.close()
 	var parsed: Variant = JSON.parse_string(text)
 	return parsed if parsed is Dictionary else {}
+
+
+# ---------------------------------------------------------------------------
+# RELIEF-01 — opt-in relief-grid stamping. PORT APPROXIMATION: donor engine
+# blend UNVERIFIED (RELIEF_BLEND_LABEL). A coarse 8x10 donor-derived table is
+# mapped onto a small footprint window centred on (cx,cy) in MAP CELLS; each
+# cell receives coarse[gy,gx] * effective_scale additively, then the donor
+# pattern's verified HeightFieldMin/Max clamp. No mesh/node/atlas/water state
+# is touched and no donor file is read — this is a pure, testable helper.
+# Returns false for an unknown pattern name or a too-small grid.
+# ---------------------------------------------------------------------------
+func apply_relief_grid(height: PackedFloat32Array, w: int, h: int,
+		pname: String, cx: int = 0, cy: int = 0, scale: float = 1.0,
+		footprint_w: int = RELIEF_COARSE_W,
+		footprint_h: int = RELIEF_COARSE_H) -> bool:
+	if w <= 0 or h <= 0 or height.size() < w * h:
+		return false
+	var key: String = pname.strip_edges()
+	var mv: Variant = RELIEF_TABLES.get(key, null)
+	if mv == null or not (mv is Dictionary):
+		return false
+	var md: Dictionary = mv
+	var tv: Variant = md.get("table", null)
+	if not (tv is Array) or (tv as Array).size() != RELIEF_COARSE_W * RELIEF_COARSE_H:
+		return false
+	var tbl: Array = tv
+	var lo: float = float(md.get("min", 0.0))
+	var hi: float = float(md.get("max", 0.0))
+	var sf: float = float(md.get("scale", 1.0)) * scale
+	var fw: int = maxi(1, footprint_w)
+	var fh: int = maxi(1, footprint_h)
+	var x0: int = cx - fw / 2
+	var z0: int = cy - fh / 2
+	var cells: int = 0
+	for gy in range(fh):
+		var mz: int = z0 + gy
+		if mz < 0 or mz >= h:
+			continue
+		for gx in range(fw):
+			var ux: int = x0 + gx
+			if ux < 0 or ux >= w:
+				continue
+			# PORT APPROXIMATION — donor engine blend UNVERIFIED.
+			var delta: float = float(tbl[gy * RELIEF_COARSE_W + gx]) * sf
+			var idx: int = mz * w + ux
+			height[idx] = clampf(height[idx] + delta, lo, hi)
+			cells += 1
+	_relief_applied.append({
+		"name": key,
+		"cells": cells,
+		"center": [cx, cy],
+		"footprint": [fw, fh],
+		"scale": sf,
+		"min": lo,
+		"max": hi,
+		"cite": str(md.get("cite", "")),
+		"blend": RELIEF_BLEND_LABEL,
+		"source": "DPATTERN-01 Appendix A coarse 8x10 block-mean (derived numbers only)",
+	})
+	return cells > 0
+
+
+# RELIEF-01 — opt-in marker reader. The CURRENT dump schema (main.gd:736-743)
+# has no relief marker, so this returns 0 and build() is byte-identical to the
+# pre-RELIEF-01 path. An integration ticket (RELIEF_01_stamping.md) records the
+# producer-side work needed to emit dump["relief_stamps"]. No other file edited.
+# Marker fields: name (donor pattern id), cx/cy (map cells), optional scale /
+# footprint_w / footprint_h. JSON numbers may arrive as float — accept both.
+func _apply_relief_stamps_from_dump(dump: Dictionary, height: PackedFloat32Array,
+		w: int, h: int) -> int:
+	var markers: Variant = dump.get("relief_stamps", null)
+	if not (markers is Array):
+		return 0
+	var applied: int = 0
+	for sv in (markers as Array):
+		if not (sv is Dictionary):
+			continue
+		var m: Dictionary = sv
+		var pname: String = str(m.get("name", m.get("pattern", "")))
+		if pname.is_empty():
+			continue
+		var cx: int = w / 2
+		var cz: int = h / 2
+		var cv: Variant = m.get("cx", m.get("x", null))
+		if cv is int or cv is float:
+			cx = int(cv)
+		var zv: Variant = m.get("cy", m.get("y", null))
+		if zv is int or zv is float:
+			cz = int(zv)
+		var sc: float = 1.0
+		var scv: Variant = m.get("scale", null)
+		if scv is int or scv is float:
+			sc = float(scv)
+		var fw: int = RELIEF_COARSE_W
+		var fwv: Variant = m.get("footprint_w", null)
+		if fwv is int or fwv is float:
+			fw = int(fwv)
+		var fh: int = RELIEF_COARSE_H
+		var fhv: Variant = m.get("footprint_h", null)
+		if fhv is int or fhv is float:
+			fh = int(fhv)
+		if apply_relief_grid(height, w, h, pname, cx, cz, sc, fw, fh):
+			applied += 1
+	return applied
 
 
 # ---------------------------------------------------------------------------
@@ -829,6 +1017,8 @@ func invalidate() -> void:
 	_shore_sector_cells = 0
 	_water_tile_cells = 0
 	_water_fallback_cells = 0
+	# RELIEF-01 (no mesh state; keep a rebuild from stacking stamp ledgers).
+	_relief_applied = []
 
 
 # EXACT CONTRACT: one full-grid ArrayMesh from the base64 dump height[] grid.
@@ -857,6 +1047,18 @@ func build() -> bool:
 		hmin = minf(hmin, y)
 		hmax = maxf(hmax, y)
 	var t_heights := Time.get_ticks_usec()
+
+	# RELIEF-01 — OPT-IN donor-grid stamping. Only fires when the dump carries a
+	# `relief_stamps` marker (none in the current schema / smoke test), so all
+	# existing paths keep their exact heights. PORT APPROXIMATION — donor engine
+	# blend UNVERIFIED (RELIEF_BLEND_LABEL). Topology is never changed here.
+	var relief_applied: int = _apply_relief_stamps_from_dump(dump, height, w, h)
+	if relief_applied > 0:
+		hmin = INF
+		hmax = -INF
+		for i in range(w * h):
+			hmin = minf(hmin, height[i])
+			hmax = maxf(hmax, height[i])
 
 	# V7-92: decode donor tile indices and load the selected atlas transport.
 	_decode_tile_indices(dump, w, h)
@@ -1073,6 +1275,23 @@ func build() -> bool:
 		"height_min_m": hmin,
 		"height_max_m": hmax,
 		"height_range_m": hmax - hmin,
+		# RELIEF-01 — auditable opt-in provenance. No stamp fires without a
+		# dump["relief_stamps"] marker; the two coarse tables are derived
+		# NUMBERS from DPATTERN-01 Appendix A, never donor bytes.
+		"relief_grid": {
+			"label": RELIEF_BLEND_LABEL,
+			"blend_form": ("h = clamp(h + coarse[gy,gx]*HeightFieldScale, "
+				+ "HeightFieldMin, HeightFieldMax) — PORT APPROXIMATION, "
+				+ "engine Replace/Smooth/clamp order UNVERIFIED"),
+			"tables": ["k_ravine_1 (DPATTERN-01 A1)", "plt2 (DPATTERN-01 A2)"],
+			"coarse_size": [RELIEF_COARSE_W, RELIEF_COARSE_H],
+			"source": "DPATTERN-01 Appendix A block-mean floats; no donor binary copied",
+			"marker_field": "dump['relief_stamps'] (NOT in the current dump schema)",
+			"applied": relief_applied,
+			"stamps": _relief_applied.duplicate(true),
+			"not_done": ["full 26-grid float32 tables", "mountain terrainmesh props",
+				"exact donor engine blend", "2x collision sampler"],
+		},
 		"mesh_vertices": nverts,
 		"mesh_triangles": ntris,
 		"mesh_surfaces": mesh.get_surface_count(),

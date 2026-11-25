@@ -59,6 +59,20 @@ const DONOR_HEIGHT_MAX: float = 58.0  # camera.cfg:6 SphereHeight; :9 SphereLeng
 const DONOR_HEIGHT_MIN: float = 20.0  # camera.cfg:7 SphereHeightMin; :10 SphereLengthMin
 const DONOR_FOCAL: float = 400.0      # camera.cfg:44-45 Min/MaxFocalLength
 const DONOR_FOCAL_STEP: float = 5.0   # onmousewheel.inc:326,334 (CTRL screenshot zoom only)
+# MMJUMP-02 — donor minimap-jump literals. Read ONLY by jump_to_world_donor_offset() below;
+# jump_to_world() stays a byte-identical plain-centre entry point for CAM-RV-01.
+#   control.script:595      angleZ = -Lerp(-32,-32,Clamp((h-20)/(58-20),0,1)) = +32
+#                           (camera.cfg:21-22,32-35: all four free-rotation angles = -32).
+#   control.script:598-599  dz := 0.1; VectorRotateX(dx,dy,dz,angleZ) -> dz = 0.1*cos(32 deg)
+#                           (bookmark default.cameras:9-10 = 0.1*sin32 / 0.1*cos32).
+const DONOR_JUMP_TILT_DEG: float = 32.0
+const DONOR_JUMP_NUDGE_M: float = 0.1
+# PORT APPROXIMATION / UNVERIFIED — ArcTan() has no readable donor body: no donor script
+# defines it; the EXE only declares `function ArcTan(const val: Float): Float` (0x209cc6).
+# Donor uses offZ := ArcTan(angleZ)*height (control.script:602), bookmarked 78.42125/49
+# (= 1.60043); height/tan(32 deg) = cot(32 deg) = 1.60033 (0.0062% apart) is a PORT
+# APPROXIMATION chosen for numerical equivalence, NOT a claimed donor literal.
+# VectorRotateX/Y sign conventions are also UNVERIFIED (DEC_07 §6.5/Q2).
 # PORT APPROXIMATION / UNVERIFIED — NOT a donor literal and NOT a measured donor FOV.
 # Rationale (RV-CAM-01 "Verdict" + "Recommended value and label"; GAPS.md §1 Projection row):
 # 17.27 deg is the 16:9 VERTICAL FOV of a 216 mm HORIZONTAL sensor at donor focal f=400:
@@ -499,6 +513,70 @@ func apply_external_target(sim_pos: Vector2) -> void:
 	# Same order as jump_to_world(): transform :406, clamp :411.
 	_apply_transform()  # unconditional, single SIM->centred subtraction
 	clamp_pos()         # now measures the NEW view's corners, clamps in SIM space
+
+
+# MMJUMP-02 — DONOR-OFFSET camera jump, a SEPARATE API for the PRIMARY 3D minimap click.
+# jump_to_world() above is deliberately byte-identical: CAM-RV-01's confirmed runtime test
+# (variant3d/tests/t_view_rect_rv.gd:232,377-385,420-423; CAM_RV_01_view_rect_runtime.md job
+# 381 = 20/20) uses jump_to_world() to focus map centre, so its plain-centre semantics and
+# signature must not change. Only hud.gd:_cam3d_jump calls this new method.
+#
+# Donor truth (private-use, read-only; Python bytes + latin-1; never run):
+#   control.script:591-593  CameraInfoSaveFromCurrentView/CameraInfoReadProperties ->
+#                           (tx,height,tz,cx,cy,cz): current target, height, eye.
+#   control.script:595      angleZ = -Lerp(-32,-32,Clamp((h-20)/(58-20),0,1)) = +32
+#                           (camera.cfg:21-22,32-35).
+#   control.script:596      dx := cx - tx  (eye X offset from target; RotateX leaves it intact).
+#   control.script:598-599  dz := 0.1; VectorRotateX(dx,dy,dz,angleZ) -> dz = 0.1*cos(32 deg)
+#                           (default.cameras:9-10 = 0.1*sin32 / 0.1*cos32).
+#   control.script:602      offZ := ArcTan(angleZ)*height  -> PORT APPROX height/tan(32 deg).
+#   control.script:605-609  angleX := VectorAngle(0,0,1,dx,0,dz); if dx<0 then angleX := -angleX;
+#                           VectorRotateY(offX,tmp,offZ,angleX)  (rotate into current heading).
+#   control.script:611-612  newX := dstX+offX+dx; newZ := dstZ+offZ+dz.
+#   onmousedown.inc:116-131,126-130 (COMMENTED .inc; dead-code status UNVERIFIED — the active
+#                           control.script helper is the authority) documents the caller:
+#                           SetMainCameraRotateToTargetDir(false) + SetMainCameraMoveToTargetXZ.
+#                           Rotate-to-target is DISABLED in the donor; the port has no such
+#                           flag, so none is invented here (see DEEPDEC-08:127,151-155).
+# `world_point` is SIM metres (top-left map origin) — the SAME contract as jump_to_world(),
+# so hud.gd passes the same world_pos it always did. Offsets are translation-invariant and
+# are added directly to SIM metres (no _map_half() frame shift needed for the deltas).
+# PORT APPROXIMATION / UNVERIFIED — do NOT claim donor parity:
+#   * ArcTan() body/units UNVERIFIED (DSEL_02 Q1, DEC_07 §5.5/§10 Q1): height/tan(32 deg)
+#     equals cot(32 deg) and the 78.42125/49 bookmark numerically; it is not a donor literal.
+#   * VectorRotateX/Y signs UNVERIFIED (DEC_07 §6.5/Q2): dz = 0.1*cos(32 deg) and the XZ
+#     rotation below are the documented interpretation of the bookmark.
+#   * Donor effective yaw UNVERIFIED (DSEL_02 claim 6). Port yaw is fixed 0 (_apply_transform,
+#     :243-261), so dx -> 0, angleX -> 0, offX -> 0: the general rotation is the identity in
+#     this build. The clicked point ends up offset from screen centre, matching the donor's
+#     "keep the pre-click offset" framing rather than the port's "centre the clicked point".
+func jump_to_world_donor_offset(world_point: Vector2) -> void:
+	var h: float = _height_m()
+	var t: float = deg_to_rad(DONOR_JUMP_TILT_DEG)
+	# control.script:596 -- dx = cx - tx: current eye X offset from the current ground focus.
+	# _apply_transform() (:243-261) puts the eye directly behind the focus (X offset 0 at
+	# yaw 0); reading the LIVE transform preserves any offset another path introduced.
+	var half: Vector2 = _map_half()
+	var base_x: float = _target.x - half.x
+	var dx: float = global_position.x - base_x
+	# control.script:598-599 -- dz = 0.1 rotated by VectorRotateX(+32 deg): 0.1*cos(32 deg).
+	var dz: float = DONOR_JUMP_NUDGE_M * cos(t)
+	# control.script:602 -- offZ = ArcTan(32 deg)*height ~= cot(32 deg)*height (PORT APPROX).
+	var off_z: float = h / maxf(0.0001, tan(t))
+	# control.script:605-609 -- rotate (0, offZ) into the current heading in the XZ plane.
+	# angleX = angle from +Z to (dx,0,dz), with the donor's dx<0 sign flip (:606-607).
+	var angle_x: float = atan2(dx, dz)
+	if dx < 0.0:
+		angle_x = -angle_x
+	var off_x: float = off_z * sin(angle_x)
+	off_z *= cos(angle_x)
+	# control.script:611-612 -- new target = dst + (offX+dx, offZ+dz), kept in SIM metres.
+	var new_target := Vector2(world_point.x + off_x + dx, world_point.y + off_z + dz)
+	_zoom_anchor_screen = Vector2.INF  # a jump cancels any in-flight zoom anchor (camera.gd:97)
+	_target = new_target
+	_apply_transform()
+	mark_external_transform()  # fresh memo, exactly as jump_to_world() :429-430 does
+	clamp_pos()
 
 
 func _process(dt: float) -> void:

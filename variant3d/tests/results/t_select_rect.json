@@ -1,8 +1,44 @@
 {
-	"capture_path": "real main.tscn boot + --config small_map_64.json + --screenshot menu-skip flag; headless; no PNG assertion",
+	"capture_path": "real main.tscn boot + --config small_map_64.json + --screenshot menu-skip flag; WINDOWED real input (CAM-RV-01 job 381 convention); no PNG assertion",
 	"checks": [
 		{
-			"detail": "need --config <small_map_64.json> and --screenshot <path> user args (menu skip)",
+			"detail": "render_mode=3d MAP=64x64",
+			"expected_pre_fix_failure": false,
+			"name": "boot_real_64_3d_game",
+			"passed": true
+		},
+		{
+			"detail": "hud.visible restored after --screenshot boot",
+			"expected_pre_fix_failure": false,
+			"name": "hud_visible",
+			"passed": true
+		},
+		{
+			"detail": "ids=[10, 11, 12, 13] (3 friendly units + 1 non-unit building)",
+			"expected_pre_fix_failure": false,
+			"name": "test_entities_exact",
+			"passed": true
+		},
+		{
+			"detail": "input_ctl.game is CmdSpy subclass of C3Game",
+			"expected_pre_fix_failure": false,
+			"name": "cmd_spy_installed",
+			"passed": true
+		},
+		{
+			"detail": "bind_3d() must create the picking3d adapter",
+			"expected_pre_fix_failure": false,
+			"name": "picking3d_bound",
+			"passed": true
+		},
+		{
+			"detail": "p0=(-246.7239, 548.4263) p1=(290.3547, 819.6598) click=(-141.1752, 640.7642) vp=(1280.0, 720.0)",
+			"expected_pre_fix_failure": false,
+			"name": "projected_pixels_in_viewport",
+			"passed": false
+		},
+		{
+			"detail": "real boot/configure failed; see preceding checks",
 			"expected_pre_fix_failure": false,
 			"name": "boot_and_setup",
 			"passed": false
@@ -16,10 +52,49 @@
 		"world_epsilon_m": 0.005
 	},
 	"id": "t_select_rect",
-	"measured": {},
+	"measured": {
+		"click_px": [
+			-141.175155639648,
+			640.764221191406
+		],
+		"config": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tests\\fixtures\\small_map_64.json",
+		"entity_sim_positions": {
+			"10": [
+				58.0,
+				62.0
+			],
+			"11": [
+				68.0,
+				68.0
+			],
+			"12": [
+				104.0,
+				104.0
+			],
+			"13_building": [
+				64.0,
+				64.0
+			]
+		},
+		"headless": true,
+		"p0_px": [
+			-246.723937988281,
+			548.426330566406
+		],
+		"p1_px": [
+			290.354736328125,
+			819.659790039063
+		],
+		"screenshot_arg": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\s1inputfix_smallmap64.png",
+		"viewport_px": [
+			1280.0,
+			720.0
+		]
+	},
 	"passed": false,
-	"passes": 0,
-	"runner_declaration": "AUTHORING ONLY — no Godot run, no runner ticket submitted by author",
-	"total": 1,
-	"unix_ms": 1795597402067.0
+	"passes": 5,
+	"run_mode": "windowed_real_input",
+	"runner_declaration": "S1-INPUT-FIX: validated via variant runner, windowed real-input job s1inputfix-run; see docs/coord_swarm_2026-11-25/reports/S1_INPUT_FIX.md",
+	"total": 7,
+	"unix_ms": 1795598722517.0
 }

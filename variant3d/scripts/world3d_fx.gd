@@ -47,6 +47,22 @@ extends Node3D
 #   rally pennant (`_player_color`, donor_key_colors.json slots 0..12).
 #   New public API: sync_selection(entries) — driven by world3d.gd from the
 #   existing selected_ids / selected mirror (V7-76 ghost/rally pattern).
+#
+# FX-WEATHER-01 — GATED DONOR SNOW PARTICLE LAYER (default OFF, no donor art copied):
+#   Donor family `data\env\pfx\particles.snow.cfg` (ASCII OSW config, 4 emitters
+#     snow1..snow4) + `data\env\clouds\clouds.weather`, read-only and cited as
+#     path:line on the constants below. DFX-01 §5.7/§7.6 and DENV-01 §2.8/§5.3
+#     rank the weather/cloud layer a top-three visual gap, BUT with the shipped
+#     default Weather=40 < WeatherStart=70 the snow band is INACTIVE (derived).
+#     This module therefore installs a DISABLED, emitter-capable Node3D layer and
+#     exposes set_weather()/snow_active() so a future weather/season ticket can
+#     switch it on and calibrate the unmapped units.
+#   Every donor number here is a LITERAL KEY / SEMANTICS UNVERIFIED: no consumer
+#     converting Speed/Height/Width to Godot units was recovered (DFX-01 §6, §9).
+#   The draw pass is a plain untextured white billboard quad — PORT APPROXIMATION,
+#     NOT DONOR PARITY. Donor snow{1..4}.bmp are private-use and stay uncopied.
+#   NO construction dust: DFX-01 §7.4 proves that class is sound-only in the donor.
+#   No selection-ring / marquee-overlay code is touched by this addition.
 
 const Data = preload("res://scripts/data.gd")
 
@@ -117,6 +133,29 @@ const EVENT_FX := {
 
 const RALLY_TTL: float = 2.0   # PORT choice: clear markers not redrawn for 2 s (no donor key)
 
+# --- FX-WEATHER-01 — donor snow constants (LITERAL KEY / SEMANTICS UNVERIFIED) --
+# Observed donor literals, cited as `path:line`. No donor→Godot unit conversion is
+# provable (DFX-01 §6/§9), so feeding them straight into Godot is a PORT
+# APPROXIMATION that a future enabling ticket must calibrate visually.
+const SNOW_WEATHER_DEFAULT: int = 40      # clouds.weather:3 `Weather = 40` (observed)
+const SNOW_WEATHER_MIN: int = 0           # clouds.weather:21 `weatherrandomstart = 0`
+const SNOW_WEATHER_MAX: int = 99          # clouds.weather:22 `weatherrandomend = 99`
+const SNOW_WEATHER_START: int = 70        # particles.snow.cfg:32,72,112,152 `WeatherStart = 70`
+const SNOW_WEATHER_END: int = 100         # particles.snow.cfg:33,73,113,153 `WeatherEnd = 100`
+const SNOW_MONTH_START: int = 1           # particles.snow.cfg:34,74,114,154 `MonthStart = 1`
+const SNOW_MONTH_END: int = 12            # particles.snow.cfg:35,75,115,155 `MonthEnd = 12`
+# Full-precision literals are recorded in DENV-01 §2.8; rounded values here are
+# the same numbers quoted in DFX-01 §7.6.
+const SNOW_SPEEDS: Array = [0.041, 0.061, 0.08, 0.1]             # particles.snow.cfg:36,76,116,156 `Speed`
+const SNOW_COUNTS: Array = [100, 100, 100, 200]                  # particles.snow.cfg:37,77,117,157 `Count`
+const SNOW_SIZES: Array = [0.0015, 0.002, 0.00251, 0.003]        # particles.snow.cfg:4-5,44-45,84-85,124-125 `Height`/`Width`
+const SNOW_ALPHA: float = 0.5             # particles.snow.cfg:6,46,86,126 `AlphaChannel = 0.5`
+const SNOW_CUBE_EXTENTS: Vector3 = Vector3(0.5, 0.5, 0.5)        # particles.snow.cfg:17-26 etc CreatingCubeStart/End (+/-0.5)
+const SNOW_MOVE_DIR: Vector3 = Vector3(0.0, -1.0, 0.0)           # particles.snow.cfg:27-31 etc `MoveDirection = (0,-1,0)`
+# Donor spiral motion (SpiralRotatingRadius ~0.1 :14,54,94,134; Speed 20/15/13/13
+# :15,55,95,135) is RECORDED but NOT reproduced — no Godot equivalent is claimed.
+const SNOW_PORT_LIFETIME: float = 8.0     # PORT ONLY: donor weather cfg has no lifetime key (DFX-01 §6)
+
 # --- public state ----------------------------------------------------------
 var game = null
 var consume_events: bool = true    # set false if main.gd already forwards add_fx
@@ -151,6 +190,11 @@ var _selection_positions: Dictionary = {}   # id -> Vector2, for world_offset sh
 var _time: float = 0.0
 var _events_seen: int = 0
 var _spawn_index: int = 0
+# FX-WEATHER-01: weather state is persistent layer state, not a transient FX item.
+var _weather_root: Node3D = null
+var _snow_emitters: Array = []
+var _weather_value: int = SNOW_WEATHER_DEFAULT   # 40 -> below the 70..100 snow band
+var _weather_month: int = SNOW_MONTH_START       # 1, inside MonthStart/End 1..12
 
 
 # --- PUBLIC API ------------------------------------------------------------
@@ -168,6 +212,7 @@ func bind(g, world_offset_override = null) -> void:
 	stats["donor_key_colors_slots"] = PLAYER_COLORS.size()
 	stats["donor_key_colors_error"] = _key_colors_error
 	_ensure_roots()
+	_apply_snow_gate()   # FX-WEATHER-01: default Weather=40 keeps snow OFF
 
 
 # V7-73 public setter, safe to call after bind(): existing FX/ghost/rally nodes
@@ -185,6 +230,27 @@ func set_world_offset(offset: Vector2, shift_existing: bool = true) -> void:
 	stats["world_offset_source"] = "setter"
 	if shift_existing and (not is_zero_approx(delta.x) or not is_zero_approx(delta.y)):
 		_shift_created_nodes(-delta)
+
+
+# --- FX-WEATHER-01 — small gated weather API -------------------------------
+# Donor band WeatherStart=70 / WeatherEnd=100 (particles.snow.cfg:32-33 etc) on
+# the 0..99 scale (clouds.weather:21-22). Shipped default Weather=40
+# (clouds.weather:3) means OFF: call set_weather(>=70) to enable from a future
+# weather/season ticket. Values are clamped, never guessed from a port default.
+func set_weather(value: int) -> void:
+	_weather_value = clampi(value, SNOW_WEATHER_MIN, SNOW_WEATHER_MAX)
+	_apply_snow_gate()
+
+
+# MonthStart/End = 1/12 for all four emitters (particles.snow.cfg:34-35 etc),
+# so every month is inside the band in the shipped donor data.
+func set_weather_month(month: int) -> void:
+	_weather_month = clampi(month, 1, 12)
+	_apply_snow_gate()
+
+
+func snow_active() -> bool:
+	return _snow_band_ok()
 
 
 # Resolve the origin from the bound game unless an explicit offset was given.
@@ -252,6 +318,10 @@ func _shift_created_nodes(shift: Vector2) -> void:
 			var np3: Vector3 = world_pos(sp)
 			if _finite3(np3):
 				(sn as Node3D).position = np3
+	# FX-WEATHER-01: the weather root is a child of _root, not an fx_item. The
+	# donor particle manager is camera-relative (AutoOffsetFromCamera=True,
+	# particles.lib:11) and must not be shifted with sim FX. Camera-follow is an
+	# OPEN integration item (no camera reference is owned by this module).
 
 
 # V7-65: exact donor formula output (rgb_godot_float), NOT the old invented
@@ -452,6 +522,8 @@ func clear_all() -> void:
 	if _ghost_root != null:
 		_ghost_root.visible = false
 	stats["rally_active"] = 0
+	# FX-WEATHER-01: the snow layer is persistent weather state, not a transient
+	# FX item, so clear_all() deliberately leaves its gate/state untouched.
 
 
 # --- coordinate helper -----------------------------------------------------
@@ -557,6 +629,78 @@ func _ensure_roots() -> void:
 		_selection_root = Node3D.new()
 		_selection_root.name = "Selection3D"
 		add_child(_selection_root)
+	# FX-WEATHER-01: one Node3D weather root UNDER the FX layer (_root/FX3D).
+	if _weather_root == null:
+		_weather_root = Node3D.new()
+		_weather_root.name = "WeatherSnow3D"
+		_root.add_child(_weather_root)
+		_build_snow_emitters()
+		_apply_snow_gate()
+
+
+# Donor weather band, 0..99 scale (clouds.weather:21-22). Month band 1..12
+# (particles.snow.cfg:34-35) covers every month in the shipped config.
+func _snow_band_ok() -> bool:
+	return _weather_value >= SNOW_WEATHER_START \
+		and _weather_value <= SNOW_WEATHER_END \
+		and _weather_month >= SNOW_MONTH_START \
+		and _weather_month <= SNOW_MONTH_END
+
+
+# Gate the whole layer: hidden + not emitting while Weather=40 < WeatherStart=70
+# (derived from clouds.weather:3 and particles.snow.cfg:32-33).
+func _apply_snow_gate() -> void:
+	var active: bool = _snow_band_ok()
+	if _weather_root != null and is_instance_valid(_weather_root):
+		_weather_root.visible = active
+	for emitter in _snow_emitters:
+		if emitter is GPUParticles3D and is_instance_valid(emitter):
+			(emitter as GPUParticles3D).emitting = active
+	stats["snow_weather"] = _weather_value
+	stats["snow_month"] = _weather_month
+	stats["snow_band"] = [SNOW_WEATHER_START, SNOW_WEATHER_END]
+	stats["snow_active"] = active
+	stats["snow_emitter_count"] = _snow_emitters.size()
+	stats["snow_status"] = "PORT APPROXIMATION — NOT DONOR PARITY; unit mapping UNVERIFIED"
+
+
+# Four donor emitters snow1..snow4 (particles.snow.cfg:2,42,82,122), each a
+# GPUParticles3D + ParticleProcessMaterial. Draw pass is a plain white billboard
+# quad — NO donor snow*.bmp copied: PORT APPROXIMATION, NOT DONOR PARITY.
+# Donor spiral motion (SpiralRotatingRadius/Speed :14-15 etc) is NOT reproduced.
+func _build_snow_emitters() -> void:
+	_snow_emitters.clear()
+	var sprite_mat := StandardMaterial3D.new()
+	sprite_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	sprite_mat.albedo_color = Color(1.0, 1.0, 1.0, SNOW_ALPHA)  # :6,46,86,126
+	sprite_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sprite_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED  # btBillboard :16,56,96,136
+	sprite_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED  # NoZWrite=True :7,47,87,127
+	sprite_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for i in range(4):
+		var emitter := GPUParticles3D.new()
+		emitter.name = "Snow%d" % (i + 1)   # donor snow1..snow4
+		# Flake size is the donor Height/Width literal, applied to the draw-pass
+		# quad directly (no particle-size property in Godot 4.7). Unit UNVERIFIED.
+		var quad := QuadMesh.new()
+		quad.size = Vector2(float(SNOW_SIZES[i]), float(SNOW_SIZES[i]))
+		quad.material = sprite_mat
+		var ppm := ParticleProcessMaterial.new()
+		ppm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+		ppm.emission_box_extents = SNOW_CUBE_EXTENTS   # CreatingCubeStart/End (+/-0.5)
+		ppm.direction = SNOW_MOVE_DIR                 # MoveDirection (0,-1,0)
+		ppm.spread = 0.0
+		ppm.gravity = Vector3.ZERO                    # donor has no gravity field
+		var speed: float = float(SNOW_SPEEDS[i])
+		ppm.initial_velocity_min = speed
+		ppm.initial_velocity_max = speed
+		emitter.process_material = ppm
+		emitter.lifetime = SNOW_PORT_LIFETIME         # PORT ONLY, no donor lifetime key
+		emitter.amount = int(SNOW_COUNTS[i])          # Count 100/100/100/200
+		emitter.draw_pass_1 = quad
+		emitter.emitting = false                      # gated OFF until Weather >= 70
+		_weather_root.add_child(emitter)
+		_snow_emitters.append(emitter)
 
 
 func _material(col: Color, additive: bool) -> StandardMaterial3D:

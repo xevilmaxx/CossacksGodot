@@ -208,7 +208,12 @@
 		"flat_grid_promoted_cells": 0,
 		"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
 		"headless": true,
-		"input_categories": {},
+		"input_categories": {
+			"food": 0,
+			"mine": 0,
+			"stone": 0,
+			"wood": 20
+		},
 		"mesh_surfaces": 1,
 		"mesh_triangles": 7938,
 		"mesh_vertices": 4096,
@@ -264,6 +269,6 @@
 	"skip_reason": "headless or no comparable P0 PNG: state-only result, PNG diff not evaluated",
 	"skipped_or_notes": 10,
 	"structural_ok": false,
-	"unix_ms": 1795597149616.0,
+	"unix_ms": 1795597718705.0,
 	"verdict": "FAIL"
 }

@@ -216,10 +216,11 @@ func _clear_sim_entities() -> void:
 	_game.set("paused", false)
 	for p in _game.players:
 		p["entities"] = []
-	for key in ["officers", "drummers", "priests"]:
-		var arr = _game.get(key)
-		if arr is Array:
-			arr.clear()
+	# These three are per-player arrays of arrays (game.gd:145-147); spawn()
+	# indexes officers[player] directly (game.gd:2034), so keep both slots.
+	_game.set("officers", [[], []])
+	_game.set("drummers", [[], []])
+	_game.set("priests", [[], []])
 	_game.next_id = 10
 
 
@@ -374,7 +375,12 @@ func _configure() -> bool:
 	_cam.call("jump_to_world", _center)
 	var max_zoom := float(_cam.get("max_zoom"))
 	_cam.call("set_zoom_target", max_zoom, true)
+	# camera3d.gd:_process() keeps applying edge-scroll/clamp smoothing even
+	# with no input; disable it after the snap so the camera pose is FIXED for
+	# the whole sequence (VIDEO_QA_PROTOCOL.md:32).
+	_cam.set_process(false)
 	_m["camera_zoom"] = max_zoom
+	_m["camera_process_enabled"] = bool(_cam.is_processing())
 	_m["camera_meta_at_order"] = _camera_meta()
 	_anim = _world.get("anim")
 	_world.sync(0.0)
@@ -387,7 +393,12 @@ func _capture_all() -> void:
 			_abort("capture deadline exceeded at frame %d" % i)
 			return
 		# Deterministic fixed-step sim; no wall-clock dt feeds the sim here.
+		# The cleared AI player has no entities, so game._check_victory() can
+		# set `winner` and make tick() a no-op; clear it before each fixed step
+		# so all TICKS_PER_CAPTURE ticks really run (harness-only clock control).
 		for _t in range(TICKS_PER_CAPTURE):
+			_game.set("winner", -1)
+			_game.set("paused", false)
 			_game.tick(SIM_STEP)
 		var dt := float(TICKS_PER_CAPTURE) * SIM_STEP
 		_world.sync(dt)
@@ -404,13 +415,22 @@ func _capture_all() -> void:
 			_abort("capture viewport gone at frame %d" % i)
 			return
 		var img: Image = _vp.get_texture().get_image()
-		if img == null or img.is_empty():
-			_abort("blank GPU image at frame %d" % i)
+		var stats := _image_stats(img) if img != null and not img.is_empty() else {"blank": true}
+		var retries := 0
+		# UPDATE_ONCE can occasionally be sampled before the render lands. A
+		# transparent/flat read is retried with a fresh UPDATE_ONCE pass; a
+		# genuinely blank frame still fails loudly (no CPU fallback, ever).
+		while bool(stats.get("blank", true)) and retries < 4:
+			_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+			await RenderingServer.frame_post_draw
+			_rendered_frames += 1
+			img = _vp.get_texture().get_image()
+			stats = _image_stats(img) if img != null and not img.is_empty() else {"blank": true}
+			retries += 1
+		if img == null or img.is_empty() or bool(stats.get("blank", true)):
+			_abort("flat/blank 3D image at frame %d after %d retries (no CPU fallback)" % [i, retries])
 			return
-		var stats := _image_stats(img)
-		if bool(stats.get("blank", true)):
-			_abort("flat/blank 3D image at frame %d (no CPU fallback)" % i)
-			return
+		_m["blank_read_retries"] = int(_m.get("blank_read_retries", 0)) + retries
 		var name := "frame_%03d.png" % i
 		var path := FRAME_DIR + "/" + name
 		img.save_png(path)

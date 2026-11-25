@@ -1,0 +1,128 @@
+{
+	"analysis_note": "CAPTURE ONLY. Motion analysis is a separate muse-spark ticket (VID-AN-01). No donor parity claim.",
+	"capture_mode": "windowed SubViewport readback after RenderingServer.frame_post_draw",
+	"checks": [
+		{
+			"detail": "fixture=64x64 mode=3d seed=20261113",
+			"name": "fixture_64_3d",
+			"passed": true
+		},
+		{
+			"detail": "render_mode=3d map=[64, 64] seed=20261113",
+			"name": "real_game_boot",
+			"passed": true
+		},
+		{
+			"detail": "viewport=Screenshot3DViewport size=1280x720",
+			"name": "capture_viewport_ready",
+			"passed": true
+		},
+		{
+			"detail": "speed=0.000000 ais=0; sim advanced only by atom-side fixed ticks",
+			"name": "sim_clock_frozen",
+			"passed": true
+		},
+		{
+			"detail": "count=4 sid=officer player=0 ids=4",
+			"name": "four_friendly_units",
+			"passed": true
+		},
+		{
+			"detail": "cmd_move calls=1, squad_id=1, dest=[78.0, 69.0], all 4 have move order=true",
+			"name": "one_move_order",
+			"passed": true
+		},
+		{
+			"detail": "captured=16 (required >=12), rendered_frames=48, interval=3",
+			"name": "frames_captured",
+			"passed": true
+		},
+		{
+			"detail": "blank frames=0 of 16",
+			"name": "frames_nonblank",
+			"passed": true
+		},
+		{
+			"detail": "distinct image signatures=10 of 16 (factual only; no motion verdict)",
+			"name": "frames_distinct",
+			"passed": true
+		},
+		{
+			"detail": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/vidqa/frames.json",
+			"name": "frames_json_written",
+			"passed": true
+		}
+	],
+	"frame_count": 16,
+	"frame_dir": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/vidqa",
+	"frames_json": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/vidqa/frames.json",
+	"id": "t_motion_capture",
+	"measured": {
+		"anim_clock_s": 6.147536,
+		"blank_read_retries": 0,
+		"boot_map_tiles": [
+			64,
+			64
+		],
+		"boot_render_mode": "3d",
+		"boot_seed": 20261113,
+		"boot_wall_ms": 33216,
+		"camera_meta_at_order": {
+			"camera_current": true,
+			"height_m": 20.0,
+			"position_world_m": [
+				0.0,
+				20.0,
+				32.0066909790039
+			],
+			"target_sim_m": [
+				64.0,
+				64.0
+			],
+			"viewport": "Screenshot3DViewport",
+			"zoom": 2.9
+		},
+		"camera_process_enabled": false,
+		"camera_zoom": 2.9,
+		"config": "res://tests/fixtures/small_map_64.json",
+		"display_server": "Windows",
+		"distinct_image_signatures": 10,
+		"frames_json": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/vidqa/frames.json",
+		"main_ais_count": 0,
+		"main_speed": 0.0,
+		"move_calls": 1,
+		"move_dest_sim": [
+			78.0,
+			69.0
+		],
+		"rendered_frames": 48,
+		"screenshot_flag": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/vidqa/unused_flag.png",
+		"sim_time_at_order_s": 0.125,
+		"squad_id": 1,
+		"unit_sid": "officer",
+		"units_initial_sim": [
+			[
+				61.0,
+				62.0
+			],
+			[
+				67.0,
+				62.0
+			],
+			[
+				61.0,
+				66.0
+			],
+			[
+				67.0,
+				66.0
+			]
+		]
+	},
+	"passed": true,
+	"passes": 10,
+	"script_error_note": "verify via variant3d/tools/smallmap_capture.py scan-stderr on runner stderr.txt",
+	"status": "CAPTURE_OK",
+	"total": 10,
+	"unix_ms": 1795598789256.0
+}

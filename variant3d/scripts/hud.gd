@@ -1438,7 +1438,7 @@ func _on_minimap_input(ev: InputEvent) -> void:
 		_draw_minimap_viewport_box()  # F3
 
 # V7-67: 3D minimap left press/drag -> Camera3D ground focus. Uses the public
-# jump_to_world(world_pos) API V7-66 adds, via a dynamic call so hud.gd has no
+# jump_to_world_donor_offset(world_pos) API MMJUMP-02 adds, via a dynamic call so hud.gd has no
 # camera3d.gd class-name dependency. Returns true only for a 3D left press/drag
 # so the caller returns before the 2D path's unconditional set_input_as_handled;
 # the press is swallowed ONLY when the jump actually ran. Motion is never swallowed.
@@ -1456,13 +1456,15 @@ func _minimap_jump_3d(ev: InputEvent, world_pos: Vector2) -> bool:
 
 func _cam3d_jump(world_pos: Vector2) -> bool:
 	var cam: Object = _bound_cam3d
-	if cam == null or not cam.has_method("jump_to_world"):
+	if cam == null or not cam.has_method("jump_to_world_donor_offset"):
 		return false
 	# world_pos is sim metres in game (x,y); game y == world z (world3d.gd:215-216).
-	# Same public contract as 2D camera.gd:96 jump_to_world(world_pos). The
-	# minimap viewport box redraw (above) reads hud3d_adapter.get_minimap_box(),
-	# so the adapter's tile<->metre mapping stays the single source of truth.
-	cam.call("jump_to_world", world_pos)
+	# Same public contract as 2D camera.gd:96 jump_to_world(world_pos), but routed to
+	# MMJUMP-02's SEPARATE donor-offset API so jump_to_world stays plain-centre for
+	# CAM-RV-01. The minimap viewport box redraw (above) reads
+	# hud3d_adapter.get_minimap_box(), so the adapter's tile<->metre mapping stays the
+	# single source of truth.
+	cam.call("jump_to_world_donor_offset", world_pos)
 	return true
 
 # F3: draw the white viewport rectangle into a DISPLAY image and upload it.

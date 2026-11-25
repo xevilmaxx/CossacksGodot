@@ -29,6 +29,14 @@
 # A ProjectSettings setting `terrain/tile_atlas_mode` is read as a last config
 # source (read-only — this file never edits config). Default: MODE_SINGLE.
 #
+# SP-5 / SEASON-PLAN-01: an optional `manifest_path` config key parallels
+# `single_atlas_path`. It selects the JSON manifest consumed by _load_grid()
+# and _load_array(); default stays V785_MANIFEST, so Summer and the whole
+# single -> split -> array fallback chain are unchanged. A season caller can
+# pass both {"manifest_path": ..., "single_atlas_path": ...} to bind a
+# different atlas without any index or shader change (index-preserving swap).
+# MODE_SPLIT still reads SPLIT_MANIFEST (its own parts descriptor) — untouched.
+#
 # DONOR EVIDENCE (all read-only citations, no invented indices):
 #   * index dictionary = variant3d/assets/terrain/structs/presets_summer.json:2-125
 #     mirror of data/terrain/tiles/terrain.presets:2-6 (Summer, DefaultIndex=0,
@@ -66,6 +74,7 @@ const CACHE_FILE := "user://tile_atlas_cache/tile_index_atlas.png"
 const CONFIG_SETTING := "terrain/tile_atlas_mode"
 const CONFIG_KEY := "tile_atlas_mode"
 const CONFIG_SINGLE_PATH_KEY := "single_atlas_path"
+const CONFIG_MANIFEST_PATH_KEY := "manifest_path"  # SP-5; optional override
 const CHUNK := 1 << 20  # 1 MiB — never hold the whole 180 MB in RAM
 
 var mode: String = MODE_SINGLE  # user-requested default: original atlas
@@ -73,6 +82,8 @@ var last_error: String = ""
 # Overridable so a caller (or a probe simulating a clone without the big file)
 # can point single mode at a missing path and exercise the fallback chain.
 var single_atlas_path: String = SINGLE_ATLAS
+# SP-5: optional manifest override, default is the unchanged V7-85 Summer path.
+var manifest_path: String = V785_MANIFEST
 
 var _atlas_texture: ImageTexture = null
 var _tile_array: Texture2DArray = null
@@ -102,6 +113,8 @@ func _init(p_mode: Variant = "", p_config: Dictionary = {}) -> void:
 			chosen = str(setting).strip_edges()
 	if cfg.has(CONFIG_SINGLE_PATH_KEY):
 		single_atlas_path = str(cfg[CONFIG_SINGLE_PATH_KEY])
+	if cfg.has(CONFIG_MANIFEST_PATH_KEY):
+		manifest_path = str(cfg[CONFIG_MANIFEST_PATH_KEY])
 	set_mode(chosen)
 
 
@@ -295,8 +308,9 @@ func _read_json(path: String) -> Dictionary:
 
 
 func _load_grid() -> void:
-	# Grid/packing comes from V7-85's manifest, never from a hardcoded table.
-	var v785 := _read_json(V785_MANIFEST)
+	# Grid/packing comes from the selected manifest (default: V7-85's), never
+	# from a hardcoded table. SP-5: manifest_path is caller-overridable.
+	var v785 := _read_json(manifest_path)
 	var atlas: Dictionary = v785.get("atlas", {})
 	var g: Array = atlas.get("grid", [])
 	if g.size() == 2:
@@ -387,7 +401,8 @@ func _load_split() -> bool:
 # MODE_ARRAY — Texture2DArray from shipped donor block PNGs in V7-85 order.
 # ---------------------------------------------------------------------------
 func _load_array() -> bool:
-	var manifest := _read_json(V785_MANIFEST)
+	# SP-5: same manifest override as _load_grid(); default V785_MANIFEST.
+	var manifest := _read_json(manifest_path)
 	if manifest.is_empty():
 		return _fail("V7-85 manifest unavailable: " + last_error)
 	var atlas: Dictionary = manifest.get("atlas", {})

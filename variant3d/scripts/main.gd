@@ -733,6 +733,23 @@ func _dump_map() -> void:
 	for z in game.cluster_zones:
 		var zd: Dictionary = z
 		zones.append({"x": float(zd.pos.x), "y": float(zd.pos.y), "r": float(zd.r)})
+	# RELIEF-02 — PORT APPROXIMATION (donor engine blend UNVERIFIED; DPATTERN-01
+	# §5.2). Producer for RELIEF-01's opt-in dump["relief_stamps"] marker.
+	# Donor-grounded: C3PatternGen.Stamp.name is picked from
+	# assets/terrain/patterns/donor_patterns.json (source: donor .pattern files
+	# + generator.cfg, pattern_gen.gd:4-5,164,181); x/y are map-cell placement
+	# indices (pattern_gen.gd:523-533). Emit only the two ids RELIEF-01 encoded:
+	# plt2 (generator.cfg:588, pattern.lib:6805-6806) and k_ravine_1
+	# (generator.cfg:540, pattern.lib:549585-549586). k_ravine_1 is absent from
+	# donor_patterns.json (ravine_medium is not in pattern_gen.gd:27-36), so no
+	# k_ravine_1 stamp is invented here; its producer hook remains blocked.
+	var relief_stamps: Array = []
+	for sv in game.pattern_stamps:
+		var st: Object = sv
+		var pname: String = str(st.get("name"))
+		if pname != "plt2" and pname != "k_ravine_1":
+			continue
+		relief_stamps.append({"name": pname, "cx": int(st.get("x")), "cy": int(st.get("y"))})
 	var dump := {
 		"seed": Data.RANDOM_SEED, "map_w": game.MAP_W, "map_h": game.MAP_H,
 		"terrain": Marshalls.raw_to_base64(game.terrain),
@@ -740,6 +757,7 @@ func _dump_map() -> void:
 		"height": Marshalls.raw_to_base64(game.height.to_byte_array()),
 		"tileblock": Marshalls.raw_to_base64(game.tileblock),
 		"starts": starts, "clusters": zones, "res": res, "meta": game.map_meta,
+		"relief_stamps": relief_stamps,
 	}
 	var out := _write_text(dump_path, JSON.stringify(dump))
 	if out == "":

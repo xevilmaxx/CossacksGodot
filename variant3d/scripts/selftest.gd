@@ -151,7 +151,10 @@ func _spot(sid: String, near: Vector2) -> Vector2:
 			# step out of it is blocked, so the build order gives up with
 			# zero progress. Reject it; another ring candidate is tried.
 			var ink: Rect2 = game.bld_block_rect_for(0, sid, p)
-			if ink.grow(0.6).has_point(near):
+			# Keep one map tile plus a little clearance between the caller and
+			# the future ink box: a nearer site lets the builder wander into
+			# the box on a later step and be stranded inside it.
+			if ink.grow(Data.TILE_M + 0.75).has_point(near):
 				continue
 			return p
 	return Vector2.INF
