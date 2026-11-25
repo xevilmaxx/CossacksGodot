@@ -110,37 +110,37 @@
 			"status": "PASS"
 		},
 		{
-			"detail": "save_png(C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png) err=0",
+			"detail": "save_png(C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/terraindarkfix-p0/smallmap64_terrain_only.png) err=0",
 			"name": "capture_saved",
 			"passed": true,
 			"status": "PASS"
 		},
 		{
-			"detail": "non_black_fraction=0.99373589409722 (expected >0.9; smallmap_capture.py:26)",
+			"detail": "non_black_fraction=1.0 (expected >0.9; smallmap_capture.py:26)",
 			"name": "non_black_fraction",
 			"passed": true,
 			"status": "PASS"
 		},
 		{
-			"detail": "full_width_dark_rows=720 RECORDED_NOT_APPLICABLE (no water layer in P0; diagnostic only, not a pass/fail gate)",
+			"detail": "full_width_dark_rows=0 RECORDED_NOT_APPLICABLE (no water layer in P0; diagnostic only, not a pass/fail gate)",
 			"name": "full_width_dark_rows",
 			"passed": null,
 			"status": "RECORDED_NOT_APPLICABLE"
 		},
 		{
-			"detail": "mean_luma=13.271 (strict >=40; current dark frame=13.271 fails; PORT APPROX — no donor GPU A/B exists)",
+			"detail": "mean_luma=98.680 (strict >=40; current dark frame=13.271 fails; PORT APPROX — no donor GPU A/B exists)",
 			"name": "ground_mean_luma",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		},
 		{
-			"detail": "max_luma=27.413 (strict >=100; current dark frame=28.4 fails; PORT APPROX — no donor GPU A/B exists)",
+			"detail": "max_luma=172.139 (strict >=100; current dark frame=28.4 fails; PORT APPROX — no donor GPU A/B exists)",
 			"name": "ground_max_luma",
-			"passed": false,
-			"status": "FAIL"
+			"passed": true,
+			"status": "PASS"
 		}
 	],
-	"fails": 2,
+	"fails": 0,
 	"harness_source": "shared:res://tests/fixtures/_smallmap_harness.gd",
 	"id": "t_terrain_only",
 	"measured": {
@@ -163,16 +163,16 @@
 		"mesh_triangles": 7938,
 		"mesh_vertices": 4096,
 		"png_metrics": {
-			"bytes": 987980,
-			"full_width_dark_rows": 720,
+			"bytes": 2159108,
+			"full_width_dark_rows": 0,
 			"height": 720,
-			"max_luma": 27.4128001459418,
-			"mean_luma": 13.2707037475694,
-			"non_black_fraction": 0.993735894097222,
-			"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
+			"max_luma": 172.139004115865,
+			"mean_luma": 98.6802637594176,
+			"non_black_fraction": 1.0,
+			"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/terraindarkfix-p0/smallmap64_terrain_only.png",
 			"width": 1280
 		},
-		"requested_png": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
+		"requested_png": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/terraindarkfix-p0/smallmap64_terrain_only.png",
 		"res_nodes_count": 0,
 		"shader_shadow_enabled": "0.0",
 		"terrain_stats_present": true,
@@ -189,13 +189,13 @@
 		"water_tileblock_cells": 0
 	},
 	"parity_label": "PORT APPROX — internal consistency only; no donor GPU A/B (V3D_02 parity_guard)",
-	"passed": false,
-	"passes": 20,
-	"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/test01_ladder2/smallmap64_terrain_only.png",
+	"passed": true,
+	"passes": 22,
+	"png_path": "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/terraindarkfix-p0/smallmap64_terrain_only.png",
 	"script_error_note": "verify via smallmap_capture.py scan-stderr on runner stderr.txt",
 	"skip_reason": "",
 	"skipped_or_skip_capture": 1,
-	"structural_ok": false,
-	"unix_ms": 1795599430830.0,
-	"verdict": "FAIL"
+	"structural_ok": true,
+	"unix_ms": 1795600333500.0,
+	"verdict": "PASS"
 }

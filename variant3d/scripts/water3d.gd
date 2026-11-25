@@ -1,5 +1,10 @@
 extends Node3D
 
+# CONFIG-WIRE-WATER: typed readers for features.water.* (CONFIG-CORE-01). Every
+# getter falls back to the very literal it replaces, so a run with no config
+# loaded (or a default config) is byte-for-byte the same behaviour as before.
+const C3ConfigScript = preload("res://scripts/config.gd")
+
 # V7-84 — self-contained donor-grounded 3D water surface.
 #
 # Owns ONLY this file + variant3d/shaders/water3d.gdshader (per task exclusivity).
@@ -24,7 +29,11 @@ const WATER_SHORE_HEIGHT: float = -0.1     # texturemap.inc:31 cWaterShoreHeight
 # the two: this is a PORT APPROXIMATION placeholder (the only donor-readable
 # number) so waveheight stays 0 under shipped constants (DTRN-03 C16). A labelled
 # A/B may pass a different surface Y; it is never recovered donor truth.
-const WATER_SURFACE_Y: float = -0.25       # PORT APPROX placeholder for gl_TexCoord[1].z
+# CONFIG-WIRE-WATER: was `const WATER_SURFACE_Y: float = -0.25`. It is now a
+# runtime var so feature_water_surface_y() can supply it; the fallback below is
+# the identical -0.25 placeholder, and every use site (uniform + plane vertices)
+# is unchanged. Donor classification literals above stay const and untouched.
+var WATER_SURFACE_Y: float = -0.25          # PORT APPROX placeholder for gl_TexCoord[1].z
 const MAX_HEIGHT: float = 2.96             # texturemap.inc:29 cMaxHeight
 const COAST_FADE: float = 0.57             # water.dev.frag:37 coast2water_fadedepth
 const DEEP_FADE: float = 1.07              # water.dev.frag:168 0.5 + 0.57
@@ -144,6 +153,18 @@ func invalidate() -> void:
 # water quad keeps its existing full-map extent.
 func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 	invalidate()
+	# CONFIG-WIRE-WATER: resolve features.water.* through the typed getters once
+	# per build. Each getter falls back to today's literal, so a default/no-config
+	# run is unchanged. The water_cell alpha gate and every uniform binding stay
+	# byte-identical (shader is out of scope); alpha_confine and shore_prox are
+	# read here for the audit trail, not used to mutate the shader.
+	var alpha_confine: bool = true
+	var shore_prox: bool = false
+	var cfg = C3ConfigScript.active
+	if cfg != null:
+		WATER_SURFACE_Y = cfg.feature_water_surface_y()
+		alpha_confine = cfg.feature_water_alpha_confine()
+		shore_prox = cfg.feature_water_shore_prox()
 	var shader := load(SHADER_PATH) as Shader
 	if shader == null:
 		push_error("water3d: cannot load " + SHADER_PATH)
@@ -251,6 +272,10 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 			+ "donor ramp coastfade/coastfade2 unchanged (texturemap.inc:30; water.dev.frag:198-199,230)"),
 		"shore_prox": ("REMOVED — RV-TRN-03 §5.2 proved it INERT (=1) under shipped "
 			+ "literals; PORT ART absent from the donor fragment (water.dev.frag:227)"),
+		# CONFIG-WIRE-WATER: config-read values (audit only; defaults below are
+		# the current behaviour — gate stays on, shore_prox stays removed).
+		"water_alpha_confine_config": alpha_confine,
+		"shore_prox_config": shore_prox,
 	}
 	return true
 

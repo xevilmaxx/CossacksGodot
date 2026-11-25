@@ -173,6 +173,9 @@ func bind(game: Object, view_scale: float = 1.0) -> void:
 	self.view_scale = view_scale
 	_resolve_height_sampler()
 	projection = PROJECTION_PERSPECTIVE  # G31:225 — donor main view is perspective, not ortho
+	# CONFIG-WIRE-CAM — FOV is now read through the global feature-config getter
+	# below. FOV_DEG_ASSUMED (17.27) is kept as the exact null-config fallback and
+	# equals the getter's own default; PORT APPROXIMATION / UNVERIFIED (RV-CAM-01).
 	fov = FOV_DEG_ASSUMED
 	near = NEAR_M
 	far = FAR_M
@@ -186,6 +189,10 @@ func bind(game: Object, view_scale: float = 1.0) -> void:
 	zoom_step_factor = Data.CAMERA_ZOOM_STEP
 	var cfg = C3ConfigScript.active
 	if cfg != null:
+		# CONFIG-WIRE-CAM — authoritative FOV read via the typed getter. It falls
+		# back to 17.27 when features.camera.fov_deg is absent, so the shipped
+		# value/behaviour is unchanged; PORT APPROX / UNVERIFIED (RV-CAM-01).
+		fov = cfg.feature_camera_fov_deg()
 		zoom_notch_gain = cfg.num("camera.zoom_notch_gain", 2.0)
 		zoom_smooth_rate = cfg.num("camera.zoom_smooth_rate", 18.0)
 		edge_depth_gain = cfg.num("camera.edge_depth_gain", 3.0)

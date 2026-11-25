@@ -226,7 +226,7 @@
 			1280.0,
 			720.0
 		],
-		"screenshot_arg": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\s1inputfix_smallmap64_r2.png",
+		"screenshot_arg": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Temp\\opencode\\configwires_smallmap64.png",
 		"viewport_px": [
 			1280.0,
 			720.0
@@ -236,8 +236,8 @@
 		"world_sel_rect_during": [
 			51.8104095458984,
 			54.4071273803711,
-			3.86607360839844,
-			36.1193771362305
+			6.09622573852539,
+			34.1132965087891
 		]
 	},
 	"passed": true,
@@ -245,5 +245,5 @@
 	"run_mode": "windowed_real_input",
 	"runner_declaration": "S1-INPUT-FIX: validated via variant runner, windowed real-input job s1inputfix-run; see docs/coord_swarm_2026-11-25/reports/S1_INPUT_FIX.md",
 	"total": 23,
-	"unix_ms": 1795599197102.0
+	"unix_ms": 1795599961483.0
 }

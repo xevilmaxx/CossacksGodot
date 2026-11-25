@@ -1,0 +1,3201 @@
+{
+ "version": 1,
+ "generator": "variant3d/tools/build_winter_atlas.py",
+ "labels": [
+  "DONOR_INDEX_CITED_SECOND_HAND",
+  "DONOR_ART_ALIAS_CITED_SECOND_HAND",
+  "APPROX_ATLAS_PACKING",
+  "APPROX_ALPHA_INTENSITY_FORMULA",
+  "UNVERIFIED_EMPTY_CELLS",
+  "UNVERIFIED_ALPHA_SUBRECT_MAPPING",
+  "NO_VISUAL_PARITY_CLAIM"
+ ],
+ "atlas": {
+  "file": "tile_index_atlas_winter.png",
+  "size": [
+   16384,
+   8192
+  ],
+  "cell_size": [
+   1024,
+   1024
+  ],
+  "grid": [
+   16,
+   8
+  ],
+  "slots": 128,
+  "named_cells": 124,
+  "filled_cells": 121,
+  "empty_cells": 3,
+  "upscaled_sources": [],
+  "packing_label": "APPROX_ATLAS_PACKING (donor tsDouble/ttExtended is engine-side, UNVERIFIED)"
+ },
+ "index_dictionary": {
+  "file": "variant3d/assets/terrain/atlas/winter_aliases.json",
+  "lines": "48-1678",
+  "count": 124,
+  "donor_evidence": "data/terrain/tiles/terrain.presets:134-263 (Winter 124-entry section, one-for-one rename); indices identical to presets_summer.json:2-125 / terrain.presets:2-6. Alias rule: texturemap.inc:525-526,605-606 (SP-2 / DENV-01, second-hand)"
+ },
+ "layout": [
+  {
+   "index": 0,
+   "name": "grass1",
+   "cell_xy": [
+    0,
+    0
+   ],
+   "cell_px": [
+    0,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:0 (grass1_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 1,
+   "name": "grass2",
+   "cell_xy": [
+    1,
+    0
+   ],
+   "cell_px": [
+    1024,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter9.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:1 (grass2_winter -> winter9.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "974069381acb4939e511e4be6e53b67743d312e6709fdb01560e67c5e20b2d4d"
+  },
+  {
+   "index": 2,
+   "name": "grass3",
+   "cell_xy": [
+    2,
+    0
+   ],
+   "cell_px": [
+    2048,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:2 (grass3_winter -> winter2.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0466cd5d92b849728cc0a2ed832a76a92e06996f31e19689ba69bf5203971940"
+  },
+  {
+   "index": 3,
+   "name": "grass4",
+   "cell_xy": [
+    3,
+    0
+   ],
+   "cell_px": [
+    3072,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:3 (grass4_winter -> winter3.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "11941960763cf6e566191f62e74c85d80151a11d1e1701d1d213d3c05cbf64af"
+  },
+  {
+   "index": 4,
+   "name": "grass5",
+   "cell_xy": [
+    4,
+    0
+   ],
+   "cell_px": [
+    4096,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:4 (grass5_winter -> winter4.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "563f4db78f9fe0d57922932081d295e6efda547d9890b7d247d7fbb559655191"
+  },
+  {
+   "index": 5,
+   "name": "grass6",
+   "cell_xy": [
+    5,
+    0
+   ],
+   "cell_px": [
+    5120,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter16.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:5 (grass6_winter -> winter16.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "579dae72bd087e238068d1b771d48fac3352760df5a7950f5dd808256053e0f9"
+  },
+  {
+   "index": 6,
+   "name": "grass7",
+   "cell_xy": [
+    6,
+    0
+   ],
+   "cell_px": [
+    6144,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:6 (grass7_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 7,
+   "name": "grass8",
+   "cell_xy": [
+    7,
+    0
+   ],
+   "cell_px": [
+    7168,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter21.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:7 (grass8_winter -> winter21.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1985ba852cd408dba1e008ac91aa1d794014c6e8a5ee0d30562220d9a5d8f186"
+  },
+  {
+   "index": 8,
+   "name": "grass9",
+   "cell_xy": [
+    8,
+    0
+   ],
+   "cell_px": [
+    8192,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:8 (grass9_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 9,
+   "name": "grass10",
+   "cell_xy": [
+    9,
+    0
+   ],
+   "cell_px": [
+    9216,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:9 (grass10_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 10,
+   "name": "ground1",
+   "cell_xy": [
+    10,
+    0
+   ],
+   "cell_px": [
+    10240,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter11.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:10 (ground1_winter -> winter11.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "a83e3cd8784ffd16b2097d14c5d08f03a88c9fa3f86be214bd4c66103868d26f"
+  },
+  {
+   "index": 11,
+   "name": "grass_sand1",
+   "cell_xy": [
+    11,
+    0
+   ],
+   "cell_px": [
+    11264,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter21.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:11 (grass_sand1_winter -> winter21.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1985ba852cd408dba1e008ac91aa1d794014c6e8a5ee0d30562220d9a5d8f186"
+  },
+  {
+   "index": 12,
+   "name": "grass_sand2",
+   "cell_xy": [
+    12,
+    0
+   ],
+   "cell_px": [
+    12288,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:12 (grass_sand2_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 13,
+   "name": "grass_rock1",
+   "cell_xy": [
+    13,
+    0
+   ],
+   "cell_px": [
+    13312,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter9.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:13 (grass_rock1_winter -> winter9.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "974069381acb4939e511e4be6e53b67743d312e6709fdb01560e67c5e20b2d4d"
+  },
+  {
+   "index": 14,
+   "name": "grass_ground1",
+   "cell_xy": [
+    14,
+    0
+   ],
+   "cell_px": [
+    14336,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:14 (grass_ground1_winter -> winter5.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3060c857195bdab4add51f5443dfb1189bbfa3f3cf042266bb33abaffc0c05c1"
+  },
+  {
+   "index": 15,
+   "name": "grass_ground2",
+   "cell_xy": [
+    15,
+    0
+   ],
+   "cell_px": [
+    15360,
+    0,
+    1024,
+    1024
+   ],
+   "source_png": "winter4.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:15 (grass_ground2_winter -> winter4.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "563f4db78f9fe0d57922932081d295e6efda547d9890b7d247d7fbb559655191"
+  },
+  {
+   "index": 16,
+   "name": "grass_ground3",
+   "cell_xy": [
+    0,
+    1
+   ],
+   "cell_px": [
+    0,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:16 (grass_ground3_winter -> winter5.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3060c857195bdab4add51f5443dfb1189bbfa3f3cf042266bb33abaffc0c05c1"
+  },
+  {
+   "index": 17,
+   "name": "rock1",
+   "cell_xy": [
+    1,
+    1
+   ],
+   "cell_px": [
+    1024,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter12.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:17 (rock1_winter -> winter12.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "70cd09a8ba5b8515f5d642a5272af66253b61c81b3732d6accdcb73c8d165cac"
+  },
+  {
+   "index": 18,
+   "name": "rock2",
+   "cell_xy": [
+    2,
+    1
+   ],
+   "cell_px": [
+    2048,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter13.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:18 (rock2_winter -> winter13.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b7d194e9ab6b55ac5f43f4e9bf94a4e6ad5c95e0d720e0b9ec024141f5960a18"
+  },
+  {
+   "index": 19,
+   "name": "rock3",
+   "cell_xy": [
+    3,
+    1
+   ],
+   "cell_px": [
+    3072,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter13.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:19 (rock3_winter -> winter13.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b7d194e9ab6b55ac5f43f4e9bf94a4e6ad5c95e0d720e0b9ec024141f5960a18"
+  },
+  {
+   "index": 20,
+   "name": "rock4",
+   "cell_xy": [
+    4,
+    1
+   ],
+   "cell_px": [
+    4096,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter17.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:20 (rock4_winter -> winter17.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "420dadbe3ea7346c0213d619dafa1c8d951a09b40d835649a71658905cb305d6"
+  },
+  {
+   "index": 21,
+   "name": "rock5",
+   "cell_xy": [
+    5,
+    1
+   ],
+   "cell_px": [
+    5120,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter22.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:21 (rock5_winter -> winter22.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "7a0366d060cafc4173658466e8010cf1b25d50e3a44106e808bdcaa40e73c5b7"
+  },
+  {
+   "index": 22,
+   "name": "rock6",
+   "cell_xy": [
+    6,
+    1
+   ],
+   "cell_px": [
+    6144,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter15.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:22 (rock6_winter -> winter15.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "c788a118989f4e71d1a86ea8726a67fac8b6ce5158df28d92ee845ccaf718594"
+  },
+  {
+   "index": 23,
+   "name": "rock7",
+   "cell_xy": [
+    7,
+    1
+   ],
+   "cell_px": [
+    7168,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter14.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:23 (rock7_winter -> winter14.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "df12de72ce0582d4a107fcf006daef3f6567855ae8d1cff1ab762918893d5bbf"
+  },
+  {
+   "index": 24,
+   "name": "rock8",
+   "cell_xy": [
+    8,
+    1
+   ],
+   "cell_px": [
+    8192,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter16.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:24 (rock8_winter -> winter16.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "579dae72bd087e238068d1b771d48fac3352760df5a7950f5dd808256053e0f9"
+  },
+  {
+   "index": 25,
+   "name": "rock9",
+   "cell_xy": [
+    9,
+    1
+   ],
+   "cell_px": [
+    9216,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter20.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:25 (rock9_winter -> winter20.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "41bc8f8c3f20d6ef86a9c3afbe097683423e8043db23d53d7a5b6ed17b402d68"
+  },
+  {
+   "index": 26,
+   "name": "sand1",
+   "cell_xy": [
+    10,
+    1
+   ],
+   "cell_px": [
+    10240,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:26 (sand1_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 27,
+   "name": "sand2",
+   "cell_xy": [
+    11,
+    1
+   ],
+   "cell_px": [
+    11264,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:27 (sand2_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 28,
+   "name": "sand3",
+   "cell_xy": [
+    12,
+    1
+   ],
+   "cell_px": [
+    12288,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter20.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:28 (sand3_winter -> winter20.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "41bc8f8c3f20d6ef86a9c3afbe097683423e8043db23d53d7a5b6ed17b402d68"
+  },
+  {
+   "index": 29,
+   "name": "sand4",
+   "cell_xy": [
+    13,
+    1
+   ],
+   "cell_px": [
+    13312,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:29 (sand4_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 30,
+   "name": "sand5",
+   "cell_xy": [
+    14,
+    1
+   ],
+   "cell_px": [
+    14336,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:30 (sand5_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 31,
+   "name": "sand6",
+   "cell_xy": [
+    15,
+    1
+   ],
+   "cell_px": [
+    15360,
+    1024,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:31 (sand6_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 32,
+   "name": "sand7",
+   "cell_xy": [
+    0,
+    2
+   ],
+   "cell_px": [
+    0,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:32 (sand7_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 33,
+   "name": "sand8",
+   "cell_xy": [
+    1,
+    2
+   ],
+   "cell_px": [
+    1024,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:33 (sand8_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 34,
+   "name": "sand9",
+   "cell_xy": [
+    2,
+    2
+   ],
+   "cell_px": [
+    2048,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:34 (sand9_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 35,
+   "name": "sand1f",
+   "cell_xy": [
+    3,
+    2
+   ],
+   "cell_px": [
+    3072,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:35 (sand1f_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 36,
+   "name": "sand1s",
+   "cell_xy": [
+    4,
+    2
+   ],
+   "cell_px": [
+    4096,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter25.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:36 (sand1s_winter -> winter25.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4e0e5e8d18a12bbbb0bf4f9cdc8e16737f67fde10dda860dc9b66451eb212fc9"
+  },
+  {
+   "index": 37,
+   "name": "sand2f",
+   "cell_xy": [
+    5,
+    2
+   ],
+   "cell_px": [
+    5120,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:37 (sand2f_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 38,
+   "name": "sand2s",
+   "cell_xy": [
+    6,
+    2
+   ],
+   "cell_px": [
+    6144,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:38 (sand2s_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 39,
+   "name": "sand3f",
+   "cell_xy": [
+    7,
+    2
+   ],
+   "cell_px": [
+    7168,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:39 (sand3f_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 40,
+   "name": "sand3s",
+   "cell_xy": [
+    8,
+    2
+   ],
+   "cell_px": [
+    8192,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:40 (sand3s_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 41,
+   "name": "sand4f",
+   "cell_xy": [
+    9,
+    2
+   ],
+   "cell_px": [
+    9216,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:41 (sand4f_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 42,
+   "name": "sand4s",
+   "cell_xy": [
+    10,
+    2
+   ],
+   "cell_px": [
+    10240,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:42 (sand4s_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 43,
+   "name": "sand5f",
+   "cell_xy": [
+    11,
+    2
+   ],
+   "cell_px": [
+    11264,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:43 (sand5f_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 44,
+   "name": "sand5s",
+   "cell_xy": [
+    12,
+    2
+   ],
+   "cell_px": [
+    12288,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:44 (sand5s_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 45,
+   "name": "sand6f",
+   "cell_xy": [
+    13,
+    2
+   ],
+   "cell_px": [
+    13312,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:45 (sand6f_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 46,
+   "name": "sand6s",
+   "cell_xy": [
+    14,
+    2
+   ],
+   "cell_px": [
+    14336,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:46 (sand6s_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 47,
+   "name": "sand7f",
+   "cell_xy": [
+    15,
+    2
+   ],
+   "cell_px": [
+    15360,
+    2048,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:47 (sand7f_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 48,
+   "name": "sand7s",
+   "cell_xy": [
+    0,
+    3
+   ],
+   "cell_px": [
+    0,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:48 (sand7s_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 49,
+   "name": "sand8f",
+   "cell_xy": [
+    1,
+    3
+   ],
+   "cell_px": [
+    1024,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:49 (sand8f_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 50,
+   "name": "sand8s",
+   "cell_xy": [
+    2,
+    3
+   ],
+   "cell_px": [
+    2048,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:50 (sand8s_winter -> winter2.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0466cd5d92b849728cc0a2ed832a76a92e06996f31e19689ba69bf5203971940"
+  },
+  {
+   "index": 51,
+   "name": "sand9f",
+   "cell_xy": [
+    3,
+    3
+   ],
+   "cell_px": [
+    3072,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:51 (sand9f_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 52,
+   "name": "sand9s",
+   "cell_xy": [
+    4,
+    3
+   ],
+   "cell_px": [
+    4096,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:52 (sand9s_winter -> winter2.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0466cd5d92b849728cc0a2ed832a76a92e06996f31e19689ba69bf5203971940"
+  },
+  {
+   "index": 53,
+   "name": "rock1vf",
+   "cell_xy": [
+    5,
+    3
+   ],
+   "cell_px": [
+    5120,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter12.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:53 (rock1vf_winter -> winter12.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "70cd09a8ba5b8515f5d642a5272af66253b61c81b3732d6accdcb73c8d165cac"
+  },
+  {
+   "index": 54,
+   "name": "rock1vs",
+   "cell_xy": [
+    6,
+    3
+   ],
+   "cell_px": [
+    6144,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter12.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:54 (rock1vs_winter -> winter12.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "70cd09a8ba5b8515f5d642a5272af66253b61c81b3732d6accdcb73c8d165cac"
+  },
+  {
+   "index": 55,
+   "name": "rock2vf",
+   "cell_xy": [
+    7,
+    3
+   ],
+   "cell_px": [
+    7168,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter13.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:55 (rock2vf_winter -> winter13.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b7d194e9ab6b55ac5f43f4e9bf94a4e6ad5c95e0d720e0b9ec024141f5960a18"
+  },
+  {
+   "index": 56,
+   "name": "rock2vs",
+   "cell_xy": [
+    8,
+    3
+   ],
+   "cell_px": [
+    8192,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter13.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:56 (rock2vs_winter -> winter13.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b7d194e9ab6b55ac5f43f4e9bf94a4e6ad5c95e0d720e0b9ec024141f5960a18"
+  },
+  {
+   "index": 57,
+   "name": "rock3vf",
+   "cell_xy": [
+    9,
+    3
+   ],
+   "cell_px": [
+    9216,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter13.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:57 (rock3vf_winter -> winter13.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b7d194e9ab6b55ac5f43f4e9bf94a4e6ad5c95e0d720e0b9ec024141f5960a18"
+  },
+  {
+   "index": 58,
+   "name": "rock3vs",
+   "cell_xy": [
+    10,
+    3
+   ],
+   "cell_px": [
+    10240,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter13.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:58 (rock3vs_winter -> winter13.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b7d194e9ab6b55ac5f43f4e9bf94a4e6ad5c95e0d720e0b9ec024141f5960a18"
+  },
+  {
+   "index": 59,
+   "name": "rock4vf",
+   "cell_xy": [
+    11,
+    3
+   ],
+   "cell_px": [
+    11264,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter17.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:59 (rock4vf_winter -> winter17.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "420dadbe3ea7346c0213d619dafa1c8d951a09b40d835649a71658905cb305d6"
+  },
+  {
+   "index": 60,
+   "name": "rock4vs",
+   "cell_xy": [
+    12,
+    3
+   ],
+   "cell_px": [
+    12288,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter17.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:60 (rock4vs_winter -> winter17.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "420dadbe3ea7346c0213d619dafa1c8d951a09b40d835649a71658905cb305d6"
+  },
+  {
+   "index": 61,
+   "name": "rock5vf",
+   "cell_xy": [
+    13,
+    3
+   ],
+   "cell_px": [
+    13312,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter22.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:61 (rock5vf_winter -> winter22.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "7a0366d060cafc4173658466e8010cf1b25d50e3a44106e808bdcaa40e73c5b7"
+  },
+  {
+   "index": 62,
+   "name": "rock5vs",
+   "cell_xy": [
+    14,
+    3
+   ],
+   "cell_px": [
+    14336,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter22.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:62 (rock5vs_winter -> winter22.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "7a0366d060cafc4173658466e8010cf1b25d50e3a44106e808bdcaa40e73c5b7"
+  },
+  {
+   "index": 63,
+   "name": "rock6vf",
+   "cell_xy": [
+    15,
+    3
+   ],
+   "cell_px": [
+    15360,
+    3072,
+    1024,
+    1024
+   ],
+   "source_png": "winter15.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:63 (rock6vf_winter -> winter15.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "c788a118989f4e71d1a86ea8726a67fac8b6ce5158df28d92ee845ccaf718594"
+  },
+  {
+   "index": 64,
+   "name": "rock6vs",
+   "cell_xy": [
+    0,
+    4
+   ],
+   "cell_px": [
+    0,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter15.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:64 (rock6vs_winter -> winter15.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "c788a118989f4e71d1a86ea8726a67fac8b6ce5158df28d92ee845ccaf718594"
+  },
+  {
+   "index": 65,
+   "name": "rock7vf",
+   "cell_xy": [
+    1,
+    4
+   ],
+   "cell_px": [
+    1024,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter14.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:65 (rock7vf_winter -> winter14.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "df12de72ce0582d4a107fcf006daef3f6567855ae8d1cff1ab762918893d5bbf"
+  },
+  {
+   "index": 66,
+   "name": "rock7vs",
+   "cell_xy": [
+    2,
+    4
+   ],
+   "cell_px": [
+    2048,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter14.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:66 (rock7vs_winter -> winter14.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "df12de72ce0582d4a107fcf006daef3f6567855ae8d1cff1ab762918893d5bbf"
+  },
+  {
+   "index": 67,
+   "name": "rock8vf",
+   "cell_xy": [
+    3,
+    4
+   ],
+   "cell_px": [
+    3072,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter16.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:67 (rock8vf_winter -> winter16.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "579dae72bd087e238068d1b771d48fac3352760df5a7950f5dd808256053e0f9"
+  },
+  {
+   "index": 68,
+   "name": "rock8vs",
+   "cell_xy": [
+    4,
+    4
+   ],
+   "cell_px": [
+    4096,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter16.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:68 (rock8vs_winter -> winter16.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "579dae72bd087e238068d1b771d48fac3352760df5a7950f5dd808256053e0f9"
+  },
+  {
+   "index": 69,
+   "name": "rock9vf",
+   "cell_xy": [
+    5,
+    4
+   ],
+   "cell_px": [
+    5120,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter20.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:69 (rock9vf_winter -> winter20.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "41bc8f8c3f20d6ef86a9c3afbe097683423e8043db23d53d7a5b6ed17b402d68"
+  },
+  {
+   "index": 70,
+   "name": "rock9vs",
+   "cell_xy": [
+    6,
+    4
+   ],
+   "cell_px": [
+    6144,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter20.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:70 (rock9vs_winter -> winter20.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "41bc8f8c3f20d6ef86a9c3afbe097683423e8043db23d53d7a5b6ed17b402d68"
+  },
+  {
+   "index": 71,
+   "name": "test0",
+   "cell_xy": [
+    7,
+    4
+   ],
+   "cell_px": [
+    7168,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter4.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:71 (test0_winter -> winter4.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "563f4db78f9fe0d57922932081d295e6efda547d9890b7d247d7fbb559655191"
+  },
+  {
+   "index": 72,
+   "name": "test1",
+   "cell_xy": [
+    8,
+    4
+   ],
+   "cell_px": [
+    8192,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:72 (test1_winter -> winter6.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "8dba024695eac99a75b9be14c23220bba0647286f1a13e246ced2417a9d86e8d"
+  },
+  {
+   "index": 73,
+   "name": "test2",
+   "cell_xy": [
+    9,
+    4
+   ],
+   "cell_px": [
+    9216,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter7.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:73 (test2_winter -> winter7.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "782f6ae74b841675dc3bbb359fba01b85468404040ac65e0c5aa5bf7bd91b67a"
+  },
+  {
+   "index": 74,
+   "name": "test3",
+   "cell_xy": [
+    10,
+    4
+   ],
+   "cell_px": [
+    10240,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter8.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:74 (test3_winter -> winter8.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b2a23f379ef64a0f4afdaed69887333b4b431bc835c221b0aa970fcdfb43d9db"
+  },
+  {
+   "index": 75,
+   "name": "test4",
+   "cell_xy": [
+    11,
+    4
+   ],
+   "cell_px": [
+    11264,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:75 (test4_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 76,
+   "name": "test5",
+   "cell_xy": [
+    12,
+    4
+   ],
+   "cell_px": [
+    12288,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:76 (test5_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 77,
+   "name": "test6",
+   "cell_xy": [
+    13,
+    4
+   ],
+   "cell_px": [
+    13312,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter4.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:77 (test6_winter -> winter4.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "563f4db78f9fe0d57922932081d295e6efda547d9890b7d247d7fbb559655191"
+  },
+  {
+   "index": 78,
+   "name": "test7",
+   "cell_xy": [
+    14,
+    4
+   ],
+   "cell_px": [
+    14336,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:78 (test7_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 79,
+   "name": "test8",
+   "cell_xy": [
+    15,
+    4
+   ],
+   "cell_px": [
+    15360,
+    4096,
+    1024,
+    1024
+   ],
+   "source_png": "winter21.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:79 (test8_winter -> winter21.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1985ba852cd408dba1e008ac91aa1d794014c6e8a5ee0d30562220d9a5d8f186"
+  },
+  {
+   "index": 80,
+   "name": "test9",
+   "cell_xy": [
+    0,
+    5
+   ],
+   "cell_px": [
+    0,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:80 (test9_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 81,
+   "name": "test10",
+   "cell_xy": [
+    1,
+    5
+   ],
+   "cell_px": [
+    1024,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:81 (test10_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 82,
+   "name": "test11",
+   "cell_xy": [
+    2,
+    5
+   ],
+   "cell_px": [
+    2048,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:82 (test11_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 83,
+   "name": "test12",
+   "cell_xy": [
+    3,
+    5
+   ],
+   "cell_px": [
+    3072,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:83 (test12_winter -> winter5.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3060c857195bdab4add51f5443dfb1189bbfa3f3cf042266bb33abaffc0c05c1"
+  },
+  {
+   "index": 84,
+   "name": "test13",
+   "cell_xy": [
+    4,
+    5
+   ],
+   "cell_px": [
+    4096,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:84 (test13_winter -> winter5.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3060c857195bdab4add51f5443dfb1189bbfa3f3cf042266bb33abaffc0c05c1"
+  },
+  {
+   "index": 85,
+   "name": "test14",
+   "cell_xy": [
+    5,
+    5
+   ],
+   "cell_px": [
+    5120,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter5.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:85 (test14_winter -> winter5.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "3060c857195bdab4add51f5443dfb1189bbfa3f3cf042266bb33abaffc0c05c1"
+  },
+  {
+   "index": 86,
+   "name": "alpha0a",
+   "cell_xy": [
+    6,
+    5
+   ],
+   "cell_px": [
+    6144,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": null,
+   "kind": "EMPTY",
+   "donor_evidence": null,
+   "status": "UNVERIFIED — no shipped PNG for this preset name; cell left transparent, no art fabricated",
+   "source_size": null,
+   "upscaled": false
+  },
+  {
+   "index": 87,
+   "name": "sandrock1",
+   "cell_xy": [
+    7,
+    5
+   ],
+   "cell_px": [
+    7168,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:87 (sandrock1_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 88,
+   "name": "sandrock2",
+   "cell_xy": [
+    8,
+    5
+   ],
+   "cell_px": [
+    8192,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:88 (sandrock2_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 89,
+   "name": "sandrock3",
+   "cell_xy": [
+    9,
+    5
+   ],
+   "cell_px": [
+    9216,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter19.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:89 (sandrock3_winter -> winter19.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "15e4b44e3c55d2163b373df7b73eb5915f9ffcdfe56ab9aea115bf3a1dca05f2"
+  },
+  {
+   "index": 90,
+   "name": "sandrock4",
+   "cell_xy": [
+    10,
+    5
+   ],
+   "cell_px": [
+    10240,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter19.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:90 (sandrock4_winter -> winter19.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "15e4b44e3c55d2163b373df7b73eb5915f9ffcdfe56ab9aea115bf3a1dca05f2"
+  },
+  {
+   "index": 91,
+   "name": "sandrock5",
+   "cell_xy": [
+    11,
+    5
+   ],
+   "cell_px": [
+    11264,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:91 (sandrock5_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 92,
+   "name": "sandrock6",
+   "cell_xy": [
+    12,
+    5
+   ],
+   "cell_px": [
+    12288,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:92 (sandrock6_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 93,
+   "name": "sandsea1",
+   "cell_xy": [
+    13,
+    5
+   ],
+   "cell_px": [
+    13312,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter19.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:93 (sandsea1_winter -> winter19.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "15e4b44e3c55d2163b373df7b73eb5915f9ffcdfe56ab9aea115bf3a1dca05f2"
+  },
+  {
+   "index": 94,
+   "name": "sandsea2",
+   "cell_xy": [
+    14,
+    5
+   ],
+   "cell_px": [
+    14336,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:94 (sandsea2_winter -> winter2.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0466cd5d92b849728cc0a2ed832a76a92e06996f31e19689ba69bf5203971940"
+  },
+  {
+   "index": 95,
+   "name": "sandsea3",
+   "cell_xy": [
+    15,
+    5
+   ],
+   "cell_px": [
+    15360,
+    5120,
+    1024,
+    1024
+   ],
+   "source_png": "winter2.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:95 (sandsea3_winter -> winter2.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0466cd5d92b849728cc0a2ed832a76a92e06996f31e19689ba69bf5203971940"
+  },
+  {
+   "index": 96,
+   "name": "sandsea4",
+   "cell_xy": [
+    0,
+    6
+   ],
+   "cell_px": [
+    0,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter19.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:96 (sandsea4_winter -> winter19.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "15e4b44e3c55d2163b373df7b73eb5915f9ffcdfe56ab9aea115bf3a1dca05f2"
+  },
+  {
+   "index": 97,
+   "name": "sandsea5",
+   "cell_xy": [
+    1,
+    6
+   ],
+   "cell_px": [
+    1024,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter19.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:97 (sandsea5_winter -> winter19.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "15e4b44e3c55d2163b373df7b73eb5915f9ffcdfe56ab9aea115bf3a1dca05f2"
+  },
+  {
+   "index": 98,
+   "name": "sandsea6",
+   "cell_xy": [
+    2,
+    6
+   ],
+   "cell_px": [
+    2048,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter3.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:98 (sandsea6_winter -> winter3.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "11941960763cf6e566191f62e74c85d80151a11d1e1701d1d213d3c05cbf64af"
+  },
+  {
+   "index": 99,
+   "name": "test15",
+   "cell_xy": [
+    3,
+    6
+   ],
+   "cell_px": [
+    3072,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:99 (test15_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 100,
+   "name": "test16",
+   "cell_xy": [
+    4,
+    6
+   ],
+   "cell_px": [
+    4096,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:100 (test16_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 101,
+   "name": "test17",
+   "cell_xy": [
+    5,
+    6
+   ],
+   "cell_px": [
+    5120,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:101 (test17_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 102,
+   "name": "test18",
+   "cell_xy": [
+    6,
+    6
+   ],
+   "cell_px": [
+    6144,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter7.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:102 (test18_winter -> winter7.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "782f6ae74b841675dc3bbb359fba01b85468404040ac65e0c5aa5bf7bd91b67a"
+  },
+  {
+   "index": 103,
+   "name": "test19",
+   "cell_xy": [
+    7,
+    6
+   ],
+   "cell_px": [
+    7168,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter8.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:103 (test19_winter -> winter8.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b2a23f379ef64a0f4afdaed69887333b4b431bc835c221b0aa970fcdfb43d9db"
+  },
+  {
+   "index": 104,
+   "name": "test20",
+   "cell_xy": [
+    8,
+    6
+   ],
+   "cell_px": [
+    8192,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter0.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:104 (test20_winter -> winter0.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "06e40cd68c15276c90691e945a2d77ca2bf7dba87161d12e191fb2357e07bd57"
+  },
+  {
+   "index": 105,
+   "name": "test21",
+   "cell_xy": [
+    9,
+    6
+   ],
+   "cell_px": [
+    9216,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter25.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:105 (test21_winter -> winter25.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4e0e5e8d18a12bbbb0bf4f9cdc8e16737f67fde10dda860dc9b66451eb212fc9"
+  },
+  {
+   "index": 106,
+   "name": "test22",
+   "cell_xy": [
+    10,
+    6
+   ],
+   "cell_px": [
+    10240,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter1.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:106 (test22_winter -> winter1.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "0a171a2fd94f6ca0662112a0033a68b52cc60d718ef7ac5bfd411f98287cb0da"
+  },
+  {
+   "index": 107,
+   "name": "test23",
+   "cell_xy": [
+    11,
+    6
+   ],
+   "cell_px": [
+    11264,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter25.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:107 (test23_winter -> winter25.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4e0e5e8d18a12bbbb0bf4f9cdc8e16737f67fde10dda860dc9b66451eb212fc9"
+  },
+  {
+   "index": 108,
+   "name": "test24",
+   "cell_xy": [
+    12,
+    6
+   ],
+   "cell_px": [
+    12288,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter10.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:108 (test24_winter -> winter10.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "9bb1aa06465b63b211a503bddccdce9b509da80b630c4d850e816f772d18f81d"
+  },
+  {
+   "index": 109,
+   "name": "test25",
+   "cell_xy": [
+    13,
+    6
+   ],
+   "cell_px": [
+    13312,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "winter25.png",
+   "kind": "FACE_BASE_REUSE",
+   "donor_evidence": "winter_aliases.json:109 (test25_winter -> winter25.png; WINTER_PNG; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "4e0e5e8d18a12bbbb0bf4f9cdc8e16737f67fde10dda860dc9b66451eb212fc9"
+  },
+  {
+   "index": 110,
+   "name": "alpha0b",
+   "cell_xy": [
+    14,
+    6
+   ],
+   "cell_px": [
+    14336,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": null,
+   "kind": "EMPTY",
+   "donor_evidence": null,
+   "status": "UNVERIFIED — no shipped PNG for this preset name; cell left transparent, no art fabricated",
+   "source_size": null,
+   "upscaled": false
+  },
+  {
+   "index": 111,
+   "name": "desert1",
+   "cell_xy": [
+    15,
+    6
+   ],
+   "cell_px": [
+    15360,
+    6144,
+    1024,
+    1024
+   ],
+   "source_png": "desert1.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:111 (desert1_winter -> desert1.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "c4f8d99c2d9be289d97e0e7121174222a8489cc25924e4a8b80578f042ce1a51"
+  },
+  {
+   "index": 112,
+   "name": "desert2",
+   "cell_xy": [
+    0,
+    7
+   ],
+   "cell_px": [
+    0,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert2.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:112 (desert2_winter -> desert2.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "b625bf03fa85c0e45e5a11cbdc97b2283cee0e2b7be3c4a560ec5d545be932e4"
+  },
+  {
+   "index": 113,
+   "name": "desert3",
+   "cell_xy": [
+    1,
+    7
+   ],
+   "cell_px": [
+    1024,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert3.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:113 (desert3_winter -> desert3.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1abd86923806a16c09109cd4f03b938b3599f8966e08c8279c3edbeb209e8cd2"
+  },
+  {
+   "index": 114,
+   "name": "desert4",
+   "cell_xy": [
+    2,
+    7
+   ],
+   "cell_px": [
+    2048,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert4.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:114 (desert4_winter -> desert4.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "899ac58e32df607f56014260d0a43f2215a924618d975b460fd2de018f6c8716"
+  },
+  {
+   "index": 115,
+   "name": "desert5",
+   "cell_xy": [
+    3,
+    7
+   ],
+   "cell_px": [
+    3072,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert5.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:115 (desert5_winter -> desert5.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "5ab5f759136a54000d926f2f3c35c541303cd0895c7dd04e6712d97712f9de26"
+  },
+  {
+   "index": 116,
+   "name": "desert6",
+   "cell_xy": [
+    4,
+    7
+   ],
+   "cell_px": [
+    4096,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert6.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:116 (desert6_winter -> desert6.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "8aeec4135c4e5c94f24f4fc0989b966073bf7d068ff1340c4d317f15656cd378"
+  },
+  {
+   "index": 117,
+   "name": "desert7",
+   "cell_xy": [
+    5,
+    7
+   ],
+   "cell_px": [
+    5120,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert7.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:117 (desert7_winter -> desert7.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "1c817419b217ab35fb7f6e1ab0bdc4ef103056b62d3c2003af2c2b963a553eb3"
+  },
+  {
+   "index": 118,
+   "name": "desert8",
+   "cell_xy": [
+    6,
+    7
+   ],
+   "cell_px": [
+    6144,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert8.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:118 (desert8_winter -> desert8.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "2f63801867004bc1c1f108555d3d1563ac507d94d6d5be331f54b4c9c2cd1132"
+  },
+  {
+   "index": 119,
+   "name": "desert9",
+   "cell_xy": [
+    7,
+    7
+   ],
+   "cell_px": [
+    7168,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert9.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:119 (desert9_winter -> desert9.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "818d838657a5d471a9b8e677f0b2280956c400a5fb3e797a968b777b05668d9a"
+  },
+  {
+   "index": 120,
+   "name": "desert10",
+   "cell_xy": [
+    8,
+    7
+   ],
+   "cell_px": [
+    8192,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert10.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:120 (desert10_winter -> desert10.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "94552049ac59e37027d25b31024a73096b8b8d1d35c41302983b82b6f5070a61"
+  },
+  {
+   "index": 121,
+   "name": "desert11",
+   "cell_xy": [
+    9,
+    7
+   ],
+   "cell_px": [
+    9216,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert11.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:121 (desert11_winter -> desert11.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "96705c4af810e55dbb55229a19e5256da034cb3df4aca5e0b3c98448baff6c84"
+  },
+  {
+   "index": 122,
+   "name": "desert12",
+   "cell_xy": [
+    10,
+    7
+   ],
+   "cell_px": [
+    10240,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": "desert12.png",
+   "kind": "DIRECT",
+   "donor_evidence": "winter_aliases.json:122 (desert12_winter -> desert12.png; DESERT_REUSE; indices identical to presets_summer.json; donor terrain.presets:134-263 / texturemap.inc:525-526 via SP-2/DENV-01)",
+   "status": "OK",
+   "upscaled": false,
+   "source_size": [
+    1024,
+    1024
+   ],
+   "source_sha256": "20df2ac3c0c37e101401b1be72b1e5dbf549f0b42383227af4d87359939d2560"
+  },
+  {
+   "index": 123,
+   "name": "alpha0c",
+   "cell_xy": [
+    11,
+    7
+   ],
+   "cell_px": [
+    11264,
+    7168,
+    1024,
+    1024
+   ],
+   "source_png": null,
+   "kind": "EMPTY",
+   "donor_evidence": null,
+   "status": "UNVERIFIED — no shipped PNG for this preset name; cell left transparent, no art fabricated",
+   "source_size": null,
+   "upscaled": false
+  }
+ ],
+ "unused_shipped_blocks": [
+  "grass1.png",
+  "grass10.png",
+  "grass2.png",
+  "grass3.png",
+  "grass4.png",
+  "grass5.png",
+  "grass6.png",
+  "grass7.png",
+  "grass8.png",
+  "grass9.png",
+  "grass_ground1.png",
+  "grass_ground2.png",
+  "grass_ground3.png",
+  "grass_rock1.png",
+  "grass_sand1.png",
+  "grass_sand2.png",
+  "ground1.png",
+  "rock1.png",
+  "rock2.png",
+  "rock3.png",
+  "rock4.png",
+  "rock5.png",
+  "rock6.png",
+  "rock7.png",
+  "rock8.png",
+  "rock9.png",
+  "sand1.png",
+  "sand2.png",
+  "sand3.png",
+  "sand4.png",
+  "sand5.png",
+  "sand6.png",
+  "sand7.png",
+  "sand8.png",
+  "sand9.png",
+  "sandrock1.png",
+  "sandrock2.png",
+  "sandrock3.png",
+  "sandrock4.png",
+  "sandrock5.png",
+  "sandrock6.png",
+  "sandsea1.png",
+  "sandsea2.png",
+  "sandsea3.png",
+  "sandsea4.png",
+  "sandsea5.png",
+  "sandsea6.png",
+  "test0.png",
+  "test1.png",
+  "test10.png",
+  "test11.png",
+  "test12.png",
+  "test13.png",
+  "test14.png",
+  "test15.png",
+  "test16.png",
+  "test17.png",
+  "test18.png",
+  "test19.png",
+  "test2.png",
+  "test20.png",
+  "test21.png",
+  "test22.png",
+  "test23.png",
+  "test24.png",
+  "test25.png",
+  "test3.png",
+  "test4.png",
+  "test5.png",
+  "test6.png",
+  "test7.png",
+  "test8.png",
+  "test9.png",
+  "winter18.png",
+  "winter23.png",
+  "winter24.png",
+  "winter26.png"
+ ],
+ "unused_note": "77 on-disk block PNGs are not selected by the Winter alias dictionary: 4 donor-unaliased winter PNGs deliberately unmapped (winter18.png, winter23.png, winter24.png, winter26.png — no tiles.mat alias, no replacement invented, SP-2 sections 6-7 / SEASON-PLAN-01 Q1/B1) and 73 summer-only PNGs not referenced by any Winter alias. The three shared-alpha carriers (indices 86/110/123) stay EMPTY: their SP-2 source_png values are donor alias carriers only, not shipped art.",
+ "masks": {
+  "alpha": {
+   "donor_evidence": "data/terrain/ref/reftilealpha.mat:30-37",
+   "donor_path": "C:/Games/Cossacks 3/data/terrain/tiles/textures/alpha.bmp",
+   "expected_size": [
+    512,
+    256
+   ],
+   "expected_bpp": 8,
+   "status": "CONVERTED_FROM_DONOR",
+   "file": "alpha.png",
+   "size": [
+    512,
+    256
+   ],
+   "mode": "L",
+   "source_sha256": "a5b9dda1dd5aaf87e485b6343880d026b87f798e2b19ec7d316285d3ff42a9f8",
+   "header": {
+    "w": 512,
+    "h": 256,
+    "bpp": 8,
+    "compression": 0
+   },
+   "note": "intensity PNG from donor BMP; exact tiaAlphaFromIntensity formula is ENGINE/UNVERIFIED; no cell<->tile sub-rect mapping invented"
+  },
+  "alphavert": {
+   "donor_evidence": "data/terrain/ref/reftilealpha.mat:139-146",
+   "donor_path": "C:/Games/Cossacks 3/data/terrain/tiles/textures/alphavert.bmp",
+   "expected_size": [
+    1024,
+    512
+   ],
+   "expected_bpp": 24,
+   "status": "CONVERTED_FROM_DONOR",
+   "file": "alphavert.png",
+   "size": [
+    1024,
+    512
+   ],
+   "mode": "L",
+   "source_sha256": "59420a036e83d1500d4581b23e2df3a296395f44875a5760373d014cbd0109ce",
+   "header": {
+    "w": 1024,
+    "h": 512,
+    "bpp": 24,
+    "compression": 0
+   },
+   "note": "intensity PNG from donor BMP; exact tiaAlphaFromIntensity formula is ENGINE/UNVERIFIED; no cell<->tile sub-rect mapping invented"
+  }
+ },
+ "shipped_tileblock": {
+  "source": "app/shots/g32_dump.json:1 (key 'tileblock', base64 uint8)",
+  "bytes": 102400,
+  "distinct_ids": 31,
+  "min_id": 0,
+  "max_id": 85,
+  "histogram": {
+   "0": 15993,
+   "1": 2863,
+   "4": 77,
+   "6": 42,
+   "7": 837,
+   "8": 1,
+   "9": 43,
+   "10": 717,
+   "14": 28535,
+   "15": 144,
+   "16": 15962,
+   "17": 1498,
+   "18": 282,
+   "19": 879,
+   "20": 2415,
+   "21": 1735,
+   "22": 265,
+   "23": 1255,
+   "24": 2283,
+   "25": 4135,
+   "72": 267,
+   "73": 576,
+   "74": 279,
+   "77": 162,
+   "78": 6691,
+   "79": 7667,
+   "80": 2229,
+   "82": 19,
+   "83": 1779,
+   "84": 599,
+   "85": 2171
+  },
+  "unresolved_ids": [],
+  "all_resolvable": true,
+  "top_ids": [
+   [
+    14,
+    28535
+   ],
+   [
+    0,
+    15993
+   ],
+   [
+    16,
+    15962
+   ],
+   [
+    79,
+    7667
+   ],
+   [
+    78,
+    6691
+   ]
+  ]
+ },
+ "visual_parity_claim": false
+}

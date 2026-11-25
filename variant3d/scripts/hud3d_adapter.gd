@@ -169,8 +169,8 @@ func stroke_minimap_quad(restore: bool = false) -> bool:
 	var quad := get_minimap_quad()
 	if quad.size() != 4:
 		return false
-	var w := clean_img.get_width()
-	var h := clean_img.get_height()
+	var w: int = clean_img.get_width()
+	var h: int = clean_img.get_height()
 	var col := Color(1.0, 1.0, 1.0, 0.9)
 	for i in 4:
 		var a: Vector2 = quad[i]

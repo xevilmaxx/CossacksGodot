@@ -88,8 +88,16 @@ class SelectionRectPainter extends Node2D:
 	func _draw() -> void:
 		if not rect_px.has_area():
 			return
+		# CONFIG-WIRE-SEL: donor yellow / solid / 1 px defaults now read from the
+		# active feature config; with defaults the draw call is unchanged.
 		# selection.cfg:3-14 - yellow, width 1, solid outline, no fill, no AA.
-		draw_rect(rect_px, Color(1, 1, 0, 1), false, 1.0, false)
+		var col: Array = [1, 1, 0, 1]
+		var width := 1.0
+		var cfg = ConfigScript.active
+		if cfg != null:
+			col = cfg.feature_selection_marquee_color()
+			width = float(cfg.feature_selection_marquee_width_px())
+		draw_rect(rect_px, Color(float(col[0]), float(col[1]), float(col[2]), float(col[3])), false, width, false)
 
 
 class SelectionRectOverlay extends CanvasLayer:
@@ -200,8 +208,20 @@ func _hide_selection_rect() -> void:
 # (data\gui\menu.inc\onmousemove.inc:32-34, :152). This script's equivalents
 # are attack_ground_mode (:42) and guard_mode (:51). SEL-01 also raises the
 # double-click window 0.35 s -> 0.5 s (data\gui\menu.cfg:33, KeyDoubleDelay).
+# CONFIG-WIRE-SEL: both thresholds now read through the existing config getters;
+# the literal fallbacks are the same defaults, so behaviour is unchanged when
+# no config instance is active (e.g. isolated unit tests).
 func _selection_epsilon_m() -> float:
-	return 0.25 if (attack_ground_mode or guard_mode) else 0.005
+	var cfg = ConfigScript.active
+	if attack_ground_mode or guard_mode:
+		return cfg.feature_selection_attack_epsilon_m() if cfg != null else 0.25
+	return cfg.feature_selection_world_epsilon_m() if cfg != null else 0.005
+
+# CONFIG-WIRE-SEL: donor double-click window (menu.cfg:33 KeyDoubleDelay = 0.5 s)
+# via the existing config getter; identical literal fallback when cfg is absent.
+func _double_click_s() -> float:
+	var cfg = ConfigScript.active
+	return cfg.feature_selection_double_click_s() if cfg != null else 0.5
 
 # FIX-SEL: attach the route overlay to the world's FX layer. 2D (Node2D world)
 # keeps the original Node2D + draw-signal path byte-for-byte; 3D (Node3D world)
@@ -293,6 +313,28 @@ func _set_selection(arr: Array) -> void:
 		e["selected"] = true
 	game.bld_dirty += 1
 	hud.refresh_selection(get_selected())
+	# AUDIO-SEL-02: donor fires the selection acknowledgement on unit-control
+	# rebuild (gui\menu.inc\showunitcontrol.inc:1024-1027), i.e. ONCE per
+	# selection apply, not per unit and not every frame. Kind comes from the
+	# first selected entity: ship tokens / naval sids -> "ship", else "unit".
+	# Reach main's audio through the same c3_main group already used at
+	# :1093/:1098/:1123, and apply main.gd's exact can_play gate (:1675, :1756)
+	# so headless / audio-less runs stay silent.
+	var first: Dictionary = arr[0] if not arr.is_empty() else {}
+	var def: Dictionary = first.get("def", {})
+	var sid_lc := str(first.get("sid", "")).to_lower()
+	# Detection mirrors _select_ships() (:1016) plus audio.gd's naval sid set
+	# (SHIP_SELECT_KINDS, audio.gd:41-44); the clip table itself stays in audio.gd.
+	var is_ship := bool(def.get("ship", false)) or bool(def.get("naval", false)) \
+		or sid_lc.contains("ship") or sid_lc in ["yacht", "yachttur", "fishboat", "galley", "frigate", "xebec", "battleship", "cog"]
+	var kind := "ship" if is_ship else "unit"
+	var tree := get_tree()
+	if tree != null:
+		var m = tree.get_first_node_in_group("c3_main")
+		if m != null:
+			var snd = m.get("audio")
+			if snd != null and is_instance_valid(snd) and bool(snd.get_meta("can_play", false)) and snd.has_method("play_selection"):
+				snd.play_selection(kind, arr.size())
 
 # --- T-NAV-RESPONSIVE: minimap navigation ------------------------------------
 func _invalidate_minimap_rect() -> void:
@@ -732,7 +774,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				else:
 					var e := _pick(pw, false)
 					var now := Time.get_ticks_msec() / 1000.0
-					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < 0.5:
+					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < _double_click_s():
 						# double click: all same-type units on screen (original behaviour)
 						var arr2: Array = []
 						# V7-52: explicit type guard for the untyped `world` seam (V71:197).

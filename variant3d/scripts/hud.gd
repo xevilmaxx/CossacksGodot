@@ -267,6 +267,30 @@ func _on_vp_resize() -> void:
 	ui_us = _calc_us()
 	_apply_scale()
 
+# CONFIG-WIRE-HUD: minimap geometry now reads the global feature config through
+# the typed getters CONFIG-CORE-01 added to config.gd. Reads go through the
+# active C3Config instance with call() (the same dynamic style as _cam3d_jump),
+# so hud.gd keeps no static dependency on config internals. Every fallback is
+# the literal donor default (initminimap.inc:5-7,17), so behaviour is unchanged
+# when no config, or no features section, is loaded.
+func _mm_size() -> int:
+	var cfg: Object = ConfigScript.active
+	if cfg != null and cfg.has_method("feature_hud_minimap_size"):
+		return int(cfg.call("feature_hud_minimap_size"))
+	return 240
+
+func _mm_inset() -> int:
+	var cfg: Object = ConfigScript.active
+	if cfg != null and cfg.has_method("feature_hud_minimap_inset"):
+		return int(cfg.call("feature_hud_minimap_inset"))
+	return -8
+
+func _mm_corner() -> String:
+	var cfg: Object = ConfigScript.active
+	if cfg != null and cfg.has_method("feature_hud_minimap_corner"):
+		return str(cfg.call("feature_hud_minimap_corner"))
+	return "bottom_right"
+
 func _apply_scale() -> void:
 	for n in find_children("*", "Control", true, false):
 		var c := n as Control
@@ -294,7 +318,8 @@ func _apply_scale() -> void:
 	# HUD-01: donor 240x240 minimap, bottom-RIGHT with a -8 edge inset
 	# (initminimap.inc:5-7,17,33). The port's ui_us still scales for small
 	# windows; 0.25 only guards very narrow viewports.
-	var mm := minf(_ms(240.0), ui_vp.x * 0.25)
+	# CONFIG-WIRE-HUD: size from features.hud.minimap_size (default 240).
+	var mm := minf(_ms(float(_mm_size())), ui_vp.x * 0.25)
 	if is_instance_valid(minimap_rect):
 		minimap_rect.custom_minimum_size = Vector2(mm, mm)
 	# Bottom strip partition (never overlaps): the minimap owns the donor's
@@ -305,7 +330,9 @@ func _apply_scale() -> void:
 		var cmd_w: float = minf(_ms(332.0), ui_vp.x * 0.34)
 		var mm_pad_w := 30.0
 		var mm_pad_h := 22.0
-		var mm_inset := _ms(8.0)   # donor cMinimapOffsetX/Y = -8
+		# CONFIG-WIRE-HUD: inset from features.hud.minimap_inset (default -8);
+		# mm_inset is the positive edge distance, i.e. -inset.
+		var mm_inset := _ms(-float(_mm_inset()))   # donor cMinimapOffsetX/Y = -8
 		if is_instance_valid(minimap_panel):
 			# Right/bottom anchors: offsets are relative to those viewport edges.
 			minimap_panel.offset_right = -mm_inset
@@ -1384,9 +1411,11 @@ func _build_minimap() -> void:
 	minimap_rect.texture = minimap_tex
 	# HUD-01: donor minimap is bottom-RIGHT 240x240 (initminimap.inc:17,33;
 	# showunitcontrol.inc:109-110,586 reserves the 289px right-hand strip).
-	minimap_rect.custom_minimum_size = Vector2(240, 240)
-	minimap_rect.set_meta("uimw", 240.0)
-	minimap_rect.set_meta("uimh", 240.0)
+	# CONFIG-WIRE-HUD: size from features.hud.minimap_size (default 240).
+	var mm_size := float(_mm_size())
+	minimap_rect.custom_minimum_size = Vector2(mm_size, mm_size)
+	minimap_rect.set_meta("uimw", mm_size)
+	minimap_rect.set_meta("uimh", mm_size)
 	minimap_rect.stretch_mode = TextureRect.STRETCH_SCALE
 	minimap_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	minimap_rect.anchor_left = 0.0
@@ -1397,16 +1426,26 @@ func _build_minimap() -> void:
 	panel.add_theme_stylebox_override("panel", ConfigScript.ui_panel_style())
 	panel.add_child(minimap_rect)
 	# The parent panel is the layout anchor; the TextureRect is container-laid-out.
-	panel.anchor_left = 1.0
-	panel.anchor_right = 1.0
-	panel.anchor_top = 1.0
-	panel.anchor_bottom = 1.0
+	# CONFIG-WIRE-HUD: corner from features.hud.minimap_corner (default
+	# "bottom_right", DEC-08 initminimap.inc:17). Only the donor bottom-right
+	# OFFSETS are implemented (below); unknown strings fall back to bottom_right
+	# and no HUD partition is rewritten, so UITEST-ANCHOR (anchor_left == 1.0)
+	# stays green on the default.
+	var mm_corner := _mm_corner()
+	var mm_anchor_x := 0.0 if mm_corner == "top_left" or mm_corner == "bottom_left" else 1.0
+	var mm_anchor_y := 0.0 if mm_corner == "top_left" or mm_corner == "top_right" else 1.0
+	panel.anchor_left = mm_anchor_x
+	panel.anchor_right = mm_anchor_x
+	panel.anchor_top = mm_anchor_y
+	panel.anchor_bottom = mm_anchor_y
 	# Initial offsets mirror _apply_scale(): -8 from the right/bottom edges
 	# (donor cMinimapOffsetX/Y = -8, initminimap.inc:5-7,29-35).
-	panel.offset_left = -(240 + 30 + 8)
-	panel.offset_top = -(240 + 22 + 8)
-	panel.offset_right = -8
-	panel.offset_bottom = -8
+	# CONFIG-WIRE-HUD: inset from features.hud.minimap_inset (default -8).
+	var mm_inset := float(_mm_inset())
+	panel.offset_left = mm_inset - mm_size - 30
+	panel.offset_top = mm_inset - mm_size - 22
+	panel.offset_right = mm_inset
+	panel.offset_bottom = mm_inset
 	minimap_panel = panel
 	add_child(panel)
 	minimap_rect.gui_input.connect(_on_minimap_input)

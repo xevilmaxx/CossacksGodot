@@ -750,6 +750,13 @@ func _dump_map() -> void:
 		if pname != "plt2" and pname != "k_ravine_1":
 			continue
 		relief_stamps.append({"name": pname, "cx": int(st.get("x")), "cy": int(st.get("y"))})
+	# CONFIG-WIRE-RELIEF — gate the producer marker on the global feature flag.
+	# Null-safe config-getter pattern (as in hud.gd): cfg may be null before
+	# settings load, and an older/no getter falls back to false. Default false
+	# => no marker key => the RELIEF-01 reader stays a no-op (unchanged behaviour).
+	var relief_enabled := false
+	if cfg != null and cfg.has_method("feature_terrain_relief_stamps"):
+		relief_enabled = bool(cfg.call("feature_terrain_relief_stamps"))
 	var dump := {
 		"seed": Data.RANDOM_SEED, "map_w": game.MAP_W, "map_h": game.MAP_H,
 		"terrain": Marshalls.raw_to_base64(game.terrain),
@@ -757,8 +764,12 @@ func _dump_map() -> void:
 		"height": Marshalls.raw_to_base64(game.height.to_byte_array()),
 		"tileblock": Marshalls.raw_to_base64(game.tileblock),
 		"starts": starts, "clusters": zones, "res": res, "meta": game.map_meta,
-		"relief_stamps": relief_stamps,
 	}
+	# CONFIG-WIRE-RELIEF: emit the marker only when the feature is enabled.
+	# With the default (false) the dump has no relief_stamps key at all, which
+	# is byte-identical to the pre-RELIEF-02, relief-off baseline.
+	if relief_enabled:
+		dump["relief_stamps"] = relief_stamps
 	var out := _write_text(dump_path, JSON.stringify(dump))
 	if out == "":
 		printerr("dump-map: could not write ", dump_path)

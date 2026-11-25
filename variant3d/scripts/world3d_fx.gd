@@ -82,6 +82,10 @@ extends Node3D
 #     FX-WEATHER-01 snow root, selection rings and marquee code are untouched.
 
 const Data = preload("res://scripts/data.gd")
+# WEATHER-DRIVER-01: active C3Config instance for the additive weather-driver
+# helper below (same static-active access pattern as hud.gd:_mm_size). No config
+# file, getter or default is edited by this module.
+const ConfigScript = preload("res://scripts/config.gd")
 
 # TILE_M / cell size: game.gd:16 (`const TILE := 2.0`), world3d.gd:12. Read-only.
 const TILE_M: float = 2.0
@@ -338,6 +342,47 @@ func set_weather_month(month: int) -> void:
 
 func snow_active() -> bool:
 	return _snow_band_ok()
+
+
+# --- WEATHER-DRIVER-01 — thin menu/config -> gated-snow driver helper --------
+# Additive bridge between the value the skirmish menu emits and the existing
+# set_weather(int) gate. It is NOT called by this module and does NOT edit
+# main.gd: a future integration ticket owning main.gd/world3d.gd must call it
+# after the config is loaded (or pass the cfg.weather_value it received from
+# the menu). Until then the Snow row stays PORT-UI-ONLY.
+#
+# Resolution order (all donor literals, no invented intensity):
+#   1. explicit `weather_value` int/float -> used as the donor Weather input
+#      (CONFIG-UI-01 emits 40 = clouds.weather:3, or 70 = particles.snow.cfg:32).
+#   2. explicit `weather_value` String -> "snow" maps to SNOW_WEATHER_START (70),
+#      anything else (e.g. "off") maps to SNOW_WEATHER_DEFAULT (40). This accepts
+#      CONFIG-UI-01's `cfg.weather` enum directly (t_weather.gd:123-126).
+#   3. no argument -> CONFIG-CORE-01's features.weather.snow getter via the
+#      active config: true -> SNOW_WEATHER_START (70), false/missing -> 40.
+# Default (no arg, no config) is 40 < WeatherStart 70 => snow stays OFF.
+# set_weather() clamps 0..99 and re-applies the band/month gate; nothing here
+# changes the donor constants, emitters, FX impacts or selection rings.
+# ENGINE-SIDE WEATHER DRIVER UNVERIFIED; NO DONOR PARITY CLAIM.
+func set_weather_from_config(weather_value = null) -> int:
+	var resolved: int = SNOW_WEATHER_DEFAULT   # clouds.weather:3 Weather=40 -> OFF
+	var source: String = "default_off"
+	if weather_value is int or weather_value is float:
+		resolved = int(weather_value)
+		source = "explicit_weather_value"
+	elif weather_value is String:
+		if str(weather_value) == "snow":
+			resolved = SNOW_WEATHER_START        # particles.snow.cfg:32 WeatherStart=70
+		source = "explicit_weather_enum"
+	else:
+		var cfg: Object = ConfigScript.active
+		if cfg != null and cfg.has_method("feature_weather_snow") \
+				and bool(cfg.call("feature_weather_snow")):
+			resolved = SNOW_WEATHER_START        # particles.snow.cfg:32 WeatherStart=70
+			source = "config_features_weather_snow"
+	set_weather(resolved)   # existing gated API: clamp 0..99 + re-apply band/month gate
+	stats["weather_driver_value"] = resolved
+	stats["weather_driver_source"] = source
+	return resolved
 
 
 # Resolve the origin from the bound game unless an explicit offset was given.
@@ -697,6 +742,12 @@ func _emit_arrow_trails() -> void:
 	var prs = game.get("projectiles")
 	if not (prs is Array):
 		return
+	# FX-IMPACT-01 opt-in: default keeps the legacy solid-box `trail` exactly as
+	# before. When enabled, emit the face-camera billboard `arrow_trail` (donor
+	# MarkStyle msFaceCamera, source.pfx:1745) at the donor TimeLimit/Alpha.
+	var trail_kind: String = "arrow_trail" if use_donor_arrow_trail else "trail"
+	var trail_life: float = IMPACT_TRAIL_TIME_LIMIT if use_donor_arrow_trail else TRAIL_TIME_LIMIT
+	var trail_alpha: float = IMPACT_TRAIL_ALPHA if use_donor_arrow_trail else TRAIL_ALPHA
 	for pr in prs:
 		if not (pr is Dictionary):
 			continue
@@ -704,7 +755,7 @@ func _emit_arrow_trails() -> void:
 			continue
 		var seen := false
 		for item in fx_items:
-			if str(item.get("kind", "")) == "trail" and item.get("pr") == pr:
+			if str(item.get("kind", "")) == trail_kind and item.get("pr") == pr:
 				seen = true
 				break
 		if seen:
@@ -712,10 +763,10 @@ func _emit_arrow_trails() -> void:
 		var pos = pr.get("pos", null)
 		if not _valid_pos(pos):
 			continue
-		var item: Dictionary = add_fx(pos, "trail", TRAIL_TIME_LIMIT)
+		var item: Dictionary = add_fx(pos, trail_kind, trail_life)
 		if not item.is_empty():
 			item["pr"] = pr
-			item["base_alpha"] = TRAIL_ALPHA
+			item["base_alpha"] = trail_alpha
 
 
 # --- node construction -----------------------------------------------------
@@ -834,6 +885,27 @@ func _material(col: Color, additive: bool) -> StandardMaterial3D:
 	return m
 
 
+# FX-IMPACT-01 — face-camera billboard material (donor msFaceCamera,
+# source.pfx:1745). Plain untextured quad: NO donor sprite sheet is copied.
+# `no_depth_write` mirrors donor trail `ZWrite = False` (source.pfx:1748).
+# PORT APPROXIMATION — NOT DONOR PARITY (no donor art / shader port).
+func _impact_material(col: Color, additive: bool, no_depth_write: bool) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = col
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.emission_enabled = true
+	m.emission = Color(col.r, col.g, col.b)
+	m.emission_energy_multiplier = 0.35
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED   # msFaceCamera
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if no_depth_write:
+		m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	if additive:
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	return m
+
+
 func _add_mesh(holder: Node3D, mesh: Mesh, mat: Material,
 		p: Vector3, rot: Vector3) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -877,6 +949,17 @@ func _kind_color(k: String) -> Color:
 			return Color(0.70, 0.60, 0.30, 0.80)  # world.gd:3676
 		"trail":
 			return Color(1.0, 0.88, 0.62, TRAIL_ALPHA)  # world.gd:3685
+		# FX-IMPACT-01 — additive kinds (donor-tinted where a key is readable):
+		"volley_smoke":
+			# material.mat:17-37 shared smoke tint 0.3137255 (=80/255) grey;
+			# alpha is a PORT choice (donor diffuse alpha UNVERIFIED).
+			return Color(IMPACT_SMOKE_TINT_GREY, IMPACT_SMOKE_TINT_GREY,
+				IMPACT_SMOKE_TINT_GREY, IMPACT_SMOKE_ALPHA)
+		"muzzle_flash":
+			return Color(1.0, 1.0, 1.0, 1.0)  # material.mat:63-81 tint (1,1,1,1)
+		"arrow_trail":
+			return Color(IMPACT_TRAIL_DIFFUSE_ALPHA, IMPACT_TRAIL_DIFFUSE_ALPHA,
+				IMPACT_TRAIL_DIFFUSE_ALPHA, IMPACT_TRAIL_ALPHA)  # source.pfx:1742,1759-1763
 	return Color(1.0, 1.0, 1.0, 0.6)
 
 
@@ -937,6 +1020,46 @@ func _build_visual(item: Dictionary, k: String) -> void:
 			var tb := BoxMesh.new()
 			tb.size = Vector3(TRAIL_WIDTH_M, TRAIL_WIDTH_M, TRAIL_STREAK_M)
 			_add_mesh(holder, tb, mat, Vector3.ZERO, Vector3.ZERO)
+		# --- FX-IMPACT-01 (additive kinds; legacy branches above untouched) ---
+		"volley_smoke":
+			# PORT APPROXIMATION — NOT DONOR PARITY. Donor `shotmusket` is a
+			# 5-layer animatedsprite composition (fx.tree:4-63) with private-use
+			# DDS sheets; two plain face-camera quads stand in for its smoke and
+			# up-smoke layers (source.pfx:41-62 / :258-294). Donor Position
+			# (-0.1,-1.5,0.775, source.pfx:54-57) is RECORDED but not applied:
+			# donor→Godot axis mapping is UNVERIFIED, so local placement is PORT.
+			var smoke_mat := _impact_material(col, false, false)
+			item["mat"] = smoke_mat
+			var sq := QuadMesh.new()
+			sq.size = Vector2(IMPACT_SMOKE_QUAD_M,
+				IMPACT_SMOKE_QUAD_M * float(IMPACT_SMOKE_FRAME_H) / float(IMPACT_SMOKE_FRAME_W))
+			_add_mesh(holder, sq, smoke_mat, Vector3(0, 1.2, 0), Vector3.ZERO)
+			var upq := QuadMesh.new()
+			upq.size = Vector2(IMPACT_SMOKE_UP_QUAD_M, IMPACT_SMOKE_UP_QUAD_M * 0.5)
+			_add_mesh(holder, upq, smoke_mat, Vector3(0, 1.9, 0), Vector3.ZERO)
+		"muzzle_flash":
+			# PORT APPROXIMATION — NOT DONOR PARITY. Donor = 4 single-frame
+			# animations (source.pfx:112-153) with OnEndFrameHide (source.pfx:176)
+			# and white tint (material.mat:63-81). No donor sheet is copied: one
+			# additive face-camera quad + alpha HOLD (no fade) stands in. The
+			# randanimation/randmirrorv codes (fx.tree:28-29) are NOT reproduced
+			# because this module has no RNG.
+			var flash_mat := _impact_material(col, true, false)
+			item["mat"] = flash_mat
+			var fq := QuadMesh.new()
+			fq.size = Vector2(IMPACT_FLASH_QUAD_M, IMPACT_FLASH_QUAD_M * 0.5)
+			_add_mesh(holder, fq, flash_mat, Vector3(0, 1.2, 0), Vector3.ZERO)
+		"arrow_trail":
+			# PORT APPROXIMATION — NOT DONOR PARITY. Donor `MarkStyle =
+			# msFaceCamera` (source.pfx:1745) => billboard quad, NOT the legacy
+			# solid BoxMesh. Width = literal MarkWidth 0.1 (source.pfx:1746);
+			# streak length is a PORT value (donor has no length key);
+			# ZWrite=False (source.pfx:1748) maps to depth-draw-disabled.
+			var trail_mat := _impact_material(col, false, not IMPACT_TRAIL_ZWRITE)
+			item["mat"] = trail_mat
+			var tq := QuadMesh.new()
+			tq.size = Vector2(IMPACT_TRAIL_WIDTH, IMPACT_TRAIL_STREAK_M)
+			item["mesh"] = _add_mesh(holder, tq, trail_mat, Vector3.ZERO, Vector3.ZERO)
 
 
 func _make_rally(p3: Vector3, player: int) -> Dictionary:
@@ -1123,10 +1246,31 @@ func _update_fx(dt: float) -> void:
 				node.scale = Vector3(f, f, f)
 			"trail":
 				_orient_trail(item, node)
+			# FX-IMPACT-01 — per-kind motion (all PORT APPROXIMATIONS):
+			"volley_smoke":
+				node.position.y = float(item.get("base_y", 0.0)) + k * 0.8
+			"muzzle_flash":
+				pass   # static face-camera quad; alpha HOLD below, no drift
+			"arrow_trail":
+				_orient_impact_trail(item, node)
 		var mat: StandardMaterial3D = item.get("mat")
 		if mat != null:
 			var c: Color = mat.albedo_color
-			c.a = float(item.get("base_alpha", 1.0)) * (1.0 - k)
+			var base_a: float = float(item.get("base_alpha", 1.0))
+			var alpha: float = base_a * (1.0 - k)
+			var ks: String = str(item.get("kind", ""))
+			if ks == "volley_smoke":
+				# AlphaPower = 1.5 (source.pfx:62) is a donor-grounded fade CURVE;
+				# AlphaTime→seconds is UNVERIFIED (DFX-01 §6), so the curve over a
+				# PORT life is a PORT APPROXIMATION, not donor parity.
+				alpha = base_a * pow(1.0 - k, IMPACT_SMOKE_ALPHA_POWER)
+			elif ks == "muzzle_flash":
+				# OnEndFrameHide = True (source.pfx:176): hold, then cut on expiry.
+				# No donor frame→second mapping exists -> PORT APPROXIMATION.
+				alpha = base_a
+			# arrow_trail keeps the generic linear fade: AlphaFade = True
+			# (source.pfx:1743), base alpha = literal Alpha 0.2 (:1742).
+			c.a = alpha
 			mat.albedo_color = c
 			mat.emission_energy_multiplier = 0.35 * (1.0 - k)
 		var light: OmniLight3D = item.get("light")
@@ -1160,6 +1304,39 @@ func _orient_trail(item: Dictionary, node: Node3D) -> void:
 	node.position = (a + b) * 0.5
 	if node.is_inside_tree() and a.distance_to(b) > 0.001:
 		node.look_at(b, Vector3.UP)
+
+
+# FX-IMPACT-01 — face-camera trail placement. The donor trail is a msFaceCamera
+# ribbon (source.pfx:1745) sampled at MinDistance 0.05 (source.pfx:1741) with a
+# 0.2 s TimeLimit (:1740). This module owns no camera reference, so the port
+# places a billboarded quad at the world-space head/tail midpoint and scales its
+# length by the segment; screen-space ribbon alignment is NOT reproduced.
+# PORT APPROXIMATION — NOT DONOR PARITY. No solid BoxMesh is used here.
+func _orient_impact_trail(item: Dictionary, node: Node3D) -> void:
+	var pr = item.get("pr")
+	if not (pr is Dictionary):
+		return
+	if not (pr.has("pos") and pr.has("target") and pr.has("t") and pr.has("total")):
+		return
+	if not (pr.get("pos") is Vector2 and pr.get("target") is Vector2):
+		return
+	var start2: Vector2 = pr["pos"] as Vector2
+	var end2: Vector2 = pr["target"] as Vector2
+	var head2: Vector2 = end2.lerp(start2, 1.0 - float(pr["t"]) / maxf(0.01, float(pr["total"])))
+	var dir2: Vector2 = end2 - start2
+	if dir2.length_squared() < 0.01:
+		dir2 = Vector2.RIGHT
+	var tail2: Vector2 = head2 - dir2.normalized() * IMPACT_TRAIL_STREAK_M
+	var a: Vector3 = world_pos(tail2)
+	var b: Vector3 = world_pos(head2)
+	node.position = (a + b) * 0.5
+	var mi = item.get("mesh")
+	if mi is MeshInstance3D and is_instance_valid(mi):
+		var q: QuadMesh = (mi as MeshInstance3D).mesh as QuadMesh
+		if q != null:
+			var seg: float = a.distance_to(b)
+			q.size = Vector2(IMPACT_TRAIL_WIDTH,
+				clampf(minf(IMPACT_TRAIL_STREAK_M, seg), IMPACT_TRAIL_MIN_DISTANCE, IMPACT_TRAIL_STREAK_M))
 
 
 func _update_rally() -> void:

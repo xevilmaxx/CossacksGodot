@@ -135,11 +135,14 @@ uniform float face_scale = 0.125;
 //   Diffuse  RGB     = 0.811764717102051 / 0.780392169952393 / 0.694117665290833 (:9-14)
 // Donor `LightStyle = lsParallel` (light.cfg:17): the vector is a CONSTANT
 // DIRECTION, never an eye-space point to subtract `realpos` from (that was
-// the headlight). Donor Z-up -> Godot Y-up uses the already-cited port mapping
-// `lightVector = (LightPos.x/4, LightPos.z/2, LightPos.y)` (water.dev.vert:22;
-// world3d_terrain.gd:100-101). The /4,/2 weights and the engine's own
-// modelview treatment of gl_LightSource[0].position are PORT APPROXIMATION /
-// UNVERIFIED (RV-TRN-01 A; DEEPDEC-02 #4/#7). The former material energies
+// the headlight). TERRAIN-DARK-FIX2 — LIGHT-02 (`reports/LIGHT_02_light_space.md`
+// §3.1-§3.4, §5.4) re-derived donor light space: light.cfg Position is a
+// WORLD-oriented sun DIRECTION in a Y-UP world; Y=0.938701 is the elevation.
+// Donor Y-up -> Godot Y-up is the IDENTITY on axes — map P.xyz directly.
+// The earlier TERRAIN-DARK-FIX axis swap was correct but kept the water-local
+// /4,/2 art scales (LIGHT-02 §3.3, §5.6); those are now dropped. The engine's
+// GL `w` / modelview submission of gl_LightSource[0].position stays UNVERIFIED
+// (LIGHT-02 §7.1; RV-TRN-01 A; DEEPDEC-02 #4/#7). The former material energies
 // (ambient 0.15686 reftile.mat:52-56/:80-84; diffuse 0.78125 :58-62/:86-90)
 // are deliberately NOT used as defaults now that the light colours are known.
 // No visual parity is claimed: a prior raw-swap A/B measured only +0.9 luma.
@@ -281,11 +284,13 @@ void vertex() {
 	vec3 e = normalize(-realpos.xyz);                 // :12 eye=vec3(0) at :4
 	// lsParallel (light.cfg:17): constant donor sun DIRECTION, no subtraction
 	// of realpos — this is what removes the old zero-position headlight.
-	// Z-up -> Y-up: water.dev.vert:22 / world3d_terrain.gd:101. VIEW_MATRIX
-	// rotates the world direction into the same eye space as `n` (PORT APPROX
-	// of the engine's gl_LightSource modelview transform, UNVERIFIED).
-	vec3 sun_world = normalize(vec3(donor_sun_position.x / 4.0,
-		donor_sun_position.z / 2.0, donor_sun_position.y));
+	// TERRAIN-DARK-FIX2 / LIGHT-02 §3.4, §5.4: donor world and Godot world are
+	// both Y-up, so map the raw light.cfg Position.xyz straight through. No
+	// /4,/2 compression: those are water-local art scales (LIGHT-02 §3.3).
+	// VIEW_MATRIX rotates this world direction into the same eye space as `n`
+	// (PORT APPROX of the engine's gl_LightSource modelview, UNVERIFIED).
+	vec3 sun_world = normalize(vec3(donor_sun_position.x,
+		donor_sun_position.y, donor_sun_position.z));
 	vec3 l = normalize((VIEW_MATRIX * vec4(sun_world, 0.0)).xyz); // :13
 	vec3 h = normalize(l + e);                        // :14
 	vec3 n = normalize((VIEW_MATRIX * MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz); // :15

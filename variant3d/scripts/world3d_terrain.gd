@@ -135,7 +135,7 @@ const WATER_LEVEL: float = -0.25          # mapgen.gd:29 C3MapGen.WATER_DEEP; do
 # heightmap_world3d.gd:34-37); only the two light.cfg colours are recorded as
 # donor evidence, the rig itself uses the same body as the sibling module.
 const SUN_POS := Vector3(-0.344731152057648, 0.938701450824738, 0.0)  # light.cfg:26-29
-const SUN_LIGHTVEC := Vector3(SUN_POS.x / 4.0, SUN_POS.z / 2.0, SUN_POS.y)  # water.dev.vert:22, then Z-up->Y-up
+const SUN_LIGHTVEC := Vector3(SUN_POS.x, SUN_POS.y, SUN_POS.z)  # LIGHT-02 verdict: normalize(vec3(P.x,P.y,P.z)), light.cfg:26-31; reports/LIGHT_02_light_space.md §3.4/§5.4 — Y-up identity map, water-local /4,/2 dropped; |P|=0.99999999 and _make_environment() normalizes at :1107, shader normalizes donor_sun_position; PORT APPROXIMATION, no donor GPU parity claim
 const DONOR_AMBIENT := Color(0.196078434586525, 0.184313729405403, 0.129411771893501)  # light.cfg:3-8 (donor evidence)
 const DONOR_DIFFUSE := Color(0.811764717102051, 0.780392169952393, 0.694117665290833)  # light.cfg:11-16 (donor evidence)
 const DONOR_SPECULAR := Color(0.278431385755539, 0.266666680574417, 0.211764708161354)  # TRN-GEOM: light.cfg:20-23 (donor evidence)
@@ -266,8 +266,11 @@ const ATLAS_MODE_ARRAY := "array"    # 121-layer Texture2DArray
 # INTENT implemented as a PORT APPROXIMATION, not a "donor runs this" claim.
 const DATA_SCRIPT = preload("res://scripts/data.gd")  # SP-1 BIOME / SEASON_ENUM
 const SUMMER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_atlas.png"  # tile_atlas_loader.gd:66 (V7-85)
-const WINTER_MANIFEST_PATH := "res://assets/terrain/atlas/tile_index_winter_atlas.manifest.json"  # SP-4, SEASON_PLAN_01.md:189
-const WINTER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_winter_atlas.png"  # SP-4, SEASON_PLAN_01.md:189
+# SP-4 LANDED with these exact on-disk names (tile_index_atlas_winter.*), NOT the
+# planned tile_index_winter_atlas.* of SEASON_PLAN_01.md:189 — path corrected here
+# to the verified artifact bytes. No rename/copy and no git add/LFS action here.
+const WINTER_MANIFEST_PATH := "res://assets/terrain/atlas/tile_index_atlas_winter.manifest.json"  # SP-4 landed (verified on disk)
+const WINTER_ATLAS_PATH := "res://assets/terrain/atlas/tile_index_atlas_winter.png"  # SP-4 landed (verified on disk)
 const DESERT_REMAP_PATH := "res://assets/terrain/atlas/desert_remap.json"  # SP-3 landed at atlas/ (SP_03 O1)
 const SEASON_DEFAULT_NAME := "summer"  # map.script:250 gen.season=0; terrain.lib:12 seasons.Summer=Summer
 const SEASON_ATLAS: Dictionary = {
@@ -1236,6 +1239,9 @@ func build() -> bool:
 	var cx: float = float(w) * 0.5
 	var cz: float = float(h) * 0.5
 	var max_tile_id: int = int(_manifest.get("atlas", {}).get("named_cells", 124)) - 1
+	# SP-6 — Desert-only; Summer and Winter cells are never remapped, so those
+	# builds (UV2, face_hist, mesh counts) stay byte-identical.
+	var season_is_desert: bool = (_season_resolved == "desert")
 	_face_hist = {"0": nverts}
 	for z in range(h):
 		for x in range(w):
@@ -1322,6 +1328,21 @@ func build() -> bool:
 				var fk: String = str(face)
 				_face_hist[fk] = int(_face_hist.get(fk, 0)) + 1
 				_face_hist["0"] = int(_face_hist["0"]) - 1
+
+			# SP-6 / SP-3 — DESERT name remap, applied to the resolved tile id
+			# BEFORE UV2.x. Donor _misc_SetDesert (miscext.script:1447-1502) is an
+			# explicit per-case NAME remap, not a palette swap; SP-3's 11 direct
+			# pairs are stored as source_index -> packed atlas index. The one
+			# height-gated rock8 row is DATA_ONLY_NOT_EXECUTED (not loaded).
+			# Indices stay inside the atlas, tileblock bytes are never mutated,
+			# and DALPHA-02's shader keeps its index-preserving contract.
+			# Runtime activity of the ';'-prefixed donor .inc lines UNVERIFIED.
+			if season_is_desert and tiles_available and _desert_remap.has(tid):
+				var remapped: int = int(_desert_remap[tid])
+				if remapped >= 0 and remapped <= max_tile_id:
+					tid = remapped
+					_desert_remap_cells += 1
+
 			uvs2[i] = Vector2(float(tid), float(face))
 	var k: int = 0
 	for z in range(h - 1):
@@ -1399,6 +1420,14 @@ func build() -> bool:
 			var wl: Variant = water_stats.get("donor_literals")
 			if wl is Dictionary:
 				water_literals = wl
+	# SP-6 — stats provenance. Summer keeps the exact legacy note and values.
+	var atlas_path_note: String = "V7-85 manifest; V7-91 loader transport"
+	if not _season_fallback.is_empty():
+		atlas_path_note = "SP-6 season fallback to V7-85; " + _season_fallback
+	elif _season_resolved == "winter":
+		atlas_path_note = "SP-4 winter manifest; SP-6 season selection"
+	var season_entry: Dictionary = SEASON_ATLAS.get(_season_resolved, {})
+	var season_enum: int = int(season_entry.get("enum", -1))
 	stats = {
 		"grid": {"w": w, "h": h, "cells": nverts},
 		"tile_m": TILE_M,
@@ -1442,7 +1471,8 @@ func build() -> bool:
 		"tile_index_cells": nverts if tiles_available else 0,
 		"tile_index_hist": _tile_index_hist.duplicate(true),
 		"atlas_mode": _atlas_mode_loaded,   # loader's CHOSEN mode after auto-fallback
-		"atlas_path": V785_MANIFEST_PATH + " (V7-85 manifest; V7-91 loader transport)",
+		# SP-6 — selected manifest path; Summer resolves to the exact legacy string.
+		"atlas_path": _season_manifest_path + " (" + atlas_path_note + ")",
 		"uv_model": ("TRN-SHADER world-ground XZ texgen: eye_plane_s=(1,0,0,0) "
 			+ "eye_plane_t=(0,0,1,0), identity texture_matrix, uv_repeat=(0.5,0.5) "
 			+ "in terrain_tileindex.gdshader:120-122,211 — PORT APPROXIMATION, "
@@ -1524,7 +1554,8 @@ func build() -> bool:
 			"v791_verified": "split and array 28/28 (job 245, v791-dual-mode)",
 			"grid": [_atlas_grid.x, _atlas_grid.y],
 			"texture_size": [atlas_size.x, atlas_size.y],
-			"manifest": V785_MANIFEST_PATH,
+			# SP-6 — selected by season; Summer equals the legacy V785 path.
+			"manifest": _season_manifest_path,
 			"reassembly": _atlas_info.duplicate(true),
 			"masks": "alpha.png 512x256 + alphavert.png 1024x512, intensity repacked into ALPHA",
 			"array_mode_note": ("V7-86 shader is sampler2D-only; array loader is "
@@ -1568,6 +1599,33 @@ func build() -> bool:
 			"decode_heights": float(t_heights - t_parsed) / 1000.0,
 			"mesh_build": float(t_mesh - t_heights) / 1000.0,
 			"total_build": float(Time.get_ticks_usec() - t_total) / 1000.0,
+		},
+		# --- SP-6 season selection (PORT APPROXIMATION; donor runtime UNVERIFIED) ---
+		"season": {
+			"selected": _season_resolved,
+			"field": season,
+			"biome": str(DATA_SCRIPT.BIOME),
+			"enum": season_enum,
+			"enum_note": ("summer=0 winter=2 desert=3 (data.gd:227 SEASON_ENUM); "
+				+ "value 1 UNVERIFIED (dmscript.global:237 gc_MaxSeasonCount=3)"),
+			"manifest_path": _season_manifest_path,
+			"atlas_path": _season_atlas_path,
+			"fallback": _season_fallback,
+			"cite": ("terrain.lib:12-15; terrain.presets:2-6,134-263; "
+				+ "texturemap.inc:525-526,605-606 (_winter); miscext.script:1429-1543 (desert)"),
+			"label": ("PORT APPROXIMATION — donor set-swap INTENT; ';'-prefixed donor "
+				+ ".inc runtime UNVERIFIED (SEASON_PLAN_01 B6, DENV-01 Q6)"),
+		},
+		"desert_remap": {
+			"file": DESERT_REMAP_PATH,
+			"direct_entries": _desert_remap_entries,
+			"cells_remapped": _desert_remap_cells,
+			"cite": ("miscext.script:1447-1502 (11 direct pairs); rock8 :1504-1505 "
+				+ "DATA_ONLY_NOT_EXECUTED"),
+			"height_koef": ("0.8 DATA_ONLY_NOT_EXECUTED (miscext.script:1513-1520; "
+				+ "SP-6 is index-only)"),
+			"label": ("DONOR INTENT / PORT APPROXIMATION — runtime UNVERIFIED; "
+				+ "tileblock bytes unchanged, DALPHA-02 shader untouched"),
 		},
 	}
 	return true

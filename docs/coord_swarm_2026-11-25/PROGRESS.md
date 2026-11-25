@@ -101,6 +101,19 @@ implementation tickets, then one final whole-system gate.
       (`wall`/`shell`/`farm_cap`), worktree 28/29 (`build`), while `config.json` is committed at
       240² without a landed MAP-SMALL-01 report. The individual 29/29 results are valid only
       for their own job artifacts — exactly why the final whole-system gate is reserved to the end.
+### 2026-11-25 — OWNER RUNTIME REPORT (real windowed game, not a gate)
+The owner ran the game and reported: flat-root morph warning (expected, labelled PORT APPROX),
+`hud3d_adapter.gd:172-173` parse errors (`w`/`h` inferred type) cascading to `hud.gd:207`
+(`GDScript.new()` nonexistent because the adapter failed to load), and repeated
+`mill_rotor.png` / `.ctex` load errors from `world3d_entities.gd:1430/1458`. Actions:
+- `MINIMAP-QUAD-01` received an urgent follow-up to add explicit types at `:172-173` and
+  re-validate; the `hud.gd:207` error is a cascade, not a separate bug.
+- `ASSET-IMPORT-01` is regenerating the variant `.godot` cache (source PNG + `.import` exist;
+  the referenced `.ctex` is absent).
+- `MOTION-ANIM-01` received a follow-up to add a graceful rotor-texture fallback so a missing
+  cache can never emit hard engine errors, and to check the rotor rotation against donor truth.
+No code was changed by COORD directly; owners fix their own files.
+
 - [ ] Await TRN-DATA, MAP-SMALL-01 and the remaining small tickets; reconcile the integrated
       selftest to 29/29, restart the piece→combo ladder from P0, run S1, then the final gate once.
 - [x] **Batch I (owner directive: keep agent count high):** 6 new read-only donor deep dives

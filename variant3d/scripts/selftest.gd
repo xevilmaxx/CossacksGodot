@@ -156,6 +156,18 @@ func _spot(sid: String, near: Vector2) -> Vector2:
 			# the box on a later step and be stranded inside it.
 			if ink.grow(Data.TILE_M + 0.75).has_point(near):
 				continue
+			# Prefer a site the builder can actually walk up to: its work slot
+			# must be reachable on a clear line (a blocked slot makes the
+			# scripted build window expire with zero progress).
+			var builder: Dictionary = _find_peasant()
+			if not builder.is_empty():
+				var def: Dictionary = Data.BUILDINGS.get(sid, {})
+				var slot: Vector2 = game._work_slot(builder, p, float(def.get("radius", 1.5)) + 0.7)
+				if sid == "hou" and rr <= 10.0:
+					var q := Vector2(clampf(near.x, ink.position.x, ink.end.x), clampf(near.y, ink.position.y, ink.end.y))
+					print("MAPSMALL-CAND r=%.1f p=%s rectdist=%.2f slot=%s slotdist=%.2f clear=%s" % [rr, str(p), near.distance_to(q), str(slot), near.distance_to(slot), str(game._nav_line_clear(builder, builder.pos, slot))])
+				if not bool(game._nav_line_clear(builder, builder.pos, slot)):
+					continue
 			return p
 	return Vector2.INF
 

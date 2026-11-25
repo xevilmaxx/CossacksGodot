@@ -57,7 +57,7 @@ var start_option := "default"
 var mode := "skirmish"
 var mission_name := ""
 var difficulty := "normal"
-var map_size := 240          # CFG-01: Tiny, the smallest port skirmish size option
+var map_size := 256          # MAPSIZE-01: donor Tiny (donewgame.inc:42-49)
 var seed_val := Data.RANDOM_SEED
 # Donor skirmish map options (RC_TERRAIN §2.1 / GUIDE4 App.B02). Map Size and
 # Teams already have rows below; these four complete the donor's six-option set.
@@ -721,9 +721,9 @@ func _show_skirmish() -> void:
 		# script already writes Data.RANDOM_SEED from seed rows (:851, :881).
 		Data.FOG_OF_WAR = id == "on"))
 	# OWNER-SPEC: donor Map Size = Tiny | Normal | Large 2x | Huge 4x.
-	# Port metric mapping is an inference (generator takes raw tile counts):
-	# Tiny=240, Normal=320, Large 2x=400, Huge 4x=480.
-	options_body.add_child(_opt_row("Map size", [{"id": "240", "name": "Tiny"}, {"id": "320", "name": "Normal"}, {"id": "400", "name": "Large 2x"}, {"id": "480", "name": "Huge 4x"}], str(map_size), func(id: String): map_size = int(id)))
+	# MAPSIZE-01: donor values 256/320/480/640 (donewgame.inc:42-49);
+	# GUI order Tiny, Normal, Large 2x, Huge 4x (showcustomgame.inc:243-246).
+	options_body.add_child(_opt_row("Map size", [{"id": "256", "name": "Tiny"}, {"id": "320", "name": "Normal"}, {"id": "480", "name": "Large 2x"}, {"id": "640", "name": "Huge 4x"}], str(map_size), func(id: String): map_size = int(id)))
 	options_body.add_child(_section_label("Resources & placement"))
 	options_body.add_child(_opt_row("Minerals", [{"id": "low", "name": "Poor"}, {"id": "med", "name": "Medium"}, {"id": "rich", "name": "Rich"}, {"id": "random", "name": "Random"}], richness, func(id: String): richness = id))
 	options_body.add_child(_opt_row("Starting resources", [{"id": "normal", "name": "Normal"}, {"id": "rich", "name": "Rich"}, {"id": "thousands", "name": "Thousands"}, {"id": "millions", "name": "Millions"}, {"id": "random", "name": "Random"}], start_resources, func(id: String): start_resources = id))

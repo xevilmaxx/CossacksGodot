@@ -185,6 +185,22 @@ const ANIM_STATUS: String = "DONOR-SAMPLED FLAT-ROOT MORPH — " + PORT_LABEL + 
 const MORPH_POSE_SOURCE: String = "donor_flat_root_morph"   # anim3d.gd:96
 const MORPH_ACTION_MAP: String = "dead->death / moving->walk / else idle (PORT policy over donor AAF names anim3d.gd:63-82; UNVERIFIED)"
 
+# MOTION-ANIM-01 — presentation-only fixes for the VID-AN-01 faults. Every
+# number and rule here is a PORT APPROXIMATION over MEASURED sim values; none
+# is a donor-authored animation constant and no donor parity is claimed.
+#   VID-AN-01 §3: unit 10 moves 0.357..0.450 m per 0.375 s capture for f00..f07
+#   (~0.95..1.20 m/s) then ~0.0005 m (~0.001 m/s) f08..f15 while `moving` stays
+#   true. A 0.15 m/s gate is 6x below the slowest measured march and 150x above
+#   the measured stall: it swaps a stopped unit off the donor walk cycle.
+#   DANIM-01 §4.2 documents the donor state map; its blending is authored as
+#   minFrameBlend=6 / maxFrameBlend=8 (unit.script:10846-10847) but the engine
+#   semantics are UNVERIFIED (DANIM-01 §4.3/§9 Q3), so the clamp below is NOT a
+#   donor blend reproduction.
+const WALK_SPEED_GATE_M_S: float = 0.15
+const YAW_MAX_RATE_RAD_S: float = 0.7853981633974483  # 45 deg/s, PORT APPROX
+const MOTION_GATE_STATUS: String = PORT_LABEL + " — walk/idle chosen from MEASURED SIM displacement per sync; donor state map DANIM-01 §4.2 readable, donor blend semantics UNVERIFIED"
+const YAW_CLAMP_STATUS: String = PORT_LABEL + " — PORT APPROX per-sync yaw clamp; donor ACL minFrameBlend=6/maxFrameBlend=8 semantics UNVERIFIED, no donor parity claim"
+
 # MILLFIX (2026-11-24) — rotor + field visuals. AUTHORIZED EXCEPTION to the
 # V7-14 "no assets/models/anim" rule in this file's header: this ticket
 # explicitly consumes the ALREADY-SHIPPED donor bake mill_rotor.png (the same
@@ -202,6 +218,17 @@ const MILL_TOWER_ORTHO: float = 6.627         # buildings.json ukr_mil:579
 const MILL_TOWER_CX: float = 0.4989           # buildings.json ukr_mil:587
 const MILL_TOWER_FOOT: float = 1.0            # ink[3]/cell, buildings.json:584-585 / world.gd:696
 const ROTOR_STATUS: String = PORT_LABEL + " — 2D donor rotor bake on a billboard quad; true .oss sail mesh UNVERIFIED"
+# MOTION-ANIM-01/ROTOR — honest fallback label, not a parity claim. A missing
+# generated .ctex must degrade to a plain white quad, never to engine ERROR
+# spam; the donor PNG path is unchanged and no new art is generated.
+const ROTOR_FALLBACK_STATUS: String = PORT_LABEL + " — rotor texture unavailable (missing import cache / unreadable donor PNG); plain untextured white quad; donor sail visual UNVERIFIED"
+# Donor-cited 2D bake spins with a POSITIVE CanvasItem angle, i.e. screen-
+# clockwise (app/scripts/world.gd:199-208,628-654; MILLFIX_rotor_fields.md:
+# :35-39,:67). The billboard basis maps local +X to screen-left and +Y to
+# screen-up, so the matching axis is local +Z (FORWARD), not BACK. Donor 3D
+# .oss spin direction itself remains UNVERIFIED: this is a PORT APPROX
+# correction against the only readable donor-rotor proxy, not donor parity.
+const ROTOR_SPIN_AXIS_STATUS: String = PORT_LABEL + " — screen-clockwise spin axis aligned to the donor-derived 2D bake; donor .oss 3D direction UNVERIFIED"
 
 # MILLFIX F2: field stage tints/scale are the EXACT 2D numbers from
 # app/scripts/world.gd:2588-2613; sow spacing is game.gd:2120 (1.6981 m,
@@ -226,10 +253,23 @@ var _slot: Dictionary = {}          # entity id -> {"key":String,"index":int,"cl
 var _refs: Dictionary = {}          # entity id -> entity Dictionary (sim object, read-only)
 var _nodes: Dictionary = {}         # building id -> MeshInstance3D
 var _rotors: Dictionary = {}        # MILLFIX: building id -> MillRotor_<id> child
+# MOTION-ANIM-01/ROTOR: one warning per process, even with many mills. Never
+# reset in bind(): the fallback is a project/import state, not a per-game state.
+var _rotor_fallback_warned: bool = false
 var _field_visual: Dictionary = {}  # MILLFIX: field id -> {state,color,scale} CPU mirror (headless-safe)
 var _field_decal_paths: Dictionary = {}  # MILLFIX: donor decals found at bind (UNVERIFIED 3D UV)
 var _mesh_sources: Dictionary = {}  # source label -> sid count (measured at bind)
 var _anim_t: float = 0.0
+
+# MOTION-ANIM-01 — presentation-side mirrors of the SIM, never written back.
+# id -> {"pos": Vector2, "t": float}: last SIM position/anim-clock sampled in
+# sync(), used to MEASURE displacement speed instead of trusting `moving`.
+var _motion_sample: Dictionary = {}
+# id -> float: yaw-smoothed SIM face (radians, wrapped to -PI..PI). PORT APPROX.
+var _face_smooth: Dictionary = {}
+# id -> int: donor frame actually bound to a mesh batch, so a frozen sim can
+# still be refreshed when the normal frame-migration callback is skipped.
+var _applied_pose_frame: Dictionary = {}
 
 # V7-74: anim3d.gd instance, discovered once among the composed world's
 # children (world3d.gd:152-165 add_child's every module under one Node3D).
@@ -273,6 +313,10 @@ func bind(g) -> void:
 	_donor_texture_paths.clear()
 	_band_mask_cache.clear()
 	_band_mask_stats.clear()
+	# MOTION-ANIM-01: per-unit presentation mirrors are rebuilt from the new game.
+	_motion_sample.clear()
+	_face_smooth.clear()
+	_applied_pose_frame.clear()
 	_rotors.clear()
 	_field_visual.clear()
 	# MILLFIX: record donor decal availability only; 3D UV mapping UNVERIFIED,
@@ -343,6 +387,11 @@ func bind(g) -> void:
 		"donor_morph_rig": "BLOCKED_RIG - flat root only, donor bone parents unreadable (V7-2 Table B1)",
 		"donor_morph_coord": "donor Z-up metres -> bbox/Y-up; vertex i == assets/models/obj/<sid>.obj vertex i",
 		"donor_morph_action_map": MORPH_ACTION_MAP,
+		"motion_gate_label": MOTION_GATE_STATUS,
+		"motion_walk_gate_m_s": WALK_SPEED_GATE_M_S,
+		"motion_yaw_clamp_label": YAW_CLAMP_STATUS,
+		"motion_yaw_max_rate_rad_s": YAW_MAX_RATE_RAD_S,
+		"motion_frozen_refresh_label": "PORT APPROX — frozen sim (measured speed below gate) still re-samples pose and rebinds the batch mesh; visual confirmation UNVERIFIED",
 		"donor_morph_normals": "generated from morphed donor faces (donor .oss emits positions only); tangents unset - UNVERIFIED",
 		"no_2d_sprite_sheets": true,
 		"tile_m": TILE_M,
@@ -367,6 +416,8 @@ func bind(g) -> void:
 		"mill_rotor_source": ROTOR_TEX_PATH,
 		"mill_rotor_meta": ROTOR_META_PATH,
 		"mill_rotor_spin_rad_per_s": MILL_SPIN,
+		"mill_rotor_spin_axis_label": ROTOR_SPIN_AXIS_STATUS,
+		"mill_rotor_texture_status": ROTOR_FALLBACK_STATUS,
 		"field_visual_label": FIELD_STATUS,
 		"field_visual_visual": "UNVERIFIED",
 		"field_visual_decals": _field_decal_paths,
@@ -897,12 +948,51 @@ func _find_anim():
 # taken from data/animations/aaf/peaukr.aaf:3-5. The sim fields are the same
 # ones the 2D renderer reads (t_entities3d.gd:118/124, game.gd entities).
 # No keyframe is invented: the actual frame and verts come from pose_for().
-func _unit_action(ed: Dictionary) -> String:
+#
+# MOTION-ANIM-01: `moving` alone is not a motion measurement. VID-AN-01 §3/§5
+# measured `moving:true` at ~0.001 m/s for f08..f15 while the donor walk frame
+# kept cycling, so walk is now gated on displacement measured in sync(). The
+# measured speed is supplied by the caller; speed < 0 means "not measured", in
+# which case the V7-74 `moving` fallback is kept for direct/stub callers.
+func _unit_action(ed: Dictionary, speed: float = -1.0) -> String:
 	if bool(ed.get("dead", false)):
 		return "death"
+	if speed >= 0.0:
+		return "walk" if speed >= WALK_SPEED_GATE_M_S else "idle"
 	if bool(ed.get("moving", false)):
 		return "walk"
 	return "idle"
+
+
+# MOTION-ANIM-01: MEASURE the SIM, never write to it. The entity Dictionary is
+# the live sim object (_refs holds the reference), so pos is read after the
+# sim's fixed ticks. Speed = |pos - last_pos| / (anim_clock - last_clock),
+# both of which this module already owns; no second wall-clock timer is added.
+func _measure_speed(id: int, ed: Dictionary) -> float:
+	var pos: Vector2 = ed.get("pos", Vector2.ZERO)
+	var prev = _motion_sample.get(id)
+	var speed := 0.0
+	if prev is Dictionary:
+		var pd := prev as Dictionary
+		var step_t := _anim_t - float(pd.get("t", _anim_t))
+		if step_t > 0.0:
+			var prev_pos: Vector2 = pd.get("pos", pos)
+			speed = (pos - prev_pos).length() / step_t
+	_motion_sample[id] = {"pos": pos, "t": _anim_t}
+	return speed
+
+
+# MOTION-ANIM-01: PORT APPROX yaw clamp. The donor authors frame blending but
+# its engine semantics are UNVERIFIED (DANIM-01 §4.3), so this is explicitly a
+# presentation-rate limiter, not a donor blend. Shortest signed arc is clamped
+# to rate * sync dt; wrap is normalised so a +179 -> -179 flip is treated as 2 deg.
+func _smooth_face(id: int, target: float, dt: float) -> float:
+	var prev := float(_face_smooth.get(id, target))
+	var max_step := YAW_MAX_RATE_RAD_S * maxf(dt, 0.0)
+	var delta := fposmod(target - prev + PI, TAU) - PI
+	if absf(delta) > max_step:
+		delta = signf(delta) * max_step
+	return fposmod(prev + delta + PI, TAU) - PI
 
 
 # Parse the DONOR-CONVERTED OBJ (convert_models.py:43-66, :109-125) once per
@@ -1227,7 +1317,14 @@ func _xf(id: int) -> Transform3D:
 		# and was 90 deg off -> units looked like they strafed.
 		# PORT APPROXIMATION retained: donor yaw itself is a renderer transform
 		# (V7-2 3.3.3; V7-1 C4: zero turn actions in 246 .aaf); visual UNVERIFIED.
-		yaw = PI / 2.0 - float(ed.get("face", 0.0))
+		# MOTION-ANIM-01: use the once-per-sync clamped face, not the raw SIM
+		# face, so a 91/166 deg snap cannot jump the mesh in one capture. Before
+		# the first sync (add_unit / stub callers) the raw face is still used.
+		var smooth_face: Variant = _face_smooth.get(id, null)
+		if smooth_face is float:
+			yaw = PI / 2.0 - float(smooth_face)
+		else:
+			yaw = PI / 2.0 - float(ed.get("face", 0.0))
 	# DECOR-01: DECOR tree jitter is per instance, so it lives here rather than
 	# in the sid-shared _mesh_cache. Donor trees sit in the "wide" 0.85..1.15
 	# band (envscales.cfg:162-164; DEC-03 §4.8); mines stay in "none" 1/1 and
@@ -1250,6 +1347,11 @@ func add_unit(e) -> void:
 	if id < 0:
 		return
 	_refs[id] = ed
+	# MOTION-ANIM-01: seed the presentation mirrors at spawn so the first sync
+	# measures a real interval and a new unit never yaws from 0 to its face.
+	_motion_sample[id] = {"pos": ed.get("pos", Vector2.ZERO), "t": _anim_t}
+	_face_smooth[id] = float(ed.get("face", 0.0))
+	_applied_pose_frame.erase(id)
 	if _slot.has(id):
 		return
 	var sid := str(ed.get("sid", ""))
@@ -1345,23 +1447,32 @@ func _rotor_mesh() -> Mesh:
 func _rotor_material() -> Material:
 	var mat := StandardMaterial3D.new()
 	var tex: Texture2D = null
-	if ResourceLoader.exists(ROTOR_TEX_PATH):
-		tex = load(ROTOR_TEX_PATH) as Texture2D
-	if tex == null:
-		# Headless sessions can have the .import file without its .ctex in
-		# .godot/imported. Read the SHIPPED donor PNG bytes directly instead of
-		# generating new art; no donor texture is invented either way.
-		var abs_path := ProjectSettings.globalize_path(ROTOR_TEX_PATH)
-		if FileAccess.file_exists(abs_path):
-			var img := Image.new()
-			if img.load(abs_path) == OK:
-				tex = ImageTexture.create_from_image(img)
+	# MOTION-ANIM-01/ROTOR — the owner's live run showed that a .import file is
+	# NOT proof that Godot generated its .ctex: ResourceLoader.load() on the
+	# missing cache emitted hard engine ERROR lines from this path. Decode the
+	# SHIPPED donor PNG bytes through FileAccess/Image instead of the import
+	# pipeline, so a stale/missing cache can never produce engine ERRORs. This
+	# uses the same donor bake (ROTOR_TEX_PATH) and invents no art. The load
+	# result is checked before use; failure degrades to a plain white quad.
+	if FileAccess.file_exists(ROTOR_TEX_PATH):
+		var img := Image.new()
+		if img.load(ROTOR_TEX_PATH) == OK and not img.is_empty():
+			tex = ImageTexture.create_from_image(img)
 	if tex != null:
 		mat.albedo_texture = tex
-	# Donor bake has transparent corners; scissor keeps a hard sail silhouette
-	# (the same alpha-cutout policy as the port's other donor cutouts).
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-	mat.alpha_scissor_threshold = 0.5
+		# Donor bake has transparent corners; scissor keeps a hard sail
+		# silhouette (the port's other donor cutouts use the same policy).
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		mat.alpha_scissor_threshold = 0.5
+	else:
+		mat.albedo_texture = null
+		mat.albedo_color = Color(1.0, 1.0, 1.0, 1.0)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+		if not _rotor_fallback_warned:
+			_rotor_fallback_warned = true
+			push_warning("world3d_entities: " + ROTOR_FALLBACK_STATUS)
+	mat.set_meta("rotor_texture_status",
+		"donor_png_bound" if tex != null else "fallback_white_untextured")
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	# Unshaded mirrors the 2D canvas sprite; lighting parity UNVERIFIED.
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -1374,7 +1485,9 @@ func _attach_rotor(id: int, parent: MeshInstance3D) -> void:
 	var rotor := MeshInstance3D.new()
 	rotor.name = "MillRotor_" + str(id)
 	rotor.mesh = _rotor_mesh()
-	rotor.material_override = _rotor_material()
+	var rotor_mat := _rotor_material()
+	rotor.material_override = rotor_mat
+	rotor.set_meta("rotor_texture_status", rotor_mat.get_meta("rotor_texture_status", "?"))
 	var hx := (MILL_HUB.x - MILL_TOWER_CX) * MILL_TOWER_ORTHO
 	var hy := (MILL_TOWER_FOOT - MILL_HUB.y) * MILL_TOWER_ORTHO
 	rotor.position = Vector3(hx, hy, 0.0)
@@ -1448,6 +1561,9 @@ func remove(id) -> void:
 		_nodes.erase(eid)
 	_rotors.erase(eid)   # child is freed with its parent; drop the mirror
 	_field_visual.erase(eid)
+	_motion_sample.erase(eid)
+	_face_smooth.erase(eid)
+	_applied_pose_frame.erase(eid)
 	_refs.erase(eid)
 
 
@@ -1464,6 +1580,11 @@ func sync(dt: float) -> void:
 	var pose_sources: Dictionary = {}
 	var seen_frames: Dictionary = {}
 	var morph_rejects: Dictionary = {}
+	# MOTION-ANIM-01: presentation telemetry only (no sim write, no parity claim).
+	var measured_speeds: Dictionary = {}
+	var rendered_actions: Dictionary = {}
+	var yaw_clamps := 0
+	var frozen_refreshes := 0
 	# V7-79: ONE donor sample per (sid, action, frame) per sync(), not per unit.
 	# All units in this pass see the same _anim_t, so pose_for() resolves the
 	# same donor frame and returns byte-identical verts for a given
@@ -1486,9 +1607,21 @@ func sync(dt: float) -> void:
 		if not (e is Dictionary):
 			continue
 		var ed := e as Dictionary
+		var uid := int(id)
 		var sid := str(ed.get("sid", ""))
 		var old_key := str((sl as Dictionary).get("key", ""))
-		var action := _unit_action(ed)
+		# MOTION-ANIM-01: measure SIM displacement first, then pick the donor
+		# action from that measurement. This is the walk-while-stalled fix:
+		# `moving:true` at ~0.001 m/s no longer selects the walk cycle.
+		var speed := _measure_speed(uid, ed)
+		measured_speeds[uid] = speed
+		var raw_face := float(ed.get("face", 0.0))
+		var smoothed := _smooth_face(uid, raw_face, dt)
+		if absf(fposmod(raw_face - smoothed + PI, TAU) - PI) > 0.0001:
+			yaw_clamps += 1
+		_face_smooth[uid] = smoothed
+		var action := _unit_action(ed, speed)
+		rendered_actions[action] = int(rendered_actions.get(action, 0)) + 1
 		var pose: Dictionary = {}
 		var morphed: Dictionary = {}
 		if anim != null and anim.has_method("pose_for") \
@@ -1517,14 +1650,32 @@ func sync(dt: float) -> void:
 			var new_key := "unit|" + sid
 			if tint is Color:
 				new_key += "|p" + str(player)
-			new_key += "|a" + action + "|f" + str(int(pose.get("frame", -1)))
+			var resolved_frame := int(pose.get("frame", -1))
+			new_key += "|a" + action + "|f" + str(resolved_frame)
 			if new_key != old_key:
-				_release(int(id))
+				_release(uid)
 				var pose_info: Dictionary = {"mesh": morphed["mesh"],
 					"source": "donor_flat_root_morph", "sid": sid, "kind": "unit",
 					"scale": float((_mesh_info(sid, "unit")).get("scale", 1.0))}
-				_acquire(new_key, int(id), pose_info, "unit", tint, player, pose)
+				_acquire(new_key, uid, pose_info, "unit", tint, player, pose)
 				frame_changes += 1
+			elif resolved_frame != int(_applied_pose_frame.get(uid, -1)):
+				# MOTION-ANIM-01 frozen-sim fallback: the slot stayed in the same
+				# batch, so the normal release/acquire mesh callback was skipped
+				# while the donor pose frame advanced. Rebind the existing batch
+				# mesh explicitly (real donor verts only, never a guess). This is
+				# a PORT APPROX presentation refresh; whether it is visible at
+				# zoom 2.9 / height 20 m is UNVERIFIED (VID-AN-01 §7.4).
+				var b = _batches.get(new_key)
+				if b is Dictionary:
+					var mm: MultiMesh = (b as Dictionary)["mm"]
+					if mm != null:
+						mm.mesh = morphed["mesh"]
+					var node = (b as Dictionary).get("node")
+					if is_instance_valid(node):
+						(node as Node3D).set_meta("donor_frame", resolved_frame)
+				frozen_refreshes += 1
+			_applied_pose_frame[uid] = resolved_frame
 			pose_sources[MORPH_POSE_SOURCE] = int(pose_sources.get(MORPH_POSE_SOURCE, 0)) + 1
 			seen_frames[int(pose.get("frame", -1))] = true
 			morph_units += 1
@@ -1574,13 +1725,18 @@ func sync(dt: float) -> void:
 					var rx := Vector3.UP.cross(d).normalized()
 					var ry := d.cross(rx).normalized()
 					face = Basis(rx, ry, d)   # local +Z faces the camera
+		# MOTION-ANIM-01/ROTOR: local +Z (FORWARD) makes a positive spin screen-
+		# clockwise, matching the donor-derived 2D bake at world.gd:640-654.
+		# BACK spun the sail the other way; donor .oss 3D direction UNVERIFIED.
 		rotor.transform = Transform3D(
-			face * Basis().rotated(Vector3.BACK, rotor_spin), rotor.position)
+			face * Basis().rotated(Vector3.FORWARD, rotor_spin), rotor.position)
 		var re = _refs.get(int(id))
 		rotor.visible = re is Dictionary and bool((re as Dictionary).get("finished", true))
 	stats["mill_rotor_angle_rad"] = rotor_spin
 	stats["mill_rotor_count"] = _rotors.size()
 	stats["mill_rotor_label"] = ROTOR_STATUS
+	stats["mill_rotor_spin_axis_label"] = ROTOR_SPIN_AXIS_STATUS
+	stats["mill_rotor_texture_fallback_used"] = _rotor_fallback_warned
 
 	# MILLFIX F2: per-field visual state, read-only on the sim. game.field_state()
 	# / field_growth01() are the SAME methods the HUD and 2D renderer use
@@ -1682,6 +1838,12 @@ func sync(dt: float) -> void:
 	stats["donor_morph_pose_sources"] = pose_sources
 	stats["donor_morph_rejects"] = morph_rejects
 	stats["donor_morph_anim_available"] = anim != null
+	# MOTION-ANIM-01: measured presentation telemetry (structural/numeric only;
+	# no sim mutation, no donor-parity or visual claim).
+	stats["motion_measured_speeds_m_s"] = measured_speeds
+	stats["motion_rendered_actions"] = rendered_actions
+	stats["motion_yaw_clamps"] = yaw_clamps
+	stats["motion_frozen_pose_refreshes"] = frozen_refreshes
 	anim_handoff["applied"] = morph_units > 0
 	anim_handoff["morph_units"] = morph_units
 	anim_handoff["label"] = PORT_LABEL

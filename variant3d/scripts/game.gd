@@ -1894,8 +1894,9 @@ func _assign_tileblocks() -> void:
 		if mine_mask[mi] != 0:
 			tileblock[mi] = _blk("ground1")
 	# T2GEN P2-5: expose the winter art selection without touching the tile
-	# index table or world.gd's tint.  Summer path does no work here, so all
-	# existing seed dumps stay byte-identical.
+	# index table or world.gd's tint.  This block is a no-op on Summer maps;
+	# TRN-DATA changes the tileblock bytes but leaves every other seed output
+	# (terrain / blocked / res_nodes / starts) byte-identical.
 	winter_tile_names.clear()
 	if str(Data.BIOME) == "winter":
 		winter_tile_names.resize(tileblock.size())
