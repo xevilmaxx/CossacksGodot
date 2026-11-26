@@ -226,6 +226,26 @@ uniform float shininess = 16.0;
 // material/runtime binding UNVERIFIED — no world3d_terrain constant exists for it.
 
 // ----------------------------------------------------------------------------
+// LIGHT-MATCH — PORT CONSISTENCY CALIBRATION, opt-in features.terrain.light_match.
+// The ONE composer rig (terrain_donor_world.gd:180-207) already lights ordinary
+// spatial entity/prop materials with AMBIENT_ENERGY = 1.40 (:69) and
+// SUN_ENERGY = 2.00 (:70) applied to the SAME donor ambient/diffuse colours.
+// This `unshaded` terrain shader is outside that rig, so the caller must hand
+// it the two rig values explicitly. NO new brightness fudge and NO gamma /
+// exposure lift is invented here (DEC_SMALL_light_products §1.3, §4(4), §6.3:
+// every exposure/gamma path is [U]; no compensation is authorised by it).
+// Defaults are NEUTRAL 1.0 so the commit-default terrain stays byte-identical;
+// terrain_donor_mesh.gd binds the real rig values only under the opt-in flag.
+// This is a PORT consistency calibration, NOT donor parity.
+// ----------------------------------------------------------------------------
+uniform float light_rig_ambient_energy = 1.0;
+// # shared scene rig AMBIENT_ENERGY (terrain_donor_world.gd:69) via its
+//   _lighting_stats() (:461-476); 1.0 = unscaled donor colour (current default).
+uniform float light_rig_sun_energy = 1.0;
+// # shared scene rig SUN_ENERGY (terrain_donor_world.gd:70) via the same
+//   telemetry surface; 1.0 = unscaled donor colour (current default).
+
+// ----------------------------------------------------------------------------
 // Shore / water levels — THREE DISTINCT LEVELS, never conflated, never used as
 // the shader plane Y (which belongs to water3d.gdshader and is [U], X11 §7.1).
 // Shore tiles are selected on the CPU by texturemap.inc:463-529 (sandsea1/5/6,
@@ -295,11 +315,17 @@ void vertex() {
 	vec3 n = normalize((VIEW_MATRIX * MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz); // :15
 	// PORT APPROX of gl_NormalMatrix (inverse-transpose is engine-side, UNVERIFIED).
 
-	vec3 diffuse = max(dot(l, n), 0.0) * diffuse_rgb;                    // :19
+	// LIGHT-MATCH [PORT CONSISTENCY]: the ambient and diffuse terms now receive
+	// the SAME two energies the scene-prop rig applies to these donor colours.
+	// With the neutral 1.0 defaults this reduces byte-for-byte to the original
+	// unscaled donor Blinn-Phong fields above. Blinn-Phong structure, zero
+	// material specular, shadow-free lighting and all debug defaults are intact.
+	vec3 ambient = ambient_rgb * light_rig_ambient_energy;               // :18 [U rig]
+	vec3 diffuse = max(dot(l, n), 0.0) * diffuse_rgb * light_rig_sun_energy; // :19 [U rig]
 	// Donor clamps away-facing slopes to zero diffuse; ambient-only dark sides
 	// are therefore expected. Do not add fill, abs(dot), or tune light colours
 	// to conceal authored rock/prop art (X35 §5/§7).
-	v_packed = ambient_rgb + diffuse;                                    // :18,:37
+	v_packed = ambient + diffuse;                                        // :18,:37
 	// Donor fixed-function product (hf.pvl.sm.vert:23; X35 §5): bound light colour
 	// x donor material specular (0,0,0,1) -> zero for normal ground and faces.
 	v_specular = pow(max(dot(h, n), 0.0), shininess) * specular_rgb * material_specular_rgb; // :22,:38
@@ -473,7 +499,8 @@ void fragment() {
 			bool shore_sandsea = (abs(sampled_tile - 93.0) < 0.5)
 				|| (abs(sampled_tile - 97.0) < 0.5)
 				|| (abs(sampled_tile - 98.0) < 0.5);
-			if (shore_sandsea && !is_alphanull) {
+			bool shore_sandrock = (sampled_tile >= 87.0 && sampled_tile <= 90.0);
+			if ((shore_sandsea || shore_sandrock) && !is_alphanull) {
 				a = 1.0;
 			}
 			if (uniform_tile && !is_alphanull) {

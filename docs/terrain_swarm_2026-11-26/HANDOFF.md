@@ -341,3 +341,19 @@ All of §9 is `PORT APPROXIMATION` / port-internal. The captures prove only that
 5. **[O]/[U] Main workers:** FIX-TERRAIN-SUBCELLS, FIX-FIELD-DONOR, FIX-RELIEF-STAMP, DEC-VIS-04 corner-tag writer; no gate run here, §4 stays `TODO(COORD)`, parity UNVERIFIED, no donor A/B frame.
 
 *End of §9.13 (DOC-NATIVE-TERRAIN, 2026-11-26). Exactly one repo file written by this worker (`docs/terrain_swarm_2026-11-26/HANDOFF.md`), §9.13 only; no source, shader, config, asset, test, result JSON, git, Godot or donor change; no gate run, no capture produced, no donor A/B frame, no donor-parity or gate-PASS claim.*
+
+### 9.14 COORD — photo-led A/B, landed visual fixes and active analysis swarm (2026-11-26)
+
+> **PORT APPROXIMATION — candidate-internal evidence only; donor parity UNVERIFIED.**
+
+- **[O] Root cause of the flat/dark ground after the 8×8 subcell patch was a binding bug:** `terrain_donor_mesh.gd` created the per-cell L8 tile map but never assigned `_tile_map_tex`, so `_make_material()` silently fell back to a plain material. Fixed by assigning the created texture in `build()`. Donor atom now includes `donor_rgb_subcell_contract` (8×8, 64, 1024, 16 m, map size/ready) and passes.
+- **[O] Photo A/B disproved two chevron hypotheses.** Gating face promotion on donor collision tags drove `face_hist` to `{0:4096}` at 64² but left the chevrons unchanged. Forcing `donor_rows=1/donor_cols=1` also left them unchanged. The close diagnostic has 350 unique heights and mostly tile 0, with shore ids 87/88/89/90/93/97/98 on the remaining cells. See `reports/PHOTO_LED_chevron_ab.md`.
+- **[O] Neutral alpha on shore families removed the central chevrons.** The donor tile→alpha patch rule is `[U]`; the port's id-hash patch is ungrounded. Setting `a=1.0` for ids 93/97/98 changed the close frame from nested dark bands to a continuous sand photograph; extending it to 87–90 removed most remaining edge stripes. No synthetic colour/noise was added.
+- **[O] Contact sheets now drive review:** `inbox/qa/captures/contact_close-shorealpha.png` and `contact_wide-final.png`. The ground and props are temporally stable; remaining visible issues are outer shore edge stripes, local dark relief patches, sparse forest and modest field gold coverage.
+- **[O] Landed code/asset changes:** per-cell tile map binding, donor RGB mirror/V-flip rule, uniform-cell alpha, compact props feed with all 39,783 records, compact pattern bundle (7.5 MB vs 238 MB source corpus) integrated as preferred runtime input, opt-in high-res atlas (`features.terrain.hires_atlas`, default false), donor field stage art/meshes converted, field stage/decal fixes, donor terrainmesh transform order, donor relief stamp vertex-mask/smooth fix, forest0 alias fix, and the donor collision face gate. See the corresponding reports and `COORD_terrain_root_cause.md`.
+- **[O] Gates re-run and green:** donor atom, `selftest`, `uitest`, `t_render_mode`, `t_map_variety`, and `assert_clean --json` (`CLEAN`). Legacy `scan_map.py` failures remain separate and were not weakened.
+- **[O] Current secondary analysis swarm (Muse Spark 1.3):** SEQ-CLOSE, SEQ-WIDE, AUDIT-FEATURES, DEC-SHORE-EDGE. They are read-only and writing one report each.
+- **[U] Guard unchanged:** no donor GPU A/B frame; `parity.status=UNVERIFIED`; §4 gates remain `TODO(COORD)`; no synthetic noise/dither, `HEIGHT_SCALE` fudge, face promotion, invented donor constant, weakened test or parity claim.
+
+*End of §9.14.*
+

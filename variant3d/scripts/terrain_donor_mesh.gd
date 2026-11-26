@@ -74,6 +74,11 @@ const LEGACY_ATLAS_DIR := "res://assets/terrain/atlas/"
 const LEGACY_ATLAS_SINGLE := LEGACY_ATLAS_DIR + "tile_index_atlas.png"
 const LEGACY_ATLAS_MANIFEST := LEGACY_ATLAS_DIR + "tile_index_atlas.manifest.json"
 const HIRES_ATLAS_FLAG_PATH := "features.terrain.hires_atlas"
+# LIGHT-MATCH opt-in: PORT CONSISTENCY calibration, NOT donor parity. When true,
+# the terrain material binds the SAME ambient/sun energies the composer already
+# uses for scene props (terrain_donor_world.gd:69-70); when false/absent the
+# shader keeps its neutral 1.0 defaults, i.e. today's unscaled donor colours.
+const LIGHT_MATCH_FLAG_PATH := "features.terrain.light_match"
 # Null-safe config access (same pattern as water3d.gd:6,163-167). config.gd
 # owns the features table, so this file reads the dotted key through flag()
 # and does NOT add a getter or edit config.gd.
@@ -109,6 +114,8 @@ var visual_parity_claim: bool = false  # hard guard, never set true
 var atlas_mode_request: String = "single"
 var season: String = ""
 var hires_atlas: bool = false             # opt-in diagnostic; resolved once per build
+var light_match: bool = false             # LIGHT-MATCH opt-in; resolved once per build
+var _light_match: Dictionary = {}         # labelled rig-energy binding telemetry
 var _atlas_resolution: Dictionary = {}    # labelled resolution / VRAM telemetry
 
 var _game = null                       # untyped I06 container / game reference
@@ -435,6 +442,45 @@ func _resolve_hires_atlas_flag() -> bool:
 	return bool(cfg.call("flag", HIRES_ATLAS_FLAG_PATH, false))
 
 
+func _resolve_light_match_flag() -> bool:
+	# LIGHT-MATCH: opt-in ONLY, resolved through config.gd's generic flag()
+	# reader (no config.gd edit). Active config may be null before settings load
+	# and an older/no key falls back to false, so the commit-default terrain is
+	# unchanged. Labelled in stats.
+	var cfg = C3ConfigScript.active
+	if cfg == null or not cfg.has_method("flag"):
+		return false
+	return bool(cfg.call("flag", LIGHT_MATCH_FLAG_PATH, false))
+
+
+func _composer_light_energies() -> Dictionary:
+	# LIGHT-MATCH: read the energies the ONE scene rig ALREADY uses for props.
+	# The composer adds this mesh as its child (terrain_donor_world.gd:275), and
+	# its own telemetry surface _lighting_stats() (:461-476) exposes
+	# AMBIENT_ENERGY (:69) and SUN_ENERGY (:70). No constant is duplicated here
+	# and no donor binary/GPU value is claimed. Standalone builds (unit tests or
+	# direct mesh use, no composer parent) return {} and stay neutral.
+	var parent := get_parent()
+	if parent == null or not (parent is Object):
+		return {}
+	if not parent.has_method("_lighting_stats"):
+		return {}
+	var lighting: Variant = parent.call("_lighting_stats")
+	if not (lighting is Dictionary):
+		return {}
+	var rig: Dictionary = lighting as Dictionary
+	var ae: Variant = rig.get("ambient_energy", null)
+	var se: Variant = rig.get("sun_energy", null)
+	if not (ae is float or ae is int) or not (se is float or se is int):
+		return {}
+	return {
+		"ambient_energy": float(ae),
+		"sun_energy": float(se),
+		"source": ("terrain_donor_world.gd:_lighting_stats() — "
+			+ "AMBIENT_ENERGY :69 / SUN_ENERGY :70"),
+	}
+
+
 func _read_manifest_atlas(path: String) -> Dictionary:
 	# Read-only probe of the CHOSEN manifest's declared geometry — the same file
 	# the loader consumes in _load_grid() (tile_atlas_loader.gd:310-317). No
@@ -692,6 +738,22 @@ func _make_material(atlas_ready: bool = true) -> Material:
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
 	_shader_path_used = DONOR_SHADER_PATH if is_new_shader else LEGACY_SHADER_PATH
+	# LIGHT-MATCH: bind the shared rig energies only under the opt-in. The
+	# shader uniforms default to 1.0 (unscaled donor colours), so with the flag
+	# off — or with no composer parent to read from — behaviour is unchanged.
+	var rig_energies: Dictionary = _composer_light_energies() if light_match else {}
+	var ambient_energy: float = float(rig_energies.get("ambient_energy", 1.0))
+	var sun_energy: float = float(rig_energies.get("sun_energy", 1.0))
+	_light_match = {
+		"feature": LIGHT_MATCH_FLAG_PATH,
+		"enabled": light_match,
+		"rig_found": not rig_energies.is_empty(),
+		"ambient_energy_bound": ambient_energy,
+		"sun_energy_bound": sun_energy,
+		"source": str(rig_energies.get("source", "NONE — neutral 1.0 shader defaults")),
+		"label": ("PORT CONSISTENCY CALIBRATION — shared scene light rig; "
+			+ "NO donor parity claim, no new donor constant, no gamma/exposure lift"),
+	}
 	var params := {
 		"tile_atlas": _atlas_texture,
 		"tile_map": _tile_map_tex,
@@ -709,6 +771,9 @@ func _make_material(atlas_ready: bool = true) -> Material:
 		"diffuse_rgb": Vector3(DONOR_DIFFUSE.r, DONOR_DIFFUSE.g, DONOR_DIFFUSE.b),
 		"specular_rgb": Vector3(DONOR_SPECULAR.r, DONOR_SPECULAR.g, DONOR_SPECULAR.b),
 		"donor_sun_position": DONOR_SUN_POS,
+		# LIGHT-MATCH: SAME rig energies scene props already receive; 1.0 when off.
+		"light_rig_ambient_energy": ambient_energy,
+		"light_rig_sun_energy": sun_energy,
 		"face_scale": DONOR_FACE_SCALE,
 		"shadow_enabled": 0.0,   # no shadow map shipped; no shadow fakery
 		"fog_mode": 0.0,         # FogMode=0 (colors.lib:23,34-43)
@@ -864,6 +929,7 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 		},
 		"material_model": material_model,
 		"shader_path": _shader_path_used,
+		"light_match": _light_match.duplicate(true),
 		"alpha": _alpha_contract.duplicate(true),
 		"visual_parity_claim": visual_parity_claim,
 		"fed_back_into_sim": false,
@@ -898,6 +964,9 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 			"alpha_blend": "cossacks.exe:949234; hf.pvl.smx3.frag:13-17,50",
 			"water": "texturemap.inc:29-31,688,704; generatemap.inc:7; water3d.gd:305-321",
 			"light": "light.cfg:3-23,26-29",
+			"light_match": ("PORT CONSISTENCY only — shared rig AMBIENT_ENERGY/SUN_ENERGY "
+				+ "(terrain_donor_world.gd:69-70); opt-in features.terrain.light_match; "
+				+ "NOT donor parity"),
 		},
 	}
 
@@ -910,6 +979,9 @@ func build() -> bool:
 	# HIRES-ATLAS-C: resolve the opt-in once, before any path/sampler binding,
 	# so _atlas_paths(), stats and the loader all see the same tier this build.
 	hires_atlas = _resolve_hires_atlas_flag()
+	# LIGHT-MATCH: likewise resolve the opt-in once per build so the material
+	# binding and the stats block see the same decision.
+	light_match = _resolve_light_match_flag()
 	if not _ingest():
 		push_error("terrain_donor_mesh: bind() an I06 container / height dump first")
 		return false
@@ -1011,6 +1083,8 @@ func invalidate() -> void:
 	_atlas_info = {}
 	_atlas_resolution = {}
 	_shader_params = {}
+	_light_match = {}
+	light_match = false
 	_alpha_contract = {}
 	_mip_source = ""
 	_built = false
