@@ -1,0 +1,349 @@
+# GAMECRAFT-MCP — MCP server hosted directly inside the Godot game.
+#
+# A Streamable-HTTP MCP endpoint served by the live variant3d game process:
+#   POST http://127.0.0.1:<port>/mcp  (JSON-RPC: initialize, tools/list, tools/call)
+# Tools drive the REAL booted game (place buildings, pan camera, tick sim)
+# and capture screenshots / frame sequences from the live viewport — so play
+# commands and video capture share one process ("play + video meanwhile").
+#
+# Launch (through the single-door runner, WITH rendering — no --headless):
+#   python variant3d\tools\godot_runner.py run --id mcp-host --timeout 3600 -- \
+#     --path variant3d --script res://tests/t_mcp_host.gd -- \
+#     --config "<ABS>\map_donor_240.json" --seed 20261113 --mcp-port 8931
+# Register in OpenCode as a remote MCP server with URL
+#   http://127.0.0.1:8931/mcp
+#
+# No donor binary is executed. No parity claim.
+extends SceneTree
+
+const MAIN_SCENE := "res://scenes/main.tscn"
+const SIM_STEP := 1.0 / 32.0
+const PINNED_SEED := 20261113
+
+var _cfg_arg := ""
+var _seed_arg := ""
+var _port := 8931
+var _shot_seq := 0
+
+var _main: Node = null
+var _game = null
+var _world = null
+var _cam = null
+var _vp: SubViewport = null
+var _tcp := TCPServer.new()
+var _running := false
+
+
+func _arg_value(flag: String) -> String:
+	for src in [OS.get_cmdline_user_args(), OS.get_cmdline_args()]:
+		var args := PackedStringArray(src)
+		for i in range(args.size()):
+			if str(args[i]) == flag and i + 1 < args.size():
+				return str(args[i + 1])
+	return ""
+
+
+func _fail(msg: String) -> void:
+	print("GAMECRAFT-MCP FAIL " + msg)
+	push_error(msg)
+	quit(1)
+
+
+func _parse_args() -> bool:
+	_cfg_arg = _arg_value("--config")
+	_seed_arg = _arg_value("--seed")
+	var port_txt := _arg_value("--mcp-port")
+	if port_txt != "":
+		_port = clampi(int(port_txt), 1024, 65535)
+	if _cfg_arg == "" or not _cfg_arg.is_absolute_path():
+		_fail("need --config <absolute json>")
+		return false
+	if _seed_arg != "20261113":
+		_fail("need --seed 20261113")
+		return false
+	return true
+
+
+func _init() -> void:
+	if not _parse_args():
+		return
+	_boot_and_host()
+
+
+func _temp_root() -> String:
+	var t := OS.get_environment("TEMP")
+	if t == "":
+		t = OS.get_environment("TMP")
+	return t.replace("\\", "/")
+
+
+func _boot() -> bool:
+	var packed: PackedScene = load(MAIN_SCENE) as PackedScene
+	if packed == null:
+		_fail("cannot load main scene")
+		return false
+	_main = packed.instantiate()
+	if _main == null:
+		_fail("cannot instantiate main")
+		return false
+	root.add_child(_main)
+	var deadline := Time.get_ticks_msec() + 300000
+	while Time.get_ticks_msec() < deadline:
+		await process_frame
+		if _main.get("game") != null and _main.get("world") != null and _main.get("camera") != null and _main.get("capture_view3d") != null:
+			var g = _main.get("game")
+			if g != null and int(g.get("MAP_W")) > 0:
+				break
+	_game = _main.get("game")
+	_world = _main.get("world")
+	_cam = _main.get("camera")
+	_vp = _main.get("capture_view3d") as SubViewport
+	if _game == null or _world == null or _cam == null or _vp == null:
+		_fail("boot incomplete")
+		return false
+	# Keep the sim controllable from tools, not from the menu driver.
+	var ais = _main.get("ais")
+	if ais is Array:
+		(ais as Array).clear()
+	_main.set("speed", 0.0)
+	_main.set("acc", 0.0)
+	_main.set("screenshot_frames", 1000000)
+	_main.set("screenshot_done", true)
+	_cam.set_process(false)
+	return true
+
+
+func _boot_and_host() -> void:
+	if not await _boot():
+		return
+	if _tcp.listen(_port, "127.0.0.1") != OK:
+		_fail("cannot listen on 127.0.0.1:%d" % _port)
+		return
+	_running = true
+	print("GAMECRAFT-MCP READY port=%d map=%dx%d" % [_port, int(_game.get("MAP_W")), int(_game.get("MAP_H"))])
+	while _running:
+		await process_frame
+		await _pump()
+
+
+# --- HTTP plumbing (minimal Streamable-HTTP: POST /mcp only) ---
+
+func _pump() -> void:
+	if not _tcp.is_connection_available():
+		return
+	var peer: StreamPeerTCP = _tcp.take_connection()
+	if peer == null:
+		return
+	await _handle(peer)
+	peer.disconnect_from_host()
+
+
+func _read_exact(peer: StreamPeerTCP, n: int, timeout_ms: int) -> PackedByteArray:
+	var out := PackedByteArray()
+	var start := Time.get_ticks_msec()
+	while out.size() < n:
+		if Time.get_ticks_msec() - start > timeout_ms:
+			break
+		var avail := peer.get_available_bytes()
+		if avail <= 0:
+			await process_frame
+			continue
+		var chunk: PackedByteArray = peer.get_data(mini(avail, n - out.size()))[1]
+		out.append_array(chunk)
+	return out
+
+
+func _read_request(peer: StreamPeerTCP) -> Dictionary:
+	# Read headers.
+	var head := PackedByteArray()
+	var start := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - start < 5000:
+		var avail := peer.get_available_bytes()
+		if avail > 0:
+			head.append_array(peer.get_data(avail)[1])
+			var s := head.get_string_from_utf8()
+			if s.find("\r\n\r\n") >= 0:
+				break
+		else:
+			await process_frame
+	var s := head.get_string_from_utf8()
+	var hsplit := s.split("\r\n\r\n", false, 1)
+	if hsplit.size() < 1:
+		return {}
+	var header_txt: String = hsplit[0]
+	var body_start := head.size() - (hsplit[1].to_utf8_buffer().size() if hsplit.size() > 1 else 0)
+	var lines := header_txt.split("\r\n")
+	if lines.is_empty():
+		return {}
+	var parts := lines[0].split(" ", false)
+	if parts.size() < 2:
+		return {}
+	var method: String = parts[0]
+	var path: String = parts[1]
+	var content_len := 0
+	for ln in lines:
+		var low := ln.to_lower()
+		if low.begins_with("content-length:"):
+			content_len = int(ln.substr(15).strip_edges())
+	var body := PackedByteArray()
+	if body_start < head.size():
+		body = head.slice(body_start)
+	while body.size() < content_len:
+		var more := await _read_exact(peer, content_len - body.size(), 5000)
+		if more.is_empty():
+			break
+		body.append_array(more)
+	return {"method": method, "path": path, "body": body.get_string_from_utf8()}
+
+
+func _respond(peer: StreamPeerTCP, code: int, text: String, body: String) -> void:
+	var payload := body.to_utf8_buffer()
+	var head := "HTTP/1.1 %d %s\r\nContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n" % [code, text, payload.size()]
+	peer.put_data(head.to_utf8_buffer())
+	if payload.size() > 0:
+		peer.put_data(payload)
+
+
+func _rpc_ok(id: Variant, result: Dictionary) -> String:
+	return JSON.stringify({"jsonrpc": "2.0", "id": id, "result": result})
+
+
+func _rpc_err(id: Variant, code: int, message: String) -> String:
+	return JSON.stringify({"jsonrpc": "2.0", "id": id, "error": {"code": code, "message": message}})
+
+
+# --- MCP surface ---
+
+func _tool_defs() -> Array:
+	return [
+		{"name": "game.status", "description": "Live game state: map, entities, sim time, camera.", "inputSchema": {"type": "object", "properties": {}}},
+		{"name": "game.tick", "description": "Advance the sim clock by N seconds (frozen driver; deterministic fixed steps).", "inputSchema": {"type": "object", "properties": {"seconds": {"type": "number"}}, "required": ["seconds"]}},
+		{"name": "camera.pan_to", "description": "Move the capture camera to a world target (sim metres) and report the settled target.", "inputSchema": {"type": "object", "properties": {"x": {"type": "number"}, "y": {"type": "number"}}, "required": ["x", "y"]}},
+		{"name": "game.screenshot", "description": "Render the live viewport once and return the PNG (saved to TEMP, base64 inline).", "inputSchema": {"type": "object", "properties": {}}},
+		{"name": "game.place_building", "description": "Place a finished=false building site for player 0 at sim metres (does not assign builders).", "inputSchema": {"type": "object", "properties": {"sid": {"type": "string"}, "x": {"type": "number"}, "y": {"type": "number"}}, "required": ["sid", "x", "y"]}},
+		{"name": "video.record_frames", "description": "Advance the sim in fixed steps, capturing N live viewport frames (meanwhile-video). Returns PNG paths.", "inputSchema": {"type": "object", "properties": {"frames": {"type": "integer"}, "sim_step": {"type": "number"}}, "required": ["frames"]}},
+	]
+
+
+func _status_text() -> String:
+	var ents := (_game.get("entities") as Array).size()
+	var res := (_game.get("res_nodes") as Array).size()
+	return JSON.stringify({
+		"map": [int(_game.get("MAP_W")), int(_game.get("MAP_H"))],
+		"seed": PINNED_SEED,
+		"entities": ents, "res_nodes": res,
+		"time_s": float(_game.get("time_s")),
+		"camera_target": [float((_cam.get("_target") as Vector2).x), float((_cam.get("_target") as Vector2).y)],
+		"terrain_backend": str(_world.get("terrain_backend")),
+	})
+
+
+func _render_once() -> Image:
+	_world.sync(0.0)
+	_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var tex = _vp.get_texture()
+	return tex.get_image() if tex != null else null
+
+
+func _save_shot(img: Image, tag: String) -> String:
+	_shot_seq += 1
+	var root := _temp_root()
+	var dir := root.path_join("opencode/v42/mcp_gamecraft")
+	DirAccess.make_dir_recursive_absolute(dir)
+	var path := dir.path_join("%s_%04d.png" % [tag, _shot_seq])
+	img.save_png(path)
+	return path
+
+
+func _call_tool(name: String, args: Dictionary) -> Dictionary:
+	match name:
+		"game.status":
+			return {"content": [{"type": "text", "text": _status_text()}]}
+		"game.tick":
+			var secs := clampf(float(args.get("seconds", 1.0)), 0.0, 120.0)
+			var n := int(round(secs / SIM_STEP))
+			_game.set("winner", -1)
+			_game.set("paused", false)
+			for i in range(n):
+				_game.tick(SIM_STEP)
+			return {"content": [{"type": "text", "text": JSON.stringify({"advanced_s": n * SIM_STEP, "time_s": float(_game.get("time_s"))})}]}
+		"camera.pan_to":
+			var t := Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
+			_cam.call("jump_to_world", t)
+			_cam.set_process(false)
+			var actual: Vector2 = _cam.get("_target")
+			return {"content": [{"type": "text", "text": JSON.stringify({"requested": [t.x, t.y], "settled": [actual.x, actual.y]})}]}
+		"game.screenshot":
+			var img := await _render_once()
+			if img == null or img.is_empty():
+				return {"content": [{"type": "text", "text": "ERROR empty frame"}], "isError": true}
+			var path := _save_shot(img, "shot")
+			var png: PackedByteArray = FileAccess.get_file_as_bytes(path)
+			return {"content": [
+				{"type": "text", "text": JSON.stringify({"file": path, "w": img.get_width(), "h": img.get_height()})},
+				{"type": "image", "data": Marshalls.raw_to_base64(png), "mimeType": "image/png"},
+			]}
+		"game.place_building":
+			var sid := str(args.get("sid", "hou"))
+			var pos := Vector2(float(args.get("x", 0.0)), float(args.get("y", 0.0)))
+			var site: Dictionary = _game.call("place_building", 0, sid, pos, false, [])
+			if site.is_empty():
+				return {"content": [{"type": "text", "text": "ERROR place_building refused"}], "isError": true}
+			return {"content": [{"type": "text", "text": JSON.stringify({"site_id": int(site.get("id", -1)), "sid": sid, "pos": [pos.x, pos.y]})}]}
+		"video.record_frames":
+			var n := clampi(int(args.get("frames", 12)), 1, 120)
+			var step := SIM_STEP
+			if args.has("sim_step"):
+				step = clampf(float(args.get("sim_step")), 0.0, 5.0)
+			var files: Array = []
+			_game.set("winner", -1)
+			_game.set("paused", false)
+			for i in range(n):
+				if step > 0.0:
+					_game.tick(step)
+				var img := await _render_once()
+				if img == null or img.is_empty():
+					return {"content": [{"type": "text", "text": "ERROR empty frame %d" % i}], "isError": true}
+				files.append(_save_shot(img, "vid"))
+			return {"content": [{"type": "text", "text": JSON.stringify({"frames": files, "time_s": float(_game.get("time_s"))})}]}
+	return {"content": [{"type": "text", "text": "ERROR unknown tool " + name}], "isError": true}
+
+
+func _handle(peer: StreamPeerTCP) -> void:
+	var req := await _read_request(peer)
+	if req.is_empty():
+		return
+	if not str(req.get("path", "")).begins_with("/mcp"):
+		_respond(peer, 404, "Not Found", _rpc_err(null, -32601, "unknown path"))
+		return
+	if str(req.get("method", "")) != "POST":
+		_respond(peer, 405, "Method Not Allowed", _rpc_err(null, -32601, "POST only"))
+		return
+	var parsed: Variant = JSON.parse_string(str(req.get("body", "")))
+	if not (parsed is Dictionary):
+		_respond(peer, 400, "Bad Request", _rpc_err(null, -32700, "bad JSON"))
+		return
+	var msg := parsed as Dictionary
+	var id: Variant = msg.get("id", null)
+	var method := str(msg.get("method", ""))
+	if method == "notifications/initialized":
+		_respond(peer, 202, "Accepted", "")
+		return
+	if method == "initialize":
+		_respond(peer, 200, "OK", _rpc_ok(id, {
+			"protocolVersion": "2024-11-05",
+			"capabilities": {"tools": {}},
+			"serverInfo": {"name": "cossacksgodotmcp", "version": "1.0.0"},
+		}))
+		return
+	if method == "tools/list":
+		_respond(peer, 200, "OK", _rpc_ok(id, {"tools": _tool_defs()}))
+		return
+	if method == "tools/call":
+		var params: Dictionary = msg.get("params", {})
+		var out: Dictionary = await _call_tool(str(params.get("name", "")), params.get("arguments", {}))
+		_respond(peer, 200, "OK", _rpc_ok(id, out))
+		return
+	_respond(peer, 404, "Not Found", _rpc_err(id, -32601, "unknown method " + method))

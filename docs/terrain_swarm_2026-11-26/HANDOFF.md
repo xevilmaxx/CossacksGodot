@@ -384,3 +384,16 @@ All of §9 is `PORT APPROXIMATION` / port-internal. The captures prove only that
 
 *End of §9.16.*
 
+### 9.17 COORD — nation move, EUR aliases, Godot-native MCP host (2026-11-26)
+
+> **PORT APPROXIMATION — candidate snapshots only; donor parity UNVERIFIED.**
+
+- **[O] Ukrainian buildings moved out of `shared/`.** 80 OBJs + `.mtl` + `.import` (`cen/hou/bar/sta/bla/aca/art/dip` × base/1-4/1a-4a/a) `obj/shared/buildings/` → `obj/ukr/buildings/`; 8 textures `tex/shared/buildings/` → `tex/ukr/buildings/`. Manifest 80 entries updated (`bucket: ukr/buildings`, `assets.obj/tex` rewritten); sprites untouched. Snapshot `cap_nationmove.png` clean. See `reports/NATION_MOVE_ukr_buildings.md`.
+- **[O] EUR aliases wired (zero new art).** `extra_assets`: `eurmil/eursto/eurmar/eurtow → shared/` mesh+tex. The donor-correct probe that could never hit now resolves `exact=true`. Backup `manifest.json.bak-EURALIAS`.
+- **[O] Mill legacy step fixed.** `game.gd:2750` `1.6981*TILE*0.5` → `SOW_SIZE_CELLS*TILE` (3.3962 m donor spacing); parse OK, snapshot `cap_millsow.png` clean.
+- **[O] Godot-native MCP host (owner request).** `variant3d/tests/t_mcp_host.gd` serves Streamable-HTTP MCP **inside the running game** (`POST 127.0.0.1:8931/mcp`): `game.status/tick/screenshot/place_building`, `camera.pan_to`, `video.record_frames` — play commands + video from one live viewport. Registered as `cossacksgodotmcp` (renamed per owner; `gamecraft` entry removed). First launch died with the background shell (game had booted to OpenGL); relaunched detached via `Start-Process` + runner lock reset. Godot alive (PID 13680, importing), port opens at READY.
+- **[O] Swarm results folded in.** `DEC_DEEP_prop_water_exclusion` → water pre-mark (`water<>cBNone`/broad/bsmooth/collision>0 + r=3 waterborder ring) landed in `terrain_donor_gen.gd` (`inbox/backup/*.bak-WATERPREMARK`); overview `map_overview_waterfix.png` still shows in-water dots → placers bypassing `_check_stand` are next. `AUDIT_MISSING_PARTS_VARIANT3D` (G1–G16, P0 first) + `FIX-TERRAIN-RESOLUTION` (opt-in partial 1024² array atlas, `features.terrain.array_atlas`, 64/85 MiB vs 512/683) → snapshot `cap_arrayatlas.png` level, micro-variance still down (id histogram, not res). `DEC_LANDSCAPE_*` (hills/water, item placement) + `FIX-OTHER-CLASS` (`other` 298→0) landed.
+- **[U] Guard unchanged.** No donor GPU A/B frame; parity UNVERIFIED; no synthetic assets/constants; `app/` untouched except via shared manifest (models only).
+
+*End of §9.17.*
+
