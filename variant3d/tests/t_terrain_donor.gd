@@ -566,7 +566,7 @@ func _find_terrain_mesh(root: Node) -> MeshInstance3D:
 
 
 func _inspect_mesh(size: int, s: Dictionary) -> Dictionary:
-	var out := {"inspected": false, "reason": "not inspected"}
+	var out := {"inspected": false, "reason": "not inspected", "rgb_subcells": {}}
 	var script := load(MODULE_WORLD) as Script
 	if script == null or not script.can_instantiate():
 		out["reason"] = "composer load failed"
@@ -655,6 +655,11 @@ func _inspect_mesh(size: int, s: Dictionary) -> Dictionary:
 		"uv2_face_violations": face_bad, "uv2_tile_violations": uv_bad,
 		"reason": "",
 	}
+	var mesh_module: Variant = inst.get("_mesh")
+	if mesh_module != null and (mesh_module is Object):
+		var mesh_stats_v: Variant = (mesh_module as Object).get("stats")
+		if mesh_stats_v is Dictionary and (mesh_stats_v as Dictionary).has("rgb_subcells"):
+			out["rgb_subcells"] = (mesh_stats_v as Dictionary)["rgb_subcells"]
 	return out
 
 
@@ -910,9 +915,26 @@ func _initialize() -> void:
 				and int(mi.get("uv2_face_violations", -1)) == 0,
 				"UV2.y outside {0,1,2} violations=%s" % str(mi.get("uv2_face_violations", -1)),
 				"spec/01:34 face in {0,1,2}; world3d_terrain.gd:1315-1318,1407 (PORT APPROX)")
+		var sc: Dictionary = mi.get("rgb_subcells", {})
+		var tile_map: Dictionary = sc.get("tile_map", {})
+		var map_w: int = int(tile_map.get("width", -1))
+		var map_h: int = int(tile_map.get("height", -1))
+		var period: float = float(sc.get("period_m", -1.0))
+		var rows_ok: bool = int(sc.get("rows", -1)) == 8
+		var cols_ok: bool = int(sc.get("cols", -1)) == 8
+		var tile_size_ok: bool = int(sc.get("tile_size", -1)) == 64
+		var block_ok: bool = float(sc.get("donor_block_px", -1.0)) == 1024.0
+		var period_ok: bool = absf(period - 16.0) < 0.0001
+		var map_ok: bool = bool(tile_map.get("ready", false)) \
+				and map_w == int(mi.get("grid_w", -1)) \
+				and map_h == int(mi.get("grid_h", -1))
+		check("donor_rgb_subcell_contract", rows_ok and cols_ok and tile_size_ok
+				and block_ok and period_ok and map_ok,
+				"rows=%s cols=%s tile=%s block=%s period=%s map=%sx%s ready=%s" % [str(sc.get("rows", -1)), str(sc.get("cols", -1)), str(sc.get("tile_size", -1)), str(sc.get("donor_block_px", -1.0)), str(period), str(map_w), str(map_h), str(tile_map.get("ready", false))],
+				"DEC-VIS-01 §4/§6: 8x8 subcells, 16 m period, per-cell L8 tile map")
 	else:
 		fail_checks(["surface_count_one", "vertex_count_exact", "triangle_count_exact",
-				"uv2_tile_id_invariant", "uv2_face_domain"],
+				"uv2_tile_id_invariant", "uv2_face_domain", "donor_rgb_subcell_contract"],
 				"NO_STREAMS", "no generation output to inspect")
 		_mesh_info = {"inspected": false, "reason": "no generation output"}
 

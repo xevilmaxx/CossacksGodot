@@ -234,6 +234,15 @@ const C_FRS_SMALL: float = 0.00054         # dogenerate.inc:1690; X03:805
 const C_STN_1: float = 0.00016             # dogenerate.inc:1692; X03:807
 const C_STN_2: float = 0.00012             # dogenerate.inc:1693; X03:808
 const C_LAKE_ZERO: float = 0.0             # dogenerate.inc:1735-1736 (hard-zeroed)
+# FIX-FOREST-PLACEMENT [O]: foreststype is hard-forced 0 (D1:5-6), so every
+# SetupStartingResources forest placement draws from these seven conifer
+# families (F08 §5 recipe; dogenerate.inc:804-861). The port's legacy alias
+# "forest0" is NOT a family block in the donor-derived compact feed (64 names,
+# none "forest0"), so both start forest passes resolved to zero stamps.
+const C_START_FOREST_FAMILIES: Array[String] = [
+	"forests_pinefir_medium", "forests_spruce_medium", "forests_pine_medium",
+	"forests_pinefir_big", "forests_spruce_big", "forests_pine_big", "forests_pine_big_2",
+]
 
 # --- stamp blend constants -------------------------------------------------
 const C_STAMP_HALF_CELL: float = 2.0       # cossacks.exe VA 0x75c1a4; D05 F6
@@ -1880,6 +1889,11 @@ func _mine_centre(start: Vector2, i: int) -> Vector2:
 func _setup_starting_resources(cx0: int, cy0: int, p: Dictionary) -> void:
 	# Six attempted placements, family picked ONCE per placement (V12:184-207).
 	# 5x7 was already stamped by CreateStartPoint (D1:984) — no food rects.
+	# FIX-FOREST-PLACEMENT: "forest0" is not a feed family; resolve it to the
+	# seven donor conifer families (F08 §5). One name draw per placement is kept;
+	# the donor's separate family-choice draw was never in this port and is NOT
+	# added here (RNG draw count/order stays unchanged).
+	_note("forest0 → F08 §5 conifer-family union: 2+1 start forest stamps per start restored, one name draw unchanged", "port_approximations")
 	var steps: Array = [
 		{"fam": "stoneforests", "count": 1, "mind": C_ELLIPSE_1_X, "span": 3.0},
 		{"fam": "@ELLIPSE2", "count": 0, "mind": 0, "span": 0.0},
@@ -2348,13 +2362,38 @@ func _stamp_smooth_post(data: Object, pat: Dictionary, x: int, y: int,
 # ---------------------------------------------------------------------------
 # Family roulette + Freq damping (misc.script:3588-3653; V12:148)
 # ---------------------------------------------------------------------------
+## FIX-FOREST-PLACEMENT: resolve the legacy "forest0" alias to the donor's
+## foreststype=0 conifer-family union (F08 §5). No member is synthesised: every
+## entry is an authored name/freq pair from the supplied donor-derived feed.
+func _family_members(family: String, p: Dictionary) -> Array:
+	if family == "forest0":
+		var families0: Dictionary = p.get("families", {})
+		var union: Array = []
+		for fn: String in C_START_FOREST_FAMILIES:
+			if families0.has(fn) and families0[fn] is Array:
+				union.append_array(families0[fn] as Array)
+		return union
+	var families: Dictionary = p.get("families", {})
+	if families.has(family) and families[family] is Array:
+		return families[family] as Array
+	return []
+
+
 func _roulette_name(family: String, p: Dictionary) -> String:
 	var families: Dictionary = p.get("families", {})
-	if not families.has(family):
+	var members: Array = []
+	if family == "forest0":
+		members = _family_members(family, p)
+		if members.is_empty():
+			_stamp_candidate("family_draw_missing_" + family)
+			_active_rng.next_f()
+			return ""
+	elif not families.has(family):
 		_stamp_candidate("family_draw_missing_" + family)
 		_active_rng.next_f()    # donor consumes one name-pick draw even with empty list
 		return ""
-	var members: Array = families[family]
+	else:
+		members = families[family]
 	if members.is_empty():
 		_active_rng.next_f()
 		return ""
@@ -2381,12 +2420,12 @@ func _damp_freq(family: String, name: String, p: Dictionary) -> void:
 	var cur: float = float(_freq_state.get(key, -1.0))
 	if cur < 0.0:
 		cur = -1.0
-		var families: Dictionary = p.get("families", {})
-		if families.has(family) and families[family] is Array:
-			for e: Dictionary in families[family]:
-				if str(e.get("name", "")) == name:
-					cur = float(e.get("freq", 1.0))
-					break
+		# Use the SAME member resolution as the roulette so damping starts from
+		# the member's authored Freq, including the resolved "forest0" union.
+		for e: Dictionary in _family_members(family, p):
+			if str(e.get("name", "")) == name:
+				cur = float(e.get("freq", 1.0))
+				break
 		if cur < 0.0:
 			cur = 1.0  # donor absent Freq defaults to 1 (F08 §4 item 1)
 	_freq_state[key] = maxf(C_FREQ_FLOOR, cur * C_FREQ_DAMP)

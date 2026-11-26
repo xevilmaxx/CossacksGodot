@@ -66,8 +66,18 @@ const ALPHA_DST_FACTOR := "GL_ONE_MINUS_SRC_ALPHA"  # donor bmTransparency (coss
 const NEW_ATLAS_DIR := "res://assets/terrain_new/atlas/"
 const NEW_ATLAS_SINGLE := NEW_ATLAS_DIR + "tile_index_atlas.png"
 const NEW_ATLAS_MANIFEST := NEW_ATLAS_DIR + "tile_index_atlas.manifest.json"
-const LEGACY_ATLAS_SINGLE := "res://assets/terrain/atlas/tile_index_atlas.png"
-const LEGACY_ATLAS_MANIFEST := "res://assets/terrain/atlas/tile_index_atlas.manifest.json"
+# HIRES-ATLAS-C opt-in diagnostic tier. The legacy pair is the ALREADY ON DISK
+# 16384x8192 / 16x8 x 1024^2-cell atlas (AUDIT-ATLAS-RES §6 option B, evidence
+# E2: manifest size/cell_size + PNG IHDR). Nothing is generated, resampled or
+# upscaled here; the commit-default terrain_new tier stays byte-identical.
+const LEGACY_ATLAS_DIR := "res://assets/terrain/atlas/"
+const LEGACY_ATLAS_SINGLE := LEGACY_ATLAS_DIR + "tile_index_atlas.png"
+const LEGACY_ATLAS_MANIFEST := LEGACY_ATLAS_DIR + "tile_index_atlas.manifest.json"
+const HIRES_ATLAS_FLAG_PATH := "features.terrain.hires_atlas"
+# Null-safe config access (same pattern as water3d.gd:6,163-167). config.gd
+# owns the features table, so this file reads the dotted key through flag()
+# and does NOT add a getter or edit config.gd.
+const C3ConfigScript = preload("res://scripts/config.gd")
 
 # Read-only collaborators (their files are NEVER edited by this module)
 const TILE_ATLAS_LOADER_PATH := "res://scripts/tile_atlas_loader.gd"
@@ -98,6 +108,8 @@ var material_model: String = ""
 var visual_parity_claim: bool = false  # hard guard, never set true
 var atlas_mode_request: String = "single"
 var season: String = ""
+var hires_atlas: bool = false             # opt-in diagnostic; resolved once per build
+var _atlas_resolution: Dictionary = {}    # labelled resolution / VRAM telemetry
 
 var _game = null                       # untyped I06 container / game reference
 var _data = null                       # untyped explicit I06 container
@@ -107,6 +119,7 @@ var _n: int = 0
 var _height := PackedFloat32Array()
 var _tex := PackedByteArray()
 var _relief_mask := PackedByteArray()
+var _collision := PackedByteArray()
 var _built: bool = false
 var _ingest_source: String = ""
 var _face_hist: Dictionary = {"0": 0, "1": 0, "2": 0}
@@ -300,6 +313,12 @@ func _ingest() -> bool:
 		_relief_mask.resize(n)
 		for i in range(n):
 			_relief_mask[i] = rc[i] if i < rc.size() else 0
+		var cv: Variant = _first(source_dicts, ["collision4", "collision"], null)
+		var cc := _as_byte_array(cv)
+		_collision = PackedByteArray()
+		_collision.resize(n)
+		for i in range(n):
+			_collision[i] = cc[i] if i < cc.size() else 0
 		_w = w
 		_h = h
 		_n = n
@@ -367,11 +386,16 @@ func _normal_at(h: PackedFloat32Array, w: int, height_cells: int,
 
 # Donor face MODE for UV2.y only (0 ground / 1 front / 2 side). Steep tests are
 # the donor cDiff1/cDiff2 literals (texturemap.inc:63-64,76-79,88-129); aspect
-# axis is texturemap.inc:438-447. The donor PROMOTION rule is ENGINE/UNVERIFIED
-# (RV-TRN-01 verdict C), so this changes neither UV2.x nor any tile art.
+# axis is texturemap.inc:438-447. DEC_SMALL_chevron_source: these cDiff tests
+# feed the COLLISION field; the donor only promotes to vf/vs when the cell is
+# collision-tagged or on the far map edge (texturemap.inc:557). Untagged steep
+# cells keep base tile art, so they must return face 0 here.
 func _face_mode_at(h: PackedFloat32Array, w: int, height_cells: int,
-		x: int, z: int) -> int:
+		x: int, z: int, collision: PackedByteArray) -> int:
 	var i: int = z * w + x
+	var collision_tag: int = collision[i] if i < collision.size() else 0
+	if collision_tag <= 0 and x < w - 1 and z < height_cells - 1:
+		return 0
 	var c: float = h[i]
 	var lh: float = h[z * w + maxi(0, x - 1)]
 	var rh: float = h[z * w + mini(w - 1, x + 1)]
@@ -400,12 +424,108 @@ func _res_exists(path: String) -> bool:
 	return FileAccess.file_exists(path) or FileAccess.file_exists(ProjectSettings.globalize_path(path))
 
 
+func _resolve_hires_atlas_flag() -> bool:
+	# HIRES-ATLAS-C: opt-in ONLY. Reads the dotted key through config.gd's
+	# generic flag() reader (no new getter, no config.gd edit). Active config can
+	# be null before settings load and an older/no key falls back to false, so
+	# the commit-default atlas tier is unchanged. Labelled in stats.
+	var cfg = C3ConfigScript.active
+	if cfg == null or not cfg.has_method("flag"):
+		return false
+	return bool(cfg.call("flag", HIRES_ATLAS_FLAG_PATH, false))
+
+
+func _read_manifest_atlas(path: String) -> Dictionary:
+	# Read-only probe of the CHOSEN manifest's declared geometry — the same file
+	# the loader consumes in _load_grid() (tile_atlas_loader.gd:310-317). No
+	# asset is written and no index is fabricated.
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return {}
+	var txt := f.get_as_text()
+	f.close()
+	var parsed: Variant = JSON.parse_string(txt)
+	if not (parsed is Dictionary):
+		return {}
+	var atlas_v: Variant = (parsed as Dictionary).get("atlas", null)
+	if not (atlas_v is Dictionary):
+		return {}
+	return atlas_v as Dictionary
+
+
+func _atlas_resolution_info(paths: Dictionary) -> Dictionary:
+	# HIRES-ATLAS-C labelled diagnostic. Numbers come from the chosen manifest
+	# plus arithmetic: RGBA8 base = w*h*4 bytes, full mip chain = base*4/3.
+	# 16384x8192 => 512 MiB base / ~683 MiB with mips (AUDIT-ATLAS-RES §6 B).
+	# This is telemetry only; no shader uniform, geometry or sim value is fed.
+	var size := Vector2i(2048, 1024)
+	var cell := Vector2i(128, 128)
+	var atlas := _read_manifest_atlas(str(paths.get("manifest_path", "")))
+	var s: Variant = atlas.get("size", null)
+	var c: Variant = atlas.get("cell_size", null)
+	if s is Array and (s as Array).size() == 2:
+		size = Vector2i(int((s as Array)[0]), int((s as Array)[1]))
+	if c is Array and (c as Array).size() == 2:
+		cell = Vector2i(int((c as Array)[0]), int((c as Array)[1]))
+	if hires_atlas:
+		# Documented tier geometry used only if the manifest cannot be read.
+		if size.x <= 0 or size.y <= 0:
+			size = Vector2i(16384, 8192)
+		if cell.x <= 0 or cell.y <= 0:
+			cell = Vector2i(1024, 1024)
+	var base_bytes := float(size.x * size.y * 4)
+	var base_mib := base_bytes / 1048576.0
+	var mip_mib := base_mib * 4.0 / 3.0
+	var subcell := Vector2i(maxi(1, cell.x / maxi(1, DONOR_RGB_ROWS)),
+		maxi(1, cell.y / maxi(1, DONOR_RGB_COLS)))
+	var period_m := TILE_M * float(maxi(DONOR_RGB_ROWS, DONOR_RGB_COLS))
+	var warning := ""
+	if hires_atlas:
+		warning = ("DIAGNOSTIC / NO PARITY CLAIM: hires atlas %dx%d, %dx%d cell; "
+			+ "RGBA8 VRAM ~= %.0f MiB base / ~%.0f MiB with CPU mips. "
+			+ "Verify target VRAM before shipping.") % [
+				size.x, size.y, cell.x, cell.y, base_mib, mip_mib,
+			]
+	return {
+		"feature": HIRES_ATLAS_FLAG_PATH,
+		"enabled": hires_atlas,
+		"tier": str(paths.get("tier", "")),
+		"size_px": [size.x, size.y],
+		"cell_size_px": [cell.x, cell.y],
+		"subcell_px": [subcell.x, subcell.y],
+		"selection_period_m": period_m,
+		"vram_rgba8_bytes_base": int(base_bytes),
+		"vram_rgba8_mib_base": base_mib,
+		"vram_rgba8_mib_with_mips": mip_mib,
+		"mip_basis": "CPU generate_mipmaps before ImageTexture.create_from_image (level 0 unchanged)",
+		"masks": "loader get_mask_textures() from atlas/atlas_parts dirs — tier-independent",
+		"season_aliases": "season atlas + manifest selected from the active tier when present",
+		"diagnostic_warning": warning,
+		"note": ("diagnostic only; shader textureSize() adapts, no shader edit, no synthetic "
+			+ "detail, no upscaling beyond the labelled tier, NO donor parity claim"),
+	}
+
+
 func _atlas_paths() -> Dictionary:
+	# Default tier stays terrain_new. The opt-in tier binds the EXISTING legacy
+	# 16384x8192 / 1024^2-cell pair; season variants are flat in that same dir
+	# (tile_index_atlas_<season>.png / .manifest.json) and existence-gated.
 	var single := NEW_ATLAS_SINGLE
 	var manifest := NEW_ATLAS_MANIFEST
+	var tier := "terrain_new_2048x1024_128cell"
+	if hires_atlas:
+		single = LEGACY_ATLAS_SINGLE
+		manifest = LEGACY_ATLAS_MANIFEST
+		tier = "legacy_16384x8192_1024cell"
 	if not season.is_empty():
-		var season_single := NEW_ATLAS_DIR + "seasons/" + season + "/tile_index_atlas.png"
-		var season_manifest := NEW_ATLAS_DIR + "seasons/" + season + "/tile_index_atlas.manifest.json"
+		var season_single := ""
+		var season_manifest := ""
+		if hires_atlas:
+			season_single = LEGACY_ATLAS_DIR + "tile_index_atlas_" + season + ".png"
+			season_manifest = LEGACY_ATLAS_DIR + "tile_index_atlas_" + season + ".manifest.json"
+		else:
+			season_single = NEW_ATLAS_DIR + "seasons/" + season + "/tile_index_atlas.png"
+			season_manifest = NEW_ATLAS_DIR + "seasons/" + season + "/tile_index_atlas.manifest.json"
 		if _res_exists(season_single):
 			single = season_single
 		if _res_exists(season_manifest):
@@ -416,7 +536,11 @@ func _atlas_paths() -> Dictionary:
 		single = LEGACY_ATLAS_SINGLE
 	if not _res_exists(manifest):
 		manifest = LEGACY_ATLAS_MANIFEST
-	return {"single_atlas_path": single, "manifest_path": manifest}
+	return {
+		"single_atlas_path": single,
+		"manifest_path": manifest,
+		"tier": tier,
+	}
 
 
 func _ensure_cpu_mipmaps(tex: Texture2D) -> Texture2D:
@@ -459,6 +583,11 @@ func _repack_mask_alpha(src: Texture2D) -> Texture2D:
 
 func _load_atlas() -> bool:
 	var paths := _atlas_paths()
+	_atlas_resolution = _atlas_resolution_info(paths)
+	if hires_atlas:
+		var diag := str(_atlas_resolution.get("diagnostic_warning", ""))
+		if not diag.is_empty():
+			push_warning("terrain_donor_mesh: " + diag)
 	var loader_script := load(TILE_ATLAS_LOADER_PATH) as Script
 	if loader_script == null or not loader_script.can_instantiate():
 		push_error("terrain_donor_mesh: cannot load " + TILE_ATLAS_LOADER_PATH)
@@ -714,6 +843,7 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 			"paths": _atlas_paths(),
 			"info": _atlas_info.duplicate(true),
 			"mipmaps_cpu_before_create_from_image": _mip_source,
+			"hires_diagnostic": _atlas_resolution.duplicate(true),
 		},
 		"rgb_subcells": {
 			"rows": DONOR_RGB_ROWS,
@@ -777,11 +907,15 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 # ---------------------------------------------------------------------------
 func build() -> bool:
 	invalidate()
+	# HIRES-ATLAS-C: resolve the opt-in once, before any path/sampler binding,
+	# so _atlas_paths(), stats and the loader all see the same tier this build.
+	hires_atlas = _resolve_hires_atlas_flag()
 	if not _ingest():
 		push_error("terrain_donor_mesh: bind() an I06 container / height dump first")
 		return false
 	_mip_source = ""
-	var tile_map_ok := _build_tile_map_texture() != null
+	_tile_map_tex = _build_tile_map_texture()
+	var tile_map_ok: bool = _tile_map_tex != null
 	var atlas_ok := _load_atlas()   # resolve samplers BEFORE the material is made
 	var nverts: int = _n
 	var ntris: int = (_w - 1) * (_h - 1) * 2
@@ -823,7 +957,7 @@ func build() -> bool:
 			if _relief_mask[i] != 0:
 				_relief_guard_cells += 1
 			else:
-				face = _face_mode_at(_height, _w, _h, x, z)
+				face = _face_mode_at(_height, _w, _h, x, z, _collision)
 			uvs2[i] = Vector2(float(raw_tid), float(face))
 			_face_hist[str(face)] = int(_face_hist.get(str(face), 0)) + 1
 	var k: int = 0
@@ -870,10 +1004,12 @@ func invalidate() -> void:
 	_atlas_loader = null
 	_atlas_texture = null
 	_tile_map_tex = null
+	_collision = PackedByteArray()
 	_alpha_tex = null
 	_alphavert_tex = null
 	_atlas_grid = Vector2.ZERO
 	_atlas_info = {}
+	_atlas_resolution = {}
 	_shader_params = {}
 	_alpha_contract = {}
 	_mip_source = ""

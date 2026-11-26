@@ -342,6 +342,16 @@ const FIELD_EMISSION_NEUTRAL: Color = Color(200.0 / 255.0, 200.0 / 255.0, 200.0 
 # MULTIPLIER, not as additive emission. This is a labelled PORT APPROXIMATION.
 const FIELD_EMISSION_STATUS: String = PORT_LABEL + " — env.mat warm/neutral RGB applied as unshaded albedo multiplier; ShaderID6 does not read Emission and StandardMaterial3D cannot encode separate authored Ambient/Diffuse zero; runtime donor path and final pixels UNVERIFIED"
 const FIELD_DECAL_STATUS: String = PORT_LABEL + " — donor envfieldd/w PNG, angle 45/225, size 1.3x, UV 1.3/-0.15 with vertical flip, epsilon 0.01; terrain-conforming sampled grid, exact native texture-matrix composition, destination-alpha bmTransparency, decal-specific blend and world units UNVERIFIED; conventional Godot alpha blend is the labelled substitute"
+# FIX-FIELD-DECAL-VISUAL — material-level complement to FIELD_DECAL_STATUS.
+# [O] envfieldd/w.png carry a real alpha channel (measured at preflight), so the
+# decal is an alpha cut-out/blend, never an opaque olive square. [O] decals.mat
+# sets bmTransparency/fcCull/moIgnoreFog; the recovered generic blend factors
+# are GL_DST_ALPHA/GL_ONE_MINUS_DST_ALPHA, which Godot cannot encode, and a
+# decal-specific override is [U] (DEC_VIS_03 §§4.3/5.2/11). DEPTH_DRAW_DISABLED
+# plus a low render_priority keep the 1.3x ground quad from overwriting the
+# standing crop depth; both are deterministic, per-frame-invariant choices.
+# No gold tint and no emission energy are introduced (ShaderID6 stays [U]).
+const FIELD_DECAL_MATERIAL_STATUS: String = PORT_LABEL + " — envfieldd/w alpha drives TRANSPARENCY_ALPHA + BLEND_MODE_MIX (cut-out/blend, not opaque square); DEPTH_DRAW_DISABLED + render_priority -1 keep the decal behind standing crops; donor dst-alpha bmTransparency and decal-specific blend [U]; no invented gold tint or emission energy; visual UNVERIFIED"
 # [O] The three existing PNG .import files set mipmaps/generate=false. The
 # material can request donor-style mipmap filtering but cannot manufacture the
 # missing mip chain; fixing that requires asset-import edits outside this file.
@@ -540,6 +550,14 @@ func bind(g) -> void:
 			stage_obj_sids.append(s)
 		if ResourceLoader.exists(AssetPaths.existing(s, "obj", "a")):
 			scaffold_obj_sids.append(s)
+	# FIX-FIELD-DECAL-VISUAL: asset-status telemetry. Every authored crop name
+	# is measured, and the mature "field" entry is surfaced explicitly so the
+	# ripe-parcel art choice is auditable without a Godot capture.
+	var field_converted := 0
+	for mname in _field_asset_status.keys():
+		if not bool((_field_asset_status[mname] as Dictionary).get("skipped", true)):
+			field_converted += 1
+	var mature_asset: Dictionary = _field_asset_status.get("field", {}) as Dictionary
 	stats = {
 		"module": "V7-14 world3d_entities",
 		"extends": "Node3D",
@@ -620,8 +638,13 @@ func bind(g) -> void:
 		"field_visual_visual": "UNVERIFIED",
 		"field_visual_decals": _field_decal_paths,
 		"field_visual_asset_status": _field_asset_status,
+		"field_visual_stage_assets_total": _field_asset_status.size(),
+		"field_visual_stage_assets_converted": field_converted,
+		"field_visual_mature_asset_path": str(mature_asset.get("path", "")),
+		"field_visual_mature_asset_status": str(mature_asset.get("status", "")),
 		"field_visual_material_status": FIELD_EMISSION_STATUS,
 		"field_visual_decal_status": FIELD_DECAL_STATUS,
+		"field_visual_decal_material_status": FIELD_DECAL_MATERIAL_STATUS,
 		"field_visual_texture_import_status": FIELD_TEXTURE_IMPORT_STATUS,
 		"field_visual_decal_constants": {
 			"angles_deg": FIELD_DECAL_ANGLES,
@@ -736,33 +759,27 @@ func _field_season() -> String:
 
 
 func _field_texture_path(material_name: String) -> Dictionary:
-	# The port sid "field" currently means donor field1.osm/field1.dds
-	# (manifest.json:2581-2603). Do not mistake that alias for mature field.dds.
-	var donor_provenance := str(_donor_texture_paths.get("field", "")).to_lower().replace("\\", "/")
-	var candidate := ""
-	if material_name == "field1":
-		if donor_provenance.ends_with("/field1.dds"):
-			candidate = AssetPaths.existing("field", "tex")
-		else:
-			candidate = AssetPaths.existing("field1", "tex")
-	elif material_name == "field":
-		if donor_provenance.ends_with("/field.dds"):
-			candidate = AssetPaths.existing("field", "tex")
-	elif material_name == "fieldw" and donor_provenance.ends_with("/fieldw.dds"):
-		candidate = AssetPaths.existing("field", "tex")
-	else:
-		candidate = AssetPaths.existing(material_name, "tex")
+	# FIX-FIELD-DECAL-VISUAL: resolve every authored crop name directly against
+	# the converted asset registered in manifest.json. FIX-FIELD-ASSETS converted
+	# all 16 stage textures (field, field1..7, fieldw, field1w..7w) to
+	# res://assets/models/tex/shared/terrain/<name>.png, and the manifest sid
+	# "field" now records the DONOR mature field.dds (not the old field1 alias).
+	# The previous provenance-gated branches could silently skip a requested
+	# stage and fall back to growth-stage art; asking for the name we mean makes
+	# "ripe" bind field.png (mature) and every field1..7/winter bind its own art.
+	var candidate := AssetPaths.existing(material_name, "tex")
 	if candidate != "" and ResourceLoader.exists(candidate):
 		return {"requested_material": material_name, "texture_material": material_name,
 			"path": candidate, "skipped": false,
 			"status": "DONOR_CONVERTED " + material_name + " -> " + candidate}
-	# Missing stage/winter art is never synthesized. Keep the already-converted
-	# field1 crop visible only as an explicitly labelled PORT APPROXIMATION.
-	var fallback := AssetPaths.existing("field", "tex")
-	if fallback != "" and ResourceLoader.exists(fallback) and donor_provenance.ends_with("/field1.dds"):
+	# A genuinely missing stage/winter asset is never synthesized. The only
+	# fallback is the explicitly converted field1.png, never the mature field.png
+	# (which now resolves under the "field" name) and never invented gold art.
+	var fallback := AssetPaths.existing("field1", "tex")
+	if fallback != "" and ResourceLoader.exists(fallback):
 		return {"requested_material": material_name, "texture_material": "field1",
 			"path": fallback, "skipped": true,
-			"status": "SKIP " + material_name + ": converted donor texture absent; fallback field1.dds -> " + fallback + " (PORT APPROXIMATION)"}
+			"status": "SKIP " + material_name + ": converted donor texture absent; fallback field1.png -> " + fallback + " (PORT APPROXIMATION)"}
 	return {"requested_material": material_name, "texture_material": "",
 		"path": "", "skipped": true,
 		"status": "SKIP " + material_name + ": converted donor texture absent; no crop texture fallback"}
@@ -853,13 +870,27 @@ func _field_decal_material(season: String) -> Material:
 		return null
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = load(texture_path) as Texture2D
-	# decals.mat:51-103 authors diffuse 200/255 and specular/emission zero.
-	# StandardMaterial3D cannot express the donor's separate 0.15686 ambient.
+	# decals.mat:51-103 authors diffuse 200/255, ambient 0.15686, specular and
+	# emission 0. StandardMaterial3D cannot express the separate authored
+	# ambient, so only the authored diffuse factor is used as a neutral albedo
+	# multiplier. No invented gold tint and no emission-energy scalar.
 	mat.albedo_color = Color(200.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0, 1.0)
+	# [O] envfieldd/w.png carry a real alpha channel, so TRANSPARENCY_ALPHA +
+	# BLEND_MODE_MIX makes the ground quad an alpha cut-out/blend instead of a
+	# dark opaque square. [O/U] decals.mat uses bmTransparency; the recovered
+	# generic GL_DST_ALPHA / GL_ONE_MINUS_DST_ALPHA factors cannot be encoded in
+	# Godot and a decal-specific override is unresolved, so this conventional
+	# source-alpha blend stays a labelled PORT APPROXIMATION (FIELD_DECAL_STATUS).
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.blend_mode = BaseMaterial3D.BLEND_MODE_MIX
 	mat.cull_mode = BaseMaterial3D.CULL_BACK
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+	# FIX-FIELD-DECAL-VISUAL: the 1.3x decal quad lies only FIELD_DECAL_EPSILON
+	# above the terrain and can overlap the standing wheat. Never write its
+	# depth and draw it before other transparents so it cannot overdraw/hide
+	# the alpha-tested crop layer. Both settings are constants (deterministic).
+	mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	mat.render_priority = -1
 	mat.roughness = 1.0
 	mat.metallic = 0.0
 	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
@@ -887,6 +918,10 @@ func _field_decal_mesh(fe: Dictionary, angle_deg: float) -> ArrayMesh:
 			var local_x := -half + 2.0 * half * float(ix) / float(segments)
 			var rotated := Vector2(local_x * c + local_z * s, -local_x * s + local_z * c)
 			var world := _world_pos(p + rotated)
+			# FIX-FIELD-DECAL-VISUAL: epsilon stays a single compile-time constant
+			# (donor 0.01, API world units [U]) sampled deterministically per grid
+			# vertex. No per-frame jitter and no crop-geometry/7x7/RNG change.
+			# Residual z-fighting against the port terrain triangulation is [U].
 			verts.append(Vector3(world.x, world.y + FIELD_DECAL_EPSILON, world.z))
 			var base_uv := Vector2(float(ix) / float(segments), float(iz) / float(segments))
 			# decals.lib texflipvertical=True, then misc.script's 1.3/-0.15.
@@ -967,6 +1002,7 @@ func _sync_field_decal(fid: int, spec: Dictionary) -> void:
 		mi.set_meta("field_angle_deg", angle)
 		mi.set_meta("field_decal_material", "envfielddw" if season == "winter" else "envfieldd")
 		mi.set_meta("field_decal_status", FIELD_DECAL_STATUS)
+		mi.set_meta("field_decal_material_status", FIELD_DECAL_MATERIAL_STATUS)
 		mi.set_meta("visual_status", "UNVERIFIED")
 		add_child(mi)
 		_field_decals[fid] = mi
@@ -2671,6 +2707,7 @@ func sync(dt: float) -> void:
 	var field_decal_angles: Dictionary = {}
 	var field_total := 0
 	var field_skipped := 0
+	var field_ripe_mature := 0
 	var field_scale := 1.0
 	var fbb: Array = _bbox.get("field", [])
 	if fbb.size() >= 6:
@@ -2711,6 +2748,12 @@ func sync(dt: float) -> void:
 		field_states[st] = int(field_states.get(st, 0)) + 1
 		field_materials[material_name] = int(field_materials.get(material_name, 0)) + 1
 		field_texture_status[texture_status] = int(field_texture_status.get(texture_status, 0)) + 1
+		# FIX-FIELD-DECAL-VISUAL: verify a ripe parcel actually binds the mature
+		# field/fieldw art, not a growth-stage fallback.
+		if st == "ripe":
+			var tm := str(spec.get("texture_material", ""))
+			if tm == "field" or tm == "fieldw":
+				field_ripe_mature += 1
 		if bool(spec.get("texture_skipped", false)):
 			field_skipped += 1
 		field_total += 1
@@ -2734,6 +2777,8 @@ func sync(dt: float) -> void:
 	stats["field_visual_materials"] = field_materials
 	stats["field_visual_texture_status"] = field_texture_status
 	stats["field_visual_skipped_instances"] = field_skipped
+	stats["field_visual_ripe_count"] = int(field_states.get("ripe", 0))
+	stats["field_visual_ripe_using_mature_texture"] = field_ripe_mature
 	stats["field_visual_count"] = field_total
 	stats["field_visual_span_scale"] = field_scale
 	stats["field_visual_target_span_m"] = FIELD_SPAN_M
@@ -2745,6 +2790,7 @@ func sync(dt: float) -> void:
 		"field1..7": [200.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0],
 	}
 	stats["field_visual_decal_status"] = FIELD_DECAL_STATUS
+	stats["field_visual_decal_material_status"] = FIELD_DECAL_MATERIAL_STATUS
 	stats["field_visual_texture_import_status"] = FIELD_TEXTURE_IMPORT_STATUS
 	stats["field_visual_decal_count"] = _field_decals.size()
 	stats["field_visual_decal_angles"] = field_decal_angles

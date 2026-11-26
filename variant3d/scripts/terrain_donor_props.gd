@@ -118,9 +118,53 @@ const WATER_DEPTH_TERM: float = -1.1                # donor data/scripts/common.
 const WATER_CLASSIFY_H: float = -0.25               # donor data/scripts/common.inc/texturemap.inc:29-31
 const SHORE_CLASSIFY_H: float = -0.1                # donor data/scripts/common.inc/texturemap.inc:29-31
 const SHORE_TILE_IDS: Array[int] = [93, 97, 98]     # port atlas manifest.json:2284,2380,2404 (sandsea1/5/6)
-const DONOR_MESH_LOD_MAX: float = 150.0             # donor data/actors/ref/refobj.actor:46-49,93-95 ([U] metres)
-const DONOR_SHADER_LOD_MAX: float = 2500.0          # donor data/actors/ref/refobj.actor:93-95 ([U] metres)
+const DONOR_MESH_LOD_MAX: float = 150.0             # donor data/actors/ref/refobj.actor:46-49,93-95 ([U] metres) — per-object MESH LOD
+const DONOR_SHADER_LOD_MAX: float = 2500.0          # donor data/actors/ref/refobj.actor:93-95 ([U] metres) — SHADER/distance LOD, distinct control
 const FOREST_BORDER_LITE_PROB: float = 0.6          # donor data/scripts/common.inc/smoothforestborders.inc:100-113 (via X03:1200)
+
+# --- DEC-VIS-02 §6.2/§6.3 donor-literal terrainmesh placement ----------------
+# [O] pattern.lib fields (read-only): every relief pattern whose Objects[] carry
+# terrainmesh1..4 shares these values; only Width/Height differ. Sources:
+# pattern_lib_index.json sections[g_mnt_* / i_mnt_* / desert_mnt_*].fields;
+# donor misc.script:3387-3390 computes angleRad = angle*pi/180 and every
+# caller (dogenerate.inc:1349,1796; generatemap.inc:956; texturemap.inc:216,
+# :287, :323; smoothforestborders.inc:123) passes angle=0 -> rotangle=0 rad.
+# [U] The final-turn helper's rotation axis is not pinned by DEC-VIS-02; with
+# rotangle=0 the turn is identity, so no axis sign is invented here.
+const DONOR_TM_OBJECTS_SCALE: float = 1.0           # donor pattern.lib ObjectsScale +0x6c
+const DONOR_TM_OFFSET_X: float = 0.0                # donor pattern.lib OffsetX +0x74
+const DONOR_TM_OFFSET_Z: float = 0.0                # donor pattern.lib OffsetZ +0x78
+const DONOR_TM_ROTANGLE: float = 0.0                # donor misc.script:3390 angleRad, radians
+const DONOR_TM_HEIGHT_SCALE: float = 1.0            # donor pattern.lib HeightFieldScale +0x48
+const DONOR_TM_OBJECTS_OFFSET: bool = false         # donor pattern.lib ObjectsOffset +0x7c
+const DONOR_TM_HEIGHT_OFFSET: bool = false          # donor pattern.lib ObjectsHeightOffset +0x7d
+const DONOR_TM_AUTO_OFFSET: bool = false            # donor pattern.lib ObjAutoOffset +0x7f
+const DONOR_TM_IGNORE_MATRIX: bool = false          # donor pattern.lib IgnoreMatrix +0x7e
+
+# [O] donor pattern.lib fields Width/Height for the 31 relief patterns that
+# actually carry terrainmesh records in the I03 compact bundles. Absent pattern
+# => no donor-derived transform is invented; the legacy PORT APPROX path stays.
+const DONOR_TM_PATTERN_DIMS: Dictionary = {
+	"g_mnt_1": Vector2i(43, 38), "g_mnt_2": Vector2i(43, 29),
+	"g_mnt_3": Vector2i(32, 37), "g_mnt_4": Vector2i(31, 26),
+	"g_mnt_5": Vector2i(38, 43), "g_mnt_6": Vector2i(40, 38),
+	"g_mnt_7": Vector2i(44, 50),
+	"i_mnt_big_1": Vector2i(51, 55), "i_mnt_big_2": Vector2i(61, 56),
+	"i_mnt_big_3": Vector2i(64, 43), "i_mnt_big_4": Vector2i(50, 72),
+	"i_mnt_big_5": Vector2i(58, 51),
+	"i_mnt_long_1": Vector2i(61, 64), "i_mnt_long_2": Vector2i(58, 58),
+	"i_mnt_long_3": Vector2i(64, 53), "i_mnt_long_4": Vector2i(53, 60),
+	"i_mnt_long_5": Vector2i(48, 67),
+	"desert_mnt_1": Vector2i(30, 29), "desert_mnt_2": Vector2i(29, 25),
+	"desert_mnt_3": Vector2i(28, 26), "desert_mnt_4": Vector2i(27, 25),
+	"desert_mnt_5": Vector2i(24, 27), "desert_mnt_6": Vector2i(25, 24),
+	"desert_mnt_7": Vector2i(31, 28), "desert_mnt_8": Vector2i(31, 25),
+	"desert_mnt_9": Vector2i(23, 24), "desert_mnt_10": Vector2i(25, 23),
+	"desert_mnt_11": Vector2i(28, 20), "desert_mnt_12": Vector2i(23, 20),
+	"desert_mnt_13": Vector2i(22, 21),
+}
+const DONOR_TM_LABEL: String = ("DEC-VIS-02 §6.2/§6.3 donor-order terrainmesh placement; "
+	+ "PORT APPROX half-cell -> world mapping; parity UNVERIFIED")
 const FOREST_BORDER_FB_P: float = 0.025             # donor data/scripts/common.inc/smoothforestborders.inc:36-148 (via X03:1200)
 const FOREST_BORDER_FB_RAD: float = 1.5             # donor data/scripts/common.inc/smoothforestborders.inc:36-148 (via X03:1200)
 
@@ -150,7 +194,9 @@ const EXPECTED_FOREST_FAMILIES: Array[String] = [
 # here is promoted to a donor fact and no missing asset is fabricated.
 const UNVERIFIED_BASE: Dictionary = {
 	"PARITY": "UNVERIFIED — no donor GPU A/B frame (CHARTER.md:43-44,125)",
-	"TRANSFORM_MATH": "UNVERIFIED — native StandPatternWithAngle transform math (Z06 §3 / A04 §8 item 1)",
+	"TRANSFORM_MATH": "DEC-VIS-02 §6 recovered donor order (rotate PI-rotangle -> ObjectsScale -> centre; Y/Direction/Up/Scaling/final turn); [U] half-cell->world mapping, matrix slot mapping and final-turn axis remain unverified; no parity claim",
+	"TERRAINMESH_HALF_CELL": "UNVERIFIED — [U] donor centre already carries +0.5; port maps donor cell-centre to world without a second +0.5 (DEC-VIS-02 §6.2)",
+	"TERRAINMESH_TURN_AXIS": "UNVERIFIED — [U] sub_7cca74 final-turn axis not pinned by DEC-VIS-02; donor rotangle=0 makes it identity here; unit discontinuity preserved, not corrected",
 	"YAW_SIGN": "UNVERIFIED — donor Y-yaw -> Godot Y-up sign (DTRN-02 C20; world3d_relief.gd:21-35)",
 	"METRES_PER_CELL": "DONOR-GROUNDED horizontal 2 m/cell (dmscript.global:170-173; V08 C2), world placement only; height float unit [U]; generator distances stay CELLS 1:1 (V08 C1)",
 	"ROW_SIGN": "UNVERIFIED — donor pattern row sign (DPATTERN_01 §2.2 / terrain_donor_data.gd:39)",
@@ -301,7 +347,15 @@ func rebuild() -> Dictionary:
 		"enabled": _lod_enabled,
 		"mesh_max": DONOR_MESH_LOD_MAX,
 		"shader_max": DONOR_SHADER_LOD_MAX,
-		"label": "PORT APPROX — donor literals 0..150 / 0..2500 from refobj.actor:46-49,93-95; metre meaning [U]",
+		"mesh": {
+			"min": 0, "max": DONOR_MESH_LOD_MAX, "per_instance": false,
+			"label": "PORT APPROX — donor mesh LOD 0..150 (refobj.actor:46-49); not applied: unit meaning [U], no threshold invented",
+		},
+		"shader": {
+			"min": 0, "max": DONOR_SHADER_LOD_MAX, "per_instance": false,
+			"label": "PORT APPROX — donor shader/distance LOD 0..2500 (refobj.actor:93-95); batch-origin only; unit meaning [U]",
+		},
+		"label": "PORT APPROX — mesh 0..150 and shader 0..2500 are DISTINCT donor controls; both [U] metres",
 	}
 	st["unverified"] = _unverified.duplicate()
 	st["built"] = true
@@ -331,8 +385,10 @@ func set_props_visible(p_visible: bool) -> void:
 			holder.visible = p_visible
 
 
-# Donor-cited LOD only. Distances are the literal donor LOD numbers; their
-# metre interpretation is [U], so this stays PORT APPROX and off by default.
+# Donor-cited LOD only. The mesh LOD 0..150 and shader/distance LOD 0..2500 are
+# DISTINCT controls (refobj.actor:46-49,93-95). Their metre meaning is [U], so
+# no per-instance mesh threshold is invented; the batch-level check below is
+# the existing PORT APPROX shader/distance rule and stays off by default.
 func set_lod_enabled(p_enabled: bool) -> void:
 	_lod_enabled = p_enabled
 	for key in _batches.keys():
@@ -340,6 +396,9 @@ func set_lod_enabled(p_enabled: bool) -> void:
 		if holder != null:
 			holder.visible = not p_enabled
 			holder.set_meta("lod_enabled", p_enabled)
+			holder.set_meta("mesh_lod_max", DONOR_MESH_LOD_MAX)
+			holder.set_meta("shader_lod_max", DONOR_SHADER_LOD_MAX)
+			holder.set_meta("lod_units", "PORT APPROX — donor LOD literals [U] metres; mesh LOD not applied")
 	if not _stats.is_empty():
 		var lod: Dictionary = _stats.get("lod", {})
 		lod["enabled"] = p_enabled
@@ -355,8 +414,12 @@ func update_lod(p_camera: Camera3D) -> void:
 		if holder == null:
 			continue
 		var d: float = eye.distance_to(holder.global_position)
+		# Only the shader/distance 0..2500 control is exercised, and only at
+		# whole-batch origin. The donor per-object mesh 0..150 is telemetry
+		# only until the [U] unit conversion is settled.
 		holder.visible = d <= DONOR_SHADER_LOD_MAX
 		holder.set_meta("lod_distance", d)
+		holder.set_meta("lod_rule", "shader/distance 0..2500 (PORT APPROX, batch origin); mesh 0..150 [U] not applied")
 
 
 # Mill fields are SCRIPT-SOWN, never a pattern stamp (F07 §1, §4.4). This hook
@@ -525,8 +588,25 @@ func _fresh_stats(state: String) -> Dictionary:
 			"fb_radius": FOREST_BORDER_FB_RAD, "foreststype": FOREST_TYPE_CONIFER,
 			"source": "donor smoothforestborders.inc:36-148 via X03:1200 / dogenerate.inc:5-6",
 		},
-		"lod": {"enabled": false, "mesh_max": DONOR_MESH_LOD_MAX,
-				"shader_max": DONOR_SHADER_LOD_MAX, "label": "PORT APPROX; donor literals [U] metres"},
+		"lod": {
+			"enabled": false,
+			"mesh_max": DONOR_MESH_LOD_MAX,
+			"shader_max": DONOR_SHADER_LOD_MAX,
+			"mesh": {
+				"min": 0, "max": DONOR_MESH_LOD_MAX, "per_instance": false,
+				"label": "PORT APPROX — donor mesh LOD 0..150 (refobj.actor:46-49); NOT applied: unit meaning [U], no threshold invented",
+			},
+			"shader": {
+				"min": 0, "max": DONOR_SHADER_LOD_MAX, "per_instance": false,
+				"label": "PORT APPROX — donor shader/distance LOD 0..2500 (refobj.actor:93-95); batch-origin distance only; unit meaning [U]",
+			},
+			"label": "PORT APPROX; two DISTINCT donor controls 0..150 mesh / 0..2500 shader; both [U] metres",
+		},
+		"terrainmesh_xform": {
+			"records": 0, "donor_records": 0, "legacy_records": 0,
+			"patterns_used": [],
+			"label": DONOR_TM_LABEL,
+		},
 		"unverified": [],
 	}
 
@@ -873,20 +953,31 @@ func _collect_stamp(p_raw, p_out: Array[Dictionary], p_stats: Dictionary) -> voi
 		var rec: Dictionary = _normalize_record(raw as Dictionary, name, p_stats)
 		if rec.is_empty():
 			continue
-		var cls: String = str(rec["class"])
-		var dim: Vector2i = _grid_dim()
-		# V08 C1: donor Position/footprints are MAP CELLS 1:1 — no W/160, no x2.
-		# Integer sampling of a fractional donor cell is PORT APPROX only.
-		var dx: int = int(roundf(float(rec["px"])))
-		var dz: int = int(roundf(float(rec["pz"])))
-		var pc: Vector2i = Vector2i(cell.x + dx, cell.y + dz)
-		var wx: float = (float(pc.x) + 0.5 - float(dim.x) * 0.5) * TILE_M
-		var wz: float = (float(pc.y) + 0.5 - float(dim.y) * 0.5) * TILE_M
-		var wy: float = _ground_y(wx, wz, pc)
-		rec["world_pos"] = Vector3(wx, wy, wz)
-		rec["stamp_cell"] = cell
-		rec["prop_cell"] = pc
-		rec["order"] = p_out.size()
+		# DEC-VIS-02 §6: only converted terrainmesh1..4 records take the donor-
+		# derived transform. Every other prop class keeps the legacy path below
+		# byte-for-byte (no RNG, no sorting, no synthetic transform).
+		if RELIEF_SIDS.has(str(rec["sid"])) and not _donor_tm_params(name).is_empty():
+			_place_terrainmesh_record(rec, name, cell, p_stats)
+		else:
+			if RELIEF_SIDS.has(str(rec["sid"])):
+				_append_unverified_once("TERRAINMESH_PATTERN_DIMS_UNVERIFIED pattern=" + name
+					+ " — no donor Width/Height literal; legacy PORT APPROX placement kept")
+				_tm_count(p_stats, "records", 1)
+				_tm_count(p_stats, "legacy_records", 1)
+			var cls: String = str(rec["class"])
+			var dim: Vector2i = _grid_dim()
+			# V08 C1: donor Position/footprints are MAP CELLS 1:1 — no W/160, no x2.
+			# Integer sampling of a fractional donor cell is PORT APPROX only.
+			var dx: int = int(roundf(float(rec["px"])))
+			var dz: int = int(roundf(float(rec["pz"])))
+			var pc: Vector2i = Vector2i(cell.x + dx, cell.y + dz)
+			var wx: float = (float(pc.x) + 0.5 - float(dim.x) * 0.5) * TILE_M
+			var wz: float = (float(pc.y) + 0.5 - float(dim.y) * 0.5) * TILE_M
+			var wy: float = _ground_y(wx, wz, pc)
+			rec["world_pos"] = Vector3(wx, wy, wz)
+			rec["stamp_cell"] = cell
+			rec["prop_cell"] = pc
+			rec["order"] = p_out.size()
 		p_out.append(rec)
 
 
@@ -962,7 +1053,9 @@ func _normalize_record(p_raw: Dictionary, p_stamp: String, p_stats: Dictionary) 
 		"py": pos.y,
 		"pz": pos.z,
 		"yaw_deg": yaw,
-		"scale": scale.x,
+		"scale": scale.x,                 # legacy classes keep the uniform x-only collapse
+		"full_scale": scale,              # DEC-VIS-02 §9.1 item 4: preserve all XYZ for the donor terrainmesh path
+		"position": pos,                  # raw float Position, never pre-rounded in the donor path
 		"direction": _vec3(p_raw.get("Direction", p_raw.get("direction", null))),
 		"up": up,
 		"donor_line": int(p_raw.get("line", p_raw.get("donor_line", -1))),
@@ -1017,6 +1110,8 @@ func _add_to_batch(p_rec: Dictionary, p_stats: Dictionary) -> void:
 		holder.set_meta("prop_class", cls)
 		holder.set_meta("family", family)
 		holder.set_meta("placement_source", str(p_rec["transform_source"]))
+		if p_rec.has("donor_placement"):
+			holder.set_meta("terrainmesh_placement", str((p_rec["donor_placement"] as Dictionary).get("label", "")))
 		holder.set_meta("scale_authored", true)
 		holder.set_meta("selection_rule", "PORT APPROX — all donor records instantiated (Z06 §1/§7 Q1)")
 		holder.set_meta("instance_count", 0)
@@ -1029,18 +1124,28 @@ func _add_to_batch(p_rec: Dictionary, p_stats: Dictionary) -> void:
 	mm2.instance_count = idx + 1
 	holder2.set_meta("instance_count", idx + 1)
 
-	var bb: Array = _bboxes.get(sid, [])
-	if bb.size() < 6:
-		bb = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-	var cx: float = (float(bb[0]) + float(bb[1])) * 0.5
-	var cy: float = (float(bb[2]) + float(bb[3])) * 0.5
-	var z0: float = float(bb[4])
-	var base_basis: Basis = Basis().rotated(Vector3(1.0, 0.0, 0.0), -PI * 0.5)  # donor Z-up -> Y-up, PORT APPROX
-	var basis: Basis = Basis().rotated(Vector3(0.0, 1.0, 0.0), deg_to_rad(float(p_rec["yaw_deg"]))) * base_basis
-	var sc: float = float(p_rec["scale"])
-	basis = basis.scaled(Vector3(sc, sc, sc))
-	var origin: Vector3 = (p_rec["world_pos"] as Vector3) + basis * Vector3(-cx, -cy, -z0)
-	mm2.set_instance_transform(idx, Transform3D(basis, origin))
+	if p_rec.has("donor_placement"):
+		# DEC-VIS-02 §4/§9.1 item 5: refobj.actor macCenter*=false and
+		# macUseBarycenter=false — keep the OSM origin and the square base. No
+		# bbox recentering and no uniform scale collapse. The donor basis is
+		# Direction / Up / cross + Scaling*ObjectsScale, then the separate final
+		# turn, all converted from donor Z-up to Godot Y-up.
+		var donor_basis: Basis = _donor_tm_basis(p_rec)
+		var donor_origin: Vector3 = p_rec["world_pos"]   # instance origin == donor object position
+		mm2.set_instance_transform(idx, Transform3D(donor_basis, donor_origin))
+	else:
+		var bb: Array = _bboxes.get(sid, [])
+		if bb.size() < 6:
+			bb = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+		var cx: float = (float(bb[0]) + float(bb[1])) * 0.5
+		var cy: float = (float(bb[2]) + float(bb[3])) * 0.5
+		var z0: float = float(bb[4])
+		var base_basis: Basis = Basis().rotated(Vector3(1.0, 0.0, 0.0), -PI * 0.5)  # donor Z-up -> Y-up, PORT APPROX
+		var basis: Basis = Basis().rotated(Vector3(0.0, 1.0, 0.0), deg_to_rad(float(p_rec["yaw_deg"]))) * base_basis
+		var sc: float = float(p_rec["scale"])
+		basis = basis.scaled(Vector3(sc, sc, sc))
+		var origin: Vector3 = (p_rec["world_pos"] as Vector3) + basis * Vector3(-cx, -cy, -z0)
+		mm2.set_instance_transform(idx, Transform3D(basis, origin))
 
 	var classes: Dictionary = p_stats["classes"]
 	var families: Dictionary = p_stats["families"]
@@ -1276,6 +1381,152 @@ func _stamp_cell(p_src) -> Vector2i:
 	var cx: Variant = _g(p_src, "x", _g(p_src, "cx", _g(p_src, "px", 0)))
 	var cy: Variant = _g(p_src, "y", _g(p_src, "cy", _g(p_src, "py", 0)))
 	return Vector2i(int(cx), int(cy))
+
+
+# --- DEC-VIS-02 §6 donor-order terrainmesh placement (terrainmesh1..4 only) ---
+
+func _append_unverified_once(p_text: String) -> void:
+	if not _unverified.has(p_text):
+		_unverified.append(p_text)
+
+
+func _tm_count(p_stats: Dictionary, p_key: String, p_delta: int) -> void:
+	if not p_stats.has("terrainmesh_xform"):
+		return
+	var tm: Dictionary = p_stats["terrainmesh_xform"]
+	tm[p_key] = int(tm.get(p_key, 0)) + p_delta
+	p_stats["terrainmesh_xform"] = tm
+
+
+func _donor_tm_params(p_pattern: String) -> Dictionary:
+	if not DONOR_TM_PATTERN_DIMS.has(p_pattern):
+		return {}
+	var dims: Vector2i = DONOR_TM_PATTERN_DIMS[p_pattern]
+	return {
+		"w": dims.x, "h": dims.y,
+		"objects_scale": DONOR_TM_OBJECTS_SCALE,
+		"offset_x": DONOR_TM_OFFSET_X, "offset_z": DONOR_TM_OFFSET_Z,
+		"rotangle": DONOR_TM_ROTANGLE,
+		"height_scale": DONOR_TM_HEIGHT_SCALE,
+		"objects_offset": DONOR_TM_OBJECTS_OFFSET,
+		"height_offset": DONOR_TM_HEIGHT_OFFSET,
+		"auto_offset": DONOR_TM_AUTO_OFFSET,
+		"ignore_matrix": DONOR_TM_IGNORE_MATRIX,
+	}
+
+
+# DEC-VIS-02 §6.1: sub_4a3c7c / sub_4a3b9c out-of-place donor Y rotation.
+func _donor_rotate_y(p_v: Vector3, p_angle: float) -> Vector3:
+	var sa: float = sin(p_angle)
+	var ca: float = cos(p_angle)
+	return Vector3(sa * p_v.x + ca * p_v.z, p_v.y, sa * p_v.z - ca * p_v.x)
+
+
+# DEC-VIS-02 §6.2: pattern-size-rounded half-cell centre, including nested
+# Round, the +0.5 cell and the PI - rotangle correction. No term is omitted.
+func _donor_base_centre(p_w: int, p_h: int, p_cx: float, p_cz: float, p_rotangle: float) -> Vector2:
+	var r0: float = roundf((float(p_w) - 1.0) * 0.5 - p_cx)
+	var r1: float = roundf((float(p_h) - 1.0) * 0.5 - p_cz)
+	var x1: float = float(p_w) + r0 - 1.0
+	var z1: float = float(p_h) + r1 - 1.0
+	var mx: float = roundf((x1 + r0) * 0.5) + 0.5
+	var mz: float = roundf((z1 + r1) * 0.5) + 0.5
+	var dx: float = (x1 + r0) * 0.5 - mx
+	var dz: float = (z1 + r1) * 0.5 - mz
+	var rotated: Vector3 = _donor_rotate_y(Vector3(dx, 0.0, dz), PI - p_rotangle)
+	return Vector2(rotated.x + mx, rotated.z + mz)
+
+
+# DEC-VIS-02 §6.3, object block 0x75b66d..0x75b733: rotate raw float XZ by
+# PI - rotangle, multiply by ObjectsScale, add raw or pattern-rounded centre;
+# Y stays zero unless ObjectsHeightOffset; terrain snap only with ObjAutoOffset.
+func _place_terrainmesh_record(p_rec: Dictionary, p_pattern: String,
+		p_cell: Vector2i, p_stats: Dictionary) -> void:
+	var par: Dictionary = _donor_tm_params(p_pattern)
+	if par.is_empty():
+		return
+	var pos: Vector3 = p_rec["position"]       # raw float Position; never pre-rounded
+	var objects_scale: float = float(par["objects_scale"])
+	var rotangle: float = float(par["rotangle"])
+	var local: Vector3 = _donor_rotate_y(Vector3(pos.x, 0.0, pos.z), PI - rotangle)
+	local *= objects_scale
+
+	var raw_x: float = float(p_cell.x) + float(par["offset_x"])
+	var raw_z: float = float(p_cell.y) + float(par["offset_z"])
+	var use_raw: bool = bool(par["objects_offset"])
+	var centre: Vector2
+	if use_raw:
+		centre = Vector2(raw_x, raw_z)
+	else:
+		centre = _donor_base_centre(int(par["w"]), int(par["h"]), raw_x, raw_z, rotangle)
+	var pos2: Vector2 = centre + Vector2(local.x, local.z)
+
+	# [U] Half-cell convention: the donor centre already carries +0.5 for the
+	# pattern-rounded branch; therefore the port cell->world conversion here
+	# does NOT add another 0.5. This is a labelled PORT APPROX mapping, not a
+	# new donor threshold.
+	var dim: Vector2i = _grid_dim()
+	var wx: float = (pos2.x - float(dim.x) * 0.5) * TILE_M
+	var wz: float = (pos2.y - float(dim.y) * 0.5) * TILE_M
+
+	var wy: float = 0.0
+	if bool(par["height_offset"]):
+		wy = pos.y * objects_scale * float(par["height_scale"])
+	if bool(par["auto_offset"]):
+		wy += _ground_y(wx, wz, p_cell)
+
+	p_rec["world_pos"] = Vector3(wx, wy, wz)
+	p_rec["stamp_cell"] = p_cell
+	p_rec["prop_cell"] = Vector2i(int(roundf(pos2.x)), int(roundf(pos2.y)))
+	p_rec["order"] = int(p_rec.get("order", 0))
+	p_rec["donor_placement"] = {
+		"pattern": p_pattern,
+		"label": DONOR_TM_LABEL,
+		"objects_scale": objects_scale,
+		"rotangle_rad": rotangle,
+		"width": int(par["w"]), "height": int(par["h"]),
+		"offset_x": float(par["offset_x"]), "offset_z": float(par["offset_z"]),
+		"centre_branch": "ObjectsOffset raw" if use_raw else "pattern-size-rounded half-cell",
+		"height_offset": bool(par["height_offset"]),
+		"auto_offset": bool(par["auto_offset"]),
+		"ignore_matrix": bool(par["ignore_matrix"]),
+		"height_scale": float(par["height_scale"]),
+	}
+	_tm_count(p_stats, "records", 1)
+	_tm_count(p_stats, "donor_records", 1)
+	var tm: Dictionary = p_stats["terrainmesh_xform"]
+	var pats: Array = tm.get("patterns_used", [])
+	if not pats.has(p_pattern):
+		pats.append(p_pattern)
+		tm["patterns_used"] = pats
+		p_stats["terrainmesh_xform"] = tm
+
+
+# DEC-VIS-02 §6.3 final matrix block 0x75bd08..0x75bddf: install Direction,
+# Up and Scaling*ObjectsScale, then the separate donor final turn. The turn
+# helper (sub_7cca74 -> sub_4cb27c -> sub_4a64e4) multiplies its argument by
+# PI/180 before rotating the basis; that unit discontinuity is preserved, not
+# silently corrected. Its axis is [U]; rotangle=0 makes the turn identity here.
+func _donor_tm_basis(p_rec: Dictionary) -> Basis:
+	var dp: Dictionary = p_rec["donor_placement"]
+	var to_godot: Basis = Basis().rotated(Vector3(1.0, 0.0, 0.0), -PI * 0.5)  # donor Z-up -> Godot Y-up, PORT APPROX
+	var scl: Vector3 = p_rec["full_scale"] * float(dp["objects_scale"])
+	if bool(dp["ignore_matrix"]):
+		return to_godot * Basis().scaled(scl)
+
+	var direction: Vector3 = p_rec["direction"]
+	var up: Vector3 = p_rec["up"]
+	if not _finite3(direction) or not _finite3(up) or direction.length_squared() < 0.000001 or up.length_squared() < 0.000001:
+		return to_godot * Basis().scaled(scl)
+	var fwd: Vector3 = direction.normalized()
+	var upd: Vector3 = up.normalized()
+	var third: Vector3 = fwd.cross(upd)
+	if third.length_squared() < 0.000001:
+		return to_godot * Basis().scaled(scl)
+	var orient: Basis = Basis(fwd, upd, third.normalized())
+	orient = orient * Basis().scaled(scl)
+	var turn: Basis = Basis().rotated(Vector3(0.0, 0.0, 1.0), float(dp["rotangle_rad"]) * PI / 180.0)
+	return to_godot * (turn * orient)
 
 
 func _g(p_src, p_key: String, p_fallback):

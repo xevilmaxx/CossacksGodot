@@ -389,6 +389,13 @@
 			"evidence": "spec/01:34 face in {0,1,2}; world3d_terrain.gd:1315-1318,1407 (PORT APPROX)",
 			"name": "uv2_face_domain",
 			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "rows=8 cols=8 tile=64 block=1024 period=16.0 map=240x240 ready=true",
+			"evidence": "DEC-VIS-01 §4/§6: 8x8 subcells, 16 m period, per-cell L8 tile map",
+			"name": "donor_rgb_subcell_contract",
+			"passed": true
 		}
 	],
 	"determinism": {
@@ -468,6 +475,26 @@
 		"grid_w": 240,
 		"inspected": true,
 		"reason": "",
+		"rgb_subcells": {
+			"cols": 8,
+			"donor_block_px": 1024,
+			"effective_subcell_px": [
+				128,
+				128
+			],
+			"period_m": 16.0,
+			"rows": 8,
+			"selection": "DEC-VIS-01 §6.2 world-cell + map-half offset, mod Rows/Cols",
+			"tile_map": {
+				"filter": "nearest (shader tile_map)",
+				"format": "L8",
+				"height": 240,
+				"ready": true,
+				"source": "I08 _tex; same out-of-range clamp as UV2.x",
+				"width": 240
+			},
+			"tile_size": 64
+		},
 		"surfaces": 1,
 		"triangles": 114242,
 		"uv2_face_violations": 0,
@@ -495,7 +522,7 @@
 		"visual_parity_claim": false
 	},
 	"passed": true,
-	"passes": 25,
+	"passes": 26,
 	"sizes": [
 		64,
 		240
@@ -555,8 +582,8 @@
 			"water_fraction": 0.0
 		}
 	},
-	"total": 25,
-	"unix_ms": 1795695494604.0,
+	"total": 26,
+	"unix_ms": 1795701172124.0,
 	"vector_hooks": {
 		"blend_vectors": {
 			"detail": "no blend_vectors vector hook on I07/I09 module; X13/X21 not landed",

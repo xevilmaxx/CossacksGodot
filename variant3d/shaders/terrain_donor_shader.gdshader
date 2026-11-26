@@ -416,9 +416,16 @@ void fragment() {
 	vec2 map_cell = clamp(cell, vec2(0.0), map_cells - vec2(1.0));
 	vec2 selected_subcell = mod(cell + map_cells * 0.5,
 		vec2(donor_rows, donor_cols));
+	// DEC_SMALL_cell_rotation_flip: tsDouble RGB call site passes mirror=1,
+	// V-flip=0, rot=0, so corner slot = 3 - corner. In a continuous subrect this
+	// is exactly local.y := 1 - local.y. No per-cell rotation metadata exists.
 	vec2 local = fract(world_cells);
+	local.y = 1.0 - local.y;
 	float map_tile = texture(tile_map, (map_cell + 0.5) / map_cells).r;
 	float sampled_tile = clamp(floor(map_tile * 255.0 + 0.5), 0.0, 123.0);
+	bool is_alphanull = (abs(sampled_tile - 86.0) < 0.5)
+		|| (abs(sampled_tile - 110.0) < 0.5)
+		|| (abs(sampled_tile - 123.0) < 0.5);
 
 	// DEBUG_TILE_ID_FLAT skips both the atlas fetch and lighting so the original
 	// UV2.x diagnostic can still be compared directly with RGB/alpha overlays.
@@ -443,15 +450,35 @@ void fragment() {
 				: vec2(v_eye.z, v_eye.y) * face_scale;
 			a = texture(alphavert_atlas, mask_uv).a;
 		} else {
-			vec2 local = mask_uv_source > 0.5 ? UV : fract(v_alpha_uv);
-			// alphanull: zero coverage on exactly three donor ids.
+			vec2 mask_local = mask_uv_source > 0.5 ? UV : fract(v_alpha_uv);
+			// alphanull tiles bind the all-zero alphanull mask:
 			// # donor data/terrain/tiles/tiles.mat:346-359 (alpha0a/b/c -> alphanull);
 			// # donor data/terrain/tiles/terrain.presets:6-129 (ids 86/110/123),
 			// # donor data/terrain/tiles/textures/alphanull.bmp (all pixel indices 0, F06-E14).
-			bool is_alphanull = (abs(v_tile - 86.0) < 0.5)
-				|| (abs(v_tile - 110.0) < 0.5)
-				|| (abs(v_tile - 123.0) < 0.5);
-			a = is_alphanull ? 0.0 : texture(alpha_atlas, alpha_patch_uv(v_tile, local)).a;
+			a = is_alphanull ? 0.0 : texture(alpha_atlas, alpha_patch_uv(v_tile, mask_local)).a;
+			// DEC_SMALL_corner_tag_writer: a uniform donor cell writes four equal
+			// corner tags, mask=0, and LUT patch 0/16; both are constant 255.
+			// Sample the nearest neighbours from the same per-cell tile map; no
+			// corner tags are invented and no random byte is synthesised.
+			vec2 tstep = 1.0 / max(map_cells, vec2(1.0));
+			vec2 lo = map_cells - vec2(1.0);
+			float tid_l = floor(texture(tile_map, (clamp(map_cell + vec2(-1.0, 0.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
+			float tid_r = floor(texture(tile_map, (clamp(map_cell + vec2( 1.0, 0.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
+			float tid_d = floor(texture(tile_map, (clamp(map_cell + vec2(0.0, -1.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
+			float tid_u = floor(texture(tile_map, (clamp(map_cell + vec2(0.0,  1.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
+			bool uniform_tile = abs(tid_l - sampled_tile) < 0.5
+				&& abs(tid_r - sampled_tile) < 0.5
+				&& abs(tid_d - sampled_tile) < 0.5
+				&& abs(tid_u - sampled_tile) < 0.5;
+			bool shore_sandsea = (abs(sampled_tile - 93.0) < 0.5)
+				|| (abs(sampled_tile - 97.0) < 0.5)
+				|| (abs(sampled_tile - 98.0) < 0.5);
+			if (shore_sandsea && !is_alphanull) {
+				a = 1.0;
+			}
+			if (uniform_tile && !is_alphanull) {
+				a = 1.0;
+			}
 		}
 	}
 

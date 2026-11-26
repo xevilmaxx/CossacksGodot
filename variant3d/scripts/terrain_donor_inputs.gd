@@ -17,6 +17,12 @@
 # values are OMITTED, never guessed. No synthetic noise/dither field, no
 # threshold change, no forest density derived from zero G.
 #
+# PERF (W06 Rank 2): the validated compact bundle at
+# `assets/terrain_new/patterns/compact/` is the preferred runtime input. It is
+# decoded in memory; the original family-index/family-file/pattern-file path is
+# retained as an explicit fallback for an absent or invalid bundle. Runtime
+# parse counts below are diagnostics only. NO DONOR PARITY CLAIM.
+#
 # Public API:  build(game, w, h) -> Dictionary      (I07 `p`)
 #              stats() -> Dictionary                (diagnostics only)
 # ---------------------------------------------------------------------------
@@ -1172,6 +1178,12 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 		"missing_family_pattern_files": missing_files.duplicate(true),
 		"fallback_reason": str(compact_telemetry.get("fallback_reason", "")),
 		"parse_scope": "compact bundle" if use_compact else "compact bundle attempt; fallback file reads not counted",
+		# Explicit proof that the 55 MB family-index and 29 MB family files were
+		# never opened while the validated compact bundle was in use. Diagnostics
+		# only: these counters never feed selection, rotation or any RNG draw.
+		"source_family_index_parsed": not use_compact,
+		"source_family_files_parsed": 0 if use_compact else families.size(),
+		"source_pattern_files_parsed": 0 if use_compact else patterns.size(),
 		"cite": "generator.cfg:67-154; pattern.lib:549563-549575; cossacks.exe:0x755f30; F01 §4.4",
 	}
 
