@@ -122,6 +122,7 @@ var start_mode := "skirmish"
 # NOTE: do not put the literal 3d value on this line; t_render_mode.gd checks
 # that the declared default is unambiguously 2D.
 var render_mode := "2d"
+var terrain_backend := "legacy"
 
 var battle_requested := false
 var config_path := ""
@@ -184,6 +185,10 @@ func _ready() -> void:
 	# V7-50 PORT ADDITION: new additive key; 2D is the default when absent.
 	render_mode = str(cfg.text("gameplay.render_mode", "2d")).to_lower()
 	Data.RENDER_MODE = render_mode
+	# I11-SEAM / V05 §4.2: opt-in terrain backend; unknown values coerce to legacy.
+	terrain_backend = str(cfg.text("features.terrain.backend", "legacy")).to_lower()
+	if terrain_backend != "donor":
+		terrain_backend = "legacy"
 	if seed_random:
 		Data.RANDOM_SEED = int(randi())
 	elif seed_arg >= 0:
@@ -585,6 +590,8 @@ func _do_async_load(cfg: Dictionary) -> void:
 		return
 	if render_mode == "3d":
 		world = make_world3d()
+		if world != null and world.has_method("set_terrain_backend"):
+			world.set_terrain_backend(terrain_backend)
 		world.bind(game)
 		add_child(world)
 	else:
@@ -1102,6 +1109,8 @@ func _setup_full_game() -> void:
 	var homes := game.buildings_of(0)
 	if render_mode == "3d":
 		world = make_world3d()
+		if world != null and world.has_method("set_terrain_backend"):
+			world.set_terrain_backend(terrain_backend)
 		world.bind(game)
 		add_child(world)
 

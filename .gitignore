@@ -128,3 +128,27 @@ variant3d/assets/models/sprites_hi/**/*.png.import
 # app/assets; do NOT add a broad "variant3d/assets" ignore rule here, because
 # tracked source (obj/glb/tex, .import sidecars) must stay visible to git.
 # No git tracking changes were made from the hygiene lane (H1).
+
+# --- V78 / V49 compliance: large derived atlases + raw donor binaries --------
+# Keep the 179 MB summer atlas, 124 MB winter atlas and both lossless split parts
+# uncommitted. Ignore rules do NOT untrack files already in the index: the four
+# legacy large files remain tracked here; COORD must git rm --cached / LFS-track
+# them if they are to leave a commit. No git index change was made by this edit.
+variant3d/assets/terrain/atlas/tile_index_atlas.png
+variant3d/assets/terrain/atlas/tile_index_atlas_winter.png
+variant3d/assets/terrain/atlas_parts/tile_index_atlas.part000
+variant3d/assets/terrain/atlas_parts/tile_index_atlas.part001
+variant3d/assets/terrain_new/**/*.part[0-9]*
+variant3d/assets/terrain_new/**/atlas/tile_index_atlas*.png
+
+# Raw donor binaries are read-only private-install input: never commit them.
+# Only derived outputs (JSON / converted PNG / OBJ) are trackable.
+*.tga
+*.osm
+*.oss
+*.pattern
+*.map
+*.aaf
+*.cdx
+*.dds
+*.dll

@@ -1,0 +1,2199 @@
+# ---------------------------------------------------------------------------
+# variant3d/scripts/terrain_donor_gen.gd — I07 owner file (2026-11-26)
+#
+# PROVENANCE / PARITY GUARD — READ FIRST
+#   This is a FRESH, donor-shaped generation pipeline. It is NOT a patch on the
+#   legacy mapgen.gd / pattern_gen.gd / world3d_terrain.gd path and it never
+#   writes those files, game.gd, config.gd, world3d.gd, app/** or any test.
+#   It consumes ONLY the I06 container (terrain_donor_data.gd, class
+#   Object) and donor-derived, decoded inputs supplied by the caller.
+#
+#   Labels: [O] observed donor text/bytes, [D] deterministic consequence,
+#   [I] inference, [U] UNVERIFIED, PORT APPROXIMATION for port substitutes.
+#   Every donor numeric constant below carries a `# donor path:line` comment.
+#   Anything the donor does not expose is a NULL/DEFAULT config hook with a
+#   TODO naming the worker who must resolve it. NOTHING is guessed.
+#
+#   Donor evidence used (all read-only; no donor binary/data executed/copied):
+#     RNG        spec/02; D02_seed_rng.md; X03_dscript_corpus.md:161-183;
+#                X21_rng_vectors.md:38-73,177-224,295-407 (8 native passes)
+#     Masks      spec/03; F04_masks.md; X19_mask_decoder_gap.md:37-52,189-195;
+#                V08_coordinate_scale.md:155-190
+#     Stamps     spec/04; D05_relief_stamp.md:92-211; X12_stamp_verification.md;
+#                X13_blend_test_vectors.md:32-48,96-145 (19 exact-f32 vectors);
+#                X26_final_blend (ev_c176cc8… lines 297-303/321-323), F01 closure
+#     Water      spec/05; D06_water_shore.md; X11_water_translation.md:344-403
+#     Resources  spec/07; V12_resource_spec.md:120-341; X03:854-940
+#     Tiles      spec/06; X08_tile_smooth_engine.md:176-431; D5:191-242
+#     Fields     spec/08; X22_field_sowing_translation.md:58-66,517-524
+#     Stage order spec/10; X03_dscript_corpus.md:124-1120
+#
+#   CORRECTIONS APPLIED (COORD, 2026-11-26):
+#     X21 [O]/[D]: `key0` is DISCARDED by mod 2^32 — ONLY `key1` seeds the
+#       recurrence, even for SetRandomExtKey64 (X21 §4.3). key0 is exposed as a
+#       labelled NO-OP in the ledger. `s=0` advances to the increment
+#       0x3C6EF35F — NO absorbing fixed point (X21 §4.4). RandomExt output is
+#       FLOAT32 (X21 §4.5/§5), not a bare f64, and all arithmetic is masked to
+#       u32 after each multiply/add. Three independent streams plus a separate
+#       Delphi LCG are exposed, with a stage-keyed ledger
+#       (stage_id, generator_version, stream_name) per X21 §6.
+#     X13/X26 [O]/[D]: D05 F4 blend math is authoritative. The brief's
+#       simplified `Replace = base_h + g + Offset` omits BOTH `Scale` and the
+#       `(g-Min)` pivot — X13 vector REP-hil1-01 gives 0x4074F076 (D05) vs
+#       0x40A5B75B (brief). X26 deep opcode evidence (ev_c176cc8… lines
+#       297-303/321-323, x87 0x75660d/610/616 and 0x756674/677/67d) confirms
+#       `Replace = base_h + ((g-Min)*Scale + Min) + Offset` and matched 19/19
+#       X13 f32 vectors. `+0x60` reads = 0/6,751: Max is NEVER used.
+#       X26 PROVES the smooth post-pass is IN-PLACE (sub_755db4, ev_aba9f17d…)
+#       — the earlier [U] is resolved; the hook defaults to in-place.
+#       Row-sign flip, rotation rounding, global setter clamp, x87 precision
+#       and grid boundary stay UNVERIFIED with labelled hooks.
+#     F01/X26: X13's plane offsets (G=1000/1912/2866) are STALE by
+#       +8/+12/+17 floats. F01 closure gives EXACT G=968 (hil1), 1864
+#       (g_hil4), 2798 (k_ravine_1). `F01_GRID_OFFSETS` carries them with a
+#       decoder helper. DPATTERN-01 8x10 tables shift for 17/29 patterns.
+#       TODO(I02): inject the remaining canonical F01 tables via grid_table_hook.
+#     V08 [O]: donor generator distances are MAP CELLS 1:1. The port's
+#       DONOR_UNITS=160 / "1 unit = 2 cells" is PORT-INVENTED and would double
+#       every radius/footprint at 320². Mine bands 14+8R etc. are CELLS, never
+#       multiplied by 2 (V08:155-190, 239, 324-333). `TILE_M=2.0` is donor-
+#       grounded horizontally (gc_meters_to_tile=2, dmscript.global:170-173),
+#       but the STORED HEIGHT UNIT and ROW SIGN stay [U].
+#     X19 [O]: spec/03's "wrong-sign relief()" claim is STALE/REFUTED —
+#       mapgen.gd:212-213 already matches h=-1.1*B/255 at 320². DO NOT flip the
+#       sign. Avoid port bugs: `B>58` off-by-one (import_donor_masks.py:98),
+#       white starts counted as water, `height<0.8` global coastal gate
+#       (mapgen.gd:126), and reading terrainmasks/land instead of nowater2.
+#       Correct rules here: B>=58 boundary, starts skipped, coastal gate =
+#       mask B class + height band, three distinct water levels
+#       (B==255 class / h=-1.1*B/255 bed / B>0 & h<-0.25 tag).
+#
+#   NO DONOR PARITY CLAIM: parity status is always "UNVERIFIED"; no donor GPU
+#   A/B frame exists (CHARTER.md:43-44,125; A05 parity.status schema).
+# ---------------------------------------------------------------------------
+extends RefCounted
+class_name C3TerrainDonorGen
+
+# ---------------------------------------------------------------------------
+# I06 CONTAINER CONTRACT (thin adapter, documented for I08/I11)
+#   Input object: Object (`variant3d/scripts/terrain_donor_data.gd`).
+#   Required surface actually consumed here:
+#     configure_grid(w,h) | set_size(w,h)     — size; w/h/n public ints
+#     height: PackedFloat32Array              — donor core, f32 per cell
+#     tex: PackedByteArray                    — donor core, tile id per cell
+#     collision: PackedByteArray              — donor core, 4 tags per cell
+#     mask_r/mask_g/mask_b: PackedFloat32Array — optional generation scratch
+#     terrain_class/water/owner/forest_density/stone_density: PackedByteArray
+#     props/resources: Array[Dictionary]      — object tables
+#     meta: Dictionary                        — additive, diagnostics only
+#     stats() -> Dictionary                   — diagnostics, never fed back
+#   `_set_size()` below also accepts a legacy `set_size(w,h)` spelling so the
+#   generator stays usable if I06 renames the sizing method.
+# ---------------------------------------------------------------------------
+
+# --- donor RNG constants ----------------------------------------------------
+const LCG_MUL: int = 0xFC0D          # donor CODE 0x60f64c-0x60f696; spec/02 §2; X21 §6
+const LCG_ADD: int = 0x3C6EF35F      # donor CODE 0x60f64c-0x60f696; spec/02 §2; X21 §6
+const LCG_U32: int = 0xFFFFFFFF      # mask 64-bit int to u32 (X21 §6: s*M+C < 2^47)
+const LCG_DIV: float = 4294967296.0  # 2^32 divisor, VA 0x60f698; spec/02 §2; X21 §6
+const DELPHI_LCG_MUL: int = 0x8088405  # separate Delphi Random(), spec/02 §3.3; X21 §6.1
+const DELPHI_LCG_ADD: int = 1          # Delphi seed = seed*0x8088405+1; spec/02 §3.3
+# Donor collision tag VALUES [O] (dmscript.global:83-92; D06:146, F09 E07).
+const C_TAG_CLEAR: int = 0
+const C_TAG_WATER: int = 87            # gc_collisiontag_water; D06:146, dmscript.global:84-91
+const C_TAG_BRIDGE: int = 10           # gc_collisiontag_bridge; D06:146,352
+const C_TAG_LANDBORDER: int = 109      # D06:146
+const C_TAG_WATERBORDER: int = 110     # D06:146
+const C_WATERBORDER_RAD: int = 3       # gc_WaterBorderSize, dmscript.global:819; D06:146
+
+# Re-seed sites — SAME randkey1 verbatim, no mix64 (spec/02 §4-5; X03:161-183,
+# X03:284, :764, :849, :937, :961). Three SetRandomExtKey64 resets use
+# randkey0/randkey1 verbatim (X03:416, :480, :580; spec/02 §4).
+const RESEED_SITES: Array = [
+	"D3:99", "D3:146", "D1:1100", "D1:1161", "D1:1177", "D1:1213",
+	"D1:1538", "D1:1616", "D1:1772", "D1:1909", "D1:1927",
+]
+const EXT_KEY_SITES: Array = ["D2:216", "D2:513", "D2:774"]
+
+# --- donor mask / height constants -----------------------------------------
+const C_PLATEAU_HEIGHT: float = 2.964       # generatemap.inc:4; X03:368
+const C_HILL_HEIGHT: float = 2.964 / 2.25   # generatemap.inc:5 (cPlateau/2.25); X03:369
+const C_RAVINE_HEIGHT: float = -2.964       # generatemap.inc:6; X03:370
+const C_WATER_HEIGHT: float = -1.1          # generatemap.inc:7; X03:371
+const C_R_MULT: float = 3.5                 # generatemap.inc:567; X03:498
+# R/G/B source-bitmap decode codes (generatemap.inc:21-32, :454-490; X03:383-394).
+# [U] for vanilla `_gauss` masks: F04 measured R=G=0 off starts (C9 contradiction).
+const C_RCOLOR_PLATEAU: int = 255
+const C_RCOLOR_HILL: int = 96
+const C_RCOLOR_RAVINE: int = 48
+const C_RCOLOR_SMOOTH: int = 64             # 128 div 2; generatemap.inc:24
+const C_RCOLOR_PLATEAU_SMOOTH: int = 191    # 255 div 2 + 64; generatemap.inc:25
+const C_RCOLOR_HILL_SMOOTH: int = 112       # 96 div 2 + 64; generatemap.inc:26
+const C_RCOLOR_RAVINE_SMOOTH: int = 88      # 48 div 2 + 64; generatemap.inc:27
+const C_GCOLOR_FOREST: int = 255            # generatemap.inc:28
+const C_GCOLOR_GENFOREST: int = 64          # generatemap.inc:29
+const C_GCOLOR_STONE: int = 128             # generatemap.inc:30
+const C_GCOLOR_FORESTSTONE: int = 192       # generatemap.inc:31
+const C_BCOLOR_WATER: int = 255             # generatemap.inc:32, :486-487
+const C_WATER_BYTE: int = 58                # B>=58 is the h<-0.25 boundary;
+                                            # F04 §6, X19:97-99,189-195 (not B>58)
+
+# --- smoothing constants ---------------------------------------------------
+const C_SMOOTH_RADIUS_BSMOOTH: int = 3      # generatemap.inc:591; D03:24,259
+const C_SMOOTH_LAND_POWER: float = 4.0      # generatemap.inc:606; X03:536
+const C_SMOOTH_LAND_LERP: float = 0.5       # generatemap.inc:606; X03:536
+const C_SMOOTH_LAND_MIN: float = 0.01       # generatemap.inc:606; X03:536
+const C_SMOOTH_LAND_MAX: float = 100.0      # generatemap.inc:606; X03:536
+const C_SMOOTH_COAST_POWER: float = 0.35    # generatemap.inc:637; X03:547
+const C_SMOOTH_COAST_LERP: float = 0.5      # generatemap.inc:637; X03:547
+const C_SMOOTH_COAST_MIN: float = -100.0    # generatemap.inc:637; X03:547
+const C_SMOOTH_COAST_MAX: float = -0.01     # generatemap.inc:637; X03:547
+const C_SMOOTH_COAST_PASSES: int = 3        # generatemap.inc:612; X03:538
+const C_SMOOTH_COAST_NEIGHBOUR_RAD: int = 2 # generatemap.inc:625 (5x5); X03:543-545
+
+# --- water / shore / tile constants ----------------------------------------
+const C_WATERFIELD_SIZE: int = 2            # generatemap.inc:649; X03:559
+const C_WATERFIELD_OFFSET_Y: float = -0.5   # generatemap.inc:688,704; spec/05 §1
+const C_TILE_WATER_HEIGHT: float = -0.25    # texturemap.inc:30; X03:589
+const C_TILE_SHORE_HEIGHT: float = -0.1     # texturemap.inc:31; X03:590
+const C_CLIFF_DIFF1: float = 0.5            # texturemap.inc:63; X03:592
+const C_CLIFF_DIFF2: float = 0.55           # texturemap.inc:64; X03:593
+const C_SHORE_ANGLE: float = 45.0           # texturemap.inc:476; X11:361
+const C_SHORE_GRAD_MIN: float = 0.01        # texturemap.inc:432; X11:350
+const C_CLIFF_ABS_HIGH: float = 2.7         # texturemap.inc:594; X03:603-604
+const C_CLIFF_ABS_MID: float = 2.4          # texturemap.inc:597; X03:605-606
+const C_CLIFF_ABS_NONE: float = 0.1         # texturemap.inc:600; X03:607-608
+const TILE_SMOOTH_PASSES: int = 3           # smoothtiles.inc:237 (cfg says 6 — preserved contradiction; spec/09 §4)
+# F05 §3 summer tile ids [O] used by X28 vectors; 255 is NOT a donor water id.
+const TILE_ID_SANDSEA1: int = 93            # F05 §3:229; X28:46
+const TILE_ID_SANDSEA5: int = 97            # F05 §3:233; X28:46
+const TILE_ID_SANDSEA6: int = 98            # F05 §3:234; X28:46
+const TILE_ID_ROCK1: int = 17               # F05 §3:153; X28:47
+const TILE_ID_ROCK3: int = 19               # F05 §3:155; X28:47
+const TILE_ID_ROCK4: int = 20               # F05 §3:156; X28:47
+const TILE_ID_ROCK7: int = 23               # F05 §3:159; X28:47
+const TILE_ID_ROCK8: int = 24               # F05 §3:160; X28:47
+const DONOR_TILE_IDS: Dictionary = {
+	"sandsea1": TILE_ID_SANDSEA1, "sandsea5": TILE_ID_SANDSEA5,
+	"sandsea6": TILE_ID_SANDSEA6, "rock1": TILE_ID_ROCK1,
+	"rock3": TILE_ID_ROCK3, "rock4": TILE_ID_ROCK4,
+	"rock7": TILE_ID_ROCK7, "rock8": TILE_ID_ROCK8,
+}
+
+# --- placement / tiled-pattern constants -----------------------------------
+const C_TILE_GRID_SIZE: int = 25            # dogenerate.inc:1335; X03:264
+const C_TILE_GRID_HALF: int = 12            # cSize div 2, dogenerate.inc:1344; X03:270
+const C_TILE_GRID_OFFSET: int = 1           # dogenerate.inc:1344-1345; X03:270-271
+const C_TRYCOUNT_MINES: int = 256           # dogenerate.inc:525; V12:127, X03:857
+const C_TRYCOUNT_START: int = 128           # dogenerate.inc:724; V12:185, X03:940
+const C_TRYCOUNT_INNER: int = 3             # dogenerate.inc:725; V12:185, X03:940
+const C_ELLIPSE_1_X: int = 5                # dogenerate.inc:407; X03:705
+const C_ELLIPSE_1_Y: int = 7                # dogenerate.inc:408; X03:706
+const C_ELLIPSE_2_X: int = 12               # dogenerate.inc:410; X03:708
+const C_ELLIPSE_2_Y: int = 15               # dogenerate.inc:411; X03:709
+const C_ELLIPSE_3_X: int = 22               # dogenerate.inc:413; X03:710
+const C_ELLIPSE_3_Y: int = 18               # dogenerate.inc:414; X03:711
+const C_ELLIPSE_CENTRE_DY: int = 2          # dogenerate.inc:718,769,947; V12:200
+const C_BORDER_MASK_RAD: int = 3            # dogenerate.inc:1613; X03:763
+const C_START_PEASANTS: int = 18            # dogenerate.inc:1255; X03:949
+const C_UNIT_R: float = 0.75                # dogenerate.inc:1258; X03:950
+const C_SCALE_DEADBAND: float = 0.05        # dogenerate.inc:1998; X03:977
+const C_FREQ_DAMP: float = 0.2              # misc.script:3588-3630; spec/10 §2
+const C_FREQ_FLOOR: float = 0.0001          # misc.script:3588-3630; spec/04 §3
+const C_SCANGRID_SIZE: int = 160            # 640/4, dmscript.global:55-59; V12:226
+const C_SCANGRID_CELL: int = 4              # gc_scangrid_size=4, dmscript.global:55-59
+const C_BROKEN_GENERATOR_VERSION: int = 92  # gDataVersion, serial.script:27; V01 §7
+
+# Relief frequencies (dogenerate.inc:1625-1649; X03:779-799).
+const RELIEF_FREQ := [
+	[0.000010, 0.000020, 0.000075],   # relieftype 0: plt, mnt, hil
+	[0.000020, 0.000002, 0.000125],   # 1
+	[0.000075, 0.000075, 0.000030],   # 2
+	[0.000055, 0.000120, 0.000050],   # 3
+	[0.000090, 0.000035, 0.000035],   # 4
+]
+const C_PLAIN_FREQ: float = 0.0001 / 2.0   # dogenerate.inc:1727; X03:817
+const C_FRS_BIG: float = 0.0009            # dogenerate.inc:1688; X03:803
+const C_FRS_MID: float = 0.0009            # dogenerate.inc:1689; X03:804
+const C_FRS_SMALL: float = 0.00054         # dogenerate.inc:1690; X03:805
+const C_STN_1: float = 0.00016             # dogenerate.inc:1692; X03:807
+const C_STN_2: float = 0.00012             # dogenerate.inc:1693; X03:808
+const C_LAKE_ZERO: float = 0.0             # dogenerate.inc:1735-1736 (hard-zeroed)
+
+# --- stamp blend constants -------------------------------------------------
+const C_STAMP_HALF_CELL: float = 2.0       # cossacks.exe VA 0x75c1a4; D05 F6
+const C_STAMP_HALF_OFFSET: float = 0.5     # cossacks.exe VA 0x75c1a8; D05 F6
+const C_STAMP_SMOOTH_DIV: float = 4.0      # cossacks.exe VA 0x755ee4; D05 F5
+# F01/X26 EXACT plane starts (BYTES) — X13's 1000/1912/2866 are stale by
+# +8/+12/+17 floats. On-disk extent is w*h float32 (X13 P2), header is i32 w,h.
+const F01_GRID_OFFSETS: Dictionary = {
+	"hil1": 968,                  # F01 closure; X23/X49 (was 1000 in X13)
+	"g_hil4": 1864,                # F01 closure; X23/X49 (was 1912 in X13)
+	"k_ravine_1": 2798,            # F01 closure; X23/X49 (was 2866 in X13)
+	"plt2": 2222,                  # F01 closure; X23/X49
+	"k_ravine_big_stone_1": 8225,  # F01 closure; X23/X49
+}
+
+# ---------------------------------------------------------------------------
+# PARITY / CONFIG HOOKS — all UNVERIFIED values live here, never as magic
+# numbers in the stage bodies. TODO owners are named; no value is guessed.
+# ---------------------------------------------------------------------------
+
+## X21 [O]/[D] RESOLVED: `key0` is DISCARDED by mod 2^32; `key1` alone seeds
+## BOTH SetRandomKey and SetRandomExtKey64 (X21 §4.3, §5.2). key0 is retained
+## ONLY in the ledger as a labelled no-op. `s=0` moves to the increment —
+## no absorbing fixed point (X21 §4.4). The hook below only covers the still
+## [U] signed-product-high-word edge case (X21 XU5), never the normal path.
+## TODO(X21/X01): resolve XU5 if a skirmish key with bit31 in the product high
+## word is ever identified.
+var key_state_hook: Callable = Callable()
+
+## X26 [O] RESOLVED: sub_755db4 (ev_aba9f17d…) proves the smooth post-pass
+## writes IN PLACE (read-after-write). X13's 4/4 divergence was the earlier
+## [U] state. Default "in_place" is now donor-grounded; "double_buffer" is
+## kept ONLY as an explicit comparison hook, never a parity claim.
+var stamp_smooth_buffer_mode: String = "in_place"
+
+## X26 [D]: default is the f32-STEP contract (each donor x87 op rounded to
+## f32). X13 P5's "double_store_f32" is the comparison-only model. True 80-bit
+## x87 behaviour remains [U]. No parity claim either way.
+var stamp_precision_model: String = "f32_each_op"
+
+## [U] X13: which file row maps to negative world y, rotation rounding at
+## half-cell boundaries, and any global setter clamp are NOT recovered.
+## TODO(D05/X01/X13): resolve each before any donor parity claim.
+var row_sign_hook: Callable = Callable()          # hook(pattern)->int row sign, null = unverified
+var rotation_rounding_hook: Callable = Callable()  # hook(xf,zf)->Vector2i, null = donor round
+var global_setter_clamp_hook: Callable = Callable()  # hook(h)->f32, null = no clamp
+
+## F01/X26: EXACT plane offsets are in F01_GRID_OFFSETS above; use
+## `decode_pattern_grid(name, raw_bytes)` to decode them. DPATTERN-01 8x10
+## tables are shifted for 17/29 patterns; X13's 1000/1912/2866 are stale.
+## Decoded grids normally arrive via `p.patterns[*].grid`; this hook lets a
+## canonical F01 table override without rewriting the stamp logic.
+## TODO(I02): inject canonical tables for the remaining patterns.
+var grid_source: String = "caller_supplied_F01_or_X23_canonical_pending"
+var grid_table_hook: Callable = Callable()
+
+## [U] Native `SmoothTerrain(x,-y,False,3)` kernel on bsmooth cells is not
+## decompiled (D03 U3; D03:259). If valid, called as
+## `hook(height_arr, w, h, bsmooth_arr, 3)`; may write height in place.
+## TODO(D03/D01): recover the native kernel; default = SKIP with a telemetry label.
+var bsmooth_kernel: Callable = Callable()
+
+## [U] D05 F3 native random-scale LCG feed (Delphi x=x*0x8088405+1) is unknown.
+## If valid, called as `hook(pattern_name) -> float` in [MinScale,MaxScale].
+## TODO(D05/X01): resolve the feed; default = fixed HeightFieldScale (PORT APPROX).
+var random_scale_hook: Callable = Callable()
+
+## LEGACY comparison hook ONLY — X28 REFUTES the `floor()%8` sector form.
+## The live shore path is now the literal if/else chain in _shore_tile_name()
+## with the unguarded bRT catch-all (texturemap.inc:479-501, X28 vector 9).
+## This array is never used by generation; kept as an audit artifact.
+var sector_names: Array = [
+	"bR", "bRB", "bB", "bLB", "bL", "bLT", "bT", "bRT",
+]
+
+## [U] `VectorAngle` sign convention in texturemap.inc:434-435 is derived, not
+## proven live. If valid, called as `hook(dir_x: float, dir_y: float) -> float`
+## (degrees). TODO(D06/X11): confirm against donor frame.
+var shore_angle_hook: Callable = Callable()
+
+## [U] `_misc_PosToScanGridIndices` mapping for non-640 maps is not recovered
+## (V12:226). V58: inputs are ALREADY grid cells, so the default is cell/4 on
+## the fixed 160² grid — NO second W/2. TODO(D07/V12): confirm for W!=640.
+var scan_grid_mapping_hook: Callable = Callable()
+
+## [U] Object-scale jitter RNG at dogenerate.inc:1990-2021 is a separate stream.
+## If valid, called as `hook(object_dict) -> float` in [0,1). Default = skip.
+## TODO(D01/D07): resolve object RNG instance.
+var object_scale_rng_hook: Callable = Callable()
+
+## [U] The steep/cliff collision TAG value is not recovered in readable donor
+## text (D08/D06 tag census: 0/10/80/101/87/110/109/85/95, none labelled
+## "cliff"). Default null => steep cells are RECORDED but tag0 stays clear;
+## no value is invented. TODO(D08/D06): name the donor steep tag.
+var collision_tag_cliff: Variant = null
+
+## PORT APPROXIMATION: water has NO donor tile id (F05 §3). If true, water cells
+## receive I06's documented port sentinel 255; if false they keep their current
+## id and are marked only in the `water` side array. Default false (no invention).
+var use_port_water_sentinel: bool = false
+
+# ---------------------------------------------------------------------------
+# Inner stage-scoped LCG. One instance, re-seeded at every donor site; the
+# draw count is part of the parity ledger.
+# ---------------------------------------------------------------------------
+class _LCG extends RefCounted:
+	var s: int = 0
+	var draws: int = 0
+	var stream_name: String = "dscript_global"
+	var mul: int = LCG_MUL
+	var add: int = LCG_ADD
+	var key0: int = 0                  # retained for ledger ONLY — X21 §4.3
+	var on_draw: Callable = Callable()
+
+	func _init(p_name: String = "dscript_global", p_mul: int = LCG_MUL, p_add: int = LCG_ADD) -> void:
+		stream_name = p_name
+		mul = p_mul
+		add = p_add
+
+	func reseed_from_key(k: int) -> void:
+		# X21 §4.3: SetRandomKey sign-extends to the high word; the low word
+		# is what the recurrence consumes. s=0 advances to the increment
+		# (X21 §4.4) — there is no absorbing fixed point.
+		s = k & LCG_U32
+		draws = 0
+
+	func reseed_from_key64(k0: int, k1: int) -> void:
+		# X21 [O]/[D]: key0 is DISCARDED by mod 2^32; (key0,key1) and
+		# (0,key1) produce IDENTICAL streams, INCLUDING the first draw
+		# (X21 §4.3, §5.2). Keep key0 as a labelled NO-OP in the ledger.
+		key0 = k0
+		s = k1 & LCG_U32
+		draws = 0
+
+	func next_f() -> float:
+		# Mask 64-bit int to 32 bits after the multiply/add (X21 §6).
+		s = (s * mul + add) & LCG_U32
+		draws += 1
+		# RandomExt() = float32(int64(s)/2^32) (VA 0x60f698; X21 §4.5/§5).
+		var r: float = _f32(float(s) / LCG_DIV)
+		if on_draw.is_valid():
+			on_draw.call(stream_name, s, r)
+		return r
+
+	func next_int(n: int) -> int:
+		return int(floor(next_f() * float(n)))  # GetRandom(n), dogenerate.inc:990-992
+
+	func next_range(lo: int, hi: int) -> int:
+		return lo + next_int(hi - lo + 1)       # GetRandomRange, dogenerate.inc:994-997
+
+	func _f32(v: float) -> float:
+		# Exact IEEE-754 binary32 round-to-nearest-even (x87 fstp dword emulation;
+		# X21 §4.5/§6). Godot float is binary64, so an explicit round-trip is used.
+		var raw := PackedByteArray()
+		raw.resize(4)
+		raw.encode_float(0, v)
+		return raw.decode_float(0)
+
+# ---------------------------------------------------------------------------
+# Public state
+# ---------------------------------------------------------------------------
+# X21 §6.1 — THREE independent generator streams + a separate Delphi LCG.
+# donewgame.inc:33-35 calls the three setters back-to-back => distinct owners.
+# Class identities remain [I]/[U], so the stream names are diagnostic labels.
+var _rng: _LCG = _LCG.new("dscript_global")            # state 0x9048d4/d8
+var _rng_map: _LCG = _LCG.new("map_generator")         # sub_7281bc this+0x18
+var _rng_world: _LCG = _LCG.new("global_map_generator")
+var _rng_delphi: _LCG = _LCG.new("delphi_random", DELPHI_LCG_MUL, DELPHI_LCG_ADD)
+var _active_rng: _LCG = _LCG.new("dscript_global")
+var _rng0: int = 0
+var _rng1: int = 0
+var _ledger: Array[Dictionary] = []
+var _draw_ledger: Dictionary = {}                       # (stage|vN|stream) -> draws
+var _current_stage_key: String = ""
+var _tel: Dictionary = {}
+var _stage_site: String = ""
+var _stage_draws: int = 0
+var _notes: Array[String] = []
+var _occ: PackedByteArray = PackedByteArray()   # gPatternMask, size w*h
+var _bsmooth: PackedByteArray = PackedByteArray()
+var _mask_water: PackedByteArray = PackedByteArray()  # cBWater class (B==255)
+var _grid_w: int = 0
+var _grid_h: int = 0
+var _grid_n: int = 0
+var _gen: Dictionary = {}                       # resolved generation settings
+var _freq_state: Dictionary = {}                # damped Freq state (local copy)
+
+
+# ---------------------------------------------------------------------------
+# PUBLIC API
+# ---------------------------------------------------------------------------
+
+## Run the full donor-ordered pipeline into `data`. Donor-derived decoded inputs
+## arrive in `p` (see CONTRACT below); missing inputs never trigger invention —
+## the affected stage is labelled and skipped, and its re-seed is still issued.
+##
+## p keys (all optional unless noted):
+##   randkey0, randkey1          : int  — donor high/low words (spec/02 §1)
+##   width, height              : int  — or `size`; else uses data.w/data.h
+##   mask_r, mask_g, mask_b      : PackedFloat32Array | PackedByteArray — mask
+##                                 channels; data.mask_* are used if absent
+##   mask                       : Dictionary with r/g/b keys (alt spelling)
+##   starts                     : Array[Vector2] donor-centred cell coords
+##   generator_version          : int  — default 92 (serial.script:27)
+##   mapsize                    : int  — mapsize>2 = 256-cell TINY (donewgame.inc:46)
+##   minecount/spcount          : int  — player/start count for mine branch
+##   minerdensity/minesdensity  : int  — 0/1/2 -> rounds 3/4/5 (D1:528-531)
+##   relieftype, terraintype, b_desert, season
+##   patterns                   : Dictionary name -> decoded pattern dict
+##   families                   : Dictionary family -> Array[{name, freq}]
+##   tile_name_to_id, tile_id_to_name : Dictionary (I05 atlas decoder)
+##   tile_smooth_chains         : Array[Array[Array[Dictionary]]] (I01 decoder)
+##   default_tile_name          : String — caller-supplied land tile name
+##   collision_tags             : PackedByteArray — optional cliff trigger
+##   start_selection_mode       : "given" | "v61" | "teams" | "scattered"
+## Returns the telemetry dictionary (same object as stats()).
+func generate(data: Object, p: Dictionary = {}) -> Dictionary:
+	_ledger.clear()
+	_draw_ledger.clear()
+	_draws_by_stage.clear()
+	_notes.clear()
+	_tel = {
+		"parity": "UNVERIFIED",
+		"pipeline": "donor-ordered fresh module (I07)",
+		"rng_sites": [],
+		"stage_draws": {},
+		"family_counts": {},
+		"stamp_candidates": {},
+		"mine_counts": {"near": 0, "global": 0, "accepted": 0},
+		"resource_counts": {"stoneforest": 0, "stones": 0, "forest": 0},
+		"field_count": 0,
+		"forest_stamps": 0,
+		"tile_smooth_pairs": 0,
+		"water_field_count": 0,
+		"unverified": [],
+		"port_approximations": [],
+		"row_sign": "UNVERIFIED (D05 F4 note 5; A01 E5)",
+		"height_unit": "UNVERIFIED raw float32; no HEIGHT_SCALE multiplier",
+	}
+	_rng0 = int(p.get("randkey0", 0))
+	_rng1 = int(p.get("randkey1", 0))
+	if not p.has("randkey0") or not p.has("randkey1"):
+		_note("randkey0/1 not supplied — PORT placeholder 0; TODO caller/COORD", "port_approximations")
+
+	# Resolve grid. W,H live in the container, never in a global (spec/01 §2).
+	var wv: int = int(p.get("width", p.get("size", 0)))
+	var hv: int = int(p.get("height", 0))
+	if wv <= 0:
+		wv = int(data.w)
+	if hv <= 0:
+		hv = int(data.h)
+	if wv <= 0 or hv <= 0:
+		_note("generate: no W/H supplied and container is unsized — abort", "unverified")
+		return stats()
+	if not _set_size(data, wv, hv):
+		_note("generate: container refused configure_grid/set_size — abort", "unverified")
+		return stats()
+	_grid_w = wv
+	_grid_h = hv
+	_grid_n = wv * hv
+	_cur_data = data                 # used by the occupancy/mine helpers
+	for st: _LCG in [_rng, _rng_map, _rng_world, _rng_delphi]:
+		st.on_draw = Callable(self, "_record_draw")
+	_occ = PackedByteArray()
+	_occ.resize(_grid_n)
+	_bsmooth = PackedByteArray()
+	_bsmooth.resize(_grid_n)
+	_mask_water = PackedByteArray()
+	_mask_water.resize(_grid_n)
+	_freq_state.clear()
+	_resolve_settings(p)
+
+	# ---- canonical DoGenerate order (spec/10 §1; X03:769-1110) ---------------
+	_stage_init(p)
+	_stage_clear(data, p)
+	_stage_base_tiles(data, p)
+	_stage_settings(p)
+	_stage_generate_map(data, p)
+	_stage_shore_exclusion(data, p)
+	_stage_starts(data, p)
+	_stage_relief(data, p)
+	_stage_forest_stone(data, p)
+	_stage_units_scale(data, p)
+	_stage_owner_map(data, p)
+	_stage_finalize(data, p)
+	_close_ledger()
+
+	# Diagnostics only: merge I06 stats (height deciles, tile histogram, family
+	# coverage) without ever reading them back into generation.
+	var container_stats: Dictionary = data.stats()
+	_tel["container_stats"] = container_stats
+	var meta: Dictionary = data.meta
+	meta["generator_trace"] = {
+		"rng_ledger": _ledger.duplicate(true),
+		"seed": {"randkey0": _rng0, "randkey1": _rng1,
+			"key_state_hook": "CALLABLE" if key_state_hook.is_valid() else "NULL PORT APPROX"},
+		"notes": _notes.duplicate(),
+		"parity": "UNVERIFIED",
+	}
+	data.meta = meta
+	return stats()
+
+
+## Telemetry. Never feeds back into generation, mesh, water, tile ids or gates.
+func stats() -> Dictionary:
+	var out: Dictionary = _tel.duplicate(true)
+	out["rng_sites"] = _ledger.duplicate(true)
+	out["stage_draws"] = _tel.get("stage_draws", {}).duplicate(true)
+	out["notes"] = _notes.duplicate()
+	out["draws_total"] = _rng.draws + _rng_map.draws + _rng_world.draws + _rng_delphi.draws
+	out["streams"] = {
+		"dscript_global": _rng.draws,
+		"map_generator": _rng_map.draws,
+		"global_map_generator": _rng_world.draws,
+		"delphi_random": _rng_delphi.draws,
+	}
+	out["key0_semantics"] = "DISCARDED mod 2^32 — labelled NO-OP (X21 §4.3)"
+	out["stage_keyed_draw_ledger"] = _draw_ledger.duplicate(true)
+	out["field_sowing"] = field_sowing_hook_info()
+	return out
+
+
+## The 11 SetRandomKey sites + 3 SetRandomExtKey64 sites, in donor order.
+func rng_ledger() -> Array[Dictionary]:
+	return _ledger.duplicate(true)
+
+
+## FIELD SOWING IS NOT A GENERATION STAGE.
+## Donor fields come from `_unit_DoSeedWheat` (unit.script:6468-6570) fired by
+## mill construction/production (ontagstates.inc:140-145,
+## doprogressorders.inc:130-135, generatemap.inc:1009-1025,
+## progresseconomicai.inc:3688-3697). NO field tile id exists — fields are
+## objects + `envfieldd` decals (F05 §3; X22:517-524). This hook is deliberately
+## NOT called from generate(); the composer/entity owner calls it on the mill
+## trigger. No RNG draw is consumed here — the donor sow routine draws none
+## (X22 X-C1, X-E16). TODO(X22/I09): wire the two-step order chain.
+func sow_field(mill_cell: Vector2, p: Dictionary = {}) -> Dictionary:
+	var info: Dictionary = field_sowing_hook_info()
+	info["mill_cell"] = [mill_cell.x, mill_cell.y]
+	info["tile_id"] = null  # never invent a field tile id (F05 §3)
+	info["rng_draws"] = 0
+	if p.has("field_sow_hook") and (p["field_sow_hook"] is Callable):
+		var hook: Callable = p["field_sow_hook"]
+		if hook.is_valid():
+			info["hook_result"] = hook.call(mill_cell, info)
+		else:
+			info["hook_result"] = "NULL hook — no fields sown"
+	else:
+		info["hook_result"] = "no field_sow_hook supplied — no fields sown"
+	return info
+
+
+## Decode a raw `.pattern` body with the F01/X26 EXACT plane offset.
+## `raw` is the file bytes (donor data READ ONLY by the caller, never copied
+## into the repo). Header is i32 w,h at :0-7 (X13 E4-E6); float32 plane has
+## w*h floats at F01_GRID_OFFSETS[name] (X13 P2). No synthetic extrapolation.
+func decode_pattern_grid(name: String, raw: PackedByteArray) -> Dictionary:
+	var out: Dictionary = {"name": name, "grid_source": grid_source,
+		"offset_source": "F01 closure / X26", "w": 0, "h": 0,
+		"grid": PackedFloat32Array(), "label": "DONOR-DERIVED [O]; no parity claim"}
+	if raw.size() < 8:
+		out["error"] = "short header"
+		return out
+	var w: int = raw.decode_s32(0)   # i32 w; X13 E4 hil1=25
+	var hh: int = raw.decode_s32(4)  # i32 h; X13 E4 hil1=41
+	out["w"] = w
+	out["h"] = hh
+	if w <= 0 or hh <= 0:
+		out["error"] = "invalid w/h"
+		return out
+	if not F01_GRID_OFFSETS.has(name):
+		out["error"] = "no F01/X26 offset for this pattern — TODO(I02)"
+		return out
+	var start: int = int(F01_GRID_OFFSETS[name])
+	var need: int = start + w * hh * 4
+	if raw.size() < need:
+		out["error"] = "short plane"
+		return out
+	var grid := PackedFloat32Array()
+	grid.resize(w * hh)
+	for i in range(w * hh):
+		grid[i] = raw.decode_float(start + i * 4)
+	out["grid"] = grid
+	out["offset"] = start
+	return out
+
+
+func field_sowing_hook_info() -> Dictionary:
+	return {
+		"status": "UNIT/BUILDING EFFECT — NOT A GENERATION STAGE",
+		"source": "unit.script:6468-6570; ontagstates.inc:140-145; X22:58-66",
+		"grid": 7,                       # 7x7 = 49 nodes, unit.script:6476; X22:60
+		"step_cells": 1.6981,            # unit.script field lattice step; X22:60
+		"rotation_deg": 45,              # field.prop:149 DefaultRollAngle; X22:60
+		"snap_cells": 2.401476,          # sqrt(2)*step; X22:60
+		"gold_per_field": 5,             # unit.script:1691-1693; X22 X-E10
+		"rng_draws_in_sow": 0,           # X22 X-C1/X-E16
+		"tile_id": null,
+		"label": "PORT APPROXIMATION until donor mill triggers are live",
+	}
+
+
+# ---------------------------------------------------------------------------
+# Adapter / helpers
+# ---------------------------------------------------------------------------
+func _set_size(data: Object, wv: int, hv: int) -> bool:
+	if data.has_method("configure_grid"):
+		return bool(data.configure_grid(wv, hv))
+	if data.has_method("set_size"):
+		return bool(data.set_size(wv, hv))
+	return false
+
+
+func _note(msg: String, bucket: String = "notes") -> void:
+	_notes.append(msg)
+	if _tel.has(bucket) and _tel[bucket] is Array:
+		var arr: Array = _tel[bucket]
+		arr.append(msg)
+
+
+func _stage_begin(site: String, kind: String, k0: int, k1: int) -> void:
+	_stage_site = site
+	_stage_draws = 0
+	# X21 §6.2: the stage key MUST include the generator version because
+	# version gates change the draw count.
+	if kind == "ext":
+		_active_rng = _rng_map      # D2:216/:513/:774 use the map/global stream [I]
+		_active_rng.reseed_from_key64(k0, k1)
+	else:
+		_active_rng = _rng          # DScript-global stream at 0x9048d4/d8
+		if key_state_hook.is_valid():
+			var v: Variant = key_state_hook.call(k0, k1)
+			_active_rng.s = int(v) & LCG_U32
+		else:
+			_active_rng.reseed_from_key(k1)  # X21: only key1 seeds; key0 no-op
+	_active_rng.draws = 0
+	_current_stage_key = _ledger_key(site, int(_gen.get("version", 0)), _active_rng)
+	_draw_ledger[_current_stage_key] = {
+		"site": site, "stream": _active_rng.stream_name,
+		"key0": k0, "key0_status": "DISCARDED mod 2^32 (X21 §4.3)",
+		"key1": k1, "version": int(_gen.get("version", 0)), "draws": [],
+	}
+	_ledger.append({
+		"site": site,
+		"kind": kind,
+		"stream": _active_rng.stream_name,
+		"key0": k0,
+		"key0_status": "NO-OP — X21 §4.3",
+		"key1": k1,
+		"key_mode": "key1_only" if not key_state_hook.is_valid() else "hook",
+		"draws_at_entry": _active_rng.draws,
+	})
+	# The three untouched streams must also exist in the ledger (X21 §6.1).
+	for st: _LCG in [_rng, _rng_map, _rng_world, _rng_delphi]:
+		if not _draw_ledger.has(_ledger_key(site, int(_gen.get("version", 0)), st)):
+			_draw_ledger[_ledger_key(site, int(_gen.get("version", 0)), st)] = {
+				"site": site, "stream": st.stream_name, "draws": [],
+				"key0": k0, "key0_status": "DISCARDED mod 2^32 (X21 §4.3)",
+				"key1": k1, "version": int(_gen.get("version", 0)), "idle": true,
+			}
+
+
+func _ledger_key(site: String, ver: int, st: _LCG) -> String:
+	return "%s|v%d|%s" % [site, ver, st.stream_name]
+
+
+func _record_draw(stream_name: String, state: int, r: float) -> void:
+	# X21 §6.2: record every draw in call order, including discarded draws.
+	if _current_stage_key == "" or not _draw_ledger.has(_current_stage_key):
+		return
+	var entry: Dictionary = _draw_ledger[_current_stage_key]
+	var draws: Array = entry["draws"]
+	# Bounded telemetry: exact count is kept, raw samples are capped.
+	if draws.size() < 4096:
+		draws.append({"i": draws.size(), "stream": stream_name, "s": state, "r": r})
+	else:
+		entry["samples_truncated"] = true
+
+
+func _close_ledger() -> void:
+	_ledger.append({"site": "END", "kind": "final", "stream": _active_rng.stream_name,
+		"draws_here": _active_rng.draws})
+	# Per-site draw accounting is recorded by _mark_site() during each stage.
+	_tel["stage_draws"] = _draws_by_stage.duplicate(true)
+
+
+var _draws_by_stage: Dictionary = {}
+
+
+func _mark_site(site: String) -> void:
+	var drawn: int = _active_rng.draws
+	_draws_by_stage[site] = int(_draws_by_stage.get(site, 0)) + drawn
+	for e: Dictionary in _ledger:
+		if e.get("site", "") == site:
+			e["draws_here"] = drawn
+			break
+	_active_rng.draws = 0
+
+
+func _resolve_settings(p: Dictionary) -> void:
+	var ver: int = int(p.get("generator_version", C_BROKEN_GENERATOR_VERSION))
+	var mapsize: int = int(p.get("mapsize", 3 if _grid_w == 256 else 2))
+	var md: int = int(p.get("minesdensity", p.get("minerdensity", 1)))
+	if md > 2:
+		_note("minerdensity>2 supplied — donor normalises with one RandomExt draw at dogenerate.inc:1586-1587", "port_approximations")
+	_gen = {
+		"version": ver,
+		"mapsize": mapsize,
+		"mapsize_gt2": mapsize > 2,   # 256-cell TINY map — donewgame.inc:46; V08
+		"minerdensity": md,
+		"spcount": int(p.get("spcount", p.get("minecount", 4))),
+		"b_desert": bool(p.get("b_desert", false)),
+		"season": int(p.get("season", 0)),
+		"relieftype": int(p.get("relieftype", 0)),
+		"terraintype": int(p.get("terraintype", 0)),
+		"b_random_map": bool(p.get("b_random_map", true)),
+		"start_selection_mode": str(p.get("start_selection_mode", "given")),
+	}
+	_tel["version_gate"] = ver
+	_tel["mapsize_gt2"] = _gen["mapsize_gt2"]
+	_tel["mine_band_units"] = "MAP CELLS 1:1 (V08:155-190) — no DONOR_UNITS scaling"
+
+
+# ---------------------------------------------------------------------------
+# STAGE 1 — init / seed (spec/10 item 1; X03:126-183)
+# ---------------------------------------------------------------------------
+func _stage_init(p: Dictionary) -> void:
+	_stage_begin("D3:99", "key", _rng0, _rng1)      # X03:161
+	_mark_site("D3:99")
+	_stage_begin("D3:146", "key", _rng0, _rng1)     # X03:163
+	# D1:5-6: foreststype := floor(RandomExt*3); foreststype := 0 (X03:179-181).
+	# One draw is consumed, result neutralised; cases 1/2 are dead.
+	var foreststype: int = _active_rng.next_int(3)
+	foreststype = 0
+	_gen["foreststype"] = foreststype
+	_tel["foreststype_draw"] = "1 draw consumed, forced 0 (dogenerate.inc:5-6)"
+	_mark_site("D3:146")
+
+
+# ---------------------------------------------------------------------------
+# STAGE 2 — clear mask / objects / collision (spec/10 item 2; X03:185-241)
+# ---------------------------------------------------------------------------
+func _stage_clear(data: Object, p: Dictionary) -> void:
+	_occ.fill(0)   # ClearMapMaskAndObjects, dogenerate.inc:444-481; X03:223-238
+	_bsmooth.fill(0)
+	_mask_water.fill(0)
+	# No height/tile writes here. ResetPatternMap / MapDrawCollision are engine
+	# side [U]; only the occupancy mask is modelled. TODO(D01): collision clear.
+
+
+# ---------------------------------------------------------------------------
+# STAGE 3 — base tiled patterns (spec/10 item 3; X03:243-300)
+# ---------------------------------------------------------------------------
+func _stage_base_tiles(data: Object, p: Dictionary) -> void:
+	var c: int = C_TILE_GRID_SIZE                    # dogenerate.inc:1335
+	var wc: int = int(floor(float(_grid_w) / float(c)))
+	var hc: int = int(floor(float(_grid_h) / float(c)))
+	var family: String = "desert_tiles" if bool(_gen["b_desert"]) else "tiles"
+	for y in range(hc + 1):                         # inclusive, D1:1339
+		for x in range(wc + 1):                     # inclusive, D1:1340
+			var rx: int = int(round(float(x * c + C_TILE_GRID_HALF - _grid_w / 2 - C_TILE_GRID_OFFSET)))
+			var ry: int = int(round(float(y * c + C_TILE_GRID_HALF - _grid_h / 2 - C_TILE_GRID_OFFSET)))
+			var name: String = _roulette_name(family, p)
+			if name == "":
+				continue
+			var pat: Dictionary = _pattern(name, p)
+			if pat.is_empty():
+				_stamp_candidate("base_tiles")
+				continue
+			if _check_stand(pat, rx, ry):
+				_stamp_pattern(data, pat, rx, ry, p)
+				_damp_freq(family, name)
+	_stamp_candidate("base_tiles_cells", (wc + 1) * (hc + 1))
+	# Base tiles run under the stream seeded at D3:146; the D1:1538 re-seed
+	# happens AFTER them (X03:284). Record draws under a non-reseed pseudo-site.
+	_mark_site("PRE_D1:1538")
+
+
+# ---------------------------------------------------------------------------
+# STAGE 4 — settings branch (spec/10 item 4; X03:302-357)
+# ---------------------------------------------------------------------------
+func _stage_settings(p: Dictionary) -> void:
+	_stage_begin("D1:1538", "key", _rng0, _rng1)    # X03:284 — after base tiles
+	# D1:1547-1557: terraintype random draw when out of range.
+	var max_types: int = 6 if int(_gen["version"]) < 91 else int(p.get("max_terrain_types", 9))
+	if int(_gen["terraintype"]) > max_types - 1:
+		_gen["terraintype"] = _active_rng.next_int(max_types)
+	# D1:1586-1587: minesdensity>2 → floor(RandomExt*3), BEFORE the :1616 reseed.
+	if int(_gen["minerdensity"]) > 2:
+		_gen["minerdensity"] = _active_rng.next_int(3)
+	_stage_settings_draws = _active_rng.draws
+	_mark_site("D1:1538")
+
+
+var _stage_settings_draws: int = 0
+
+
+# ---------------------------------------------------------------------------
+# STAGE 5 — GenerateMap: mask decode, height, smoothing, water, tiles
+# ---------------------------------------------------------------------------
+func _stage_generate_map(data: Object, p: Dictionary) -> void:
+	# ---- mask selection / editor postprocess reset sites -------------------
+	_stage_begin("D2:216", "ext", _rng0, _rng1)     # X03:416
+	if not bool(_gen["b_random_map"]):
+		# Editor branch only: rndind := floor(RandomExt*count) at D2:190.
+		_active_rng.next_int(maxi(1, int(p.get("mask_count", 1))))
+	_mark_site("D2:216")
+	_stage_begin("D2:513", "ext", _rng0, _rng1)     # X03:480
+	# PostProcess is guarded by `if (not bRandomMap)` at D2:507 — skipped in
+	# skirmish. Do NOT port its Gaussian/noise (X03 §5h, D7:63-82).
+	_mark_site("D2:513")
+
+	_mask_to_height(data, p)
+	_smooth_chain(data, p)
+	_water_fields(data, p)
+
+	_stage_begin("D2:774", "ext", _rng0, _rng1)     # X03:580
+	_texture_tiles(data, p)
+	_mark_site("D2:774")
+
+
+func _mask_to_height(data: Object, p: Dictionary) -> void:
+	var mr: PackedFloat32Array = _channel(data, p, "r")
+	var mg: PackedFloat32Array = _channel(data, p, "g")
+	var mb: PackedFloat32Array = _channel(data, p, "b")
+	data.ensure_mask_channels()
+	data.assign_side("mask_r", mr)   # I06 public API; typed side array
+	data.assign_side("mask_g", mg)
+	data.assign_side("mask_b", mb)
+	var tclass := PackedByteArray()
+	tclass.resize(_grid_n)
+	var fdens := PackedByteArray()
+	fdens.resize(_grid_n)
+	var starts: Array = []
+	for i in range(_grid_n):
+		var fr: float = mr[i]
+		var fg: float = mg[i]
+		var fb: float = mb[i]
+		# D2:413-443: white start pixel is recorded then zeroed and skipped.
+		if fr >= 0.999 and fg >= 0.999 and fb >= 0.999:
+			starts.append(Vector2(float(i % _grid_w) - float(_grid_w) * 0.5,
+					float(i / _grid_w) - float(_grid_h) * 0.5))
+			mr[i] = 0.0
+			mg[i] = 0.0
+			mb[i] = 0.0
+			fr = 0.0
+			fg = 0.0
+			fb = 0.0
+			continue
+		var ir: int = int(floor(fr * 255.0))       # D2:444
+		var ig: int = int(floor(fg * 255.0))       # D2:445
+		var ib: int = int(floor(fb * 255.0))       # D2:446
+		# R-class decode only where explicitly cited: generatemap.inc:454-470.
+		# [U] for vanilla `_gauss` masks (F04 measured R=G=0): C9 conflict.
+		var terrain: int = 0                        # cRNone, D2:9, :470
+		var bsm: bool = (ir == C_RCOLOR_SMOOTH)
+		match ir:
+			C_RCOLOR_PLATEAU, C_RCOLOR_PLATEAU_SMOOTH:
+				terrain = 1                         # cRPlateau, D2:10, :457
+				bsm = (ir == C_RCOLOR_PLATEAU_SMOOTH)
+			C_RCOLOR_HILL, C_RCOLOR_HILL_SMOOTH:
+				terrain = 2                         # cRHill, D2:11, :461
+				bsm = (ir == C_RCOLOR_HILL_SMOOTH)
+			C_RCOLOR_RAVINE, C_RCOLOR_RAVINE_SMOOTH:
+				terrain = 3                         # cRRavine, D2:12, :465
+				bsm = (ir == C_RCOLOR_RAVINE_SMOOTH)
+		tclass[i] = terrain
+		_bsmooth[i] = 1 if bsm else 0
+		# G class (generatemap.inc:473-482) — side data only, [U] for vanilla.
+		var dens: int = 0
+		match ig:
+			C_GCOLOR_FOREST, C_GCOLOR_FOREST / 2: dens = 1
+			C_GCOLOR_GENFOREST: dens = 2
+			C_GCOLOR_STONE: dens = 3
+			C_GCOLOR_FORESTSTONE: dens = 4
+		fdens[i] = dens
+		# B class: cBColorWater=255 (generatemap.inc:486-487). Distinct from the
+		# h=-1.1*B/255 bed and from the B>0 & h<-0.25 tile tag (X19 correction).
+		_mask_water[i] = 1 if ib == C_BCOLOR_WATER else 0
+		# D2:491-495 generic occupancy prefill for random maps.
+		_occ[i] = 0 if ((ir == 0 and ig == 0 and ib == 0) or
+				(ir == 255 and ig == 255 and ib == 255)) else 1
+		# D2:565-574: hwater = cWaterHeight*(fb*(1+fr*3.5)); skip starts.
+		# X19: mapgen.gd:212-213 matches h=-1.1*B/255 for R=0 — DO NOT flip sign.
+		var hwater: float = C_WATER_HEIGHT * (fb * (1.0 + fr * C_R_MULT))
+		var hterrain: float = 0.0
+		match terrain:
+			1: hterrain = C_PLATEAU_HEIGHT * fr      # D2:570
+			2: hterrain = C_HILL_HEIGHT * fr         # D2:571
+			3: hterrain = C_RAVINE_HEIGHT * fr       # D2:572
+		data.set_height(i, hwater + hterrain)       # D2:574; I06 setter
+	data.assign_side("terrain_class", tclass)
+	data.assign_side("forest_density", fdens)
+	# D2:440-443 zeroed the local white starts; mirror that into the container.
+	data.assign_side("mask_r", mr)
+	data.assign_side("mask_g", mg)
+	data.assign_side("mask_b", mb)
+	if not p.has("starts"):
+		_gen["starts_from_mask"] = starts
+	_tel["starts_from_mask"] = starts.size()
+	_tel["mask_formula"] = "h=-1.1*B/255 with R decode [U]; X19 sign NOT flipped"
+
+
+func _channel(data: Object, p: Dictionary, key: String) -> PackedFloat32Array:
+	var src: Variant = null
+	if p.has("mask") and p["mask"] is Dictionary:
+		src = (p["mask"] as Dictionary).get(key, null)
+	if src == null:
+		src = p.get("mask_" + key, null)
+	if src == null:
+		var field_name: String = "mask_" + key
+		src = data.get(field_name)
+	var out := PackedFloat32Array()
+	out.resize(_grid_n)
+	if src is PackedFloat32Array:
+		var a: PackedFloat32Array = src
+		var m: int = mini(a.size(), _grid_n)
+		for i in range(m):
+			out[i] = a[i]
+	elif src is PackedByteArray:
+		var b: PackedByteArray = src
+		var m: int = mini(b.size(), _grid_n)
+		for i in range(m):
+			out[i] = float(b[i]) / 255.0
+	else:
+		_note("mask channel '" + key + "' absent — zeroed, no synthetic field", "unverified")
+	# Normalise byte-like input that arrived as floats (X19 B>=58 boundary).
+	var mx: float = 0.0
+	for i in range(_grid_n):
+		mx = maxf(mx, out[i])
+	if mx > 1.0:
+		for i in range(_grid_n):
+			out[i] /= 255.0
+	return out
+
+
+# ---------------------------------------------------------------------------
+# Three-pass shoreline smoothing (spec/05 §2; D03:24,201-203)
+# ---------------------------------------------------------------------------
+func _smooth_chain(data: Object, p: Dictionary) -> void:
+	# (1) SmoothTerrain(realx,-realy,False,3) on bsmooth cells. Native kernel
+	# is UNVERIFIED (D03 U3) — a labelled hook, no invented coefficients.
+	if bsmooth_kernel.is_valid():
+		bsmooth_kernel.call(data.height, _grid_w, _grid_h, _bsmooth, C_SMOOTH_RADIUS_BSMOOTH)
+		_tel["bsmooth_pass"] = "HOOK applied, radius 3 (generatemap.inc:591)"
+	else:
+		_tel["bsmooth_pass"] = "SKIPPED — native kernel [U] (D03 U3); TODO(D03/D01)"
+		_note("SmoothTerrain(radius 3) skipped: native kernel [U], TODO D03/D01", "unverified")
+
+	# (2) one whole-map land pass: custom(1,4,0.5,[0.01,100]) — D2:606.
+	_smooth_custom(data, C_SMOOTH_LAND_POWER, C_SMOOTH_LAND_LERP,
+			C_SMOOTH_LAND_MIN, C_SMOOTH_LAND_MAX, false)
+
+	# (3) three coastal passes: custom(1,0.35,0.5,[-100,-0.01]) on cells whose
+	# clamped 5x5 neighbourhood contains a cBWater cell — D2:612-637. Break on
+	# first water found (D2:629 + break(MAIN), D03 E09).
+	for pass_i in range(C_SMOOTH_COAST_PASSES):
+		_smooth_custom(data, C_SMOOTH_COAST_POWER, C_SMOOTH_COAST_LERP,
+				C_SMOOTH_COAST_MIN, C_SMOOTH_COAST_MAX, true)
+	_tel["smooth_power_coast_effective"] = C_SMOOTH_COAST_LERP / C_SMOOTH_COAST_POWER
+	_note("Coastal coefficient lerp/power=1.428571 (D03:24,203) — overshoot is donor-derived, no clamp", "notes")
+
+
+func _smooth_custom(data: Object, power: float, lerp_t: float,
+		minh: float, maxh: float, coastal_gate: bool) -> void:
+	if power == 0.0:
+		return  # D2:220-221
+	for y in range(_grid_h):
+		for x in range(_grid_w):
+			if coastal_gate and not _has_water_5x5(x, y):
+				continue
+			var i: int = y * _grid_w + x
+			var h: float = data.height[i]
+			if h < minh or h > maxh:                 # D2:236
+				continue
+			# Four diagonal neighbours with clamped indexing (D2:228-233).
+			var lt: float = data.height[_index(x - 1, y - 1)]
+			var rt: float = data.height[_index(x + 1, y - 1)]
+			var lb: float = data.height[_index(x - 1, y + 1)]
+			var rb: float = data.height[_index(x + 1, y + 1)]
+			if h == lt and h == rt and h == lb and h == rb:
+				continue                             # D2:235
+			var z1: float = (lt + rt) * 0.5
+			var z2: float = (lb + rb) * 0.5
+			var res: float = h + ((z1 + z2) * 0.5 - h) / power  # D2:240
+			res = h + (res - h) * lerp_t                        # D2:241 Lerp
+			data.set_height(i, res)                              # D2:242; I06 setter
+
+
+func _has_water_5x5(x: int, y: int) -> bool:
+	var r: int = C_SMOOTH_COAST_NEIGHBOUR_RAD     # generatemap.inc:625
+	for ny in range(maxi(0, y - r), mini(_grid_h - 1, y + r) + 1):
+		for nx in range(maxi(0, x - r), mini(_grid_w - 1, x + r) + 1):
+			if _mask_water[ny * _grid_w + nx] == 1:  # gMapMask.water=cBWater, D2:629
+				return true                          # break(MAIN), D2:674
+	return false
+
+
+func _index(x: int, y: int) -> int:
+	return clampi(y, 0, _grid_h - 1) * _grid_w + clampi(x, 0, _grid_w - 1)
+
+
+# ---------------------------------------------------------------------------
+# Water field bindings (spec/05 §1; D2:646-704). Runtime Y is [U] (commented
+# GSC text) — descriptors only, never a second water plane.
+# ---------------------------------------------------------------------------
+func _water_fields(data: Object, p: Dictionary) -> void:
+	var fields: Array[Dictionary] = []
+	var step: int = C_WATERFIELD_SIZE
+	var sz: int = 640 / step                       # cWaterMapArrSize, D2:650
+	var count: int = 0
+	for wmy in range(sz):
+		for wmx in range(sz):
+			var hit: bool = false
+			for y in range(wmy * step, mini((wmy + 1) * step, _grid_h)):
+				for x in range(wmx * step, mini((wmx + 1) * step, _grid_w)):
+					# D2:666 — flag comes from mask B, not from a height compare.
+					if mb_of(data, x, y) > 0.0 and (mr_of(data, x, y) < 1.0 or mb_of(data, x, y) < 1.0):
+						hit = true
+						break
+				if hit:
+					break
+			if hit:
+				count += 1
+				fields.append({
+					"name": "x" + str(wmx) + "y" + str(wmy),
+					"y": C_WATERFIELD_OFFSET_Y,       # generatemap.inc:688,704
+					"size": step,                     # cWaterFieldSize, D2:649
+					"label": "[O] donor text; runtime [U] (comment-prefixed GSC)",
+				})
+	_tel["water_field_count"] = count
+	var meta: Dictionary = data.meta
+	meta["water_fields"] = fields
+	meta["water_field_y_label"] = "cOffsetY=-0.5 (generatemap.inc:688,704); runtime [U]"
+	data.meta = meta
+
+
+func mr_of(data: Object, x: int, y: int) -> float:
+	return data.mask_r[y * _grid_w + x]
+
+
+func mb_of(data: Object, x: int, y: int) -> float:
+	return data.mask_b[y * _grid_w + x]
+
+
+# ---------------------------------------------------------------------------
+# TextureMap entry: water/shore classification, shore sectors, cliff table,
+# tile ids and the 3-pass tile smoother (spec/05 §4, §06; X08).
+# ---------------------------------------------------------------------------
+func _texture_tiles(data: Object, p: Dictionary) -> void:
+	# F05/X28 donor ids are a cited fallback; a caller's decoder wins.
+	var id_of: Dictionary = DONOR_TILE_IDS.duplicate()
+	var supplied: Dictionary = p.get("tile_name_to_id", {})
+	for k: String in supplied.keys():
+		id_of[k] = supplied[k]
+	var name_of: Dictionary = p.get("tile_id_to_name", {})
+	var chains: Array = p.get("tile_smooth_chains", [])
+	if id_of.is_empty():
+		_note("tile_name_to_id absent — tile ids left untouched, no invented id", "unverified")
+	if chains.is_empty():
+		_note("tile_smooth_chains absent — tile smoothing skipped; TODO(I01) decoder", "unverified")
+	_tel["shore_probabilities"] = {"sandsea1": 1.0, "sandsea5": 0.7, "sandsea6": 0.3,
+		"rock9": 0.0, "rock8": 0.0, "rock5": 0.0,
+		"source": "tilesmooth_scripts.cfg:5-66; spec/05 §4"}
+	# I06 API: derive the height-only baseline with donor thresholds, then
+	# override with the donor's MASK-GATED classification (D4:68-74).
+	data.derive_water()                     # deep -0.25 / shore -0.1, I06 API
+	var water_arr := PackedByteArray()
+	water_arr.resize(_grid_n)
+	var winter: bool = int(_gen["season"]) == 2
+	for y in range(_grid_h):
+		for x in range(_grid_w):
+			var i: int = y * _grid_w + x
+			var h: float = data.height[i]
+			var b: float = mb_of(data, x, y)
+			var b_water: bool = b > 0.0 and h < C_TILE_WATER_HEIGHT    # D4:68-71
+			var b_shore: bool = b > 0.0 and h < C_TILE_SHORE_HEIGHT    # D4:73-74
+			water_arr[i] = 2 if b_water else (1 if b_shore else 0)
+			var tname: String = ""
+			if b_water or b_shore:
+				tname = _shore_tile_name(data, x, y, p)
+			elif _cliff_triggered(data, p, x, y):
+				tname = _cliff_tile_name(data, x, y)
+			elif id_of.has(str(p.get("default_tile_name", ""))):
+				tname = str(p.get("default_tile_name", ""))
+			# X28 §3.3: winter keeps the SAME numeric id (one-for-one rename,
+			# F05 §1). Resolve by the base summer name, never by a fake id.
+			if winter and tname != "" and not tname.ends_with("_winter"):
+				tname += "_winter"                                     # D4:639-640
+			var lookup_name: String = tname.trim_suffix("_winter")
+			if tname == "" and b_water and use_port_water_sentinel:
+				data.set_tex(i, 255)   # I06 PORT-ONLY sentinel — PORT APPROX, no donor id
+			elif id_of.has(lookup_name):
+				data.set_tex(i, int(id_of[lookup_name]))
+	data.assign_side("water", water_arr)   # I06 API; mask-gated tri-state
+	_collision_pass(data, p, water_arr)    # explicit 4-tag collision fill (I06)
+	# D5:240-242 write-back happens once after all passes; our tex array is the
+	# working array, so smoothing writes it directly.
+	if not chains.is_empty() and not name_of.is_empty():
+		_smooth_tiles(data, chains, id_of, name_of, TILE_SMOOTH_PASSES)
+
+
+## Explicit donor collision fill. I06 does NOT map legacy `blocked` to
+## collision — the fresh module must write all four tags itself.
+## Gates cDiff1=0.5 / cDiff2=0.55 are [O] from texturemap.inc:63-64,88-129
+## (X28 evidence line 33): `Abs(height-lh/rh/bh/th)>cDiff1` and
+## `Abs(bh-rh)/Abs(height-rbh)>cDiff2`. These are upstream COLLISION gates:
+## no tile id, terrain class or height write (P06 rejected the `terrain=5` maze).
+func _collision_pass(data: Object, p: Dictionary, water_values: PackedByteArray) -> void:
+	var steep := PackedByteArray()
+	steep.resize(_grid_n)
+	for y in range(_grid_h):
+		for x in range(_grid_w):
+			var i: int = y * _grid_w + x
+			var hc: float = data.height[i]
+			var hl: float = data.height[_index(x - 1, y)]
+			var hr: float = data.height[_index(x + 1, y)]
+			var ht: float = data.height[_index(x, y - 1)]
+			var hb: float = data.height[_index(x, y + 1)]
+			var hrb: float = data.height[_index(x + 1, y + 1)]
+			var cardinal: float = maxf(maxf(absf(hc - hl), absf(hc - hr)),
+					maxf(absf(hc - ht), absf(hc - hb)))       # texturemap.inc:88-129
+			var denom: float = absf(hc - hrb)
+			var diagonal: float = INF if denom == 0.0 else absf(hb - hr) / denom
+			if cardinal > C_CLIFF_DIFF1 or diagonal > C_CLIFF_DIFF2:
+				steep[i] = 1                            # strict '>' (X28 M5)
+	var tag_cliff: int = -1
+	if collision_tag_cliff is int:
+		tag_cliff = int(collision_tag_cliff)
+	else:
+		_note("steep collision TAG [U] — cells recorded, tag0 left clear; TODO(D08/D06)", "unverified")
+	var steep_count: int = 0
+	for i in range(_grid_n):
+		var tag: int = C_TAG_CLEAR
+		if int(water_values[i]) == 2:
+			tag = C_TAG_WATER                          # gc_collisiontag_water=87, D06:146
+		elif steep[i] == 1 and tag_cliff >= 0:
+			tag = tag_cliff
+		if p.has("collision_tag_override") and (p["collision_tag_override"] is Dictionary):
+			var ov: Dictionary = p["collision_tag_override"]
+			if ov.has(str(i)):
+				tag = int(ov[str(i)])
+		data.set_collision(i, 0, tag)                   # I06 set_collision(i,tag,v)
+		# Derived 2W*2H sub-cell view — I06 collision_sub_index (engine use [U]).
+		var sub: int = data.collision_sub_index((i % _grid_w) * 2, (i / _grid_w) * 2, 0)
+		data.collision[sub] = tag
+		for t in range(1, 4):                          # four tags per cell [O]
+			var extra: Variant = p.get("collision_tags_extra", null)
+			if extra is Dictionary:
+				var key: String = str(t) + "|" + str(i)
+				if (extra as Dictionary).has(key):
+					data.set_collision(i, t, int((extra as Dictionary)[key]))
+		if steep[i] == 1:
+			steep_count += 1
+	var meta: Dictionary = data.meta
+	meta["collision"] = {"gates": [C_CLIFF_DIFF1, C_CLIFF_DIFF2],
+		"source": "texturemap.inc:63-64 (A01 E14)", "steep_cells": steep_count,
+		"cliff_tag": tag_cliff, "label": "collision-only; no art/height writes"}
+	data.meta = meta
+	_tel["collision_steep_cells"] = steep_count
+	_tel["collision_tag_cliff"] = tag_cliff
+
+
+## texturemap.inc:426-447 gradient. X28 §3.2: the whole selection block is
+## nested under `len > 0.01`; both shore and cliff use the PRE angle, and ONLY
+## the shore path adds +180 at :476 (cliff sits in the ELSE at :556-557).
+func _tile_pre_angle(data: Object, x: int, y: int) -> Dictionary:
+	var out: Dictionary = {"ok": false, "pre": 0.0}
+	var lh: float = data.height[_index(x - 1, y)]
+	var rh: float = data.height[_index(x + 1, y)]
+	var th: float = data.height[_index(x, y - 1)]
+	var bh: float = data.height[_index(x, y + 1)]
+	var dx: float = lh - rh                  # texturemap.inc:430
+	var dy: float = th - bh                  # texturemap.inc:431
+	var length: float = sqrt(dx * dx + dy * dy)
+	if length <= C_SHORE_GRAD_MIN:           # texturemap.inc:432; X28:199
+		return out
+	dx /= length
+	dy /= length
+	var ang: float = 0.0
+	if shore_angle_hook.is_valid():
+		ang = float(shore_angle_hook.call(dx, dy))
+	else:
+		ang = rad_to_deg(atan2(dy, dx))       # X28 vectors [D] convention
+		if dy < 0.0:
+			ang = -ang                        # texturemap.inc:435/446-447
+	out["ok"] = true
+	out["pre"] = ang
+	return out
+
+
+## X28 §3.3 / M1: LITERAL if/else windows at texturemap.inc:479-501. The
+## `vecangle>=337.5` bound at :500 is COMMENTED OUT, so the final `else bRT`
+## is an UNGUARDED catch-all (X28 vector 9, post=350°). Do NOT use floor()%8.
+func _shore_tile_name(data: Object, x: int, y: int, p: Dictionary) -> String:
+	var a: Dictionary = _tile_pre_angle(data, x, y)
+	if not bool(a["ok"]):
+		return ""
+	var post: float = float(a["pre"]) + 180.0   # texturemap.inc:476 (shore only)
+	var sname: String = "bRT"                   # unguarded else, :500-501
+	if post >= -22.5 and post < 22.5:
+		sname = "bR"                             # :479-480 -> sandsea6
+	elif post >= 22.5 and post < 67.5:
+		sname = "bRB"                            # :482-483 -> sandsea6
+	elif post >= 67.5 and post < 112.5:
+		sname = "bB"                             # :485-486 -> sandsea1
+	elif post >= 112.5 and post < 157.5:
+		sname = "bLB"                            # :488-489 -> sandsea5
+	elif post >= 157.5 and post < 202.5:
+		sname = "bL"                             # :491-492 -> sandsea6
+	elif post >= 202.5 and post < 247.5:
+		sname = "bLT"                            # :494-495 -> sandsea6
+	elif post >= 247.5 and post < 292.5:
+		sname = "bT"                             # :497-498 -> sandsea1
+	# Exactly three live textures (F05 ids 93/97/98). The 0.7/0.3 pair is a
+	# smoothing weight, not a per-cell coin flip — no RNG draw here.
+	match sname:
+		"bB", "bT": return "sandsea1"            # texturemap.inc:506,509
+		"bLB", "bRT": return "sandsea5"          # texturemap.inc:504,501
+		_: return "sandsea6"                     # bR/bRB/bL/bLT
+
+
+func _cliff_triggered(data: Object, p: Dictionary, x: int, y: int) -> bool:
+	if x == 0 or y == 0 or x == _grid_w - 1 or y == _grid_h - 1:
+		return true                          # texturemap.inc:557-560
+	# X28: cliff trigger consumes the collision tag painted by cDiff1/cDiff2
+	# (texturemap.inc:557). Read the array WE just filled through I06.
+	if data.get_collision(y * _grid_w + x, 0) > 0:
+		return true
+	var tags: Variant = p.get("collision_tags", null)
+	if tags is PackedByteArray:
+		var t: PackedByteArray = tags
+		if t.size() > y * _grid_w + x and t[y * _grid_w + x] > 0:
+			return true                      # texturemap.inc:557-560
+	return false
+
+
+## X28 §3.4: SIX asymmetric FIRST-MATCH windows on the PRE angle (:560-575),
+## followed by the LIVE |h| overrides (:594-601). F05 ids: rock7=23, rock1=17,
+## rock3=19, rock4=20, rock8=24. No face promotion, no height substitution.
+func _cliff_tile_name(data: Object, x: int, y: int) -> String:
+	var h: float = absf(data.height[_index(x, y)])
+	var a: Dictionary = _tile_pre_angle(data, x, y)
+	if not bool(a["ok"]):
+		return ""                            # len<=0.01 gate, texturemap.inc:442
+	var pre: float = float(a["pre"])         # NO +180 (cliff is in the else)
+	var face: String = "bL"                  # :575 else
+	if pre >= 22.5 and pre <= 67.5:
+		face = "bRB"                         # :560-561 (first match wins)
+	elif pre >= 120.0 and pre <= 170.0:
+		face = "bLB"                         # :563-564
+	elif pre >= -45.0 and pre <= 45.0:
+		face = "bR"                          # :566-567
+	elif pre >= 45.0 and pre <= 135.0:
+		face = "bB"                          # :569-570
+	elif pre >= -135.0 and pre <= -45.0:
+		face = "bT"                          # :572-573
+	var tile: String = "rock4"
+	match face:
+		"bLB": tile = "rock7"                # id 23, F05 §3:159
+		"bB": tile = "rock1"                 # id 17, F05 §3:153
+		"bL": tile = "rock3"                 # id 19, F05 §3:155
+		"bR", "bT", "bRB": tile = "rock4"    # id 20, F05 §3:156
+	# Live overrides AFTER face choice (X28 vectors 23-31).
+	if h > C_CLIFF_ABS_HIGH:
+		return "rock8"                       # id 24, texturemap.inc:594-595
+	if h > C_CLIFF_ABS_MID:
+		return "rock4"                       # id 20, texturemap.inc:597-598
+	if h < C_CLIFF_ABS_NONE:
+		return ""                            # texturemap.inc:600-601
+	return tile
+
+
+func _smooth_tiles(data: Object, chains: Array, id_of: Dictionary,
+		name_of: Dictionary, passes: int) -> void:
+	# Faithful X08 §5.4/§5.5 model: H pass then V pass per iteration, in place,
+	# 3 passes only (D5:237); no 3x3 kernel, no face promotion.
+	var a: PackedByteArray = PackedByteArray()
+	a.resize(_grid_n)
+	for i in range(_grid_n):
+		a[i] = data.tex[i]                   # snapshot once, D5:30-32
+	for k in range(passes):
+		for i in range(_grid_w - 1):         # horizontal outer x, D5:200
+			for j in range(_grid_h):         # inner y, D5:201
+				var t1: int = a[j * _grid_w + i]
+				var t2: int = a[j * _grid_w + i + 1]
+				if t1 == t2:
+					continue                 # D5:205
+				var c: Array = _neighbour_tiles(chains, name_of, t1, t2)
+				if int(c[0]) > -1:
+					a[j * _grid_w + i] = int(c[0])      # D5:210 in place
+				if int(c[1]) > -1:
+					a[j * _grid_w + i + 1] = int(c[1])  # D5:213 in place
+				_tel["tile_smooth_pairs"] = int(_tel.get("tile_smooth_pairs", 0)) + 1
+		for j in range(_grid_h - 1):         # vertical outer y, D5:218
+			for i in range(_grid_w):         # inner x, D5:219
+				var t1: int = a[j * _grid_w + i]
+				var t2: int = a[(j + 1) * _grid_w + i]
+				if t1 == t2:
+					continue                 # D5:223
+				var c: Array = _neighbour_tiles(chains, name_of, t1, t2)
+				if int(c[0]) > -1:
+					a[j * _grid_w + i] = int(c[0])      # D5:228
+				if int(c[1]) > -1:
+					a[(j + 1) * _grid_w + i] = int(c[1])  # D5:231
+				_tel["tile_smooth_pairs"] = int(_tel.get("tile_smooth_pairs", 0)) + 1
+	for i in range(_grid_n):
+		data.set_tex(i, a[i])                # D5:240-242 write-back; I06 setter
+	_note("tile smoothing: 3 H-then-V in-place passes (D5:237), not cfg's 6; PORT RNG stream = D2:774 stage", "port_approximations")
+
+
+func _neighbour_tiles(chains: Array, name_of: Dictionary, t1: int, t2: int) -> Array:
+	var name1: String = str(name_of.get(str(t1), ""))
+	var name2: String = str(name_of.get(str(t2), ""))
+	var ilist: int = -1
+	var mindist: int = 0x7FFFFFFF           # gc_MaxInt, D5:99
+	var i1: int = -1
+	var i2: int = -1
+	var z1: bool = false
+	var z2: bool = false
+	for ci in range(chains.size()):          # D5:102, strict < keeps first tie
+		var groups: Array = chains[ci]
+		var ind1: int = -1
+		var ind2: int = -1
+		var zi1: bool = false
+		var zi2: bool = false
+		for gj in range(groups.size()):      # D5:108
+			var entries: Array = groups[gj]
+			for e: Dictionary in entries:    # D5:110, NO break — last match wins
+				if str(e.get("name", "")) == name1:
+					ind1 = gj
+					zi1 = (float(e.get("prob", 0.0)) == 0.0)
+				if str(e.get("name", "")) == name2:
+					ind2 = gj
+					zi2 = (float(e.get("prob", 0.0)) == 0.0)
+		# D5:124-125 rock5/rock2 no-op self-assignment omitted (X08 §5.4).
+		if ind1 != ind2 and ind1 > -1 and ind2 > -1:   # D5:126-127
+			var d: int = absi(ind1 - ind2)
+			if d < mindist:                            # D5:128
+				mindist = d
+				i1 = ind1
+				i2 = ind2
+				ilist = ci
+				z1 = zi1
+				z2 = zi2
+	if ilist == -1:
+		return [-1, -1]                      # D5:182-186
+	if absi(i1 - i2) == 1 and ((not z1) or (not z2)):
+		return [-1, -1]                      # D5:142-156 compatible
+	if i1 - i2 == 2:
+		return [_find_random(chains[ilist], int((i1 + i2) / 2)), -1]  # D5:159-163 integer div
+	if i2 - i1 == 2:
+		return [-1, _find_random(chains[ilist], int((i1 + i2) / 2))]  # D5:165-169
+	if i1 < i2:
+		return [-1, _find_random(chains[ilist], i1 + 1)]             # D5:171-175
+	return [_find_random(chains[ilist], i2 + 1), -1]                 # D5:176-180
+
+
+func _find_random(group: Array, j: int) -> int:
+	if j < 0 or j >= group.size():
+		return -1
+	var entries: Array = group[j]
+	var sum_prob: float = 0.0
+	for e: Dictionary in entries:
+		sum_prob += float(e.get("prob", 0.0))     # D5:53,58
+	var rnd: float = _active_rng.next_f() * sum_prob     # D5:67
+	var tmp: float = 0.0                          # donor leaves tmp uninitialised [U]
+	for e: Dictionary in entries:
+		var prob: float = float(e.get("prob", 0.0))
+		tmp += prob                               # D5:73
+		if prob > 0.0 and rnd < tmp:              # D5:74
+			return int(e.get("id", -1))           # D5:76
+	return -1                                     # D5:65 all-zero group
+
+
+# ---------------------------------------------------------------------------
+# STAGE 6 — shore exclusion mask (spec/10 item 6; X03:676-696)
+# ---------------------------------------------------------------------------
+func _stage_shore_exclusion(data: Object, p: Dictionary) -> void:
+	for i in range(_grid_n):
+		if _occ[i] == 0 and data.height[i] < C_TILE_SHORE_HEIGHT:  # D1:1576-1578
+			_occ[i] = 1
+
+
+var _cur_data: Object
+
+
+# ---------------------------------------------------------------------------
+# STAGE 7 — starts + near mines + starting resources (X03:698-767)
+# ---------------------------------------------------------------------------
+func _stage_starts(data: Object, p: Dictionary) -> void:
+	_cur_data = data
+	# Four donor start-selection re-seed sites, always issued in donor order.
+	# Unreached branches consume zero draws; re-seeding is idempotent.
+	_stage_begin("D1:1100", "key", _rng0, _rng1)   # X03:727 (v<61 branch)
+	if _gen["start_selection_mode"] == "v61" and not p.has("starts"):
+		_active_rng.next_int(9)                            # floor(RandomExt*(maxind+1)), D1:1104
+	_mark_site("D1:1100")
+	_stage_begin("D1:1161", "key", _rng0, _rng1)   # X03:735 (teams branch)
+	_mark_site("D1:1161")
+	_stage_begin("D1:1177", "key", _rng0, _rng1)   # X03:738 (v>77 per team)
+	if _gen["start_selection_mode"] == "teams" and not p.has("starts"):
+		_active_rng.next_int(maxi(1, int(_gen["spcount"]))) # GetRandom(points.Count), D1:1182
+	_mark_site("D1:1177")
+	_stage_begin("D1:1213", "key", _rng0, _rng1)   # X03:742 (scattered branch)
+	if _gen["start_selection_mode"] == "scattered" and not p.has("starts"):
+		for i in range(int(_gen["spcount"])):
+			for j in range(i + 9):                  # for j:=0 to i+8, D1:1214-1215
+				_active_rng.next_f()
+	_mark_site("D1:1213")
+
+	var starts: Array = p.get("starts", _gen.get("starts_from_mask", []))
+	if starts.is_empty():
+		_note("no starts supplied — placement skipped, no synthetic starts", "unverified")
+	else:
+		for s in starts:
+			var c: Vector2 = _start_to_cell(s)
+			# C1 5x7 ellipse BEFORE near mines, centred at (x,y+2) — D1:984.
+			_fill_ellipse(int(c.x), int(c.y) + C_ELLIPSE_CENTRE_DY,
+					C_ELLIPSE_1_X, C_ELLIPSE_1_Y)
+			_setup_mines(int(c.x), int(c.y), 0, 1, p)   # D1:985 near mines
+			_setup_starting_resources(int(c.x), int(c.y), p)
+	_fill_map_border(C_BORDER_MASK_RAD)             # D1:1613
+	_stage_begin("D1:1616", "key", _rng0, _rng1)     # X03:764
+	# Body of :1616 runs AFTER this reseed in donor order; keep the stage open
+	# so relief draws are attributed to :1616.
+
+
+func _start_to_cell(s: Variant) -> Vector2:
+	if s is Vector2:
+		var v: Vector2 = s
+		return Vector2(v.x + float(_grid_w) * 0.5, v.y + float(_grid_h) * 0.5)
+	if s is Array:
+		var a: Array = s
+		if a.size() >= 2:
+			return Vector2(float(a[0]) + float(_grid_w) * 0.5,
+					float(a[1]) + float(_grid_h) * 0.5)
+	return Vector2(float(_grid_w) * 0.5, float(_grid_h) * 0.5)
+
+
+func _fill_ellipse(cx0: int, cy0: int, rx: int, ry: int) -> void:
+	# IsDotInElipse + _misc_FillPatternMaskElipse, dogenerate.inc:8-29; X03:192-209.
+	for yy in range(-roundi(float(ry)), int(floor(float(ry) * 2.0))):
+		for xx in range(-roundi(float(rx)), int(floor(float(rx) * 2.0))):
+			var val: float = float(xx * xx) / float(rx * rx) + float(yy * yy) / float(ry * ry)
+			if val > 1.0:
+				continue
+			# V58: cx0/cy0 are ALREADY grid cells (from _start_to_cell) — no
+			# second W/2. Donor's own `x+mapW/2` applies only to centred coords.
+			var ix: int = int(floor(float(cx0) + float(xx)))
+			var iy: int = int(floor(float(cy0) + float(yy)))
+			if ix >= 0 and ix < _grid_w and iy >= 0 and iy < _grid_h:
+				_occ[iy * _grid_w + ix] = 1
+
+
+func _fill_map_border(r: int) -> void:
+	# _misc_FillPatternMaskMapBorder, dogenerate.inc:67-78; X03:213-219.
+	for y in range(_grid_h):
+		for x in range(_grid_w):
+			if x < r or x > _grid_w - r or y < r or y > _grid_h - r:
+				_occ[y * _grid_w + x] = 1
+
+
+# ---------------------------------------------------------------------------
+# Mines & starting resources (V12 §3.1-3.7; X03:854-940)
+# ---------------------------------------------------------------------------
+func _setup_mines(cx0: int, cy0: int, minround: int, maxround: int, p: Dictionary) -> void:
+	var rounds: int = 3
+	match int(_gen["minerdensity"]):
+		0: rounds = 3                        # dogenerate.inc:529
+		1: rounds = 4                        # dogenerate.inc:530
+		2: rounds = 5                        # dogenerate.inc:531
+	if maxround > 0 and rounds > maxround:
+		rounds = maxround                     # D1:533-534
+	for i in range(minround, rounds):        # ring outer, D1:535
+		var dst: float = 0.0                  # D1:537 — zero-init [I]/[U], V12 §4
+		var gap_reproduced: bool = false
+		for j in range(3):                    # mng/mni/mnc, D1:544-550
+			var ore: String = ["mng", "mni", "mnc"][j]
+			var family: String = ("desert_" if bool(_gen["b_desert"]) else "") + ore
+			for k in range(C_TRYCOUNT_MINES): # D1:525,555
+				var name: String = _roulette_name(family, p)  # one name draw, D1:557
+				if name == "":
+					continue
+				var band: int = _mine_band(i)  # consumes dst draw ONLY when a case assigns
+				if band == -1:
+					continue                  # `continue` rings — no angle draw, D1:600
+				if band == -2:
+					gap_reproduced = true     # missing case i=2: keep zero-init dst
+				else:
+					dst = _apply_band(band, dst)
+				# D1:658-702 far-ring corner relocation (v>=90, big, i=2, sp<=4).
+				var centre: Vector2 = _mine_centre(Vector2(float(cx0), float(cy0)), i)
+				var angle: float = _active_rng.next_f() * 360.0      # D1:704
+				var vx: float = cos(deg_to_rad(angle)) * dst
+				var vz: float = sin(deg_to_rad(angle)) * dst  # VectorRotateY, D1:705-708
+				_stamp_candidate("mines_attempts")
+				var pat: Dictionary = _pattern(name, p)
+				if not pat.is_empty() and _check_stand(pat,
+						int(round(float(centre.x) + vx)), int(round(float(centre.y) + vz))):
+					_stamp_pattern(_cur_data, pat,
+							int(round(float(centre.x) + vx)), int(round(float(centre.y) + vz)), p)
+					_damp_freq(family, name)
+					_tel["mine_counts"]["accepted"] = int(_tel["mine_counts"]["accepted"]) + 1
+					break                     # first success, D1:712
+		if gap_reproduced:
+			_tel["ring2_dst_mode"] = "zero — reproduced missing case i=2 (V12 §4)"
+			_note("REPRODUCED donor missing case i=2: dst=0, trace flag set, NO fix", "port_approximations")
+		# Record per-call mine counts for near/global attribution.
+		if maxround > 0:
+			_tel["mine_counts"]["near"] = int(_tel["mine_counts"]["near"]) + 1
+		else:
+			_tel["mine_counts"]["global"] = int(_tel["mine_counts"]["global"]) + 1
+
+
+func _mine_band(i: int) -> int:
+	# X21-compatible draw discipline: the dst RandomExt is consumed ONLY when
+	# the donor case actually assigns dst. -1 = `continue`, -2 = missing case.
+	var band: int = _band_id(i)
+	if band >= 0:
+		_band_r = _active_rng.next_f()                # one fresh draw per assignment
+	return band
+
+
+func _band_id(i: int) -> int:
+	# Full V12 §3.2 matrix. Returns -1 for `continue`; -2 for UNASSIGNED.
+	var v: int = int(_gen["version"])
+	var big: bool = bool(_gen["mapsize_gt2"])
+	var sp: int = int(_gen["spcount"])
+	if v < 70:
+		match i:
+			0: return 0   # 14+8R
+			1: return 1   # 38+8R
+			2: return 2   # 130+40R
+			3: return 3   # 52+8R
+			4: return 4   # 26+5R
+			_: return -1
+	if big:
+		if v < 77:
+			match i:
+				0: return 0  # 14+8R
+				1: return 5  # 36+12R
+				2: return 6  # 50+12R
+				3: return 3  # 22+16R
+				_: return -1  # CONT ring4, V12:162
+		elif v < 80:
+			match i:
+				0: return 0  # 14+8R
+				1: return 7  # 32+10R
+				2: return 6  # 50+12R
+				3: return 3  # 22+16R
+				_: return -1
+		else:
+			match i:
+				0: return 0  # 14+8R,  D1:596
+				1: return 7  # 32+10R, D1:597
+				2: return 8  # 70+12R, D1:598
+				3: return 3  # 22+16R, D1:599
+				_: return -1  # ring4 skipped, D1:600
+	if sp <= 4:
+		if v < 75:
+			match i:
+				0: return 0  # 14+8R
+				1: return 5  # 36+12R
+				2: return 9  # 88+18R
+				3: return 6  # 50+12R
+				4: return 10 # 24+9R
+				_: return -1
+		elif v < 77:
+			match i:
+				0: return 0
+				1: return 5
+				2: return -2 # NO case i=2, D1:619-625
+				3: return 6
+				4: return 3
+				_: return -1 # CONT ring5
+		elif v < 80:
+			match i:
+				0: return 0
+				1: return 7
+				2: return -2
+				3: return 6
+				4: return 3
+				_: return -1
+		else:
+			match i:
+				0: return 0  # 14+8R,  D1:640
+				1: return 7  # 32+10R, D1:641
+				2: return -2 # missing case i=2, D1:639-645 (V12 §4)
+				3: return 8  # 70+12R, D1:642
+				4: return 3  # 22+16R, D1:643
+				_: return -1  # CONT ring5, D1:644
+	# spcount>4, D1:648-654
+	match i:
+		0: return 11  # 14+6R
+		1: return 12  # 23+10R
+		2: return 13  # 39+9R
+		3: return 14  # 33+9R
+		_: return -1  # CONT
+
+
+## Apply a V12 band id to `dst`. Kept separate so the missing-case flag can be
+## set by the caller without hiding the donor gap.
+func _apply_band(band: int, dst: float) -> float:
+	# Distances are MAP CELLS, never doubled (V08:155-190). R was drawn in
+	# _mine_band; re-use the returned id as a band selector with a stored R.
+	match band:
+		0: return 14.0 + _band_r * 8.0    # D1:596/640
+		1: return 38.0 + _band_r * 8.0    # D1:563
+		2: return 130.0 + _band_r * 40.0  # D1:565
+		3: return 22.0 + _band_r * 16.0   # D1:599/643
+		4: return 26.0 + _band_r * 5.0    # D1:567
+		5: return 36.0 + _band_r * 12.0   # D1:577/620
+		6: return 50.0 + _band_r * 12.0   # D1:587/632
+		7: return 32.0 + _band_r * 10.0   # D1:597/641
+		8: return 70.0 + _band_r * 12.0   # D1:598/642
+		9: return 88.0 + _band_r * 18.0   # D1:611
+		10: return 24.0 + _band_r * 9.0   # D1:614
+		11: return 14.0 + _band_r * 6.0   # D1:649
+		12: return 23.0 + _band_r * 10.0  # D1:650
+		13: return 39.0 + _band_r * 9.0   # D1:651
+		14: return 33.0 + _band_r * 9.0   # D1:652
+		_: return dst
+
+
+var _band_r: float = 0.0
+
+
+func _mine_centre(start: Vector2, i: int) -> Vector2:
+	if i == 2 and int(_gen["spcount"]) <= 4 and bool(_gen["mapsize_gt2"]) and int(_gen["version"]) >= 90:
+		var hw: float = float(_grid_w) * 0.5
+		var hh: float = float(_grid_h) * 0.5
+		var sx: bool = start.x >= float(_grid_w) * 0.5
+		var sy: bool = start.y >= float(_grid_h) * 0.5
+		# D1:667-689 corner ±(maphW-24) is in CENTRED donor coords; V08 says
+		# distances are cells 1:1 and V58 forbids a second W/2. Convert once
+		# into grid-cell space: +corner -> W-24, -corner -> 24.
+		return Vector2(float(_grid_w) - 24.0 if sx else 24.0,
+				float(_grid_h) - 24.0 if sy else 24.0)
+	return start                                            # D1:698-702
+
+
+func _setup_starting_resources(cx0: int, cy0: int, p: Dictionary) -> void:
+	# Six attempted placements, family picked ONCE per placement (V12:184-207).
+	# 5x7 was already stamped by CreateStartPoint (D1:984) — no food rects.
+	var steps: Array = [
+		{"fam": "stoneforests", "count": 1, "mind": C_ELLIPSE_1_X, "span": 3.0},
+		{"fam": "@ELLIPSE2", "count": 0, "mind": 0, "span": 0.0},
+		{"fam": "stones", "count": 1, "mind": C_ELLIPSE_2_X, "span": 3.0},
+		{"fam": "forest0", "count": 2, "mind": C_ELLIPSE_2_X, "span": 3.0},
+		{"fam": "stones", "count": 1, "mind": C_ELLIPSE_2_X + 4, "span": 2.0},
+		{"fam": "forest0", "count": 1, "mind": C_ELLIPSE_2_X + 4, "span": 2.0},
+	]
+	for step: Dictionary in steps:
+		if str(step["fam"]) == "@ELLIPSE2":
+			_fill_ellipse(cx0, cy0 + C_ELLIPSE_CENTRE_DY, C_ELLIPSE_2_X, C_ELLIPSE_2_Y)  # D1:769
+			continue
+		var family: String = str(step["fam"])
+		var name: String = _roulette_name(family, p)   # once per placement, D1:743/782/839/869/922
+		if name == "":
+			continue
+		var pat: Dictionary = _pattern(name, p)
+		var placed: int = 0
+		for num in range(int(step["count"])):
+			var done: bool = false
+			for i in range(C_TRYCOUNT_START):          # D1:724
+				var angle: float = _active_rng.next_f() * 360.0  # D1:751/790/845/877/930
+				for j in range(C_TRYCOUNT_INNER):        # D1:725
+					var dst: float = float(step["mind"]) + _active_rng.next_f() * float(step["span"]) + float(i + j) * 0.5  # D1:754/793/848/880/933
+					var vx: float = cos(deg_to_rad(angle)) * dst
+					var vz: float = sin(deg_to_rad(angle)) * dst
+					_stamp_candidate("start_resources_attempts")
+					if not pat.is_empty() and _check_stand(pat,
+							int(round(float(cx0) + vx)), int(round(float(cy0) + vz))):
+						_stamp_pattern(_cur_data, pat,
+								int(round(float(cx0) + vx)), int(round(float(cy0) + vz)), p)
+						_damp_freq(family, name)
+						placed += 1
+						done = true
+						break                          # break(MAIN)
+				if done:
+					break
+		_tel["resource_counts"][family] = int(_tel["resource_counts"].get(family, 0)) + placed
+	_fill_ellipse(cx0, cy0 + C_ELLIPSE_CENTRE_DY, C_ELLIPSE_3_X, C_ELLIPSE_3_Y)  # D1:947
+	# D1:949-977 commented-out C3 placement — deliberately NOT implemented.
+	_note("No food rects in SetupStartingResources (X22 X-C6); C3 placement dead text", "notes")
+
+
+# ---------------------------------------------------------------------------
+# Occupancy-only two-phase rejection (V12 §3.5; misc.script:3384-3521)
+# ---------------------------------------------------------------------------
+func _check_stand(pat: Dictionary, x: int, y: int) -> bool:
+	# Ext = test with doStand=false then stamp with doStand=true, angle=0.
+	# Predicate rejects out-of-map or already-occupied cells (misc.script:3466).
+	var w: int = int(pat.get("w", 0))
+	var hh: int = int(pat.get("h", 0))
+	if w <= 0 or hh <= 0:
+		return false
+	var occ: Variant = pat.get("occupancy", null)
+	var x0: int = x - w / 2
+	var y0: int = y - hh / 2
+	for r in range(hh):                       # exclusive upper bound, D9:3476-3477
+		for c in range(w):
+			var bit: int = 1
+			if occ is PackedByteArray:
+				var ob: PackedByteArray = occ
+				if ob.size() >= w * hh:
+					bit = int(ob[r * w + c])
+			if bit == 0:
+				continue
+			var ix: int = x0 + c
+			var iy: int = y0 + r
+			if ix < 0 or ix >= _grid_w or iy < 0 or iy >= _grid_h:
+				return false
+			if _occ[iy * _grid_w + ix] == 1:
+				return false
+	return true
+
+
+func _stamp_pattern(data: Object, pat: Dictionary, x: int, y: int, p: Dictionary) -> void:
+	if not bool(pat.get("height_field_stand", false)):
+		return
+	# F01/X23: canonical grid tables are injected here, never baked in.
+	# X13's F02 plane offsets (G=1000/1912/2866) are STALE for 17/29 patterns.
+	if grid_table_hook.is_valid():
+		var injected: Variant = grid_table_hook.call(str(pat.get("name", "")))
+		if injected is Dictionary:
+			pat = injected as Dictionary
+	var w: int = int(pat.get("w", 0))
+	var hh: int = int(pat.get("h", 0))
+	var grid_v: Variant = pat.get("grid", null)
+	if w <= 0 or hh <= 0 or not (grid_v is PackedFloat32Array):
+		return
+	var grid: PackedFloat32Array = grid_v
+	if grid.size() < w * hh:
+		return
+	# Rotation about centre, row-major grid[z][x] (D05 F4/F5; X13 §Formulas).
+	# Row sign / rotation rounding stay [U] (X13 §UNVERIFIED) — hooks only.
+	var angle: float = float(pat.get("rotation_angle", 0.0))  # +0x70
+	var cs: float = cos(deg_to_rad(angle))
+	var sn: float = sin(deg_to_rad(angle))
+	var ox: float = float(pat.get("offset_x", 0.0))           # +0x74, D05 F2
+	var oz: float = float(pat.get("offset_z", 0.0))           # +0x78, D05 F2
+	var scale: float = float(pat.get("scale", 1.0))           # +0x48, D05 F2
+	if bool(pat.get("use_rnd_scale", false)):
+		if random_scale_hook.is_valid():
+			scale = float(random_scale_hook.call(str(pat.get("name", ""))))
+		else:
+			_note("UseRndScale pattern without hook — fixed HeightFieldScale; TODO(D05/X01)", "port_approximations")
+	var hmin: float = float(pat.get("min", 1.0))              # +0x5c, D05 F2
+	var hoff: float = float(pat.get("offset", 0.0))           # +0x64, D05 F2
+	var terrain_scale: float = float(pat.get("terrain_scale", 1.0))  # +0x68
+	var rep: bool = bool(pat.get("replace", false))            # +0x3a
+	var rep_water: bool = bool(pat.get("replace_for_water", false))  # +0x3b
+	# bilinear world height at stamp centre, D05 F4 (0x810498 @0x756435).
+	var base_h: float = _sample_bilinear(data.height, float(x) + ox, float(y) + oz)
+	var occ: Variant = pat.get("occupancy", null)
+	for r in range(hh):
+		for c in range(w):
+			if bool(pat.get("height_field_stand", false)) and occ is PackedByteArray:
+				var ob: PackedByteArray = occ
+				if ob.size() >= w * hh and ob[r * w + c] != 0:
+					continue                                   # 0x756638 mask gate
+			var g: float = grid[r * w + c]                     # row-major grid[z][x]
+			# X26 [O]: Replace = base_h + ((g-Min)*Scale + Min) + Offset.
+			# Min is a PIVOT, never a clamp; +0x60 (Max) reads = 0/6,751.
+			# x87 0x75660d/610/616; setter 0x756674/677/67d (ev_c176cc8…).
+			if not rep_water:
+				g = _pf(_pf((g - hmin) * scale) + hmin)        # 0x756607-0x756619
+			else:
+				g = _pf(g * scale)                              # 0x75661f-0x756625
+			# Rotation about centre (donor sin/cos 0x403404/0x40342c).
+			# Rotation rounding at half-cell boundaries is still [U] (X13).
+			var px: float = float(c) - float(w) * C_STAMP_HALF_OFFSET  # centre offset 0.5, D05 F6
+			var pz: float = float(r) - float(hh) * C_STAMP_HALF_OFFSET
+			var rx: float = px * cs - pz * sn
+			var rz: float = px * sn + pz * cs
+			var tx: int = int(round(float(x) + rx + ox))
+			var tz: int = int(round(float(y) + rz + oz))
+			if row_sign_hook.is_valid():
+				var rs: Variant = row_sign_hook.call(tz)
+				if rs is int:
+					tz = int(rs)
+			if rotation_rounding_hook.is_valid():
+				var rr: Variant = rotation_rounding_hook.call(float(x) + rx + ox, float(y) + rz + oz)
+				if rr is Vector2i:
+					tx = (rr as Vector2i).x
+					tz = (rr as Vector2i).y
+			if tx < 0 or tx >= _grid_w or tz < 0 or tz >= _grid_h:
+				continue
+			var idx: int = tz * _grid_w + tx
+			var stamped: float = 0.0
+			if rep_water:
+				stamped = g + hoff                              # 0x75664b-0x756664
+			elif rep:
+				stamped = base_h + g + hoff                     # X26 authoritative
+			else:
+				var h0: float = data.height[idx]                # first read 0x7566a0
+				var t: float = (base_h - h0) * terrain_scale + g + hoff  # 0x7566a5-0x7566b4
+				var h1: float = data.height[idx]                # second read 0x7566c7
+				stamped = t + h1                                # 0x7566d2-0x7566e4
+			if global_setter_clamp_hook.is_valid():
+				var cv: Variant = global_setter_clamp_hook.call(stamped)
+				if cv is float:
+					stamped = float(cv)
+			data.set_height(idx, _pf(stamped))                  # I06 public setter
+			var rid: Variant = pat.get("resource_id", null)
+			if rid is int:
+				data.set_u16(data.resource_id, idx, int(rid))   # [U] per-cell id
+	# X26: the smooth post-pass runs whenever Stand && Smooth — INCLUDING the
+	# ReplaceForWater branch (g_hil4; X13 §Implications item 2). It is gated
+	# ONLY by `Stand && Smooth`, never by the Smooth BLEND path.
+	if bool(pat.get("height_field_smooth", false)):
+		_stamp_smooth_post(data, pat, x, y)
+
+
+## X13 P5 [U]: x87 80-bit intermediate precision is not reproduced. Default
+## "double_store_f32" (f64 ops, f32 store); "f32_each_op" rounds every op.
+func _pf(v: float) -> float:
+	if stamp_precision_model == "f32_each_op":
+		var raw := PackedByteArray()
+		raw.resize(4)
+		raw.encode_float(0, v)
+		return raw.decode_float(0)
+	return v  # stored via PackedFloat32Array / set_height (f32 on write)
+
+
+func _sample_bilinear(arr: PackedFloat32Array, fx: float, fy: float) -> float:
+	var x0: int = clampi(int(floor(fx)), 0, _grid_w - 1)
+	var y0: int = clampi(int(floor(fy)), 0, _grid_h - 1)
+	var x1: int = clampi(x0 + 1, 0, _grid_w - 1)
+	var y1: int = clampi(y0 + 1, 0, _grid_h - 1)
+	var ax: float = fx - float(x0) - C_STAMP_HALF_OFFSET  # bilinear half-cell 0.5, D05 F6; exact tap placement [U]
+	var ay: float = fy - float(y0) - C_STAMP_HALF_OFFSET
+	ax = clampf(ax, 0.0, 1.0)
+	ay = clampf(ay, 0.0, 1.0)
+	var a: float = arr[y0 * _grid_w + x0]
+	var b: float = arr[y0 * _grid_w + x1]
+	var c: float = arr[y1 * _grid_w + x0]
+	var d: float = arr[y1 * _grid_w + x1]
+	return (a * (1.0 - ax) + b * ax) * (1.0 - ay) + (c * (1.0 - ax) + d * ax) * ay
+
+
+func _stamp_smooth_post(data: Object, pat: Dictionary, x: int, y: int) -> void:
+	# X26 [O] sub_755db4 (ev_aba9f17d…) proves IN-PLACE read-after-write.
+	# D05 F5: own byte and all eight neighbours must be 0; radial remap by
+	# (Radius-Offset)/d; repeat Factor times; 4-neighbour mean / 4.0f.
+	var radius: int = int(pat.get("smooth_radius", 0))       # +0x50
+	var factor: int = int(pat.get("smooth_factor", 0))       # +0x54 (ITERATIONS)
+	var offset: int = int(pat.get("smooth_offset", 0))       # +0x58
+	if radius <= 0 or factor <= 0:
+		return
+	var w: int = int(pat.get("w", 0))
+	var hh: int = int(pat.get("h", 0))
+	var occ: Variant = pat.get("occupancy", null)
+	if not (occ is PackedByteArray):
+		return
+	var ob: PackedByteArray = occ
+	if ob.size() < w * hh:
+		return
+	# X26 default is IN-PLACE. The comparison-only double-buffer mode reads a
+	# snapshot; never claim donor parity when it is selected.
+	var double_buffer: bool = (stamp_smooth_buffer_mode == "double_buffer")
+	var snap := PackedFloat32Array()
+	if double_buffer:
+		snap = data.height.duplicate()
+	for r in range(1, hh - 1):
+		for c in range(1, w - 1):
+			var clear: bool = true
+			for dr in range(-1, 2):
+				for dc in range(-1, 2):
+					if ob[(r + dr) * w + (c + dc)] != 0:
+						clear = false
+			if not clear:
+				continue
+			var dx: float = float(c - int(w * 0.5))
+			var dz: float = float(r - int(hh * 0.5))
+			var d: float = sqrt(dx * dx + dz * dz)
+			if d <= 0.0:
+				continue
+			var tx: int = int(round(float(int(w * 0.5)) + dx * float(radius - offset) / d))
+			var tz: int = int(round(float(int(hh * 0.5)) + dz * float(radius - offset) / d))
+			for _f in range(factor):
+				for u in range(maxi(0, tx - radius), mini(w - 1, tx + radius) + 1):
+					for v in range(maxi(0, tz - radius), mini(hh - 1, tz + radius) + 1):
+						var du: float = float(u - tx)
+						var dv: float = float(v - tz)
+						if du * du + dv * dv >= float(radius * radius):
+							continue
+						var wx: int = x + u - w / 2
+						var wz: int = y + v - hh / 2
+						if wx <= 0 or wx >= _grid_w - 1 or wz <= 0 or wz >= _grid_h - 1:
+							continue
+						var wi: int = wz * _grid_w + wx
+						var src: PackedFloat32Array = snap if double_buffer else data.height
+						var mean: float = (src[wi - 1] + src[wi + 1]
+								+ src[wi - _grid_w] + src[wi + _grid_w]) / C_STAMP_SMOOTH_DIV
+						data.set_height(wi, _pf(mean))
+
+
+# ---------------------------------------------------------------------------
+# Family roulette + Freq damping (misc.script:3588-3653; V12:148)
+# ---------------------------------------------------------------------------
+func _roulette_name(family: String, p: Dictionary) -> String:
+	var families: Dictionary = p.get("families", {})
+	if not families.has(family):
+		_stamp_candidate("family_draw_missing_" + family)
+		_active_rng.next_f()    # donor consumes one name-pick draw even with empty list
+		return ""
+	var members: Array = families[family]
+	if members.is_empty():
+		_active_rng.next_f()
+		return ""
+	var total: float = 0.0
+	for e: Dictionary in members:
+		total += maxf(C_FREQ_FLOOR, float(_freq_state.get(str(e.get("name", "")) + "|" + family,
+				float(e.get("freq", 0.0)))))
+	var rnd: float = _active_rng.next_f() * total
+	var acc: float = 0.0
+	for e: Dictionary in members:
+		var key: String = str(e.get("name", "")) + "|" + family
+		var f: float = maxf(C_FREQ_FLOOR, float(_freq_state.get(key, float(e.get("freq", 0.0)))))
+		acc += f
+		if rnd < acc:
+			return str(e.get("name", ""))
+	return str((members[members.size() - 1] as Dictionary).get("name", ""))
+
+
+func _damp_freq(family: String, name: String) -> void:
+	# Freq *= 0.2 with floor 1e-4 (misc.script:3588-3630; spec/04 §3).
+	var key: String = name + "|" + family
+	var cur: float = float(_freq_state.get(key, -1.0))
+	if cur < 0.0:
+		cur = 1.0
+	_freq_state[key] = maxf(C_FREQ_FLOOR, cur * C_FREQ_DAMP)
+
+
+func _pattern(name: String, p: Dictionary) -> Dictionary:
+	var patterns: Dictionary = p.get("patterns", {})
+	if patterns.has(name) and patterns[name] is Dictionary:
+		return patterns[name] as Dictionary
+	return {}
+
+
+func _stamp_candidate(key: String, amount: int = 1) -> void:
+	var d: Dictionary = _tel.get("stamp_candidates", {})
+	d[key] = int(d.get(key, 0)) + amount
+	_tel["stamp_candidates"] = d
+
+
+# ---------------------------------------------------------------------------
+# STAGE 8 — relief pattern passes (X03:769-853)
+# ---------------------------------------------------------------------------
+func _stage_relief(data: Object, p: Dictionary) -> void:
+	_cur_data = data
+	if int(_gen["relieftype"]) > 4:
+		_gen["relieftype"] = _active_rng.next_int(5)      # D1:1621-1622
+	var rt: int = clampi(int(_gen["relieftype"]), 0, 4)
+	var plt: float = RELIEF_FREQ[rt][0]
+	var mnt: float = RELIEF_FREQ[rt][1]
+	var hil: float = RELIEF_FREQ[rt][2]
+	# probsmall/mid/large/huge [I] from _misc_GetFreePatternMaskModifier
+	# (D1:1715). UNVERIFIED producer — leave the caller-supplied modifier.
+	var mods: Dictionary = p.get("pattern_modifiers", {})
+	var probsmall: float = float(mods.get("small", 1.0))
+	var probmid: float = float(mods.get("mid", 1.0))
+	var problarge: float = float(mods.get("large", 1.0))
+	var probhuge: float = float(mods.get("huge", 1.0))
+	if _grid_w != 640 or _grid_h != 640:
+		var modifier: float = 640.0 / (float(_grid_w + _grid_h) * 0.5)  # D1:1718-1724
+		probsmall *= modifier
+		probmid *= modifier
+		problarge *= modifier
+		probhuge *= modifier
+	var plain: float = C_PLAIN_FREQ                     # D1:1727
+	var pln_small: float = plain * 6.0 * probsmall      # D1:1728
+	var pln_mid: float = plain * 2.0 * probmid          # D1:1729
+	var pln_large: float = plain * problarge            # D1:1730
+	var pln_huge: float = plain * probhuge              # D1:1731
+	mnt *= problarge                                    # D1:1737
+	plt *= problarge                                    # D1:1738
+	hil *= problarge                                    # D1:1739
+	# Non-desert relief families in donor call order (D1:1747-1766).
+	_setup_patterns_by_type("mountains", mnt, p)
+	_setup_patterns_by_type("plateau_big", plt / 3.0, p)
+	_setup_patterns_by_type("plain_huge", pln_huge, p)
+	_setup_patterns_by_type("ravine_big", plt / 1.5, p)
+	_setup_patterns_by_type("plateau", plt / 3.0, p)
+	_setup_patterns_by_type("plateau_small", plt / 3.0, p)
+	_setup_patterns_by_type("hills_dark", hil / 2.0, p)
+	_setup_patterns_by_type("hills_light", hil / 2.0, p)
+	if bool(_gen["b_desert"]):
+		_setup_patterns_by_type("desert_mountains", mnt, p)
+		_setup_patterns_by_type("desert_plateau_big", plt / 3.0, p)
+		_setup_patterns_by_type("desert_plain_big", pln_huge, p)
+		_setup_patterns_by_type("desert_plateau", plt / 3.0, p)
+		_setup_patterns_by_type("desert_plateau_small", plt / 3.0, p)
+	# `ravine_medium` is commented out in the donor (D1:1760) — do not stamp.
+	# Global mines (D1:1769-1770): minround=1, maxround=0; ONE call per map.
+	_setup_mines(int(_grid_w * 0.5), int(_grid_h * 0.5), 1, 0, p)
+	_mark_site("D1:1616")   # relief + global mines ran under the :1616 stream
+	_stage_begin("D1:1772", "key", _rng0, _rng1)   # X03:849
+
+
+func _setup_patterns_by_type(family: String, freq: float, p: Dictionary) -> void:
+	if freq <= 0.0:
+		return
+	var needed: int = int(floor(float(_grid_n) * freq))     # D9:3686-3704
+	var trycount: int = int(256.0 * 320.0 * 320.0 / maxf(1.0, float(_grid_n)))  # D9:3686-3704
+	_tel["family_counts"][family] = int(_tel["family_counts"].get(family, 0)) + needed
+	var attempts: int = 0
+	for _k in range(maxi(needed, 1) * maxi(1, mini(trycount, 256))):
+		var name: String = _roulette_name(family, p)   # one donor name draw per attempt
+		attempts += 1
+		if name == "":
+			continue
+		_stamp_candidate("relief_attempts")
+	_stamp_candidate("relief_family_attempts_" + family, attempts)
+
+
+# ---------------------------------------------------------------------------
+# STAGE 9 — forest / stone / decor (X03:895-940)
+# ---------------------------------------------------------------------------
+func _stage_forest_stone(data: Object, p: Dictionary) -> void:
+	_cur_data = data
+	var plain: float = C_PLAIN_FREQ
+	var probsmall: float = float((p.get("pattern_modifiers", {}) as Dictionary).get("small", 1.0))
+	var probmid: float = float((p.get("pattern_modifiers", {}) as Dictionary).get("mid", 1.0))
+	var problarge: float = float((p.get("pattern_modifiers", {}) as Dictionary).get("large", 1.0))
+	var frs_big: float = C_FRS_BIG * probsmall
+	var frs_mid: float = C_FRS_MID * probmid
+	var frs_small: float = C_FRS_SMALL * problarge
+	var stn1: float = C_STN_1 * probsmall
+	var stn2: float = C_STN_2 * probsmall
+	if bool(_gen["b_desert"]):
+		frs_big /= 2.0                                  # D1:1781-1785
+		frs_mid /= 2.0
+		frs_small /= 2.0
+	# foreststype is hard-forced 0 — only branch 0 is reachable (D1:6).
+	_setup_patterns_by_type("forests_pinefir_big", frs_big / 8.0, p)   # D1:1838
+	_setup_patterns_by_type("forests_spruce_big", frs_big / 8.0, p)
+	_setup_patterns_by_type("forests_pine_big", frs_big / 8.0, p)
+	_setup_patterns_by_type("forests_pine_big_2", frs_big / 8.0, p)
+	_setup_patterns_by_type("stones", stn1, p)                          # D1:1846
+	if int(p.get("gc_halloween", 0)) > 0 and int(_gen["season"]) != 2:
+		_setup_patterns_by_type("pump", plain * 6.0 * probsmall * 4.0, p)  # D1:1848-1849
+	if int(p.get("gc_christmas", 0)) > 0:
+		_setup_patterns_by_type("christmas", plain * 6.0 * probsmall * 2.0, p)  # D1:1850-1851
+	_setup_patterns_by_type("plain_big", plain * problarge, p)          # D1:1853
+	_setup_patterns_by_type("plain_medium", plain * 2.0 * probmid, p)   # D1:1854
+	_setup_patterns_by_type("forests_spruce_medium", frs_mid / 6.0, p)  # D1:1855
+	_setup_patterns_by_type("forests_pinefir_medium", frs_mid / 6.0, p)
+	_setup_patterns_by_type("forests_pine_medium", frs_mid / 6.0, p)
+	_setup_patterns_by_type("stones", stn2, p)                          # D1:1862
+	_setup_patterns_by_type("forests_pinefir_small", frs_small / 4.0, p) # D1:1866
+	_setup_patterns_by_type("forests_pine_small", frs_small / 4.0, p)
+	_setup_patterns_by_type("swamp_big", plain * problarge, p)          # D1:1899
+	_setup_patterns_by_type("swamp_medium", plain * 2.0 * probmid, p)
+	_setup_patterns_by_type("swamp_small", plain * 6.0 * probsmall, p)
+	var lake_big: float = C_LAKE_ZERO                                # D1:1735
+	if bool(_gen["b_desert"]):
+		lake_big = plain * 35.0                                       # D1:1812 desert override
+	_setup_patterns_by_type("desert_lake" if bool(_gen["b_desert"]) else "lake_big", lake_big, p)
+	_setup_patterns_by_type("lake_small", C_LAKE_ZERO, p)
+	_setup_patterns_by_type("plain_small", plain * 6.0 * probsmall, p)  # D1:1906
+	_tel["forest_stamps"] = int(_tel["forest_stamps"]) + 1
+	_mark_site("D1:1772")
+	_stage_begin("D1:1909", "key", _rng0, _rng1)   # X03:937
+
+
+# ---------------------------------------------------------------------------
+# STAGE 10 — units + prop/asset instancing (X03:942-1035)
+# ---------------------------------------------------------------------------
+func _stage_units_scale(data: Object, p: Dictionary) -> void:
+	# 18 peasants/player, cUnitR=0.75 (D1:1255,1258) are UNIT work, not terrain
+	# generation; recorded only. Silhouette comes from instanced props (spec/08).
+	_tel["peasant_count_per_player"] = C_START_PEASANTS
+	_tel["unit_r"] = C_UNIT_R
+	if object_scale_rng_hook.is_valid():
+		for e: Dictionary in data.props:
+			var r: float = float(object_scale_rng_hook.call(e))
+			if r > 0.0 and r < 1.0:
+				e["scale_jitter"] = r                    # D1:1990-2021, dead-band 0.05
+	else:
+		_note("object scale jitter skipped: separate object RNG [U]; TODO(D01/D07)", "unverified")
+	_mark_site("D1:1909")
+	_stage_begin("D1:1927", "key", _rng0, _rng1)   # X03:961
+
+
+# ---------------------------------------------------------------------------
+# STAGE 11 — FillOwnerMap (X03:1037-1086; V12 §3.6). Late, 160², 4-neighbour
+# wavefront. No terrain/collision test — ownership crosses water. No height
+# writes. Border block :1421-1427 is commented out — NOT implemented.
+# ---------------------------------------------------------------------------
+func _stage_owner_map(data: Object, p: Dictionary) -> void:
+	var g: int = C_SCANGRID_SIZE                     # 640/4, dmscript.global:55-59
+	var owner: PackedByteArray = PackedByteArray()
+	owner.resize(g * g)
+	var dist: PackedByteArray = PackedByteArray()
+	dist.resize(g * g)
+	var checked: PackedByteArray = PackedByteArray()
+	checked.resize(g * g)
+	for i in range(g * g):
+		owner[i] = 255        # -1 as u8, D1:1377
+		dist[i] = 255         # -1 as u8, D1:1378
+		checked[i] = 0
+	var starts: Array = p.get("starts", _gen.get("starts_from_mask", []))
+	var seeds: Array[Dictionary] = []
+	for i in range(starts.size()):
+		var c: Vector2 = _start_to_cell(starts[i])
+		var sc: Vector2i = _to_scan(int(c.x), int(c.y))
+		var si: int = sc.y * g + sc.x
+		owner[si] = i & 0xFF                          # arrStartPosBusy[i], D1:1386
+		dist[si] = 0                                  # D1:1387
+		seeds.append({"i": si, "owner": i & 0xFF})
+	var dcur: int = 0                                 # implicit zero-init [U], V12:232
+	var guard: int = 0
+	while guard < g * g + 2:
+		guard += 1
+		var f: bool = false
+		for iy in range(g):
+			for ix in range(g):
+				var ii: int = iy * g + ix
+				if dist[ii] != dcur or checked[ii] != 0:
+					continue
+				var o: int = owner[ii]
+				for nb: Array in [[ix - 1, iy], [ix + 1, iy], [ix, iy - 1], [ix, iy + 1]]:
+					var nx: int = int(nb[0])
+					var ny: int = int(nb[1])
+					if nx < 0 or nx >= g or ny < 0 or ny >= g:
+						continue
+					var ni: int = ny * g + nx
+					if dist[ni] == 255:                # only if dist < 0, D1:1363-1366
+						dist[ni] = dcur + 1
+						owner[ni] = o
+				checked[ii] = 1                        # D1:1414
+				f = true
+		if not f:
+			break
+		dcur += 1                                      # D1:1418
+	var meta: Dictionary = data.meta
+	meta["scan_grid"] = {"size": g, "owner": owner, "dist": dist,
+		"seeds": seeds, "label": "[O] 160² wavefront BFS; mapping [U] for W!=640"}
+	data.meta = meta
+	_tel["owner_map"] = {"grid": g, "seeds": seeds.size(), "waves": dcur}
+	_mark_site("D1:1927")
+
+
+func _to_scan(x: int, y: int) -> Vector2i:
+	if scan_grid_mapping_hook.is_valid():
+		var v: Variant = scan_grid_mapping_hook.call(x, y)
+		if v is Vector2i:
+			return v
+	# V58: x/y are ALREADY grid cells (from _start_to_cell) — do NOT add
+	# W/2 (=320 at 640²) a second time. Scan cell = donor cell / 4
+	# (gc_scangrid_size=4, dmscript.global:55-59). Mapping for W!=640 is [U].
+	# TODO(D07/V12): confirm for W=240/320/480.
+	var sx: int = clampi(int(floor(float(x) / float(C_SCANGRID_CELL))), 0, C_SCANGRID_SIZE - 1)
+	var sy: int = clampi(int(floor(float(y) / float(C_SCANGRID_CELL))), 0, C_SCANGRID_SIZE - 1)
+	return Vector2i(sx, sy)
+
+
+# ---------------------------------------------------------------------------
+# STAGE 12 — finalize (X03:1088-1110)
+# ---------------------------------------------------------------------------
+func _stage_finalize(data: Object, p: Dictionary) -> void:
+	var colour: int = 0
+	var phdr: int = 0
+	if int(_gen["season"]) == 2:
+		colour = 6                                   # D1:2076
+		phdr = 1                                     # D1:2077
+	elif int(_gen["b_desert"]):
+		colour = 7                                   # D1:2080
+	var meta: Dictionary = data.meta
+	meta["finalize"] = {"color_table": colour, "phdr": phdr,
+		"shore_collision": "_misc_SetShoresCollision (D1:2068) — engine side [U]"}
+	data.meta = meta
+	# NO post-collision height writes (hard forbidden, spec/10 §3).

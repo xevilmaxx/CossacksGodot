@@ -27,7 +27,7 @@ extends SceneTree
 
 const MAIN_SCENE := "res://scenes/main.tscn"
 const BASE_FIXTURE := "res://tests/fixtures/small_map_64.json"
-const PROP_MANIFEST := "res://assets/terrain/terrainmesh_props.json"
+const PROP_MANIFEST := "res://assets/terrain/mountain_props.json"  # V13: live file; old terrainmesh_props.json absent
 const OUT_DIR := "res://tests/results"
 const CAP_DIR := "C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/z07_relief_props"
 const RESULT_ID := "t_relief_props_qa"
@@ -232,7 +232,7 @@ func _configure() -> bool:
     _cam = _main.get("camera")
     _vp = _main.get("capture_view3d") as SubViewport
     _terrain = _world.get("terrain") if _world != null else null
-    var boot_ok := (_game != null and _world != null and _cam != null and _vp != null
+    var boot_ok: bool = (_game != null and _world != null and _cam != null and _vp != null
         and _terrain != null and _terrain.has_method("height_at_world")
         and str(_main.get("render_mode")).to_lower() == "3d"
         and int(_game.get("MAP_W")) == _map_size and int(_game.get("MAP_H")) == _map_size)

@@ -1,0 +1,181 @@
+{
+  "schema": "terrain_qa_spec/1",
+  "schema_only": true,
+  "status": "SCHEMA_ONLY__UNPOPULATED__NO_PARITY_CLAIM",
+  "owner": "I13 / COORD (N17)",
+  "created": "2026-11-26",
+  "purpose": "Schema for the terrain QA bands. No threshold is populated here. A --policy red flip is refused until COORD signs promotion and every band below carries a donor path:line evidence string.",
+  "labels": ["O", "D", "I", "U", "PORT APPROXIMATION"],
+  "parity": {
+    "claim": "NONE",
+    "status": "UNVERIFIED",
+    "note": "PORT APPROXIMATION - internal consistency only; no donor GPU A/B frame exists."
+  },
+  "promotion": {
+    "policy": "advisory",
+    "signed": false,
+    "signed_by": null,
+    "deviations": [],
+    "v17_spec_ready": false,
+    "v16_open_items_cleared": false,
+    "rule": "red requires signed=true, signed_by, V17 READY, no V16 OPEN item changing a numeric gate, and a donor path:line evidence string on every band"
+  },
+  "bands": {
+    "S1_max_band_share": {
+      "value": null,
+      "frozen_advisory": 0.85,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:149; no decile/band above this share of cells"
+    },
+    "S1_min_bands_occupied": {
+      "value": null,
+      "frozen_advisory": 3,
+      "label": "D",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:149; at least this many of the five donor height bands occupied"
+    },
+    "S2_water_low": {
+      "value": null,
+      "frozen_advisory": 0.05,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:150; map_type=land only"
+    },
+    "S2_water_high": {
+      "value": null,
+      "frozen_advisory": 0.45,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:150; map_type=land only"
+    },
+    "S3_shore_low": {
+      "value": null,
+      "frozen_advisory": 0.02,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:151"
+    },
+    "S3_shore_high": {
+      "value": null,
+      "frozen_advisory": 0.25,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:151"
+    },
+    "S3_ratio_low": {
+      "value": null,
+      "frozen_advisory": 0.2,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:151; shore/water ratio"
+    },
+    "S3_ratio_high": {
+      "value": null,
+      "frozen_advisory": 1.5,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:151; shore/water ratio"
+    },
+    "S4_min_distinct_land_ids": {
+      "value": null,
+      "frozen_advisory": 8,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:152; anti-flat-field sanity only"
+    },
+    "S4_max_top1_share": {
+      "value": null,
+      "frozen_advisory": 0.6,
+      "label": "I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:152; legal id domain is a hard gate, not this band"
+    },
+    "S6_family_ratio_low": {
+      "value": null,
+      "frozen_advisory": 0.5,
+      "label": "D/I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:154; observed/expected from generator.cfg weights"
+    },
+    "S6_family_ratio_high": {
+      "value": null,
+      "frozen_advisory": 2.0,
+      "label": "D/I",
+      "evidence": null,
+      "spec_section": null,
+      "note": "A05:154"
+    }
+  },
+  "hard": {
+    "water_id": {
+      "value": 255,
+      "label": "O",
+      "evidence": "variant3d/scripts/game.gd:52",
+      "note": "immutable donor encoding; a changed value is refused, not lowered"
+    },
+    "illegal_tile_ids": {
+      "value": 0,
+      "label": "O",
+      "evidence": "reports/A05_qa_harness.md:152; reports/D08_tile_select_bin.md:78-100",
+      "note": "hard count; legal domain must be cited from the donor preset/atlas"
+    },
+    "alphanull_ids": {
+      "value": [86, 110, 123],
+      "label": "O",
+      "evidence": "reports/V16_contradiction_register.md (V16-05); data/terrain/tiles.mat:346-360",
+      "note": "zero-coverage ids; any stamp is a hard FAIL"
+    },
+    "unknown_family_count": {
+      "value": 0,
+      "label": "O",
+      "evidence": "reports/A05_qa_harness.md:154",
+      "note": "hard count"
+    },
+    "k_ravine_1": {
+      "status": "BLOCKED_UNVERIFIED",
+      "evidence": "variant3d/scripts/main.gd:769-776",
+      "note": "absent from donor_patterns.json; never stamped and never a PASS"
+    }
+  },
+  "catalogue": {
+    "stamps": null,
+    "families": null,
+    "legal_tile_ids": null,
+    "note": "Populate only from donor-cited derived assets; null means the corresponding subcheck stays UNVERIFIED, never PASS."
+  },
+  "not_gates": {
+    "note": "A11/A05 §4.2.1 direction bands (BV32 150-270, grad 1-2, luma std 18-22, saturation ~0.53) are corroboration only, never gates.",
+    "default_compare_shots_threshold": 0.8,
+    "default_compare_shots_threshold_is_smoke_placeholder": true,
+    "self_determinism_compare_shots_threshold": 0.9999
+  },
+  "seed_manifest_shape": {
+    "schema": "terrain_qa_manifest/1",
+    "generation": "object of pinned config keys echoed into dump.meta (random_seed, map_w, map_h, map_type, ...)",
+    "capture": "object of pinned camera/display keys (not byte-changing)",
+    "meta_key_alias": "optional object mapping a config key to its dump.meta key spelling",
+    "config_sha256": "string",
+    "overlay_sha256": "string",
+    "run_integrity": "optional object {a:{status,script_error_lines,result_mtime_after_start},b:{...},assert_clean:{verdict}} supplied by COORD; never inferred from a dump"
+  },
+  "forbidden": [
+    "lowering any threshold",
+    "inventing a band or donor constant",
+    "inventing an assertion deletion",
+    "converting UNVERIFIED to PASS without signed evidence",
+    "any donor-parity claim without a real donor GPU A/B frame",
+    "git reset --hard or any blanket restore"
+  ]
+}

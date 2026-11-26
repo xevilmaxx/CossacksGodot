@@ -1,0 +1,121 @@
+# 04 — Pattern stamping (from F02 + A02; F01/D05 pending)
+
+**PORT APPROXIMATION on engine-side use; no donor parity claim.** F02 read donor
+bytes read-only; A02 cited prior-wave DScript evidence.
+
+## 1. `pattern.lib` is plaintext [O] — F02
+
+- 30,309,138 B, `section.begin`/`section.end` sections, CRLF, 1,172,417 lines,
+  **680 top-level sections**, 205,571 `struct.begin`/`struct.end` pairs
+  (`pattern.lib:1-39`, full-file scan). **No binary header/index/string table.**
+- Fixed **37-field prologue** in identical order for 680/680 sections;
+  `HeightFieldMin` at +30, `HeightFieldMax` at +31 relative to section start.
+- All prior `pattern.lib:N` "offsets" are **1-based line numbers**, not byte
+  offsets. Byte starts for five cited pairs: 18,877,479 (k_ravine_big_stone_1),
+  854,933 (hil1), 9,458,861 (g_hil4), 173,669 (plt2), 14,196,248 (k_ravine_1).
+- 680/680 names map to `.pattern` files; donor has **710** `.pattern` files;
+  30 files have no section.
+- Nested blocks: `Objects` → `[*]` → `RaceName`, `BaseName`, `Position`,
+  `Direction`, `Up`, `Scaling` (X,Y,Z,W) (`pattern.lib:359-387`); `Waters` →
+  `[*]` → `Name=x25y32`, `Width/Height/Position` (`:638257-638286`); `Decals`.
+  **39,780 object records, 235 distinct `BaseName`.**
+- 12 float-grid cross-checks against `.pattern` bytes reproduce
+  `HeightFieldMin/Max` bit-exactly as float32; `Width/Height` equals binary
+  `int32 w,h` for 679/680 (one mismatch: `m_swamp_12_old` lib 17×20 vs binary
+  18×23 — investigate with multiple passes).
+
+## 2. Families live in `generator.cfg`, not `pattern.lib` [O] — F02
+
+- `Patterns : struct.begin` tree: **64 `Name =` family groups, 493
+  `Pattern =`/`Freq =` refs** (`generator.cfg:67-154, :69, :98, :127`).
+  452 exact-name matches, 489/493 after normalisation; 217 sections outside any
+  family (editor brushes, `i_mnt_*`, `j_big_plt_*`, `fb_*`, `n_small_frt_*`).
+- **"Mines" are not a named family**: `mng/mni/mnc` sections embed object props
+  `minegold`/`mineiron`/`minecoal` (`pattern.lib:713410, :715244, :716910`
+  etc.). Interpretation as gold/iron/coal is `[I]`.
+- Mountain props: `BaseName = terrainmesh4` at `pattern.lib:338482` (`g_mnt_1`).
+
+## 3. Stamp algorithm [O]/[U] — A02
+
+- Unit = `.pattern` with height grid + object list + footprint; **rejection
+  sampling** against occupancy via `_misc_CheckStandPattern(Ext)`
+  (D9:3384–3521). Base placement grid is a strict **25-unit grid** (D1:1330–1359).
+- Attempt budget `needed=floor(W*H*freq)`, `trycount=256*(320²)/(W*H)`
+  (D9:3686–3704); `Freq` damping ×0.2, floor 1e-4 (D9:3588–3630).
+- Relief frequency table for `relieftype 0–4` (D1:1625–1649, :1757–1765).
+- Blend flags: `HeightFieldStand/Scale/Min/Max/Replace/ReplaceForWater/Smooth`
+  occur in `pattern.lib` with no plaintext consumer; counts Replace=False 680/680,
+  ReplaceForWater=True 85/680, Smooth=True 41/680. Engine math **[U]** — read
+  flags from decoded data, label any implementation PORT APPROX, invent nothing.
+- Height amplitudes: plateau 2.964, hill 1.31733…, ravine −2.964, water −1.1,
+  R multiplier 3.5 (D2:4–7, :567–574).
+
+## 4. Implementation consequences [D]
+
+- `decode_donor_pattern.py` (I02) must decode the `.pattern` float grid at the
+  verified offsets and the object tail; `decode_pattern_lib.py` (I03) is a
+  plaintext section parser (37 fields + nested structs), not a binary reader.
+- Do **not** use `donor_gen.py` as a compiler: it stops at the `w*h` occupancy
+  prefix (`donor_gen.py:74-85`) and synthesises objects/constants (P04 F1/F2).
+- Keep the one anomalous record (`m_swamp_12_old`) labelled UNVERIFIED until
+  F01/D05 resolve it.
+
+## 5. Cross-check queue
+
+F01 (exact `.pattern` byte layout), D05 (blend math from binary), F08 (flora /
+mineral family contents), D07 (placement function verification), X05 (decoder
+validation).
+
+## 6. Native stamp function and blend math (from D05) [O] — REFUTES port clamp
+
+D05 anchored the relief stamp to native **`sub_755f30`** via DScript native
+registration (`StandPattern → 0x6b28d8 → 0x755f30`); the config-field→offset
+map is decoded in `sub_75c314`, cross-checked in `editor.exe`. Ten passes recorded.
+
+**The port's additive-clamp model is refuted:**
+- `Min` is a **scale pivot**, not a clamp lower bound;
+- `Max` is **never read** in the stamp;
+- `Offset` is the additive term.
+
+Three blend paths recovered (implementation must read the flags, invent nothing):
+| Path | Formula |
+|---|---|
+| `ReplaceForWater` | `g*Scale + Offset` |
+| `Replace` | `base_h + g + Offset` |
+| default `Smooth` | `h += (base_h-h)*TerrainScale + (g-Min)*Scale + Min + Offset` |
+
+Grid is row-major `grid[z][x]`, rotated about centre, followed by a 4-neighbour
+smooth post-pass (divisor **4.0**, iterations = `SmoothFactor`). `globalparams.cfg`
+has **no** height-field keys. Still `[U]`: row-sign flip, global setter clamp,
+rotation rounding. X12 is independently verifying the function.
+
+## 7. Numeric vectors and formula correction (from X13) [O]
+
+X13 extracted real float grids and produced **19 exact-f32 blend vectors** plus
+4 smooth-postpass snapshots (JSON sha256 `82945e4a…dbb1`, CSV
+`11943010…e024b`, prototype in `%TEMP%\opencode\blend_vectors\`). Key finding:
+the simplified `Replace = base_h + g + Offset` in §6 **omits `Scale` and the
+`Min` pivot** — use the D05/X13 vector-encoded formulas. Post-pass in-place vs
+double-buffer diverges 4/4 → `[U]`; row-sign flip, rotation rounding, global
+setter clamp, x87 precision and grid boundary stay `[U]`.
+
+**Grid-offset caveat:** X13 used old F02 offsets (G=1000/1912/2866); F01 found
+DPATTERN-01 grid offsets shifted for 17/29 patterns and published corrected
+tables for `k_ravine_1`, `plt2`, `hil1`, `g_hil4`, `k_ravine_big_stone_1`.
+X23 is verifying canonical tables; treat X13 grid VALUES as stale where F01/X23
+disagree (formula structure remains valid).
+
+## 8. Cross-check queue (updated)
+
+F01 ✓ (size law `8+4wh+54(w−1)(h−1)` on 710/710; five regions; record/weight/tail
+semantics `[U]`), X12 ✓ (native verification; chain
+`StandPattern → 0x6b28d8 → 0x75c228 → 0x755f30`), X26 (formula verdict), F08 ✓,
+D07 ✓, X05 ✓, V01 ✓.
+
+---
+*Integrated by COORD from F02 + A02 + D05 + F01 + X12 + X13.*
+
+
+---
+*Integrated by COORD from F02 + A02 + D05.*
+

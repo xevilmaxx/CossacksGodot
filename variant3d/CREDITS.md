@@ -132,3 +132,34 @@ all 280 pre-existing manifest entries and all pre-existing asset bytes were left
   hierarchy unreadable). Winter `terrainmeshNw.dds`, desert `terrainmeshdesertN.dds` and
   `terrainplateau1..4.osm` are NOT converted. Visual donor parity is UNVERIFIED — no
   donor GPU A/B frame exists; adding these assets alone does not make hills visible.
+
+## V49-TERRAIN-NEW — donor-derived pattern / cfg assets (2026-11-26, derived, not copied)
+
+Offline readers (read-only donor; dry-run by default, explicit write required):
+`python variant3d/tools/decode_donor_cfg.py --game "C:\Games\Cossacks 3" --out variant3d/assets/terrain_new/cfg`,
+`python variant3d/tools/decode_pattern_lib.py --game "C:\Games\Cossacks 3" --write --out variant3d/assets/terrain_new/patterns`,
+`python variant3d/tools/decode_donor_pattern.py --game "C:\Games\Cossacks 3" --no-dry-run --out variant3d/assets/terrain_new/patterns`.
+
+Donor files READ (never copied, executed or committed):
+`data/gen/{globalparams,localparams,mapcover,tilesmooth,tilesmooth_scripts}.cfg`,
+`data/game/var/{generator,startingsettings}.cfg`,
+`data/pattern/pattern.lib` (30,309,138 B, sha256 `f7b421b179dee5ad2b28e025c6b776d8eeccfbec74a93a13c3d1c9d9f10dc1c0`),
+and 710 `data/pattern/*.pattern` binaries — per-file `source_sha256` values are recorded in
+`variant3d/assets/terrain_new/patterns/pattern_decode_manifest.json` (`output_count: 710`,
+`determinism_second_pass_equal: true`).
+
+Written DERIVED outputs (labelled, not donor bytes):
+`variant3d/assets/terrain_new/cfg/{constants.json,config_strings.json,manifest.json}` and
+`variant3d/assets/terrain_new/patterns/*.json` (710 decoded pattern records,
+`patterns/families/*.json` 64 family files, `family_index.json`,
+`blend_test_vectors.json`, `pattern_decode_manifest.json`). Values are decoded numbers,
+strings, labels and sha256 checksums; undecodable fields stay `null` + `UNVERIFIED`;
+every emitted JSON carries `visual_parity_claim:false`. No TGA/DDS/OSM/OSS/.pattern/.map
+or donor executable was written. `decode_donor_masks.py` and `build_terrain_new_atlas.py`
+were not run in write mode: `terrain_new/{atlas,masks,schemas}` do not exist.
+
+For private use of the game owner on their own machine only; never share, publish,
+upload or redistribute. PORT APPROXIMATION — visual donor parity is UNVERIFIED; no
+donor GPU A/B frame exists. Before any commit, replace the absolute donor install
+path embedded in the current JSON outputs with `$COSSACKS3_DIR` / `source_rel`
+(spec/11 §11.1; X15 §2.1).

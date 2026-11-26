@@ -1,0 +1,52 @@
+{
+  "schema": "terrain_qa_report/PENDING__NOT_A_GATE_RESULT",
+  "fixture_id": "N18",
+  "status": "PENDING__FAIL_CLOSED__NOT_RUN",
+  "author": "I16 (QA-fixture implementation worker)",
+  "created": "2026-11-26",
+  "real_expected_path_absent": "inbox/qa/terrain_qa_report.json",
+  "parity_claim": false,
+  "parity": {
+    "claim": "NONE",
+    "status": "UNVERIFIED",
+    "note": "PORT APPROXIMATION - no donor GPU A/B frame exists; no parity verdict"
+  },
+  "gate_summary": {
+    "total": 0,
+    "pass": 0,
+    "fail": 0,
+    "unverified_counted": 0,
+    "note": "NOT_RUN: no harness inputs were produced; zero is an empty set, never a green result"
+  },
+  "gates": [],
+  "determinism": null,
+  "structure": null,
+  "visual_ab": {
+    "class_c_gpu_capture": "NOT_RUN__OWNER_ONLY",
+    "note": "No windowed 1280x720 frame, no frozen 240/320 baseline, no second-agent card"
+  },
+  "regression": null,
+  "rollback": null,
+  "unverified": [
+    "N7 validate_terrain_new.py absent (PENDING_N7_validate_terrain_new.md)",
+    "N18 real report absent; this .PENDING file is not consumable as terrain_qa_report/1",
+    "N19 inbox/qa/captures/ absent; GPU captures must be produced by COORD after the gates",
+    "Five-stream determinism D1 not run; A05 fingerprint cannot be claimed",
+    "assert_clean CLEAN blocked by unacked runner rows 575/582/585 (V06:24-28,83-98)"
+  ],
+  "citation": {
+    "schema_source": "reports/A05_qa_harness.md:240-295",
+    "path_source": "reports/V11_ownership_ledger.md:110 (N18); reports/V21_gate_register.md:156,177 (D-6 sign-off)",
+    "tool_contract": "variant3d/tools/terrain_qa_harness.py:47 (SCHEMA), :625-986 (build_report), :1133/:1160-1163 (--out writes the real file), :1166 (parity.status=UNVERIFIED parity.claim=NONE)",
+    "review_contract": "reports/V28_code_review_r1.md:147 (COORD must supply --out; spec bands remain value:null/signed:false)"
+  },
+  "invariants_respected": [
+    "No threshold lowered",
+    "No assertion deleted",
+    "No fabricated baseline",
+    "No invented donor value",
+    "No donor-parity wording",
+    "status UNVERIFIED is never converted to PASS"
+  ],
+  "end": "PENDING placeholder - fail closed; replace by the harness-produced terrain_qa_report/1 only after COORD sign-off (V21 D-6)."
+}

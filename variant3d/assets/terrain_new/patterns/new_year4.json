@@ -1,0 +1,706 @@
+{
+  "byte_closure": {
+    "actual_bytes": 1796,
+    "expected_bytes": 1796,
+    "formula": "8 + 4*w*h + 54*(w-1)*(h-1)  [F01, 710/710]",
+    "ok": true,
+    "regions": [
+      {
+        "length": 8,
+        "name": "header",
+        "offset": 0
+      },
+      {
+        "length": 30,
+        "name": "mask",
+        "offset": 8
+      },
+      {
+        "length": 168,
+        "name": "height",
+        "offset": 38
+      },
+      {
+        "length": 4,
+        "name": "pre",
+        "offset": 206
+      },
+      {
+        "length": 720,
+        "name": "records",
+        "offset": 210
+      },
+      {
+        "length": 476,
+        "name": "weights",
+        "offset": 930
+      },
+      {
+        "length": 390,
+        "name": "tail",
+        "offset": 1406
+      }
+    ]
+  },
+  "collision_records": null,
+  "flags": {
+    "Max": 0.0,
+    "Min": 0.0,
+    "Offset": 0.0,
+    "Replace": false,
+    "ReplaceForWater": false,
+    "Scale": 1.0,
+    "Smooth": false,
+    "Stand": true,
+    "TerrainScale": 1.0
+  },
+  "grid_layout": "h x w row-major f32 at G=8+(w-1)*(h-1) [F01 \u00a74.4]",
+  "grid_offset": 38,
+  "h": 6,
+  "label": "[O] DECODED grid+mask; tail semantics UNVERIFIED",
+  "labels": {
+    "binary_layout": "[O] F01 \u00a74.1/\u00a74.2: 8+4wh+54(w-1)(h-1), G=8+(w-1)(h-1)",
+    "blend_inputs": "[D] D05 \u00a7F2/F4 + X12 claim 3/4: Min pivot, Max unused in stamp",
+    "byte_closure": "[O] OK: seven contiguous regions, zero residual [F01 \u00a74.1]",
+    "collision_records": "[U] Tail13 code/flag semantics unidentified \u2014 null, not guessed/padded (F01 \u00a74.8)",
+    "lattice_weights": "[U] i32[4N-1] semantics unidentified \u2014 null, not guessed/padded (F01 \u00a74.7)",
+    "metadata_source": "[O] pattern.lib:923985 (byte 23897825) [F02/X05, 1-based LINE]",
+    "min_max_crosscheck": "[O] bit-exact float32 match vs lib Min/Max at CORRECTED G [F01 \u00a74.4]",
+    "object_records": "[O] structure only (Rec24); id/tail4 semantics [U] \u2014 no prop-name mapping (F01 \u00a74.5/\u00a79)",
+    "occupancy_cells": "[O] u8[N] 0/1 lattice mask, (h-1)x(w-1) row-major; semantics [U] (F01 \u00a74.3)",
+    "original_floats": "[O] Rec24 f[4] verified 1.0f in all records (F01 E13)",
+    "overall": "[O] binary DECODED; semantic fields UNVERIFIED; no parity claim",
+    "parity": "[U] no donor GPU A/B frame; visual_parity_claim=false",
+    "quarantine": "[O] no lib/binary dimension mismatch",
+    "relief_float_grid": "[O] f32[w*h] at G=8+N, h x w row-major; engine blend [U] (F01 \u00a74.4)"
+  },
+  "lattice_weights": null,
+  "name": "new_year4",
+  "object_records": [
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 188,
+      "k": 0,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 33,
+      "k": 1,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 58,
+      "k": 2,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 53,
+      "k": 3,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 3,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 64,
+      "k": 4,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 4,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 137,
+      "k": 5,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 5,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 197,
+      "k": 6,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 22,
+      "k": 7,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 142,
+      "k": 8,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 21,
+      "k": 9,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 3,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 144,
+      "k": 10,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 4,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 229,
+      "k": 11,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 5,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 192,
+      "k": 12,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 196,
+      "k": 13,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 197,
+      "k": 14,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 65,
+      "k": 15,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 3,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 182,
+      "k": 16,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 4,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 161,
+      "k": 17,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 5,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 122,
+      "k": 18,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 3
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 97,
+      "k": 19,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 3
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 60,
+      "k": 20,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 3
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 129,
+      "k": 21,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 3,
+      "v": 3
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 167,
+      "k": 22,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 4,
+      "v": 3
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 36,
+      "k": 23,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 5,
+      "v": 3
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 97,
+      "k": 24,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 4
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 248,
+      "k": 25,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 4
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 105,
+      "k": 26,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 4
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 2,
+      "k": 27,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 3,
+      "v": 4
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 17,
+      "k": 28,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 4,
+      "v": 4
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 228,
+      "k": 29,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 5,
+      "v": 4
+    }
+  ],
+  "occupancy_cells": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "occupancy_layout": "(h-1) x (w-1) row-major u8 0/1 [F01 \u00a74.3]",
+  "relief_float_grid": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "schema": "terrain_new.pattern_decode.v1",
+  "source": "data\\pattern\\new_year4.pattern",
+  "source_sha256": "2263135309ea13499b53163f9405e808f57d789c74c04ce1a41fd0117552e5ed",
+  "status": "DECODED",
+  "tail_offset": 1406,
+  "visual_parity_claim": false,
+  "w": 7,
+  "weight_offset": 930
+}

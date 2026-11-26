@@ -1,0 +1,281 @@
+{
+  "byte_closure": {
+    "actual_bytes": 558,
+    "expected_bytes": 558,
+    "formula": "8 + 4*w*h + 54*(w-1)*(h-1)  [F01, 710/710]",
+    "ok": true,
+    "regions": [
+      {
+        "length": 8,
+        "name": "header",
+        "offset": 0
+      },
+      {
+        "length": 9,
+        "name": "mask",
+        "offset": 8
+      },
+      {
+        "length": 64,
+        "name": "height",
+        "offset": 17
+      },
+      {
+        "length": 4,
+        "name": "pre",
+        "offset": 81
+      },
+      {
+        "length": 216,
+        "name": "records",
+        "offset": 85
+      },
+      {
+        "length": 140,
+        "name": "weights",
+        "offset": 301
+      },
+      {
+        "length": 117,
+        "name": "tail",
+        "offset": 441
+      }
+    ]
+  },
+  "collision_records": null,
+  "flags": {
+    "Max": 1.72656166553497,
+    "Min": 1.72656166553497,
+    "Offset": 0.0,
+    "Replace": false,
+    "ReplaceForWater": true,
+    "Scale": 0.925000011920929,
+    "Smooth": false,
+    "Stand": true,
+    "TerrainScale": 1.0
+  },
+  "grid_layout": "h x w row-major f32 at G=8+(w-1)*(h-1) [F01 \u00a74.4]",
+  "grid_offset": 17,
+  "h": 4,
+  "label": "[O] DECODED grid+mask; tail semantics UNVERIFIED",
+  "labels": {
+    "binary_layout": "[O] F01 \u00a74.1/\u00a74.2: 8+4wh+54(w-1)(h-1), G=8+(w-1)(h-1)",
+    "blend_inputs": "[D] D05 \u00a7F2/F4 + X12 claim 3/4: Min pivot, Max unused in stamp",
+    "byte_closure": "[O] OK: seven contiguous regions, zero residual [F01 \u00a74.1]",
+    "collision_records": "[U] Tail13 code/flag semantics unidentified \u2014 null, not guessed/padded (F01 \u00a74.8)",
+    "lattice_weights": "[U] i32[4N-1] semantics unidentified \u2014 null, not guessed/padded (F01 \u00a74.7)",
+    "metadata_source": "[O] pattern.lib:241 (byte 6058) [F02/X05, 1-based LINE]",
+    "min_max_crosscheck": "[O] bit-exact float32 match vs lib Min/Max at CORRECTED G [F01 \u00a74.4]",
+    "object_records": "[O] structure only (Rec24); id/tail4 semantics [U] \u2014 no prop-name mapping (F01 \u00a74.5/\u00a79)",
+    "occupancy_cells": "[O] u8[N] 0/1 lattice mask, (h-1)x(w-1) row-major; semantics [U] (F01 \u00a74.3)",
+    "original_floats": "[O] Rec24 f[4] verified 1.0f in all records (F01 E13)",
+    "overall": "[O] binary DECODED; semantic fields UNVERIFIED; no parity claim",
+    "parity": "[U] no donor GPU A/B frame; visual_parity_claim=false",
+    "quarantine": "[O] no lib/binary dimension mismatch",
+    "relief_float_grid": "[O] f32[w*h] at G=8+N, h x w row-major; engine blend [U] (F01 \u00a74.4)"
+  },
+  "lattice_weights": null,
+  "name": "brush_plt_1x1_half",
+  "object_records": [
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 156,
+      "k": 0,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 54,
+      "k": 1,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 237,
+      "k": 2,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 0
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 194,
+      "k": 3,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 132,
+      "k": 4,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 171,
+      "k": 5,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 1
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 74,
+      "k": 6,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 0,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 19,
+      "k": 7,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 1,
+      "v": 2
+    },
+    {
+      "f4": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "id": 232,
+      "k": 8,
+      "tail4": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "u": 2,
+      "v": 2
+    }
+  ],
+  "occupancy_cells": [
+    1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1
+  ],
+  "occupancy_layout": "(h-1) x (w-1) row-major u8 0/1 [F01 \u00a74.3]",
+  "relief_float_grid": [
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731,
+    1.7265616655349731
+  ],
+  "schema": "terrain_new.pattern_decode.v1",
+  "source": "data\\pattern\\brush_plt_1x1_half.pattern",
+  "source_sha256": "49074dd9392cf1977d5c8c56941fba18924b7ed0da91080ffd1468ff76f754b2",
+  "status": "DECODED",
+  "tail_offset": 441,
+  "visual_parity_claim": false,
+  "w": 4,
+  "weight_offset": 301
+}

@@ -1,0 +1,559 @@
+{
+	"advisories": [
+		{
+			"band": false,
+			"class": "B",
+			"evidence": "V11 §3 N10/N13, §4 G10",
+			"label": "[O]",
+			"name": "optional_presence",
+			"status": "UNVERIFIED",
+			"value": "res://scripts/terrain_donor_tiles.gd"
+		},
+		{
+			"band": true,
+			"class": "B",
+			"evidence": "V11 §3 N10/N13, §4 G10",
+			"label": "[O]",
+			"name": "optional_presence",
+			"status": "UNVERIFIED",
+			"value": "res://shaders/terrain_donor_shader.gdshader"
+		},
+		{
+			"band": true,
+			"class": "B",
+			"evidence": "V11 §3 N10/N13, §4 G10",
+			"label": "[O]",
+			"name": "optional_presence",
+			"status": "UNVERIFIED",
+			"value": "res://assets/terrain_new/manifest.json"
+		},
+		{
+			"band": "max_share<=0.85; >=3 of 5 bands",
+			"class": "B",
+			"evidence": "A05:149; donor_gen.py:49-59",
+			"label": "[I]/[D] ADVISORY",
+			"name": "S1_height_deciles_64",
+			"status": "UNVERIFIED",
+			"value": [
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			]
+		},
+		{
+			"band": [
+				0.05,
+				0.45
+			],
+			"class": "B",
+			"evidence": "A05:150; game.gd:52 water id 255 (hard in GR-A20)",
+			"label": "[I] ADVISORY",
+			"name": "S2_water_fraction_64",
+			"status": "UNVERIFIED",
+			"value": 0.0
+		},
+		{
+			"band": [
+				0.02,
+				0.25
+			],
+			"class": "B",
+			"evidence": "A05:151; V21 GR-B04",
+			"label": "[I] ADVISORY",
+			"name": "S3_shore_fraction_64",
+			"status": "UNVERIFIED",
+			"value": 0.0
+		},
+		{
+			"band": [
+				0.2,
+				1.5
+			],
+			"class": "B",
+			"evidence": "A05:151; V21 GR-B04",
+			"label": "[I] ADVISORY",
+			"name": "S3_shore_water_ratio_64",
+			"status": "UNVERIFIED",
+			"value": 0.0
+		},
+		{
+			"band": ">=8",
+			"class": "B",
+			"evidence": "A05:152; V21 GR-B05",
+			"label": "[I] ADVISORY",
+			"name": "S4_distinct_land_ids_64",
+			"status": "UNVERIFIED",
+			"value": 1
+		},
+		{
+			"band": "<=0.6",
+			"class": "B",
+			"evidence": "A05:152; V21 GR-B05",
+			"label": "[I] ADVISORY",
+			"name": "S4_top1_share_64",
+			"status": "UNVERIFIED",
+			"value": 1.0
+		},
+		{
+			"band": "in spec range (empty)",
+			"class": "B",
+			"evidence": "A05:153; V21 GR-B06",
+			"label": "[I] ADVISORY",
+			"name": "S5_relief_stamp_count_64",
+			"status": "UNVERIFIED",
+			"value": 0
+		},
+		{
+			"band": "observed/expected ratio [0.5, 2.0]",
+			"class": "B",
+			"evidence": "A05:154; V21 GR-B07",
+			"label": "[D]/[I] ADVISORY",
+			"name": "S6_family_counts_64",
+			"status": "UNVERIFIED",
+			"value": []
+		},
+		{
+			"band": "max_share<=0.85; >=3 of 5 bands",
+			"class": "B",
+			"evidence": "A05:149; donor_gen.py:49-59",
+			"label": "[I]/[D] ADVISORY",
+			"name": "S1_height_deciles_240",
+			"status": "UNVERIFIED",
+			"value": [
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			]
+		},
+		{
+			"band": [
+				0.05,
+				0.45
+			],
+			"class": "B",
+			"evidence": "A05:150; game.gd:52 water id 255 (hard in GR-A20)",
+			"label": "[I] ADVISORY",
+			"name": "S2_water_fraction_240",
+			"status": "UNVERIFIED",
+			"value": 0.0
+		},
+		{
+			"band": [
+				0.02,
+				0.25
+			],
+			"class": "B",
+			"evidence": "A05:151; V21 GR-B04",
+			"label": "[I] ADVISORY",
+			"name": "S3_shore_fraction_240",
+			"status": "UNVERIFIED",
+			"value": 0.0
+		},
+		{
+			"band": [
+				0.2,
+				1.5
+			],
+			"class": "B",
+			"evidence": "A05:151; V21 GR-B04",
+			"label": "[I] ADVISORY",
+			"name": "S3_shore_water_ratio_240",
+			"status": "UNVERIFIED",
+			"value": 0.0
+		},
+		{
+			"band": ">=8",
+			"class": "B",
+			"evidence": "A05:152; V21 GR-B05",
+			"label": "[I] ADVISORY",
+			"name": "S4_distinct_land_ids_240",
+			"status": "UNVERIFIED",
+			"value": 1
+		},
+		{
+			"band": "<=0.6",
+			"class": "B",
+			"evidence": "A05:152; V21 GR-B05",
+			"label": "[I] ADVISORY",
+			"name": "S4_top1_share_240",
+			"status": "UNVERIFIED",
+			"value": 1.0
+		},
+		{
+			"band": "in spec range (empty)",
+			"class": "B",
+			"evidence": "A05:153; V21 GR-B06",
+			"label": "[I] ADVISORY",
+			"name": "S5_relief_stamp_count_240",
+			"status": "UNVERIFIED",
+			"value": 0
+		},
+		{
+			"band": "observed/expected ratio [0.5, 2.0]",
+			"class": "B",
+			"evidence": "A05:154; V21 GR-B07",
+			"label": "[D]/[I] ADVISORY",
+			"name": "S6_family_counts_240",
+			"status": "UNVERIFIED",
+			"value": []
+		}
+	],
+	"checks": [
+		{
+			"class": "A",
+			"detail": "required=5 missing=[]",
+			"evidence": "V11 §3 N1/N8/N9/N11/N12; V21 U4",
+			"name": "module_present",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "WATER_DEEP=-0.25 WATER_SHORE=-0.1 expected -0.25/-0.1",
+			"evidence": "donor data/scripts/texturemap.inc:29-31; spec/05:12; terrain_donor_data.gd:35-36",
+			"name": "water_shore_thresholds",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "found=true value=true source=res://scripts/terrain_donor_mesh.gd (must be explicit false)",
+			"evidence": "spec/11 §11.1:17; A05 parity_guard; V21 U1",
+			"name": "visual_parity_claim_false",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "active synthesis tokens=2 [\"res://scripts/terrain_donor_mesh.gd: \\\"relief_mask_cells_no_face_promotion\\\": _relief_guard_cells,\", \"res://scripts/terrain_donor_props.gd: \\\"no_noise_field\\\": true,\"]",
+			"evidence": "CHARTER §4 (no synthetic noise/dither S-25-09); spec/10:60; V21 GR-A21",
+			"name": "no_synthetic_noise_field",
+			"passed": false
+		},
+		{
+			"class": "A",
+			"detail": "two in-process generations at 64²: ok height=16384 tileblock=4096 terrain=4096 blocked=16384 props=36 ",
+			"evidence": "A05 §2.2; spec/12 §12.6:100-104; V21 GR-A01 (hard)",
+			"name": "gen_stream_hook_64",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe B=4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe bytes=16384/16384 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_64_height",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7 B=ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7 bytes=4096/4096 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_64_tileblock",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7 B=ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7 bytes=4096/4096 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_64_terrain",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe B=4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe bytes=16384/16384 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_64_blocked",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b B=d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b bytes=36/36 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_64_props",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "two in-process generations at 240²: ok height=230400 tileblock=57600 terrain=57600 blocked=230400 props=36 ",
+			"evidence": "A05 §2.2; spec/12 §12.6:100-104; V21 GR-A01 (hard)",
+			"name": "gen_stream_hook_240",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2 B=2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2 bytes=230400/230400 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_240_height",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390 B=c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390 bytes=57600/57600 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_240_tileblock",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390 B=c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390 bytes=57600/57600 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_240_terrain",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2 B=2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2 bytes=230400/230400 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_240_blocked",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "SHA-256 raw bytes A=d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b B=d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b bytes=36/36 zero_tolerance",
+			"evidence": "A05 §2.2/§2.3 D1; V21 GR-A01; CHARTER §6.3",
+			"name": "determinism_240_props",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "w=64 h=64 n=4096 height=16384 tileblock=4096 terrain=4096 blocked=16384",
+			"evidence": "donor miscext2.script:19-26, dmscript.global:132-135 (spec/01:30); terrain_donor_data.gd:43-45",
+			"name": "grid_size_64",
+			"passed": false
+		},
+		{
+			"class": "A",
+			"detail": "illegal_ids=0 domain=[0,123] sentinel=255 PORT-ONLY",
+			"evidence": "donor terrain/tiles/terrain.presets:2-6,129 (spec/06:9); game.gd:52 (sentinel)",
+			"name": "tile_id_range_64",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "w=240 h=240 n=57600 height=230400 tileblock=57600 terrain=57600 blocked=230400",
+			"evidence": "donor miscext2.script:19-26, dmscript.global:132-135 (spec/01:30); terrain_donor_data.gd:43-45",
+			"name": "grid_size_240",
+			"passed": false
+		},
+		{
+			"class": "A",
+			"detail": "illegal_ids=0 domain=[0,123] sentinel=255 PORT-ONLY",
+			"evidence": "donor terrain/tiles/terrain.presets:2-6,129 (spec/06:9); game.gd:52 (sentinel)",
+			"name": "tile_id_range_240",
+			"passed": true
+		},
+		{
+			"class": "A",
+			"detail": "surfaces=-1 reason=",
+			"evidence": "t_terrain3d.gd:206-213 (G32 §6); spec/01 §2",
+			"name": "surface_count_one",
+			"passed": false
+		},
+		{
+			"class": "A",
+			"detail": "vertices=-1 expected=-2",
+			"evidence": "t_terrain3d.gd:215-226; G32 §6 (w*h shared cell-centre vertices)",
+			"name": "vertex_count_exact",
+			"passed": false
+		},
+		{
+			"class": "A",
+			"detail": "triangles=-1 expected=-2",
+			"evidence": "t_terrain3d.gd:8-10; G32 §6 ((w-1)*(h-1)*2)",
+			"name": "triangle_count_exact",
+			"passed": false
+		},
+		{
+			"class": "A",
+			"detail": "UV2.x!=tex violations=-1 eps=0.001",
+			"evidence": "spec/01:34; spec/06:42; world3d_terrain.gd:1315-1318 (PORT APPROX)",
+			"name": "uv2_tile_id_invariant",
+			"passed": false
+		},
+		{
+			"class": "A",
+			"detail": "UV2.y outside {0,1,2} violations=-1",
+			"evidence": "spec/01:34 face in {0,1,2}; world3d_terrain.gd:1315-1318,1407 (PORT APPROX)",
+			"name": "uv2_face_domain",
+			"passed": false
+		}
+	],
+	"determinism": {
+		"240": {
+			"equal": {
+				"blocked": true,
+				"height": true,
+				"props": true,
+				"terrain": true,
+				"tileblock": true
+			},
+			"hashes_a": {
+				"blocked": "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2",
+				"height": "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2",
+				"props": "d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b",
+				"terrain": "c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390",
+				"tileblock": "c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390"
+			},
+			"hashes_b": {
+				"blocked": "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2",
+				"height": "2a589ae1f2fa2a6328223ff195a29c9244bec633dca49139f6f231e1d79c0eb2",
+				"props": "d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b",
+				"terrain": "c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390",
+				"tileblock": "c72274a22cba2dcef62e0f62834446ee39b0cd95ad0faa27a89b3b49f48aa390"
+			},
+			"pairwise_equal": true,
+			"size": 240,
+			"tolerance": 0
+		},
+		"64": {
+			"equal": {
+				"blocked": true,
+				"height": true,
+				"props": true,
+				"terrain": true,
+				"tileblock": true
+			},
+			"hashes_a": {
+				"blocked": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+				"height": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+				"props": "d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b",
+				"terrain": "ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"tileblock": "ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7"
+			},
+			"hashes_b": {
+				"blocked": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+				"height": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+				"props": "d46908d86abf9c0d01e41d0f70b3c17240ed18c952d332ecc0391560c4951f2b",
+				"terrain": "ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7",
+				"tileblock": "ad7facb2586fc6e966c004d7d1d16b024f5805ff7cb47c7a85dabd8b48892ca7"
+			},
+			"pairwise_equal": true,
+			"size": 64,
+			"tolerance": 0
+		}
+	},
+	"id": "t_terrain_donor",
+	"key_manifest": {
+		"keys": {
+			"map_height_tiles": 240,
+			"map_type": "land",
+			"map_width_tiles": 240,
+			"nation0": "rus",
+			"nation1": "bav",
+			"relief_stamps": true,
+			"start_option": "default",
+			"water_surface_y": -0.25
+		},
+		"seed": 20261113,
+		"sha256": "20af5db4be4c778166aa32b6fc225ceafdf646a57219134a9b293be4e6031d80"
+	},
+	"mesh": {},
+	"modules": {
+		"optional": [
+			"res://scripts/terrain_donor_tiles.gd",
+			"res://shaders/terrain_donor_shader.gdshader",
+			"res://assets/terrain_new/manifest.json"
+		],
+		"required": [
+			"res://scripts/terrain_donor_world.gd",
+			"res://scripts/terrain_donor_data.gd",
+			"res://scripts/terrain_donor_gen.gd",
+			"res://scripts/terrain_donor_mesh.gd",
+			"res://scripts/terrain_donor_props.gd"
+		]
+	},
+	"parity": {
+		"claim": "NONE",
+		"note": "PORT APPROXIMATION — internal consistency only; no donor GPU A/B frame",
+		"status": "UNVERIFIED",
+		"visual_parity_claim": false
+	},
+	"passed": false,
+	"passes": 17,
+	"sizes": [
+		64,
+		240
+	],
+	"status": "FAIL",
+	"structure": {
+		"240": {
+			"distinct_land_ids": 1,
+			"h": 240,
+			"height_deciles": [
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"n": 57600,
+			"shore_fraction": 0.0,
+			"shore_water_ratio": 0.0,
+			"tile_histogram": {
+				"0": 57600
+			},
+			"top1_share": 1.0,
+			"w": 240,
+			"water_fraction": 0.0
+		},
+		"64": {
+			"distinct_land_ids": 1,
+			"h": 64,
+			"height_deciles": [
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"n": 4096,
+			"shore_fraction": 0.0,
+			"shore_water_ratio": 0.0,
+			"tile_histogram": {
+				"0": 4096
+			},
+			"top1_share": 1.0,
+			"w": 64,
+			"water_fraction": 0.0
+		}
+	},
+	"total": 25,
+	"unix_ms": 1795686511533.0,
+	"vector_hooks": {
+		"blend_vectors": {
+			"detail": "no blend_vectors vector hook on I07/I09 module; X13/X21 not landed",
+			"policy": "ADVISORY",
+			"status": "HOOK_MISSING"
+		},
+		"rng_vectors": {
+			"detail": "no rng_vectors vector hook on I07/I09 module; X13/X21 not landed",
+			"policy": "ADVISORY",
+			"status": "HOOK_MISSING"
+		}
+	}
+}

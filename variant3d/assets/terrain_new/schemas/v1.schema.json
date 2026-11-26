@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "terrain_new/v1.schema.json",
+  "title": "Cossacks 3 donor-derived terrain assets (terrain_new v1)",
+  "description": "Schema for derived-only assets emitted by variant3d/tools/decode_donor_*.py and build_terrain_new_atlas.py. Donor binaries are never copied. This schema certifies shape only, NOT donor visual parity.",
+  "$defs": {
+    "provenance_entry": {
+      "type": "object",
+      "required": ["source", "output", "output_sha256", "label", "visual_parity_claim"],
+      "properties": {
+        "source": {"type": "string", "description": "Donor path:line/offset, preferably relative or $COSSACKS3_DIR"},
+        "offset": {"type": ["string", "integer"]},
+        "output": {"type": "string"},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "output_sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+        "label": {"type": "string"},
+        "visual_parity_claim": {"const": false}
+      }
+    },
+    "derived_doc": {
+      "type": "object",
+      "required": ["visual_parity_claim"],
+      "properties": {
+        "visual_parity_claim": {"const": false},
+        "schema": {"type": "string"},
+        "version": {"type": "integer"},
+        "source": {"type": "string"},
+        "source_sha256": {"type": "string"},
+        "labels": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    }
+  },
+  "oneOf": [
+    {
+      "$comment": "Root manifest (X15 schema v1)",
+      "type": "object",
+      "required": ["schema", "version", "pack", "pack_id", "labels", "counts", "asset_index", "visual_parity_claim"],
+      "properties": {
+        "schema": {"const": "terrain_new/manifest/v1"},
+        "version": {"type": "integer"},
+        "pack": {"type": "string"},
+        "pack_id": {"type": "string", "pattern": "^terrain_new_v1-"},
+        "labels": {"type": "array", "items": {"type": "string"}},
+        "counts": {"type": "object"},
+        "asset_index": {"type": "array", "items": {"$ref": "#/$defs/provenance_entry"}},
+        "commit_policy": {"type": "object"},
+        "validation": {"type": "object"},
+        "visual_parity_claim": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    {"$ref": "#/$defs/derived_doc"}
+  ],
+  "x-parity-guard": "PORT APPROXIMATION - no donor GPU A/B frame exists; shape validation is NOT donor parity."
+}

@@ -1,0 +1,394 @@
+{
+  "check_basis": "observed donor facts only; F03 summary 20 vs observed 19 is recorded as MP-1 and is NOT a pass criterion; no key invented",
+  "count_checks": [
+    {
+      "expected": 19,
+      "id": "C01",
+      "label": "globalparams.cfg active key=value lines",
+      "note": "F03 summary 20 vs observed 19; F03 table lists 19. Validated against observed 19 — documented exception MP-1, no key invented",
+      "pass1_structural": 19,
+      "pass2_regex": 19,
+      "pass3_bytes": 19,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 13,
+      "id": "C02",
+      "label": "localparams.cfg active key=value lines",
+      "note": "F03 §5.1: localparams.cfg:4-16",
+      "pass1_structural": 13,
+      "pass2_regex": 13,
+      "pass3_bytes": 13,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 15,
+      "id": "C03",
+      "label": "mapcover.cfg active key=value lines",
+      "note": "F03 §5.2: mapcover.cfg:4-30 (15 parameter rows)",
+      "pass1_structural": 15,
+      "pass2_regex": 15,
+      "pass3_bytes": 15,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 8,
+      "id": "C04",
+      "label": "tilesmooth.cfg section.begin blocks",
+      "note": "F03 §6.1: lines 1,15,29,46,63,80,97,114 (supersedes prior '10')",
+      "pass1_structural": 8,
+      "pass2_regex": 8,
+      "pass3_bytes": 8,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 30,
+      "id": "C05",
+      "label": "tilesmooth.cfg TileName entries",
+      "note": "F03 §2/§6.1: 3+3+4x6 = 30, no Prob key",
+      "pass1_structural": 30,
+      "pass2_regex": 30,
+      "pass3_bytes": 30,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 22,
+      "id": "C06",
+      "label": "tilesmooth_scripts.cfg chains (SmoothTiles structs)",
+      "note": "F03 §6.3: C00..C21; C10/C21 all-commented terminators",
+      "pass1_structural": 22,
+      "pass2_regex": 22,
+      "pass3_bytes": 22,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 130,
+      "id": "C07",
+      "label": "tilesmooth_scripts.cfg groups (TileNames structs, all)",
+      "note": "F03 §6.3/§6.6: 118 active + 12 commented",
+      "pass1_structural": 130,
+      "pass2_regex": 130,
+      "pass3_bytes": 130,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 118,
+      "id": "C08",
+      "label": "tilesmooth_scripts.cfg active groups",
+      "note": "F03 §6.3",
+      "pass1_structural": 118,
+      "pass2_regex": 118,
+      "pass3_bytes": 118,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 310,
+      "id": "C09",
+      "label": "tilesmooth_scripts.cfg entries (TileName lines, all)",
+      "note": "F03 §6.3/§6.6: 282 active + 28 commented",
+      "pass1_structural": 310,
+      "pass2_regex": 310,
+      "pass3_bytes": 310,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 282,
+      "id": "C10",
+      "label": "tilesmooth_scripts.cfg active entries",
+      "note": "F03 §6.3",
+      "pass1_structural": 282,
+      "pass2_regex": 282,
+      "pass3_bytes": 282,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 86,
+      "id": "C11",
+      "label": "tilesmooth_scripts.cfg distinct active TileName values",
+      "note": "F03 §6.3/§6.5: three INDEPENDENT passes — raw text, structural tokens, anchored byte regex; no tautological re-use",
+      "pass1_structural": 86,
+      "pass2_regex": 86,
+      "pass3_bytes": 86,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": "174.0168",
+      "id": "C12",
+      "label": "tilesmooth_scripts.cfg sum of active Prob",
+      "note": "F03 §6.3: three INDEPENDENT Decimal passes — raw text, structural tokens, anchored byte regex; //Prob alternatives excluded; active Prob lines=282",
+      "pass1_structural": "174.0168",
+      "pass2_regex": "174.0168",
+      "pass3_bytes": "174.0168",
+      "result": "PASS",
+      "unit": "decimal"
+    },
+    {
+      "expected": 64,
+      "id": "C13",
+      "label": "generator.cfg pattern families (Name = records)",
+      "note": "F03 §7.3: generator.cfg:69-2314; 4 duplicate names -> index key required",
+      "pass1_structural": 64,
+      "pass2_regex": 64,
+      "pass3_bytes": 64,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 493,
+      "id": "C14",
+      "label": "generator.cfg Pattern/Freq pairs",
+      "note": "F03 §7.2: Freq lines independently counted = 493",
+      "pass1_structural": 493,
+      "pass2_regex": 493,
+      "pass3_bytes": 493,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 19,
+      "id": "C15",
+      "label": "startingsettings.cfg presets (startid =)",
+      "note": "F03 §8: startingsettings.cfg:87-3423",
+      "pass1_structural": 19,
+      "pass2_regex": 19,
+      "pass3_bytes": 19,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 61,
+      "id": "C16",
+      "label": "startingsettings.cfg countries (allowedcountries structs)",
+      "note": "F03 §2: '61 countries[]'. The token 'countries : struct.begin' occurs 79x; see MP-2",
+      "pass1_structural": 61,
+      "pass2_regex": 61,
+      "pass3_bytes": 61,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 61,
+      "id": "C17",
+      "label": "startingsettings.cfg mask structs",
+      "note": "F03 §8: 61 mask blocks",
+      "pass1_structural": 61,
+      "pass2_regex": 61,
+      "pass3_bytes": 61,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 61,
+      "id": "C18",
+      "label": "startingsettings.cfg legends structs",
+      "note": "F03 §8: 61 legends blocks",
+      "pass1_structural": 61,
+      "pass2_regex": 61,
+      "pass3_bytes": 61,
+      "result": "PASS",
+      "unit": "count"
+    },
+    {
+      "expected": 276,
+      "id": "C19",
+      "label": "startingsettings.cfg legend entries (key =)",
+      "note": "F03 §8: 276 key/role/countrysid/basename quadruples",
+      "pass1_structural": 276,
+      "pass2_regex": 276,
+      "pass3_bytes": 276,
+      "result": "PASS",
+      "unit": "count"
+    }
+  ],
+  "derived": {
+    "active_prob_line_count": 282,
+    "active_prob_sum": "174.0168",
+    "distinct_active_tilenames": 86,
+    "mp_notes": {
+      "MP-1": "F03 summary 20 vs observed 19; F03 table lists 19 at globalparams.cfg:2-20. Four passes (structural / regex / anchored byte-regex / full verbatim line re-read) all give 19. --check validates against observed 19 with this documented exception; do not invent a 20th key. [O]/[D]",
+      "MP-2": "'61 countries' in F03 §2 is reproduced by 61 `allowedcountries : struct.begin` blocks; the literal token `countries : struct.begin` occurs 79x (all active). Definitional ambiguity, not a count error; I01 keys on allowedcountries blocks. [D]/[U]"
+    }
+  },
+  "documented_exceptions": [
+    {
+      "check": "C01",
+      "f03_summary_count": 20,
+      "id": "MP-1",
+      "label": "[D] documented count mismatch — F03 summary 20 vs observed 19; F03 table lists 19",
+      "observed_count": 19,
+      "passes": "structural / regex / anchored byte-regex / verbatim re-read all = 19",
+      "resolution": "--check validates against OBSERVED 19; F03 §3.1 dump and §4 table also list 19 rows. No 20th key invented. [O]/[D]",
+      "source": "data\\gen\\globalparams.cfg:2-20"
+    }
+  ],
+  "game_root": "$COSSACKS3_DIR",
+  "multi_pass_audit": [],
+  "preserved_contradictions": [
+    {
+      "cfg_side": {
+        "label": "O",
+        "line": 9,
+        "source": "data\\gen\\globalparams.cfg",
+        "source_rel": "data\\gen\\globalparams.cfg",
+        "source_short": "gen\\globalparams.cfg",
+        "text": "   TileSmoothPasses = 6"
+      },
+      "f03_citation": "F03 §4 F3 / §9 F3; spec/09 §4",
+      "id": "C2",
+      "label": "[D] donor contradiction — preserve, do not fix",
+      "port_rule": "skirmish uses 3; keep cfg literal 6 as provenance only (PORT APPROXIMATION)",
+      "script_side": {
+        "label": "O",
+        "line": 237,
+        "sha256": "1887b5ddc6ebed051b709647eaafe6e96b415b56a2be15ba5b4e81ea6bcf179c",
+        "source": "data\\scripts\\common.inc\\smoothtiles.inc",
+        "source_rel": "data\\scripts\\common.inc\\smoothtiles.inc",
+        "source_short": "scripts\\common.inc\\smoothtiles.inc",
+        "text": "      [*] = ;SmoothTileMap(0, 0, GetMapWidth, GetMapHeight, 3);"
+      }
+    },
+    {
+      "cfg_side": {
+        "label": "O",
+        "line": 10,
+        "source": "data\\gen\\globalparams.cfg",
+        "source_rel": "data\\gen\\globalparams.cfg",
+        "source_short": "gen\\globalparams.cfg",
+        "text": "   TileSmoothListFileName = .\\data\\gen\\tilesmooth.cfg"
+      },
+      "f03_citation": "F03 §4 F4 / §9 F4; spec/09 §4",
+      "id": "C3",
+      "label": "[D] donor contradiction — preserve, do not fix",
+      "port_rule": "runtime loads tilesmooth_scripts.cfg; keep cfg path literal as provenance only",
+      "script_side": {
+        "label": "O",
+        "line": 5,
+        "sha256": "1887b5ddc6ebed051b709647eaafe6e96b415b56a2be15ba5b4e81ea6bcf179c",
+        "source": "data\\scripts\\common.inc\\smoothtiles.inc",
+        "source_rel": "data\\scripts\\common.inc\\smoothtiles.inc",
+        "source_short": "scripts\\common.inc\\smoothtiles.inc",
+        "text": "      [*] = ;ParserLoadFromFileByHandle(pTileSmoothLists, '.\\data\\gen\\tilesmooth_scripts.cfg');"
+      }
+    }
+  ],
+  "schema_version": "1.0",
+  "source_hashes": [
+    {
+      "bytes_expected": 537,
+      "bytes_observed": 537,
+      "crlf_count": 22,
+      "eol": "CRLF",
+      "lines_expected": 22,
+      "lines_observed": 22,
+      "rel": "data\\gen\\globalparams.cfg",
+      "result": "PASS",
+      "sha256_expected": "15a8dc64a91dc4e72f45a997d6f6a5b770b2b77786518f48a75e04ab95727a51",
+      "sha256_match": true,
+      "sha256_observed": "15a8dc64a91dc4e72f45a997d6f6a5b770b2b77786518f48a75e04ab95727a51",
+      "source": "data\\gen\\globalparams.cfg"
+    },
+    {
+      "bytes_expected": 508,
+      "bytes_observed": 508,
+      "crlf_count": 20,
+      "eol": "CRLF",
+      "lines_expected": 20,
+      "lines_observed": 20,
+      "rel": "data\\gen\\localparams.cfg",
+      "result": "PASS",
+      "sha256_expected": "8d174830c47388e28ed80ad434ad591943a7d69616fb89697e68175b0934a12d",
+      "sha256_match": true,
+      "sha256_observed": "8d174830c47388e28ed80ad434ad591943a7d69616fb89697e68175b0934a12d",
+      "source": "data\\gen\\localparams.cfg"
+    },
+    {
+      "bytes_expected": 1196,
+      "bytes_observed": 1196,
+      "crlf_count": 40,
+      "eol": "CRLF",
+      "lines_expected": 40,
+      "lines_observed": 40,
+      "rel": "data\\gen\\mapcover.cfg",
+      "result": "PASS",
+      "sha256_expected": "ff0a7bf43314af53c93dd14f992fa4e6b866cd5acf07b95abdb2404ed9fa43f2",
+      "sha256_match": true,
+      "sha256_observed": "ff0a7bf43314af53c93dd14f992fa4e6b866cd5acf07b95abdb2404ed9fa43f2",
+      "source": "data\\gen\\mapcover.cfg"
+    },
+    {
+      "bytes_expected": 2796,
+      "bytes_observed": 2796,
+      "crlf_count": 129,
+      "eol": "CRLF",
+      "lines_expected": 129,
+      "lines_observed": 129,
+      "rel": "data\\gen\\tilesmooth.cfg",
+      "result": "PASS",
+      "sha256_expected": "1753533e7984c2319c3c5fdbc519728e0937905c4cc5117846432ce008b89c7d",
+      "sha256_match": true,
+      "sha256_observed": "1753533e7984c2319c3c5fdbc519728e0937905c4cc5117846432ce008b89c7d",
+      "source": "data\\gen\\tilesmooth.cfg"
+    },
+    {
+      "bytes_expected": 64017,
+      "bytes_observed": 64017,
+      "crlf_count": 1863,
+      "eol": "CRLF",
+      "lines_expected": 1863,
+      "lines_observed": 1863,
+      "rel": "data\\gen\\tilesmooth_scripts.cfg",
+      "result": "PASS",
+      "sha256_expected": "b82c88844160c0451696951466a72bcd1dff64079388c0ad0b3b0a07a531b433",
+      "sha256_match": true,
+      "sha256_observed": "b82c88844160c0451696951466a72bcd1dff64079388c0ad0b3b0a07a531b433",
+      "source": "data\\gen\\tilesmooth_scripts.cfg"
+    },
+    {
+      "bytes_expected": 70074,
+      "bytes_observed": 70074,
+      "crlf_count": 2367,
+      "eol": "CRLF",
+      "lines_expected": 2367,
+      "lines_observed": 2367,
+      "rel": "data\\game\\var\\generator.cfg",
+      "result": "PASS",
+      "sha256_expected": "f8a5cd2e08952565290adf4da888017467097c9b6e7666a45cf141827a974cc3",
+      "sha256_match": true,
+      "sha256_observed": "f8a5cd2e08952565290adf4da888017467097c9b6e7666a45cf141827a974cc3",
+      "source": "data\\game\\var\\generator.cfg"
+    },
+    {
+      "bytes_expected": 116920,
+      "bytes_observed": 116920,
+      "crlf_count": 3424,
+      "eol": "CRLF",
+      "lines_expected": 3424,
+      "lines_observed": 3424,
+      "rel": "data\\game\\var\\startingsettings.cfg",
+      "result": "PASS",
+      "sha256_expected": "17d4aeddaf4496594bda74e5f1fcc4f8ff0e149a5b2a53211c8f1eba200c111f",
+      "sha256_match": true,
+      "sha256_observed": "17d4aeddaf4496594bda74e5f1fcc4f8ff0e149a5b2a53211c8f1eba200c111f",
+      "source": "data\\game\\var\\startingsettings.cfg"
+    }
+  ],
+  "summary": {
+    "count_checks_pass": 19,
+    "count_checks_total": 19,
+    "hash_checks_pass": 7,
+    "hash_checks_total": 7
+  },
+  "tool": "decode_donor_cfg.py/I01",
+  "visual_parity_claim": false
+}

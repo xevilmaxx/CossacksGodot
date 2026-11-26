@@ -82,6 +82,15 @@ implementation in `variant3d/`**, in this order:
   ask COORD first.
 - **No invention.** No new donor constants, no synthetic noise/dither field
   (S-25-09), no threshold lowered, no assertion deleted, no fake A/B.
+- **Multiple passes on anomalies (owner directive).** If a decompiled function,
+  struct, constant or byte pattern looks strange, garbled, unstructured or
+  contradictory, do NOT skip it after one attempt. Re-run it with a second
+  instrument: `native_function_study` (Deep/Ghidra dossier) vs
+  `native_function_pseudocode` (clean-room lifter), assembly/bytes, callers/
+  callees, xrefs, vtable pointers, and where possible a second target
+  (`editor.exe` vs `cossacks.exe`) or a second decoder. Record every pass,
+  what changed, and why the final reading was accepted — or mark it
+  `[U] UNVERIFIED` with the passes attempted. Silent skipping is a defect.
 - **Windows:** use `python`, PowerShell `;`, paths quoted.
 
 ## 5. Swarm board — 30 concurrent workers
@@ -124,5 +133,56 @@ A05 QA / A-B harness · A06 integration + rollback plan.
    no hard grid.
 5. Gates remain green; `app/` untouched; no donor parity claim unless a real
    donor GPU A/B frame is produced.
+
+## 7. Outcome / honest ceiling (point-in-time, 2026-11-26)
+
+> This section records what the day actually achieved. It changes no rule above:
+> the read-only/no-execution/label/parity guardrails of §4 and the owner-facing
+> criteria of §6 remain binding. Every count is point-in-time; file presence is
+> evidence of existence only, never correctness, a gate PASS or donor fidelity.
+
+- **[O] Data formats are byte-exact, with counts.** `.pattern` size law
+  `S = 8+4wh+54(w−1)(h−1)` holds **710/710** with zero residual (**678/680** min/max
+  bit-exact, **550,908** `Rec24`); `pattern.lib` **30,309,138 B** plaintext / **680**
+  sections / **39,780** object records / **235** `BaseName`; **4,466** terrainmask
+  TGAs (**1,331** vanilla + **1,856** dlc5 + **1,279** src) with `h = −1.1·B/255`;
+  **7** gen cfg files (**64** families / **493** `Pattern=Freq` pairs, **22** chains /
+  **118** active groups / **282** active entries / **86** names); exact 32-bit LCG;
+  **124** tile ids/season; 37-byte `.map` records **102,400/102,400** and
+  **147,456/147,456**. These are decode-integrity results, **not** tier-1 verdicts
+  and **not** fidelity (X27 §2, V81 §2.1).
+- **[O] Binaries are complete over discovered functions only.** **18,918/18,918**
+  `cossacks.exe` and **22,384/22,384** `editor.exe` *discovered* functions were
+  exported, but the lifter marks **4,265 (22.54%)** and **12,254 (54.7%)** as
+  garbled/unstructured; only **11/34** D01 terrain anchors are present (**23 absent**)
+  and ~45/64 class constructors stay `[U]`. Never quote the export totals without
+  the garble and anchor counts; "whole binary decoded" is false (X27 §2/§6 C9).
+- **[O] The packed stub is genuinely undecodable: 2.786%.** Five PEs carry a
+  **146,800-byte**, entropy-**7.965** `.bind`/`WUS1` tail = **835,376 / 29,987,184 B**
+  (**2.786%** of seven PEs; **2.152%** of the two terrain-relevant PEs). X31
+  statically recovered the GetPC stub and a 240-byte rolling-XOR descriptor (magic
+  `0xC0DEC0DF`, OEP equal to the already-readable `.exe` entry), but the residual
+  high-entropy payload was never unpacked or executed; a complete offline unpacker
+  is not feasible under §4 and would yield no new terrain code. No strings/functions
+  there is `[U]`, not proof of absence (X31 §6/§8).
+- **[U] Runtime intent is not execution — the single biggest categorical gap.**
+  All **972** X03 `.inc` excerpts and all F03 cfg literals are `;`-prefixed; no donor
+  binary was run, so no compiled path was observed consuming a decoded value.
+  `bmTransparency` pass count (six X17 passes), `hmapTex` binding/plane Y, native
+  kernels (`SmoothTerrain`, `PlateauTerrain`, `PaintTerrain`, `WaterFieldAdd`),
+  `.pattern` field semantics, `.map` tag/owner/collision fields, `GenerateMapRandKey`
+  and saved-map key bytes remain `[U]`; every port visual stays `PORT APPROXIMATION`.
+- **[D] "Every single bit" is not achievable under these read-only rules and was not
+  achieved.** The honest ceiling is byte-level closure of readable terrain-relevant
+  data plus on-demand instruction reads of named functions, with every
+  runtime-dependent claim permanently `[U]`/`PORT APPROXIMATION`. Lifting it needs a
+  VMT-pointer discovery pass plus a second lifter, or a permitted donor runtime/GL
+  trace — both outside today's rules (X27 §7).
+- **[O] No parity claim.** No donor GPU A/B frame exists: `parity.claim = NONE`,
+  `parity.status = "UNVERIFIED"`, no tier above 2 in the V15 vocabulary, and
+  `blocking_unverified` is non-empty ⇒ `RESULT IS NOT GOOD`. The scaffold
+  (I01–I13 + N14, 780 `terrain_new` JSONs, V48 patches applied, V61/V65 **static**
+  API PASS) is default-legacy and ungated; **no gate was run for today's tree**, so
+  none of it is a green result, a cloned terrain, or a donor match. (V81 §1/§3/§7.)
 
 *End of charter.*

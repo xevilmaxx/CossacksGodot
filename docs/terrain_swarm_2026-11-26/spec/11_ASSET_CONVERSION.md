@@ -72,6 +72,28 @@ one; mip presence; `terrainmeshN` object counts; sha256 manifest; no donor bytes
 in outputs; `--dry-run` writes nothing; determinism across two runs; parity flag
 false.
 
+## 11.7 Legacy tool disposition (from P04)
+
+Never edit legacy tools in place — freeze them as read-only cross-checks and copy
+their *proven algorithms* into the new `*_new.py` tools (P04 §0.4, A03:280).
+
+| Tool | Disposition (P04 §2) |
+|---|---|
+| `import_donor_map.py` | **KEEP/PORT LOGIC** — real `.map` height decoder (`TerrainMapBegin/End`, repeated `u32 W,W`, measured `f32[W*H]`), but its default dump writes a **zero tileblock placeholder** (`:450,462-465`); new tool must emit surveyed tile ids instead. D04 owns full format. |
+| `import_donor_masks.py` | **KEEP/EXTEND** — TGA RGB decode + start-dot BFS; store raw R relief channel, cover *every* mask (`PER_TYPE=8` subsample drops most); water heuristic `B>58` is `[I]`. |
+| `donor_gen.py`, `gen_variant_maps.py` | **DO NOT PORT** — synthesised objects, authored relief constants, Python RNG, blob noise; read-only constant reference only. |
+| `export_donor_patterns.py` | **KEEP cross-check** for 41-family weights + occupancy; readers stop at the `w*h` occupancy prefix — float grid (byte 8225 in `k_ravine_big_stone_1.pattern`) and object list are `[U]`. |
+| `build_tile_index_atlas.py` | **KEEP `--check`**, port index/face/alpha logic into `build_terrain_new_atlas.py`; packing/upscale/alpha-intensity are labelled APPROX. |
+| `heightmap_splat.py` | **KEEP dump reader** for QA; replace blend/alpha/id logic with donor tile+`bmTransparency` path. |
+| `convert_models.py` | **KEEP readers** for relief/forest/stone/mine/field props; placement transforms must come from F01/F02 object records. |
+| `scan_map.py` | **EXTEND** into A05 QA harness with new dump schema; re-derive gates, never lower thresholds. |
+| `parse_terrain.py`, `extract_map.py`, `build_missions.py`, `compute_ortho.py`, `t6_registry.py` | **RETIRE** from compiler (diagnostic/scenario/unit/project-management roles). |
+| `pieces/t6_*.py` (16) + `piece_specs/*.json` (21) | **KEEP as QA fixtures** for landscape classes; never runtime decoders or parity evidence. |
+
+`app/tools/**` is a stale byte-identical mirror of 12 tools + 16 pieces + 21
+specs; 3 tools exist only in `variant3d/`; `convert_models.py` differs (variant
+has additive relief/nation tables). `app/` stays byte-untouched (P04 §0.5).
+
 ---
-*Integrated by COORD from A03. Contradictions with F01/F02/F03/D05 reports will be
-resolved in the contradiction register in `spec/README.md`.*
+*Integrated by COORD from A03 + P04. Contradictions with F01/F02/F03/D05 reports
+will be resolved in the contradiction register in `spec/README.md`.*

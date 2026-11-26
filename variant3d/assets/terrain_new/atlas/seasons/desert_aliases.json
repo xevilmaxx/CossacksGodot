@@ -1,0 +1,8 @@
+{
+ "version": 1,
+ "generator": "variant3d/tools/build_terrain_new_atlas.py",
+ "status": "UNVERIFIED — no season swap emitted",
+ "entries": [],
+ "note": "F10/DLC desert season set is UNVERIFIED; no desert texture is fabricated. Desert summer tiles remain at ids 111-122 in both season atlases (tiles.mat desertN_winter -> desertN.dds reuse).",
+ "visual_parity_claim": false
+}

@@ -114,6 +114,8 @@ const ANIM_SCRIPT := "res://scripts/anim3d.gd"
 # module; no edit to pattern_gen.gd / game.gd / world3d_terrain.gd, so no stamp,
 # RNG, height[] or blocked[] stream is touched.
 const RELIEF_SCRIPT := "res://scripts/world3d_relief.gd"
+# I11-SEAM / V05 §4.2: opt-in donor backend; legacy stays the default.
+const TERRAIN_DONOR_SCRIPT := "res://scripts/terrain_donor_world.gd"
 
 # --- FULL 2D WORLD CONTRACT: DATA MEMBERS (V71 §3 :184-195) -------------------
 var game = null                      # untyped: C3Game object OR dictionary test double
@@ -137,6 +139,10 @@ var fx = null        # world3d_fx.gd       : bind/sync/add_fx/draw_*/
 var fog = null       # world3d_fog.gd      : bind/sync + fog_* arrays
 var anim = null      # anim3d.gd           : bind(game, entities)/play
 var relief = null    # world3d_relief.gd   : bind(game, terrain) -> static prop MultiMeshes (Z08)
+
+# I11-SEAM / V05 §4.2: backend switch — default legacy, opt-in donor only.
+var terrain_backend := "legacy"
+var _terrain_locked := false
 
 var stats: Dictionary = {}
 var anim_t: float = 0.0
@@ -207,6 +213,15 @@ func _prop(g, key: String, fallback):
 		return fallback
 	var v = g.get(key)
 	return fallback if v == null else v
+
+
+# I11-SEAM / V05 §4.2: a late switch is refused after bind() so it cannot
+# orphan the single water/relief nodes built against the chosen terrain.
+func set_terrain_backend(mode: String) -> void:
+	if _terrain_locked:
+		push_error("world3d: terrain backend locked after bind()")
+		return
+	terrain_backend = "donor" if str(mode).to_lower() == "donor" else "legacy"
 
 
 # Instantiate one module once and attach it to the composed world.
@@ -606,7 +621,7 @@ func bind(g, h = null) -> void:
 	hud = h
 	view_scale = float(Data.PIXELS_PER_METER)   # world.gd:240; data.gd:113
 	if not _modules_ready:
-		terrain = _instantiate(TERRAIN_SCRIPT)
+		terrain = _instantiate(TERRAIN_DONOR_SCRIPT if terrain_backend == "donor" else TERRAIN_SCRIPT)
 		entities = _instantiate(ENTITIES_SCRIPT)
 		fx = _instantiate(FX_SCRIPT)
 		fog = _instantiate(FOG_SCRIPT)
@@ -627,6 +642,7 @@ func bind(g, h = null) -> void:
 		fog_sprite.name = "FogVisibilityProxy3D"
 		add_child(fog_sprite)
 		_modules_ready = true
+		_terrain_locked = true
 
 	# Re-binding reuses the module instances but rebuilds their registration
 	# state; restart the feed id sets so no id is silently skipped.
@@ -686,6 +702,9 @@ func bind(g, h = null) -> void:
 		"fog_arrays_aliased": fog != null,
 		"entity_feed": "V7-62 game.entities + game.res_nodes -> add_*/remove",
 		"contract": "V71_mechanics_inventory.md:180-199 / V73_ATOMIC_CONTRACT.md:24",
+		# I11-SEAM / V05 §4.2: A/B proof — which backend and script actually ran.
+		"terrain_backend": terrain_backend,
+		"terrain_script": TERRAIN_DONOR_SCRIPT if terrain_backend == "donor" else TERRAIN_SCRIPT,
 		# Z08 observability — derived prop counts + PORT APPROX labels. The
 		# module's own stats carries per-prop descriptors for QA reconciliation.
 		"relief_props": relief.stats if relief != null else {},

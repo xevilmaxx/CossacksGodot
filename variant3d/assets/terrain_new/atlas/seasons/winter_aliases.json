@@ -1,0 +1,1003 @@
+{
+ "version": 1,
+ "generator": "variant3d/tools/build_terrain_new_atlas.py",
+ "index_preserving": true,
+ "alias_suffix": "_winter",
+ "count": 124,
+ "entries": [
+  {
+   "index": 0,
+   "name": "grass1",
+   "winter_alias": "grass1_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 1,
+   "name": "grass2",
+   "winter_alias": "grass2_winter",
+   "source_png": "winter9.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 2,
+   "name": "grass3",
+   "winter_alias": "grass3_winter",
+   "source_png": "winter2.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 3,
+   "name": "grass4",
+   "winter_alias": "grass4_winter",
+   "source_png": "winter3.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 4,
+   "name": "grass5",
+   "winter_alias": "grass5_winter",
+   "source_png": "winter4.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 5,
+   "name": "grass6",
+   "winter_alias": "grass6_winter",
+   "source_png": "winter16.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 6,
+   "name": "grass7",
+   "winter_alias": "grass7_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 7,
+   "name": "grass8",
+   "winter_alias": "grass8_winter",
+   "source_png": "winter21.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 8,
+   "name": "grass9",
+   "winter_alias": "grass9_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 9,
+   "name": "grass10",
+   "winter_alias": "grass10_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 10,
+   "name": "ground1",
+   "winter_alias": "ground1_winter",
+   "source_png": "winter11.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 11,
+   "name": "grass_sand1",
+   "winter_alias": "grass_sand1_winter",
+   "source_png": "winter21.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 12,
+   "name": "grass_sand2",
+   "winter_alias": "grass_sand2_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 13,
+   "name": "grass_rock1",
+   "winter_alias": "grass_rock1_winter",
+   "source_png": "winter9.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 14,
+   "name": "grass_ground1",
+   "winter_alias": "grass_ground1_winter",
+   "source_png": "winter5.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 15,
+   "name": "grass_ground2",
+   "winter_alias": "grass_ground2_winter",
+   "source_png": "winter4.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 16,
+   "name": "grass_ground3",
+   "winter_alias": "grass_ground3_winter",
+   "source_png": "winter5.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 17,
+   "name": "rock1",
+   "winter_alias": "rock1_winter",
+   "source_png": "winter12.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 18,
+   "name": "rock2",
+   "winter_alias": "rock2_winter",
+   "source_png": "winter13.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 19,
+   "name": "rock3",
+   "winter_alias": "rock3_winter",
+   "source_png": "winter13.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 20,
+   "name": "rock4",
+   "winter_alias": "rock4_winter",
+   "source_png": "winter17.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 21,
+   "name": "rock5",
+   "winter_alias": "rock5_winter",
+   "source_png": "winter22.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 22,
+   "name": "rock6",
+   "winter_alias": "rock6_winter",
+   "source_png": "winter15.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 23,
+   "name": "rock7",
+   "winter_alias": "rock7_winter",
+   "source_png": "winter14.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 24,
+   "name": "rock8",
+   "winter_alias": "rock8_winter",
+   "source_png": "winter16.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 25,
+   "name": "rock9",
+   "winter_alias": "rock9_winter",
+   "source_png": "winter20.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 26,
+   "name": "sand1",
+   "winter_alias": "sand1_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 27,
+   "name": "sand2",
+   "winter_alias": "sand2_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 28,
+   "name": "sand3",
+   "winter_alias": "sand3_winter",
+   "source_png": "winter20.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 29,
+   "name": "sand4",
+   "winter_alias": "sand4_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 30,
+   "name": "sand5",
+   "winter_alias": "sand5_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 31,
+   "name": "sand6",
+   "winter_alias": "sand6_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 32,
+   "name": "sand7",
+   "winter_alias": "sand7_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 33,
+   "name": "sand8",
+   "winter_alias": "sand8_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 34,
+   "name": "sand9",
+   "winter_alias": "sand9_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 35,
+   "name": "sand1f",
+   "winter_alias": "sand1f_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 36,
+   "name": "sand1s",
+   "winter_alias": "sand1s_winter",
+   "source_png": "winter25.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 37,
+   "name": "sand2f",
+   "winter_alias": "sand2f_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 38,
+   "name": "sand2s",
+   "winter_alias": "sand2s_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 39,
+   "name": "sand3f",
+   "winter_alias": "sand3f_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 40,
+   "name": "sand3s",
+   "winter_alias": "sand3s_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 41,
+   "name": "sand4f",
+   "winter_alias": "sand4f_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 42,
+   "name": "sand4s",
+   "winter_alias": "sand4s_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 43,
+   "name": "sand5f",
+   "winter_alias": "sand5f_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 44,
+   "name": "sand5s",
+   "winter_alias": "sand5s_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 45,
+   "name": "sand6f",
+   "winter_alias": "sand6f_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 46,
+   "name": "sand6s",
+   "winter_alias": "sand6s_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 47,
+   "name": "sand7f",
+   "winter_alias": "sand7f_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 48,
+   "name": "sand7s",
+   "winter_alias": "sand7s_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 49,
+   "name": "sand8f",
+   "winter_alias": "sand8f_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 50,
+   "name": "sand8s",
+   "winter_alias": "sand8s_winter",
+   "source_png": "winter2.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 51,
+   "name": "sand9f",
+   "winter_alias": "sand9f_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 52,
+   "name": "sand9s",
+   "winter_alias": "sand9s_winter",
+   "source_png": "winter2.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 53,
+   "name": "rock1vf",
+   "winter_alias": "rock1vf_winter",
+   "source_png": "winter12.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 54,
+   "name": "rock1vs",
+   "winter_alias": "rock1vs_winter",
+   "source_png": "winter12.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 55,
+   "name": "rock2vf",
+   "winter_alias": "rock2vf_winter",
+   "source_png": "winter13.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 56,
+   "name": "rock2vs",
+   "winter_alias": "rock2vs_winter",
+   "source_png": "winter13.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 57,
+   "name": "rock3vf",
+   "winter_alias": "rock3vf_winter",
+   "source_png": "winter13.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 58,
+   "name": "rock3vs",
+   "winter_alias": "rock3vs_winter",
+   "source_png": "winter13.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 59,
+   "name": "rock4vf",
+   "winter_alias": "rock4vf_winter",
+   "source_png": "winter17.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 60,
+   "name": "rock4vs",
+   "winter_alias": "rock4vs_winter",
+   "source_png": "winter17.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 61,
+   "name": "rock5vf",
+   "winter_alias": "rock5vf_winter",
+   "source_png": "winter22.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 62,
+   "name": "rock5vs",
+   "winter_alias": "rock5vs_winter",
+   "source_png": "winter22.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 63,
+   "name": "rock6vf",
+   "winter_alias": "rock6vf_winter",
+   "source_png": "winter15.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 64,
+   "name": "rock6vs",
+   "winter_alias": "rock6vs_winter",
+   "source_png": "winter15.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 65,
+   "name": "rock7vf",
+   "winter_alias": "rock7vf_winter",
+   "source_png": "winter14.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 66,
+   "name": "rock7vs",
+   "winter_alias": "rock7vs_winter",
+   "source_png": "winter14.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 67,
+   "name": "rock8vf",
+   "winter_alias": "rock8vf_winter",
+   "source_png": "winter16.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 68,
+   "name": "rock8vs",
+   "winter_alias": "rock8vs_winter",
+   "source_png": "winter16.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 69,
+   "name": "rock9vf",
+   "winter_alias": "rock9vf_winter",
+   "source_png": "winter20.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 70,
+   "name": "rock9vs",
+   "winter_alias": "rock9vs_winter",
+   "source_png": "winter20.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 71,
+   "name": "test0",
+   "winter_alias": "test0_winter",
+   "source_png": "winter4.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 72,
+   "name": "test1",
+   "winter_alias": "test1_winter",
+   "source_png": "winter6.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 73,
+   "name": "test2",
+   "winter_alias": "test2_winter",
+   "source_png": "winter7.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 74,
+   "name": "test3",
+   "winter_alias": "test3_winter",
+   "source_png": "winter8.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 75,
+   "name": "test4",
+   "winter_alias": "test4_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 76,
+   "name": "test5",
+   "winter_alias": "test5_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 77,
+   "name": "test6",
+   "winter_alias": "test6_winter",
+   "source_png": "winter4.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 78,
+   "name": "test7",
+   "winter_alias": "test7_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 79,
+   "name": "test8",
+   "winter_alias": "test8_winter",
+   "source_png": "winter21.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 80,
+   "name": "test9",
+   "winter_alias": "test9_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 81,
+   "name": "test10",
+   "winter_alias": "test10_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 82,
+   "name": "test11",
+   "winter_alias": "test11_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 83,
+   "name": "test12",
+   "winter_alias": "test12_winter",
+   "source_png": "winter5.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 84,
+   "name": "test13",
+   "winter_alias": "test13_winter",
+   "source_png": "winter5.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 85,
+   "name": "test14",
+   "winter_alias": "test14_winter",
+   "source_png": "winter5.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 86,
+   "name": "alpha0a",
+   "winter_alias": "alpha0a_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": true
+  },
+  {
+   "index": 87,
+   "name": "sandrock1",
+   "winter_alias": "sandrock1_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 88,
+   "name": "sandrock2",
+   "winter_alias": "sandrock2_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 89,
+   "name": "sandrock3",
+   "winter_alias": "sandrock3_winter",
+   "source_png": "winter19.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 90,
+   "name": "sandrock4",
+   "winter_alias": "sandrock4_winter",
+   "source_png": "winter19.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 91,
+   "name": "sandrock5",
+   "winter_alias": "sandrock5_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 92,
+   "name": "sandrock6",
+   "winter_alias": "sandrock6_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 93,
+   "name": "sandsea1",
+   "winter_alias": "sandsea1_winter",
+   "source_png": "winter19.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 94,
+   "name": "sandsea2",
+   "winter_alias": "sandsea2_winter",
+   "source_png": "winter2.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 95,
+   "name": "sandsea3",
+   "winter_alias": "sandsea3_winter",
+   "source_png": "winter2.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 96,
+   "name": "sandsea4",
+   "winter_alias": "sandsea4_winter",
+   "source_png": "winter19.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 97,
+   "name": "sandsea5",
+   "winter_alias": "sandsea5_winter",
+   "source_png": "winter19.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 98,
+   "name": "sandsea6",
+   "winter_alias": "sandsea6_winter",
+   "source_png": "winter3.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 99,
+   "name": "test15",
+   "winter_alias": "test15_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 100,
+   "name": "test16",
+   "winter_alias": "test16_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 101,
+   "name": "test17",
+   "winter_alias": "test17_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 102,
+   "name": "test18",
+   "winter_alias": "test18_winter",
+   "source_png": "winter7.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 103,
+   "name": "test19",
+   "winter_alias": "test19_winter",
+   "source_png": "winter8.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 104,
+   "name": "test20",
+   "winter_alias": "test20_winter",
+   "source_png": "winter0.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 105,
+   "name": "test21",
+   "winter_alias": "test21_winter",
+   "source_png": "winter25.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 106,
+   "name": "test22",
+   "winter_alias": "test22_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 107,
+   "name": "test23",
+   "winter_alias": "test23_winter",
+   "source_png": "winter25.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 108,
+   "name": "test24",
+   "winter_alias": "test24_winter",
+   "source_png": "winter10.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 109,
+   "name": "test25",
+   "winter_alias": "test25_winter",
+   "source_png": "winter25.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": false
+  },
+  {
+   "index": 110,
+   "name": "alpha0b",
+   "winter_alias": "alpha0b_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": true
+  },
+  {
+   "index": 111,
+   "name": "desert1",
+   "winter_alias": "desert1_winter",
+   "source_png": "desert1.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 112,
+   "name": "desert2",
+   "winter_alias": "desert2_winter",
+   "source_png": "desert2.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 113,
+   "name": "desert3",
+   "winter_alias": "desert3_winter",
+   "source_png": "desert3.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 114,
+   "name": "desert4",
+   "winter_alias": "desert4_winter",
+   "source_png": "desert4.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 115,
+   "name": "desert5",
+   "winter_alias": "desert5_winter",
+   "source_png": "desert5.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 116,
+   "name": "desert6",
+   "winter_alias": "desert6_winter",
+   "source_png": "desert6.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 117,
+   "name": "desert7",
+   "winter_alias": "desert7_winter",
+   "source_png": "desert7.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 118,
+   "name": "desert8",
+   "winter_alias": "desert8_winter",
+   "source_png": "desert8.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 119,
+   "name": "desert9",
+   "winter_alias": "desert9_winter",
+   "source_png": "desert9.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 120,
+   "name": "desert10",
+   "winter_alias": "desert10_winter",
+   "source_png": "desert10.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 121,
+   "name": "desert11",
+   "winter_alias": "desert11_winter",
+   "source_png": "desert11.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 122,
+   "name": "desert12",
+   "winter_alias": "desert12_winter",
+   "source_png": "desert12.png",
+   "kind": "DESERT_REUSE",
+   "shared_alpha": false
+  },
+  {
+   "index": 123,
+   "name": "alpha0c",
+   "winter_alias": "alpha0c_winter",
+   "source_png": "winter1.png",
+   "kind": "WINTER_PNG",
+   "shared_alpha": true
+  }
+ ],
+ "note": "Derived from variant3d/assets/terrain/atlas/winter_aliases.json (hand-authored, donor-cited second-hand). Shared alpha indices 86/110/123 stay EMPTY in the atlas; alias recorded, no art invented.",
+ "visual_parity_claim": false
+}

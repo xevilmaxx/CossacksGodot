@@ -1,0 +1,103 @@
+---
+id: V108
+ticket: "TERRAIN-SWARM-2026-11-26 / V108 — FINAL GO/NO-GO for COORD to run the V42 gate packet"
+agent: "V108 (read-only final prerequisite verification worker, 30-agent DONOR-FIRST terrain swarm 2026-11-26; reporting to COORD)"
+date: 2026-11-26
+status: DELIVERED__READ_ONLY__ONE_REPORT_ONLY__NO_GATE_RUN__NO_RUNNER_SUBCOMMAND__NO_GODOT_JOB__NO_SOURCE_EDIT__NO_PARITY_CLAIM
+owner_file: docs/terrain_swarm_2026-11-26/reports/V108_final_go.md
+files_created: [docs/terrain_swarm_2026-11-26/reports/V108_final_go.md]
+files_edited: []
+labels: [observed, derived, inferred, UNVERIFIED, "PORT APPROXIMATION", "NO_PARITY_CLAIM"]
+parity_guard: "No donor binary, donor byte, donor GPU frame, Godot process, runner subcommand or gate result was produced by V108. Every PASS below is a CURRENT-BYTES file:line / hash / filesystem / read-only-Python verdict, or a read of result JSONs produced by other actors — NOT a gate result and NOT a donor-parity claim. parity.claim=NONE, parity.status=UNVERIFIED (CHARTER.md:43-44,125)."
+multiple_passes: true
+scope_guard: "Read-only: file reads, grep, read-only json.loads / hashlib / ast.parse / os.walk, read-only git status/diff, and six read-only Python --dry-run/--check commands with PYTHONPYCACHEPREFIX+PYTHONDONTWRITEBYTECODE redirected to %TEMP%\\opencode\\v108_*. Scratch probes were confined to C:/Users/Maxym.Oboyshev/AppData/Local/Temp/opencode/ (outside the repo). No source, shader, asset, test, manifest, config, backup, queue, app/, git or Godot state was changed."
+root: "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3"
+verdict: "NO-GO — see §5. No gate run by V108; no parity claim."
+---
+
+# V108 — FINAL GO/NO-GO for the V42 gate packet
+
+## 0. Verdict in one line
+
+**NO-GO.** Every asset/registration/hygiene prerequisite is now satisfied on current bytes, but the A′-1 Godot parse station is **failing**: the latest fresh job `v42c-parse-gen` (ticket 621) exited 1, and `terrain_donor_gen.gd:377` and `:1844` still contain the three-argument `raw.encode_float(0, v, true)` call that Godot 4.7.2 rejected as "Expected at most 2 but received 3". 320² is still optional with no signed waiver, and `schemas/v1.schema.json` is still absent. No gate was run by V108; no donor-parity claim is made.
+
+## 1. Method — multiple passes (CHARTER.md:85–93)
+
+| Pass | Instrument | Result / effect |
+|---|---|---|
+| P1 | Read CHARTER.md in full; read V93, V95, V89, V55, V90, V104, V103, V105, V86, V83, V42, V48/V61/V65/V58 summaries | Baseline claims captured. **V102_final_blockers.md and V106_i09_feed_verify.md are ABSENT** at final glob (V105:85 records V102 absent too); no content invented for them. **V94 has no standalone report** — its path-correction pass is recorded in `V42_gate_commands.md:27-30`. |
+| P2 | Python `os.walk`+`os.path.getsize` census + per-tier grouping over `variant3d/assets/terrain_new/**`; explicit `Test-Path` equivalent for 14 paths | 5257 files / 364,646,949 B; root manifest **now PRESENT** (delta since V89/V86); `schemas/` and season-winter shape still absent. |
+| P3 | `hashlib.sha256` (streaming) on 10 V89/V93 anchor files; regex+`json.loads` sweep over all 787 derived JSONs | 10/10 anchor hashes match; 787/787 parse, 787/787 `visual_parity_claim:false`, **0** absolute-path files, 0 parse failures. |
+| P4 | Read-only parse of `variant3d/tests/manifest.json`, `t_relief_props_qa.gd`, `terrain_donor_props.gd`, `terrain_donor_gen.gd`, `terrain_donor_world.gd`, `t_terrain_donor.gd`, `main.gd`, `world3d.gd`, V42 packet paths | 41 tests, relief atom repoint, I09 canonical path + new shape branch, I07 fixes, V48 patches, seam, all packet paths — checked on **current** bytes. |
+| P5 | `git status --short -- app/`, `git diff --exit-code -- app/`, freeze-set diff; `hashlib` on both `.bak-COORD-I11` | app/ and freeze set clean; both backups SHA-exact. |
+| P6 | Read-only `json.loads` of `.godot_queue/status.json`; reads of result JSONs 607–622 and their per-job stderr | Three acks landed; **five V42 parse jobs failed** and three re-runs were needed; latest `v42c-parse-gen` still failed. Transient lock/job observed here, settled by P10. |
+| P7 | Six `python … --dry-run/--check` commands + `python -m py_compile`, all with temp cache, plus `ast.parse` on all six tools | All six exit **0** with expected summaries; `py_compile` exit 0; 6/6 AST PASS. No write to repo. |
+| P8 | V90-style bracket/indent/duplicate-`func` scanner on the two drifted `.gd` files; forbidden-token scan on the 13-file set | gen.gd and props.gd structurally clean on current bytes; no executable forbidden construct; only benign doc hit (`decode_donor_masks.py:14`). |
+| P9 | Grep of `docs/terrain_swarm_2026-11-26/**/*.md` for a 320² waiver; read of `.gitignore`/`variant3d/CREDITS.md` | No COORD-signed 320² waiver found; V78 artefacts present. |
+| P10 | Final spool re-read | counter=now_serving=623, `godot.lock` absent, `jobs/` 0 — settled at final pass. |
+
+**[O] No verdict was accepted from one pass.** Where a landed report was overtaken by a later write (V89's "root manifest absent", V90's hash table, V86's ack/I09 rows, V42's pre-V94 prose), the live tree wins and the stale reading is named.
+
+## 2. Prerequisite → CURRENT status → evidence → owner (master table)
+
+Legend: **PASS** = satisfied on current bytes (never a gate result); **FAIL** = not satisfied; **STALE** = landed report superseded by current bytes; **NOT_RUN** = no fresh gate evidence. `[O]` observation · `[D]` consequence · `[U]` UNVERIFIED.
+
+| # | Blocker / prerequisite (source) | CURRENT status | Exact evidence (current bytes / result id) | Owner |
+|---:|---|---|---|---|
+| 1 | Asset pack atlas/masks/lib/cfg presence + shas (V89 §1-4, V62) | **PASS** | Census 5257 files / 364,646,949 B = atlas 8, cfg 3, lib 1, masks 4467, patterns 777, root 1; 787 `.json` + 4470 `.png`, no raw donor type. 10/10 anchor SHA-256 match: `tile_index_atlas.png ba69259f…`, winter `ead5cc89…`, `alpha.png dfaf78d0…`, `alphavert.png c916ea98…`, `family_index.json 177b06aa…`, cfg `manifest/constants/config_strings e649d07a…/81f73057…/48e17434…`, `pattern_decode_manifest.json 28ad12b8…`, `masks/mask_index.json 4f60de5c…`. | None |
+| 2 | X15 root pack manifest (V89 P0, V62 C5, V11 G10) | **PASS — newly landed** | `variant3d/assets/terrain_new/manifest.json` PRESENT, 6,450,422 B, sha `2a6a8290bde0743c…`; `schema="terrain_new/manifest/v1"`, `pack_id="terrain_new_v1-b7984b3cb162cdf9"`, `entries` len 5256, `visual_parity_claim:false`, all 19 X15 §2.1 keys present, `census_reference` declares the root excluded from its own 5256/358,196,527 counts. | None |
+| 3 | I09 feed wired (V106 — **report absent**; V59/V86 row 6) | **PASS on current bytes** | `terrain_donor_props.gd` sha `E044CC28…` (V90 sealed `C990F604` — drifted). `:59-60` both constants now `res://assets/terrain_new/lib/pattern_lib_index.json` (I03 canonical); that file PRESENT (55,784,815 B). `_try_feed` `:567-582` new `generator_families` branch, `:585-589` top-level array fallback, `:618-623` returns true when records found; lib index has 64 `generator_families` → `source_map` found 64. `_fallback_used` set true only on the `:542-544` fallback branch. **[U]** donor-stream production at runtime remains unproven — no gate. | None for wiring; COORD for stream assertion |
+| 4 | I07 fixes present (V58, V86 rows 1-5) | **PASS** | `terrain_donor_gen.gd` sha `82968B1A…`, 2199 lines; `:233-234` `"plt2":2222`, `"k_ravine_big_stone_1":8225`; `:1470` "NO second W/2"; `:1117` `_collision_pass()` + `:1164` `data.set_collision(i,0,tag)`; `:1267` `NO +180`, `:1281-1282` `rock7`/`rock1` cliff mapping; `:1221` `var sname := "bRT"` unguarded else. | None |
+| 5 | V48 patches + V61/V65 static API (V86 row 11) | **PASS** | `terrain_donor_world.gd` sha `c98f34fe…` at `:219-223` `generate([_data,gen_params])`, `:234-239` `to_live()/to_dump()`/bind, `:246-254` props; `t_terrain_donor.gd` sha `3bf7e5fb…` at `:330-358`. Callee signatures unchanged. **[U]** `gen_params = {}` — decoded donor inputs still not wired; runtime stream success unproven. | COORD (runtime only) |
+| 6 | Manifest 41 tests (V95, V86 row 18) | **PASS** | `variant3d/tests/manifest.json` valid JSON, `len(tests)=41`, last `t_terrain_donor`, 0 duplicate ids, six-field entry at `:333-338` (`ready`, owner `I12`, timeout 240). | None |
+| 7 | GR-A24 relief atom path (V13, V95, V86 row 19) | **PASS (static)** | `t_relief_props_qa.gd:30` = `res://assets/terrain/mountain_props.json` with `:41 BBOX_TOL=0.05`, `:42 SCALE_WANT=1.0`, `:158 expected_pre_fix_failure=true`; live file PRESENT, old `terrainmesh_props.json` ABSENT. A fresh Godot atom `v42b-relief-props` (ticket 620) exited 0, but the earlier V42-atom job 615 failed and was re-run under a different id — see row 14. | None for path |
+| 8 | Canonical shader path in V42 packet (V94 pass, V76 B1) | **PASS** | `V42_gate_commands.md:27-30` records both corrections; `:177` `Test-Path docs\terrain_swarm_2026-11-26\spec\terrain_qa_spec.json` → TRUE; `:185` ledger names `variant3d\shaders\terrain_donor_shader.gdshader` → TRUE; retired alias `terrain_donor.gdshader` intentionally FALSE. 6/6 packet paths resolve. **[O]** stale prose at `:211` still calls the relief atom a "known hard blind spot" — non-blocking doc drift. | COORD (doc cleanup only) |
+| 9 | Python preflight — V55 + current-bytes run (V55, V86 row 20) | **PASS (current bytes)** | All six tool hashes equal V55 E10 finals (`abbf0571…`, `00c0591a…`, `ddfb8688…`, `667b71fb…`, `3a92d053…`, `5a3b9e77…`). V108 read-only re-run: cfg exit 0 (7/7 hashes, 19/19 counts); lib 0 (50 PASS / 0 FAIL); pattern 0 (30/30, 710/710 closure); masks 0 (18/18); harness 0 (36/36); atlas 0 (`"passed": true`); `py_compile` 0. No separate COORD preflight log found on disk — **[U]** COORD's own run not independently recorded, but current bytes are clean under V108's run. | COORD (record exit codes) |
+| 10 | Static syntax seal (V90) | **STALE report / PASS on current bytes** | V90's table sealed `gen.gd 2BB553C0` and `props.gd C990F604`; current bytes are `82968B1A…` / `E044CC28…` (rewritten 10:38:50 / 10:30:12). V108 re-seal: gen 2199 lines curly 0/0, square 0/0, round 0/0, depthEnd 0, 71 funcs, 0 dups, 0 indent issues; props 1038 lines likewise 34 funcs, 0 dups; 6/6 tools `ast.parse` PASS; shader unchanged `BB31B1EB`. **Godot parse is a different instrument — see row 14.** | COORD (re-record seal) |
+| 11 | Forbidden scan + V78 path fix (V83/V86 row 12, V93) | **PASS (current)** | 13-file scan: no executable `mix64`, `DONOR_UNITS`, `B>58`, 6-pass, 3×3, heightmap-as-albedo, `rgb*a`, `HEIGHT_SCALE`, face promotion, synthetic noise, food rects or parity claim; only benign hit `decode_donor_masks.py:14` (docstring). 787/787 derived JSON free of absolute donor paths; 787/787 parity false. V78 artefacts `.gitignore:132` header and `variant3d/CREDITS.md:136` V49 block present. **[D] Durability condition:** emit sites `decode_donor_cfg.py:673`, `decode_donor_pattern.py:944`, `decode_pattern_lib.py:1041`, `decode_donor_masks.py:511` still interpolate the resolved donor root; a regeneration re-breaks compliance (V93 §7). | COORD / I03 (durability) |
+| 12 | Seam default legacy + backups + `app/**` (V86 rows 14-15, V95) | **PASS** | `main.gd:125` `var terrain_backend := "legacy"`, `:189` config key `features.terrain.backend`, guards `:593-594`/`:1112-1113`; `world3d.gd:144` legacy, `:220-224` late-switch refusal, `:624` ternary. Backups `main.gd.bak-COORD-I11 = 3859B6056…E71F8`, `world3d.gd.bak-COORD-I11 = 44EE96C0…1AB07A` — SHA-exact. `git status --short -- app/` empty; `git diff --exit-code -- app/` exit 0; freeze-set diff exit 0. | None |
+| 13 | Ack plan for 575/582/585 (V104, V86 row 16) | **PASS — executed** | `status.json` history 500; **41 leak rows, 0 unacked**; acknowledged count 89. 575 `timed-out`, 582 `skipped`, 585 `timed-out` all carry `acknowledged=true` + evidence-backed `ack_reason` (585's wording amended vs V104 §4 — permitted by V42 Q1); result JSONs `00000575/582/585.json` present. No `--ignore-history`/deletion evidence. | None |
+| 14 | **A′-1 Godot parse station / fresh gate evidence** | **FAIL — decisive blocker** | Result JSONs from other actors: 607 `v42-parse-data` **failed/1** (`decode_float/encode_float` arity at data.gd:359/370), 608 `v42-parse-gen` **failed/1** (`C3TerrainData` unknown at :438,627,…), 610 `v42-parse-props` **failed/1** (`to_lowercase` at :907-908), 614 `v42-parse-tdonor` **failed/1**, 615 `v42-relief-props-atom` **failed/1** (`boot_ok` inference at :235). Fixes landed later: data.gd mtime 10:36:24, props 10:36:24, relief 10:36:24, gen 10:38:50 then 10:39:49, test 10:38:50. Re-runs: 616 `v42b-parse-data` ok, 617 `v42b-parse-gen` **failed**, 618 `v42b-parse-props` ok, 619 `v42b-parse-tdonor` **failed**, 620 `v42b-relief-props` ok, **621 `v42c-parse-gen` failed/1**, 622 `v42c-parse-tdonor` ok. Ticket 621 stderr: `decode_s32()` 3-arg at gen.gd:585-586, `decode_float()` 3-arg at :603, `sqrtf()` missing at :1196/:1899, `encode_float()` 3-arg at :1844. Current gen.gd (mtime 10:39:49) fixed 585/586/603/1196/1899 but **still has `raw.encode_float(0, v, true)` at :377 and :1844** — the exact 3-arg form Godot rejected. Fresh A′-0…D-6 green packet absent; all `HANDOFF §4` cells remain `TODO(COORD)`. | **I07 + COORD** |
+| 15 | 320² hard gate (V21 D-2, V86 row 18) | **FAIL** | `t_terrain_donor.gd:60` `const SIZES := [64, 240]`, `:61 RUN_320_OPTIONAL := false`, `:396-398` appends 320 only on the flag. Doc-wide grep for a 320² waiver found none (only V15:304's hard-D1 row and stale "no fresh 320² baseline" notes). | I12 + COORD |
+| 16 | `schemas/v1.schema.json` (V11 G11, V89 P3) | **FAIL** | `Test-Path variant3d/assets/terrain_new/schemas/v1.schema.json` FALSE at final pass; no runtime module hard-fails on it, so validator/gate-2 stays blocked rather than red. | I05 / COORD (retire G11 explicitly if out of scope) |
+| 17 | C3 season texture layout (V62 C3, V86 row 10) | **FAIL (latent)** | `atlas/seasons/winter/tile_index_atlas.png` and `...manifest.json` ABSENT while flat `atlas/seasons/tile_index_atlas_winter.png` (2,738,328 B, sha `ead5cc89…`) is PRESENT; `terrain_donor_mesh.gd:371-372` expects `seasons/<season>/…`. No `set_season()` caller today. | I05 + COORD |
+| 18 | Spool settled for A′-0 (V42 §4.1, AGENT_PROTOCOL) | **PASS at final pass** | Probe4/8: counter=now_serving=623, `godot.lock` absent, `jobs/` 0, 0 unacked leaks. Probe3 transiently saw `godot.lock` + job 615 pending mid-run — do not start A′-0 until the final re-read confirms free. | COORD |
+| 19 | Stale owner docs (HANDOFF, SWARM_BOARD, V42:211) | **Non-blocking drift** | `HANDOFF.md:46,70,77,149,180` still says no atlas/root manifest, 780 JSONs, A24 hard FAIL; `V42:211` still calls A24 a blind spot. Current bytes contradict all of them. | COORD (last) |
+
+## 3. The decisive finding (row 14) in detail
+
+- **[O]** Godot Engine `4.7.2.stable.official.ed1daf0bf` produced real `SCRIPT ERROR: Parse Error` lines, not runner timeouts. These are exactly the class of defect V90's bracket/indent seal and V55's `--check` exit 0 **cannot** detect (V90 §8, V105 §4).
+- **[D]** Four of the five original failures were corrected after their failed jobs (data/props/test/relief now show fixed literals and `as Object`/explicit `bool` typing), and their re-runs 616/618/620/622 are `ok`/0. `gen.gd` required two further re-runs and **still fails**: ticket 621 (`v42c-parse-gen`, `exit=1`) reported the 3-arg `encode_float()` at `:1844`; current `terrain_donor_gen.gd:377` and `:1844` both read `raw.encode_float(0, v, true)`, so the rejected form is still on disk.
+- **[U]** V108 did **not** launch Godot and did not re-run that atom; the current-bytes persistence of the rejected call is a static observation plus the latest fresh failure record. Only a fresh `godot_runner.py run --id …` parse smoke can close it.
+- **[D]** Therefore the V42 packet cannot be declared GO: A′-1 has a red station, and V21 forbids proceeding to D-0…D-6 with a red parse gate.
+
+## 4. What changed since V86/V89/V90 (and what did not)
+
+**Closed:** root X15 manifest (V89 P0) · I09 canonical feed path + shape branch (V86 row 6) · I07 fixes survive the gen.gd rewrite · acks 575/582/585 executed (V86 row 16) · V94 packet path corrections landed · Python preflight re-run clean on current bytes · static structure re-sealed on the two drifted files · forbidden/donor-path hygiene still clean.
+
+**Still open:** A′-1 Godot parse gen.gd (new, decisive) · 320² hard gate · `schemas/v1.schema.json` · C3 season layout · durability of the path normalisation in four emit sites · fresh D-0…D-6 evidence and CLEAN can only come from COORD's gate run.
+
+**Unchanged guards:** seam at `legacy`, `app/**` byte-clean, backups SHA-exact, `parity.status=UNVERIFIED`, no donor GPU A/B frame.
+
+## 5. VERDICT — **NO-GO**
+
+Do **not** run the V42 gate packet yet. Clear these blockers in this exact order; none requires lowering a threshold, deleting an assertion or inventing a donor value.
+
+1. **I07 + COORD — fix the remaining Godot parse error in `terrain_donor_gen.gd`.** Remove the third argument from `raw.encode_float(0, v, true)` at `:377` and `:1844` (Godot 4.7.2 accepts at most 2). Then re-run the `--check-only --script` parse smoke for **every** implementation file under a fresh unique `--id` and require `status=ok`, `exit=0`, `SCRIPT ERROR=0` with result mtime after job START. Acceptance: no `failed` row remains for the current tree. *(row 14; tickets 607/608/610/614/615/617/619/621)*
+2. **COORD — freeze, then re-run the whole A′-1 station once.** The successful jobs 609/611/612/613/616/618/620/622 predate or straddle later edits (data.gd 10:36:24, props 10:36:24, relief 10:36:24, gen 10:39:49, t_terrain_donor 10:38:50). A single clean pass on a quiescent tree is required before A′-0 → A′-3 → D-0 → D-6; keep one Godot at a time and verify `pending=0`, lock free, counters aligned between jobs. *(rows 14, 18)*
+3. **I12 + COORD — resolve 320².** Add `320` to `SIZES` in `t_terrain_donor.gd:60` (or flip `RUN_320_OPTIONAL`) **or** attach an explicit COORD-signed waiver; V21 D-2 makes it hard today. No waiver exists on disk. *(row 15)*
+4. **I05 / COORD — settle `schemas/v1.schema.json`:** land it, or record an explicit retirement of G11/N7 so a validator input is not silently assumed. *(row 16)*
+5. **I05 + COORD — decide C3 season layout:** either emit `atlas/seasons/winter/tile_index_atlas.{png,manifest.json}` or repoint `terrain_donor_mesh.gd:371-372` and document the shape change. *(row 17)*
+6. **I03 + COORD — make the donor-path hygiene durable:** patch `decode_donor_cfg.py:673`, `decode_donor_pattern.py:944`, `decode_pattern_lib.py:1041`, `decode_donor_masks.py:511` to stop interpolating the absolute donor root, so a decoder re-run cannot reintroduce the V83/V93 defect. Current JSON is clean; only the emit path is not. *(row 11)*
+7. **COORD — re-run and record the prerequisite set after the freeze:** six Python `--dry-run/--check` exits + `py_compile`, re-seal the two drifted `.gd` files, re-run the forbidden scan and the path/hash sweep, and re-confirm `app/**`, freeze set, backups and the three acknowledged acks. Then, and only then, execute the V42 packet with fresh result JSONs, keeping the backend at `legacy` until D-1/D-3 and the red gates pass. *(rows 1-13, 18)*
+8. **COORD — refresh stale docs last** (`HANDOFF.md:46,70,77,149,180`, `SWARM_BOARD.md`, `V42_gate_commands.md:211`). Non-blocking. *(row 19)*
+
+> **NO-GO.** V108 ran no gate, no runner subcommand, no Godot process and no donor access; the failed result JSONs cited above were produced by other actors and were only read. No donor parity is claimed — parity remains `UNVERIFIED` / `PORT APPROXIMATION` (CHARTER.md:43-44,125), and even a fully green gate would be "gates green / internal consistency PASS / donor parity UNVERIFIED", never a donor match.
+
+## 6. Attestation
+
+Exactly one repository file was written: `docs/terrain_swarm_2026-11-26/reports/V108_final_go.md`. Scratch probes (P1–P10) were written outside the repo under `C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\` and all Python runs used `-B` plus a redirected cache. No source, shader, config, asset, test, manifest, backup, queue, runner, git, `app/` or Godot state was changed; no donor file was opened, executed or copied; no threshold was lowered and no assertion deleted. V102 and V106 were absent at final glob and no content was invented for them. **No gate result, no parity claim.**
+
+---
+
+*End of V108 report. Exactly one repo file written; NO-GO with eight ordered blockers; no gate run, no Godot job, no donor-parity claim.*

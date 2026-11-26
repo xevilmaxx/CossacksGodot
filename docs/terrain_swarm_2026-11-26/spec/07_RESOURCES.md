@@ -1,0 +1,101 @@
+# 07 — Resource placement (from D07 + A02/X03; V12/X09 pending)
+
+**PORT APPROXIMATION on port substitutes; no donor parity claim.** D07 completed
+a 7-pass verification; native function discovery was truncated (6,000,000
+instructions) and found **0** functions named `SetupMines` etc. — the clean-room
+lifter misread embedded ASCII as code (`0x71c0a5` → `pop eax`), so its pseudo-C
+for `sub_71c0b4` was **rejected as algorithm evidence**. Authoritative source is
+donor DScript text (`dogenerate.inc`, `misc.script`).
+
+## 1. Mine placement [O] — D07 §3.2–3.4
+
+**[O] One correct statement (D07/V12/V01/F07/X22):** `SetupStartingResources` (`dogenerate.inc:720-977`) places **six attempted stone/forest items only — zero food rects**; fields are created later by the mill's unit script `_unit_DoSeedWheat` (`unit.script:6470-6570`: 7×7=49 nodes, `size=1.6981` map cells, 45° rotated lattice, `size2=√(2·size²)` snap, 5 gold per field), with `envfieldd`/`envfielddw` 2×2 decals bound to field objects at load/save (`writenewp.inc:23-29`, `readnewp.inc:41-47`, `misc.script:4286-4306`). A02 Stage 9 / GUIDE4's "guaranteed food rects inside `SetupStartingResources` (D1:720-980)" is **refuted** (V12 C-V4 = red gate G9; X22 X-C6; V01 §5 item 4). Runtime activation of the `;`-prefixed callers is `[U]`; any port field stage is `PORT APPROXIMATION`, not parity.
+
+**[O] The version/size gate is:** `gRecordGeneratorVersion := gDataVersion = 92` (`serial.script:27`, `initmapgen.inc:57`), so the `v>=80` branch is live. The literal `gRecordGeneratorVersion>=80 AND mapsize>2` selects only the **256-cell TINY map** — `donewgame.inc:42-46` maps `0→320, 1→480, 2→640, 3→256` (V01 P4/EV08); A02's "small/large" labels are reversed and V12 C-V3's `[U]` enum label is superseded. Default 320/480/640 maps therefore use the `mapsize<=2` rows (`dogenerate.inc:608-654`): for `spcount<=4, v>=80` the case labels are `0,1,3,4,5` with **no `case i of 2`** (ring 2 keeps a zero-initialised `dst` — reproduce structurally with a trace flag, `[I]/PORT APPROXIMATION`); "ring 4/5 skipped" means `continue` inside the `k` loop, where the name-pick draw at `:557` is still consumed 256× per ore and no angle draw occurs (V12 C-V7). Do not invent the missing band or rename the gate from the `// tiny` comment. *(V26 C2)*
+
+- `SetupMines` (`dogenerate.inc:522-717`) loops **rings** (outer `i`), then **all
+  three ores** (`j=0..2` → `mng`, `mni`, `mnc`; `desert_` prefix on desert maps),
+  then up to **256 angle attempts per ore per ring** (`:525`, `:544-553`,
+  `:554-557`, `:704-713`).
+- Port belief "gold 14–22, iron 32–42, coal 70–82" is **REFUTED**: those are
+  **ring radius bands shared by all three ores**, not per-ore radii. Current
+  band (`gRecordGeneratorVersion>=80`, `mapsize>2`): ring0 `14+8R`, ring1
+  `32+10R`, ring2 `70+12R`, ring3 `22+16R`, ring4 skipped (`:595-601`).
+- Rounds 3/4/5 for `minesdensity` 0/1/2 (`:528-534`).
+- **Anomaly (preserve, do not silently skip):** in the `v>=80`, `spcount<=4`,
+  `mapsize<=2` band there is no `case i of 2` — labels only 0,1,3,4,5
+  (`:639-645`); ring 2 inherits a stale/uninitialised `dst` and ring 5 is skipped.
+  Not present in the mapsize>2 band. V12 will recommend reproduce-vs-fix.
+
+## 2. Starting resources [O] — D07 §3.6
+
+- `SetupStartingResources` (`:720-947`) places **stone/forest rings only** — no
+  food rects. 128 outer tries × 3 inner radius steps per placement; six attempted
+  placements: stoneforest ×1, stones ×1, forest ×2, stones ×1 at `+4`, forest ×1.
+- Three nested keep-clear ellipses into the same occupancy mask: **5×7** (before
+  near mines), **12×15** (after stoneforest), **22×18** (end of function), always
+  centred at `(start.x, start.y+2)` (`:407-415`, `:769`, `:947`, `:984`).
+- Food fields are mill-seeded elsewhere (F2-02 F4/F6), not guaranteed here.
+
+## 3. Owner fill and rejection [O]
+
+- `FillOwnerMap` = 4-neighbour BFS over a **160×160 scan grid** seeded from
+  player starts (`:1370-1425`; `dmscript.global:57-58`: 640/4=160). Runs **late**,
+  after peasants; followed by `SetupBorderObjects` and shore collision
+  (`:2062-2068`).
+- `_misc_CheckStandPattern` (`misc.script:3384-3513`) tests the pattern stand mask
+  against `gPatternMask` (4-step fast sample then full box), rejecting any
+  out-of-map or already-occupied cell; `Ext` tests with `doStand=false`, then
+  stamps with `doStand=true` (`:3516-3521`). Rejection is **occupancy-based, not
+  semantic** — no dedicated water/rock branch inside the checker. Water/shore
+  cells enter the mask earlier from `height < -0.1` (`dogenerate.inc:1557-1564`).
+
+## 4. Deposit amounts [U] — D07 §3.8
+
+No finite deposit amount is set by the generator. Ore deposits are typed resource
+nodes (`env.inc/initial.inc:49-51`), `_res_Init` sets `hp := 0` (`res.script:23-32`);
+`initial.inc:74-103` overrides hp only for wood/stone/food. "Deposit amount"
+analogue is UNVERIFIED; starting stock in `startingsettings.cfg` is a different
+system (X09 investigates).
+
+## 5. Family data [O] — F02/X03
+
+`mng/mni/mnc` families: 6 members each, ΣFreq 5 (`generator.cfg:69,98,127`
+etc.), each section embedding object props `minegold`/`mineiron`/`minecoal`
+(`pattern.lib:713410, :715244, :716910`). Interpretation as gold/iron/coal is
+`[I]`. Stoneforest = `str_new_1..8`; stones = `d_stn_1..7` (D07 P7).
+
+## 6. Cross-check queue
+
+V12 ✓ (definitive resource spec + anomaly policy), V01 ✓ (`mapsize>2 = 256` tiny; `gDataVersion=92`), F07 ✓ (fields are script-sown), X22 ✓ (verbatim sow translation), F08 ✓, D04 (saved `.map` records). No X09 claim may be used to re-label `mapsize>2`. *(V26 C2)*
+
+## 7. Version-gate correction (from V01) [O]
+
+- `gDataVersion := 92` (`data/scripts/lib/serial.script:27`);
+  `gRecordGeneratorVersion := gDataVersion` (`initmapgen.inc:57`) for new maps.
+  Shipping branch is `v>=80` (and `v>=90` for tiny-map corner relocation),
+  `v>=91` for `TerrainTypesDLC5`.
+- **`mapsize>2` is the 256-cell TINY map** (`donewgame.inc:46`), not "large" —
+  A02's small/large labels are reversed; D07 §3.4's 320-cell example is
+  inconsistent with its own gate. Trust the enum, not the comment/example.
+- V12 recommendation for the missing `case i=2`: reproduce literally with
+  zero-initialised `dst`, a trace flag and an off-by-default override — never
+  silently fix or skip.
+
+## 8. Scale correction (from V08) [O]
+
+Donor generator distances are **map cells (1:1)** — `DONOR_UNITS=160` /
+"1 unit = 2 cells" is PORT-INVENTED and doubles radii/footprints at 320².
+Therefore rings `14+8R / 32+10R / 70+12R / 22+16R`, ellipses 5×7/12×15/22×18,
+mine footprints and field step 1.6981 are in **cells**. Donor metre is defined
+(`dmscript.global:170-173`, 2 m/cell) so `TILE_M=2.0` is donor-grounded
+horizontally; stored height units stay `[U]`.
+
+## 9. Cross-check (updated)
+
+X09 ✓ (masks are per-country relative templates; a fourth occupancy layer of
+circles r=5 building / r=1 unit; start masks do NOT choose map start positions),
+F08 ✓, V12 ✓, V01 ✓, V08 ✓.
+
+---
+*Integrated by COORD from D07 + V01 + V12 (+ A02/X03/F02).*

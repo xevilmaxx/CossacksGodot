@@ -328,6 +328,14 @@
       "owner": "TEST-S1",
       "timeout": 120,
       "windowed": true
+    },
+    {
+      "id": "t_terrain_donor",
+      "path": "res://tests/t_terrain_donor.gd",
+      "feature": "fresh donor terrain determinism + structural/telemetry gates (I12)",
+      "status": "ready",
+      "owner": "I12",
+      "timeout": 240
     }
   ]
 }

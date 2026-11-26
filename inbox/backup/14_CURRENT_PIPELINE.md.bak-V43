@@ -1,0 +1,39 @@
+# 14 — Current variant3d terrain pipeline (from P01)
+
+Source: `reports/P01_pipeline_audit.md` (508 lines, read-only trace). Facts here
+describe the **legacy** path the new module must coexist with.
+
+## 1. Stage trace with exact file:line citations [O]
+
+config/seed → `game.setup` / staged loader → `mapgen.gd` mask height →
+`pattern_gen.gd` stamps → `_shape_stamp_relief` → clamp/collision →
+`_gen_patterns` → `_assign_tileblocks` → `world3d_terrain` dump/mesh → shader →
+water. Per-stage file:line in P01 §.
+
+## 2. Ownership boundary [O]
+
+- Sim owns `terrain`, `blocked`, `height`, `tileblock`, `mine_mask`, `res_nodes`.
+- Renderer reads only `height` + `tileblock` from a **synthesized dump**.
+- `_generate_map()` is **dead code**.
+- `relief_stamps` and `_relief_stamp_mask` **never reach live 3D**.
+
+## 3. RNG [O]
+
+Five live streams: `game.rng`, mask `r`, `C3PatternGen.rng`, `mine_rng`, tileblock
+`brng`, plus seed-derived `_hash2`. The `gen_rng` stage reseeds are **inert**.
+
+## 4. Divergences from donor [O]/[U]
+
+Donor smoothing, blend, tile variety, relief props and water bindings are PORT
+APPROXIMATION or UNVERIFIED. The Y02 `terrain=5` maze route is severed, but the
+**height → face → cliff-art** route and Y08 meadow flattening remain.
+
+## 5. Seam proposed by P01 [D]
+
+Compose a fresh `terrain_donor_*.gd` behind a COORD-owned switch at
+`world3d.gd:609/642-645` using the `world3d_relief.gd` sibling pattern; **no
+edits to the six legacy pipeline files**. V05 is reconciling this with A06's
+`terrain_backend` seam — see `reports/V05_seam_reconciliation.md` when landed.
+
+---
+*Integrated by COORD from P01.*
