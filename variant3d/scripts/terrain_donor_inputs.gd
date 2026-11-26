@@ -32,6 +32,11 @@ const WINTER_ALIASES := "res://assets/terrain_new/atlas/seasons/winter_aliases.j
 const FAMILY_INDEX := "res://assets/terrain_new/patterns/family_index.json"
 const FAMILY_DIR := "res://assets/terrain_new/patterns/families/"
 const PATTERN_DIR := "res://assets/terrain_new/patterns/"
+const COMPACT_DIR := "res://assets/terrain_new/patterns/compact/"
+const COMPACT_MANIFEST := COMPACT_DIR + "manifest.json"
+const COMPACT_FAMILIES := COMPACT_DIR + "families.json"
+const COMPACT_PATTERNS := COMPACT_DIR + "patterns.json"
+const COMPACT_SCHEMA := "terrain_new/patterns_compact/v1"
 
 # --- donor-cited values (NO invention) -------------------------------------
 const GENERATOR_VERSION_FALLBACK: int = 92   # donor serial.script:27 gDataVersion=92; X54 §1 row 10
@@ -40,6 +45,7 @@ const MASK_HEIGHT_SCALE: float = -1.1         # donor generatemap.inc:4-7 (cWate
 const MASK_B_WATER_BYTE: int = 58             # donor generatemap.inc:486-490; spec/03 §1 (B>=58)
 const MAX_PATTERNS: int = 64                  # PORT memory cap (not a donor constant)
 const MAX_FAMILIES: int = 64                  # donor generator.cfg has exactly 64 families (spec/09 §1)
+const TILE_SMOOTH_CHAIN_COUNT: int = 22       # tilesmooth_scripts.cfg:1-1863; spec/09 §1 (282 active entries)
 
 # Stamp families/patterns actually named by the ticket (donor generator.cfg:
 # 67-154 / pattern.lib sections; spec/04 §1-§2, X54 §1 row 4).
@@ -60,6 +66,7 @@ const C3ConfigScript = preload("res://scripts/config.gd")
 const DataScript = preload("res://scripts/data.gd")
 
 var _last_stats: Dictionary = {}
+var _shape_info: Dictionary = {}
 
 
 # ---------------------------------------------------------------------------
@@ -91,6 +98,288 @@ func _read_json(path: String, skipped: Array) -> Dictionary:
 		skipped.append("BAD_JSON " + path + " [U] — no substitute invented")
 		return {}
 	return parsed as Dictionary
+
+
+func _pattern_entry_name(entry: Dictionary) -> String:
+	# Some authoritative family rows have match:null and a valid pattern name.
+	# Never stringify null or case-fold a name: both would invent a lookup key.
+	var match_v: Variant = entry.get("match", null)
+	if match_v is String and not (match_v as String).is_empty():
+		return match_v as String
+	var pattern_v: Variant = entry.get("pattern", null)
+	if pattern_v is String and not (pattern_v as String).is_empty():
+		return pattern_v as String
+	return ""
+
+
+func _read_compact_json(path: String, skipped: Array, telemetry: Dictionary) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		skipped.append("ABSENT " + path + " [U] — no substitute invented")
+		telemetry["fallback_reason"] = "ABSENT " + path
+		return {}
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		skipped.append("UNREADABLE " + path + " [U] — no substitute invented")
+		telemetry["fallback_reason"] = "UNREADABLE " + path
+		return {}
+	var byte_count: int = f.get_length()
+	var txt: String = f.get_as_text()
+	f.close()
+	var parsed: Variant = JSON.parse_string(txt)
+	if not (parsed is Dictionary):
+		skipped.append("BAD_JSON " + path + " [U] — no substitute invented")
+		telemetry["fallback_reason"] = "BAD_JSON " + path
+		return {}
+	telemetry["files_parsed"] = int(telemetry.get("files_parsed", 0)) + 1
+	telemetry["bytes_parsed"] = int(telemetry.get("bytes_parsed", 0)) + byte_count
+	return parsed as Dictionary
+
+
+func _compact_failure(reason: String, skipped: Array, telemetry: Dictionary) -> Dictionary:
+	telemetry["fallback_reason"] = reason
+	skipped.append("COMPACT_FALLBACK [U] — " + reason +
+			"; file-based family/pattern sources retained")
+	return {"telemetry": telemetry}
+
+
+func _compact_false_claim(doc: Dictionary) -> bool:
+	var claim: Variant = doc.get("visual_parity_claim", null)
+	return claim is bool and not (claim as bool)
+
+
+func _compact_sha256(value: Variant) -> bool:
+	if not (value is String) or (value as String).length() != 64:
+		return false
+	var text: String = value as String
+	for i in range(64):
+		if not "0123456789abcdef".contains(text[i]):
+			return false
+	return true
+
+
+func _compact_nonnegative_int(value: Variant) -> bool:
+	return value is int and int(value) >= 0
+
+
+func _compact_positive_int(value: Variant) -> bool:
+	return value is int and int(value) > 0
+
+
+func _compact_number(value: Variant) -> bool:
+	return (value is int or value is float) and is_finite(float(value))
+
+
+func _compact_grid_valid(value: Variant, expected: int) -> bool:
+	if not (value is Array) or (value as Array).size() != expected:
+		return false
+	for item in (value as Array):
+		if not _compact_number(item):
+			return false
+	return true
+
+
+func _compact_occupancy_valid(value: Variant, w: int, h: int) -> bool:
+	if not (value is Array):
+		return false
+	var cells: Array = value as Array
+	if cells.size() != w * h and cells.size() != (w - 1) * (h - 1):
+		return false
+	for item in cells:
+		if not (item is int) or int(item) < 0 or int(item) > 255:
+			return false
+	return true
+
+
+func _validate_compact_bundle(manifest: Dictionary, families_doc: Dictionary,
+		patterns_doc: Dictionary, families_bytes: int, patterns_bytes: int) -> String:
+	if manifest.get("schema", null) != COMPACT_SCHEMA:
+		return COMPACT_MANIFEST + " — unsupported schema"
+	if families_doc.get("schema", null) != COMPACT_SCHEMA:
+		return COMPACT_FAMILIES + " — unsupported schema"
+	if patterns_doc.get("schema", null) != COMPACT_SCHEMA:
+		return COMPACT_PATTERNS + " — unsupported schema"
+	if not _compact_false_claim(manifest):
+		return COMPACT_MANIFEST + " — visual_parity_claim must be false"
+	if not _compact_false_claim(families_doc):
+		return COMPACT_FAMILIES + " — visual_parity_claim must be false"
+	if not _compact_false_claim(patterns_doc):
+		return COMPACT_PATTERNS + " — visual_parity_claim must be false"
+	if not (families_doc.get("families", null) is Array):
+		return COMPACT_FAMILIES + " — families must be an array"
+	if not (patterns_doc.get("patterns", null) is Dictionary):
+		return COMPACT_PATTERNS + " — patterns must be a map"
+	if not (manifest.get("excluded_non_pattern_json", null) is Array):
+		return COMPACT_MANIFEST + " — excluded_non_pattern_json must be an array"
+	if not (manifest.get("missing_family_pattern_files", null) is Array):
+		return COMPACT_MANIFEST + " — missing_family_pattern_files must be an array"
+	for item in (manifest.get("excluded_non_pattern_json") as Array):
+		if not (item is String):
+			return COMPACT_MANIFEST + " — excluded_non_pattern_json entries must be strings"
+	for item in (manifest.get("missing_family_pattern_files") as Array):
+		if not (item is String):
+			return COMPACT_MANIFEST + " — missing_family_pattern_files entries must be strings"
+
+	var source_sha: Variant = manifest.get("source_family_index_sha256", null)
+	if not _compact_sha256(source_sha):
+		return COMPACT_MANIFEST + " — source family-index SHA-256 missing or malformed"
+	if families_doc.get("source_sha256", null) != source_sha:
+		return COMPACT_FAMILIES + " — source SHA-256 does not match manifest"
+	if not (families_doc.get("source", null) is String) or (families_doc.get("source") as String).is_empty():
+		return COMPACT_FAMILIES + " — source family-index path missing"
+	if not _compact_positive_int(manifest.get("source_family_index_bytes", null)):
+		return COMPACT_MANIFEST + " — invalid source_family_index_bytes"
+	if not _compact_nonnegative_int(manifest.get("source_family_bytes", null)):
+		return COMPACT_MANIFEST + " — invalid source_family_bytes"
+	if not _compact_positive_int(manifest.get("source_pattern_bytes", null)):
+		return COMPACT_MANIFEST + " — invalid source_pattern_bytes"
+	if not _compact_nonnegative_int(manifest.get("source_family_files", null)):
+		return COMPACT_MANIFEST + " — invalid source_family_files"
+	if not _compact_positive_int(manifest.get("source_pattern_files", null)):
+		return COMPACT_MANIFEST + " — invalid source_pattern_files"
+	if not _compact_positive_int(manifest.get("source_total_bytes", null)):
+		return COMPACT_MANIFEST + " — invalid source_total_bytes"
+	if not _compact_nonnegative_int(manifest.get("compact_family_count", null)):
+		return COMPACT_MANIFEST + " — invalid compact_family_count"
+	if not _compact_positive_int(manifest.get("compact_pattern_count", null)):
+		return COMPACT_MANIFEST + " — invalid compact_pattern_count"
+	if manifest.get("compact_files", null) != 2:
+		return COMPACT_MANIFEST + " — compact_files must count the two payload files"
+	if not _compact_positive_int(manifest.get("compact_bytes", null)):
+		return COMPACT_MANIFEST + " — invalid compact_bytes"
+	if manifest.get("roundtrip", null) != "PASS":
+		return COMPACT_MANIFEST + " — roundtrip must be PASS"
+
+	var family_entries: Array = families_doc.get("families") as Array
+	var pattern_map: Dictionary = patterns_doc.get("patterns") as Dictionary
+	if int(manifest["compact_family_count"]) != family_entries.size():
+		return COMPACT_MANIFEST + " — compact_family_count mismatch"
+	if int(manifest["compact_pattern_count"]) != pattern_map.size():
+		return COMPACT_MANIFEST + " — compact_pattern_count mismatch"
+	if int(manifest["source_family_files"]) != family_entries.size():
+		return COMPACT_MANIFEST + " — source_family_files mismatch"
+	if int(manifest["source_pattern_files"]) != pattern_map.size():
+		return COMPACT_MANIFEST + " — source_pattern_files mismatch"
+	if int(manifest["compact_bytes"]) != families_bytes + patterns_bytes:
+		return COMPACT_MANIFEST + " — compact_bytes mismatch"
+	if int(manifest["source_total_bytes"]) != int(manifest["source_family_index_bytes"]) + \
+			int(manifest["source_family_bytes"]) + int(manifest["source_pattern_bytes"]):
+		return COMPACT_MANIFEST + " — source_total_bytes mismatch"
+
+	var missing: Array[String] = []
+	var missing_seen := {}
+	for family_v in family_entries:
+		if not (family_v is Dictionary):
+			return COMPACT_FAMILIES + " — family entry must be a map"
+		var family: Dictionary = family_v as Dictionary
+		if not (family.get("family", null) is String) or (family.get("family") as String).is_empty():
+			return COMPACT_FAMILIES + " — family name missing"
+		if not (family.get("output", null) is String) or (family.get("output") as String).is_empty():
+			return COMPACT_FAMILIES + " — family output missing"
+		if not _compact_nonnegative_int(family.get("pattern_count", null)):
+			return COMPACT_FAMILIES + " — invalid family pattern_count"
+		if not (family.get("patterns", null) is Array):
+			return COMPACT_FAMILIES + " — family patterns must be an array"
+		var members: Array = family.get("patterns") as Array
+		if int(family["pattern_count"]) != members.size():
+			return COMPACT_FAMILIES + " — family pattern_count mismatch"
+		for member_v in members:
+			if not (member_v is Dictionary):
+				return COMPACT_FAMILIES + " — family pattern entry must be a map"
+			var member: Dictionary = member_v as Dictionary
+			var member_name := _pattern_entry_name(member)
+			if member_name.is_empty():
+				return COMPACT_FAMILIES + " — family pattern entry has no match/pattern name"
+			if not _compact_number(member.get("freq", 1.0)):
+				return COMPACT_FAMILIES + " — family pattern freq must be finite"
+			if not pattern_map.has(member_name) and not missing_seen.has(member_name):
+				missing.append(member_name)
+				missing_seen[member_name] = true
+	missing.sort()
+	var recorded_missing: Array = manifest.get("missing_family_pattern_files") as Array
+	if recorded_missing.size() != missing.size():
+		return COMPACT_MANIFEST + " — missing_family_pattern_files count mismatch"
+	for i in range(missing.size()):
+		if recorded_missing[i] != missing[i]:
+			return COMPACT_MANIFEST + " — missing_family_pattern_files mismatch"
+
+	for key in pattern_map:
+		if not (key is String) or (key as String).is_empty():
+			return COMPACT_PATTERNS + " — pattern map key must be a non-empty string"
+		var doc_v: Variant = pattern_map[key]
+		if not (doc_v is Dictionary):
+			return COMPACT_PATTERNS + "#" + str(key) + " — pattern document must be a map"
+		var doc: Dictionary = doc_v as Dictionary
+		if not (doc.get("name", null) is String):
+			return COMPACT_PATTERNS + "#" + str(key) + " — name missing"
+		if not _compact_positive_int(doc.get("w", null)) or not _compact_positive_int(doc.get("h", null)):
+			return COMPACT_PATTERNS + "#" + str(key) + " — invalid dimensions"
+		var w: int = int(doc["w"])
+		var h: int = int(doc["h"])
+		if not _compact_grid_valid(doc.get("relief_float_grid", null), w * h):
+			return COMPACT_PATTERNS + "#" + str(key) + " — invalid relief_float_grid"
+		if not (doc.get("flags", null) is Dictionary):
+			return COMPACT_PATTERNS + "#" + str(key) + " — flags must be a map"
+		var flags: Dictionary = doc.get("flags") as Dictionary
+		for flag_name in ["Scale", "Min", "Offset", "TerrainScale"]:
+			if flags.has(flag_name) and not _compact_number(flags[flag_name]):
+				return COMPACT_PATTERNS + "#" + str(key) + " — non-finite numeric flag " + flag_name
+		for flag_name in ["Replace", "ReplaceForWater", "Stand", "Smooth"]:
+			if flags.has(flag_name) and not (flags[flag_name] is bool):
+				return COMPACT_PATTERNS + "#" + str(key) + " — non-boolean flag " + flag_name
+		if not (doc.get("grid_offset", null) is int):
+			return COMPACT_PATTERNS + "#" + str(key) + " — grid_offset must be an integer"
+		if not (doc.get("grid_layout", null) is String):
+			return COMPACT_PATTERNS + "#" + str(key) + " — grid_layout must be a string"
+		if doc.has("grid") and not _compact_grid_valid(doc.get("grid"), w * h):
+			return COMPACT_PATTERNS + "#" + str(key) + " — invalid canonical grid"
+		if doc.has("occupancy_cells") and not _compact_occupancy_valid(doc.get("occupancy_cells"), w, h):
+			return COMPACT_PATTERNS + "#" + str(key) + " — invalid occupancy_cells"
+	return ""
+
+
+func _load_compact_pattern_bundle(skipped: Array) -> Dictionary:
+	var telemetry := {"files_parsed": 0, "bytes_parsed": 0, "fallback_reason": ""}
+	var manifest_bytes: int = 0
+	var families_bytes: int = 0
+	var before_patterns: int = 0
+	var patterns_bytes: int = 0
+	var manifest := _read_compact_json(COMPACT_MANIFEST, skipped, telemetry)
+	if manifest.is_empty():
+		var manifest_reason := str(telemetry["fallback_reason"])
+		if manifest_reason.is_empty():
+			manifest_reason = COMPACT_MANIFEST + " — empty document"
+		return _compact_failure(manifest_reason, skipped, telemetry)
+	manifest_bytes = int(telemetry.get("bytes_parsed", 0))
+	var families_doc := _read_compact_json(COMPACT_FAMILIES, skipped, telemetry)
+	if families_doc.is_empty():
+		var families_reason := str(telemetry["fallback_reason"])
+		if families_reason.is_empty():
+			families_reason = COMPACT_FAMILIES + " — empty document"
+		return _compact_failure(families_reason, skipped, telemetry)
+	families_bytes = int(telemetry.get("bytes_parsed", 0)) - manifest_bytes
+	before_patterns = int(telemetry.get("bytes_parsed", 0))
+	var patterns_doc := _read_compact_json(COMPACT_PATTERNS, skipped, telemetry)
+	if patterns_doc.is_empty():
+		var patterns_reason := str(telemetry["fallback_reason"])
+		if patterns_reason.is_empty():
+			patterns_reason = COMPACT_PATTERNS + " — empty document"
+		return _compact_failure(patterns_reason, skipped, telemetry)
+	patterns_bytes = int(telemetry.get("bytes_parsed", 0)) - before_patterns
+	var validation_error := _validate_compact_bundle(manifest, families_doc, patterns_doc,
+			families_bytes, patterns_bytes)
+	if not validation_error.is_empty():
+		return _compact_failure(validation_error, skipped, telemetry)
+	var missing_files: Array = manifest.get("missing_family_pattern_files") as Array
+	for missing_name in missing_files:
+		skipped.append("ABSENT " + PATTERN_DIR + str(missing_name) +
+				".json [U] — pattern not stamped; family-referenced compact key absent, no substitute invented")
+	telemetry["payload_bytes"] = families_bytes + patterns_bytes
+	return {
+		"families": families_doc.get("families"),
+		"patterns": patterns_doc.get("patterns"),
+		"manifest": manifest,
+		"telemetry": telemetry,
+	}
 
 
 func _hash32(s: String) -> int:
@@ -149,22 +438,78 @@ func _derive_seed(game) -> Dictionary:
 	}
 
 
-# Map shape: menu/config terrain_type wins, then map_type (config.gd:535).
-# The derived mask index uses the donor folder name as `shape`
-# (mask_index.json:24 `shape`, :6-26 `types` keys).
+# Map shape: explicit game/capture keys win over resolved defaults. In the live
+# capture JSON `gameplay.map_type="land"` is explicit while `terrain_type` is
+# only the built-in "mediterranean" default; reading the merged terrain_type
+# first silently selected the wrong donor mask family (W03 §2.1).
+func _explicit_config_shape(cfg) -> Dictionary:
+	var out: Dictionary = {"map_type": "", "terrain_type": "", "source": ""}
+	if cfg == null or not (cfg is Object):
+		return out
+	var src: String = str(_prop(cfg, "source"))
+	if src.is_empty() or not FileAccess.file_exists(src):
+		return out
+	var doc := _read_json(src, [])
+	var gp_v: Variant = doc.get("gameplay", {})
+	if not (gp_v is Dictionary):
+		return out
+	var gp: Dictionary = gp_v
+	for key in ["map_type", "terrain_type"]:
+		var v: Variant = gp.get(key, null)
+		if v is String and not str(v).strip_edges().is_empty():
+			out[key] = str(v).strip_edges().to_lower()
+	out["source"] = src
+	return out
+
+
 func _shape_of(game) -> String:
-	for key in ["shape", "map_type", "MAP_TYPE", "terrain_type", "TERRAIN_TYPE", "biome"]:
+	_shape_info = {}
+	# Explicit per-game values (not the resolved Data.MAP_TYPE alias).
+	for key in ["shape", "map_type", "terrain_type", "biome"]:
 		var v: Variant = _prop(game, key)
-		if v is String and not str(v).is_empty():
-			return str(v).strip_edges().to_lower()
+		if v is String and not str(v).strip_edges().is_empty():
+			var shape: String = str(v).strip_edges().to_lower()
+			_shape_info = {"shape": shape, "source": "game." + key,
+				"explicit_map_type": shape if key == "map_type" else "",
+				"explicit_terrain_type": shape if key == "terrain_type" else "",
+				"conflict": false, "resolution": "explicit game key"}
+			return shape
 	var cfg = C3ConfigScript.active
+	var explicit := _explicit_config_shape(cfg)
+	var em: String = str(explicit.get("map_type", ""))
+	var et: String = str(explicit.get("terrain_type", ""))
+	var conflict: bool = not em.is_empty() and not et.is_empty() and em != et
+	# config.gd:535 makes terrain_type canonical when BOTH were explicitly set.
+	# When only map_type was explicit, the default terrain_type cannot override it.
+	if not et.is_empty() or not em.is_empty():
+		var shape: String = et if not et.is_empty() else em
+		_shape_info = {"shape": shape, "source": str(explicit.get("source", "")),
+			"explicit_map_type": em, "explicit_terrain_type": et,
+			"conflict": conflict,
+			"resolution": "explicit capture config; terrain_type wins only when explicit" if conflict else "explicit capture config"}
+		return shape
+	# Resolved aliases are fallbacks, never allowed to beat an explicit capture
+	# key. Prefer map_type over the donor-default terrain_type in this fallback.
+	for key in ["MAP_TYPE", "TERRAIN_TYPE"]:
+		var v: Variant = _prop(game, key)
+		if v is String and not str(v).strip_edges().is_empty():
+			var shape: String = str(v).strip_edges().to_lower()
+			_shape_info = {"shape": shape, "source": "game." + key,
+				"explicit_map_type": "", "explicit_terrain_type": "",
+				"conflict": false, "resolution": "resolved game alias fallback"}
+			return shape
 	if cfg != null and cfg is Object and (cfg as Object).has_method("text"):
-		var t: Variant = (cfg as Object).call("text", "gameplay.terrain_type", "")
-		if t is String and not str(t).is_empty():
-			return str(t).strip_edges().to_lower()
-		var m: Variant = (cfg as Object).call("text", "gameplay.map_type", "")
-		if m is String and not str(m).is_empty():
-			return str(m).strip_edges().to_lower()
+		for key in ["gameplay.map_type", "gameplay.terrain_type"]:
+			var t: Variant = (cfg as Object).call("text", key, "")
+			if t is String and not str(t).strip_edges().is_empty():
+				var shape: String = str(t).strip_edges().to_lower()
+				_shape_info = {"shape": shape, "source": key,
+					"explicit_map_type": "", "explicit_terrain_type": "",
+					"conflict": false, "resolution": "merged config fallback; map_type preferred"}
+				return shape
+	_shape_info = {"shape": "", "source": "NONE", "explicit_map_type": em,
+		"explicit_terrain_type": et, "conflict": conflict,
+		"resolution": "no shape from game/config"}
 	return ""
 
 
@@ -207,7 +552,8 @@ func _select_mask(seed: int, shape: String, w: int, h: int, skipped: Array) -> D
 		skipped.append("MASK no entry for shape '" + shape + "' — no synthetic mask [U]")
 		return {}
 	candidates.sort_custom(func(a, b): return str(a["type"]) + "|" + str((a["mask"] as Dictionary).get("file", "")) < str(b["type"]) + "|" + str((b["mask"] as Dictionary).get("file", "")))
-	# Prefer a mask whose native grid equals the caller's grid; never rescale.
+	# Prefer a mask whose native grid equals the caller's grid; otherwise the
+	# selected mask is deterministically resampled to the requested w/h below.
 	var exact: Array = []
 	for c in candidates:
 		var m: Dictionary = c["mask"]
@@ -235,6 +581,45 @@ func _load_image(path: String) -> Image:
 	return null
 
 
+func _mask_bytes_from_image(img: Image, w: int, h: int) -> PackedByteArray:
+	var out := PackedByteArray()
+	out.resize(w * h)
+	for y in range(h):
+		for x in range(w):
+			var v: int = clampi(int(roundf(img.get_pixel(x, y).r * 255.0)), 0, 255)
+			out[y * w + x] = v
+	return out
+
+
+func _resample_mask_image(img: Image, mw: int, mh: int, w: int, h: int,
+		skipped: Array) -> Dictionary:
+	if w <= 0 or h <= 0:
+		return {"bytes": PackedByteArray(), "method": "SKIPPED",
+			"label": "invalid requested grid — no mask resampled"}
+	if mw == w and mh == h:
+		return {"bytes": _mask_bytes_from_image(img, w, h), "method": "NATIVE",
+			"label": "native mask grid; no resample"}
+	# Godot 4 Image.resize supplies deterministic bilinear interpolation. Work
+	# on a duplicate so a cached Texture2D image is never mutated.
+	var resized := img.duplicate()
+	resized.resize(w, h, Image.INTERPOLATE_BILINEAR)
+	if resized.get_width() == w and resized.get_height() == h:
+		return {"bytes": _mask_bytes_from_image(resized, w, h), "method": "BILINEAR",
+			"label": "PORT APPROXIMATION — deterministic bilinear native-to-requested mask resample; donor nearest sampler not claimed"}
+	# Clearly labelled fallback for an unavailable/failed bilinear resize. This
+	# is the donor-style floor(x/W*srcW) nearest tap, with no synthetic values.
+	var nearest := PackedByteArray()
+	nearest.resize(w * h)
+	for y in range(h):
+		var sy: int = mini(mh - 1, int(floor(float(y) * float(mh) / float(h))))
+		for x in range(w):
+			var sx: int = mini(mw - 1, int(floor(float(x) * float(mw) / float(w))))
+			nearest[y * w + x] = clampi(int(roundf(img.get_pixel(sx, sy).r * 255.0)), 0, 255)
+	skipped.append("MASK bilinear resize unavailable — nearest fallback PORT APPROXIMATION (floor(x/W*srcW), floor(y/H*srcH))")
+	return {"bytes": nearest, "method": "NEAREST_PORT_APPROX",
+		"label": "PORT APPROXIMATION — nearest fallback floor(x/W*srcW), floor(y/H*srcH)"}
+
+
 func _apply_mask(p: Dictionary, seed: int, shape: String, w: int, h: int,
 		skipped: Array, loaded: Array) -> Dictionary:
 	var sel := _select_mask(seed, shape, w, h, skipped)
@@ -258,15 +643,14 @@ func _apply_mask(p: Dictionary, seed: int, shape: String, w: int, h: int,
 	if mw != img.get_width() or mh != img.get_height():
 		skipped.append("MASK size mismatch " + path + " — no resampling invented [U]")
 		return {}
-	var mb := PackedByteArray()
-	mb.resize(mw * mh)
-	for y in range(mh):
-		for x in range(mw):
-			var v: int = clampi(int(roundf(img.get_pixel(x, y).r * 255.0)), 0, 255)
-			mb[y * mw + x] = v
+	var resampled := _resample_mask_image(img, mw, mh, w, h, skipped)
+	var mb: PackedByteArray = resampled["bytes"]
+	if mb.size() != w * h:
+		skipped.append("MASK resample did not produce requested " + str(w) + "x" + str(h) + " — skipped [U]")
+		return {}
 	p["mask_b"] = mb                                   # raw gray8 byte v; h=-1.1*v/255
-	p["width"] = mw                                    # native mask grid, never resampled
-	p["height"] = mh
+	p["width"] = w                                     # REQUESTED grid; never native mask size
+	p["height"] = h
 	var starts: Array = []
 	var sv: Variant = m.get("starts", [])
 	if sv is Array:
@@ -274,15 +658,22 @@ func _apply_mask(p: Dictionary, seed: int, shape: String, w: int, h: int,
 			if s is Array and (s as Array).size() >= 2:
 				var nx: float = float((s as Array)[0])
 				var ny: float = float((s as Array)[1])
-				starts.append(Vector2(nx * float(mw) - float(mw) * 0.5,
-						ny * float(mh) - float(mh) * 0.5))
+				# Starts stay normalised source coordinates; only the donor-centred
+				# conversion uses the requested grid, never the native mask grid.
+				starts.append(Vector2(nx * float(w) - float(w) * 0.5,
+						ny * float(h) - float(h) * 0.5))
 	if not starts.is_empty():
 		p["starts"] = starts                           # donor-centred cells, gen.gd:1450
-	loaded.append("MASK " + path + " (" + str(mw) + "x" + str(mh) + ", " + str(starts.size()) + " starts)")
+	loaded.append("MASK " + path + " (source " + str(mw) + "x" + str(mh) +
+			" -> requested " + str(w) + "x" + str(h) + ", " + str(resampled["method"]) +
+			", " + str(starts.size()) + " starts)")
 	return {
 		"type": str(sel["type"]), "file": path,
-		"width": mw, "height": mh, "starts": starts.size(),
-		"exact_grid": bool(sel["exact_grid"]),
+		"source_width": mw, "source_height": mh,
+		"width": w, "height": h, "starts": starts.size(),
+		"exact_grid": bool(sel["exact_grid"]) and str(resampled["method"]) == "NATIVE",
+		"resample": str(resampled["method"]),
+		"resample_label": str(resampled["label"]),
 		"height_formula": "h=-1.1*v/255 (donor generatemap.inc:4-7; p.mask_b carries raw byte v)",
 		"forest_density": null,
 		"forest_density_label": "[U] G=0 on vanilla non-start pixels; no density invented (mask_index.json:76-77)",
@@ -297,14 +688,65 @@ func _struct_indices(path: String) -> Array:
 	var out: Array = [-1, -1, -1]
 	var parts: Array = path.split("/")
 	var names: Array[String] = ["TileSmoothLists", "SmoothTiles", "TileNames"]
-	for part in parts:
-		var seg: String = str(part)
+	# I01 emits paths such as:
+	# <root>/TileSmoothLists/[*]#1/SmoothTiles/[*]#4/TileNames/[*]#2/Prob
+	# The 1-based index is on the wildcard segment AFTER each container name,
+	# not on the container segment itself (the old parser never matched it).
+	for i in range(parts.size()):
+		var seg: String = str(parts[i])
 		for j in range(names.size()):
-			if seg.begins_with(names[j]):
-				var hashpos: int = seg.find("#")
+			if seg == names[j] or seg.begins_with(names[j]):
+				var index_seg: String = seg
+				if seg == names[j] and i + 1 < parts.size():
+					index_seg = str(parts[i + 1])
+				var hashpos: int = index_seg.find("#")
 				if hashpos >= 0:
-					out[j] = int(seg.substr(hashpos + 1)) - 1   # cfg is 1-based
+					var one_based: int = int(index_seg.substr(hashpos + 1))
+					if one_based > 0:
+						out[j] = one_based - 1
 	return out
+
+
+func _valid_tile_smooth_chains(chains: Array) -> bool:
+	for chain_v in chains:
+		if not (chain_v is Array):
+			return false
+		for group_v in (chain_v as Array):
+			if not (group_v is Array):
+				return false
+			for entry_v in (group_v as Array):
+				if not (entry_v is Dictionary):
+					return false
+				var entry: Dictionary = entry_v
+				if not (entry.get("name") is String) or not (entry.get("id") is int):
+					return false
+				if not ((entry.get("prob") is int) or (entry.get("prob") is float)):
+					return false
+	return true
+
+
+func _tile_smooth_counts(chains: Array) -> Dictionary:
+	var groups: int = 0
+	var active_groups: int = 0
+	var entries: int = 0
+	var empty_chains: int = 0
+	for chain_v in chains:
+		if not (chain_v is Array):
+			continue
+		var chain: Array = chain_v
+		if chain.is_empty():
+			empty_chains += 1
+		groups += chain.size()
+		for group_v in chain:
+			if not (group_v is Array):
+				continue
+			var group: Array = group_v
+			entries += group.size()
+			if not group.is_empty():
+				active_groups += 1
+	return {"chains": chains.size(), "groups": groups,
+		"active_groups": active_groups, "entries": entries,
+		"empty_chains": empty_chains}
 
 
 func _apply_constants(p: Dictionary, skipped: Array, loaded: Array) -> Dictionary:
@@ -352,8 +794,9 @@ func _apply_constants(p: Dictionary, skipped: Array, loaded: Array) -> Dictionar
 				elif not have_chains and key == "tile_smooth_chains" and c.get("value") is Array:
 					p["tile_smooth_chains"] = c["value"]
 					have_chains = true
-				# tilesmooth_scripts.cfg:1-1863 — flat entries carrying a
-				# structural_path; rebuild the 22-chain table losslessly.
+				# tilesmooth_scripts.cfg:1-1863 — flat ACTIVE entries carrying a
+				# structural_path; rebuild the 22-chain table without inventing
+				# commented/inactive rows.
 				var path: String = str(c.get("structural_path", ""))
 				if path.find("TileSmoothLists/") < 0:
 					continue
@@ -403,40 +846,68 @@ func _apply_constants(p: Dictionary, skipped: Array, loaded: Array) -> Dictionar
 
 	var chain_count := 0
 	var group_count := 0
+	var active_group_count := 0
 	var entry_count := 0
+	var empty_chain_count := 0
+	if have_chains:
+		var direct: Array = p["tile_smooth_chains"]
+		if not _valid_tile_smooth_chains(direct):
+			skipped.append("tile_smooth_chains malformed in constants.json — skipped, no invented table")
+			p.erase("tile_smooth_chains")
+			have_chains = false
+		else:
+			var counts := _tile_smooth_counts(direct)
+			chain_count = int(counts["chains"])
+			group_count = int(counts["groups"])
+			active_group_count = int(counts["active_groups"])
+			entry_count = int(counts["entries"])
+			empty_chain_count = int(counts["empty_chains"])
+			loaded.append("tile_smooth_chains " + str(chain_count) + " chains / " +
+					str(active_group_count) + " active groups / " + str(entry_count) +
+					" entries from constants.json canonical table")
 	if not have_chains and not stat_names.is_empty():
-		var chains: Array = []
-		var keys: Array = stat_names.keys()
-		keys.sort()                                    # zero-padded = donor order
-		for ck in keys:
-			var segs: Array = str(ck).split("_")
-			var li: int = int(segs[0])
-			var gi: int = int(segs[1])
-			var ei: int = int(segs[2])
-			while chains.size() <= li:
+		var complete: bool = true
+		for ck in stat_names.keys():
+			if not stat_probs.has(ck) or not names_to_id.has(str(stat_names[ck])):
+				complete = false
+				break
+		if not complete:
+			skipped.append("tile_smooth_chains incomplete in constants.json (missing Prob or tile id) — tile smoothing stays skipped, no invented table")
+		else:
+			var chains: Array = []
+			var keys: Array = stat_names.keys()
+			keys.sort()                                # zero-padded = donor order
+			for ck in keys:
+				var segs: Array = str(ck).split("_")
+				var li: int = int(segs[0])
+				var gi: int = int(segs[1])
+				while chains.size() <= li:
+					chains.append([])
+				var groups: Array = chains[li]
+				while groups.size() <= gi:
+					groups.append([])                 # preserve inactive group positions
+				var entries: Array = groups[gi]
+				var tname: String = str(stat_names[ck])
+				# Active entries are compacted in donor order; inactive/commented
+				# entries are absent from constants.json and are never fabricated.
+				entries.append({"name": tname, "prob": float(stat_probs[ck]),
+					"id": int(names_to_id[tname])})
+			# I01 emits active literals only, so empty donor chains 11 and 22
+			# have no rows. Preserve the observed 22-slot census without inventing
+			# any group, entry, probability or tile id (spec/09 §1; X54 row 9).
+			while chains.size() < TILE_SMOOTH_CHAIN_COUNT:
 				chains.append([])
-			var groups: Array = chains[li]
-			while groups.size() <= gi:
-				groups.append([])
-			var entries: Array = groups[gi]
-			while entries.size() <= ei:
-				entries.append({})
-			var entry: Dictionary = {
-				"name": str(stat_names[ck]),
-				"prob": float(stat_probs.get(ck, 0.0)),
-			}
-			if names_to_id.has(str(stat_names[ck])):
-				entry["id"] = int(names_to_id[str(stat_names[ck])])
-			entries[ei] = entry
-		p["tile_smooth_chains"] = chains
-		chain_count = chains.size()
-		for g in chains:
-			group_count += (g as Array).size()
-			for e2 in (g as Array):
-				entry_count += (e2 as Array).size()
-		loaded.append("tile_smooth_chains " + str(chain_count) + " chains / " + str(group_count) +
-				" groups / " + str(entry_count) + " entries from tilesmooth_scripts.cfg:1-1863")
-	elif not have_chains:
+			p["tile_smooth_chains"] = chains
+			var counts := _tile_smooth_counts(chains)
+			chain_count = int(counts["chains"])
+			group_count = int(counts["groups"])
+			active_group_count = int(counts["active_groups"])
+			entry_count = int(counts["entries"])
+			empty_chain_count = int(counts["empty_chains"])
+			loaded.append("tile_smooth_chains " + str(chain_count) + " chains / " +
+					str(active_group_count) + " active groups / " + str(entry_count) +
+					" active entries from tilesmooth_scripts.cfg:1-1863; empty chain slots preserved")
+	elif not have_chains and stat_names.is_empty():
 		skipped.append("tile_smooth_chains not emitted [U] — tile smoothing stays skipped, no invented table")
 
 	return {
@@ -445,7 +916,9 @@ func _apply_constants(p: Dictionary, skipped: Array, loaded: Array) -> Dictionar
 		"relieftype_present": have_relief,
 		"minesdensity_present": have_mines,
 		"tile_ids": names_to_id.size(),
-		"chains": chain_count, "groups": group_count, "entries": entry_count,
+		"chains": chain_count, "groups": group_count,
+		"active_groups": active_group_count, "entries": entry_count,
+		"empty_chains": empty_chain_count,
 		"cite": "globalparams.cfg:2-20; tilesmooth_scripts.cfg:1-1863; presets_summer.json:2-125",
 	}
 
@@ -466,7 +939,7 @@ func _target_family(name: String) -> bool:
 func _target_pattern(name: String) -> bool:
 	if EXACT_PATTERNS.has(name):
 		return true
-	for prefix in ["frs_", "frt_", "d_frt_", "d_stn_", "d_plt", "hil", "g_hil", "plt", "k_ravine", "mng", "mni", "mnc"]:
+	for prefix in ["frs_", "frt_", "d_frt_", "b_frt_", "d_stn_", "d_str_", "b_str_", "str_new_", "d_plt", "hil", "g_hil", "plt", "k_ravine", "mng", "mni", "mnc"]:
 		if name.begins_with(prefix):
 			return true
 	return false
@@ -480,24 +953,34 @@ func _decode_pattern(name: String, skipped: Array) -> Dictionary:
 	var doc := _read_json(path, skipped)
 	if doc.is_empty():
 		return {}
+	return _decode_pattern_doc(name, doc, path, skipped)
+
+
+func _decode_pattern_doc(name: String, doc: Dictionary, source: String, skipped: Array) -> Dictionary:
+	if doc.is_empty():
+		return {}
 	var w: int = int(doc.get("w", 0))
 	var hh: int = int(doc.get("h", 0))
 	var gv: Variant = doc.get("relief_float_grid", null)
 	if w <= 0 or hh <= 0 or not (gv is Array):
-		skipped.append("NO_GRID " + path + " [U] — no synthetic grid")
+		skipped.append("NO_GRID " + source + " [U] — no synthetic grid")
+		return {}
+	var src: Array = gv
+	if src.size() != w * hh:
+		skipped.append("GRID_SIZE " + source + " [U] — expected " + str(w * hh) +
+				" relief_float_grid values, got " + str(src.size()) + "; no zero padding")
 		return {}
 	var grid := PackedFloat32Array()
 	grid.resize(w * hh)
-	var src: Array = gv as Array
-	var m: int = mini(grid.size(), src.size())
-	for i in range(m):
+	for i in range(w * hh):
 		grid[i] = float(src[i])
 	var fv: Variant = doc.get("flags", {})
 	var flags: Dictionary = fv if fv is Dictionary else {}
 	var out: Dictionary = {
 		"name": str(doc.get("name", name)),
 		"w": w, "h": hh,
-		"grid": grid,                                   # f32[w*h] at corrected F01 offset
+		"relief_float_grid": grid,                       # I02 primary key; corrected F01 G
+		"grid_source_key": "relief_float_grid",
 		"scale": float(flags.get("Scale", 1.0)),        # pattern.lib HeightFieldScale +0x48
 		"min": float(flags.get("Min", 0.0)),            # +0x5c, PIVOT (never a clamp)
 		"offset": float(flags.get("Offset", 0.0)),      # +0x64
@@ -507,27 +990,61 @@ func _decode_pattern(name: String, skipped: Array) -> Dictionary:
 		"height_field_stand": bool(flags.get("Stand", false)),
 		"height_field_smooth": bool(flags.get("Smooth", false)),
 		"grid_offset": int(doc.get("grid_offset", 0)),
-		"grid_layout": "h x w row-major f32; G=8+(w-1)(h-1) [O] F01 §4.4",
+		"grid_layout": "h x w row-major f32[w*h]; G=8+(w-1)(h-1) [O] F01 §4.4",
 		"label": "[O] DECODED grid+flags; row sign / global clamp [U]; no parity claim",
 	}
-	var occ_v: Variant = doc.get("occupancy_cells", null)
-	if occ_v is Array and (occ_v as Array).size() == w * hh:
-		var occ := PackedByteArray()
-		occ.resize(w * hh)
+	# Optional canonical override: never alias the donor-decoded key to `grid`.
+	var canonical_v: Variant = doc.get("grid", null)
+	if canonical_v is Array:
+		var canonical_src: Array = canonical_v
+		if canonical_src.size() != w * hh:
+			skipped.append("CANONICAL_GRID_SIZE " + source + " [U] — optional grid override rejected; no synthetic grid")
+			return {}
+		var canonical := PackedFloat32Array()
+		canonical.resize(w * hh)
 		for i in range(w * hh):
+			canonical[i] = float(canonical_src[i])
+		out["grid"] = canonical
+	var occ_v: Variant = doc.get("occupancy_cells", null)
+	var lattice_n: int = (w - 1) * (hh - 1)
+	if occ_v is Array and ((occ_v as Array).size() == lattice_n or (occ_v as Array).size() == w * hh):
+		var occ := PackedByteArray()
+		occ.resize((occ_v as Array).size())
+		for i in range(occ.size()):
 			occ[i] = int((occ_v as Array)[i]) & 0xFF
 		out["occupancy"] = occ
+		out["occupancy_label"] = "[O] raw 0/1 mask; F01 lattice (h-1)x(w-1); PatternMaskStand/ReverceStand [U], no inverse/expansion invented"
 	else:
-		out["occupancy_label"] = "[U] decoded occupancy is (h-1)x(w-1) lattice, not the w*h stamp mask — gate left unmodified"
+		out["occupancy_label"] = "[U] occupancy_cells absent or wrong size — stand rejected, no invented footprint"
 	return out
 
 
 func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) -> Dictionary:
 	var families: Dictionary = {}
 	var patterns: Dictionary = {}
-	var fi := _read_json(FAMILY_INDEX, skipped)
+	var compact := _load_compact_pattern_bundle(skipped)
+	var use_compact: bool = compact.has("patterns")
+	var compact_telemetry: Dictionary = compact.get("telemetry", {}) as Dictionary
+	var compact_manifest: Dictionary = compact.get("manifest", {}) as Dictionary
+	var compact_families: Array = compact.get("families", []) as Array
+	var compact_patterns: Dictionary = compact.get("patterns", {}) as Dictionary
+	var family_lookup := {}
+	if use_compact:
+		for family_v in compact_families:
+			var family: Dictionary = family_v as Dictionary
+			family_lookup[str(family["family"])] = family
+
+	# The compact bundle is preferred. The original file path remains byte-for-byte
+	# selectable below and is labelled in telemetry whenever bundle loading fails.
+	var fi := {}
+	if not use_compact:
+		fi = _read_json(FAMILY_INDEX, skipped)
 	var fam_names: Array[String] = []
-	if not fi.is_empty():
+	if use_compact:
+		for fv in compact_families:
+			if fv is Dictionary and (fv as Dictionary).has("family"):
+				fam_names.append(str((fv as Dictionary)["family"]))
+	elif not fi.is_empty():
 		var fs_v: Variant = fi.get("families", [])
 		if fs_v is Array:
 			for fv in (fs_v as Array):
@@ -543,12 +1060,21 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 	var fam_pattern_names: Array[String] = []
 	for fn in selected:
 		var fp: String = FAMILY_DIR + fn + ".json"
-		if not FileAccess.file_exists(fp):
-			skipped.append("ABSENT " + fp + " [U] — family not supplied")
-			continue
-		var fd := _read_json(fp, skipped)
-		if fd.is_empty():
-			continue
+		var fd: Dictionary
+		var family_source: String = fp
+		if use_compact:
+			if not family_lookup.has(fn):
+				skipped.append("ABSENT " + fp + " [U] — family not supplied")
+				continue
+			fd = family_lookup[fn] as Dictionary
+			family_source = COMPACT_FAMILIES + "#" + fn
+		else:
+			if not FileAccess.file_exists(fp):
+				skipped.append("ABSENT " + fp + " [U] — family not supplied")
+				continue
+			fd = _read_json(fp, skipped)
+			if fd.is_empty():
+				continue
 		var members: Array = []
 		var pv: Variant = fd.get("patterns", [])
 		if pv is Array:
@@ -556,30 +1082,51 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 				if not (mv is Dictionary):
 					continue
 				var md: Dictionary = mv as Dictionary
-				var nm: String = str(md.get("match", md.get("pattern", "")))
+				var nm: String = _pattern_entry_name(md)
 				if nm.is_empty():
 					continue
-				members.append({"name": nm, "freq": float(md.get("freq", 0.0))})
-				if _target_pattern(nm) and not EXACT_PATTERNS.has(nm) and not fam_pattern_names.has(nm):
+				members.append({"name": nm, "freq": float(md.get("freq", 1.0))})
+				# Every member of a selected donor family is a valid placement
+				# candidate. The old prefix filter silently excluded donor families
+				# such as g_mnt_*, f_plt_*, big_hill_* and str_new_*.
+				if not EXACT_PATTERNS.has(nm) and not fam_pattern_names.has(nm):
 					fam_pattern_names.append(nm)
 		families[fn] = members
-		loaded.append("FAMILY " + fp + " (" + str(members.size()) + " name/freq pairs)")
-	if not fi.is_empty():
+		loaded.append("FAMILY " + family_source + " (" + str(members.size()) + " name/freq pairs)")
+	if use_compact:
+		loaded.append("COMPACT_PATTERNS " + COMPACT_MANIFEST + " + " + COMPACT_FAMILIES +
+				" + " + COMPACT_PATTERNS + " (" + str(compact_families.size()) +
+				" family entries / " + str(compact_patterns.size()) + " pattern docs)")
+	elif not fi.is_empty():
 		skipped.append("NOT_LOADED " + ASSET_ROOT + "lib/pattern_lib_index.json [U] — 55.8 MB metadata index, family_index.json used instead")
 
 	# Exact relief/mine patterns first, then a seed-rotated bounded sample of
 	# the forest/stone/plateau names from those families (cap 64, no synthesis).
 	var ordered: Array[String] = []
 	for n in EXACT_PATTERNS:
-		if FileAccess.file_exists(PATTERN_DIR + n + ".json"):
-			ordered.append(n)
+		if use_compact:
+			if compact_patterns.has(n):
+				ordered.append(n)
+			else:
+				skipped.append("ABSENT " + PATTERN_DIR + n + ".json [U] — pattern not stamped")
 		else:
-			skipped.append("ABSENT " + PATTERN_DIR + n + ".json [U] — pattern not stamped")
+			if FileAccess.file_exists(PATTERN_DIR + n + ".json"):
+				ordered.append(n)
+			else:
+				skipped.append("ABSENT " + PATTERN_DIR + n + ".json [U] — pattern not stamped")
 	fam_pattern_names.sort()
 	var pool: Array[String] = []
 	for n in fam_pattern_names:
-		if FileAccess.file_exists(PATTERN_DIR + n + ".json"):
-			pool.append(n)
+		if use_compact:
+			if compact_patterns.has(n):
+				pool.append(n)
+			else:
+				# Missing family references were labelled once from the validated
+				# manifest. Exact-key lookup never aliases K_ravine_2 to k_ravine_2.
+				continue
+		else:
+			if FileAccess.file_exists(PATTERN_DIR + n + ".json"):
+				pool.append(n)
 	if not pool.is_empty():
 		var start: int = _hash32("%d|patterns" % seed) % pool.size()
 		for k in range(pool.size()):
@@ -589,16 +1136,42 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 			if not ordered.has(candidate):
 				ordered.append(candidate)
 	for n in ordered:
-		var decoded := _decode_pattern(n, skipped)
+		var decoded: Dictionary
+		if use_compact:
+			var pattern_source: String = COMPACT_PATTERNS + "#" + n
+			decoded = _decode_pattern_doc(n, compact_patterns[n] as Dictionary, pattern_source, skipped)
+			if not decoded.is_empty():
+				loaded.append("PATTERN " + pattern_source)
+		else:
+			decoded = _decode_pattern(n, skipped)
+			if not decoded.is_empty():
+				loaded.append("PATTERN " + PATTERN_DIR + n + ".json")
 		if not decoded.is_empty():
 			patterns[n] = decoded
-			loaded.append("PATTERN " + PATTERN_DIR + n + ".json")
 	p["patterns"] = patterns
 	p["families"] = families
+	var files_parsed: int = int(compact_telemetry.get("files_parsed", 0))
+	var bytes_parsed: int = int(compact_telemetry.get("bytes_parsed", 0))
+	var missing_files: Array = compact_manifest.get("missing_family_pattern_files", []) as Array
 	return {
 		"patterns_loaded": patterns.size(),
 		"families_loaded": families.size(),
 		"cap": MAX_PATTERNS,
+		"source": "compact" if use_compact else "file",
+		"compact_source_used": use_compact,
+		"files_parsed": files_parsed,
+		"bytes_parsed": bytes_parsed,
+		"compact_files_parsed": files_parsed,
+		"compact_bytes_parsed": bytes_parsed,
+		"compact_payload_files": int(compact_manifest.get("compact_files", 0)),
+		"compact_payload_bytes": int(compact_telemetry.get("payload_bytes", 0)),
+		"compact_family_count": int(compact_manifest.get("compact_family_count", 0)),
+		"compact_pattern_count": int(compact_manifest.get("compact_pattern_count", 0)),
+		"source_corpus_bytes": int(compact_manifest.get("source_total_bytes", 0)),
+		"source_family_index_sha256": str(compact_manifest.get("source_family_index_sha256", "")),
+		"missing_family_pattern_files": missing_files.duplicate(true),
+		"fallback_reason": str(compact_telemetry.get("fallback_reason", "")),
+		"parse_scope": "compact bundle" if use_compact else "compact bundle attempt; fallback file reads not counted",
 		"cite": "generator.cfg:67-154; pattern.lib:549563-549575; cossacks.exe:0x755f30; F01 §4.4",
 	}
 
@@ -608,8 +1181,9 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 # ---------------------------------------------------------------------------
 
 ## Build I07's `p` Dictionary (terrain_donor_gen.gd:414-437) from derived
-## assets. `game` is read-only; w/h are the caller's grid (used only to prefer
-## a native-size mask). Missing assets are labelled skips, never inventions.
+## assets. `game` is read-only; w/h are the caller's requested grid. A native-
+## size mask is preferred, otherwise it is deterministically resampled to w/h.
+## Missing assets are labelled skips, never inventions.
 func build(game, w: int, h: int) -> Dictionary:
 	var skipped: Array = []
 	var loaded: Array = []
@@ -627,6 +1201,11 @@ func build(game, w: int, h: int) -> Dictionary:
 	var const_info := _apply_constants(p, skipped, loaded)
 	var pat_info := _apply_patterns(p, seed, skipped, loaded)
 	p["visual_parity_claim"] = false
+	# The donor LoadTextureTerrainFromBitmap routine is fully commented source.
+	# Keep its exact implementation available for diagnostics, but never enable
+	# editor/test tile art in normal generation without an explicit opt-in.
+	var cfg = C3ConfigScript.active
+	p["detail_bitmap_enabled"] = bool(cfg.flag("features.terrain.detail_bitmap", false)) if cfg != null else false
 	var unverified: Array[String] = [
 		"forest density from mask G: [U] G=0 on all shipped vanilla non-start pixels; no density invented (spec/03 §4; mask_index.json:76-77)",
 		"GenerateMapRandKey: [U] spec/02 §1; no mix64 per-stage derivation (spec/02 §5)",
@@ -650,6 +1229,7 @@ func build(game, w: int, h: int) -> Dictionary:
 			"derivation_label": str(seed_info["derivation_label"]),
 		},
 		"shape": shape,
+		"shape_resolution": _shape_info.duplicate(true),
 		"mask": mask_info,
 		"constants": const_info,
 		"patterns": pat_info,

@@ -432,6 +432,40 @@ func _source_text(path: String) -> String:
 	return s
 
 
+# Strip quoted string literals and inline comments from a source line so the
+# synthesis scan matches EXECUTABLE code only. Telemetry dictionary keys
+# (e.g. "relief_mask_cells_no_face_promotion", "no_noise_field"), log text and
+# provenance prose are string literals / comments, not hacks. Both quote styles
+# and backslash escapes are honoured; removed characters become spaces so byte
+# offsets stay stable. Real executable synthesis (calls, assignments, variable
+# declarations containing the tokens) is left untouched.
+func _strip_string_literals(line: String) -> String:
+	var out := ""
+	var quote: int = 0
+	var i: int = 0
+	var length: int = line.length()
+	while i < length:
+		var c: String = line.substr(i, 1)
+		if quote == 0:
+			if c == "#":
+				break  # inline comment: prose, not code
+			if c == "\"" or c == "'":
+				quote = c.unicode_at(0)
+				out += " "
+			else:
+				out += c
+		else:
+			out += " "
+			if c == "\\":
+				i += 1
+				if i < length:
+					out += " "  # escaped char can never close the literal
+			elif c.unicode_at(0) == quote:
+				quote = 0
+		i += 1
+	return out
+
+
 # ------------------------------------------------------------- statistics ----
 func _hist(raw: PackedByteArray) -> Dictionary:
 	var h := {}
@@ -499,6 +533,12 @@ func _deciles(raw: PackedByteArray) -> Array:
 
 # ------------------------------------------------------------------- mesh -----
 class StubGame extends C3Game:
+	# C3Game defaults MAP_W/MAP_H to 160 (game.gd:35-36) and declares no
+	# lowercase aliases. Declare them here so the mesh/composer/data seam can be
+	# pinned to the requested stream size via either spelling (t_terrain3d.gd
+	# pattern), instead of silently building a 160² mesh for a 240² request.
+	var map_w: int = 0
+	var map_h: int = 0
 	var height_b64: String = ""
 	var tileblock_b64: String = ""
 	var dump: Dictionary = {}
@@ -539,23 +579,41 @@ func _inspect_mesh(size: int, s: Dictionary) -> Dictionary:
 		out["reason"] = "composer is not a Node (expected Node3D per V11 CR3)"
 		return out
 	root.add_child(inst as Node)
+	# Drive the seam from the supplied stream's own dimensions, not from the
+	# requested `size`: the stream dictionary carries map_w/map_h from the
+	# generator (see _generate_streams :w/:h). If they ever differ, the mesh and
+	# the exact-count expectations below must agree with the data inspected.
+	var w: int = int(s.get("w", size))
+	var h: int = int(s.get("h", size))
+	if w <= 0:
+		w = size
+	if h <= 0:
+		h = size
 	var g := StubGame.new()
 	var hraw: PackedByteArray = s.get("height", PackedByteArray())
 	var traw: PackedByteArray = s.get("tileblock", PackedByteArray())
 	var craw: PackedByteArray = s.get("terrain", PackedByteArray())
 	var braw: PackedByteArray = s.get("blocked", PackedByteArray())
-	var n := size * size
+	var n := w * h
 	if craw.size() < n:
 		craw = PackedByteArray()
 		craw.resize(n)
 	if braw.size() < n:
 		braw = PackedByteArray()
 		braw.resize(n)
+	# Pin BOTH spellings before bind(): composer._grid_size() (world.gd:92-101)
+	# reads MAP_W/MAP_H first, then map_w/map_h; I06.from_live_object and I08
+	# ingest read the same names. Without this, C3Game's 160 defaults leak in.
+	g.MAP_W = w
+	g.MAP_H = h
+	g.map_w = w
+	g.map_h = h
 	g.height = _f32_array(hraw)
 	g.tileblock = traw.duplicate()
 	g.terrain = craw
 	g.blocked = braw
 	root.add_child(g)
+	inst.call("invalidate")  # guarantee no cached grid from a prior build
 	inst.call("bind", g)
 	var built := false
 	if inst.has_method("build"):
@@ -590,9 +648,10 @@ func _inspect_mesh(size: int, s: Dictionary) -> Dictionary:
 		uv_bad = -1
 	out = {
 		"inspected": true, "build_ok": built, "surfaces": surfaces,
+		"grid_w": w, "grid_h": h,
 		"vertices": vertices, "expected_vertices": n,
 		"triangles": triangles,
-		"expected_triangles": (size - 1) * (size - 1) * TRI_PER_CELL,
+		"expected_triangles": (w - 1) * (h - 1) * TRI_PER_CELL,
 		"uv2_face_violations": face_bad, "uv2_tile_violations": uv_bad,
 		"reason": "",
 	}
@@ -733,8 +792,11 @@ func _initialize() -> void:
 				% [str(parity_found), str(parity_value), parity_source],
 			"spec/11 §11.1:17; A05 parity_guard; V21 U1")
 
-	# No synthetic noise/dither field. Source scan ignores comment lines
-	# (provenance comments legitimately say "no synthetic noise/dither").
+	# No synthetic noise/dither field. Source scan ignores full-line comments
+	# (provenance comments legitimately say "no synthetic noise/dither") AND
+	# quoted string literals / inline comments: telemetry keys such as
+	# "relief_mask_cells_no_face_promotion" and "no_noise_field" are labels,
+	# not executable synthesis. Assertion and SYNTHESIS_TOKENS are unchanged.
 	var synth_hits: Array[String] = []
 	for p in [MODULE_WORLD, MODULE_DATA, MODULE_GEN, MODULE_MESH, MODULE_PROPS]:
 		var txt := _source_text(p)
@@ -745,8 +807,11 @@ func _initialize() -> void:
 			var t := str(line).strip_edges()
 			if t.begins_with("#") or t.begins_with(";") or t.is_empty():
 				continue
+			var code := _strip_string_literals(t)
+			if code.strip_edges().is_empty():
+				continue
 			for tok in SYNTHESIS_TOKENS:
-				if t.find(str(tok)) >= 0:
+				if code.find(str(tok)) >= 0:
 					synth_hits.append(str(p) + ": " + t.substr(0, 160))
 	check("no_synthetic_noise_field", synth_hits.is_empty(),
 			"active synthesis tokens=%d %s" % [synth_hits.size(), str(synth_hits)],

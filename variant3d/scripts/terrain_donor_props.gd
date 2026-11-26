@@ -37,10 +37,11 @@
 #     * I07 stamp output (IMPLEMENTATION_PLAN.md:15): an ordered Array of stamp
 #       dictionaries/objects (name + cell) passed to build(), or the same array
 #       under container.meta["pattern_stamps"] / dump["fields"]["pattern_stamps"].
-#     * I03 decoded JSON feed (IMPLEMENTATION_PLAN.md:11; V11 ledger G5/G3):
-#       res://assets/terrain_new/patterns/pattern_lib_index.json (pattern ->
-#       Objects[]), optionally family_index.json. Absent today (V07 E19) =>
-#       UNVERIFIED, never guessed. The committed Z08-derived table
+#     * I03 compact props feed, when present:
+#       res://assets/terrain_new/props/props_index.json + only the family bundles
+#       named by accepted stamps. The 55.8 MB lib/pattern_lib_index.json monolith
+#       remains a labelled fallback walker. Both feeds carry pattern -> Objects[];
+#       absent => UNVERIFIED, never guessed. The committed Z08-derived table
 #       res://assets/terrain/mountain_props.json is the clearly labelled
 #       PORT APPROX fallback for transforms; if neither feed has a record, the
 #       record is SKIPPED, not synthesised. No synthetic scatter, no noise field,
@@ -56,8 +57,11 @@ const MODULE_ID: String = "I09/terrain_donor_props"
 const GROUP: String = "terrain_donor_props"
 
 # --- decoded feeds / fallback (I03 output, V11 ledger G3/G5) ----------------
-const FEED_LIB_INDEX: String = "res://assets/terrain_new/lib/pattern_lib_index.json"     # I03 canonical output (V64/V66; V11's patterns/ path is stale)
-const FEED_FAMILY_INDEX: String = "res://assets/terrain_new/lib/pattern_lib_index.json"  # I03 emits generator_families, not a separate family_index.json
+const FEED_PROPS_DIR: String = "res://assets/terrain_new/props"
+const FEED_PROPS_INDEX: String = "res://assets/terrain_new/props/props_index.json"  # PERF-FEED compact index; preferred when valid
+const FEED_PROPS_SCHEMA: String = "terrain_new/props_preindex/v1"
+const FEED_LIB_INDEX: String = "res://assets/terrain_new/lib/pattern_lib_index.json"     # legacy monolith walker fallback (V64/V66; V11's patterns/ path is stale)
+const FEED_FAMILY_INDEX: String = "res://assets/terrain_new/lib/pattern_lib_index.json"  # legacy alias of the same monolith; not parsed twice
 const FEED_FALLBACK: String = "res://assets/terrain/mountain_props.json"                    # port world3d_relief.gd:42; V07 E03
 const MODEL_MANIFEST: String = "res://assets/models/manifest.json"                           # port asset_paths.gd:15
 
@@ -169,7 +173,7 @@ const UNVERIFIED_BASE: Dictionary = {
 	"ACTIVATION": "UNVERIFIED — all cited .inc callers are commented [*] = ; text (F07 §1; F08 §0)",
 	"LOD_UNITS": "UNVERIFIED — donor LOD literals 0..150 / 0..2500 have [U] metre meaning (refobj.actor:46-49,93-95)",
 	"WEEKLY_CONSTANT": "UNVERIFIED — no donor 'weekly' constant found in X03/D06; none invented; X03/D06 forest-border literals used instead",
-	"FAMILY_INDEX": "UNVERIFIED — I03 family_index.json absent; per-family counts fall back to class buckets",
+	"FAMILY_INDEX": "UNVERIFIED — compact section_family is derived bundle grouping; authoritative generator_families membership is not carried",
 }
 
 const AssetPaths = preload("res://scripts/asset_paths.gd")
@@ -181,6 +185,8 @@ var _stamps: Array = []
 var _records: Dictionary = {}          # pattern name -> Array[Dictionary] (feed order)
 var _family_of_pattern: Dictionary = {}
 var _feed_source: String = ""
+var _feed_kind: String = ""
+var _feed_metrics: Dictionary = {}
 var _fallback_used: bool = false
 var _known_sids: Dictionary = {}
 var _meshes: Dictionary = {}
@@ -227,7 +233,6 @@ func rebuild() -> Dictionary:
 		_unverified.append(str(UNVERIFIED_BASE[key]))
 
 	_load_manifest()
-	_load_feed(st)
 
 	var placements: Array[Dictionary] = []
 	var stamp_list: Array = _stamps
@@ -241,6 +246,7 @@ func rebuild() -> Dictionary:
 		_unverified.append("NO_I07_STAMP_LIST — build() got no stamps and I06 container carried none")
 	var counts: Dictionary = st["counts"]
 	counts["stamps_seen"] = stamp_list.size()
+	_load_feed(st, stamp_list)
 
 	# Collect in I07 stamp order; every Objects record is visited in donor feed
 	# order (no sort, no RNG). Then emit in the donor stage order of spec §10 §1.
@@ -269,12 +275,28 @@ func rebuild() -> Dictionary:
 	counts["matched_stamps"] = int(counts["matched_stamps"])
 	st["counts"] = counts
 	st["sids"] = _batches.keys()
-	st["feed"] = {
+	var props_total: int = int(counts["props_total"])
+	var donor_objects_instanced: bool = (
+		props_total > 0 and not _fallback_used
+		and (_feed_kind == "compact_preindex" or _feed_kind == "monolith_fallback"))
+	var feed_label: String
+	if donor_objects_instanced:
+		feed_label = "DONOR LITERALS (I03 compact Objects[])" if _feed_kind == "compact_preindex" else "DONOR LITERALS (I03 Objects[]; monolith fallback)"
+	elif props_total == 0:
+		feed_label = "ZERO PROPS — feed/stamp/shape UNVERIFIED"
+	elif _fallback_used:
+		feed_label = "PORT APPROX — Z08 fallback table"
+	else:
+		feed_label = "UNVERIFIED — non-canonical object source"
+	var feed_stats: Dictionary = {
 		"source": _feed_source,
+		"kind": _feed_kind,
 		"fallback_used": _fallback_used,
-		"label": "PORT APPROX — Z08 fallback table" if _fallback_used else (
-			"DONOR LITERALS (I03 decoded feed)" if not _feed_source.is_empty() else "NO FEED — nothing instanced"),
+		"label": feed_label,
 	}
+	for key in _feed_metrics.keys():
+		feed_stats[key] = _feed_metrics[key]
+	st["feed"] = feed_stats
 	st["lod"] = {
 		"enabled": _lod_enabled,
 		"mesh_max": DONOR_MESH_LOD_MAX,
@@ -403,6 +425,8 @@ func asset_inventory() -> Dictionary:
 		"field_decals": FIELD_DECALS.duplicate(),
 		"mine_meshes": MINE_MESH_PATHS.duplicate(),
 		"wave_sheets": WAVE_SHEETS.duplicate(),
+		"feed_props_dir": FEED_PROPS_DIR,
+		"feed_props_index": FEED_PROPS_INDEX,
 		"feed_lib_index": FEED_LIB_INDEX,
 		"feed_family_index": FEED_FAMILY_INDEX,
 		"missing": missing,
@@ -446,6 +470,7 @@ func _fresh_stats(state: String) -> Dictionary:
 		"counts": {
 			"stamps_seen": 0, "matched_stamps": 0, "props_total": 0, "batches": 0,
 			"skipped_unknown_stamp": 0, "skipped_no_records": 0,
+			"skipped_non_dictionary_stamp": 0,
 			"skipped_no_transform": 0, "skipped_unknown_sid": 0,
 			"skipped_missing_mesh": 0, "skipped_unknown_class": 0,
 		},
@@ -529,28 +554,185 @@ func _load_manifest() -> void:
 			_bboxes[sid] = (md["bbox"] as Array).duplicate()
 
 
-func _load_feed(p_stats: Dictionary) -> void:
+func _load_feed(p_stats: Dictionary, p_stamps: Array) -> void:
 	_records = {}
 	_family_of_pattern = {}
 	_feed_source = ""
+	_feed_kind = ""
 	_fallback_used = false
-	if _try_feed(FEED_LIB_INDEX, p_stats):
-		_feed_source = FEED_LIB_INDEX
+	_feed_metrics = {
+		"files_read": 0,
+		"bytes_read": 0,
+		"json_parse_calls": 0,
+		"json_parse_successes": 0,
+		"json_parse_failures": 0,
+		"family_bundle_parse_calls": 0,
+		"family_bundles_parsed": 0,
+		"bundle_paths": [],
+		"index_source_bytes": 0,
+		"index_record_count": 0,
+		"patterns_loaded": 0,
+		"records_loaded": 0,
+	}
+	var accepted_names: Array[String] = _accepted_stamp_names(p_stamps)
+	if _try_compact_feed(accepted_names):
+		_feed_source = FEED_PROPS_INDEX
+		_feed_kind = "compact_preindex"
 	else:
-		if _try_feed(FEED_FAMILY_INDEX, p_stats):
-			_feed_source = FEED_FAMILY_INDEX
-		if _try_feed(FEED_FALLBACK, p_stats):
+		# The compact bundle is an optimization, not a new semantic source. Any
+		# absent/invalid compact input falls back to the legacy monolith walker.
+		if _try_feed(FEED_LIB_INDEX, p_stats):
+			_feed_source = FEED_LIB_INDEX
+			_feed_kind = "monolith_fallback"
+		elif _try_feed(FEED_FALLBACK, p_stats):
 			_feed_source = FEED_FALLBACK
+			_feed_kind = "z08_fallback"
 			_fallback_used = true
 			_unverified.append("TRANSFORM_FALLBACK — I03 feed absent; using Z08 derived table; engine transform PORT APPROX")
 	if _feed_source.is_empty():
 		_unverified.append("NO_OBJECT_FEED — no I03 feed or Z08 fallback; zero props instanced, none invented")
+	var records_loaded: int = 0
+	for recs in _records.values():
+		if recs is Array:
+			records_loaded += (recs as Array).size()
+	_feed_metrics["patterns_loaded"] = _records.size()
+	_feed_metrics["records_loaded"] = records_loaded
+
+
+func _accepted_stamp_names(p_stamps: Array) -> Array[String]:
+	# Mirror _collect_stamp's current Dictionary/name gate; rejected stamps must
+	# never cause a family bundle read.
+	var names: Array[String] = []
+	var seen: Dictionary = {}
+	for raw_stamp in p_stamps:
+		if not (raw_stamp is Dictionary):
+			continue
+		var name: String = _s(raw_stamp as Dictionary, "name",
+			_s(raw_stamp as Dictionary, "pattern", _s(raw_stamp as Dictionary, "pattern_name", "")))
+		if name.is_empty() or seen.has(name):
+			continue
+		seen[name] = true
+		names.append(name)
+	return names
+
+
+func _read_feed_json(p_path: String) -> Variant:
+	var file: FileAccess = FileAccess.open(p_path, FileAccess.READ)
+	if file == null:
+		return null
+	var byte_count: int = file.get_length()
+	var text: String = file.get_as_text()
+	file.close()
+	_feed_metrics["files_read"] = int(_feed_metrics["files_read"]) + 1
+	_feed_metrics["bytes_read"] = int(_feed_metrics["bytes_read"]) + byte_count
+	_feed_metrics["json_parse_calls"] = int(_feed_metrics["json_parse_calls"]) + 1
+	var parsed: Variant = JSON.parse_string(text)
+	if parsed == null:
+		_feed_metrics["json_parse_failures"] = int(_feed_metrics["json_parse_failures"]) + 1
+		return null
+	_feed_metrics["json_parse_successes"] = int(_feed_metrics["json_parse_successes"]) + 1
+	return parsed
+
+
+func _compact_bundle_path(p_relative: Variant) -> String:
+	if not (p_relative is String):
+		return ""
+	var relative: String = (p_relative as String).replace("\\", "/")
+	if relative.is_empty() or relative.begins_with("/") or relative.begins_with("res:") or relative.contains(".."):
+		return ""
+	return FEED_PROPS_DIR + "/" + relative
+
+
+func _try_compact_feed(p_names: Array[String]) -> bool:
+	var parsed: Variant = _read_feed_json(FEED_PROPS_INDEX)
+	if not (parsed is Dictionary):
+		return false
+	var root: Dictionary = parsed
+	if str(root.get("schema", "")) != FEED_PROPS_SCHEMA:
+		return false
+	if bool(root.get("visual_parity_claim", true)):
+		return false
+	var files_v: Variant = root.get("files", null)
+	var families_v: Variant = root.get("families", null)
+	var section_family_v: Variant = root.get("section_family", null)
+	if not (files_v is Dictionary) or not (families_v is Dictionary) or not (section_family_v is Dictionary):
+		return false
+	var files: Dictionary = files_v
+	var family_files: Dictionary = families_v
+	var section_family: Dictionary = section_family_v
+	_feed_metrics["index_source_bytes"] = int(root.get("source_bytes", 0))
+	_feed_metrics["index_record_count"] = int(root.get("record_count", 0))
+
+	# Resolve only accepted stamp names. Multiple stamps in one derived bundle
+	# share one parse; no unrelated family file is opened.
+	var bundle_names: Dictionary = {}
+	var bundle_family: Dictionary = {}
+	var loaded_families: Dictionary = {}
+	# section_family is the bundle's derived grouping key, not the monolith's
+	# authoritative generator_families membership (kept UNVERIFIED in stats).
+	for name in p_names:
+		if not files.has(name):
+			continue
+		var bundle_path: String = _compact_bundle_path(files[name])
+		var family: String = str(section_family.get(name, ""))
+		if bundle_path.is_empty() or family.is_empty():
+			return false
+		if _compact_bundle_path(family_files.get(family, null)) != bundle_path:
+			return false
+		loaded_families[name] = family
+		bundle_family[bundle_path] = family
+		if not bundle_names.has(bundle_path):
+			bundle_names[bundle_path] = []
+		var names_for_bundle: Array = bundle_names[bundle_path]
+		names_for_bundle.append(name)
+		bundle_names[bundle_path] = names_for_bundle
+
+	var loaded_records: Dictionary = {}
+	for path_v in bundle_names.keys():
+		var bundle_path: String = str(path_v)
+		_feed_metrics["family_bundle_parse_calls"] = int(_feed_metrics["family_bundle_parse_calls"]) + 1
+		var bundle_parsed: Variant = _read_feed_json(bundle_path)
+		if not (bundle_parsed is Dictionary):
+			return false
+		var bundle: Dictionary = bundle_parsed
+		if str(bundle.get("family", "")) != str(bundle_family[bundle_path]):
+			return false
+		var sections_v: Variant = bundle.get("sections", null)
+		if not (sections_v is Dictionary):
+			return false
+		var sections: Dictionary = sections_v
+		for name_v in (bundle_names[bundle_path] as Array):
+			var name: String = str(name_v)
+			if not sections.has(name):
+				return false
+			var records_v: Variant = sections[name]
+			if not (records_v is Array):
+				return false
+			var normalised: Array[Dictionary] = []
+			for raw_v in (records_v as Array):
+				if raw_v is Dictionary:
+					# Shallow-copy the record but retain every nested vector dict,
+					# including Position/Scaling/Up/Direction W components.
+					normalised.append(_copy_feed_record(raw_v as Dictionary))
+			loaded_records[name] = normalised
+		_feed_metrics["family_bundles_parsed"] = int(_feed_metrics["family_bundles_parsed"]) + 1
+		var parsed_paths: Array = _feed_metrics["bundle_paths"]
+		if not parsed_paths.has(bundle_path):
+			parsed_paths.append(bundle_path)
+		_feed_metrics["bundle_paths"] = parsed_paths
+	_records = loaded_records
+	_family_of_pattern = loaded_families
+	return true
+
+
+func _copy_feed_record(p_raw: Dictionary) -> Dictionary:
+	var rec: Dictionary = p_raw.duplicate(false)
+	rec["BaseName"] = _record_base_name(rec)
+	return rec
 
 
 func _try_feed(p_path: String, p_stats: Dictionary) -> bool:
-	if not FileAccess.file_exists(p_path):
-		return false
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(p_path))
+	var parsed: Variant = _read_feed_json(p_path)
 	if not (parsed is Dictionary):
 		return false
 	var root: Dictionary = parsed
@@ -581,22 +763,63 @@ func _try_feed(p_path: String, p_stats: Dictionary) -> bool:
 						if not pname.is_empty():
 							_family_of_pattern[pname] = fname
 
-	# Z08-style `props` map is preferred; other I03 shapes are accepted too.
-	for key in ["props", "objects", "Objects", "records", "by_pattern"]:
-		var v: Variant = root.get(key, null)
-		if v is Dictionary:
-			source_map = v as Dictionary
-			break
-	if source_map.is_empty():
-		for key in root.keys():
-			if key in ["version", "source", "source_sha256", "selection", "labels",
-					"derived_stats", "families", "fields", "stats", "family_index",
-					"pattern_index", "note", "donor_units"]:
-				continue
-			if root[key] is Array:
-				source_map[str(key)] = true
-
 	var found: int = 0
+
+	# I03 canonical shape: pattern_lib.sections[].blocks[].records[]. Only
+	# Objects blocks carry prop transforms; family/grid metadata is not a record.
+	# Key by the parsed section.name because blocks may precede name in the JSON.
+	var pattern_lib: Variant = root.get("pattern_lib", null)
+	if pattern_lib is Dictionary:
+		var sections_v: Variant = (pattern_lib as Dictionary).get("sections", [])
+		if sections_v is Array:
+			for section_v in (sections_v as Array):
+				if not (section_v is Dictionary):
+					continue
+				var section: Dictionary = section_v as Dictionary
+				var pattern_name: String = str(section.get("name", "")).strip_edges()
+				if pattern_name.is_empty():
+					continue
+				var blocks_v: Variant = section.get("blocks", [])
+				if not (blocks_v is Array):
+					continue
+				for block_v in (blocks_v as Array):
+					if not (block_v is Dictionary):
+						continue
+					var block: Dictionary = block_v as Dictionary
+					if str(block.get("block", "")) != "Objects":
+						continue
+					var records_v: Variant = block.get("records", [])
+					if not (records_v is Array):
+						continue
+					var normalised: Array[Dictionary] = []
+					for raw_v in (records_v as Array):
+						if not (raw_v is Dictionary):
+							continue
+						var rec: Dictionary = _copy_feed_record(raw_v as Dictionary)
+						normalised.append(rec)
+					if not normalised.is_empty():
+						var dst: Array = _records.get(pattern_name, [])
+						dst.append_array(normalised)
+						_records[pattern_name] = dst
+						found += normalised.size()
+
+	# Z08-style `props` map is preferred; other I03 shapes are accepted too.
+	# Never treat generator_families metadata as Objects records.
+	if found == 0:
+		for key in ["props", "objects", "Objects", "records", "by_pattern"]:
+			var v: Variant = root.get(key, null)
+			if v is Dictionary:
+				source_map = v as Dictionary
+				break
+		if source_map.is_empty():
+			for key in root.keys():
+				if key in ["version", "source", "source_sha256", "selection", "labels",
+						"derived_stats", "families", "fields", "stats", "family_index",
+						"pattern_index", "note", "donor_units", "generator_families"]:
+					continue
+				if root[key] is Array:
+					source_map[str(key)] = true
+
 	if not source_map.is_empty():
 		for name in source_map.keys():
 			var arr: Variant = source_map[name]
@@ -604,14 +827,14 @@ func _try_feed(p_path: String, p_stats: Dictionary) -> bool:
 			if arr is Array:
 				for raw in (arr as Array):
 					if raw is Dictionary and not (raw as Dictionary).is_empty():
-						recs.append(raw as Dictionary)
+						recs.append(_copy_feed_record(raw as Dictionary))
 			elif arr == true:
 				# Top-level keyed-by-pattern shape: records live under the key.
 				var nested: Variant = root.get(str(name), null)
 				if nested is Array:
 					for raw in (nested as Array):
 						if raw is Dictionary:
-							recs.append(raw as Dictionary)
+							recs.append(_copy_feed_record(raw as Dictionary))
 			if not recs.is_empty():
 				_records[str(name)] = recs
 				found += recs.size()
@@ -671,7 +894,7 @@ func _normalize_record(p_raw: Dictionary, p_stamp: String, p_stats: Dictionary) 
 	var counts: Dictionary = p_stats["counts"]
 	var classes: Dictionary = p_stats["classes"]
 	var families: Dictionary = p_stats["families"]
-	var base: String = _s(p_raw, "base", _s(p_raw, "BaseName", _s(p_raw, "base_name", "")))
+	var base: String = _record_base_name(p_raw)
 	var pos: Vector3 = _vec3(p_raw.get("Position", p_raw.get("position", null)))
 	if not _finite3(pos):
 		pos = Vector3(float(p_raw.get("px", NAN)), float(p_raw.get("py", 0.0)), float(p_raw.get("pz", NAN)))
@@ -765,6 +988,30 @@ func _add_to_batch(p_rec: Dictionary, p_stats: Dictionary) -> void:
 		var holder := MultiMeshInstance3D.new()
 		holder.name = "DonorProps_" + sid
 		holder.multimesh = mm
+		# Converted donor OBJs declare mtllib but no usemtl (for example
+		# terrainmesh1.obj:2-3); their MTL map_Kd is therefore not a reliable
+		# imported surface binding. Bind the manifest/AssetPaths albedo only
+		# when the imported mesh has no usable material. Donor UVs stay intact.
+		# The broad square footprint is triangulated donor relief geometry, not
+		# an editor grid (terrainmesh3.obj:4,6-8,8004-8005,8650-8656); keep it.
+		if sid == "field":
+			# field.obj is the converted field1.osm cut-out: it names field.mtl,
+			# but has no usemtl (and no vertex normals). Force its explicit
+			# AssetPaths field.png binding instead of trusting an importer
+			# default/opaque surface. envfieldd is the separate lit, alpha-
+			# blended ground decal (decals.mat:17,110-115), not crop albedo.
+			_bind_donor_albedo(holder, sid)
+			var field_material := holder.material_override as StandardMaterial3D
+			if field_material != null:
+				# Donor crop materials are emissive (env.mat:58-69). The tint is
+				# donor-grounded; 0.22 remains the existing PORT APPROX energy.
+				field_material.emission_enabled = true
+				field_material.emission = Color(232.0 / 255.0, 218.0 / 255.0, 195.0 / 255.0)
+				field_material.emission_energy_multiplier = 0.22
+				holder.set_meta("material_binding",
+					"PORT APPROXIMATION — donor field1 crop albedo + alpha scissor + emissive lift; parity UNVERIFIED")
+		elif not _mesh_has_usable_material(res as Mesh):
+			_bind_donor_albedo(holder, sid)
 		holder.add_to_group(GROUP)
 		holder.set_meta("terrain_sid", sid)
 		holder.set_meta("prop_class", cls)
@@ -810,6 +1057,61 @@ func _add_to_batch(p_rec: Dictionary, p_stats: Dictionary) -> void:
 	fe["sids"] = sids
 	families[family] = fe
 	p_stats["families"] = families
+
+
+func _mesh_has_usable_material(p_mesh: Mesh) -> bool:
+	if p_mesh == null:
+		return false
+	for surface in range(p_mesh.get_surface_count()):
+		var surface_material: Material = p_mesh.surface_get_material(surface)
+		if surface_material == null:
+			continue
+		# Preserve imported shader materials and any non-BaseMaterial3D
+		# material rather than replacing an intentional donor binding.
+		if surface_material is ShaderMaterial:
+			return true
+		if surface_material is BaseMaterial3D:
+			var base_material := surface_material as BaseMaterial3D
+			# The converted MTL carries Kd/map_Kd only. A textured but opaque
+			# or back-culled import still lacks the donor refbase alpha/cull state.
+			if (base_material.albedo_texture != null
+					and base_material.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+					and is_equal_approx(base_material.alpha_scissor_threshold, 0.5)
+					and base_material.cull_mode == BaseMaterial3D.CULL_DISABLED):
+				return true
+			continue
+		return true
+	return false
+
+
+func _bind_donor_albedo(p_holder: MultiMeshInstance3D, p_sid: String) -> void:
+	var texture_path: String = AssetPaths.existing(p_sid, "tex")
+	var texture: Texture2D = null
+	if ResourceLoader.exists(texture_path):
+		texture = load(texture_path) as Texture2D
+	var mat := StandardMaterial3D.new()
+	mat.roughness = 1.0
+	mat.metallic = 0.0
+	# Match the donor-prop entity fallback: keep imported winding visible and
+	# remain lit so the scene's donor light rig, not an unshaded tint, drives it.
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if texture != null:
+		mat.albedo_texture = texture
+		p_holder.set_meta("material_binding",
+			"PORT APPROXIMATION — donor albedo " + texture_path)
+	else:
+		# Only reached if a manifest/legacy donor albedo is absent. This is a
+		# labelled neutral PORT fallback, never a bright-white invented material.
+		mat.albedo_color = Color(0.2, 0.2, 0.2)
+		p_holder.set_meta("material_binding",
+			"PORT APPROXIMATION — neutral untextured fallback; donor albedo unavailable "
+			+ texture_path)
+	# Donor refbase.mat:17 uses bmAlphaTest50 and :18 uses fcNoCull for
+	# these converted env props. The 0.5 cut-out also prevents fully
+	# transparent white RGB texels in the relief RGBA from painting a tile.
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	mat.alpha_scissor_threshold = 0.5
+	p_holder.material_override = mat
 
 
 func _batch_classes(p_cls: String) -> Array[String]:
@@ -983,6 +1285,19 @@ func _g(p_src, p_key: String, p_fallback):
 		var v: Variant = (p_src as Object).get(p_key)
 		return p_fallback if v == null else v
 	return p_fallback
+
+
+func _record_base_name(p_raw: Dictionary) -> String:
+	for key in ["base", "BaseName", "base_name"]:
+		var value: Variant = p_raw.get(key, null)
+		if value is Dictionary:
+			value = (value as Dictionary).get("value", "")
+		if value == null:
+			continue
+		var text: String = str(value).strip_edges()
+		if not text.is_empty():
+			return text
+	return ""
 
 
 func _s(p_src: Dictionary, p_key: String, p_fallback: String) -> String:

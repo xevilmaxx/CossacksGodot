@@ -1,0 +1,42 @@
+{
+  "worker": "FIX-FIELD-ASSETS",
+  "created": "2026-11-26",
+  "files": [
+    {
+      "source": "variant3d\\assets\\models\\manifest.json",
+      "backup": "variant3d\\assets\\models\\tex\\shared\\terrain\\.backup-FIX-FIELD-ASSETS-20261126\\manifest.json",
+      "sha256": "cbc22b42d5e57139d3ecba431af0f4fccd2d94fab6105ac7124dd890bde5f73d",
+      "bytes": 320756
+    },
+    {
+      "source": "variant3d\\assets\\models\\tex\\shared\\terrain\\field.png",
+      "backup": "variant3d\\assets\\models\\tex\\shared\\terrain\\.backup-FIX-FIELD-ASSETS-20261126\\field.png",
+      "sha256": "8eee403df4ab56f0c32fbbb3fab707eeba3127618e56c8df42004e0e72c3c8ef",
+      "bytes": 48365
+    },
+    {
+      "source": "variant3d\\assets\\models\\tex\\shared\\terrain\\field.png.import",
+      "backup": "variant3d\\assets\\models\\tex\\shared\\terrain\\.backup-FIX-FIELD-ASSETS-20261126\\field.png.import",
+      "sha256": "9fc2086db0f1324e74896795c414dc3ad09606ac1ae039afa5739ef95174791f",
+      "bytes": 951
+    },
+    {
+      "source": "variant3d\\assets\\models\\obj\\shared\\terrain\\field.mtl",
+      "backup": "variant3d\\assets\\models\\tex\\shared\\terrain\\.backup-FIX-FIELD-ASSETS-20261126\\field.mtl",
+      "sha256": "ba370eb8c949ce3e87eeeac8c4e5dcf7a860fc564d5865e91a911c1c46209947",
+      "bytes": 70
+    },
+    {
+      "source": "variant3d\\assets\\models\\obj\\shared\\terrain\\field.obj",
+      "backup": "variant3d\\assets\\models\\tex\\shared\\terrain\\.backup-FIX-FIELD-ASSETS-20261126\\field.obj",
+      "sha256": "7824a2dd8b77e1a807604bcb2e4d63dc2be1974bc307a59b90b4f8c37d3f5139",
+      "bytes": 44551
+    },
+    {
+      "source": "variant3d\\assets\\models\\obj\\shared\\terrain\\field.obj.import",
+      "backup": "variant3d\\assets\\models\\tex\\shared\\terrain\\.backup-FIX-FIELD-ASSETS-20261126\\field.obj.import",
+      "sha256": "784fd9aba6332ee819a96925d60be9a636225c0f65944c8241a9a33e267f8572",
+      "bytes": 717
+    }
+  ]
+}

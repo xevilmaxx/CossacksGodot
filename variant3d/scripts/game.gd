@@ -5,6 +5,7 @@ class_name C3Game
 
 const Data = preload("res://scripts/data.gd")
 const Nav = preload("res://scripts/nav.gd")
+const C3ConfigScript = preload("res://scripts/config.gd")
 
 # Runtime grid A* (see nav.gd).  `nav_version` is bumped whenever the
 # passability grid changes so every planned route is invalidated.
@@ -2712,7 +2713,9 @@ func _on_building_finished(e: Dictionary) -> void:
 	if e.def.has("trains"):
 		e["rally"] = _default_rally(e)
 	if e.sid == "mil":
-		_sow_field_ring(e)  # P-50: donor cSeedWheat on a finished mill
+		# FIX-FIELDS: the demo switch selects the X22 donor routine; with the
+		# feature absent/false this remains the legacy completion behaviour.
+		_sow_field_ring(e, _demo_mill_enabled())
 	bld_dirty += 1
 
 # P-50: donor _unit_DoSeedWheat (unit.script:6470-6570). cRow=7 -> 7x7 grid
@@ -2725,8 +2728,13 @@ const SOW_GOLD := 5
 # most SOW_ROW*SOW_ROW tiles; the clash check enforces it geometrically, but
 # the explicit cap keeps repeated 60 s re-seeds from ever stacking fields.
 const MAX_FIELDS_PER_MILL := 49
+# X22 / unit.script:6477, dmscript.global:178, unit.script:6527. These are
+# donor MAP-CELL units; TILE (2 m) performs the only port unit conversion.
+const SOW_SIZE_CELLS := 1.6981
+const SOW_COLLISION_SIZE_CELLS := 0.5
+const SOW_RAD_CELLS := SOW_SIZE_CELLS * 0.9 * 3.0
 
-func _sow_field_ring(mill: Dictionary) -> int:
+func _sow_field_ring(mill: Dictionary, donor_rules := false) -> int:
 	if mill.is_empty() or str(mill.sid) != "mil" or not bool(mill.get("finished", false)):
 		return 0
 	var owned := 0
@@ -2735,6 +2743,8 @@ func _sow_field_ring(mill: Dictionary) -> int:
 			owned += 1
 	if owned >= MAX_FIELDS_PER_MILL:
 		return 0
+	if donor_rules:
+		return _sow_donor_field_ring(mill, owned)
 	var player: int = int(mill.player)
 	var made := 0
 	var step := 1.6981 * TILE * 0.5
@@ -2766,6 +2776,64 @@ func _sow_field_ring(mill: Dictionary) -> int:
 			made += 1
 	return made
 
+# X22 §4.2 literal transplant of _unit_DoSeedWheat geometry and gates. The
+# collision-grid/resource-list adapters and direct completion trigger remain
+# PORT APPROXIMATION; this makes no donor-parity claim and consumes no RNG.
+func _sow_donor_field_ring(mill: Dictionary, owned: int) -> int:
+	var player: int = int(mill.player)
+	var made := 0
+	var size := SOW_SIZE_CELLS * TILE
+	var size2 := sqrt(2.0 * size * size)
+	var base_x: float = floor((float(mill.pos.x) + size) / size2) * size2
+	var base_y: float = floor((float(mill.pos.y) + size * 0.5) / size2) * size2
+	var rot_c := cos(deg_to_rad(45.0))
+	var rot_s := sin(deg_to_rad(45.0))
+	var soft_clear := (SOW_RAD_CELLS / 3.0) * TILE
+	var ore_clear := SOW_RAD_CELLS * TILE
+	for i in SOW_ROW * SOW_ROW:
+		var dir_x := -((SOW_ROW - 0.5) * SOW_SIZE_CELLS / 2.0) + float(i % SOW_ROW) * SOW_SIZE_CELLS
+		var dir_y := -((SOW_ROW - 0.5) * SOW_SIZE_CELLS / 2.0) + float(i / SOW_ROW) * SOW_SIZE_CELLS
+		var rotated := Vector2(dir_x * rot_c + dir_y * rot_s, -dir_x * rot_s + dir_y * rot_c)
+		var p := Vector2(base_x, base_y) + rotated * TILE
+		var collision := false
+		for j in 25:
+			var probe_x := float(-2 + j / 5) * SOW_COLLISION_SIZE_CELLS
+			var probe_y := float(-2 + j % 5) * SOW_COLLISION_SIZE_CELLS
+			var probe_rot := Vector2(probe_x * rot_c + probe_y * rot_s, -probe_x * rot_s + probe_y * rot_c)
+			var sample := p + probe_rot * TILE
+			if not in_bounds(sample) or is_blocked(sample):
+				collision = true
+				break
+			var st := tile_of(sample)
+			var terrain_id := int(terrain[_t(st.x, st.y)])
+			if terrain_id == 3 or terrain_id == 4 or terrain_id == 5:
+				collision = true
+				break
+		if collision:
+			continue
+		var static_clash := false
+		for n in res_nodes:
+			var allow_dist := -1.0
+			match str(n.get("type", "")):
+				"food", "wood", "stone":
+					allow_dist = soft_clear
+				"gold", "iron", "coal":
+					allow_dist = ore_clear
+			if allow_dist >= 0.0 and n.pos.distance_to(p) < allow_dist:
+				static_clash = true
+				break
+		if static_clash or owned + made >= MAX_FIELDS_PER_MILL:
+			continue
+		if players[player].res[3] < float(SOW_GOLD):
+			continue
+		if not pay_cost(player, {"gold": SOW_GOLD}):
+			continue
+		_add_res("food", p, 50, 0.6)
+		var f: Dictionary = res_nodes[res_nodes.size() - 1]
+		f["mill"] = mill.id
+		made += 1
+	return made
+
 # P-51: donor "Grain Crops" production order (doprogressorders.inc:120-136).
 # Restore this mill's depleted fields first (reusing the shared field path),
 # then sow fresh ring tiles only if there is still room.
@@ -2777,7 +2845,7 @@ func cmd_sow(mill: Dictionary) -> int:
 			n += 1
 	if n > 0:
 		return n
-	return _sow_field_ring(mill)
+	return _sow_field_ring(mill, _demo_mill_enabled())
 
 # Shared restore used by the manual peasant resow tick and the ~60 s field
 # growth timer, so there is only one field-restoration code path.
@@ -2904,7 +2972,7 @@ func _tick_field_growth() -> void:
 			continue
 		for b in buildings_of(pi, false):
 			if b.sid == "mil" and b.finished:
-				_sow_field_ring(b)
+				_sow_field_ring(b, _demo_mill_enabled())
 	for n in res_nodes:
 		if n.type == "food" and n.has("mill") and int(n.hits) <= 0 and int(n.max_hits) > 0:
 			if _field_mill_id(n) != 0:
@@ -3132,16 +3200,22 @@ func _spawn_starts() -> void:
 		var cen := spawn("cen", i, c)
 		var cr: float = float(cen.get("block_r", cen.def.radius))
 		players[i].res[0] += float(opt.get("food", 0))
+		var peasant_cols := maxi(1, int(ceil(float(Data.START_PEASANTS) * 0.5)))
+		var peasant_spacing := 1.8
 		for k in Data.START_PEASANTS:
-			# The town hall sprite stands ~13 m tall ABOVE its ground anchor
-			# (buildings.json ortho/foot), while its blocked footprint is only
-			# the small base circle.  A full TAU ring at cr+1.5 therefore puts
-			# the northern arc ON the drawn hall.  Spawn the starting peasants
-			# in the open front (south) fan instead: outside the hall sprite and
-			# on walkable ground (they never have to pass through the hall).
-			var a := PI * (float(k) + 0.5) / maxf(1.0, float(Data.START_PEASANTS))
-			var pe := spawn("peasant", i, _start_free_pos(c, cr, a))
+			# PORT APPROXIMATION — owner usability request: compact two-row
+			# starting group in front of the hall on camera-forward SIM/world +X.
+			# This is a usability layout, not a donor placement claim.
+			var row: int = int(k) / peasant_cols
+			var col: int = int(k) % peasant_cols
+			var row_count := mini(peasant_cols, int(Data.START_PEASANTS) - row * peasant_cols)
+			var lane := (float(col) - float(row_count - 1) * 0.5) * peasant_spacing
+			var front := cr + 2.5 + float(row) * peasant_spacing
+			# _start_free_pos adds 2 m to its radius argument. Shift its anchor
+			# laterally so the 0-radian +X search preserves the row alignment.
+			var pe := spawn("peasant", i, _start_free_pos(c + Vector2(0.0, lane), front - 2.0, 0.0))
 			pe.order = {"type": "none"}
+			pe.face = 0.0  # world3d_entities: face 0.0 -> world/sim +X
 		# starting option extras: towers / cannons near the town
 		for t in int(opt.get("towers", 0)):
 			spawn("tow", i, c + Vector2(cr + 4.0 + t * 4.0, -5.0))
@@ -3160,6 +3234,48 @@ func _spawn_starts() -> void:
 					var a := TAU * ring / maxf(1.0, float(total))
 					spawn(_spawn_sid(i, sid), i, c + Vector2(cos(a), sin(a)) * (cr + 3.0 + (ring % 4) * 1.5))
 					ring += 1
+	if _demo_mill_enabled():
+		_spawn_demo_mill(starts[0])
+
+# FIX-FIELDS: opt-in QA-only mill/field fixture. Reading through C3Config.flag
+# keeps missing/malformed keys at false and leaves the default game untouched.
+func _demo_mill_enabled() -> bool:
+	var cfg: Variant = C3ConfigScript.active
+	if not (cfg is Object) or not cfg.has_method("flag"):
+		return false
+	return bool(cfg.call("flag", "features.terrain.demo_mill", false))
+
+func _spawn_demo_mill(hall_pos: Vector2) -> void:
+	# setup_spawns() can be called again while rebuilding a roster/world. The
+	# marker makes that idempotent: one demo mill, one donor field sowing.
+	for b in live_blds:
+		if not b.dead and int(b.player) == 0 and str(b.sid) == "mil" \
+				and bool(b.get("terrain_demo_mill", false)):
+			return
+	# Deterministic nearest-ring search, +X first. can_place() enforces map,
+	# terrain, building and resource clearance; no RNG draw is consumed.
+	var mill_pos := Vector2.INF
+	for ring in range(2, 13):
+		for k in range(16):
+			var a := TAU * float(k) / 16.0
+			var p := hall_pos + Vector2(cos(a), sin(a)) * (float(ring) * TILE)
+			if not in_bounds(p) or is_blocked(p):
+				continue
+			var pt := tile_of(p)
+			var terrain_id := int(terrain[_t(pt.x, pt.y)])
+			if terrain_id == 3 or terrain_id == 4 or terrain_id == 5:
+				continue
+			if bool(can_place(0, "mil", p).get("ok", false)):
+				mill_pos = p
+				break
+		if mill_pos != Vector2.INF:
+			break
+	if not in_bounds(mill_pos):
+		return
+	# The normal finished-spawn hook invokes the same mill->field path as any
+	# completed mill; the marker only makes later start rebuilds idempotent.
+	var mill := spawn("mil", 0, mill_pos, true)
+	mill["terrain_demo_mill"] = true
 
 # Pick a free tile for a starting villager in direction `a` (given in the
 # lower/south half of the screen, 0..PI, so the tall town-hall sprite to the

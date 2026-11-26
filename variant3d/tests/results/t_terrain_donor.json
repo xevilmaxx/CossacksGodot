@@ -231,17 +231,17 @@
 		},
 		{
 			"class": "A",
-			"detail": "found=true value=true source=res://scripts/terrain_donor_mesh.gd (must be explicit false)",
+			"detail": "found=true value=true source=res://scripts/terrain_donor_world.gd (must be explicit false)",
 			"evidence": "spec/11 §11.1:17; A05 parity_guard; V21 U1",
 			"name": "visual_parity_claim_false",
 			"passed": true
 		},
 		{
 			"class": "A",
-			"detail": "active synthesis tokens=2 [\"res://scripts/terrain_donor_mesh.gd: \\\"relief_mask_cells_no_face_promotion\\\": _relief_guard_cells,\", \"res://scripts/terrain_donor_props.gd: \\\"no_noise_field\\\": true,\"]",
+			"detail": "active synthesis tokens=0 []",
 			"evidence": "CHARTER §4 (no synthetic noise/dither S-25-09); spec/10:60; V21 GR-A21",
 			"name": "no_synthetic_noise_field",
-			"passed": false
+			"passed": true
 		},
 		{
 			"class": "A",
@@ -332,7 +332,7 @@
 			"detail": "w=64 h=64 n=4096 height=16384 tileblock=4096 terrain=4096 blocked=16384",
 			"evidence": "donor miscext2.script:19-26, dmscript.global:132-135 (spec/01:30); terrain_donor_data.gd:43-45",
 			"name": "grid_size_64",
-			"passed": false
+			"passed": true
 		},
 		{
 			"class": "A",
@@ -346,7 +346,7 @@
 			"detail": "w=240 h=240 n=57600 height=230400 tileblock=57600 terrain=57600 blocked=230400",
 			"evidence": "donor miscext2.script:19-26, dmscript.global:132-135 (spec/01:30); terrain_donor_data.gd:43-45",
 			"name": "grid_size_240",
-			"passed": false
+			"passed": true
 		},
 		{
 			"class": "A",
@@ -357,38 +357,38 @@
 		},
 		{
 			"class": "A",
-			"detail": "surfaces=-1 reason=",
+			"detail": "surfaces=1 reason=",
 			"evidence": "t_terrain3d.gd:206-213 (G32 §6); spec/01 §2",
 			"name": "surface_count_one",
-			"passed": false
+			"passed": true
 		},
 		{
 			"class": "A",
-			"detail": "vertices=-1 expected=-2",
+			"detail": "vertices=57600 expected=57600",
 			"evidence": "t_terrain3d.gd:215-226; G32 §6 (w*h shared cell-centre vertices)",
 			"name": "vertex_count_exact",
-			"passed": false
+			"passed": true
 		},
 		{
 			"class": "A",
-			"detail": "triangles=-1 expected=-2",
+			"detail": "triangles=114242 expected=114242",
 			"evidence": "t_terrain3d.gd:8-10; G32 §6 ((w-1)*(h-1)*2)",
 			"name": "triangle_count_exact",
-			"passed": false
+			"passed": true
 		},
 		{
 			"class": "A",
-			"detail": "UV2.x!=tex violations=-1 eps=0.001",
+			"detail": "UV2.x!=tex violations=0 eps=0.001",
 			"evidence": "spec/01:34; spec/06:42; world3d_terrain.gd:1315-1318 (PORT APPROX)",
 			"name": "uv2_tile_id_invariant",
-			"passed": false
+			"passed": true
 		},
 		{
 			"class": "A",
-			"detail": "UV2.y outside {0,1,2} violations=-1",
+			"detail": "UV2.y outside {0,1,2} violations=0",
 			"evidence": "spec/01:34 face in {0,1,2}; world3d_terrain.gd:1315-1318,1407 (PORT APPROX)",
 			"name": "uv2_face_domain",
-			"passed": false
+			"passed": true
 		}
 	],
 	"determinism": {
@@ -460,7 +460,20 @@
 		"seed": 20261113,
 		"sha256": "20af5db4be4c778166aa32b6fc225ceafdf646a57219134a9b293be4e6031d80"
 	},
-	"mesh": {},
+	"mesh": {
+		"build_ok": true,
+		"expected_triangles": 114242,
+		"expected_vertices": 57600,
+		"grid_h": 240,
+		"grid_w": 240,
+		"inspected": true,
+		"reason": "",
+		"surfaces": 1,
+		"triangles": 114242,
+		"uv2_face_violations": 0,
+		"uv2_tile_violations": 0,
+		"vertices": 57600
+	},
 	"modules": {
 		"optional": [
 			"res://scripts/terrain_donor_tiles.gd",
@@ -481,13 +494,13 @@
 		"status": "UNVERIFIED",
 		"visual_parity_claim": false
 	},
-	"passed": false,
-	"passes": 17,
+	"passed": true,
+	"passes": 25,
 	"sizes": [
 		64,
 		240
 	],
-	"status": "FAIL",
+	"status": "PASS",
 	"structure": {
 		"240": {
 			"distinct_land_ids": 1,
@@ -543,7 +556,7 @@
 		}
 	},
 	"total": 25,
-	"unix_ms": 1795686511533.0,
+	"unix_ms": 1795695494604.0,
 	"vector_hooks": {
 		"blend_vectors": {
 			"detail": "no blend_vectors vector hook on I07/I09 module; X13/X21 not landed",

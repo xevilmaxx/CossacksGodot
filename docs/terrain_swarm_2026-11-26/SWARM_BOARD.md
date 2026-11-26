@@ -344,3 +344,47 @@ present shader is `terrain_donor_shader.gdshader`), `inbox/qa/terrain_qa_report.
 unverified). No gate result JSON was verified fresh by this worker; do not read
 any stale 2026-11-25 green JSON as current. No capture, no gate run, default
 `"legacy"` seam, and no donor-parity claim.
+
+## VISUAL WAVE (2026-11-26) — DOC-BOARD refresh
+
+**Method / authority.** Filesystem-authoritative, read-only: two independent
+`Get-ChildItem`/glob passes plus explicit `Test-Path` checks, then a third
+re-check immediately before this edit. The set **grew between passes** —
+`reports/PREP_VIDEO_assembly.md` was absent in passes 1–2 and present in pass 3 —
+so the final re-check below is the frozen authority. Status rule: the listed
+report/owner file on disk ⇒ `LANDED`; no file ⇒ `RUNNING`. `LANDED` here means
+**file presence only** — not a gate PASS, not spec READY, not donor parity, not
+an integration annotation. Findings are one-liners drawn from each file's
+frontmatter / executive summary; nothing below is re-measured or re-run by this
+worker. This worker ran no Godot job, capture, gate, git command or donor
+execution; `app/**` was not re-verified.
+
+| ID | Wave | Assignment / owner file | Status | Finding (frontmatter / executive summary) |
+|---|---|---|---|---|
+| W01 | VISUAL | `reports/W01_capture_visual_diff.md` | LANDED | Both 240b/240c are admissible nonblank 1280×720 GPU captures; 240b flat olive, 240c blocky terraced — direction-of-movement only, parity UNVERIFIED. |
+| W02 | VISUAL | no report file on disk | RUNNING | — |
+| W03 | VISUAL | `reports/W03_terrace_root_cause.md` | LANDED | Compound failure: wrong mask/grid size (320² mask for a 240² run) plus 2 m eye-space tile repeat/fract bands; alpha cleared, relief families never stamped. |
+| W04 | VISUAL | no report file on disk (shader bytes read-only in HANDOFF §9.3) | RUNNING | — |
+| W05 | VISUAL | `reports/W05_video_capture.md` | LANDED | Planned only: current `--seq` reads root viewport and can emit an 800×600 CPU map; SubViewport capture seam required; no capture run. |
+| W06 | VISUAL | `reports/W06_performance_audit.md` | LANDED | Only clean donor baseline is ticket 636 at 45.555 s; JSON parse dominates startup; proposed port-internal ≤30 s median target, no valid FPS measurement. |
+| W07 | VISUAL | `reports/W07_props_visual_audit.md` | LANDED | `_try_feed` never walks `sections[].blocks[].records[]` and rejects live `Stamp` Objects → 0 props; no donor light rig → black silhouettes. |
+| W08 | VISUAL | `reports/W08_visual_acceptance_criteria.md` | LANDED | Tier-2 self-consistent visual criteria with G0-a…e admissibility; terraces/bands/silhouettes are FAIL artifacts; no donor A/B frame. |
+| W09 | VISUAL | `reports/W09_usability_audit.md` | LANDED | Donor backend not usability-ready: 240² SIM vs 256² render grid, no light rig, picking/off-grid mismatch; camera constants donor-shaped but FOV is `PORT APPROXIMATION`. |
+| W10 | VISUAL | `reports/W10_regression_status.md` | LANDED | Fresh ACKs + `t_map_variety` 638 5/5, but donor atom 639 FAIL 22/25 (vertex/triangle counts, synthetic-noise field); 240c stale after the 11:15:54 shader edit. |
+| FIX-HEIGHT | VISUAL | no report/owner file on disk (COORD/I17 + I07, in flight) | RUNNING | — |
+| FIX-PROPS | VISUAL | no report/owner file on disk (in flight) | RUNNING | — |
+| CAP-VIDEO | VISUAL | no report/owner file on disk (in flight; atom planned in W05 §4.2) | RUNNING | — |
+| FIX-ATOM | VISUAL | no report/owner file on disk | RUNNING | — |
+| DOC-VIS | VISUAL | `HANDOFF.md` §9 (written by DOC-VIS) | LANDED | §9 records 240b flat / 240c terraced, the mask-size override and relief-grid key mismatch, no family placement, fixes in flight, parity UNVERIFIED. |
+| VERIFY-HEIGHT | VISUAL | `reports/VERIFY_HEIGHT_fix.md` — absent on both passes | RUNNING | — |
+| FIX-CONFIG | VISUAL | `reports/FIX_CONFIG_shape.md` | LANDED | W03 P2 confirmed: overlay sets `map_type=land` but omits `terrain_type`, so effective I17 shape is `mediterranean`; add `gameplay.terrain_type = "land"`. |
+| PREP-VIDEO | VISUAL | `reports/PREP_VIDEO_assembly.md` (landed mid-refresh) | LANDED | Planned only: ffmpeg/ffprobe/Pillow present, exact MP4/contact-sheet packet; no capture and no MP4 assembled; exit-code-only MP4 check is a trap. |
+| DOC-BOARD | VISUAL | `SWARM_BOARD.md` (this file, §VISUAL WAVE) | LANDED | This read-only board refresh: VISUAL WAVE rows plus the honest status box below; no gate result or parity claim asserted. |
+
+### Current honest status (DOC-BOARD, point-in-time 2026-11-26)
+
+> - **[O] Two donor-backend captures exist:** `cap_donor_240b.png` (flat olive field, black silhouettes) and `cap_donor_240c.png` (large blocky **terraced/stepped** surface with diagonal bands). Both are real nonblank 1280×720 GPU frames; 240c is **stale after the 11:15:54 shader edit** — direction of movement only, never a sign-off capture.
+> - **[I]/[U] Diagnostic (owner/COORD-reported, not re-run here):** requested grid silently overridden by native mask size (64²→256²; same defect class at 240²), **relief-grid key mismatch** (`relief_float_grid` vs `grid`) that drops decoded stamp grids, and **no donor family placement** (`_setup_patterns_by_type()` draws names but never calls `_stamp_pattern()`), so relief contributes no height. Field-name seam needs re-verification against the captured build.
+> - **[O] Fixes are in flight:** FIX-HEIGHT / FIX-PROPS / CAP-VIDEO / FIX-ATOM have **no landed owner file** at this pass; FIX-CONFIG and PREP-VIDEO have read-only reports only. No fix is certified by this board.
+> - **[U] No donor A/B frame exists.** No donor GPU reference frame, no donor-match threshold, no parity score; **parity stays `UNVERIFIED`** and all claims are `PORT APPROXIMATION` / port-internal. No new gate result is claimed here — the fresh RED donor atom (639, 22/25) is reported by W10, not produced or re-adjudicated by this worker, and no §4 cell is filled.
+> - **Rule reminder:** `LANDED` above = file presence only. It is not a gate PASS, not spec READY, not integration, and not donor fidelity. Re-glob before relying on the row set; reports were still landing during this edit.

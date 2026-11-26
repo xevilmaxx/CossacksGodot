@@ -24,7 +24,8 @@
 #                X26_final_blend (ev_c176cc8… lines 297-303/321-323), F01 closure
 #     Water      spec/05; D06_water_shore.md; X11_water_translation.md:344-403
 #     Resources  spec/07; V12_resource_spec.md:120-341; X03:854-940
-#     Tiles      spec/06; X08_tile_smooth_engine.md:176-431; D5:191-242
+#     Tiles      spec/06; X08_tile_smooth_engine.md:176-431; D5:191-242;
+#                loadtextureterrainfrombitmap.inc:4-42; H06/V09 call order
 #     Fields     spec/08; X22_field_sowing_translation.md:58-66,517-524
 #     Stage order spec/10; X03_dscript_corpus.md:124-1120
 #
@@ -48,6 +49,15 @@
 #       — the earlier [U] is resolved; the hook defaults to in-place.
 #       Row-sign flip, rotation rounding, global setter clamp, x87 precision
 #       and grid boundary stay UNVERIFIED with labelled hooks.
+#       FIX-RELIEF-STAMP [O]: the loader reads N=(W-1)(H-1) mask bytes, then
+#       sub_755f30 builds a WxH vertex mask with the last row/column blocked
+#       (ev_58a2e11f…, ev_a92017af…; editor ev_c041ddb4…). The Smooth gate is
+#       mask-BOUNDARY, not clear-interior: 0x757077-0x757161 branches to the
+#       post-pass when a clear cell touches a blocked neighbour. The ordered
+#       radial remap uses 0.4 only on Z (VA 0x75c1b8), Factor iterations, the
+#       donor's duplicated-right/omitted-left neighbour list, and the helper's
+#       observed target-axis swap. Smooth parameters are the exact 41-pattern
+#       pattern.lib census below; I17 currently emits only the boolean.
 #     F01/X26: X13's plane offsets (G=1000/1912/2866) are STALE by
 #       +8/+12/+17 floats. F01 closure gives EXACT G=968 (hil1), 1864
 #       (g_hil4), 2798 (k_ravine_1). `F01_GRID_OFFSETS` carries them with a
@@ -164,6 +174,11 @@ const C_CLIFF_ABS_HIGH: float = 2.7         # texturemap.inc:594; X03:603-604
 const C_CLIFF_ABS_MID: float = 2.4          # texturemap.inc:597; X03:605-606
 const C_CLIFF_ABS_NONE: float = 0.1         # texturemap.inc:600; X03:607-608
 const TILE_SMOOTH_PASSES: int = 3           # smoothtiles.inc:237 (cfg says 6 — preserved contradiction; spec/09 §4)
+const C_DETAIL_LOW_HEIGHT: float = 0.1      # loadtextureterrainfrombitmap.inc:4
+# Existing converted PNGs, pixel-checked against donor 320x320 24bpp BMPs.
+# Donor source: data/gen/bitmap/ext/tile_{low,high}ground.bmp; loader lines :8-9.
+const DETAIL_BITMAP_LOW_PATH := "res://assets/terrain/structs/tile_lowground.png"
+const DETAIL_BITMAP_HIGH_PATH := "res://assets/terrain/structs/tile_highground.png"
 # F05 §3 summer tile ids [O] used by X28 vectors; 255 is NOT a donor water id.
 const TILE_ID_SANDSEA1: int = 93            # F05 §3:229; X28:46
 const TILE_ID_SANDSEA5: int = 97            # F05 §3:233; X28:46
@@ -224,6 +239,45 @@ const C_LAKE_ZERO: float = 0.0             # dogenerate.inc:1735-1736 (hard-zero
 const C_STAMP_HALF_CELL: float = 2.0       # cossacks.exe VA 0x75c1a4; D05 F6
 const C_STAMP_HALF_OFFSET: float = 0.5     # cossacks.exe VA 0x75c1a8; D05 F6
 const C_STAMP_SMOOTH_DIV: float = 4.0      # cossacks.exe VA 0x755ee4; D05 F5
+# sub_755f30 scales only the radial Z component by the 80-bit constant at
+# VA 0x75c1b8 (bytes cd cc cc cc cc cc cc cc fe 3f = 0.4). The editor copy
+# at VA 0x8cbe00 is byte-identical. This is an observed donor asymmetry, not
+# a port tuning factor.
+const C_STAMP_SMOOTH_Z_RADIAL_SCALE: float = 0.4
+# I17 currently carries the Smooth boolean but not its three integer fields.
+# These are the complete donor Smooth=True census (41/680), transcribed from
+# pattern.lib so the live g_mnt_*/g_hil*/ravine stamps do not silently skip the
+# native post-pass. Values are [Radius, Factor iterations, Offset].
+const STAMP_SMOOTH_PARAMS: Dictionary = {
+	# brush_plt_* — pattern.lib:19-21,59-61,99-101,139-141,179-181
+	"brush_plt_15x15_2": [1, 4, 1], "brush_plt_13x13_2": [1, 4, 1],
+	"brush_plt_11x11_2": [1, 4, 1], "brush_plt_7x7_2": [1, 4, 1],
+	"brush_plt_3x3_2": [1, 4, 1],
+	# d_plt1 — pattern.lib:89477-89479
+	"d_plt1": [3, 4, 2],
+	# g_mnt_1..7 — pattern.lib:337479-337481 through 352207-352209
+	"g_mnt_1": [3, 4, 2], "g_mnt_2": [3, 4, 2], "g_mnt_3": [3, 4, 2],
+	"g_mnt_4": [3, 4, 2], "g_mnt_5": [3, 4, 2], "g_mnt_6": [3, 4, 2],
+	"g_mnt_7": [3, 4, 2],
+	# g_hil1..9 — pattern.lib:357961-357963 through 381089-381091
+	"g_hil1": [3, 4, 2], "g_hil2": [3, 4, 2], "g_hil3": [3, 4, 2],
+	"g_hil4": [3, 4, 2], "g_hil5": [3, 4, 2], "g_hil6": [3, 4, 2],
+	"g_hil7": [3, 4, 2], "g_hil8": [3, 4, 2], "g_hil9": [3, 4, 2],
+	# i_mnt_big_1..5 — pattern.lib:391827-391829 through 423495-423497
+	"i_mnt_big_1": [3, 4, 2], "i_mnt_big_2": [3, 4, 2],
+	"i_mnt_big_3": [3, 4, 2], "i_mnt_big_4": [3, 4, 2],
+	"i_mnt_big_5": [3, 4, 2],
+	# k_ravine_big_1 — pattern.lib:542615-542617
+	"k_ravine_big_1": [3, 4, 2],
+	# k_ravine_big_stone_1..8 — pattern.lib:730033-730035 through 796015-796017
+	"k_ravine_big_stone_1": [3, 4, 0], "k_ravine_big_stone_2": [3, 4, 0],
+	"k_ravine_big_stone_3": [3, 4, 0], "k_ravine_big_stone_4": [3, 4, 0],
+	"k_ravine_big_stone_5": [3, 4, 0], "k_ravine_big_stone_6": [3, 4, 0],
+	"k_ravine_big_stone_7": [3, 4, 0], "k_ravine_big_stone_8": [3, 4, 0],
+	# gift1..5 — pattern.lib:931671-931673 through 932791-932793
+	"gift1": [3, 4, 2], "gift2": [3, 4, 2], "gift3": [3, 4, 2],
+	"gift4": [3, 4, 2], "gift5": [3, 4, 2],
+}
 # F01/X26 EXACT plane starts (BYTES) — X13's 1000/1912/2866 are stale by
 # +8/+12/+17 floats. On-disk extent is w*h float32 (X13 P2), header is i32 w,h.
 const F01_GRID_OFFSETS: Dictionary = {
@@ -259,11 +313,12 @@ var stamp_smooth_buffer_mode: String = "in_place"
 ## x87 behaviour remains [U]. No parity claim either way.
 var stamp_precision_model: String = "f32_each_op"
 
-## [U] X13: which file row maps to negative world y, rotation rounding at
-## half-cell boundaries, and any global setter clamp are NOT recovered.
+## [U] X13: which file row maps to negative world y, non-axis offset rotation,
+## and any global setter clamp are NOT recovered. The native floor conversion
+## itself is observed (FUN_004a6aa0); the hook remains only for comparison.
 ## TODO(D05/X01/X13): resolve each before any donor parity claim.
 var row_sign_hook: Callable = Callable()          # hook(pattern)->int row sign, null = unverified
-var rotation_rounding_hook: Callable = Callable()  # hook(xf,zf)->Vector2i, null = donor round
+var rotation_rounding_hook: Callable = Callable()  # hook(xf,zf)->Vector2i, null = donor floor
 var global_setter_clamp_hook: Callable = Callable()  # hook(h)->f32, null = no clamp
 
 ## F01/X26: EXACT plane offsets are in F01_GRID_OFFSETS above; use
@@ -293,6 +348,11 @@ var random_scale_hook: Callable = Callable()
 var sector_names: Array = [
 	"bR", "bRB", "bB", "bLB", "bL", "bLT", "bT", "bRT",
 ]
+
+## [U] Optional detail-bitmap loader hook: `hook(path: String) -> Image` (a
+## Texture2D is also accepted). Default reads the existing converted PNGs.
+## Missing/unreadable assets are labelled skips, never random/synthetic tiles.
+var detail_bitmap_loader_hook: Callable = Callable()
 
 ## [U] `VectorAngle` sign convention in texturemap.inc:434-435 is derived, not
 ## proven live. If valid, called as `hook(dir_x: float, dir_y: float) -> float`
@@ -427,10 +487,14 @@ var _freq_state: Dictionary = {}                # damped Freq state (local copy)
 ##   minecount/spcount          : int  — player/start count for mine branch
 ##   minerdensity/minesdensity  : int  — 0/1/2 -> rounds 3/4/5 (D1:528-531)
 ##   relieftype, terraintype, b_desert, season
-##   patterns                   : Dictionary name -> decoded pattern dict
+##   patterns                   : Dictionary name -> decoded pattern dict;
+##                                 `relief_float_grid` is the I02 donor-decoded
+##                                 f32[w*h] key; `grid` is an optional canonical
+##                                 override (F01/X23), never a synthetic fallback
 ##   families                   : Dictionary family -> Array[{name, freq}]
 ##   tile_name_to_id, tile_id_to_name : Dictionary (I05 atlas decoder)
 ##   tile_smooth_chains         : Array[Array[Array[Dictionary]]] (I01 decoder)
+##   detail_bitmap_loader_hook  : Callable — optional hook(path)->Image/Texture2D
 ##   default_tile_name          : String — caller-supplied land tile name
 ##   collision_tags             : PackedByteArray — optional cliff trigger
 ##   start_selection_mode       : "given" | "v61" | "teams" | "scattered"
@@ -447,6 +511,7 @@ func generate(data: Object, p: Dictionary = {}) -> Dictionary:
 		"stage_draws": {},
 		"family_counts": {},
 		"stamp_candidates": {},
+		"family_placements": {},
 		"mine_counts": {"near": 0, "global": 0, "accepted": 0},
 		"resource_counts": {"stoneforest": 0, "stones": 0, "forest": 0},
 		"field_count": 0,
@@ -765,6 +830,11 @@ func _stage_clear(data: Object, p: Dictionary) -> void:
 	_occ.fill(0)   # ClearMapMaskAndObjects, dogenerate.inc:444-481; X03:223-238
 	_bsmooth.fill(0)
 	_mask_water.fill(0)
+	# I09 consumes this donor-owned handoff in acceptance order. Reset it per
+	# generate() run so repeated generation cannot append stale stamp records.
+	var meta: Dictionary = data.meta
+	meta["pattern_stamps"] = []
+	data.meta = meta
 	# No height/tile writes here. ResetPatternMap / MapDrawCollision are engine
 	# side [U]; only the occupancy mask is modelled. TODO(D01): collision clear.
 
@@ -790,7 +860,7 @@ func _stage_base_tiles(data: Object, p: Dictionary) -> void:
 				continue
 			if _check_stand(pat, rx, ry):
 				_stamp_pattern(data, pat, rx, ry, p)
-				_damp_freq(family, name)
+				_damp_freq(family, name, p)
 	_stamp_candidate("base_tiles_cells", (wc + 1) * (hc + 1))
 	# Base tiles run under the stream seeded at D3:146; the D1:1538 re-seed
 	# happens AFTER them (X03:284). Record draws under a non-reseed pseudo-site.
@@ -1119,6 +1189,151 @@ func _texture_tiles(data: Object, p: Dictionary) -> void:
 	# working array, so smoothing writes it directly.
 	if not chains.is_empty() and not name_of.is_empty():
 		_smooth_tiles(data, chains, id_of, name_of, TILE_SMOOTH_PASSES)
+	# Donor call order is TextureMap -> SmoothTiles -> LoadTextureTerrainFromBitmap
+	# (generatemap.inc:776,786,795; V09/H06). The detail routine itself is fully
+	# commented donor source and selects editor/test tiles, so it is diagnostic
+	# opt-in only; normal generation stops after the active smoothing stage.
+	if bool(p.get("detail_bitmap_enabled", false)):
+		_apply_detail_bitmap(data, p, id_of, name_of)
+	else:
+		_tel["detail_bitmap"] = {
+			"status": "SKIPPED",
+			"reason": "commented donor routine; requires features.terrain.detail_bitmap=true",
+			"rng_draws": 0,
+			"parity": "UNVERIFIED — no donor runtime execution evidence",
+		}
+
+
+## LoadTextureTerrainFromBitmap (loadtextureterrainfrombitmap.inc:4-42).
+## The donor routine is commented text [U], but its authored order/rule is exact:
+## h<0.1 selects lowground, red byte div 2 selects a preset id, and only a cell
+## whose id is still literal 0 is eligible. Non-zero shore/cliff/water ids are
+## consequently untouched. No new RNG stream or draw exists in this pass.
+func _apply_detail_bitmap(data: Object, p: Dictionary, id_of: Dictionary,
+		name_of: Dictionary) -> void:
+	var draws_before: int = _active_rng.draws
+	var info: Dictionary = {
+		"status": "SKIPPED",
+		"source": "loadtextureterrainfrombitmap.inc:4-42; generatemap.inc:791-798",
+		"order": "after tile smoothing, inside D2:774; detail ids are final",
+		"donor_runtime_activity": "[U] donor code lines are ;-commented",
+		"low_path": DETAIL_BITMAP_LOW_PATH,
+		"high_path": DETAIL_BITMAP_HIGH_PATH,
+		"low_height": C_DETAIL_LOW_HEIGHT,
+		"eligible_id0": 0,
+		"low_selected": 0,
+		"high_selected": 0,
+		"changed_from_zero": 0,
+		"unchanged_zero": 0,
+		"unresolved": 0,
+		"output_histogram": {},
+		"unresolved_histogram": {},
+		"rng_draws": 0,
+		"parity": "UNVERIFIED — authored donor intent, no GPU A/B",
+	}
+	_tel["detail_bitmap"] = info
+	var loader: Callable = detail_bitmap_loader_hook
+	if p.get("detail_bitmap_loader_hook") is Callable:
+		loader = p["detail_bitmap_loader_hook"]
+	var low: Image = _load_detail_bitmap_image(DETAIL_BITMAP_LOW_PATH, loader)
+	var high: Image = _load_detail_bitmap_image(DETAIL_BITMAP_HIGH_PATH, loader)
+	if low == null or high == null:
+		info["rng_draws"] = _active_rng.draws - draws_before
+		return
+	info["low_size"] = [low.get_width(), low.get_height()]
+	info["high_size"] = [high.get_width(), high.get_height()]
+	if low.get_width() != high.get_width() or low.get_height() != high.get_height():
+		info["skip_reason"] = "LOW/HIGH SIZE MISMATCH — no resampling invented"
+		_note("detail bitmaps differ in size — pass skipped; no resampling invented", "unverified")
+		info["rng_draws"] = _active_rng.draws - draws_before
+		return
+	if name_of.is_empty():
+		info["skip_reason"] = "tile_id_to_name absent — donor name check cannot be performed"
+		_note("tile_id_to_name absent — detail bitmap pass skipped; no invented id", "unverified")
+		info["rng_draws"] = _active_rng.draws - draws_before
+		return
+	var width: int = low.get_width()
+	var height: int = low.get_height()
+	# Donor :18-19 uses <= Min(map, bitmap). Keep that inclusive bitmap edge
+	# where it lands inside I06; omit only the terminal W/H cell that I06's
+	# W*H container does not store. Sampling is direct x/y, never scaled.
+	var limit_x: int = mini(_grid_w, width + 1)
+	var limit_y: int = mini(_grid_h, height + 1)
+	info["scan_size"] = [limit_x, limit_y]
+	info["sampling"] = "direct GetBitmapPixel(x,y); Min(x,w-1), Min(y,h-1); no scaling"
+	info["edge_policy"] = "donor inclusive Min() edge retained in-bounds; terminal W/H sentinel omitted [U]"
+	var output_hist: Dictionary = info["output_histogram"]
+	var unresolved_hist: Dictionary = info["unresolved_histogram"]
+	for y in range(limit_y):
+		for x in range(limit_x):
+			var i: int = y * _grid_w + x
+			if int(data.tex[i]) != 0:             # loadtextureterrainfrombitmap.inc:37
+				continue
+			info["eligible_id0"] = int(info["eligible_id0"]) + 1
+			var use_low: bool = float(data.height[i]) < C_DETAIL_LOW_HEIGHT  # donor :25-29
+			if use_low:
+				info["low_selected"] = int(info["low_selected"]) + 1
+			else:
+				info["high_selected"] = int(info["high_selected"]) + 1
+			var bitmap: Image = low if use_low else high
+			var sx: int = mini(x, width - 1)        # donor :32
+			var sy: int = mini(y, height - 1)
+			var red: int = clampi(int(floorf(bitmap.get_pixel(sx, sy).r * 255.0)), 0, 255)
+			var tex: int = red / 2                 # donor :33-36, integer div 2
+			# Donor :39-41 resolves the numeric id back to a tile-block name and
+			# writes only when that name is non-empty. I17 supplies both maps;
+			# round-trip through them rather than hard-coding detail ids.
+			var tile_name: String = str(name_of.get(str(tex), ""))
+			var lookup_name: String = tile_name.trim_suffix("_winter")
+			if tile_name.is_empty() or not id_of.has(lookup_name):
+				unresolved_hist[str(tex)] = int(unresolved_hist.get(str(tex), 0)) + 1
+				continue
+			if int(id_of[lookup_name]) != tex:
+				unresolved_hist[str(tex)] = int(unresolved_hist.get(str(tex), 0)) + 1
+				continue
+			output_hist[str(tex)] = int(output_hist.get(str(tex), 0)) + 1
+			data.set_tex(i, tex)                  # donor :41; ids are final
+			if tex == 0:
+				info["unchanged_zero"] = int(info["unchanged_zero"]) + 1
+			else:
+				info["changed_from_zero"] = int(info["changed_from_zero"]) + 1
+	info["unresolved"] = int(info["eligible_id0"]) - int(info["changed_from_zero"]) - int(info["unchanged_zero"])
+	info["status"] = "APPLIED"
+	info["rng_draws"] = _active_rng.draws - draws_before
+	if int(info["unresolved"]) > 0:
+		_note("detail bitmap ids unresolved in I17 tile maps — " + str(info["unresolved"]) + " cells left untouched", "unverified")
+	else:
+		_note("detail bitmap pass: " + str(info["changed_from_zero"]) + " tile-0 cells changed; 0 RNG draws (D2:774)", "notes")
+
+
+func _load_detail_bitmap_image(path: String, loader: Callable) -> Image:
+	if loader.is_valid():
+		var value: Variant = loader.call(path)
+		if value is Image:
+			var hooked_image: Image = value
+			if not hooked_image.is_empty():
+				return hooked_image
+		elif value is Texture2D:
+			var hooked_texture: Texture2D = value
+			if hooked_texture != null:
+				var texture_image: Image = hooked_texture.get_image()
+				if texture_image != null and not texture_image.is_empty():
+					return texture_image
+		_note("detail bitmap loader hook returned no image for " + path + " — pass skipped, no synthetic tile", "unverified")
+		return null
+	if not FileAccess.file_exists(path):
+		_note("ABSENT " + path + " — detail bitmap pass skipped, no synthetic tile", "unverified")
+		return null
+	var texture: Texture2D = ResourceLoader.load(path) as Texture2D
+	var image: Image = null
+	if texture != null:
+		image = texture.get_image()
+	if image == null or image.is_empty():
+		image = Image.load_from_file(path)
+	if image == null or image.is_empty():
+		_note("UNREADABLE " + path + " — detail bitmap pass skipped, no synthetic tile", "unverified")
+		return null
+	return image
 
 
 ## Explicit donor collision fill. I06 does NOT map legacy `blocked` to
@@ -1515,13 +1730,14 @@ func _setup_mines(cx0: int, cy0: int, minround: int, maxround: int, p: Dictionar
 				var angle: float = _active_rng.next_f() * 360.0      # D1:704
 				var vx: float = cos(deg_to_rad(angle)) * dst
 				var vz: float = sin(deg_to_rad(angle)) * dst  # VectorRotateY, D1:705-708
+				var sx: int = int(round(float(centre.x) + vx))
+				var sy: int = int(round(float(centre.y) + vz))
 				_stamp_candidate("mines_attempts")
 				var pat: Dictionary = _pattern(name, p)
-				if not pat.is_empty() and _check_stand(pat,
-						int(round(float(centre.x) + vx)), int(round(float(centre.y) + vz))):
-					_stamp_pattern(_cur_data, pat,
-							int(round(float(centre.x) + vx)), int(round(float(centre.y) + vz)), p)
-					_damp_freq(family, name)
+				if not pat.is_empty() and _check_stand(pat, sx, sy):
+					_stamp_pattern(_cur_data, pat, sx, sy, p)
+					_record_pattern_stamp(_cur_data, name, family, sx, sy, "mine")
+					_damp_freq(family, name, p)
 					_tel["mine_counts"]["accepted"] = int(_tel["mine_counts"]["accepted"]) + 1
 					break                     # first success, D1:712
 		if gap_reproduced:
@@ -1690,12 +1906,14 @@ func _setup_starting_resources(cx0: int, cy0: int, p: Dictionary) -> void:
 					var dst: float = float(step["mind"]) + _active_rng.next_f() * float(step["span"]) + float(i + j) * 0.5  # D1:754/793/848/880/933
 					var vx: float = cos(deg_to_rad(angle)) * dst
 					var vz: float = sin(deg_to_rad(angle)) * dst
+					var sx: int = int(round(float(cx0) + vx))
+					var sy: int = int(round(float(cy0) + vz))
 					_stamp_candidate("start_resources_attempts")
-					if not pat.is_empty() and _check_stand(pat,
-							int(round(float(cx0) + vx)), int(round(float(cy0) + vz))):
-						_stamp_pattern(_cur_data, pat,
-								int(round(float(cx0) + vx)), int(round(float(cy0) + vz)), p)
-						_damp_freq(family, name)
+					if not pat.is_empty() and _check_stand(pat, sx, sy):
+						_stamp_pattern(_cur_data, pat, sx, sy, p)
+						_record_pattern_stamp(_cur_data, name, family, sx, sy,
+								_family_stamp_kind(family))
+						_damp_freq(family, name, p)
 						placed += 1
 						done = true
 						break                          # break(MAIN)
@@ -1710,24 +1928,87 @@ func _setup_starting_resources(cx0: int, cy0: int, p: Dictionary) -> void:
 # ---------------------------------------------------------------------------
 # Occupancy-only two-phase rejection (V12 §3.5; misc.script:3384-3521)
 # ---------------------------------------------------------------------------
-func _check_stand(pat: Dictionary, x: int, y: int) -> bool:
-	# Ext = test with doStand=false then stamp with doStand=true, angle=0.
-	# Predicate rejects out-of-map or already-occupied cells (misc.script:3466).
+func _resolve_stand_mask(pat: Dictionary) -> Dictionary:
 	var w: int = int(pat.get("w", 0))
 	var hh: int = int(pat.get("h", 0))
 	if w <= 0 or hh <= 0:
+		return {}
+	var lattice_n: int = (w - 1) * (hh - 1)
+	# Prefer I17's packed buffer when it is usable, but fall back to I02's
+	# decoded cell list when the buffer is absent, unpacked, or the wrong size.
+	# Never replace missing data with a full rectangle.
+	var sources: Array = [
+		{"value": pat.get("occupancy", null), "source": "I17 occupancy buffer"},
+		{"value": pat.get("occupancy_cells", null), "source": "I02 occupancy_cells"},
+	]
+	for entry_v in sources:
+		var entry: Dictionary = entry_v
+		var value: Variant = entry["value"]
+		var ob := PackedByteArray()
+		if value is PackedByteArray:
+			ob = value as PackedByteArray
+		elif value is Array:
+			var cells: Array = value
+			if cells.size() != w * hh and cells.size() != lattice_n:
+				continue
+			ob.resize(cells.size())
+			for i in range(cells.size()):
+				ob[i] = int(cells[i]) & 0xFF
+		else:
+			continue
+		var mw: int = -1
+		var mh: int = -1
+		var layout: String = ""
+		if ob.size() == w * hh:
+			mw = w
+			mh = hh
+			layout = "legacy w*h vertex mask"
+		elif w > 1 and hh > 1 and ob.size() == lattice_n:
+			mw = w - 1
+			mh = hh - 1
+			layout = "I02/F01 (h-1)*(w-1) lattice"
+		if mw <= 0 or mh <= 0:
+			continue
+		var label: String = "PORT APPROX: raw occupancy bytes; donor polarity [U]"
+		if mw == w - 1 and mh == hh - 1:
+			label = ("PORT APPROX: decoded nonzero (h-1)*(w-1) cells are the explicit "
+					+ "stand footprint; PatternMaskStand/ReverceStand polarity [U]; "
+					+ "no inversion and no guessed full rectangle")
+		return {"bytes": ob, "w": mw, "h": mh, "layout": layout,
+			"source": str(entry["source"]), "label": label}
+	return {}
+
+
+func _check_stand(pat: Dictionary, x: int, y: int) -> bool:
+	# Ext = test with doStand=false then stamp with doStand=true, angle=0.
+	# The resolver consumes I02's raw (h-1)x(w-1) lattice verbatim. Donor
+	# PatternMaskStand/ReverceStand polarity is not supplied; the nonzero-cell
+	# footprint above is therefore explicitly labelled PORT APPROXIMATION.
+	var mask: Dictionary = _resolve_stand_mask(pat)
+	if mask.is_empty():
 		return false
-	var occ: Variant = pat.get("occupancy", null)
-	var x0: int = x - w / 2
-	var y0: int = y - hh / 2
-	for r in range(hh):                       # exclusive upper bound, D9:3476-3477
-		for c in range(w):
-			var bit: int = 1
-			if occ is PackedByteArray:
-				var ob: PackedByteArray = occ
-				if ob.size() >= w * hh:
-					bit = int(ob[r * w + c])
-			if bit == 0:
+	var masks_v: Variant = _tel.get("stand_masks", {})
+	var masks: Dictionary = masks_v if masks_v is Dictionary else {}
+	masks[str(pat.get("name", ""))] = {
+		"layout": str(mask["layout"]),
+		"source": str(mask["source"]),
+		"label": str(mask["label"]),
+	}
+	_tel["stand_masks"] = masks
+	var ob: PackedByteArray = mask["bytes"]
+	var mw: int = int(mask["w"])
+	var mh: int = int(mask["h"])
+	# misc.script:3325-3379 / Z06 §3: vMin=floor(stand-(mSize-1)/2).
+	# `x/y` here are grid indices; the donor centred->grid +W/2 conversion
+	# cancels exactly, so no second map-size offset is applied (V08/V58).
+	var x0: int = int(floor(float(x) - float(mw - 1) * 0.5))
+	var y0: int = int(floor(float(y) - float(mh - 1) * 0.5))
+	if str(mask["layout"]) == "legacy w*h vertex mask":
+		x0 = x - int(mw / 2)             # legacy canonical w*h vertex mask
+		y0 = y - int(mh / 2)
+	for r in range(mh):                      # exclusive upper bound, D9:3476-3477
+		for c in range(mw):
+			if int(ob[r * mw + c]) == 0:
 				continue
 			var ix: int = x0 + c
 			var iy: int = y0 + r
@@ -1735,31 +2016,81 @@ func _check_stand(pat: Dictionary, x: int, y: int) -> bool:
 				return false
 			if _occ[iy * _grid_w + ix] == 1:
 				return false
+	# Donor Ext's second pass writes gPatternMask for the accepted footprint
+	# (misc.script:3497-3501). The old predicate-only stub omitted this write,
+	# allowing later family stamps to overlap accepted stands.
+	for r in range(mh):
+		for c in range(mw):
+			if int(ob[r * mw + c]) != 0:
+				var ix: int = x0 + c
+				var iy: int = y0 + r
+				if ix >= 0 and ix < _grid_w and iy >= 0 and iy < _grid_h:
+					_occ[iy * _grid_w + ix] = 1
 	return true
 
 
 func _stamp_pattern(data: Object, pat: Dictionary, x: int, y: int, p: Dictionary) -> void:
-	if not bool(pat.get("height_field_stand", false)):
-		return
 	# F01/X23: canonical grid tables are injected here, never baked in.
 	# X13's F02 plane offsets (G=1000/1912/2866) are STALE for 17/29 patterns.
 	if grid_table_hook.is_valid():
 		var injected: Variant = grid_table_hook.call(str(pat.get("name", "")))
 		if injected is Dictionary:
 			pat = injected as Dictionary
+	# I02 emits blend fields nested under `flags`; I17 may also supply the
+	# flattened canonical form. Normalize a shallow copy so direct I02 callers
+	# and I17 callers share ONE D05/X26 implementation. Explicit top-level keys
+	# always win (canonical override); absent keys inherit the observed flags.
+	var flags_v: Variant = pat.get("flags", {})
+	if flags_v is Dictionary:
+		pat = pat.duplicate(false)               # do not mutate caller/I02 asset dict
+		var flags: Dictionary = flags_v
+		if not pat.has("height_field_stand") and flags.has("Stand"):
+			pat["height_field_stand"] = bool(flags["Stand"])
+		if not pat.has("scale") and flags.has("Scale"):
+			pat["scale"] = float(flags["Scale"])
+		if not pat.has("min") and flags.has("Min"):
+			pat["min"] = float(flags["Min"])
+		if not pat.has("offset") and flags.has("Offset"):
+			pat["offset"] = float(flags["Offset"])
+		if not pat.has("terrain_scale") and flags.has("TerrainScale"):
+			pat["terrain_scale"] = float(flags["TerrainScale"])
+		if not pat.has("replace") and flags.has("Replace"):
+			pat["replace"] = bool(flags["Replace"])
+		if not pat.has("replace_for_water") and flags.has("ReplaceForWater"):
+			pat["replace_for_water"] = bool(flags["ReplaceForWater"])
+		if not pat.has("height_field_smooth") and flags.has("Smooth"):
+			pat["height_field_smooth"] = bool(flags["Smooth"])
+		if not pat.has("smooth_radius") and flags.has("SmoothRadius"):
+			pat["smooth_radius"] = int(flags["SmoothRadius"])
+		if not pat.has("smooth_factor") and flags.has("SmoothFactor"):
+			pat["smooth_factor"] = int(flags["SmoothFactor"])
+		if not pat.has("smooth_offset") and flags.has("SmoothOffset"):
+			pat["smooth_offset"] = int(flags["SmoothOffset"])
+	if not bool(pat.get("height_field_stand", false)):
+		return
 	var w: int = int(pat.get("w", 0))
 	var hh: int = int(pat.get("h", 0))
+	# I02's donor-decoded key is `relief_float_grid`; `grid` is ONLY an
+	# optional canonical F01/X23 override. Never scan/shift or synthesise data.
 	var grid_v: Variant = pat.get("grid", null)
+	if grid_v == null:
+		grid_v = pat.get("relief_float_grid", null)
+	if grid_v is Array:
+		# Direct I02 JSON callers may not have passed through I17's f32 pack.
+		var src_grid: Array = grid_v
+		if src_grid.size() == w * hh:
+			var packed := PackedFloat32Array()
+			packed.resize(w * hh)
+			for i in range(w * hh):
+				packed[i] = float(src_grid[i])
+			grid_v = packed
 	if w <= 0 or hh <= 0 or not (grid_v is PackedFloat32Array):
 		return
 	var grid: PackedFloat32Array = grid_v
 	if grid.size() < w * hh:
 		return
 	# Rotation about centre, row-major grid[z][x] (D05 F4/F5; X13 §Formulas).
-	# Row sign / rotation rounding stay [U] (X13 §UNVERIFIED) — hooks only.
-	var angle: float = float(pat.get("rotation_angle", 0.0))  # +0x70
-	var cs: float = cos(deg_to_rad(angle))
-	var sn: float = sin(deg_to_rad(angle))
+	# File-row sign and non-axis offset rotation stay [U] — hooks only.
 	var ox: float = float(pat.get("offset_x", 0.0))           # +0x74, D05 F2
 	var oz: float = float(pat.get("offset_z", 0.0))           # +0x78, D05 F2
 	var scale: float = float(pat.get("scale", 1.0))           # +0x48, D05 F2
@@ -1775,13 +2106,33 @@ func _stamp_pattern(data: Object, pat: Dictionary, x: int, y: int, p: Dictionary
 	var rep_water: bool = bool(pat.get("replace_for_water", false))  # +0x3b
 	# bilinear world height at stamp centre, D05 F4 (0x810498 @0x756435).
 	var base_h: float = _sample_bilinear(data.height, float(x) + ox, float(y) + oz)
-	var occ: Variant = pat.get("occupancy", null)
+	# Native loader reads only the (W-1)x(H-1) source mask. sub_755f30 then
+	# allocates a WxH vertex mask, copies those N bytes to its top-left and
+	# explicitly blocks the final row and column (0x7561d0-0x756220). Using the
+	# raw lattice directly as a WxH gate made every unmasked vertex stampable.
+	var ob := _stamp_vertex_mask(pat)
+	if ob.size() != w * hh:
+		_note("height stamp '" + str(pat.get("name", "")) + "' skipped: donor vertex mask unavailable", "unverified")
+		return
+	var mask_stats: Dictionary = _tel.get("stamp_height_masks", {})
+	mask_stats[str(pat.get("name", ""))] = "native WxH: copied (W-1)x(H-1), last row/column blocked"
+	_tel["stamp_height_masks"] = mask_stats
 	for r in range(hh):
 		for c in range(w):
-			if bool(pat.get("height_field_stand", false)) and occ is PackedByteArray:
-				var ob: PackedByteArray = occ
-				if ob.size() >= w * hh and ob[r * w + c] != 0:
-					continue                                   # 0x756638 mask gate
+			# Donor order: rotated world coordinate -> grid fetch -> scale/pivot
+			# -> local vertex-mask gate -> blend -> setter. 0x75646e-0x7566e9.
+			var wp: Vector2 = _stamp_world_position(pat, x, y, r, c)
+			var tx: int = int(floor(wp.x))       # FUN_004a6aa0 = floor, not Round
+			var tz: int = int(floor(wp.y))
+			if row_sign_hook.is_valid():
+				var rs: Variant = row_sign_hook.call(tz)
+				if rs is int:
+					tz = int(rs)
+			if rotation_rounding_hook.is_valid():
+				var rr: Variant = rotation_rounding_hook.call(wp.x, wp.y)
+				if rr is Vector2i:
+					tx = (rr as Vector2i).x
+					tz = (rr as Vector2i).y
 			var g: float = grid[r * w + c]                     # row-major grid[z][x]
 			# X26 [O]: Replace = base_h + ((g-Min)*Scale + Min) + Offset.
 			# Min is a PIVOT, never a clamp; +0x60 (Max) reads = 0/6,751.
@@ -1790,25 +2141,10 @@ func _stamp_pattern(data: Object, pat: Dictionary, x: int, y: int, p: Dictionary
 				g = _pf(_pf((g - hmin) * scale) + hmin)        # 0x756607-0x756619
 			else:
 				g = _pf(g * scale)                              # 0x75661f-0x756625
-			# Rotation about centre (donor sin/cos 0x403404/0x40342c).
-			# Rotation rounding at half-cell boundaries is still [U] (X13).
-			var px: float = float(c) - float(w) * C_STAMP_HALF_OFFSET  # centre offset 0.5, D05 F6
-			var pz: float = float(r) - float(hh) * C_STAMP_HALF_OFFSET
-			var rx: float = px * cs - pz * sn
-			var rz: float = px * sn + pz * cs
-			var tx: int = int(round(float(x) + rx + ox))
-			var tz: int = int(round(float(y) + rz + oz))
-			if row_sign_hook.is_valid():
-				var rs: Variant = row_sign_hook.call(tz)
-				if rs is int:
-					tz = int(rs)
-			if rotation_rounding_hook.is_valid():
-				var rr: Variant = rotation_rounding_hook.call(float(x) + rx + ox, float(y) + rz + oz)
-				if rr is Vector2i:
-					tx = (rr as Vector2i).x
-					tz = (rr as Vector2i).y
+			if ob[r * w + c] != 0:
+				continue                                        # 0x756638 mask gate
 			if tx < 0 or tx >= _grid_w or tz < 0 or tz >= _grid_h:
-				continue
+				continue                                        # donor setter rejects outside map
 			var idx: int = tz * _grid_w + tx
 			var stamped: float = 0.0
 			if rep_water:
@@ -1829,10 +2165,10 @@ func _stamp_pattern(data: Object, pat: Dictionary, x: int, y: int, p: Dictionary
 			if rid is int:
 				data.set_u16(data.resource_id, idx, int(rid))   # [U] per-cell id
 	# X26: the smooth post-pass runs whenever Stand && Smooth — INCLUDING the
-	# ReplaceForWater branch (g_hil4; X13 §Implications item 2). It is gated
-	# ONLY by `Stand && Smooth`, never by the Smooth BLEND path.
+	# ReplaceForWater branch (g_mnt_* / g_hil4). It is ordered after the blend
+	# and all other stamp payloads, never selected by the Smooth BLEND path.
 	if bool(pat.get("height_field_smooth", false)):
-		_stamp_smooth_post(data, pat, x, y)
+		_stamp_smooth_post(data, pat, x, y, ob)
 
 
 ## X13 P5 [U]: x87 80-bit intermediate precision is not reproduced. Default
@@ -1862,54 +2198,144 @@ func _sample_bilinear(arr: PackedFloat32Array, fx: float, fy: float) -> float:
 	return (a * (1.0 - ax) + b * ax) * (1.0 - ay) + (c * (1.0 - ax) + d * ax) * ay
 
 
-func _stamp_smooth_post(data: Object, pat: Dictionary, x: int, y: int) -> void:
-	# X26 [O] sub_755db4 (ev_aba9f17d…) proves IN-PLACE read-after-write.
-	# D05 F5: own byte and all eight neighbours must be 0; radial remap by
-	# (Radius-Offset)/d; repeat Factor times; 4-neighbour mean / 4.0f.
-	var radius: int = int(pat.get("smooth_radius", 0))       # +0x50
-	var factor: int = int(pat.get("smooth_factor", 0))       # +0x54 (ITERATIONS)
-	var offset: int = int(pat.get("smooth_offset", 0))       # +0x58
-	if radius <= 0 or factor <= 0:
-		return
+func _stamp_vertex_mask(pat: Dictionary) -> PackedByteArray:
+	# sub_75ca34 loads N=(W-1)(H-1) mask bytes; sub_755f30 copies them into a
+	# WxH local vertex mask and writes 1 to its last row and last column
+	# (0x7561d0-0x756220). A caller-supplied canonical WxH mask is already in
+	# the native vertex layout and is used verbatim.
+	var mask: Dictionary = _resolve_stand_mask(pat)
+	if mask.is_empty():
+		return PackedByteArray()
 	var w: int = int(pat.get("w", 0))
 	var hh: int = int(pat.get("h", 0))
-	var occ: Variant = pat.get("occupancy", null)
-	if not (occ is PackedByteArray):
+	if w <= 0 or hh <= 0:
+		return PackedByteArray()
+	var src: PackedByteArray = mask["bytes"]
+	if src.size() == w * hh:
+		return src.duplicate()
+	if w <= 1 or hh <= 1 or src.size() != (w - 1) * (hh - 1):
+		return PackedByteArray()
+	var out := PackedByteArray()
+	out.resize(w * hh)
+	for r in range(hh - 1):
+		for c in range(w - 1):
+			out[r * w + c] = src[r * (w - 1) + c]
+	for c in range(w):
+		out[(hh - 1) * w + c] = 1
+	for r in range(hh):
+		out[r * w + w - 1] = 1
+	return out
+
+
+func _stamp_world_position(pat: Dictionary, x: int, y: int, r: int, c: int) -> Vector2:
+	# Exact active angle=0 form of sub_755f30's coordinate block. The donor
+	# floors the origins, uses the raw midpoint averages, rounds cos/sin to
+	# integers (FUN_004a6a5c), then floors the final world coordinate
+	# (FUN_004a6aa0). This agrees with misc.script:3351-3359,3367-3368.
+	var w: int = int(pat.get("w", 0))
+	var hh: int = int(pat.get("h", 0))
+	var angle: float = float(pat.get("rotation_angle", 0.0))
+	var cs: float = float(int(round(cos(deg_to_rad(angle)))))
+	var sn: float = float(int(round(sin(deg_to_rad(angle)))))
+	var cx: float = float(x) + float(pat.get("offset_x", 0.0))
+	var cz: float = float(y) + float(pat.get("offset_z", 0.0))
+	var x0: int = int(floor(cx - float(w - 1) * 0.5))
+	var z0: int = int(floor(cz - float(hh - 1) * 0.5))
+	var x1: int = x0 + w - 1
+	var z1: int = z0 + hh - 1
+	var xavg: float = float(x0 + x1) * 0.5
+	var zavg: float = float(z0 + z1) * 0.5
+	var col: float = float(x0 + c)
+	var row: float = float(z0 + r)
+	return Vector2(cs * (col - xavg) - sn * (row - zavg) + xavg,
+			cs * (row - zavg) + sn * (col - xavg) + zavg)
+
+
+func _stamp_smooth_parameters(pat: Dictionary) -> Vector3i:
+	# Parser defaults are Radius=0, Factor=0, Offset=2 (sub_75c314). Explicit
+	# caller fields win; the complete donor Smooth=True table fills the fields
+	# that I17 does not currently emit.
+	var name: String = str(pat.get("name", ""))
+	var fallback: Array = STAMP_SMOOTH_PARAMS.get(name, [0, 0, 2])
+	return Vector3i(int(pat.get("smooth_radius", fallback[0])),
+			int(pat.get("smooth_factor", fallback[1])),
+			int(pat.get("smooth_offset", fallback[2])))
+
+
+func _stamp_smooth_boundary(ob: PackedByteArray, w: int, hh: int, r: int, c: int) -> bool:
+	# Raw donor condition at 0x757081-0x757161: an outer cell or a clear cell
+	# touching a blocked neighbour is smoothed. D05's "all eight clear" prose
+	# had the polarity reversed. Preserve the donor's observed neighbour list:
+	# right is tested twice and left is omitted.
+	if r == 0 or r == hh - 1 or c == 0 or c == w - 1:
+		return true
+	var neighbours: Array = [[1, 0], [-1, 0], [0, 1], [0, 1],
+			[1, 1], [1, -1], [-1, -1], [-1, 1]]
+	for off in neighbours:
+		if ob[(r + int(off[0])) * w + c + int(off[1])] != 0:
+			return true
+	return false
+
+
+func _stamp_smooth_post(data: Object, pat: Dictionary, x: int, y: int,
+		ob: PackedByteArray) -> void:
+	# sub_755f30 orders this after the per-cell blend and all other payloads.
+	# sub_755db4 proves IN-PLACE read-after-write; Factor is the iteration
+	# count, and the divisor is the hardcoded 4.0 at VA 0x755ee4.
+	var smooth: Vector3i = _stamp_smooth_parameters(pat)
+	var radius: int = smooth.x
+	var factor: int = smooth.y
+	var offset: int = smooth.z
+	if radius <= 0 or factor <= 0:
+		var skipped: Dictionary = _tel.get("stamp_smooth_skipped", {})
+		skipped[str(pat.get("name", ""))] = "Radius/Factor zero; donor parameters unavailable"
+		_tel["stamp_smooth_skipped"] = skipped
 		return
-	var ob: PackedByteArray = occ
-	if ob.size() < w * hh:
+	var smooth_stats: Dictionary = _tel.get("stamp_smooth", {})
+	smooth_stats[str(pat.get("name", ""))] = {
+		"radius": radius, "factor": factor, "offset": offset,
+		"source": "caller fields or exact pattern.lib Smooth=True census",
+	}
+	_tel["stamp_smooth"] = smooth_stats
+	var w: int = int(pat.get("w", 0))
+	var hh: int = int(pat.get("h", 0))
+	if ob.size() != w * hh:
 		return
+	var centre := Vector2(float(x) + float(pat.get("offset_x", 0.0)),
+			float(y) + float(pat.get("offset_z", 0.0)))
 	# X26 default is IN-PLACE. The comparison-only double-buffer mode reads a
 	# snapshot; never claim donor parity when it is selected.
 	var double_buffer: bool = (stamp_smooth_buffer_mode == "double_buffer")
 	var snap := PackedFloat32Array()
 	if double_buffer:
 		snap = data.height.duplicate()
-	for r in range(1, hh - 1):
-		for c in range(1, w - 1):
-			var clear: bool = true
-			for dr in range(-1, 2):
-				for dc in range(-1, 2):
-					if ob[(r + dr) * w + (c + dc)] != 0:
-						clear = false
-			if not clear:
+	for r in range(hh):
+		for c in range(w):
+			if ob[r * w + c] != 0 or not _stamp_smooth_boundary(ob, w, hh, r, c):
 				continue
-			var dx: float = float(c - int(w * 0.5))
-			var dz: float = float(r - int(hh * 0.5))
+			var wp: Vector2 = _stamp_world_position(pat, x, y, r, c)
+			var cell := Vector2i(int(floor(wp.x)), int(floor(wp.y)))
+			var dx: float = float(cell.x) - centre.x
+			var dz: float = float(cell.y) - centre.y
 			var d: float = sqrt(dx * dx + dz * dz)
 			if d <= 0.0:
-				continue
-			var tx: int = int(round(float(int(w * 0.5)) + dx * float(radius - offset) / d))
-			var tz: int = int(round(float(int(hh * 0.5)) + dz * float(radius - offset) / d))
+				continue  # active masks have no blocked boundary at the exact centre
+			var radial: float = float(radius - offset) / d
+			var target_x: int = int(round(float(cell.x) + dx * radial))
+			# VA 0x757220 loads the 80-bit 0.4 constant only for Z.
+			var target_z: int = int(round(float(cell.y) + dz * radial * C_STAMP_SMOOTH_Z_RADIAL_SCALE))
 			for _f in range(factor):
-				for u in range(maxi(0, tx - radius), mini(w - 1, tx + radius) + 1):
-					for v in range(maxi(0, tz - radius), mini(hh - 1, tz + radius) + 1):
-						var du: float = float(u - tx)
-						var dv: float = float(v - tz)
+				# Donor stack order passes target_z as helper center-X and
+				# target_x as helper center-Z (0x757243-0x757262). Preserve that
+				# observed axis swap rather than silently "correcting" it.
+				for wx in range(target_z - radius, target_z + radius + 1):
+					for wz in range(target_x - radius, target_x + radius + 1):
+						var du: float = float(wx - target_z)
+						var dv: float = float(wz - target_x)
 						if du * du + dv * dv >= float(radius * radius):
 							continue
-						var wx: int = x + u - w / 2
-						var wz: int = y + v - hh / 2
+						# Donor getter/setter wraps map quadrants; edge-wrap
+						# semantics remain [U], so out-of-map samples are skipped.
 						if wx <= 0 or wx >= _grid_w - 1 or wz <= 0 or wz >= _grid_h - 1:
 							continue
 						var wi: int = wz * _grid_w + wx
@@ -1947,12 +2373,22 @@ func _roulette_name(family: String, p: Dictionary) -> String:
 	return str((members[members.size() - 1] as Dictionary).get("name", ""))
 
 
-func _damp_freq(family: String, name: String) -> void:
+func _damp_freq(family: String, name: String, p: Dictionary) -> void:
 	# Freq *= 0.2 with floor 1e-4 (misc.script:3588-3630; spec/04 §3).
+	# D09 uses the member's authored Freq as `oldfreq`; never start from 1.0
+	# when the caller supplied a different weight.
 	var key: String = name + "|" + family
 	var cur: float = float(_freq_state.get(key, -1.0))
 	if cur < 0.0:
-		cur = 1.0
+		cur = -1.0
+		var families: Dictionary = p.get("families", {})
+		if families.has(family) and families[family] is Array:
+			for e: Dictionary in families[family]:
+				if str(e.get("name", "")) == name:
+					cur = float(e.get("freq", 1.0))
+					break
+		if cur < 0.0:
+			cur = 1.0  # donor absent Freq defaults to 1 (F08 §4 item 1)
 	_freq_state[key] = maxf(C_FREQ_FLOOR, cur * C_FREQ_DAMP)
 
 
@@ -1967,6 +2403,36 @@ func _stamp_candidate(key: String, amount: int = 1) -> void:
 	var d: Dictionary = _tel.get("stamp_candidates", {})
 	d[key] = int(d.get(key, 0)) + amount
 	_tel["stamp_candidates"] = d
+
+
+## I09 handoff: append only real accepted donor stamps, in acceptance order.
+## No sort, RNG draw, synthetic stamp, or legacy C3PatternGen.Stamp conversion.
+func _record_pattern_stamp(data: Object, name: String, family: String,
+		x: int, y: int, kind: String) -> void:
+	var meta: Dictionary = data.meta
+	var stamps: Array = meta.get("pattern_stamps", [])
+	if not (stamps is Array):
+		stamps = []
+	stamps.append({
+		"name": name,
+		"family": family,
+		"x": x,
+		"y": y,
+		"kind": kind,
+		"source": "I07 donor family placement",
+	})
+	meta["pattern_stamps"] = stamps
+	data.meta = meta
+
+
+func _family_stamp_kind(family: String) -> String:
+	# Keep the handoff categories explicit; mixed stoneforests use the legacy
+	# forest/stone recipe's "stone" class, while pure forests stay "forest".
+	if family.contains("stone"):
+		return "stone"
+	if family.contains("forest"):
+		return "forest"
+	return "relief"
 
 
 # ---------------------------------------------------------------------------
@@ -2026,16 +2492,78 @@ func _stage_relief(data: Object, p: Dictionary) -> void:
 func _setup_patterns_by_type(family: String, freq: float, p: Dictionary) -> void:
 	if freq <= 0.0:
 		return
-	var needed: int = int(floor(float(_grid_n) * freq))     # D9:3686-3704
-	var trycount: int = int(256.0 * 320.0 * 320.0 / maxf(1.0, float(_grid_n)))  # D9:3686-3704
+	# D9:3686-3704: density -> target count and map-size-scaled attempt budget.
+	# The donor's <1 optimiser factor is preserved; the old stub both forced one
+	# stamp at tiny densities and capped attempts at 256, changing the stream.
+	var needed: int = int(floor(float(_grid_n) * freq))
+	if needed == 0 and freq > 0.0:
+		needed = int(round(float(_grid_n) * freq))  # D9:3696-3700; may remain 0
+	var mapsizeoptimise: float = 320.0 * 320.0 / maxf(1.0, float(_grid_n))
+	if mapsizeoptimise < 1.0:
+		mapsizeoptimise *= 0.65                     # D9:3687-3688
+	var trycount: int = int(floor(256.0 * mapsizeoptimise))
+	# COORD visual-wave directive: family stands use the strict 25-cell tiled
+	# placement lattice from D1:1330-1359, never uniform free-cell scatter.
+	var wc: int = int(floor(float(_grid_w) / float(C_TILE_GRID_SIZE)))
+	var hc: int = int(floor(float(_grid_h) / float(C_TILE_GRID_SIZE)))
+	var previous: Dictionary = _tel["family_placements"].get(family, {})
+	var stat: Dictionary = {
+		"calls": int(previous.get("calls", 0)) + 1,
+		"needed": int(previous.get("needed", 0)) + needed,
+		"attempts": int(previous.get("attempts", 0)),
+		"accepted": int(previous.get("accepted", 0)),
+		"rejected": int(previous.get("rejected", 0)),
+		"missing_name": int(previous.get("missing_name", 0)),
+		"missing_pattern": int(previous.get("missing_pattern", 0)),
+		"height_stamps": int(previous.get("height_stamps", 0)),
+		"name_draws": int(previous.get("name_draws", 0)),
+		"position_draws": int(previous.get("position_draws", 0)),
+		"last_trycount": trycount,
+		"grid_cells": (wc + 1) * (hc + 1),
+		"placement_grid": "25-cell tiled lattice (D1:1330-1359)",
+	}
 	_tel["family_counts"][family] = int(_tel["family_counts"].get(family, 0)) + needed
 	var attempts: int = 0
-	for _k in range(maxi(needed, 1) * maxi(1, mini(trycount, 256))):
-		var name: String = _roulette_name(family, p)   # one donor name draw per attempt
-		attempts += 1
+	for _i in range(needed):
+		# Donor picks the family member once per target stamp, then probes up to
+		# trycount positions; Freq damping happens only after an accepted stand.
+		stat["name_draws"] = int(stat["name_draws"]) + 1
+		var name: String = _roulette_name(family, p)   # D9:3709
 		if name == "":
+			stat["missing_name"] = int(stat["missing_name"]) + 1
 			continue
-		_stamp_candidate("relief_attempts")
+		var pat: Dictionary = _pattern(name, p)
+		if pat.is_empty():
+			stat["missing_pattern"] = int(stat["missing_pattern"]) + 1
+			continue
+		for _k in range(trycount):
+			var gx: int = _active_rng.next_int(wc + 1)
+			var gy: int = _active_rng.next_int(hc + 1)
+			stat["position_draws"] = int(stat["position_draws"]) + 2
+			# V08: donor realx/realy are centred cells, but _check_stand() and
+			# _stamp_pattern() consume GRID INDICES. Convert once here by keeping
+			# only the donor lattice term `gx*25 + 12 - 1`; adding W/2 cancels the
+			# donor-centred `-W/2`. Never subtract the map half-size a second time.
+			var rx: int = int(round(float(gx * C_TILE_GRID_SIZE + C_TILE_GRID_HALF
+					- C_TILE_GRID_OFFSET)))
+			var ry: int = int(round(float(gy * C_TILE_GRID_SIZE + C_TILE_GRID_HALF
+					- C_TILE_GRID_OFFSET)))
+			attempts += 1
+			stat["attempts"] = int(stat["attempts"]) + 1
+			_stamp_candidate("relief_attempts")
+			if _check_stand(pat, rx, ry):
+				_stamp_pattern(_cur_data, pat, rx, ry, p)
+				_record_pattern_stamp(_cur_data, name, family, rx, ry,
+						_family_stamp_kind(family))
+				_damp_freq(family, name, p)
+				stat["accepted"] = int(stat["accepted"]) + 1
+				if bool(pat.get("height_field_stand", false)) and (pat.has("relief_float_grid") or pat.has("grid")):
+					stat["height_stamps"] = int(stat["height_stamps"]) + 1
+				_stamp_candidate("family_accepted_" + family)
+				break                              # D9:3717-3723
+			stat["rejected"] = int(stat["rejected"]) + 1
+	_tel["family_placements"][family] = stat
+	_stamp_candidate("family_attempts_" + family, attempts)
 	_stamp_candidate("relief_family_attempts_" + family, attempts)
 
 

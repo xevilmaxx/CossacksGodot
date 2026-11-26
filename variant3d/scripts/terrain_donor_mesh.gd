@@ -1,8 +1,9 @@
 extends Node3D
 
 # I08 — mesh / rendering side of the fresh DONOR-FIRST terrain module
-# (TERRAIN-SWARM-2026-11-26). OWNER FILE: this file only. No edit to
-# world3d_terrain.gd, world3d.gd, game.gd, any shader, test, asset, app/**.
+# (TERRAIN-SWARM-2026-11-26). SUBCELLS pass owner files: this file and
+# variant3d/shaders/terrain_donor_shader.gdshader ONLY. No edit to
+# world3d_terrain.gd, world3d.gd, game.gd, any test, asset or app/**.
 # No runner job, no Godot process and no git operation was used to write it.
 #
 # TOP-LEVEL PROVENANCE / PARITY GUARD
@@ -39,6 +40,14 @@ extends Node3D
 # Donor constants (every value carries its donor path:line citation)
 # ---------------------------------------------------------------------------
 const TILE_M: float = 2.0                  # data.gd:23; donor gc_meters_to_tile=2 (dmscript.global:171, DEC-05)
+# Recovered tsDouble/ttExtended RGB selector geometry (DEC-VIS-01 §4/§6.2).
+# TileSize=64 is the producer's selector unit; the shipped 1024² DDS divided by
+# Rows/Cols=8 gives the effective 128² art subcell. TileSize cancels in UV space.
+const DONOR_RGB_ROWS: int = 8              # DEC-VIS-01 §4.1/§4.2; ev_1d5e6e/ev_b2e664
+const DONOR_RGB_COLS: int = 8              # DEC-VIS-01 §4.1/§4.2; ev_1d5e6e/ev_b2e664
+const DONOR_RGB_TILE_SIZE: int = 64        # DEC-VIS-01 §4.1; reftile.lib active default
+const DONOR_RGB_BLOCK_SIZE: int = 1024     # D08 §3.1 grass1.dds header (1024x1024, 11 mips)
+const DONOR_RGB_SUBCELL_PX: int = DONOR_RGB_BLOCK_SIZE / DONOR_RGB_ROWS  # 128, DEC-VIS-01 §4.2
 const HEIGHT_SCALE: float = 1.0            # world3d_terrain.gd:131,1311 — PORT contract, NO multiplier
 const WATER_LEVEL: float = -0.25           # texturemap.inc:29-30,466-467 cWaterHeight (tile classify)
 const SHORE_LEVEL: float = -0.1            # texturemap.inc:31,463-472 cWaterShoreHeight
@@ -108,6 +117,7 @@ var _atlas_grid := Vector2.ZERO
 var _atlas_info: Dictionary = {}
 var _atlas_loader = null
 var _atlas_texture: Texture2D = null
+var _tile_map_tex: ImageTexture = null   # L8, nearest; one resolved donor id per I08 cell
 var _alpha_tex: Texture2D = null
 var _alphavert_tex: Texture2D = null
 var _mip_source: String = ""
@@ -303,6 +313,32 @@ func _ingest() -> bool:
 	return false
 
 
+func _build_tile_map_texture() -> ImageTexture:
+	# SUBCELLS: RGB tile ids are fetched here, not by interpolating UV2.x across
+	# a triangle. The L8 image is exactly _w x _h and the shader samples texel
+	# centres from integer world-cell coordinates with a nearest sampler.
+	if _w <= 0 or _h <= 0 or _n != _w * _h or _tex.size() != _n:
+		push_error("terrain_donor_mesh: tile-map source grid is invalid")
+		return null
+	var pixels := _tex.duplicate()   # source I08 array stays read-only
+	for i in range(_n):
+		var tid := int(pixels[i])
+		# Match the existing UV2.x atlas clamp exactly: water sentinel 255 and
+		# every other out-of-range byte become tile 0, with stats still counted
+		# from the raw value in build().
+		if tid < 0 or tid > MAX_TILE_ID:
+			tid = 0
+		pixels[i] = tid
+	var image := Image.create_from_data(_w, _h, false, Image.FORMAT_L8, pixels)
+	if image == null or image.is_empty():
+		push_error("terrain_donor_mesh: cannot create L8 tile-map image")
+		return null
+	var texture := ImageTexture.create_from_image(image)
+	if texture == null:
+		push_error("terrain_donor_mesh: cannot create tile-map texture")
+	return texture
+
+
 # ---------------------------------------------------------------------------
 # Normals: proven 1-cell forward difference (one-sided backward at last
 # row/column), world3d_terrain.gd:901-917. TILE_M stays 2.0 m and NO vertex or
@@ -495,9 +531,9 @@ func _bind_known_params(mat: ShaderMaterial, params: Dictionary) -> Dictionary:
 
 
 func _make_material(atlas_ready: bool = true) -> Material:
-	if not atlas_ready:
-		# Geometry still builds; no shader sampler is bound to a null atlas.
-		material_model = "PORT APPROXIMATION — plain material (atlas unavailable)"
+	if not atlas_ready or _tile_map_tex == null:
+		# Geometry still builds; no shader sampler is bound to a null atlas/map.
+		material_model = "PORT APPROXIMATION — plain material (atlas/tile map unavailable)"
 		_shader_path_used = "NONE"
 		var plain_fallback := StandardMaterial3D.new()
 		plain_fallback.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -529,9 +565,16 @@ func _make_material(atlas_ready: bool = true) -> Material:
 	_shader_path_used = DONOR_SHADER_PATH if is_new_shader else LEGACY_SHADER_PATH
 	var params := {
 		"tile_atlas": _atlas_texture,
+		"tile_map": _tile_map_tex,
 		"alpha_atlas": _alpha_tex,
 		"alphavert_atlas": _alphavert_tex,
 		"atlas_grid": _atlas_grid,
+		# DEC-VIS-01 §6.2: integer world-cell lookup + map-half-offset 8x8 select.
+		"map_cells": Vector2(float(_w), float(_h)),
+		"donor_rows": float(DONOR_RGB_ROWS),
+		"donor_cols": float(DONOR_RGB_COLS),
+		"donor_tile_size": float(DONOR_RGB_TILE_SIZE),
+		"donor_rgb_block_size": float(DONOR_RGB_BLOCK_SIZE),
 		# Donor Blinn-Phong terms from light.cfg (donor path:line cited above).
 		"ambient_rgb": Vector3(DONOR_AMBIENT.r, DONOR_AMBIENT.g, DONOR_AMBIENT.b),
 		"diffuse_rgb": Vector3(DONOR_DIFFUSE.r, DONOR_DIFFUSE.g, DONOR_DIFFUSE.b),
@@ -672,6 +715,23 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 			"info": _atlas_info.duplicate(true),
 			"mipmaps_cpu_before_create_from_image": _mip_source,
 		},
+		"rgb_subcells": {
+			"rows": DONOR_RGB_ROWS,
+			"cols": DONOR_RGB_COLS,
+			"tile_size": DONOR_RGB_TILE_SIZE,
+			"donor_block_px": DONOR_RGB_BLOCK_SIZE,
+			"effective_subcell_px": [DONOR_RGB_SUBCELL_PX, DONOR_RGB_BLOCK_SIZE / DONOR_RGB_COLS],
+			"period_m": TILE_M * float(maxi(DONOR_RGB_ROWS, DONOR_RGB_COLS)),
+			"selection": "DEC-VIS-01 §6.2 world-cell + map-half offset, mod Rows/Cols",
+			"tile_map": {
+				"width": _w,
+				"height": _h,
+				"format": "L8",
+				"filter": "nearest (shader tile_map)",
+				"source": "I08 _tex; same out-of-range clamp as UV2.x",
+				"ready": _tile_map_tex != null,
+			},
+		},
 		"material_model": material_model,
 		"shader_path": _shader_path_used,
 		"alpha": _alpha_contract.duplicate(true),
@@ -721,6 +781,7 @@ func build() -> bool:
 		push_error("terrain_donor_mesh: bind() an I06 container / height dump first")
 		return false
 	_mip_source = ""
+	var tile_map_ok := _build_tile_map_texture() != null
 	var atlas_ok := _load_atlas()   # resolve samplers BEFORE the material is made
 	var nverts: int = _n
 	var ntris: int = (_w - 1) * (_h - 1) * 2
@@ -785,7 +846,7 @@ func build() -> bool:
 	arrays[Mesh.ARRAY_INDEX] = inds
 	mesh = ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, _make_material(atlas_ok))
+	mesh.surface_set_material(0, _make_material(atlas_ok and tile_map_ok))
 	mesh_instance = MeshInstance3D.new()
 	mesh_instance.name = "DonorTerrainMesh"
 	mesh_instance.mesh = mesh
@@ -808,6 +869,7 @@ func invalidate() -> void:
 	water = null
 	_atlas_loader = null
 	_atlas_texture = null
+	_tile_map_tex = null
 	_alpha_tex = null
 	_alphavert_tex = null
 	_atlas_grid = Vector2.ZERO

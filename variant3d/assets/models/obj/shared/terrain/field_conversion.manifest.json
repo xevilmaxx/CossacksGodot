@@ -1,0 +1,889 @@
+{
+  "schema": "fix-field-assets/conversion/v1",
+  "worker": "FIX-FIELD-ASSETS",
+  "date": "2026-11-26",
+  "donor_root_policy": "C:/Games/Cossacks 3 (read-only private install)",
+  "generator": "offline Python + Pillow; OSM topology read through variant3d/tools/convert_models.py:read_osm",
+  "tools_modified": [],
+  "counts": {
+    "donor_textures_read": 16,
+    "png_outputs": 16,
+    "new_png_outputs": 15,
+    "replaced_png_outputs": 1,
+    "donor_mesh_variants_converted": 2,
+    "obj_outputs": 2,
+    "mtl_outputs": 2,
+    "field1_geometry_modified": 0,
+    "donor_binaries_copied": 0,
+    "manifest_model_entries_before": 299,
+    "manifest_model_entries_after": 299,
+    "manifest_extra_asset_mappings_before": 1,
+    "manifest_extra_asset_mappings_after": 16
+  },
+  "invariants": {
+    "all_texture_pixels_equal": true,
+    "all_texture_alpha_equal": true,
+    "all_mesh_vertices_exact": true,
+    "all_mesh_uvs_exact": true,
+    "all_mesh_faces_exact": true,
+    "all_mesh_uv_faces_exact": true,
+    "field1_obj_unchanged": true,
+    "synthetic_art": false,
+    "color_retouch": false,
+    "donor_dds_or_osm_in_outputs": []
+  },
+  "textures": [
+    {
+      "material": "field",
+      "source": "data/materials/env/field.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field.png",
+      "source_sha256": "40c259a85530e39a30aae9abb1ac1648238ad6f1fd478eb6ea17d8bbfd0875a1",
+      "output_sha256": "9b2ff1030b82f823bf7f882de88e36d04d59186af31a9a3ee02c7c52f0e4e5d6",
+      "source_bytes": 174928,
+      "output_bytes": 130169,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "b003d5eb3c7a7b43a18d7b6d607e2d2a3e9fa6091589d5a61fc6ca37947c9d46",
+      "decoded_alpha_sha256": "3f28460c6270fc57838fe2c45c05103eb925381478e90c54bc89720572c2045e",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field1",
+      "source": "data/materials/env/field1.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field1.png",
+      "source_sha256": "6a80f089795b532614939d4059b9c25c801e37618a23556da89c86dc297073b7",
+      "output_sha256": "8eee403df4ab56f0c32fbbb3fab707eeba3127618e56c8df42004e0e72c3c8ef",
+      "source_bytes": 174928,
+      "output_bytes": 48365,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "35474859aba7503353a94875b29c5d987b32eb2af8e92b8f136c93f032596831",
+      "decoded_alpha_sha256": "dd87c3765d628570bda6960fbc378ed2e5d96e0ed49a173bfc537b8adfa66f49",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field2",
+      "source": "data/materials/env/field2.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field2.png",
+      "source_sha256": "419a07b5bb113624098e29408b986cf973677107249e2a0fc2bb1e30eba2ee7d",
+      "output_sha256": "edd645c91a81068980600bae3444d93560d1d15df6331927092b53c779acc87c",
+      "source_bytes": 174928,
+      "output_bytes": 64151,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "445a8bfc946625c429795dd3a14df39382adb95b113a1f25d1ca5060d0346888",
+      "decoded_alpha_sha256": "865eef01f5ad83ac79268eb531fef44a389e3dca47c0526c5012f8ad3f91a304",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field3",
+      "source": "data/materials/env/field3.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field3.png",
+      "source_sha256": "ddc51bdfdbf37efbdb8bc5172e315611abc25a226964b132b9d7138892315ce0",
+      "output_sha256": "1b455a17634c5ad3ddce7c12bfd85829bd053f3fe40296913cbca1e7cffa796d",
+      "source_bytes": 174928,
+      "output_bytes": 83427,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "c1601fa93e1e964f738175a4723a2968a57ff3fc02457349bfd1470b1ab34e95",
+      "decoded_alpha_sha256": "0e06ec944fd41cd2474bb9526b20718afbc16db6ff1ad9cdc5bf926933949174",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field4",
+      "source": "data/materials/env/field4.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field4.png",
+      "source_sha256": "acf2c46413bce33f5f18d20233a1e911ad758e596f4d3bbdca1588e4b925fc9e",
+      "output_sha256": "6b77729b0e0b55d9fe15b850771ebf0ca3bec180a4f168c36cc83ed64e8fbbbe",
+      "source_bytes": 174928,
+      "output_bytes": 110732,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "95833549549964a3b9517b73b62686299a2774d9f95ce6fdd2e26c6c8f20e1d0",
+      "decoded_alpha_sha256": "00c70f2f8641c121676fced67237ae9186de657542ac0b1f377e0855253b9312",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field5",
+      "source": "data/materials/env/field5.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field5.png",
+      "source_sha256": "7e02567dc32fab0593ffc7ad8cb2dcaee332239b306848d2ab6edb90252a66ac",
+      "output_sha256": "9419adce1e660de61301168edd6207e39accdd0429aa0b8f3cadceef002739b1",
+      "source_bytes": 174928,
+      "output_bytes": 125803,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "33ed68bf29d95586b7f3812dec4441eb1dfaf2490ee537f2850c2ac3257d163d",
+      "decoded_alpha_sha256": "b8e36bc274d5ffe9ce0339b6bae0a203ed92c1fdd621ba4b91a590bd881a4593",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field6",
+      "source": "data/materials/env/field6.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field6.png",
+      "source_sha256": "66cc4eb997b37ed2a500241bf406ca622cf86b38be4ff521873031b1524b9224",
+      "output_sha256": "827b9af00208e93ae6c5f9617962545755791f20f4fad42fbdafaf35deda0b7c",
+      "source_bytes": 174928,
+      "output_bytes": 114866,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "231ee401ddc4b1924a9f34cd1d0ac1fc9981babb607f3f33b5567381b43a56bf",
+      "decoded_alpha_sha256": "043d7d0249ec50560ca7043d67ecb163681405757500a088f11fda887cddc825",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field7",
+      "source": "data/materials/env/field7.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field7.png",
+      "source_sha256": "89790301d4b9cf48e64f67bac10e830ba4e349489abc995de59693d793c4fa2c",
+      "output_sha256": "e540e240fe345dcfb785e1b79a65a67f725545261775a2ecfda7a352fd4810ef",
+      "source_bytes": 174928,
+      "output_bytes": 97978,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "871232903bf82a377fa6f7c944a67253ccb21fde1f2dae84c8e5664913b4db88",
+      "decoded_alpha_sha256": "14e25ec6d249f77376a1baf32188ff5ce4f2527ec9765720a0b302ebe878053d",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "fieldw",
+      "source": "data/materials/env/fieldw.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/fieldw.png",
+      "source_sha256": "2a7c6cfb09361e944ccebe2090e7ef688085d209e6dbc93b5eab50fbe8a14cc1",
+      "output_sha256": "47cfd71df36c3c07394b88262135cb062980aaaac3006396b5112087908fb78b",
+      "source_bytes": 174928,
+      "output_bytes": 125886,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "1ed3d841babc780c29d91bc436c0203ccaa4785397746d39820a628339971fa0",
+      "decoded_alpha_sha256": "0a7c5b271c9dec47772d4222f3ce6da5a6df447c8ed6c4f932d4c8c2e7a40f2c",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field1w",
+      "source": "data/materials/env/field1w.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field1w.png",
+      "source_sha256": "e0e618095455d97fabef747d8078fdf9af4c30a765694c2ba3f55b33be0cc27d",
+      "output_sha256": "75c011ef921bf07572301d723328bc213fff6eb9c8e4a773a349ed38f0ae8e8d",
+      "source_bytes": 174928,
+      "output_bytes": 103651,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "4da8b7d5cc3465f951318a050618fe28966c8289bbbfd8aa86300ef1b78474f0",
+      "decoded_alpha_sha256": "6d74d440c37891a8061164d5f431da20ecb2cd606f9114d2db53c1602fd651b0",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field2w",
+      "source": "data/materials/env/field2w.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field2w.png",
+      "source_sha256": "8592fc0d60b785085842980ba63aad214d8a2dc522642490d2306e51594b4202",
+      "output_sha256": "a0147b07c44c5ce4f1b137d073832f4ae38be1af2d8f3d55dbaf1cf4c239c0dd",
+      "source_bytes": 174928,
+      "output_bytes": 124227,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "9a550750a0698a4b99f2e1b8056fe7494fe192193c969f87b2970df8c6a37c1f",
+      "decoded_alpha_sha256": "4b03cb46d76365a51a9bb199b2c9fce6c9ab5d34a317e5c3aa7e5bd034927600",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field3w",
+      "source": "data/materials/env/field3w.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field3w.png",
+      "source_sha256": "84ca53ab0e58f47505e95b4d770729deae87defa4b060954630f6eb77e1374b8",
+      "output_sha256": "b3727db14284fce8ebdaff4441062d084114d5f398a6a732e0d23fabc1992b53",
+      "source_bytes": 174928,
+      "output_bytes": 154591,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "ef67af20d69f7554db7f389887af8a32cf90829ae7c06ce40c649ea2d34eb26c",
+      "decoded_alpha_sha256": "3c3381f1bf8f21084452b3ac6eb0cc35bb495344262a858c19af049fb56bb704",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field4w",
+      "source": "data/materials/env/field4w.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field4w.png",
+      "source_sha256": "f1cc8fe72316b3bf918033d39fe58c92f32228082921fc6e75cd3392bf11fa67",
+      "output_sha256": "b1f04c625bf4941e593130dc590108e078172e675fea4b07d7640b159c08da3e",
+      "source_bytes": 174928,
+      "output_bytes": 193441,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "9258c3c420bad6718c47768f222f3ecc25805e37cf06d862d8b8588a8f07b6c9",
+      "decoded_alpha_sha256": "80e199b5a8724165857668b81f0ebeed55ac39c1cc724c19de19906fc76a05bc",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field5w",
+      "source": "data/materials/env/field5w.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field5w.png",
+      "source_sha256": "f0fe5f959ac5fd061fca378e08785895f751b08be0a8a6448eb8a9708e400afd",
+      "output_sha256": "61e595864bda313a7e9fdff4e5745a78cb2ccc87ddbc55398e32d0ec8c6e40e0",
+      "source_bytes": 174928,
+      "output_bytes": 197525,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "b217c51a8d6b19c1aaaecc6d7fd62e0fbf6e93bd65a21878fb2d44f9b677b084",
+      "decoded_alpha_sha256": "9b6769ee1be5bbbadea68a0cd5e2d544567e533cfb68bce482f60d139e07fc0c",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field6w",
+      "source": "data/materials/env/field6w.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field6w.png",
+      "source_sha256": "e5f3116cd160d5439e5a7231461495d0241f1756082e4877d9472994ac19a9c4",
+      "output_sha256": "1247685911d2ce55ccc4312b1b863984181832ab03f46e6dedf73aef343faeca",
+      "source_bytes": 174928,
+      "output_bytes": 155162,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "a05a15218913d92f3afaa4ae7d00b27eaff5477c542f0006654a0d40b3b24054",
+      "decoded_alpha_sha256": "5211793af4044f7f19559b7708419cbed496a2882c28e7e69828d2821ff6cd26",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    },
+    {
+      "material": "field7w",
+      "source": "data/materials/env/field7w.dds",
+      "output": "variant3d/assets/models/tex/shared/terrain/field7w.png",
+      "source_sha256": "2a6763db6fe53089a7371ad54e3e9cbec1287ffd7a4790cfe27039852136a758",
+      "output_sha256": "84548ead9fd76900605aa826895f325cd5a4861f25abad68c962812a1d222bde",
+      "source_bytes": 174928,
+      "output_bytes": 156145,
+      "dds": {
+        "width": 512,
+        "height": 256,
+        "mip_levels": 10,
+        "fourcc": "DXT5",
+        "caps": "0x00401008"
+      },
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "png": {
+        "width": 512,
+        "height": 256,
+        "bit_depth": 8,
+        "color_type": 6,
+        "compression": 0,
+        "filtering": 0,
+        "interlace": 0
+      },
+      "decoded_rgba_sha256": "e531e2258308bf3e0cf2241ee9595b274eb2b730ae6507c9c41df67b2d7d62b1",
+      "decoded_alpha_sha256": "14e25ec6d249f77376a1baf32188ff5ce4f2527ec9765720a0b302ebe878053d",
+      "alpha_min": 0,
+      "alpha_max": 255,
+      "alpha_unique_values": 256,
+      "pixels_equal": true,
+      "alpha_equal": true,
+      "retouch": "none; direct DDS decode -> RGBA PNG re-encode"
+    }
+  ],
+  "meshes": [
+    {
+      "mesh_variant": "field2",
+      "source": "data/actors/env/field2.osm",
+      "obj": "variant3d/assets/models/obj/shared/terrain/field2.obj",
+      "mtl": "variant3d/assets/models/obj/shared/terrain/field2.mtl",
+      "source_sha256": "b308e15bf84a9261b02b4bedd760f9e3d244306e135c0b570836a85d4e57c0b4",
+      "obj_sha256": "a80e7656440222f77e0ffb9d9e0ecb7accbc59b90bc79b9508b9be34061cf735",
+      "mtl_sha256": "755008bb8a67c19f0ac5c32a19209a7344332577885c787326b426e5edf48a3b",
+      "source_bytes": 23932,
+      "obj_bytes": 63418,
+      "mtl_bytes": 68,
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 495,
+      "uvs": 495,
+      "faces": 496,
+      "bbox": [
+        -27.20178985595703,
+        27.2017822265625,
+        -24.29454231262207,
+        24.294544219970703,
+        -1.413125991821289,
+        16.469148635864258
+      ],
+      "mtl_texture_reference": "../../../tex/shared/terrain/field2.png",
+      "checks": {
+        "verts_count": true,
+        "uvs_count": true,
+        "faces_count": true,
+        "vertices_exact": true,
+        "uvs_exact": true,
+        "faces_exact": true,
+        "uv_faces_exact": true,
+        "mtllib_present": true,
+        "usemtl_present": true,
+        "mtl_texture_exists": true
+      },
+      "float_serialization": "17 significant digits; exact float32 values round-trip"
+    },
+    {
+      "mesh_variant": "field3",
+      "source": "data/actors/env/field3.osm",
+      "obj": "variant3d/assets/models/obj/shared/terrain/field3.obj",
+      "mtl": "variant3d/assets/models/obj/shared/terrain/field3.mtl",
+      "source_sha256": "8be46b2bb81eab34e0fd16fafc0847747d6cb547a0c3237cfa07d2bab6ddd37b",
+      "obj_sha256": "9b69b7206701a357246c13dec58a6b24b7f835d5b897cda975ddd09e3eab2153",
+      "mtl_sha256": "4a6379a12c97d8fcc88bcec0ecd707f194a3300653d1bb7198bce2b70a33cbe9",
+      "source_bytes": 26308,
+      "obj_bytes": 69789,
+      "mtl_bytes": 68,
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 546,
+      "uvs": 546,
+      "faces": 544,
+      "bbox": [
+        -26.988357543945312,
+        26.988327026367188,
+        -23.84872817993164,
+        23.848709106445312,
+        -1.4131231307983398,
+        16.46915054321289
+      ],
+      "mtl_texture_reference": "../../../tex/shared/terrain/field3.png",
+      "checks": {
+        "verts_count": true,
+        "uvs_count": true,
+        "faces_count": true,
+        "vertices_exact": true,
+        "uvs_exact": true,
+        "faces_exact": true,
+        "uv_faces_exact": true,
+        "mtllib_present": true,
+        "usemtl_present": true,
+        "mtl_texture_exists": true
+      },
+      "float_serialization": "17 significant digits; exact float32 values round-trip"
+    }
+  ],
+  "manifest_resolution": {
+    "field": {
+      "res_path": "res://assets/models/tex/shared/terrain/field.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field.png",
+      "exists": true,
+      "sha256": "9b2ff1030b82f823bf7f882de88e36d04d59186af31a9a3ee02c7c52f0e4e5d6"
+    },
+    "field1": {
+      "res_path": "res://assets/models/tex/shared/terrain/field1.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field1.png",
+      "exists": true,
+      "sha256": "8eee403df4ab56f0c32fbbb3fab707eeba3127618e56c8df42004e0e72c3c8ef"
+    },
+    "field2": {
+      "res_path": "res://assets/models/tex/shared/terrain/field2.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field2.png",
+      "exists": true,
+      "sha256": "edd645c91a81068980600bae3444d93560d1d15df6331927092b53c779acc87c"
+    },
+    "field3": {
+      "res_path": "res://assets/models/tex/shared/terrain/field3.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field3.png",
+      "exists": true,
+      "sha256": "1b455a17634c5ad3ddce7c12bfd85829bd053f3fe40296913cbca1e7cffa796d"
+    },
+    "field4": {
+      "res_path": "res://assets/models/tex/shared/terrain/field4.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field4.png",
+      "exists": true,
+      "sha256": "6b77729b0e0b55d9fe15b850771ebf0ca3bec180a4f168c36cc83ed64e8fbbbe"
+    },
+    "field5": {
+      "res_path": "res://assets/models/tex/shared/terrain/field5.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field5.png",
+      "exists": true,
+      "sha256": "9419adce1e660de61301168edd6207e39accdd0429aa0b8f3cadceef002739b1"
+    },
+    "field6": {
+      "res_path": "res://assets/models/tex/shared/terrain/field6.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field6.png",
+      "exists": true,
+      "sha256": "827b9af00208e93ae6c5f9617962545755791f20f4fad42fbdafaf35deda0b7c"
+    },
+    "field7": {
+      "res_path": "res://assets/models/tex/shared/terrain/field7.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field7.png",
+      "exists": true,
+      "sha256": "e540e240fe345dcfb785e1b79a65a67f725545261775a2ecfda7a352fd4810ef"
+    },
+    "fieldw": {
+      "res_path": "res://assets/models/tex/shared/terrain/fieldw.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/fieldw.png",
+      "exists": true,
+      "sha256": "47cfd71df36c3c07394b88262135cb062980aaaac3006396b5112087908fb78b"
+    },
+    "field1w": {
+      "res_path": "res://assets/models/tex/shared/terrain/field1w.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field1w.png",
+      "exists": true,
+      "sha256": "75c011ef921bf07572301d723328bc213fff6eb9c8e4a773a349ed38f0ae8e8d"
+    },
+    "field2w": {
+      "res_path": "res://assets/models/tex/shared/terrain/field2w.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field2w.png",
+      "exists": true,
+      "sha256": "a0147b07c44c5ce4f1b137d073832f4ae38be1af2d8f3d55dbaf1cf4c239c0dd"
+    },
+    "field3w": {
+      "res_path": "res://assets/models/tex/shared/terrain/field3w.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field3w.png",
+      "exists": true,
+      "sha256": "b3727db14284fce8ebdaff4441062d084114d5f398a6a732e0d23fabc1992b53"
+    },
+    "field4w": {
+      "res_path": "res://assets/models/tex/shared/terrain/field4w.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field4w.png",
+      "exists": true,
+      "sha256": "b1f04c625bf4941e593130dc590108e078172e675fea4b07d7640b159c08da3e"
+    },
+    "field5w": {
+      "res_path": "res://assets/models/tex/shared/terrain/field5w.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field5w.png",
+      "exists": true,
+      "sha256": "61e595864bda313a7e9fdff4e5745a78cb2ccc87ddbc55398e32d0ec8c6e40e0"
+    },
+    "field6w": {
+      "res_path": "res://assets/models/tex/shared/terrain/field6w.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field6w.png",
+      "exists": true,
+      "sha256": "1247685911d2ce55ccc4312b1b863984181832ab03f46e6dedf73aef343faeca"
+    },
+    "field7w": {
+      "res_path": "res://assets/models/tex/shared/terrain/field7w.png",
+      "file": "variant3d/assets/models/tex/shared/terrain/field7w.png",
+      "exists": true,
+      "sha256": "84548ead9fd76900605aa826895f325cd5a4861f25abad68c962812a1d222bde"
+    },
+    "field2_obj": {
+      "res_path": "res://assets/models/obj/shared/terrain/field2.obj",
+      "file": "variant3d/assets/models/obj/shared/terrain/field2.obj",
+      "exists": true,
+      "sha256": "a80e7656440222f77e0ffb9d9e0ecb7accbc59b90bc79b9508b9be34061cf735"
+    },
+    "field3_obj": {
+      "res_path": "res://assets/models/obj/shared/terrain/field3.obj",
+      "file": "variant3d/assets/models/obj/shared/terrain/field3.obj",
+      "exists": true,
+      "sha256": "9b69b7206701a357246c13dec58a6b24b7f835d5b897cda975ddd09e3eab2153"
+    }
+  },
+  "integration": {
+    "manifest": {
+      "file": "variant3d/assets/models/manifest.json",
+      "sha256": "ac9bcafc692828c20f3826088ebfc8898954a0f971c74e34da7617367a6d95f5",
+      "field_sid_mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\field1.osm",
+      "field_sid_texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\field.dds",
+      "field_sid_obj": "res://assets/models/obj/shared/terrain/field.obj",
+      "field_sid_tex": "res://assets/models/tex/shared/terrain/field.png",
+      "added_extra_asset_keys": [
+        "field1",
+        "field2",
+        "field3",
+        "field4",
+        "field5",
+        "field6",
+        "field7",
+        "fieldw",
+        "field1w",
+        "field2w",
+        "field3w",
+        "field4w",
+        "field5w",
+        "field6w",
+        "field7w"
+      ]
+    },
+    "field1_mtl": {
+      "file": "variant3d/assets/models/obj/shared/terrain/field.mtl",
+      "sha256": "1263e6b93eafc1b1eb6529b0099b2bf08a38a3e716776f193f8d49df3f490486",
+      "map_Kd": "../../../tex/shared/terrain/field1.png",
+      "texture_exists": true
+    },
+    "field1_geometry": {
+      "output": "variant3d/assets/models/obj/shared/terrain/field.obj",
+      "sha256_before": "7824a2dd8b77e1a807604bcb2e4d63dc2be1974bc307a59b90b4f8c37d3f5139",
+      "sha256_after": "7824a2dd8b77e1a807604bcb2e4d63dc2be1974bc307a59b90b4f8c37d3f5139",
+      "unchanged": true
+    },
+    "backup": {
+      "directory": "variant3d/assets/models/tex/shared/terrain/.backup-FIX-FIELD-ASSETS-20261126",
+      "manifest_sha256": "d064d952574a5c7e8d65b2c4f85fd524a27309057de2d861030270f04645c84e"
+    }
+  },
+  "limitations": [
+    "Static/offline conversion only; no Godot editor, importer, runner, render, capture, or git command was run.",
+    "Every donor DDS has 10 mip levels; each derived PNG contains only the base level. No mip chain was generated or copied.",
+    "Only field.png has an existing .import sidecar. The 15 new PNGs and two new OBJs have no .import sidecars yet and require a normal Godot import before ResourceLoader.exists/load can be relied on.",
+    "field.png was replaced with mature field.dds art; its existing field.png.import sidecar was preserved but may be stale until Godot reimports the changed source.",
+    "field2.mtl and field3.mtl use field2.png and field3.png as usable default references; donor runtime material selection is independent of the random mesh variant.",
+    "No donor/port A/B frame exists. Asset pixel/topology equality is not a visual parity claim."
+  ],
+  "visual_parity_claim": false
+}

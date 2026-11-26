@@ -56,6 +56,20 @@ const CDIFF2: float = 0.55               # texturemap.inc:64 (diagonal steep tes
 const FIELD_STEP_CELLS: float = 1.6981   # unit.script:6468-6570 (F07 §8 mill-sown fields)
 const DONOR_SIZES := [256, 320, 480, 640]  # miscext2.script:19-26; dmscript.global:132-135
 
+# Active skirmish light.cfg literals (X35 E3-E6). The terrain shader keeps its
+# own manual Blinn-Phong; this rig lights ordinary spatial entity/prop materials.
+const DONOR_SUN_POS := Vector3(-0.344731152057648, 0.938701450824738, 0.0)  # light.cfg:26-30
+const DONOR_AMBIENT := Color(0.196078434586525, 0.184313729405403, 0.129411771893501)  # light.cfg:3-6
+const DONOR_DIFFUSE := Color(0.811764717102051, 0.780392169952393, 0.694117665290833)  # light.cfg:10-13
+const DONOR_SPECULAR := Color(0.278431385755539, 0.266666680574417, 0.211764708161354)  # light.cfg:20-23
+# Existing port compensation, NOT donor literals (X35 E27; world3d_terrain.gd:149-151).
+# PORT APPROXIMATION — owner visual usability request: modest energy increase so
+# ordinary spatial entity/prop materials are readable. Sun direction and every
+# donor colour remain byte-exact; no new hue, no shadows, no AO, no shader edit.
+const AMBIENT_ENERGY: float = 1.40
+const SUN_ENERGY: float = 2.00
+const ENERGY_LABEL := "PORT APPROXIMATION — owner visual usability request"
+
 const PORT_LABEL := "PORT APPROXIMATION — no donor GPU A/B frame; parity UNVERIFIED"
 
 # --- state (all additive; no global class_name, no sim writes) --------------
@@ -73,6 +87,13 @@ var _missing: Array[String] = []
 var _built: bool = false
 var _gen_applied: bool = false
 var _props_applied: bool = false
+var _environment: WorldEnvironment = null
+var _sun: DirectionalLight3D = null
+var _stamps_seen: int = 0
+var _stamps_accepted: int = 0
+var _stamps_skipped: int = 0
+var _stamp_source: String = "legacy fallback"
+var _stamp_conversion_notes: Array[String] = []
 
 
 # ---------------------------------------------------------------------------
@@ -87,6 +108,41 @@ func _prop(src, key: String):
 	if src is Object:
 		return (src as Object).get(key)
 	return null
+
+
+# C3PatternGen.Stamp (pattern_gen.gd:66-73) exposes family/name/kind/res/x/y/cells.
+# It has no height or sid property; do not synthesize either. Dictionary stamps
+# remain accepted for headless callers, while live Stamp Objects are adapted here.
+func _stamp_to_dictionary(p_raw, p_index: int) -> Dictionary:
+	if p_raw is Dictionary:
+		return (p_raw as Dictionary).duplicate(true)
+	if not (p_raw is Object):
+		_stamp_conversion_notes.append("stamp[%d] skipped: unsupported non-Object value" % p_index)
+		return {}
+	var src: Object = p_raw as Object
+	var name_v: Variant = _prop(src, "name")
+	var name: String = "" if name_v == null else str(name_v).strip_edges()
+	if name.is_empty():
+		name_v = _prop(src, "pattern")
+		name = "" if name_v == null else str(name_v).strip_edges()
+	if name.is_empty():
+		name_v = _prop(src, "pattern_name")
+		name = "" if name_v == null else str(name_v).strip_edges()
+	var x_v: Variant = _prop(src, "x")
+	var y_v: Variant = _prop(src, "y")
+	if name.is_empty() or not ((x_v is int or x_v is float) and (y_v is int or y_v is float)):
+		_stamp_conversion_notes.append(
+			"stamp[%d] skipped: Object cannot be converted (requires name/pattern and numeric x/y)" % p_index)
+		return {}
+	var out: Dictionary = {"name": name, "pattern": name, "x": x_v, "y": y_v}
+	for key in ["family", "kind", "res"]:
+		var value: Variant = _prop(src, key)
+		if value != null:
+			out[key] = value
+	var cells: Variant = _prop(src, "cells")
+	if cells is Array:
+		out["cells"] = (cells as Array).duplicate(true)
+	return out
 
 
 func _grid_size() -> Vector2i:
@@ -117,6 +173,38 @@ func _load_module(path: String, as_child: bool):
 	if as_child and inst is Node:
 		add_child(inst as Node)
 	return inst
+
+
+# One donor-backed rig for this composer. Reuse the nodes on rebind/rebuild so
+# WorldEnvironment and DirectionalLight3D cannot stack. Shadows/AO stay off.
+func _ensure_light_rig() -> void:
+	if _environment == null or not is_instance_valid(_environment):
+		var env := Environment.new()
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		env.ambient_light_color = DONOR_AMBIENT
+		env.ambient_light_energy = AMBIENT_ENERGY
+		env.set_meta("donor_ambient", DONOR_AMBIENT)
+		# The raised AMBIENT_ENERGY is the mild ambient fill; it uses DONOR_AMBIENT
+		# itself, so no second hue or extra scene node is introduced.
+		env.set_meta("energy_label", ENERGY_LABEL)
+		_environment = WorldEnvironment.new()
+		_environment.name = "WorldEnvironment"
+		_environment.environment = env
+		add_child(_environment)
+	if _sun == null or not is_instance_valid(_sun):
+		_sun = DirectionalLight3D.new()
+		_sun.name = "DonorSun"
+		_sun.light_color = DONOR_DIFFUSE
+		_sun.light_energy = SUN_ENERGY
+		_sun.shadow_enabled = false
+		# light.cfg Position is a Y-up parallel direction (X35 C1-C3). Light3D
+		# has no separate specular-colour slot; retain the cited literal in meta
+		# and telemetry while the terrain shader remains unchanged.
+		_sun.set_meta("donor_sun_position", DONOR_SUN_POS)
+		_sun.set_meta("donor_specular", DONOR_SPECULAR)
+		_sun.set_meta("energy_label", ENERGY_LABEL)
+		_sun.look_at_from_position(DONOR_SUN_POS.normalized() * 120.0, Vector3.ZERO, Vector3.FORWARD)
+		add_child(_sun)
 
 
 # Call a method with the right arity from a candidate argument list. This keeps
@@ -186,6 +274,7 @@ func bind(g, _h = null) -> void:
 	_gen = _load_module(GEN_SCRIPT, false)
 	_mesh = _load_module(MESH_SCRIPT, true)
 	_props = _load_module(PROPS_SCRIPT, true)
+	_ensure_light_rig()
 	var size := _grid_size()
 	if _data != null and game != null:
 		var ok := false
@@ -200,10 +289,16 @@ func build() -> bool:
 	_built = false
 	_gen_applied = false
 	_props_applied = false
+	_stamps_seen = 0
+	_stamps_accepted = 0
+	_stamps_skipped = 0
+	_stamp_source = "legacy fallback"
+	_stamp_conversion_notes.clear()
 	var size := _grid_size()
 	if size.x <= 0 or size.y <= 0:
 		stats = _make_stats(false, "no game grid; build skipped (read-only, no fallback mesh)")
 		return false
+	_ensure_light_rig()
 	# I06: refresh the read-only SoA view of the live dump keys.
 	if _data != null:
 		var ok := false
@@ -258,6 +353,18 @@ func build() -> bool:
 			target.callv("bind", [game, mesh_src])
 		if target.has_method("build"):
 			mesh_ok = bool(target.call("build"))
+	# COORD addendum: I07's donor stamp Dictionaries take precedence. Legacy
+	# game.pattern_stamps remain the fallback and still use Stamp Object adaption.
+	var stamps_v: Variant = _prop(game, "pattern_stamps")
+	var donor_stamps_v: Variant = null
+	var data_meta: Variant = _prop(_data, "meta")
+	if data_meta is Dictionary:
+		donor_stamps_v = (data_meta as Dictionary).get("pattern_stamps", null)
+	if donor_stamps_v is Array and not (donor_stamps_v as Array).is_empty():
+		stamps_v = donor_stamps_v
+		_stamp_source = "I07 donor"
+	else:
+		_stamp_source = "legacy fallback"
 	# I09: optional, built after the mesh/height source is live.
 	# V48 patch (b): I09 has no bind(); its single entry is
 	# build(Object, Array, Dictionary) (props.gd:210), which binds
@@ -266,11 +373,23 @@ func build() -> bool:
 		var ptarget: Object = _props as Object
 		if ptarget.has_method("build"):
 			var stamps: Array = []
-			var stamps_v: Variant = _prop(game, "pattern_stamps")
 			if stamps_v is Array:
-				stamps = stamps_v as Array
+				for i in (stamps_v as Array).size():
+					_stamps_seen += 1
+					var stamp: Dictionary = _stamp_to_dictionary((stamps_v as Array)[i], i)
+					if stamp.is_empty():
+						_stamps_skipped += 1
+					else:
+						stamps.append(stamp)
+						_stamps_accepted += 1
 			var pres: Variant = ptarget.call("build", _data, stamps, {"terrain": _mesh})
-			_props_applied = pres is Dictionary
+			var props_result: Dictionary = {}
+			if pres is Dictionary:
+				props_result = pres as Dictionary
+			var props_counts: Variant = props_result.get("counts", {})
+			_props_applied = bool(props_result.get("built", false)) \
+				and props_counts is Dictionary \
+				and int((props_counts as Dictionary).get("props_total", 0)) > 0
 	_bind_shader()
 	_built = mesh_ok
 	stats = _make_stats(mesh_ok, "")
@@ -339,6 +458,24 @@ func _donor_constants() -> Dictionary:
 	}
 
 
+func _lighting_stats() -> Dictionary:
+	return {
+		"source": "donor data/env/lights/light.cfg:3-6,10-13,20-23,26-30 (X35 E3-E6)",
+		"sun_position": [DONOR_SUN_POS.x, DONOR_SUN_POS.y, DONOR_SUN_POS.z],
+		"ambient": [DONOR_AMBIENT.r, DONOR_AMBIENT.g, DONOR_AMBIENT.b],
+		"diffuse": [DONOR_DIFFUSE.r, DONOR_DIFFUSE.g, DONOR_DIFFUSE.b],
+		"specular": [DONOR_SPECULAR.r, DONOR_SPECULAR.g, DONOR_SPECULAR.b],
+		"ambient_energy": AMBIENT_ENERGY,
+		"sun_energy": SUN_ENERGY,
+		"energy_label": ENERGY_LABEL,
+		"ambient_fill": "Environment.AMBIENT_SOURCE_COLOR with DONOR_AMBIENT (same colour, no new hue); fill comes from the raised AMBIENT_ENERGY only",
+		"specular_binding": "Light3D has no separate specular-colour slot; literal kept in node meta/telemetry; terrain shader unchanged",
+		"shadows_enabled": false,
+		"terrain_shader": "manual Blinn-Phong unchanged; unshaded terrain does not consume this scene rig",
+		"visual_parity_claim": false,
+	}
+
+
 func _make_stats(mesh_ok: bool, note: String) -> Dictionary:
 	var module_stats: Dictionary = {}
 	if _mesh != null and _mesh is Object:
@@ -359,11 +496,21 @@ func _make_stats(mesh_ok: bool, note: String) -> Dictionary:
 			"mesh": _mesh != null,
 			"props": _props != null,
 			"shader": _shader != null,
+			"environment": _environment != null,
+			"sun": _sun != null,
 		},
 		"missing_modules": _missing.duplicate(),
 		"degrade_label": PORT_LABEL,
 		"shader_path": _shader_path_used,
 		"shader_binding": _shader_label,
+		"stamp_source": _stamp_source,
+		"stamp_conversion": {
+			"seen": _stamps_seen,
+			"accepted": _stamps_accepted,
+			"skipped": _stamps_skipped,
+			"notes": _stamp_conversion_notes.duplicate(),
+		},
+		"lighting": _lighting_stats(),
 		"height_fallback": "read-only game.height nearest-cell sample; PORT APPROXIMATION",
 		"mesh_stats": module_stats,
 		"visual_parity_claim": visual_parity_claim,

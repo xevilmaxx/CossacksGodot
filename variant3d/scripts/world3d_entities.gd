@@ -305,23 +305,47 @@ const MILL_TOWER_BBOX_LO := Vector3(-2.425523519515991, -2.4005842208862305, -0.
 const MILL_TOWER_BBOX_HI := Vector3(2.778339147567749, 2.3941283226013184, 5.914005756378174)
 const ROTOR_MOUNT_STATUS: String = PORT_LABEL + " — hub/axis geometry DONOR-GROUNDED from eurmilanim.oss via _bake_mesh() to the local +Z tower face; fixed axle, body yaw 0; spin SIGN and the 2D-bake-on-quad stand-in stay PORT APPROX, visual UNVERIFIED"
 
-# MILLFIX F2: field stage tints/scale are the EXACT 2D numbers from
-# app/scripts/world.gd:2588-2613; sow spacing is game.gd:2120 (1.6981 m,
-# diagonal neighbour sqrt(2)*step) replacing the 58.5 m donor field bbox.
+# FIX-FIELD-DONOR (2026-11-26) — donor stage/material and ground-decal visuals.
+# [O] DEC_VIS_03_fields.md §§3-6: field1..4 growth, field mature, field5/6
+# harvested HP bands, field7 first depletion, and w-suffixed winter twins.
+# [O] Donor decal: angle 45/225, size/UV multiplier 1.3, UV offset -0.15,
+# epsilon 0.01 (misc.script:4284-4306; writenewp.inc:23-29; decals.lib:1-44).
+# [U] Decal API world units and exact donor/port overlap remain unresolved.
+# FIELD_SPAN_M keeps the existing port footprint so 7x7 placement/transforms do
+# not move; it is a PORT APPROXIMATION, not the donor prop-scale measurement.
 const FIELD_STEP_M: float = 1.6981
 const FIELD_SPAN_M: float = FIELD_STEP_M * 1.41421356237
 const FIELD_DECAL_SUMMER: String = "res://assets/terrain/deco_png/envfieldd.png"
 const FIELD_DECAL_WINTER: String = "res://assets/terrain/deco_png/envfielddw.png"
-const FIELD_STATUS: String = PORT_LABEL + " — stage tint/scale from game.field_state()/field_growth01(); donor decal 3D UV mapping UNVERIFIED"
-# FCOL-03 — DONOR-GROUNDED crop-mesh emission: D:materials/env/env.mat:58-69
-# and :873-884 set field/fieldw Emission (232,218,195)/255 with Ambient=Diffuse=0
-# (FCOL-02 FC10). Season is carried by RGB pixels, not by this tint (FCOL-02 §5).
+const FIELD_DECAL_SIZE_MULTIPLIER: float = 1.3
+const FIELD_DECAL_UV_SCALE: float = 1.3
+const FIELD_DECAL_UV_OFFSET: float = -0.15
+const FIELD_DECAL_EPSILON: float = 0.01
+const FIELD_DECAL_BASE_SIZE_M: float = FIELD_SPAN_M
+const FIELD_DECAL_SIZE_M: float = FIELD_DECAL_BASE_SIZE_M * FIELD_DECAL_SIZE_MULTIPLIER
+const FIELD_DECAL_GRID_SEGMENTS: int = 8  # PORT APPROXIMATION tessellation, not donor tiles/constants
+const FIELD_DECAL_ANGLES: Array[float] = [45.0, 225.0]
+const FIELD_GROWTH_MATERIALS: Array[String] = ["field1", "field2", "field3", "field4"]
+const FIELD_DONOR_HP_MAX: float = 25000.0
+const FIELD_DONOR_HP_FIELD5: float = 5000.0
+const FIELD_DONOR_HP_MATURE: float = 13000.0
+const FIELD_STATUS: String = PORT_LABEL + " — donor material names selected from game.field_state()/field_growth01(); port HP/timer semantics and missing-art fallbacks remain APPROXIMATION; no stage alpha/tint/scale interpolation; visual UNVERIFIED"
+# [O] env.mat:50-223 and :864-1038 author warm mature Emission
+# (232,218,195)/255 and neutral field1..7 Emission 200/255, with Ambient and
+# Diffuse RGB zero. No emission-energy scalar exists in the donor material.
 const FIELD_EMISSION_WARM: Color = Color(232.0 / 255.0, 218.0 / 255.0, 195.0 / 255.0)
-# PORT APPROX starting energy, NOT a donor value: donor blue 195 * 0.22 ≈ 43,
-# the tight upper bound of FCOL-02 §7.2 golden B band (36..43). G04 must
-# calibrate against the capture; the donor's +45..51 L multiplier is UNVERIFIED.
-const FIELD_EMISSION_ENERGY: float = 0.22
-const FIELD_EMISSION_STATUS: String = PORT_LABEL + " — emission colour DONOR-GROUNDED (env.mat:58-69); energy 0.22 PORT APPROX; on-screen golden lift and donor parity UNVERIFIED"
+const FIELD_EMISSION_NEUTRAL: Color = Color(200.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0)
+# [O] field.actor -> reftree.actor selects ShaderID6; tree.pvl.id6.frag does not
+# read gl_FrontMaterial.emission. [U] Runtime custom-shader state injection is
+# unresolved. StandardMaterial3D has no separate authored ambient/diffuse-zero
+# channels, so the exact authored Emission RGB is used as an UNSHADED ALBEDO
+# MULTIPLIER, not as additive emission. This is a labelled PORT APPROXIMATION.
+const FIELD_EMISSION_STATUS: String = PORT_LABEL + " — env.mat warm/neutral RGB applied as unshaded albedo multiplier; ShaderID6 does not read Emission and StandardMaterial3D cannot encode separate authored Ambient/Diffuse zero; runtime donor path and final pixels UNVERIFIED"
+const FIELD_DECAL_STATUS: String = PORT_LABEL + " — donor envfieldd/w PNG, angle 45/225, size 1.3x, UV 1.3/-0.15 with vertical flip, epsilon 0.01; terrain-conforming sampled grid, exact native texture-matrix composition, destination-alpha bmTransparency, decal-specific blend and world units UNVERIFIED; conventional Godot alpha blend is the labelled substitute"
+# [O] The three existing PNG .import files set mipmaps/generate=false. The
+# material can request donor-style mipmap filtering but cannot manufacture the
+# missing mip chain; fixing that requires asset-import edits outside this file.
+const FIELD_TEXTURE_IMPORT_STATUS: String = PORT_LABEL + " — BLOCKED: field.png and envfieldd/w.png imports have mipmaps/generate=false; donor miLinearMipmapLinear is requested but the imported mip chain is absent; asset-import owner required"
 
 # BUILD-STAGES-01 — donor construction-stage presentation (no stage art shipped).
 # Donor truth (DBUILD-01 §2, line citations there): build progress is hp/maxhp
@@ -364,8 +388,11 @@ var _stage_mesh_cache: Dictionary = {} # sid|suffix|kind -> {"mesh":Mesh,"source
 # MOTION-ANIM-01/ROTOR: one warning per process, even with many mills. Never
 # reset in bind(): the fallback is a project/import state, not a per-game state.
 var _rotor_fallback_warned: bool = false
-var _field_visual: Dictionary = {}  # MILLFIX: field id -> {state,color,scale} CPU mirror (headless-safe)
-var _field_decal_paths: Dictionary = {}  # MILLFIX: donor decals found at bind (UNVERIFIED 3D UV)
+var _field_visual: Dictionary = {}  # field id -> state/material/texture/scale CPU mirror
+var _field_decals: Dictionary = {}   # field id -> terrain-conforming MeshInstance3D
+var _field_decal_materials: Dictionary = {}  # season -> shared StandardMaterial3D
+var _field_asset_status: Dictionary = {}  # donor material -> resolved texture/skip label
+var _field_decal_paths: Dictionary = {}  # donor summer/winter decal paths found at bind
 var _mesh_sources: Dictionary = {}  # source label -> sid count (measured at bind)
 var _anim_t: float = 0.0
 
@@ -441,8 +468,15 @@ func bind(g) -> void:
 	_build_scaffolds.clear()
 	_stage_mesh_cache.clear()
 	_field_visual.clear()
-	# MILLFIX: record donor decal availability only; 3D UV mapping UNVERIFIED,
-	# so the mesh keeps its own donor field albedo and uses per-instance tint.
+	for fid in _field_decals.keys():
+		var decal = _field_decals[fid]
+		if is_instance_valid(decal):
+			(decal as Node).free()
+	_field_decals.clear()
+	_field_decal_materials.clear()
+	_field_asset_status.clear()
+	# FIX-FIELD-DONOR: both converted donor ground-decal PNGs are present;
+	# actual terrain-conforming decals are created per field below.
 	_field_decal_paths = {
 		"summer": FIELD_DECAL_SUMMER if ResourceLoader.exists(FIELD_DECAL_SUMMER) else "",
 		"winter": FIELD_DECAL_WINTER if ResourceLoader.exists(FIELD_DECAL_WINTER) else "",
@@ -465,6 +499,21 @@ func bind(g) -> void:
 				if sid != "" and donor_tex != "":
 					_donor_texture_paths[sid] = donor_tex
 				models += 1
+	# FIX-FIELD-DONOR: preflight every authored summer/winter crop material.
+	# Only converted port assets are eligible. Missing art is a labelled SKIP;
+	# the existing field1 conversion may be used only as an explicit fallback.
+	var field_material_names: Array[String] = []
+	for base_name in ["field", "field1", "field2", "field3", "field4", "field5", "field6", "field7"]:
+		field_material_names.append(base_name)
+		field_material_names.append(base_name + "w")
+	var field_skipped: Array[String] = []
+	for material_name in field_material_names:
+		var texture_status: Dictionary = _field_texture_path(material_name)
+		_field_asset_status[material_name] = texture_status
+		if bool(texture_status.get("skipped", false)):
+			field_skipped.append(material_name)
+	if not field_skipped.is_empty():
+		push_warning("world3d_entities: FIX-FIELD-DONOR SKIP missing converted crop art for " + ", ".join(field_skipped) + "; existing field1 art is an explicitly labelled fallback, never synthesized gold art")
 	# Asset availability is MEASURED here with ResourceLoader.exists(); actual
 	# load() happens lazily in _mesh_info() and is recorded in _mesh_sources.
 	var obj_available: int = 0
@@ -570,6 +619,18 @@ func bind(g) -> void:
 		"field_visual_label": FIELD_STATUS,
 		"field_visual_visual": "UNVERIFIED",
 		"field_visual_decals": _field_decal_paths,
+		"field_visual_asset_status": _field_asset_status,
+		"field_visual_material_status": FIELD_EMISSION_STATUS,
+		"field_visual_decal_status": FIELD_DECAL_STATUS,
+		"field_visual_texture_import_status": FIELD_TEXTURE_IMPORT_STATUS,
+		"field_visual_decal_constants": {
+			"angles_deg": FIELD_DECAL_ANGLES,
+			"size_multiplier": FIELD_DECAL_SIZE_MULTIPLIER,
+			"uv_scale": FIELD_DECAL_UV_SCALE,
+			"uv_offset": FIELD_DECAL_UV_OFFSET,
+			"epsilon": FIELD_DECAL_EPSILON,
+			"port_size_m": FIELD_DECAL_SIZE_M,
+		},
 		"field_visual_sow_step_m": FIELD_STEP_M,
 		"field_visual_target_span_m": FIELD_SPAN_M,
 		# DECOR-01 telemetry (structural/numeric/measurement only, no visual claim).
@@ -652,7 +713,7 @@ func _default_material(sid: String, kind: String) -> Material:
 	mat.metallic = 0.0
 	# Donor env PNGs are RGBA (V7-2 section 2.3). Cut-out is a PORT
 	# APPROXIMATION: donor GLB alphaMode is UNVERIFIED (V7-2 Table B1).
-	if kind == "res" and sid != "field":
+	if kind == "res":
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 		mat.alpha_scissor_threshold = 0.5
 	# The OBJ importer keeps donor winding; disable culling so a convention
@@ -660,6 +721,259 @@ func _default_material(sid: String, kind: String) -> Material:
 	# to double-swap winding).
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return mat
+
+
+# ---------------------------------------------------------------- field donor visuals
+func _is_field_batch(key: String) -> bool:
+	return key.begins_with("res|field|")
+
+
+func _field_season() -> String:
+	# Data.BIOME is the existing canonical season string (data.gd:230).
+	# Desert has no separate donor field crop binding in the read sources;
+	# summer art is the explicit port fallback there, never a winter claim.
+	return "winter" if str(Data.BIOME).to_lower() == "winter" else "summer"
+
+
+func _field_texture_path(material_name: String) -> Dictionary:
+	# The port sid "field" currently means donor field1.osm/field1.dds
+	# (manifest.json:2581-2603). Do not mistake that alias for mature field.dds.
+	var donor_provenance := str(_donor_texture_paths.get("field", "")).to_lower().replace("\\", "/")
+	var candidate := ""
+	if material_name == "field1":
+		if donor_provenance.ends_with("/field1.dds"):
+			candidate = AssetPaths.existing("field", "tex")
+		else:
+			candidate = AssetPaths.existing("field1", "tex")
+	elif material_name == "field":
+		if donor_provenance.ends_with("/field.dds"):
+			candidate = AssetPaths.existing("field", "tex")
+	elif material_name == "fieldw" and donor_provenance.ends_with("/fieldw.dds"):
+		candidate = AssetPaths.existing("field", "tex")
+	else:
+		candidate = AssetPaths.existing(material_name, "tex")
+	if candidate != "" and ResourceLoader.exists(candidate):
+		return {"requested_material": material_name, "texture_material": material_name,
+			"path": candidate, "skipped": false,
+			"status": "DONOR_CONVERTED " + material_name + " -> " + candidate}
+	# Missing stage/winter art is never synthesized. Keep the already-converted
+	# field1 crop visible only as an explicitly labelled PORT APPROXIMATION.
+	var fallback := AssetPaths.existing("field", "tex")
+	if fallback != "" and ResourceLoader.exists(fallback) and donor_provenance.ends_with("/field1.dds"):
+		return {"requested_material": material_name, "texture_material": "field1",
+			"path": fallback, "skipped": true,
+			"status": "SKIP " + material_name + ": converted donor texture absent; fallback field1.dds -> " + fallback + " (PORT APPROXIMATION)"}
+	return {"requested_material": material_name, "texture_material": "",
+		"path": "", "skipped": true,
+		"status": "SKIP " + material_name + ": converted donor texture absent; no crop texture fallback"}
+
+
+func _field_spec(fe: Dictionary) -> Dictionary:
+	var st := ""
+	var g := 0.0
+	if game != null:
+		if game.has_method("field_state"):
+			st = str(game.call("field_state", fe))
+		if game.has_method("field_growth01"):
+			g = clampf(float(game.call("field_growth01", fe)), 0.0, 1.0)
+	if st == "":
+		st = "ripe" if g > 0.0 else "depleted"
+	# [O] Donor harvested HP bands are 13000/5000/25000 (DEC_VIS_03 §3.3).
+	# The port's hits ratio is left untouched; only its visual material changes.
+	var donor_material := "field7"
+	match st:
+		"ripe":
+			donor_material = "field"
+		"growing":
+			if g >= FIELD_DONOR_HP_MATURE / FIELD_DONOR_HP_MAX:
+				donor_material = "field"
+			elif g >= FIELD_DONOR_HP_FIELD5 / FIELD_DONOR_HP_MAX:
+				donor_material = "field5"
+			else:
+				donor_material = "field6"
+		"regrowing":
+			# The port has one regrow timer, not the donor's separate rest/grow
+			# timers. Map its existing 0..1 progress to the four donor growth
+			# materials without changing the timer or any sim value.
+			if g <= 0.0:
+				donor_material = "field7"
+			elif g >= 1.0:
+				donor_material = "field"
+			else:
+				var growth_stage := mini(int(floor(g * 4.0)), FIELD_GROWTH_MATERIALS.size() - 1)
+				donor_material = FIELD_GROWTH_MATERIALS[growth_stage]
+		_:
+			donor_material = "field7"
+	var season := _field_season()
+	if season == "winter":
+		donor_material += "w"
+	var emission := FIELD_EMISSION_WARM if donor_material == "field" or donor_material == "fieldw" else FIELD_EMISSION_NEUTRAL
+	var texture_status: Dictionary
+	if _field_asset_status.has(donor_material):
+		texture_status = _field_asset_status[donor_material]
+	else:
+		texture_status = _field_texture_path(donor_material)
+	return {"state": st, "growth01": g, "season": season,
+		"material": donor_material, "emission": emission,
+		"texture_path": str(texture_status.get("path", "")),
+		"texture_material": str(texture_status.get("texture_material", "")),
+		"texture_status": str(texture_status.get("status", "")),
+		"texture_skipped": bool(texture_status.get("skipped", false))}
+
+
+func _field_crop_material(spec: Dictionary) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	var texture_path := str(spec.get("texture_path", ""))
+	if texture_path != "" and ResourceLoader.exists(texture_path):
+		mat.albedo_texture = load(texture_path) as Texture2D
+	# Exact authored warm/neutral RGB, applied as a multiplier rather than an
+	# additive emission-energy approximation. See FIELD_EMISSION_STATUS.
+	mat.albedo_color = spec.get("emission", Color(1, 1, 1, 1))
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.disable_ambient_light = true
+	mat.roughness = 1.0
+	mat.metallic = 0.0
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	# Donor refbase.mat bmAlphaTest50 + fcNoCull. Instance alpha stays 1.0.
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	mat.alpha_scissor_threshold = 0.5
+	mat.vertex_color_use_as_albedo = true
+	mat.emission_enabled = false
+	# Donor twBoth + linear/linear-mipmap-linear filtering.
+	mat.texture_repeat = true
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	return mat
+
+
+func _field_decal_material(season: String) -> Material:
+	if _field_decal_materials.has(season):
+		return _field_decal_materials[season] as Material
+	var texture_path := str(_field_decal_paths.get(season, ""))
+	if texture_path == "":
+		return null
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = load(texture_path) as Texture2D
+	# decals.mat:51-103 authors diffuse 200/255 and specular/emission zero.
+	# StandardMaterial3D cannot express the donor's separate 0.15686 ambient.
+	mat.albedo_color = Color(200.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0, 1.0)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_MIX
+	mat.cull_mode = BaseMaterial3D.CULL_BACK
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+	mat.roughness = 1.0
+	mat.metallic = 0.0
+	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
+	mat.disable_fog = true
+	mat.emission_enabled = false
+	mat.texture_repeat = true
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_field_decal_materials[season] = mat
+	return mat
+
+
+func _field_decal_mesh(fe: Dictionary, angle_deg: float) -> ArrayMesh:
+	var p: Vector2 = fe.get("pos", Vector2.ZERO)
+	var half := FIELD_DECAL_SIZE_M * 0.5
+	var segments := FIELD_DECAL_GRID_SEGMENTS
+	var row := segments + 1
+	var c := cos(deg_to_rad(angle_deg))
+	var s := sin(deg_to_rad(angle_deg))
+	var verts := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var indices := PackedInt32Array()
+	for iz in range(row):
+		var local_z := half - 2.0 * half * float(iz) / float(segments)
+		for ix in range(row):
+			var local_x := -half + 2.0 * half * float(ix) / float(segments)
+			var rotated := Vector2(local_x * c + local_z * s, -local_x * s + local_z * c)
+			var world := _world_pos(p + rotated)
+			verts.append(Vector3(world.x, world.y + FIELD_DECAL_EPSILON, world.z))
+			var base_uv := Vector2(float(ix) / float(segments), float(iz) / float(segments))
+			# decals.lib texflipvertical=True, then misc.script's 1.3/-0.15.
+			var flipped := Vector2(base_uv.x, 1.0 - base_uv.y)
+			uvs.append(flipped * FIELD_DECAL_UV_SCALE + Vector2(FIELD_DECAL_UV_OFFSET, FIELD_DECAL_UV_OFFSET))
+	for iz in range(segments):
+		for ix in range(segments):
+			var a := iz * row + ix
+			var b := a + 1
+			var cc := a + row
+			var d := cc + 1
+			# Clockwise/upward winding for Godot's back-face culling.
+			indices.append(a)
+			indices.append(b)
+			indices.append(cc)
+			indices.append(b)
+			indices.append(d)
+			indices.append(cc)
+	var normals := PackedVector3Array()
+	normals.resize(verts.size())
+	for i in range(0, indices.size(), 3):
+		var a := verts[indices[i]]
+		var b := verts[indices[i + 1]]
+		var cc := verts[indices[i + 2]]
+		var face_normal := (b - a).cross(cc - a)
+		normals[indices[i]] += face_normal
+		normals[indices[i + 1]] += face_normal
+		normals[indices[i + 2]] += face_normal
+	for i in range(normals.size()):
+		if normals[i].length_squared() > 0.0:
+			normals[i] = normals[i].normalized()
+		else:
+			normals[i] = Vector3.UP
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	for i in range(Mesh.ARRAY_MAX):
+		arrays[i] = null
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+func _sync_field_decal(fid: int, spec: Dictionary) -> void:
+	var fe = _refs.get(fid)
+	if not (fe is Dictionary):
+		return
+	var ed := fe as Dictionary
+	var season := str(spec.get("season", "summer"))
+	var texture_path := str(_field_decal_paths.get(season, ""))
+	var existing = _field_decals.get(fid, null)
+	if texture_path == "":
+		if existing is MeshInstance3D and is_instance_valid(existing):
+			(existing as MeshInstance3D).free()
+		_field_decals.erase(fid)
+		return
+	var p: Vector2 = ed.get("pos", Vector2.ZERO)
+	# Donor random>0.5 chooses 45, else 225. Position hash preserves the shared
+	# RNG stream and gives deterministic 45/225 variation without a new draw.
+	var angle := 225.0 if _hash01(p) > 0.5 else 45.0
+	var rebuild := not (existing is MeshInstance3D and is_instance_valid(existing))
+	if not rebuild:
+		var old_pos: Variant = (existing as MeshInstance3D).get_meta("field_pos", Vector2.INF)
+		rebuild = not (old_pos is Vector2) or (old_pos as Vector2) != p \
+			or float((existing as MeshInstance3D).get_meta("field_angle_deg", -1.0)) != angle
+	if rebuild:
+		if existing is MeshInstance3D and is_instance_valid(existing):
+			(existing as MeshInstance3D).free()
+		var mi := MeshInstance3D.new()
+		mi.name = "FieldDecal_" + str(fid)
+		mi.mesh = _field_decal_mesh(ed, angle)
+		mi.material_override = _field_decal_material(season)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.set_meta("field_pos", p)
+		mi.set_meta("field_angle_deg", angle)
+		mi.set_meta("field_decal_material", "envfielddw" if season == "winter" else "envfieldd")
+		mi.set_meta("field_decal_status", FIELD_DECAL_STATUS)
+		mi.set_meta("visual_status", "UNVERIFIED")
+		add_child(mi)
+		_field_decals[fid] = mi
+		existing = mi
+	else:
+		(existing as MeshInstance3D).material_override = _field_decal_material(season)
+	(existing as MeshInstance3D).visible = not _is_hidden(ed)
 
 
 # --- V7-65 donor player-slot key colours -----------------------------------
@@ -1491,37 +1805,14 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.mesh = info["mesh"]
-	# MILLFIX F2: fields carry per-instance stage colour. Kind "res" sid
-	# "field" is the only batch that opts into vertex/instance colours; all
-	# other batches keep their untouched donor albedo path. Godot 4.7 only
-	# allows toggling use_colors while instance_count == 0, so do this FIRST.
-	if key == "res|field":
+	# FIX-FIELD-DONOR: one batch per requested donor material/season. A
+	# MultiMesh has one material, so stage changes migrate the field slot to the
+	# matching key instead of tinting one shared field1 texture.
+	var field_spec: Dictionary = info.get("field_spec", {})
+	var is_field := _is_field_batch(key) and not field_spec.is_empty()
+	if is_field:
+		# Godot 4.7 permits use_colors only while instance_count == 0.
 		mm.use_colors = true
-		var fmesh: Mesh = info["mesh"]
-		for s in range(fmesh.get_surface_count()):
-			# FCOL-03: keep the DONOR dark cut-out field.png albedo and the donor
-			# OBJ mesh/UVs; no art swap, no synthetic noise, no invented light.
-			# Donor crop meshes are unlit/emissive (env.mat:58-69): warm emission
-			# stops the 72.8%-black texels (FCOL_01 §3) rendering as opaque black.
-			# Emission COLOUR is DONOR-GROUNDED; ENERGY is PORT APPROX and must
-			# be calibrated by G04 against FCOL-02 §7.2 bands.
-			var src: Material = fmesh.surface_get_material(s)
-			var fm := StandardMaterial3D.new()
-			if src is StandardMaterial3D:
-				fm.albedo_texture = (src as StandardMaterial3D).albedo_texture
-			if fm.albedo_texture == null:
-				var tex_path := AssetPaths.existing("field", "tex")
-				if ResourceLoader.exists(tex_path):
-					fm.albedo_texture = load(tex_path) as Texture2D
-			fm.roughness = 1.0
-			fm.metallic = 0.0
-			fm.cull_mode = BaseMaterial3D.CULL_DISABLED
-			# Opaque: field stays exempt from alpha scissor (:646-648).
-			fm.vertex_color_use_as_albedo = true  # 2D stage tints still apply
-			fm.emission_enabled = true
-			fm.emission = FIELD_EMISSION_WARM
-			fm.emission_energy_multiplier = FIELD_EMISSION_ENERGY
-			fmesh.surface_set_material(s, fm)
 	# P11: allocate only the initial buffer; use_colors is toggled above while
 	# instance_count is still 0, which Godot 4.7 requires.
 	var cap: int = mini(BATCH_INITIAL_CAPACITY, BATCH_CAPACITY)
@@ -1540,6 +1831,14 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 		mmi.set_meta("donor_action", str(pose.get("action", "")))
 		mmi.set_meta("donor_label", PORT_LABEL)
 		mmi.set_meta("donor_visual", "UNVERIFIED")
+	if is_field:
+		# material_override keeps the shared crop mesh immutable while each
+		# stage batch binds its own resolved texture/authored RGB.
+		mmi.material_override = _field_crop_material(field_spec)
+		mmi.set_meta("field_material", str(field_spec.get("material", "")))
+		mmi.set_meta("field_texture_status", str(field_spec.get("texture_status", "")))
+		mmi.set_meta("field_material_status", FIELD_EMISSION_STATUS)
+		mmi.set_meta("visual_status", "UNVERIFIED")
 	mmi.multimesh = mm
 	add_child(mmi)
 	# xforms is a CPU mirror. Headless Godot 4.7 dummy RenderingServer makes
@@ -1568,9 +1867,9 @@ func _grow_batch(b: Dictionary, needed: int) -> void:
 	var ids: Array = b["ids"]
 	for i in range(xforms.size()):
 		mm.set_instance_transform(i, xforms[i])
-	# MILLFIX F2 field colours are read-only here: re-apply from the existing
-	# per-field mirror so a resize is byte-identical on the next render.
-	if str(b.get("key", "")) == "res|field":
+	# FIX-FIELD-DONOR field colours are read-only here: re-apply neutral
+	# alpha=1 from the mirror so a resize is byte-identical on the next render.
+	if _is_field_batch(str(b.get("key", ""))):
 		for i in range(xforms.size()):
 			var fv = _field_visual.get(int(ids[i]))
 			if fv is Dictionary:
@@ -1612,8 +1911,8 @@ func _acquire(key: String, id: int, info: Dictionary, cls: String,
 		"player": player, "pose_source": str(pose.get("pose_source", "static_bind_pose")),
 		"frame": int(pose.get("frame", -1)), "action": str(pose.get("action", ""))}
 	var mm: MultiMesh = b["mm"]
-	# MILLFIX F2: neutral initial instance colour; sync() owns stage colours.
-	if key == "res|field":
+	# FIX-FIELD-DONOR: neutral initial instance colour; sync() keeps alpha 1.0.
+	if _is_field_batch(key):
 		mm.set_instance_color(ix, Color(1, 1, 1, 1))
 	mm.visible_instance_count = ids.size()
 	return ix
@@ -2135,12 +2434,22 @@ func add_resource(n) -> void:
 		sid = "__proxy_" + ty           # no donor sid: bbox proxy, tagged in stats
 	var info := _mesh_info(sid, "res")
 	var key := "res|" + sid
+	var field_spec: Dictionary = {}
+	if ty == "food":
+		field_spec = _field_spec(nd)
+		# Shallow copy: never write presentation stage data into the shared
+		# _mesh_cache entry used by every field batch.
+		info = info.duplicate()
+		info["field_spec"] = field_spec
+		key = "res|field|" + str(field_spec.get("material", "field7"))
 	var ix := _acquire(key, id, info, "res")
 	if ix >= 0:
 		var b: Dictionary = _batches[key]
 		var xf := _xf(id)
 		(b["xforms"] as Array)[ix] = xf
 		(b["mm"] as MultiMesh).set_instance_transform(ix, xf)
+		if ty == "food":
+			_sync_field_decal(id, field_spec)
 
 
 func remove(id) -> void:
@@ -2162,6 +2471,11 @@ func remove(id) -> void:
 		if sc is MeshInstance3D and is_instance_valid(sc):
 			(sc as MeshInstance3D).free()
 		_build_scaffolds.erase(eid)
+	if _field_decals.has(eid):
+		var decal = _field_decals[eid]
+		if is_instance_valid(decal):
+			(decal as Node).free()
+		_field_decals.erase(eid)
 	_field_visual.erase(eid)
 	_motion_sample.erase(eid)
 	_face_smooth.erase(eid)
@@ -2348,73 +2662,94 @@ func sync(dt: float) -> void:
 		-(MILL_ROTOR_AXLE_TIP_DONOR_Y - (MILL_TOWER_BBOX_LO.y + MILL_TOWER_BBOX_HI.y) * 0.5)]
 	stats["mill_rotor_texture_fallback_used"] = _rotor_fallback_warned
 
-	# MILLFIX F2: per-field visual state, read-only on the sim. game.field_state()
-	# / field_growth01() are the SAME methods the HUD and 2D renderer use
-	# (game.gd:2210-2228, world.gd:2550-2559). Tints and relative scales below
-	# are copied verbatim from the 2D stage rules (world.gd:2588-2613); the
-	# footprint replaces the 58.5 m donor bbox with the sow-step span
-	# (game.gd:2120). No res_nodes mutation, no res_dirty bump, no new node.
+	# FIX-FIELD-DONOR: read-only visual state selection. The sim's field_state()
+	# / field_growth01() values and 7x7 positions are unchanged. Donor material
+	# names replace the old arbitrary RGB/alpha/pulse/relative-scale table.
 	var field_states: Dictionary = {}
+	var field_materials: Dictionary = {}
+	var field_texture_status: Dictionary = {}
+	var field_decal_angles: Dictionary = {}
 	var field_total := 0
+	var field_skipped := 0
 	var field_scale := 1.0
 	var fbb: Array = _bbox.get("field", [])
 	if fbb.size() >= 6:
 		var native_span := maxf(float(fbb[1]) - float(fbb[0]), 0.001)
 		field_scale = FIELD_SPAN_M / native_span
-	for key in _batches.keys():
-		if key != "res|field":
+	var field_ids: Array = []
+	for fid in _slot.keys():
+		var sl = _slot[fid]
+		if not (sl is Dictionary) or str((sl as Dictionary).get("class", "")) != "res":
 			continue
-		var bd := _batches[key] as Dictionary
+		var fe = _refs.get(int(fid))
+		if fe is Dictionary and str((fe as Dictionary).get("type", "")) == "food":
+			field_ids.append(int(fid))
+	for fid in field_ids:
+		var fe = _refs.get(fid)
+		if not (fe is Dictionary):
+			continue
+		var ed := fe as Dictionary
+		var spec := _field_spec(ed)
+		var desired_key := "res|field|" + str(spec.get("material", "field7"))
+		var sl = _slot.get(fid)
+		var current_key := str((sl as Dictionary).get("key", "")) if sl is Dictionary else ""
+		if current_key != desired_key:
+			_release(fid)
+			var info := _mesh_info("field", "res")
+			info = info.duplicate()
+			info["field_spec"] = spec
+			var new_ix := _acquire(desired_key, fid, info, "res")
+			if new_ix < 0:
+				continue
+		var bd := _batches[desired_key] as Dictionary
 		var mm: MultiMesh = bd["mm"]
-		var ids: Array = bd["ids"]
+		var ix: int = int((_slot[fid] as Dictionary).get("index", 0))
 		var xforms: Array = bd["xforms"]
-		for i in range(ids.size()):
-			var fid := int(ids[i])
-			var fe = _refs.get(fid)
-			var st := ""
-			var g := 0.0
-			if game != null and fe is Dictionary:
-				if game.has_method("field_state"):
-					st = str(game.call("field_state", fe))
-				if game.has_method("field_growth01"):
-					g = clampf(float(game.call("field_growth01", fe)), 0.0, 1.0)
-			if st == "":
-				st = "ripe" if g > 0.0 else "depleted"
-			var col := Color(1, 1, 1, 1)
-			var rel := 0.68 / 4.6
-			match st:
-				"ripe":
-					col = Color(3.3, 2.5, 1.0, clampf(0.42 + 0.28 * g, 0.0, 1.0))
-					rel = (1.6 + 0.7 * g) / 2.3
-				"growing":
-					col = Color(0.9, 1.6, 0.7, clampf(0.45 + 0.30 * g, 0.0, 1.0))
-					rel = (1.1 + 0.9 * g) / 2.0
-				"regrowing":
-					var pulse := 0.75 + 0.25 * sin(_anim_t * 4.0 + float(fid) * 0.37)
-					col = Color(lerpf(0.9, 3.3, g), lerpf(1.5, 2.5, g), 0.7,
-						clampf(0.40 + 0.30 * g, 0.0, 1.0) * pulse)
-					rel = (1.1 + 0.9 * g) / 2.0
-				_:
-					# Bare stubble: 2D span0*2 / ripe width = 0.68/4.6.
-					col = Color(0.30, 0.26, 0.16, 0.60)
-					rel = 0.68 / 4.6
-			field_states[st] = int(field_states.get(st, 0)) + 1
-			field_total += 1
-			var s := field_scale * rel
-			var xf: Transform3D = _xf(fid)
-			xf.basis = xf.basis.scaled(Vector3(s, s, s))
-			xforms[i] = xf
-			mm.set_instance_transform(i, xf)
-			mm.set_instance_color(i, col)
-			_field_visual[fid] = {"state": st, "color": col, "scale": s}
+		var st := str(spec.get("state", ""))
+		var material_name := str(spec.get("material", ""))
+		var texture_status := str(spec.get("texture_status", ""))
+		field_states[st] = int(field_states.get(st, 0)) + 1
+		field_materials[material_name] = int(field_materials.get(material_name, 0)) + 1
+		field_texture_status[texture_status] = int(field_texture_status.get(texture_status, 0)) + 1
+		if bool(spec.get("texture_skipped", false)):
+			field_skipped += 1
+		field_total += 1
+		# Donor has no stage scale interpolation. Keep the existing port
+		# footprint constant; instance alpha stays 1.0 for scissor coverage.
+		var xf: Transform3D = _xf(fid)
+		xf.basis = xf.basis.scaled(Vector3(field_scale, field_scale, field_scale))
+		xforms[ix] = xf
+		mm.set_instance_transform(ix, xf)
+		mm.set_instance_color(ix, Color(1, 1, 1, 1))
+		_sync_field_decal(fid, spec)
+		var p: Vector2 = ed.get("pos", Vector2.ZERO)
+		var decal_angle := 225.0 if _hash01(p) > 0.5 else 45.0
+		if _field_decals.has(fid):
+			field_decal_angles[str(decal_angle)] = int(field_decal_angles.get(str(decal_angle), 0)) + 1
+		_field_visual[fid] = {"state": st, "material": material_name,
+			"season": str(spec.get("season", "summer")), "color": Color(1, 1, 1, 1),
+			"scale": field_scale, "texture_path": str(spec.get("texture_path", "")),
+			"texture_status": texture_status, "decal_angle": decal_angle}
 	stats["field_visual_states"] = field_states
+	stats["field_visual_materials"] = field_materials
+	stats["field_visual_texture_status"] = field_texture_status
+	stats["field_visual_skipped_instances"] = field_skipped
 	stats["field_visual_count"] = field_total
 	stats["field_visual_span_scale"] = field_scale
 	stats["field_visual_target_span_m"] = FIELD_SPAN_M
 	stats["field_visual_label"] = FIELD_STATUS
+	stats["field_visual_asset_status"] = _field_asset_status
 	stats["field_visual_emission_status"] = FIELD_EMISSION_STATUS
-	stats["field_visual_emission_rgb"] = [232.0 / 255.0, 218.0 / 255.0, 195.0 / 255.0]
-	stats["field_visual_emission_energy"] = FIELD_EMISSION_ENERGY
+	stats["field_visual_emission_rgb"] = {
+		"field": [232.0 / 255.0, 218.0 / 255.0, 195.0 / 255.0],
+		"field1..7": [200.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0],
+	}
+	stats["field_visual_decal_status"] = FIELD_DECAL_STATUS
+	stats["field_visual_texture_import_status"] = FIELD_TEXTURE_IMPORT_STATUS
+	stats["field_visual_decal_count"] = _field_decals.size()
+	stats["field_visual_decal_angles"] = field_decal_angles
+	stats["field_visual_decal_size_m"] = FIELD_DECAL_SIZE_M
+	stats["field_visual_decal_uv"] = [FIELD_DECAL_UV_SCALE, FIELD_DECAL_UV_OFFSET]
 	var units := 0
 	var ress := 0
 	var tinted_batches := 0

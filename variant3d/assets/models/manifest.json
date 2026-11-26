@@ -2581,7 +2581,7 @@
       "sid": "field",
       "kind": "env",
       "mesh": "C:\\Games\\Cossacks 3\\data\\actors\\env\\field1.osm",
-      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\field1.dds",
+      "texture": "C:\\Games\\Cossacks 3\\data\\materials\\env\\field.dds",
       "directions": 1,
       "obj": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\obj\\field.obj",
       "texture_png": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\assets\\models\\tex\\field.png",
@@ -7674,6 +7674,53 @@
     }
   ],
   "extra_assets": {
+    "field1": {
+      "tex": "res://assets/models/tex/shared/terrain/field1.png"
+    },
+    "field2": {
+      "obj": "res://assets/models/obj/shared/terrain/field2.obj",
+      "tex": "res://assets/models/tex/shared/terrain/field2.png"
+    },
+    "field3": {
+      "obj": "res://assets/models/obj/shared/terrain/field3.obj",
+      "tex": "res://assets/models/tex/shared/terrain/field3.png"
+    },
+    "field4": {
+      "tex": "res://assets/models/tex/shared/terrain/field4.png"
+    },
+    "field5": {
+      "tex": "res://assets/models/tex/shared/terrain/field5.png"
+    },
+    "field6": {
+      "tex": "res://assets/models/tex/shared/terrain/field6.png"
+    },
+    "field7": {
+      "tex": "res://assets/models/tex/shared/terrain/field7.png"
+    },
+    "fieldw": {
+      "tex": "res://assets/models/tex/shared/terrain/fieldw.png"
+    },
+    "field1w": {
+      "tex": "res://assets/models/tex/shared/terrain/field1w.png"
+    },
+    "field2w": {
+      "tex": "res://assets/models/tex/shared/terrain/field2w.png"
+    },
+    "field3w": {
+      "tex": "res://assets/models/tex/shared/terrain/field3w.png"
+    },
+    "field4w": {
+      "tex": "res://assets/models/tex/shared/terrain/field4w.png"
+    },
+    "field5w": {
+      "tex": "res://assets/models/tex/shared/terrain/field5w.png"
+    },
+    "field6w": {
+      "tex": "res://assets/models/tex/shared/terrain/field6w.png"
+    },
+    "field7w": {
+      "tex": "res://assets/models/tex/shared/terrain/field7w.png"
+    },
     "mill_rotor": {
       "bucket": "shared/buildings",
       "tex": "res://assets/models/tex/shared/buildings/mill_rotor.png"

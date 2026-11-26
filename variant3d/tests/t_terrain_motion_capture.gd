@@ -1,0 +1,1219 @@
+# CAP-VIDEO — donor-aware terrain motion capture (W05 §5 SubViewport seam).
+#
+# Owns ONLY variant3d/tests/t_terrain_motion_capture.gd. No game/config/asset
+# edits, no runner or git calls, no donor execution, no repo-local results.
+#
+# Boots the REAL main scene with an explicit donor overlay and the proven
+# Screenshot3DViewport path. The root viewport and main's CPU/headless image
+# renderer are never used. Terrain, resource nodes, stamps and clusters are not
+# cleared. The only cleared collection is main.ais, to freeze automatic sim.
+#
+# Camera motion is a deterministic smoothstep PAN. camera3d.gd has fixed yaw 0
+# and no orbit API, so no orbit or synthetic camera effect is invented.
+#
+# Windowed examples (COORD runs serially through godot_runner.py):
+#   python variant3d\tools\godot_runner.py run --id cap-video-wide --timeout 900 -- ^
+#     --path variant3d --script res://tests/t_terrain_motion_capture.gd -- ^
+#     --config <ABS>\map_donor_240.json --screenshot <ABS>\menu-skip.png ^
+#     --screenshot-frames 1000000 --seed 20261113 --shot wide ^
+#     --out-dir <ABS>\donor_240 --frames 24 --fps 6 --timeout 840
+#
+#   --shot close uses map_donor_64.json, donor_64, 24 frames and defaults to 8 fps.
+#   --dump <ABS>.json is optional; when supplied its seed/size/hash are validated
+#   and the close relief window is measured from that dump. Otherwise the same
+#   deterministic scan reads the live game.height/terrain/map_starts arrays.
+
+extends SceneTree
+
+const MAIN_SCENE := "res://scenes/main.tscn"
+const Data = preload("res://scripts/data.gd")
+const DONOR_TERRAIN_SCRIPT := "res://scripts/terrain_donor_world.gd"
+
+# TOP-LEVEL PARITY GUARD — never set true without a matched donor GPU A/B.
+const visual_parity_claim: bool = false
+const PORT_LABEL := "PORT APPROXIMATION — no donor GPU A/B frame; parity UNVERIFIED"
+
+const WANT_SEED := 20261113
+const N_FRAMES := 24
+const SIM_STEP := 1.0 / 32.0
+const TICKS_PER_FRAME := 1
+const BOOT_LIMIT_MS := 300000
+const RUN_LIMIT_MS := 180000
+const FRAME_STALL_LIMIT_MS := 10000
+const BLANK_RETRIES := 4
+const VIEWPORT_SIZE := Vector2i(1280, 720)
+const CLOSE_WINDOW_TILES := 9
+const CLOSE_WINDOW_MARGIN_TILES := 12
+const CLOSE_START_EXCLUSION_M := 24.0
+const WIDE_ROI := [0.12, 0.22, 0.88, 0.88]
+const CLOSE_ROI := [0.20, 0.30, 0.80, 0.90]
+
+var _checks: Array[Dictionary] = []
+var _ok := true
+var _finished := false
+var _failure_reason := ""
+
+var _start_ms := 0
+var _boot_ready_ms := 0
+var _capture_start_ms := 0
+var _rendered_frames := 0
+var _fixed_ticks := 0
+var _blank_retries_total := 0
+var _frame_intervals_ms: Array[float] = []
+var _frames_meta: Array[Dictionary] = []
+var _m: Dictionary = {}
+
+var _shot := ""
+var _want_size := Vector2i.ZERO
+var _cfg_arg := ""
+var _screenshot_arg := ""
+var _seed_arg := ""
+var _dump_arg := ""
+var _out_arg := ""
+var _timeout_arg := ""
+var _ground_debug_arg := ""
+var _fps := 6.0
+var _abs_config := ""
+var _config_sha256 := ""
+var _abs_dump := ""
+var _dump_sha256 := ""
+var _dump_loaded := false
+var _dump_heights := PackedFloat32Array()
+var _dump_terrain := PackedByteArray()
+var _dump_starts: Array[Vector2] = []
+var _video_root := ""
+var _out_dir := ""
+var _output_safe := false
+
+var _main: Node = null
+var _game = null
+var _world = null
+var _cam = null
+var _vp: SubViewport = null
+
+var _path_center := Vector2.ZERO
+var _path_span_m := 0.0
+var _path_height_m := 0.0
+var _path_zoom := 1.0
+var _roi_frac: Array = []
+var _roi_rect := Rect2i()
+
+var _initial_height := PackedFloat32Array()
+var _initial_terrain := PackedByteArray()
+var _initial_blocked := PackedByteArray()
+var _initial_tileblock := PackedByteArray()
+var _initial_entities_count := 0
+var _initial_res_count := 0
+var _initial_stamps_count := 0
+var _initial_clusters_count := 0
+
+
+func check(name: String, cond: bool, detail: String) -> void:
+	_checks.append({"name": name, "passed": cond, "detail": detail})
+	if not cond:
+		_ok = false
+	print("TERRAINCAP %s %s - %s" % ["PASS" if cond else "FAIL", name, detail])
+
+
+func _gate(name: String, cond: bool, detail: String) -> bool:
+	check(name, cond, detail)
+	if not cond:
+		_failure_reason = detail
+	return cond
+
+
+func _arg_value(flag: String) -> String:
+	for src in [OS.get_cmdline_user_args(), OS.get_cmdline_args()]:
+		var args := PackedStringArray(src)
+		for i in range(args.size()):
+			if str(args[i]) == flag and i + 1 < args.size():
+				return str(args[i + 1])
+	return ""
+
+
+func _norm_path(path: String) -> String:
+	return path.replace("\\", "/").simplify_path()
+
+
+func _path_within(path: String, root: String) -> bool:
+	var p := _norm_path(path).to_lower()
+	var r := _norm_path(root).to_lower()
+	if r.ends_with("/"):
+		r = r.substr(0, r.length() - 1)
+	return p == r or p.begins_with(r + "/")
+
+
+func _inside_repo(path: String) -> bool:
+	return _path_within(path, ProjectSettings.globalize_path("res://"))
+
+
+func _default_video_root() -> String:
+	var temp := OS.get_environment("TEMP")
+	if temp == "":
+		temp = OS.get_environment("TMP")
+	if temp == "":
+		return ""
+	return _norm_path(temp.path_join("opencode").path_join("v42").path_join("video"))
+
+
+func _ensure_dir(path: String) -> bool:
+	var err := DirAccess.make_dir_recursive_absolute(path)
+	return err == OK or DirAccess.dir_exists_absolute(path)
+
+
+func _write_text(path: String, text: String) -> bool:
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		push_error("t_terrain_motion_capture: cannot write " + path)
+		return false
+	f.store_string(text)
+	var err := f.get_error()
+	f.close()
+	return err == OK
+
+
+func _sha256(data: PackedByteArray) -> String:
+	var context := HashingContext.new()
+	if context.start(HashingContext.HASH_SHA256) != OK:
+		return ""
+	context.update(data)
+	return context.finish().hex_encode()
+
+
+func _sha256_file(path: String) -> String:
+	if path == "" or not FileAccess.file_exists(path):
+		return ""
+	return _sha256(FileAccess.get_file_as_bytes(path))
+
+
+# Engine stats may contain Vector2i/Vector3 prop descriptors. Convert every
+# native value recursively so capture.json is strict JSON rather than a partial
+# or empty serialization. Non-finite diagnostics are labelled, never emitted as
+# invalid JSON numbers.
+func _json_safe(value):
+	if value is Dictionary:
+		var out: Dictionary = {}
+		var d: Dictionary = value as Dictionary
+		for key in d:
+			out[str(key)] = _json_safe(d[key])
+		return out
+	if value is Array:
+		var out: Array = []
+		var a: Array = value as Array
+		for item in a:
+			out.append(_json_safe(item))
+		return out
+	if value is Vector2i:
+		var v: Vector2i = value
+		return [v.x, v.y]
+	if value is Vector2:
+		var v: Vector2 = value
+		return [v.x, v.y]
+	if value is Vector3i:
+		var v: Vector3i = value
+		return [v.x, v.y, v.z]
+	if value is Vector3:
+		var v: Vector3 = value
+		return [v.x, v.y, v.z]
+	if value is Color:
+		var v: Color = value
+		return [v.r, v.g, v.b, v.a]
+	if value is Rect2:
+		var v: Rect2 = value
+		return [v.position.x, v.position.y, v.size.x, v.size.y]
+	if value is StringName:
+		return str(value)
+	if value is float:
+		return float(value) if is_finite(float(value)) else str(value)
+	if value is Object:
+		return "<non-json object: " + str((value as Object).get_class()) + ">"
+	return value
+
+
+func _has_stale_capture(path: String) -> bool:
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return false
+	for name in dir.get_files():
+		if str(name).begins_with("frame_") or str(name) in ["capture.json", "SKIP_CAPTURE.txt"]:
+			return true
+	return false
+
+
+func _prepare_output() -> bool:
+	if _out_dir == "" or not _out_dir.is_absolute_path():
+		return _gate("output_path", false, "--out-dir must be an absolute path outside the repo")
+	if _inside_repo(_out_dir):
+		return _gate("output_path", false, "refusing repo-local capture output: " + _out_dir)
+	if _video_root == "" or not _path_within(_out_dir, _video_root) or _norm_path(_out_dir).to_lower() == _norm_path(_video_root).to_lower():
+		return _gate("output_path", false, "output must be a child of " + _video_root)
+	if not _ensure_dir(_out_dir):
+		return _gate("output_path", false, "cannot create output directory " + _out_dir)
+	if _has_stale_capture(_out_dir):
+		return _gate("output_path", false, "stale frame_*/capture.json in " + _out_dir + "; use a fresh external directory")
+	_output_safe = true
+	return _gate("output_path", true, _out_dir)
+
+
+func _parse_cli() -> bool:
+	var shot_arg := _arg_value("--shot").to_lower()
+	match shot_arg:
+		"wide", "wide240":
+			_shot = "wide"
+			_want_size = Vector2i(240, 240)
+			_fps = 6.0
+		"close", "close64":
+			_shot = "close"
+			_want_size = Vector2i(64, 64)
+			_fps = 8.0
+		_:
+			return _gate("shot_arg", false, "need --shot wide|close (aliases wide240|close64 accepted)")
+
+	_cfg_arg = _arg_value("--config")
+	_screenshot_arg = _arg_value("--screenshot")
+	_seed_arg = _arg_value("--seed")
+	_dump_arg = _arg_value("--dump")
+	_out_arg = _arg_value("--out-dir")
+	_timeout_arg = _arg_value("--timeout")
+	_ground_debug_arg = _arg_value("--ground-debug-json")
+	var frames_arg := _arg_value("--frames")
+	if frames_arg != "" and int(frames_arg) != N_FRAMES:
+		return _gate("frames_arg", false, "this CAP-VIDEO contract requires exactly 24 frames")
+	var fps_arg := _arg_value("--fps")
+	if fps_arg != "":
+		_fps = float(fps_arg)
+	if _fps <= 0.0:
+		return _gate("fps_arg", false, "--fps must be positive")
+	if _seed_arg != str(WANT_SEED):
+		return _gate("seed_arg", false, "need --seed 20261113 in addition to the pinned overlay")
+	if _cfg_arg == "" or not _cfg_arg.is_absolute_path():
+		return _gate("config_arg", false, "need --config <absolute donor overlay>")
+	if _screenshot_arg == "" or not _screenshot_arg.is_absolute_path():
+		return _gate("screenshot_arg", false, "need --screenshot <absolute external menu-skip flag>")
+	if _inside_repo(_screenshot_arg):
+		return _gate("screenshot_arg", false, "screenshot menu-skip flag must be outside the repo")
+	if _dump_arg != "" and not _dump_arg.is_absolute_path():
+		return _gate("dump_arg", false, "--dump must be an absolute path when supplied")
+
+	_video_root = _default_video_root()
+	if _video_root == "":
+		return _gate("temp_root", false, "TEMP/TMP is unavailable; no safe external output root")
+	_out_dir = _out_arg if _out_arg != "" else _norm_path(_video_root.path_join("donor_240" if _shot == "wide" else "donor_64"))
+	if not _prepare_output():
+		return false
+	_m["cli"] = {
+		"shot": _shot,
+		"frames": N_FRAMES,
+		"fps": _fps,
+		"config": _cfg_arg,
+		"screenshot_menu_skip": _screenshot_arg,
+		"seed": _seed_arg,
+		"dump": _dump_arg,
+		"out_dir": _out_dir,
+		"timeout": _timeout_arg,
+		"ground_debug_json": _ground_debug_arg,
+	}
+	return true
+
+
+func _load_config() -> bool:
+	if not FileAccess.file_exists(_abs_config):
+		return _gate("config_file", false, "config not found: " + _abs_config)
+	_config_sha256 = _sha256_file(_abs_config)
+	var f := FileAccess.open(_abs_config, FileAccess.READ)
+	if f == null:
+		return _gate("config_file", false, "cannot read config: " + _abs_config)
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if not (parsed is Dictionary):
+		return _gate("config_json", false, "config is not a JSON object")
+	var root: Dictionary = parsed as Dictionary
+	var gp_value: Variant = root.get("gameplay", {})
+	var features_value: Variant = root.get("features", {})
+	if not (gp_value is Dictionary) or not (features_value is Dictionary):
+		return _gate("config_json", false, "config needs gameplay and features objects")
+	var gp: Dictionary = gp_value as Dictionary
+	var features: Dictionary = features_value as Dictionary
+	var terrain_value: Variant = features.get("terrain", {})
+	var camera_value: Variant = root.get("camera", {})
+	var feature_camera_value: Variant = features.get("camera", {})
+	if not (terrain_value is Dictionary) or not (camera_value is Dictionary) or not (feature_camera_value is Dictionary):
+		return _gate("config_json", false, "config terrain/camera sections are malformed")
+	var terrain_cfg: Dictionary = terrain_value as Dictionary
+	var camera_cfg: Dictionary = camera_value as Dictionary
+	var feature_camera: Dictionary = feature_camera_value as Dictionary
+	var backend := str(terrain_cfg.get("backend", "")).to_lower()
+	var render_mode := str(gp.get("render_mode", "")).to_lower()
+	var map_w := int(gp.get("map_width_tiles", 0))
+	var map_h := int(gp.get("map_height_tiles", 0))
+	var seed := int(gp.get("random_seed", -1))
+	var map_type := str(gp.get("terrain_type", gp.get("map_type", ""))).to_lower()
+	var season := str(gp.get("season", gp.get("biome", ""))).to_lower()
+	var fov_deg := float(feature_camera.get("fov_deg", camera_cfg.get("fov_deg", 17.27)))
+	var pitch_deg := float(camera_cfg.get("pitch_degrees", Data.CAMERA_PITCH))
+	var min_height := float(camera_cfg.get("min_height", Data.CAMERA_MIN_HEIGHT))
+	var max_height := float(camera_cfg.get("max_height", Data.CAMERA_MAX_HEIGHT))
+	var ok := (backend == "donor" and render_mode == "3d"
+		and map_w == _want_size.x and map_h == _want_size.y and seed == WANT_SEED
+		and (map_type == "" or map_type == "land") and (season == "" or season == "summer")
+		and absf(fov_deg - 17.27) < 0.0001 and absf(pitch_deg + 32.0) < 0.0001
+		and absf(min_height - 20.0) < 0.0001 and absf(max_height - 58.0) < 0.0001
+		and _config_sha256.length() == 64)
+	_m["config"] = {
+		"path": _abs_config,
+		"sha256": _config_sha256,
+		"backend": backend,
+		"render_mode": render_mode,
+		"map_size_tiles": [map_w, map_h],
+		"seed": seed,
+		"map_type": map_type,
+		"season": season,
+		"fov_deg": fov_deg,
+		"pitch_deg": pitch_deg,
+		"min_height_m": min_height,
+		"max_height_m": max_height,
+	}
+	return _gate("donor_config_overlay", ok,
+		"backend=%s mode=%s size=%dx%d seed=%d type=%s season=%s sha256=%s" % [
+			backend, render_mode, map_w, map_h, seed, map_type, season, _config_sha256])
+
+
+func _decode_dump_floats(encoded: String, want_count: int) -> PackedFloat32Array:
+	var raw := Marshalls.base64_to_raw(encoded)
+	var out := PackedFloat32Array()
+	if raw.size() != want_count * 4:
+		return out
+	out.resize(want_count)
+	for i in range(want_count):
+		out[i] = raw.decode_float(i * 4)
+	return out
+
+
+func _load_dump() -> bool:
+	if _dump_arg == "":
+		_m["dump"] = {"provided": false, "used_for_close_roi": false}
+		return true
+	_abs_dump = _norm_path(_dump_arg)
+	if not FileAccess.file_exists(_abs_dump):
+		return _gate("dump_file", false, "dump not found: " + _abs_dump)
+	_dump_sha256 = _sha256_file(_abs_dump)
+	var f := FileAccess.open(_abs_dump, FileAccess.READ)
+	if f == null:
+		return _gate("dump_file", false, "cannot read dump: " + _abs_dump)
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if not (parsed is Dictionary):
+		return _gate("dump_json", false, "dump is not a JSON object")
+	var d: Dictionary = parsed as Dictionary
+	var seed := int(d.get("seed", -1))
+	var map_w := int(d.get("map_w", -1))
+	var map_h := int(d.get("map_h", -1))
+	var ok := seed == WANT_SEED and map_w == _want_size.x and map_h == _want_size.y and _dump_sha256.length() == 64
+	if ok and _shot == "close":
+		var count := _want_size.x * _want_size.y
+		_dump_heights = _decode_dump_floats(str(d.get("height", "")), count)
+		_dump_terrain = Marshalls.base64_to_raw(str(d.get("terrain", "")))
+		var starts_value: Variant = d.get("starts", [])
+		_dump_starts.clear()
+		if starts_value is Array:
+			for sv in starts_value:
+				if sv is Dictionary:
+					var sd: Dictionary = sv as Dictionary
+					_dump_starts.append(Vector2(float(sd.get("x", 0.0)), float(sd.get("y", 0.0))))
+		ok = (_dump_heights.size() == count and _dump_terrain.size() == count and _dump_starts.size() > 0)
+	_dump_loaded = ok
+	_m["dump"] = {
+		"provided": true,
+		"path": _abs_dump,
+		"sha256": _dump_sha256,
+		"seed": seed,
+		"map_size_tiles": [map_w, map_h],
+		"used_for_close_roi": ok and _shot == "close",
+	}
+	return _gate("dump_matches_capture", ok,
+		"dump=%s seed=%d size=%dx%d sha256=%s" % [_abs_dump, seed, map_w, map_h, _dump_sha256])
+
+
+func _apply_ground_debug(json_text: String) -> bool:
+	if json_text.is_empty():
+		return true
+	var parsed: Variant = JSON.parse_string(json_text)
+	if not parsed is Dictionary:
+		# PowerShell/native argument forwarding can strip JSON member quotes.
+		# Accept an explicit diagnostic shorthand as well: KEY=VALUE;KEY2=VALUE.
+		# Values still use JSON scalar syntax (true/false/number/string).
+		parsed = {}
+		for pair in json_text.split(";", false):
+			if pair.find("=") < 1:
+				return _gate("ground_debug_json", false, "--ground-debug-json must be a JSON object or KEY=VALUE list")
+			var kv: PackedStringArray = pair.split("=", false)
+			if kv.size() != 2:
+				return _gate("ground_debug_json", false, "invalid ground debug pair: " + pair)
+			var value: Variant = JSON.parse_string(kv[1])
+			if value == null:
+				value = kv[1]
+			(parsed as Dictionary)[kv[0]] = value
+	if not parsed is Dictionary:
+		return _gate("ground_debug_json", false, "--ground-debug-json must be a JSON object or KEY=VALUE list")
+	var terrain_obj: Variant = _world.get("terrain") if _world != null else null
+	if terrain_obj == null or not (terrain_obj is Object):
+		return _gate("ground_debug_json", false, "donor terrain object is unavailable")
+	var mesh_obj: Variant = terrain_obj.get("_mesh")
+	if mesh_obj == null or not (mesh_obj is Object):
+		return _gate("ground_debug_json", false, "donor terrain mesh module is unavailable")
+	var surface_mesh: Variant = mesh_obj.get("mesh")
+	if not (surface_mesh is ArrayMesh) or (surface_mesh as ArrayMesh).get_surface_count() < 1:
+		return _gate("ground_debug_json", false, "donor terrain ArrayMesh surface is unavailable")
+	var mat: Variant = (surface_mesh as ArrayMesh).surface_get_material(0)
+	if not (mat is ShaderMaterial):
+		return _gate("ground_debug_json", false, "donor terrain surface is not a ShaderMaterial")
+	var applied: Array = []
+	for key in (parsed as Dictionary).keys():
+		var value: Variant = (parsed as Dictionary)[key]
+		if value is Array and (value as Array).size() == 2:
+			value = Vector2(float((value as Array)[0]), float((value as Array)[1]))
+		(mat as ShaderMaterial).set_shader_parameter(str(key), value)
+		applied.append(str(key))
+	return _gate("ground_debug_json", true, "applied=%s" % [",".join(applied)])
+
+
+func _configure() -> bool:
+	_game = _main.get("game")
+	_world = _main.get("world")
+	_cam = _main.get("camera")
+	_vp = _main.get("capture_view3d") as SubViewport
+	var actual_w := int(_game.get("MAP_W")) if _game != null else -1
+	var actual_h := int(_game.get("MAP_H")) if _game != null else -1
+	var main_render_mode := str(_main.get("render_mode")).to_lower()
+	var main_backend := str(_main.get("terrain_backend")).to_lower()
+	var world_backend := str(_world.get("terrain_backend")).to_lower() if _world != null else ""
+	var world_stats_value: Variant = _world.get("stats") if _world != null else null
+	var world_stats: Dictionary = world_stats_value if world_stats_value is Dictionary else {}
+	var terrain_obj = _world.get("terrain") if _world != null else null
+	var terrain_script_path := ""
+	var donor_stats_value: Variant = null
+	if terrain_obj is Object:
+		var scr = terrain_obj.get_script()
+		if scr is Script:
+			terrain_script_path = str((scr as Script).resource_path)
+		donor_stats_value = terrain_obj.get("stats")
+	var donor_stats: Dictionary = donor_stats_value if donor_stats_value is Dictionary else {}
+	var vp_size := _vp.size if _vp != null else Vector2i.ZERO
+	var vp_name := str(_vp.name) if _vp != null else "<none>"
+	var world_parent := str(_world.get_parent().name) if _world != null and _world.get_parent() != null else "<none>"
+	var camera_parent := str(_cam.get_parent().name) if _cam != null and _cam.get_parent() != null else "<none>"
+	var camera_current := false
+	if _cam != null and _cam.get_viewport() != null:
+		camera_current = _cam.get_viewport().get_camera_3d() == _cam
+	var texture_present := _vp != null and _vp.get_texture() != null
+	var boot_ok := (_game != null and _world != null and _cam != null and _vp != null
+		and main_render_mode == "3d" and str(Data.RENDER_MODE).to_lower() == "3d"
+		and actual_w == _want_size.x and actual_h == _want_size.y
+		and int(Data.RANDOM_SEED) == WANT_SEED
+		and str(Data.MAP_TYPE).to_lower() == "land" and str(Data.BIOME).to_lower() == "summer")
+	if not _gate("real_game_boot", boot_ok,
+		"mode=%s/%s actual=%dx%d seed=%d type=%s season=%s" % [
+			main_render_mode, str(Data.RENDER_MODE), actual_w, actual_h,
+			int(Data.RANDOM_SEED), str(Data.MAP_TYPE), str(Data.BIOME)]):
+		return false
+
+	var donor_ok := (main_backend == "donor" and world_backend == "donor"
+		and str(world_stats.get("terrain_backend", "")) == "donor"
+		and str(world_stats.get("terrain_script", "")) == DONOR_TERRAIN_SCRIPT
+		and terrain_script_path == DONOR_TERRAIN_SCRIPT
+		and str(donor_stats.get("backend", "")) == "donor"
+		and bool(donor_stats.get("mesh_built", false)))
+	if not _gate("live_donor_backend", donor_ok,
+		"main=%s world=%s script=%s mesh_built=%s" % [
+			main_backend, world_backend, terrain_script_path, str(donor_stats.get("mesh_built", false))]):
+		return false
+	if not _apply_ground_debug(_ground_debug_arg):
+		return false
+
+	var viewport_ok := (vp_name == "Screenshot3DViewport" and vp_size == VIEWPORT_SIZE
+		and world_parent == "Screenshot3DViewport" and camera_parent == "Screenshot3DViewport"
+		and camera_current and texture_present)
+	if not _gate("capture_viewport_ready", viewport_ok,
+		"viewport=%s size=%s world_parent=%s camera_parent=%s current=%s texture=%s" % [
+			vp_name, str(vp_size), world_parent, camera_parent, str(camera_current), str(texture_present)]):
+		return false
+
+	var camera_ok := (absf(float(_cam.fov) - 17.27) < 0.0001
+		and absf(float(Data.CAMERA_PITCH) + 32.0) < 0.0001
+		and absf(float(Data.CAMERA_MIN_HEIGHT) - 20.0) < 0.0001
+		and absf(float(Data.CAMERA_MAX_HEIGHT) - 58.0) < 0.0001)
+	if not _gate("camera_contract", camera_ok,
+		"fov=%.5f pitch=%.5f height_bounds=%.3f..%.3f" % [
+			float(_cam.fov), float(Data.CAMERA_PITCH), float(Data.CAMERA_MIN_HEIGHT), float(Data.CAMERA_MAX_HEIGHT)]):
+		return false
+
+	# Freeze only main's automatic driver. Do NOT clear game entities, terrain,
+	# res_nodes, pattern_stamps, cluster_zones or any composed prop collection.
+	var ais = _main.get("ais")
+	if ais is Array:
+		(ais as Array).clear()
+	_main.set("speed", 0.0)
+	_main.set("acc", 0.0)
+	_main.set("screenshot_frames", 1000000)
+	_main.set("screenshot_done", true)
+	_cam.set_process(false)
+	var frozen := (absf(float(_main.get("speed"))) < 0.0001
+		and (_main.get("ais") is Array) and (_main.get("ais") as Array).is_empty()
+		and bool(_main.get("screenshot_done")) and not bool(_cam.is_processing()))
+	if not _gate("sim_clock_frozen", frozen,
+		"speed=%f ais=%d screenshot_done=%s camera_process=%s; atom alone advances fixed ticks" % [
+			float(_main.get("speed")), (_main.get("ais") as Array).size(),
+			str(_main.get("screenshot_done")), str(_cam.is_processing())]):
+		return false
+
+	var height_value: Variant = _game.get("height")
+	var terrain_value: Variant = _game.get("terrain")
+	var blocked_value: Variant = _game.get("blocked")
+	var tileblock_value: Variant = _game.get("tileblock")
+	if height_value is PackedFloat32Array:
+		_initial_height = (height_value as PackedFloat32Array).duplicate()
+	if terrain_value is PackedByteArray:
+		_initial_terrain = (terrain_value as PackedByteArray).duplicate()
+	if blocked_value is PackedByteArray:
+		_initial_blocked = (blocked_value as PackedByteArray).duplicate()
+	if tileblock_value is PackedByteArray:
+		_initial_tileblock = (tileblock_value as PackedByteArray).duplicate()
+	_initial_entities_count = (_game.get("entities") as Array).size()
+	_initial_res_count = (_game.get("res_nodes") as Array).size()
+	_initial_stamps_count = (_game.get("pattern_stamps") as Array).size()
+	_initial_clusters_count = (_game.get("cluster_zones") as Array).size()
+	_m["live"] = {
+		"render_mode": main_render_mode,
+		"seed": int(Data.RANDOM_SEED),
+		"map_size_tiles": [actual_w, actual_h],
+		"map_type": str(Data.MAP_TYPE),
+		"season": str(Data.BIOME),
+		"main_backend": main_backend,
+		"world_backend": world_backend,
+		"terrain_script": terrain_script_path,
+		"world_stats": world_stats,
+		"donor_stats": donor_stats,
+		"viewport": {
+			"name": vp_name,
+			"size": [vp_size.x, vp_size.y],
+			"world_parent": world_parent,
+			"camera_parent": camera_parent,
+			"camera_current": camera_current,
+			"texture_present": texture_present,
+		},
+		"counts_at_boot": {
+			"entities": _initial_entities_count,
+			"res_nodes": _initial_res_count,
+			"pattern_stamps": _initial_stamps_count,
+			"cluster_zones": _initial_clusters_count,
+		},
+	}
+	_world.sync(0.0)
+	return true
+
+
+func _nearest_rank(sorted_values: Array, percentile: float) -> float:
+	if sorted_values.is_empty():
+		return 0.0
+	var rank := maxi(1, int(ceil(float(sorted_values.size()) * percentile)))
+	return float(sorted_values[mini(sorted_values.size() - 1, rank - 1)])
+
+
+func _select_close_window(heights: PackedFloat32Array, terrain: PackedByteArray, starts: Array) -> Dictionary:
+	var w := _want_size.x
+	var h := _want_size.y
+	var count := w * h
+	if heights.size() != count or terrain.size() != count:
+		return {}
+	var side := CLOSE_WINDOW_TILES
+	var margin := CLOSE_WINDOW_MARGIN_TILES
+	var best: Dictionary = {}
+	var best_spread := -INF
+	for wy in range(margin, h - margin - side + 1):
+		for wx in range(margin, w - margin - side + 1):
+			var center := Vector2(float(wx) + float(side) * 0.5, float(wy) + float(side) * 0.5) * float(Data.TILE_M)
+			var nearest_start := INF
+			for start in starts:
+				nearest_start = minf(nearest_start, center.distance_to(start))
+			if nearest_start <= CLOSE_START_EXCLUSION_M:
+				continue
+			var values: Array = []
+			var has_water := false
+			for yy in range(wy, wy + side):
+				for xx in range(wx, wx + side):
+					var idx := yy * w + xx
+					if int(terrain[idx]) == 3:
+						has_water = true
+						break
+					values.append(float(heights[idx]))
+				if has_water:
+					break
+			if has_water or values.size() != side * side:
+				continue
+			values.sort()
+			var p05 := _nearest_rank(values, 0.05)
+			var p95 := _nearest_rank(values, 0.95)
+			var spread := p95 - p05
+			# Iteration is y then x; strict improvement keeps lowest y/x on ties.
+			if best.is_empty() or spread > best_spread:
+				best_spread = spread
+				best = {
+					"window_origin_tile": [wx, wy],
+					"window_size_tiles": [side, side],
+					"center_sim_m": [center.x, center.y],
+					"p05_height_m": p05,
+					"p95_height_m": p95,
+					"p95_minus_p05_m": spread,
+					"nearest_start_m": nearest_start,
+					"water_cells": 0,
+				}
+	return best
+
+
+func _make_roi_rect() -> Rect2i:
+	var x0 := clampi(int(floor(float(_roi_frac[0]) * float(VIEWPORT_SIZE.x))), 0, VIEWPORT_SIZE.x - 1)
+	var y0 := clampi(int(floor(float(_roi_frac[1]) * float(VIEWPORT_SIZE.y))), 0, VIEWPORT_SIZE.y - 1)
+	var x1 := clampi(int(ceil(float(_roi_frac[2]) * float(VIEWPORT_SIZE.x))), x0 + 1, VIEWPORT_SIZE.x)
+	var y1 := clampi(int(ceil(float(_roi_frac[3]) * float(VIEWPORT_SIZE.y))), y0 + 1, VIEWPORT_SIZE.y)
+	return Rect2i(x0, y0, x1 - x0, y1 - y0)
+
+
+func _select_path() -> bool:
+	if _shot == "wide":
+		# Deterministic X traverse across the central band of the 240² map.
+		# Endpoints are SIM metres; centre/span derive from them so every
+		# camera-path manifest field (x_start/x_end/y/height) stays automatic.
+		var wide_x_start_m := 60.0
+		var wide_x_end_m := 420.0
+		_path_center = Vector2((wide_x_start_m + wide_x_end_m) * 0.5,
+			float(_want_size.y) * float(Data.TILE_M) * 0.5)
+		_path_span_m = (wide_x_end_m - wide_x_start_m) * 0.5
+		_path_height_m = float(Data.CAMERA_MAX_HEIGHT)
+		_path_zoom = float(Data.CAMERA_MIN_HEIGHT) / float(Data.CAMERA_MAX_HEIGHT)
+		_roi_frac = WIDE_ROI.duplicate()
+		_m["roi_selection"] = {
+			"source": "wide X traverse across central band; endpoints derived from variables",
+			"center_sim_m": [_path_center.x, _path_center.y],
+		}
+	else:
+		var heights := PackedFloat32Array()
+		var terrain := PackedByteArray()
+		var starts: Array = []
+		var source := "live game.height/terrain/map_starts"
+		if _dump_loaded:
+			heights = _dump_heights
+			terrain = _dump_terrain
+			starts = _dump_starts
+			source = "validated dump height/terrain/starts"
+		else:
+			var hv: Variant = _game.get("height")
+			var tv: Variant = _game.get("terrain")
+			if hv is PackedFloat32Array:
+				heights = hv as PackedFloat32Array
+			if tv is PackedByteArray:
+				terrain = tv as PackedByteArray
+			for start in _game.get("map_starts"):
+				if start is Vector2:
+					starts.append(start)
+		var selected := _select_close_window(heights, terrain, starts)
+		if selected.is_empty():
+			return _gate("close_relief_window", false,
+				"no valid 9x9 land window with 12-tile margin and >24 m start exclusion")
+		var c: Array = selected.get("center_sim_m", [0.0, 0.0])
+		_path_center = Vector2(float(c[0]), float(c[1]))
+		_path_span_m = 6.0
+		_path_height_m = float(Data.CAMERA_MIN_HEIGHT)
+		_path_zoom = float(Data.CAMERA_MAX_HEIGHT) / float(Data.CAMERA_MIN_HEIGHT)
+		_roi_frac = CLOSE_ROI.duplicate()
+		selected["source"] = source
+		_m["roi_selection"] = selected
+	_roi_rect = _make_roi_rect()
+	_m["camera_path"] = {
+		"kind": "deterministic smoothstep pan",
+		"orbit": false,
+		"yaw_contract_deg": 0.0,
+		"pitch_deg": float(Data.CAMERA_PITCH),
+		"fov_deg": float(_cam.fov),
+		"height_m": _path_height_m,
+		"zoom": _path_zoom,
+		"center_sim_m": [_path_center.x, _path_center.y],
+		"x_start_sim_m": _path_center.x - _path_span_m,
+		"x_end_sim_m": _path_center.x + _path_span_m,
+		"y_sim_m": _path_center.y,
+		"interpolation": "t=i/(N-1); s=t*t*(3-2*t); x=center-span+2*span*s",
+		"camera_process_enabled": false,
+	}
+	_m["roi"] = {
+		"fractional_xyxy": _roi_frac.duplicate(),
+		"pixels_xyxy": [_roi_rect.position.x, _roi_rect.position.y,
+			_roi_rect.position.x + _roi_rect.size.x, _roi_rect.position.y + _roi_rect.size.y],
+		"pixels_x_y_w_h": [_roi_rect.position.x, _roi_rect.position.y, _roi_rect.size.x, _roi_rect.size.y],
+		"ground_only_status": "UNVERIFIED_PENDING_VISUAL_REVIEW",
+	}
+	return _gate("camera_path_selected", true,
+		"shot=%s center=%s span=%.3f height=%.3f zoom=%.9f roi=%s" % [
+			_shot, str(_path_center), _path_span_m, _path_height_m, _path_zoom, str(_roi_frac)])
+
+
+func _target_for_frame(index: int) -> Vector2:
+	var t := float(index) / float(N_FRAMES - 1)
+	var s := t * t * (3.0 - 2.0 * t)
+	return _path_center + Vector2(-_path_span_m + 2.0 * _path_span_m * s, 0.0)
+
+
+func _fixed_step() -> void:
+	for _i in range(TICKS_PER_FRAME):
+		# Harness-only clock control, matching the proven atom: a winner/pause
+		# must not make requested fixed ticks silently disappear.
+		_game.set("winner", -1)
+		_game.set("paused", false)
+		_game.tick(SIM_STEP)
+		_fixed_ticks += 1
+
+
+func _camera_meta() -> Dictionary:
+	if _cam == null:
+		return {"target_sim_m": [0.0, 0.0], "position_world_m": [0.0, 0.0, 0.0], "zoom": -1.0}
+	var target: Vector2 = _cam.get("_target")
+	var pos: Vector3 = _cam.global_position
+	var current := false
+	if _cam.get_viewport() != null:
+		current = _cam.get_viewport().get_camera_3d() == _cam
+	return {
+		"target_sim_m": [target.x, target.y],
+		"position_world_m": [pos.x, pos.y, pos.z],
+		"zoom": float(_cam.get("zoom")),
+		"height_m": float(_cam.get("height")),
+		"fov_deg": float(_cam.fov),
+		"pitch_deg": float(Data.CAMERA_PITCH),
+		"yaw_contract_deg": 0.0,
+		"viewport": str(_cam.get_viewport().name) if _cam.get_viewport() != null else "<none>",
+		"camera_current": current,
+		"process_enabled": bool(_cam.is_processing()),
+	}
+
+
+func _image_stats(img: Image, region: Rect2i = Rect2i(0, 0, 0, 0)) -> Dictionary:
+	if img == null or img.is_empty():
+		return {"blank": true, "w": 0, "h": 0, "mean_luma": 0.0, "min_luma": 0.0, "max_luma": 0.0, "signature": []}
+	var w := img.get_width()
+	var h := img.get_height()
+	var x0 := 0
+	var y0 := 0
+	var x1 := w
+	var y1 := h
+	if region.size.x > 0 and region.size.y > 0:
+		x0 = clampi(region.position.x, 0, w - 1)
+		y0 = clampi(region.position.y, 0, h - 1)
+		x1 = clampi(region.position.x + region.size.x, x0 + 1, w)
+		y1 = clampi(region.position.y + region.size.y, y0 + 1, h)
+	var step_x := maxi(1, (x1 - x0) / 32)
+	var step_y := maxi(1, (y1 - y0) / 18)
+	var sum_l := 0.0
+	var min_l := INF
+	var max_l := -INF
+	var min_c := INF
+	var max_c := -INF
+	var max_alpha := 0.0
+	var nonblack := 0
+	var n := 0
+	var sig: Array[float] = []
+	var sum_r := 0.0
+	var sum_g := 0.0
+	var sum_b := 0.0
+	for yy in range(y0, y1, step_y):
+		for xx in range(x0, x1, step_x):
+			var c := img.get_pixel(xx, yy)
+			var l := c.get_luminance()
+			var cmax := maxf(maxf(c.r, c.g), c.b)
+			var cmin := minf(minf(c.r, c.g), c.b)
+			sum_l += l
+			sum_r += c.r
+			sum_g += c.g
+			sum_b += c.b
+			min_l = minf(min_l, l)
+			max_l = maxf(max_l, l)
+			min_c = minf(min_c, cmin)
+			max_c = maxf(max_c, cmax)
+			max_alpha = maxf(max_alpha, c.a)
+			if cmax > 0.0314:
+				nonblack += 1
+			n += 1
+			sig.append(snappedf(l, 0.01))
+	var blank := (max_l - min_l < 0.02 and max_c - min_c < 0.02) or max_alpha < 0.01
+	return {
+		"blank": blank,
+		"w": w,
+		"h": h,
+		"region_xyxy": [x0, y0, x1, y1],
+		"mean_rgb": [sum_r / maxf(1.0, float(n)), sum_g / maxf(1.0, float(n)), sum_b / maxf(1.0, float(n))],
+		"mean_luma": sum_l / maxf(1.0, float(n)),
+		"min_luma": min_l,
+		"max_luma": max_l,
+		"min_channel": min_c,
+		"max_channel": max_c,
+		"max_alpha": max_alpha,
+		"nonblack_fraction": float(nonblack) / maxf(1.0, float(n)),
+		"signature": sig,
+	}
+
+
+func _image_invalid(img: Image, stats: Dictionary) -> bool:
+	return (img == null or img.is_empty() or img.get_width() != VIEWPORT_SIZE.x
+		or img.get_height() != VIEWPORT_SIZE.y or bool(stats.get("blank", true)))
+
+
+func _abort(reason: String) -> void:
+	_failure_reason = reason
+	check("capture_run", false, reason)
+	push_error("t_terrain_motion_capture: " + reason)
+	_finish()
+
+
+func _capture_all() -> void:
+	_capture_start_ms = Time.get_ticks_msec()
+	for i in range(N_FRAMES):
+		var frame_start_ms := Time.get_ticks_msec()
+		if frame_start_ms - _capture_start_ms > RUN_LIMIT_MS:
+			_abort("capture deadline exceeded at frame %d" % i)
+			return
+		_fixed_step()
+		var requested_target := _target_for_frame(i)
+		# Set height first so jump_to_world() clamps against the actual shot FOV.
+		_cam.call("set_zoom_target", _path_zoom, true)
+		_cam.call("jump_to_world", requested_target)
+		_cam.set_process(false)
+		var actual_target: Vector2 = _cam.get("_target")
+		if actual_target.distance_to(requested_target) > 0.01:
+			_abort("camera clamp changed deterministic path at frame %d: wanted=%s actual=%s" % [
+				i, str(requested_target), str(actual_target)])
+			return
+		if absf(float(_cam.get("height")) - _path_height_m) > 0.001:
+			_abort("camera height mismatch at frame %d" % i)
+			return
+		_world.sync(0.0)
+
+		if not is_instance_valid(_vp):
+			_abort("Screenshot3DViewport gone at frame %d; no root/CPU fallback" % i)
+			return
+		_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+		await RenderingServer.frame_post_draw
+		_rendered_frames += 1
+		if not is_instance_valid(_vp):
+			_abort("Screenshot3DViewport gone after draw at frame %d; no root/CPU fallback" % i)
+			return
+		var tex = _vp.get_texture()
+		var img: Image = tex.get_image() if tex != null else null
+		var stats := _image_stats(img)
+		var retries := 0
+		while _image_invalid(img, stats) and retries < BLANK_RETRIES:
+			if Time.get_ticks_msec() - _capture_start_ms > RUN_LIMIT_MS:
+				_abort("capture deadline exceeded during blank retry at frame %d" % i)
+				return
+			_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+			await RenderingServer.frame_post_draw
+			_rendered_frames += 1
+			retries += 1
+			if not is_instance_valid(_vp):
+				_abort("Screenshot3DViewport gone during retry at frame %d" % i)
+				return
+			tex = _vp.get_texture()
+			img = tex.get_image() if tex != null else null
+			stats = _image_stats(img)
+		if _image_invalid(img, stats):
+			_abort("missing/flat/wrong-size 3D image at frame %d after %d retries; no CPU fallback" % [i, retries])
+			return
+		_blank_retries_total += retries
+
+		var name := "frame_%04d.png" % i
+		var path := _out_dir.path_join(name)
+		var save_err := img.save_png(path)
+		if save_err != OK or not FileAccess.file_exists(path):
+			_abort("save_png failed for %s (err=%d)" % [path, int(save_err)])
+			return
+		var png_bytes := FileAccess.get_file_as_bytes(path)
+		if png_bytes.is_empty():
+			_abort("saved PNG is empty: " + path)
+			return
+		var digest := _sha256(png_bytes)
+		if digest.length() != 64:
+			_abort("SHA-256 unavailable for " + path)
+			return
+		var camera_meta := _camera_meta()
+		camera_meta["requested_target_sim_m"] = [requested_target.x, requested_target.y]
+		var frame_ms := Time.get_ticks_msec() - frame_start_ms
+		var frame_meta := {
+			"frame": i,
+			"png": name,
+			"png_abs": path,
+			"bytes": png_bytes.size(),
+			"sha256": digest,
+			"width": img.get_width(),
+			"height": img.get_height(),
+			"rendered_frame_index": _rendered_frames,
+			"fixed_ticks_total": _fixed_ticks,
+			"sim_time_s": float(_game.get("time_s")),
+			"capture_wall_ms": frame_ms,
+			"blank_read_retries": retries,
+			"camera": camera_meta,
+			"image": stats,
+			"roi_image": _image_stats(img, _roi_rect),
+		}
+		_frames_meta.append(frame_meta)
+		_frame_intervals_ms.append(float(frame_ms))
+		if frame_ms > FRAME_STALL_LIMIT_MS:
+			_abort("frame %d stalled %d ms (> %d ms)" % [i, frame_ms, FRAME_STALL_LIMIT_MS])
+			return
+		print("TERRAINCAP FRAME %02d/%02d sim=%.3fs target=%s bytes=%d retries=%d ms=%d" % [
+			i + 1, N_FRAMES, float(_game.get("time_s")), str(requested_target), png_bytes.size(), retries, frame_ms])
+
+
+func _finish_capture_checks() -> void:
+	var exact := _frames_meta.size() == N_FRAMES
+	if not _gate("frames_captured", exact, "captured=%d required=%d" % [_frames_meta.size(), N_FRAMES]):
+		return
+	var contiguous := true
+	var nonblank := true
+	var camera_ok := true
+	var hashes: Dictionary = {}
+	for fm in _frames_meta:
+		var i := int(fm.get("frame", -1))
+		var name := "frame_%04d.png" % i
+		if i < 0 or i >= N_FRAMES or str(fm.get("png", "")) != name or not FileAccess.file_exists(_out_dir.path_join(name)):
+			contiguous = false
+		if bool((fm.get("image", {}) as Dictionary).get("blank", true)):
+			nonblank = false
+		var cm: Dictionary = fm.get("camera", {})
+		if not bool(cm.get("camera_current", false)) or bool(cm.get("process_enabled", true)):
+			camera_ok = false
+		hashes[str(fm.get("sha256", ""))] = true
+	_gate("frames_contiguous", contiguous, "frame_0000.png..frame_0023.png")
+	_gate("frames_nonblank", nonblank, "all saved GPU frames are non-blank")
+	_gate("camera_path_stable", camera_ok, "camera current in Screenshot3DViewport; camera _process disabled")
+	_gate("frames_distinct", hashes.size() > 1, "distinct PNG SHA-256 values=%d of %d" % [hashes.size(), N_FRAMES])
+
+	var final_height: Variant = _game.get("height")
+	var final_terrain: Variant = _game.get("terrain")
+	var final_blocked: Variant = _game.get("blocked")
+	var final_tileblock: Variant = _game.get("tileblock")
+	var final_res_count := (_game.get("res_nodes") as Array).size()
+	var final_stamps_count := (_game.get("pattern_stamps") as Array).size()
+	var final_clusters_count := (_game.get("cluster_zones") as Array).size()
+	var arrays_unchanged := (final_height is PackedFloat32Array and final_terrain is PackedByteArray
+		and final_blocked is PackedByteArray and final_tileblock is PackedByteArray
+		and _initial_height == (final_height as PackedFloat32Array)
+		and _initial_terrain == (final_terrain as PackedByteArray)
+		and _initial_blocked == (final_blocked as PackedByteArray)
+		and _initial_tileblock == (final_tileblock as PackedByteArray))
+	var props_unchanged := (final_res_count == _initial_res_count
+		and final_stamps_count == _initial_stamps_count
+		and final_clusters_count == _initial_clusters_count)
+	_m["preservation"] = {
+		"height_array_unchanged": arrays_unchanged,
+		"terrain_array_unchanged": arrays_unchanged,
+		"blocked_array_unchanged": arrays_unchanged,
+		"tileblock_array_unchanged": arrays_unchanged,
+		"res_nodes_count_initial": _initial_res_count,
+		"res_nodes_count_final": final_res_count,
+		"pattern_stamps_count_initial": _initial_stamps_count,
+		"pattern_stamps_count_final": final_stamps_count,
+		"cluster_zones_count_initial": _initial_clusters_count,
+		"cluster_zones_count_final": final_clusters_count,
+		"entities_count_initial": _initial_entities_count,
+		"entities_count_final": (_game.get("entities") as Array).size(),
+	}
+	_gate("terrain_and_props_not_cleared", arrays_unchanged and props_unchanged,
+		"terrain arrays unchanged=%s res/stamps/clusters unchanged=%s" % [str(arrays_unchanged), str(props_unchanged)])
+
+	var intervals: Array = _frame_intervals_ms.duplicate()
+	intervals.sort()
+	var median_all := float(intervals[intervals.size() / 2]) if not intervals.is_empty() else -1.0
+	var recent: Array = _frame_intervals_ms.slice(maxi(0, _frame_intervals_ms.size() - 16))
+	recent.sort()
+	var median_recent := float(recent[recent.size() / 2]) if not recent.is_empty() else -1.0
+	var max_interval := 0.0
+	for value in _frame_intervals_ms:
+		max_interval = maxf(max_interval, float(value))
+	_m["timing"] = {
+		"boot_wall_ms": _boot_ready_ms - _start_ms,
+		"capture_wall_ms": Time.get_ticks_msec() - _capture_start_ms,
+		"target_fps": _fps,
+		"presentation_duration_s": float(N_FRAMES) / _fps,
+		"per_frame_wall_ms": _frame_intervals_ms.duplicate(),
+		"median_all_ms": median_all,
+		"median_last16_ms": median_recent,
+		"max_frame_ms": max_interval,
+		"real_time_claim": false,
+	}
+	_gate("frame_stall_watchdog", max_interval <= float(FRAME_STALL_LIMIT_MS),
+		"max frame=%d ms limit=%d ms" % [int(max_interval), FRAME_STALL_LIMIT_MS])
+	_m["blank_read_retries"] = _blank_retries_total
+	_m["rendered_frames"] = _rendered_frames
+	_m["fixed_ticks_total"] = _fixed_ticks
+	_m["distinct_frame_sha256"] = hashes.size()
+	_m["sim"] = {
+		"fixed_step_s": SIM_STEP,
+		"ticks_per_frame": TICKS_PER_FRAME,
+		"world_sync_dt_s": 0.0,
+		"fixed_ticks_total": _fixed_ticks,
+		"sim_time_start_s": float(_frames_meta[0].get("sim_time_s", 0.0)),
+		"sim_time_end_s": float(_frames_meta[-1].get("sim_time_s", 0.0)),
+	}
+	_gate("no_cpu_or_root_fallback", is_instance_valid(_vp) and _vp.name == "Screenshot3DViewport"
+		and _world.get_parent() == _vp and _cam.get_parent() == _vp,
+		"capture source remained Screenshot3DViewport; root texture and CPU renderer unused")
+	_gate("parity_guard", not visual_parity_claim, PORT_LABEL)
+
+
+func _skip_capture(reason: String) -> void:
+	check("headless_guard", false, reason + "; windowed GPU capture required")
+	_failure_reason = reason
+	_m["status"] = "SKIP_CAPTURE"
+	if _output_safe:
+		_write_text(_out_dir.path_join("SKIP_CAPTURE.txt"),
+			"SKIP_CAPTURE\nreason: " + reason + "\nstatus: SKIP_CAPTURE\npassed: false\nvisual_parity_claim: false\n")
+	_finish()
+
+
+func _manifest_path() -> String:
+	return _out_dir.path_join("capture.json") if _output_safe else ""
+
+
+func _finish() -> void:
+	if _finished:
+		return
+	_finished = true
+	var passes := 0
+	for c in _checks:
+		if bool(c.get("passed", false)):
+			passes += 1
+	var status := "CAPTURE_OK" if _ok else "CAPTURE_FAILED"
+	if str(_m.get("status", "")) == "SKIP_CAPTURE":
+		status = "SKIP_CAPTURE"
+	var actual_size: Array = []
+	var actual_seed := -1
+	if _game != null:
+		actual_size = [int(_game.get("MAP_W")), int(_game.get("MAP_H"))]
+		actual_seed = int(Data.RANDOM_SEED)
+	var manifest := {
+		"format": "terrain-motion-capture-1",
+		"id": "cap-video-terrain-motion",
+		"status": status,
+		"passed": _ok,
+		"passes": passes,
+		"total": _checks.size(),
+		"failure_reason": _failure_reason,
+		"shot": _shot,
+		"requested_frame_count": N_FRAMES,
+		"frame_count": _frames_meta.size(),
+		"frames": _frames_meta,
+		"seed": {
+			"requested": WANT_SEED,
+			"cli": _seed_arg,
+			"actual": actual_seed,
+		},
+		"backend": _m.get("live", {}),
+		"terrain_backend": str((_m.get("live", {}) as Dictionary).get("world_backend", "")),
+		"terrain_script": str((_m.get("live", {}) as Dictionary).get("terrain_script", "")),
+		"map_size": {
+			"requested_tiles": [_want_size.x, _want_size.y],
+			"actual_tiles": actual_size,
+			"tile_m": float(Data.TILE_M),
+		},
+		"config": _m.get("config", {}),
+		"dump": _m.get("dump", {}),
+		"camera_path": _m.get("camera_path", {}),
+		"roi": _m.get("roi", {}),
+		"roi_selection": _m.get("roi_selection", {}),
+		"sim": _m.get("sim", {}),
+		"timing": _m.get("timing", {}),
+		"preservation": _m.get("preservation", {}),
+		"capture_mode": "windowed Screenshot3DViewport readback after RenderingServer.frame_post_draw",
+		"capture_source": "Screenshot3DViewport",
+		"viewport_update_mode": "UPDATE_ONCE",
+		"cpu_fallback_used": false,
+		"root_viewport_used": false,
+		"repo_capture_artifacts_written": false,
+		"out_dir": _out_dir,
+		"output_manifest": _manifest_path(),
+		"visual_parity_claim": visual_parity_claim,
+		"parity": {
+			"claim": "NONE",
+			"status": "UNVERIFIED",
+			"label": PORT_LABEL,
+		},
+		"analysis_note": "CAPTURE ONLY. Camera/ROI/image facts are port-internal evidence; no donor parity or visual acceptance verdict is made here.",
+		"checks": _checks,
+		"measured": _m,
+		"script_error_note": "COORD must run variant3d/tools/smallmap_capture.py scan-stderr on this runner job's stderr.txt",
+		"unix_ms": Time.get_unix_time_from_system() * 1000.0,
+	}
+	var path := _manifest_path()
+	if path != "":
+		if not _write_text(path, JSON.stringify(_json_safe(manifest), "\t", true, true)):
+			push_error("t_terrain_motion_capture: failed to write manifest " + path)
+			_ok = false
+			status = "CAPTURE_FAILED"
+		print("TERRAINCAP RESULT_JSON: " + path)
+	else:
+		print("TERRAINCAP RESULT_JSON: <none: no safe external output directory>")
+	print("TERRAINCAP RESULT: %s %s %d/%d" % [status, "PASS" if _ok else "FAIL", passes, _checks.size()])
+	print("TERRAINCAP STDERR_SCAN_REQUIRED; " + PORT_LABEL)
+	call_deferred("quit", 0 if _ok else 1)
+
+
+func _initialize() -> void:
+	if _finished:
+		return
+	_start_ms = Time.get_ticks_msec()
+	if not _parse_cli():
+		_finish()
+		return
+	_m["display_server"] = DisplayServer.get_name()
+	if DisplayServer.get_name() == "headless":
+		_skip_capture("DisplayServer is headless")
+		return
+
+	_abs_config = _norm_path(_cfg_arg)
+	if not _load_config():
+		_finish()
+		return
+	if not _load_dump():
+		_finish()
+		return
+
+	var packed := load(MAIN_SCENE) as PackedScene
+	if packed == null:
+		_abort("cannot load " + MAIN_SCENE)
+		return
+	_main = packed.instantiate()
+	if _main == null:
+		_abort("cannot instantiate " + MAIN_SCENE)
+		return
+	root.add_child(_main)
+
+	# main._ready() is delivered after this custom SceneTree starts. Wait for
+	# the real game and dedicated viewport, never substitute a stub or root VP.
+	var ready := false
+	for _i in range(600):
+		await RenderingServer.frame_post_draw
+		if is_instance_valid(_main) and _main.get("game") != null and _main.get("capture_view3d") != null:
+			ready = true
+			break
+		if Time.get_ticks_msec() - _start_ms > BOOT_LIMIT_MS:
+			break
+	if not ready:
+		_abort("real main boot did not expose game + Screenshot3DViewport within 300 s")
+		return
+	_boot_ready_ms = Time.get_ticks_msec()
+	if not _configure():
+		_finish()
+		return
+	if not _select_path():
+		_finish()
+		return
+	await _capture_all()
+	if _finished:
+		return
+	_finish_capture_checks()
+	_finish()
