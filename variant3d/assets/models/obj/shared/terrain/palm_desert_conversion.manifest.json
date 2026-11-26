@@ -1352,6 +1352,7 @@
     "Every donor DDS carries mip levels; each derived PNG contains only the base level. No mip chain was generated or copied.",
     "New PNG/OBJ assets have no .import sidecars; a normal Godot import is required before ResourceLoader.exists/load can be relied on.",
     "Winter albedo variants (palm1w..3w, desert1w..5w, plantsyellowatlasw) are not converted here; only the donor DefaultMaterialName summer albedo used by each MTL is emitted.",
+    "palm* props declare RandomMaterialName=True with summer albedo set palm1/palm2/palm3; only DefaultMaterialName=palm1 is bound in the MTL. Engine-side random material selection is UNVERIFIED.",
     "Feed BaseName -> sid rules in terrain_donor_props.gd are unchanged; binding these sids is separate follow-up work.",
     "No donor/port A/B frame exists. Pixel/topology equality is not a visual parity claim."
   ],

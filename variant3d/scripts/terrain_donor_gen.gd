@@ -1620,11 +1620,67 @@ func _find_random(group: Array, j: int) -> int:
 
 # ---------------------------------------------------------------------------
 # STAGE 6 — shore exclusion mask (spec/10 item 6; X03:676-696)
+# DEC_DEEP_prop_water_exclusion: donor pre-marks gPatternMask before any
+# SetupPatternsByType — water<>cBNone, bsmooth, collision>0 (incl. waterborder
+# ring radius gc_WaterBorderSize=3). _check_stand itself is mask-only.
 # ---------------------------------------------------------------------------
 func _stage_shore_exclusion(data: Object, p: Dictionary) -> void:
 	for i in range(_grid_n):
 		if _occ[i] == 0 and data.height[i] < C_TILE_SHORE_HEIGHT:  # D1:1576-1578
 			_occ[i] = 1
+	_apply_water_premark(data)
+
+
+# Donor generatemap.inc:818 pre-mark + _misc_SetShoresCollision waterborder.
+# Water cells, bsmooth cells and any collision-tagged cell block prop stands;
+# a 3-cell disc around deep water forms the waterborder ring. Broad is [U]
+# (no broad array modelled) and is explicitly not invented here.
+func _apply_water_premark(data: Object) -> void:
+	var water_blocked := 0
+	var border_blocked := 0
+	for i in range(_grid_n):
+		var wv: int = 0
+		if (data as Object).get("water") is PackedByteArray:
+			var warr: PackedByteArray = (data as Object).get("water")
+			if i < warr.size():
+				wv = int(warr[i])
+		var bs: int = 0
+		if i < _bsmooth.size():
+			bs = int(_bsmooth[i])
+		var tag: int = 0
+		if (data as Object).has_method("get_collision"):
+			tag = int((data as Object).call("get_collision", i, 0))
+		if wv != 0 or bs != 0 or tag > 0:
+			if _occ[i] == 0:
+				_occ[i] = 1
+				water_blocked += 1
+	# Waterborder ring: disc radius gc_WaterBorderSize=3 around deep water.
+	var rad: int = 3
+	for y in range(_grid_h):
+		for x in range(_grid_w):
+			var i0: int = y * _grid_w + x
+			var w0: int = 0
+			if (data as Object).get("water") is PackedByteArray:
+				var warr0: PackedByteArray = (data as Object).get("water")
+				if i0 < warr0.size():
+					w0 = int(warr0[i0])
+			if w0 != 2:
+				continue
+			for dy in range(-rad, rad + 1):
+				for dx in range(-rad, rad + 1):
+					if dx * dx + dy * dy >= rad * rad:
+						continue
+					var ix: int = x + dx
+					var iy: int = y + dy
+					if ix < 0 or ix >= _grid_w or iy < 0 or iy >= _grid_h:
+						continue
+					var j: int = iy * _grid_w + ix
+					if _occ[j] == 0:
+						_occ[j] = 1
+						border_blocked += 1
+	_tel["water_premark"] = {"water_blocked": water_blocked,
+		"border_blocked": border_blocked,
+		"source": "generatemap.inc:818 + gc_WaterBorderSize=3; broad [U] not invented"}
 
 
 var _cur_data: Object

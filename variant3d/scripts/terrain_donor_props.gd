@@ -1417,7 +1417,56 @@ func _class_for(p_stamp: String, p_base: String) -> String:
 	if (n.contains("frt") or b.contains("pine") or b.contains("fir") or b.contains("spruce")
 			or b.contains("oak") or b.contains("palm") or b.contains("plantain") or b.contains("bush")):
 		return "forests"
+
+	# A5 (AUDIT_TERRAIN_ASSET_COVERAGE.md §7 item 5a / §4): the plain, plateau,
+	# hill, street and forest-border stamp families had NO class rule, so every
+	# record in them fell through to `other` and died — 298 records with an
+	# already-converted stone sid plus 5,247 weed sid-skips. Attribute by
+	# BaseName to an EXISTING pass: converted stones/shore stones keep their
+	# material class, decorative bases stay decor, the rest is weed/understory
+	# fill in `forests`. This runs ONLY for records the rules above left
+	# unclassified: no sid rule, transform, RNG draw, placement order or
+	# mill-field hook is touched. No new art, no synthetic record.
+	if _is_unclassified_stamp(n):
+		return _class_for_unclassified_base(b)
 	return "other"
+
+
+# A5 stamp-family gate. `contains` keeps the derived §4 sections inside the
+# named family (d_plt*, j_big_plt*, f_plt_*, k_plain_mid*, g_hil*, b_str_*);
+# the remaining §4 `other` sections are named explicitly so no whole-stamp
+# skip keeps the former `other` label.
+func _is_unclassified_stamp(p_stamp_lower: String) -> bool:
+	var tokens: Array[String] = [
+		"plt", "desert_plt", "desert_plain",
+		"k_plain", "k_ravine", "k_small_plain",
+		"hil", "g_hil", "str_", "b_str_", "fb_",
+		"k_pump", "new_year", "desert_mng", "desert_mni", "desert_mnc",
+		"f1_from_big3", "gift",
+	]
+	for token in tokens:
+		if p_stamp_lower.contains(token):
+			return true
+	return false
+
+
+# A5: BaseName -> existing pass for the formerly-`other` records only. No
+# mesh, sid mapping, transform or synthetic record is created; just a class
+# string on records that had no class at all.
+func _class_for_unclassified_base(p_base_lower: String) -> String:
+	var b: String = p_base_lower
+	if (b.begins_with("smallstonessea") or b.begins_with("stonessea")
+			or b.begins_with("rocksea")):
+		return "shore"
+	if (b.begins_with("smallstones") or b.begins_with("stones")
+			or b.begins_with("stone") or b.begins_with("rock")):
+		return "stone_quarries"
+	if (b.begins_with("gift") or b.begins_with("christmas") or b.begins_with("reed")
+			or b.begins_with("fern") or b.begins_with("flower")):
+		return "decor"
+	# grass / chamomile / plant / burdock / horseradish / burch / desert-scrub /
+	# dead-tree understory under plateaus, plains, ravines, hills, streets, fb_.
+	return "forests"
 
 
 func _grid_dim() -> Vector2i:

@@ -35,6 +35,25 @@ extends Node3D
 # The I06 SoA container (spec/01 §4:55-66; A01 §4.3/§4.4) is read, never written;
 # `height` and `tex`/`tileblock` stay top-level, `fields.relief_mask` is optional
 # and a short/missing array is zero-filled exactly as the dump contract says.
+#
+# TERRAINRES — PARTIAL FULL-RESOLUTION TILE TIER (opt-in, additive)
+# ------------------------------------------------------------------
+# AUDIT-ATLAS-RES §2/§6 says the commit-default terrain_new atlas gives a
+# 16x16 px subcell (128px cell / 8x8 selector) while the donor authoring unit
+# is 128x128 px (1024^2 block / 8x8). §6 option B (full 16384x8192 atlas) is
+# already wired as HIRES-ATLAS-C / `features.terrain.hires_atlas` above, but it
+# costs 512 MiB base / ~683 MiB with mips. This file adds a THIRD, opt-in tier:
+# `features.terrain.array_atlas`. It collects only the tile ids actually present
+# in the ingested grid (the canonical dumps use 14 legal ids, AUDIT §5/E7),
+# reads their already-on-disk byte-identical 1024^2 donor-derived block PNGs,
+# and packs them into the smallest 4-column power-of-two 2D atlas with one
+# 1024^2 cell per id. The L8 tile map is remapped id -> compact slot so the
+# UNCHANGED shader sees cell_px=1024, donor_to_packed=1 and a 128 px subcell.
+# It is a partial-array-style layer set exposed through the existing sampler2D
+# (a true sampler2DArray needs a shader edit, which is OUT OF SCOPE here).
+# Default tier, hires opt-in, shader, masks, geometry and sim stay untouched.
+# NO synthetic upscaling, NO invented art, NO donor visual parity claim: all
+# new state is labelled telemetry only and never feeds back into sim.
 
 # ---------------------------------------------------------------------------
 # Donor constants (every value carries its donor path:line citation)
@@ -74,6 +93,15 @@ const LEGACY_ATLAS_DIR := "res://assets/terrain/atlas/"
 const LEGACY_ATLAS_SINGLE := LEGACY_ATLAS_DIR + "tile_index_atlas.png"
 const LEGACY_ATLAS_MANIFEST := LEGACY_ATLAS_DIR + "tile_index_atlas.manifest.json"
 const HIRES_ATLAS_FLAG_PATH := "features.terrain.hires_atlas"
+# TERRAINRES opt-in: partial full-resolution tile tier (AUDIT-ATLAS-RES §6 D).
+# Reads only the ids actually present in the ingested grid and packs their
+# 1024^2 donor-derived block PNGs into a compact index-remapped 2D atlas.
+# Absent/false => commit-default terrain_new; no shader, config.gd or asset edit.
+const ARRAY_ATLAS_FLAG_PATH := "features.terrain.array_atlas"
+const BLOCKS_DIR := "res://assets/terrain/blocks/"   # TileAtlasLoader:69, :455
+const ARRAY_ATLAS_BLOCK_PX: int = 1024               # D08 §3.1 / E3; donor block
+const ARRAY_ATLAS_COLS: int = 4                      # compact grid columns
+const ARRAY_ATLAS_MAX_SLOTS: int = 16                # hard VRAM cap: 4x4 x 1024^2 = 64 MiB base
 # LIGHT-MATCH opt-in: PORT CONSISTENCY calibration, NOT donor parity. When true,
 # the terrain material binds the SAME ambient/sun energies the composer already
 # uses for scene props (terrain_donor_world.gd:69-70); when false/absent the
@@ -138,11 +166,18 @@ var visual_parity_claim: bool = false  # hard guard, never set true
 var atlas_mode_request: String = "single"
 var season: String = ""
 var hires_atlas: bool = false             # opt-in diagnostic; resolved once per build
+var array_atlas: bool = false             # TERRAINRES opt-in; resolved once per build
 var light_match: bool = false             # LIGHT-MATCH opt-in; resolved once per build
 var color_unify: bool = false             # COLOR-UNIFY opt-in; resolved once per build
 var _light_match: Dictionary = {}         # labelled rig-energy binding telemetry
 var _color_unify: Dictionary = {}         # labelled partial-lift calibration telemetry
 var _atlas_resolution: Dictionary = {}    # labelled resolution / VRAM telemetry
+var _array_atlas: Dictionary = {}         # TERRAINRES partial-tier labelled telemetry
+var _id_to_slot: Dictionary = {}          # donor tile id -> compact atlas slot (0..15)
+var _slot_to_id: Dictionary = {}          # inverse map, telemetry only
+var _compact_atlas_texture: Texture2D = null
+var _compact_grid := Vector2.ZERO
+var _unmapped_cells: int = 0              # cells whose id was not carried by the partial tier
 
 var _game = null                       # untyped I06 container / game reference
 var _data = null                       # untyped explicit I06 container
@@ -380,6 +415,18 @@ func _build_tile_map_texture() -> ImageTexture:
 		# from the raw value in build().
 		if tid < 0 or tid > MAX_TILE_ID:
 			tid = 0
+		# TERRAINRES partial tier: the shader derives its atlas cell as
+		# (id % grid.x, id / grid.x). Compact packing therefore requires the
+		# L8 tile map to carry a SLOT index, not the donor id. UV2.x is left
+		# untouched (alpha/debug transport keeps the original id). Unmapped
+		# ids fall back to slot 0, a real donor-derived block — no art is
+		# invented and the count is exported as labelled telemetry.
+		if array_atlas and not _id_to_slot.is_empty():
+			if _id_to_slot.has(tid):
+				tid = int(_id_to_slot[tid])
+			else:
+				_unmapped_cells += 1
+				tid = 0
 		pixels[i] = tid
 	var image := Image.create_from_data(_w, _h, false, Image.FORMAT_L8, pixels)
 	if image == null or image.is_empty():
@@ -466,6 +513,18 @@ func _resolve_hires_atlas_flag() -> bool:
 	if cfg == null or not cfg.has_method("flag"):
 		return false
 	return bool(cfg.call("flag", HIRES_ATLAS_FLAG_PATH, false))
+
+
+func _resolve_array_atlas_flag() -> bool:
+	# TERRAINRES: opt-in ONLY. Same config.gd generic flag() reader as the other
+	# opt-ins (no new getter, no config.gd edit). Active config can be null
+	# before settings load and an older/no key falls back to false, so the
+	# commit-default terrain_new tier is byte-identical. Independent of
+	# light_match / color_unify; explicitly suppressed by hires_atlas.
+	var cfg = C3ConfigScript.active
+	if cfg == null or not cfg.has_method("flag"):
+		return false
+	return bool(cfg.call("flag", ARRAY_ATLAS_FLAG_PATH, false))
 
 
 func _resolve_light_match_flag() -> bool:
@@ -583,6 +642,206 @@ func _read_manifest_atlas(path: String) -> Dictionary:
 	if not (atlas_v is Dictionary):
 		return {}
 	return atlas_v as Dictionary
+
+
+func _read_manifest_full(path: String) -> Dictionary:
+	# Read-only probe of the WHOLE manifest. `_read_manifest_atlas()` above
+	# returns only its `atlas` block; the partial tier also needs `layout`
+	# (index -> source_png / source_size). No asset is written or resampled.
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return {}
+	var txt := f.get_as_text()
+	f.close()
+	var parsed: Variant = JSON.parse_string(txt)
+	if not (parsed is Dictionary):
+		return {}
+	return parsed as Dictionary
+
+
+func _used_tile_id_counts() -> Dictionary:
+	# Data-driven used-id set: the ingested L8 grid is the only source of truth.
+	# Water sentinel / out-of-range bytes are excluded exactly as in build().
+	# The canonical 240^2 dumps contain 12 legal ids; across 64^2/240^2/320^2
+	# the union is 14 (AUDIT-ATLAS-RES §5/E7). This reports what THIS map
+	# actually uses — no fabricated id list.
+	var counts: Dictionary = {}
+	for i in range(_tex.size()):
+		var tid := int(_tex[i])
+		if tid < 0 or tid > MAX_TILE_ID:
+			continue
+		counts[tid] = int(counts.get(tid, 0)) + 1
+	return counts
+
+
+func _array_atlas_fallback(reason: String) -> bool:
+	# EVERY failure is a labelled fallback to the unchanged commit-default
+	# terrain_new tier. No partial atlas is bound and no art is synthesised.
+	_array_atlas = {
+		"feature": ARRAY_ATLAS_FLAG_PATH,
+		"enabled": true,
+		"active": false,
+		"tier": "terrain_new_2048x1024_128cell (DEFAULT — partial tier unavailable)",
+		"fallback": reason,
+		"ids_covered": [],
+		"ids_covered_count": 0,
+		"no_synthetic_upscaling": true,
+		"no_invented_art": true,
+		"visual_parity_claim": false,
+	}
+	return false
+
+
+func _build_partial_array_atlas() -> bool:
+	# TERRAINRES: opt-in partial full-resolution tier (AUDIT-ATLAS-RES §6 D/B).
+	# Collect the ids present in THIS grid, read their already-on-disk
+	# byte-identical 1024^2 donor-derived block PNGs, and pack one cell per id
+	# into the smallest 4-column power-of-two 2D atlas. The tile map is later
+	# remapped id -> slot so the UNCHANGED shader computes cell_px=1024 and a
+	# 128 px subcell. Source art is never resampled, upscaled or invented.
+	_array_atlas = {}
+	_id_to_slot = {}
+	_slot_to_id = {}
+	_compact_atlas_texture = null
+	_compact_grid = Vector2.ZERO
+	_unmapped_cells = 0
+	if hires_atlas:
+		# HIRES-ATLAS-C is the higher-priority opt-in and is left unchanged.
+		return _array_atlas_fallback("suppressed by features.terrain.hires_atlas (option B tier kept)")
+	var counts := _used_tile_id_counts()
+	if counts.is_empty():
+		return _array_atlas_fallback("ingested grid has no legal tile id")
+	var manifest := _read_manifest_full(LEGACY_ATLAS_MANIFEST)
+	var layout: Variant = manifest.get("layout", null)
+	if not (layout is Array) or (layout as Array).is_empty():
+		return _array_atlas_fallback("legacy manifest layout unavailable: " + LEGACY_ATLAS_MANIFEST)
+	var sources: Dictionary = {}
+	for entry in (layout as Array):
+		if not (entry is Dictionary):
+			continue
+		var raw_png: Variant = (entry as Dictionary).get("source_png", null)
+		if raw_png == null:
+			continue   # EMPTY preset (alpha0a/b/c): never fabricate art
+		var png := str(raw_png)
+		if png.is_empty():
+			continue
+		var sz: Variant = (entry as Dictionary).get("source_size", null)
+		if not (sz is Array) or (sz as Array).size() != 2:
+			continue
+		if int((sz as Array)[0]) != ARRAY_ATLAS_BLOCK_PX or int((sz as Array)[1]) != ARRAY_ATLAS_BLOCK_PX:
+			continue   # e.g. sand1/sand2 256^2 donor: no upscaling, not carried
+		sources[int((entry as Dictionary).get("index", -1))] = png
+	var ids: Array = []
+	for key in counts.keys():
+		ids.append(int(key))
+	ids.sort()
+	var kept: Array = []
+	var dropped: Array = []
+	for idv in ids:
+		var id := int(idv)
+		if not sources.has(id):
+			dropped.append(id)
+			continue
+		if kept.size() >= ARRAY_ATLAS_MAX_SLOTS:
+			dropped.append(id)
+			continue
+		kept.append(id)
+	if kept.is_empty():
+		return _array_atlas_fallback("no used id has a 1024^2 donor-derived block PNG")
+	var rows: int = int(ceil(float(kept.size()) / float(ARRAY_ATLAS_COLS)))
+	var rows_pow2: int = 1
+	while rows_pow2 < rows:
+		rows_pow2 *= 2
+	var cols: int = ARRAY_ATLAS_COLS
+	rows = rows_pow2
+	var w: int = cols * ARRAY_ATLAS_BLOCK_PX
+	var h: int = rows * ARRAY_ATLAS_BLOCK_PX
+	var blocks: Array[Image] = []
+	for idv2 in kept:
+		var id2 := int(idv2)
+		var block := Image.new()
+		var err := block.load(BLOCKS_DIR + str(sources[id2]))
+		if err != OK:
+			err = block.load(ProjectSettings.globalize_path(BLOCKS_DIR + str(sources[id2])))
+		if err != OK or block.get_size() != Vector2i(ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX):
+			return _array_atlas_fallback("block PNG missing/wrong size for id %d (%s)"
+				% [id2, str(sources[id2])])
+		if block.get_format() != Image.FORMAT_RGBA8:
+			block.convert(Image.FORMAT_RGBA8)
+		blocks.append(block)
+	if blocks.is_empty():
+		return _array_atlas_fallback("no block image assembled")
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	if img == null or img.is_empty():
+		return _array_atlas_fallback("cannot allocate %dx%d compact atlas image" % [w, h])
+	# Unused slots duplicate a REAL used block: byte-identical donor-derived
+	# pixels, not synthetic detail and not invented art. No fragment samples
+	# those slots in this tier (the tile map carries only kept slots); the fill
+	# only prevents garbage when coarse mip levels blend across cells.
+	var filler: Image = blocks[0]
+	for slot in range(cols * rows):
+		img.blit_rect(filler, Rect2i(0, 0, ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX),
+			Vector2i((slot % cols) * ARRAY_ATLAS_BLOCK_PX,
+				int(slot / cols) * ARRAY_ATLAS_BLOCK_PX))
+	for slot2 in range(kept.size()):
+		img.blit_rect(blocks[slot2], Rect2i(0, 0, ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX),
+			Vector2i((slot2 % cols) * ARRAY_ATLAS_BLOCK_PX,
+				int(slot2 / cols) * ARRAY_ATLAS_BLOCK_PX))
+		_id_to_slot[int(kept[slot2])] = slot2
+		_slot_to_id[slot2] = int(kept[slot2])
+	if img.generate_mipmaps(false) != OK:
+		push_warning("terrain_donor_mesh: partial atlas mipmap generation failed; base level unchanged")
+	_compact_atlas_texture = ImageTexture.create_from_image(img)
+	if _compact_atlas_texture == null:
+		return _array_atlas_fallback("ImageTexture.create_from_image failed for partial atlas")
+	_compact_grid = Vector2(float(cols), float(rows))
+	var base_bytes := float(w * h * 4)
+	var base_mib := base_bytes / 1048576.0
+	var mip_mib := base_mib * 4.0 / 3.0
+	var full_base := float(16384 * 8192 * 4) / 1048576.0
+	var full_mip := full_base * 4.0 / 3.0
+	var covered: Array = []
+	for idv3 in kept:
+		covered.append(int(idv3))
+	_array_atlas = {
+		"feature": ARRAY_ATLAS_FLAG_PATH,
+		"enabled": true,
+		"active": true,
+		"tier": "partial_array_2d_%dx%d_1024cell" % [cols, rows],
+		"label": ("PARTIAL FULL-RES TILE TIER — one 1024^2 donor-derived block per used "
+			+ "id, index-remapped tile map; PORT APPROXIMATION, NO donor parity claim"),
+		"fallback": "NONE — partial tier active",
+		"source_manifest": LEGACY_ATLAS_MANIFEST,
+		"source_blocks_dir": BLOCKS_DIR,
+		"ids_covered": covered,
+		"ids_covered_count": covered.size(),
+		"cells_by_id": counts.duplicate(true),
+		"ids_dropped": dropped.duplicate(),
+		"ids_dropped_count": dropped.size(),
+		"unmapped_cells": 0,   # filled in build() after the tile map is remapped
+		"grid": [cols, rows],
+		"atlas_size_px": [w, h],
+		"cell_size_px": [ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX],
+		"effective_subcell_px": [DONOR_RGB_SUBCELL_PX, DONOR_RGB_SUBCELL_PX],
+		"selection_period_m": TILE_M * float(maxi(DONOR_RGB_ROWS, DONOR_RGB_COLS)),
+		"vram_rgba8_bytes_base": int(base_bytes),
+		"vram_rgba8_mib_base": base_mib,
+		"vram_rgba8_mib_with_mips": mip_mib,
+		"full_atlas_rgba8_mib_base": full_base,
+		"full_atlas_rgba8_mib_with_mips": full_mip,
+		"vram_saved_mib_with_mips": full_mip - mip_mib,
+		"mip_basis": "CPU generate_mipmaps(false) before ImageTexture.create_from_image (level 0 unchanged)",
+		"shader_binding": ("sampler2D tile_atlas bound to compact atlas; atlas_grid = partial grid; "
+			+ "donor_to_packed = 1; NO shader edit. True sampler2DArray needs a shader change (OUT OF SCOPE)"),
+		"id_remap": ("L8 tile map carries compact slot, not donor id; UV2.x keeps the original "
+			+ "id for alpha/debug. id-gated shader alpha overrides therefore see slot indices — "
+			+ "labelled PORT APPROXIMATION"),
+		"no_synthetic_upscaling": true,
+		"no_invented_art": true,
+		"filler_policy": "unused slots duplicate a real used block; no fragment samples them",
+		"visual_parity_claim": false,
+	}
+	return true
 
 
 func _atlas_resolution_info(paths: Dictionary) -> Dictionary:
@@ -727,6 +986,35 @@ func _load_atlas() -> bool:
 	_atlas_loader = loader_script.new(atlas_mode_request, paths)
 	if _atlas_loader == null:
 		return false
+	var use_partial: bool = (array_atlas and not hires_atlas
+		and _compact_atlas_texture != null and not _id_to_slot.is_empty())
+	if use_partial:
+		# TERRAINRES partial tier: bind the compact full-res atlas built from
+		# the used ids' real block PNGs. The loader is used for its two masks
+		# ONLY (get_mask_textures() lazily calls _load_masks()), so the default
+		# terrain_new atlas is never decoded into VRAM. Sampler, grid and the
+		# remapped tile map are already prepared; no shader edit is involved.
+		atlas_mode = str(_array_atlas.get("tier", "partial_array_2d"))
+		atlas_texture = _compact_atlas_texture
+		_atlas_texture = _compact_atlas_texture
+		_atlas_grid = _compact_grid
+		_mip_source = "CPU generate_mipmaps before ImageTexture.create_from_image (partial tier)"
+		_atlas_info = {
+			"mode": atlas_mode,
+			"array_layers": _id_to_slot.size(),
+			"single_path": "partial block PNGs: " + BLOCKS_DIR,
+			"note": "partial-array-style 2D atlas; true sampler2DArray requires a shader edit (OUT OF SCOPE)",
+		}
+		_atlas_resolution["superseded_by"] = ARRAY_ATLAS_FLAG_PATH
+		_atlas_resolution["active_tier"] = atlas_mode
+		_atlas_resolution["tier"] = atlas_mode
+		var partial_masks: Array = _atlas_loader.call("get_mask_textures")
+		if partial_masks.size() < 2:
+			push_error("terrain_donor_mesh: loader returned fewer than 2 masks (partial tier)")
+			return false
+		_alpha_tex = _repack_mask_alpha(partial_masks[0])
+		_alphavert_tex = _repack_mask_alpha(partial_masks[1])
+		return _alpha_tex != null and _alphavert_tex != null
 	# load() owns single -> split -> array; it reports the CHOSEN mode.
 	if not bool(_atlas_loader.call("load")):
 		push_error("terrain_donor_mesh: atlas load failed: %s" % str(_atlas_loader.call("get_last_error")))
@@ -1018,6 +1306,7 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 			"info": _atlas_info.duplicate(true),
 			"mipmaps_cpu_before_create_from_image": _mip_source,
 			"hires_diagnostic": _atlas_resolution.duplicate(true),
+			"partial_array_diagnostic": _array_atlas.duplicate(true),
 		},
 		"rgb_subcells": {
 			"rows": DONOR_RGB_ROWS,
@@ -1040,6 +1329,7 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 		"shader_path": _shader_path_used,
 		"light_match": _light_match.duplicate(true),
 		"color_unify": _color_unify.duplicate(true),
+		"array_atlas": _array_atlas.duplicate(true),
 		"alpha": _alpha_contract.duplicate(true),
 		"visual_parity_claim": visual_parity_claim,
 		"fed_back_into_sim": false,
@@ -1081,6 +1371,10 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 				+ "full-rig lift (PHOTO_LED §1 halo/grass; HANDOFF §9.15 overshoot; "
 				+ "PHOTO_LED §2 donor-direction b); opt-in features.terrain.color_unify; "
 				+ "NOT donor parity, no gamma/exposure lift"),
+			"partial_array": ("OPT-IN features.terrain.array_atlas; AUDIT-ATLAS-RES §2/§5/§6 "
+				+ "options B/D. 1024^2 donor-derived block PNGs from assets/terrain/blocks/, "
+				+ "id -> compact slot remap, one 128 px subcell per used id. "
+				+ "PORT APPROXIMATION, NO donor parity claim"),
 		},
 	}
 
@@ -1093,6 +1387,9 @@ func build() -> bool:
 	# HIRES-ATLAS-C: resolve the opt-in once, before any path/sampler binding,
 	# so _atlas_paths(), stats and the loader all see the same tier this build.
 	hires_atlas = _resolve_hires_atlas_flag()
+	# TERRAINRES: resolve the partial-tier opt-in once per build so the tile
+	# map, atlas binding, loader path and stats all see the same decision.
+	array_atlas = _resolve_array_atlas_flag()
 	# LIGHT-MATCH: likewise resolve the opt-in once per build so the material
 	# binding and the stats block see the same decision.
 	light_match = _resolve_light_match_flag()
@@ -1102,7 +1399,14 @@ func build() -> bool:
 		push_error("terrain_donor_mesh: bind() an I06 container / height dump first")
 		return false
 	_mip_source = ""
+	# TERRAINRES: build the compact full-res tier BEFORE the tile map so the
+	# id -> slot remap is available when the L8 image is packed. A failure is
+	# labelled and silently leaves the commit-default terrain_new tier intact.
+	if array_atlas:
+		_build_partial_array_atlas()
 	_tile_map_tex = _build_tile_map_texture()
+	if not _array_atlas.is_empty():
+		_array_atlas["unmapped_cells"] = _unmapped_cells
 	var tile_map_ok: bool = _tile_map_tex != null
 	var atlas_ok := _load_atlas()   # resolve samplers BEFORE the material is made
 	var nverts: int = _n
@@ -1198,11 +1502,18 @@ func invalidate() -> void:
 	_atlas_grid = Vector2.ZERO
 	_atlas_info = {}
 	_atlas_resolution = {}
+	_array_atlas = {}
+	_id_to_slot = {}
+	_slot_to_id = {}
+	_compact_atlas_texture = null
+	_compact_grid = Vector2.ZERO
+	_unmapped_cells = 0
 	_shader_params = {}
 	_light_match = {}
 	light_match = false
 	_color_unify = {}
 	color_unify = false
+	array_atlas = false
 	_alpha_contract = {}
 	_mip_source = ""
 	_built = false

@@ -2747,7 +2747,9 @@ func _sow_field_ring(mill: Dictionary, donor_rules := false) -> int:
 		return _sow_donor_field_ring(mill, owned)
 	var player: int = int(mill.player)
 	var made := 0
-	var step := 1.6981 * TILE * 0.5
+	# DEC_LANDSCAPE_item_placement §7: SIZE=1.6981 CELLS, not metres.
+	# At TILE=2 m/cell the lattice step is 3.3962 m (X22 §4).
+	var step := SOW_SIZE_CELLS * TILE
 	for r in SOW_ROW:
 		for c in SOW_ROW:
 			var rr := r - SOW_ROW / 2

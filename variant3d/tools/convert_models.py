@@ -916,6 +916,9 @@ def convert_palm_desert(game: str, out: str) -> int:
             "Winter albedo variants (palm1w..3w, desert1w..5w, "
             "plantsyellowatlasw) are not converted here; only the donor "
             "DefaultMaterialName summer albedo used by each MTL is emitted.",
+            "palm* props declare RandomMaterialName=True with summer albedo "
+            "set palm1/palm2/palm3; only DefaultMaterialName=palm1 is bound "
+            "in the MTL. Engine-side random material selection is UNVERIFIED.",
             "Feed BaseName -> sid rules in terrain_donor_props.gd are unchanged; "
             "binding these sids is separate follow-up work.",
             "No donor/port A/B frame exists. Pixel/topology equality is not a "

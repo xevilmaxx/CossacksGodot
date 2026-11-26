@@ -8848,6 +8848,22 @@
    "obj": "res://assets/models/obj/shared/terrain/plantyellow1.obj",
    "tex": "res://assets/models/tex/shared/terrain/plantsyellowatlas.png",
    "bucket": "shared/terrain"
+  },
+  "eurmil": {
+   "obj": "res://assets/models/obj/shared/buildings/mil.obj",
+   "tex": "res://assets/models/tex/shared/buildings/mil.png"
+  },
+  "eursto": {
+   "obj": "res://assets/models/obj/shared/buildings/sto.obj",
+   "tex": "res://assets/models/tex/shared/buildings/sto.png"
+  },
+  "eurmar": {
+   "obj": "res://assets/models/obj/shared/buildings/mar.obj",
+   "tex": "res://assets/models/tex/shared/buildings/mar.png"
+  },
+  "eurtow": {
+   "obj": "res://assets/models/obj/shared/buildings/tow.obj",
+   "tex": "res://assets/models/tex/shared/buildings/tow.png"
   }
  }
 }
