@@ -390,12 +390,12 @@ func _finalize_mine_tiles() -> void:
 		var sc := Vector2(float(st.x) / TILE, float(st.y) / TILE)
 		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
 			for xx in range(maxi(0, int(sc.x - 16.0)), mini(MAP_W, int(sc.x + 16.0) + 1)):
+				var ci := _t(xx, yy)
 				if Vector2(float(xx) - sc.x, float(yy) - sc.y).length() <= 16.05:
-					var ci := _t(xx, yy)
 					if terrain[ci] == 2:
 						terrain[ci] = 0
-				if tileblock.size() == MAP_W * MAP_H and int(tileblock[ci]) != BLK_WATER:
-					tileblock[ci] = g0  # Y08b: whole start disc visible as meadow id; water kept
+					if tileblock.size() == MAP_W * MAP_H and int(tileblock[ci]) != BLK_WATER:
+						tileblock[ci] = g0  # Y08b: whole start disc visible as meadow id; water kept
 		# Keep every start walkable: stamp relief / collision can otherwise
 		# enclose an AI home slot with rock, breaking scan_map reachability.
 		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):

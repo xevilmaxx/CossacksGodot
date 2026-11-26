@@ -875,4 +875,123 @@ source edit occurred in this implementation step. Whether the rings actually dis
 **UNVERIFIED** until G04's matched-camera capture and a second-agent visual read. **No donor
 parity and no gate PASS claimed** (CHARTER §3/§5).
 
-*End of Y08 report (analysis + follow-up + Y08-IMPL + Y08b proposal + Y08b-IMPL). Stay available.*
+### 12.10 Gate-fail (ticket 604) and COORD's correction — FINAL SOURCE
+
+**OBSERVED — my §12.9 edit introduced a real defect.** In my applied version of the start
+keep-clear hunk, `var ci := _t(xx, yy)` remained **inside** the `if …length() <= 16.05:` block
+while the lifted tileblock write referenced `ci` **outside** it. That is a scope error in
+GDScript. Note that §12.3's proposed diff had the declaration inside the radius check too —
+the proposal was wrong in exactly the same way; §12.9 applied it verbatim. I own that error.
+
+**Gate-fail evidence (all OBSERVED):**
+- Result `variant3d\.godot_queue\results\00000604.json`: ticket **604**, id **`y08b-realmap`**,
+  `--seed 20261113`, `run=609.9024 s`, **`exit=1`, `status="failed"`**, watchdog wall-clock limit
+  reached, forced exit.
+- `...\00000604_y08b-realmap\stderr.txt` (16 lines) — **5 `SCRIPT ERROR` lines**:
+  1. `SCRIPT ERROR: Parse Error: Identifier "ci" not declared in the current scope.` — `game.gd:397`
+  2. same — `game.gd:398`
+  3. `SCRIPT ERROR: Compile Error: Failed to compile depended scripts.` — `world.gd:0`
+  4. same — `main.gd:0`
+  5. `SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.` — `main.gd:1085` (`_setup_full_game`)
+  Plus `ERROR: Failed to load script "res://scripts/main.gd" with error "Compilation failed".`
+- **No PNG was produced**: `C:\Users\Maxym.Oboyshev\AppData\Local\Temp\opencode\y08b\realmap.png`
+  does not exist (`Test-Path` = False). The failure is therefore a **code compile failure**,
+  not an art/visual result; no visual verdict may be drawn from ticket 604.
+
+**COORD's fix (OBSERVED current source; DO NOT UNDO):**
+- `var ci := _t(xx, yy)` moved **above** the `if …length() <= 16.05:` radius check (`:393`).
+- The tileblock write moved **inside** the radius check (`:397-398`), so the original
+  **16.05-cell radius semantics are preserved** — my intermediate version would have applied
+  the write to the whole bbox (`16.0`-style square extent), silently widening the start
+  keep-clear disc. COORD's version is correct on both scope and geometry.
+
+Corrected final source lines `game.gd:389-399` (verbatim):
+
+```gdscript
+	for st in map_starts:
+		var sc := Vector2(float(st.x) / TILE, float(st.y) / TILE)
+		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
+			for xx in range(maxi(0, int(sc.x - 16.0)), mini(MAP_W, int(sc.x + 16.0) + 1)):
+				var ci := _t(xx, yy)
+				if Vector2(float(xx) - sc.x, float(yy) - sc.y).length() <= 16.05:
+					if terrain[ci] == 2:
+						terrain[ci] = 0
+					if tileblock.size() == MAP_W * MAP_H and int(tileblock[ci]) != BLK_WATER:
+						tileblock[ci] = g0  # Y08b: whole start disc visible as meadow id; water kept
+		# Keep every start walkable: stamp relief / collision can otherwise
+```
+
+Verbatim current diff vs `inbox/backup/game.gd.bak-Y08b` (OBSERVED):
+
+```diff
+diff --git a/inbox/backup/game.gd.bak-Y08b b/variant3d/scripts/game.gd
+index 6d6bac8e..43c36a9b 100644
+--- a/inbox/backup/game.gd.bak-Y08b
++++ b/variant3d/scripts/game.gd
+@@ -379,7 +379,7 @@ func _finalize_mine_tiles() -> void:
+ 			_mark_mine_mask(n.pos, 3.0 * TILE)
+ 	if tileblock.size() != MAP_W * MAP_H:
+ 		return
+-	var g1 := _blk("ground1")
++	var g1 := _blk("test8")  # Y08b PORT APPROX: visible worked ground = meadow id; mine_mask/terrain untouched
+ 	for mi in mine_mask.size():
+ 		if mine_mask[mi] != 0:
+ 			tileblock[mi] = g1
+@@ -390,12 +390,12 @@ func _finalize_mine_tiles() -> void:
+ 		var sc := Vector2(float(st.x) / TILE, float(st.y) / TILE)
+ 		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
+ 			for xx in range(maxi(0, int(sc.x - 16.0)), mini(MAP_W, int(sc.x + 16.0) + 1)):
++				var ci := _t(xx, yy)
+ 				if Vector2(float(xx) - sc.x, float(yy) - sc.y).length() <= 16.05:
+-					var ci := _t(xx, yy)
+ 					if terrain[ci] == 2:
+ 						terrain[ci] = 0
+-						if tileblock.size() == MAP_W * MAP_H:
+-							tileblock[ci] = g0
++					if tileblock.size() == MAP_W * MAP_H and int(tileblock[ci]) != BLK_WATER:
++						tileblock[ci] = g0  # Y08b: whole start disc visible as meadow id; water kept
+ 		# Keep every start walkable: stamp relief / collision can otherwise
+ 		# enclose an AI home slot with rock, breaking scan_map reachability.
+ 		for yy in range(maxi(0, int(sc.y - 16.0)), mini(MAP_H, int(sc.y + 16.0) + 1)):
+@@ -2146,13 +2146,14 @@ func _assign_tileblocks() -> void:
+ 	# patch (0,0) constant 1.0) AFTER smoothing, forest borders, L01 spots and
+ 	# the mine apron, so no per-cell colour ring, spot or checkerboard survives
+ 	# into UV2.x. Exceptions are only donor-required roles: water, shore/sand,
+-	# rock/cliff, worked road/apron. _blk() draws no RNG; no terrain/height/
++	# rock/cliff and roads. Mine worked ground is now visible-meadow too. _blk() draws no RNG; no terrain/height/
+ 	# blocked write. Placement BEFORE the winter alias keeps season art intact.
+ 	var meadow_id := _blk("test8")
+ 	for i in tileblock.size():
+ 		if int(tileblock[i]) == BLK_WATER:   # 255, game.gd:52
+ 			continue
+-		if mine_mask[i] != 0:                # real worked ground wins
++		if mine_mask[i] != 0:                # Y08b: VISIBLE id only; mask/terrain untouched
++			tileblock[i] = meadow_id
+ 			continue
+ 		var role: int = int(terrain[i])
+ 		if role == 1 or role == 3 or role == 4 or role == 5:
+```
+
+`git diff --no-index --numstat` → **7 insertions, 6 deletions** (net +1 line) against
+`game.gd.bak-Y08b`. Current source SHA-256
+`B4E4E8754EA2ED540544F6D30CC9E4A2B57407D43F82D4F380CAC49CECFD3B55` — **supersedes** the
+`E6295C02…EA17865` value recorded in §12.9 (that was my broken pre-COORD-fix state). The
+`bak-Y08b` backup remains the correct pre-Y08b baseline; rollback to it removes all of Y08b.
+
+**Invariant note (DERIVED):** COORD's correction changes no semantics other than fixing scope
+and restoring the original 16.05-cell radius; `terrain[ci]=0` is still gated by `terrain==2`,
+the `BLK_WATER` guard still holds, the tileblock write is still whole-disc-within-radius, and
+no RNG token was added. All §12.5 invariants stand, with "whole start disc" now correctly
+reading "whole start disc **within the original 16.05 radius**".
+
+**Next gate:** ticket 604 must be re-run under a new unique id (G04 owns the runner). Only a
+fresh `script_error_lines == 0` capture with a PNG can promote the "no rings around mines/starts"
+acceptance in §12.6 from UNVERIFIED to observed. No donor parity claim.
+
+### 12.11 Scope of this notice update
+
+Only this report file was edited in response to COORD's notice. No code edit (I do **not** undo
+COORD's fix), no runner job, no Godot process, no queue mutation, no donor file. **No donor
+parity and no gate PASS claimed.**
+
+*End of Y08 report (analysis + follow-up + Y08-IMPL + Y08b proposal + Y08b-IMPL + ticket-604 correction). Stay available.*

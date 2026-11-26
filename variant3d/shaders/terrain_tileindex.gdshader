@@ -57,7 +57,7 @@ render_mode blend_mix, unshaded, cull_disabled;
 // magnification of the repeating cell cannot band at shallow cameras. This is
 // NOT donor parity: donor maNearest/miNearestMipmapLinear stays the cited
 // intent (reftile.mat:29-37); no anisotropic claim (A08 §7 #4, reftile.mat:24).
-uniform sampler2D tile_atlas : filter_linear_mipmap, repeat_enable;
+uniform sampler2D tile_atlas : filter_linear_mipmap_anisotropic, repeat_enable;
 // V7-85 asset: donor block atlas, one preset per cell. Cell = preset index
 // (presets_summer.json:2-125), row-major from top-left, grid in `atlas_grid`.
 // RGB only: no normal map — donor tangentSpace=false (shaders.lib:19) and
