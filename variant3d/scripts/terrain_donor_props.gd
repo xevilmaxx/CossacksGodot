@@ -105,6 +105,15 @@ const MINE_STAMP_H: int = 10                        # donor data/game/var/genera
 const MINE_RING_MIN: int = 3                        # donor data/scripts/common.inc/dogenerate.inc:528-534 (density 0)
 const MINE_RING_MAX: int = 5                        # donor data/scripts/common.inc/dogenerate.inc:528-534 (density 2)
 const MINE_ORES: Array[String] = ["mng", "mni", "mnc"]  # donor data/scripts/common.inc/dogenerate.inc:547-551
+# FIX-MINE-SIZE — donor prop scale, PROVEN (not a fudge): all three deposit props
+# declare DefaultScale X=Y=Z=0.3152 (donor data/objects/env/mine{gold,iron,coal}.prop:37-39)
+# and envscales.cfg group=mines sets scale=0.3152 with minscale=maxscale=1, i.e. no
+# jitter (donor data/game/var/envscales.cfg:16-36; DTRN-05 C5/C6). The converted OBJ
+# keeps the RAW mesh AABB 15.026x15.822x1.913 (port manifest.json:2217-2224), so this
+# scale yields 4.736x4.987x0.603 m = 2.37x2.49 map cells at TILE_M=2.0 (V08 C2).
+# This is a dimensionless prop scale, NOT a generator distance: V08 C1 keeps all
+# mine rings/stamp footprints in CELLS 1:1 and forbids any W/160 multiplier.
+const MINE_PROP_SCALE: float = 0.3152
 const KEEP_CLEAR_ELLIPSES_CELLS: Array = [[5, 7], [12, 15], [22, 18]]  # donor dogenerate.inc:407-414; CELLS 1:1 (V08 C1)
 const FIELD_ROWS: int = 7                           # donor data/scripts/lib/unit.script:6475-6476 (cRow=7, cCount=49)
 const FIELD_NODES: int = 49                         # donor data/scripts/lib/unit.script:6476
@@ -213,6 +222,7 @@ const UNVERIFIED_BASE: Dictionary = {
 	"PUMPS": "UNVERIFIED — k_pump_* 15 patterns and pump meshes/texture not converted (F07 §3.4; F08 E15)",
 	"FIELD_DECAL_UV": "UNVERIFIED — 3D UV/epsilon binding of envfieldd/w (world3d_entities.gd:315; F07 E5)",
 	"MINE_RECORD_BINDING": "UNVERIFIED — mine stamp record-id -> prop mapping (DTRN-05 Q1/Q2; A04 §8 item 11)",
+	"PHANTOM_DISC_RADIUS": "UNVERIFIED — this instancer has NO halo/deposit-disc radius parameter to resize; the olive ground disc is donor mesh albedo art on low-Z faces (DTRN-05 C7) while VIDEO_MINE_FIELD.md §2.3 reports no donor halo; no disc-only scale invented and the halo-quad belongs to another file",
 	"SHORE_SUBSTRATE": "UNVERIFIED — donor mask.b>0 shore substrate binding (G26-5; A04 §8 item 10)",
 	"SWAMP_LAKE_EXPORT": "UNVERIFIED — swamp/lake families absent from donor_patterns.json (V07 E16)",
 	"LAKE_BIG_ANOMALY": "UNVERIFIED — lake_big := plain*2*0 literal zero preserved (A04 E20 / spec/10 §5 A3)",
@@ -554,6 +564,10 @@ func _fresh_stats(state: String) -> Dictionary:
 			"rings_min": MINE_RING_MIN, "rings_max": MINE_RING_MAX,
 			"unit": "MAP CELLS 1:1 — no DONOR_UNITS=160 multiplier (V08 C1)",
 			"source": "donor dogenerate.inc:528-551 / generator.cfg:69-153",
+			"prop_default_scale": MINE_PROP_SCALE,
+			"footprint_cells_xy": [2.368, 2.494],
+			"footprint_note": "4.736x4.987 m footprint = raw OBJ AABB (manifest.json:2217-2224) x0.3152, /TILE_M=2.0; DTRN-05 C6",
+			"scale_source": "donor objects/env/mine{gold,iron,coal}.prop:37-39 / game/var/envscales.cfg:16-36 (minscale=maxscale=1); DTRN-05 C5/C6",
 		},
 		"keep_clear_ellipses_cells": {
 			"radii": KEEP_CLEAR_ELLIPSES_CELLS.duplicate(true),
@@ -1143,9 +1157,22 @@ func _add_to_batch(p_rec: Dictionary, p_stats: Dictionary) -> void:
 		var base_basis: Basis = Basis().rotated(Vector3(1.0, 0.0, 0.0), -PI * 0.5)  # donor Z-up -> Y-up, PORT APPROX
 		var basis: Basis = Basis().rotated(Vector3(0.0, 1.0, 0.0), deg_to_rad(float(p_rec["yaw_deg"]))) * base_basis
 		var sc: float = float(p_rec["scale"])
+		if cls == "mines":
+			# FIX-MINE-SIZE: bind the donor prop DefaultScale for mine deposits ONLY.
+			# The compact feed's per-object Scaling drifts slightly (gold 0.31520,
+			# iron 0.31519, coal 0.32307); the donor prop/envscales tables are
+			# authoritative and jitter-free (minscale=maxscale=1). This substitutes
+			# a donor-literal value — it does NOT add a multiplier. The original feed
+			# value stays in p_rec["scale"]; every other class keeps its own value.
+			sc = MINE_PROP_SCALE
 		basis = basis.scaled(Vector3(sc, sc, sc))
 		var origin: Vector3 = (p_rec["world_pos"] as Vector3) + basis * Vector3(-cx, -cy, -z0)
 		mm2.set_instance_transform(idx, Transform3D(basis, origin))
+		if cls == "mines":
+			holder2.set_meta("mine_prop_scale", sc)
+			holder2.set_meta("mine_prop_scale_source",
+				"DONOR LITERAL — mine{gold,iron,coal}.prop:37-39 / envscales.cfg:16-36 (0.3152, min=max=1); DTRN-05 C5/C6")
+			holder2.set_meta("mine_footprint_cells_xy", Vector2(2.368, 2.494))
 
 	var classes: Dictionary = p_stats["classes"]
 	var families: Dictionary = p_stats["families"]

@@ -5204,6 +5204,37 @@ func _work_slot(e: Dictionary, center: Vector2, ring_r: float) -> Vector2:
 		return p2
 	return center
 
+# BUILDER-STANDS: construction-only stand slot around the WHOLE unfinished
+# footprint.  Keeps _work_slot's golden-angle hash (deterministic per unit id,
+# no RNG draw, so default-seed bytes are untouched) but tests candidates with
+# the pathfinder's own obstacle query, so a peasant is never ordered into the
+# drawn ink box / under the scaffold.  The probe deliberately carries no build
+# order: _blocked_for then treats the site's own block_rect and stamped circle
+# as obstacles instead of skipping them.  A bounded 16-direction scan (same
+# lattice as _snap_free_point, starting at this builder's hash angle) spreads
+# the crew to free sides; the last resort is to stay put, never the site centre,
+# which is what used to trap builders inside on completion.
+func _build_stand_slot(e: Dictionary, site: Dictionary) -> Vector2:
+	var center: Vector2 = site.pos
+	var ring_r := float(site.get("block_r", site.def.radius)) + 0.7
+	var ang := float(e.id) * 2.399963 + center.x * 0.13 + center.y * 0.07
+	var rr := ring_r + float(e.id % 3) * 0.35
+	var probe: Dictionary = {"def": {}, "order": {}}
+	var p := center + Vector2(cos(ang), sin(ang)) * rr
+	if in_bounds(p) and not _blocked_for(probe, p):
+		return p
+	var p2 := center - Vector2(cos(ang), sin(ang)) * rr
+	if in_bounds(p2) and not _blocked_for(probe, p2):
+		return p2
+	for ring in 4:
+		var rad := rr + float(ring)
+		for k in 16:
+			var a := ang + TAU * float(k) / 16.0
+			var q := center + Vector2(cos(a), sin(a)) * rad
+			if in_bounds(q) and not _blocked_for(probe, q):
+				return q
+	return e.pos
+
 # T5GEN F4: nearest walkable point around p for a probe entity.  Ring scan is
 # deterministic (fixed 16 directions, 1 m steps) and never uses unseeded RNG.
 func _snap_free_point(p: Vector2, probe: Dictionary) -> Vector2:
@@ -5482,9 +5513,10 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 			if site.is_empty() or site.dead or site.finished:
 				e.order = {"type": "none"}
 				return
-			# each builder takes its own slot around the site so the crew
-			# rings the foundations instead of stacking on one point
-			var slot_b := _work_slot(e, site.pos, float(site.get("block_r", site.def.radius)) + 0.7)
+			# Each builder takes its own slot around the WHOLE footprint; the
+			# stand is tested against the drawn block box so nobody is ordered
+			# inside the unfinished walls or under the scaffold.
+			var slot_b := _build_stand_slot(e, site)
 			var d: float = e.pos.distance_to(slot_b)
 			if d > 0.6:
 				e.moving = true

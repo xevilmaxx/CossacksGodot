@@ -246,6 +246,31 @@ uniform float light_rig_sun_energy = 1.0;
 //   telemetry surface; 1.0 = unscaled donor colour (current default).
 
 // ----------------------------------------------------------------------------
+// COLOR-UNIFY — PORT CALIBRATION, opt-in features.terrain.color_unify.
+// The full rig lift MEASURED on the candidate overshot global grass from
+// [72.0,74.4,20.3] (PHOTO_LED_mine_colour_seam.md §1) to [134.1,139.2,42.9]
+// (HANDOFF §9.15, cap_donor_240_lightmatch.png). This uniform applies ONLY the
+// missing fraction of THAT SAME lift, per channel, derived from the measured
+// halo/grass and the donor-direction cue:
+//   G  = [72.0,74.4,20.3]          global grass (PHOTO_LED §1)
+//   O  = [134.1,139.2,42.9]        full-rig overshoot (HANDOFF §9.15)
+//   L  = O-G = [62.1,64.8,22.6]    existing rig lift
+//   H  = [76.3,78.4,25.4]          mine halo (PHOTO_LED §1)
+//   V  = [78.0,80.0,36.0]          donor-video grass DIRECTION only (PHOTO_LED §2)
+//   T  = [H.r,H.g,V.b] = [76.3,78.4,36.0]   (V.b ~= measured disc b 35.9)
+//   N  = T-G = [4.3,4.0,15.7]      missing lift (grass->halo seam + blue)
+//   f  = N/L = [0.06924,0.06173,0.69469]
+//   g  = 1 + f*(O/G - 1) = T/G = [1.05972,1.05376,1.77340]
+// These are ratios of measured candidate pixels, NOT a new donor constant and
+// NOT a gamma/exposure operation. Default vec3(1.0) is byte-identical to the
+// previous unscaled Blinn-Phong path. terrain_donor_mesh.gd binds the gain only
+// under the opt-in and leaves the rig energies neutral to prevent stacking;
+// light_match remains an independent flag. No shadow/AO/emissive/noise fill.
+// PORT CALIBRATION — NO donor parity claim.
+// ----------------------------------------------------------------------------
+uniform vec3 color_unify_gain = vec3(1.0);
+
+// ----------------------------------------------------------------------------
 // Shore / water levels — THREE DISTINCT LEVELS, never conflated, never used as
 // the shader plane Y (which belongs to water3d.gdshader and is [U], X11 §7.1).
 // Shore tiles are selected on the CPU by texturemap.inc:463-529 (sandsea1/5/6,
@@ -325,7 +350,12 @@ void vertex() {
 	// Donor clamps away-facing slopes to zero diffuse; ambient-only dark sides
 	// are therefore expected. Do not add fill, abs(dot), or tune light colours
 	// to conceal authored rock/prop art (X35 §5/§7).
-	v_packed = ambient + diffuse;                                        // :18,:37
+	// COLOR-UNIFY [PORT CALIBRATION]: scale ONLY the packed ambient+diffuse
+	// light term by the per-channel fraction of the MEASURED rig lift needed to
+	// close the grass->halo seam and restore donor-direction blue. Multiplying
+	// in vertex space keeps the donor equation shape and the single varying;
+	// specular (donor material zero) is untouched. vec3(1) = previous path.
+	v_packed = (ambient + diffuse) * color_unify_gain;                   // :18,:37
 	// Donor fixed-function product (hf.pvl.sm.vert:23; X35 §5): bound light colour
 	// x donor material specular (0,0,0,1) -> zero for normal ground and faces.
 	v_specular = pow(max(dot(h, n), 0.0), shininess) * specular_rgb * material_specular_rgb; // :22,:38

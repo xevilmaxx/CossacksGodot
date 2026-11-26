@@ -48,10 +48,19 @@ Usage:
       --game "C:\\Games\\Cossacks 3" \
       --manifest variant3d/assets/models/manifest.json \
       --out variant3d/assets/models/skin
+
+FIX-SAIL-MESH — derived sail geometry (opt-in, skin pass not run):
+  python variant3d/tools/convert_skins.py --sail-mesh \
+      --game "C:\\Games\\Cossacks 3" \
+      --sail-out variant3d/assets/models/obj/shared/buildings
+
+The .oss reader below is shared with the sail exporter: read_oss(..., geometry=True)
+also keeps the donor faces / UVs / UV-faces so the OBJ can carry them verbatim.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import struct
@@ -81,13 +90,29 @@ DEFAULT_ACTIONS = ("idle", "idle0", "walk", "walk0", "death",
                    "attack0", "attack1", "construct")
 SCHEMA = "c3_skin_v1"
 
+# FIX-SAIL-MESH — donor mill-sail attach. The actor/prop name the mesh and its
+# material; the geometry stays RAW donor Z-up metres (convert_models.py:43-66).
+SAIL_OSS_REL = "data/actors/buildings/commoneur/attach/eurmilanim.oss"
+SAIL_OBJ_STEM = "eurmilanim"
+# The donor prop names material `eurmil` (summer); the already-converted repo
+# PNG for that exact DDS is `mil.png` (manifest.json sid `mil`, tex bucket).
+SAIL_MTL_REF = r"..\..\..\tex\shared\buildings\mil.png"
+SAIL_CITE = ("data/actors/buildings/commoneur/attach/eurmilanim.actor:5-6; "
+             "data/objects/buildings/attach/eurmilanim.prop:17-21")
+SAIL_EXPECT = {"k": 251, "fps": 30, "bones": 1, "v": 1098, "fc": 550, "t": 1098}
+
 
 # ---------------------------------------------------------------------------
 # donor layout readers (verbatim shape from bake_sprites.py / convert_models.py)
 # ---------------------------------------------------------------------------
 
-def read_oss(path: str) -> dict:
-    """bake_sprites.py:91-103 / convert_models.py:48-71, read-only."""
+def read_oss(path: str, geometry: bool = False) -> dict:
+    """bake_sprites.py:91-103 / convert_models.py:48-71, read-only.
+
+    geometry=False keeps the original skin path byte-identical. geometry=True
+    additionally returns the donor face / UV / UV-face arrays without changing
+    any offsets or interpretation.
+    """
     with open(path, "rb") as f:
         raw = f.read()
     if len(raw) < 24:
@@ -100,6 +125,7 @@ def read_oss(path: str) -> dict:
     verts = []
     for _ in range(v):
         verts.append(struct.unpack_from("<3f", raw, off)); off += 12
+    geom_off = off
     off += fc * 12 + t * 8 + fc * 12          # faces, uv, uv-faces: skipped
     weights = []
     for _ in range(v):
@@ -119,8 +145,17 @@ def read_oss(path: str) -> dict:
     if off != len(raw):
         raise ValueError("size closure failed: consumed %d of %d bytes"
                          % (off, len(raw)))
-    return dict(k=k, fps=fps, bones=b, v=v, fc=fc, t=t,
-                verts=verts, weights=weights, anim=anim, bytes=off)
+    out = dict(k=k, fps=fps, bones=b, v=v, fc=fc, t=t,
+               verts=verts, weights=weights, anim=anim, bytes=off)
+    if geometry:
+        p = geom_off
+        faces = [struct.unpack_from("<3i", raw, p + 12 * i) for i in range(fc)]
+        p += fc * 12
+        uvs = [struct.unpack_from("<2f", raw, p + 8 * i) for i in range(t)]
+        p += t * 8
+        uv_faces = [struct.unpack_from("<3i", raw, p + 12 * i) for i in range(fc)]
+        out.update(faces=faces, uvs=uvs, uv_faces=uv_faces)
+    return out
 
 
 def read_aaf(path: str) -> dict:
@@ -186,6 +221,86 @@ def skin_at(mesh: dict, frame: int) -> list[tuple[float, float, float]]:
 def r6(x: float) -> float:
     """Trim float32 noise so the JSON stays compact (1e-6 m precision)."""
     return round(float(x), 6)
+
+
+# ---------------------------------------------------------------------------
+# FIX-SAIL-MESH — derived donor sail OBJ/MTL (geometry pass only)
+# ---------------------------------------------------------------------------
+
+def write_sail_obj(dest: Path, mesh: dict, mtl_name: str) -> None:
+    """Same wire format as convert_models.write_obj (:114-130), donor order.
+
+    Vertices stay RAW donor Z-up metres and UVs are the donor's own (no bake,
+    no axis flip, no re-indexing); the runtime mount applies the proven
+    _bake_mesh() transform instead. A different header line marks provenance.
+    """
+    with open(dest, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("# Cossacks 3 donor sail mesh, derived by convert_skins.py "
+                 "(FIX-SAIL-MESH); raw donor Z-up metres\n")
+        fh.write("mtllib %s\n" % mtl_name)
+        fh.write("o model\n")
+        for x, y, z in mesh["verts"]:
+            fh.write("v %.6f %.6f %.6f\n" % (x, y, z))
+        for u, v in mesh["uvs"]:
+            fh.write("vt %.6f %.6f\n" % (u, v))
+        for tri, uv in zip(mesh["faces"], mesh["uv_faces"]):
+            fh.write("f %d/%d %d/%d %d/%d\n" % (
+                tri[0] + 1, uv[0] + 1, tri[1] + 1, uv[1] + 1,
+                tri[2] + 1, uv[2] + 1))
+
+
+def write_sail_mtl(dest: Path, texture_ref: str) -> None:
+    """Same material block as convert_models.write_mtl (:133-137)."""
+    with open(dest, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("newmtl model\n")
+        fh.write("Kd 1 1 1\n")
+        fh.write("map_Kd %s\n" % texture_ref)
+
+
+def convert_sail_mesh(game: Path, out_dir: Path) -> dict:
+    """Derive OBJ/MTL from the donor sail attach; never copy donor bytes."""
+    src = game / SAIL_OSS_REL
+    if not src.is_file():
+        raise ValueError("missing donor sail mesh %s" % src)
+    donor_bytes = src.read_bytes()
+    mesh = read_oss(str(src), geometry=True)
+    for field, want in SAIL_EXPECT.items():
+        if mesh[field] != want:
+            raise ValueError("donor sail %s=%d, expected %d (source drift)"
+                             % (field, mesh[field], want))
+    for tri in mesh["faces"] + mesh["uv_faces"]:
+        if min(tri) < 0 or max(tri) >= mesh["v"]:
+            raise ValueError("donor sail face index out of range")
+    if len(mesh["faces"]) != mesh["fc"] or len(mesh["uvs"]) != mesh["t"] \
+            or len(mesh["uv_faces"]) != mesh["fc"]:
+        raise ValueError("donor sail geometry count mismatch")
+
+    obj_path = out_dir / (SAIL_OBJ_STEM + ".obj")
+    mtl_path = out_dir / (SAIL_OBJ_STEM + ".mtl")
+    write_sail_obj(obj_path, mesh, SAIL_OBJ_STEM + ".mtl")
+    write_sail_mtl(mtl_path, SAIL_MTL_REF)
+
+    obj_hash = hashlib.sha256(obj_path.read_bytes()).hexdigest()
+    mtl_hash = hashlib.sha256(mtl_path.read_bytes()).hexdigest()
+    donor_hash = hashlib.sha256(donor_bytes).hexdigest()
+    xs, ys, zs = zip(*mesh["verts"])
+    return {
+        "sid": SAIL_OBJ_STEM,
+        "source": src.as_posix(),
+        "cite": SAIL_CITE,
+        "label": PORT_LABEL + " — donor geometry verbatim; spin/mount PORT APPROX, visual UNVERIFIED",
+        "coord": MORPH_COORD,
+        "k": mesh["k"], "fps": mesh["fps"], "bones": mesh["bones"],
+        "v": mesh["v"], "fc": mesh["fc"], "t": mesh["t"],
+        "vt": len(mesh["uvs"]), "f": len(mesh["faces"]),
+        "donor_bytes": len(donor_bytes), "donor_sha256": donor_hash,
+        "obj": obj_path.name, "obj_bytes": obj_path.stat().st_size,
+        "obj_sha256": obj_hash,
+        "mtl": mtl_path.name, "mtl_bytes": mtl_path.stat().st_size,
+        "mtl_sha256": mtl_hash, "mtl_map_kd": SAIL_MTL_REF,
+        "bbox": [min(xs), max(xs), min(ys), max(ys), min(zs), max(zs)],
+        "donor_binary_copied": obj_hash == donor_hash,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -289,9 +404,34 @@ def main() -> int:
                     help="C01-ASSET: index filename written under --out "
                          "(default: index.json; an additive run must use a "
                          "separate name, e.g. index_nation.json)")
+    ap.add_argument("--sail-mesh", action="store_true",
+                    help="FIX-SAIL-MESH: export ONLY the donor eurmilanim.oss "
+                         "sail geometry as derived OBJ/MTL; no skin pass, no "
+                         "index write")
+    ap.add_argument("--sail-out",
+                    default="variant3d/assets/models/obj/shared/buildings",
+                    help="destination folder for --sail-mesh OBJ/MTL")
     args = ap.parse_args()
 
     game = Path(args.game)
+    if args.sail_mesh:
+        sail_out = Path(args.sail_out)
+        sail_out.mkdir(parents=True, exist_ok=True)
+        try:
+            sail = convert_sail_mesh(game, sail_out)
+        except (OSError, ValueError) as exc:
+            print("SAIL FAIL %s" % exc)
+            return 1
+        print("SAIL OK %s v=%d vt=%d f=%d (donor k=%d fps=%d b=%d fc=%d t=%d)"
+              % (sail["obj"], sail["v"], sail["vt"], sail["f"], sail["k"],
+                 sail["fps"], sail["bones"], sail["fc"], sail["t"]))
+        print("  donor %s bytes sha256=%s"
+              % (sail["donor_bytes"], sail["donor_sha256"]))
+        print("  obj   %s bytes sha256=%s"
+              % (sail["obj_bytes"], sail["obj_sha256"]))
+        print("  mtl   %s bytes sha256=%s map_Kd=%s"
+              % (sail["mtl_bytes"], sail["mtl_sha256"], sail["mtl_map_kd"]))
+        return 0
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)

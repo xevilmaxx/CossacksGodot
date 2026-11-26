@@ -356,6 +356,24 @@ const FIELD_DECAL_MATERIAL_STATUS: String = PORT_LABEL + " — envfieldd/w alpha
 # material can request donor-style mipmap filtering but cannot manufacture the
 # missing mip chain; fixing that requires asset-import edits outside this file.
 const FIELD_TEXTURE_IMPORT_STATUS: String = PORT_LABEL + " — BLOCKED: field.png and envfieldd/w.png imports have mipmaps/generate=false; donor miLinearMipmapLinear is requested but the imported mip chain is absent; asset-import owner required"
+# FIX-FIELD-VISIBILITY (static audit only, no Godot run, no donor parity claim).
+# [O] The crop is a real cut-out: TRANSPARENCY_ALPHA_SCISSOR 0.5, CULL_DISABLED,
+# emission disabled, instance alpha held at 1.0. Mature field.png keeps 28.7% of
+# its texels above the 0.5 scissor, so ground stays visible between stalks.
+# [O] The envfieldd/w quad is TRANSPARENCY_ALPHA + BLEND_MODE_MIX, i.e. it is in
+# the TRANSPARENT pass with DEPTH_DRAW_DISABLED and render_priority -1, depth
+# TEST left at its default. The scissored crop is in the OPAQUE pass and writes
+# depth first, so the decal is depth-rejected wherever a stalk is in front: it
+# cannot overdraw or hide the golden crop. Both facts are mirrored into telemetry.
+# No gold tint and no emission energy are introduced.
+const FIELD_CROP_MATERIAL_STATUS: String = PORT_LABEL + " — mature field/fieldw albedo + TRANSPARENCY_ALPHA_SCISSOR 0.5 + CULL_DISABLED + instance alpha 1.0; ground shows between stalks; emission disabled, no energy/tint; visual UNVERIFIED"
+# [O] The donor decal is 1.3x the field scale (misc.script:4284-4306). Applying
+# that SAME preserved multiplier to the 49 already-sown crop instances lets the
+# golden cut-out cover its own ground quad instead of a small centre dot. Node
+# count, positions, yaw, the 7x7 sow, stage selection and the decal 45/225/1.3/UV
+# constants are untouched; no fake tiles and no new RNG. PORT APPROXIMATION.
+const FIELD_CROP_FOOTPRINT_M: float = FIELD_DECAL_SIZE_M
+const FIELD_CROP_FOOTPRINT_STATUS: String = PORT_LABEL + " — 49 existing crop instances scaled to the donor 1.3x decal footprint; positions/yaw/sow/stage/decal constants unchanged; no fake tiles or RNG; visual UNVERIFIED"
 
 # BUILD-STAGES-01 — donor construction-stage presentation (no stage art shipped).
 # Donor truth (DBUILD-01 §2, line citations there): build progress is hp/maxhp
@@ -643,6 +661,10 @@ func bind(g) -> void:
 		"field_visual_mature_asset_path": str(mature_asset.get("path", "")),
 		"field_visual_mature_asset_status": str(mature_asset.get("status", "")),
 		"field_visual_material_status": FIELD_EMISSION_STATUS,
+		"field_visual_crop_material_status": FIELD_CROP_MATERIAL_STATUS,
+		"field_visual_crop_footprint_status": FIELD_CROP_FOOTPRINT_STATUS,
+		"field_visual_crop_footprint_m": FIELD_CROP_FOOTPRINT_M,
+		"field_visual_mature_texture_path": str((_field_asset_status.get("field", {}) as Dictionary).get("path", "")),
 		"field_visual_decal_status": FIELD_DECAL_STATUS,
 		"field_visual_decal_material_status": FIELD_DECAL_MATERIAL_STATUS,
 		"field_visual_texture_import_status": FIELD_TEXTURE_IMPORT_STATUS,
@@ -859,6 +881,19 @@ func _field_crop_material(spec: Dictionary) -> StandardMaterial3D:
 	# Donor twBoth + linear/linear-mipmap-linear filtering.
 	mat.texture_repeat = true
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	# FIX-FIELD-VISIBILITY: mirror the real cut-out state for telemetry. This is
+	# introspection only - it does not change any rendering value above.
+	mat.set_meta("field_crop_material_state", {
+		"transparency": "TRANSPARENCY_ALPHA_SCISSOR",
+		"alpha_scissor_threshold": mat.alpha_scissor_threshold,
+		"cull_mode": "CULL_DISABLED",
+		"shading_mode": "SHADING_MODE_UNSHADED",
+		"instance_alpha": 1.0,
+		"emission_enabled": mat.emission_enabled,
+		"vertex_color_use_as_albedo": mat.vertex_color_use_as_albedo,
+		"texture_path": texture_path,
+		"status": FIELD_CROP_MATERIAL_STATUS,
+	})
 	return mat
 
 
@@ -898,8 +933,57 @@ func _field_decal_material(season: String) -> Material:
 	mat.emission_enabled = false
 	mat.texture_repeat = true
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	# FIX-FIELD-VISIBILITY: mirror the real draw state for telemetry. Introspection
+	# only - no rendering value above is changed. DEPTH_DRAW_DISABLED means "do not
+	# WRITE depth"; depth TEST stays at default, so the opaque scissored crop already
+	# in the depth buffer rejects these fragments instead of being overpainted.
+	mat.set_meta("field_decal_material_state", {
+		"transparency": "TRANSPARENCY_ALPHA",
+		"blend_mode": "BLEND_MODE_MIX",
+		"depth_draw_mode": "DEPTH_DRAW_DISABLED",
+		"render_priority": mat.render_priority,
+		"cull_mode": "CULL_BACK",
+		"no_depth_test_flag": mat.get_flag(BaseMaterial3D.FLAG_DISABLE_DEPTH_TEST),
+		"texture_path": texture_path,
+		"status": FIELD_DECAL_MATERIAL_STATUS,
+	})
 	_field_decal_materials[season] = mat
 	return mat
+
+
+# FIX-FIELD-VISIBILITY: read the material meta back without allocating a material
+# or switching season. Returns the declared defaults when nothing is built yet.
+func _field_decal_material_state() -> Dictionary:
+	var season := _field_season()
+	var mat = _field_decal_materials.get(season, null)
+	if mat is Material:
+		var state: Variant = (mat as Material).get_meta("field_decal_material_state", {})
+		if state is Dictionary:
+			return state as Dictionary
+	return {"transparency": "TRANSPARENCY_ALPHA", "blend_mode": "BLEND_MODE_MIX",
+		"depth_draw_mode": "DEPTH_DRAW_DISABLED", "render_priority": -1,
+		"cull_mode": "CULL_BACK", "no_depth_test_flag": false,
+		"texture_path": str(_field_decal_paths.get(season, "")),
+		"state_source": "declared_default_no_material_yet"}
+
+
+# FIX-FIELD-VISIBILITY: same idea for the crop, read from a live field batch.
+func _field_crop_material_state() -> Dictionary:
+	for key in _batches.keys():
+		if not _is_field_batch(str(key)):
+			continue
+		var node = (_batches[key] as Dictionary).get("node", null)
+		if node is GeometryInstance3D:
+			var mat = (node as GeometryInstance3D).material_override
+			if mat is Material:
+				var state: Variant = (mat as Material).get_meta("field_crop_material_state", {})
+				if state is Dictionary:
+					return state as Dictionary
+	return {"transparency": "TRANSPARENCY_ALPHA_SCISSOR", "alpha_scissor_threshold": 0.5,
+		"cull_mode": "CULL_DISABLED", "shading_mode": "SHADING_MODE_UNSHADED",
+		"instance_alpha": 1.0, "emission_enabled": false,
+		"vertex_color_use_as_albedo": true, "texture_path": "",
+		"state_source": "declared_default_no_batch_yet"}
 
 
 func _field_decal_mesh(fe: Dictionary, angle_deg: float) -> ArrayMesh:
@@ -2708,11 +2792,15 @@ func sync(dt: float) -> void:
 	var field_total := 0
 	var field_skipped := 0
 	var field_ripe_mature := 0
+	var field_ripe_texture_path := ""
 	var field_scale := 1.0
 	var fbb: Array = _bbox.get("field", [])
 	if fbb.size() >= 6:
 		var native_span := maxf(float(fbb[1]) - float(fbb[0]), 0.001)
-		field_scale = FIELD_SPAN_M / native_span
+		# FIX-FIELD-VISIBILITY: cover the donor 1.3x decal footprint with the SAME
+		# 49 instances. No instance is added, removed or repositioned; only the
+		# uniform scale follows FIELD_DECAL_SIZE_M (the preserved donor multiplier).
+		field_scale = FIELD_CROP_FOOTPRINT_M / native_span
 	var field_ids: Array = []
 	for fid in _slot.keys():
 		var sl = _slot[fid]
@@ -2754,11 +2842,14 @@ func sync(dt: float) -> void:
 			var tm := str(spec.get("texture_material", ""))
 			if tm == "field" or tm == "fieldw":
 				field_ripe_mature += 1
+				if field_ripe_texture_path == "":
+					field_ripe_texture_path = str(spec.get("texture_path", ""))
 		if bool(spec.get("texture_skipped", false)):
 			field_skipped += 1
 		field_total += 1
-		# Donor has no stage scale interpolation. Keep the existing port
-		# footprint constant; instance alpha stays 1.0 for scissor coverage.
+		# Donor has no stage scale interpolation: one constant footprint for all
+		# stages (now the donor 1.3x quad). Instance alpha stays 1.0 so the
+		# scissor cut-out, not gameplay alpha, decides ground-vs-stalk coverage.
 		var xf: Transform3D = _xf(fid)
 		xf.basis = xf.basis.scaled(Vector3(field_scale, field_scale, field_scale))
 		xforms[ix] = xf
@@ -2779,8 +2870,17 @@ func sync(dt: float) -> void:
 	stats["field_visual_skipped_instances"] = field_skipped
 	stats["field_visual_ripe_count"] = int(field_states.get("ripe", 0))
 	stats["field_visual_ripe_using_mature_texture"] = field_ripe_mature
+	# FIX-FIELD-VISIBILITY: decisive static proof for a capture log. A ripe field
+	# must bind field/fieldw AND resolve a real converted texture path; 0 means
+	# Branch A (no fields in this config) or a missing mature conversion.
+	stats["field_visual_ripe_mature_verified"] = field_ripe_mature > 0
+	stats["field_visual_ripe_mature_texture_path"] = field_ripe_texture_path
+	stats["field_visual_crop_material_state"] = _field_crop_material_state()
+	stats["field_visual_decal_material_state"] = _field_decal_material_state()
 	stats["field_visual_count"] = field_total
 	stats["field_visual_span_scale"] = field_scale
+	stats["field_visual_crop_footprint_m"] = FIELD_CROP_FOOTPRINT_M
+	stats["field_visual_crop_footprint_status"] = FIELD_CROP_FOOTPRINT_STATUS
 	stats["field_visual_target_span_m"] = FIELD_SPAN_M
 	stats["field_visual_label"] = FIELD_STATUS
 	stats["field_visual_asset_status"] = _field_asset_status

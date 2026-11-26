@@ -79,6 +79,30 @@ const HIRES_ATLAS_FLAG_PATH := "features.terrain.hires_atlas"
 # uses for scene props (terrain_donor_world.gd:69-70); when false/absent the
 # shader keeps its neutral 1.0 defaults, i.e. today's unscaled donor colours.
 const LIGHT_MATCH_FLAG_PATH := "features.terrain.light_match"
+# COLOR-UNIFY opt-in: PORT CALIBRATION, NOT donor parity. The full rig lift was
+# MEASURED to overshoot (HANDOFF §9.15), so this flag applies ONLY the missing
+# fraction of that same lift — never the full rig, never a second brightness
+# constant, never a gamma/exposure/shadow/AO/emissive/noise fill. The gain is a
+# ratio of measured candidate ROI pixels, not a donor material constant.
+#   grass G      = [72.0, 74.4, 20.3]   # PHOTO_LED §1 global grass left
+#   full rig O   = [134.1, 139.2, 42.9] # HANDOFF §9.15 measured light_match grass
+#   lift   L=O-G = [62.1, 64.8, 22.6]
+#   halo H       = [76.3, 78.4, 25.4]   # PHOTO_LED §1 mine halo
+#   donor dir V  = [78.0, 80.0, 36.0]   # PHOTO_LED §2 direction-only cue
+#   disc D       = [83.9, 85.0, 35.9]   # PHOTO_LED §1 (corroborates V.b ~= D.b)
+#   target T per channel = [H.r, H.g, V.b] = [76.3, 78.4, 36.0]
+#     r/g collapse the measured +4R/+4G grass->halo seam; b takes the donor
+#     direction (== measured disc b within 0.1), collapsing the +16B disc delta.
+#   need   N=T-G = [4.3, 4.0, 15.7]
+#   fraction f=N/L = [0.06924, 0.06173, 0.69469]
+#   gain g = 1 + f*(O/G - 1) = T/G = [1.05972, 1.05376, 1.77340]
+const COLOR_UNIFY_FLAG_PATH := "features.terrain.color_unify"
+const COLOR_UNIFY_GRASS_BASE := Vector3(72.0, 74.4, 20.3)   # PHOTO_LED §1
+const COLOR_UNIFY_MINE_HALO := Vector3(76.3, 78.4, 25.4)    # PHOTO_LED §1
+const COLOR_UNIFY_MINE_DISC := Vector3(83.9, 85.0, 35.9)    # PHOTO_LED §1
+const COLOR_UNIFY_DONOR_DIR := Vector3(78.0, 80.0, 36.0)    # PHOTO_LED §2 direction only
+const COLOR_UNIFY_FULL_RIG := Vector3(134.1, 139.2, 42.9)   # HANDOFF §9.15
+const COLOR_UNIFY_TARGET := Vector3(76.3, 78.4, 36.0)       # [halo.r, halo.g, donor.b]
 # Null-safe config access (same pattern as water3d.gd:6,163-167). config.gd
 # owns the features table, so this file reads the dotted key through flag()
 # and does NOT add a getter or edit config.gd.
@@ -115,7 +139,9 @@ var atlas_mode_request: String = "single"
 var season: String = ""
 var hires_atlas: bool = false             # opt-in diagnostic; resolved once per build
 var light_match: bool = false             # LIGHT-MATCH opt-in; resolved once per build
+var color_unify: bool = false             # COLOR-UNIFY opt-in; resolved once per build
 var _light_match: Dictionary = {}         # labelled rig-energy binding telemetry
+var _color_unify: Dictionary = {}         # labelled partial-lift calibration telemetry
 var _atlas_resolution: Dictionary = {}    # labelled resolution / VRAM telemetry
 
 var _game = null                       # untyped I06 container / game reference
@@ -453,6 +479,16 @@ func _resolve_light_match_flag() -> bool:
 	return bool(cfg.call("flag", LIGHT_MATCH_FLAG_PATH, false))
 
 
+func _resolve_color_unify_flag() -> bool:
+	# COLOR-UNIFY: opt-in ONLY, resolved through the same config.gd flag() reader
+	# (no config.gd edit). Null active config / missing key -> false, so the
+	# commit-default terrain is byte-identical. Independent of light_match.
+	var cfg = C3ConfigScript.active
+	if cfg == null or not cfg.has_method("flag"):
+		return false
+	return bool(cfg.call("flag", COLOR_UNIFY_FLAG_PATH, false))
+
+
 func _composer_light_energies() -> Dictionary:
 	# LIGHT-MATCH: read the energies the ONE scene rig ALREADY uses for props.
 	# The composer adds this mesh as its child (terrain_donor_world.gd:275), and
@@ -478,6 +514,56 @@ func _composer_light_energies() -> Dictionary:
 		"sun_energy": float(se),
 		"source": ("terrain_donor_world.gd:_lighting_stats() — "
 			+ "AMBIENT_ENERGY :69 / SUN_ENERGY :70"),
+	}
+
+
+func _color_unify_calibration() -> Dictionary:
+	# PORT CALIBRATION (candidate-internal, direction-only donor cue), NOT parity.
+	# Arithmetic, per channel, from the two measured frames + the acceptance band:
+	#   G  = [72.0, 74.4, 20.3]           global grass (PHOTO_LED §1)
+	#   O  = [134.1, 139.2, 42.9]         full-rig overshoot (HANDOFF §9.15)
+	#   L  = O-G = [62.1, 64.8, 22.6]     existing rig lift
+	#   T  = [76.3, 78.4, 36.0]           halo.r, halo.g, donor-direction.b
+	#   N  = T-G = [4.3, 4.0, 15.7]       missing lift (seam closure)
+	#   f  = N/L = [0.06924, 0.06173, 0.69469]
+	#   g  = 1 + f*(O/G - 1) = T/G = [1.05972, 1.05376, 1.77340]
+	# The shader multiplies g into the packed donor Blinn-Phong term only. With
+	# g = vec3(1) this is byte-identical to today's unscaled lighting. No gamma,
+	# exposure, shadow, AO, emissive fill, noise or new donor constant is used.
+	var lift := COLOR_UNIFY_FULL_RIG - COLOR_UNIFY_GRASS_BASE
+	var need := COLOR_UNIFY_TARGET - COLOR_UNIFY_GRASS_BASE
+	var lx := maxf(lift.x, 1e-6)
+	var ly := maxf(lift.y, 1e-6)
+	var lz := maxf(lift.z, 1e-6)
+	var fx := need.x / lx
+	var fy := need.y / ly
+	var fz := need.z / lz
+	var gx := 1.0 + fx * (COLOR_UNIFY_FULL_RIG.x / maxf(COLOR_UNIFY_GRASS_BASE.x, 1e-6) - 1.0)
+	var gy := 1.0 + fy * (COLOR_UNIFY_FULL_RIG.y / maxf(COLOR_UNIFY_GRASS_BASE.y, 1e-6) - 1.0)
+	var gz := 1.0 + fz * (COLOR_UNIFY_FULL_RIG.z / maxf(COLOR_UNIFY_GRASS_BASE.z, 1e-6) - 1.0)
+	return {
+		"feature": COLOR_UNIFY_FLAG_PATH,
+		"label": "PORT CALIBRATION — missing fraction of the MEASURED rig lift; NOT donor parity",
+		"measured_grass": [COLOR_UNIFY_GRASS_BASE.x, COLOR_UNIFY_GRASS_BASE.y, COLOR_UNIFY_GRASS_BASE.z],
+		"measured_full_rig_overshoot": [COLOR_UNIFY_FULL_RIG.x, COLOR_UNIFY_FULL_RIG.y, COLOR_UNIFY_FULL_RIG.z],
+		"measured_lift": [lift.x, lift.y, lift.z],
+		"measured_halo": [COLOR_UNIFY_MINE_HALO.x, COLOR_UNIFY_MINE_HALO.y, COLOR_UNIFY_MINE_HALO.z],
+		"measured_disc": [COLOR_UNIFY_MINE_DISC.x, COLOR_UNIFY_MINE_DISC.y, COLOR_UNIFY_MINE_DISC.z],
+		"donor_video_grass_direction": [COLOR_UNIFY_DONOR_DIR.x, COLOR_UNIFY_DONOR_DIR.y, COLOR_UNIFY_DONOR_DIR.z],
+		"target": [COLOR_UNIFY_TARGET.x, COLOR_UNIFY_TARGET.y, COLOR_UNIFY_TARGET.z],
+		"missing_lift": [need.x, need.y, need.z],
+		"fraction_of_full_rig_lift": [fx, fy, fz],
+		"gain": [gx, gy, gz],
+		"gain_vector": Vector3(gx, gy, gz),
+		"predicted_grass": [COLOR_UNIFY_TARGET.x, COLOR_UNIFY_TARGET.y, COLOR_UNIFY_TARGET.z],
+		"saturation_before": (COLOR_UNIFY_GRASS_BASE.y - COLOR_UNIFY_GRASS_BASE.z) / COLOR_UNIFY_GRASS_BASE.y,
+		"saturation_target": (COLOR_UNIFY_TARGET.y - COLOR_UNIFY_TARGET.z) / COLOR_UNIFY_TARGET.y,
+		"arithmetic": ("L=O-G; N=T-G; f=N/L; g=1+f*(O/G-1)=T/G; "
+			+ "T.r=halo.r, T.g=halo.g, T.b=donor-direction.b (~= disc.b)"),
+		"shader_uniform": "color_unify_gain",
+		"scope": "terrain shader packed Blinn-Phong light term only; props/roofs/mines untouched",
+		"guard": ("no gamma/exposure lift, no shadow/AO/emissive/noise, "
+			+ "specular stays zero, debug defaults unchanged"),
 	}
 
 
@@ -741,19 +827,39 @@ func _make_material(atlas_ready: bool = true) -> Material:
 	# LIGHT-MATCH: bind the shared rig energies only under the opt-in. The
 	# shader uniforms default to 1.0 (unscaled donor colours), so with the flag
 	# off — or with no composer parent to read from — behaviour is unchanged.
-	var rig_energies: Dictionary = _composer_light_energies() if light_match else {}
-	var ambient_energy: float = float(rig_energies.get("ambient_energy", 1.0))
-	var sun_energy: float = float(rig_energies.get("sun_energy", 1.0))
+	# COLOR-UNIFY is INDEPENDENT: its gain already encodes the missing fraction
+	# of that same rig lift measured from neutral, so when it is active the rig
+	# energies stay at 1.0 (no stacking, no second full lift). light_match stats
+	# still report the rig's own values and decision unchanged.
+	var rig_energies: Dictionary = _composer_light_energies() if (light_match or color_unify) else {}
+	var rig_ambient: float = float(rig_energies.get("ambient_energy", 1.0))
+	var rig_sun: float = float(rig_energies.get("sun_energy", 1.0))
+	var cu := _color_unify_calibration()
+	var cu_gain: Vector3 = cu.get("gain_vector", Vector3.ONE)
+	cu.erase("gain_vector")   # keep stats JSON-safe; the Vector3 is bound only
+	var apply_full_rig: bool = light_match and not color_unify
+	var ambient_energy: float = rig_ambient if apply_full_rig else 1.0
+	var sun_energy: float = rig_sun if apply_full_rig else 1.0
 	_light_match = {
 		"feature": LIGHT_MATCH_FLAG_PATH,
 		"enabled": light_match,
 		"rig_found": not rig_energies.is_empty(),
 		"ambient_energy_bound": ambient_energy,
 		"sun_energy_bound": sun_energy,
+		"rig_ambient_energy": rig_ambient,
+		"rig_sun_energy": rig_sun,
+		"suppressed_by_color_unify": (light_match and color_unify),
 		"source": str(rig_energies.get("source", "NONE — neutral 1.0 shader defaults")),
 		"label": ("PORT CONSISTENCY CALIBRATION — shared scene light rig; "
 			+ "NO donor parity claim, no new donor constant, no gamma/exposure lift"),
 	}
+	_color_unify = cu
+	_color_unify["enabled"] = color_unify
+	_color_unify["active"] = color_unify
+	_color_unify["wins_over_light_match"] = (light_match and color_unify)
+	_color_unify["rig_energies_left_neutral"] = color_unify
+	_color_unify["bound_gain"] = ([cu_gain.x, cu_gain.y, cu_gain.z]
+		if color_unify else [1.0, 1.0, 1.0])
 	var params := {
 		"tile_atlas": _atlas_texture,
 		"tile_map": _tile_map_tex,
@@ -774,6 +880,9 @@ func _make_material(atlas_ready: bool = true) -> Material:
 		# LIGHT-MATCH: SAME rig energies scene props already receive; 1.0 when off.
 		"light_rig_ambient_energy": ambient_energy,
 		"light_rig_sun_energy": sun_energy,
+		# COLOR-UNIFY: calibrated per-channel fraction of the measured rig lift;
+		# vec3(1) when off (byte-identical), neutral rig energies when on.
+		"color_unify_gain": cu_gain if color_unify else Vector3.ONE,
 		"face_scale": DONOR_FACE_SCALE,
 		"shadow_enabled": 0.0,   # no shadow map shipped; no shadow fakery
 		"fog_mode": 0.0,         # FogMode=0 (colors.lib:23,34-43)
@@ -930,6 +1039,7 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 		"material_model": material_model,
 		"shader_path": _shader_path_used,
 		"light_match": _light_match.duplicate(true),
+		"color_unify": _color_unify.duplicate(true),
 		"alpha": _alpha_contract.duplicate(true),
 		"visual_parity_claim": visual_parity_claim,
 		"fed_back_into_sim": false,
@@ -967,6 +1077,10 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 			"light_match": ("PORT CONSISTENCY only — shared rig AMBIENT_ENERGY/SUN_ENERGY "
 				+ "(terrain_donor_world.gd:69-70); opt-in features.terrain.light_match; "
 				+ "NOT donor parity"),
+			"color_unify": ("PORT CALIBRATION only — per-channel fraction of the MEASURED "
+				+ "full-rig lift (PHOTO_LED §1 halo/grass; HANDOFF §9.15 overshoot; "
+				+ "PHOTO_LED §2 donor-direction b); opt-in features.terrain.color_unify; "
+				+ "NOT donor parity, no gamma/exposure lift"),
 		},
 	}
 
@@ -982,6 +1096,8 @@ func build() -> bool:
 	# LIGHT-MATCH: likewise resolve the opt-in once per build so the material
 	# binding and the stats block see the same decision.
 	light_match = _resolve_light_match_flag()
+	# COLOR-UNIFY: likewise resolved once per build; independent of light_match.
+	color_unify = _resolve_color_unify_flag()
 	if not _ingest():
 		push_error("terrain_donor_mesh: bind() an I06 container / height dump first")
 		return false
@@ -1085,6 +1201,8 @@ func invalidate() -> void:
 	_shader_params = {}
 	_light_match = {}
 	light_match = false
+	_color_unify = {}
+	color_unify = false
 	_alpha_contract = {}
 	_mip_source = ""
 	_built = false
