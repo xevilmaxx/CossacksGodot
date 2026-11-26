@@ -372,3 +372,15 @@ All of §9 is `PORT APPROXIMATION` / port-internal. The captures prove only that
 
 *End of §9.15.*
 
+### 9.16 COORD — nation move, snapshot validation, prop-efficiency decomp (2026-11-26)
+
+> **PORT APPROXIMATION — candidate snapshots only; donor parity UNVERIFIED.**
+
+- **[O] Ukrainian buildings moved out of shared/.** 80 OBJs (`cen/hou/bar/sta/bla/aca/art/dip` × base/1-4/1a-4a/a) + `.mtl` + `.import` moved `obj/shared/buildings/` → `obj/ukr/buildings/`; 8 base textures moved `tex/shared/buildings/` → `tex/ukr/buildings/`. Manifest updated for 80 sids (`bucket: ukr/buildings`, `assets.obj/tex` rewritten); `.mtl` `map_Kd` rewritten. Sprites left in place. Backup `inbox/backup/manifest.json.bak-NATIONMOVE`. See `reports/NATION_MOVE_ukr_buildings.md`.
+- **[O] Snapshot validation (no unit-test gates per owner instruction).** `cap_nationmove.png` (seed 20261113, default donor config): hall + houses render, no missing-mesh regression. `app/` untouched.
+- **[O] Donor prop-efficiency decomp landed.** `DEC_DEEP_prop_efficiency.md`: `sub_755f30` (25175 B, 662 calls, 0 API/RNG), quadrant dispatch helpers, 9-way station dispatch, `7cca74` commit wrapper, height 4-tap kernel, LOD framework names only in `.rsrc`, LOD bounds absent from exe bytes (actor/script data). Recommendations for `terrain_donor_props.gd`: single linear pass, angle fast-path first, batch by station, split LOD 0..150 vs 0..2500, conditional height-snap, no baked LOD floats.
+- **[O] Active swarm:** `FIX-ASSET-MAP-REUSE`, `CONVERT-PALM-DESERT` (Hy4), `DEC_DEEP_prop_efficiency` (done), `VIDEO_DENSITY_cZW0` (Muse). `terrain_donor_props.gd` is owned by the mapping worker — no concurrent edits.
+- **[U] Guard unchanged.** No donor GPU A/B frame; parity UNVERIFIED; no synthetic assets, no invented constants.
+
+*End of §9.16.*
+

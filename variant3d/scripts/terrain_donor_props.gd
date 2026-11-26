@@ -1255,11 +1255,16 @@ func _batch_classes(p_cls: String) -> Array[String]:
 
 
 func _sid_for_base(p_base: String) -> String:
-	var b: String = p_base.strip_edges()
-	if b.is_empty():
+	var original: String = p_base.strip_edges()
+	if original.is_empty():
 		return ""
-	# Mesh/material variant suffix `.1..4` is a variant selector (F08 §3.5),
-	# engine-side binding [U]; strip it and collapse to the converted OBJ.
+	# FIX-ASSET-MAP-REUSE (audit §7 A1/A2): capture the donor `.N` mesh/material
+	# variant selector BEFORE the legacy strip below. Only the exact stems named
+	# by A1/A2 reuse their already-converted N-th OBJ; every other family keeps
+	# the legacy collapse byte-for-byte. No new art, no RNG/order/class change,
+	# no parity claim; each reuse/alias is labelled UNVERIFIED.
+	var variant_n: int = _variant_suffix_n(original)
+	var b: String = original
 	var dot: int = b.find(".")
 	if dot > 0:
 		b = b.substr(0, dot)
@@ -1277,7 +1282,22 @@ func _sid_for_base(p_base: String) -> String:
 			_unverified.append("PUMP_PROP " + b + " — pump family not converted (F07 §3.4)")
 			return ""
 		"bushes", "drybushes": return _has_sid("bush1")
-		"plantain": return _has_sid("plantain1")
+		"plantain":
+			if variant_n > 0:
+				_append_unverified_once("VARIANT_REUSE plantain." + str(variant_n)
+					+ " -> plantain" + str(clampi(variant_n, 1, 3))
+					+ " — PORT APPROX donor variant selector reuse (F08 §3.5); material binding [U]; no parity claim")
+				return _clamped_sid("plantain", str(variant_n), 3)
+			return _has_sid("plantain1")
+		"fern":
+			_append_unverified_once("ALIAS_FERN fern[.N] -> fern1 — PORT APPROX bare-name alias (X16 row 21); donor material variant not converted; UNVERIFIED; no parity claim")
+			return _has_sid("fern1")
+		"flowers":
+			_append_unverified_once("ALIAS_FLOWER flowers[.N] -> flower1 — PORT APPROX bare-name alias (X16 rows 28-31); donor material variant not converted; UNVERIFIED; no parity claim")
+			return _has_sid("flower1")
+		"plantainyellow":
+			_append_unverified_once("ALIAS_PLANTAINYELLOW plantainyellow -> plantain1 — PORT APPROX material-variant alias (X16 row 97 G3); donor yellow material not converted; UNVERIFIED; no parity claim")
+			return _has_sid("plantain1")
 		"christmastree": return _has_sid("christmastree")
 		"christmas": return _has_sid("christmastree")
 		"stones": return _has_sid("stone")
@@ -1313,15 +1333,29 @@ func _sid_for_base(p_base: String) -> String:
 		_unverified.append("TREE_SID_UNRESOLVED " + b + " — no converted mesh; skipped")
 		return ""
 
-	# Stone / shore props (F08 §3.2, E10/E17).
+	# Stone / shore props (F08 §3.2, E10/E17). A1 variant reuse is limited to
+	# the exact converted stems; `smallstonesdesert.*` keeps its legacy reuse
+	# of rock_smallstones1 (X16 G3), so no unintended re-route is introduced.
 	if b.begins_with("smallstonessea"):
-		return _clamped_sid("rock_smallstonesea", digits, 6)
+		var sea_digits: String = digits
+		if b == "smallstonessea" and variant_n > 0:
+			sea_digits = str(variant_n)
+			_append_unverified_once("VARIANT_REUSE smallstonessea." + str(variant_n)
+				+ " -> rock_smallstonesea" + str(clampi(variant_n, 1, 6))
+				+ " — PORT APPROX donor variant selector reuse (F08 §3.5); material binding [U]; no parity claim")
+		return _clamped_sid("rock_smallstonesea", sea_digits, 6)
 	if b.begins_with("stonessea"):
 		return _clamped_sid("rock_stonessea", digits, 10)
 	if b.begins_with("rocksea"):
 		return _clamped_sid("rock_sea", digits, 6)
 	if b.begins_with("smallstones"):
-		return _clamped_sid("rock_smallstones", digits, 6)
+		var stn_digits: String = digits
+		if b == "smallstones" and variant_n > 0:
+			stn_digits = str(variant_n)
+			_append_unverified_once("VARIANT_REUSE smallstones." + str(variant_n)
+				+ " -> rock_smallstones" + str(clampi(variant_n, 1, 6))
+				+ " — PORT APPROX donor variant selector reuse (F08 §3.5); material binding [U]; no parity claim")
+		return _clamped_sid("rock_smallstones", stn_digits, 6)
 	if b.begins_with("stones"):
 		if digits.is_empty():
 			return _has_sid("stone")
@@ -1335,6 +1369,21 @@ func _sid_for_base(p_base: String) -> String:
 
 func _has_sid(p_sid: String) -> String:
 	return p_sid if _known_sids.has(p_sid) else ""
+
+
+# FIX-ASSET-MAP-REUSE (audit §7 A1): extract the donor trailing `.N` mesh/
+# material variant selector. Returns the final dot-token when it is all digits,
+# else 0. Only exact stems named by A1/A2 consume this value; all other families
+# keep the legacy strip-and-collapse path unchanged.
+func _variant_suffix_n(p_base: String) -> int:
+	var idx: int = p_base.rfind(".")
+	if idx <= 0 or idx >= p_base.length() - 1:
+		return 0
+	var suffix: String = p_base.substr(idx + 1)
+	for c in suffix:
+		if c < "0" or c > "9":
+			return 0
+	return int(suffix)
 
 
 func _clamped_sid(p_prefix: String, p_digits: String, p_max: int) -> String:

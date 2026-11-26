@@ -130,6 +130,36 @@ def write_obj(path: str, mesh: dict, mtl_name: str) -> None:
                 tri[0] + 1, uv[0] + 1, tri[1] + 1, uv[1] + 1, tri[2] + 1, uv[2] + 1))
 
 
+def write_obj_exact(path: str, mesh: dict, mtl_name: str, source: str = "") -> None:
+    """A3 — exact-float OBJ writer (additive; legacy write_obj() is untouched).
+
+    The legacy writer rounds to 6 decimals, which is a PORT APPROXIMATION.
+    This writer emits each float32 value with Python's shortest round-trip
+    repr, so a parse-back is bit-identical to read_osm()'s vertices and UVs.
+    Winding and UV-face order are copied verbatim from the reader; no shape,
+    UV or topology is invented.
+    """
+    verts = mesh["verts"]
+    uvs = mesh["uvs"]
+    faces = mesh["faces"]
+    uv_faces = mesh.get("uv_faces", faces)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("# Cossacks 3 original mesh, converted by tools/convert_models.py\n")
+        if source:
+            f.write("# Source: %s (IDP2 v%s, first frame only: %s)\n" % (
+                source, mesh.get("version", "?"), mesh.get("frame_name", "")))
+        f.write("mtllib %s\n" % mtl_name)
+        f.write("o model\n")
+        f.write("usemtl model\n")
+        for v in verts:
+            f.write("v %s %s %s\n" % (repr(float(v[0])), repr(float(v[1])), repr(float(v[2]))))
+        for t in uvs:
+            f.write("vt %s %s\n" % (repr(float(t[0])), repr(float(t[1]))))
+        for tri, uv in zip(faces, uv_faces):
+            f.write("f %d/%d %d/%d %d/%d\n" % (
+                tri[0] + 1, uv[0] + 1, tri[1] + 1, uv[1] + 1, tri[2] + 1, uv[2] + 1))
+
+
 def write_mtl(path: str, texture: str) -> None:
     with open(path, "w", encoding="utf-8") as f:
         f.write("newmtl model\n")
@@ -611,6 +641,298 @@ def relief_models(game: str) -> list:
     } for sid, base in table.items()]
 
 
+# --------------------------------------------------------------------------
+# A3 — additive palm / desert-scrub / plantyellow conversion.
+#
+# Opt-in and self-contained: --palm-desert writes ONLY new derived assets under
+# <out>/{obj,tex}/shared/terrain/ and APPENDS new sid entries to <out>/manifest.json.
+# No existing asset is rewritten, no donor binary is copied or executed, and the
+# legacy default pipeline stays byte-identical. Donor sources are read-only:
+#   mesh:  data/actors/env/<stem>.osm       (IDP2 v8, first frame only)
+#   albedo: data/materials/env/<material>.dds
+# Material provenance: X16 rows 9-14, 69-72, 98-99 + each data/objects/env/
+# <stem>.prop DefaultMaterialName (palm*->palm1, desertN->desertN,
+# plantyellow*/plantyellowN->plantsyellowatlas).
+# --------------------------------------------------------------------------
+
+def desert_palm_models(game: str) -> list:
+    """Return the donor-grounded A3 model table (28 canonical + 8 alias sids)."""
+    actors = os.path.join(game, "data", "actors", "env")
+    mats = os.path.join(game, "data", "materials", "env")
+    canonical = []
+    # palm1..5 + palmsmall1..3 all declare DefaultMaterialName = palm1.
+    for i in range(1, 6):
+        canonical.append(("palm%d" % i, "palm%d" % i, "palm1", "palm1"))
+    for i in range(1, 4):
+        canonical.append(("palmsmall%d" % i, "palmsmall%d" % i, "palm1", "palm1"))
+    # Each desertN has three real donor mesh variants (.1/.2/.3) and its own
+    # summer albedo; keep the variant index in the sid instead of collapsing it.
+    for i in range(1, 6):
+        for v in range(1, 4):
+            canonical.append(("desert%d_%d" % (i, v), "desert%d.%d" % (i, v),
+                              "desert%d" % i, "desert%d" % i))
+    # plantyellow props reuse plant1..5.mesh with plantsyellowatlas albedo.
+    for i in range(1, 6):
+        canonical.append(("plantyellow%d" % i, "plant%d" % i,
+                          "plantsyellowatlas", "plantsyellowatlas"))
+    out = []
+    for sid, stem, mat, png in canonical:
+        out.append({
+            "sid": sid, "kind": "env",
+            "mesh": os.path.join(actors, stem + ".osm"),
+            "texture": os.path.join(mats, mat + ".dds"),
+            "obj_name": sid, "tex_name": png, "directions": 1,
+            "exact": True, "source_rel": "data/actors/env/%s.osm" % stem,
+            "alias_of": None,
+        })
+    # Feed BaseNames (AUDIT §3, X16) bind to the variant-1 asset: same derived
+    # geometry, no second file and no synthetic variant.
+    aliases = [("palm", "palm1"), ("palmsmall", "palmsmall1")]
+    aliases += [("desert%d" % i, "desert%d_1" % i) for i in range(1, 6)]
+    aliases.append(("plantyellow", "plantyellow1"))
+    by_sid = {m["sid"]: m for m in out}
+    for sid, target in aliases:
+        entry = dict(by_sid[target])
+        entry["sid"] = sid
+        entry["alias_of"] = target
+        out.append(entry)
+    return out
+
+
+def _parse_obj_exact(path: str) -> dict:
+    """Parse an exact-float OBJ back into reader-shaped arrays for comparison."""
+    verts, uvs, faces, uvf = [], [], [], []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("v "):
+                verts.append(tuple(float(x) for x in line.split()[1:4]))
+            elif line.startswith("vt "):
+                uvs.append(tuple(float(x) for x in line.split()[1:3]))
+            elif line.startswith("f "):
+                parts = [p.split("/") for p in line.split()[1:4]]
+                faces.append(tuple(int(p[0]) - 1 for p in parts))
+                uvf.append(tuple(int(p[1]) - 1 for p in parts))
+    return {"verts": verts, "uvs": uvs, "faces": faces, "uv_faces": uvf}
+
+
+def _rgba_bytes(path: str) -> bytes:
+    if Image is None:
+        return b""
+    img = Image.open(path)
+    img.load()
+    return img.convert("RGBA").tobytes()
+
+
+def convert_palm_desert(game: str, out: str) -> int:
+    """A3: emit derived OBJ/MTL/PNG, append manifest sids, write provenance."""
+    import hashlib
+
+    obj_dir = os.path.join(out, "obj", "shared", "terrain")
+    tex_dir = os.path.join(out, "tex", "shared", "terrain")
+    os.makedirs(obj_dir, exist_ok=True)
+    os.makedirs(tex_dir, exist_ok=True)
+    models = desert_palm_models(game)
+    failures = []
+    tex_report, mesh_report = [], []
+    meshes_by_name = {}
+
+    # -- textures: one PNG per distinct donor albedo -----------------------
+    for png, src in sorted({m["tex_name"]: m["texture"] for m in models}.items()):
+        if not os.path.exists(src):
+            failures.append("MISSING texture " + src)
+            continue
+        dst = os.path.join(tex_dir, png + ".png")
+        if not convert_texture(src, dst, force_opaque=False):
+            failures.append("texture failed " + src)
+            continue
+        donor_rgba = _rgba_bytes(src)
+        png_rgba = _rgba_bytes(dst)
+        alpha = bytes(png_rgba[3::4])
+        tex_report.append({
+            "material": png,
+            "source": "\\".join(["data", "materials", "env", png + ".dds"]),
+            "output": "variant3d/assets/models/tex/shared/terrain/%s.png" % png,
+            "source_sha256": hashlib.sha256(open(src, "rb").read()).hexdigest(),
+            "output_sha256": hashlib.sha256(open(dst, "rb").read()).hexdigest(),
+            "source_bytes": os.path.getsize(src),
+            "output_bytes": os.path.getsize(dst),
+            "donor_decoded_mode": "RGBA",
+            "donor_decoded_size": list(Image.open(src).size),
+            "decoded_rgba_sha256": hashlib.sha256(donor_rgba).hexdigest(),
+            "decoded_alpha_sha256": hashlib.sha256(alpha).hexdigest(),
+            "alpha_min": min(alpha), "alpha_max": max(alpha),
+            "alpha_unique_values": len(set(alpha)),
+            "pixels_equal": donor_rgba == png_rgba,
+            "alpha_equal": alpha == bytes(donor_rgba[3::4]),
+            "retouch": "none; direct DDS decode -> RGBA PNG re-encode",
+        })
+
+    # -- meshes: one OBJ+MTL per distinct donor .osm ------------------------
+    for name, m in sorted({x["obj_name"]: x for x in models}.items()):
+        if not os.path.exists(m["mesh"]):
+            failures.append("MISSING mesh " + m["mesh"])
+            continue
+        mesh = read_osm(m["mesh"])
+        n_v, n_uv = len(mesh["verts"]), len(mesh["uvs"])
+        if any(not (0 <= i < n_v) for tri in mesh["faces"] for i in tri):
+            failures.append("vertex index out of range " + m["mesh"])
+            continue
+        if any(not (0 <= i < n_uv) for tri in mesh["uv_faces"] for i in tri):
+            failures.append("UV index out of range " + m["mesh"])
+            continue
+        obj_path = os.path.join(obj_dir, name + ".obj")
+        mtl_path = os.path.join(obj_dir, name + ".mtl")
+        write_obj_exact(obj_path, mesh, name + ".mtl", m["source_rel"])
+        write_mtl(mtl_path, "../../../tex/shared/terrain/%s.png" % m["tex_name"])
+        back = _parse_obj_exact(obj_path)
+        checks = {
+            "verts_count": len(back["verts"]) == n_v,
+            "uvs_count": len(back["uvs"]) == n_uv,
+            "faces_count": len(back["faces"]) == len(mesh["faces"]),
+            "vertices_exact": back["verts"] == [tuple(v) for v in mesh["verts"]],
+            "uvs_exact": back["uvs"] == [tuple(t) for t in mesh["uvs"]],
+            "faces_exact": back["faces"] == [tuple(t) for t in mesh["faces"]],
+            "uv_faces_exact": back["uv_faces"] == [tuple(t) for t in mesh["uv_faces"]],
+            "mtllib_present": ("mtllib " + name + ".mtl") in open(obj_path, encoding="utf-8").read(),
+            "usemtl_present": "usemtl model" in open(obj_path, encoding="utf-8").read(),
+            "mtl_texture_exists": os.path.exists(os.path.join(
+                obj_dir, "../../../tex/shared/terrain/%s.png" % m["tex_name"])),
+        }
+        xs = [v[0] for v in mesh["verts"]]
+        ys = [v[1] for v in mesh["verts"]]
+        zs = [v[2] for v in mesh["verts"]]
+        info = {
+            "mesh_variant": name,
+            "source": m["source_rel"],
+            "obj": "variant3d/assets/models/obj/shared/terrain/%s.obj" % name,
+            "mtl": "variant3d/assets/models/obj/shared/terrain/%s.mtl" % name,
+            "source_sha256": hashlib.sha256(open(m["mesh"], "rb").read()).hexdigest(),
+            "obj_sha256": hashlib.sha256(open(obj_path, "rb").read()).hexdigest(),
+            "mtl_sha256": hashlib.sha256(open(mtl_path, "rb").read()).hexdigest(),
+            "source_bytes": os.path.getsize(m["mesh"]),
+            "obj_bytes": os.path.getsize(obj_path),
+            "mtl_bytes": os.path.getsize(mtl_path),
+            "format": "osm", "version": mesh["version"],
+            "frame_name": mesh["frame_name"],
+            "verts": n_v, "uvs": n_uv, "faces": len(mesh["faces"]),
+            "bbox": [min(xs), max(xs), min(ys), max(ys), min(zs), max(zs)],
+            "mtl_texture_reference": "../../../tex/shared/terrain/%s.png" % m["tex_name"],
+            "checks": checks,
+            "float_serialization": "shortest round-trip repr; exact float32 values reparse bit-identical",
+        }
+        meshes_by_name[name] = info
+        mesh_report.append(info)
+
+    if failures:
+        print("A3 failures: " + "; ".join(failures))
+        return 1
+
+    # -- manifest: append only; keep the shipped CRLF / indent=1 byte style --
+    manifest_path = os.path.join(out, "manifest.json")
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+    existing = {str(x.get("sid", "")) for x in manifest.get("models", [])}
+    before = len(manifest.get("models", []))
+    added_sids = []
+    for m in models:
+        sid = m["sid"]
+        if sid in existing:
+            failures.append("manifest sid already exists: " + sid)
+            continue
+        info = meshes_by_name[m["obj_name"]]
+        entry = {
+            "sid": sid, "kind": "env",
+            "mesh": m["mesh"], "texture": m["texture"], "directions": 1,
+            "obj": os.path.join(obj_dir, m["obj_name"] + ".obj"),
+            "texture_png": os.path.join(tex_dir, m["tex_name"] + ".png"),
+            "bbox": info["bbox"], "verts": info["verts"],
+            "faces": info["faces"], "uvs": info["uvs"],
+            "bucket": "shared/terrain",
+            "assets": {
+                "obj": "res://assets/models/obj/shared/terrain/%s.obj" % m["obj_name"],
+                "tex": "res://assets/models/tex/shared/terrain/%s.png" % m["tex_name"],
+            },
+            "source_rel": m["source_rel"],
+        }
+        if m["alias_of"]:
+            entry["alias_of"] = m["alias_of"]
+        manifest["models"].append(entry)
+        manifest.setdefault("extra_assets", {})[sid] = {
+            "obj": entry["assets"]["obj"],
+            "tex": entry["assets"]["tex"],
+            "bucket": "shared/terrain",
+        }
+        added_sids.append(sid)
+    text = json.dumps(manifest, indent=1).replace("\n", "\r\n")
+    tmp = manifest_path + ".tmp-palm-desert"
+    with open(tmp, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+    os.replace(tmp, manifest_path)
+
+    # -- provenance manifest (FIX-FIELD-ASSETS invariant pattern) -----------
+    prov = {
+        "schema": "fix-palm-desert/conversion/v1",
+        "worker": "CONVERT-PALM-DESERT",
+        "date": "2026-11-26",
+        "donor_root_policy": "C:/Games/Cossacks 3 (read-only private install)",
+        "generator": "offline Python + Pillow; OSM topology read through "
+                     "variant3d/tools/convert_models.py:read_osm",
+        "tools_modified": ["variant3d/tools/convert_models.py (additive "
+                           "--palm-desert mode; legacy pipeline untouched)"],
+        "counts": {
+            "donor_textures_read": len(tex_report),
+            "png_outputs": len(tex_report),
+            "donor_mesh_variants_converted": len(mesh_report),
+            "obj_outputs": len(mesh_report),
+            "mtl_outputs": len(mesh_report),
+            "manifest_sids_added": len(added_sids),
+            "manifest_model_entries_before": before,
+            "manifest_model_entries_after": len(manifest["models"]),
+            "extra_asset_mappings_added": len(added_sids),
+            "donor_binaries_copied": 0,
+        },
+        "invariants": {
+            "all_texture_pixels_equal": all(t["pixels_equal"] for t in tex_report),
+            "all_texture_alpha_equal": all(t["alpha_equal"] for t in tex_report),
+            "all_mesh_vertices_exact": all(m["checks"]["vertices_exact"] for m in mesh_report),
+            "all_mesh_uvs_exact": all(m["checks"]["uvs_exact"] for m in mesh_report),
+            "all_mesh_faces_exact": all(m["checks"]["faces_exact"] for m in mesh_report),
+            "all_mesh_uv_faces_exact": all(m["checks"]["uv_faces_exact"] for m in mesh_report),
+            "all_mtl_textures_resolve": all(m["checks"]["mtl_texture_exists"] for m in mesh_report),
+            "synthetic_art": False,
+            "color_retouch": False,
+            "donor_dds_or_osm_in_outputs": [],
+        },
+        "textures": tex_report,
+        "meshes": mesh_report,
+        "manifest_sids": added_sids,
+        "limitations": [
+            "Static/offline conversion only; no Godot editor, importer, runner, "
+            "render, capture or git command was run.",
+            "Every donor DDS carries mip levels; each derived PNG contains only "
+            "the base level. No mip chain was generated or copied.",
+            "New PNG/OBJ assets have no .import sidecars; a normal Godot import "
+            "is required before ResourceLoader.exists/load can be relied on.",
+            "Winter albedo variants (palm1w..3w, desert1w..5w, "
+            "plantsyellowatlasw) are not converted here; only the donor "
+            "DefaultMaterialName summer albedo used by each MTL is emitted.",
+            "Feed BaseName -> sid rules in terrain_donor_props.gd are unchanged; "
+            "binding these sids is separate follow-up work.",
+            "No donor/port A/B frame exists. Pixel/topology equality is not a "
+            "visual parity claim.",
+        ],
+        "visual_parity_claim": False,
+    }
+    prov_path = os.path.join(obj_dir, "palm_desert_conversion.manifest.json")
+    with open(prov_path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(prov, f, indent=2)
+        f.write("\n")
+
+    print("A3 done: %d meshes, %d textures, %d manifest sids (models %d -> %d)" % (
+        len(mesh_report), len(tex_report), len(added_sids), before, len(manifest["models"])))
+    return 0 if not failures else 1
+
+
 def load_bucket_map() -> dict:
     """FOLD-06: read the shipped additive `bucket` map; no nation logic here.
 
@@ -654,11 +976,17 @@ def main() -> int:
                     help="FOLD-06: write obj/tex into the manifest bucket tree "
                          "and emit additive bucket/assets fields; default off "
                          "keeps the flat 280-entry pipeline byte-identical")
+    ap.add_argument("--palm-desert", action="store_true",
+                    help="A3: convert donor palm/palmsmall/desert1..5/plantyellow "
+                         "props into shared/terrain and append new manifest sids; "
+                         "legacy pipeline is untouched")
     args = ap.parse_args()
 
     # expanduser makes ~/: Linux/macOS paths work; Path.resolve is cross-platform.
     game = str(Path(args.game).expanduser().resolve())
     out = str(Path(args.out).expanduser().resolve())
+    if args.palm_desert:
+        return convert_palm_desert(game, out)
     obj_dir = os.path.join(out, "obj")
     tex_dir = os.path.join(out, "tex")
     os.makedirs(obj_dir, exist_ok=True)
