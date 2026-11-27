@@ -345,7 +345,10 @@ func _load_meshes() -> void:
 		# resolver; flat original is only a diagnostic fallback (never relied
 		# on). COORD's typed `var path: String` form is preserved.
 		var path: String = AssetPaths.existing(sid, "obj")
-		if path.begins_with(AssetPaths.LEGACY_OBJ_DIR):
+		# FOLD-07-PREFIX-FIX: a begins_with(LEGACY_OBJ_DIR) test also matched the
+		# healthy mapped bucket .../obj/shared/terrain/<sid>.obj (flagged by
+		# FLATMAP_relief_obj.md). Compare against the exact legacy path instead.
+		if path == AssetPaths.legacy_for(sid, "obj"):
 			push_warning("world3d_relief: relief OBJ map miss for %s — flat diagnostic fallback %s" % [sid, path])
 		# Without a Godot import pass no .import exists; load() then returns null.
 		# Skip with a warning rather than crash any existing gate (Z05 R11).

@@ -1,184 +1,184 @@
 ---
-id: DEC-U-SELECT-DEEP
+id: DEC-U-SELECT-DEEP-STATIC-2026-11-26
 swarm: TERRAIN-SWARM-2026-11-26 / PORT1TO1-NO-APPROXIMATION
-role: "WORKER DEC-U-SELECT-DEEP — deep static probe: FOV/sensor law, projection args, drag-anchor struct, marquee inside-test"
+role: "WORKER SELECT-DEEP — read-only static decompilation of donor selection / screen-to-world projection"
 owner_file: docs/terrain_swarm_2026-11-26/reports/DEC_U_select_deep.md
-status: DELIVERED__READ_ONLY__ONE_REPORT_ONLY__NO_CODE_ASSET_CONFIG_GODOT_GIT_EDIT
+status: DELIVERED__READ_ONLY__ONE_REPORT_ONLY__NO_CODE_GODOT_GIT_EXEC
 created: 2026-11-26
-labels: [O, D, I, U, NO_PARITY_CLAIM, NO_APPROXIMATION]
-parity_guard: "NO DONOR PARITY IS CLAIMED. No same-camera donor/port A/B frame was produced or examined. Every donor statement is a read-only byte/line observation with VA/file-off or path:line. No FOV/sensor/near/far/anchor value is written as donor fact."
-scope_guard: "Exactly one repo file written (this report). No source, shader, config, asset, fixture, test, runner, GodOT, git or user-mod edit. Donor binary and donor data tree read READ-ONLY; donor executable never run, no donor bytes copied. Singleplayer skirmish only."
-donor_pin: "t_87f0f3c130b0 = C:\\Games\\Cossacks 3\\cossacks.exe, PE x86, 5,768,048 B, sha256 87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c, Deep mode. Every native call passed document=t_87f0f3c130b0 explicitly."
-prior_reports_read:
-  - docs/terrain_swarm_2026-11-26/reports/DEC_U_gl_perspective.md (custom glFrustum/glOrtho via sub_4cd334, gluPerspective thunk 0x907b84 0 refs, GetCameraFieldOfView @0x5fece6 string-table blob)
-  - docs/terrain_swarm_2026-11-26/reports/DEC_U_selection.md (pick gate/priority order recovered; V1-SENSOR/V2-PROJ/DRAG/BOX left [U])
-  - docs/terrain_swarm_2026-11-26/reports/DEC_U_blend_deep.md (method reference: raw CODE byte search over data-section index limits)
+labels: [D, U, NO_PARITY_CLAIM, NO_APPROXIMATION, READ_ONLY]
+parity: UNVERIFIED
+chain: 0/6
+result: NOT GOOD
+donor_pin: "t_87f0f3c130b0 = C:\\Games\\Cossacks 3\\cossacks.exe, PE x86, 5768048 B, sha256 87F0F3C130B027E7C4E72DC217EAe9D592982370D112E0D224897BC92AF4E16C"
+scope_guard: "Exactly one repo file written (this report). No code/Godot/git/donor-execution or copying. Donor read READ-ONLY; donor executable never executed; no donor bytes copied. No .bind unpacking. No port behaviour wired. No parity claim."
+tooling_constraint: "MUST NOT call any tools.craftanything.native_* except tools.craftanything.native_function_study (summary then complete). Used only: core_target_open / core_session_show / core_overview_show / core_feature_find / core_evidence_browse / native_function_study / report tools."
 ---
 
-# DEC-U-SELECT-DEEP — FOV law, projection args, drag-anchor, marquee inside-test (donor 1:1)
+# DEC_U_select_deep — read-only static decompilation: selection / screen-to-world projection
 
-> READ-ONLY. No parity claim. No approximation endorsed.
-> `[O]` = observed donor bytes/lines, verified by a second read in this ticket. `[D]` = deterministic reading over cited `[O]`. `[I]` = reading without runtime proof. `[U]` = unresolved after the passes here.
-> `ev_*` = Craft Anything evidence ids from NEW passes in **this** session, all pinned `document=t_87f0f3c130b0` unless the subject is a donor text path. "Address" = donor VA `0x…`; file-off = `0x…` file offset.
+> READ-ONLY. Parity UNVERIFIED. No approximations. No parity claim.
+> `[D]` = byte-proven deterministic reading over cited `[O]` with evidence id + address. `[U]` = ambiguous or runtime-dependent, left unresolved.
+> `ev_*` = Craft Anything evidence ids from NEW passes in **this** session, all pinned to `t_87f0f3c130b0` unless stated. Address = donor VA `0x…`; slot = `.idata` VA `0x…`.
 
-## 0. Method, labels, pass ledger (multiple NEW passes on the pin)
+## 0. Donor pin verification — before any finding [D]
 
-`native_bytes_find` searches file bytes as stored (packed `.bind` + runtime-built data invisible — 0 hits is never proof of absence); `native_strings_find` searches data sections only (CODE-embedded tables invisible to it — same limit exploited in DEC_U_blend_deep). `native_xrefs_list` is static-references-only (computed-pointer/script-VM dispatch invisible). All three limits are printed on every evidence record and are cited, never worked around.
+- `[D]` `core_session_show` confirms active target `t_87f0f3c130b0`, path `C:\Games\Cossacks 3\cossacks.exe`, kind `pe`, bytes `5768048`, sha256 `87f0f3c130b027e7c4e72dc217eae9d592982370d112e0d224897bc92af4e16c`. Expected pin `t_87f0f3c130b0` matches. Expected SHA256 `87F0F3C130B027E7C4E72DC217EAe9D592982370D112E0D224897BC92AF4E16C` matches (case-insensitive). No donor execution performed.
+- `[D]` `core_overview_show` summary `ev_60b497434aa3e6cb68b019fd0a3b016ec0415ef6eec1a3189726faa8d3752f4c4`: PE x86, `18918` functions, `12073` strings, `746` imports, `18` libraries, `10` segments, `2` toolchain hints. Limitations carried on the record: function discovery stopped after `6000000` instructions so the function list is incomplete; `1238` indirect jumps unresolved; stripped binary (most names `sub_…`); static-analysis-only — functions reached only through computed pointers or at run time may be missing; absence is not proof.
+- Context per task brief: `PORT1TO1_u_classify` lists selection/projection as owner-gated runtime `[U]`; prior camera work recovered the start→camera wire but not projection math; prior B8 LOS census proved the 12-float `OctreeRayCastIntersect` call shape. This ticket does NOT re-derive that shape and does NOT lift new projection math — it records only what the nine listed literal passes plus thunk/call-edge studies byte-prove.
 
-| Pass | Operation (read-only, `document=t_87f0f3c130b0`) | Evidence | Result |
+## 1. Method — pass ledger (read-only, `document=t_87f0f3c130b0`)
+
+| Pass | Operation | Evidence | Result summary |
 |---|---|---|---|
-| P1 | `native_bytes_find` `GetCameraFieldOfView` | `ev_3598d0fb…` | 1 hit: VA `0x5fece6`, file-off `0x1fe0e6`, CODE (re-find of prior `ev_5273d228…`, same VA) |
-| P2 | `native_bytes_find` `MinFocalLength` | `ev_f46cce1e…` | 1 hit: VA `0x7abf68`, file-off `0x3ab368`, CODE (same VA as prior `ev_3ca11397…`) |
-| P3 | `native_bytes_find` `ScreenToWorld` | `ev_59c0e2dc…` **NEW** | 1 hit: VA `0x69e45a`, file-off `0x29d85a`, CODE |
-| P4 | `native_bytes_find` `GetCurrentMouseWorldCoord` | `ev_3f19d659…` **NEW** | 1 hit: VA `0x66daa2`, file-off `0x26cea2`, CODE |
-| P5 | `native_bytes_find` `FOVSensor` | `ev_70ca60bd…` **NEW** | 0 hits (file-bytes-only limit; absence is not proof) |
-| P6 | `native_bytes_find` `ProjectionMatrix` | `ev_834975ec…` **NEW** | 1 hit: VA `0x85511c`, file-off `0x45451c`, CODE |
-| P7 | `native_bytes_find` `Projection` | `ev_e73b06e4…` | 1 hit: same VA `0x85511c` (overlap; confirms single occurrence) |
-| P8 | `native_bytes_find` `FocalLength` | `ev_7a8cf1b5…` **NEW re-find** | 16 hits, all CODE (`0x4c851e/0x58c14b/0x58e1ac/0x5d5d54/0x5fe19e/0x5fe1da/0x5fea67/0x5fead3/0x5fecfc/0x5fed5b/0x7aadb0/0x7ab32c/0x7abf6b/0x7abf83/0x7abf98/0x7e99db`) — same 16-set as prior `ev_99e2a779…` |
-| P9 | `native_bytes_show` `0x5fece6` +128 / +512 | `ev_b17e889d…` / `ev_bec18fb4…` **NEW windows** | Full signatures: `GetCameraFieldOfViewByFocalLength(const focallength, viewportdimension : Float) : Float` + inverse `GetCameraFocalLengthByFieldOfView(const fieldofview, viewportdimension : Float) : Float` (§1) |
-| P10 | `native_bytes_show` `0x69e45a` +256; `0x69e433` +256 | `ev_fa82ce48…` / `ev_c9172eb6…` **NEW** | `ScreenToWorldRayCast(ascreenx, ascreeny: Integer; var arayx, arayy, arayz: Float)` + `MouseRay: Integer` neighbour + `GameObjectSortRayCastList` (§4) |
-| P11 | `native_bytes_show` `0x66daa2` +256/+512 | `ev_ff81038f…` / `ev_14745506…` **NEW** | `GetCurrentMouseWorldCoord(var arayx, arayy, arayz: Float)` + GUI neighbours (no numeric law) |
-| P12 | `native_bytes_show` `0x85511c` +256 | `ev_3002bd99…` **NEW** | `ProjectionMatrix*P;` GLSL fog-shader text (`fogFragCoord = abs(gl_Position.z)` / `length(gl_Position)` ATI branches), NOT a script API |
-| P13 | `native_bytes_show` `0x7abf68` +256 | `ev_ea91c02e…` **NEW window** | `MinFocalLength … MaxFocalLength … FocalLengthPower … FreeRotationMode … ElasticTargetRaycastMode … ElasticCameraRaycastMode … PowerDOF … MinLengthDOF … MaxLengthDOF … MinNearDOF …` property run |
-| P14 | `native_bytes_find` `ByFocalLength` | `ev_86a5c6f4…` | 1 hit `0x5fecfa` (+`0x14` past P1; tail of the P9 signature) |
-| P15 | `native_bytes_find` `GetCameraFocalLengthByFieldOfView` | `ev_cc24f391…` **NEW** | 1 hit VA `0x5fed52`, file-off `0x1fe152`, CODE (the inverse entry) |
-| P16 | `native_bytes_find` `NearPlane` | `ev_d881a79f…` | 2 hits CODE `0x4c8590/0x4c85be` (same as prior P22) |
-| P17 | `native_bytes_show` `0x4c8590` +256 | `ev_68cdbf61…` **NEW window** | `NearPlaneBias … DirectNearPlaneBias … TargetObject … CameraStyle … OnCustomPerspective … OnCustomApply … Positio…` (bias property block, no values) |
-| P18 | `native_bytes_find` `FarPlane` | `ev_1716e536…` **NEW** | 0 hits (same limit as P5) |
-| P19 | `native_bytes_find` `DepthOfView` | `ev_b139c84c…` **NEW re-find** | 8 hits CODE (`0x4c84cc/0x4c84f8/0x5fe2b0/0x5fe301/0x5fe353/0x5fe387/0x7aadc4/0x7ab340`) |
-| P20 | `native_bytes_show` `0x4c84cc` +256 | `ev_4fb3dcd0…` **NEW window** | `DepthOfView … DirectDepthOfView … FocalLength … SceneScaleX … SceneScaleY … NearPlaneBias … DirectNearPlaneBias …` (camera property block) |
-| P21 | `native_bytes_find` `GetViewerWidth` | `ev_22c4a016…` **NEW** | 1 hit VA `0x69dd5e`, CODE |
-| P22 | `native_bytes_show` `0x69dd5e` +256 | `ev_e93fc7d4…` **NEW** | `GetViewerWidth(): Integer … GetViewerHeight(): Integer … GetProjectMode(): String … GetProjectModeInt … SetProjectMode …` |
-| P23 | `native_bytes_find` `Aspect` | `ev_aa704dba…` **NEW re-find** | 9 hits CODE (`0x50ce30/0x50d47c/0x5a4c71/0x5a5564/0x6db810/0x6db868/0x87436c/0x874933/0x88878f`) |
-| P24 | `native_bytes_show` `0x50ce30` +128 | `ev_b9352bd3…` **NEW** | `AspectRatio … Rotation … Friction … BlendingMode …` (particle/material props, not camera) |
-| P25 | `native_bytes_show` `0x87436c` +256 | `ev_c17f6a02…` **NEW** | `Aspect … lnaInvisible/lnaAxes/lnaCube … TLineSplineMode … lsmLines/lsmCubicSpline/…` (spline/object props, not camera) |
-| P26 | `native_bytes_find` `Sensor` | `ev_361934c5…` **NEW** | 0 hits (same limit) |
-| P27 | `native_bytes_show` `0x4cd780` +32 | `ev_07143cf6…` **NEW window** | `00 00 C8 42 (=100.0f) | 00 00 00 40 (=2.0f) | 33 33 33 33 33…` table head (same floats as prior P35) |
-| P28 | `native_data_show` `0x8f4dec` | `ev_50092d6f…` | `0x38d1b717` = `0.0001f`, DATA, 2 refs (observed only, §2) |
-| P29 | `native_function_pseudocode sub_4cd334` | `ev_030dff8c…` | 114-line Ghidra `FUN_004cd334(p1,p2,w,focalArg,p5,h)`; mode byte `*(p1+200)`; bounds via `max(w,h)` + `focalScale`; `glFrustum/glOrtho/glMultMatrixf/gluOrtho2D` (§2) |
-| P30 | `native_function_callees_list sub_4cd334` | `ev_db494e86…` | 5 calls (1 unresolved indirect): `gluOrtho2D@0x4cd38c`, indirect `@0x4cd3bf`, `glMultMatrixf@0x4cd723`, `glOrtho@0x4cd771`, `glFrustum@0x4cd626` |
-| P31 | `native_function_pseudocode sub_5d1c60` | `ev_6a85f244…` | 72-line `FUN_005d1c60`: `glClear → glViewport → glMatrixMode → glPushMatrix → glLoadIdentity → sub_4cd334(… w … focal … 0x60 … h) → glMatrixMode`, `w=*(p1+0x44) h=*(p1+0x48)`, refresh only when `param_2[0xf]/[0x10]` change (§2) |
-| P32 | `native_function_pseudocode sub_777c80` | `ev_0f24561c…` **NEW** | 23-line wrapper: `FUN_00777cd0(param_1,param_2,param_3,0x60,iVar2)` then `FUN_004cd334(*( *param_2+0x4c),&local,local_14,(float)ST0,0x60,iVar2)` — second caller also passes `p5=0x60` (§2) |
-| P33 | `native_xrefs_list 0x4cd334` | `ev_90877626…` | 2 callers: `sub_5d1c60 @ 0x5d1ddb`, `sub_777c80 @ 0x777cc1` |
-| P34 | `native_xrefs_list 0x5fece6 / 0x69e45a / 0x66daa2 / 0x85511c` | `ev_4a019653…` / `ev_72852ae3…` / `ev_49bb2069…` / `ev_ecaf885e…` **NEW** | 0 static refs each (computed-pointer/script-VM limit; never read as "uncalled") |
-| P35 | `native_xrefs_list 0x7abf68` | `ev_4f07a0b1…` | 1 static data ref: `0x7aba11` in `sub_7ab704` (same as prior `ev_6b9e9436…`) |
-| P36 | `native_bytes_find` `glFrustum` + `native_name_xrefs_list glFrustum@thunk` | `ev_c22aad85…` + `ev_7b9c6ee2…` **NEW** | `.idata` name slot `0x90aaf4` + thunk `0x4afd04` with exactly 1 caller `sub_4cd334 @ 0x4cd626` (no other static caller) |
-| P37 | `native_bytes_find` `prevselmousex / prevs / isselectionstarted` | `ev_6eafe381…` / `ev_2b7104b4…` / `ev_f731c284…` **NEW** | 0 hits each — script globals live in script state, not exe bytes (expected; §3) |
-| P38 | `native_bytes_find` `GameManagerBeginSelection` | `ev_f5bcd413…` | 1 hit `0x6a03fa` CODE (re-find) |
-| P39 | `native_bytes_show` `0x6a03c2` +256 | `ev_aa0dddd5…` **NEW window** | `GameManagerIsSelectionMode:Boolean … BeginSelection … EndSelection … GetGameManagerPickingMode: String … GetGameManagerRestrictSelection(): boolean …` (§4) |
-| P40 | `native_bytes_find` `MouseRay` / `MouseRayX` | `ev_6375113d…` / `ev_464c8268…` **NEW** | `MouseRay` 5 hits (`0x69e433/0x69e5be/0x70f64f/0x70f673/0x70f697`); `MouseRayX` 1 hit `0x70f64f` |
-| P41 | `native_bytes_show` `0x69e433` +256 | `ev_c9172eb6…` **NEW** | `MouseRay: Integer … ScreenToWorldRayCast(…) … GameObjectSortRayCastList … GetGameObjectRayCastByIndex …` (§4) |
-| P42 | `native_bytes_show` `0x70f64f` +256/+512 | `ev_9718bfe4…` / `ev_ae7a8d7f…` **NEW** | `MouseRayX … MouseRayY … MouseRayZ … CameraTrackList … CameraList … CameraL1 … SoundVolumes … AmbientSound … SoundManager … WasMouseDown … WasMouseUp … NeededMap …` (§3: property block, no anchor pair) |
-| P43 | `native_bytes_find` `GetRayCastIntersectGameObject` | `ev_e836f957…` **NEW** | 2 hits `0x69e59d/0x69e5e5` CODE |
-| P44 | `native_bytes_show` `0x69e57a` +256 | `ev_e95410af…` **NEW** | `PickedObjects() … GetRayCastIntersectGameObjectFromMouseRay(): Integer … GetRayCastIntersectGameObject(start_x…end_x…var int_x…): Integer …` (§4: full ray signatures) |
-| P45 | `native_bytes_find` `GetGameObjectRayCastAABBByHandle` | `ev_b0325b2d…` | 1 hit `0x63153e` CODE (re-find) |
-| P46 | `native_bytes_show` `0x63153e` +256 | `ev_a111e992…` **NEW window** | `GetGameObjectRayCastAABBByHandle(const gohnd: Integer; x1,y1,z1,x2,y2,z2: Float): Boolean` + 12-float `…CustAABBByHandle(…minx…maxz: Float): Boolean` (§4) |
-| P47 | `native_bytes_find` `OctreeRayCast` | `ev_4685a40a…` | 2 hits `0x62e84a/0x62e8fa` CODE (re-find) |
-| P48 | `native_bytes_show` `0x62e84a` +256 | `ev_83078fe1…` **NEW window** | `OctreeRayCastIntersect(gohandle; rs_x,rs_y,rs_z; dir_x,dir_y,dir_z; var p_x,p_y,p_z; var n_x,n_y,n_z): Boolean` + `…Children(…)` (§4) |
-| P49 | `native_bytes_find` `GameObjectSortRayCastList / GameObjectRayCastCount / spmRunTime / spmAdd / Picked` | `ev_2bf9d42c…` / `ev_d833f886…` / `ev_0edab27d…` / `ev_29a985f9…` / `ev_85968a92…` | 1 (`0x69e4be`) / 1 (`0x69e535`) / 2 (`0x511e3d/0x5125c8`) / 2 (`0x511e48/0x5125dc`) / 25 hits — binding-table placement, no callers lifted |
-| P50 | `native_bytes_find` `spmFrame / SelectionRect` | `ev_259ecb0a…` / `ev_3cd5a2fe…` **NEW** | 0 hits each (same file-bytes limit; §4 negative is the finding) |
-| P51 | `native_bytes_find` `GameManagerIsSelectionMode` | `ev_1a0549b0…` | 1 hit `0x6a03c2` (same VA as P39 window) |
-| P52 | `native_bytes_find` `GetCameraAbsolutePosition / HeightTarget / GetViewerWidth-neighbours` | `ev_30b6fc42…` / `ev_bfd77b8a…` | `GetCameraAbsolutePosition(var x,y,z: Float)` 1 hit `0x5fcbaa`; `HeightTarget: Float` 3 hits (`0x5fe02a/0x7abc14/0x7abc2c`) |
-| P53 | `native_bytes_show` `0x5fcbaa` +256; `0x5fe02a` +256 | `ev_92b76b7c…` / `ev_a328c903…` **NEW** | `GetCameraAbsolutePosition / GetCameraPosition / GetCameraTargetPosition (var x,y,z: Float)` triple + `HeightTarget: Float … SetCameraPropertiesFromFile …` |
-| P54 | donor text `data/gui/menu.inc/onmousemove.inc:32-34,66-70,141-167` + `onmousedown.inc:364-379` + `doupdateselection.inc:1-22` | local reads | epsilon law, world-read, two-phase anchor freeze, LButtonUp teardown, highlight-only `DoUpdateSelection` (§3) [O] |
-| P55 | donor text `data/scripts/lib/control.script:170-184,288-300` | local re-read | AABB call shape `cPos→mPos` on both pick and list paths (§4) [O] |
+| P0 | `core_session_show` | (session record, no ev) | pin + SHA verified above |
+| P1 | `core_overview_show` detail=summary | `ev_60b497434aa3e6cb68b019fd0a3b016ec0415ef6eec1a3189726faa8d3752f4c4` | counts + incompleteness limits |
+| P2 | `core_feature_find` `select` | `ev_40b0648ec25a0dbf5c248f2fb5f4e791f969f4beff0e8a5c00fa905b556ac6` | §2 |
+| P3 | `core_feature_find` `selection` | `ev_cc459bb14cf49ca3b301ff9d4a423a240760bf3dd9e7783344b0f7209e08d2df` | §2 |
+| P4 | `core_feature_find` `ray` | `ev_e5a90fcbfe0fde1558394cb58840d749031ed200e268d062453ad04ca9be5940` | §2 |
+| P5 | `core_feature_find` `pick` | `ev_50d03d1594617ebc000bf5fb8362f1877d4ad3b1f73589f86671de8b172e9c25` | §2 |
+| P6 | `core_feature_find` `screen` | `ev_0002bdd6d862b968ee770f5a6b347fa49bab140b41e5c63a326dd442ed68f601` | §2 |
+| P7 | `core_feature_find` `project` | `ev_b8682413b00674a271d57e4bb873dce308c830e9cfa06e73311f32f46f5a672d` | §2 |
+| P8 | `core_feature_find` `octree` | `ev_1f9395d35de6e07826dc3159ad1ca580f207ca053bff8d49242a7e4f323e72a6` | §2 |
+| P9 | `core_feature_find` `raycast` | `ev_383505a5e507a2f2c3889afb9d5179656b4d5f83fb986afe02140ddd37c507fd` | §2, zero hits |
+| P10 | `core_feature_find` `GetCursor` | `ev_4b163911375bf1abf63a463d878a5af25be3e50d768d71f2f5e20325fe3db5c5` | §2 |
+| P11 | `native_function_study` detail=summary `0x4afeec`, `0x408d14`, `0x4089e4`, `0x4089dc` | `ev_7f07da25eab2c18a528b804a7d2f19f62dccf83fe362dfaca9e790eda8ca32ab`, `ev_c63c1c39473defe06749b9ed574136dcf38733e3575e482e713361daee8184ae`, `ev_5d44c3f3eacc1ca58a88471f29008c239d60eceee5520656246591f5f6293a12`, `ev_e446ffeb84009b88843ee58cd7fd6f393bf2bb68566af5f53d44d91cbcc0c721` | §3, thunks 1 block / 1 insn each |
+| P12 | `core_evidence_browse` callers of above | `ev_220578aa17a7ec75d7b558d36e086d5e787031488f50e955e16228dea00d598f`, `ev_9cec28a09c6b3cf4e7efac182ded59448d1150c30cb183450c8c9f657d8d6e2`, `ev_f8d7c4bee21c2752ed7d43925ef95d6200c3e98a3d79348710828d0a64fd332`, `ev_0cb058d51b8f4fd6ff71a543d0c76b664af5f53d44d91cbcc0c721` | §3 call edges |
+| P13 | `native_function_study` detail=summary `0x5811ec`, `0x582914`, `0x492634` | `ev_c05d9c9c3a0e0a165e57e04eb7e96a71ba40f9f1706de0ce201e12d85a69e4e2`, `ev_e95bd4a16cad53d8805d6efa164a552d5492762138dc35badae7dffa4182a1a8`, `ev_510e0be0962b24061a584a4e5fb87cdf5c0693406cc72d74e11399da9f4c6013` | §3 caller sizes |
+| P14 | `core_evidence_browse` callees of above | `ev_68be647731ac792c5f3976d1d75e8c3bba68354bf224cfb36e94a3d712ddcc6c`, `ev_f3e86e2410e307afaa1cb2795aab0748a2d0d085668ef3891b2177d1477f29d1`, `ev_2c0d34321bf6c120ac87efaf29346323b5da7ad516eea9b77ff01c16f423bcc4` | §3 callee edges |
+| P15 | `native_function_study` detail=complete `0x4afeec`, `0x4089e4`, `0x408d14` | same ev ids as P11 (complete dossier returned inline) | §3 assembly + import slots |
 
-**Strange-decomp log (required):** P34 binding-table VAs return 0 static refs under the engine's own "computed pointers at run time are not seen" limitation — localized as data, never as "dead code". `native_function_find` on `0x69e45a/0x66daa2/0x85511c/0x70f64f` reports "not inside any discovered function" (same CODE-string-table placement as prior P28) — no caller, polarity, or register law is guessed from it. `sub_5fc2d0`-region lifter output remains string-bytes garbage (prior P34, not re-litigated). `.bind` entropy `7.96` exec (prior P1) bounds every 0-hit verdict.
+No other `native_*` was called. No `.bind` unpacking. No donor execution. No port behaviour wired.
 
----
+## 2. Literal census [D] — exact counts, VAs, slots
 
-## 1. V1-SENSOR — exact FOV law inputs recovered as NATIVE SIGNATURES `[O]`; sensor width still `[U]`
+Incomplete-discovery rule applies to every row: the finder searches an index over data sections/imports; CODE-embedded tables, packed bytes, runtime-built text, and computed-pointer refs are invisible to it. **Zero hits are index-vs-CODE, not disproof.** No absence is read as non-existence.
 
-### 1.1 RECOVERED — the focal↔FOV entries take TWO floats, one is the viewport dimension `[O]`
+### 2.1 `select` — `ev_40b0648ec25a0dbf5c248f2fb5f4e791f969f4beff0e8a5c00fa905b556ac6` [D]
 
-- `[O]` P9 (`ev_bec18fb4…`, 512-B window at `0x5fece6`): the entry is byte-identically
-  `GetCameraFieldOfViewByFocalLength(const focallength, viewportdimension : Float) : Float`,
-  immediately followed by its inverse
-  `GetCameraFocalLengthByFieldOfView(const fieldofview, viewportdimension : Float) : Float`
-  (P15: `ev_cc24f391…`, VA `0x5fed52`, +`0x6c` past P1). The LONG form `ByFocalLength` (P14) is the tail of the first signature, not a separate symbol family.
-- `[D]` The law therefore binds THREE quantities, not two: `focal`, `viewportdimension`, and the returned angle. The second argument is **named** `viewportdimension` in the binary — it is not labelled width, height, `max(w,h)`, diagonal, or sensor. Any of those readings is `[I]` until the V1-SENSOR capture (§1.2) decides it.
-- `[O]` Neighbour context (same window): `GetCameraHandle`, `GetCameraTargetHandle`, `GetCameraMouseDistanceSpeed/Set…`, `GetCameraMouseRotateFactor/Set…` — camera-handle/mouse-speed API family, no numeric law.
-- `[O]` P13 (`ev_ea91c02e…`): `MinFocalLength` sits in a camera property run with `MaxFocalLength`, `FocalLengthPower`, `FreeRotationMode`, `ElasticTargetRaycastMode`, `ElasticCameraRaycastMode`, `PowerDOF`, `Min/MaxLengthDOF`, `MinNearDOF…`. Numeric 400 lives in `camera.cfg` text (upstream), never as a recovered float literal here. The single static data ref `0x7aba11` in `sub_7ab704` (P35) is a binding-table pointer, not a value read.
-- `[O]` Negatives with the stated tool limit: `FOVSensor` 0 hits (P5), `Sensor` 0 hits (P26), `FarPlane` 0 hits (P18). `Aspect` 9 CODE hits (P23) are particle/spline object properties (`AspectRatio` P24, spline `Aspect` P25) — no camera aspect literal exists anywhere. `ProjectionMatrix` (P6/P12) is GLSL fog-shader text (`ProjectionMatrix*P; … fogFragCoord …`), not a script/camera API — explicitly excluded from the projection setup to prevent misuse.
-- `[D]` Consequence: the thin-lens relation stays the ONLY law (upstream, `[D]`): `FOV = 2·atan(k·viewportdimension / focal)` up to an unknown scale `k` and an unknown choice of which viewport dimension feeds the second argument. Port `17.27°` (and every 216/36/121.4-unit shadow) stays `PORT APPROXIMATION`. `gluPerspective` plays no role (P36: single static caller of the thunk is `sub_4cd334`; `__imp_gluPerspective` itself has 0 static refs per prior P7, re-cited not re-derived).
+- `[D]` 21 matching strings, 4 matching function names, 5 matching imports, 4 functions involved.
+- `[D]` Function VAs: `SelectClipRgn@thunk @ 0x4086dc`, `SelectObject@thunk @ 0x4086e4`, `SelectPalette@thunk @ 0x4086ec`, `WSAAsyncSelect@thunk @ 0x5a2ff0`. Each `why: name matches + calls <same>`.
+- `[D]` Import slots: `SelectPalette @ 0x907560` used_by `0x4086ec`; `SelectObject @ 0x907564` used_by `0x4086e4`; `SelectClipRgn @ 0x907568` used_by `0x4086dc`; `WSAAsyncSelect @ 0x907dd0` used_by `0x5a2ff0`; `select (wsock32) @ 0x907dec` used_by `[]` (zero static users observed — index-vs-CODE, not disproof).
+- `[D]` String VAs include `SelectPalette @ 0x908c2c`, `SelectObject @ 0x908c3c`, `SelectClipRgn @ 0x908c4c`, `WSAAsyncSelect @ 0x90afac`, `select @ 0x90b00c`, plus UI/script-table strings `EXSelectionBrush @ 0x958d55`, `goRowSelect @ 0x959f0b`, `Select a state to edit... @ 0x95ac2a`, `MultiSelect\t @ 0x95b9c0`, `SelectAllMenuItem @ 0x95bf5a`, `\nSelect All @ 0x95bf74`, `SelectAllMenuItemClick @ 0x95bf95`, `RemoveBPSelectedStateMenuItem @ 0x95c48b`, `"RemoveBPSelectedStateMenuItemClick @ 0x95c4d4`, `TabSheetSelectProfile @ 0x96193c`, `TabSheetSelectProfile\nTabVisible @ 0x96195b`, `PanelSelectProfile @ 0x961b12`, `BevelSelectProfile @ 0x961b8d`, `ButtonSelectProfile @ 0x961be8`, `ButtonSelectProfileClick @ 0x961ccd`, `#Remove selected variable from stack\tOnExecute @ 0x965535`. References arrays are empty in this index view. None is a proven selection-ray function name — all four code hits are GDI/socket thunks.
 
-### 1.2 Still-`[U]` — sensor/viewport binding (the one missing derivation)
+### 2.2 `selection` — `ev_cc459bb14cf49ca3b301ff9d4a423a240760bf3dd9e7783344b0f7209e08d2df` [D]
 
-No readable line or float literal binds focal 400 to an angle. The second signature argument could be height, width, `max(w,h)` (cf. `sub_4cd334` §2 `local_34`), or a pre-scaled sensor width — bytes do not decide.
+- `[D]` 1 matching string, 0 matching function names, 0 matching imports, 0 functions involved.
+- `[D]` Sole string: `EXSelectionBrush @ 0x958d55` (same VA as in §2.1 row). No code edge.
+- `[D]` Limitation on the record: `no_match` — text may be built at run time, encrypted, or come from a resource file; absence is not proof. Recorded here as index-vs-CODE, not as disproof of selection logic.
 
-- Capture V1-SENSOR (fixed-camera projection capture, owner-authorised, zero-mismatch criterion): fixed map seed, fixed camera target, FOW off; two surveyed markers at known world separation perpendicular to the view axis at target depth; capture frame; measure pixel separation + full frame size; solve per candidate second-argument reading (height vs width vs `max(w,h)` vs scaled width) at two depths (bracket pinhole vs engine fit-mode); cross-check vertical vs horizontal; repeat with the focal-100 debug camera as a second equation; log `GetCameraAbsolutePosition` + `GetCurrentMouseWorldCoord` for surveyed ground points as independent scale witnesses. **Termination:** predicted pixel positions of ≥5 surveyed ground points agree with captured positions to **0 px mismatch** (integer pixels, same viewport, same 58/−32/400 rig) under exactly ONE second-argument reading before any sensor/FOV literal is written as donor fact. Until then every angle stays `PORT APPROXIMATION`.
+### 2.3 `ray` — `ev_e5a90fcbfe0fde1558394cb58840d749031ed200e268d062453ad04ca9be5940` [D]
 
----
+- `[D]` 17 matching strings, 1 matching function name, 6 matching imports, 1 function involved.
+- `[D]` Function VA: `glDrawArrays@thunk @ 0x4afb74` (substring hit on `ray`; calls `glDrawArrays`, slot `0x907d60`).
+- `[D]` Imports: `SafeArrayPtrOfIndex @ 0x907a24`, `SafeArrayGetUBound @ 0x907a28`, `SafeArrayGetLBound @ 0x907a2c`, `SafeArrayCreate @ 0x907a30`, `glInterleavedArrays @ 0x907c8c`, `glDrawArrays @ 0x907d60` (only the last has a static user `0x4afb74`; others used_by `[]`).
+- `[D]` String VAs include `SafeArray* @ 0x90a044/0x90a05a/0x90a070/0x90a086`, `glInterleavedArrays @ 0x90aabe`, `glDrawArrays @ 0x90addc`, colour/table strings `Medium Gray\rActive Border @ 0x955452`, `Default\tGray Text @ 0x95556e`, `Gray @ 0x955654`, safe-array error texts `@ 0x957926/0x9579d0`, `dsTypeArray @ 0x958f70`, `clGray @ 0x95ab6a/0x95aeb8/0x95b0ee/0x968c9d`, `\tTCheckBox\rCheckBoxArray @ 0x969a28`. No `RayCast`/`MouseRay` literal appears on this pass — those live on §§2.5/2.7-adjacent prior work, not re-claimed here.
 
-## 2. V2-PROJ — custom frustum in `sub_4cd334`; aspect divisor byte-proven, near/far still `[U]`
+### 2.4 `pick` — `ev_50d03d1594617ebc000bf5fb8362f1877d4ad3b1f73589f86671de8b172e9c25` [D]
 
-### 2.1 RECOVERED — call sites, constants, and what is NOT near/far `[O]`
+- `[D]` 2 matching strings, 0 matching function names, 1 matching import, 0 functions involved.
+- `[D]` Strings: `gluPickMatrix @ 0x90a6a8`, `XPicked @ 0x9590fd`.
+- `[D]` Import: `gluPickMatrix (GLU32.dll) @ slot 0x907b80`, used_by `[]` — imported but zero static call edges observed in this index view (index-vs-CODE, not disproof of use; computed-pointer dispatch is explicitly invisible per P1 limits).
+- `[D]` Limitation `no_match` on code names carried on the record.
 
-- `[O]` Both callers pass `p5 = 0x60` (= 96) as a literal: `sub_5d1c60` (`ev_6a85f244…`: `FUN_004cd334(…w…, …focal…, 0x60, …h…)`, `w = *(p1+0x44)`, `h = *(p1+0x48)`, refreshed only when `param_2[0xf]/[0x10]` change = window-size driven) and `sub_777c80` (`ev_0f24561c…` **NEW**: `FUN_00777cd0(…,0x60,…)` then `FUN_004cd334(…,0x60,…)`). Xrefs confirm exactly these 2 callers (P33 `ev_90877626…`: `0x5d1ddb`, `0x777cc1`).
-- `[O]` `focalArg` at both sites is a runtime struct float (`*( *( *param_2+0x4c)+0xa4)` at the viewport path; `(float)ST0` at the wrapper) — never a literal. `w/h` are viewport-struct ints. `p2` is a zeroed stack pair (`uStack_18/uStack_14 = 0,0`; `local_1c/local_18 = 0,0`).
-- `[O]` Callee law (`ev_030dff8c…`, re-verified): `m = local_34 = max(w,h)` — **the aspect divisor is byte-proven**: every frustum term divides by `(_DAT_004cd784 · m)` with `m = max(w,h)`, and per-axis numerators scale `w`- vs `h`-terms separately (`*(p1+0xcc)` vs `*(p1+0xd0)`). There is no single stored aspect ratio; handling is structural (viewport-driven per-axis scale).
-- `[O]` Table floats at the frustum site (P27 `ev_07143cf6…`): `0x4cd780 = 100.0f`, `0x4cd784 = 2.0f` (+ `0x4cd788` continuation, `0x4cd794 = 1.0f` per prior P35). Mode-`0x04` custom-matrix path additionally uses `_DAT_008f4dec = 0.0001f` (P28, DATA, 2 refs).
-- `[D]` What `p5 = 96` is NOT: the depth term `local_2c = ((p5 · *(p1+0xa0) · 2.0/(_DAT_004cd788 · m)) · *(p1+0xac) + focalArg)` consumes `p5` multiplicatively with struct floats — it is an integer count/scale input to a runtime expression, not a near or far plane literal. It is recorded as "observed constant 96 at both call sites", never as near/far. Likewise `0.0001f @ 0x8f4dec` is an observed DATA float on the mode-`0x04` custom-matrix path only — NOT the donor near plane. `100.0f/2.0f/1.0f` are observed table constants — NOT sensor/focal facts.
-- `[O]` `DepthOfView` (P19/P20: 8 CODE hits; property block `DepthOfView … DirectDepthOfView … FocalLength … SceneScaleX … SceneScaleY … NearPlaneBias …`) is the far-plane candidate consumed in CODE and declared per-camera in text (`1200` gameplay), but no readable line binds it to the GL `far` parameter. `NearPlaneBias / DirectNearPlaneBias` exist as property names (P17); `FarPlane` has 0 hits (P18). No near/far NUMERIC literal is recovered anywhere.
+### 2.5 `screen` — `ev_0002bdd6d862b968ee770f5a6b347fa49bab140b41e5c63a326dd442ed68f601` [D]
 
-### 2.2 Still-`[U]` — numeric near/far + struct-field bindings
+- `[D]` 13 matching strings, 1 matching function name, 3 matching imports, 1 function involved.
+- `[D]` Function VA: `ScreenToClient@thunk @ 0x408d14` (calls `ScreenToClient`).
+- `[D]` Imports: `GetConsoleScreenBufferInfo @ 0x90747c` used_by `[]`; `ScreenToClient @ 0x907778` used_by `0x408d14`; `ClientToScreen @ 0x9079d0` used_by `[]`.
+- `[D]` Strings: `GetConsoleScreenBufferInfo @ 0x908836`, `ScreenToClient @ 0x909516`, `ClientToScreen @ 0x909ed8`, `TFORMHELLOSCREEN @ 0x94d120`, `LOSWFullScreenViewer @ 0x959481`, `HOSWScreen @ 0x9594a9`, `frmHelloScreen @ 0x959ae7`, `poScreenCenter @ 0x9617af/0x9643a1`, `TformHelloScreen @ 0x9688e5`, `formHelloScreen @ 0x9688f6/0x968943`, `poScreenCenter @ 0x968b86`.
 
-- Capture V2-PROJ-NF (GL trace + runtime, owner-authorised, zero-mismatch criterion): instrumented frame with surveyed camera target + 58/−32/400 rig; fixed viewport; log `GetCameraAbsolutePosition` + `GetCurrentMouseWorldCoord` for surveyed ground points; fit projection (focal scale, principal point, pitch order, `HeightTarget` handling); cross-check `DepthOfView=1200` as far-plane hypothesis by pushing a marker to 1199/1201 and observing clip vs render; bracket near by pushing geometry toward the eye until clip. **Termination:** fitted matrix re-projects ≥5 surveyed world points to captured pixels with **0 px mismatch** AND predicts the clip boundary (near + far) exactly before any (near, far) literal is written as donor fact.
-- Capture V2-PROJ-ASPECT (runtime, owner-authorised, zero-mismatch criterion): fixed rig 58/−32/400; SAME surveyed scene at ≥3 viewport aspect ratios (e.g. 4:3, 16:9, 21:9 with identical height); fit per-axis focal scale + principal point from `GetCameraAbsolutePosition`/`GetCurrentMouseWorldCoord` logs. **Termination:** one fitted matrix family re-projects ≥5 surveyed points at EVERY probed aspect with **0 px mismatch** before any aspect/focal-scale literal is written as donor fact.
+### 2.6 `project` — `ev_b8682413b00674a271d57e4bb873dce308c830e9cfa06e73311f32f46f5a672d` [D]
 
----
+- `[D]` 4 matching strings, 1 matching function name, 2 matching imports, 1 function involved.
+- `[D]` Function VA: `gluProject@thunk @ 0x4afeec` (calls `gluProject`).
+- `[D]` Imports: `gluUnProject @ slot 0x907b74` used_by `[]`; `gluProject @ slot 0x907b78` used_by `0x4afeec`.
+- `[D]` Strings: `gluUnProject @ 0x90a67e`, `gluProject @ 0x90a68e`, `XProject @ 0x958c36`, `XDScriptProject @ 0x959353`.
 
-## 3. DRAG — anchor struct hunt `[O]` (negative is the finding); geometric anchor still `[U]`
+### 2.7 `octree` — `ev_1f9395d35de6e07826dc3159ad1ca580f207ca053bff8d49242a7e4f323e72a6` [D]
 
-### 3.1 RECOVERED — there is no native drag-anchor field; the anchor lives in script state `[O]`
+- `[D]` 1 matching string, 0 matching function names, 0 matching imports, 0 functions involved.
+- `[D]` Sole string: `POSWOctree @ 0x958bfa`.
+- `[D]` Limitation `no_match` on code names carried on the record. The prior B8 12-float `OctreeRayCastIntersect` call shape is cited as prior context only, NOT re-proven here (no new bytes lifted for it in this ticket).
 
-- `[O]` P42 (`ev_9718bfe4…` + `ev_ae7a8d7f…`, 512-B window at `0x70f64f`): `MouseRayX … MouseRayY … MouseRayZ` sit in a global/GUI property block with `CameraTrackList … CameraList … CameraL1 … SoundVolumes … AmbientSound … SoundManager … WasMouseDown … WasMouseUp … NeededMap …`. `WasMouseDown/Up` are adjacent bools — they are press-state flags, never an (x,z) anchor pair. No `prev*`, `anchor*`, `drag*`, `start*`/`press*` coordinate pair exists in the block. `function_find`/`xrefs` on `0x70f64f` report undiscovered-region/0-refs (P42 context) — placement only, no field law guessed.
-- `[O]` P37 (`ev_6eafe381…` / `ev_2b7104b4…` / `ev_f731c284…`): `prevselmousex`, `prevs*`, `isselectionstarted` have 0 exe hits — expected: they are script globals, not engine struct fields.
-- `[O]` Donor script (P54, re-read this ticket): `onmousemove.inc:32-34` epsilon (`0.005`, `0.25` in attack/guard mode); `:66-70` per-move `GetCurrentMouseWorldCoord(x,y,z)`; `:142-147` two-phase start (`if not gbool_gui_isselectionstarted then { isselectionstarted:=true; gfloat_gui_prevselmousex:=x; gfloat_gui_prevselmousez:=z; }`); `:150-165` axis-wise compare `Abs(x−prevselmousex)>eps or Abs(z−prevselmousez)>eps` → `GameManagerBeginSelection` (`:154`) + Shift?`spmAdd` (`:156-157`) else `spmRunTime` (`:162`) + `DoUpdateSelection` (`:164`); `onmousedown.inc:364-379` LButtonUp teardown (`isselectionstarted:=false`, `if GameManagerIsSelectionMode then GameManagerCancelSelection`). `doupdateselection.inc:1-22` is highlight-only (`gSelectedObjects` → `gGuiUpdateHighlights`, `_gui_ForceShowUnitControl`, `_gui_UpdateHighlights`) — it performs NO rect mapping.
-- `[D]` The donor freezes a WORLD-ground anchor on the first LMB-held move and compares axis-wise X/Z deltas. Which of (press-point, first-move-point) the ENGINE uses geometrically as the rect corner is not in text (the script never passes a rect), and no native anchor field exists to decide it → `[U]` below. The port dual-model mirrors `:141-152` faithfully; it is not a donor geometry claim.
+### 2.8 `raycast` — `ev_383505a5e507a2f2c3889afb9d5179656b4d5f83fb986afe02140ddd37c507fd` [D]
 
-### `[U]` V2-PROJ-DRAG-open + capture
+- `[D]` 0 matching strings, 0 matching function names, 0 matching imports, 0 functions involved. This is a negative index observation only.
+- `[D]` Must be read as index-vs-CODE (case-insensitive literal `raycast` absent from the searched index; CODE-embedded/packed/runtime-built forms invisible). It is NOT disproof of raycast logic — §§2.4/2.6 import slots plus prior `OctreeRayCast*` / `GetGameObjectRayCast*` VAs (prior-ticket context) already show the feature family exists elsewhere.
 
-Which point the engine freezes as the rect corner (press-point vs first-move point) and whether the frozen corner is re-projected through the live camera on pan/zoom mid-drag. **Capture V2-PROJ-DRAG** (fixed rig, owner-authorised): LMB press at surveyed pixel, hold, step 1–3 px across the epsilon boundary in each axis; log `GetCurrentMouseWorldCoord` at press vs first-move vs each step + `GameManagerIsSelectionMode` onset frame. **Termination:** onset frame + frozen rect corner match ONE of (press-point, first-move-point) with **0 px / 0.0 m mismatch** on all four drag directions before the port collapses the dual model.
+### 2.9 `GetCursor` — `ev_4b163911375bf1abf63a463d878a5af25be3e50d768d71f2f5e20325fe3db5c5` [D]
 
----
+- `[D]` 2 matching strings, 2 matching function names, 2 matching imports, 2 functions involved.
+- `[D]` Function VAs: `GetCursor@thunk @ 0x4089dc` (calls `GetCursor`), `GetCursorPos@thunk @ 0x4089e4` (calls `GetCursorPos`).
+- `[D]` Imports: `GetCursorPos @ slot 0x907900` used_by `0x4089e4`; `GetCursor @ slot 0x907904` used_by `0x4089dc`.
+- `[D]` Strings: `GetCursorPos @ 0x909b94`, `GetCursor @ 0x909ba4`.
 
-## 4. BOX — marquee inside-test: world-segment law `[O]`; rect→world mapping still `[U]`
+## 3. Function dossiers [D] — thunks (summary then complete) + caller/call-edge paging
 
-### 4.1 RECOVERED — native call signatures prove the pick path tests WORLD segments against AABBs, not screen rects `[O]`
+All dossiers carry limitations: register-level (machine registers/stack slots; types not recovered), assumed x86 calling convention, flag-rebuilt branch conditions, inferred pseudo-C as reading aid. No types, field offsets, or numeric laws are taken from pseudo-C.
 
-- `[O]` P46 (`ev_a111e992…`, 256-B window at `0x63153e`): full prototypes —
-  `GetGameObjectRayCastAABBByHandle(const gohnd: Integer; x1, y1, z1, x2, y2, z2: Float): Boolean`
-  and the 12-float custom form
-  `GetGameObjectRayCastCustAABBByHandle(const hnd: Integer; x1…z2, minx…maxz: Float): Boolean`.
-  Boolean return, two world points + handle: a segment-vs-volume predicate, not a screen-rect predicate.
-- `[O]` Script call shape (P55, re-read): `control.script:184` (pick) and `:300` (list) both call `…AABBByHandle(goHnd, cPos.x,cPos.y,cPos.z, mPos.x,mPos.y,mPos.z)` where P52/P53 pin `cPos := GetCameraAbsolutePosition` (`0x5fcbaa`: `var x,y,z: Float` triple with `GetCameraPosition`/`GetCameraTargetPosition`) and `mpos := GetCurrentMouseWorldCoord` (P11). The tested segment is camera-point → ground-point in world space. The inside-test (slab vs OBB, expansion by selection size, water/bridge handling) remains engine-side, but its DOMAIN (world segment vs world AABB) is byte-proven.
-- `[O]` P44 (`ev_e95410af…`): `GetRayCastIntersectGameObjectFromMouseRay(): Integer` (screen→ray entry) + `GetRayCastIntersectGameObject(start_x…end_x…var int_x…): Integer` (world segment → hit handle). P48 (`ev_83078fe1…`): `OctreeRayCastIntersect(gohandle; rs,dir; var p; var n): Boolean` + `…Children(…)` — ray origin + direction + hit-point + normal out-params: the broadphase is a 3-D ray cast, not a 2-D rect test. P41/P49: `MouseRay: Integer` input + `GameObjectSortRayCastList` (procedure) + `GetGameObjectRayCastByIndex/Count` complete the ray-list pipeline.
-- `[O]` P39 (`ev_aa0dddd5…`, window at `0x6a03c2`): `GameManagerIsSelectionMode:Boolean … BeginSelection … EndSelection … GetGameManagerPickingMode: String … GetGameManagerRestrictSelection(): boolean …` — the marquee envelope is engine selection-mode state, never a script rect. P50 (`ev_259ecb0a…` / `ev_3cd5a2fe…`): `spmFrame` and `SelectionRect` both 0 hits — no frame/rect polling name exists in the binary (same limit as P5, but combined with the highlight-only `DoUpdateSelection` (P54) the absence of ANY script-side per-candidate loop on the drag path is itself the finding, consistent with DEC_U_selection §4.1).
-- `[D]` Verdict on the asked question: the pick/list inside-test is a **world-space** segment-vs-AABB predicate (signatures + call shape byte-proven). A screen-space rectangle test appears nowhere in native signatures or script lines. What is still `[U]` is the MARQUEE rect→world mapping: how the engine converts the drag (two world points? two screen points unprojected? frustum-slab volume?) into the membership test, plus the membership rule (centroid-in vs AABB-overlap vs containment fraction, edge inclusion, building/unit/res-node membership, squad side effects).
+### 3.1 Thunk bodies — 1 block / 1 instruction each [D]
 
-### `[U]` V2-BOX-open + capture
+- `[D]` `gluProject@thunk @ 0x4afeec`, body range `0x4afeec–0x4afef2`, size `6` (`ev_7f07da25eab2c18a528b804a7d2f19f62dccf83fe362dfaca9e790eda8ca32ab`, summary then complete): assembly `jmp dword ptr [0x907b78]`; callees `1` (`gluProject`, import, tail call); signature `void gluProject@thunk()`; thunk_of `gluProject`; outgoing ref `0x4afeec → 0x907b78 (__imp_gluProject)`.
+- `[D]` `ScreenToClient@thunk @ 0x408d14`, range `0x408d14–0x408d1a`, size `6` (`ev_c63c1c39473defe06749b9ed574136dcf38733e3575e482e713361daee8184ae`, summary then complete): assembly `jmp dword ptr [0x907778]`; callees `1` (`ScreenToClient`); outgoing ref `→ 0x907778`.
+- `[D]` `GetCursorPos@thunk @ 0x4089e4`, range `0x4089e4–0x4089ea`, size `6` (`ev_5d44c3f3eacc1ca58a88471f29008c239d60eceee5520656246591f5f6293a12`, summary then complete): assembly `jmp dword ptr [0x907900]`; callees `1` (`GetCursorPos`); `9` callers / `9` incoming refs (see §3.2).
+- `[D]` `GetCursor@thunk @ 0x4089dc`, range `0x4089dc–0x4089e2` (6 B), size `6` (`ev_e446ffeb84009b88843ee58cd7fd6f393bf2bb68566af5f53d44d91cbcc0c721`, summary): assembly `jmp dword ptr [0x907904]`; callees `1` (`GetCursor`); `1` caller (§3.2).
+- `[D]` Field offsets: none recovered. Thunk dossiers list `0` parameters, `0` referenced strings, `0` unresolved calls, `0` flow parameters. Any struct-field reading from these records would be invention — none is made.
 
-Inside rule (centroid vs AABB vs fraction, edge inclusion, building vs unit vs res-node membership, squad side effects) + drag-rect world mapping. **Capture V2-BOX** (FOW off, fixed rig): grid of idle peasants at known spacing; scripted drag rects inset/outset by 1–3 px around known units, both drag directions; log `GetCountGameManagerPickedObjects` (`0x6a7cda`, P49) membership per rect + `GetCurrentMouseWorldCoord` at rect corners. **Termination:** fitted rule predicts membership of ALL probed rects including 1-px edge cases and both drag directions with **zero membership mismatches** before any rule is written as donor fact. `SelectionRectPainter` keeps its `PORT APPROXIMATION` tag until then.
+### 3.2 Call edges — byte-proven incoming refs [D]
 
----
+- `[D]` `gluProject@thunk` has exactly `2` static callers in this view (`ev_220578aa17a7ec75d7b558d36e086d5e787031488f50e955e16228dea00d598f`, page of `ev_7f07da25…` callers): `sub_5811ec @ site 0x5812f1`, `sub_582914 @ site 0x582a1c`. Incoming refs `0x5812f1 → 0x4afeec`, `0x582a1c → 0x4afeec`.
+- `[D]` `ScreenToClient@thunk` has exactly `2` static call sites, both inside one function (`ev_9cec28a09c6b3cf4e7efac182ded59448d1150c30cb183450c8c9f657d8d6e2`, page of `ev_c63c1c…`): `sub_492634 @ 0x4926a9` and `sub_492634 @ 0x4926b4`. Incoming refs `0x4926a9 → 0x408d14`, `0x4926b4 → 0x408d14`.
+- `[D]` `GetCursorPos@thunk` has `9` static callers (`ev_f8d7c4bee21c2752ed7d43925ef95d6200c3e98a3d79348710828d0a64fd332`, page of `ev_5d44c3…`): `sub_469ed0 @ 0x469f56`, `sub_47d008 @ 0x47d011`, `sub_47d44c @ 0x47d524`, `sub_489e5c @ 0x489f73`, `sub_48c1e4 @ 0x48c248`, `sub_496784 @ 0x4969c4`, `sub_496c34 @ 0x496c38`, `sub_57a980 @ 0x57a981`, `sub_8bc510 @ 0x8bc51b`.
+- `[D]` `GetCursor@thunk` has `1` static caller (`ev_0cb058d51b8f4fd6ff71a543d0c76b664af5f53d44d91cbcc0c721`, page of `ev_e446ff…`): `sub_47d610 @ 0x47d62b`.
+- `[D]` Zero-static-user imports observed (index-vs-CODE, not disproof): `gluUnProject slot 0x907b74`, `gluPickMatrix slot 0x907b80`, `ClientToScreen slot 0x9079d0`, `select slot 0x907dec`, safe-array/Interleaved slots in §2.3. No uncalled/unused verdict is drawn.
+
+### 3.3 Caller contexts — sizes and callee fans [D]
+
+- `[D]` `sub_5811ec @ 0x5811ec` (`ev_c05d9c9c3a0e0a165e57e04eb7e96a71ba40f9f1706de0ce201e12d85a69e4e2`, summary): `39` blocks, `376` instructions, `58` callees, `1` caller, `0` strings. Callee page `ev_68be647731ac792c5f3976d1d75e8c3bba68354bf224cfb36e94a3d712ddcc6c` includes `gluProject@thunk @ site 0x5812f1 → 0x4afeec` plus `glMatrixMode @ 0x581393/0x5813b3/0x581745`, `glPushMatrix @ 0x581398/0x5813b8`, `glLoadMatrixf @ 0x5813a9/0x5813fe/0x58170c`, `glColorMask @ 0x581444/0x5815b1`, `glBegin @ 0x5814cd/0x581680`, `glVertex3f @ 0x5814ec/0x58150b/0x58152a/0x581549`, `glEnd @ 0x58154e/0x5816ff`, `glTranslatef @ 0x581679`, `glVertex2f @ 0x58169d/0x5816f6`, `glPopMatrix @ 0x58173b/0x58174a`, `glDisable @ 0x581589`, `glGetBooleanv @ 0x58159a`, `glReadPixels @ 0x5815f9`, and internal `sub_4a21a0/4a2504/4a2a08/4a3d40/4a2188/4a22f4/4ca428/88f148/88faf8/88fb14/4c05a4/4c06c0/4c08d0/4c08ec/4c0900/4bfa1c/4a6a5c/4e9bec/580a44/581080/580b7c/88f0f0`.
+- `[D]` `sub_582914 @ 0x582914` (`ev_e95bd4a16cad53d8805d6efa164a552d5492762138dc35badae7dffa4182a1a8`, summary): `58` blocks, `551` instructions, `77` callees, `2` callers, `0` strings. Callee page `ev_f3e86e2410e307afaa1cb2795aab0748a2d0d085668ef3891b2177d1477f29d1` includes `gluProject@thunk @ site 0x582a1c → 0x4afeec` plus the same GL family (`glMatrixMode/glPushMatrix/glLoadMatrixf/glColorMask/glEnable/glBegin/glVertex3f/glEnd/glTranslatef/glPopMatrix/glGetBooleanv/glReadPixels`) with additional `glTexCoord2f @ 0x582e7b/0x582ebe/0x582f02/0x582f41` and internal `sub_582594/582700/5827f0/58267c/4ec794/4ecb24/403a28/4a35d4`.
+- `[D]` `sub_492634 @ 0x492634` (`ev_510e0be0962b24061a584a4e5fb87cdf5c0693406cc72d74e11399da9f4c6013`, summary): `7` blocks, `64` instructions, `8` callees, `1` caller, `0` strings. Callee page `ev_2c0d34321bf6c120ac87efaf29346323b5da7ad516eea9b77ff01c16f423bcc4`: `IsIconic @ 0x492643 → 0x408bd4`, `GetWindowRect @ 0x492679 → 0x408b3c`, `GetWindowPlacement @ 0x492660 → 0x408b34`, `GetWindowLongA @ 0x492687 → 0x408b24`, `GetWindowLongA @ 0x49269c → 0x408b24`, `ScreenToClient @ 0x4926a9 → 0x408d14`, `ScreenToClient @ 0x4926b4 → 0x408d14`, `sub_48b160 @ 0x4926dd → 0x48b160`.
+- `[D]` No ray-construction arithmetic, no projection-matrix literal, and no picked-entity identity is byte-proven by these edges. The dossiers prove that a `gluProject` call path and a `ScreenToClient` window-mapping path and a `GetCursorPos` mouse path exist as static code; what values flow through them is runtime-dependent and stays `[U]` (§4).
+
+## 4. Unresolved — owner-gated runtime [U] with exact zero-mismatch termination
+
+Each `[U]` needs owner-authorised live capture. Static bytes alone cannot close them. No value is guessed.
+
+- `[U]` U1 — ray construction (origin + direction from cursor): which `GetCursorPos` caller (`§3.2` nine sites) feeds selection, what client→GL viewport transform applies, and whether `ClientToScreen`/`ScreenToClient` pair at `sub_492634` is on the pick path at all. Static proves the imports and call sites; live mouse state is invisible statically.
+  - Termination (owner-only, zero-mismatch): fixed map seed, fixed 58/−32/400-style rig, FOW off; surveyed ground markers; scripted cursor pixels (centre + 4 corners + 1-px edge steps); log `GetCursorPos` client point + `GetCurrentMouseWorldCoord` ground point per pixel on the same frame. **Close only when one fitted client→world ray law re-projects ≥5 surveyed ground points to captured pixels with 0 px mismatch and predicts the 1-px edge steps exactly, on two viewports (e.g. 4:3 + 16:9 same height), before any ray coefficient is written as donor fact.**
+- `[U]` U2 — projection matrix (modelview/projection/viewport fed to the two `gluProject` sites `0x5812f1`/`0x582a1c`): matrix contents, viewport rect, depth-range handling, and whether `gluUnProject @ 0x907b74` or `gluPickMatrix @ 0x907b80` participates at run time (both zero static users — index-vs-CODE). Prior camera work recovered start→camera wire only; no matrix math is recovered here.
+  - Termination (owner-only, zero-mismatch): GL-trace capture on the fixed rig; log matrices + viewport at both `gluProject` sites plus `GetCameraAbsolutePosition` for surveyed points at two depths. **Close only when the traced inputs re-project ≥5 surveyed world points to captured pixels with 0 px mismatch AND the fitted matrix equals the traced matrix element-for-element, before any matrix literal is written as donor fact.**
+- `[U]` U3 — picked-entity identity (which handle the engine returns for a click/drag, centroid-vs-AABB-vs-fraction rule, building/unit/resource membership, squad side effects, water/bridge handling). The 12-float `OctreeRayCastIntersect` shape is prior-ticket context, not re-proven here; `POSWOctree @ 0x958bfa`, `XPicked @ 0x9590fd`, `GameObject*RayCast*` names were not lifted in this ticket's nine passes.
+  - Termination (owner-only, zero-mismatch): FOW off, grid of idle units at known spacing; scripted click pixels inset/outset 1–3 px around known units + both drag directions; log picked-handle set per rect. **Close only when one fitted membership rule predicts ALL probed rects including 1-px edge cases and both drag directions with zero membership mismatches, before any rule is written as donor fact.**
+- `[U]` U4 — live mouse state (`GetCursor @ 0x4089dc` single caller `sub_47d610 @ 0x47d62b`; `GetCursorPos` nine callers): press vs first-move anchor, epsilon handling, mid-drag pan/zoom re-projection. No anchor pair, no drag threshold, and no marquee rect literal was lifted in this ticket.
+  - Termination (owner-only, zero-mismatch): LMB press at surveyed pixel, hold, step 1–3 px across the epsilon boundary per axis; log press vs first-move vs per-step world points + selection-mode onset frame. **Close only when onset frame + frozen corner match exactly ONE of (press-point, first-move-point) with 0 px / 0.0 m mismatch on all four drag directions, before any anchor is written as donor fact.**
+- `[U]` U5 — sensor/viewport binding, near/far, aspect literal, focal↔FOV numeric law: no `FOVSensor`/`Sensor`/`FarPlane` static hits (§§2.7–2.8 negatives are index-vs-CODE); `Aspect` strings are particle/spline props, not camera; `100.0f/2.0f/1.0f`-style table floats were not lifted in this ticket and are not re-claimed.
+  - Termination (owner-only, zero-mismatch): same V1-SENSOR / V2-PROJ-NF / V2-PROJ-ASPECT captures as the prior select-deep ticket (two depths, ≥3 aspects, near/far clip bracketing). **Close only when one fitted family re-projects ≥5 surveyed points at every probed aspect/depth with 0 px mismatch AND predicts both clip boundaries exactly, before any (sensor, near, far, aspect) literal is written as donor fact.**
 
 ## 5. Claim register
 
-| # | Claim | Label |
+| # | Claim | Label + evidence |
 |---|---|---|
-| 1 | `GetCameraFieldOfViewByFocalLength(focallength, viewportdimension): Float` @ `0x5fece6` + inverse `GetCameraFocalLengthByFieldOfView(fieldofview, viewportdimension): Float` @ `0x5fed52`; second arg is named `viewportdimension`, not width/height/sensor | [O] P1/P9/P14/P15 |
-| 2 | No `FOVSensor`/`Sensor`/`FarPlane` bytes; `ProjectionMatrix` @ `0x85511c` is GLSL fog-shader text, not a camera API; `Aspect` hits are particle/spline props | [O] P5/P6/P12/P18/P23–P26 |
-| 3 | `MinFocalLength` @ `0x7abf68` in camera property run (`MaxFocalLength/FocalLengthPower/FreeRotation/ElasticTarget/CameraRaycast/PowerDOF/Min-MaxLengthDOF/MinNearDOF`), 1 static data ref `0x7aba11`; no numeric value recovered | [O] P2/P13/P35 |
-| 4 | `sub_4cd334` mode byte `*(p1+200)` → `gluOrtho2D(02)` / script-callback `(03)` / `glFrustum(00)` / `glOrtho(01)` / `glMultMatrixf-custom(04)`; aspect divisor `m=max(w,h)` byte-proven; both callers pass literal `p5=96`, `w/h` viewport-driven, `focalArg` runtime struct float | [O] P29–P33 |
-| 5 | `p5=96`, `0.0001f@0x8f4dec`, `100.0f/2.0f/1.0f` table floats are observed constants, never near/far/sensor facts; near/far numerics unrecovered (`NearPlaneBias` names only, `DepthOfView` unbound to GL `far`) | [O]/[D] P16–P20/P27/P28 |
-| 6 | No native drag-anchor (x,z) field: `MouseRayX/Y/Z` block has only `WasMouseDown/Up` bools as neighbours; `prevselmousex/isselectionstarted` script-only; anchor freeze + epsilon + Begin→spmAdd/spmRunTime script-side, geometry engine-side | [O] P37/P40/P42/P54 |
-| 7 | Pick/list inside-test is world segment (`cPos→mPos`) vs AABB (`: Boolean` + 12-float Cust form); ray pipeline (`FromMouseRay`, `start…end…var int`, `OctreeRayCastIntersect(rs,dir,p,n): Boolean`, SortList/ByIndex/Count); `spmFrame`/`SelectionRect` absent; `DoUpdateSelection` highlight-only | [O] P39/P41/P43–P51/P54/P55 |
-| 8 | Sensor width, FOV angle, near/far, aspect literal, drag geometric anchor, marquee rect→world mapping + membership rule | [U] V1-SENSOR/V2-PROJ-NF/V2-PROJ-ASPECT/V2-PROJ-DRAG/V2-BOX with zero-mismatch captures §§1–4 |
-| 9 | Any port visual/selection equals donor behaviour | **Denied** — no same-camera donor/port A/B exists; parity UNVERIFIED |
+| 1 | Donor pin `t_87f0f3c130b0`, `5768048` B PE x86, SHA `87f0…16c` verified before any finding; donor never executed; no bytes copied | [D] §0 |
+| 2 | Analysis incompleteness bounds: `18918` fns / `12073` strs / `746` imps; `6000000`-insn cutoff; `1238` unresolved indirect jumps; stripped; computed-pointer invisibility | [D] `ev_60b497434aa3e6cb68b019fd0a3b016ec0415ef6eec1a3189726faa8d3752f4c4` @ overview |
+| 3 | `select`: 21 strs / 4 fnames / 5 imps / 4 fns; thunks `0x4086dc/0x4086e4/0x4086ec/0x5a2ff0`; slots `0x907560/0x907564/0x907568/0x907dd0/0x907dec` | [D] `ev_40b0648ec25a0dbf5c248f2fb5f4e791f969f4beff0e8a5c00fa905b556ac6` |
+| 4 | `selection`: 1 str (`EXSelectionBrush @ 0x958d55`), 0 fns, 0 imps | [D] `ev_cc459bb14cf49ca3b301ff9d4a423a240760bf3dd9e7783344b0f7209e08d2df` |
+| 5 | `ray` (substring): 17 strs / 1 fname / 6 imps / 1 fn; `glDrawArrays@thunk @ 0x4afb74`, slot `0x907d60` | [D] `ev_e5a90fcbfe0fde1558394cb58840d749031ed200e268d062453ad04ca9be5940` |
+| 6 | `pick`: 2 strs (`gluPickMatrix @ 0x90a6a8`, `XPicked @ 0x9590fd`); import `gluPickMatrix @ 0x907b80` with 0 static users; 0 fns | [D] `ev_50d03d1594617ebc000bf5fb8362f1877d4ad3b1f73589f86671de8b172e9c25` |
+| 7 | `screen`: 13 strs / 1 fname / 3 imps / 1 fn; `ScreenToClient@thunk @ 0x408d14`, slot `0x907778`; `ClientToScreen slot 0x9079d0` 0 users | [D] `ev_0002bdd6d862b968ee770f5a6b347fa49bab140b41e5c63a326dd442ed68f601` |
+| 8 | `project`: 4 strs / 1 fname / 2 imps / 1 fn; `gluProject@thunk @ 0x4afeec`, slot `0x907b78`; `gluUnProject slot 0x907b74` 0 users | [D] `ev_b8682413b00674a271d57e4bb873dce308c830e9cfa06e73311f32f46f5a672d` |
+| 9 | `octree`: 1 str (`POSWOctree @ 0x958bfa`), 0 fns, 0 imps; prior 12-float shape NOT re-proven here | [D] `ev_1f9395d35de6e07826dc3159ad1ca580f207ca053bff8d49242a7e4f323e72a6` |
+| 10 | `raycast`: 0/0/0/0 — index negative only, not disproof | [D] `ev_383505a5e507a2f2c3889afb9d5179656b4d5f83fb986afe02140ddd37c507fd` |
+| 11 | `GetCursor`: 2/2/2/2; `GetCursor@thunk @ 0x4089dc` slot `0x907904`; `GetCursorPos@thunk @ 0x4089e4` slot `0x907900`; strings `@ 0x909b94/0x909ba4` | [D] `ev_4b163911375bf1abf63a463d878a5af25be3e50d768d71f2f5e20325fe3db5c5` |
+| 12 | Thunk bodies: `jmp dword ptr [slot]` 6 B each; `0x4afeec→0x907b78`, `0x408d14→0x907778`, `0x4089e4→0x907900`, `0x4089dc→0x907904`; 0 params / 0 strings / 0 field offsets | [D] `ev_7f07da25…`, `ev_c63c1c…`, `ev_5d44c3…`, `ev_e446ff…` @ VAs |
+| 13 | Call edges: `gluProject` ← `0x5811ec@0x5812f1, 0x582914@0x582a1c`; `ScreenToClient` ← `0x492634@0x4926a9+0x4926b4`; `GetCursorPos` ← 9 sites (§3.2); `GetCursor` ← `0x47d610@0x47d62b` | [D] `ev_220578aa…`, `ev_9cec28a0…`, `ev_f8d7c4be…`, `ev_0cb058d5…` |
+| 14 | Caller sizes/fans: `0x5811ec` 39blk/376insn/58 callees; `0x582914` 58blk/551insn/77 callees; `0x492634` 7blk/64insn/8 callees; callee VAs in §3.3 | [D] `ev_c05d9c9c…`, `ev_e95bd4a1…`, `ev_510e0be0…` + `ev_68be6477…`, `ev_f3e86e24…`, `ev_2c0d3432…` |
+| 15 | Ray construction, projection matrix, picked-entity identity, live mouse state, sensor/near/far/aspect numerics | [U] U1–U5 §4, owner-only zero-mismatch captures |
+| 16 | Any donor↔port behavioural equality | Denied — parity UNVERIFIED, no A/B frame, no gate PASS |
 
 ## 6. Scope statement
 
-Exactly one repository file was written by this worker: this report. All donor reads were read-only against pin `t_87f0f3c130b0` (every binary call with `document=` pinned; donor text tree read-only, donor binary never executed, no bytes copied) and the evidence ids above. No source, shader, config, asset, fixture, test, runner, Godot, git or user-mod state was changed. No parity, similarity score, threshold or gate PASS is claimed. Network is out of scope.
+Exactly one repository file was written by this worker: this report. All donor reads were read-only against pin `t_87f0f3c130b0` (every binary call with `document=` pinned or active-target verified; donor binary never executed; no donor bytes copied; no `.bind` unpacking). No source, shader, config, asset, fixture, test, runner, Godot, git, or user-mod state was changed. No parity, similarity score, threshold, or gate PASS is claimed. Network out of scope.
 
-*End of DEC-U-SELECT-DEEP.*
+Chain `0/6`. RESULT IS NOT GOOD.
+
+*End of DEC_U_select_deep (SELECT-DEEP static worker).*

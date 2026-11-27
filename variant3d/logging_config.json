@@ -1,0 +1,20 @@
+{
+    "_readme":  [
+                    "Cossacks 3 port - OPTIONAL diagnostic logging. This file is NOT a donor key and NOT a preserve-only user mod.",
+                    "Default level OFF: no log output, so deterministic captures and all gates are byte-identical to before.",
+                    "Set level to ERROR | WARN | INFO | DEBUG | TRACE to emit progressively more [C3LOG] lines to stdout.",
+                    "Environment C3_LOG_LEVEL overrides this file (e.g. C3_LOG_LEVEL=DEBUG). Never commit a non-OFF level.",
+                    "Logging is print-only: it changes no value, gate, timing, RNG stream, capture frame or parity state."
+                ],
+    "level":  "OFF",
+    "modules":  {
+                    "async":  true,
+                    "terrain":  true,
+                    "world":  true,
+                    "art":  true,
+                    "sim":  true,
+                    "water":  true,
+                    "camera":  true,
+                    "fog":  true
+                }
+}

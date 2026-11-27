@@ -154,6 +154,10 @@ var loading_stage: Label = null
 var loading_pct: Label = null
 var loading_active := false
 var loading_gen := 0
+# ASYNC-LOG-01: opt-in stage telemetry for load debugging. Off by default;
+# enable with env C3_ASYNC_LOG=1. Adds print() lines only — no value, gate,
+# timing or behaviour change. Never emitted in default/deterministic captures.
+var _async_log_on := false
 # LOAD-ASYNC-01: explicit, testable readiness flag. Set ONLY after every stage
 # that gates usability (sim, world/terrain, camera, HUD, input, 3D hooks, audio,
 # warm world sync and the first drawn frame) has finished behind the overlay.
@@ -561,18 +565,29 @@ func _hide_loading() -> void:
 	loading_stage = null
 	loading_pct = null
 
+func _async_log(msg: String) -> void:
+	# ASYNC-LOG-01: print-only, opt-in. Routes through the leveled C3Log
+	# autoload; the legacy C3_ASYNC_LOG=1 env still forces INFO output.
+	if _async_log_on and C3Log.get_level() < C3Log.LEVEL_INFO:
+		C3Log.set_level(C3Log.LEVEL_INFO)
+	C3Log.info("async", msg)
+
+
 func _loading_tick(frac: float, stage: String, gen: int) -> bool:
 	# Returns false if this load was superseded (a newer Start click won).
 	if gen != loading_gen:
 		return false
+	_async_log("tick f=%.2f gen=%d stage=%s" % [frac, gen, stage])
 	_set_loading(frac, stage)
 	await get_tree().process_frame
 	await get_tree().process_frame
 	return gen == loading_gen
 
 func _do_async_load(cfg: Dictionary) -> void:
+	_async_log_on = OS.get_environment("C3_ASYNC_LOG") == "1"
 	loading_gen += 1
 	var gen := loading_gen
+	_async_log("BEGIN gen=%d render_mode=%s terrain=%s seed=%d" % [gen, render_mode, terrain_backend, seed_arg])
 	loading_active = true
 	# Hide the menu at once so a second Start click cannot queue.
 	if menu != null and is_instance_valid(menu):
@@ -713,6 +728,7 @@ func _do_async_load(cfg: Dictionary) -> void:
 	# input+3D hooks, AI, audio, objectives, warm world sync and one drawn frame
 	# are all complete before the overlay is removed.
 	load_ready = true
+	_async_log("COMPLETE gen=%d load_ready=true" % gen)
 	_hide_loading()
 
 func _apply_menu_post_loadsave(cfg: Dictionary) -> void:
@@ -1115,6 +1131,8 @@ func _apply_3d_hooks(p_hud, p_cam, p_input) -> void:
 
 
 func _setup_full_game() -> void:
+	_async_log_on = OS.get_environment("C3_ASYNC_LOG") == "1"
+	_async_log("SYNC-BEGIN render_mode=%s terrain=%s seed=%d" % [render_mode, terrain_backend, seed_arg])
 	if not is_headless:
 		get_window().size = Vector2i(Data.WINDOW_WIDTH, Data.WINDOW_HEIGHT)
 		if Data.FULLSCREEN:
@@ -1124,6 +1142,7 @@ func _setup_full_game() -> void:
 
 	game = C3Game.new()
 	add_child(game)
+	_async_log("SYNC sim created")
 	# W5-2: a standalone subset may skip the expensive mapgen entirely when a
 	# pre-baked post-setup snapshot is supplied and passes validation/parity.
 	# Canonical runs (no --self-only) never take this path.
@@ -1132,6 +1151,7 @@ func _setup_full_game() -> void:
 		loaded_fast = _load_self_base(game, self_snapshot_path)
 	if not loaded_fast:
 		game.setup(start_mode)
+	_async_log("SYNC mapgen done fast=%s" % str(loaded_fast))
 	game.game_over.connect(func(w: int) -> void: _on_game_over(w))
 	# W26 (T3 Scenario B): snapshot the freshly generated world ONCE. Subsets
 	# restore this instead of relying on cross-step side effects. Gates (no
@@ -1145,6 +1165,7 @@ func _setup_full_game() -> void:
 		if world != null and world.has_method("set_terrain_backend"):
 			world.set_terrain_backend(terrain_backend)
 		world.bind(game)
+		_async_log("SYNC world.bind done")
 		add_child(world)
 
 		camera = make_camera3d()

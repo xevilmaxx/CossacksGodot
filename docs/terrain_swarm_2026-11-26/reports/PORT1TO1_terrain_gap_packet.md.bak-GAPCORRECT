@@ -1,0 +1,257 @@
+# PORT1TO1 — Terrain Gap Packet (owner-facing, read-only)
+
+- id: PORT1TO1-terrain-gap-packet-2026-11-27
+- worker: TERRAIN-GAPPACKET (read-only work packet)
+- date: 2026-11-27
+- source: `docs/terrain_swarm_2026-11-26/reports/PORT1TO1_terrain_completeness.md` (id `PORT1TO1-terrain-completeness-2026-11-27`, worker TERRAIN-COMPLETE)
+- companion: `PORT1TO1_terrain_assets.md` (TERRAIN-ASSETS, id `PORT1TO1-TERRAIN-ASSETS`, 2026-11-27) — **LANDED and incorporated below (§3–§4)**. Asset counts/NEW-gaps/P0-1…P0-9 carried with [V]/[C] provenance as cited in that report.
+- parity: **UNVERIFIED. No parity claim. No approximations.**
+- chain: **0/6. Nine P0 OPEN. `blocking_unverified` non-empty ⇒ RESULT IS NOT GOOD.**
+- method: read-only. No code/Godot/git/donor execution. Exactly one file written (this packet); no other edits.
+
+## 0. Binding rules (read first)
+
+1. **No item in this packet is a parity closure.** Nothing below closes any class-A value/behaviour item.
+2. **Static work cannot close class-A value/behaviour items.** File presence, byte sizes, static greps, and labels are existence only — never correctness, never a gate PASS, never donor fidelity.
+3. **Deterministic repeats and ROI metrics never promote parity.** `compare_shots.py` candidate-vs-candidate determinism, `terrain_ab_metric.py` (SMOKE-only, no ARI), `roi_metrics_*` run dirs, and self-determinism repeats are port-internal only. No metric overrides the visual read; no repeat is a donor match.
+4. **Zero-mismatch** below means byte/label-exact satisfaction of the stated acceptance condition plus a fresh gate verdict where a gate governs — not "close enough".
+5. Classifications used: `WORKER-EXECUTABLE-STATIC` (static file/label/probe work a worker can do without GPU/runtime) / `OWNER-GPU-RUNTIME` (needs owner GPU run, capture, or donor execution) / `OWNER-DECISION` (needs an explicit owner ruling; work stops until ruled).
+
+## 1. Prioritized missing-work items (11)
+
+### MW-1 — Genuine matched-seed donor GPU A/B frame
+- (a) Gap: no matched-seed donor GPU frame exists. Port path: **no file found** (no donor GPU A/B frame anywhere in completeness audit §6.6).
+- (b) Governs: HANDOFF §4 GR-C08 / §7.1; V15 §2; V57; X39; X07/X36.
+- (c) Classification: **OWNER-GPU-RUNTIME**.
+- (d) Next action: owner produces or formally rules out a genuine matched-seed donor GPU frame per HANDOFF §4 GR-C08. Acceptance: frame on disk with seed/pinned-camera/roi provenance recorded, or a signed rule-out memo; **zero-mismatch = provenance fields all present and matching, no substitute frame accepted**.
+- (e) P0 effect: **narrows only**. Blocks every tier above 2 and any parity discussion, but the frame alone closes no P0 row (still needs gate + reviewer verdict).
+
+### MW-2 — Fresh gate sequence A′-0…A′-3 then D-0…D-6
+- (a) Gap: no fresh gate verdicts; TODO(COORD) unfilled. Port paths: `variant3d/tools/terrain_qa_harness.py` (61,675 B, 52 rows, `--policy advisory`) PRESENT but not run; `inbox/qa/terrain_qa_report.json.PENDING`, `PENDING_N19_captures.md`, `PENDING_N7_validate_terrain_new.md` still pending markers; `inbox/qa/captures/**` populated but unadjudicated (completeness §§5–6.2).
+- (b) Governs: V21 gate register; V06; V42; V63/V76/V83/V86 NO-GO blockers (dirty spool 575/582/585, local tool overrides, broken gate atoms, stale JSONs); GR-A04…A24 incl. `t_relief_props_qa.gd:30` repoint (`mountain_props.json`, V13).
+- (c) Classification: **OWNER-GPU-RUNTIME** (analysis workers submit no Godot jobs).
+- (d) Next action: owner/COORD runs A′-0…A′-3 then D-0…D-6 with unique job ids (D1: 5 streams × 3 sizes, zero-byte dumps; D3: `script_error_lines=0`; 29/29 + 17/17 + render-mode + 5/5 variety + `scan_map ALL GREEN`). Acceptance: every TODO(COORD) filled, all gate rows GREEN with unique job ids; **zero-mismatch = no skipped atom, no stale JSON, no `--ignore-history`**.
+- (e) P0 effect: **can close P0 rows** — only this (plus MW-11 verdicts) can move a P0 row to closed; static prep alone only narrows.
+
+### MW-3 — Land N7 + populate N17 + generate atlas tier for real
+- (a) Gap: three files/behaviours absent-or-unproven: `variant3d/tools/validate_terrain_new.py` — **no file found**; `variant3d/tools/terrain_qa_spec.json` copy — **no file found** (spec copy at `docs/terrain_swarm_2026-11-26/spec/terrain_qa_spec.json`, 5,913 B, SCHEMA-ONLY: all bands `value:null`, `promotion.signed:false`); I05 `variant3d/tools/build_terrain_new_atlas.py` PRESENT but DRY-RUN BY DEFAULT, `--write` unconfirmed; `atlas/tile_index_atlas.png` (4,211,707 B) + manifest (149,449 B) + `alpha.png`/`alphavert.png` + `seasons/` exist but UNVERIFIED.
+- (b) Governs: I16 + `PENDING_N7_validate_terrain_new.md`; N17 + HANDOFF §4 GR-B; I05/A03, V62/V66, spec/11.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for writing N7 + populating spec bands + byte-verifying atlas/manifest; **OWNER-GPU-RUNTIME** for any gate run that consumes them.
+- (d) Next action: write `validate_terrain_new.py`; populate every `terrain_qa_spec.json` band + land the `variant3d/tools/` copy; run I05 with `--write` and byte-verify `atlas/` + root `manifest.json` (6,450,422 B); re-run I01–I04 self-checks and record hashes. Acceptance: all three artifacts present with recorded hashes and byte-verified atlas/manifest; **zero-mismatch = no null band, `signed` only where a real signature exists, no DRY-RUN claimed as output**.
+- (e) P0 effect: **narrows only**. Static readiness never closes a class-A row.
+
+### MW-4 — Grid-size seam (64→256 / 240² override)
+- (a) Gap: requested sizes not proven exact end-to-end. Port paths: `variant3d/scripts/terrain_donor_inputs.gd:729 _apply_mask()` writes native mask size into `p.width/p.height`; `variant3d/scripts/terrain_donor_gen.gd` I07 prefers those values; observed requested 64² as 256² (65,536 cells); same defect class at 240² (completeness §1; W09; HANDOFF §9.2).
+- (b) Governs: W09 TG-1; HANDOFF §9.2; spec/10; V06.
+- (c) Classification: **OWNER-GPU-RUNTIME** (terminating byte probe needs runtime execution).
+- (d) Next action: terminating byte probe proving requested 64²/240²/320² stay exact end-to-end (SIM = render = picking = entity) with native-mask-size override removed or explicitly modelled + donor nearest resampling proven; freeze explicit 240² AND 320² baselines labelled by actual size. Acceptance: size labels match actual cell counts at every stage; **zero-mismatch = exact grid integers, no relabelled baseline**.
+- (e) P0 effect: **can close its P0 row only via the runtime probe + gate verdict**; static code read only narrows.
+
+### MW-5 — Relief-feed seam (field names + stamp wiring + float windows)
+- (a) Gap: runtime effect UNVERIFIED despite code-present dual-read. Port paths: `variant3d/scripts/terrain_donor_gen.gd:3001-3005` reads `pat.get("grid")` then `pat.get("relief_float_grid")`; `variant3d/scripts/terrain_donor_inputs.gd:1113-1114` emits `relief_float_grid` as primary; stamp blend Replace/ReplaceForWater/Smooth telemetry `parity: UNVERIFIED` (`terrain_donor_gen.gd:822,928,1848,1946,1975`); `row_sign` + `height_unit` UNVERIFIED (`:843-844`); `FLOAT_WINDOWS` [U] (completeness §§1, 6.3).
+- (b) Governs: W03 (+§2.4 `_setup_patterns_by_type`); V07 E06/E17; spec/04; HANDOFF §9.2.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for re-verifying field names against the captured build (static); **OWNER-GPU-RUNTIME** for proving `relief_float_grid` reaches `_stamp_pattern` on all fixed seeds + stamps actually fire + I02 float windows export.
+- (d) Next action: re-verify `:3001-3005` + `:1113-1114` against the exact captured build; prove feed reaches `_stamp_pattern` on all fixed seeds with `_setup_patterns_by_type` stamping and I02 float windows exported. No `HEIGHT_SCALE` fudge, no synthetic noise/dither. Acceptance: captured-build field names match; stamps observed firing on every fixed seed; **zero-mismatch = no fallback masking a miss, no fudge factor**.
+- (e) P0 effect: **narrows only until runtime proof + gate**; static re-verification alone closes nothing.
+
+### MW-6 — Native kernels and blend/alpha unknowns
+- (a) Gap: native bodies unrecovered; blend vectors synthetic/stale. Port paths: `terrain_donor_gen.gd:573-577` `[U]` native kernel not recovered, `bsmooth_kernel` NULL, `:581-590` SKIPPED + `_note("SmoothTerrain(radius 3) skipped…")`; `bmTransparency = SRC_ALPHA, ONE_MINUS_SRC_ALPHA`, port `rgb *= mask` labelled PORT APPROXIMATION, pass count [U] after six X17 passes (completeness §§1–2).
+- (b) Governs: N17-G11/U-S0 (SmoothTerrain body); TODO D01; D03 U3; V20/S08 tile counts; D08 #3–#6; V16 O11; X13/X26/X37 (+X13-extension with real donor flags).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for documenting candidates and swapping in real-flag vectors once available; **OWNER-GPU-RUNTIME** for any trace/GL capture the recovery requires; **OWNER-DECISION** if recovery is accepted-open.
+- (d) Next action: recover `SmoothTerrain(x,-y,False,3)` body + tile smoothing counts + `bmTransparency` composite pass count + alpha patch selector + eye planes + atlas packing equivalence, replacing synthetic-flag vectors (X13/X26/X37) with real-flag vectors. Acceptance: real donor flags cited per vector, or a signed accept-open ruling; **zero-mismatch = no synthetic flag presented as donor, no blur substituted silently**.
+- (e) P0 effect: **narrows only** (or parks via accept-open ruling); recovery alone is not a parity closure.
+
+### MW-7 — Water U12/U3/U4* (or keep fail-closed)
+- (a) Gap: water undrawable on affected paths by design. Port paths: `variant3d/scripts/water3d.gd` — BUILTIN/U12 hard-fail (`:679-682`, FBO provenance unresolved `:39-41,123,304-313,365-366,497-508,671-685`); LEGACY-DEV/U3 substitute bind (`:40-41,143,307,319,657-662`, identity unresolved); scalar/U4* `_water_scalar_source = UNSET`, `build()` refuses until FILE/ENGINE selected (`:71-72,103-108,129-140,210-291,365,442-463,721-747,795-802`, `U4_CAPTURE_ID :220`); waveMap `diffusewaves0.png` missing ⇒ hard fail (`:785`); `WATER_SURFACE_Y = -0.25` PORT APPROX placeholder (`terrain_donor_mesh.gd:92`); sentinel 255 PORT APPROXIMATION (`:1760`); `shore_prox` REMOVED (`:2321-2323`) (completeness §§2, 6.5).
+- (b) Governs: D06 (register 1–10: plane Y, foam width, metres-per-cell, pass count); X11; DEC_U water series; `PORT1TO1_water_owner_protocol.md`; X51 `GenerateMapRandKey`/U4* note.
+- (c) Classification: **OWNER-GPU-RUNTIME** for captures; **OWNER-DECISION** for FILE-vs-ENGINE scalar winner + scope decision if water stays fail-closed.
+- (d) Next action: owner captures U12 reflection FBO provenance, U3 height-object identity, U4* FILE-vs-ENGINE scalar winner + engine wave dirs, plane Y / foam width / metres-per-cell / pass count — or signs that BUILTIN/LEGACY-DEV water stays undrawable and scopes water accordingly. Acceptance: each U-item captured and bound, or signed scope memo; **zero-mismatch = no grey/neutral fallback invented, no candidate constant presented as live uniform**.
+- (e) P0 effect: **can close water P0 rows only via captures + gate**; keeping fail-closed narrows (defined scope) but leaves the deficit open.
+
+### MW-8 — Props feed end-to-end (or keep ZERO-PROPS fail-closed)
+- (a) Gap: zero-props predicted by reported trace. Port paths: `variant3d/scripts/terrain_donor_props.gd` (78,742 B) — `matched_stamps=0/props_total=0` predicted, `_try_feed` top-level-only scan, `_collect_stamp` rejects live `C3PatternGen.Stamp` Objects, `BaseName.value` not unwrapped, 1,070 non-uniform Scaling + 17,354 non-zero Position.Y dropped, `_props_applied=true` even for zero props, legacy Z08 + donor I09 double-instance risk; `UNVERIFIED_BASE` register (`:202-232`), `visual_parity_claim=false` (`:532-533`); GR-A24 atom references absent `terrainmesh_props.json` vs live `mountain_props.json` (completeness §§3–4).
+- (b) Governs: I09; V59; W07; V66 (+V66-F1 feed keys); V13 (GR-A24 repoint); spec/08; V16-26 (`terrain_new_assets.gd` owner) + V16-27 (I07 two-file ownership); `terrain_donor_tiles.gd` absent (I12 optional).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for the static feed walk/fix (668 Objects blocks / 39,783 records in `pattern_lib.sections[].blocks[].records[]`, unwrap `BaseName.value`, carry Scaling/Position.Y, I09-compatible keys); **OWNER-DECISION** for V16-26/V16-27 ownership + GR-A24 repoint; **OWNER-GPU-RUNTIME** for proving `matched_stamps>0` live.
+- (d) Next action: walk the full record tree, fix feed, deliver I09-compatible keys (V66-F1), repoint GR-A24 atom to `mountain_props.json`. Acceptance: live `matched_stamps>0`, `props_total>0` with carried transforms, no double-instancing; **zero-mismatch = zero dropped non-uniform scales / non-zero Y without a recorded reason**.
+- (e) P0 effect: **can close its P0 row only via live proof + gate**; the static fix alone narrows.
+
+### MW-9 — Swamp/lake + mine + field activation and bindings
+- (a) Gap: activation/binding unproven; quarantines must be preserved. Port paths: tiers PRESENT (`patterns/m_swamp*.json`, `k_swamp*.json`, `l_lake_big/small*.json`, `mng/mni/mnc*.json`, `n_desert_mn*`); but `[*] = ;` callers are commented text, `MINE_RECORD_BINDING` UNVERIFIED (`terrain_donor_props.gd:224`), mill/mill-death/rusmil-turmil/rotor-AAF/winter-crops/field-variants/pumps/decal-UV/LOD/family-index all UNVERIFIED (`:207-231`); `m_swamp_12_old` 17×20 vs binary 18×23 PRESERVED quarantine; `lake_big := plain*2*0` literal preserved (completeness §4).
+- (b) Governs: F07/F08; V12 (U1/U6–U9); X22 (49-node `_unit_DoSeedWheat` translation, REPORTED-ONLY); A04 §8; spec/07/08; V16 O2/O5.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for recording bindings/decals/stages as static ledger entries; **OWNER-GPU-RUNTIME** for activation proof; **OWNER-DECISION** for any binding ruling.
+- (d) Next action: settle `[*] = ;` runtime activation, deposit capacity, record-id→prop binding, native `StandPatternWithAngle`, swamp/lake export, mill stages/AAF/crops/variants/pumps/decal-UV/LOD/family index — without touching `m_swamp_12_old` donor bytes or the `lake_big` literal. Acceptance: each binding recorded with evidence id or explicitly UNKNOWN; **zero-mismatch = quarantines byte-identical, no "fix" to donor bytes**.
+- (e) P0 effect: **narrows only**. Ledger entries are not behaviour proof.
+
+### MW-10 — Spec/toolchain readiness + contradiction ownership
+- (a) Gap: 19 OPEN contradiction items + ownership breach + absent tickets. Port paths: landed-but-unfolded reports vs `docs/terrain_swarm_2026-11-26/spec/01…14`; V16 O1–O14 / V47 O-A…O-S 19 OPEN; I03 F-01 ownership breach OPEN/MAJOR (V44/V64, tool `decode_pattern_lib.py` PRESENT); I14/I15 ticket definitions — **no file found, do not invent**; spool 575/582/585 unacked (completeness §7.10).
+- (b) Governs: V16/V17/V26/V47 (canonical register); V34; V44; V56; V64; V72; V81; V95; V98; X44.
+- (c) Classification: **OWNER-DECISION** (ownership + acks + ticket definitions) with **WORKER-EXECUTABLE-STATIC** support (folding reports into §§01–14, marking READY).
+- (d) Next action: integrate landed reports into §§01–14 with READY marks; resolve all 19 OPEN items; settle I03 F-01; define I14/I15 (owner) or record absent; ack 575/582/585 with evidence-backed reasons, never `--ignore-history`; keep `app/**` byte-clean. Acceptance: register shows 0 OPEN with ruling links; **zero-mismatch = every O-item ruled or proven, none silently dropped**.
+- (e) P0 effect: **can close process/readiness P0 rows** (ownership + ack rows); never closes class-A value/behaviour rows.
+
+### MW-11 — Owner-signed capture/criteria verdicts
+- (a) Gap: captures exist, verdicts do not. Port paths: `inbox/qa/captures/**` populated (PNG/MP4 + `*_20261113`/`*_20261127` run dirs) but PENDING markers remain and no reviewer verdict, no gate PASS; 240c stale after 11:15:54 shader edit (completeness §6.2); W06 perf bounds median ≤30 s / max ≤35 s unadjudicated.
+- (b) Governs: A05; V15; W01/W06/W08; HANDOFF §4 GR-C; tier-2 cards per class (mountain silhouette ≥ centre +4 m / +2 m; props ≥200 px / ≥8 px rise / <1% outside; `matched_stamps>0`; two non-blank PNGs).
+- (c) Classification: **OWNER-GPU-RUNTIME** for admissible 1280×720 non-blank windowed captures at pinned camera/roi; **OWNER-DECISION** for the signed verdict itself.
+- (d) Next action: owner signs capture/criteria verdicts per class at pinned camera/roi (admissible 1280×720 non-blank windowed; tier-2 cards; W06 perf acceptance; self-determinism noted as port-internal). Acceptance: signed verdict per card with pinned provenance; **zero-mismatch = no metric overriding the visual read, stale 240c re-captured or explicitly excluded**.
+- (e) P0 effect: **can close P0 rows** — this is the only verdict step that, combined with MW-2 gates, moves rows to closed.
+
+## 2. New completeness gaps found by direct file checks (6)
+
+### NG-1 — Atlas/masks/lib/schemas/root-manifest tiers PRESENT but UNVERIFIED
+- (a) Gap: validation missing, not files. Port paths: `variant3d/assets/terrain_new/{atlas,masks,lib,schemas}/`, `atlas/{tile_index_atlas.png, tile_index_atlas.manifest.json, alpha.png, alphavert.png, seasons/}`, `masks/{mask_index.json, height/}`, `lib/pattern_lib_index.json` (55,784,815 B), `schemas/v1.schema.json` (2,438 B), root `manifest.json` (6,450,422 B) — all PRESENT; HANDOFF V75 + REPORT_INDEX V49/V56/V62 stale on this point, V87 (5,256 files / 786 JSON) matches better.
+- (b) Governs: A03/I05; V62/V66/V87; spec/11.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (byte validation + `--write` confirmation record).
+- (d) Next action: byte-validate every tier + confirm I05 `--write` provenance + record hashes. Acceptance: hash list with zero validation errors; **zero-mismatch = no DRY-RUN output claimed as final**.
+- (e) P0 effect: **narrows only**.
+
+### NG-2 — `inbox/qa/captures/**` populated but unadjudicated
+- (a) Gap: no verdict. Port paths: `inbox/qa/captures/**` holds donor-port PNGs (`cap_donor_240h/l/m`, `cap_donor_240_colorfield`, `cap_fullport6/7/8`, `cap_mapreuse/millsow/nationmove/palmdesert/arrayatlas/defaultcfg_donor`, `contact_*`, `map_overview_4k/waterfix`, `donor_compare_contact`) + MP4s + dated run dirs, alongside still-present `PENDING_N19_captures.md`, `PENDING_N7_validate_terrain_new.md`, `terrain_qa_report.json.PENDING`.
+- (b) Governs: I13/I16/N18/N19; W01/W08/W09/W10.
+- (c) Classification: **OWNER-GPU-RUNTIME** (review + verdict) — a worker can only index the directory.
+- (d) Next action: reviewer verdict per capture (admissible / stale / excluded) + gate PASS or FAIL. Acceptance: every PNG/MP4 adjudicated, 240c staleness resolved; **zero-mismatch = no unadjudicated file counted as proof**.
+- (e) P0 effect: **narrows only until MW-11 signs**.
+
+### NG-3 — Relief field-name seam has code-present dual-read, runtime UNVERIFIED
+- (a) Gap: build + runtime proof missing. Port paths: `variant3d/scripts/terrain_donor_gen.gd:3001-3005` + `variant3d/scripts/terrain_donor_inputs.gd:1113-1114` (see MW-5).
+- (b) Governs: W03; HANDOFF §9.2; spec/04.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (build re-verification) + **OWNER-GPU-RUNTIME** (runtime effect).
+- (d) Next action: re-verify both field names against the exact captured build; prove runtime effect with post-fix capture. No `HEIGHT_SCALE` fudge. Acceptance: build match + post-fix capture; **zero-mismatch = both names confirmed, no alias assumed**.
+- (e) P0 effect: **narrows only**.
+
+### NG-4 — Collision explicitly written by I07; values/consumption still [U]
+- (a) Gap: cliff TAG + engine consumption unproven. Port paths: `terrain_donor_gen.gd:2082-2147 _collision_pass` via I06 `set_collision` (+ 2W·2H view `:2124-2125`); `terrain_donor_mesh.gd:511-516` ingest; `terrain_donor_data.gd:423` non-mapping note; cliff TAG [U] NULL/hook (`terrain_donor_gen.gd:666-670,2107-2110`).
+- (b) Governs: A01; V58; spec/01.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (static write-path confirmation — done) + **OWNER-GPU-RUNTIME** (engine-consumption proof).
+- (d) Next action: prove cliff TAG value + engine consumption of the 2x view in a live run. Acceptance: observed tag values + consumer read-back; **zero-mismatch = all four tags demonstrated, none assumed from code**.
+- (e) P0 effect: **narrows only**.
+
+### NG-5 — Water fail-closed discipline confirmed (structural deficit)
+- (a) Gap: scenes needing bindings get no water drawn. Port paths: `water3d.gd` hard-fail lines per §2/MW-7 (`:679-682`, `:746-747`, `:721-723`, `:785`, `:194`).
+- (b) Governs: D06/X11; DEC_U water series; `PORT1TO1_water_owner_protocol.md`.
+- (c) Classification: **OWNER-DECISION** (scope) + **OWNER-GPU-RUNTIME** (bindings/captures).
+- (d) Next action: owner supplies real bindings + U4* selection + U12 target, or scopes water accordingly (see MW-7). Acceptance: water drawn where scoped, fail-closed documented where not; **zero-mismatch = no silent fallback**.
+- (e) P0 effect: **narrows only** (scoping is not a closure of the water deficit).
+
+### NG-6 — Still ABSENT (re-confirmed, do not claim)
+- (a) Gap: six absences. Port paths: `variant3d/scripts/terrain_donor_tiles.gd` — **no file found**; `variant3d/tools/validate_terrain_new.py` — **no file found**; `variant3d/tools/terrain_qa_spec.json` — **no file found**; retired alias `variant3d/shaders/terrain_donor.gdshader` — **no file found** (intentionally retired); fresh runner result JSONs / determinism dumps / frozen 240²+320² baselines labelled by actual size — **no file found**; donor GPU A/B frame — **no file found**.
+- (b) Governs: I12 (tiles optional; V16-27 governs); I16/N17 (N7/spec copy); V37 (shader alias retired); MW-2/MW-4 + HANDOFF §4 GR-C08 (baselines/frame).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for N7/spec-copy/baselines-as-files where static creation suffices; **OWNER-DECISION** for tiles ownership (V16-27) + alias retirement confirmation; **OWNER-GPU-RUNTIME** for baselines/frame requiring runs.
+- (d) Next action: create/record each item or file a signed absence/ownership ruling; never claim an absent file. Acceptance: each line PRESENT-with-hash or ruled-absent with ruling link; **zero-mismatch = no absent path cited as evidence**.
+- (e) P0 effect: **narrows only** (readiness); runtime items in this list close rows only via MW-2/MW-4/MW-11.
+
+## 3. TERRAIN-ASSETS companion status (LANDED — incorporated, no PENDING marker)
+
+- `PORT1TO1_terrain_assets.md` (TERRAIN-ASSETS, id `PORT1TO1-TERRAIN-ASSETS`, 2026-11-27): **LANDED. No "PENDING by absence" marker remains.** Findings below are carried with [V]/[C] provenance exactly as cited in that report; nothing invented here.
+- Verified on disk [V] this pass (asset report §0/§2): 5339 `terrain_new` files / 383,192,189 B (dual-listed `Get-ChildItem -Recurse -File`); 77 `props/families/*.json`; `props/props_index.json` record_count 39783 / distinct_basenames 235 / section_count 668 / family_count 77 (`python json.load`); `skin/index.json` count 66 + skipped 7 naval (yacht/yachttur/fishboat/frigate/galley/battleship/xebec) with 40 action names (idle/idle0/walk/walk0/death/attack0/attack1/construct/workfood/workwood/workstone/idlefood/idlewood/idlestone/walkfood/walkwood/walkstone/reaction/prepare0/unprepare0/death0/death1/death2/idle1/idle2/walkprepare0/walkunprepare0/trans01/trans10/trans02/trans12/trans20/trans21/prepare1/unprepare1/prepare2/unprepare2/attack2/attack2before/attack2after — supersedes the 8-name `DEC_U_aaf_art_audit` census); 63 tool-skin JSONs in `skin/attach/` (= 9 peasant sids × 7 tools: axe/bag/cart/hammer/hoe/lumber/pick); `anim3d.gd` T1–T26 state table with donor cites + `port: yes/partial/no` flags; `BLD_DEATH_STEMS` 12 families — mil->eurmil, cen->ukrcen, hou->ukrhou, bar->ukrbar, sta->ukrsta, bla->ukrbla, aca->ukraca, art->ukrart, dip->ukrdip, sto->eursto, mar->eurmar, tow->eurtow (`world3d_entities.gd:375`); 112 block PNGs (+112 `.import` = 224 entries in `assets/terrain/blocks/`); `assets/terrain/deco_png/` 14 entries (7 PNG + 7 `.import`, incl. `envfieldd/envfielddw.png`, `christmastreed.png`); grass/ground/rock PNGs (`grass1..10`, `grasssand1-2`, `ground1-3`, `rock1-3`, `rockgrass1`, `dirt1`, each + `.import`); `variant3d/assets/fx/` tier (`models/`, `tex/`, `manifest.json`); `world3d_fx.gd` spatial FX layer (PORT APPROXIMATION label in-file); all V62-absent tiers PRESENT (`atlas/` + manifest + `alpha.png`/`alphavert.png` + `seasons/`, `cfg/` 3 JSON, `lib/pattern_lib_index.json`, `masks/` 4467 files, `props/` 78, `schemas/v1.schema.json`, root `manifest.json`).
+- Carried [C] (not re-verified by either worker): AAF census 194 unit/building + 52 pfx; 56 attach `.oss` (8 nations × 7) + 8 `<base>_tools.actor`; X16 141 BaseNames 75 exact OBJ / 3 fallback / 63 missing, COMPLETE 0/141; `mountain_props.json` base_name_census only 8 relief names, 0 forest/stone/mine OBJ transform hits; `prop_winter_materials.json` data-only unwired, no converted winter texture for any of 141; 15 desert-stone + 3 desert-ore DDS substitutions; X27 ceiling 22.54%/54.7% garbled, 23/34 anchors absent; V89 seal 5257 files / 364,646,949 B (X15 visible checks: 19 keys, 5256 ordered tuples, `visual_parity_claim:false` 787/787); V97 freeze 5,255 files / 127 reports / 162 board IDs; F08 19 forest families (footprints to 86×92, Freq roulette damped x0.2, pass rates 0.0009/0.0009/0.00054); stone `stn1=0.00016/stn2=0.00012`, scale 0.329 ±15%; mine scale 0.3152 + 5×5 dirt plate, no finite deposit capacity; quarry name `quarr` 0 hits ([D]/[I] mapping to `stones`); A0 gold mine [I] from icon/text, no identifiable iron/coal stills (X07 U4/U8); `m_swamp_12_old` 17×20 vs binary 18×23 quarantine, never "fix"; `lake_big := plain*2*0` literal preserved.
+- Presence is existence only — never correctness, never a gate PASS, never donor fidelity. Full per-class ledger: asset report §§1.1–1.13 (forests/bushes/fields/stones/mines/decor/swamps/relief/AAF/tool-skins/death-art/FX/tiers).
+
+## 4. Asset-report packet rows (5 NEW gaps + 9 P0 items)
+
+### AN-1 — `props_index.json` 668 vs donor 680 sections (12 sections unaccounted)
+- (a) Gap: index incompleteness. Port path: `variant3d/assets/terrain_new/props/props_index.json` (`section_count 668` [V]) vs donor 680-section `pattern.lib` census [C] (F02/X05).
+- (b) Governs: F02/X05 + spec/11 A11.4 (asset report NEW-1).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC**.
+- (d) Next action: diff index sections against the 680-section census; land the 12 missing sections or record a signed ruling per missing section. Acceptance: 680/680 accounted or ruling-linked; **zero-mismatch = no section silently absent**.
+- (e) P0 effect: **narrows only** (feeds AP-1; closes nothing alone).
+
+### AN-2 — 12-family stems resolve, 11 non-eurmil death-OBJ bytes unverified
+- (a) Gap: stem-to-bytes unproven. Port path: `variant3d/scripts/world3d_entities.gd:375` `BLD_DEATH_STEMS` 12/12 in script [V] vs no per-family death-OBJ listing under `variant3d/assets/models/obj/**` this pass (11 families × 4 files open; `eursto/eurtow _deathNa` 660 B degenerate IDP2 stubs [C]; `eurmil*a.osm` glob-all-directories follow-up open [C]).
+- (b) Governs: DEC_U_death_families A3–A5 (asset report NEW-2).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC**.
+- (d) Next action: glob `*death1*`/`*death2*`/`*1a*` per stem; record PRESENT/ABSENT per family + manifest rows. Acceptance: 12 × file matrix with hashes; **zero-mismatch = every stem resolves to bytes or is marked ABSENT, no assumed conversion**.
+- (e) P0 effect: **narrows only** (feeds AP-3).
+
+### AN-3 — Grass/plantain BaseName-to-PNG wiring unproven
+- (a) Gap: no mapping file found. Port paths: `grass.4`/`plantain.*` records in family JSONs [V] + `variant3d/assets/terrain/grass1..10.png`, `grasssand1-2.png`, `ground1-3.png`, `rockgrass1.png`, `dirt1.png` [V], but no BaseName-to-PNG manifest (`mountain_props.json` holds only 8 relief names; `prop_winter_materials.json` data-only and unwired) [V-gap].
+- (b) Governs: X16 A3–A5 + spec/11 (asset report NEW-3).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for the manifest; **OWNER-GPU-RUNTIME** for render proof.
+- (d) Next action: write per-BaseName mesh+material manifest (mesh OBJ PRESENT/ABSENT, albedo PNG + dimensions, winter PRESENT/ABSENT). Acceptance: all grass/plantain rows mapped; **zero-mismatch = no PNG claimed wired without a manifest row**.
+- (e) P0 effect: **narrows only** (feeds AP-2/AP-8).
+
+### AN-4 — 40-action skin index outran the T-table resolver
+- (a) Gap: index shape vs resolver mismatch. Port paths: `variant3d/assets/models/skin/index.json` 40-key actions map [V] vs `variant3d/scripts/anim3d.gd` T-table T6/T7/T23/T24/T25 `port: partial`, T18–T20/T22/T26 `port: no` [V]; orphan/explicit-`anim_action`-only `attack2before/after`, `death0/1/2`, `trans*/prepare*/unprepare*`, `walkprepare0/walkunprepare0` (T23/T24/T25 `orphan: true`) [V-script/C-report]; port `_frame_at` fposmod loop UNVERIFIED (`anim3d.gd:104`, [U] U2); 5 non-combat sids had no `death` at audit time (61/66) [C]; blend `0,0` vs 6/8 response [U]-B open [C].
+- (b) Governs: DEC_U_aaf_art_audit A5 + DANIM_01 A3–A5 (asset report NEW-4).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for the gap matrix; **OWNER-GPU-RUNTIME** for orphan-capture proof.
+- (d) Next action: per-sid 40-action gap matrix (66 sids × 40 names: frames PRESENT/ABSENT) + orphan-capture plan for T6/T7/T23–T25. Acceptance: full matrix landed; **zero-mismatch = no action marked supported without frame lists**.
+- (e) P0 effect: **narrows only** (feeds AP-4).
+
+### AN-5 — `desert_frt_un.json` + `n_desert_frt_big_1..17` resolution open
+- (a) Gap: spillover resolution unproven. Port path: `variant3d/assets/terrain_new/props/families/desert_frt_un.json` + `n_desert_frt_big_1..17` PRESENT [V]; F08 E16 name-mismatch caveat (17 members unresolvable at audit time) still governs [C].
+- (b) Governs: F08 E16 (asset report NEW-5).
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** for confirm-or-re-quarantine; **OWNER-DECISION** for any re-mapping ruling.
+- (d) Next action: confirm each member resolves or re-quarantine per V89 hygiene; no silent "fix". Acceptance: per-member RESOLVED/QUARANTINED with ruling link; **zero-mismatch = donor names byte-identical, no renamed-to-fit**.
+- (e) P0 effect: **narrows only**.
+
+### AP-1 — I09 object feed end-to-end (DONOR LITERALS label honest)
+- (a) Gap: feed path/shape mismatch. Port paths: I09 reads `patterns/pattern_lib_index.json` but tool-default output is `lib/pattern_lib_index.json` (V66-F3 [C]); `family_index.json` shape unusable by `_try_feed()` (V66-F1 FALSE return) so I09 lands on legacy `mountain_props.json` with `TRANSFORM_FALLBACK` (V89 A5–A7 [C]); season path shape conflict V66-F2; atlas sub-manifest misses three X15 A2.4 keys [C, V89 A5–A7].
+- (b) Governs: V66 A2–A4; V89 A5–A7; spec/11 A11.4.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (land index at I09 read path OR repoint `_load_feed()`/`_try_feed()` + fix feed shape) + **OWNER-GPU-RUNTIME** (Godot-load proof; runtime prop render still needs a capture).
+- (d) Next action: land `pattern_lib_index.json` at I09's read path OR repoint loader + fix feed shape (V66-F1) so DONOR-LITERALS label is honest. Acceptance: feed loads from the canonical path with no FALSE return; **zero-mismatch = no fallback path silently taken**.
+- (e) P0 effect: **can close its P0 row only via load proof + gate**; static fix alone narrows.
+
+### AP-2 — Per-BaseName mesh+material manifest, all 235 basenames
+- (a) Gap: "63 missing OBJs" + material-variant defects lack file evidence. Port paths: per-`props_index.json` 235 basenames [V] vs X16 75/3/63 split [C]; 15 desert-stone + 3 desert-ore DDS substitutions [C, X16 A5]; winter albedo unwired (`prop_winter_materials.json` data-only) [C, X16 A5]; no forest OBJ transform export in `mountain_props.json` [C, X16 A3].
+- (b) Governs: X16 A1–A6; AN-3.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC**.
+- (d) Next action: manifest with mesh OBJ PRESENT/ABSENT, albedo PNG PRESENT/ABSENT + dimensions, winter PRESENT/ABSENT per basename. Acceptance: 235/235 rows with file evidence; **zero-mismatch = no row without a PRESENT/ABSENT + path or ruling**.
+- (e) P0 effect: **narrows only** (readiness ledger, not behaviour proof).
+
+### AP-3 — Death-OBJ per-family glob + manifest rows
+- (a) Gap: bytes for 11 families open (see AN-2). Port paths: stems in `world3d_entities.gd:375` [V]; `*death1*`/`*death2*`/`*1a*` under `variant3d/assets/models/obj/**` unverified this pass.
+- (b) Governs: DEC_U_death_families A3–A5; AN-2.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC**.
+- (d) Next action: 11 families × 4 files glob + manifest rows; confirm stems resolve to bytes. Acceptance: per-family PRESENT/ABSENT with hashes; **zero-mismatch = no stem claimed resolved without bytes**.
+- (e) P0 effect: **narrows only**.
+
+### AP-4 — Per-sid 40-action gap matrix + orphan-capture plan
+- (a) Gap: which of the 40 names each of the 66 sids ships frames for is unmapped (see AN-4); donor needs up to 30 rows/sid (grenadier 30 active + 1 commented), DANIM_01 246-file/62-name catalog, 1,434/1,434 `morph` [C]; loop/one-shot/blend live outside AAF (`showdebuganimations.inc`, `movie.script:648-656`, `unit.script:10808-10852`, min/max blend 6/8) [C]; naval hulls are `.osm` + `.tlf`, not skin tracks [C].
+- (b) Governs: DEC_U_aaf_art_audit A5; `anim3d.gd` T-table; DANIM_01 A3–A5; AN-4.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (matrix) + **OWNER-GPU-RUNTIME** (orphan captures for T6/T7/T23–T25).
+- (d) Next action: 66 × 40 matrix (frames PRESENT/ABSENT) + orphan-capture plan. Acceptance: matrix landed, orphans have capture criteria; **zero-mismatch = no `partial`/`no` row upgraded without frames + capture**.
+- (e) P0 effect: **narrows only** (matrix is readiness; captures feed MW-11 verdicts).
+
+### AP-5 — [U]-T-A / [U]-T-B tool-attach + [U]-G / [U]-R ghost/rally captures
+- (a) Gap: wiring present, proof absent. Port paths: 63 tool-skin JSONs [V] + `anim3d.gd:351-367` IMPL-TOOL-WIRING block (`TOOL_SKIN_SUBDIR`, `ATTACH_ACTOR_INDEX` 0..6, `TOOL_ATTACH_STATUS` = PORT APPROXIMATION) [V]; T22 refutes stale "no .oss" claim with header words (`peaukr_axe.oss` k=483/fps=30/b=1, every tool b=1, k=k_body) [V-script/C-report]; `world3d_fx.gd` FX drift/flicker deterministic in (age, spawn index), no donor RNG mapping, PORT APPROXIMATION by its own label [V-script]; `[U]-T-A` (child swap/visibility), `[U]-T-B` (3D pixel proof), `[U]-G` (ghost colour/blink), `[U]-R` (rally TTL/pennant) all open [C].
+- (b) Governs: DEC_U_tool_attach A4; DEC_U_aaf_art_audit A4.
+- (c) Classification: **OWNER-GPU-RUNTIME** (fixed-camera close-up + named captures; OWNER-ONLY if donor GPU frames needed).
+- (d) Next action: fixed-camera close-up captures with zero-mismatch criterion per [U]-item. Acceptance: each [U]-item captured or explicitly still-open; **zero-mismatch = no APPROXIMATION label counted as proof**.
+- (e) P0 effect: **can close its P0 row only via captures + verdict**; wiring alone narrows.
+
+### AP-6 — Atlas/manifest validator run + `pack_id` recomputation
+- (a) Gap: validator never executed. Port paths: N7 `validate_terrain_new.py` still absent at V89 [C]; `schemas/` now PRESENT [V] but no validation executed; root `manifest.json` passes X15 visible checks (19 keys, 5256 ordered tuples, `visual_parity_claim:false` 787/787, 0 absolute donor paths) [C]; atlas PNGs are compact `--cell 128` derivatives [C]; atlas sub-manifest misses three X15 A2.4 keys [C, V89 A5–A7].
+- (b) Governs: V89 A3; V66 A3; spec/11.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (write/run validator, recompute `pack_id` from canonical seed) + **OWNER-GPU-RUNTIME** where a gate consumes the result.
+- (d) Next action: write/run N7 validator + recompute `pack_id` from canonical seed. Acceptance: validator GREEN on current bytes with recorded hashes; **zero-mismatch = no missing A2.4 key unrecorded, no stale `pack_id`**.
+- (e) P0 effect: **narrows only** (readiness; gate verdict still via MW-2).
+
+### AP-7 — Season/desert path reconciliation
+- (a) Gap: shape conflict + dead caller. Port paths: V66-F2 season path shape conflict [C]; `set_season()` has no caller [C]; winter atlas + winter/desert aliases PRESENT [V] (asset report §1.13) but unreconciled.
+- (b) Governs: V66 A4; V89 A7.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (path reconciliation) + **OWNER-DECISION** (canonical shape ruling).
+- (d) Next action: reconcile season/desert paths; owner rules canonical shape; wire or formally dead-code `set_season()`. Acceptance: single canonical shape with all aliases resolving; **zero-mismatch = no two shapes both "canonical"**.
+- (e) P0 effect: **narrows only**.
+
+### AP-8 — Grass/bush/fern material wiring + winter/desert prop swaps
+- (a) Gap: materials unwired, swaps unproven (see AN-3). Port paths: grass PNGs + family records [V] without manifest; X30 season texture spec [C]; X16 A5 winter/desert gaps [C]; HANDOFF A4 swamp/lake fringe tier-1-prepared, tier-2-unobserved [C].
+- (b) Governs: X16 A5; X30; AN-3.
+- (c) Classification: **WORKER-EXECUTABLE-STATIC** (wiring manifest) + **OWNER-GPU-RUNTIME** (swap/render proof).
+- (d) Next action: wire grass/bush/fern materials per manifest + prove winter/desert swaps. Acceptance: each swap demonstrated or marked open; **zero-mismatch = no data-only JSON counted as wired**.
+- (e) P0 effect: **narrows only**.
+
+### AP-9 — Donor GPU A/B frame decision (only path above V15 tier 2)
+- (a) Gap: same as MW-1, restated for the asset scope: without a same-camera/seed/map-size donor frame every asset verdict stays UNVERIFIED. Port path: **no file found**.
+- (b) Governs: V15 A2; HANDOFF A5.
+- (c) Classification: **OWNER-GPU-RUNTIME** + **OWNER-DECISION** (the rule-out alternative).
+- (d) Next action: owner produces or formally rules out the donor GPU A/B frame. Acceptance: frame with provenance or signed rule-out; **zero-mismatch = same camera/seed/map-size or explicit rule-out, no substitute**.
+- (e) P0 effect: **narrows only** alone; combined with MW-2/MW-11 it is the precondition for any closure.
+
+## 5. Close-out statement
+
+- Parity **UNVERIFIED** for every landscape subdomain. Chain **0/6**, nine P0 **OPEN**, `blocking_unverified` non-empty ⇒ **RESULT IS NOT GOOD**.
+- TERRAIN-ASSETS incorporated (§§3–4): all counts above are existence evidence only — 5339 derived files PRESENT with `visual_parity_claim:false` labels is not correctness, not a gate pass, not donor parity.
+- No item in this packet is a parity closure. Static work cannot close class-A value/behaviour items. Deterministic repeats and ROI metrics never promote parity.
+- No approximations, no parity claim. Read-only; exactly one file written.
+
+*End of packet.*

@@ -7,6 +7,9 @@ config/name="CossacksGodot - 3D Skirmish Variant"
 config/description="CossacksGodot 3D variant (singleplayer skirmish only). Donor-driven; numbers read from original game data files."
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
+
+[autoload]
+C3Log="*res://scripts/c3_log.gd"
 boot_splash/show_image=false
 boot_splash/bg_color=Color(0.06, 0.06, 0.05, 1)
 

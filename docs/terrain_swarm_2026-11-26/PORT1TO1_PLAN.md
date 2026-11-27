@@ -242,7 +242,7 @@ Status legend: DONE = landed with evidence/backups; DOING = active worker; TODO 
 | 231 | B-angle outcome index | DONE | `PORT1TO1_b_angle_index.md` | 11/14 executed + 7 new candidates, no value promoted |
 | 232 | Class-C owner decisions | DONE | `PORT1TO1_c_decisions.md` | 5 owner-policy items + preserve-only hash/witness table |
 | 233 | Class-D cosmetic tails | DONE | `PORT1TO1_d_cosmetic.md` | 10 tails; D4 market semantics flagged non-cosmetic if prices in scope; none CLOSED |
-| 234 | Final plan sync audit | DONE | `PORT1TO1_plan_sync.md` + COORD renumbering | point-in-time: 237 rows then sequential; current numbering re-verified in task 263 |
+| 234 | Final plan sync audit | DONE | `PORT1TO1_plan_sync.md` + COORD renumbering | point-in-time: 237 rows then sequential; current numbering re-verified in task 263 [point-in-time; superseded by later sync — label-only] |
 | 235 | Final handoff sync | DONE | `PORT1TO1_handoff_sync.md` | correction list, implemented-vs-reported, plan/verification state, unchanged verdict |
 | 236 | D4 market residual reclassification | DONE | `PORT1TO1_d4_reclass.md` | rational/dlt law already port [O-PORT]; U6-T/DLT price semantics blocking unless excluded |
 | 237 | Final parity claim recheck 4 | DONE | `PORT1TO1_claim_recheck4.md` | 14 new reports clean, no promoted static value, label-only gaps |
@@ -271,7 +271,7 @@ Status legend: DONE = landed with evidence/backups; DOING = active worker; TODO 
 | 260 | Final counts sync audit | DONE | `PORT1TO1_counts_sync.md` | 71 [U]/9 P0 OPEN/0-of-6 consistent; 14 stale snapshots flagged label-only |
 | 261 | Final label hardening | DONE | `LABEL-HARDEN` + COORD report fixes | 2 source qualifiers + brief/register/plan headings, no value change |
 | 262 | Final parity claim recheck 7 | DONE | `PORT1TO1_claim_recheck7.md` | all 8 final reports carry verdict; recheck6 fixes landed with no new claim |
-| 263 | Final plan sync 2 | DONE | `PORT1TO1_plan_sync2.md` | numbering 1..266 PASS, stale active list/summary flagged label-only |
+| 263 | Final plan sync 2 | DONE | `PORT1TO1_plan_sync2.md` | numbering 1..266 PASS, stale active list/summary flagged label-only [point-in-time; superseded by later sync — label-only] |
 | 264 | Verdict identity final audit | DONE | `PORT1TO1_verdict_sync.md` | reviewer line byte-identical; all verdict differences additive qualifiers, canonical line derived |
 | 265 | Final parity guard recheck 8 | DONE | `PORT1TO1_claim_recheck8.md` | no live parity claim; 13 stale ABSENT/EXACT claims need inline footnotes |
 | 266 | Final owner checklist | DONE | `PORT1TO1_checklist_final.md` | 63 unchecked boxes, 9 P0 OPEN, canonical verdict; main.gd hash drift flagged for adjudication |
@@ -282,16 +282,90 @@ Status legend: DONE = landed with evidence/backups; DOING = active worker; TODO 
 | 271 | Final parity guard recheck 9 | DONE | `PORT1TO1_claim_recheck9.md` | C1–C6 clean, all 13 C7 footnotes present, no substantive verdict difference |
 | 272 | Owner bundle verification | DONE | `PORT1TO1_bundle_verify.md` + COORD hash fix | 34/34 paths valid, stale water-packet hash corrected point-in-time |
 | 273 | Final hygiene resolutions | DONE | `PORT1TO1_hygiene_final.md` | HF-1..HF-12 register; 8 resolved/superseded, 4 owner-open; no P0 closed |
-| 274 | Final plan sync 3 | DONE | `PORT1TO1_plan_sync3.md` | numbering 1..275 PASS, 1 BLOCKED owner row; stale bullets flagged label-only |
+| 274 | Final plan sync 3 | DONE | `PORT1TO1_plan_sync3.md` | numbering 1..275 PASS, 1 BLOCKED owner row; stale bullets flagged label-only [point-in-time; superseded by later sync — label-only] |
 | 275 | Owner sign-off statement | DONE | `PORT1TO1_signoff.md` | delivered/not-claimed/blocking categories/owner actions/canonical verdict |
 | 276 | Final deterministic repeat check | DONE | `lastcheck_20261127` via `capture_sequence.py` | two real Godot runs, byte_identical=TRUE, parity=UNVERIFIED |
 | 277 | Final parity guard recheck 10 | DONE | `PORT1TO1_claim_recheck10.md` + COORD label fixes | C1–C6 clean, 4 historical label gaps corrected, no new claim |
 | 278 | Final parity guard recheck 11 | DONE | `PORT1TO1_claim_recheck11.md` + COORD label fixes | post-signoff/repeat clean, C7/C8 corrected, gaps G-1..G-3 closed |
+| 279 | B3 randkey consumer sweep | DONE | `DEC_U_b3_callback_sweep.md` | 12-link chain + 15 Random callers [D]; live timing/values [U] |
+| 280 | B4 smooth kernel native lift | DONE | `DEC_U_b4_smooth_native.md` | no kernel VA/radius/mb recoverable; all [U] with 320²+640² zero-mismatch termination |
+| 281 | B13 DSP CODE-table sweep | DONE | `DEC_U_b13_dsp_code_sweep.md` | 26-call registration order [D]; API order not tick order; U-DSP stays [U] |
+| 282 | B2 water reg caller sweep | DONE | `DEC_U_b2_ureg_callers.md` | 42 call sites exhausted, 3 incompatible +0x50 semantics, 0 draw-gate reach; U3 [U] |
+| 283 | B14 FOW engine surface sweep | DONE | `DEC_U_b14_fow_native.md` | 0-ref thunk/name facts [D]; incomplete-DB 0-hits not disproof; no FOW value wired |
+| 284 | B1 water copy-helper caller walk | DONE | `DEC_U_b1_glcopy_callers.md` | copy imports 0 discovered users; bind path disjoint; water [U] hard-failed |
+| 285 | B5 T-VER/MDEN/HF/OBJ residual | DONE | `DEC_U_b5_ver_residual.md` | 17 literals 0 indexed functions; 30 data refs no binding; numeric substitution refused |
+| 286 | B8 collision/LOS census | DONE | `DEC_U_b8_coll_los.md` | 369/354/15 masks, 0 Rotate overrides, 12-float LOS shape; live values [U] |
+| 287 | Port-internal video/frame review | DONE | `PORT1TO1_video_internal_review.md` | 9 sets byte-identical; dither explained; 0 water pixels expected; no parity |
+| 288 | U-DSP tick-stage order follow-on | DONE | `DEC_U_dsp_stage_order.md` | iteration sequence [D], intersection with 26-call order empty; U-DSP [U] |
+| 289 | D4 market float semantics sweep | DONE | `DEC_U_d4_floats.md` | full price/DLT literal map [O]; no 36-float donor table; float semantics [U], D4 blocks |
+| 290 | Camera derivation static sweep | DONE | `DEC_U_cam_derive.md` | 9 sites + wrapper law [O]; final target/height/zoom [U]; 0.75 PORT CHOICE not promoted |
+| 291 | B6 T-G0 density static sweep | DONE | `DEC_U_b6_g0_density.md` | fdens port-only; height pass ignores fg; no zero-density SetHeightData; G0 [U] |
+| 292 | B7 / U-base-speed consumer sweep | DONE | `DEC_U_speed_consumers.md` | 3 live/18 dead speed writes, 11 live rotatespeed; U-base-speed split, total 71 |
+| 293 | Interim decomp-wave synthesis | DONE | `PORT1TO1_wave_synth.md` | 11 reports static-only, 0 value changes, 0 P0 closures, 3 pending flagged |
+| 294 | Decomp-wave parity claim recheck | DONE | `PORT1TO1_claim_recheck12.md` | 12 wave reports clean, C7/C8 intact, G-1..G-3 label-only staleness carried |
+| 295 | B11 AI continuation static sweep | DONE | `DEC_U_b11_ai.md` | AI ladder/container rows [O]; U-B11-1..5 retained, no timing/value promoted |
+| 296 | B12 peace/upgrade static row audit | DONE | `DEC_U_b12_peace.md` | setter/frames/gate/refund + peace ×60 rows [O]; live values [U] |
+| 297 | Post-wave plan/status sync | DONE | `PORT1TO1_wave_sync.md` | 298 rows sequential, 4/4 bullets, 1 BLOCKED, hashes match; WS-1..5 label-only [point-in-time; superseded by later sync — label-only] |
+| 298 | Terrain port completeness audit | DONE | `PORT1TO1_terrain_completeness.md` | full stack 3-way classification, 6 new gaps, 11 prioritized missing-work items |
+| 299 | B10 skirmish table residual sweep | DONE | `DEC_U_b10_resid.md` | 12 building-base rows + 9 startid resource sextuples [O]; symmetry verified; framing [U] |
+| 300 | Landscape assets completeness audit | DONE | `PORT1TO1_terrain_assets.md` | 5339 files/39783 prop records/63 tool skins verified; 5 gaps, 9 P0 items |
+| 301 | Terrain gap work packet | DONE | `PORT1TO1_terrain_gap_packet.md` | verified asset counts + AN-1..5/AP-1..9 with class/action/condition, no parity |
+| 302 | Asset gap static attack A | DONE | `PORT1TO1_asset_gap_a.md` | 668+12=680 count-definition; death OBJ 48/48 exist; desert_frt_un resolved; byte checks [U] |
+| 303 | Asset gap static attack B | DONE | `PORT1TO1_asset_gap_b.md` | grass split (tile implemented, prop bases skipped); 40-action set fully wired, no parity |
+| 304 | Terrain-wave parity claim recheck | DONE | `PORT1TO1_claim_recheck13.md` | 4 terrain reports clean; counts existence-only; no completeness/parity declared |
+| 305 | Static-actionable item verification | DONE | `PORT1TO1_terrain_statverify.md` | 22 static items checked; AN-1/AN-5 misclassified, NG-4 resolved, bytes [U] |
+| 306 | Grass prop BaseName donor sweep | DONE | `DEC_U_grass_basename.md` | grass/horseradish props EXIST in donor (.prop/.actor/.osm); port skip real gap [U] |
+| 307 | Death OBJ byte verification | DONE | `PORT1TO1_death_obj_bytes.md` | 48/48 OBJ+MTL, 4/4 stubs verified, 0 mismatches; donor byte parity NOT-RECOVERABLE |
+| 308 | Terrain wave final synthesis | DONE | `PORT1TO1_wave_synth2.md` | owner-facing landscape status; port not full; 9 P0 OPEN, 71 [U], no parity |
+| 309 | Gap packet classification correction | DONE | `GAP-CORRECT` | 15 label-only line fixes, byte-exact revert proof; AN-1/5, AN-2/AP-3, NG-4 corrected; [U] intact |
+| 310 | Post-terrain-wave parity claim recheck | DONE | `PORT1TO1_claim_recheck14.md` + COORD G-4 fix | 5 reports + packet clean; wave_synth2 PENDING block corrected; [U] intact |
+| 311 | Terrain wave evidence index delta | DONE | `PORT1TO1_index_wave.md` | 30 landed + 2 pending indexed; supersessions flagged; no parity |
+| 312 | Final terrain owner brief | DONE | `PORT1TO1_terrain_brief.md` | port NOT full, subdomain table, resolved/open, next actions, canonical verdict |
+| 313 | Corrected packet re-read | DONE | `PORT1TO1_packet_reread.md` | 31/31 items PASS, no dropped [U]/condition, AP ids stable, verdict intact |
+| 314 | Wave index pending closure | DONE | `INDEX-CLOSE` | 6 label-only lines, byte-exact revert proof; PENDING→LANDED for recheck14/GAP-CORRECT |
+| 315 | Plan sync after terrain wave | DONE | `PORT1TO1_plan_sync5.md` | 1..316 PASS, 1 BLOCKED, hashes match; PS5-1 header/stale notes flagged label-only |
+| 316 | Final guard recheck 15 | DONE | `PORT1TO1_claim_recheck15.md` | C1–C6 clean, 3/3 guards PASS, G-4 fix clean; index_wave PENDING rows flagged for INDEX-CLOSE |
+| 317 | Final terrain brief verification | DONE | `PORT1TO1_brief_check.md` | 5/5 sections PASS, no defects, no completeness/parity claim |
+| 318 | PS5 label corrections | DONE | `PS5-LABELFIX` | 4 point-in-time qualifiers, byte-exact revert proof; statuses/hashes/verdict untouched |
+| 319 | Guard recheck 16 | DONE | `PORT1TO1_claim_recheck16.md` | 2/2 guards PASS, INDEX-CLOSE/PS5 label-only clean, C7/C8 intact |
+| 320 | Remaining worker-static gap sweep | DONE | `PORT1TO1_terrain_lastgap.md` | 17 static items probed, no byte-proven advance; no [U]/condition weakened |
+| 321 | Owner decision packet consolidation | DONE | `PORT1TO1_owner_packet2.md` | 9 P0 + GPU/decision/ack/hash rules in one owner list, nothing closed |
+| 322 | Preserve-only hash verification | DONE | `PORT1TO1_hash_verify2.md` | 13/13 hashes match recorded state; no drift; identity not fidelity |
+| 323 | Final deterministic capture/repeat | DONE | `finalwave_20261127` via `capture_sequence.py` | two real Godot runs, byte_identical=TRUE, parity=UNVERIFIED |
+| 324 | Final plan + guard sync | DONE | `PORT1TO1_final_sync.md` + COORD label fixes | 324 rows PASS, guards/repeats/hashes PASS; header+duplicate MCP bullet fixed |
+| 325 | Save container/transform static attack | DONE | `DEC_U_save_deep.md` | WriteFile thunks/79 OSW strings [D]; container bytes/transform [U] roundtrip-only |
+| 326 | Selection/projection static attack | DONE | `DEC_U_select_deep.md` | gluProject/ScreenToClient/GetCursorPos edges [D]; ray/picked identity [U] |
+| 327 | Animation blend/completion static attack | DONE | `DEC_U_anim_deep.md` | blend thunk 0x4afb14→sub_88fb78 + BONE/WGHT blob [D]; weights/timing [U] |
+| 328 | Capture/garrison tails static attack | DONE | `DEC_U_capture_deep.md` | Win32 capture thunks [D]; garrison/occupy 0-hit index; runtime [U] batteries |
+| 329 | Gameplay video evidence assessment | DONE | `PORT1TO1_video_evidence_assessment.md` | public videos not admissible parity evidence; no donor GUI control |
+| 330 | Full-port piece review — generation/terrain | DONE | `PORT1TO1_review_gen.md` | 7 NEW gaps: bridge, mine relocation, obj-scale skip, smooth chains, editor cfg, legacy shader/tools |
+| 331 | Full-port piece review — objects/art/AAF | DONE | `PORT1TO1_review_art.md` | new PARTIAL/ABSENT (peaaustools.png, naval AAF, chaika/mills); stale NATION_MESH label flagged |
+| 332 | Full-port piece review — laws/save/UI | DONE | `PORT1TO1_review_laws.md` | new deltas: upgrade/peace batteries, team-win U-E/N/C, AI U-B11, Q1/E1/E-T1b-c |
+| 333 | GEN new-gap probe | DONE | `PORT1TO1_gen_gaps.md` | bridge/editor ABSENT; mine runtime [U]; scale skip; legacy files present uninventoried |
+| 334 | ART new-gap probe + stale label fix | DONE | `PORT1TO1_art_gaps.md` | peaaustools/naval/chaika ABSENT with guards; wiring [U]; NATION_MESH label refuted |
+| 335 | Laws new-gaps owner addendum | DONE | `PORT1TO1_laws_addendum.md` | upgrade/peace/team/AI/Q1/E1 gaps with class/action/condition, no P0 closure |
+| 336 | Consolidated review addendum | DONE | `PORT1TO1_review_consolidate.md` | 7 gen + 7 art + 8 law gaps classified, all narrows-only, no parity |
+| 337 | Nation mesh label correction | DONE | `PORT1TO1_nation_label.md` + COORD source fix | label-only stale census corrected at world3d_entities.gd:249, backup kept |
+| 338 | Guard recheck 17 | DONE | `PORT1TO1_claim_recheck17.md` | 8/8 guarded, C1–C6 none, label fix verified label-only |
+| 339 | Final owner brief 3 | DONE | `PORT1TO1_owner_brief3.md` | port NOT full, 22 gaps + label fix, 9 P0 OPEN, canonical verdict |
+| 340 | Deep generation-logic verification | DONE | `DEEPGEN_mask_height.md` | S1–S7 MATCH, BUG-A/B fixed, no fudge; 6 blocking [U] remain |
+| 341 | Deep stamping/relief logic verification | DONE | `DEEPGEN_stamp_relief.md` | Scale/no-clamp/Replace/Smooth/water-replace MATCH; seam resolved; row-sign [U]; no fudge |
+| 342 | Deep grid/seed/callback logic verification | DONE | `DEEPGEN_grid_seed.md` | randkey/seam/12-stage MATCH; 240² DIVERGES spec; 64→256 [U] |
+| 343 | Deep water/shore logic verification | DONE | `DEEPGEN_water_shore.md` | 6 water facts MATCH; hard-fail verified; run-log warnings labelled-expected |
+| 344 | Opt-in async stage logging | DONE | `main.gd` + `.bak-ASYNCLOG` | env C3_ASYNC_LOG=1; print-only stage markers for both sync/async paths; parse OK, emitted |
+| 345 | Map overview snapshot | DONE | `mapoverview_20261127`, `mapwide_20261127` | 1280x720 donor-backend; flat green terrain confirmed visually |
+| 346 | Flat terrain render diagnosis | DONE | `FLATMAP_render.md` | vertex Y applies height at mesh:2230-2232; omission refuted; scale/gate [U] |
+| 347 | Relief OBJ fallback investigation | DONE | `FLATMAP_relief_obj.md` | prefix-test false positive found in world3d_relief.gd:348 |
+| 348 | Forest/stone placement investigation | DONE | `FLATMAP_flora.md` | rendered path never calls _gen_patterns; prop layer unwired [U] |
+| 349 | Camera/preset view investigation | DONE | `FLATMAP_camera.md` | preset handling traced, parity UNVERIFIED |
+| 350 | Relief prefix false-positive fix | DONE | `.bak-RELIEFPREFIX` + COORD source fix | world3d_relief.gd:348 exact legacy compare; parse OK |
+| 351 | Leveled C3Log system | DONE | `c3_log.gd`, `logging_config.json`, project.godot autoload | levels OFF..TRACE, config+env, print-only; verified both paths, default OFF |
 
 ## Current active workers (0)
 
 - All worker-executable lanes DONE; only the owner-gated final review remains (task 186 BLOCKED).
-- MCP host DONE (all 6 tools verified); final deterministic repeat `byte_identical=TRUE`; Godot free
+- MCP host DONE (all 6 tools verified); deterministic repeats `byte_identical=TRUE`; Godot free
+- MCP host DONE (all 6 tools verified); two deterministic repeats `byte_identical=TRUE`; Godot free
 
 ## Global done vs to-do
 
