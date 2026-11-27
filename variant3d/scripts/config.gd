@@ -8,6 +8,13 @@
 # Every key is optional: a key that is not in the file keeps the number from
 # the original game (scripts/data.gd). The source of every number is written
 # down in MECHANICS.md.
+#
+# SETTINGS-LABEL telemetry (SETTINGS-PERSIST §7.6, POLICY AUDIT §1 P1/§8 C1):
+# visual_parity_claim=false. Labels only: no default/key/value changed; the
+# preserve-only config.json / config_donor_capture.json were never opened for
+# write. Unresolved after this ticket = the 7 [U] items of §6 (OWNER paired runs,
+# zero-mismatch x3 each): U-S1, U-SP1, U-SP2, U-SP3, U-SP4, U-SP5, U-SP6.
+# None is claimed passed; no criterion is weakened or test relaxed here.
 extends RefCounted
 class_name C3Config
 
@@ -70,7 +77,9 @@ const FEATURES_DEFAULTS := {
 		"snow": false,  # FX-WEATHER-01: clouds.weather:3 Weather=40 < snow band 70..100
 	},
 	"camera": {
-		"fov_deg": 17.27,  # PORT APPROX / UNVERIFIED (RV-CAM-01); camera3d.gd:65
+		# PORT APPROXIMATION / UNVERIFIED (DEC-U §2.2-V1, RV-CAM-01): not a
+		# donor-claimed value; 216 mm sensor -> 17.27 deg is a port derivation.
+		"fov_deg": 17.27,
 	},
 	"hud": {
 		"minimap_size": 240,               # DEC-08: initminimap.inc:5-7 cMinimapSize=240
@@ -105,9 +114,12 @@ const DEFAULT := {
 		"units_opaque": true,
 	},
 	"camera": {
+		# RESOLVED donor pins mirrored from camera3d.gd (camera.cfg:6-10,
+		# :32-35, :44-45): 58 / -32 / 400. FOV remains PORT APPROXIMATION.
 		"pitch_degrees": -32.0,
 		"min_height": 20.0,
 		"max_height": 58.0,
+		"focal": 400.0,
 		"edge_margin": 8.0,
 		"corner_margin": 24.0,
 		"key_scroll_speed": 96.0,
@@ -132,8 +144,19 @@ const DEFAULT := {
 		"start_option": "default",
 		"start_resources": {"food": 800, "wood": 800, "stone": 400, "gold": 200, "iron": 150, "coal": 150},
 		"start_peasants": 8,
-		"build_queue_limit": 10,
+		# [O] donor gc_obj_MaxOrderCount = 12 (dmscript.global:113; order slots,
+		# doprogressorders.inc:217-234); matches data.gd:266-267. An explicit
+		# config.json `gameplay.build_queue_limit` still wins over this default.
+		# [U] slot/job semantics differ - see the apply() note below.
+		"build_queue_limit": 12,
 		"max_builders_sent": 8,
+		# C1 / POLICY AUDIT §1 P1 + §8 C1 [O-absence]: donor has NO victory / score /
+		# scorelimit / timelimit key — skirmish cfg grep = 0 hits (SETTINGS-PERSIST §2),
+		# no TMap* struct field (§3.1), win is trigger-gated only (VSTART §1.3;
+		# SCENWIN §7/P10). These two keys are PORT EXTENSION, byte-identical defaults;
+		# the "score" branch stays inert unless Data.PORT_EXTENSION_SCORE_VICTORY=true
+		# (data.gd:287-292). Never default VICTORY to "score"; never a 1:1 gate.
+		# C1 remediation is IN CODE (config.json is preserve-only, untouched by this ticket).
 		"victory": "destroy_all",
 		"score_limit": 5000,
 		"max_tick_seconds": 0.25,
@@ -454,7 +477,8 @@ func feature_weather_snow() -> bool:
 	return flag("features.weather.snow", false)
 
 func feature_camera_fov_deg() -> float:
-	# PORT APPROX / UNVERIFIED (RV-CAM-01) - not a donor-grounded value.
+	# PORT APPROXIMATION / UNVERIFIED (DEC-U §2.2-V1, RV-CAM-01) — NOT a
+	# donor-claimed value. Value kept byte-identical (17.27).
 	return num("features.camera.fov_deg", 17.27)
 
 func feature_hud_minimap_size() -> int:
@@ -503,6 +527,7 @@ func apply() -> void:
 	Data.CAMERA_PITCH = num("camera.pitch_degrees", -32.0)
 	Data.CAMERA_MIN_HEIGHT = num("camera.min_height", 20.0)
 	Data.CAMERA_MAX_HEIGHT = num("camera.max_height", 58.0)
+	Data.CAMERA_FOCAL = num("camera.focal", 400.0)  # camera.cfg:44-45, fixed zoom
 	Data.CAMERA_EDGE_MARGIN = num("camera.edge_margin", 8.0)
 	Data.CAMERA_CORNER_MARGIN = num("camera.corner_margin", 24.0)
 	Data.CAMERA_KEY_SPEED = num("camera.key_scroll_speed", 96.0)
@@ -514,8 +539,23 @@ func apply() -> void:
 	Data.MAP_H = maxi(16, int(num("gameplay.map_height_tiles", 240)))
 	Data.RANDOM_SEED = int(num("gameplay.random_seed", 20261113))
 	Data.START_PEASANTS = maxi(0, int(num("gameplay.start_peasants", 8)))
-	Data.BUILD_QUEUE_LIMIT = maxi(1, int(num("gameplay.build_queue_limit", 10)))
+	# [O] donor gc_obj_MaxOrderCount = 12 (dmscript.global:113;
+	# doprogressorders.inc:217-234), already the data.gd:266-267 default.
+	# A user override in config.json `gameplay.build_queue_limit` still wins;
+	# only this built-in default / fallback is set to the donor literal.
+	# [U] SEMANTIC DIFFERENCE: donor counts ORDER SLOTS per object (a batch is
+	# carried in one order's `amount`); the port counts JOBS in `queue`. 12 is
+	# the donor slot count, not a proven slot<->job equivalence. Fixed-seed
+	# capture E-QUEUE: seed S, one barracks, issue N distinct train orders;
+	# snapshot donor orders[0..11] occupancy and port queue.size() each tick.
+	# Zero-mismatch: identical (seed, N, config) -> identical snapshots; any
+	# slot/job divergence stays [U]. No cap or timing invented by this edit.
+	Data.BUILD_QUEUE_LIMIT = maxi(1, int(num("gameplay.build_queue_limit", 12)))
 	Data.MAX_BUILDERS_SENT = maxi(1, int(num("gameplay.max_builders_sent", 8)))
+	# C1 / POLICY AUDIT §1 P1 [O-absence] PORT EXTENSION: gameplay.victory and
+	# gameplay.score_limit have NO donor counterpart (SETTINGS-PERSIST §2/§3.1;
+	# VSTART §1.3; SCENWIN §7/P10). Kept verbatim as user-config keys only; the
+	# score victory branch remains behind PORT_EXTENSION_SCORE_VICTORY=false.
 	Data.VICTORY = text("gameplay.victory", "destroy_all")
 	Data.SCORE_LIMIT = num("gameplay.score_limit", 5000.0)
 	Data.TICK_MAX = maxf(0.01, num("gameplay.max_tick_seconds", 0.25))
@@ -559,6 +599,15 @@ func apply() -> void:
 		Data.PLAYER_NAMES = [_nation_display(n0, 0), _nation_display(n1, 1)]
 	var tm: Variant = section("gameplay").get("teams", [])
 	Data.TEAMS = tm.duplicate() if tm is Array else []
+	# AI PERSISTENCE [O]/[U] (SETTINGS-PERSIST §3.3/§5): donor stores per-slot
+	# aidifficulty/bai/bhuman/bexists/cid/team/color inside custommap.players[]
+	# and global speed as gProfile.igamespeed via Options Accept. Struct shape +
+	# Start-only write trigger are donor-grounded [O] (classes.script:95-113,
+	# eventcustomgame.inc:123-147, profile.script:617-623). [U] native store file
+	# bytes and exit flush are engine natives (EV-SP-14, U-SP5); the port
+	# round-trip stays UNVERIFIED pending the U-SP3 paired run (normal/
+	# igamespeed=1 vs impossible/igamespeed=3, zero-mismatch x3). No parity claim;
+	# every key/id below kept byte-identical.
 	# Per-slot control pick persisted by the lobby; empty keeps the sim fallback.
 	Data.PLAYER_AI = []
 	var pai: Variant = section("gameplay").get("player_ai", [])
@@ -572,6 +621,15 @@ func apply() -> void:
 			var d := str(v)
 			Data.PLAYER_AI_DIFFICULTY.append(d if AI_DIFFICULTIES.has(d) else "normal")
 
+	# MAP PERSISTENCE [O]/[U] (SETTINGS-PERSIST §3.3/§5, EV-SP-06): donor saves a
+	# WHOLE TMap snapshot on Start -> gProfileUserStruct.custommap: all 8 gen.*
+	# integers + all 13 additional.* integers + players[] roster + header, with
+	# randkey0/1 zeroed (eventcustomgame.inc:324-391). Key inventory donor-grounded
+	# [O] (classes.script:58-88); lobby init all 0 (initmapsettings.inc:10-29).
+	# [U] native store bytes + exit flush unrecovered (EV-SP-14, U-SP5); port
+	# round-trip stays UNVERIFIED pending the U-SP4 paired run (all-0 vs the
+	# six-int pair, randkey0/1=0, zero-mismatch x3). No parity claim; every key
+	# and id below kept byte-identical.
 	# T-MENU-ROSTER DEEP: full donor option set for saved configs. Unknown ids
 	# fall back to the donor default instead of corrupting the sim.
 	Data.DONOR_MAP_SHAPE = _donor_id("map_shape", Data.DONOR_MAP_SHAPES.keys(), "mediterranean")
@@ -584,7 +642,26 @@ func apply() -> void:
 	Data.CAPTURE_MODE = _donor_id("capture", Data.DONOR_CAPTURE, "default")
 	Data.MARKET_DIP_MODE = _donor_id("marketdip", Data.DONOR_MARKET_DIP, "default")
 	Data.POP_LIMIT = clampi(int(num("gameplay.pop_limit", 0)), 0, 500)
-	Data.PEACE_TIME = clampf(num("gameplay.peace_time", 0.0), 0.0, 240.0 * 60.0)
+	# [O] DEC-U-MENU-PEACE §1.2 / lib/misc.script:4267-4281: the saved value is
+	# the DONOR INDEX TAG (miscext2.script:2375/2635 carry it raw); arms are
+	# MINUTES and `Result := Result * 60` (:4281) makes SECONDS. Tag 10 /
+	# unknown -> `else Result := 0` (:4278-4279) -> 0.0 s.
+	# [O] PERSISTED AS INDEX (SETTINGS-PERSIST §3.3/§5, EV-SP-06 eventcustomgame.
+	# inc:324-391): what the donor stores is this raw INDEX inside
+	# gProfileUserStruct.custommap.settings.additional.peacetime, written ONLY on
+	# Start (randkey0/1 zeroed); the minutes->seconds chain below is a GEN-TIME
+	# conversion, NEVER the persisted form. Absent from cossacks.ini / editor.ini
+	# / startingsettings.cfg / Options Accept (§1/§2/§4.4). Lobby init index 0
+	# (initmapsettings.inc:21); 10 is reserved/unmapped, 11 = 15 min.
+	# [U]-S1: config.gd has NO peace_time writer (load-only) - saved-game peace
+	# persistence stays UNVERIFIED; never claim it.
+	# [U]-S1/U-SP1 (7-item §6 register, OWNER paired runs): close ONLY on
+	# zero-mismatch x3 — emitted `peacetime` equals the lobby TAG byte-for-byte,
+	# reloaded PEACE_TIME equals U-P2 seconds, no invented key; U-SP1 dumps tag 1
+	# then 11 with randkey0/1=0. Criteria unchanged; no parity claim.
+	var peace_tag := int(num("gameplay.peace_time", 0.0))
+	var peace_minutes := int(Data.DONOR_PEACE_TIME_INDEX_SECONDS.get(peace_tag, 0))
+	Data.PEACE_TIME = clampf(float(peace_minutes) * 60.0, 0.0, 240.0 * 60.0)
 	Data.GAME_SPEED = _donor_id("game_speed", Data.DONOR_GAME_SPEED.keys(), "normal")
 	Data.AUTOSAVE_MODE = _donor_id("autosave", Data.DONOR_AUTOSAVE, "off")
 	Data.ADVISER_MODE = _donor_id("adviserassistant", Data.DONOR_ADVISER, "default")

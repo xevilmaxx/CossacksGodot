@@ -60,8 +60,19 @@ var sea_ambient_vol := 0.0     # donor's smoothed linear sea volume
 var ambient_tick := 0.0
 var last_play: Dictionary = {}
 var music_on := false
+# DEC-U-AUDIO-RNG §4: ONE owned generator, cosmetic clip selection only.
+# Donor clip pick EXISTS (floor(random*(maxind+1)): sound.script:396,446,501;
+# gui.script:2966,2752) on the free-run, process-seeded Delphi G stream — NOT
+# the sim RandomExt (S) stream. This instance is seeded deterministically from
+# the pinned run seed, never reseeded on a sound path, and is INDEPENDENT of
+# sim_rng/rng/gen_rng (no draw in either direction). Zero sim effect.
+var audio_rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
+	# DEC-U-AUDIO-RNG §4: seed the cosmetic clip RNG once, before any play().
+	# Never reseed on a sound path (donor G is free-run after one process seed).
+	# No gameplay stream is read or advanced here.
+	audio_rng.seed = int(Data.RANDOM_SEED)
 	var d := DirAccess.open(DIR)
 	if d != null:
 		for f in d.get_files():
@@ -147,6 +158,8 @@ func _ambient_player(name: String, vol_db: float) -> AudioStreamPlayer:
 # so read them through get_parent() without editing (or owning) main.gd/game.gd.
 # The proximity scan is throttled and touches no game state — it only reads
 # buildings, terrain and camera position.
+# DEC-U-AUDIO-RNG §4: COSMETIC-ONLY — reads game/camera/terrain, writes no sim
+# state; deterministic (clock/counter-gated, no RNG). Do not add draws here.
 func _process(dt: float) -> void:
 	if not music_on or not Data.AUDIO_ENABLED:
 		return
@@ -331,10 +344,16 @@ func play(prefixes: Array, vol_db := 0.0, at := Vector2.INF) -> void:
 	if prefixes.size() == 1 and str(prefixes[0]) == "workwood" and at != Vector2.INF:
 		prefixes = _work_sound_at(at, prefixes)
 	var key: String = str(prefixes[0]) if prefixes.size() > 0 else ""
+	# DEC-U-AUDIO-RNG §4 / determinism audit N4: this 0.09 s wall-clock dedup is
+	# frame-time dependent by construction — PRESERVE (documented Class-N), do
+	# not remove; keep identical across the fixed-seed audio traces.
 	var now := Time.get_ticks_msec() / 1000.0
 	if now - float(last_play.get(key, -10.0)) < 0.09:
 		return
 	last_play[key] = now
+	# DEC-U-AUDIO-RNG: donor pan/volume RNG ABSENT — fixed radius 8000 (global,
+	# sound.script:425) and loudness*1.25 (positional, gui.script:2990). This
+	# distance attenuation is arithmetic/fixed, no draw; keep the fixed law.
 	if at != Vector2.INF:
 		var cam := get_viewport().get_camera_2d() if get_viewport() != null else null
 		if cam != null:
@@ -357,7 +376,11 @@ func play(prefixes: Array, vol_db := 0.0, at := Vector2.INF) -> void:
 	var names := names_for(prefixes)
 	if names.is_empty():
 		return
-	var n: String = names[randi() % names.size()]
+	# DEC-U-AUDIO-RNG: donor clip pick EXISTS — floor(random*(maxind+1)) on the
+	# Delphi G stream (sound.script:396,446,501; gui.script:2966,2752), guarded
+	# by maxind>0 then a non-playing-handle probe. Port substitutes its seeded,
+	# cosmetic-only audio_rng; never route this through rng/sim_rng/gen_rng.
+	var n: String = names[audio_rng.randi() % names.size()]
 	var s := _stream(n)
 	if s == null:
 		return
@@ -365,7 +388,12 @@ func play(prefixes: Array, vol_db := 0.0, at := Vector2.INF) -> void:
 	next_player = (next_player + 1) % players.size()
 	p.stream = s
 	p.volume_db = vol_db + Data.MASTER_VOLUME_DB
-	p.pitch_scale = randf_range(0.92, 1.08)
+	# DEC-U-AUDIO-RNG: donor pitch RNG ABSENT — SetSndSoundRandomOffset(0,...)
+	# (sound.script:476,523), DefRandomOffset=0 in all .snd templates; no pitch/
+	# frequency setter anywhere in donor scripts. The former randf_range(0.92,
+	# 1.08) was a port invention with NO donor counterpart — removed (zero
+	# offset, donor-exact neutral pitch).
+	p.pitch_scale = 1.0
 	p.play()
 
 # Donor truth (units/unit.inc/ontagstates.inc and onaclanimationreachedwork.inc,
@@ -373,7 +401,8 @@ func play(prefixes: Array, vol_db := 0.0, at := Vector2.INF) -> void:
 # Food is SILENT in the donor: sound.script's `workfood` loop and the
 # `_unit_RequestPlaySound(..., gc_snd_ind_workfood)` call are both commented out,
 # and no workfood*.ogg exists. The closest donor work clip (a short tap) is used
-# as an INFERRED stand-in so food is audible and distinct; it is not donor-exact.
+# as an INFERRED [I] stand-in so food is audible and distinct; it is not donor-exact.
+# E-AUDIO-FOOD: fixed-camera workfood clip log, zero mismatch to close.
 func work_sound(res: String) -> Array:
 	match res:
 		"wood", "stump", "bush":
@@ -381,7 +410,7 @@ func work_sound(res: String) -> Array:
 		"stone", "gold", "iron", "coal":
 			return ["workstone"]
 		"food":
-			return ["workconstruct"]
+			return ["workconstruct"] # [I] inferred stand-in; E-AUDIO-FOOD
 	return ["workwood"]
 
 # Find the resource node that emitted a "chop" event and pick its work family.
@@ -406,6 +435,12 @@ func _work_sound_at(at: Vector2, fallback: Array) -> Array:
 	return work_sound(best_type)
 
 # The walking sound of a kind of unit (the original has one per unit type).
+# DEC-U-AUDIO-RNG: the donor WALK pick is deterministic round-robin —
+# gint_soundsteptick mod (maxind+1), incremented each step (gui.script:2757-2758,
+# soundcontrolcounters.inc:23-24) — which UNCONDITIONALLY overrides that path's
+# random line (:2752/:18). No walk-specific RNG is introduced here; the counter's
+# initial phase is [U] and stays uninvented. This resolver only maps sid -> fixed
+# prefix, so the eventual clip pick flows through the cosmetic audio_rng in play().
 func walk_sound(sid: String) -> Array:
 	match sid:
 		"peasant":
@@ -463,6 +498,8 @@ func building_sound(sid: String) -> Array:
 # Pure resolver: deterministic, testable without audio being enabled. The donor
 # registers six peasant variants; selection size/index picks one (wrapping), so
 # repeated identical selections resolve identically.
+# DEC-U-AUDIO-RNG §4: COSMETIC-ONLY — deterministic (count-based modulo, NO RNG);
+# reads no game/entity state and writes no sim state. Do NOT add an RNG here.
 func selection_clip(kind: String, count: int) -> String:
 	var k := kind.to_lower()
 	if SHIP_SELECT_KINDS.has(k):

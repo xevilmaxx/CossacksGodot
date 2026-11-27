@@ -1,0 +1,936 @@
+extends Node3D
+
+# V7-16 — per-tile fog-of-war shading for the 3D variant.
+# Owns ONE file. The 2D path (app/scripts/world.gd) is untouched.
+#
+# PORT SOURCES (read-only this session, cited):
+#   app/scripts/world.gd:27-28       fog_explored / fog_vis PackedByteArray
+#   app/scripts/world.gd:333-338     bind() sizes arrays to MAP_W*MAP_H, fog_img fill
+#   app/scripts/world.gd:2186-2256   _update_fog(): reveal requests, search radius,
+#                                    fog_counts, visible/explored transitions and the
+#                                    0.78 / 0.30 / 0.00 black-alpha ladder (:2250-2255)
+#   app/scripts/world.gd:2258-2272   tile_visible() / tile_explored()
+#   app/scripts/game.gd:2834-2836    reveal_requests + game_reveal(pos, r)
+#   variant3d/scripts/game.gd:2834-2836, :3456-3461  same sim API in the 3D project
+#   variant3d/scripts/world3d.gd:215-224  centred tile-corner -> world quad mapping
+#   variant3d/tests/t_fog3d.gd:37-48,150-184  stub-game shape and structural checks
+#
+# DONOR SOURCES OF TRUTH (read via evidence reports, NOT re-read here):
+#   E19  pvl.smx3.id0.frag:29-43  view-space LINEAR/EXP/EXP2 fog  (RENDER_ARCH_SHADERS.md:150)
+#   E20  def.pvl.sm.vert:38-42    fog depth = view-space distance (RENDER_ARCH_SHADERS.md:151)
+#   camera.cfg:51-64 DynFog* keys; DynFogDepth=False in game mode (:59)
+#        (RENDER_ARCH_CAMERA.md:59-62)
+#   V71_mechanics_inventory.md:166 — fog overlay PARTIAL; donor fog<->explored
+#        engine binding UNVERIFIED; "do not invent a new fog rule".
+#
+# HONEST LIMIT: the donor depth fog above is a *view-distance* effect and is
+# disabled in the gameplay camera (DynFogDepth=False). The 2D fog-of-war arrays
+# are a different mechanic. Their sim state is ported verbatim; the donor's
+# binding of that state to any shader is UNVERIFIED, so no donor fog constant
+# is fabricated here. The alpha ladder below is the port's own state encoding
+# (world.gd:2251-2255), not a claimed donor value.
+#
+# Rendering: ONE transparent ArrayMesh of per-tile quads with vertex-colour
+# alpha, NOT a full-map Sprite2D / ImageTexture (the 2D path at world.gd:337-347).
+
+# ─── DEC-U-FOG-CAMERA-HUD — IMPL-FOG-HUD resolved-law layer ────────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_camera_hud.md.
+# RESOLVED donor law, implemented 1:1 (all [O] with file:line in that report):
+#   §1.1 unit.script:11563-11614 _unit_GetVision — fogreveal -> floor(pproj.dx);
+#        normal -> floor(20 + 4*vision); dead / unbuilt / not-visible -> 0.
+#        cBaseVal=20, cModVal=4 (:11567-11571); 18/3.6/3.75 rows are DEAD.
+#   §1.2 misc.script:5883-5944 — tag-109 fogreveal objects (dmscript.global:1439),
+#        get-or-create by px/pz scan, AddFOWObjects, visible=False,
+#        TProj.px/pz/dx := px/pz/radius; remove destroys the first match.
+#        scenario.script:1851-1864 map_revealZone + FOWBuildFull on enable.
+#   §1.3 player.script:451-478 — FOW off for balloon / victory / editor flag,
+#        own handle + same-team allies share vision, SetFOWDovFunc('_unit_GetVision'),
+#        SetFOWEnable(bFOW); control.script:712-720 set-player call order.
+#   §4.1/§5.1 LOS veto — (not GetFOWEnable) or GetFOWLOSData(x,z)>0 drives
+#        picking (control.script:270-273) and resource tint (gui.script:3478-3496).
+# UNRESOLVED [U] — NOT substituted; each keeps its experiment:
+#   F1-GRID cell size, max/sum combine, LOS occlusion, explored persistence;
+#   F1-MINI explored-vs-visible tint thresholds.
+#   DynFog* (camera.cfg:59-64) is a VISUAL depth fog, DynFogDepth=False in the
+#   gameplay camera — never used as gameplay FOW.
+# NO PARITY CLAIM.
+
+# ─── DEC-U-FOW-KNOBS — donor-settled labels / telemetry ───────────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fow_knobs.md (§§2/4/5/8).
+# STATIC PASS ONLY. Donor binary never executed. NO PARITY CLAIM. Labels below
+# are donor-settled facts; they add NO behaviour and NO port constant.
+#
+# SHIPPED-ACTIVE bindings [O] — each has >=1 shipped lib/*.script writer/call:
+#   Get/SetFOWEnable (sim gate) · Add/ClearFOWPlayers (viewer set,
+#     player.script:460-472) · Add/Del/ClearFOWObjects (misc.script:5927) ·
+#     Get/SetFOWDovFunc · GetFOWLOSData · FOWBuildFull (scenario.script:1861-1862).
+#   K9  GetFOWLOSData(x, z: Float): Integer @ file-off 0x2a7812 (VA 0x6a8412).
+#       Script call sites compare only >0 (control.script:270, gui.script:3479);
+#       Integer domain (boolean-vs-count) stays [U] until E-GRID-e.
+#   Single shipped SetFOWDovFunc site: player.script:475
+#       SetFOWDovFunc('_unit_GetVision'); — the only FOW hook consumer shipped.
+#
+# ENGINE-DEFAULT-ONLY knobs [D] — zero shipped lib/*.script writers, zero FOW
+#   keys in cossacks.ini/editor.ini, zero knob mentions in camera.cfg. Their
+#   live values are engine defaults readable only via the paired Get* entry
+#   points. ALL eight stay [U]; NO default invented; NO port constant added
+#   until E-KNOB-defaults terminates (§7 change list is CONDITIONAL, not applied
+#   by this label pass). Signatures/file-offs re-dumped verbatim (§2):
+#     K1 Get/SetFOWElevation (Float)                       @0x2a750d / 0x2a7539
+#     K2 Get/SetFOWLerpFactor (Float)                      @0x2a7569 / 0x2a7595
+#     K3 Get/SetFOWTextured (Boolean)                      @0x2a75c5 / 0x2a75f1
+#     K4 Get/SetFOWDefDov (Integer)                        @0x2a774e / 0x2a7776
+#     K5 Get/SetFOWColor (r,g,b,a: Float)                  @0x2a77a9 / 0x2a77e1
+#     K6 Get/SetFOWFillMaxNum (Integer)                    @0x2a784d / 0x2a7881
+#     K7 Get/SetFOWDateTime (Boolean)                      @0x2a78ad / 0x2a78d9
+#     K8 Get/SetFOWSmooth (pcfsmooth,pcffactor,aasmooth,
+#                          aafactor)                       @0x2a7929 / 0x2a79a5
+#   E-KNOB-defaults log: call each getter once per run alongside E-GRID-a x3;
+#   terminate only on identical values with zero mismatches. Any flapping
+#   value stays [U] and gets no port constant. Never set a knob to match a look.
+#   K2/K3/K5/K8 are render-edge/tint/smoothing only — they move pixels, never
+#   the script grid; all §6 readouts dump GetFOWLOSData, never pixels.
+#
+# RTTI / renderer types — shipped-active engine internals [D]: byte traces in
+#   the shipped image (P4), but NO script construction site and NO readable
+#   field layout. Layouts and the cell-to-map transform are UNRECOVERABLE [U]:
+#     TLOSInfo @0x361191 · TLOSData @0x3611e9 ·
+#     TFOWLerpInfo @0x361241 · TFOWLerpData @0x36129d ·
+#     TOSWFOWRender @0x3613a9 / 0x3613be ·
+#     XFOWRender @0x3613d6 / 0x361419 / 0x549f0d · FOWRenderT @0x1d9c16.
+#   These are engine-internal records, never port structures. The port
+#   fog_explored / fog_vis / fog_counts arrays (below) are port inventions,
+#   not donor names.
+#
+# camera.cfg DynFog* is VISUAL view-depth fog only (DynFogDepth=False in game
+#   mode, camera.cfg:59-64) — never gameplay FOW (see also header :21-22/:54-55).
+#
+# STILL [U] — fixed-camera transects, zero-mismatch termination, NO value
+#   substituted: E-GRID-a cell size; E-GRID-b combine/FOWFillMaxNum cap/
+#   FOWDefDov fallback; E-GRID-c occlusion/FOWElevation; E-GRID-d persistence;
+#   E-GRID-e K9 Integer domain. No slope, cell size, combine operator, cap or
+#   default is invented here. The provisional metre driver and sticky-explored
+#   mirror remain PORT labels until their arms terminate.
+
+# ─── DEC-U-FOW-TINT — donor-settled labels / [U] telemetry ─────────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fow_tint.md §§2/6/7.
+# STATIC PASS ONLY. Donor binary never executed. NO PARITY CLAIM. Labels below
+# add NO behaviour, NO colour, NO interval unit and NO threshold.
+# [D] FOWColor (K5) signature / [U] value — Get/SetFOWColor(r,g,b,a: Float)
+#     @0x2a77a9 / 0x2a77e1 in the DEC-U-FOW-KNOBS block above is
+#     ENGINE-DEFAULT-ONLY: zero shipped lib/*.script writers (P-B7: 0 matches),
+#     no value in any readable file. It is a render-edge tint/smoothing knob,
+#     NOT a grid law, and CANNOT ground any panel-terrain colour. No port
+#     constant mirrors it here.
+# [U] TELEMETRY — no readable terrain/explored tint RGBA, threshold or blend
+#     factor exists in the donor minimap/HUD path (full text reads P-B1..P-B7:
+#     minimap.cfg / colors.lib / gui.script / misc.script). Native renderer
+#     names (P-A3: TOSWFOWRender / XFOWRender / FOWRenderT) prove an engine FOW
+#     render layer but expose no layout, colour or threshold. This is a
+#     RECORDED [U], not a gap to fill — no value is substituted.
+# [U] PORT APPROXIMATION (DEC-U-FOW-TINT §6.10) — ALPHA_UNEXPLORED/EXPLORED/
+#     VISIBLE 0.78 / 0.30 / 0.00 and the black-RGB shader below are the port's
+#     own state encoding, NOT donor tint values. F1-MINI-TINT-TERRAIN keeps its
+#     fixed-camera, zero-mismatch 3-run × 2-DPI capture; only a terminating
+#     capture may replace the ladder/shader with measured values.
+# [O] camera.cfg:59-64 DynFog* is visual view-depth fog (DynFogDepth=False in
+#     gameplay) — never an explored tint. minimap.cfg:28-723 LOD CriticalColor
+#     Blue=1/0 is a CriticalScale zoom-out fallback, NOT a tint. miscext2.script
+#     :260-272 lens.0 blink (0.2, floor(10/0.2)*10) is the ALARM primitive,
+#     never a unit blink. misc.script:1042-1048 `Interval = 50` has NO stated
+#     unit — a bare integer, recorded [U] beside hud.gd's S2 label.
+# visual_parity_claim = false — unchanged. The six minimap [U] items keep their
+#     zero-mismatch captures; no test weakened and no behaviour changed.
+
+# ─── DEC-U-TEAMS / IMPL-TEAMVIS — viewer-team law + [U] captures ───────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_teams.md §§2/4/5/8/9
+#            + DEC_U_fog_camera_hud.md §1.3 + donor player.script:451-478.
+# STATIC PASS ONLY. Donor binary never executed. NO PARITY CLAIM. No test
+# weakened. This block adds labels/telemetry; the three donor facts below are
+# applied in rebuild_fow_enable() / _fow_viewer_players() with exact cites.
+#
+# DONOR LAW IMPLEMENTED HERE (decomposed from player.script:451-478 [O]):
+#   V1 viewer set = AddFOWPlayers(self) + every i<>viewer with the SAME SIM
+#      TEAM (gPlayer[i].team = team), player.script:464-473; DEC_U_teams §5.1.
+#   V2 slot-0 / bneutral exception: `(plInd<>0) or (not gPlayer[i].bneutral)`,
+#      player.script:470-472; the broad commented form at :470 is NOT taken.
+#      bneutral is a TPlayer boolean (classes.script:3674-3698) written by
+#      trigger action 20 (scenario.script:2225-2249) — NOT a team id.
+#   V3 ANY terminal victorystate of the viewer (`<> none`, win=1 OR lose=2)
+#      disables FOW entirely = full map vision, player.script:454-456;
+#      enum none/win/lose = 0/1/2 (dmscript.global:777-779).
+# LAYERS KEPT DISTINCT (DEC_U_teams §4): layer A = gPlayer[].team, the ONLY
+#   key FOW/win/AI read; layer B = enemyplmask/myplmask + engine friend/enemy
+#   handles, targeting only. FOW must never consult layer B or a lobby team.
+# FFA SHAPE [D] §2 (player.script:2139-2173): lobby [0,0,0,0] -> sim [1,2,3,4];
+#   shared lobby [1,1,2,2] -> sim [1,1,2,2]. This file does NOT synthesise
+#   those dense ids — game.gd/data.gd own SetupTeams (§8 change 1, OUT OF
+#   SCOPE here). It reads the existing game `_sim_team` accessor when present
+#   (§8 change 2) else the port's -1-unique mapping (game.gd:8283-8285), which
+#   yields the same no-share outcome without inventing a team matrix.
+#
+# PORT GAPS (labelled, not filled):
+#   G1 no _player_SetupTeams; post-setup sim teams absent.
+#   G2 no enemyplmask/myplmask or engine friend/enemy handles.
+#   G3 no bneutral TPlayer flag — `nation == "neutral"` fallback is a PORT
+#      APPROXIMATION retained from the landed viewer set.
+#   G4 one global fog grid / interface viewer (slot 0), no per-viewer set.
+#   §5 law 4 requires re-resolve on every team-id merge/split and victorystate
+#   transition; game.gd must call rebuild_fow() there (exact recs in report).
+#
+# [U] CAPTURES below are the report's §9 fixed-seed zero-mismatch criteria.
+# NONE was executed by this worker; no team matrix, tick or vision value is
+# substituted. Owner-authorised donor runs only.
+
+# ─── DEC-U-FOG-TERRITORY — donor-settled labels / [U] telemetry ─────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_territory.md §§1-7.
+# STATIC PASS ONLY. Donor binary never executed. NO PARITY CLAIM. Labels/telemetry
+# below add NO behaviour, NO FOW write, NO repaint rule, NO rect, NO colour and NO
+# threshold. Landed layers (FOG-HUD / FOG-PATCHES / MINIMAP-TAIL / FOW-KNOBS /
+# FOW-TINT / TEAMVIS) are untouched — this block only cites them.
+#
+# [O] CAPTURE RE-KEYS ScanGrid membership but issues ZERO FOW writes (P6 census):
+#     _misc_ChangePlayer (miscext.script:894-959) strips counters under the loser
+#     (:914), flips TObj.pl (:915-917), adds counters under the winner (:919) and
+#     queues gGuiUpdateHighlights.Add (:920). ScanGrid re-key is
+#     _unit_ScanGridRemoveUnit (unit.script:3974 -> :3157-3167, OLD pl) and
+#     _unit_ScanGridAddUnit (unit.script:3856 -> :3135-3153, NEW pl).
+#     EV-FT-ZERO — each FOW writer resolves to ONE non-capture site:
+#       FOWBuildFull      -> scenario.script:1862 only
+#       SetFOWEnable      -> player.script:477 only
+#       ClearFOWPlayers   -> player.script:460 only (via control.script:712-720)
+#       AddFOWPlayers     -> player.script:463,472 only
+#       AddFOWObjects     -> misc.script:5927 only
+#       SetFOWDovFunc     -> player.script:475 only
+#     The capture path calls NONE. The next scheduled _update_fog() re-poll
+#     (movement / `_fog_tick % 6` / reveal gate) IS the donor recompute. Never add
+#     rebuild_fow_full() to any capture/transfer function.
+# [O+I] Territory `.owner` repaint and FOW-cell recompute are ENGINE-LAZY downstream
+#     of the Add/Remove calls: the only script `.owner` write is the init
+#     `gScanGrid[i,j].owner := -1` (serial.script:277); the capture predicate only
+#     READS it (miscext.script:970-971,986; unit.script:11624). Add/Remove carry
+#     (material, pl), so the repaint is engine-side [I-flagged]. No cell set, no
+#     repaint radius and no fog-texture invalidation is recoverable or invented.
+# [O-absence -> D] Explored state is RETAINED at script level on capture: no clear
+#     on miscext.script:894-959; FOWBuildFull is absent; ClearFOWPlayers fires only
+#     on player switch (player.script:460 via control.script:714-716); serial
+#     carries scangrid owner/dist with no explored payload (serial.script:2549-2578).
+#     The engine channel (sticky vs visible-only, per-player vs global) stays [U]
+#     (E-FOGT-b). Never wire an explored clear to the capture flip itself.
+# [O] Highlight/keycolor/minimap are exact name-swap laws on capture:
+#     winner color recursive SetGameObjectUniform4f(gKeyColor[colorInd], ...)
+#     (misc.script:5067-5083 via unit.script:3860) BEFORE the highlight queue
+#     (miscext.script:920 -> gui.script:3383-3470 friend/ally/enemy table, walls
+#     invisible); minimap blip _misc_UnitUpdateMiniMapPrimitive (gui.script:3472,
+#     misc.script:1137-1172) swaps only `.<color>` (and `.sel` if IO-selection is
+#     dropped per unit.script:3980-3998); position/size class is static.
+#     No EffectHighlight argument beyond the donor literals (gui.script:3372-3377):
+#     selection.friend/building/ship, highlight.friend/ally/enemy. No material or
+#     highlight applier exists in this file, so no arg is invented here.
+# DO NOT TOUCH (landed law, not this pass): DONOR_VISION_BASE/PER_POINT coefficients,
+#     rebuild_fow_enable/_fow_viewer_players team law, fogreveal create/remove +
+#     rebuild_fow_full (scenario.script:1862 counterpart), los_at/is_visible_at
+#     `>0` predicate (control.script:270, gui.script:3479), AIData/Topology mirrors.
+# STILL [U] — four fixed-camera + minimap-transect captures below keep their
+#     zero-mismatch criteria; NONE was executed by this worker and NO repaint
+#     rule / colour / rect is substituted. Provisional `_vision_radius_m` and the
+#     `fog_counts > 0` combine stay labelled PORT law until E-FOGT-a terminates.
+
+const TEAMVIS_CAPTURES: Dictionary = {
+	"U-T1": {"name": "FFA expansion 4-slot",
+		"input": "lobby [0,0,0,0] -> sim [1,2,3,4]; seed S; eliminate 3->2->1 on fixed ticks",
+		"zero": "No win stamp while >=2 live non-leavers; final survivor victorystate_int=1, others 2; lose_tick/win_tick identical across 3 runs; win_tick >= last lose_tick",
+		"cite": "DEC_U_teams.md:226 (§9 U-T1) + :82-95 (§2)"},
+	"U-T2": {"name": "2v2 shared-team win",
+		"input": "lobby [1,1,2,2] -> sim [1,1,2,2]; seed S; wipe team B on fixed ticks",
+		"zero": "BOTH team-A slots stamp win on the SAME tick; ticks identical across 3 runs; no win before the last B-slot loss",
+		"cite": "DEC_U_teams.md:227 (§9 U-T2) + :95 (§2)"},
+	"U-T3": {"name": "2v1 menu shape [0,0,1]",
+		"input": "3-slot lobby [0,0,1]; seed S; kill slot 2 then slot 1",
+		"zero": "No win after slot-2 death (two distinct live teams); slot 0 alone wins after slot-1 death; any win with 2 live teams = fail",
+		"cite": "DEC_U_teams.md:228 (§9 U-T3) + :96 (§2)"},
+	"U-T4": {"name": "Leaver exclusion",
+		"input": "2v2 seed S; _surrender team-A slot 0 with units alive",
+		"zero": "Leaver keeps lose, never flips to win; surviving team-B slots stamp win same tick; identical across 3 runs",
+		"cite": "DEC_U_teams.md:229 (§9 U-T4) + miscext2.script:3796-3811"},
+	"U-T5": {"name": "Trigger set-enemy does NOT split win team",
+		"input": "2v2 seed S + trigger engine; action 18 between team-A slots; wipe team B",
+		"zero": "Both A slots still win same tick (team ids unchanged) while mutually hostile at targeting layer; collapse = fail",
+		"cite": "DEC_U_teams.md:230 (§9 U-T5) + scenario.script:2175-2197"},
+	"U-T6": {"name": "Trigger set-ally merges win team",
+		"input": "FFA 3-slot seed S; action 19 between slots 0,1; wipe slot 2",
+		"zero": "Slots 0+1 win same tick (merged team1); without trigger only the survivor wins (U-T1 control)",
+		"cite": "DEC_U_teams.md:231 (§9 U-T6) + scenario.script:2202"},
+	"U-T7": {"name": "Shared vision follows sim team",
+		"input": "2v2 seed S, FOW on; ally scout vs FFA foe scout vs bneutral mate",
+		"zero": "Reveal bitmaps equal across 3 runs; FFA leak or neutral leak = fail; port FOW stays stubbed until this passes",
+		"cite": "DEC_U_teams.md:232 (§9 U-T7) + player.script:453-478"},
+	"U-T8": {"name": "bneutral + slot-0 exception",
+		"input": "Mission-shape fixture: slot 0 + neutral mate",
+		"zero": "Slot 0 gains no vision from the neutral mate; a non-zero mate does",
+		"cite": "DEC_U_teams.md:233 (§9 U-T8) + player.script:470-472"},
+}
+
+# DEC-U-FOG-TERRITORY §5 — four fixed-camera + minimap-transect [U] captures.
+# Labels/telemetry only: NONE executed by this worker; each keeps its exact
+# zero-mismatch termination; no rule/cell set/rect/colour is asserted until its
+# three identical-seed runs match. No parity claim.
+const FOGTERR_CAPTURES: Dictionary = {
+	"E-FOGT-a": {"name": "Which FOW + territory cells recompute on capture",
+		"input": "seed S; lone viewer + victim barracks; W-E GetFOWLOSData transect (1.0-unit steps, ±(res+8)) + gScanGrid.owner 3x3 neighbourhood, tick-before -> tick-after -> +3 ticks, plus one FOWBuildFull+settle control",
+		"zero": "3 runs identical; report first tick LOS transect reflects new attribution and first tick .owner neighbourhood does; any script-tick-synchronous rect must show zero off-rect cells, else verdict = lazy engine recompute and port invalidates no rect on capture",
+		"cite": "DEC_U_fog_territory.md:68 (§5 E-FOGT-a) + :34-40 (§1)"},
+	"E-FOGT-b": {"name": "Explored retention for the new owner",
+		"input": "seed S; viewer A reveals far probe cell, (i) capture the revealing unit's post to player B and dump probe as A and as B via _control_SetPlayer round-trip (log both legs), (ii) walk winner's viewers away + FOWBuildFull, dump probe, (iii) save+reload, dump probe",
+		"zero": "3 runs identical; verdict must state retained-vs-cleared per leg with zero flapping cells, else stays [U]; never wire a clear to the capture flip",
+		"cite": "DEC_U_fog_territory.md:69 (§5 E-FOGT-b) + :51-53 (§3)"},
+	"E-FOGT-c": {"name": "Combine/occlusion after the flip",
+		"input": "seed S; two-viewer overlap with victim as one contributor pre-capture; pair-transect + perpendicular bisector before/after + FOWBuildFull+settle; then interpose hill/forest/wall between captured contributor and far transect half (control: same seed, no interposition)",
+		"zero": "3 runs identical; union-shape match for the pair AND cell-identical control-vs-interposition (pure-disc) or a fitted blocker rule predicting a second rotated transect with zero mismatches",
+		"cite": "DEC_U_fog_territory.md:70 (§5 E-FOGT-c) + :49 (§2)"},
+	"E-FOGT-d": {"name": "Highlight/keycolor/minimap repaint on capture",
+		"input": "seed S; fixed-camera 3-run capture of a building + a unit; per tick dump EffectHighlight mat/visibility args, gKeyColor uniform index (object + one child), minimap primitive pl2x2|pl3x3.<color>[.sel] name + position, gSelectedObjects/ctrlgroup membership, plus a fixed minimap-viewport transect (donor blip row across the victim's cell, 1-px steps) before/after",
+		"zero": "3 runs identical; assert name-swap .<oldColor>->.<newColor> with static position, highlight friend->enemy flip on the next GUI tick, selection dropped iff IO-party; any pixel/tick deviation fails the item",
+		"cite": "DEC_U_fog_territory.md:71 (§5 E-FOGT-d) + :55-60 (§4)"},
+}
+
+const Data = preload("res://scripts/data.gd")
+
+# Verbatim from app/scripts/world.gd:2251-2255 (port state encoding).
+# [U] PORT APPROXIMATION (DEC-U-FOW-TINT §6.10, F1-MINI-TINT-TERRAIN): no donor
+# RGBA / threshold / blend is readable; no FOWColor or CriticalColor value is
+# used here. Do not re-label these port numbers as donor facts.
+const ALPHA_UNEXPLORED: float = 0.78
+const ALPHA_EXPLORED: float = 0.30
+const ALPHA_VISIBLE: float = 0.0
+# PORT-SIDE, no donor source: lift the overlay a few cm above the sampled
+# terrain height so it does not z-fight with the top quads.
+const FOG_Y_OFFSET: float = 0.03
+# Donor _unit_GetVision coefficients — unit.script:11567-11571 [O] (resolved).
+const DONOR_VISION_BASE: float = 20.0
+const DONOR_VISION_PER_POINT: float = 4.0
+# gc_properties_stringtag_fogreveal = 109 — dmscript.global:1439 [O].
+const DONOR_FOGREVEAL_TAG: int = 109
+
+var game = null
+# Public: HUD minimap reads these (contract V73_ATOMIC_CONTRACT.md:15,24).
+var fog_explored: PackedByteArray = PackedByteArray()
+var fog_vis: PackedByteArray = PackedByteArray()
+var fog_counts: PackedInt32Array = PackedInt32Array()
+
+var _map_w: int = 0
+var _map_h: int = 0
+var _tile_m: float = 2.0
+var _built: bool = false
+var _fog_timer: float = 0.0
+var _fog_tick: int = 0
+var _fog_last_pos: Dictionary = {}
+var _fog_unit_count: int = 0
+var _tile_alpha: PackedFloat32Array = PackedFloat32Array()
+# DEC-U §1.2 tag-109 fogreveal objects: [{px, pz, dx, tag}] in world metres.
+var fog_reveals: Array = []
+# DEC-U §1.3 mirrors of SetFOWEnable and the sharing viewer-player set.
+var _fow_enabled: bool = false
+var _fow_viewers: Array = []
+
+var _overlay: MeshInstance3D = null
+var _overlay_mesh: ArrayMesh = null
+var _fog_vertices: PackedVector3Array = PackedVector3Array()
+var _fog_uvs: PackedVector2Array = PackedVector2Array()
+var _fog_indices: PackedInt32Array = PackedInt32Array()
+var _fog_colors: PackedColorArray = PackedColorArray()
+
+
+func bind(g) -> void:
+	game = g
+	if game == null:
+		return
+	_map_w = int(game.get("MAP_W"))
+	_map_h = int(game.get("MAP_H"))
+	if _map_w <= 0 or _map_h <= 0:
+		push_error("world3d_fog: game has no usable MAP_W/MAP_H")
+		return
+	_tile_m = float(Data.TILE_M)
+	var n: int = _map_w * _map_h
+
+	# Mirror game-owned arrays when present and correctly sized (the stub game
+	# in t_fog3d.gd:40-48 pre-fills them); otherwise start clean like 2D bind()
+	# at world.gd:333-335.
+	var src_exp = game.get("fog_explored")
+	if src_exp is PackedByteArray and (src_exp as PackedByteArray).size() == n:
+		fog_explored = (src_exp as PackedByteArray).duplicate()
+	else:
+		fog_explored = PackedByteArray()
+		fog_explored.resize(n)
+	var src_vis = game.get("fog_vis")
+	if src_vis is PackedByteArray and (src_vis as PackedByteArray).size() == n:
+		fog_vis = (src_vis as PackedByteArray).duplicate()
+	else:
+		fog_vis = PackedByteArray()
+		fog_vis.resize(n)
+	fog_counts = PackedInt32Array()
+	fog_counts.resize(n)
+	_tile_alpha = PackedFloat32Array()
+	_tile_alpha.resize(n)
+
+	_fog_timer = float(Data.FOG_INTERVAL)
+	_fog_tick = 0
+	_fog_last_pos.clear()
+	_fog_unit_count = 0
+	# DEC-U §1.3 — _control_SetPlayer order: UpdateFOW before any pick/HUD draw
+	# (control.script:712-720). Rebuilt again at each _update_fog() tick so live
+	# balloon/victory/team changes are honoured without another bind().
+	rebuild_fow_enable()
+	_built = _build_overlay()
+	if not _built:
+		return
+	for i in n:
+		_tile_alpha[i] = _alpha_for(i)
+		_set_tile_color(i, _tile_alpha[i])
+	_refresh_mesh()
+	_update_fog()
+
+
+func sync(dt: float) -> void:
+	if game == null or not _built:
+		return
+	# 2D gates the recount on FOG_INTERVAL (world.gd:833-836, :336). dt is
+	# sim-agnostic; this accumulator keeps the same cadence.
+	_fog_timer -= dt
+	if _fog_timer > 0.0:
+		return
+	_fog_timer = float(Data.FOG_INTERVAL)
+	_update_fog()
+
+
+func _alpha_for(i: int) -> float:
+	# [U] PORT APPROXIMATION (DEC-U-FOW-TINT §6.10): ladder, not a donor tint law.
+	if fog_vis[i] == 1:
+		return ALPHA_VISIBLE
+	if fog_explored[i] == 1:
+		return ALPHA_EXPLORED
+	return ALPHA_UNEXPLORED
+
+
+func _set_tile_color(i: int, a: float) -> void:
+	var base: int = i * 4
+	if base + 3 >= _fog_colors.size():
+		return
+	var c := Color(0.0, 0.0, 0.0, a)
+	_fog_colors[base] = c
+	_fog_colors[base + 1] = c
+	_fog_colors[base + 2] = c
+	_fog_colors[base + 3] = c
+
+
+func _make_fog_material() -> ShaderMaterial:
+	# Spatial port of the 2D fog overlay: multiply black by per-tile alpha.
+	# No donor shader is claimed: donor E19 depth fog is a different effect and
+	# is off in the gameplay camera (camera.cfg:59).
+	var sh := Shader.new()
+	sh.code = """
+shader_type spatial;
+render_mode blend_mix, unshaded, cull_disabled, depth_draw_never;
+// Per-tile fog-of-war tint. COLOR.a is the port's 0.78 / 0.30 / 0.00 ladder
+// (app/scripts/world.gd:2251-2255); COLOR.rgb is black. Deliberately NOT a
+// port of donor view-depth fog (E19/E20) - that binding is UNVERIFIED.
+// [U] PORT APPROXIMATION (DEC-U-FOW-TINT §6.10, F1-MINI-TINT-TERRAIN): these
+// are port numbers, not a donor tint — no FOWColor / CriticalColor value here.
+void fragment() {
+	ALBEDO = COLOR.rgb;
+	ALPHA = COLOR.a;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	return mat
+
+
+func _build_overlay() -> bool:
+	_fog_vertices = PackedVector3Array()
+	_fog_uvs = PackedVector2Array()
+	_fog_indices = PackedInt32Array()
+	_fog_colors = PackedColorArray()
+	var n: int = _map_w * _map_h
+
+	# game.height is optional: the t_fog3d.gd stub has no such field. Use a
+	# flat y=0 overlay there; in a real game sample the generated height grid
+	# (variant3d/scripts/game.gd:44, :364). Alignment with world3d_terrain.gd's
+	# dump-derived heights is an OPEN QUESTION (see report).
+	var hs = game.get("height")
+	var h: PackedFloat32Array = PackedFloat32Array()
+	if hs is PackedFloat32Array and (hs as PackedFloat32Array).size() == n:
+		h = hs
+
+	for ty in range(_map_h):
+		for tx in range(_map_w):
+			var i: int = ty * _map_w + tx
+			var wy: float = (h[i] if h.size() == n else 0.0) + FOG_Y_OFFSET
+			# Centred tile-corner mapping mirrors variant3d/scripts/world3d.gd:215-220.
+			var wx: float = (float(tx) - float(_map_w) * 0.5) * _tile_m
+			var wz: float = (float(ty) - float(_map_h) * 0.5) * _tile_m
+			var base: int = _fog_vertices.size()
+			_fog_vertices.append(Vector3(wx, wy, wz))
+			_fog_vertices.append(Vector3(wx + _tile_m, wy, wz))
+			_fog_vertices.append(Vector3(wx + _tile_m, wy, wz + _tile_m))
+			_fog_vertices.append(Vector3(wx, wy, wz + _tile_m))
+			_fog_uvs.append(Vector2(0.0, 0.0))
+			_fog_uvs.append(Vector2(1.0, 0.0))
+			_fog_uvs.append(Vector2(1.0, 1.0))
+			_fog_uvs.append(Vector2(0.0, 1.0))
+			_fog_indices.append_array([base, base + 2, base + 1, base, base + 3, base + 2])
+			var a: float = _alpha_for(i)
+			for k in 4:
+				_fog_colors.append(Color(0.0, 0.0, 0.0, a))
+
+	_overlay_mesh = ArrayMesh.new()
+	_overlay = MeshInstance3D.new()
+	_overlay.name = "FogOverlay"
+	_overlay.mesh = _overlay_mesh
+	_overlay.material_override = _make_fog_material()
+	# 2D draws fog above units at world.gd:346 (z_index = 10). In 3D the
+	# equivalent transparent-sort bias is VisualInstance3D.sorting_offset.
+	_overlay.sorting_offset = 10.0
+	_overlay.visible = bool(Data.FOG_OF_WAR)
+	add_child(_overlay)
+	return true
+
+
+func _refresh_mesh() -> void:
+	if _overlay_mesh == null or _fog_vertices.is_empty():
+		return
+	_overlay_mesh.clear_surfaces()
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = _fog_vertices
+	arrays[Mesh.ARRAY_TEX_UV] = _fog_uvs
+	arrays[Mesh.ARRAY_COLOR] = _fog_colors
+	arrays[Mesh.ARRAY_INDEX] = _fog_indices
+	_overlay_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
+
+func _update_fog() -> void:
+	if game == null or not _built:
+		return
+	# DEC-U §1.3 — SetFOWEnable mirror, not the raw Data flag: balloon /
+	# victory / editor-flag gates switch FOW off even when the option is on.
+	rebuild_fow_enable()
+	if not _fow_enabled:
+		return
+	if not game.has_method("tile_of"):
+		return
+
+	# Cheap change gate, structure verbatim from world.gd:2191-2211. Viewer set
+	# is now the team-shared list from _player_UpdateFOW, not a hardcoded player 0.
+	_fog_tick += 1
+	var forced: bool = _fog_tick % 6 == 0
+	var reqs = game.get("reveal_requests")
+	var has_reveals: bool = (reqs is Array and not (reqs as Array).is_empty()) or not fog_reveals.is_empty()
+	var any_moved: bool = forced or has_reveals
+	if not any_moved:
+		var ents = game.get("entities")
+		if not (ents is Array):
+			return
+		var live_n: int = 0
+		for e in ents:
+			if not _is_fow_viewer_entity(e):
+				continue
+			live_n += 1
+			var lp: Vector2 = _fog_last_pos.get(int(e.id), Vector2.INF)
+			if lp == Vector2.INF or lp.distance_squared_to(e.pos) > 0.25:
+				any_moved = true
+				break
+		if not any_moved and live_n != _fog_unit_count:
+			any_moved = true
+	if not any_moved:
+		return
+	_fog_last_pos.clear()
+	var ents2 = game.get("entities")
+	if ents2 is Array:
+		for e in ents2:
+			if not _is_fow_viewer_entity(e):
+				continue
+			_fog_last_pos[int(e.id)] = e.pos
+	_fog_unit_count = _fog_last_pos.size()
+
+	# Explicit reveal requests from sim abilities — game.gd:2834-2836,
+	# world.gd:2218-2227. game_reveal(Vector2(MAP_W,MAP_H), 1e9) is the
+	# "reveal whole map" call at game.gd:3461 and is handled by this same loop.
+	# DEC-U §1.2 — tag-109 fogreveal objects are the scenario map_revealZone path.
+	# TProj.dx was set to `radius` at creation; _unit_GetVision reads floor(dx).
+	# The resolved floor() is applied here at the reveal site, never an estimate.
+	var reveal_jobs: Array = []
+	if reqs is Array:
+		for rq in (reqs as Array):
+			reveal_jobs.append({"c": Vector2(rq.pos), "r": float(rq.r)})
+		(reqs as Array).clear()
+	for rv in fog_reveals:
+		reveal_jobs.append({
+			"c": Vector2(float(rv.get("px", 0.0)), float(rv.get("pz", 0.0))),
+			"r": floor(float(rv.get("dx", 0.0))),
+		})
+	for job in reveal_jobs:
+		var c: Vector2 = job.c
+		var rr: float = job.r
+		var t0: Vector2i = game.tile_of(c - Vector2(rr, rr))
+		var t1: Vector2i = game.tile_of(c + Vector2(rr, rr))
+		for ty in range(maxi(0, t0.y), mini(_map_h, t1.y + 1)):
+			for tx in range(maxi(0, t0.x), mini(_map_w, t1.x + 1)):
+				# world.gd:2225 uses tx*2+1 (TILE_M=2 tile centre).
+				var centre := Vector2((float(tx) + 0.5) * _tile_m, (float(ty) + 0.5) * _tile_m)
+				if centre.distance_to(c) <= rr:
+					fog_explored[ty * _map_w + tx] = 1
+
+	# DEC-U-FOG-TERRITORY §6.1 [O] EV-FT-ZERO — this is the capture-path handoff,
+	# NOT an FOW invalidation: donor capture (miscext.script:894-959) re-keys
+	# ScanGrid membership (unit.script:3157-3167 / :3135-3153) but issues ZERO
+	# FOW writes (FOWBuildFull -> scenario.script:1862 only; SetFOWEnable ->
+	# player.script:477 only; ClearFOWPlayers -> player.script:460 only).
+	# The next scheduled _update_fog() re-poll (movement / `_fog_tick % 6` /
+	# reveal gate) IS the donor recompute. Never add rebuild_fow_full() here or
+	# to any capture/transfer function. `fog_counts > 0` combine stays PORT law
+	# until E-FOGT-a terminates — no cell/rect/color is invented.
+	fog_counts.fill(0)
+	# DEC-U §1.1 — every eligible viewer contributes floor(20+4*vision).
+	# [U] F1-GRID: donor `res` unit (cell vs metre) is engine-defined and absent
+	# from readable text; _vision_radius_m() is a labelled grid driver, not a
+	# donor claim. Cell size, combine rule and occlusion stay unresolved.
+	var ents3 = game.get("entities")
+	if ents3 is Array:
+		for e in ents3:
+			if not _is_fow_viewer_entity(e):
+				continue
+			var res: int = donor_unit_vision(e)
+			if res <= 0:
+				continue
+			var r: float = _vision_radius_m(res)
+			var t0: Vector2i = game.tile_of(e.pos - Vector2(r, r))
+			var t1: Vector2i = game.tile_of(e.pos + Vector2(r, r))
+			for y in range(maxi(0, t0.y), mini(_map_h, t1.y + 1)):
+				for x in range(maxi(0, t0.x), mini(_map_w, t1.x + 1)):
+					var c := Vector2((float(x) + 0.5) * _tile_m, (float(y) + 0.5) * _tile_m)
+					if c.distance_to(e.pos) <= r:
+						fog_counts[y * _map_w + x] += 1
+	# fogreveal objects feed the same visible grid (AddFOWObjects in donor).
+	for rv2 in fog_reveals:
+		var rr2: float = floor(float(rv2.get("dx", 0.0)))
+		var pc := Vector2(float(rv2.get("px", 0.0)), float(rv2.get("pz", 0.0)))
+		var q0: Vector2i = game.tile_of(pc - Vector2(rr2, rr2))
+		var q1: Vector2i = game.tile_of(pc + Vector2(rr2, rr2))
+		for y2 in range(maxi(0, q0.y), mini(_map_h, q1.y + 1)):
+			for x2 in range(maxi(0, q0.x), mini(_map_w, q1.x + 1)):
+				var cc := Vector2((float(x2) + 0.5) * _tile_m, (float(y2) + 0.5) * _tile_m)
+				if cc.distance_to(pc) <= rr2:
+					fog_counts[y2 * _map_w + x2] += 1
+
+	# DEC-U-FOG-TERRITORY §6.2 [O-absence -> D] — sticky explored commit: NEVER
+	# clear on an owner change. Donor has no clear on miscext.script:894-959,
+	# FOWBuildFull is absent, and the only reset is ClearFOWPlayers on player
+	# switch (player.script:460 via control.script:714-716); serial carries no
+	# explored payload (serial.script:2549-2578). If E-FOGT-b proves a clear,
+	# wire it to player-switch / victory / save-load legs only — never the flip.
+	var changed: bool = false
+	for i in _map_w * _map_h:
+		var v: int = 1 if fog_counts[i] > 0 else 0
+		if v == 1:
+			fog_explored[i] = 1
+		if fog_vis[i] == v:
+			continue
+		fog_vis[i] = v
+		var a: float = _alpha_for(i)
+		_tile_alpha[i] = a
+		_set_tile_color(i, a)
+		changed = true
+	if changed:
+		if _overlay != null:
+			_overlay.visible = _fow_enabled
+		_refresh_mesh()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEC-U-FOG-CAMERA-HUD §§1.1-1.3 — resolved donor laws.
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _player(pi: int) -> Dictionary:
+	if game == null or not is_instance_valid(game):
+		return {}
+	var ps: Variant = game.get("players")
+	if not (ps is Array) or pi < 0 or pi >= (ps as Array).size():
+		return {}
+	var p: Variant = (ps as Array)[pi]
+	return p if p is Dictionary else {}
+
+
+func _player_count() -> int:
+	if game == null or not is_instance_valid(game):
+		return 0
+	var ps: Variant = game.get("players")
+	return (ps as Array).size() if ps is Array else 0
+
+
+func rebuild_fow_enable() -> void:
+	# _player_UpdateFOW (player.script:451-478), verbatim gate order:
+	# bFOW := True; False if balloon / mapsetting-balloon-with / victory /
+	# not editor_fogofwar; then own handle + same-team allies + DovFunc + Enable.
+	var on: bool = bool(Data.FOG_OF_WAR)
+	if on and str(Data.BALLOON_MODE) == "balloons":
+		on = false  # gc_mapsettings_balloon_with (player.script:454-457)
+	if on:
+		var pl0 := _player(0)
+		if bool(pl0.get("balloon", false)):
+			on = false  # gPlayer[pl].bballoon (player.script:454-456)
+		# V3 [O] player.script:454-456 + dmscript.global:777-779: ANY terminal
+		# victorystate of the viewer (win=1 OR lose=2, `<> none`) = full vision.
+		# The port carries the donor enum mirror `victorystate_int` beside the
+		# display string (game.gd:494); check BOTH, never the string alone.
+		if _is_terminal_victory(pl0):
+			on = false
+		if game != null and game.get("editor_fogofwar") == false:
+			on = false  # gbool_editor_fogofwar (dmscript.global:2120)
+	_fow_enabled = on
+	_fow_viewers = _fow_viewer_players()
+	if _overlay != null:
+		_overlay.visible = on
+
+
+func _is_terminal_victory(p: Dictionary) -> bool:
+	# V3 [O] player.script:454-456 (`victorystate <> none`) + enum
+	# none=0/win=1/lose=2 [O] dmscript.global:777-779. The port keeps the
+	# display string (game.gd:8334/8359) AND the donor int mirror
+	# `victorystate_int` (game.gd:494); either terminal value disables FOW.
+	var vi: int = int(p.get("victorystate_int", 0))
+	if vi != 0:
+		return true
+	var vs: String = str(p.get("victorystate", "none")).to_lower()
+	return vs != "none" and vs != ""
+
+
+func _is_bneutral(p: Dictionary) -> bool:
+	# V2 [O] player.script:470-472 reads gPlayer[i].bneutral — a TPlayer
+	# boolean (classes.script:3674-3698) set by trigger action 20
+	# (scenario.script:2225-2249), a LAYER-B flag, never a team id.
+	# PORT APPROXIMATION (landed viewer set): the port has no bneutral field;
+	# `nation == "neutral"` is a null-safe fallback, NOT a donor value.
+	if p.has("bneutral"):
+		return bool(p.get("bneutral", false))
+	return str(p.get("nation", "")).to_lower() == "neutral"
+
+
+func _sim_team_key(pi: int) -> int:
+	# V1 [O] player.script:464-473 shares by SIM team gPlayer[i].team, i.e.
+	# post-SetupTeams ids (DEC_U_teams §2/§5): FFA [0,0,0,0] -> [1,2,3,4],
+	# shared [1,1,2,2] -> [1,1,2,2]. Those ids are built in game.gd (§8
+	# change 1, OUT OF SCOPE here); no dense id is synthesised in this file.
+	# Port keeps `team=0` as a REAL shared id (game.gd:8282) — a port mapping
+	# vs the donor's pre-setup sentinel (player.script:110-117), not a law.
+	# §8 change 2 keeps game `_sim_team` as the single layer-A accessor for
+	# win/FOW/AI: use it when present, else the same port -1-unique mapping
+	# (game.gd:8283-8285). Both give "each FFA slot its own team, no sharing".
+	if game == null or pi < 0 or pi >= _player_count():
+		return -1
+	if game.has_method("_sim_team"):
+		return int(game.call("_sim_team", pi))
+	var t: int = int(_player(pi).get("team", -1))
+	return t if t >= 0 else -(pi + 2)
+
+
+func _fow_viewer_players() -> Array:
+	# DEC_U_teams §5 [O] player.script:451-478 / :464-473 — ClearFOWPlayers,
+	# AddFOWPlayers(self), then every i<>plInd with gPlayer[i].team = team
+	# (the VIEWER's sim team) and `(plInd<>0) or (not gPlayer[i].bneutral)`.
+	# The port has ONE global fog grid, i.e. interface viewer plInd=0; keep the
+	# full two-branch condition so a per-viewer set needs no law change.
+	# Layer A only — enemyplmask / engine handles (DEC_U_teams §4) are NEVER
+	# consulted for vision sharing.
+	var out: Array = []
+	var viewer: int = 0
+	var viewer_team: int = _sim_team_key(viewer)
+	for i in _player_count():
+		var p := _player(i)
+		# PORT APPROXIMATION (landed): terminal mates are skipped from the
+		# viewer set. Donor adds them unconditionally but their units are gone;
+		# the viewer's own terminal state already disables FOW at V3 above.
+		if _is_terminal_victory(p):
+			continue
+		if i == viewer:
+			out.append(i)  # AddFOWPlayers(self)
+			continue
+		if _sim_team_key(i) != viewer_team:
+			continue
+		# V2 slot-0 / bneutral exception (player.script:470-472). The broad
+		# commented form at :470 is NOT taken. For viewer 0 a bneutral mate is
+		# excluded; for any other viewer it would be included.
+		if viewer != 0 or not _is_bneutral(p):
+			out.append(i)
+	return out
+
+
+func team_vision_telemetry() -> Dictionary:
+	# Read-only labels + the report's [U] fixed-seed captures. NO behaviour,
+	# NO port constant, NO parity claim.
+	var rows: Array = []
+	for pi in _fow_viewers:
+		var p := _player(int(pi))
+		rows.append({"player": int(pi), "sim_team_key": _sim_team_key(int(pi)),
+			"bneutral_approx": _is_bneutral(p), "terminal": _is_terminal_victory(p)})
+	return {
+		"cite": "DEC_U_teams.md §§2/4/5/8/9; player.script:451-478; dmscript.global:777-779",
+		"viewer_slot": 0,
+		"fow_enabled": _fow_enabled,
+		"fow_viewers": _fow_viewers.duplicate(),
+		"viewer_team_keys": rows,
+		"sim_team_source": "game._sim_team() when present, else port -1-unique mapping (game.gd:8283-8285)",
+		"layer_A": "gPlayer[].team — FOW / win / AI key",
+		"layer_B": "enemyplmask/myplmask + engine handles — targeting only, NOT read by FOW",
+		"gaps": ["G1_no_SetupTeams", "G2_no_enemy_mask", "G3_no_bneutral_flag", "G4_single_global_viewer"],
+		"captures": TEAMVIS_CAPTURES,
+		"parity_claim": false,
+	}
+
+
+func fog_territory_telemetry() -> Dictionary:
+	# DEC-U-FOG-TERRITORY §§1-7 — read-only labels + the four [U] captures. NO
+	# behaviour, NO FOW write, NO repaint rule, NO port constant, NO parity claim.
+	return {
+		"cite": "DEC_U_fog_territory.md §§1-7; miscext.script:894-959; unit.script:3135-3167; serial.script:277",
+		"capture_path": "re-keys ScanGrid membership only; ZERO FOW writes on capture (P6 census)",
+		"fow_writers": {
+			"FOWBuildFull": "scenario.script:1862 only",
+			"SetFOWEnable": "player.script:477 only",
+			"ClearFOWPlayers": "player.script:460 only (player switch via control.script:712-720)",
+			"AddFOWPlayers": "player.script:463,472 only",
+			"AddFOWObjects": "misc.script:5927 only",
+			"SetFOWDovFunc": "player.script:475 only",
+		},
+		"recompute": "engine-lazy downstream of ScanGrid Add/Remove; no script rect/cell invalidation; port invalidates no rect on capture (E-FOGT-a)",
+		"territory_owner": "engine repaint inside Add/Remove [I-flagged]; only script .owner write is init -1 (serial.script:277); no radius/rect invented",
+		"explored": "retained at script level on capture; no clear on miscext.script:894-959; engine sticky-vs-visible channel [U] (E-FOGT-b)",
+		"name_swap": {
+			"keycolor": "misc.script:5067-5083 via unit.script:3860 (winner color recursive)",
+			"highlight": "miscext.script:920 -> gui.script:3383-3470 (friend/ally/enemy, walls invisible)",
+			"minimap": "gui.script:3472 -> misc.script:1137-1172 (pl2x2|pl3x3.<color>[.sel], static position)",
+			"deselect": "unit.script:3980-3998 (IO-party picked dropped, ctrlgroups wiped)",
+		},
+		"captures": FOGTERR_CAPTURES,
+		"parity_claim": false,
+	}
+
+
+func _is_fow_viewer_entity(e: Dictionary) -> bool:
+	# DEC-U-FOG-TERRITORY §6.3 [O] — e.player is read LIVE here and in
+	# donor_unit_vision(): after a capture the object's radius re-attributes to
+	# the winner on the next pass (donor _unit_GetVision reads TObj.pl at poll
+	# time; owner flip miscext.script:915-919; ScanGrid re-key unit.script:3135-3167).
+	# No enemyplmask/myplmask consult here — the layer-A/B viewer split stays in
+	# _fow_viewer_players() (:645-673). No behaviour change: still the live read.
+	if not _fow_viewers.has(int(e.get("player", -1))):
+		return false
+	if bool(e.get("hidden", false)):
+		return false  # GetGameObjectVisibleByHandle (unit.script:11576)
+	if bool(e.get("dead", false)) or not bool(e.get("finished", true)):
+		return false  # not bdead and bbuilt
+	return true
+
+
+func donor_unit_vision(e: Dictionary) -> int:
+	# _unit_GetVision (unit.script:11563-11614) — installed by the ONE shipped
+	# SetFOWDovFunc site, player.script:475. The integer floor() is
+	# load-bearing: vision 0/1/3/8 -> 20/24/32/52.
+	# DEC-U-FOG-TERRITORY §6.3 [O] — reads live e.player/TObj.pl at poll time, so
+	# a captured object's radius follows the winner with no script FOW write
+	# (miscext.script:915-919; unit.script:3135-3167). No team-mask consult here.
+	if str(e.get("sid", "")).to_lower() == "fogreveal" or bool(e.get("fogreveal", false)):
+		# TProj(pproj).dx is set to the caller radius at creation
+		# (misc.script:5942); any absent dx is 0 + ErrorLog in the donor.
+		return int(floor(float(e.get("dx", e.get("r", 0.0)))))
+	if not _is_fow_viewer_entity(e):
+		return 0
+	var def: Variant = e.get("def", {})
+	if not (def is Dictionary) or not (def as Dictionary).has("vision"):
+		# [U] F1-GRID — port data.gd has no per-sid integer `vision` field yet.
+		# Never invent one: the donor vision=0 row (res=20) is the loaded law.
+		# IMPL-FOG-HUD's report carries the exact data.gd patch to close this.
+		return int(floor(DONOR_VISION_BASE))
+	var vision := int((def as Dictionary).get("vision", 0))
+	return int(floor(DONOR_VISION_BASE + DONOR_VISION_PER_POINT * float(vision)))
+
+
+func _vision_radius_m(res: int) -> float:
+	# [U] F1-GRID — the donor unit of `res` (FOW cell vs world metre) is
+	# engine-defined and no readable text gives the cell size. 1 res = 1 port
+	# metre is a PROVISIONAL grid driver ONLY, NOT a donor claim. Experiment
+	# E-GRID-a fits the true scale by dumping GetFOWLOSData(x,z) along a
+	# fixed-camera transect for known vision values; no combine/occlusion rule
+	# is assumed. The eight ENGINE-DEFAULT-ONLY knobs (K1-K8) get NO port
+	# counterpart here — their values stay [U] until E-KNOB-defaults logs them.
+	# DEC-U-FOG-TERRITORY §6.1 — this metre driver and the `fog_counts > 0`
+	# combine stay labelled PORT law until E-FOGT-a terminates; no cell size,
+	# combine operator, rect or radius is invented on capture.
+	return float(res)
+
+
+func get_fog_reveal(px: float, pz: float) -> int:
+	# _misc_GetFogReveal (misc.script:5901-5916): px/pz epsilon scan. Godot's
+	# is_equal_approx is used so NO donor epsilon literal is invented.
+	for i in fog_reveals.size():
+		var r: Dictionary = fog_reveals[i]
+		if is_equal_approx(float(r.get("px", INF)), px) and is_equal_approx(float(r.get("pz", INF)), pz):
+			return i
+	return -1
+
+
+func get_or_create_fog_reveal(px: float, pz: float, radius: float) -> Dictionary:
+	# _misc_GetOrCreateFogReveal (misc.script:5918-5944): reuse by px/pz, else
+	# CreatePlayerGameObjectHandleByHandle(miscPlHnd,'misc','fogreveal',px,
+	# RayCastHeight,pz) + AddFOWObjects + visible=False + TProj.px/pz/dx.
+	# The port has no engine object table; the tag-109 record IS the object.
+	var i := get_fog_reveal(px, pz)
+	if i >= 0:
+		return fog_reveals[i]
+	var o := {"px": px, "pz": pz, "dx": radius, "tag": DONOR_FOGREVEAL_TAG}
+	fog_reveals.append(o)
+	rebuild_fow_full()  # scenario.script:1862 — if GetFOWEnable then FOWBuildFull
+	return o
+
+
+func remove_fog_reveal(px: float, pz: float) -> bool:
+	# _misc_RemoveFogReveal (misc.script:5883-5897): destroy first tag-109 match.
+	var i := get_fog_reveal(px, pz)
+	if i < 0:
+		return false
+	fog_reveals.remove_at(i)
+	rebuild_fow_full()  # same FOWBuildFull call as the scenario trigger
+	return true
+
+
+func rebuild_fow_full() -> void:
+	# FOWBuildFull (scenario.script:1862): force a full recompute next tick,
+	# bypassing the `_fog_tick % 6` / movement change gate.
+	_fog_tick += 1
+	_fog_timer = 0.0
+	_fog_last_pos.clear()
+	_fog_unit_count = -1
+	_update_fog()
+
+
+func los_at(pos: Vector2) -> int:
+	# K9 GetFOWLOSData(x, z: Float): Integer @0x2a7812 (VA 0x6a8412), a getter
+	# with no script writer; call sites compare only >0 (control.script:270).
+	# [U] E-GRID-a/b/c/e: grid quantisation, combine, occlusion and Integer
+	# domain are not statically known; this reads the SAME port grid the reveal
+	# pass writes, so picking and tint use one source of truth.
+	if not _fow_enabled or not _built:
+		return 1
+	if game == null or not game.has_method("tile_of"):
+		return 1
+	var t: Vector2i = game.tile_of(pos)
+	if t.x < 0 or t.y < 0 or t.x >= _map_w or t.y >= _map_h:
+		return 0
+	return int(fog_vis[t.y * _map_w + t.x])
+
+
+func is_visible_at(pos: Vector2) -> bool:
+	# control.script:270-273 and gui.script:3479-3490:
+	# bVisible := (not GetFOWEnable) or (GetFOWLOSData(x,z) > 0).
+	return (not _fow_enabled) or los_at(pos) > 0
+

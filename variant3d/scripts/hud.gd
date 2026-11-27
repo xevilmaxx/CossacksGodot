@@ -2,6 +2,150 @@
 extends CanvasLayer
 class_name C3HUD
 
+# ─── DEC-U-FOG-CAMERA-HUD §5 — IMPL-FOG-HUD resolved-law layer ────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_camera_hud.md.
+# ─── DEC-U-MINIMAP-TAIL — statically closed minimap-tail layer ────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_minimap_tail.md.
+# [O] misc.script:1017-1172 — visible -> building ? pl3x3.<color> : pl2x2.<color>
+#     (`.sel` when selected); invisible -> remove the primitive. Color index is
+#     gMap.players[pl].color; gui.script:3472 / player.script:769 refresh it.
+#     NAME-SWAP ONLY: no userBlend / tint literal exists on the unit path; no
+#     unit colour is invented here (port RGB stays [U] PORT APPROXIMATION).
+# [O] gui.script:3478-3491 — bNotInFOW := (not GetFOWEnable) or
+#     GetFOWLOSData(x,z) > 0 (threshold STRICTLY > 0); bVisible := bGeology or
+#     bNotInFOW; blend 1.0 (seen-now / FOW off), 0.5 (geology-visible, LOS==0),
+#     hidden (not bVisible). Resource HUD icons ONLY — never units/panel terrain.
+# [O] minimap.cfg:1-27 — 240x240, HAlign=halLeft / VAlign=valBottom,
+#     Position=(0,0,0,1) is the STALE cfg default, overwritten on every
+#     InitMinimap; FrustumVisible=True, FrustumLineStyle 1 px white 65535;
+#     atlas pl2x2 = 3px cell / 2px core, pl3x3 = 4px cell / 3px core.
+# [O] initminimap.inc + gui.script:140-172,158-161 — LIVE rect is BOTTOM-RIGHT:
+#     SetGUIMiniMapWidth/Height(cMinimapSize*scale), SetGUIMiniMapPosition(
+#     GetViewerWidth - cMinimapSize*scale + cMinimapOffsetX, cMinimapOffsetY, 0)
+#     = (ViewerW - 240*scale - 8, -8); scale = 2 iff GetViewerHeight > 1535
+#     else 1 (dpi arm commented out); classes.script:4578-4589,4634-4705.
+#     Donor quirk preserved: the halLeft align KEY stays with the bottom-right
+#     rect. The port corner string stays "bottom_right" — do not "fix" either.
+# [O] classes.script:6026-6040 — GetCameraFrustumQuadrangle is the SOUND
+#     manager's LT/RT/RB/LB frustum, NOT minimap geometry; lens.0 is the ALARM
+#     primitive (miscext2.script:260-272). Neither is wired as a minimap box.
+# [O] control.script:712-720 — SetPlayer -> UpdateFOW -> Deselect ->
+#     DoUpdateSelection -> InitMinimap (order hook below).
+# UNRESOLVED [U] — NOT substituted: V2-MINI-SCALE world->minimap affine,
+#     V2-MINI-QUAD frustum quad geometry, F1-MINI-TINT panel terrain / explored
+#     persistence, and the S2-UNIT-TAIL (FOW gating, .sel RGB, Interval=50).
+#     NO PARITY CLAIM.
+
+# ─── DEC-U-FOW-TINT — donor-settled labels / [U] telemetry ─────────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fow_tint.md §§3/5/6.
+# STATIC PASS ONLY. Donor binary never executed. NO PARITY CLAIM. Labels below
+# add NO behaviour, NO colour, NO interval unit and NO threshold. Code sites are
+# named (not re-numbered) because this header insertion shifts line numbers.
+#
+# [O] RESOURCE ARM — CORROBORATION ONLY, already wired by MINIMAP-TAIL, NOT
+#     rewired here: gui.script:3478-3491 has bNotInFOW := (not GetFOWEnable)
+#     or GetFOWLOSData(x,z) > 0 (threshold STRICTLY > 0), bVisible :=
+#     bGeology or bNotInFOW, then blend 1.0 (seen-now / FOW off), 0.5
+#     (geology-visible, LOS == 0), hidden (not bVisible). The DONOR_MM_BLEND_*
+#     constants, _mm_resource_fow_blend() and the _draw_mine_markers() skip are
+#     the existing wires; this pass only restates them. Resource HUD icons ONLY
+#     — never unit blips, never panel terrain.
+# [O] UNIT PATH IS A NAME-SWAP ONLY — misc.script:1017-1172: visible ->
+#     building ? pl3x3.<color> : pl2x2.<color>, with `.sel` when bSetAsSelected;
+#     invisible -> ReleasePrimitive/BehaviourDestroy (no primitive). color =
+#     gMap.players[pl].color. NO userBlend / tint / RGB literal exists in donor
+#     text on this path; `.sel` pixels live only in primitives.bmp (16,440 B
+#     binary, never decoded). _mm_primitive_name() is the canonical key; every
+#     painted RGB (white `.sel` stand-in, MM_PLAYER_COLORS, rims, clusters)
+#     stays [U] PORT APPROXIMATION (S2-UNIT-SEL).
+# [O] lens.0 is the ALARM primitive (miscext2.script:260-272,
+#     SetGUIMiniMapPrimitiveBlink(prim, 0.2, floor(10/0.2)*10) — donor-text
+#     alarm period, NOT a unit blink), not the minimap viewport box.
+# [O] minimap.cfg:28-723 LOD CriticalColor(Red=0,Green=0,Blue=1/0,Alpha=0) is a
+#     CriticalScale-keyed zoom-out fallback (which sprites survive zoom-out),
+#     NOT a selection / terrain tint. No CriticalColor Blue value is read as
+#     RGB anywhere in this file.
+# [U] TELEMETRY — FOWColor is ENGINE-DEFAULT-ONLY (signature [O], value [U]):
+#     Get/SetFOWColor(r,g,b,a: Float), file-offs 0x2a77a9 / 0x2a77e1, has ZERO
+#     shipped script writers (P-B7: 0 matches) and no readable value; it cannot
+#     ground any panel colour. Recorded in world3d_fog.gd's DEC-U-FOW-KNOBS /
+#     FOW-TINT blocks; no FOWColor constant exists here.
+# [U] TELEMETRY — no readable terrain/explored tint RGBA, threshold or blend
+#     factor exists in the donor minimap/HUD path (full text reads P-B1..P-B7:
+#     minimap.cfg / colors.lib / gui.script / misc.script). Native renderer
+#     names (P-A3) prove an engine FOW layer but expose no layout or colour.
+#     The ×0.25 never-seen dim in _update_minimap() and the 0.78/0.30/0.00
+#     ladder in world3d_fog.gd remain PORT APPROXIMATION.
+# [U] TELEMETRY — `Interval = 50` (misc.script:1042-1048) is a BARE INTEGER:
+#     no readable file states its unit (ms / ticks / frames / engine quanta).
+#     Unstated => [U]; Data.MINIMAP_INTERVAL = 0.25 s (data.gd:508) is a PORT
+#     cadence, NOT the donor Interval. No period or unit is invented or wired.
+# SIX STILL-[U] ITEMS — each keeps ONE fixed-camera, zero-mismatch settling
+#     capture; none is closed, substituted or weakened by this label pass:
+#   F1-MINI-TINT-TERRAIN · F1-MINI-PERSIST · F1-MINI-RESOURCE-RECHECK ·
+#   S2-UNIT-GATE (incl. wall blips) · S2-UNIT-SEL (.sel RGB) · S2-UNIT-INTERVAL.
+# visual_parity_claim = false — unchanged. No port RGB/factor/cadence is written
+# back as a donor fact; no test weakened; no behaviour changed.
+
+# ─── DEC-U-FOG-TERRITORY — donor-settled labels / [U] telemetry ─────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_territory.md §§4-7.
+# STATIC PASS ONLY. Donor binary never executed. NO PARITY CLAIM. Labels/telemetry
+# add NO behaviour, NO repaint call, NO rect, NO colour and NO threshold. Landed
+# FOG-HUD / MINIMAP-TAIL / FOW-TINT layers are untouched — cited, not rewired.
+#
+# [O] MINIMAP NAME-SWAP ON CAPTURE — gGuiUpdateHighlights.Add (miscext.script:920)
+#     is consumed by _gui_UpdateHighlights, which calls
+#     _misc_UnitUpdateMiniMapPrimitive(go, bPicked) per handle (gui.script:3472).
+#     That proc (misc.script:1137-1172) is a PURE NAME-SWAP: visible ->
+#     building ? pl3x3.<color> : pl2x2.<color> (`.sel` when selected, color =
+#     gMap.players[TObj.pl].color), invisible -> ReleasePrimitive/destroy.
+#     After a capture only the `.<color>` suffix (and `.sel` when IO-party
+#     selection is dropped per unit.script:3980-3998; ctrlgroups wiped :3991-3998)
+#     may change — position and size class are STATIC. NO repaint call, no rect,
+#     no colour invented. _mm_primitive_name() is the canonical key and the
+#     _rebuild_*_blips() derive it from live e.player.
+# [O] KEYCOLOR / HIGHLIGHT ORDER — winner color recursive
+#     SetGameObjectUniform4f(gKeyColor[colorInd], ...) (misc.script:5067-5083 via
+#     unit.script:3860) BEFORE the highlight queue (miscext.script:920 ->
+#     gui.script:3383-3470 friend/ally/enemy table, walls invisible), applied via
+#     EffectHighlightGetOrCreate(go,'h',visible,mat) (:3470). No argument beyond
+#     the donor literals (gui.script:3372-3377): selection.friend/building/ship,
+#     highlight.friend/ally/enemy. No applier of this kind lives in this file.
+# [O] RESOURCE TINT UNCHANGED — bNotInFOW := (not GetFOWEnable) or
+#     GetFOWLOSData(x,z) > 0 (gui.script:3479, STRICTLY > 0), blend 1.0 / 0.5
+#     (:3478-3491); capture moves attribution but changes no threshold.
+# [U] The ×0.25 never-seen dim in _update_minimap() and any terrain tint stay
+#     PORT APPROXIMATION until E-FOGT-d; the minimap-transect telemetry below
+#     keeps its zero-mismatch criterion. No test weakened; no behaviour changed.
+
+# ─── DEC-U-CAPTURE-STATE2 §7 items 5-6 — IMPL-CAPTURE-FOW labels / telemetry ────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_capture_state2.md §§5-7.
+# STATIC PASS ONLY. Donor binary never executed. NO PARITY CLAIM. Labels/telemetry
+# ONLY: NO behaviour, NO repaint call, NO rect, NO colour, NO interval unit added.
+# Landed FOG-HUD / MINIMAP-TAIL / FOW-TINT / FOGTERR blocks above are UNTOUCHED.
+#
+# [O] SELECTION DROP (§7.5d) — pre-swap, under the loser, IO party only: picked
+#     -> gSelectedObjects.Remove + Picked(False) + gui flags (unit.script:3981-3988);
+#     NON-IO selection is NOT touched by the transfer. Then UNCONDITIONALLY
+#     ctrlgroupmask>0 -> wipe all 10 gCtrlGroups[pl][i] + mask zero (:3990-3998).
+#     Extends the existing hud.gd:103 / FOGTERR_MINIMAP_TELEMETRY selection-drop
+#     cite with the exact pre-swap ordering; no deselect code is added or removed.
+# [O] KEYCOLOR BEFORE HIGHLIGHT (§7.5e) — winner key colour is applied recursively
+#     (unit.script:3860 -> misc.script:5067-5083) BEFORE gGuiUpdateHighlights.Add
+#     (miscext.script:920-921); the GUI consumes it in gui.script:3383-3472 and
+#     clears it at :3569. hud.gd:107-113 already carries this order — labelled
+#     here as data only. The minimap primitive swaps only `.<color>` (and `.sel`
+#     iff IO-selection dropped); position/size class STATIC; no repaint rule.
+# [O-port / PORT RULE G-09] The port guard-block at game.gd:8354-8363 stays AFTER
+#     the donor protector veto (game.gd:8330-8345) and is NEVER deleted or merged.
+#     Donor capture miscext.script:963-1185 has NO guard read; its ONLY veto is
+#     _unit_SearchProtectors + distSqr<protectionradiusSqr (miscext.script:1041-1072;
+#     unit.script:4617-4637). Prototype label only — the live rule is owned by
+#     game.gd, out of this worker's scope.
+# visual_parity_claim = false. The six minimap [U] captures and the six §6 CS-*
+#     items keep their fixed-seed THREE-RUN ZERO-MISMATCH criteria; NONE executed,
+#     closed, substituted or weakened here.
+
 const Data = preload("res://scripts/data.gd")
 const ConfigScript = preload("res://scripts/config.gd")
 
@@ -71,6 +215,8 @@ var _mm_mine_ver := -1
 var _mm_bld_centers: Array[Vector2i] = []
 var _mm_bld_colors: Array[Color] = []
 var _mm_bld_enemy: Array[bool] = []
+var _mm_bld_selected: Array[bool] = []   # DEC-U §5.1 `.sel` primitive variant
+var _mm_bld_player: Array[int] = []      # DEC-U §5.1 gMap.players[pl].color index
 var _mm_bld_ver := -1
 var _mm_unit_tiles: Array[Vector2i] = []
 var _mm_unit_colors: Array[Color] = []
@@ -142,6 +288,8 @@ const RES_TOOLTIPS := [
 ]
 const RES_STOCK_CAP := 9999999  # donor gui.txt:251-252 "9999999+"
 const RES_STOCK_CAP_TEXT := "9999999+"
+# [U] PORT APPROXIMATION (DEC-U-MINIMAP-TAIL §3.2 F1-MINI-TINT): no donor RGB is
+# readable for marker/unit blips — these hues are port-authored, never donor facts.
 # T-MINIMAP: bright amber-family marker per mine/quarry ore (distinct hues,
 # all readable on the dimmed terrain); the dark rim keeps them crisp.
 const MINE_MARKER_COLORS := {
@@ -157,6 +305,13 @@ const MINE_MARKER_RIM := Color(0.05, 0.04, 0.03)
 # T-HUD-12: extended 8 -> 12 to match world.gd PLAYER_COLORS / menu.gd
 # ROSTER_COLORS. P0..P7 keep hud's brighter variants; P8..P11 from world.gd
 # (teal/amber brightened for legibility). P7 is white; wrapi handles p>=12.
+# [U] PORT APPROXIMATION (S2-UNIT-TAIL): the donor unit path is a NAME-SWAP only
+# (misc.script:1017-1172) with no colour literal — no port RGB may be claimed as
+# donor. The palette, rims, cluster thresholds and white `.sel` stand-in stay [U].
+# [U] DEC-U-FOW-TINT §5.2/§6.7: wall blips, `.sel` RGB and the unit of
+# `Interval = 50` (misc.script:1042-1048, bare integer; ms/ticks/frames unstated)
+# join the S2 [U] list. minimap.cfg:28-723 CriticalColor Blue=1/0 is a
+# CriticalScale LOD fallback, NOT a tint — no Blue value is read as RGB here.
 const MM_PLAYER_COLORS := [
 	Color(0.35, 0.75, 1.00), Color(1.00, 0.35, 0.30),
 	Color(1.00, 0.85, 0.20), Color(0.35, 1.00, 0.45),
@@ -169,6 +324,48 @@ const MM_ENEMY_RIM := Color(0.34, 0.02, 0.02)  # dark red ring on enemy blips
 const MM_OWN_RIM := Color(0.04, 0.05, 0.03)    # near-black ring on friendly blips
 const MM_CLUSTER_THRESHOLD := 16   # per player: above this, group into blips
 const MM_CLUSTER_CELL := 4         # tiles per cluster bucket
+# [O] DEC-U-MINIMAP-TAIL §1.1 minimap.cfg:52-~740 sprite atlas — donor-grounded
+# cell/core pixel counts (not a port guess). RGB painted into these extents stays [U].
+const DONOR_MM_CELL_UNIT_PX := 3   # pl2x2: 3 px cell
+const DONOR_MM_CORE_UNIT_PX := 2   # pl2x2: 2 px coloured core
+const DONOR_MM_CELL_BLD_PX := 4    # pl3x3: 4 px cell
+const DONOR_MM_CORE_BLD_PX := 3    # pl3x3: 3 px coloured core
+# [O] DEC-U-MINIMAP-TAIL §3.1 gui.script:3488-3491 resource-row userBlend
+# literals: 1.0 (seen-now/FOW-off) / 0.5 (geology-visible, LOS==0); hidden is
+# the third arm, applied by the caller's never-seen skip. Units use NO blend.
+const DONOR_MM_BLEND_VISIBLE := 1.0
+const DONOR_MM_BLEND_GEOLOGY_ONLY := 0.5
+# DEC-U-FOG-TERRITORY §4/§5 E-FOGT-d — read-only name-swap law + the minimap
+# transect's zero-mismatch criterion. No pixel/tick/rule/colour is asserted;
+# never executed by this worker; NO PARITY CLAIM.
+const FOGTERR_MINIMAP_TELEMETRY: Dictionary = {
+	"cite": "DEC_U_fog_territory.md:59-60 (§4) + :71 (§5 E-FOGT-d); miscext.script:920; gui.script:3472,3372-3377; misc.script:1137-1172; unit.script:3980-3998",
+	"name_swap": "visible -> building ? pl3x3.<color> : pl2x2.<color> (`.sel` when selected); invisible -> ReleasePrimitive/destroy",
+	"on_capture": "only `.<color>` (and `.sel` if IO-selection dropped) may change; position/size class STATIC; no repaint call",
+	"highlight_order": "winner color recursive (unit.script:3860 -> misc.script:5067-5083) then highlight queue (miscext.script:920 -> gui.script:3383-3470)",
+	"still_U": "port ×0.25 never-seen dim / painted RGB / terrain tint stay PORT APPROXIMATION until capture terminates",
+	"zero": "3 identical runs; assert .<oldColor>->.<newColor> with static position, highlight friend->enemy flip next GUI tick, selection dropped iff IO-party; any pixel/tick deviation fails the item",
+	"parity_claim": false,
+}
+# DEC-U-CAPTURE-STATE2 §7.5-6 — read-only labelled data; NO repaint call, NO
+# parity claim; the six minimap and six CS-* [U] captures stay open.
+const CAPFOW_HUD_CAPTURE_TELEMETRY: Dictionary = {
+	"cite": "DEC_U_capture_state2.md §§5-7 (items 5-6); unit.script:3860,3980-3998; miscext.script:920-921,963-1185; misc.script:5067-5083; gui.script:3383-3472,3569",
+	"selection": {
+		"deselect": "IO party ONLY (pre-swap, loser side): picked -> gSelectedObjects.Remove + Picked(False) + gui flags — unit.script:3981-3988",
+		"non_IO": "not touched by the transfer — unit.script:3980 gate",
+		"ctrlgroup": "UNCONDITIONAL ctrlgroupmask>0 -> wipe all 10 gCtrlGroups[pl][i] + mask zero — unit.script:3990-3998",
+	},
+	"order": "winner key colour recursive (unit.script:3860 -> misc.script:5067-5083) BEFORE highlight queue (miscext.script:920-921 -> gui.script:3383-3472, cleared :3569)",
+	"minimap": "name-swap only: .<color> (and .sel iff IO-selection dropped); position/size STATIC; no repaint rule",
+	"guard_block": {
+		"label": "PORT RULE G-09 (no donor counterpart) — KEEP after donor veto (game.gd:8354-8363 after :8330-8345); do not delete or merge",
+		"donor": "miscext.script:963-1185 never reads order_type_guard; ONLY veto = _unit_SearchProtectors + distSqr<protectionradiusSqr (miscext.script:1041-1072; unit.script:4617-4637)",
+	},
+	"still_U": "F1-MINI-TINT-TERRAIN / F1-MINI-PERSIST / F1-MINI-RESOURCE-RECHECK / S2-UNIT-GATE / S2-UNIT-SEL / S2-UNIT-INTERVAL + CS-VETO / CS-LEDGER / CS-GARRISON / CS-HIDE / CS-FOW / CS-RALLY — three-run zero-mismatch, none weakened",
+	"visual_parity_claim": false,
+}
+
 var market_give_idx := 1   # wood
 var market_want_idx := 3   # iron
 var want_rally := false
@@ -316,6 +513,17 @@ func _mm_corner() -> String:
 		return str(cfg.call("feature_hud_minimap_corner"))
 	return "bottom_right"
 
+func _mm_dpi_scale() -> int:
+	# DEC-U-MINIMAP-TAIL §1.2 [O] initminimap.inc: scale :=
+	# _gui_AbsScaleByDPI(elmParent). _gui_GetAbsScaleByDPI (gui.script:140-162,
+	# :158-161) is resolution-based: 2 iff GetViewerHeight > 1535, else 1; the
+	# dpi-based arm is commented out. The engine rect is
+	# SetGUIMiniMapWidth/Height(cMinimapSize*scale) and SetGUIMiniMapPosition(
+	# GetViewerWidth - cMinimapSize*scale + cMinimapOffsetX, cMinimapOffsetY, 0),
+	# i.e. (ViewerW - 240*scale - 8, -8) at bottom-right. Port ui_vp.y is the
+	# viewer height refreshed by _calc_us()/bind(), so this arm follows resizes.
+	return 2 if ui_vp.y > 1535.0 else 1
+
 func _apply_scale() -> void:
 	for n in find_children("*", "Control", true, false):
 		var c := n as Control
@@ -342,11 +550,20 @@ func _apply_scale() -> void:
 	# assumption. Must run after the generic meta pass above so its compact
 	# overrides win.
 	_layout_top()
+	# DEC-U-MINIMAP-TAIL §1.2 [D] — the corner conflict is CLOSED as text:
+	# minimap.cfg:1-27 HAlign=halLeft / Position=(0,0,0,1) is the STALE config
+	# default; InitMinimap overwrites the live rect every time to bottom-right
+	# (ViewerW - 240*scale - 8, -8). The existing bottom-RIGHT placement is kept;
+	# the halLeft align KEY stays too (donor quirk, not a second corner). Port
+	# corner string stays "bottom_right". World->panel affine stays [U] V2-MINI-SCALE.
 	# HUD-01: donor 240x240 minimap, bottom-RIGHT with a -8 edge inset
 	# (initminimap.inc:5-7,17,33). The port's ui_us still scales for small
 	# windows; 0.25 only guards very narrow viewports.
-	# CONFIG-WIRE-HUD: size from features.hud.minimap_size (default 240).
-	var mm := minf(_ms(float(_mm_size())), ui_vp.x * 0.25)
+	# CONFIG-WIRE-HUD: base size from features.hud.minimap_size (default 240).
+	# DEC-U-MINIMAP-TAIL §1.2 [O]: panel size is cMinimapSize*scale, scale=2 iff
+	# GetViewerHeight>1535 else 1 (gui.script:158-161) — apply the DPI arm to the
+	# base before the port's responsive ui_us scale, leaving -8 as the edge inset.
+	var mm := minf(_ms(float(_mm_size()) * float(_mm_dpi_scale())), ui_vp.x * 0.25)
 	if is_instance_valid(minimap_rect):
 		minimap_rect.custom_minimum_size = Vector2(mm, mm)
 	# Bottom strip partition (never overlaps): the minimap owns the donor's
@@ -461,6 +678,9 @@ func _build_top() -> void:
 	top_bar.add_child(sep2)
 	# S02 (owner directive): x8/x16/x32/x64 extend the old 1x/2x/4x set.
 	# x16/x32/x64 are PORT APPROX — NOT donor-verified; no donor GPU A/B exists.
+	# [U] U1/U19: speed cadence is a port usability extension, not a donor
+	# literal. Decomp plan (skirmish_logic §13): recover per-tick order from
+	# player.script/unit.script before any speed value is claimed donor-exact.
 	speed_menu = _mkoption([["II", 0.0], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0],
 		["8x", 8.0], ["16x", 16.0], ["32x", 32.0], ["64x", 64.0]], 1)
 	speed_menu.tooltip_text = "Game speed (Space pauses)"
@@ -1584,10 +1804,13 @@ func _build_minimap() -> void:
 	minimap_tex = ImageTexture.create_from_image(minimap_view_img)
 	minimap_rect = TextureRect.new()
 	minimap_rect.texture = minimap_tex
-	# HUD-01: donor minimap is bottom-RIGHT 240x240 (initminimap.inc:17,33;
-	# showunitcontrol.inc:109-110,586 reserves the 289px right-hand strip).
-	# CONFIG-WIRE-HUD: size from features.hud.minimap_size (default 240).
-	var mm_size := float(_mm_size())
+	# DEC-U-MINIMAP-TAIL §1.2 [D] — minimap.cfg:1-27 bottom-left (0,0,0,1) is the
+	# overwritten STALE default; the live rect from initminimap.inc is bottom-RIGHT
+	# (ViewerW - 240*scale - 8, -8). showunitcontrol.inc:109-110,586 reserves the
+	# 289px right-hand strip. CONFIG-WIRE-HUD: base size from
+	# features.hud.minimap_size (default 240); DPI arm doubles it when the viewer
+	# height exceeds 1535 (gui.script:158-161).
+	var mm_size := float(_mm_size() * _mm_dpi_scale())
 	minimap_rect.custom_minimum_size = Vector2(mm_size, mm_size)
 	minimap_rect.set_meta("uimw", mm_size)
 	minimap_rect.set_meta("uimh", mm_size)
@@ -1602,10 +1825,12 @@ func _build_minimap() -> void:
 	panel.add_child(minimap_rect)
 	# The parent panel is the layout anchor; the TextureRect is container-laid-out.
 	# CONFIG-WIRE-HUD: corner from features.hud.minimap_corner (default
-	# "bottom_right", DEC-08 initminimap.inc:17). Only the donor bottom-right
-	# OFFSETS are implemented (below); unknown strings fall back to bottom_right
-	# and no HUD partition is rewritten, so UITEST-ANCHOR (anchor_left == 1.0)
-	# stays green on the default.
+	# "bottom_right", DEC-08 / DEC-U-MINIMAP-TAIL initminimap.inc:17). Only the
+	# donor bottom-right OFFSETS are implemented (below); unknown strings fall
+	# back to bottom_right and no HUD partition is rewritten, so UITEST-ANCHOR
+	# (anchor_left == 1.0) stays green on the default. Donor quirk: the engine
+	# align keys stay halLeft/valBottom while this rect is bottom-right — keep
+	# them, do not "correct" them to halRight.
 	var mm_corner := _mm_corner()
 	var mm_anchor_x := 0.0 if mm_corner == "top_left" or mm_corner == "bottom_left" else 1.0
 	var mm_anchor_y := 0.0 if mm_corner == "top_left" or mm_corner == "top_right" else 1.0
@@ -1689,6 +1914,13 @@ func _cam3d_jump(world_pos: Vector2) -> bool:
 # T-PERF-RENDER: instead of duplicating the whole ~100k-pixel image whenever
 # the camera scrolls, only the previous/new 1px borders are rewritten. The
 # clean image is the restore source, so no ghost rectangles can be left behind.
+# DEC-U-MINIMAP-TAIL §2 [U] V2-MINI-QUAD: this AABB is a PORT APPROXIMATION.
+# The only script-level 4-corner frustum API, classes.script:6026-6040
+# GetCameraFrustumQuadrangle (LT/RT/RB/LB), belongs to TSoundManager (SOUND
+# only) — it is NOT the minimap camera box. minimap.cfg's lens.0 is the ALARM
+# primitive (miscext2.script:260-272), also NOT the box. Neither is wired here.
+# The single quad source stays camera3d.gd:get_viewport_corners(); hud3d_adapter
+# stroke_minimap_quad remains opt-in until the V2-MINI-QUAD 0 px capture closes.
 func _draw_minimap_viewport_box(force: bool = false) -> void:
 	if minimap_img == null or minimap_view_img == null or minimap_tex == null or game == null:
 		return
@@ -1817,6 +2049,10 @@ func _draw_mine_markers() -> void:
 		if has_fog and fog[t.y * mw + t.x] == 0:
 			continue
 		var c: Color = _mm_mine_colors[i]
+		# DEC-U §5.1 — resource row userBlend 0.5/1.0 (gui.script:3488-3491).
+		var blend := _mm_resource_fow_blend(t)
+		if blend < DONOR_MM_BLEND_VISIBLE:
+			c = Color(c.r * blend, c.g * blend, c.b * blend, c.a)
 		for dyi in 7:
 			var py := t.y + dyi - 3
 			if py < 0 or py >= mh:
@@ -1831,9 +2067,81 @@ func _draw_mine_markers() -> void:
 				minimap_img.set_pixel(px, py, MINE_MARKER_RIM if d == 3 else c)
 
 func _mm_player_color(p: int) -> Color:
-	# T-MINIMAP-BRIGHT: wrap instead of falling back to gray, so P8+ recycle
-	# the bright palette (mirrors world.gd PLAYER_COLORS wrapi behaviour).
+	# [U] PORT APPROXIMATION (S2-UNIT-TAIL) — donor units are a sprite NAME swap
+	# only; no readable RGB exists to match. Wrap instead of falling back to gray
+	# so P8+ recycle the bright palette (mirrors world.gd PLAYER_COLORS wrapi).
 	return MM_PLAYER_COLORS[wrapi(p, 0, MM_PLAYER_COLORS.size())]
+
+func _mm_primitive_name(is_building: bool, color_index: int, selected: bool) -> String:
+	# DEC-U-MINIMAP-TAIL §4.1 [O] misc.script:1017-1172 — the unit path is a
+	# NAME-SWAP ONLY: visible -> building ? pl3x3.<color> : pl2x2.<color>, plus
+	# `.sel` when bSetAsSelected; invisible -> ReleasePrimitive/BehaviourDestroy
+	# (no primitive). color = gMap.players[pl].color. No userBlend / tint literal
+	# exists on this path — none is invented here. The port has no primitive
+	# engine: this name is the canonical key for the pixel-blip encoding below;
+	# the RGB extents it paints are [U] PORT APPROXIMATION (S2-UNIT-TAIL).
+	# DEC-U-FOG-TERRITORY §6.4 [O] — on an owner change only the `.<color>`
+	# suffix (and `.sel` if IO-selection is dropped per unit.script:3980-3998)
+	# may change; position/size class is static. Queue miscext.script:920,
+	# per-handle update gui.script:3472. No repaint call / rect / colour invented.
+	var base := "pl3x3" if is_building else "pl2x2"
+	var name := "%s.%d" % [base, wrapi(color_index, 0, MM_PLAYER_COLORS.size())]
+	return name + ".sel" if selected else name
+
+
+func _mm_core_size(is_building: bool) -> int:
+	# Donor core pixel counts (minimap.cfg pl2x2 / pl3x3 atlas), not a port guess.
+	return DONOR_MM_CORE_BLD_PX if is_building else DONOR_MM_CORE_UNIT_PX
+
+
+func _mm_bld_color(p: int, selected: bool) -> Color:
+	# [U] PORT APPROXIMATION (S2-UNIT-TAIL): the donor swaps to the pl*.sel sprite
+	# but no readable text gives its RGB — white is a port stand-in, NOT a donor
+	# colour; the palette tint is port-authored too. Only the NAME law is [O].
+	# No blend is applied on the unit path (name swap is the whole donor law).
+	return Color(1, 1, 1) if selected else _mm_player_color(p)
+
+
+func _mm_resource_fow_blend(t: Vector2i) -> float:
+	# DEC-U-MINIMAP-TAIL §3.1 [O] gui.script:3478-3491 — resource-row tint law,
+	# applied to resource HUD icons only (never units, never panel terrain):
+	#   bNotInFOW := (not GetFOWEnable) or (GetFOWLOSData(x,z) > 0)  [threshold > 0]
+	#   bVisible  := bGeology or bNotInFOW
+	#   blend     := 0.5 if (bVisible and not bNotInFOW) else 1.0
+	# Three states: 1.0 = seen-now/FOW-off; 0.5 = geology-visible, LOS == 0;
+	# hidden = not bVisible (never-seen tiles are skipped by _draw_mine_markers,
+	# whose fog_explored guard is the port's [U] geology proxy — F1-MINI-TINT).
+	# This returns the 1.0 / 0.5 pair; the hidden arm lives in the caller.
+	# DEC-U-FOW-TINT §3/§6.6 CORROBORATES this 1.0 / 0.5 / hidden + >0 arm as
+	# donor text only — no blend, RGB or threshold is added or rewired here.
+	if not Data.FOG_OF_WAR:
+		return DONOR_MM_BLEND_VISIBLE
+	if world != null and world.has_method("is_visible_at"):
+		# world3d_fog.is_visible_at() already implements `(not FOW) or los_at() > 0`.
+		var pos := Vector2(float(t.x) * Data.TILE_M, float(t.y) * Data.TILE_M)
+		return DONOR_MM_BLEND_VISIBLE if bool(world.call("is_visible_at", pos)) else DONOR_MM_BLEND_GEOLOGY_ONLY
+	if game != null and world != null:
+		var idx := t.y * game.MAP_W + t.x
+		if idx >= 0 and idx < world.fog_vis.size():
+			# [O] GetFOWLOSData(x,z) > 0 — STRICTLY greater than zero.
+			var los: int = int(world.fog_vis[idx])
+			return DONOR_MM_BLEND_VISIBLE if los > 0 else DONOR_MM_BLEND_GEOLOGY_ONLY
+	return DONOR_MM_BLEND_VISIBLE
+
+
+func donor_post_player_change() -> void:
+	# DEC-U §5.1 control.script:712-720 — SetPlayerHandleInterfaceIO ->
+	# UpdateFOW -> Deselect -> DoUpdateSelection -> InitMinimap. Only the HUD-
+	# owned tail is here; input_controller owns Deselect/DoUpdateSelection.
+	var fog = world.get("fog") if world != null else null
+	if fog != null and fog.has_method("rebuild_fow_enable"):
+		fog.call("rebuild_fow_enable")
+	if game != null:
+		refresh_selection(game.get_selected())
+	_rebuild_bld_blips()
+	_rebuild_unit_blips()
+	_update_minimap()
+
 
 func _mm_enemy_visible(t: Vector2i) -> bool:
 	# T-MINIMAP-EXTRA: an enemy needs BOTH explored history and current
@@ -1848,9 +2156,14 @@ func _mm_enemy_visible(t: Vector2i) -> bool:
 func _rebuild_bld_blips() -> void:
 	# T-MINIMAP-EXTRA: buildings never move, so rebuild only when bld_dirty
 	# moves (spawn/finish/destroy). Fog is applied at stamp time, not cached.
+	# DEC-U-FOG-TERRITORY §6.4 [O] — p below is read live from e.player, so after
+	# a capture only the primitive colour suffix follows the winner; position
+	# and size class stay static (misc.script:1137-1172 via gui.script:3472).
 	_mm_bld_centers.clear()
 	_mm_bld_colors.clear()
 	_mm_bld_enemy.clear()
+	_mm_bld_selected.clear()
+	_mm_bld_player.clear()
 	for e in game.live_blds:
 		if e.dead:
 			continue
@@ -1861,37 +2174,43 @@ func _rebuild_bld_blips() -> void:
 		_mm_bld_centers.append(t)
 		_mm_bld_colors.append(_mm_player_color(p))
 		_mm_bld_enemy.append(int(e.player) != 0)
+		_mm_bld_selected.append(bool(e.get("selected", false)))
+		_mm_bld_player.append(p)
 	_mm_bld_ver = game.bld_dirty
 
 func _draw_bld_blips() -> void:
-	# T-MINIMAP-EXTRA: own = 2x2 player tint; enemy = 3x3 dark-red rim with a
-	# bright player-tint core. Enemy buildings need current visibility too.
+	# DEC-U §5.1 — every visible building is a pl3x3.<color> primitive (3 px
+	# core in a 4 px cell), selected -> `.sel`; unseen => no primitive at all.
+	# T-MINIMAP-EXTRA keeps the dark-red rim for enemy blips on the dimmed map.
 	var mw := game.MAP_W
 	var mh := game.MAP_H
+	var core := _mm_core_size(true)  # DONOR_MM_CORE_BLD_PX = 3
 	for i in _mm_bld_centers.size():
 		var t: Vector2i = _mm_bld_centers[i]
 		var enemy := _mm_bld_enemy[i]
 		if enemy and not _mm_enemy_visible(t):
 			continue
-		var c: Color = _mm_bld_colors[i]
-		if enemy:
-			for dxi in 3:
-				for dyi in 3:
-					var px := t.x + dxi - 1
-					var py := t.y + dyi - 1
-					if px < 0 or py < 0 or px >= mw or py >= mh:
-						continue
-					minimap_img.set_pixel(px, py, c if dxi == 1 and dyi == 1 else MM_ENEMY_RIM)
-		else:
-			for dxi in 2:
-				for dyi in 2:
-					minimap_img.set_pixel(mini(mw - 1, t.x + dxi), mini(mh - 1, t.y + dyi), c)
+		var selected: bool = _mm_bld_selected[i] if i < _mm_bld_selected.size() else false
+		var pi: int = _mm_bld_player[i] if i < _mm_bld_player.size() else 0
+		var c: Color = _mm_bld_color(pi, selected)
+		for dxi in core:
+			for dyi in core:
+				var px := t.x + dxi - core / 2
+				var py := t.y + dyi - core / 2
+				if px < 0 or py < 0 or px >= mw or py >= mh:
+					continue
+				minimap_img.set_pixel(px, py, c if (not enemy or (dxi == core / 2 and dyi == core / 2)) else MM_ENEMY_RIM)
+		# Canonical donor key: pl3x3.<color> or pl3x3.<color>.sel.
+		var _prim_name: String = _mm_primitive_name(true, pi, selected)
 
 func _rebuild_unit_blips() -> void:
 	# T-MINIMAP-EXTRA: one scan of live_units per minimap tick (movement is the
 	# only reason these positions change). Small armies get 1px dots; above
 	# MM_CLUSTER_THRESHOLD per player they collapse into coarse cluster blips,
 	# so a 1000-unit army costs a handful of set_pixel calls, not 1000.
+	# DEC-U-FOG-TERRITORY §6.4 [O] — p/pi below read live e.player and the
+	# `.<color>` key follows the winner on the next rebuild; position/size class
+	# static, no repaint call (gui.script:3472; misc.script:1137-1172).
 	_mm_unit_tiles.clear()
 	_mm_unit_colors.clear()
 	_mm_unit_players.clear()
@@ -1945,6 +2264,18 @@ func _rebuild_unit_blips() -> void:
 		_mm_cluster_sx[ci] += t.x
 		_mm_cluster_sy[ci] += t.y
 		_mm_cluster_cnt[ci] += 1
+
+func _mm_paint_unit_core(x: int, y: int, c: Color) -> void:
+	# DEC-U §5.1 — pl2x2.<color> 2 px coloured core; bounds-guarded. The third
+	# pixel of the donor 3 px cell is the rim painted by _mm_rim_cross().
+	var core := _mm_core_size(false)  # DONOR_MM_CORE_UNIT_PX = 2
+	for dxi in core:
+		for dyi in core:
+			var px := x + dxi
+			var py := y + dyi
+			if px >= 0 and py >= 0 and px < game.MAP_W and py < game.MAP_H:
+				minimap_img.set_pixel(px, py, c)
+
 
 func _mm_rim_cross(x: int, y: int, rim: Color) -> void:
 	# 1px cross rim around a single-pixel unit dot; map-bounds guarded.
@@ -2002,7 +2333,11 @@ func _draw_unit_blips() -> void:
 		var t2: Vector2i = _mm_unit_tiles[ui2]
 		if t2.x < 0 or t2.y < 0 or t2.x >= mw or t2.y >= mh:
 			continue
-		minimap_img.set_pixel(t2.x, t2.y, _mm_unit_colors[ui2])
+		# DEC-U §5.1 — pl2x2.<color>[.sel] core; `_rebuild_unit_blips()`
+		# selects the `.sel` tint (white) for selected own units.
+		var _prim_name: String = _mm_primitive_name(false, _mm_unit_players[ui2], \
+			_mm_unit_colors[ui2] == Color(1, 1, 1) and not _mm_unit_enemy[ui2])
+		_mm_paint_unit_core(t2.x, t2.y, _mm_unit_colors[ui2])
 	for ci2 in _mm_cluster_sx.size():
 		var n := maxi(1, _mm_cluster_cnt[ci2])
 		var cx := clampi(int(_mm_cluster_sx[ci2] / n), 0, mw - 1)
@@ -2037,6 +2372,12 @@ func _update_minimap() -> void:
 				for x in game.MAP_W:
 					if world.fog_explored[y * game.MAP_W + x] == 0:
 						var c: Color = minimap_fog_base.get_pixel(x, y)
+						# [U] PORT APPROXIMATION (DEC-U-FOW-TINT §6.8): this ×0.25
+						# never-seen dim is a port factor, NOT a donor tint/threshold;
+						# F1-MINI-TINT-TERRAIN keeps its zero-mismatch capture.
+						# DEC-U-FOG-TERRITORY §6.4 [U] — this ×0.25 dim and any
+						# terrain tint stay PORT APPROXIMATION until E-FOGT-d;
+						# capture issues no repaint/rect and no value is invented.
 						minimap_fog_base.set_pixel(x, y, Color(c.r * 0.25, c.g * 0.25, c.b * 0.25))
 			minimap_fog_rev = world.fog_revision
 		minimap_img = minimap_fog_base.duplicate()

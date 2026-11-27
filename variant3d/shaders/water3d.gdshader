@@ -7,6 +7,22 @@ shader_type spatial;
 // Cross-checked against DEEPDEC-03 §4/§6
 // (ev_b284c02cf7c0727264d5d59d4ed3f2399566c0b1fb505da77f4852ab50fd3cc2).
 //
+// PORT1TO1-WATER (IMPL-WATER-SHADER): the DEV block below is UNCHANGED. Two
+// donor-literal variants are added behind `water_shader_path`: BUILTIN =
+// embedded FUN_00854ac0/FUN_008551d8 C-literal pair (§5.3), LEGACY =
+// water.vert/water.frag (§5.2). Authority:
+// docs/terrain_swarm_2026-11-26/reports/PORT1TO1_water_shore.md. No parity claim.
+//
+// WATERCOMPILE (static-only): Godot 4.7 rejects `return` inside a `vertex()` or
+// `fragment()` processor function (capture error: "Using 'return' in the
+// 'fragment' processor function is incorrect"). BOTH processors below are strict
+// if/else-if/else chains with ZERO `return` statements; only the ordinary helper
+// functions above may return. Donor discards stay as `discard` in the DEV branch
+// (water.dev.frag:176-182); the BUILTIN/LEGACY `discard` guards are port hard-fails
+// for missing [U12] reflectionMap / [U3] hmapTex, never a grey fallback.
+// BUILTIN is the LABELLED default per DEC_U_water_runtime.md §4.3 [D]
+// (CustomEnable=False -> C+0x184=0 -> CUSTOM unreachable); U1 capture stays open.
+//
 // DEEPDEC-03 §4.1/§6.1: deepColor, shallowColor, reflectionAmount, waterAmount,
 // fresnelPower/Bias, distFactor and bumpFactor are declared but COMMENTED OUT in
 // the shipped fragment (water.dev.frag:8-16). They are deliberately NOT wired
@@ -29,13 +45,13 @@ uniform float water_level;        // -0.25  texturemap.inc:30 (cWaterHeight) —
 // The port placeholder is the only donor-readable number (-0.25), so the
 // coarse swell stays zero under shipped constants (DTRN-03 C16); an A/B value
 // is a labelled PORT APPROXIMATION, never a recovered donor value.
-uniform float water_surface_y;    // PORT APPROX placeholder -0.25 for gl_TexCoord[1].z
+uniform float water_surface_y;    // [U] PORT APPROX placeholder -0.25 for gl_TexCoord[1].z (E-SURFACE: dump gl_TexCoord[3].z vs donor height, zero mismatch)
 uniform float shore_height;       // -0.1   texturemap.inc:31 — INERT in the shipped fragment
-uniform float max_height;         // 2.96   texturemap.inc:29 (cMaxHeight)
+uniform float max_height;         // 2.96 texturemap.inc:29 (cMaxHeight) — script-stage CLASSIFICATION literal ONLY; ABSENT from water.lib. Port [-2.96,+2.96] hmap span is [U3] SUBSTITUTE, NOT donor-recovered hmapMin/Max (DEC-U §2.6/§3 MH / §7.6).
 uniform float coast_fade_depth;   // 0.57   water.dev.frag:37
 uniform float deep_fade_depth;    // 1.07   water.dev.frag:168 (0.5+0.57)
-uniform float tex_scale_s;        // 0.1    water.lib:32
-uniform float tex_scale_t;        // 0.01   water.lib:33
+uniform float tex_scale_s;        // 0.1  water.lib:32 FILE tuple — [U4*] candidate ONLY (ENGINE ctor 0.4). DEV shader reads this live; applies iff U4*=FILE. NOT settled (DEC-U §7.3).
+uniform float tex_scale_t;        // 0.01 water.lib:33 FILE tuple — [U4*] candidate ONLY (ENGINE ctor 0.825). Never presented as a recovered live value until U4* captures the winner.
 uniform vec3 shallow_color;       // (0.1,0.24,0.24)  water.dev.frag:45
 uniform vec3 deep_color;          // (0,0.025,0.05)   water.dev.frag:46
 uniform vec3 spec_color;          // (0.4,0.4,0.4)    water.dev.frag:47
@@ -52,20 +68,128 @@ uniform sampler2D wave_noise : repeat_enable, filter_linear;
 uniform sampler2D height_tex : filter_linear;
 // PORT SUBSTITUTE for donor hmapTex. Donor binding is UNVERIFIED
 // (DECOMP-04 §8.1/§8.2: 0x853bde mov edx,0x853e0c -> call 0x405454 only
-// assigns a Delphi string; no texture lookup is proven). Default is a neutral
-// 1x1 alpha=0 texture => hmapMin (-max_height) => full coverage.
+// assigns a Delphi string; no texture lookup is proven). water3d.gd now binds
+// a REAL decoded height grid here; a neutral 1x1 texture is NEVER substituted.
 uniform sampler2D reflection_map : filter_linear;
 // PORT APPROXIMATION of donor reflectionMap projected FBO (water.dev.frag:207-213);
 // engine binding UNVERIFIED (TERRAIN2-03 UNV-2). Disabled by default.
 uniform float reflection_enabled;
 uniform vec2 map_size;            // port substitute for hmapW/hmapH (water.dev.vert:2-3, UNVERIFIED)
-uniform float time;               // donor `time` (water.dev.frag:1), advanced in water3d.gd
+uniform float time;               // donor `time` (water.dev.frag:1). [U5] FORMULA [D]:
+                                  // time=(float)(dbl[C+0xc8]*dbl[C+0xc4]), Speed=1.0 (lib :42; 0x854091 ev_bbdb…; DEC-U §5/§7.5).
+                                  // Writer EIP UNVERIFIED [U5]: water3d.gd `_time += delta` is SCAFFOLDING, not a donor value.
+                                  // Same accumulator drives DEV scroll (:176-177/:248/:433/:451) and BUILTIN VP (:330-331).
 uniform int fog_enabled;          // int, donor water.dev.frag:23; 0 default (colors.lib:36 FogMode=0)
 uniform vec3 fog_color;           // donor palette Fog (60,100,150)/255 colors.lib:23
 uniform float fog_density;        // neutral 0 while fog_enabled==0
 
+// ---- PORT1TO1-WATER explicit per-variant mode selection (report §10 rule c) ----
+// 0 = DEV     water.dev.vert + water.dev.frag (water.lib:67-68, shipped pair).
+//             The equations below stay bit-identical to the V7-84 port.
+// 1 = BUILTIN embedded C literals FUN_00854ac0 / FUN_008551d8, compiled into the
+//             program by FUN_00855b38 (report §5.3). deepColor/shallowColor come
+//             from water.lib; alphaDepth = gl_Color.r; 2-wave vertex displacement.
+// 2 = LEGACY  water.vert + water.frag, NOT pinned by water.lib (report §5.2).
+//             NOTE: the IMPL brief calls this pair "BUILTIN"; the authoritative
+//             PORT1TO1 report and water3d.gd's enum call it LEGACY, and reserve
+//             BUILTIN for the embedded compiled pair. The naming here follows
+//             the authority; all three literal pairs are implemented.
+// WATERCOMPILE: BUILTIN is now the LABELLED default (1), not a silent switch.
+// Basis: docs/terrain_swarm_2026-11-26/reports/DEC_U_water_runtime.md §4.3 [D] —
+// shipped water.lib CustomEnable=False (ev_2eb0…/ev_227e…) and ctor C+0x184=0
+// (ev_5aae…) / layer copy C+0x184=layer+0x90 (ev_513e…) both leave C+0x184=0, so
+// the CUSTOM arm of FUN_00856530 is unreachable and the embedded pair compiled by
+// FUN_00855b38 is strongly implied. This is [D], NOT [O]; U1 §9 capture remains
+// open. water3d.gd sets this uniform explicitly on every build(); selecting DEV
+// or LEGACY is an explicit labelled choice, never a fallback.
+uniform int water_shader_path = 1;
+
+// ---- BUILTIN embedded-pair uniforms: exact donor names (report §4.3/§5.3) ----
+// water.lib layer defaults are supplied by water3d.gd (LIB_* constants).
+// [U4*] DEC-U §7.2: the S1–S9 defaults below are the FILE (water.lib :21-29)
+// candidate; the ENGINE ctor tuple (§2.4: 0.4/0.3/4/0.1/0.5/1/0.05/2/0.01) is
+// EQUALLY live until U4*. water3d.gd selects the tuple via water_scalar_source
+// (NO default). These literals are NOT presented as settled donor values.
+// BRANCH-LABELS (DEC-U §2/§3): FILE vs ENGINE is chosen by ONE branch —
+// FUN_00851bdc @0x851bdc picks FUN_00856080 (ENGINE ctor) when layerPtr==0, else
+// FUN_00852f5c (FILE layer copy). Each arm writes the whole C+0x88..+0xc4 scalar
+// block + C+0xb4/+0xbc waveDirs ATOMICALLY; no per-scalar FILE/ENGINE mix exists
+// in shipped code. Per-scalar source is the FUN_00854054 bitmask binder:
+// K(P,key) pushes [C+0x88..+0xb0], V2 pairs read C+0xb4/C+0xbc; time is
+// fld [C+0xc8] * fmul [C+0xc4] -> fstp @0x854091 (Speed=1.0, water.lib:42).
+// [D] deepColor/shallowColor/alphaDepth/hdrMultiplier converge; S1–S11/W0/W1 stay
+// [U] until U4*-CORE/W0/W1/S10 + U1/U3/U5/U6/U12 zero-mismatch GL captures land.
+// S10/S11 LIVE: FILE 0.1/0.01 (lib :32/:33) vs ENGINE 0.4/0.825 (C+0xac/+0xb0);
+// texScaleS/T 0.01/0.02 below are EMBEDDED-VP SOURCE defaults, NOT live uniforms.
+uniform sampler2D waveMap : repeat_enable, filter_linear;  // S(P,waveMap,C+0xfc) bit 0x7c.02
+uniform sampler2D reflectionMap : filter_linear;           // S(P,reflectionMap,C+0xf8) bit 0x7c.01
+uniform bool reflectionMapBound = false;                   // [U12] no FBO provenance; hard-fail in water3d.gd — UNCHANGED
+uniform vec4 eyePosition;                                  // V3(P,eyePosition,V+8) bit 0x7c.08; [U4] numeric source unrecovered, host camera eye is used below
+uniform vec4 deepColor = vec4(0.0, 0.0, 0.1255, 0.5);       // [D] SETTLED DEC-U §3 C1: lib :9-13 == ctor (path-insensitive), §7.1
+uniform vec4 shallowColor = vec4(0.0, 0.0, 0.0, 0.5);      // [D] SETTLED DEC-U §3 C2: lib :15-19 == ctor, §7.1
+uniform float reflectionAmount = 1.0;                      // K(P,reflectionAmount) bit 0x7c.40 [U4*] FILE candidate
+uniform float waterAmount = 1.0;                           // K(P,waterAmount) bit 0x7c.80
+uniform float fresnelPower = 1.0;                          // K(P,fresnelPower) bit 0x7d.01
+uniform float fresnelBias = 1.0;                           // K(P,fresnelBias) bit 0x7d.02
+uniform float distFactor = 1.0;                            // K(P,distFactor) bit 0x7d.20
+uniform float bumpFactor = 1.0;                            // K(P,bumpFactor) bit 0x7d.40
+uniform float waveFreq = 0.0;                              // K(P,waveFreq) bit 0x7d.08
+uniform float waveAmp = 0.0;                               // K(P,waveAmp) bit 0x7d.10
+uniform vec2 waveDir0 = vec2(-1.0, 0.0);                   // V2(P,waveDir0,C+0xb4) bit 0x7e.02 — [U4*] FILE candidate lib :34-36; engine slot UNENUMERATED (§3 W0)
+uniform vec2 waveDir1 = vec2(-0.7, 0.7);                   // V2(P,waveDir1,C+0xbc) bit 0x7e.04 — [U4*] FILE candidate lib :38-40; engine slot UNENUMERATED (§3 W1)
+uniform float texScaleS = 0.01;                            // K(P,texScaleS) bit 0x7d.80 — [U4*] EMBEDDED-SOURCE-DEFAULT (§2.5), NOT a live uniform; FILE 0.1 / ENGINE 0.4 (§7.3)
+uniform float texScaleT = 0.02;                            // K(P,texScaleT) bit 0x7e.01 — [U4*] EMBEDDED-SOURCE-DEFAULT (§2.5), NOT a live uniform; FILE 0.01 / ENGINE 0.825 (§7.3)
+uniform vec4 alphaDepth = vec4(1.0, 1.0, 1.0, 1.0);        // donor gl_Color; draw path sets (1,1,1,1) (§7.3)
+uniform float hdrMultiplier = 1.0;                         // K(P,hdrMultiplier) bit 0x7d.04 — exact §4.3 key; DEV uses hdr_multiplier above
+
+// ---- DEC-U-HMAP-IDENTITY §7.4: donor-SETTLED chain (LABELS ONLY, no change) ----
+// [O]/[D] Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_hmap_identity.md.
+// Mirrored as telemetry in water3d.gd stats["hmap_identity_chain"]. These comments
+// change NO uniform value, texture, gate or shader path: height_tex / hmapTex stay
+// the labelled [U3] decoded-grid substitute and the +/-2.96 span stays script-stage
+// CLASSIFICATION. No parity claim. U3-NUM/U3-TEX/U3-REG captures remain open (§6).
+//   hmapTex = engine height object at slot C+0xe0, per-draw:
+//             FUN_008520a8 <- FUN_00739bf8(layerObj) -> FUN_0082f86c(*(h+0x200)).
+//             NOT heightmapwaves0.tga / diffusewaves0/2 / a 1x1 neutral texel.
+//   sampler unit C+0xdc (ctor 2, FUN_00856080 @0x856080);
+//   target C+0xd8 (ctor 0xde1 = GL_TEXTURE_2D, per-draw *(h+0x50));
+//   liveness gate C+0xe0!=0 && [C+0xe0+8]!=0 @0x854250 (closed => no bind).
+//   hmapW/H = verbatim int32 layerObj+8/+0xc -> C+0xd0/+0xd4 -> glUniform1i.
+//   hmapMin/Max = (float)FUN_0082f060/0082f114(*(h+0x200)) -> C+0xe4/+0xe8
+//                 -> glUniform1f, IDENTITY (no donor scale/bias/conversion).
+//   water.lib: ONLY HeightMapEnable=True; no MaxHeight / HeightMapTexUnit key;
+//              HeightMapWaves0 commented (water.mat:86-106). 2.96 = texturemap.inc:29
+//              cMaxHeight, script-stage CLASSIFICATION, NOT a recovered hmapMin/Max.
+uniform int hmapW;                                         // S(P,hmapW,C+0xd0) bit 0x7e.20 [U3] decoded-grid width; donor int32 layerObj+8 -> C+0xd0 -> glUniform1i (verbatim)
+uniform int hmapH;                                         // S(P,hmapH,C+0xd4) bit 0x7e.40 [U3] decoded-grid height; donor int32 layerObj+0xc -> C+0xd4 -> glUniform1i (verbatim)
+uniform float hmapMin;                                     // K(P,hmapMin) bit 0x7e.80 [U3] = -max_height substitute; donor (float)FUN_0082f060(*(h+0x200)) -> C+0xe4 -> glUniform1f (identity, no donor scale)
+uniform float hmapMax;                                     // K(P,hmapMax) bit 0x7f.01 [U3] = +max_height substitute; donor (float)FUN_0082f114(*(h+0x200)) -> C+0xe8 -> glUniform1f (identity, no donor scale)
+
+// ---- LEGACY water.vert/water.frag donor constants (report §5.2) --------------
+uniform sampler2D hmapTex : filter_linear;                 // raw texel on dry pixels (§5.2 discard); [U3] donor = engine height obj C+0xe0 <- FUN_008520a8<-FUN_00739bf8(layerObj)->FUN_0082f86c(*(h+0x200)); unit C+0xdc ctor 2, target C+0xd8 ctor 0xde1, gate @0x854250
+uniform bool hmapTexBound = false;                         // [U3] no engine hmapTex; hard-fail in water3d.gd
+uniform vec3 legacy_watercolor = vec3(0.43, 0.60, 0.66);    // water.frag watercolor
+uniform vec3 legacy_watercolor2 = vec3(0.06, 0.07, 0.11);  // water.frag watercolor2
+uniform vec3 legacy_specularcolor = vec3(1.3, 1.3, 0.9);   // water.frag specularcolor
+uniform float legacy_water_level = 1.5;                    // 1.5 /*0.94*/ - debug constant, NOT the plane Y
+uniform float legacy_coast_fade = 0.10;                    // coast2water_fadedepth
+uniform float legacy_deep_fade = 0.60;                     // 0.5 + 0.10
+uniform float legacy_soft = 15.0;                          // water_softlight_fact
+uniform float legacy_glossy = 120.0;                       // water_glossylight_fact
+uniform float legacy_particle_amount = 70.0;               // particle_amount (inert under donor stubs, [U])
+uniform float legacy_small_waveheight = 0.6;               // small_waveheight
+
 varying vec2 v_height_uv;         // donor gl_TexCoord[1].xy (hmap UV)
 varying float v_fog_depth;        // port analogue of donor fogFragCoord
+// BUILTIN embedded-pair varyings (§5.3): T1/T2, eyeVector, alphaDepth.
+varying vec2 v_builtin_t1;
+varying vec2 v_builtin_t2;
+varying vec3 v_builtin_eye;
+varying float v_alpha_depth;
+// LEGACY water.vert varyings (§5.2): T0, T3.z (plane Y), alphaDepth.
+varying vec2 v_legacy_uv;
+varying float v_plane_y;
+varying vec2 v_screen_uv;         // [U12] inert placeholder until reflection FBO is bound
 
 const mat2 M = mat2(vec2(0.72, -1.60), vec2(1.60, 0.72)); // water.dev.frag:83
 
@@ -75,9 +199,11 @@ float noise(vec2 p) {
 }
 
 // donor height_map(): hmapMin + v.w*(hmapMax-hmapMin) — water.dev.frag:70-75.
-// hmapMin = -max_height, hmapMax = +max_height is a PORT APPROXIMATION from the
-// donor plateau/ravine span (texturemap.inc:29 cMaxHeight=2.96;
-// generatemap.inc:7 cRavineHeight=-2.964). Donor hmapMin/hmapMax binding UNVERIFIED.
+// hmapMin = -max_height, hmapMax = +max_height is a [U3] PORT SUBSTITUTE, NOT
+// donor-recovered: DEC-U §3 MH — MaxHeight is ABSENT from water.lib; the only
+// donor literal is texturemap.inc:29 cMaxHeight=2.96 (script-stage CLASSIFICATION).
+// Live hmapMin/Max sit in C+0xe4/+0xe8 via FUN_0082f060/0082f114 (§6 U3-NUM);
+// until captured, +/-2.96 stays labelled — no parity claim.
 float height_map(vec2 p) {
 	float w = texture(height_tex, p).a;
 	return -max_height + w * (2.0 * max_height);
@@ -146,13 +272,179 @@ vec3 terrain_map(vec2 p) {
 	return vec3(0.175, 0.1375, 0.1) + texture(wave_noise, fract(p * 8.0 * (1.0 / 256.0))).rgb * 0.25;
 }
 
+// ---- LEGACY water.frag helpers (report §5.2; DEC_DEEP ev_fb3fef…/fnd_76) ----
+// [I] The DEV water_map() :85-104 structure is reused with the verbatim LEGACY
+// constants (large_waveheight 0.50, large_wavesize 2.0, small_waveheight 0.6,
+// small_wavesize 0.5, iglobaltime = time*3.0). The exact water.frag body was not
+// recovered, so this reuse is labelled [U] by water3d.gd, not presented as [O].
+float legacy_noise(vec2 p) {
+	return texture(waveMap, p * (1.0 / 256.0)).r;          // donor noise() waveMap tap
+}
+
+float legacy_water_map(vec2 p, float hgt) {
+	vec2 p2 = p * 2.0;                                     // large_wavesize = 2.0 (§5.2)
+	float ig = time * 3.0;                                 // iglobaltime (§5.2)
+	vec2 shift1 = 0.001 * vec2(ig * 160.0 * 2.0, ig * 120.0 * 2.0);
+	vec2 shift2 = 0.001 * vec2(ig * 190.0 * 2.0, -ig * 130.0 * 2.0);
+	float f = 0.6000 * legacy_noise(p);
+	f += 0.2500 * legacy_noise(p * M);
+	f += 0.1666 * legacy_noise(p * M * M);
+	float wave = sin(p2.x * 0.622 + p2.y * 0.622 + shift2.x * 4.269) * 0.50 * f * hgt * hgt;
+	p *= 0.5;                                              // small_wavesize = 0.5
+	f = 0.0;
+	float amp = 1.0;
+	float s = 0.5;
+	for (int i = 0; i < 9; i++) {
+		p = M * p * 0.947;
+		f -= amp * abs(sin((legacy_noise(p + shift1 * s) - 0.5) * 2.0));
+		amp *= 0.59;
+		s *= -1.329;
+	}
+	return wave + f * legacy_small_waveheight;            // 0.6 (§5.2)
+}
+
+// LEGACY mainImage(). Donor stubs kept verbatim: terrain_map()=vec3(0),
+// nautic()=1, test_shadow()=1 (fnd_77). h is the hmapTex-derived depth from the
+// discard tail; the inner height_map() fBm (flat_level 0.525, §5.2) is [U] and
+// is NOT invented here.
+vec3 legacy_main_image(vec2 uv0, float h) {
+	float ig = time * 3.0;
+	float waveheight = clamp(legacy_water_level * 3.0 - 1.5, 0.0, 1.0); // DEV :174 shape with LEGACY 1.5 [I]
+	float level = legacy_water_level + 0.2 * legacy_water_map(uv0 * 15.0 + vec2(ig * 0.1), waveheight);
+	vec2 dif = vec2(0.0, 0.01);
+	vec2 pos = uv0 * 15.0 / tex_scale_s * (float(hmapW) / 128.0) + vec2(ig * 0.01); // donor hmapW/128 [U3]
+	float h1 = legacy_water_map(pos - dif, waveheight);
+	float h2 = legacy_water_map(pos + dif, waveheight);
+	float h3 = legacy_water_map(pos - dif.yx, waveheight);
+	float h4 = legacy_water_map(pos + dif.yx, waveheight);
+	vec3 normwater = normalize(vec3(h3 - h4, h1 - h2, 0.15));
+	vec2 wavejitter = normwater.xy * tex_scale_t * (level - h);
+
+	vec3 col = vec3(0.0);                                  // donor terrain_map() stub
+	float coastfade = clamp((level - h) / legacy_coast_fade, 0.0, 1.0); // 0.10
+	float coastfade2 = clamp((level - h) / legacy_deep_fade, 0.0, 1.0); // 0.60
+	float intensity = dot(col, vec3(0.2126, 0.7152, 0.0722));
+	vec3 watercolor = mix(legacy_watercolor * intensity, legacy_watercolor2, smoothstep(0.0, 1.0, coastfade2));
+
+	// donor projected reflectionMap; screen-space UV derived from gl_FragCoord ([U12]).
+	if (reflectionMapBound) {
+		vec2 ruv = clamp(v_screen_uv + wavejitter, vec2(0.0), vec2(1.0));
+		vec3 refcol = texture(reflectionMap, ruv).rgb;
+		refcol *= (refcol.r + refcol.g + refcol.b) * hdrMultiplier;
+		watercolor += refcol;
+	}
+
+	vec3 r0 = vec3(uv0, legacy_water_level);
+	vec3 rd = normalize(sun_dir - r0);
+	float grad = dot(normwater, rd);
+	float gc = max(grad, 0.0);                             // pow-domain guard (PORT)
+	float specular = pow(gc, legacy_soft);                 // 15
+	float specular2 = pow(gc, legacy_glossy);               // 120
+	float gradpos = dot(vec3(0.0, 0.0, 1.0), rd);
+	float specular1 = smoothstep(0.0, 1.0, pow(max(gradpos, 0.0), 5.0));
+	float watershade = 1.0;                                // donor test_shadow() stub
+	watercolor *= 2.2 + watershade;
+	watercolor += (0.2 + 0.8 * watershade) * ((grad - 1.0) * 0.5 + specular) * 0.25;
+	watercolor /= (1.0 + specular1 * 1.25);
+	watercolor += watershade * specular2 * legacy_specularcolor; // (1.3,1.3,0.9)
+	// nautic()=1 / particles()=1 stubs (fnd_77). legacy_particle_amount (70) is
+	// bound by water3d.gd but inert under those stubs — labelled [U].
+	watercolor += watershade * coastfade * (1.0 - coastfade2) * (vec3(0.5, 0.6, 0.7) + vec3(1.0));
+	col = mix(col, watercolor, coastfade);
+	return col;
+}
+
+// WATERCOMPILE: no `return` may appear in vertex()/fragment() — Godot 4.7
+// processor functions reject it. The three-way selection is if/else-if/else;
+// every path falls through to its ALBEDO/ALPHA writes. Helper functions above
+// return normally (allowed); do not inline a `return` into either processor.
 void vertex() {
-	v_height_uv = UV;
-	vec4 view_pos = VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
-	v_fog_depth = -view_pos.z;                            // port analogue of donor fogFragCoord
+	if (water_shader_path == 1) {
+		// §5.3 embedded VP, verbatim: NWAVES=2, wave[0]=(waveFreq,waveAmp,0.5,
+		// waveDir0), wave[1]=(3*waveFreq,0.33*waveAmp,1.7,waveDir1).
+		vec3 P = VERTEX;
+		float a0 = dot(waveDir0, P.xz) * waveFreq + time * 0.5;
+		float a1 = dot(waveDir1, P.xz) * (3.0 * waveFreq) + time * 1.7;
+		P.y += waveAmp * sin(a0) + (0.33 * waveAmp) * sin(a1);
+		v_builtin_t1 = P.xz * texScaleS + vec2(time * 0.02);
+		v_builtin_t2 = P.xz * texScaleT + vec2(time * 0.02);
+		v_builtin_eye = P - CAMERA_POSITION_WORLD;          // donor eyePosition (caller/camera eye, V+8) from host camera, not an invented constant
+		v_alpha_depth = alphaDepth.r;                       // alphaDepth = gl_Color.r
+		vec4 clip = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * vec4(P, 1.0);
+		v_screen_uv = (clip.xy / max(clip.w, 1e-5)) * 0.5 + 0.5;
+		VERTEX = P;
+		v_height_uv = UV;
+		vec4 vp = VIEW_MATRIX * MODEL_MATRIX * vec4(P, 1.0);
+		v_fog_depth = -vp.z;
+	} else if (water_shader_path == 2) {
+		// §5.2 water.vert varyings. T3.xy donor -0.5 centring is absorbed by
+		// bind_height_grid's (x+0.5)/w encoding [U6]; T3.z = gl_Vertex.y.
+		v_legacy_uv = UV * tex_scale_s;                    // T0 = MultiTexCoord0 * texScaleS
+		v_height_uv = UV;                                  // T3.xy [U6] port space
+		v_plane_y = VERTEX.y;                              // T3.z
+		v_alpha_depth = alphaDepth.r;                      // alphaDepth = gl_Color.r
+		vec4 clip = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
+		v_screen_uv = (clip.xy / max(clip.w, 1e-5)) * 0.5 + 0.5;
+		vec4 vp = VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
+		v_fog_depth = -vp.z;                               // fogFragCoord
+	} else {
+		v_height_uv = UV;
+		vec4 clip = PROJECTION_MATRIX * VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
+		v_screen_uv = (clip.xy / max(clip.w, 1e-5)) * 0.5 + 0.5;
+		vec4 view_pos = VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
+		v_fog_depth = -view_pos.z;                            // port analogue of donor fogFragCoord
+	}
 }
 
 void fragment() {
+	if (water_shader_path == 1) {
+		// §5.3 embedded FP, verbatim equations. reflectionMap is REQUIRED ([U12]):
+		// water3d.gd hard-fails the draw when no real target is bound; this flag
+		// keeps an unbound sampler from ever producing a grey quad.
+		if (!reflectionMapBound) {
+			discard;
+		}
+		vec3 t0 = texture(waveMap, v_builtin_t1).xyz;
+		vec3 t1 = texture(waveMap, v_builtin_t2).xyz;
+		vec3 t = normalize(t0 + t1 - vec3(1.0, 1.0, 0.0));
+		float fDist = distFactor / length(v_builtin_eye);
+		float facing = 1.0 + v_builtin_eye.y * fDist * (0.1 - t.y * bumpFactor);
+		float fresnel = clamp(fresnelBias + pow(facing, fresnelPower), 0.0, 1.0);
+		vec2 waveJitter = t.xy * fDist;
+		waveJitter.y = abs(waveJitter.y);
+		vec3 refuv = vec3(v_screen_uv, 1.0); // [U12] screen-space substitute
+		refuv.xy -= waveJitter * refuv.z;
+		vec3 refcol = texture(reflectionMap, refuv.xy).rgb;
+		refcol *= (refcol.r + refcol.g + refcol.b) * hdrMultiplier;
+		vec4 waterColor = mix(shallowColor, deepColor, facing) * waterAmount;
+		vec4 reflecColor = mix(waterColor, vec4(refcol, 1.0), fresnel) * reflectionAmount;
+		vec3 outcol = waterColor.rgb + reflecColor.rgb;
+		// §5.3 fog modes 2/3 (1.442695); mode 1 needs gl_Fog.end/scale (unported).
+		if (fog_enabled == 2) {
+			float f = clamp(exp2(-fog_density * v_fog_depth * 1.442695), 0.0, 1.0);
+			outcol = mix(fog_color, outcol, f);
+		} else if (fog_enabled == 3) {
+			float f = clamp(exp2(-pow(fog_density * v_fog_depth, 2.0) * 1.442695), 0.0, 1.0);
+			outcol = mix(fog_color, outcol, f);
+		}
+		ALBEDO = outcol;
+		ALPHA = v_alpha_depth;                             // alphaDepth = gl_Color.r (draw path = 1)
+	} else if (water_shader_path == 2) {
+		// §5.2 water.frag main tail, verbatim logic. hmapTex is the [U3] port
+		// substitute bound by bind_height_grid (real decoded grid, never a
+		// neutral 1x1 texel). Dry pixels keep the raw texel, exactly as donor.
+		if (!hmapTexBound) {
+			discard;
+		}
+		vec4 dry = texture(hmapTex, v_height_uv);
+		float h = hmapMin + dry.a * (hmapMax - hmapMin);    // donor discard depth [U3] engine values
+		vec3 col = dry.rgb;                                // dry: keep raw hmapTex texel
+		if (v_plane_y > h) {                               // gl_TexCoord[3].z > h
+			col = legacy_main_image(v_legacy_uv, h);
+		}
+		ALBEDO = col;
+		ALPHA = 1.0;                                       // vec4(col, 1.0) opaque
+	} else {
 	// donor mainImage() — water.dev.frag:162-235.
 	// TRN-WATER: stop feeding the -0.25 CLASSIFICATION literal as the surface Y.
 	// Donor WATER_LEVEL comes from gl_TexCoord[1].z (:167; water.dev.vert:18),
@@ -210,11 +502,11 @@ void fragment() {
 	float intensity = dot(rescolor, vec3(0.2126, 0.7152, 0.0722)); // (:200)
 	vec3 watercolor = mix(shallow_color * intensity, deep_color, smoothstep(0.0, 1.0, coastfade2)); // (:201)
 
-	// donor projected reflection (:207-213). PORT APPROXIMATION: SCREEN_UV
+	// donor projected reflection (:207-213). gl_FragCoord/VIEWPORT_SIZE screen-space [U12]
 	// replaces the engine's projective texture-matrix coord; disabled by default
 	// and the FBO binding is UNVERIFIED (TERRAIN2-03 UNV-2 / DECOMP-04 §8).
 	if (reflection_enabled > 0.5) {
-		vec2 ruv = clamp(SCREEN_UV + wavejitter, vec2(0.0), vec2(1.0));
+		vec2 ruv = clamp(v_screen_uv + wavejitter, vec2(0.0), vec2(1.0));
 		vec3 refcol = texture(reflection_map, ruv).rgb;
 		refcol *= (refcol.r + refcol.g + refcol.b) * hdr_multiplier; // (:210)
 		watercolor += refcol;                             // (:213)
@@ -276,4 +568,5 @@ void fragment() {
 
 	ALBEDO = rescolor;
 	ALPHA = alpha;
-}
+	}
+} // WATERCOMPILE: close the DEV `else` branch (line ~408) and fragment() itself.

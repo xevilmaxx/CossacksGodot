@@ -80,6 +80,50 @@
 #
 #   NO DONOR PARITY CLAIM: parity status is always "UNVERIFIED"; no donor GPU
 #   A/B frame exists (CHARTER.md:43-44,125; A05 parity.status schema).
+#
+#   GEN1TO1 HARD PORT (2026-11-26, worker IMPL-GEN-1TO1), driven by the exact
+#   implementation bible docs/terrain_swarm_2026-11-26/reports/
+#   PORT1TO1_terrain_generation.md §A-§G. Backup before edit:
+#   inbox/backup/terrain_donor_gen.gd.bak-GEN1TO1 (SHA256 5C50099C…).
+#   Rules honoured: no invented constant, no synthetic noise, no weakened gate,
+#   no parity claim. Every genuinely [U] item stays a NULL/default hook with a
+#   telemetry label and is listed in the worker report.
+#
+#   GENSEED HARD PORT (2026-11-26, worker IMPL-GEN-SEED), driven by
+#   docs/terrain_swarm_2026-11-26/reports/DEC_U_gen_seed.md §2-§5 and
+#   PORT1TO1_terrain_generation.md §A.5/§C/§E/§F. Backup before edit:
+#   inbox/backup/terrain_donor_gen.gd.bak-GENSEED (SHA256 B1F866FA…).
+#   SCOPE: static donor facts ONLY — Delphi LCG algorithm + slot/seeder,
+#   RandomExt randkey0/1 source, renderer+0x40 producer/consumer annotation,
+#   minx/miny producer. ADDITIVE comments/diagnostic labels ONLY: no geometry,
+#   gate, draw-count, seed-source or RNG wiring change. Donor never executed;
+#   no Godot/runner/git; no parity claim. Every [U] keeps a terminating probe
+#   and is never given an invented numeric.
+#
+#   PLACEMENT HARD PORT (2026-11-26, worker IMPL-PLACEMENT), driven by
+#   docs/terrain_swarm_2026-11-26/reports/DEC_U_placement.md §8 P-PLACE-01..16
+#   and the §7 [U] register. Backup before edit:
+#   inbox/backup/terrain_donor_gen.gd.bak-PLACEMENT. SCOPE: G=127 terrain gate,
+#   desert family fan-out with its own ledgered draws, labelled NULL
+#   forest-border stage, objects_missing telemetry, plus cited comments/telemetry
+#   only. No donor binary executed; no Godot/runner/git; no parity claim; no
+#   invented density, draw or count. IMPL-GEN-SEED landings and all user mods
+#   (water pre-mark, I11 seam, mill/field fixes) preserved.
+#
+#   RANDKEY-DERIV HARD LABELS (2026-11-27, worker IMPL-RANDKEY-DERIV), driven by
+#   docs/terrain_swarm_2026-11-26/reports/DEC_U_nb4.md §2-§5. Backup before edit:
+#   inbox/backup/terrain_donor_gen.gd.bak-RANDKEYDERIV (SHA256 CFCA86C3…).
+#   SCOPE: donor-settled facts ONLY [STATIC [D] ONLY — NO DONOR PARITY; live values [U]] — `GenerateMapRandKey` body at 0x6ac244
+#   (decl 0x69f448, registrar sub_69a70c) is BYTE-PROVEN [D]: `mov eax,0x7fffffff;
+#   call 0x403a0c (Delphi Random); cdq; helper 0x8484d0 stores hi->randkey0,
+#   lo->randkey1` => randkey0=0 CONSTANT, randkey1=Random($7FFFFFFF) SINGLE draw,
+#   var-out 1st=key0(hi)/2nd=key1(lo), stored +0x18/+0x108=key1 and
+#   +0x1c/+0x10c=key0, NO map-name/settings input. Recorded as labelled
+#   data/telemetry ONLY. ADDITIVE comments/dicts/telemetry: no generation RNG
+#   behaviour change, no seed invented, caller-supplied randkey0/1 stay verbatim.
+#   The actual Delphi Random STATE/SOURCE (U-KEY2/U-MAP/U-SS) stays [U] with the
+#   report's ±1 and restart-changes-seed probes. No donor binary executed;
+#   no Godot/runner/git; no parity claim; no test weakened.
 # ---------------------------------------------------------------------------
 extends RefCounted
 class_name C3TerrainDonorGen
@@ -106,8 +150,14 @@ const LCG_MUL: int = 0xFC0D          # donor CODE 0x60f64c-0x60f696; spec/02 §2
 const LCG_ADD: int = 0x3C6EF35F      # donor CODE 0x60f64c-0x60f696; spec/02 §2; X21 §6
 const LCG_U32: int = 0xFFFFFFFF      # mask 64-bit int to u32 (X21 §6: s*M+C < 2^47)
 const LCG_DIV: float = 4294967296.0  # 2^32 divisor, VA 0x60f698; spec/02 §2; X21 §6
-const DELPHI_LCG_MUL: int = 0x8088405  # separate Delphi Random(), spec/02 §3.3; X21 §6.1
-const DELPHI_LCG_ADD: int = 1          # Delphi seed = seed*0x8088405+1; spec/02 §3.3
+const DELPHI_LCG_MUL: int = 0x8088405  # [O] sub_403a0f imul edx,[ebx+0x8f2008],0x8088405 (ev_6478320b…)
+const DELPHI_LCG_ADD: int = 1          # [O] sub_403a19 inc edx; state=state*MUL+1 mod 2^32 (ev_6478320b…)
+# GENSEED §2.1 [O] Delphi Random(256) = sub_403a0c @0x403a0c (ev_6478320b…):
+#   0x403a0f imul edx,[ebx+0x8f2008],0x8088405 | 0x403a19 inc edx |
+#   0x403a1a mov [ebx+0x8f2008],edx | 0x403a20 mul edx (eax=0x100 at entry) |
+#   0x403a22 mov eax,edx  =>  out = (256*state)>>32 = state>>>24.
+#   State slot 0x8f2008 IMAGE = 0 (ev_0e686c8c…/ev_bde23e2d…) — file-image
+#   default, NOT a generation seed. Seed SOURCE stays [U] U4 (delphi_state_hook).
 # Donor collision tag VALUES [O] (dmscript.global:83-92; D06:146, F09 E07).
 const C_TAG_CLEAR: int = 0
 const C_TAG_WATER: int = 87            # gc_collisiontag_water; D06:146, dmscript.global:84-91
@@ -124,6 +174,23 @@ const RESEED_SITES: Array = [
 	"D1:1538", "D1:1616", "D1:1772", "D1:1909", "D1:1927",
 ]
 const EXT_KEY_SITES: Array = ["D2:216", "D2:513", "D2:774"]
+
+# GENSEED §2.2/§2.3 [O] seed source: `randkey0 := gMap.settings.gen.randkey0;
+# randkey1 := gMap.settings.gen.randkey1` (generatemap.inc:141-142, ev_51c638a0…).
+# ALL 11 SetRandomKey + ALL 3 SetRandomExtKey64 sites consume randkey1; key0 is
+# DISCARDED mod 2^32 (ev_661ef2e6… SetRandomExtKey64 RTTI, ev_9defac5a… SetRandomKey
+# RTTI, X21 §4.3). GenerateMapRandKey / Get-Set(Map|GlobalMap)GeneratorRandomKey
+# are RTTI names with ZERO static xrefs (ev_3e61f9fa…, §1 xref rows) — derivation
+# stays [U] U5/P5. Terminating ±1 probe (§2.4.2): fix randkey0, vary randkey1 by
+# ±1, dump the D2:190 mask pick + first three RandomExt floats; terminate when
+# key0-only changes are bit-identical and key1±1 changes the stream. No silent
+# fallback and no derived per-map seed is introduced anywhere in this module.
+# DEC-U-NB4 REFINEMENT (additive, 2026-11-27): the DERIVATION FORMULA above is now
+# [D] byte-proven at impl 0x6ac244 — randkey0=0, randkey1=Random($7FFFFFFF), one
+# draw, no name/settings input (RANDKEY_DERIVATION_AUTHORITY below). Only the
+# Delphi state/source feeding that draw and the runtime invocation timing stay
+# [U] (U-KEY2/U-MAP/U-SS) with the ±1 + restart probes. This comment is retained
+# verbatim; no seed or wiring is introduced.
 
 # --- donor mask / height constants -----------------------------------------
 const C_PLATEAU_HEIGHT: float = 2.964       # generatemap.inc:4; X03:368
@@ -163,6 +230,8 @@ const C_SMOOTH_COAST_NEIGHBOUR_RAD: int = 2 # generatemap.inc:625 (5x5); X03:543
 
 # --- water / shore / tile constants ----------------------------------------
 const C_WATERFIELD_SIZE: int = 2            # generatemap.inc:649; X03:559
+const C_MAP_SIZE_REF: int = 640             # generatemap.inc:650 cMapSize=640 (fixed donor map ref)
+const C_WATER_MAP_ARR_SIZE: int = 320       # generatemap.inc:650 cWaterMapArrSize=(640 div 2)
 const C_WATERFIELD_OFFSET_Y: float = -0.5   # generatemap.inc:688,704; spec/05 §1
 const C_TILE_WATER_HEIGHT: float = -0.25    # texturemap.inc:30; X03:589
 const C_TILE_SHORE_HEIGHT: float = -0.1     # texturemap.inc:31; X03:590
@@ -234,14 +303,20 @@ const C_FRS_SMALL: float = 0.00054         # dogenerate.inc:1690; X03:805
 const C_STN_1: float = 0.00016             # dogenerate.inc:1692; X03:807
 const C_STN_2: float = 0.00012             # dogenerate.inc:1693; X03:808
 const C_LAKE_ZERO: float = 0.0             # dogenerate.inc:1735-1736 (hard-zeroed)
-# FIX-FOREST-PLACEMENT [O]: foreststype is hard-forced 0 (D1:5-6), so every
-# SetupStartingResources forest placement draws from these seven conifer
-# families (F08 §5 recipe; dogenerate.inc:804-861). The port's legacy alias
-# "forest0" is NOT a family block in the donor-derived compact feed (64 names,
-# none "forest0"), so both start forest passes resolved to zero stamps.
+# GEN1TO1 §F.4 [O]: foreststype is hard-forced 0 (D1:5-6). Each start-forest
+# placement consumes floor(RandomExt*7) and selects ONE of these seven authored
+# conifer families, then roulette inside it (F08 §5; dogenerate.inc:804-861).
+# The old "forest0" union alias is inert legacy and is never selected now.
 const C_START_FOREST_FAMILIES: Array[String] = [
 	"forests_pinefir_medium", "forests_spruce_medium", "forests_pine_medium",
 	"forests_pinefir_big", "forests_spruce_big", "forests_pine_big", "forests_pine_big_2",
+]
+# P-PLACE-03 [O] dogenerate.inc:736-940 / DEC_DEEP_forest_generation §3: on a
+# desert start ring the 7-way conifer draw is replaced by floor(RandomExt*2)
+# over these TWO authored families (index 0 = medium, 1 = big). No family name
+# is invented and the temperate draw is never reused.
+const C_START_DESERT_FOREST_FAMILIES: Array[String] = [
+	"desert_forests_medium", "desert_forests_big",
 ]
 
 # --- stamp blend constants -------------------------------------------------
@@ -298,6 +373,162 @@ const F01_GRID_OFFSETS: Dictionary = {
 }
 
 # ---------------------------------------------------------------------------
+# DEC_U_relief_stamps §7 (worker IMPL-RELIEF-LABELS, 2026-11-26) — LABEL ONLY.
+# Additive, donor-settled authority data + telemetry. These two constants are
+# NEVER read by generation: the live stamp body and its in-place post-pass
+# (§7 R-1/R-7) are untouched. No parity claim; no donor binary run;
+# no Scale/kernel/clamp/mesh key invented. The 12 relief [U] items keep the
+# §6 fixed-seed byte-dump zero-mismatch termination (telemetry in stats()).
+# ---------------------------------------------------------------------------
+# §2 [O] authoritative formula table (X26 ev_c176cc8… deep lines 297-303/
+# 321-323; X12 E5; X13 19/19 f32step vectors). Selectors are parser +0x3a/+0x3b.
+const RELIEF_FORMULA_AUTHORITY: Dictionary = {
+	"authority": "DEC_U_relief_stamps.md §2 table [O]; X26 authoritative; X12 E5; X13 19/19 f32step",
+	"min_pivot": "+0x5c is the SCALE PIVOT, never a clamp: g=(g-Min)*Scale+Min (x87 0x75660d/610/616)",
+	"max_unused": "+0x60 read 0/6751 in sub_755f30 (X26 E7); parser-written only; no [Min,Max] clamp (U-MAX open outside stamp)",
+	"offset_additive": "+0x64 added last on every path (0x756651/67d/6b4); shipped 680/680 = 0",
+	"terrain_scale": "+0x68 multiplies ONLY (base_h-h0) on the Smooth path (0x7566ab); shipped 680/680 = 1.0",
+	"replace_for_water": {
+		"selector": "+0x3b true (cmp @0x756601)",
+		"transform": "g2 = g*Scale (0x75661f/622/625)",
+		"final": "h_new = g2 + Offset (fld g 0x75664b; fadd 0x756651; setter call 0x7551a8 @0x756664)",
+		"incidence": "True 85/680 shipped (F02 census)",
+	},
+	"replace": {
+		"selector": "+0x3b false then +0x3a false (cmp @0x75666e)",
+		"transform": "g2 = (g-Min)*Scale + Min (0x756607-0x756619)",
+		"final": "h_new = base_h + g2 + Offset (0x756674/677/67d; setter @0x756690)",
+		"incidence": "False 680/680 shipped — branch preserved, never promoted",
+	},
+	"smooth_default": {
+		"selector": "+0x3b false and +0x3a false",
+		"transform": "same pivot as Replace",
+		"final": "h0=getHeight @0x7566a0; t=(base_h-h0)*TerrainScale+g2+Offset (0x7566a5-0x7566b4); 80-bit spill fstp tbyte [ebp-0x154] @0x7566b7; h1=getHeight @0x7566c7; h_new=t+h1 (0x7566d2; setter @0x7566e4)",
+		"read_count": "TWO getHeight reads + tbyte spill mandatory (X26 S2 refutes single-read literal)",
+		"incidence": "True 41/680 shipped (STAMP_SMOOTH_PARAMS census)",
+	},
+	"occupancy_gate": "cmp byte mask,0 @0x756638: nonzero skips the cell; flag semantics [U] U-OCC",
+	"post_pass": "sub_755db4: gated Stand && Smooth INDEPENDENT of blend branch; IN-PLACE read-after-write; hardcoded /4.0 @0x755ee4; 8-neighbour boundary",
+	"grid_addressing": "F01 G=8+N bytes for the float plane; X13 G=1000/1912/2866 are STALE +8/+12/+17 floats — never used for addressing",
+	"precision": "port default stamp_precision_model=f32_each_op; true x87 80-bit result [U] U-X87; no parity claim",
+	"termination": "19/19 f32step bits on g_mnt_1/g_hil4 + hil1/k_ravine_1 at true G=8+N — zero mismatches",
+}
+
+# §3/§4 [O structure / U semantics] — .pattern five-region layout + tail
+# invariants and the pattern.lib descriptor census. Data only: no decoder
+# changed; decode_pattern_grid() stays F01-offset based.
+const PATTERN_LAYOUT_AUTHORITY: Dictionary = {
+	"authority": "DEC_U_relief_stamps.md §3/§4 [O structure]; F01_pattern_format.md §4.1-4.2/4.9",
+	"closure": "710/710 files: filesize = 8 + 4*w*h + 54*N, N=(w-1)(h-1), zero residual",
+	"regions": [
+		"1 header: int32 w,h at 0x00-0x07 (8 B)",
+		"2 mask: u8[N] at 0x08, values 0/1 only in all 710 files (F01 E6)",
+		"3 height: float32[w*h] at G=8+N (F01 E8-E11; X26 E13/E14; X13 1000/1912/2866 STALE)",
+		"4 objects: u8[4] PRE + N*24 B records (u8 id 0..255, four 1.0f 0x3F800000, 4 B tail 00000000 in fb_1; semantics [U] U-TAIL)",
+		"5 weights: int32[4N-1] (16N-4 B; values {0,99,100,101,200} + float-looking ~2.8e7 in 4 files) then N*13 B tail (u8[10]=0 in 100%, i16 -1 (547,967)/255 (2,941), u8 0 (494,076)/1 (56,832); semantics [U] U-TAIL)",
+	],
+	"tail_invariants": "24 B record id spans 0..255 over 550,908 records; four exact 0x3F800000 floats; never map id->mesh (U-TAIL)",
+	"pattern_lib_census": {
+		"bytes": 30309138, "line_endings": "CRLF", "lines": 1172417,
+		"top_level_sections": 680, "struct_begin_end_pairs": 205571,
+		"fixed_prologue_fields": 37, "identical_prologue_order": "680/680",
+		"height_field_min_field": 30, "height_field_max_field": 31,
+		"section_names_map_to_pattern_files": "680/680 (donor ships 710 .pattern; 30 orphans + 1 case-only k_ravine_2/K_ravine_2)",
+		"width_height_int32_matches_binary": "679/680 (m_swamp_12_old 17x20 lib vs 18x23 binary stays [U])",
+		"objects_records": 39780, "distinct_base_name": 235,
+	},
+	"smooth_census": {
+		"entries": 41,
+		"source": "STAMP_SMOOTH_PARAMS const above (:314-343), transcribed census — never derived by formula",
+		"groups": "brush_plt_*x5 [1,4,1]; d_plt1/g_mnt_1..7/g_hil1..9/i_mnt_big_1..5/gift1..5 [3,4,2]; k_ravine_big_1 [3,4,2]; k_ravine_big_stone_1..8 [3,4,0]",
+	},
+	"loader_vs_disk": "loader reserves (w+1)(h+1) floats; on-disk plane is w*h floats; border-cell contents [U]",
+	"objects_not_binary": "hil1 pattern.lib Objects[] 58 records != binary N=960 — different populations, never equate (F01 E20)",
+	"termination": "U-TAIL typed field dump (id/model/scale/pos); U-OBJ per-pattern Objects[] export diff — zero mismatches",
+}
+
+# ---------------------------------------------------------------------------
+# DEC-U-NB4 §2-§5 (worker IMPL-RANDKEY-DERIV) — LABEL / DATA / TELEMETRY ONLY.
+# `GenerateMapRandKey` body is BYTE-PROVEN [D]; recorded here as authority data.
+# NEVER read by generation: the caller still supplies randkey0/1 verbatim and
+# every RNG reseed path is untouched. No seed derived/invented; the Delphi
+# Random STATE/SOURCE stays [U] with its terminating probes. No parity claim.
+# ---------------------------------------------------------------------------
+const RANDKEY_DERIVATION_AUTHORITY: Dictionary = {
+	"authority": "DEC_U_nb4.md §2-§5 [D] byte-proven (pinned t_87f0f3c130b0); parity UNVERIFIED",
+	"impl_va": "0x6ac244",
+	"decl_va": "0x69f448",  # name-hit 0x69f452; length-prefix 0x4A=74 @0x69f440
+	"registrar": ("sub_69a70c row 0x69ae52: mov ecx,0x6ac244 / mov edx,0x69f448 / "
+			+ "call [esi+0x30] (ev_0c3cbed5…, ev_d4963f56…); flat-xref absence is "
+			+ "VM-dispatch, NOT proof of non-registration"),
+	"body_opcodes": [
+		"0x6ac244 push ebp",
+		"0x6ac245 mov ebp,esp",
+		"0x6ac247 mov eax,0x7fffffff (ev_e3d17104…)",
+		"0x6ac24c call 0x403a0c — Delphi Random(range) (ev_dc243dd3…)",
+		"0x6ac251 cdq — edx=sign(eax)=0 since eax in [0,0x7ffffffe] (ev_073af193…)",
+		"0x6ac252 push edx (hi=0)",
+		"0x6ac253 push eax (lo=Random)",
+		"0x6ac254 mov edx,[ebp+0xc] — @randkey1 (2nd var-out)",
+		"0x6ac257 mov eax,[ebp+8] — @randkey0 (1st var-out)",
+		"0x6ac25a call 0x8484d0 — store helper",
+		"0x6ac25f pop ebp",
+		"0x6ac260 ret 8 — stdcall, 2 var-out args",
+	],
+	"store_helper_opcodes": [
+		"0x8484d0 push ebp / 0x8484d1 mov ebp,esp",
+		"0x8484d3 mov ecx,[ebp+0xc] — first-pushed word (hi) (ev_2aee671b…)",
+		"0x8484d6 mov [eax],ecx — *randkey0 = hi (ev_ce1cf038…)",
+		"0x8484d8 mov eax,[ebp+8] — last-pushed word (lo) (ev_300506d7…)",
+		"0x8484db mov [edx],eax — *randkey1 = lo (ev_54398df9…)",
+		"0x8484dd pop ebp / 0x8484de ret 8",
+	],
+	"derivation": {
+		"label": "[D] byte-proven — formula CLOSED at body level (U-KEY narrowed, DEC_U_nb4 §3)",
+		"randkey0": "CONSTANT 0 — cdq sign word of the non-negative Random draw",
+		"randkey1": "Random($7FFFFFFF) — ONE Delphi LCG draw at sub_403a0c",
+		"range_const": "0x7fffffff (eax at 0x6ac247, b8ffffff7f)",
+		"result_bounds": "0 <= randkey1 <= 0x7ffffffe; high dword (state_lo*range)>>32",
+		"draw_count": 1,
+		"single_random_call": true,
+		"no_map_name_or_settings_input": true,
+		"no_second_constant_no_mix64_no_qpc": true,
+		"pascal": "randkey1 := Random($7FFFFFFF); randkey0 := 0;  // one draw",
+	},
+	"var_out_order": {
+		"label": "[D] §2.1/§2.2 — standard register passing, all five siblings agree",
+		"1st_var": "randkey0 = @ebp+8 = hi word",
+		"2nd_var": "randkey1 = @ebp+0xc = lo word",
+	},
+	"stored_slots": {
+		"label": "[D] §2.2 Get/Set sibling push-pop cross-check",
+		"map_plus_0x18": "randkey1 (Get push ev_ef51315b… / Set pop ev_6a0aed3e…)",
+		"map_plus_0x1c": "randkey0 (Get push ev_25e73327… / Set pop ev_b4e871c2…)",
+		"global_plus_0x108": "randkey1",
+		"global_plus_0x10c": "randkey0",
+		"layout": "+0x18/+0x108=key1, +0x1c/+0x10c=key0 (low-to-high)",
+	},
+	"delphi_lcg": ("[O] sub_403a0c: state=(state*0x8088405+1) mod 2^32 at slot "
+			+ "0x8f2008; return=(state_lo*range)>>32 (ev_6d21e3c7…)"),
+	"state_source_status": ("[U] — the per-run Delphi state/source that FEEDS this draw "
+			+ "is NOT recovered; no seed invented; caller randkey0/1 stay verbatim"),
+	"invocation_timing_status": ("[U] — whether the engine calls GenerateMapRandKey at "
+			+ "runtime (call-site census) is NOT proven; formula closed, timing open"),
+	"terminating_probes": [
+		("U-KEY2 ±1 (DEC_U_nb4 §4): fix randkey1=K (K=1 and K=12345), W=H=320 / "
+			+ "shape=nowater2 / version=92 / minesdensity=1 / spcount=4 / season=0 / "
+			+ "b_random_map=true; dump D2:190 pick + first 3 RandomExt floats after each "
+			+ "D2:216/513/774 ext-reseed for key0=0 vs key0=1; TERMINATE when key0-only "
+			+ "changes are bit-identical on all draws after #1 (differ at most on draw #1 "
+			+ "per cross-term), zero mismatches on both K and two map sizes."),
+		("U-SS/U-TIME restart-changes-seed (DEC_U_nb4 §4): restart + same menu settings "
+			+ "=> GenerateMapRandKey pair must DIFFER across restarts (wall-clock "
+			+ "sub_4033b8 stream) while same-process regeneration CONTINUES the stream; "
+			+ "any same-seed-same-pair repeat is a mismatch. Zero mismatches required."),
+	],
+}
+
+# ---------------------------------------------------------------------------
 # PARITY / CONFIG HOOKS — all UNVERIFIED values live here, never as magic
 # numbers in the stage bodies. TODO owners are named; no value is guessed.
 # ---------------------------------------------------------------------------
@@ -344,6 +575,8 @@ var grid_table_hook: Callable = Callable()
 ## `hook(height_arr, w, h, bsmooth_arr, 3)`; may write height in place.
 ## TODO(D03/D01): recover the native kernel; default = SKIP with a telemetry label.
 var bsmooth_kernel: Callable = Callable()
+## N17-G11: terminates only on a byte-proven SmoothTerrain(x,-y,False,3) kernel
+## dump reproducing the hook signature; never substitute a blur.
 
 ## [U] D05 F3 native random-scale LCG feed (Delphi x=x*0x8088405+1) is unknown.
 ## If valid, called as `hook(pattern_name) -> float` in [MinScale,MaxScale].
@@ -377,6 +610,58 @@ var scan_grid_mapping_hook: Callable = Callable()
 ## If valid, called as `hook(object_dict) -> float` in [0,1). Default = skip.
 ## TODO(D01/D07): resolve object RNG instance.
 var object_scale_rng_hook: Callable = Callable()
+
+## GEN1TO1 — [U] U7/P1: the NUMERIC `minx/miny` in `_misc_SmoothTerrainCustom`
+## are not present in readable donor text. GENSEED §4 [O]: the PRODUCER is
+## recovered — `_misc_GetMapLeftTopPos(minx,miny)` (generatemap.inc:218-228,
+## ev_b7759b44…); the literal gate is `x>minx ∧ x<W div 2 ∧ y>miny ∧ y<W div 2`
+## (mapwidth used for the y bound too — donor anomaly, D2:610 [O]). The numeric
+## pair itself stays [U]. When valid, hook() -> Vector2i(minx,miny) enables that
+## gate. Null = no gate, labelled, NEVER hard-coded 0. Terminating P1 probe (§4):
+## log the helper's out-args per S1/S2 call; terminate when the pair reproduces
+## the in/out gate with zero mismatches on two map sizes.
+var smooth_custom_min_hook: Callable = Callable()
+
+## GEN1TO1 — [U] U2/N17-G11: native `SmoothTerrain(x,-y,False,3)` kernel still
+## unrecovered; bsmooth_kernel above stays NULL/SKIP with telemetry, never a
+## substituted filter.
+## GEN1TO1 — [U] engine-side `TerrainUpdate(True,False)` after the three coastal
+## passes (D2:641). When valid, hook(height,w,h) may perform the engine update.
+var terrain_update_hook: Callable = Callable()
+
+## GEN1TO1 — [O] D2:646-709 `WaterFieldAdd(name,tx,tz,bx,bz,-0.5)`. The four
+## translated coordinates are now computed exactly; the native binding of the
+## field class/plane Y remains [U]. hook(name,tx,tz,bx,bz,offsety).
+var water_field_add_hook: Callable = Callable()
+
+## GEN1TO1 — [U] U4: generation-time seed/stream position of the Delphi LCG
+## (`sub_403a0c`, state slot 0x8f2008) is unknown. Default state is the observed
+## IMAGE value 0 (ev_bde23e2d…), labelled [U] at runtime. When valid,
+## hook() -> int supplies the generation-time u32 state.
+##
+## GENSEED §2 [O]/[D] — do NOT weaken this label:
+##   The ALGORITHM IS recovered: state=(state*0x8088405+1) mod 2^32, out=state>>>24
+##   (sub_403a0c instructions 0x403a0f/0x403a19/0x403a1a/0x403a20/0x403a22,
+##   ev_6478320b…). It is wired ONLY in _LCG.next_u8() and consumed by
+##   _delphi_byte() / _set_tile() — the 24-byte record +4 variant byte.
+##   The SEEDER is sub_4033b8 (ev_78bcf9c8…): QueryPerformanceCounter-thunk low
+##   dword (0x401450), else GetTickCount-thunk (0x401458), stored to 0x8f2008.
+##   Its THREE static callers (0x5937a0 / 0x59c011 / 0x8300e5, ev_583b7258…)
+##   are startup/scatter — NONE on the DoGenerate / 0x8326b8 tile path [O].
+##   [D]: the stream free-runs from the process-start QPC/TickCount snapshot and
+##   is NEVER reseeded by _stage_begin or by any of the 11+3 RandomExt sites.
+##   Do NOT wire _stage_begin to _rng_delphi; do NOT invent a per-map seed.
+##   Terminating probe (§2.4.1): break at 0x83272f; at first hit dump u32
+##   @0x8f2008 BEFORE call 0x403a0c @0x832727 plus returned al; log
+##   (cell,corner,state-before,byte) through the fan-out. TERMINATE when byte ==
+##   state>>>24 for every hit with zero mismatches AND pre-first-hit state is
+##   recorded; restart must change it (QPC), same-process regen must continue it.
+var delphi_state_hook: Callable = Callable()
+
+## GEN1TO1 — [U] D3:235-239 post-DoGenerate wrapper
+## (`MapWorldUpdateTerrainData(0,0)`, `TopologyBuild`, `_misc_BuildIslandsGrid`).
+## Engine-side; modelled ONLY as an opt-in hook, never invented in the pipeline.
+var d3_wrapper_hook: Callable = Callable()
 
 ## [U] The steep/cliff collision TAG value is not recovered in readable donor
 ## text (D08/D06 tag census: 0/10/80/101/87/110/109/85/95, none labelled
@@ -432,6 +717,13 @@ class _LCG extends RefCounted:
 			on_draw.call(stream_name, s, r)
 		return r
 
+	func next_u8() -> int:
+		# GEN1TO1 §E.3: Delphi Random(256) at sub_403a0c — mul 0x8088405/add 1,
+		# result = (256*state)>>32 = state>>>24. No f32 conversion here.
+		s = (s * mul + add) & LCG_U32
+		draws += 1
+		return (s >> 24) & 0xFF
+
 	func next_int(n: int) -> int:
 		return int(floor(next_f() * float(n)))  # GetRandom(n), dogenerate.inc:990-992
 
@@ -456,6 +748,8 @@ var _rng: _LCG = _LCG.new("dscript_global")            # state 0x9048d4/d8
 var _rng_map: _LCG = _LCG.new("map_generator")         # sub_7281bc this+0x18
 var _rng_world: _LCG = _LCG.new("global_map_generator")
 var _rng_delphi: _LCG = _LCG.new("delphi_random", DELPHI_LCG_MUL, DELPHI_LCG_ADD)
+## N17-G10: image-0 placeholder + free-running Delphi LCG (slot 0x8f2008);
+## terminate only on the 0x83272f dump (state>>>24, zero mismatches, restart changes seed).
 var _active_rng: _LCG = _LCG.new("dscript_global")
 var _rng0: int = 0
 var _rng1: int = 0
@@ -474,6 +768,17 @@ var _grid_h: int = 0
 var _grid_n: int = 0
 var _gen: Dictionary = {}                       # resolved generation settings
 var _freq_state: Dictionary = {}                # damped Freq state (local copy)
+
+# GEN1TO1 §E — 24-byte + 13-byte per-cell records held by THIS module (I06 owns
+# only the scalar `tex` field and cannot be edited by this worker). The arrays
+# are the donor-shaped side records; `data.tex` remains the port's compatible
+# mirror of donor `GetTileIndex` (corner tag +0).
+var _rec24: PackedByteArray = PackedByteArray()   # _grid_n * 24
+var _rec13: PackedByteArray = PackedByteArray()   # _grid_n * 13
+var _delphi_state: int = 0                        # [O] image state 0; runtime seed [U]
+var _delphi_draws: int = 0
+var _mask_native_w: int = 0                       # D2:329 scaled/equal-size dedup branch
+var _mask_native_h: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -524,6 +829,12 @@ func generate(data: Object, p: Dictionary = {}) -> Dictionary:
 		"mine_counts": {"near": 0, "global": 0, "accepted": 0},
 		"resource_counts": {"stoneforest": 0, "stones": 0, "forest": 0},
 		"field_count": 0,
+		"objects_missing": ("[U] pattern.lib Objects[] instancing ABSENT — per-record "
+				+ "positions/scales/material keys are not exported; _record_pattern_stamp "
+				+ "carries name/family/x/y/kind only. NO member invented (DEC_U_placement "
+				+ "P-PLACE-15; U-OBJ probe: terminate only on a per-pattern Objects[] export "
+				+ "diff with zero mismatches)"),
+		"objects_missing_probe": "N17-G6: terminate only on a per-pattern Objects[] export diff (counts/positions/scales) with zero mismatches; instancer stays missing by design",
 		"forest_stamps": 0,
 		"tile_smooth_pairs": 0,
 		"water_field_count": 0,
@@ -532,6 +843,16 @@ func generate(data: Object, p: Dictionary = {}) -> Dictionary:
 		"row_sign": "UNVERIFIED (D05 F4 note 5; A01 E5)",
 		"height_unit": "UNVERIFIED raw float32; no HEIGHT_SCALE multiplier",
 	}
+	# GENSEED §2.2 [O]: these two words ARE gMap.settings.gen.randkey0/1
+	# (generatemap.inc:141-142, ev_51c638a0…). Only randkey1 seeds the 11+3
+	# reseeds; key0 is a labelled no-op (ev_661ef2e6…). GenerateMapRandKey
+	# derivation stays [U] U5/P5 with the ±1 probe (§2.4.2): the caller passes
+	# the two words verbatim, no fallback seed is derived here.
+	# DEC-U-NB4 (additive): the derivation FORMULA is now [D] byte-proven
+	# (randkey0=0, randkey1=Random($7FFFFFFF), one draw; no name/settings input),
+	# but the actual Delphi state/source + invocation timing stay [U], so the
+	# caller words are still taken verbatim below. NO RNG behaviour is changed
+	# and no randkey value is invented here (IMPL-RANDKEY-DERIV).
 	_rng0 = int(p.get("randkey0", 0))
 	_rng1 = int(p.get("randkey1", 0))
 	if not p.has("randkey0") or not p.has("randkey1"):
@@ -562,7 +883,10 @@ func generate(data: Object, p: Dictionary = {}) -> Dictionary:
 	_bsmooth.resize(_grid_n)
 	_mask_water = PackedByteArray()
 	_mask_water.resize(_grid_n)
+	_init_tile_records()                 # GEN1TO1 §E: donor 24B/13B defaults
 	_freq_state.clear()
+	_mask_native_w = int(p.get("mask_native_width", 0))
+	_mask_native_h = int(p.get("mask_native_height", 0))
 	_resolve_settings(p)
 
 	# ---- canonical DoGenerate order (spec/10 §1; X03:769-1110) ---------------
@@ -575,10 +899,21 @@ func generate(data: Object, p: Dictionary = {}) -> Dictionary:
 	_stage_starts(data, p)
 	_stage_relief(data, p)
 	_stage_forest_stone(data, p)
+	_stage_forest_borders(data, p)   # P-PLACE-11/N17: labelled NULL stub, no props
 	_stage_units_scale(data, p)
 	_stage_owner_map(data, p)
 	_stage_finalize(data, p)
 	_close_ledger()
+	# GEN1TO1 §A.4 — post-DoGenerate D3 wrapper is engine-side [U]. Expose only
+	# as an opt-in hook; the canonical pipeline ends at stage 16.
+	if d3_wrapper_hook.is_valid():
+		var wrapper_result: Variant = d3_wrapper_hook.call(data)
+		_tel["d3_wrapper"] = {"status": "HOOK applied",
+			"result": str(wrapper_result), "sources": "D3:235/:237/:239"}
+	else:
+		_tel["d3_wrapper"] = {"status": "SKIPPED — engine-side [U] D3:235-239",
+			"sources": "D3:235/:237/:239"}
+	_publish_tile_records(data)          # GEN1TO1 §E: hand off records to I08/I10
 
 	# Diagnostics only: merge I06 stats (height deciles, tile histogram, family
 	# coverage) without ever reading them back into generation.
@@ -605,13 +940,109 @@ func stats() -> Dictionary:
 	out["draws_total"] = _rng.draws + _rng_map.draws + _rng_world.draws + _rng_delphi.draws
 	out["streams"] = {
 		"dscript_global": _rng.draws,
-		"map_generator": _rng_map.draws,
-		"global_map_generator": _rng_world.draws,
+		"map_generator": _rng_map.draws,          # GEN1TO1: idle diagnostic only
+		"global_map_generator": _rng_world.draws, # GEN1TO1: idle diagnostic only
 		"delphi_random": _rng_delphi.draws,
 	}
+	out["rng_stream_contract"] = ("GEN1TO1 §A.5 / GENSEED §2.2 [O]: ALL 11 SetRandomKey "
+			+ "AND all 3 SetRandomExtKey64 sites feed the SAME RandomExt generator (_rng) "
+			+ "and consume randkey1; key0 DISCARDED mod 2^32 (ev_661ef2e6…). Seed source "
+			+ "gMap.settings.gen.randkey0/1 (generatemap.inc:141-142, ev_51c638a0…); "
+			+ "derivation [U] U5/P5. The 3-stream split is a labelled diagnostic only.")
+	# DEC-U-NB4 [D] refinement (additive, IMPL-RANDKEY-DERIV): GenerateMapRandKey
+	# FORMULA is closed (key0=0, key1=Random($7FFFFFFF), one draw, no name/settings
+	# input); only Delphi state/source + invocation timing stay [U]. Detail is in
+	# the stats() keys randkey_derivation_authority / randkey_u_register.
+	out["delphi_rng"] = {
+		"draws": _delphi_draws,
+		"state_image": 0,
+		"algorithm": "[O] sub_403a0c: state=(state*0x8088405+1) mod 2^32; out=state>>>24 (ev_6478320b…)",
+		"state_slot": "0x8f2008 — image 0 is the FILE DEFAULT, not a generation seed (ev_0e686c8c…/ev_bde23e2d…)",
+		"seeder": "[O] sub_4033b8: QPC-low dword else GetTickCount (ev_78bcf9c8…); 3 non-generation callers (ev_583b7258…)",
+		"seed_status": "[U] U4 generation-time state; hook NULL => image 0 placeholder, NOT an invented per-map seed",
+		"terminating_probe": "GENSEED §2.4.1: break 0x83272f; dump u32 @0x8f2008 before call 0x403a0c @0x832727; terminate on zero byte mismatches + restart changes seed",
+	}
+	out["tile_records"] = {"count": _grid_n, "record24_bytes": 24,
+		"record13_bytes": 13, "writer": "SetTileIndex fan-out (a-outer/b-inner)"}
 	out["key0_semantics"] = "DISCARDED mod 2^32 — labelled NO-OP (X21 §4.3)"
 	out["stage_keyed_draw_ledger"] = _draw_ledger.duplicate(true)
 	out["field_sowing"] = field_sowing_hook_info()
+	# DEC_U_placement §7 [U] register — additive telemetry only, never fed back.
+	# Every item keeps its fixed-seed/zero-mismatch termination probe; no density,
+	# draw or count is invented to force a match, and no parity is claimed.
+	out["u_register"] = {
+		"U-G0": "[U] forest_density is all-zero off starts on shipped masks; TERMINATE when fdens==0 everywhere off starts on 3 shipped _gauss masks, zero mismatches. Never add a G->count map.",
+		"U-S0": "[U] bsmooth_kernel NULL/SKIP; TERMINATE only on a byte-proven SmoothTerrain(x,-y,False,3) kernel dump reproducing the hook signature.",
+		"U-MM": "[U] smooth_custom_min_hook NULL (no gate, never hard-code 0); TERMINATE when logged out-args reproduce x>minx ∧ x<W/2 ∧ y>miny ∧ y<W/2 with zero mismatches on 320² + 640².",
+		"U-MOD": "[U] caller modifiers verbatim; TERMINATE when needed=floor(W·H·freq) trip counts recomputed from logged modifiers match exactly on ≥3 sizes.",
+		"U-SEED": "[U] two words verbatim; TERMINATE when key0-only changes are bit-identical and key1±1 changes the D2:190 pick + first three RandomExt floats.",
+		"U-DELPHI": "[U] image-0 placeholder + NULL hook; TERMINATE on 0x83272f dump: every byte == state>>>24, zero mismatches, restart changes seed.",
+		"U-VER": "[U] live version/mapsize/settings dump; TERMINATE when dumped integers select the 6- vs N-way branch on both sides of v91 and reproduce the §3 band row.",
+		"U-MDEN": "[U] vary menu 0/1/2; TERMINATE when ring trip counts = 3/4/5 exactly and minesdensity>2 consumes exactly one draw.",
+		"U-HF": "[U] caller height fields + STAMP_SMOOTH_PARAMS census; TERMINATE when dumped floats reproduce X13 vectors 19/19 on g_mnt_1/g_hil4.",
+		"U-OBJ": "[U] objects_missing: pattern.lib Objects[] instancer absent; TERMINATE on a per-pattern Objects[] export diff (counts/positions/scales) with zero mismatches.",
+		"U-FA": "[U] fa/broad omitted; TERMINATE on a loader dump showing fa==0 everywhere (road dead) or a nonzero map (then implement >0.5/>0.25 branch).",
+		"N17-G5": "[U] .pattern relief float-grid + object-list tail null+UNVERIFIED (donor_gen.py:74-85, A03 check 4); TERMINATE only on a triple-pattern byte dump (hil1/g_mnt_3/f_plt_big_1) with zero mismatches; never invent a grid/UV/atlas",
+	}
+	# DEC_U_relief_stamps §7 (IMPL-RELIEF-LABELS): additive authority labels only.
+	# No value below feeds back into generation; no parity claim; no test changed.
+	# The existing u_register above (IMPL-PLACEMENT) is left untouched.
+	out["relief_formula_authority"] = RELIEF_FORMULA_AUTHORITY.duplicate(true)
+	out["pattern_layout_authority"] = PATTERN_LAYOUT_AUTHORITY.duplicate(true)
+	out["relief_u_register"] = {
+		"U-HF": "[U] per-pattern HeightField* concretes (677 sections never byte-dumped); TERMINATE on a full 680-section float dump + X26 19-vector harness at true G=8+N on g_mnt_1/g_hil4 + hil1/k_ravine_1 when 19/19 f32step bits reproduce. Never invent a Scale.",
+		"U-ANG": "[U] minangle/maxangle offsets + WithAngle +0x34/+0x38 arg use; fork +0x41 and 0.0/90.0 constants [O], filter shape [D carried]; TERMINATE on a per-pattern record export + +0x41==0/!=0 branch dump when angle floats reproduce accept/skip on g_mnt_1 with zero mismatches. Port keeps minangle<=0 & maxangle>=90 accept else accept-with-warning stub.",
+		"U-S0": "[U] SmoothTerrain(x,-y,False,3) kernel body undiscovered; TERMINATE only on a byte-proven kernel dump reproducing the hook signature; bsmooth_kernel=NULL/SKIP, bsmooth_pass=SKIPPED on all fixed seeds; never substitute a blur.",
+		"U-RND": "[U] UseRndScale/MinScale/MaxScale LCG feed unmapped; random_scale_hook=NULL + fixed-Scale fallback with UseRndScale TODO(D05/X01); TERMINATE on an authorised-trace draw dump showing the exact rand(MinScale,MaxScale) value per pattern.",
+		"U-ROW": "[U] file-row sign / rotated sub-cell rounding unproven; row_sign_hook/rotation_rounding_hook=NULL = donor floor; TERMINATE when dumped (tx,tz) reproduce X26 vectors at true G with zero mismatches.",
+		"U-CLAMP": "[U] global setHeight clamp (sub_0059b934 -> sub_7551a8) unstudied; stamp has no clamp [O]; global_setter_clamp_hook=NULL = no clamp; TERMINATE on a setter byte-dump proving a ceiling/floor; until then never clamp to [Min,Max].",
+		"U-X87": "[U] true x87 80-bit result (fstp tbyte @0x7566b7); port default stamp_precision_model=f32_each_op vs comparison double_store_f32; TERMINATE on an 80-bit replay resolving the 1-ULP REP-kr1-01/SMB-kr1-01 pair; 1-ULP diffs are not bugs until then.",
+		"U-TAIL": "[U] .pattern 24 B tail + weight + 13 B tail semantics; structure/invariants [O], no field proof; tails stay unparsed (occupancy + height only); TERMINATE on a typed field dump (id/model/scale/pos) with zero mismatches; never map id->mesh.",
+		"U-OBJ": "[U] pattern.lib Objects[] -> mesh index binding engine-side; objects_missing telemetry + opaque mesh_key; TERMINATE on a per-pattern Objects[] export diff (counts/positions/scales) with zero mismatches; instancer stays missing by design.",
+		"U-SMP": "[U] smooth post-pass mask gating + radial remap over all cells; gate window + (Radius-Offset)/d [O], full-field run never runtime-exercised; keep in-place Factor loop + 8-neighbour boundary as coded; TERMINATE when dumped (tx,tz,radius,factor) reproduce a fixed-seed height dump with zero mismatches.",
+		"U-OCC": "[U] PatternMask* -> occupancy byte @0x756638; gate [O], flag semantics [U]; keep WxH vertex-mask construction (last row/column blocked per 0x7561d0-0x756220); TERMINATE on a both-masks bundle diff with zero mismatches.",
+		"U-MAX": "[U] HeightFieldMax consumers outside stamp; 0/6751 in stamp [O], editor/brush paths unchecked; no port use of Max except decode/census; TERMINATE on a named outside-stamp consumer cite.",
+	}
+	# N17 feed gaps (DEC_U_n17_gaps.md §5/§6): 17 labelled [U] items, each with
+	# its exact zero-mismatch byte-dump termination. Telemetry only — never fed
+	# back; no grid/UV/atlas or float invented, no parity claim.
+	out["n17_feed_gaps"] = {
+		"N17-G1": "[U] packed-atlas grid (donor ships none); TERMINATE on E-ATLAS-LAYOUT §6 glTexImage2D/glBindTexture tuple dump, zero mismatches over Summer+Winter; else 16x8 stays labelled fallback",
+		"N17-G2": "[U] RGB DDS glTexImage2D upload tuple; TERMINATE on the same trace bound to texUnit0=0x84c0, zero mismatches",
+		"N17-G3": "[U] tiaAlphaFromIntensity arithmetic + mask upload; TERMINATE on fixed-camera GL_ALPHA texel dump == fragment ALPHA, zero mismatches",
+		"N17-G4": "[U] per-frame eye planes/matrix/pass count; TERMINATE on a 2-frame trace byte-identical for a fixed seed/map",
+		"N17-G5": "[U] .pattern relief float-grid/object-list tail; TERMINATE on hil1/g_mnt_3/f_plt_big_1 tail dump with zero mismatches; no field invented",
+		"N17-G6": "[U] pattern.lib Objects[] -> mesh binding; TERMINATE on per-pattern export diff (counts/positions/scales), zero mismatches; instancer missing by design",
+		"N17-G7": "[U] per-pattern HeightField*/angle concretes; TERMINATE on X13 vectors 19/19 on g_mnt_1/g_hil4, zero float mismatches; Max never read preserved",
+		"N17-G8": "[U] tiles.lib 245-section override application + ObjectsScale/ReplaceForWater; TERMINATE on stamp-vs-smooth order trace, zero mismatches",
+		"N17-G9": "[U] GenerateMapRandKey derivation; TERMINATE when key0-only bit-identical and key1±1 changes D2:190 pick + first 3 RandomExt floats",
+		"N17-G10": "[U] Delphi generation-time state (slot 0x8f2008); TERMINATE on 0x83272f dump: every byte == state>>>24, zero mismatches, restart changes seed",
+		"N17-G11": "[U] SmoothTerrain(x,-y,False,3) kernel body; TERMINATE only on a byte-proven kernel dump; bsmooth_kernel=NULL/SKIP, no blur substituted",
+		"N17-G12": "[U] minx/miny numerics; TERMINATE on logged _misc_GetMapLeftTopPos out-args reproducing the gate on 320²+640², zero mismatches; never hard-code 0",
+		"N17-G13": "[U] probsmall/mid/large/huge + pln_*/swamp_*/lake_* modifiers; TERMINATE on logged modifiers recomputing trip counts exactly on ≥3 sizes",
+		"N17-G14": "[U] TileSmoothPasses=6 cfg consumer (script uses 3); TERMINATE on a named cfg-key reader call-site address",
+		"N17-G15": "[U] case-1 alpha comparator/ref; TERMINATE on GL state dump at a case-1 draw, zero mismatches; alpha_test_ref=-1.0 sentinel + discard OFF",
+		"N17-G16": "[U] per-instance Objects[] variation source; TERMINATE on sub_755f30-family trace with zero RNG draws (no RandomExt/Delphi/QPC)",
+		"N17-G17": "[U] runtime activation of `[*] = ;` DScript text; TERMINATE on an authorised execution trace only; labels only, never a tuned visual",
+	}
+	# DEC-U-NB4 (IMPL-RANDKEY-DERIV): additive byte-proven derivation authority.
+	# No value below feeds back into generation; no parity claim; caller words verbatim.
+	out["randkey_derivation_authority"] = RANDKEY_DERIVATION_AUTHORITY.duplicate(true)
+	out["randkey_u_register"] = {
+		"U-KEY2": ("[U] runtime key0-discard (DEC_U_nb4 §4): fresh GenerateMapRandKey "
+			+ "outputs key0=0, so the 3 SetRandomExtKey64 sites install (0,K); a shipped "
+			+ "map/debugger could still present non-zero key0. TERMINATE on the ±1 "
+			+ "key0=0-vs-1 probe (D2:190 pick + first 3 RandomExt floats), zero mismatches "
+			+ "on K=1/12345 and two map sizes. No draw invented, no parity claim."),
+		"U-MAP": ("[U] shipped-map override of the generated pair (DEC_U_nb4 §4, carried "
+			+ "from DEC_U_place_seed_deep §6: map-load 0x8f2008 watch); TERMINATE on a "
+			+ "map-load byte dump proving override vs fresh draw. No override modelled here."),
+		"U-SS": ("[U] Delphi per-run stream/source at slot 0x8f2008 (DEC_U_nb4 §4: "
+			+ "0x83272f first-hit state-before>>>24 + restart-changes-seed proof); "
+			+ "delphi_state_hook stays NULL / image-0 placeholder. No seed invented."),
+		"N17-G9-narrowed": ("[D] formula CLOSED by DEC_U_nb4 §2; only invocation timing and "
+			+ "per-run values stay [U]. The original N17-G9 label above is kept untouched."),
+	}
 	return out
 
 
@@ -629,6 +1060,11 @@ func rng_ledger() -> Array[Dictionary]:
 ## NOT called from generate(); the composer/entity owner calls it on the mill
 ## trigger. No RNG draw is consumed here — the donor sow routine draws none
 ## (X22 X-C1, X-E16). TODO(X22/I09): wire the two-step order chain.
+## P-PLACE-12 [O]: 49 nodes / 1.6981 cells / 45° / asymmetric snap (√2·step),
+## 25-cell collision probe, ore rad vs soft rad/3, 5 gold, no sow RNG
+## (unit.script:6470-6570,1691-1693; already cited above). The spec/10 food-rect
+## rows are STALE — fields are mill-triggered objects+decals, never a generation
+## stage; spec is referenced only, NOT edited in this ticket.
 func sow_field(mill_cell: Vector2, p: Dictionary = {}) -> Dictionary:
 	var info: Dictionary = field_sowing_hook_info()
 	info["mill_cell"] = [mill_cell.x, mill_cell.y]
@@ -714,13 +1150,24 @@ func _note(msg: String, bucket: String = "notes") -> void:
 
 
 func _stage_begin(site: String, kind: String, k0: int, k1: int) -> void:
+	# GENSEED §2.2 [O]/[D]: every reseed here is a RandomExt (SetRandomKey /
+	# SetRandomExtKey64) site consuming randkey1; key0 discarded (ev_661ef2e6…).
+	# _rng_delphi is deliberately NOT touched — it free-runs from process-start
+	# sub_4033b8 and has NO generation reseed site (ev_583b7258…).
+	# DEC-U-NB4 [D] (additive): GenerateMapRandKey formula at 0x6ac244 is closed —
+	# randkey0=0 / randkey1=Random($7FFFFFFF) one draw; state/source + timing stay
+	# [U]. This reseed path is UNCHANGED: k0/k1 arrive verbatim from the caller.
 	_stage_site = site
 	_stage_draws = 0
 	# X21 §6.2: the stage key MUST include the generator version because
 	# version gates change the draw count.
 	if kind == "ext":
-		_active_rng = _rng_map      # D2:216/:513/:774 use the map/global stream [I]
+		# GEN1TO1 §A.5 (X21 §4.3/§5.2): SetRandomExtKey64 seeds the SAME RandomExt
+		# generator as SetRandomKey. The old separate map_generator stream was a
+		# PORT APPROXIMATION and is now an idle labelled diagnostic only.
+		_active_rng = _rng
 		_active_rng.reseed_from_key64(k0, k1)
+		_note("D2 ext-reseed routed through the shared RandomExt stream (X21)", "notes")
 	else:
 		_active_rng = _rng          # DScript-global stream at 0x9048d4/d8
 		if key_state_hook.is_valid():
@@ -743,6 +1190,9 @@ func _stage_begin(site: String, kind: String, k0: int, k1: int) -> void:
 		"key0_status": "NO-OP — X21 §4.3",
 		"key1": k1,
 		"key_mode": "key1_only" if not key_state_hook.is_valid() else "hook",
+		"key_source": "gMap.settings.gen.randkey0/1 (generatemap.inc:141-142, ev_51c638a0…)",
+		"key0_evidence": "ev_661ef2e6… SetRandomExtKey64 / ev_9defac5a… SetRandomKey — key0 DISCARDED mod 2^32",
+		"derivation_status": "[U] U5/P5 GenerateMapRandKey — ±1 probe §2.4.2; no silent fallback",
 		"draws_at_entry": _active_rng.draws,
 	})
 	# The three untouched streams must also exist in the ledger (X21 §6.1).
@@ -757,6 +1207,25 @@ func _stage_begin(site: String, kind: String, k0: int, k1: int) -> void:
 
 func _ledger_key(site: String, ver: int, st: _LCG) -> String:
 	return "%s|v%d|%s" % [site, ver, st.stream_name]
+
+
+## GEN1TO1 §A.3: enter a site that INHERITS the current RandomExt state (no
+## reseed). Used for D2:190 mask-index draw, which runs before the D2:216
+## ext-reseed on the stream inherited from D1:1538.
+func _enter_inherited_site(site: String) -> void:
+	_stage_site = site
+	_stage_draws = 0
+	_current_stage_key = _ledger_key(site, int(_gen.get("version", 0)), _active_rng)
+	_draw_ledger[_current_stage_key] = {
+		"site": site, "stream": _active_rng.stream_name,
+		"key0": _rng0, "key0_status": "DISCARDED mod 2^32 (X21 §4.3)",
+		"key1": _rng1, "version": int(_gen.get("version", 0)),
+		"inherits_state": true, "draws": [],
+	}
+	_ledger.append({"site": site, "kind": "inherited",
+		"stream": _active_rng.stream_name, "key1": _rng1,
+		"draws_at_entry": _active_rng.draws,
+		"label": "D2:190 mask pick on inherited D1:1538 stream; exact seed [U]"})
 
 
 func _record_draw(stream_name: String, state: int, r: float) -> void:
@@ -883,6 +1352,9 @@ func _stage_settings(p: Dictionary) -> void:
 	_stage_begin("D1:1538", "key", _rng0, _rng1)    # X03:284 — after base tiles
 	# D1:1547-1557: terraintype random draw when out of range.
 	var max_types: int = 6 if int(_gen["version"]) < 91 else int(p.get("max_terrain_types", 9))
+	_tel["max_terrain_types"] = max_types
+	_tel["max_terrain_types_label"] = ("[U] U6: caller value used" if int(_gen["version"]) >= 91
+			else "[O] v<91 → 6 (D1:1547); U6 shipping version/mapsize still open")
 	if int(_gen["terraintype"]) > max_types - 1:
 		_gen["terraintype"] = _active_rng.next_int(max_types)
 	# D1:1586-1587: minesdensity>2 → floor(RandomExt*3), BEFORE the :1616 reseed.
@@ -899,11 +1371,25 @@ var _stage_settings_draws: int = 0
 # STAGE 5 — GenerateMap: mask decode, height, smoothing, water, tiles
 # ---------------------------------------------------------------------------
 func _stage_generate_map(data: Object, p: Dictionary) -> void:
+	# ---- D2:190 mask-index draw, BEFORE the D2:216 ext-reseed --------------
+	# GEN1TO1 §A.3: `rndind := floor(RandomExt*count)` consumes one draw on the
+	# stream inherited from D1:1538 (or GenerateMapRandKey — exact seed [U] U5).
+	# Inputs emits `mask_count`; the asset selection itself stays in I17 and is
+	# labelled there. No draw is skipped or synthesised.
+	# N17: mask_count + next_int(mask_count) inherited-stream draw preserved
+	# verbatim; no hash-draw or nearest substitution (P-PLACE-16; GEN-SEED §5.2.1).
+	var mask_count: int = maxi(1, int(p.get("mask_count", 1)))
+	_enter_inherited_site("D2:190")
+	var mask_rndind: int = _active_rng.next_int(mask_count)  # D2:190
+	_tel["mask_rndind"] = mask_rndind
+	_tel["mask_count"] = mask_count
+	_mark_site("D2:190")
 	# ---- mask selection / editor postprocess reset sites -------------------
 	_stage_begin("D2:216", "ext", _rng0, _rng1)     # X03:416
 	if not bool(_gen["b_random_map"]):
-		# Editor branch only: rndind := floor(RandomExt*count) at D2:190.
-		_active_rng.next_int(maxi(1, int(p.get("mask_count", 1))))
+		# Editor postprocess at D2:507-533 is a separate [U] branch; skirmish
+		# skips it. No Gaussian/noise is ever generated here.
+		_note("editor postprocess D2:507-533 skipped in skirmish", "notes")
 	_mark_site("D2:216")
 	_stage_begin("D2:513", "ext", _rng0, _rng1)     # X03:480
 	# PostProcess is guarded by `if (not bRandomMap)` at D2:507 — skipped in
@@ -932,14 +1418,30 @@ func _mask_to_height(data: Object, p: Dictionary) -> void:
 	var fdens := PackedByteArray()
 	fdens.resize(_grid_n)
 	var starts: Array = []
+	# GEN1TO1 §B.3 [O]: exact normalized white only (no tolerance). Dedup is
+	# prev-only when `srcwidth>mapwidth` (D2:329/419-435), full-scan otherwise
+	# (D2:417-435). No minimum-distance rule exists.
+	var prev_start: Vector2 = Vector2(INF, INF)
+	var scaled_branch: bool = _mask_native_w > _grid_w
 	for i in range(_grid_n):
 		var fr: float = mr[i]
 		var fg: float = mg[i]
 		var fb: float = mb[i]
 		# D2:413-443: white start pixel is recorded then zeroed and skipped.
-		if fr >= 0.999 and fg >= 0.999 and fb >= 0.999:
-			starts.append(Vector2(float(i % _grid_w) - float(_grid_w) * 0.5,
-					float(i / _grid_w) - float(_grid_h) * 0.5))
+		if fr == 1.0 and fg == 1.0 and fb == 1.0:
+			var sc: Vector2 = Vector2(float(i % _grid_w) - float(_grid_w) * 0.5,
+					float(i / _grid_w) - float(_grid_h) * 0.5)
+			var duplicate: bool = false
+			if scaled_branch:
+				duplicate = (sc == prev_start)
+			else:
+				for s0: Vector2 in starts:
+					if s0 == sc:
+						duplicate = true
+						break
+			if not duplicate:
+				starts.append(sc)
+				prev_start = sc
 			mr[i] = 0.0
 			mg[i] = 0.0
 			mb[i] = 0.0
@@ -966,10 +1468,22 @@ func _mask_to_height(data: Object, p: Dictionary) -> void:
 				bsm = (ir == C_RCOLOR_RAVINE_SMOOTH)
 		tclass[i] = terrain
 		_bsmooth[i] = 1 if bsm else 0
-		# G class (generatemap.inc:473-482) — side data only, [U] for vanilla.
+		# P-PLACE-01 [O] generatemap.inc:473-482: ig=255 (cGForest) sets the class
+		# unconditionally, but ig=127 (255 div 2 = cGForest/2) becomes cGForest ONLY
+		# when the already-decoded terrain ∈ {plateau,hill,ravine} (1/2/3); on any
+		# other terrain the cell stays unchanged (cGNone -> dens 0). Gate on the
+		# decoded `terrain`, never on an invented density.
+		# P-PLACE-02: `fdens` is SIDE DATA ONLY — free-stand counts come from the
+		# §2.2 `_setup_patterns_by_type` passes, NEVER from this enum (U-G0: G=0 on
+		# every shipped vanilla non-start pixel => zero mask-driven density).
+		# N17: forest_density is side data; counts come ONLY from
+		# _setup_patterns_by_type, never this enum (U-G0/N17-G17).
 		var dens: int = 0
 		match ig:
-			C_GCOLOR_FOREST, C_GCOLOR_FOREST / 2: dens = 1
+			C_GCOLOR_FOREST: dens = 1
+			C_GCOLOR_FOREST / 2:
+				if terrain >= 1 and terrain <= 3:
+					dens = 1
 			C_GCOLOR_GENFOREST: dens = 2
 			C_GCOLOR_STONE: dens = 3
 			C_GCOLOR_FORESTSTONE: dens = 4
@@ -982,6 +1496,12 @@ func _mask_to_height(data: Object, p: Dictionary) -> void:
 				(ir == 255 and ig == 255 and ib == 255)) else 1
 		# D2:565-574: hwater = cWaterHeight*(fb*(1+fr*3.5)); skip starts.
 		# X19: mapgen.gd:212-213 matches h=-1.1*B/255 for R=0 — DO NOT flip sign.
+		# GEN1TO1 §B.3 asymmetry [O]: the HEIGHT pass skips on (bRandomMap) and
+		# (fr=1) and (fb=1), IGNORING fg (D2:565). Exact-white pixels were already
+		# zeroed above; an R=B=1,G!=1 pixel must leave height untouched here.
+		var skip_height: bool = bool(_gen["b_random_map"]) and fr == 1.0 and fb == 1.0
+		if skip_height:
+			continue
 		var hwater: float = C_WATER_HEIGHT * (fb * (1.0 + fr * C_R_MULT))
 		var hterrain: float = 0.0
 		match terrain:
@@ -990,6 +1510,9 @@ func _mask_to_height(data: Object, p: Dictionary) -> void:
 			3: hterrain = C_RAVINE_HEIGHT * fr       # D2:572
 		data.set_height(i, hwater + hterrain)       # D2:574; I06 setter
 	data.assign_side("terrain_class", tclass)
+	# P-PLACE-02: `forest_density` is side data only (U-G0); no stamp count is
+	# derived from it here — forest/stone counts come exclusively from the §2.2
+	# global passes. This enum never maps to a prop/stamp count.
 	data.assign_side("forest_density", fdens)
 	# D2:440-443 zeroed the local white starts; mirror that into the container.
 	data.assign_side("mask_r", mr)
@@ -999,6 +1522,9 @@ func _mask_to_height(data: Object, p: Dictionary) -> void:
 		_gen["starts_from_mask"] = starts
 	_tel["starts_from_mask"] = starts.size()
 	_tel["mask_formula"] = "h=-1.1*B/255 with R decode [U]; X19 sign NOT flipped"
+	_tel["mask_start_rule"] = ("D2:413 exact fr=fg=fb=1; dedup "
+			+ ("prev-only (scaled, D2:329)" if scaled_branch else "full-scan (equal-size, D2:417-435)"))
+	_tel["broad_channel"] = "[U] U8: fa/broad absent in 24-bit shipped TGAs; road branch D4:622-636 omitted, never invented"
 
 
 func _channel(data: Object, p: Dictionary, key: String) -> PackedFloat32Array:
@@ -1037,6 +1563,20 @@ func _channel(data: Object, p: Dictionary, key: String) -> PackedFloat32Array:
 # ---------------------------------------------------------------------------
 # Three-pass shoreline smoothing (spec/05 §2; D03:24,201-203)
 # ---------------------------------------------------------------------------
+# GENSEED §4 [U] REGISTER — P1–P8 numeric stage params: NONE implemented as fact.
+#   P1 minx/miny: PRODUCER _misc_GetMapLeftTopPos [O]; numeric [U] (§4 probe).
+#   P2 probsmall/mid/large/huge + pln_*/swamp_*/lake_* modifiers: [U] engine-side.
+#   P3 gc_MaxTerrainTypeCount / gRecordGeneratorVersion / mapsize enum: [U]
+#      (only `v<91 -> 6` is [O], already labelled at _stage_settings).
+#   P4 minesdensity runtime / maxround / rounds: [U] live menu input.
+#   P5 GenerateMapRandKey derivation: [U] with the ±1 probe (§2.4.2).
+#      DEC-U-NB4 [D]: FORMULA now closed (0x6ac244: randkey0=0,
+#      randkey1=Random($7FFFFFFF), one draw, no name/settings input); only
+#      Delphi state/source + runtime timing remain [U] (U-KEY2/U-MAP/U-SS).
+#   P6 per-pattern HeightField*/WithAngle/angle floats: [U].
+#   P7 SmoothTerrain kernel + TerrainUpdate + water plane Y: [U] hooks stay NULL.
+#   P8 fa/broad + road tiles ground1/test2/test3: [U] (no alpha in shipped TGAs).
+# No constant here was invented; each [U] carries the report's terminating probe.
 func _smooth_chain(data: Object, p: Dictionary) -> void:
 	# (1) SmoothTerrain(realx,-realy,False,3) on bsmooth cells. Native kernel
 	# is UNVERIFIED (D03 U3) — a labelled hook, no invented coefficients.
@@ -1046,8 +1586,17 @@ func _smooth_chain(data: Object, p: Dictionary) -> void:
 	else:
 		_tel["bsmooth_pass"] = "SKIPPED — native kernel [U] (D03 U3); TODO(D03/D01)"
 		_note("SmoothTerrain(radius 3) skipped: native kernel [U], TODO D03/D01", "unverified")
+	# N17-G11: bsmooth_pass stays SKIPPED + bsmooth_kernel NULL on all fixed
+	# seeds until the kernel byte-dump probe terminates; no blur substituted.
 
 	# (2) one whole-map land pass: custom(1,4,0.5,[0.01,100]) — D2:606.
+	# GEN1TO1 §C.2 [O]: literal interior gate x>minx, x<W div 2, y>miny,
+	# y<W div 2. minx/miny remain [U] U7 — hook only, never guessed.
+	_tel["s1_interior_gate"] = ("HOOK minx/miny applied (D2:610 literal gate; "
+			+ "producer _misc_GetMapLeftTopPos [O] ev_b7759b44…)"
+			if smooth_custom_min_hook.is_valid() else
+			"[U] U7/P1: producer _misc_GetMapLeftTopPos is [O] (D2:218-228), numeric pair "
+			+ "still [U] — no gate applied, no invented bounds, §4 probe")
 	_smooth_custom(data, C_SMOOTH_LAND_POWER, C_SMOOTH_LAND_LERP,
 			C_SMOOTH_LAND_MIN, C_SMOOTH_LAND_MAX, false)
 
@@ -1057,6 +1606,11 @@ func _smooth_chain(data: Object, p: Dictionary) -> void:
 	for pass_i in range(C_SMOOTH_COAST_PASSES):
 		_smooth_custom(data, C_SMOOTH_COAST_POWER, C_SMOOTH_COAST_LERP,
 				C_SMOOTH_COAST_MIN, C_SMOOTH_COAST_MAX, true)
+	if terrain_update_hook.is_valid():
+		terrain_update_hook.call(data.height, _grid_w, _grid_h)
+		_tel["terrain_update"] = "HOOK applied (D2:641 TerrainUpdate(True,False))"
+	else:
+		_tel["terrain_update"] = "[U] engine-side TerrainUpdate(True,False) D2:641 — SKIPPED"
 	_tel["smooth_power_coast_effective"] = C_SMOOTH_COAST_LERP / C_SMOOTH_COAST_POWER
 	_note("Coastal coefficient lerp/power=1.428571 (D03:24,203) — overshoot is donor-derived, no clamp", "notes")
 
@@ -1065,10 +1619,20 @@ func _smooth_custom(data: Object, power: float, lerp_t: float,
 		minh: float, maxh: float, coastal_gate: bool) -> void:
 	if power == 0.0:
 		return  # D2:220-221
+	var half_w: int = _grid_w >> 1            # donor `mapwidth div 2`
 	for y in range(_grid_h):
 		for x in range(_grid_w):
-			if coastal_gate and not _has_water_5x5(x, y):
-				continue
+			if coastal_gate:
+				if not _has_water_5x5(x, y):
+					continue
+			elif smooth_custom_min_hook.is_valid():
+				# GEN1TO1 §C.2 [O] D2:610 — mapwidth is used for the y bound too.
+				var mn: Variant = smooth_custom_min_hook.call()
+				if mn is Vector2i:
+					var minx: int = (mn as Vector2i).x
+					var miny: int = (mn as Vector2i).y
+					if not (x > minx and x < half_w and y > miny and y < half_w):
+						continue
 			var i: int = y * _grid_w + x
 			var h: float = data.height[i]
 			if h < minh or h > maxh:                 # D2:236
@@ -1089,7 +1653,9 @@ func _smooth_custom(data: Object, power: float, lerp_t: float,
 
 func _has_water_5x5(x: int, y: int) -> bool:
 	var r: int = C_SMOOTH_COAST_NEIGHBOUR_RAD     # generatemap.inc:625
-	for ny in range(maxi(0, y - r), mini(_grid_h - 1, y + r) + 1):
+	# GEN1TO1 §G.3 [O] D2:626 — donor clamps BOTH axes with `mapwidth-1`; the
+	# old `_grid_h-1` "fix" is a PORT APPROXIMATION. Preserve the literal anomaly.
+	for ny in range(maxi(0, y - r), mini(_grid_w - 1, y + r) + 1):
 		for nx in range(maxi(0, x - r), mini(_grid_w - 1, x + r) + 1):
 			if _mask_water[ny * _grid_w + nx] == 1:  # gMapMask.water=cBWater, D2:629
 				return true                          # break(MAIN), D2:674
@@ -1106,14 +1672,28 @@ func _index(x: int, y: int) -> int:
 # ---------------------------------------------------------------------------
 func _water_fields(data: Object, p: Dictionary) -> void:
 	var fields: Array[Dictionary] = []
-	var step: int = C_WATERFIELD_SIZE
-	var sz: int = 640 / step                       # cWaterMapArrSize, D2:650
+	var step: int = C_WATERFIELD_SIZE                       # D2:649
+	var sz: int = int(C_WATER_MAP_ARR_SIZE)                 # D2:650 = 640 div 2
+	# GEN1TO1 §F.7 [O] D2:698: mapsizemod = (cWaterMapArrSize/((cMapSize/H)*2)) * cWaterFieldSize, FLOAT division.
+	var mapsizemod: float = (float(C_WATER_MAP_ARR_SIZE) /
+			((float(C_MAP_SIZE_REF) / float(_grid_h)) * 2.0)) * float(step)
 	var count: int = 0
+	var guard_notes: Array[String] = []
 	for wmy in range(sz):
 		for wmx in range(sz):
+			# D2:662-665 ErrorLog guards: x/y vs terrain map size, wmx/wmy vs
+			# cWaterMapArrSize. Our bounded loops satisfy them; keep the checks
+			# explicit and labelled rather than silently dropping them.
+			if wmx >= sz or wmy >= sz:
+				guard_notes.append("wmx/wmy outside cWaterMapArrSize — skipped")
+				continue
 			var hit: bool = false
-			for y in range(wmy * step, mini((wmy + 1) * step, _grid_h)):
-				for x in range(wmx * step, mini((wmx + 1) * step, _grid_w)):
+			# D2:654-660 inclusive upper bound: Min((wmy+1)*2, mapH-1).
+			for y in range(wmy * step, mini((wmy + 1) * step, _grid_h - 1) + 1):
+				for x in range(wmx * step, mini((wmx + 1) * step, _grid_w - 1) + 1):
+					if x >= _grid_w or y >= _grid_h:
+						guard_notes.append("x/y outside gc_terraindata_map — skipped")
+						continue
 					# D2:666 — flag comes from mask B, not from a height compare.
 					if mb_of(data, x, y) > 0.0 and (mr_of(data, x, y) < 1.0 or mb_of(data, x, y) < 1.0):
 						hit = true
@@ -1122,17 +1702,163 @@ func _water_fields(data: Object, p: Dictionary) -> void:
 					break
 			if hit:
 				count += 1
+				var fname: String = "x" + str(wmx) + "y" + str(wmy)
+				# GEN1TO1 §F.7 [O] D2:700-704 — all four translated corners.
+				var tx: float = float(wmx * step) - mapsizemod
+				var tz: float = float(wmy * step) - mapsizemod
+				var bx: float = float((wmx + 1) * step) - mapsizemod
+				var bz: float = float((wmy + 1) * step) - mapsizemod
 				fields.append({
-					"name": "x" + str(wmx) + "y" + str(wmy),
-					"y": C_WATERFIELD_OFFSET_Y,       # generatemap.inc:688,704
+					"name": fname,
+					"tx": tx, "tz": tz, "bx": bx, "bz": bz,
+					"offset_y": C_WATERFIELD_OFFSET_Y,
+					"y": C_WATERFIELD_OFFSET_Y,       # legacy mirror
 					"size": step,                     # cWaterFieldSize, D2:649
 					"label": "[O] donor text; runtime [U] (comment-prefixed GSC)",
 				})
+				if water_field_add_hook.is_valid():
+					water_field_add_hook.call(fname, tx, tz, bx, bz, C_WATERFIELD_OFFSET_Y)
 	_tel["water_field_count"] = count
+	_tel["water_field_mapsizemod"] = mapsizemod
+	_tel["water_field_guards"] = guard_notes
+	_tel["water_field_binding"] = ("HOOK WaterFieldAdd(name,tx,tz,bx,bz,-0.5)"
+			if water_field_add_hook.is_valid() else
+			"[U] native WaterFieldAdd binding/class/plane Y — coordinates recorded, no call")
 	var meta: Dictionary = data.meta
 	meta["water_fields"] = fields
 	meta["water_field_y_label"] = "cOffsetY=-0.5 (generatemap.inc:688,704); runtime [U]"
 	data.meta = meta
+
+
+# ---------------------------------------------------------------------------
+# GEN1TO1 §E — 24B/13B record writer + SetTileIndex vertex fan-out.
+# Setter 0x8326b8: for a=0..1, b=0..1 write target (r-a,c-b) corner a*2+b and
+# refresh +4 from Delphi Random(256); no neighbour comparison, no LUT, no mask.
+# ---------------------------------------------------------------------------
+# GENSEED §3 [O] — RENDERER-SIDE CHAIN, ANNOTATION ONLY. DO NOT IMPLEMENT A COPY HERE.
+#   Installer sub_8177f0 (ev_9ce28a17…, 129 insns), three mutually exclusive
+#     installs at renderer record [ebx+0x12c]. DEFAULT TERRAIN path 0x8178b4:
+#     renderer+0x40 = 0x812e34 (producer pointer), renderer+0x44 = ebx (terrain
+#     object). Sibling slots +0x48/+0x4c select 0x8185c0 / 0x818554 by the same
+#     word-gate pattern (0x817841/0x81784a, 0x817868/0x817865, 0x81787a/0x817877).
+#   Producer sub_812e34 (ev_58d7418c…, 516 insns): builds the 0x48-byte payload.
+#     RGB UV via `call 0x812b4c` at 0x813227 / 0x8132c3; alpha UV via
+#     `call 0x812ccc` at 0x813380; per-layer slot counter [ebp-0x2b]; ret 8.
+#   Consumer sub_818920: the 0x50-byte list builder, ONE call at 0x8179b6.
+#   EXACT 0x48 -> 0x50 relationship: producer's +0x05..+0x44 UV bytes become the
+#     consumer's +0x10..+0x4f list bytes (+0x0b UV shift + 16-byte index header,
+#     DEC_U §6.4). The instruction performing this copy HIDES behind the INDIRECT
+#     renderer+0x40 dispatch — [U], still UNVERIFIED. Terminating write-break
+#     probe (§3.3): break on write to renderer+0x40 @0x8178b4, then on the first
+#     indirect call through that slot, single-step the copy loop and record
+#     (src_off -> dst_off). TERMINATE when every +0x05..+0x44 -> +0x10..+0x4f byte
+#     is mapped gap-free AND the four +0x00..+0x0c index words are shown written
+#     from the vertex-index source.
+#   This module writes ONLY the generation side (24B/13B records at _set_tile).
+#   No 0x48/0x50 copy routine is added here; the mesh/renderer worker owns the
+#   probe. GEOMETRY UNCHANGED — annotation/diagnostics only.
+var _tile_sets: int = 0
+
+
+func _init_tile_records() -> void:
+	_rec24.resize(_grid_n * 24)
+	_rec13.resize(_grid_n * 13)
+	for i in range(_grid_n):
+		var o24: int = i * 24
+		# Donor record24 default 0x8f6164 = 00*8 | f32(1.0)*4 (ev_7a605515…).
+		for k in range(8):
+			_rec24[o24 + k] = 0
+		for k in range(4):
+			_rec24[o24 + 8 + k * 4] = 0
+			_rec24[o24 + 9 + k * 4] = 0
+			_rec24[o24 + 10 + k * 4] = 0x80
+			_rec24[o24 + 11 + k * 4] = 0x3F
+		var o13: int = i * 13
+		# Donor record13 default 0x8fab6c = 00*10 FF 00 00 (fresh correction:
+		# +11 is 0x00, NOT 0xFF — ev_2f7258e1…/ev_b9a8a9c2…).
+		for k in range(10):
+			_rec13[o13 + k] = 0
+		_rec13[o13 + 10] = 0xFF
+		_rec13[o13 + 11] = 0
+		_rec13[o13 + 12] = 0
+	# GENSEED §2 [O]/[U]: the ALGORITHM is wired in _LCG.next_u8() —
+	#   state=(state*0x8088405+1) mod 2^32, out=state>>>24 (sub_403a0c, ev_6478320b…).
+	#   Image state 0 at slot 0x8f2008 is [O] (ev_bde23e2d…) but is the FILE DEFAULT,
+	#   NOT a donor generation seed. The seed SOURCE is [U] U4: seeder sub_4033b8
+	#   (QPC-low else GetTickCount, ev_78bcf9c8…) runs at process start with only
+	#   3 non-generation callers (ev_583b7258…); NO per-map Delphi reseed exists.
+	#   Image 0 below is a labelled placeholder only — do not wire _stage_begin to
+	#   _rng_delphi and do not invent a per-map seed. Probe: GENSEED §2.4.1 @0x83272f.
+	#   N17-G10 @0x83272f (state>>>24, zero mismatches); N17-G9: key0 DISCARDED
+	#   mod 2^32 (ledger §2.4.2 above) — key0-only bit-identical, key1±1 changes stream.
+	_rng_delphi.s = 0
+	_rng_delphi.draws = 0
+	if delphi_state_hook.is_valid():
+		var v: Variant = delphi_state_hook.call()
+		if v is int:
+			_rng_delphi.s = int(v) & LCG_U32
+	_delphi_state = _rng_delphi.s
+	_delphi_draws = 0
+	_tile_sets = 0
+
+
+func _delphi_byte() -> int:
+	# [O] sub_403a0c: 0x403a0f imul 0x8088405 / 0x403a19 inc / 0x403a1a store
+	# 0x8f2008 / 0x403a20 mul / 0x403a22 mov eax,edx => (256*state)>>32 = state>>>24.
+	var b: int = _rng_delphi.next_u8()            # sub_403a0c: state>>>24
+	_delphi_state = _rng_delphi.s
+	_delphi_draws = _rng_delphi.draws
+	return b
+
+
+func _set_tile(r: int, c: int, tile: int) -> void:
+	# Exact donor setter fan-out; tile is narrowed to u8 with NO range check.
+	var tv: int = tile & 0xFF
+	for a in range(2):
+		for b in range(2):
+			var rr: int = r - a
+			var cc: int = c - b
+			if rr < 0 or rr >= _grid_h or cc < 0 or cc >= _grid_w:
+				continue                            # bounds helper 0x50fba0
+			var cell: int = rr * _grid_w + cc
+			_rec24[cell * 24 + a * 2 + b] = tv      # corner store, a-outer/b-inner
+			_rec24[cell * 24 + 4] = _delphi_byte()  # one accepted draw per target
+			_rec13[cell * 13 + 12] = 1              # dirty/loaded flag (reader=1)
+			if _cur_data != null:
+				_cur_data.set_tex(cell, _rec24[cell * 24])  # GetTileIndex returns +0
+	_tile_sets += 1
+
+
+func get_tile(r: int, c: int) -> int:
+	if r < 0 or r >= _grid_h or c < 0 or c >= _grid_w:
+		return 0
+	return int(_rec24[(r * _grid_w + c) * 24])    # OOB default is f32(1.0) ptr [U]
+
+
+func _publish_tile_records(data: Object) -> void:
+	var meta: Dictionary = data.meta
+	meta["tile_records_24_13"] = {
+		"count": _grid_n,
+		"record24": _rec24.duplicate(),
+		"record13": _rec13.duplicate(),
+		"layout24": "0..3 corner tags [a*2+b]; +4 Delphi variant byte; +5..+23 donor default 00*8|f32(1.0)*4",
+		"layout13": "+0..3 corners; +4..7 flags; +8 override; +9 override random; +10/+11 control; +12 dirty (writer clears 0)",
+		"setter": "cossacks.exe:0x8326b8 — four targets (r-a,c-b), no neighbour/LUT",
+		"variant": "sub_403a0c Delphi LCG state>>>24; generation-time seed [U] U4",
+		"parity": "UNVERIFIED — no donor GPU A/B frame",
+	}
+	# GENSEED §3 annotation only — renderer-side, no copy implemented, no geometry change.
+	meta["renderer_callback_contract"] = {
+		"status": "[O] renderer-side chain — NOT generation; no 0x48/0x50 copy implemented here",
+		"installer": "sub_8177f0 (ev_9ce28a17…): default terrain @0x8178b4 installs renderer+0x40 = 0x812e34, renderer+0x44 = terrain object",
+		"producer": "sub_812e34 (ev_58d7418c…, 516 insns): 0x48-byte payload; RGB UV via 0x812b4c (@0x813227/0x8132c3), alpha UV via 0x812ccc (@0x813380)",
+		"consumer": "sub_818920: one call @0x8179b6 builds the 0x50-byte list; exact 0x48->0x50 (+0x0b UV shift + 16-byte index header) copy is [U]",
+		"terminating_probe": "GENSEED §3.3: break write to renderer+0x40 @0x8178b4, then first indirect call; terminate when +0x05..+0x44 -> +0x10..+0x4f gap-free AND index words shown from vertex-index source",
+		"geometry_change": "NONE — annotation/diagnostics only",
+	}
+	data.meta = meta
+	_tel["tile_record_set_calls"] = _tile_sets
+	_tel["tile_record_variant_draws"] = _delphi_draws
 
 
 func mr_of(data: Object, x: int, y: int) -> float:
@@ -1159,9 +1885,17 @@ func _texture_tiles(data: Object, p: Dictionary) -> void:
 		_note("tile_name_to_id absent — tile ids left untouched, no invented id", "unverified")
 	if chains.is_empty():
 		_note("tile_smooth_chains absent — tile smoothing skipped; TODO(I01) decoder", "unverified")
-	_tel["shore_probabilities"] = {"sandsea1": 1.0, "sandsea5": 0.7, "sandsea6": 0.3,
+	# GEN1TO1 §D.4 [O] fresh `tilesmooth_scripts.cfg:1-120` table (not just the
+	# shore subset). Logic still consumes the caller's decoded chains verbatim.
+	_tel["shore_probabilities"] = {
+		"sandsea1": 1.0, "sandsea2": 1.0, "sandsea3": 1.0, "sandsea4": 1.0,
+		"sandsea5": 0.7, "sandsea6": 0.3,
 		"rock9": 0.0, "rock8": 0.0, "rock5": 0.0,
-		"source": "tilesmooth_scripts.cfg:5-66; spec/05 §4"}
+		"rock1": 0.16, "rock2": 0.16, "rock3": 0.16,
+		"rock6": 0.16, "rock7": 0.16, "rock4": 0.20,
+		"source": "tilesmooth_scripts.cfg:1-120 (fresh PORT1TO1 read)",
+	}
+	_tel["road_tiles"] = "[U] U8: broad/fa absent in shipped 24-bit TGAs; D4:622-636 road branch omitted, no invented tile"
 	# I06 API: derive the height-only baseline with donor thresholds, then
 	# override with the donor's MASK-GATED classification (D4:68-74).
 	data.derive_water()                     # deep -0.25 / shore -0.1, I06 API
@@ -1189,9 +1923,9 @@ func _texture_tiles(data: Object, p: Dictionary) -> void:
 				tname += "_winter"                                     # D4:639-640
 			var lookup_name: String = tname.trim_suffix("_winter")
 			if tname == "" and b_water and use_port_water_sentinel:
-				data.set_tex(i, 255)   # I06 PORT-ONLY sentinel — PORT APPROX, no donor id
+				_set_tile(x, y, 255)   # I06 PORT-ONLY sentinel — PORT APPROX, no donor id
 			elif id_of.has(lookup_name):
-				data.set_tex(i, int(id_of[lookup_name]))
+				_set_tile(x, y, int(id_of[lookup_name]))
 	data.assign_side("water", water_arr)   # I06 API; mask-gated tri-state
 	_collision_pass(data, p, water_arr)    # explicit 4-tag collision fill (I06)
 	# D5:240-242 write-back happens once after all passes; our tex array is the
@@ -1301,7 +2035,7 @@ func _apply_detail_bitmap(data: Object, p: Dictionary, id_of: Dictionary,
 				unresolved_hist[str(tex)] = int(unresolved_hist.get(str(tex), 0)) + 1
 				continue
 			output_hist[str(tex)] = int(output_hist.get(str(tex), 0)) + 1
-			data.set_tex(i, tex)                  # donor :41; ids are final
+			_set_tile(x, y, tex)                  # donor :41; ids are final (§E fan-out)
 			if tex == 0:
 				info["unchanged_zero"] = int(info["unchanged_zero"]) + 1
 			else:
@@ -1469,8 +2203,9 @@ func _cliff_triggered(data: Object, p: Dictionary, x: int, y: int) -> bool:
 	if x == 0 or y == 0 or x == _grid_w - 1 or y == _grid_h - 1:
 		return true                          # texturemap.inc:557-560
 	# X28: cliff trigger consumes the collision tag painted by cDiff1/cDiff2
-	# (texturemap.inc:557). Read the array WE just filled through I06.
-	if data.get_collision(y * _grid_w + x, 0) > 0:
+	# (texturemap.inc:557). Donor query is `GetMapCollisionTagInRadius(x,y,0,False)`
+	# — radius 0, so the tested set is the centre cell only.
+	if _collision_tag_in_radius(data, x, y, 0) > 0:
 		return true
 	var tags: Variant = p.get("collision_tags", null)
 	if tags is PackedByteArray:
@@ -1483,6 +2218,18 @@ func _cliff_triggered(data: Object, p: Dictionary, x: int, y: int) -> bool:
 ## X28 §3.4: SIX asymmetric FIRST-MATCH windows on the PRE angle (:560-575),
 ## followed by the LIVE |h| overrides (:594-601). F05 ids: rock7=23, rock1=17,
 ## rock3=19, rock4=20, rock8=24. No face promotion, no height substitution.
+## GEN1TO1 §G.4 [O] texturemap.inc:557 `GetMapCollisionTagInRadius(x,y,0,False)`.
+## Radius 0 addresses the centre cell; the engine's wider-radius scan (if any)
+## is [U] and is never substituted here.
+func _collision_tag_in_radius(data: Object, x: int, y: int, r: int) -> int:
+	if r != 0:
+		_note("non-zero collision radius query is [U] — only r=0 modelled", "unverified")
+		return 0
+	if x < 0 or x >= _grid_w or y < 0 or y >= _grid_h:
+		return 0
+	return int(data.get_collision(y * _grid_w + x, 0))
+
+
 func _cliff_tile_name(data: Object, x: int, y: int) -> String:
 	var h: float = absf(data.height[_index(x, y)])
 	var a: Dictionary = _tile_pre_angle(data, x, y)
@@ -1550,7 +2297,7 @@ func _smooth_tiles(data: Object, chains: Array, id_of: Dictionary,
 					a[(j + 1) * _grid_w + i] = int(c[1])  # D5:231
 				_tel["tile_smooth_pairs"] = int(_tel.get("tile_smooth_pairs", 0)) + 1
 	for i in range(_grid_n):
-		data.set_tex(i, a[i])                # D5:240-242 write-back; I06 setter
+		_set_tile(i % _grid_w, int(i / _grid_w), a[i])  # D5:240-242 write-back; §E fan-out
 	_note("tile smoothing: 3 H-then-V in-place passes (D5:237), not cfg's 6; PORT RNG stream = D2:774 stage", "port_approximations")
 
 
@@ -1605,6 +2352,8 @@ func _find_random(group: Array, j: int) -> int:
 	if j < 0 or j >= group.size():
 		return -1
 	var entries: Array = group[j]
+	# GEN1TO1 §G.4 [U]: donor `sumProb` initialisation is unverified (D5:53/58);
+	# keep the deterministic zero but label it — never claim donor equivalence.
 	var sum_prob: float = 0.0
 	for e: Dictionary in entries:
 		sum_prob += float(e.get("prob", 0.0))     # D5:53,58
@@ -1620,24 +2369,29 @@ func _find_random(group: Array, j: int) -> int:
 
 # ---------------------------------------------------------------------------
 # STAGE 6 — shore exclusion mask (spec/10 item 6; X03:676-696)
-# DEC_DEEP_prop_water_exclusion: donor pre-marks gPatternMask before any
-# SetupPatternsByType — water<>cBNone, bsmooth, collision>0 (incl. waterborder
-# ring radius gc_WaterBorderSize=3). _check_stand itself is mask-only.
+# GEN1TO1 §F.1 [O] (refutes DEC_DEEP_prop_water_exclusion's generic reading):
+# skirmish pre-mark is ONLY D1:1568 height<-0.1 + D2:491 blanket + D1:1613
+# border + ellipses. The D2:811-850 water/bsmooth/collision layer pre-mark is
+# editor-only; the waterborder ring runs at FINALIZE D1:2068.
+# _check_stand itself is mask-only.
 # ---------------------------------------------------------------------------
 func _stage_shore_exclusion(data: Object, p: Dictionary) -> void:
+	# GEN1TO1 §F.1 [O] D1:1568-1581: skirmish pre-mark is ONLY the shore band on
+	# unoccupied cells. The D2:811-850 water/bsmooth/broad/collision layer
+	# pre-mark is editor-only (`cPlaceFreeForests and not bRandomMap`, D2:799)
+	# and must NOT run in skirmish. The waterborder ring belongs to finalize.
 	for i in range(_grid_n):
 		if _occ[i] == 0 and data.height[i] < C_TILE_SHORE_HEIGHT:  # D1:1576-1578
 			_occ[i] = 1
-	_apply_water_premark(data)
+	if not bool(_gen["b_random_map"]):
+		_editor_layer_premark(data)
 
 
-# Donor generatemap.inc:818 pre-mark + _misc_SetShoresCollision waterborder.
-# Water cells, bsmooth cells and any collision-tagged cell block prop stands;
-# a 3-cell disc around deep water forms the waterborder ring. Broad is [U]
-# (no broad array modelled) and is explicitly not invented here.
-func _apply_water_premark(data: Object) -> void:
+# GEN1TO1 §F.1 [O] editor-only D2:811-850 layer premark. Water cells, bsmooth
+# cells and any collision-tagged cell block prop stands. Broad is [U] (no alpha
+# in shipped masks) and is explicitly not invented. No waterborder ring here.
+func _editor_layer_premark(data: Object) -> void:
 	var water_blocked := 0
-	var border_blocked := 0
 	for i in range(_grid_n):
 		var wv: int = 0
 		if (data as Object).get("water") is PackedByteArray:
@@ -1654,18 +2408,27 @@ func _apply_water_premark(data: Object) -> void:
 			if _occ[i] == 0:
 				_occ[i] = 1
 				water_blocked += 1
-	# Waterborder ring: disc radius gc_WaterBorderSize=3 around deep water.
-	var rad: int = 3
+	_tel["editor_layer_premark"] = {"water_blocked": water_blocked,
+		"source": "D2:811-850, guard `cPlaceFreeForests and not bRandomMap` (D2:799)",
+		"broad": "[U] U8 — no alpha byte in shipped 24-bit TGAs; not invented",
+		"note": "editor-only; NEVER applied to skirmish; no waterborder ring here"}
+
+
+# GEN1TO1 §F.1 [O]: gc_WaterBorderSize=3 ring belongs to `_misc_SetShoresCollision`
+# at FINALIZE (D1:2068), i.e. after every placement gate. It is therefore not a
+# placement-time occupancy blocker. The engine collision tag write itself is [U];
+# this records the donor-order occupancy ring and labels the tag side.
+func _shore_collision_ring(data: Object) -> void:
+	var rad: int = C_WATERBORDER_RAD                 # gc_WaterBorderSize=3
+	var border_blocked: int = 0
+	var warr: PackedByteArray = PackedByteArray()
+	if (data as Object).get("water") is PackedByteArray:
+		warr = (data as Object).get("water")
 	for y in range(_grid_h):
 		for x in range(_grid_w):
 			var i0: int = y * _grid_w + x
-			var w0: int = 0
-			if (data as Object).get("water") is PackedByteArray:
-				var warr0: PackedByteArray = (data as Object).get("water")
-				if i0 < warr0.size():
-					w0 = int(warr0[i0])
-			if w0 != 2:
-				continue
+			if i0 >= warr.size() or int(warr[i0]) != 2:
+				continue                            # deep water only
 			for dy in range(-rad, rad + 1):
 				for dx in range(-rad, rad + 1):
 					if dx * dx + dy * dy >= rad * rad:
@@ -1678,9 +2441,10 @@ func _apply_water_premark(data: Object) -> void:
 					if _occ[j] == 0:
 						_occ[j] = 1
 						border_blocked += 1
-	_tel["water_premark"] = {"water_blocked": water_blocked,
-		"border_blocked": border_blocked,
-		"source": "generatemap.inc:818 + gc_WaterBorderSize=3; broad [U] not invented"}
+	_tel["shore_collision_ring"] = {"border_blocked": border_blocked,
+		"source": "D1:2068 _misc_SetShoresCollision; gc_WaterBorderSize=3",
+		"timing": "FINALIZE — after all placement (not a placement gate)",
+		"collision_tag": "[U] engine-side tag write, not invented"}
 
 
 var _cur_data: Object
@@ -1691,6 +2455,10 @@ var _cur_data: Object
 # ---------------------------------------------------------------------------
 func _stage_starts(data: Object, p: Dictionary) -> void:
 	_cur_data = data
+	# GEN1TO1 §A.2/§G.1 [O] D1:1613 border fill runs BEFORE RandomStartingPoints
+	# (:1615) and therefore before its four internal reseeds. The old post-loop
+	# call was a PORT APPROXIMATION.
+	_fill_map_border(C_BORDER_MASK_RAD)
 	# Four donor start-selection re-seed sites, always issued in donor order.
 	# Unreached branches consume zero draws; re-seeding is idempotent.
 	_stage_begin("D1:1100", "key", _rng0, _rng1)   # X03:727 (v<61 branch)
@@ -1721,7 +2489,6 @@ func _stage_starts(data: Object, p: Dictionary) -> void:
 					C_ELLIPSE_1_X, C_ELLIPSE_1_Y)
 			_setup_mines(int(c.x), int(c.y), 0, 1, p)   # D1:985 near mines
 			_setup_starting_resources(int(c.x), int(c.y), p)
-	_fill_map_border(C_BORDER_MASK_RAD)             # D1:1613
 	_stage_begin("D1:1616", "key", _rng0, _rng1)     # X03:764
 	# Body of :1616 runs AFTER this reseed in donor order; keep the stage open
 	# so relief draws are attributed to :1616.
@@ -1780,6 +2547,10 @@ func _setup_mines(cx0: int, cy0: int, minround: int, maxround: int, p: Dictionar
 			var ore: String = ["mng", "mni", "mnc"][j]
 			var family: String = ("desert_" if bool(_gen["b_desert"]) else "") + ore
 			for k in range(C_TRYCOUNT_MINES): # D1:525,555
+				# P-PLACE-08 [O] dogenerate.inc:544-557,704-713: per-attempt order is
+				# name roulette (1 draw, consumed even on `continue` rings) -> conditional
+				# dst -> angle -> rotate -> round -> test/stamp/break. No angle draw on a
+				# `continue` ring. No behaviour change; cite only.
 				var name: String = _roulette_name(family, p)  # one name draw, D1:557
 				if name == "":
 					continue
@@ -1792,7 +2563,7 @@ func _setup_mines(cx0: int, cy0: int, minround: int, maxround: int, p: Dictionar
 					dst = _apply_band(band, dst)
 				# D1:658-702 far-ring corner relocation (v>=90, big, i=2, sp<=4).
 				var centre: Vector2 = _mine_centre(Vector2(float(cx0), float(cy0)), i)
-				var angle: float = _active_rng.next_f() * 360.0      # D1:704
+				var angle: float = _active_rng.next_f() * 360.0      # D1:704 (dogenerate.inc:704-713, P-PLACE-08)
 				var vx: float = cos(deg_to_rad(angle)) * dst
 				var vz: float = sin(deg_to_rad(angle)) * dst  # VectorRotateY, D1:705-708
 				var sx: int = int(round(float(centre.x) + vx))
@@ -1945,30 +2716,61 @@ func _mine_centre(start: Vector2, i: int) -> Vector2:
 func _setup_starting_resources(cx0: int, cy0: int, p: Dictionary) -> void:
 	# Six attempted placements, family picked ONCE per placement (V12:184-207).
 	# 5x7 was already stamped by CreateStartPoint (D1:984) — no food rects.
-	# FIX-FOREST-PLACEMENT: "forest0" is not a feed family; resolve it to the
-	# seven donor conifer families (F08 §5). One name draw per placement is kept;
-	# the donor's separate family-choice draw was never in this port and is NOT
-	# added here (RNG draw count/order stays unchanged).
-	_note("forest0 → F08 §5 conifer-family union: 2+1 start forest stamps per start restored, one name draw unchanged", "port_approximations")
+	# GEN1TO1 §F.4 [O]: foreststype is hard-forced 0, so each start-forest
+	# placement draws floor(RandomExt*7) to select ONE conifer family, then runs
+	# the roulette INSIDE that family. The old "forest0" union of all seven was
+	# a PORT APPROXIMATION. This adds one draw per placement — stream order is
+	# replayed below; no constant or family is invented.
+	_note("GEN1TO1: 7-way conifer family draw (floor(RandomExt*7)) before family-local roulette; extra draw vs prior union", "port_approximations")
+	# P-PLACE-06 [O] dogenerate.inc:720-947: 128 angles x 3 inner probes;
+	# `dst=mindst+RandomExt*span+(i+j)*0.5`, per-i angle, round() coords. The
+	# SECOND `stones` ring uses span 2.0 (the `+R*2` form, D1:880-range), so the
+	# 2.0 entries below are donor-exact — do not "normalise" them to 3.0.
+	# P-PLACE-07 [O] X22 X-C6: six attempted placements only, no food rects;
+	# the 12x15 ellipse follows stoneforests, the 22x18 ellipse is last.
 	var steps: Array = [
 		{"fam": "stoneforests", "count": 1, "mind": C_ELLIPSE_1_X, "span": 3.0},
 		{"fam": "@ELLIPSE2", "count": 0, "mind": 0, "span": 0.0},
 		{"fam": "stones", "count": 1, "mind": C_ELLIPSE_2_X, "span": 3.0},
-		{"fam": "forest0", "count": 2, "mind": C_ELLIPSE_2_X, "span": 3.0},
+		{"fam": "@FOREST7", "count": 2, "mind": C_ELLIPSE_2_X, "span": 3.0},
 		{"fam": "stones", "count": 1, "mind": C_ELLIPSE_2_X + 4, "span": 2.0},
-		{"fam": "forest0", "count": 1, "mind": C_ELLIPSE_2_X + 4, "span": 2.0},
+		{"fam": "@FOREST7", "count": 1, "mind": C_ELLIPSE_2_X + 4, "span": 2.0},
 	]
 	for step: Dictionary in steps:
 		if str(step["fam"]) == "@ELLIPSE2":
 			_fill_ellipse(cx0, cy0 + C_ELLIPSE_CENTRE_DY, C_ELLIPSE_2_X, C_ELLIPSE_2_Y)  # D1:769
 			continue
-		var family: String = str(step["fam"])
-		var name: String = _roulette_name(family, p)   # once per placement, D1:743/782/839/869/922
-		if name == "":
-			continue
-		var pat: Dictionary = _pattern(name, p)
-		var placed: int = 0
+		var base_family: String = str(step["fam"])
+		var placed_by_family: Dictionary = {}
 		for num in range(int(step["count"])):
+			var family: String = base_family
+			if bool(_gen["b_desert"]):
+				# P-PLACE-03 [O] dogenerate.inc:736-940 / DEC_DEEP_forest_generation §3:
+				# desert SWITCHES family names — stoneforests -> desert_stoneforests
+				# when version<77 else desert_forests_big; stones -> desert_stones —
+				# and replaces the temperate 7-way conifer draw with floor(RandomExt*2).
+				# Each placement takes its OWN draw; the temperate draw is not reused.
+				if base_family == "stoneforests":
+					family = "desert_stoneforests" if int(_gen["version"]) < 77 else "desert_forests_big"
+				elif base_family == "stones":
+					family = "desert_stones"
+				elif base_family == "@FOREST7":
+					var di: int = _active_rng.next_int(C_START_DESERT_FOREST_FAMILIES.size())  # floor(RandomExt*2)
+					family = C_START_DESERT_FOREST_FAMILIES[di]
+					_tel["start_forest_family_draws"] = int(_tel.get("start_forest_family_draws", 0)) + 1
+					_tel["desert_start_forest_family_draws"] = int(_tel.get("desert_start_forest_family_draws", 0)) + 1
+			else:
+				# GEN1TO1 §F.4 [O] D1:804-861 / F08 §5: conifer-only branch picks one
+				# of exactly seven authored families with floor(RandomExt*7), then
+				# roulette within THAT family. [I] placement granularity = per stamp.
+				if base_family == "@FOREST7":
+					var fi: int = _active_rng.next_int(C_START_FOREST_FAMILIES.size())
+					family = C_START_FOREST_FAMILIES[fi]
+					_tel["start_forest_family_draws"] = int(_tel.get("start_forest_family_draws", 0)) + 1
+			var name: String = _roulette_name(family, p)   # D1:743/782/839/869/922
+			if name == "":
+				continue
+			var pat: Dictionary = _pattern(name, p)
 			var done: bool = false
 			for i in range(C_TRYCOUNT_START):          # D1:724
 				var angle: float = _active_rng.next_f() * 360.0  # D1:751/790/845/877/930
@@ -1984,15 +2786,21 @@ func _setup_starting_resources(cx0: int, cy0: int, p: Dictionary) -> void:
 						_record_pattern_stamp(_cur_data, name, family, sx, sy,
 								_family_stamp_kind(family))
 						_damp_freq(family, name, p)
-						placed += 1
+						placed_by_family[family] = int(placed_by_family.get(family, 0)) + 1
 						done = true
 						break                          # break(MAIN)
 				if done:
 					break
-		_tel["resource_counts"][family] = int(_tel["resource_counts"].get(family, 0)) + placed
+		for fam_key: String in placed_by_family:
+			_tel["resource_counts"][fam_key] = int(_tel["resource_counts"].get(fam_key, 0)) + int(placed_by_family[fam_key])
 	_fill_ellipse(cx0, cy0 + C_ELLIPSE_CENTRE_DY, C_ELLIPSE_3_X, C_ELLIPSE_3_Y)  # D1:947
 	# D1:949-977 commented-out C3 placement — deliberately NOT implemented.
 	_note("No food rects in SetupStartingResources (X22 X-C6); C3 placement dead text", "notes")
+	if bool(_gen["b_desert"]):
+		_tel["desert_start_family_gate"] = ("[O] dogenerate.inc:736-940: stoneforests -> "
+				+ "desert_stoneforests if version<77 else desert_forests_big; stones -> "
+				+ "desert_stones; forest pick floor(RandomExt*2) over "
+				+ "desert_forests_medium/big; own draws, temperate draw never reused")
 
 
 # ---------------------------------------------------------------------------
@@ -2044,51 +2852,99 @@ func _resolve_stand_mask(pat: Dictionary) -> Dictionary:
 			label = ("PORT APPROX: decoded nonzero (h-1)*(w-1) cells are the explicit "
 					+ "stand footprint; PatternMaskStand/ReverceStand polarity [U]; "
 					+ "no inversion and no guessed full rectangle")
+		# GEN1TO1 §F.2 [O] D9:3384-3521 — when the decoded asset exposes the
+		# actual GetPatternMaskStand / GetPatternMaskInvStand bytes, build the
+		# required-cell set with the LITERAL donor predicate
+		# `(maskValue and maskStand) or ((not maskValue) and maskInvStand)`.
+		# Absent masks keep the labelled nonzero-cell fallback above; no polarity
+		# is guessed and no full rectangle is substituted.
+		# P-PLACE-05 probe: terminate fallback removal ONLY on a both-masks-present
+		# bundle diff with zero mismatches; until then the fallback is kept.
+		var stand_v: Variant = pat.get("mask_stand", null)
+		var inv_v: Variant = pat.get("mask_inv_stand", null)
+		if stand_v is PackedByteArray and inv_v is PackedByteArray:
+			var sba: PackedByteArray = stand_v
+			var iba: PackedByteArray = inv_v
+			if sba.size() == ob.size() and iba.size() == ob.size():
+				var req := PackedByteArray()
+				req.resize(ob.size())
+				for k in range(ob.size()):
+					var mv: int = int(ob[k])
+					var rbit: int = (mv & int(sba[k])) | ((~mv & 0xFF) & int(iba[k]))
+					req[k] = 1 if rbit != 0 else 0
+				ob = req
+				label = ("DONOR PREDICATE: (maskValue and maskStand) or "
+						+ "((not maskValue) and maskInvStand) — D9:3384-3521")
 		return {"bytes": ob, "w": mw, "h": mh, "layout": layout,
 			"source": str(entry["source"]), "label": label}
 	return {}
 
 
-func _check_stand(pat: Dictionary, x: int, y: int) -> bool:
-	# Ext = test with doStand=false then stamp with doStand=true, angle=0.
-	# The resolver consumes I02's raw (h-1)x(w-1) lattice verbatim. Donor
-	# PatternMaskStand/ReverceStand polarity is not supplied; the nonzero-cell
-	# footprint above is therefore explicitly labelled PORT APPROXIMATION.
+func _stand_footprint(pat: Dictionary, x: int, y: int) -> Dictionary:
 	var mask: Dictionary = _resolve_stand_mask(pat)
 	if mask.is_empty():
-		return false
+		return {}
 	var masks_v: Variant = _tel.get("stand_masks", {})
 	var masks: Dictionary = masks_v if masks_v is Dictionary else {}
 	masks[str(pat.get("name", ""))] = {
-		"layout": str(mask["layout"]),
-		"source": str(mask["source"]),
+		"layout": str(mask["layout"]), "source": str(mask["source"]),
 		"label": str(mask["label"]),
 	}
 	_tel["stand_masks"] = masks
-	var ob: PackedByteArray = mask["bytes"]
 	var mw: int = int(mask["w"])
 	var mh: int = int(mask["h"])
-	# misc.script:3325-3379 / Z06 §3: vMin=floor(stand-(mSize-1)/2).
-	# `x/y` here are grid indices; the donor centred->grid +W/2 conversion
-	# cancels exactly, so no second map-size offset is applied (V08/V58).
+	# misc.script:3325-3379 / Z06 §3: vMin=floor(stand-(mSize-1)/2). `x/y` are
+	# already grid indices, so there is no second map-size offset (V08/V58).
 	var x0: int = int(floor(float(x) - float(mw - 1) * 0.5))
 	var y0: int = int(floor(float(y) - float(mh - 1) * 0.5))
 	if str(mask["layout"]) == "legacy w*h vertex mask":
-		x0 = x - int(mw / 2)             # legacy canonical w*h vertex mask
+		x0 = x - int(mw / 2)
 		y0 = y - int(mh / 2)
-	for r in range(mh):                      # exclusive upper bound, D9:3476-3477
-		for c in range(mw):
+	return {"bytes": mask["bytes"], "w": mw, "h": mh, "x0": x0, "y0": y0}
+
+
+func _test_stand_footprint(fp: Dictionary, step: int) -> bool:
+	# P-PLACE-04 [O] misc.script:3384-3521 (D9:3441): fast path for
+	# `not doStand and angle=0` samples the mask box with step=4; the full path
+	# then uses step=1. All generator call sites pass angle=0, so this branch is
+	# always live. Pure reject accelerator; the full box upper bound stays
+	# exclusive (range(0, mh, step) / range(0, mw, step)). No behaviour change.
+	var ob: PackedByteArray = fp["bytes"]
+	var mw: int = int(fp["w"])
+	var mh: int = int(fp["h"])
+	var x0: int = int(fp["x0"])
+	var y0: int = int(fp["y0"])
+	for r in range(0, mh, step):                 # exclusive upper bound D9:3476
+		for c in range(0, mw, step):
 			if int(ob[r * mw + c]) == 0:
 				continue
 			var ix: int = x0 + c
 			var iy: int = y0 + r
 			if ix < 0 or ix >= _grid_w or iy < 0 or iy >= _grid_h:
-				return false
+				return false                     # out-of-map silently rejects
 			if _occ[iy * _grid_w + ix] == 1:
 				return false
-	# Donor Ext's second pass writes gPatternMask for the accepted footprint
-	# (misc.script:3497-3501). The old predicate-only stub omitted this write,
-	# allowing later family stamps to overlap accepted stands.
+	return true
+
+
+func _check_stand(pat: Dictionary, x: int, y: int) -> bool:
+	# Ext = test (doStand=false, angle=0: step-4 fast path then full box) and
+	# only then atomic stamp (doStand=true). No water/collision/topology test
+	# exists inside this predicate (§F.1); those enter via the earlier pre-mark.
+	var fp: Dictionary = _stand_footprint(pat, x, y)
+	if fp.is_empty():
+		return false
+	if not _test_stand_footprint(fp, 4):
+		return false
+	if not _test_stand_footprint(fp, 1):
+		return false
+	# Donor Ext's stamp pass writes gPatternMask for the accepted footprint
+	# (misc.script:3497-3501).
+	var ob: PackedByteArray = fp["bytes"]
+	var mw: int = int(fp["w"])
+	var mh: int = int(fp["h"])
+	var x0: int = int(fp["x0"])
+	var y0: int = int(fp["y0"])
 	for r in range(mh):
 		for c in range(mw):
 			if int(ob[r * mw + c]) != 0:
@@ -2100,6 +2956,8 @@ func _check_stand(pat: Dictionary, x: int, y: int) -> bool:
 
 
 func _stamp_pattern(data: Object, pat: Dictionary, x: int, y: int, p: Dictionary) -> void:
+	# P-PLACE-14 [O]: no RNG draws in this function (ev_4a342…; sub_755f30's 662
+	# callees contain no RandomExt/Delphi draw) — record/grid bytes only.
 	# F01/X23: canonical grid tables are injected here, never baked in.
 	# X13's F02 plane offsets (G=1000/1912/2866) are STALE for 17/29 patterns.
 	if grid_table_hook.is_valid():
@@ -2349,6 +3207,7 @@ func _stamp_smooth_boundary(ob: PackedByteArray, w: int, hh: int, r: int, c: int
 
 func _stamp_smooth_post(data: Object, pat: Dictionary, x: int, y: int,
 		ob: PackedByteArray) -> void:
+	# no RNG draws in this function (ev_4a342…); record bytes only (N17-G16).
 	# sub_755f30 orders this after the per-cell blend and all other payloads.
 	# sub_755db4 proves IN-PLACE read-after-write; Factor is the iteration
 	# count, and the divisor is the hardcoded 4.0 at VA 0x755ee4.
@@ -2418,9 +3277,10 @@ func _stamp_smooth_post(data: Object, pat: Dictionary, x: int, y: int,
 # ---------------------------------------------------------------------------
 # Family roulette + Freq damping (misc.script:3588-3653; V12:148)
 # ---------------------------------------------------------------------------
-## FIX-FOREST-PLACEMENT: resolve the legacy "forest0" alias to the donor's
-## foreststype=0 conifer-family union (F08 §5). No member is synthesised: every
-## entry is an authored name/freq pair from the supplied donor-derived feed.
+## INERT LEGACY (GEN1TO1): the old "forest0" union resolver. Start-forest
+## placements now use floor(RandomExt*7) + family-local roulette (§F.4), so this
+## alias is no longer selected; kept only so callers using it do not break.
+## No member is synthesised: every entry is an authored name/freq pair.
 func _family_members(family: String, p: Dictionary) -> Array:
 	if family == "forest0":
 		var families0: Dictionary = p.get("families", {})
@@ -2502,6 +3362,12 @@ func _stamp_candidate(key: String, amount: int = 1) -> void:
 
 ## I09 handoff: append only real accepted donor stamps, in acceptance order.
 ## No sort, RNG draw, synthetic stamp, or legacy C3PatternGen.Stamp conversion.
+## P-PLACE-15: this is NOT a pattern.lib Objects[] instancer — per-record
+## transform/material data is absent [U] and no member is synthesised. The
+## `objects_missing` telemetry flag in stats() exposes that gap explicitly.
+## N17-G6 (pattern.lib:713285+): per-record Position/Scaling/material keys stay
+## UNVERIFIED; terminate only on a per-pattern Objects[] export diff with zero
+## mismatches. No member is synthesised and instancer stays missing by design.
 func _record_pattern_stamp(data: Object, name: String, family: String,
 		x: int, y: int, kind: String) -> void:
 	var meta: Dictionary = data.meta
@@ -2548,6 +3414,9 @@ func _stage_relief(data: Object, p: Dictionary) -> void:
 	var probmid: float = float(mods.get("mid", 1.0))
 	var problarge: float = float(mods.get("large", 1.0))
 	var probhuge: float = float(mods.get("huge", 1.0))
+	_tel["free_pattern_modifiers"] = {"small": probsmall, "mid": probmid,
+		"large": problarge, "huge": probhuge,
+		"label": "[U] U9: engine-computed producer; caller values used, never invented here"}
 	if _grid_w != 640 or _grid_h != 640:
 		var modifier: float = 640.0 / (float(_grid_w + _grid_h) * 0.5)  # D1:1718-1724
 		probsmall *= modifier
@@ -2578,8 +3447,16 @@ func _stage_relief(data: Object, p: Dictionary) -> void:
 		_setup_patterns_by_type("desert_plateau", plt / 3.0, p)
 		_setup_patterns_by_type("desert_plateau_small", plt / 3.0, p)
 	# `ravine_medium` is commented out in the donor (D1:1760) — do not stamp.
-	# Global mines (D1:1769-1770): minround=1, maxround=0; ONE call per map.
-	_setup_mines(int(_grid_w * 0.5), int(_grid_h * 0.5), 1, 0, p)
+	# GEN1TO1 §G.5 [O] D1:1769-1770: global mines are called PER START with
+	# `SetupMines(arrStartPos[i].x, arrStartPos[i].y, 1, 0, ...)`. The old single
+	# call at map centre was a MAJOR MISSING port approximation.
+	var gstarts: Array = p.get("starts", _gen.get("starts_from_mask", []))
+	if gstarts.is_empty():
+		_note("global mines: no starts supplied — no call, no synthetic centre", "unverified")
+	else:
+		for s: Variant in gstarts:
+			var gc: Vector2 = _start_to_cell(s)
+			_setup_mines(int(gc.x), int(gc.y), 1, 0, p)
 	_mark_site("D1:1616")   # relief + global mines ran under the :1616 stream
 	_stage_begin("D1:1772", "key", _rng0, _rng1)   # X03:849
 
@@ -2597,10 +3474,12 @@ func _setup_patterns_by_type(family: String, freq: float, p: Dictionary) -> void
 	if mapsizeoptimise < 1.0:
 		mapsizeoptimise *= 0.65                     # D9:3687-3688
 	var trycount: int = int(floor(256.0 * mapsizeoptimise))
-	# COORD visual-wave directive: family stands use the strict 25-cell tiled
-	# placement lattice from D1:1330-1359, never uniform free-cell scatter.
-	var wc: int = int(floor(float(_grid_w) / float(C_TILE_GRID_SIZE)))
-	var hc: int = int(floor(float(_grid_h) / float(C_TILE_GRID_SIZE)))
+	# GEN1TO1 §F.6 [O] misc.script:3686-3704: two UNIFORM CENTRED draws per
+	# attempt — x=floor(x0+RandomExt*mapwidth), y=floor(y0+RandomExt*mapheight),
+	# x0=-(mapwidth div 2), y0=-(mapheight div 2). The 25-cell lattice is ONLY
+	# for SetupTiledPatterns (stage 2); using it here was a MAJOR PORT APPROX.
+	var x0c: int = -(int(_grid_w) >> 1)
+	var y0c: int = -(int(_grid_h) >> 1)
 	var previous: Dictionary = _tel["family_placements"].get(family, {})
 	var stat: Dictionary = {
 		"calls": int(previous.get("calls", 0)) + 1,
@@ -2614,8 +3493,7 @@ func _setup_patterns_by_type(family: String, freq: float, p: Dictionary) -> void
 		"name_draws": int(previous.get("name_draws", 0)),
 		"position_draws": int(previous.get("position_draws", 0)),
 		"last_trycount": trycount,
-		"grid_cells": (wc + 1) * (hc + 1),
-		"placement_grid": "25-cell tiled lattice (D1:1330-1359)",
+		"placement": "uniform centred floor(-W/2+R*W), floor(-H/2+R*H) (D9:3703-3704)",
 	}
 	_tel["family_counts"][family] = int(_tel["family_counts"].get(family, 0)) + needed
 	var attempts: int = 0
@@ -2632,17 +3510,14 @@ func _setup_patterns_by_type(family: String, freq: float, p: Dictionary) -> void
 			stat["missing_pattern"] = int(stat["missing_pattern"]) + 1
 			continue
 		for _k in range(trycount):
-			var gx: int = _active_rng.next_int(wc + 1)
-			var gy: int = _active_rng.next_int(hc + 1)
+			# X draw THEN Y draw (D9:3703-3704). Two next_f() calls, never a
+			# next_int lattice pick. Convert the centred cell to the grid index
+			# consumed by _check_stand/_stamp_pattern with exactly one +W/2.
+			var rdx: float = _active_rng.next_f()
+			var rdy: float = _active_rng.next_f()
 			stat["position_draws"] = int(stat["position_draws"]) + 2
-			# V08: donor realx/realy are centred cells, but _check_stand() and
-			# _stamp_pattern() consume GRID INDICES. Convert once here by keeping
-			# only the donor lattice term `gx*25 + 12 - 1`; adding W/2 cancels the
-			# donor-centred `-W/2`. Never subtract the map half-size a second time.
-			var rx: int = int(round(float(gx * C_TILE_GRID_SIZE + C_TILE_GRID_HALF
-					- C_TILE_GRID_OFFSET)))
-			var ry: int = int(round(float(gy * C_TILE_GRID_SIZE + C_TILE_GRID_HALF
-					- C_TILE_GRID_OFFSET)))
+			var rx: int = int(floor(float(x0c) + rdx * float(_grid_w))) + (int(_grid_w) >> 1)
+			var ry: int = int(floor(float(y0c) + rdy * float(_grid_h))) + (int(_grid_h) >> 1)
 			attempts += 1
 			stat["attempts"] = int(stat["attempts"]) + 1
 			_stamp_candidate("relief_attempts")
@@ -2707,9 +3582,50 @@ func _stage_forest_stone(data: Object, p: Dictionary) -> void:
 	_setup_patterns_by_type("desert_lake" if bool(_gen["b_desert"]) else "lake_big", lake_big, p)
 	_setup_patterns_by_type("lake_small", C_LAKE_ZERO, p)
 	_setup_patterns_by_type("plain_small", plain * 6.0 * probsmall, p)  # D1:1906
+	if bool(_gen["b_desert"]):
+		# P-PLACE-03 [O] dogenerate.inc:1780-1907 / DEC_DEEP_forest_generation §7:
+		# the desert arm SWITCHES to the authored desert_* family names. frs_* were
+		# halved above (D1:1781/1783/1785). Divisors mirror the temperate fan-out
+		# (/4 /6 /8) with the desert small arm at /2. Every line below is a SEPARATE
+		# _setup_patterns_by_type invocation: it takes its OWN name + 2-per-position
+		# draws, separately ledgered under _tel["family_placements"][family]. NO
+		# temperate draw/count is reused. `desert_forests_unique` is an authored
+		# family but no donor divisor is recovered in the audited text, so it is
+		# NOT called — no density/draw is invented (U-OBJ/U-HF).
+		_setup_patterns_by_type("desert_forests_big", frs_big / 4.0, p)     # D1:1780+
+		_setup_patterns_by_type("desert_forests_big", frs_big / 8.0, p)
+		_setup_patterns_by_type("desert_forests_medium", frs_big / 4.0, p)
+		_setup_patterns_by_type("desert_forests_medium", frs_big / 8.0, p)
+		_setup_patterns_by_type("desert_forests_medium", frs_mid / 6.0, p)
+		_setup_patterns_by_type("desert_forests_small", frs_small / 2.0, p)
+		_setup_patterns_by_type("desert_stones", stn1, p)                    # D1:1846 mirror
+		_setup_patterns_by_type("desert_stones", stn2, p)                    # D1:1862 mirror
+		_tel["desert_forest_fanout"] = ("[O] b_desert arm: frs_* halved (D1:1781/1783/1785); "
+				+ "desert_forests_big /4+/8, medium /4+/8+/6, small /2, desert_stones stn1+stn2; "
+				+ "own ledgered draws per family; desert_forests_unique uncalled (no donor divisor [U])")
 	_tel["forest_stamps"] = int(_tel["forest_stamps"]) + 1
 	_mark_site("D1:1772")
 	_stage_begin("D1:1909", "key", _rng0, _rng1)   # X03:937
+
+
+# ---------------------------------------------------------------------------
+# STAGE 9b — SmoothForestBorders post-pass: labelled NULL stub (P-PLACE-11)
+# ---------------------------------------------------------------------------
+func _stage_forest_borders(data: Object, p: Dictionary) -> void:
+	# P-PLACE-11 [O] smoothforestborders.inc:30-171: donor dresses ONE stamp per
+	# eligible cell (unconditional break; only the count==1 single-neighbour edge
+	# enters), rad=1.5, pind=floor(1+RandomExt*53), corner `fb_*` objects plus
+	# `grass5`/`rock9` decal tiles (_winter suffix); grid=3 cells dress only at
+	# RandomExt>0.975, tile=floor(1+RandomExt*3). The fb_*/grass5/rock9 pool is
+	# [U] (pine path only in visible text; leaf/mixed pools absent), so this
+	# stage stays a NULL stub: NO fb_*/grass5/rock9 prop is synthesised and NO
+	# RNG draw is fabricated for a stage whose data pool is unverified.
+	_tel["forest_borders"] = ("SKIPPED — fb_*/grass5/rock9 pool [U]; "
+			+ "smoothforestborders.inc:30-171; no fb_* prop synthesized (P-PLACE-11)")
+	_note("SmoothForestBorders post-pass skipped: fb_*/grass5/rock9 pool [U]; NULL stub, no synthesized props (smoothforestborders.inc:30-171)", "unverified")
+	# N17 border-dress probe: authorised trace of smoothforestborders.inc:30-171
+	# on a fixed seed; terminate only on zero mismatches before any fb_*/grass5
+	# prop is synthesised. Never fabricate a RandomExt draw here.
 
 
 # ---------------------------------------------------------------------------
@@ -2726,7 +3642,13 @@ func _stage_units_scale(data: Object, p: Dictionary) -> void:
 			if r > 0.0 and r < 1.0:
 				e["scale_jitter"] = r                    # D1:1990-2021, dead-band 0.05
 	else:
-		_note("object scale jitter skipped: separate object RNG [U]; TODO(D01/D07)", "unverified")
+		# P-PLACE-13: keep the NULL skip. D1:1990-2021 has THREE branches — jitter
+		# (5% dead-band), skip terrainmesh/stones, and the winter `leaftree` delete.
+		# A future hook must implement all three together; no RandomExt substitute.
+		_note("object scale jitter skipped: separate object RNG [U] D1:1990-2021; future hook must also skip terrainmesh/stones and delete leaftree in winter (TODO D01/D07)", "unverified")
+		# N17-G16: sub_755f30-family trace must show zero RNG draws and all three
+		# branches together (5% dead-band jitter, skip terrainmesh/stones, winter
+		# `leaftree` delete — dogenerate.inc:1990-2021) before any hook is applied.
 	_mark_site("D1:1909")
 	_stage_begin("D1:1927", "key", _rng0, _rng1)   # X03:961
 
@@ -2749,14 +3671,23 @@ func _stage_owner_map(data: Object, p: Dictionary) -> void:
 		dist[i] = 255         # -1 as u8, D1:1378
 		checked[i] = 0
 	var starts: Array = p.get("starts", _gen.get("starts_from_mask", []))
+	# GEN1TO1 §G.5 [O] D1:1386: seeds carry arrStartPosBusy[i], NOT the raw
+	# player index. Consume the decoded team array when supplied; otherwise keep
+	# the labelled player-index fallback (no invented team mapping).
+	var busy: Variant = p.get("start_pos_busy", p.get("arrStartPosBusy", null))
 	var seeds: Array[Dictionary] = []
 	for i in range(starts.size()):
 		var c: Vector2 = _start_to_cell(starts[i])
 		var sc: Vector2i = _to_scan(int(c.x), int(c.y))
 		var si: int = sc.y * g + sc.x
-		owner[si] = i & 0xFF                          # arrStartPosBusy[i], D1:1386
+		var owner_id: int = i & 0xFF
+		if busy is Array and i < (busy as Array).size():
+			owner_id = int((busy as Array)[i]) & 0xFF
+		owner[si] = owner_id                         # arrStartPosBusy[i], D1:1386
 		dist[si] = 0                                  # D1:1387
-		seeds.append({"i": si, "owner": i & 0xFF})
+		seeds.append({"i": si, "owner": owner_id})
+	_tel["owner_seed_source"] = ("arrStartPosBusy from decoded input"
+			if busy is Array else "player index fallback — arrStartPosBusy [U]")
 	var dcur: int = 0                                 # implicit zero-init [U], V12:232
 	var guard: int = 0
 	while guard < g * g + 2:
@@ -2815,6 +3746,9 @@ func _stage_finalize(data: Object, p: Dictionary) -> void:
 		phdr = 1                                     # D1:2077
 	elif int(_gen["b_desert"]):
 		colour = 7                                   # D1:2080
+	# GEN1TO1 §F.1 [O]: the waterborder ring is a FINALIZE effect (D1:2068),
+	# not a placement-time pre-mark. Applying it here cannot change any stand.
+	_shore_collision_ring(data)
 	var meta: Dictionary = data.meta
 	meta["finalize"] = {"color_table": colour, "phdr": phdr,
 		"shore_collision": "_misc_SetShoresCollision (D1:2068) — engine side [U]"}

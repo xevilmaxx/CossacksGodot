@@ -25,6 +25,31 @@
 #
 # Public API:  build(game, w, h) -> Dictionary      (I07 `p`)
 #              stats() -> Dictionary                (diagnostics only)
+#
+# GEN1TO1 HARD PORT (2026-11-26, worker IMPL-GEN-1TO1), driven by
+# docs/terrain_swarm_2026-11-26/reports/PORT1TO1_terrain_generation.md §G.6.
+# Backup: inbox/backup/terrain_donor_inputs.gd.bak-GEN1TO1 (SHA256 9511E178…).
+# No invented constant, no synthetic field, no parity claim. [U] items stay
+# labelled and are reported, never given a fabricated fallback.
+#
+# GENSEED HARD PORT (2026-11-26, worker IMPL-GEN-SEED), driven by
+# docs/terrain_swarm_2026-11-26/reports/DEC_U_gen_seed.md §2.2/§2.4/§4 and
+# PORT1TO1_terrain_generation.md §G.6. Backup before edit:
+# inbox/backup/terrain_donor_inputs.gd.bak-GENSEED (SHA256 10B7FA08…).
+# SCOPE: static donor facts only — randkey0/1 seed source, key0-discard across
+# all 11+3 reseeds, [U] GenerateMapRandKey with ±1 probe. ADDITIVE labels only:
+# no mask-pick draw, no seed derivation, no gate, no constant, no parity claim.
+# Donor never executed; no Godot/runner/git.
+#
+# PLACEMENT HARD PORT (2026-11-26, worker IMPL-PLACEMENT), driven by
+# docs/terrain_swarm_2026-11-26/reports/DEC_U_placement.md §8 P-PLACE-01..16.
+# Backup before edit: inbox/backup/terrain_donor_inputs.gd.bak-PLACEMENT.
+# SCOPE: P-PLACE-16 only — remove the FNV hash mask-pick draw; inputs exposes
+# `mask_count` and selects a deterministic sorted asset index. The donor
+# `floor(RandomExt*count)` draw is the generator's D2:190 on the inherited
+# D1:1538 stream. Nearest sampling, land->nowater2 alias and conifer gate are
+# unchanged. No invented density/draw/count, no parity claim; IMPL-GEN-SEED and
+# all user mods preserved.
 # ---------------------------------------------------------------------------
 extends RefCounted
 class_name C3TerrainDonorInputs
@@ -43,6 +68,10 @@ const COMPACT_MANIFEST := COMPACT_DIR + "manifest.json"
 const COMPACT_FAMILIES := COMPACT_DIR + "families.json"
 const COMPACT_PATTERNS := COMPACT_DIR + "patterns.json"
 const COMPACT_SCHEMA := "terrain_new/patterns_compact/v1"
+
+# GEN1TO1 §G.6 [O] generator.cfg:5-6 — live Land shape folder is `nowater2`
+# (`land` is commented out). Canonicalise only that alias, never other shapes.
+const SHAPE_ALIASES: Dictionary = {"land": "nowater2"}
 
 # --- donor-cited values (NO invention) -------------------------------------
 const GENERATOR_VERSION_FALLBACK: int = 92   # donor serial.script:27 gDataVersion=92; X54 §1 row 10
@@ -73,6 +102,16 @@ const DataScript = preload("res://scripts/data.gd")
 
 var _last_stats: Dictionary = {}
 var _shape_info: Dictionary = {}
+
+# GEN1TO1 §G.6 [O]: donor nearest-pixel sampler is `floor(x/W*srcW)` /
+# `floor(y/H*srcH)` (D2:409-411,541-542). Nearest is now the DEFAULT; bilinear
+# is retained ONLY as an explicit comparison hook, never as donor truth.
+var mask_resample_mode: String = "nearest"
+
+# GEN1TO1 §G.6 [O]: shipped skirmish pins foreststype=0 (D1:5-6) = conifer only.
+# Leaf/mixed families stay gated behind this explicit opt-in; default false.
+var include_leaf_forests: bool = false
+var _family_gate_notes: Array[String] = []
 
 
 # ---------------------------------------------------------------------------
@@ -400,15 +439,60 @@ func _hash32(s: String) -> int:
 # ---------------------------------------------------------------------------
 # Seed: config.gd:515 maps `gameplay.random_seed` to Data.RANDOM_SEED
 # (data.gd:35). donor has TWO 32-bit words: high = randkey0, low = randkey1
-# (spec/02 §1; donewgame.inc:16,33-37). X21 §4.3: key0 is discarded by
-# mod 2^32 — only key1 seeds; key0 is therefore a labelled NO-OP.
-# GenerateMapRandKey itself is [U] (spec/02 §1) — no derivation invented.
+# (spec/02 §1; donewgame.inc:16,33-37). GENSEED §2.2 [O]: verbatim donor text is
+# `randkey0 := gMap.settings.gen.randkey0; randkey1 := gMap.settings.gen.randkey1`
+# (generatemap.inc:141-142, ev_51c638a0…). X21 §4.3: key0 is discarded by
+# mod 2^32 — only key1 seeds; key0 is therefore a labelled NO-OP; ALL 11
+# SetRandomKey + ALL 3 SetRandomExtKey64 reseeds consume randkey1
+# (ev_9defac5a… / ev_661ef2e6… RTTI, key0 discarded ev_661ef2e6…).
+# GenerateMapRandKey / Get-Set(Map|GlobalMap)GeneratorRandomKey are RTTI names
+# with ZERO static xrefs (ev_3e61f9fa…, §1 xref rows): derivation stays [U] U5/P5.
+# Terminating ±1 probe (§2.4.2): fix randkey0, vary randkey1 ±1, dump the D2:190
+# mask pick + first three RandomExt floats; terminate on key0-only = bit-identical
+# and key1±1 = changed stream. No silent fallback, no invented derivation.
 # ---------------------------------------------------------------------------
 func _derive_seed(game) -> Dictionary:
 	var seed_value: int = 0
 	var have_seed := false
 	var source := "NONE"
 	var cfg = C3ConfigScript.active
+	# GEN1TO1 §G.6 [O] donewgame.inc:16,33-37 — donor has TWO independent 32-bit
+	# settings. Consume them verbatim when the caller exposes them; the old
+	# high/low split of one 32-bit seed is retained only as a labelled [U]
+	# fallback (GenerateMapRandKey derivation is still unverified).
+	var kw0: Variant = null
+	var kw1: Variant = null
+	if cfg != null and cfg is Object and (cfg as Object).has_method("num"):
+		var a0: Variant = (cfg as Object).call("num", "gameplay.randkey0", -1.0)
+		var a1: Variant = (cfg as Object).call("num", "gameplay.randkey1", -1.0)
+		if (a0 is int or a0 is float) and int(a0) >= 0:
+			kw0 = a0
+		if (a1 is int or a1 is float) and int(a1) >= 0:
+			kw1 = a1
+	for key0_name in ["randkey0", "random_seed0"]:
+		var g0: Variant = _prop(game, key0_name)
+		if (g0 is int or g0 is float) and int(g0) >= 0:
+			kw0 = g0
+			break
+	for key1_name in ["randkey1", "random_seed1"]:
+		var g1: Variant = _prop(game, key1_name)
+		if (g1 is int or g1 is float) and int(g1) >= 0:
+			kw1 = g1
+			break
+	if kw0 != null and kw1 != null:
+		return {
+			"seed": (int(kw0) << 32) | (int(kw1) & U32_MASK),
+			"have_seed": true,
+			"source": "gameplay.randkey0/randkey1 (donewgame.inc:16,33-37)",
+			"randkey0": int(kw0) & U32_MASK,
+			"randkey1": int(kw1) & U32_MASK,
+			"key0_label": "DONOR high word consumed verbatim [O] — NO-OP mod 2^32 (X21 §4.3)",
+			"key1_label": "DONOR low word consumed verbatim [O] — seeds RandomExt",
+			"derivation_label": "[O] two independent donor words; GenerateMapRandKey itself [U]",
+			"seed_source": "gMap.settings.gen.randkey0/1 (generatemap.inc:141-142, ev_51c638a0…)",
+			"derivation_probe": "[U] U5/P5 ±1 probe §2.4.2: fix key0, vary key1 ±1; terminate on key0-only bit-identical / key1-changed stream",
+			"reseed_contract": "ALL 11 SetRandomKey + ALL 3 SetRandomExtKey64 consume key1; key0 DISCARDED mod 2^32 (ev_661ef2e6…)",
+		}
 	if cfg != null and cfg is Object and (cfg as Object).has_method("num"):
 		var v: Variant = (cfg as Object).call("num", "gameplay.random_seed", -1.0)
 		if v is int or v is float:
@@ -441,6 +525,9 @@ func _derive_seed(game) -> Dictionary:
 		"key0_label": "DONOR high word [O] spec/02 §1; NO-OP mod 2^32 (X21 §4.3)",
 		"key1_label": "DONOR low word [O] spec/02 §1; seeds the LCG (spec/02 §2)",
 		"derivation_label": "[U] GenerateMapRandKey (spec/02 §1) — single 32-bit port seed used verbatim as key1; no mix64",
+		"seed_source": "gMap.settings.gen.randkey0/1 (generatemap.inc:141-142, ev_51c638a0…)",
+		"derivation_probe": "[U] U5/P5 ±1 probe §2.4.2: fix key0, vary key1 ±1; terminate on key0-only bit-identical / key1-changed stream",
+		"reseed_contract": "ALL 11 SetRandomKey + ALL 3 SetRandomExtKey64 consume key1; key0 DISCARDED mod 2^32 (ev_661ef2e6…)",
 	}
 
 
@@ -568,10 +655,20 @@ func _select_mask(seed: int, shape: String, w: int, h: int, skipped: Array) -> D
 	var pool: Array = candidates
 	if not exact.is_empty():
 		pool = exact
-	var pick: int = _hash32("%d|%s" % [seed, shape]) % pool.size()
-	var chosen: Dictionary = (pool[pick] as Dictionary)["mask"]
-	return {"type": str((pool[pick] as Dictionary)["type"]), "mask": chosen,
-			"exact_grid": not exact.is_empty()}
+	# P-PLACE-16 (DEC_U_placement §8 P-PLACE-16; GENSEED §5.2.1/§5.3): the donor
+	# mask pick is `floor(RandomExt*count)` on the stream inherited from D1:1538.
+	# That draw belongs to the GENERATOR at D2:190 (`_enter_inherited_site` +
+	# `_active_rng.next_int(mask_count)`), BEFORE the D2:216 ext-reseed; inputs
+	# exposes `count` (the donor `count`) only. The old FNV hash pick is REMOVED:
+	# no hash/RNG draw is consumed here. Selection is the first entry of the
+	# deterministic, sorted, native-grid-preferred pool. `seed` stays in the
+	# signature for API stability only — it no longer drives selection.
+	# Nearest sampling, the land->nowater2 alias and the conifer gate are unchanged.
+	var chosen: Dictionary = (pool[0] as Dictionary)["mask"]
+	return {"type": str((pool[0] as Dictionary)["type"]), "mask": chosen,
+			"exact_grid": not exact.is_empty(),
+			"count": candidates.size(), "pool_size": pool.size(),
+			"pick_label": "[U] deterministic sorted asset index 0 — NO hash/RNG draw in inputs; the donor floor(RandomExt*count) draw is the generator's D2:190 on the inherited stream (exact seed [U])"}
 
 
 func _load_image(path: String) -> Image:
@@ -605,15 +702,9 @@ func _resample_mask_image(img: Image, mw: int, mh: int, w: int, h: int,
 	if mw == w and mh == h:
 		return {"bytes": _mask_bytes_from_image(img, w, h), "method": "NATIVE",
 			"label": "native mask grid; no resample"}
-	# Godot 4 Image.resize supplies deterministic bilinear interpolation. Work
-	# on a duplicate so a cached Texture2D image is never mutated.
-	var resized := img.duplicate()
-	resized.resize(w, h, Image.INTERPOLATE_BILINEAR)
-	if resized.get_width() == w and resized.get_height() == h:
-		return {"bytes": _mask_bytes_from_image(resized, w, h), "method": "BILINEAR",
-			"label": "PORT APPROXIMATION — deterministic bilinear native-to-requested mask resample; donor nearest sampler not claimed"}
-	# Clearly labelled fallback for an unavailable/failed bilinear resize. This
-	# is the donor-style floor(x/W*srcW) nearest tap, with no synthetic values.
+	# GEN1TO1 §G.6 [O] D2:409-411/541-542: donor sampler is NEAREST with
+	# floor(x/W*srcW), floor(y/H*srcH); no synthetic values. It is now the
+	# default. Bilinear stays exclusively as an explicit comparison hook.
 	var nearest := PackedByteArray()
 	nearest.resize(w * h)
 	for y in range(h):
@@ -621,9 +712,18 @@ func _resample_mask_image(img: Image, mw: int, mh: int, w: int, h: int,
 		for x in range(w):
 			var sx: int = mini(mw - 1, int(floor(float(x) * float(mw) / float(w))))
 			nearest[y * w + x] = clampi(int(roundf(img.get_pixel(sx, sy).r * 255.0)), 0, 255)
-	skipped.append("MASK bilinear resize unavailable — nearest fallback PORT APPROXIMATION (floor(x/W*srcW), floor(y/H*srcH))")
-	return {"bytes": nearest, "method": "NEAREST_PORT_APPROX",
-		"label": "PORT APPROXIMATION — nearest fallback floor(x/W*srcW), floor(y/H*srcH)"}
+	if mask_resample_mode != "bilinear":
+		return {"bytes": nearest, "method": "NEAREST",
+			"label": "[O] donor nearest sampler floor(x/W*srcW), floor(y/H*srcH) (D2:409-411/541-542)"}
+	# Explicit comparison-only bilinear path — NEVER claimed as donor parity.
+	var resized := img.duplicate()          # never mutate a cached Texture2D image
+	resized.resize(w, h, Image.INTERPOLATE_BILINEAR)
+	if resized.get_width() == w and resized.get_height() == h:
+		return {"bytes": _mask_bytes_from_image(resized, w, h), "method": "BILINEAR",
+			"label": "[U] PORT APPROXIMATION — comparison hook only; donor sampler is nearest (E-D2: nearest/bilinear upload byte dump, terminate on zero mismatch)"}
+	skipped.append("MASK bilinear resize unavailable — nearest donor sampler used instead (no synthetic values)")
+	return {"bytes": nearest, "method": "NEAREST",
+		"label": "[O] donor nearest sampler; bilinear comparison hook failed"}
 
 
 func _apply_mask(p: Dictionary, seed: int, shape: String, w: int, h: int,
@@ -657,6 +757,12 @@ func _apply_mask(p: Dictionary, seed: int, shape: String, w: int, h: int,
 	p["mask_b"] = mb                                   # raw gray8 byte v; h=-1.1*v/255
 	p["width"] = w                                     # REQUESTED grid; never native mask size
 	p["height"] = h
+	# GEN1TO1 §A.3/§G.6: candidate count is consumed by I07's D2:190
+	# `floor(RandomExt*count)` draw on the inherited stream. Native size drives
+	# the D2:329 scaled-vs-equal-size start dedup branch.
+	p["mask_count"] = int(sel.get("count", 1))
+	p["mask_native_width"] = mw
+	p["mask_native_height"] = mh
 	var starts: Array = []
 	var sv: Variant = m.get("starts", [])
 	if sv is Array:
@@ -681,6 +787,12 @@ func _apply_mask(p: Dictionary, seed: int, shape: String, w: int, h: int,
 		"resample": str(resampled["method"]),
 		"resample_label": str(resampled["label"]),
 		"height_formula": "h=-1.1*v/255 (donor generatemap.inc:4-7; p.mask_b carries raw byte v)",
+		"mask_count": int(sel.get("count", 1)),
+		"mask_pick_label": str(sel.get("pick_label", "")),
+		"mask_selection_label": ("[U] PORT APPROX: deterministic sorted asset index 0; NO hash/RNG "
+				+ "draw in inputs. The donor D2:190 floor(RandomExt*count) draw is issued by the "
+				+ "generator on the inherited D1:1538 stream using p.mask_count "
+				+ "(E-I07: fixed-seed draw ledger, terminate on zero mismatch)"),
 		"forest_density": null,
 		"forest_density_label": "[U] G=0 on vanilla non-start pixels; no density invented (mask_index.json:76-77)",
 	}
@@ -939,7 +1051,20 @@ func _apply_constants(p: Dictionary, skipped: Array, loaded: Array) -> Dictionar
 func _target_family(name: String) -> bool:
 	if TARGET_FAMILIES.has(name):
 		return true
-	return name.find("forest") >= 0 or name.find("stoneforest") >= 0
+	if name.find("forest") < 0:
+		return false
+	# GEN1TO1 §G.6 [O] D1:5-6: foreststype is hard-forced 0 (conifer only).
+	# Leaf/mixed families are gated behind the explicit opt-in; no family is
+	# renamed or synthesised, and TARGET_FAMILIES entries are never dropped.
+	if not include_leaf_forests:
+		var conifer: bool = (name.find("pine") >= 0 or name.find("spruce") >= 0
+				or name.find("fir") >= 0 or name.find("conifer") >= 0
+				or name.find("stoneforest") >= 0)
+		if not conifer:
+			_family_gate_notes.append("GATED leaf/mixed family '" + name
+					+ "' — foreststype=0 conifer-only (D1:5-6)")
+			return false
+	return true
 
 
 func _target_pattern(name: String) -> bool:
@@ -1199,6 +1324,7 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 func build(game, w: int, h: int) -> Dictionary:
 	var skipped: Array = []
 	var loaded: Array = []
+	_family_gate_notes.clear()
 	var p: Dictionary = {}
 	var seed_info := _derive_seed(game)
 	var seed: int = int(seed_info["seed"])
@@ -1208,7 +1334,12 @@ func build(game, w: int, h: int) -> Dictionary:
 		loaded.append("seed from " + str(seed_info["source"]))
 	else:
 		skipped.append("no seed in config/game — randkey0/1 omitted, no invented seed [U]")
-	var shape: String = _shape_of(game)
+	var raw_shape: String = _shape_of(game)
+	# GEN1TO1 §G.6 [O] generator.cfg:5-6: live Land path is nowater2; `land` is
+	# commented out. Canonicalise only that alias before mask selection.
+	var shape: String = str(SHAPE_ALIASES.get(raw_shape, raw_shape))
+	if shape != raw_shape:
+		loaded.append("shape alias " + raw_shape + " -> " + shape + " (generator.cfg:5-6)")
 	var mask_info := _apply_mask(p, seed, shape, w, h, skipped, loaded)
 	var const_info := _apply_constants(p, skipped, loaded)
 	var pat_info := _apply_patterns(p, seed, skipped, loaded)
@@ -1220,9 +1351,16 @@ func build(game, w: int, h: int) -> Dictionary:
 	p["detail_bitmap_enabled"] = bool(cfg.flag("features.terrain.detail_bitmap", false)) if cfg != null else false
 	var unverified: Array[String] = [
 		"forest density from mask G: [U] G=0 on all shipped vanilla non-start pixels; no density invented (spec/03 §4; mask_index.json:76-77)",
-		"GenerateMapRandKey: [U] spec/02 §1; no mix64 per-stage derivation (spec/02 §5)",
+		"GenerateMapRandKey: [U] U5/P5 — RTTI names only, 0 static xrefs (ev_3e61f9fa…); ±1 probe §2.4.2; no mix64 per-stage derivation (spec/02 §5); no silent fallback",
 		"stamp row sign / global setter clamp / x87 precision: [U] spec/04 §6",
 		"tile_smooth pass count 6 (globalparams.cfg:9) preserved as donor contradiction; script uses 3 (smoothtiles.inc:237)",
+		"U2: native SmoothTerrain(x,-y,False,3) bsmooth kernel unrecovered; I07 hook stays NULL/SKIP",
+		"U4: generation-time Delphi LCG state unknown — ALGORITHM [O] sub_403a0c state=(state*0x8088405+1) mod 2^32 out=state>>>24; seeder sub_4033b8 (QPC-low else TickCount, ev_78bcf9c8…) has only 3 non-generation callers; I07 image state 0 is a labelled placeholder, NOT an invented per-map seed; breakpoint probe §2.4.1",
+		"U7/P1: minx/miny numeric pair unrecovered — PRODUCER _misc_GetMapLeftTopPos IS [O] (generatemap.inc:218-228, ev_b7759b44…); I07 hook stays NULL, no bounds guessed; §4 probe",
+		"U8: fa/broad absent in shipped 24-bit TGAs; road tile branch D4:622-636 omitted",
+		"U13: water runtime plane Y / WaterFieldAdd class binding unknown; I07 records exact tx/tz/bx/bz only",
+		"U14: steep/cliff collision tag numeric value unknown; I07 leaves tag clear and labels steep cells",
+		"U16: no donor GPU A/B frame — visual parity UNVERIFIED",
 	]
 	_last_stats = {
 		"module": "res://scripts/terrain_donor_inputs.gd",
@@ -1239,19 +1377,29 @@ func build(game, w: int, h: int) -> Dictionary:
 			"key0_label": str(seed_info["key0_label"]),
 			"key1_label": str(seed_info["key1_label"]),
 			"derivation_label": str(seed_info["derivation_label"]),
+			"seed_source": str(seed_info.get("seed_source", "[U] not supplied")),
+			"derivation_probe": str(seed_info.get("derivation_probe", "[U] ±1 probe §2.4.2")),
+			"reseed_contract": str(seed_info.get("reseed_contract", "11+3 reseeds consume key1; key0 DISCARDED")),
 		},
 		"shape": shape,
+		"raw_shape": raw_shape,
+		"shape_alias": ("land -> nowater2 (generator.cfg:5-6)" if shape != raw_shape else "none"),
 		"shape_resolution": _shape_info.duplicate(true),
 		"mask": mask_info,
 		"constants": const_info,
 		"patterns": pat_info,
 		"loaded": loaded,
 		"skipped": skipped,
+		"family_gate_notes": _family_gate_notes.duplicate(),
+		"mask_resample_mode": mask_resample_mode,
+		"include_leaf_forests": include_leaf_forests,
 		"unverified": unverified,
 		"donor_citations": [
 			"generatemap.inc:4-7 (h=-1.1*B/255)",
 			"generatemap.inc:440-443,486-490 (white starts; B class)",
 			"donewgame.inc:16,33-37 (randkey0/1 high/low words)",
+			"generatemap.inc:141-142 (gMap.settings.gen.randkey0/1, ev_51c638a0…)",
+			"RTTI ev_9defac5a… SetRandomKey / ev_661ef2e6… SetRandomExtKey64 (key0 discarded) / ev_3e61f9fa… GenerateMapRandKey (0 xrefs)",
 			"spec/02 §1/§2/§5 + X21 §4.3 (key1 seeds; key0 NO-OP)",
 			"serial.script:27 (gDataVersion=92)",
 			"globalparams.cfg:2-20 (flat keys)",

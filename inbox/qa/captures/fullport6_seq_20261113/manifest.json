@@ -1,0 +1,40 @@
+{
+  "capture_semantics": "windowed seq = real viewport frames (frame_post_draw)",
+  "deterministic": true,
+  "finished_utc": "2026-11-26T19:50:54+00:00",
+  "generated_utc": "2026-11-26T19:50:54+00:00",
+  "godot_on_path": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Microsoft\\WinGet\\Links\\godot.EXE",
+  "headless": false,
+  "mode": "seq",
+  "parallelism": {
+    "godot_processes": "one at a time via godot_runner.py FIFO",
+    "harness_lock": "inbox\\qa\\captures\\fullport6_seq_20261113\\.capture.lock",
+    "submissions": "strictly sequential"
+  },
+  "parity": "UNVERIFIED",
+  "project": "variant3d",
+  "requested_frames_per_view": 2,
+  "runner": "variant3d\\tools\\godot_runner.py",
+  "runner_python": "C:\\Python314\\python.exe",
+  "schema": 1,
+  "seed": "20261113",
+  "seq_seconds": 2.0,
+  "status": "failed",
+  "step_s": 1.0,
+  "timeouts": {
+    "engine_s": 670.0,
+    "max_wait_s": 3600.0,
+    "runner_s": 700.0
+  },
+  "tool": "capture_sequence.py",
+  "views": [
+    {
+      "config": "variant3d\\config_donor_capture.json",
+      "config_abs": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json",
+      "config_controlled": true,
+      "config_sha256_file": "aa857480474399dc4674104744ea292bf84094d8321cdd4d0889c24cf9a202da",
+      "error": "KeyError('seq_seconds')",
+      "name": "donor"
+    }
+  ]
+}

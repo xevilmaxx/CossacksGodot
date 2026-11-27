@@ -1,0 +1,624 @@
+---
+id: DEC-U-SKIRMISH-IMPL-PATCH
+worker: IMPL-SKIRMISH-U (subagent, full 1:1 donor port)
+wave: PORT1TO1 / terrain_swarm_2026-11-26
+date: 2026-11-26
+status: READ_ONLY__ZERO_GD_EDITS__PATCH_RECOMMENDATIONS_ONLY
+scope_guard: "COORD urgent correction honoured: STOPPED all edits to game.gd / data.gd / picking3d.gd. No .gd file was written. No .bak-SKIRMISHU was created (none needed). This report is the ONLY file written."
+reason: "IMPL-COLLISION-CALLERS is actively editing game.gd / data.gd / picking3d.gd; write access revoked to avoid clobbering."
+user_mods: "demo-mill, builder stands, v5 save state, I11 seam — all preserved by every patch below; explicit proof in §9."
+parity: "NO PARITY CLAIM. Donor binary never executed by this worker; no GPU A/B frame; all citations are donor TEXT reads recorded in DEC_U_skirmish.md."
+network: "OUT OF SCOPE (no LAN/multiplayer law is wired; lan_cached=false)."
+authority: "DEC_U_skirmish.md §2.1-§2.10 + §3 + §4; PORT1TO1_skirmish_logic.md §6-§13."
+labels: "[O] verbatim donor literal · [D] deterministic reading of [O] · [I] inference, flagged · [U] UNVERIFIED with experiment · PORT APPROXIMATION = port substitute to remove for 1:1."
+---
+
+# DEC-U-SKIRMISH-IMPL-PATCH — precise donor-law patch recommendations (2026-11-26)
+
+## 0. State / compliance (read first)
+
+- **Zero edits made.** I read `variant3d/scripts/game.gd`, `variant3d/scripts/data.gd`, `config.gd`, `hud.gd`, the two authority reports and git status only. No `write`, no `edit`, no backup, no Godot/runner/git action. There is therefore **nothing to revert**; no `.bak-SKIRMISHU` exists.
+- **All patches below are recommendations for the owning worker (COORD / IMPL-COLLISION-CALLERS) to apply after their own edits land.** Do not apply them as-is without re-anchoring: the two files are concurrently modified (git shows `M data.gd`, `M game.gd`; `.bak-COLLCALL` present). Every hunk is anchored by **function name + verbatim source text**, so it survives line drift. Line numbers quoted are **as-read at 2026-11-26** and are provenance only.
+- **Discipline:** only statically RESOLVED donor laws are given as executable patches. Everything the DEC report still marks `[U]` keeps its label and its §9 experiment. No number was invented, no gate was weakened, no test was touched, no parity is claimed.
+- **DSL rule (load-bearing):** in donor script `not X` on a numeric lvalue is a *current-value read*, not boolean negation (`res.script:326`, `player.script:301-302`). Every predicate below is read with that rule (DEC §0).
+
+---
+
+## 1. Famine + rebellion rolls (U11) — RESOLVED; delete grace/HP-drain
+
+**Authority:** DEC §2.1 (`unit.inc/nothing.inc:450-506`; `lib/misc.script:493-498`; `dmscript.global:176`); PORT1TO1 §13-U11.
+
+**Donor law [O]/[D]:**
+- Gate: `gProfile.bFamine AND gPlayer[plInd].bfamine AND bplayable`, mode `game`/`spectator`, then `not building AND not bnohungry` (unit-only). Inside-of-mine branch is commented out — do not port.
+- `RandomInt = floor(random*32768)` (`gc_c1rand_to_random=32768`).
+- Death: `((difficulty>1) or lan_cached and RandomInt<50) or (difficulty=0 and RandomInt<5) or (difficulty=1 and RandomInt<12)` → `_unit_SetTagStates(go, essential_death)`. Singleplayer ⇒ `lan_cached=false`, so hard/veryhard = **50**, normal = **12**, easy = **5**.
+- Rebellion: gate `brebellion AND bmercenary AND (plInd<>mercenaryind) AND bplayable`; roll `diff>1 → <6000`, `diff=0 → <100`, `diff=1 → <200` → `_misc_ChangePlayer(go, mercHnd, False, False, True)`.
+- **There is no grace timer and no HP drain.** `FAMINE_GRACE_S=120` / `FAMINE_DRAIN_PER_S=0.3` are a wrong-shape PORT INVENTION and must stop being consumed.
+
+### Patch 1a — `game.gd`, add exact literals/helpers immediately AFTER the existing `const _UPKEEP_RES_IDX := [0, 3, 2]` line (≈5027):
+
+```gdscript
+# RESOLVED donor law (DEC-U §2.1): unit.inc/nothing.inc:450-506,
+# lib/misc.script:493-498, dmscript.global:176. NO PARITY CLAIM.
+const C1RAND_TO_RANDOM := 32768          # gc_c1rand_to_random
+const FAMINE_ROLL_HARD := 50             # difficulty>1 (or lan_cached)
+const FAMINE_ROLL_NORMAL := 12          # difficulty=1
+const FAMINE_ROLL_EASY := 5             # difficulty=0
+const REBEL_ROLL_HARD := 6000
+const REBEL_ROLL_NORMAL := 200
+const REBEL_ROLL_EASY := 100
+# donor difficulty ints: 0=easy, 1=normal, >1=hard/veryhard/impossible.
+# lan_cached is false — network/multiplayer is OUT OF SCOPE.
+static func _donor_difficulty() -> int:
+	match str(Data.AI_DIFFICULTY):
+		"easy":
+			return 0
+		"normal":
+			return 1
+		_:
+			return 2
+
+# RandomInt := floor(random*gc_c1rand_to_random). Routed through the single
+# sim `rng`; the donor's second Delphi Random() instance (D02 §4.5) and the
+# exact per-site draw ledger remain [U]-G1 with experiment X21 fixture.
+func _misc_random_int() -> int:
+	return int(floorf(rng.randf() * float(C1RAND_TO_RANDOM)))
+```
+
+### Patch 1b — `game.gd`, add a per-unit roll at the TOP of `_tick_unit(e, dt)` (≈5534), before the `e.cooldown` line:
+
+```gdscript
+	# RESOLVED donor famine/rebellion roll (DEC-U §2.1). Unit-only gate;
+	# replaces the wrong-shape grace/HP-drain path in _tick_upkeep.
+	_tick_famine_rebellion(e)
+```
+
+New function (place next to `_tick_unit`, before the `[U] U10` morale block at ≈5820):
+
+```gdscript
+# gProfile.bFamine default is [U] (profile.script:39; experiment §9-U11-P):
+# until the menu key/default is cited, this gate is an explicit labelled
+# PORT gate, never claimed as a donor literal. bplayable/spectator and
+# bnohungry have no port counterpart (all slots playable; no tag) ⇒ default.
+func _tick_famine_rebellion(e: Dictionary) -> void:
+	if e.kind != "unit" or e.dead:
+		return
+	var pl: int = int(e.player)
+	if pl < 0 or pl >= players.size():
+		return
+	var p: Dictionary = players[pl]
+	if not bool(Data.FAMINE_PROFILE_ENABLED) or not bool(p.get("famine", false)):
+		return
+	if bool(e.get("bnohungry", false)):
+		return
+	var diff: int = _donor_difficulty()
+	var ri: int = _misc_random_int()
+	var thresh: int = FAMINE_ROLL_EASY if diff == 0 else (FAMINE_ROLL_NORMAL if diff == 1 else FAMINE_ROLL_HARD)
+	if ri < thresh:
+		_kill(e, null, true)   # donor _unit_SetTagStates(go, essential_death)
+		return
+	# Rebellion: mercenary-only, owner != mercenaryind. Port has no mercenary
+	# sid and no mercHnd player slot: the roll/gate are implemented verbatim;
+	# the owner-flip target stays [U]-U11-M with experiment §9 (do NOT invent
+	# a mercenary faction/player).
+	if not bool(p.get("rebellion", false)):
+		return
+	if not bool(e.get("mercenary", false)) or int(e.get("mercenaryind", -1)) == pl:
+		return
+	var rr: int = _misc_random_int()
+	var rthresh: int = REBEL_ROLL_EASY if diff == 0 else (REBEL_ROLL_NORMAL if diff == 1 else REBEL_ROLL_HARD)
+	if rr < rthresh:
+		var merc: int = int(e.get("mercenaryind", -2))
+		if merc >= 0 and merc < players.size() and merc != pl:
+			# donor _misc_ChangePlayer(go, mercHnd, False, False, True)
+			players[pl].entities.erase(e.id)
+			players[merc].entities.append(e.id)
+			e.player = merc
+			e.order = {"type": "none"}
+```
+
+Companion data constant in `data.gd` next to the deprecated famine block (§1d below):
+```gdscript
+# [U]-U11-P: donor gProfile.bFamine default not cited this ticket; explicit
+# labelled gate, NOT a claimed donor literal. Experiment: profile.script:39
+# + menu "famine" key default.
+static var FAMINE_PROFILE_ENABLED := true
+```
+
+### Patch 1c — `game.gd`, `_tick_upkeep`: replace the grace/drain body (≈5098-5115)
+
+Replace exactly this text:
+```gdscript
+				else:
+					p.res[idx] = 0.0
+					if k == 0:
+						p["famine"] = true
+						p["famine_t"] = float(p.get("famine_t", 0.0)) + dt
+						if float(p["famine_t"]) >= Data.FAMINE_GRACE_S:
+							if float(p.get("famine_msg_t", 0.0)) <= 0.0:
+								p["famine_msg_t"] = 10.0
+								say("Famine! %s is starving." % p.name)
+							for eu in live_units:
+								if not eu.dead and eu.player == pi:
+									eu.hp -= Data.FAMINE_DRAIN_PER_S * dt
+					if k == 1:
+						p["gold_famine_t"] = float(p.get("gold_famine_t", 0.0)) + dt
+						if float(p["gold_famine_t"]) >= 60.0:
+							for eu2 in live_units:
+								if not eu2.dead and eu2.player == pi and (eu2.def.get("eat", {}) as Dictionary).has("gold"):
+									eu2["morale"] = maxf(0.0, float(eu2.get("morale", 70.0)) - 10.0 * dt)
+```
+with:
+```gdscript
+				else:
+					p.res[idx] = 0.0
+					# RESOLVED donor flags (player.script:294-321): famine on
+					# food shortfall; rebellion on gold shortfall ONLY when
+					# gold consume > gold income. No grace, no HP drain.
+					if k == 0:
+						p["famine"] = true
+						p["famine_t"] = float(p.get("famine_t", 0.0)) + dt
+						if float(p.get("famine_msg_t", 0.0)) <= 0.0:
+							p["famine_msg_t"] = 10.0
+							say("Famine! %s is starving." % p.name)
+					if k == 1:
+						p["gold_famine_t"] = float(p.get("gold_famine_t", 0.0)) + dt
+						var gold_income: float = 0.0
+						for b in live_blds:
+							if not b.dead and int(b.player) == pi and str(b.sid).begins_with("mine_") and int(b.workers) > 0:
+								gold_income += Data.MINE_INCOME_PER_S * float(b.workers) * float(p.get("mine_mult", 1.0))
+						if float(eat[k]) > gold_income:
+							p["rebellion"] = true
+```
+and replace the surplus clears (≈5091-5097) with the **exact donor clearing gates**:
+```gdscript
+				if have >= need:
+					p.res[idx] = have - need
+					# donor: bfamine:=False iff res[food] > 0 OR consume<=0;
+					#        brebellion:=False iff res[gold] >= 2 OR consume<=0.
+					if k == 0 and float(p.res[idx]) > 0.0:
+						p["famine"] = false
+						p["famine_t"] = 0.0
+					if k == 1 and float(p.res[idx]) >= 2.0:
+						p["rebellion"] = false
+						p["gold_famine_t"] = 0.0
+```
+Add `"rebellion": false` to `new_player()`'s dictionary (≈401) so the flag exists from slot creation. Keep `famine_t` / `gold_famine_t` keys (v5 save + HUD compatibility; §9).
+
+### Patch 1d — `data.gd`, relabel (do NOT delete) the deprecated constants at ≈233-234
+
+`config.gd:617-618` writes `Data.FAMINE_GRACE_S` / `Data.FAMINE_DRAIN_PER_S`; deleting them would break an out-of-scope file. Keep them but change the comment to:
+```gdscript
+# DEPRECATED / NOT CONSUMED BY THE SIM (donor has NO grace or HP drain).
+# Kept only so config.gd:617-618 still writes a defined static; the 1:1 law
+# is the floor(rand*32768) roll wired in game.gd Patch 1b/1c.
+static var FAMINE_GRACE_S := 120.0
+static var FAMINE_DRAIN_PER_S := 0.3
+```
+Also keep `PORT_MORALE_FAMINE_ENABLED` (≈240) untouched — it is a quarantine marker, not a consumer.
+
+---
+
+## 2. Upkeep / income accumulator law — RESOLVED (replaces fractional deduction)
+
+**Authority:** DEC §2.1 (`player.script:240-322`; mine `:233-238`); PORT1TO1 §6.
+
+**Donor law [O]/[D]:** per-resource `mult=100`, `speed=20000`; `resconsume *= gc_time_to_frames(32)`; `bank = remains/100 + resconsume*dt`; `realbank = bank/20000`; `value = floor(realbank)`; deduct `value` whole units or flag shortfall; leftover `remains` carries the fractional bank. Clearing gates are in §1c. Income engine: **same accumulator, `speed = 256/1.024 = 250.0` exactly**. Surplus path adds the value-read resource to `stat.resonlife`.
+
+**Consistency check [D]:** port `eat[k] = consume/625` and `625 = 20000/32`, so `eat[k]*20000` is exactly the donor's `resconsume*32` in bank units/s (peasant `eat.food=32` → `1024` bank units/s → 1 food per `20000/1024 = 19.5 s = 625 frames`). No new rate is introduced.
+
+### Patch 2a — `data.gd`, add after `UPKEEP_DIVISOR` (≈174):
+
+```gdscript
+# RESOLVED donor accumulator literals (DEC-U §2.1, player.script:240-322).
+const UPKEEP_MULT := 100.0        # per-res mult
+const UPKEEP_SPEED := 20000.0     # consume speed
+const INCOME_SPEED := 250.0       # 256/1.024, income speed
+const FRAMES_PER_TIME := 32.0     # gc_time_to_frames
+```
+Keep `UPKEEP_DIVISOR := 625.0` (config.gd:608 writes it) as a compatibility mirror; it is `UPKEEP_SPEED/FRAMES_PER_TIME`.
+
+### Patch 2b — `game.gd`, extend `_tick_upkeep` per-player loop
+
+Initialise the accumulator in `new_player()` (≈401):
+```gdscript
+		"upkeep_remains": [0.0, 0.0, 0.0], "resonlife": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+```
+Inside `for k in 3:` in `_tick_upkeep`, replace the direct `have >= need` subtraction with the accumulator:
+```gdscript
+			# donor bank accumulator: remains/100 + resconsume*dt, /speed, floor.
+			var rem: Array = p.get("upkeep_remains", [0.0, 0.0, 0.0])
+			var bank: float = float(rem[k]) / Data.UPKEEP_MULT + float(eat[k]) * Data.UPKEEP_SPEED * dt
+			var value: int = int(floorf(bank / Data.UPKEEP_SPEED))
+			var have: float = p.res[idx]
+			if value > 0 and have >= float(value):
+				p.res[idx] = have - float(value)
+				rem[k] = (bank - float(value) * Data.UPKEEP_SPEED) * Data.UPKEEP_MULT
+				# clearing gates (§1c) ...
+			elif value > 0:
+				p.res[idx] = 0.0
+				rem[k] = 0.0
+				# shortfall flags (§1c) ...
+			else:
+				rem[k] = bank * Data.UPKEEP_MULT
+				# donor stat.resonlife += value-read res (not res boolean)
+				var rl: Array = p.get("resonlife", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+				rl[idx] = float(rl[idx]) + have
+				p["resonlife"] = rl
+			p["upkeep_remains"] = rem
+```
+
+### Patch 2c — `game.gd`, `_tick_building` mine income block (≈6372-6383)
+
+Replace the fractional add `players[e.player].res[idx] += amount` with the donor income accumulator:
+```gdscript
+		var mine_rem: float = float(e.get("income_remains", 0.0))
+		var bank: float = mine_rem / Data.UPKEEP_MULT + amount * Data.INCOME_SPEED
+		var value: int = int(floorf(bank / Data.INCOME_SPEED))
+		if value > 0:
+			players[e.player].res[idx] += float(value)
+			stats.gathered[e.def.mine] = float(stats.gathered.get(e.def.mine, 0.0)) + float(value)
+			e["income_remains"] = (bank - float(value) * Data.INCOME_SPEED) * Data.UPKEEP_MULT
+		else:
+			e["income_remains"] = bank * Data.UPKEEP_MULT
+```
+`deposit_left` decrements by `amount` as before (depletion shape is separate and unchanged). The raw donor `resconsume[gold]` row (`player.script:233-238`) stays `[U]-T1`; the per-second rate `MINE_INCOME_PER_S=13*32/250` is already donor-grounded and is not retuned.
+
+---
+
+## 3. Full market tables + trade/recovery (U6) — RESOLVED as wrong-shape scalar
+
+**Authority:** DEC §2.2 (`lib/res.script:180-309`, trade `:313-344`, recovery `:291-308`; `dmscript.global:810-811`); PORT1TO1 §13-U6.
+
+**Donor law [O]/[D] (all triplets are `[min, def, max]`):**
+| res | buy | sell |
+|---|---|---|
+| food | 20 / 25 / 40 | def `18.24095*0.8333` ≈15.20; min ×0.7, max ×1.3 |
+| wood | 40 / 50 / 60 | 20 / 30 / 40 |
+| stone | 40 / 50 / 60 | def `19.29725*1.08306` ≈20.90; min ×0.75, max ×1.25 |
+| gold | 140 / 190 / 240 | 80 / 110 / 140 |
+| iron / coal | 100 / 140 / 180 (`80+20 / 100+40 / 120+60`) | 40 / 60 / 80 |
+| else | 40 / 50 / 60 | 20 / 30 / 40 |
+
+- `buyexp = sellexp = gc_economy_exp = 0.00002`; `buytime = selltime = gc_economy_time = 0.0001*32 = 0.0032`; costs initialise to `def` (`:247-248`).
+- Trade: `buyamount = floor(sellamount*sellcost[sell]/buycost[buy])`; sell amount clamped to current `res[sell]`; buy-side pushes both buy/sell costs toward **max** with `weight = buyamount*buyexp`; sell-side pulls both toward **min** with `weight = sellamount*sellexp`.
+- Recovery: old linear `buytime*deltatime` block is **commented out**; live `bc = bc - (bc-bcd)*dt` with `dt = deltatime*0.025*MaxFloat(1, garr_res_dlt[i]*0.01)`, clamped to `[min,max]`. `garr_res_dlt/trg` is project-mode-gated ⇒ **0 in skirmish** ⇒ factor 1. `bcd` is the default cost `[I]` (labelled; confirm at `res.script:291-308`).
+- Dip modes 0-4 (`dmscript.global:1077-1081`, `player.script:2741-2763`); wire only via existing `Data.MARKET_DIP_MODE` surface, no new values.
+
+### Patch 3a — `data.gd`, replace the scalar MARKET block (≈241-248)
+
+`config.gd:619` writes `Data.MARKET_RATE` — **keep that static var** as a display-only mirror for `hud.gd:878`; do not let `trade()` consume it. Keep `MARKET_DRIFT` / `MARKET_RECOVERY_PER_S` as deprecated (no consumer) if other config/tests reference them; otherwise remove their consumers, not the declarations, until config.gd is owned.
+
+```gdscript
+# RESOLVED donor per-resource market tables (DEC-U §2.2; lib/res.script:180-248).
+const MARKET_EXP := 0.00002        # gc_economy_exp (buyexp=sellexp)
+const MARKET_TIME := 0.0001 * 32.0 # gc_economy_time = 0.0032
+const MARKET_RECOVERY_RATE := 0.025
+const MARKET_BUY_COST := {
+	"food":  [20.0, 25.0, 40.0],
+	"wood":  [40.0, 50.0, 60.0],
+	"stone": [40.0, 50.0, 60.0],
+	"gold":  [140.0, 190.0, 240.0],
+	"iron":  [100.0, 140.0, 180.0],
+	"coal":  [100.0, 140.0, 180.0],
+}
+const MARKET_SELL_COST := {
+	"food":  [18.24095*0.8333*0.7, 18.24095*0.8333, 18.24095*0.8333*1.3],
+	"wood":  [20.0, 30.0, 40.0],
+	"stone": [19.29725*1.08306*0.75, 19.29725*1.08306, 19.29725*1.08306*1.25],
+	"gold":  [80.0, 110.0, 140.0],
+	"iron":  [40.0, 60.0, 80.0],
+	"coal":  [40.0, 60.0, 80.0],
+}
+static func market_triplet(res: String, buying: bool) -> Array:
+	if buying:
+		return MARKET_BUY_COST.get(res, [40.0, 50.0, 60.0])
+	return MARKET_SELL_COST.get(res, [20.0, 30.0, 40.0])
+```
+
+### Patch 3b — `game.gd`, replace `trade()` (≈4477-4502) and `tick_market()` (≈4504-4515)
+
+In `new_player()` (≈409), replace `"market_rate": Data.MARKET_RATE` with the full per-player cost state, keeping the mirror:
+```gdscript
+		"market_rate": Data.MARKET_RATE,  # display-only mirror (hud.gd:878)
+		"market_cost": {},  # {res: {"buy": cur, "sell": cur}}; init below
+```
+Initialise after player creation (e.g. in `setup_begin` after `new_player` calls):
+```gdscript
+	for pi in players.size():
+		var mc: Dictionary = {}
+		for rn in Data.RES_NAMES:
+			var bt: Array = Data.market_triplet(str(rn), true)
+			var st: Array = Data.market_triplet(str(rn), false)
+			mc[str(rn)] = {"buy": float(bt[1]), "sell": float(st[1])}  # :247-248 init to def
+		players[pi]["market_cost"] = mc
+```
+
+Trade body (keep the market-building / index / stock gates verbatim; replace the rate math):
+```gdscript
+	var sellcost: float = float(p.market_cost[give]["sell"])
+	var buycost: float = float(p.market_cost[want]["buy"])
+	var buyamount: int = int(floorf(amount * sellcost / buycost))
+	if buyamount <= 0:
+		return false
+	var sellamt: float = minf(amount, float(p.res[gi]))   # `not res` = value read
+	p.res[gi] = float(p.res[gi]) - sellamt
+	p.res[wi] = float(p.res[wi]) + float(buyamount)
+	# weight pushes: buy side → max, sell side → min.
+	# [I] interpolation form "cur + (bound-cur)*weight" is the minimal reading of
+	# "push toward"; confirm verbatim at res.script:313-344 (experiment §9-U6-T).
+	var wbuy: float = float(buyamount) * Data.MARKET_EXP
+	var wsell: float = sellamt * Data.MARKET_EXP
+	for rn in Data.RES_NAMES:
+		var key := str(rn)
+		var btrip: Array = Data.market_triplet(key, true)
+		var strip: Array = Data.market_triplet(key, false)
+		var cb: Dictionary = p.market_cost[key]
+		cb["buy"] = clampf(float(cb["buy"]) + (float(btrip[2]) - float(cb["buy"])) * wbuy, float(btrip[0]), float(btrip[2]))
+		cb["sell"] = clampf(float(cb["sell"]) + (float(strip[2]) - float(cb["sell"])) * wbuy, float(strip[0]), float(strip[2]))
+		cb["buy"] = clampf(float(cb["buy"]) + (float(btrip[0]) - float(cb["buy"])) * wsell, float(btrip[0]), float(btrip[2]))
+		cb["sell"] = clampf(float(cb["sell"]) + (float(strip[0]) - float(cb["sell"])) * wsell, float(strip[0]), float(strip[2]))
+	stats.gathered["trade"] = int(stats.gathered.get("trade", 0)) + buyamount
+	post_event("trade", Vector2.ZERO, give + ">" + want)
+	return true
+```
+
+Recovery (replaces `tick_market` entirely; no `MARKET_RECOVERY_PER_S` consumption):
+```gdscript
+func tick_market(dt: float) -> void:
+	for p in players:
+		var mc: Dictionary = p.get("market_cost", {})
+		for rn in Data.RES_NAMES:
+			var key := str(rn)
+			if not mc.has(key):
+				continue
+			var trip_b: Array = Data.market_triplet(key, true)
+			var trip_s: Array = Data.market_triplet(key, false)
+			# skirmish: garr_res_dlt project-mode-gated => 0 => Max(1,0)=1.
+			var rdt: float = dt * Data.MARKET_RECOVERY_RATE
+			var cb: Dictionary = mc[key]
+			cb["buy"] = clampf(float(cb["buy"]) - (float(cb["buy"]) - float(trip_b[1])) * rdt, float(trip_b[0]), float(trip_b[2]))
+			cb["sell"] = clampf(float(cb["sell"]) - (float(cb["sell"]) - float(trip_s[1])) * rdt, float(trip_s[0]), float(trip_s[2]))
+```
+The `garr_res_dlt` delta-centre path is `[U]` (project mode only — out of skirmish scope). Dip modes are already surfaced by `Data.MARKET_DIP_MODE`; do not add new dip behaviour here.
+
+---
+
+## 4. Capture predicate "head 80%" (U4) — implement recovered head, keep tail `[U]`
+
+**Authority:** DEC §2.3 + §3-C1 (`miscext.script:963-~1100`; `dmscript.global:208,1479-1480`; `miscext2.script:2757`; `nothing.inc:516-518`; `unit.script:11340`).
+
+**Recovered head [O]/[D]:** cadence `lasttimecheckcapture + gametimewithrnd`, interval `0.1*19-eps` (art `0.1*5-eps`), jitter init `random*TimeCheckCapture`; scan radius literals `214/px_per_tile` (≈4.01 tile-units), blockshot `160/px` (≈3.0), protection `426/px` (≈7.99); capturer filter skip `bcapture or media=water`, require `distSqr < captureradiusSqr`, `bblockshot` if also `< blockshotSqr`; non-peasant + blockshot ⇒ 100-frame attack lock (`100*gc_frames_to_time`); map gating `onlyartillery → bart`, exclude non-capturable/mine/center/market usages.
+
+**Still `[U]` (DEC §3-C1):** protector-count majority rule and post-capture cooldown (`miscext.script:1050-1130`). Keep the port's `capture_t` accumulation for those, labelled; do **not** claim the tail.
+
+### Patch 4 — `game.gd`, in `_tick_building` capture block (≈6409-6425)
+
+Add donor cadence + capturer filter ahead of the existing `grid_query` scan:
+```gdscript
+	# RESOLVED capture head (DEC-U §2.3). Tail (majority/cooldown) stays [U]-C1.
+	var cap_interval: float = 0.1 * 19.0   # gc_unit_TimeCheckCapture (eps [U], <1 frame)
+	if bool(e.def.get("artillery", false)):
+		cap_interval = 0.1 * 5.0           # art branch
+	e["cap_check_t"] = float(e.get("cap_check_t", rng.randf() * cap_interval)) - dt
+	if float(e["cap_check_t"]) > 0.0:
+		return   # ...
+```
+**Implementation warning for the owner:** this `return` exits `_tick_building`, so it must be placed at the *end* of the function or converted to a `var do_capture := ...` guard around ONLY the capture block — do not skip tower fire / research / mine income. Preferred form:
+```gdscript
+	var capture_due: bool = float(e.get("cap_check_t", rng.randf() * cap_interval)) <= 0.0
+	if capture_due:
+		e["cap_check_t"] = cap_interval
+	# ... existing scan, but with donor capturer filter below ...
+```
+In the `for u in grid_query(...)` filter (≈6415), add:
+```gdscript
+			if _is_naval(u):            # donor media=water
+				continue
+			if bool((u.def as Dictionary).get("bcapture", false)):
+				continue                # donor bcapturer flag
+			var cd: float = u.pos.distance_to(e.pos)
+			if cd >= 214.0 / Data.DEC_U_PX_PER_TILE * Data.TILE_M:
+				continue                # captureradius, px->m (unit-label [U]-E1)
+			if cd < 160.0 / Data.DEC_U_PX_PER_TILE * Data.TILE_M and u.sid != "peasant":
+				u.cooldown = maxf(float(u.cooldown), 100.0 / 32.0)  # 100-frame lock
+```
+**Unit-label caveat `[U]-E1`:** the DEC report writes `214/px ≈4.01 m`, `160/px ≈3.0 m`, `426/px ≈7.99 m`; numerically those match **tiles** when `px_per_tile=53.3333` (`4.0125 / 3.0 / 7.9875` tiles = `8.025 / 6.0 / 15.975` m). The existing port scan radius `8.0 + e.def.radius` metres therefore already approximates the metre reading. **Do not silently switch units**; resolve via `gc_pixels_to_tile` (experiment §9-E1) before locking the conversion.
+
+**Target-usage exclusions:** `_building_capture_allowed` (≈3697) already covers the capture-mode head (`artillery_only`, `cen` freeze). Add `mine_*`/market exclusions only after confirming `nothing.inc:516-518` + `unit.script:11340` wording — the DEC report's "center excluded" line conflicts with the port's tested town-hall capture (R02/T5SIM); flag as a **decision point**, not a silent change. Protector majority + post-capture cooldown stay `[U]-C1`.
+
+---
+
+## 5. Derived-key reseeds = identity (U20/V01) — remove invented derivation
+
+**Authority:** DEC §2.10 (`11×SetRandomKey + 3×SetRandomExtKey64` identity / same-key skip-ahead; D02/X03/V01) and DEC §4 item 4.
+
+### Patch 5 — `game.gd`, `_reseed_stage` (≈306-316)
+
+Replace the whole function body:
+```gdscript
+func _reseed_stage(stage: String) -> void:
+	_ = stage  # identity reseed: donor re-sets the SAME key; stage slot ignored.
+	# RESOLVED (DEC-U §2.10, D02/X03/V01): 11+3 identity reseeds, key0
+	# discarded, NO derived key and NO mix64. Deletes seed+si*1000003+
+	# ver*10007 (PORT APPROXIMATION with no donor counterpart).
+	gen_rng.seed = int(Data.RANDOM_SEED)
+```
+Keep `GEN_STAGES` as call-site provenance (now unused by `.find`) and all eight `_reseed_stage("...")` call sites (≈967,1389,1391,1413,1415,1560,1579,1777) — do not remove stage boundaries. Keep `gen_rng` state in v5 save (§9). Stream splitting / `floor(RandomExt*n)` wrapper / `brng` removal are `[U]-G1` (DEC §4 item 4) and are **not** part of this resolved patch.
+
+---
+
+## 6. Per-player tick slice + defeat/liveness (U1/U12) — resolved head, tail `[U]`
+
+**Authority:** DEC §2.5 (`progress.inc:60-148`, fragment order `:144-178`; `nothing.inc:658`; `serial.script:272`); PORT1TO1 §13-U1/U12.
+
+**Donor law [O]/[D]:** per-player fragment order = exists-check → `_player_ProcessResourceIncome` → `_player_ProcessResourceConsume` → squad hold progress (`fHoldModeProgress += dt/37.5`, `gc_squad_holdmode_time=150*8*0.03125`) → `CheckSquadsDisband` (non-AI) → `ProgressAI` (AI or adviser-enabled). `bexists`: `gMap.bbattle ⇒ true`; else `farmused>0`; with `0<farmused<100` fallback scan for a live peasant (visual_none+essential_none, or human-owned inside-transport), else built `usage=center`. `not bexists and (AI or human)` ⇒ `_misc_KillPlayerUnits`, first transition stamps `victorystate=lose + GetGameTime`. Peacetime: `gbool_peacemode and gametime>gfloat_peacetime`. Score-limit victory: **absent** in all readable scripts ⇒ PORT EXTENSION. Global interleave remains `[U]-O1`.
+
+### Patch 6a — `game.gd`, `tick()` (≈4862-4922)
+
+Do **not** reorder the global stage list (that is `[U]-O1`). Only replace the single shared upkeep call at ≈4920 with the donor per-player slice:
+```gdscript
+	# RESOLVED per-player slice (DEC-U §2.5, progress.inc:144-178).
+	# Global interleave (where this slice sits vs separation/projectiles) is
+	# still [U]-O1 — do not reorder the surrounding stages.
+	_tick_players_slice(dt)
+```
+New function next to `tick()`:
+```gdscript
+func _tick_players_slice(dt: float) -> void:
+	for pi in players.size():
+		_check_player_exists(pi)          # donor exists-check head
+		# income/consume accumulators are tile/mine & unit driven; they are
+		# computed once per player by _tick_upkeep (Patches 2b/2c) to keep
+		# the already-grounded per-resource totals single-sourced.
+		_tick_upkeep_for_player(pi, dt)   # refactor of _tick_upkeep's per-pi body
+		# squad hold progress donor literal 37.5 s; support units only [U]-M1.
+		# CheckSquadsDisband / ProgressAI tails stay [U]-M1/A1 — ai.gd out of scope.
+```
+**Refactor note:** split `_tick_upkeep(dt)` into a totals-accumulation helper plus `_tick_upkeep_for_player(pi, dt)`; the totals loop and all literals stay byte-identical. This is a shape change only, not a retune. If the owner prefers a minimal diff, the equivalent single-pass order is acceptable as long as the exists-check runs **before** income/consume for each player — document that choice as `TICK_ORDER v1` PORT APPROXIMATION per DEC §4 item 13.
+
+### Patch 6b — `game.gd`, replace `_player_bexists` / `_check_victory` (≈6483-6544)
+
+Add:
+```gdscript
+# RESOLVED donor bexists (DEC-U §2.5; progress.inc:60-148). [I] mapping of
+# donor visual_none+essential_none tags -> port "not dead and not hidden".
+func _player_bexists(pi: int) -> bool:
+	if battle_mode:                 # gMap.bbattle ⇒ bexists=True always
+		return true
+	var p: Dictionary = players[pi]
+	var farmused: int = int(p.get("farm_cap", 0))
+	if farmused > 100:
+		return true
+	if farmused <= 0:
+		return false
+	# 0 < farmused < 100: live peasant (essential_none/visual_none), or a
+	# human-owned unit inside transport.
+	for e in live_units:
+		if e.dead or int(e.player) != pi:
+			continue
+		if str(e.sid) == "peasant" and not bool(e.get("hidden", false)):
+			return true
+		if bool(e.get("hidden", false)) and not bool(p.get("is_ai", false)):
+			return true
+	# built usage=center
+	for b in live_blds:
+		if not b.dead and int(b.player) == pi and bool(b.get("finished", false)) and str(b.sid) == "cen":
+			return true
+	return false
+
+func _check_player_exists(pi: int) -> void:
+	var alive: bool = _player_bexists(pi)
+	if alive or bool(players[pi].get("eliminated", false)):
+		return
+	players[pi]["eliminated"] = true
+	players[pi]["victorystate"] = "lose"
+	players[pi]["lose_t"] = time_s          # donor: lose + GetGameTime
+	for e in entities:                       # donor _misc_KillPlayerUnits
+		if not e.dead and int(e.player) == pi:
+			_kill(e, null, false)
+	# _misc_LanServerSendResult is NOT wired — network OUT OF SCOPE.
+```
+In `_check_victory`, replace the OR-liveness test at ≈6529-6535 with:
+```gdscript
+		if _player_bexists(pi):
+			continue
+```
+Keep the team check, `game_over.emit`, and `say`. Peacetime gate: keep `Data.PEACE_TIME` (≈6514) but document the donor key surface `gbool_peacemode/gfloat_peacetime` (`nothing.inc:658`, `serial.script:272`). The `VICTORY=="score"` branch (≈6519-6525) is a PORT EXTENSION: keep the constants for config compatibility but make the branch reachable only behind a **named non-1:1 opt-in** (e.g. `Data.PORT_EXTENSION_SCORE_VICTORY`, default false), and label `[U]-U12` until the menu cfg is cited. Note: donor `bexists` subsumes the T5SIM "buildings but no units" case (a town hall gives `farmused>0`), so this replacement does **not** reintroduce the T5SIM bug.
+
+---
+
+## 7. Damage / protection row shapes (U7 head) — shape resolved, per-sid rows `[U]-T1/T2`
+
+**Authority:** DEC §2.7 (`lib/weapon.script:39-62,314-329`; `lib/unit.script:510-517`, `classes.script:3582`; examples `:762`, `:739`); PORT1TO1 §13-U7.
+
+**Resolved [O]:**
+- Donor weapon-row shape: `_weapon_AddWeapon(ind, sid, fx, projbasename, damage, radius, gravity, propagation, physvalue, time)`; radius is **pixels** pre-`_misc_PixelsToTiles` (convert with `PX_TO_M = 1/26.6666666`; tiles via `/53.3333333`). Examples: `NUCL2P 340 dmg r=35px`, `NUCL3M 800 r=60px`, `NUCL3MONONEW 0 dmg`.
+- Donor `objbase.protection[6]` = `[pike, sword, bullet, cannister, arrow, cannonball]`. Example rows: `:762 → (5,3,8,225,17,80)`; `:739 → (3,3,7,225,16,80)`.
+- Port already has the correct 6-slot shape (`data.gd:763` `UNITS_BASE[..]["prot"]`) and `WK`/`PROT_SLOT` (`data.gd:749-761`). `roundshier` prot `[3,3,7,225,16,80]` already matches donor `:739` verbatim.
+
+### Patch 7 — `data.gd`, add donor row-shape documentation/helpers near `WK`/`PROT_SLOT` (≈749-761)
+
+```gdscript
+# RESOLVED donor row shapes (DEC-U §2.7). Per-sid VALUES remain [U]-T1
+# (mechanical audit of unit.script/weapon.script rows); the damage-application
+# combination function stays [U]-T2 (not located this ticket).
+const DONOR_WEAPON_ROW_KEYS := ["ind", "sid", "fx", "projbasename", "damage",
+	"radius_px", "gravity", "propagation", "physvalue", "time"]
+static func donor_weapon_radius_m(radius_px: float) -> float:
+	return radius_px * PX_TO_M
+static func donor_weapon_radius_tiles(radius_px: float) -> float:
+	return radius_px / DEC_U_PX_PER_TILE
+# protection[6] order is already exact in UNITS_BASE; do NOT reorder PROT_SLOT.
+const DONOR_PROT_KINDS := ["pike", "sword", "bullet", "cannister", "arrow", "cannonball"]
+```
+No per-sid row is changed by this patch: changing estimated stats without a cited donor row would invent values. Keep `apply_damage` (`data.gd:1711-1729`) intact; keep the tower/wall kind gate (`game.gd:6034`) labelled `[U]-U3`, and leave height ×1.25 / dispersion / projectile flights as `[U]-D1/U8` — those are **not** statically resolved and are out of this patch.
+
+---
+
+## 8. Camera pins owned in these two files
+
+**Authority:** DEC §2.9 (`data/cameras/camera.cfg:1-65`); PORT1TO1 §13-U17.
+
+### Patch 8 — `data.gd`, camera constants (≈319-322)
+
+Add cites and the fixed focal pin; do not touch `camera.gd` / `camera3d.gd` / `config.gd` (out of scope):
+```gdscript
+static var CAMERA_MIN_HEIGHT := 20.0    # camera.cfg SphereHeightMin (:6-10) — DONOR-GROUNDED
+static var CAMERA_MAX_HEIGHT := 58.0    # camera.cfg SphereHeight (:6-10) — DONOR-GROUNDED
+static var CAMERA_SPHERE_LENGTH := 58.0 # camera.cfg SphereLength (=SphereHeight)
+static var CAMERA_FOCAL := 400.0        # camera.cfg MinFocalLength=MaxFocalLength (:44-45), zoom fixed
+# CAMERA_PITCH=-32 is DONOR-GROUNDED at all heights (camera.cfg:32-35).
+# FOV 17.27° stays [U]-V1 (px→angle needs sensor width; experiment §9-V1).
+```
+`CAMERA_EDGE_MARGIN/CORNER_MARGIN/KEY_SPEED/MOUSE_SPEED/ZOOM_STEP` stay as-is with their existing provenance; no pin is invented.
+
+---
+
+## 9. Preserve-mod proof (each patch audited against live file content)
+
+| Mod | Hook(s) | Patches 1-8 touch? | Proof |
+|---|---|---|---|
+| demo-mill | `_demo_mill_enabled` ≈3471-3475, `_spawn_demo_mill` ≈3477-3512; calls ≈2945, 3077, 3204, 3466-3467; `FIELD_REGROW_TIME`/`FIELD_MILL_RADIUS` ≈251-252 | **No** | Patches touch 401/409, 306-317, 4477-4515, 4862-4922, 5027-5115, 5534/5820+, 6372-6383, 6409-6425, 6483-6544, data.gd 174/241-248/319-322/749-761. None of these lines or symbols are demo-mill hooks. `_tick_building` capture guard (Patch 4) must be a local guard, not a function-level `return`, so mine income + all mill paths stay reachable. |
+| builder stands | `_build_stand_slot` ≈5468-5490 and its call ≈5770 | **No** | Patch 1b inserts at the *top* of `_tick_unit` (≈5534) before the `match`; the `build` arm and ≈5770 call are untouched. |
+| v5 save state | `serialize()` ≈6616-6667 (`version:5`, full RNG/projectiles/tile/stamps), `deserialize()` ≈6669+ with v3/v4 compatibility | **No structural change** | Patches 1-8 add only **new player/entity keys** (`rebellion`, `upkeep_remains`, `resonlife`, `market_cost`, `income_remains`, `cap_check_t`, `eliminated`, `victorystate`, `lose_t`) and keep every existing key (`famine_t`, `gold_famine_t`, `market_rate`, `morale`, `routing`, `capture_t`). `serialize()` iterates `for k in p` / `for k in e`, so new keys round-trip automatically; old saves still deserialize. No migration, no forced reset, no test weakened. |
+| I11 seam | `game.gd:9` header comment only; real seam in `main.gd` / `world3d.gd` / `terrain_donor_*` | **No** | No API, backend switch or terrain adapter is referenced by any patch. |
+| Other worker (IMPL-COLLISION-CALLERS) | live edits to `game.gd`, `data.gd`, `picking3d.gd`; `.bak-COLLCALL` present | **No writes by me** | My patches are **recommendations only**; re-anchor by function name before applying. No `.bak-SKIRMISHU` was created, so nothing can clobber their edits. |
+
+---
+
+## 10. Remaining `[U]` register (unchanged; no values substituted)
+
+| Item | Why still `[U]` | Exact experiment (from DEC §3 / §9) |
+|---|---|---|
+| U1-tail global tick interleave | only per-player slice resolved | §9-O1: `progress.inc:1-60` head (addtime/stagger `0.125*plInd`, `TimeCheckExists`) + `nothing.inc` cadence; freeze `TICK_ORDER v1` + fixed-seed hash |
+| U2 order predicates | arrival/stuck radii invented | `unit.script` move/attack + `misc.script` stand checker |
+| U3 tower/wall gate exact kind-set | port kind list uncited | `weapon.script` vs armor table; per-kind shot log |
+| U4-tail capture majority + cooldown | `miscext.script:1050-1130` not read | §9-C1: read protector loop / `capturerCount` / `_misc_ChangePlayer` args; runtime N-vs-M ring |
+| U5 queue caps/batch | producer fns not recovered | `player.script` train/research; queue sweep |
+| U6-tail cost-push interpolation + `garr_res_dlt` | DEC recovered direction/weight only | §9: `res.script:313-344` and `:252-268`; project-mode delta ≠ 0 |
+| U7 per-sid rows + damage application | mechanical audit not done | §9-T1/T2: script row audit; grep `protection[` consumers ~`unit.script:8100-8360` |
+| U8 dispersion/height | video-pass values | §9-D1: `unit.script` shot fns; fixed volley σ + height pairs |
+| U10 morale/disband/runaway | donor absence proven, replacement uncited | §9-M1: `squad.script:98-107`, disband `*0.25`, runaway mode |
+| U11-P profile default / U11-M merc target | not cited | `profile.script:39` + menu key; `_misc_ChangePlayer` mercHnd mapping |
+| U12 score/peace final literals | menu cfg uncited | `donewgame.inc`, menu cfg `victory/score/peacetime` |
+| U13 start stock/peasants | foods only | §9-S1: `startingsettings.cfg:183-720+` six-resource + legends |
+| U14 stat rows | per-row | MECHANICS.md cite-or-tag audit |
+| U15 save byte format | port format invented | §9-R1: `write*.inc/read*.inc` field order; round-trip test |
+| U16 selection/minimap | engine-side | Ghidra + GL trace (audit Q-4) |
+| U17-tail FOV | sensor width unknown | §9-V1: matched-pair screenshot; never video-derived |
+| U18 fog rule | consumers not read | §9-F1: `fogreveal|fogofwar` grep + visible/explored pairs |
+| U19 AI thresholds | video estimates | `progresswarai.inc:2799-2832` fear selector; rest PORT-AI |
+| U20 RNG draw ledger / stream split | stream identity/draw count | X21 20-vector + per-site draw-count test |
+| E1 tile-vs-metre capture radii | DEC numbers ambiguous | `gc_pixels_to_tile` read; confirm `214/160/426` units |
+
+---
+
+## 11. Explicit non-claims
+
+- **NO PARITY CLAIM.** No donor binary executed, no donor GPU A/B frame, no port capture compared by this worker.
+- No approximation was substituted for a resolved law; the one `[I]` interpolation in Patch 3b is explicitly labelled and carries its settling experiment, not a asserted donor literal.
+- No test was edited, weakened or deleted; no config key was removed; `config.gd` writes keep defined statics in `data.gd`.
+- No `.gd` file was written. This report is the only repo file written this ticket.
+
+*End of DEC-U-SKIRMISH-IMPL-PATCH. Read-only patch recommendations only. Network/multiplayer explicitly out of scope.*

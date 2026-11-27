@@ -1,0 +1,650 @@
+extends Node3D
+
+# ============================================================================
+# PORT1TO1-WATER — HARD donor 1:1 water + shore port (worker IMPL-WATER-1TO1)
+# ============================================================================
+# AUTHORITY: docs/terrain_swarm_2026-11-26/reports/PORT1TO1_water_shore.md
+#   (PORT1TO1-WATER, status DELIVERED__READ_ONLY__EXACTLY_ONE_FILE__NO_PARITY_CLAIM).
+#   All donor facts below carry [O]/[D]/[I]/[U] from that report. No donor binary
+#   was run, no donor asset copied, no GPU frame captured.
+# SCOPE: this is the ONLY file written by this worker. variant3d/shaders/
+#   water3d.gdshader, config.gd, world3d_terrain.gd, tests, git and the Godot
+#   runner are READ-ONLY here. No Godot/runner/git was invoked.
+# NO PARITY CLAIM: visual_parity_claimed = false. All checks are structural.
+#
+# --- The single most important correction (report §0) ------------------------
+# There are THREE donor shader systems, all recovered verbatim:
+#   DEV     water.lib:67-68 pins water.dev.vert + water.dev.frag. Live colours
+#           (0.1,0.24,0.24)/(0,0.025,0.05), coast fade 0.57, deep fade 1.07,
+#           dry result fragColor=vec4(0.0) (NO grey hmap texel fallback).
+#   BUILTIN C string literals inside cossacks.exe compiled by FUN_00855b38;
+#           deepColor=(0,0,0.1255)/shallowColor=(0,0,0) from water.lib,
+#           alphaDepth=gl_Color.r, 2-wave displacement.
+#   LEGACY  water.vert + water.frag (NOT pinned by water.lib): colours
+#           (0.43,0.60,0.66)/(0.06,0.07,0.11), fade 0.10, WATER_LEVEL 1.5,
+#           discard keeps the RAW hmapTex texel -> THE GREY FALLBACK PATH.
+# Which path is live at runtime is genuinely [U] (report §11 U1). Therefore all
+# three are exposed as labelled mode switches below with donor-literal defaults
+# (§11 rule c); DEV is the labelled water.lib-pinned default, never a silent
+# pick. The settling experiment is recorded in WATER_SHADER_SETTLING_EXPERIMENT
+# and in stats["shader_path_unresolved"]. Selecting BUILTIN/LEGACY does NOT
+# silently render DEV equations with different colours: it hard-fails, because
+# the single shipped .gdshader is out of this worker's scope (see build()).
+#
+# --- No grey fallback / no invented texture (report §9.5, §10.10) ------------
+# The former _neutral_height_texture() 1x1 alpha=0 substitute is REMOVED.
+# Missing wave texture, missing height grid, missing shader, or missing required
+# binding => push_error + NO water node, never a neutral/grey quad.
+
+const C3ConfigScript = preload("res://scripts/config.gd")
+
+# ---- Donor literals: geometry (report §7, all [O]/[D]) ----------------------
+const C3_WATER_FIELD_SIZE: int = 2            # generatemap.inc:648 cWaterFieldSize
+const C3_WATER_MAP_ARR_SIZE: int = 320        # generatemap.inc:649 (640 div 2)
+const C3_MAP_REFERENCE: int = 640             # generatemap.inc formula reference
+const C3_OFFSET_Y: float = -0.5               # generatemap.inc:654 cOffsetY (plane Y)
+const TILE_M: float = 2.0                     # dmscript.global:171 gc_meters_to_tile=2
+# Donor engine field centre/extent contract (FUN_0073b57c / FUN_0073ab50):
+#   worldX = (tz+bz)*0.5 ; worldZ = (tx+bx)*0.5 ; worldY = cOffsetY
+#   extentX = |bx-tx| = 2 ; extentZ = |bz-tz| = 2 ; x/z swap is engine convention.
+const C3_FIELD_EXTENT: float = 2.0                 # donor field+0xa4/+0xa8 = 2
+
+# ---- Donor literals: classification / fragment ------------------------------
+const WATER_LEVEL: float = -0.25              # texturemap.inc:30 cWaterHeight (CLASSIFICATION)
+const WATER_SHORE_HEIGHT: float = -0.1        # texturemap.inc:31 (bWaterShore gate)
+const MAX_HEIGHT: float = 2.96                # texturemap.inc:29 cMaxHeight
+const COAST_FADE: float = 0.57                # water.dev.frag:37 coast2water_fadedepth
+const DEEP_FADE: float = 1.07                 # water.dev.frag:168 0.5 + 0.57
+const TEX_SCALE_S: float = 0.1                # water.lib:32
+const TEX_SCALE_T: float = 0.01               # water.lib:33
+const HDR_MULTIPLIER: float = 1.0             # water.lib:25
+const SPEC_SOFT: float = 170.0                # water.dev.frag:42
+const SPEC_GLOSSY: float = 120.0              # water.dev.frag:43
+const PARTICLE_AMOUNT: float = 30.0           # water.dev.frag:44
+const DEFAULT_GRID: int = 320                 # port test-grid default only
+
+# ---- Donor colours (report §5.1 / §5.2 / §5.3) ------------------------------
+# DEV live constants (water.dev.frag:45-47) — deepColor/shallowColor uniforms are
+# COMMENTED OUT in this pair, so these ARE the live colours (report §5.1).
+const DEV_SHALLOW_COLOR := Color(0.1, 0.24, 0.24)
+const DEV_DEEP_COLOR := Color(0.0, 0.025, 0.05)
+const DEV_SPEC_COLOR := Color(0.4, 0.4, 0.4)
+# water.lib layer defaults, consumed by the BUILTIN embedded pair (report §3.3/§5.3).
+const LIB_DEEP_COLOR := [0.0, 0.0, 0.1255, 0.5]
+const LIB_SHALLOW_COLOR := [0.0, 0.0, 0.0, 0.5]
+# LEGACY water.frag constants (report §5.2) — the grey-fallback pair.
+const LEGACY_WATER_COLOR := [0.43, 0.60, 0.66]
+const LEGACY_WATER_COLOR2 := [0.06, 0.07, 0.11]
+const LEGACY_SPEC_COLOR := [1.3, 1.3, 0.9]
+const LEGACY_WATER_LEVEL: float = 1.5
+const LEGACY_FADE: float = 0.10
+
+const SUN_LIGHTVEC := Vector3(-0.0861828, 0.9387015, 0.0)  # light.cfg:26-29 -> water.dev.vert:22, Y-up
+const FOG_COLOR := Color(0.235294, 0.392157, 0.588235)      # colors.lib:23
+const SHADER_PATH := "res://shaders/water3d.gdshader"
+const WAVE_TEX_PATH := "res://assets/terrain/water_png/diffusewaves0.png"  # water.mat:7,11 (donor-derived, shipped)
+
+# ---- 30-key uniform system (report §4, all [O]/[D]) -------------------------
+# DAT_00853eb8 f32 1.99999988 = 0x3FFFFFFF = 32-bit enable mask, 30 lower bits
+# set. It is NOT a shader float. Every row: plain key / wst label / f* key /
+# bit position / donor runtime source / how this port resolves it.
+const UNIFORM_ENABLE_MASK: int = 0x3FFFFFFF
+const DONOR_UNIFORM_KEYS := [
+	{"n":1,  "key":"reflectionMap", "wst":"wstReflectTex",   "f":"fReflectTex",    "bit":"0x7c.01", "bind":"S(P,key,C+0xf8)",        "source":"reflection sampler unit on shader object", "resolve":"shader reflection_map; FBO provenance [U] -> disabled"},
+	{"n":2,  "key":"waveMap",       "wst":"wstWaveTex",      "f":"fWaveTex",       "bit":"0x7c.02", "bind":"S(P,key,C+0xfc)",        "source":"wave sampler unit (default 1)",            "resolve":"wave_noise = diffusewaves0.png"},
+	{"n":3,  "key":"time",          "wst":"wstTime",         "f":"fTime",          "bit":"0x7c.04", "bind":"K(P,key)",              "source":"numeric scalar [U] (U5)",                  "resolve":"runtime _time, starts 0.0"},
+	{"n":4,  "key":"eyePosition",   "wst":"wstEyePos",       "f":"fEyePos",        "bit":"0x7c.08", "bind":"V3(P,key,V+8)",        "source":"caller/camera eye vector",                 "resolve":"no shader uniform -> recorded UNRESOLVED"},
+	{"n":5,  "key":"deepColor",     "wst":"wstDeepColor",    "f":"fDeepColor",     "bit":"0x7c.10", "bind":"V3(P,key,C+0x68)",     "source":"shader-object deep RGBA (A=0.5)",           "resolve":"DEV: live frag constant (0,0.025,0.05); BUILTIN: water.lib (0,0,0.1255)"},
+	{"n":6,  "key":"shallowColor",  "wst":"wstShallowColor", "f":"fShallowColor",  "bit":"0x7c.20", "bind":"V3(P,key,C+0x78)",     "source":"shader-object shallow RGBA (A=0.5)",       "resolve":"DEV: live frag constant (0.1,0.24,0.24); BUILTIN: water.lib (0,0,0)"},
+	{"n":7,  "key":"reflectionAmount","wst":"wstReflectAmount","f":"fReflectAmount","bit":"0x7c.40","bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 1; no shader uniform"},
+	{"n":8,  "key":"waterAmount",   "wst":"wstWaterAmount",  "f":"fWaterAmount",   "bit":"0x7c.80", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 1; no shader uniform"},
+	{"n":9,  "key":"fresnelPower",  "wst":"wstFresnelPower", "f":"fFresnelPower",  "bit":"0x7d.01", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 1; no shader uniform"},
+	{"n":10, "key":"fresnelBias",   "wst":"wstFresnelBias",  "f":"fFresnelBias",   "bit":"0x7d.02", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 1; no shader uniform"},
+	{"n":11, "key":"hdrMultiplier", "wst":"wstHdrMultiplier","f":"fHdrMultiplier", "bit":"0x7d.04", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 1 -> hdr_multiplier"},
+	{"n":12, "key":"waveFreq",      "wst":"wstWaveFreq",     "f":"fWaveFreq",      "bit":"0x7d.08", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 0; no shader uniform"},
+	{"n":13, "key":"waveAmp",       "wst":"wstWaveAmp",      "f":"fWaveAmp",       "bit":"0x7d.10", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 0; no shader uniform"},
+	{"n":14, "key":"distFactor",    "wst":"wstDistFactor",   "f":"fDistFactor",    "bit":"0x7d.20", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 1; no shader uniform"},
+	{"n":15, "key":"bumpFactor",    "wst":"wstBumpFactor",   "f":"fBumpFactor",    "bit":"0x7d.40", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 1; no shader uniform"},
+	{"n":16, "key":"texScaleS",     "wst":"wstTexScaleS",    "f":"fTexScaleS",     "bit":"0x7d.80", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 0.1 -> tex_scale_s"},
+	{"n":17, "key":"texScaleT",     "wst":"wstTexScaleT",    "f":"fTexScaleT",     "bit":"0x7e.01", "bind":"K(P,key)",             "source":"scalar [U] (U4)",                          "resolve":"water.lib 0.01 -> tex_scale_t"},
+	{"n":18, "key":"waveDir0",      "wst":"wstWaveDir0",     "f":"fWaveDir0",      "bit":"0x7e.02", "bind":"V2(P,key,C+0xb4)",    "source":"shader-object vec2",                       "resolve":"water.lib (-1,0); no shader uniform"},
+	{"n":19, "key":"waveDir1",      "wst":"wstWaveDir1",     "f":"fWaveDir1",      "bit":"0x7e.04", "bind":"V2(P,key,C+0xbc)",    "source":"shader-object vec2",                       "resolve":"water.lib (-0.7,0.7); no shader uniform"},
+	{"n":20, "key":"fogEnabled",    "wst":"wstFogEnabled",   "f":"fFogEnabled",    "bit":"0x7e.08", "bind":"S(P,key,0/device+1)",  "source":"capability byte V+100+0x8c & 0x80",        "resolve":"0 (colors.lib:36 FogMode=0) -> fog_enabled"},
+	{"n":21, "key":"hmapTex",       "wst":"wstHMapTex",      "f":"fHMapTex",       "bit":"0x7e.10", "bind":"S(P,key,C+0xdc)",     "source":"ONLY if height object C+0xe0 exists [U3]", "resolve":"height_tex from bind_height_grid; else NO WATER"},
+	{"n":22, "key":"hmapW",         "wst":"wstHMapWidth",    "f":"fHMapWidth",     "bit":"0x7e.20", "bind":"S(P,key,C+0xd0)",     "source":"height-object width [U3]",                 "resolve":"map_size.x port substitute; [U] recorded"},
+	{"n":23, "key":"hmapH",         "wst":"wstHMapHeight",   "f":"fHMapHeight",    "bit":"0x7e.40", "bind":"S(P,key,C+0xd4)",     "source":"height-object height [U3]",                "resolve":"map_size.y port substitute; [U] recorded"},
+	{"n":24, "key":"hmapMin",       "wst":"wstHMapMin",      "f":"fHMapMin",       "bit":"0x7e.80", "bind":"K(P,key)",             "source":"scalar [U3]",                              "resolve":"no shader uniform; shader uses -max_height [U]"},
+	{"n":25, "key":"hmapMax",       "wst":"wstHMapMax",      "f":"fHMapMax",       "bit":"0x7f.01", "bind":"K(P,key)",             "source":"scalar [U3]",                              "resolve":"no shader uniform; shader uses +max_height [U]"},
+	{"n":26, "key":"shadowed",      "wst":"wstShadowed",     "f":"fShadowed",      "bit":"0x7f.02", "bind":"S(P,key,0/1)",        "source":"ONLY if shadow object C+0xec exists",      "resolve":"no shadow sampler -> unshadowed branch 1.0"},
+	{"n":27, "key":"shadowMap",     "wst":"wstShadowTex",    "f":"fShadowTex",     "bit":"0x7f.04", "bind":"S(P,key,shadow unit)","source":"shadow object",                             "resolve":"no shader uniform -> recorded UNRESOLVED"},
+	{"n":28, "key":"shadowSize",    "wst":"wstShadowSize",   "f":"fShadowSize",    "bit":"0x7f.08", "bind":"S(P,key,obj+0xb4)",   "source":"shadow object size",                       "resolve":"no shader uniform -> recorded UNRESOLVED"},
+	{"n":29, "key":"shadowColor",   "wst":"wstShadowColor",  "f":"fShadowColor",   "bit":"0x7f.10", "bind":"V3(P,key,obj+0xe0+18)","source":"shadow object colour",                     "resolve":"no shader uniform -> recorded UNRESOLVED"},
+	{"n":30, "key":"cameraModel",   "wst":"wstCameraModel",  "f":"fCameraModel",   "bit":"0x7f.20", "bind":"M(P,key,camera+0xc0+24)","source":"camera model matrix",                     "resolve":"no shader uniform -> recorded UNRESOLVED"},
+]
+
+# ---- Shader path mode switches (report §11 U1: genuinely [U]) ---------------
+enum WaterShaderPath { DEV, BUILTIN, LEGACY }
+const WATER_SHADER_PATH_LABELS := ["DEV", "BUILTIN", "LEGACY"]
+# Donor-literal defaults for all three modes (no approximation; each value cited).
+const DONOR_SHADER_MODES := {
+	"DEV": {
+		"pinned_by": "water.lib:67-68 (water.dev.vert/frag)",
+		"shallow_color": [0.1, 0.24, 0.24], "deep_color": [0.0, 0.025, 0.05],
+		"spec_color": [0.4, 0.4, 0.4], "coast_fade": 0.57, "deep_fade": 1.07,
+		"plane_y": -0.5, "discard": "fragColor=vec4(0.0) (no grey hmap texel)",
+		"alpha": "coastfade2 = clamp((level-height)/1.07,0,1)",
+		"commented_uniforms": ["deepColor","shallowColor","reflectionAmount","waterAmount","fresnelPower","fresnelBias","distFactor","bumpFactor"],
+	},
+	"BUILTIN": {
+		"pinned_by": "FUN_00855b38 embedded C literals in cossacks.exe",
+		"shallow_color": [0.0, 0.0, 0.0, 0.5], "deep_color": [0.0, 0.0, 0.1255, 0.5],
+		"reflectionAmount": 1, "waterAmount": 1, "fresnelPower": 1, "fresnelBias": 1,
+		"hdrMultiplier": 1, "distFactor": 1, "bumpFactor": 1,
+		"waveFreq": 0, "waveAmp": 0, "waveDir0": [-1.0, 0.0], "waveDir1": [-0.7, 0.7],
+		"texScaleS": 0.1, "texScaleT": 0.01,
+		"wave_phases": [0.5, 1.7], "alpha": "gl_Color.r (draw path sets 1,1,1,1 => opaque)",
+		"discard": "none (field always drawn)",
+	},
+	"LEGACY": {
+		"pinned_by": "NOT pinned by water.lib (water.vert/frag development pair)",
+		"shallow_color": [0.43, 0.60, 0.66], "deep_color": [0.06, 0.07, 0.11],
+		"spec_color": [1.3, 1.3, 0.9], "coast_fade": 0.10, "deep_fade": 0.60,
+		"plane_y": 1.5, "particle_amount": 70.0, "soft": 15.0,
+		"discard": "if(TEX3.z>h) mainImage else KEEP RAW hmapTex TEXEL (grey fallback)",
+		"alpha": "1.0 (opaque)",
+	},
+}
+const WATER_SHADER_SETTLING_EXPERIMENT := ("[U1] Break on glShaderSource/glCompileShader: record the "
+	+ "source string and whether it contains 'hmapTex' (DEV) or 'alphaDepth' (BUILTIN). "
+	+ "Break on FUN_00855b38 and FUN_0085600c; read shader+0x184/+0x50 and water.lib "
+	+ "descriptor +0x90 (CustomEnable). GPU frame capture confirms the program actually "
+	+ "drawn for a water field. Until then DEV is the labelled water.lib-pinned default "
+	+ "and BUILTIN/LEGACY hard-fail rather than silently render DEV equations.")
+
+# ---- Shore collision constants (report §8, [O]; native kernel [U11]) --------
+const C_TAG_NONE: int = 0
+const C_TAG_BRIDGE: int = 10
+const C_TAG_WATER: int = 87
+const C_TAG_LANDBORDER: int = 109
+const C_TAG_WATERBORDER: int = 110
+const C_WATER_BORDER_SIZE: int = 3            # dmscript.global:819 gc_WaterBorderSize
+const C_SHORE_DISC_STRICT_R2: int = 9         # keep only i1*i1 + j1*j1 < 9 (boundary excluded)
+
+# ---- Engine-side [U] values: exposed, never silently defaulted --------------
+const UNVERIFIED_BINDINGS := {
+	"hmapMin_hmapMax": "[U3] runtime engine values not recovered; shader uses +/-max_height (2.96) port substitute",
+	"hmapW_hmapH": "[U3] runtime engine values not recovered; shader uses map_size.x/y from grid dims",
+	"reflectionMap_FBO": "[U12] projected FBO provenance not recovered; DEV reflection branch disabled",
+	"time_scalar": "[U5] numeric source not recovered; runtime _time starts 0.0",
+	"vertex_uv_layout": "[U6] FUN_00545e0c mesh template not decompiled; port uses hmapUV from grid coords",
+	"MapDrawCollision_kernel": "[U11] native radius/shape not decompiled; script strict disc is the only source",
+	"active_shader_path": "[U1] DEV/BUILTIN/LEGACY selection not recovered; DEV is water.lib-pinned default",
+}
+
+var stats: Dictionary = {}
+var _material: ShaderMaterial = null
+var _water: MeshInstance3D = null
+var _built: bool = false
+var _time: float = 0.0
+var _grid_w: int = 0
+var _grid_h: int = 0
+var _height: PackedFloat32Array = PackedFloat32Array()
+var _height_bound: bool = false
+var _mask_r: PackedFloat32Array = PackedFloat32Array()
+var _mask_b: PackedFloat32Array = PackedFloat32Array()
+var _mask_bound: bool = false
+var _field_centres: Array = []          # [{"x":..,"y":..,"z":..,"name":..}, ...]
+var _water_shader_path: int = WaterShaderPath.DEV
+
+
+func _ready() -> void:
+	if not _built:
+		build(DEFAULT_GRID, DEFAULT_GRID)
+
+
+func _process(delta: float) -> void:
+	if _material == null:
+		return
+	_time += delta
+	_material.set_shader_parameter("time", _time)
+
+
+# Runtime PNG load needs no editor .import step (world3d_terrain.gd:87-97).
+# NO neutral fallback: missing donor-derived texture => null => build() refuses.
+func _load_png_texture(res_path: String) -> Texture2D:
+	var abs_path := ProjectSettings.globalize_path(res_path)
+	if not FileAccess.file_exists(abs_path):
+		return null
+	var img := Image.new()
+	if img.load(abs_path) != OK or img.is_empty():
+		return null
+	return ImageTexture.create_from_image(img)
+
+
+func invalidate() -> void:
+	for child in get_children():
+		remove_child(child)
+		child.free()
+	_material = null
+	_water = null
+	_built = false
+	_time = 0.0
+	_grid_w = 0
+	_grid_h = 0
+	_height = PackedFloat32Array()
+	_height_bound = false
+	_mask_r = PackedFloat32Array()
+	_mask_b = PackedFloat32Array()
+	_mask_bound = false
+	_field_centres = []
+	stats = {}
+
+
+# ---- Explicit, labelled shader-path switch (report §10 rule c) -------------
+# Accepts the enum int or a "DEV"/"BUILTIN"/"LEGACY" label. Never called silently
+# by build(); the default DEV is itself labelled [U] in stats.
+func set_shader_path(path) -> bool:
+	var idx: int = -1
+	if path is int:
+		idx = int(path)
+	elif path is String:
+		idx = WATER_SHADER_PATH_LABELS.find(str(path).to_upper())
+	if idx < 0 or idx >= WATER_SHADER_PATH_LABELS.size():
+		push_error("water3d: unknown shader path " + str(path))
+		return false
+	_water_shader_path = idx
+	if _built:
+		invalidate()
+	return true
+
+
+func shader_path_label() -> String:
+	return WATER_SHADER_PATH_LABELS[_water_shader_path]
+
+
+# ---- Supply the exact donor gMapMask R/B channels (generatemap.inc:316-317) -
+# bWaterMap[wmx,wmy] = true iff any cell (x,y) in the 2x2 block has
+# mask.b>0 AND (mask.r<1 OR mask.b<1). The integrating owner can call this to
+# replace the documented height-derived fallback with the exact donor gate.
+# Arrays are per-cell, flat, indexed z*gw+x, matching the height[] grid.
+func bind_water_mask(mask_r: PackedFloat32Array, mask_b: PackedFloat32Array, gw: int, gh: int) -> bool:
+	if gw <= 0 or gh <= 0 or mask_r.size() < gw * gh or mask_b.size() < gw * gh:
+		push_error("water3d: bind_water_mask bad dims/size")
+		return false
+	_mask_r = mask_r
+	_mask_b = mask_b
+	_mask_bound = true
+	if _height_bound:
+		return _finalize_water_node()
+	return true
+
+
+# ---- Bind the decoded height[] grid => the donor hmapTex substitute ---------
+# NO neutral texture: if this is never called, no water node is ever created.
+func bind_height_grid(height: PackedFloat32Array, gw: int, gh: int) -> bool:
+	if gw <= 0 or gh <= 0 or height.size() < gw * gh:
+		push_error("water3d: bind_height_grid bad dims/size")
+		return false
+	_height = height
+	_grid_w = gw
+	_grid_h = gh
+	_height_bound = true
+	return _finalize_water_node()
+
+
+# ---- mapsizemod: generatemap.inc:655-657, live FLOAT division --------------
+#   mapsizemod = (cWaterMapArrSize/((640/mapheight)*2))*cWaterFieldSize
+# Delphi `640 div mapheight` is integer division; the outer division is float.
+# Under the donor swap the `mapheight` axis is the port grid's first dim (w),
+# which maps to world X (report §7.2). Both axes are exposed in stats.
+func _mapsizemod(mapheight: int) -> float:
+	if mapheight <= 0:
+		return 0.0
+	var ratio: int = int(C3_MAP_REFERENCE / float(mapheight))  # integer `div`
+	if ratio <= 0:
+		return 0.0
+	return (float(C3_WATER_MAP_ARR_SIZE) / float(ratio * 2)) * float(C3_WATER_FIELD_SIZE)
+
+
+# ---- Exact 2x2 block raster (report §7.1, [O]; gate execution [U8]) ---------
+# Returns the list of field records. Each record carries the exact donor centre
+# formula and name `x<wmx>y<wmy>`.
+func _build_field_records() -> Array:
+	var records: Array = []
+	if not _height_bound:
+		return records
+	# Donor script axes: wmx indexes mapwidth, wmy indexes mapheight. Under the
+	# donor engine x/z swap the port grid's first dim (w) is mapheight (world X)
+	# and the second dim (h) is mapwidth (world Z).
+	var mapheight: int = _grid_w
+	var mapwidth: int = _grid_h
+	var mod: float = _mapsizemod(mapheight)
+	var max_wmy: int = int(ceil(float(mapheight) / float(C3_WATER_FIELD_SIZE)))
+	var max_wmx: int = int(ceil(float(mapwidth) / float(C3_WATER_FIELD_SIZE)))
+	for wmy in range(max_wmy):
+		for wmx in range(max_wmx):
+			var marked: bool = false
+			var y0: int = wmy * C3_WATER_FIELD_SIZE
+			var y1: int = mini((wmy + 1) * C3_WATER_FIELD_SIZE, mapheight - 1)
+			var x0: int = wmx * C3_WATER_FIELD_SIZE
+			var x1: int = mini((wmx + 1) * C3_WATER_FIELD_SIZE, mapwidth - 1)
+			for gy in range(y0, y1 + 1):
+				for gx in range(x0, x1 + 1):
+					# Port grid: first index (x, size _grid_w) = donor script y (wmy);
+					# second index (z, size _grid_h) = donor script x (wmx).
+					var idx: int = gx * _grid_w + gy
+					if idx < 0 or idx >= _height.size():
+						continue
+					if _mask_bound:
+						# Exact donor generatemap.inc:316-317 gate.
+						var rb: float = _mask_b[idx]
+						var rr: float = _mask_r[idx]
+						if rb > 0.0 and (rr < 1.0 or rb < 1.0):
+							marked = true
+							break
+					else:
+						# LABELED FALLBACK [U]: mask.b>0 covers bWater/bWaterShore
+						# (texturemap.inc:463-472); use the shore threshold -0.1 as
+						# the closest height-only proxy. NOT an exact donor gate.
+						if _height[idx] < WATER_SHORE_HEIGHT:
+							marked = true
+							break
+				if marked:
+					break
+			if not marked:
+				continue
+			# Donor script corners (tiles). tx/tz from script x/y; engine swap below.
+			var tx: float = float(wmx * C3_WATER_FIELD_SIZE) - mod
+			var tz: float = float(wmy * C3_WATER_FIELD_SIZE) - mod
+			var bx: float = float((wmx + 1) * C3_WATER_FIELD_SIZE) - mod
+			var bz: float = float((wmy + 1) * C3_WATER_FIELD_SIZE) - mod
+			records.append({
+				"name": "x" + str(wmx) + "y" + str(wmy),
+				"wmx": wmx, "wmy": wmy,
+				"tx": tx, "tz": tz, "bx": bx, "bz": bz,
+				# FUN_0073b57c: engine X from script z, engine Z from script x.
+				"cx": (tz + bz) * 0.5 * TILE_M,
+				"cz": (tx + bx) * 0.5 * TILE_M,
+				"cy": C3_OFFSET_Y,
+				"extent_x": absf(bx - tx) * TILE_M,
+				"extent_z": absf(bz - tz) * TILE_M,
+				# hmapUV space: port grid coords (0..1). Donor -0.5 centring is
+				# absorbed by bind_height_grid's (x+0.5)/w encoding.
+				"u0": float(wmy * C3_WATER_FIELD_SIZE) / float(_grid_w),
+				"u1": float((wmy + 1) * C3_WATER_FIELD_SIZE) / float(_grid_w),
+				"v0": float(wmx * C3_WATER_FIELD_SIZE) / float(_grid_h),
+				"v1": float((wmx + 1) * C3_WATER_FIELD_SIZE) / float(_grid_h),
+			})
+	return records
+
+
+# ---- Finalize: build the merged field mesh + bind every donor uniform ------
+func _finalize_water_node() -> bool:
+	if not _built or not _height_bound or _material == null:
+		return false
+	_field_centres = _build_field_records()
+	if _field_centres.is_empty():
+		push_error("water3d: no water fields generated; refusing to draw a grey quad")
+		return false
+
+	var n: int = _field_centres.size()
+	var verts := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var inds := PackedInt32Array()
+	verts.resize(n * 4)
+	uvs.resize(n * 4)
+	inds.resize(n * 6)
+	for i in range(n):
+		var f: Dictionary = _field_centres[i]
+		var x0: float = float(f["tz"]) * TILE_M
+		var x1: float = float(f["bz"]) * TILE_M
+		var z0: float = float(f["tx"]) * TILE_M
+		var z1: float = float(f["bx"]) * TILE_M
+		var y: float = C3_OFFSET_Y
+		var b: int = i * 4
+		verts[b] = Vector3(x0, y, z0)
+		verts[b + 1] = Vector3(x1, y, z0)
+		verts[b + 2] = Vector3(x1, y, z1)
+		verts[b + 3] = Vector3(x0, y, z1)
+		uvs[b] = Vector2(float(f["u0"]), float(f["v0"]))
+		uvs[b + 1] = Vector2(float(f["u1"]), float(f["v0"]))
+		uvs[b + 2] = Vector2(float(f["u1"]), float(f["v1"]))
+		uvs[b + 3] = Vector2(float(f["u0"]), float(f["v1"]))
+		var t: int = i * 6
+		inds[t] = b
+		inds[t + 1] = b + 3
+		inds[t + 2] = b + 1
+		inds[t + 3] = b + 1
+		inds[t + 4] = b + 3
+		inds[t + 5] = b + 2
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = verts
+	arr[Mesh.ARRAY_TEX_UV] = uvs
+	arr[Mesh.ARRAY_INDEX] = inds
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+
+	# hmapTex substitute: real decoded grid only, alpha = (h+2.96)/(2*2.96).
+	var img := Image.create(_grid_w, _grid_h, false, Image.FORMAT_RGBA8)
+	for z in range(_grid_h):
+		for x in range(_grid_w):
+			var hval: float = _height[z * _grid_w + x]
+			var a: float = clampf((hval + MAX_HEIGHT) / (2.0 * MAX_HEIGHT), 0.0, 1.0)
+			img.set_pixel(x, z, Color(0.0, 0.0, 0.0, a))
+	_material.set_shader_parameter("height_tex", ImageTexture.create_from_image(img))
+	_material.set_shader_parameter("map_size", Vector2(float(_grid_w), float(_grid_h)))
+
+	if _water == null:
+		_water = MeshInstance3D.new()
+		_water.name = "WaterPlane3D"
+		_water.mesh = mesh
+		_water.material_override = _material
+		add_child(_water)
+	else:
+		_water.mesh = mesh
+
+	# Structural verification (report §10.11; no parity claim).
+	var all_y_exact: bool = true
+	var centre_ok: bool = true
+	for f in _field_centres:
+		if not is_equal_approx(float(f["cy"]), C3_OFFSET_Y):
+			all_y_exact = false
+		var expect_cx: float = (float(f["tz"]) + float(f["bz"])) * 0.5 * TILE_M
+		var expect_cz: float = (float(f["tx"]) + float(f["bx"])) * 0.5 * TILE_M
+		if not is_equal_approx(float(f["cx"]), expect_cx) or not is_equal_approx(float(f["cz"]), expect_cz):
+			centre_ok = false
+	stats["field_count"] = n
+	stats["plane_vertices"] = n * 4
+	stats["plane_triangles"] = n * 2
+	stats["field_geometry_verified"] = {"plane_y_all_minus_half": all_y_exact, "centre_formula_exact": centre_ok}
+	stats["height_aware"] = true
+	stats["height_grid"] = {"w": _grid_w, "h": _grid_h}
+	stats["field_source"] = ("EXACT gMapMask gate (bind_water_mask)" if _mask_bound
+		else "HEIGHT-DERIVED FALLBACK [U] - exact donor gate needs bind_water_mask")
+	return true
+
+
+# ---- build(): donor-literal material + exact field geometry -----------------
+# Non-DEV modes are EXPOSED but hard-fail: the shipped .gdshader is out of this
+# worker's single-file scope and implements DEV equations only. This is the
+# explicit anti-approximation behaviour demanded by report §10 rule (c)/(d).
+func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
+	invalidate()
+	_grid_w = w
+	_grid_h = h
+
+	# CONFIG-WIRE-WATER (config.gd read-only): config supplies an A/B surface Y;
+	# for the donor path the plane Y is the recovered cOffsetY=-0.5, so the config
+	# value is recorded for audit only and NEVER substituted silently.
+	var cfg = C3ConfigScript.active
+	var cfg_surface_y: float = -0.25
+	var cfg_alpha_confine: bool = true
+	var cfg_shore_prox: bool = false
+	if cfg != null:
+		cfg_surface_y = cfg.feature_water_surface_y()
+		cfg_alpha_confine = cfg.feature_water_alpha_confine()
+		cfg_shore_prox = cfg.feature_water_shore_prox()
+
+	var label: String = shader_path_label()
+	var shader := load(SHADER_PATH) as Shader
+	if shader == null:
+		push_error("water3d: cannot load " + SHADER_PATH + " (no water drawn)")
+		return false
+	if _water_shader_path != WaterShaderPath.DEV:
+		push_error("water3d: shader path " + label + " selected but the shipped "
+			+ SHADER_PATH + " implements DEV equations only (single-file scope). "
+			+ "Refusing to approximate. " + WATER_SHADER_SETTLING_EXPERIMENT)
+		return false
+
+	_material = ShaderMaterial.new()
+	_material.shader = shader
+
+	# Donor literals -> uniforms. The shipped DEV shader is the only path drawn.
+	_material.set_shader_parameter("water_level", WATER_LEVEL)         # -0.25 classification
+	_material.set_shader_parameter("water_surface_y", C3_OFFSET_Y)     # donor plane Y = -0.5
+	_material.set_shader_parameter("shore_height", WATER_SHORE_HEIGHT) # -0.1 (inert in DEV frag)
+	_material.set_shader_parameter("max_height", MAX_HEIGHT)
+	_material.set_shader_parameter("coast_fade_depth", COAST_FADE)     # 0.57
+	_material.set_shader_parameter("deep_fade_depth", DEEP_FADE)       # 1.07
+	_material.set_shader_parameter("tex_scale_s", TEX_SCALE_S)         # 0.1
+	_material.set_shader_parameter("tex_scale_t", TEX_SCALE_T)         # 0.01
+	_material.set_shader_parameter("hdr_multiplier", HDR_MULTIPLIER)   # 1
+	_material.set_shader_parameter("spec_soft", SPEC_SOFT)             # 170
+	_material.set_shader_parameter("spec_glossy", SPEC_GLOSSY)         # 120
+	_material.set_shader_parameter("particle_amount", PARTICLE_AMOUNT) # 30
+	_material.set_shader_parameter("shallow_color", DEV_SHALLOW_COLOR) # (0.1,0.24,0.24)
+	_material.set_shader_parameter("deep_color", DEV_DEEP_COLOR)       # (0,0.025,0.05)
+	_material.set_shader_parameter("spec_color", DEV_SPEC_COLOR)       # (0.4,0.4,0.4)
+	_material.set_shader_parameter("sun_dir", SUN_LIGHTVEC)
+	_material.set_shader_parameter("fog_color", FOG_COLOR)
+	_material.set_shader_parameter("fog_density", 0.0)
+	_material.set_shader_parameter("fog_enabled", 0)                  # colors.lib:36 FogMode=0
+	_material.set_shader_parameter("time", 0.0)
+	# reflectionMap FBO is [U12]; DEV reflection branch stays disabled. No
+	# reflection_map texture is invented/bound.
+	_material.set_shader_parameter("reflection_enabled", 0.0)
+	# height_tex / map_size are bound only by bind_height_grid (no grey fallback).
+
+	# waveMap = diffusewaves0.png, donor-derived and shipped. Missing => hard fail.
+	var wave := _load_png_texture(WAVE_TEX_PATH)
+	if wave == null:
+		push_error("water3d: missing donor wave texture " + WAVE_TEX_PATH + "; no water drawn")
+		_material = null
+		return false
+	_material.set_shader_parameter("wave_noise", wave)
+
+	_built = true
+	stats = {
+		"module": "res://scripts/water3d.gd",
+		"shader": SHADER_PATH,
+		"shader_path": label,
+		"shader_path_unresolved": "[U1] " + WATER_SHADER_SETTLING_EXPERIMENT,
+		"donor_shader_modes": DONOR_SHADER_MODES,
+		"uniform_enable_mask": UNIFORM_ENABLE_MASK,
+		"uniform_enable_mask_hex": "0x3FFFFFFF",
+		"uniform_key_count": DONOR_UNIFORM_KEYS.size(),
+		"uniform_keys": DONOR_UNIFORM_KEYS,
+		"unverified_bindings": UNVERIFIED_BINDINGS,
+		"wave_tex_path": WAVE_TEX_PATH,
+		"donor_literals": {
+			"water_level": WATER_LEVEL,
+			"shore_height": WATER_SHORE_HEIGHT,
+			"max_height": MAX_HEIGHT,
+			"coast_fade_depth": COAST_FADE,
+			"deep_fade_depth": DEEP_FADE,
+			"tex_scale_s": TEX_SCALE_S,
+			"tex_scale_t": TEX_SCALE_T,
+		},
+		"donor_water_lib_proven": {
+			"MaxDepth": 1, "MinDepth": 0, "MaxAlpha": 1.1, "MinAlpha": 0,
+			"DeepColor": LIB_DEEP_COLOR, "ShallowColor": LIB_SHALLOW_COLOR,
+			"ReflectionAmount": 1, "WaterAmount": 1,
+			"FresnelPower": 1, "FresnelBias": 1,
+			"WaveFreq": 0, "WaveAmp": 0, "DistFactor": 1, "BumpFactor": 1,
+			"WaveDir0": [-1.0, 0.0], "WaveDir1": [-0.7, 0.7], "Speed": 1.0,
+			"TexScaleS": TEX_SCALE_S, "TexScaleT": TEX_SCALE_T,
+			"Offset": 0.495, "LayerCount": 1, "CustomTexCoord": true,
+			"HeightMapEnable": true, "ShadowMapEnable": true,
+			"VertexProgram": "water.dev.vert", "FragmentProgram": "water.dev.frag",
+			"Tag": 512, "DefaultWaterIndex": 0,
+		},
+		"water_lib_keys_commented_in_fragment": ["deepColor","shallowColor","reflectionAmount","waterAmount","fresnelPower","fresnelBias","distFactor","bumpFactor"],
+		"binary_caution": ("0x853ad4 = 30 string-key assignments; 0x853eb8 f32 "
+			+ "1.9999998807907104 = 0x3FFFFFFF enable BITMASK, NOT a shader float."),
+		"hmap_min_max": "[U3] engine values not recovered; shader PORT SUBSTITUTE -max_height/+max_height",
+		"waveheight_from_donor_literal": clampf(WATER_LEVEL * 3.0 - 1.5, 0.0, 1.0),
+		"waveheight_from_plane_y": clampf(C3_OFFSET_Y * 3.0 - 1.5, 0.0, 1.0),
+		# With plane Y=-0.5, waveheight=0 so level<=-0.5. Every surviving fragment
+		# therefore has height<-0.25 and the shipped PORT GUARD water_cell is
+		# provably 1 => alpha = donor coastfade2 exactly (report §9.1).
+		"water_alpha_gate": ("DONOR alpha=coastfade2. Shipped PORT GUARD water_cell=1-step(-0.25,height) "
+			+ "is PROVABLY INERT under plane Y=-0.5 (level<=-0.5<height threshold). No alpha floor."),
+		"shore_prox": "REMOVED (PORT ART, RV-TRN-03 §5.2); absent from donor fragment",
+		"water_alpha_confine_config": cfg_alpha_confine,
+		"shore_prox_config": cfg_shore_prox,
+		"config_surface_y_ignored": cfg_surface_y,
+		"plane_y": C3_OFFSET_Y,
+		"field_geometry": {
+			"field_size": C3_WATER_FIELD_SIZE,
+			"arr_size": C3_WATER_MAP_ARR_SIZE,
+			"mapsizemod_formula": "(320/((640/mapheight)*2))*2 (float outer division)",
+			"centre": "X=(tz+bz)*0.5, Z=(tx+bx)*0.5, Y=cOffsetY=-0.5",
+			"extent": [C3_FIELD_EXTENT * TILE_M, C3_FIELD_EXTENT * TILE_M],
+			"x_z_swap": "world X from script z (wmy), world Z from script x (wmx) [D]",
+		},
+		"collision_spec": {
+			"tags": {"none": C_TAG_NONE, "bridge": C_TAG_BRIDGE, "water": C_TAG_WATER,
+				"landborder": C_TAG_LANDBORDER, "waterborder": C_TAG_WATERBORDER},
+			"rad": C_WATER_BORDER_SIZE,
+			"strict_disc": "i1*i1 + j1*j1 < 9 (boundary excluded)",
+			"offsets": _strict_disc_offsets(),
+			"native_kernel": "[U11] MapDrawCollision radius/shape not decompiled; script is only source",
+		},
+		"grey_fallback_removed": true,
+		"visual_parity_claimed": false,
+	}
+	return true
+
+
+# ---- Exact strict radius-3 disc offsets (report §8, misc.script:5186-5190) --
+func _strict_disc_offsets() -> Array:
+	var out: Array = []
+	for i1 in range(-C_WATER_BORDER_SIZE, C_WATER_BORDER_SIZE + 1):
+		var rem: int = C_SHORE_DISC_STRICT_R2 - i1 * i1
+		if rem < 0:
+			continue
+		var min_j: int = int(ceilf(sqrt(float(rem))))
+		for j1 in range(-min_j, min_j + 1):
+			if i1 * i1 + j1 * j1 < C_SHORE_DISC_STRICT_R2:
+				out.append([i1, j1])
+	return out
+
+
+# ---- Pure collision tag remap (report §8; application to engine [U11]) ------
+# Given a per-cell tag grid (flat, z*gw+x), apply the strict disc border remap:
+# tag 0 -> 109 (landborder), tag 87 -> 110 (waterborder). Returns a new grid;
+# never writes engine collision (out of this worker's scope).
+func remap_shore_collision_tags(tags: PackedByteArray, gw: int, gh: int) -> PackedByteArray:
+	var out := PackedByteArray()
+	out.resize(tags.size())
+	for i in range(tags.size()):
+		out[i] = tags[i]
+	var offsets: Array = _strict_disc_offsets()
+	for z in range(gh):
+		for x in range(gw):
+			var idx: int = z * gw + x
+			var t: int = tags[idx]
+			if t != C_TAG_NONE and t != C_TAG_WATER:
+				continue
+			for d in offsets:
+				var nx: int = x + int(d[0])
+				var nz: int = z + int(d[1])
+				if nx < 0 or nx >= gw or nz < 0 or nz >= gh:
+					continue
+				var ni: int = nz * gw + nx
+				if tags[ni] == C_TAG_NONE:
+					out[ni] = C_TAG_LANDBORDER
+				elif tags[ni] == C_TAG_WATER:
+					out[ni] = C_TAG_WATERBORDER
+	return out

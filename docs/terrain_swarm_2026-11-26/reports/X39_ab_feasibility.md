@@ -233,7 +233,7 @@ Each contradiction was re-read with ≥2 instruments/readings; accepted reading 
 
 ## 7. Open questions
 
-1. **Q1 (OWNER):** Will you personally launch `C:\Games\Cossacks 3\cossacks.exe` and supply the Route A PNG + `.map` + manifest (§3)? If no, parity is permanently UNVERIFIED and the honest owner verdict is `RESULT IS GOOD — internal consistency PASS / donor parity UNVERIFIED` (V15 §6), provided no blocking QA item is missing.
+1. **Q1 (OWNER):** Will you personally launch `C:\Games\Cossacks 3\cossacks.exe` and supply the Route A PNG + `.map` + manifest (§3)? If no, parity is permanently UNVERIFIED and the honest owner verdict is `RESULT IS NOT GOOD while blocking_unverified is non-empty` with `internal consistency PASS / donor parity UNVERIFIED` (V15 §6, superseded by owner guard: no unqualified RESULT IS GOOD).
 2. **Q2 (COORD):** Confirm size pin = 320² donor enum 0, with 240² retained as a port-only determinism atom (P2/U5).
 3. **Q3 (COORD):** Can `randkey0/1` be read from the owner's map/game state, or must the comparison be downgraded to A/B-L2 with `randkey0 = UNKNOWN` (U2/U3)?
 4. **Q4 (COORD):** Approve the A/B-L1 vs A/B-L2 distinction and the rule "donor frame necessary but not sufficient for parity" (§4)? Without approval, `parity.status` stays UNVERIFIED on principle.

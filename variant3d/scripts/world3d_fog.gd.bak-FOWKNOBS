@@ -1,0 +1,551 @@
+extends Node3D
+
+# V7-16 — per-tile fog-of-war shading for the 3D variant.
+# Owns ONE file. The 2D path (app/scripts/world.gd) is untouched.
+#
+# PORT SOURCES (read-only this session, cited):
+#   app/scripts/world.gd:27-28       fog_explored / fog_vis PackedByteArray
+#   app/scripts/world.gd:333-338     bind() sizes arrays to MAP_W*MAP_H, fog_img fill
+#   app/scripts/world.gd:2186-2256   _update_fog(): reveal requests, search radius,
+#                                    fog_counts, visible/explored transitions and the
+#                                    0.78 / 0.30 / 0.00 black-alpha ladder (:2250-2255)
+#   app/scripts/world.gd:2258-2272   tile_visible() / tile_explored()
+#   app/scripts/game.gd:2834-2836    reveal_requests + game_reveal(pos, r)
+#   variant3d/scripts/game.gd:2834-2836, :3456-3461  same sim API in the 3D project
+#   variant3d/scripts/world3d.gd:215-224  centred tile-corner -> world quad mapping
+#   variant3d/tests/t_fog3d.gd:37-48,150-184  stub-game shape and structural checks
+#
+# DONOR SOURCES OF TRUTH (read via evidence reports, NOT re-read here):
+#   E19  pvl.smx3.id0.frag:29-43  view-space LINEAR/EXP/EXP2 fog  (RENDER_ARCH_SHADERS.md:150)
+#   E20  def.pvl.sm.vert:38-42    fog depth = view-space distance (RENDER_ARCH_SHADERS.md:151)
+#   camera.cfg:51-64 DynFog* keys; DynFogDepth=False in game mode (:59)
+#        (RENDER_ARCH_CAMERA.md:59-62)
+#   V71_mechanics_inventory.md:166 — fog overlay PARTIAL; donor fog<->explored
+#        engine binding UNVERIFIED; "do not invent a new fog rule".
+#
+# HONEST LIMIT: the donor depth fog above is a *view-distance* effect and is
+# disabled in the gameplay camera (DynFogDepth=False). The 2D fog-of-war arrays
+# are a different mechanic. Their sim state is ported verbatim; the donor's
+# binding of that state to any shader is UNVERIFIED, so no donor fog constant
+# is fabricated here. The alpha ladder below is the port's own state encoding
+# (world.gd:2251-2255), not a claimed donor value.
+#
+# Rendering: ONE transparent ArrayMesh of per-tile quads with vertex-colour
+# alpha, NOT a full-map Sprite2D / ImageTexture (the 2D path at world.gd:337-347).
+
+# ─── DEC-U-FOG-CAMERA-HUD — IMPL-FOG-HUD resolved-law layer ────────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_camera_hud.md.
+# RESOLVED donor law, implemented 1:1 (all [O] with file:line in that report):
+#   §1.1 unit.script:11563-11614 _unit_GetVision — fogreveal -> floor(pproj.dx);
+#        normal -> floor(20 + 4*vision); dead / unbuilt / not-visible -> 0.
+#        cBaseVal=20, cModVal=4 (:11567-11571); 18/3.6/3.75 rows are DEAD.
+#   §1.2 misc.script:5883-5944 — tag-109 fogreveal objects (dmscript.global:1439),
+#        get-or-create by px/pz scan, AddFOWObjects, visible=False,
+#        TProj.px/pz/dx := px/pz/radius; remove destroys the first match.
+#        scenario.script:1851-1864 map_revealZone + FOWBuildFull on enable.
+#   §1.3 player.script:451-478 — FOW off for balloon / victory / editor flag,
+#        own handle + same-team allies share vision, SetFOWDovFunc('_unit_GetVision'),
+#        SetFOWEnable(bFOW); control.script:712-720 set-player call order.
+#   §4.1/§5.1 LOS veto — (not GetFOWEnable) or GetFOWLOSData(x,z)>0 drives
+#        picking (control.script:270-273) and resource tint (gui.script:3478-3496).
+# UNRESOLVED [U] — NOT substituted; each keeps its experiment:
+#   F1-GRID cell size, max/sum combine, LOS occlusion, explored persistence;
+#   F1-MINI explored-vs-visible tint thresholds.
+#   DynFog* (camera.cfg:59-64) is a VISUAL depth fog, DynFogDepth=False in the
+#   gameplay camera — never used as gameplay FOW.
+# NO PARITY CLAIM.
+
+const Data = preload("res://scripts/data.gd")
+
+# Verbatim from app/scripts/world.gd:2251-2255 (port state encoding).
+const ALPHA_UNEXPLORED: float = 0.78
+const ALPHA_EXPLORED: float = 0.30
+const ALPHA_VISIBLE: float = 0.0
+# PORT-SIDE, no donor source: lift the overlay a few cm above the sampled
+# terrain height so it does not z-fight with the top quads.
+const FOG_Y_OFFSET: float = 0.03
+# Donor _unit_GetVision coefficients — unit.script:11567-11571 [O] (resolved).
+const DONOR_VISION_BASE: float = 20.0
+const DONOR_VISION_PER_POINT: float = 4.0
+# gc_properties_stringtag_fogreveal = 109 — dmscript.global:1439 [O].
+const DONOR_FOGREVEAL_TAG: int = 109
+
+var game = null
+# Public: HUD minimap reads these (contract V73_ATOMIC_CONTRACT.md:15,24).
+var fog_explored: PackedByteArray = PackedByteArray()
+var fog_vis: PackedByteArray = PackedByteArray()
+var fog_counts: PackedInt32Array = PackedInt32Array()
+
+var _map_w: int = 0
+var _map_h: int = 0
+var _tile_m: float = 2.0
+var _built: bool = false
+var _fog_timer: float = 0.0
+var _fog_tick: int = 0
+var _fog_last_pos: Dictionary = {}
+var _fog_unit_count: int = 0
+var _tile_alpha: PackedFloat32Array = PackedFloat32Array()
+# DEC-U §1.2 tag-109 fogreveal objects: [{px, pz, dx, tag}] in world metres.
+var fog_reveals: Array = []
+# DEC-U §1.3 mirrors of SetFOWEnable and the sharing viewer-player set.
+var _fow_enabled: bool = false
+var _fow_viewers: Array = []
+
+var _overlay: MeshInstance3D = null
+var _overlay_mesh: ArrayMesh = null
+var _fog_vertices: PackedVector3Array = PackedVector3Array()
+var _fog_uvs: PackedVector2Array = PackedVector2Array()
+var _fog_indices: PackedInt32Array = PackedInt32Array()
+var _fog_colors: PackedColorArray = PackedColorArray()
+
+
+func bind(g) -> void:
+	game = g
+	if game == null:
+		return
+	_map_w = int(game.get("MAP_W"))
+	_map_h = int(game.get("MAP_H"))
+	if _map_w <= 0 or _map_h <= 0:
+		push_error("world3d_fog: game has no usable MAP_W/MAP_H")
+		return
+	_tile_m = float(Data.TILE_M)
+	var n: int = _map_w * _map_h
+
+	# Mirror game-owned arrays when present and correctly sized (the stub game
+	# in t_fog3d.gd:40-48 pre-fills them); otherwise start clean like 2D bind()
+	# at world.gd:333-335.
+	var src_exp = game.get("fog_explored")
+	if src_exp is PackedByteArray and (src_exp as PackedByteArray).size() == n:
+		fog_explored = (src_exp as PackedByteArray).duplicate()
+	else:
+		fog_explored = PackedByteArray()
+		fog_explored.resize(n)
+	var src_vis = game.get("fog_vis")
+	if src_vis is PackedByteArray and (src_vis as PackedByteArray).size() == n:
+		fog_vis = (src_vis as PackedByteArray).duplicate()
+	else:
+		fog_vis = PackedByteArray()
+		fog_vis.resize(n)
+	fog_counts = PackedInt32Array()
+	fog_counts.resize(n)
+	_tile_alpha = PackedFloat32Array()
+	_tile_alpha.resize(n)
+
+	_fog_timer = float(Data.FOG_INTERVAL)
+	_fog_tick = 0
+	_fog_last_pos.clear()
+	_fog_unit_count = 0
+	# DEC-U §1.3 — _control_SetPlayer order: UpdateFOW before any pick/HUD draw
+	# (control.script:712-720). Rebuilt again at each _update_fog() tick so live
+	# balloon/victory/team changes are honoured without another bind().
+	rebuild_fow_enable()
+	_built = _build_overlay()
+	if not _built:
+		return
+	for i in n:
+		_tile_alpha[i] = _alpha_for(i)
+		_set_tile_color(i, _tile_alpha[i])
+	_refresh_mesh()
+	_update_fog()
+
+
+func sync(dt: float) -> void:
+	if game == null or not _built:
+		return
+	# 2D gates the recount on FOG_INTERVAL (world.gd:833-836, :336). dt is
+	# sim-agnostic; this accumulator keeps the same cadence.
+	_fog_timer -= dt
+	if _fog_timer > 0.0:
+		return
+	_fog_timer = float(Data.FOG_INTERVAL)
+	_update_fog()
+
+
+func _alpha_for(i: int) -> float:
+	if fog_vis[i] == 1:
+		return ALPHA_VISIBLE
+	if fog_explored[i] == 1:
+		return ALPHA_EXPLORED
+	return ALPHA_UNEXPLORED
+
+
+func _set_tile_color(i: int, a: float) -> void:
+	var base: int = i * 4
+	if base + 3 >= _fog_colors.size():
+		return
+	var c := Color(0.0, 0.0, 0.0, a)
+	_fog_colors[base] = c
+	_fog_colors[base + 1] = c
+	_fog_colors[base + 2] = c
+	_fog_colors[base + 3] = c
+
+
+func _make_fog_material() -> ShaderMaterial:
+	# Spatial port of the 2D fog overlay: multiply black by per-tile alpha.
+	# No donor shader is claimed: donor E19 depth fog is a different effect and
+	# is off in the gameplay camera (camera.cfg:59).
+	var sh := Shader.new()
+	sh.code = """
+shader_type spatial;
+render_mode blend_mix, unshaded, cull_disabled, depth_draw_never;
+// Per-tile fog-of-war tint. COLOR.a is the port's 0.78 / 0.30 / 0.00 ladder
+// (app/scripts/world.gd:2251-2255); COLOR.rgb is black. Deliberately NOT a
+// port of donor view-depth fog (E19/E20) - that binding is UNVERIFIED.
+void fragment() {
+	ALBEDO = COLOR.rgb;
+	ALPHA = COLOR.a;
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	return mat
+
+
+func _build_overlay() -> bool:
+	_fog_vertices = PackedVector3Array()
+	_fog_uvs = PackedVector2Array()
+	_fog_indices = PackedInt32Array()
+	_fog_colors = PackedColorArray()
+	var n: int = _map_w * _map_h
+
+	# game.height is optional: the t_fog3d.gd stub has no such field. Use a
+	# flat y=0 overlay there; in a real game sample the generated height grid
+	# (variant3d/scripts/game.gd:44, :364). Alignment with world3d_terrain.gd's
+	# dump-derived heights is an OPEN QUESTION (see report).
+	var hs = game.get("height")
+	var h: PackedFloat32Array = PackedFloat32Array()
+	if hs is PackedFloat32Array and (hs as PackedFloat32Array).size() == n:
+		h = hs
+
+	for ty in range(_map_h):
+		for tx in range(_map_w):
+			var i: int = ty * _map_w + tx
+			var wy: float = (h[i] if h.size() == n else 0.0) + FOG_Y_OFFSET
+			# Centred tile-corner mapping mirrors variant3d/scripts/world3d.gd:215-220.
+			var wx: float = (float(tx) - float(_map_w) * 0.5) * _tile_m
+			var wz: float = (float(ty) - float(_map_h) * 0.5) * _tile_m
+			var base: int = _fog_vertices.size()
+			_fog_vertices.append(Vector3(wx, wy, wz))
+			_fog_vertices.append(Vector3(wx + _tile_m, wy, wz))
+			_fog_vertices.append(Vector3(wx + _tile_m, wy, wz + _tile_m))
+			_fog_vertices.append(Vector3(wx, wy, wz + _tile_m))
+			_fog_uvs.append(Vector2(0.0, 0.0))
+			_fog_uvs.append(Vector2(1.0, 0.0))
+			_fog_uvs.append(Vector2(1.0, 1.0))
+			_fog_uvs.append(Vector2(0.0, 1.0))
+			_fog_indices.append_array([base, base + 2, base + 1, base, base + 3, base + 2])
+			var a: float = _alpha_for(i)
+			for k in 4:
+				_fog_colors.append(Color(0.0, 0.0, 0.0, a))
+
+	_overlay_mesh = ArrayMesh.new()
+	_overlay = MeshInstance3D.new()
+	_overlay.name = "FogOverlay"
+	_overlay.mesh = _overlay_mesh
+	_overlay.material_override = _make_fog_material()
+	# 2D draws fog above units at world.gd:346 (z_index = 10). In 3D the
+	# equivalent transparent-sort bias is VisualInstance3D.sorting_offset.
+	_overlay.sorting_offset = 10.0
+	_overlay.visible = bool(Data.FOG_OF_WAR)
+	add_child(_overlay)
+	return true
+
+
+func _refresh_mesh() -> void:
+	if _overlay_mesh == null or _fog_vertices.is_empty():
+		return
+	_overlay_mesh.clear_surfaces()
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = _fog_vertices
+	arrays[Mesh.ARRAY_TEX_UV] = _fog_uvs
+	arrays[Mesh.ARRAY_COLOR] = _fog_colors
+	arrays[Mesh.ARRAY_INDEX] = _fog_indices
+	_overlay_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
+
+func _update_fog() -> void:
+	if game == null or not _built:
+		return
+	# DEC-U §1.3 — SetFOWEnable mirror, not the raw Data flag: balloon /
+	# victory / editor-flag gates switch FOW off even when the option is on.
+	rebuild_fow_enable()
+	if not _fow_enabled:
+		return
+	if not game.has_method("tile_of"):
+		return
+
+	# Cheap change gate, structure verbatim from world.gd:2191-2211. Viewer set
+	# is now the team-shared list from _player_UpdateFOW, not a hardcoded player 0.
+	_fog_tick += 1
+	var forced: bool = _fog_tick % 6 == 0
+	var reqs = game.get("reveal_requests")
+	var has_reveals: bool = (reqs is Array and not (reqs as Array).is_empty()) or not fog_reveals.is_empty()
+	var any_moved: bool = forced or has_reveals
+	if not any_moved:
+		var ents = game.get("entities")
+		if not (ents is Array):
+			return
+		var live_n: int = 0
+		for e in ents:
+			if not _is_fow_viewer_entity(e):
+				continue
+			live_n += 1
+			var lp: Vector2 = _fog_last_pos.get(int(e.id), Vector2.INF)
+			if lp == Vector2.INF or lp.distance_squared_to(e.pos) > 0.25:
+				any_moved = true
+				break
+		if not any_moved and live_n != _fog_unit_count:
+			any_moved = true
+	if not any_moved:
+		return
+	_fog_last_pos.clear()
+	var ents2 = game.get("entities")
+	if ents2 is Array:
+		for e in ents2:
+			if not _is_fow_viewer_entity(e):
+				continue
+			_fog_last_pos[int(e.id)] = e.pos
+	_fog_unit_count = _fog_last_pos.size()
+
+	# Explicit reveal requests from sim abilities — game.gd:2834-2836,
+	# world.gd:2218-2227. game_reveal(Vector2(MAP_W,MAP_H), 1e9) is the
+	# "reveal whole map" call at game.gd:3461 and is handled by this same loop.
+	# DEC-U §1.2 — tag-109 fogreveal objects are the scenario map_revealZone path.
+	# TProj.dx was set to `radius` at creation; _unit_GetVision reads floor(dx).
+	# The resolved floor() is applied here at the reveal site, never an estimate.
+	var reveal_jobs: Array = []
+	if reqs is Array:
+		for rq in (reqs as Array):
+			reveal_jobs.append({"c": Vector2(rq.pos), "r": float(rq.r)})
+		(reqs as Array).clear()
+	for rv in fog_reveals:
+		reveal_jobs.append({
+			"c": Vector2(float(rv.get("px", 0.0)), float(rv.get("pz", 0.0))),
+			"r": floor(float(rv.get("dx", 0.0))),
+		})
+	for job in reveal_jobs:
+		var c: Vector2 = job.c
+		var rr: float = job.r
+		var t0: Vector2i = game.tile_of(c - Vector2(rr, rr))
+		var t1: Vector2i = game.tile_of(c + Vector2(rr, rr))
+		for ty in range(maxi(0, t0.y), mini(_map_h, t1.y + 1)):
+			for tx in range(maxi(0, t0.x), mini(_map_w, t1.x + 1)):
+				# world.gd:2225 uses tx*2+1 (TILE_M=2 tile centre).
+				var centre := Vector2((float(tx) + 0.5) * _tile_m, (float(ty) + 0.5) * _tile_m)
+				if centre.distance_to(c) <= rr:
+					fog_explored[ty * _map_w + tx] = 1
+
+	fog_counts.fill(0)
+	# DEC-U §1.1 — every eligible viewer contributes floor(20+4*vision).
+	# [U] F1-GRID: donor `res` unit (cell vs metre) is engine-defined and absent
+	# from readable text; _vision_radius_m() is a labelled grid driver, not a
+	# donor claim. Cell size, combine rule and occlusion stay unresolved.
+	var ents3 = game.get("entities")
+	if ents3 is Array:
+		for e in ents3:
+			if not _is_fow_viewer_entity(e):
+				continue
+			var res: int = donor_unit_vision(e)
+			if res <= 0:
+				continue
+			var r: float = _vision_radius_m(res)
+			var t0: Vector2i = game.tile_of(e.pos - Vector2(r, r))
+			var t1: Vector2i = game.tile_of(e.pos + Vector2(r, r))
+			for y in range(maxi(0, t0.y), mini(_map_h, t1.y + 1)):
+				for x in range(maxi(0, t0.x), mini(_map_w, t1.x + 1)):
+					var c := Vector2((float(x) + 0.5) * _tile_m, (float(y) + 0.5) * _tile_m)
+					if c.distance_to(e.pos) <= r:
+						fog_counts[y * _map_w + x] += 1
+	# fogreveal objects feed the same visible grid (AddFOWObjects in donor).
+	for rv2 in fog_reveals:
+		var rr2: float = floor(float(rv2.get("dx", 0.0)))
+		var pc := Vector2(float(rv2.get("px", 0.0)), float(rv2.get("pz", 0.0)))
+		var q0: Vector2i = game.tile_of(pc - Vector2(rr2, rr2))
+		var q1: Vector2i = game.tile_of(pc + Vector2(rr2, rr2))
+		for y2 in range(maxi(0, q0.y), mini(_map_h, q1.y + 1)):
+			for x2 in range(maxi(0, q0.x), mini(_map_w, q1.x + 1)):
+				var cc := Vector2((float(x2) + 0.5) * _tile_m, (float(y2) + 0.5) * _tile_m)
+				if cc.distance_to(pc) <= rr2:
+					fog_counts[y2 * _map_w + x2] += 1
+
+	var changed: bool = false
+	for i in _map_w * _map_h:
+		var v: int = 1 if fog_counts[i] > 0 else 0
+		if v == 1:
+			fog_explored[i] = 1
+		if fog_vis[i] == v:
+			continue
+		fog_vis[i] = v
+		var a: float = _alpha_for(i)
+		_tile_alpha[i] = a
+		_set_tile_color(i, a)
+		changed = true
+	if changed:
+		if _overlay != null:
+			_overlay.visible = _fow_enabled
+		_refresh_mesh()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEC-U-FOG-CAMERA-HUD §§1.1-1.3 — resolved donor laws.
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _player(pi: int) -> Dictionary:
+	if game == null or not is_instance_valid(game):
+		return {}
+	var ps: Variant = game.get("players")
+	if not (ps is Array) or pi < 0 or pi >= (ps as Array).size():
+		return {}
+	var p: Variant = (ps as Array)[pi]
+	return p if p is Dictionary else {}
+
+
+func _player_count() -> int:
+	if game == null or not is_instance_valid(game):
+		return 0
+	var ps: Variant = game.get("players")
+	return (ps as Array).size() if ps is Array else 0
+
+
+func rebuild_fow_enable() -> void:
+	# _player_UpdateFOW (player.script:451-478), verbatim gate order:
+	# bFOW := True; False if balloon / mapsetting-balloon-with / victory /
+	# not editor_fogofwar; then own handle + same-team allies + DovFunc + Enable.
+	var on: bool = bool(Data.FOG_OF_WAR)
+	if on and str(Data.BALLOON_MODE) == "balloons":
+		on = false  # gc_mapsettings_balloon_with (player.script:454-457)
+	if on:
+		var pl0 := _player(0)
+		if bool(pl0.get("balloon", false)):
+			on = false  # gPlayer[pl].bballoon
+		if str(pl0.get("victorystate", "none")) != "none":
+			on = false  # gPlayer[pl].victorystate <> none
+		if game != null and game.get("editor_fogofwar") == false:
+			on = false  # gbool_editor_fogofwar (dmscript.global:2120)
+	_fow_enabled = on
+	_fow_viewers = _fow_viewer_players()
+	if _overlay != null:
+		_overlay.visible = on
+
+
+func _fow_viewer_players() -> Array:
+	# player.script:459-466 — own handle plus same-team allies; i<>plInd and
+	# plInd<>0 or not neutral. No port `neutral` player index exists, so the
+	# nation string is the null-safe guard; -1 (FFA) never matches another -1.
+	var out: Array = []
+	var self_team := int(_player(0).get("team", -1))
+	for i in _player_count():
+		var p := _player(i)
+		if str(p.get("victorystate", "none")) != "none":
+			continue
+		if i == 0:
+			out.append(i)
+			continue
+		var t := int(p.get("team", -1))
+		if self_team >= 0 and t == self_team and str(p.get("nation", "")).to_lower() != "neutral":
+			out.append(i)
+	return out
+
+
+func _is_fow_viewer_entity(e: Dictionary) -> bool:
+	if not _fow_viewers.has(int(e.get("player", -1))):
+		return false
+	if bool(e.get("hidden", false)):
+		return false  # GetGameObjectVisibleByHandle (unit.script:11576)
+	if bool(e.get("dead", false)) or not bool(e.get("finished", true)):
+		return false  # not bdead and bbuilt
+	return true
+
+
+func donor_unit_vision(e: Dictionary) -> int:
+	# _unit_GetVision (unit.script:11563-11614). The integer floor() is
+	# load-bearing: vision 0/1/3/8 -> 20/24/32/52.
+	if str(e.get("sid", "")).to_lower() == "fogreveal" or bool(e.get("fogreveal", false)):
+		# TProj(pproj).dx is set to the caller radius at creation
+		# (misc.script:5942); any absent dx is 0 + ErrorLog in the donor.
+		return int(floor(float(e.get("dx", e.get("r", 0.0)))))
+	if not _is_fow_viewer_entity(e):
+		return 0
+	var def: Variant = e.get("def", {})
+	if not (def is Dictionary) or not (def as Dictionary).has("vision"):
+		# [U] F1-GRID — port data.gd has no per-sid integer `vision` field yet.
+		# Never invent one: the donor vision=0 row (res=20) is the loaded law.
+		# IMPL-FOG-HUD's report carries the exact data.gd patch to close this.
+		return int(floor(DONOR_VISION_BASE))
+	var vision := int((def as Dictionary).get("vision", 0))
+	return int(floor(DONOR_VISION_BASE + DONOR_VISION_PER_POINT * float(vision)))
+
+
+func _vision_radius_m(res: int) -> float:
+	# [U] F1-GRID — the donor unit of `res` (FOW cell vs world metre) is
+	# engine-defined and no readable text gives the cell size. 1 res = 1 port
+	# metre is a PROVISIONAL grid driver ONLY, NOT a donor claim. Experiment
+	# F1-GRID (DEC-U §1.4) fits the true scale by dumping GetFOWLOSData along a
+	# transect for known vision values; no combine/occlusion rule is assumed.
+	return float(res)
+
+
+func get_fog_reveal(px: float, pz: float) -> int:
+	# _misc_GetFogReveal (misc.script:5901-5916): px/pz epsilon scan. Godot's
+	# is_equal_approx is used so NO donor epsilon literal is invented.
+	for i in fog_reveals.size():
+		var r: Dictionary = fog_reveals[i]
+		if is_equal_approx(float(r.get("px", INF)), px) and is_equal_approx(float(r.get("pz", INF)), pz):
+			return i
+	return -1
+
+
+func get_or_create_fog_reveal(px: float, pz: float, radius: float) -> Dictionary:
+	# _misc_GetOrCreateFogReveal (misc.script:5918-5944): reuse by px/pz, else
+	# CreatePlayerGameObjectHandleByHandle(miscPlHnd,'misc','fogreveal',px,
+	# RayCastHeight,pz) + AddFOWObjects + visible=False + TProj.px/pz/dx.
+	# The port has no engine object table; the tag-109 record IS the object.
+	var i := get_fog_reveal(px, pz)
+	if i >= 0:
+		return fog_reveals[i]
+	var o := {"px": px, "pz": pz, "dx": radius, "tag": DONOR_FOGREVEAL_TAG}
+	fog_reveals.append(o)
+	rebuild_fow_full()  # scenario.script:1862 — if GetFOWEnable then FOWBuildFull
+	return o
+
+
+func remove_fog_reveal(px: float, pz: float) -> bool:
+	# _misc_RemoveFogReveal (misc.script:5883-5897): destroy first tag-109 match.
+	var i := get_fog_reveal(px, pz)
+	if i < 0:
+		return false
+	fog_reveals.remove_at(i)
+	rebuild_fow_full()  # same FOWBuildFull call as the scenario trigger
+	return true
+
+
+func rebuild_fow_full() -> void:
+	# FOWBuildFull (scenario.script:1862): force a full recompute next tick,
+	# bypassing the `_fog_tick % 6` / movement change gate.
+	_fog_tick += 1
+	_fog_timer = 0.0
+	_fog_last_pos.clear()
+	_fog_unit_count = -1
+	_update_fog()
+
+
+func los_at(pos: Vector2) -> int:
+	# GetFOWLOSData(x,z). [U] F1-GRID: grid quantisation / combine / occlusion
+	# are not statically known; this reads the SAME port grid the reveal pass
+	# writes, so picking and tint use one source of truth.
+	if not _fow_enabled or not _built:
+		return 1
+	if game == null or not game.has_method("tile_of"):
+		return 1
+	var t: Vector2i = game.tile_of(pos)
+	if t.x < 0 or t.y < 0 or t.x >= _map_w or t.y >= _map_h:
+		return 0
+	return int(fog_vis[t.y * _map_w + t.x])
+
+
+func is_visible_at(pos: Vector2) -> bool:
+	# control.script:270-273 and gui.script:3479-3490:
+	# bVisible := (not GetFOWEnable) or (GetFOWLOSData(x,z) > 0).
+	return (not _fow_enabled) or los_at(pos) > 0
+

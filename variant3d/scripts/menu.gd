@@ -7,6 +7,12 @@
 # the port's skirmish map, because the .map heightmap has no public spec.
 # NOTE: no class_name here on purpose - main.gd loads this via preload so
 # headless test runs never depend on the editor's global class cache.
+#
+# SETTINGS-LABEL telemetry (SETTINGS-PERSIST §7.6, POLICY AUDIT §1 P1/§8 C1):
+# visual_parity_claim=false. Labels only; no default/key/value changed; the
+# preserve-only config.json / config_donor_capture.json were never written.
+# Unresolved 7 [U] items (§6): U-S1 + U-SP1..U-SP6 — OWNER paired runs only,
+# zero-mismatch x3 each. None claimed passed; no criterion weakened here.
 extends CanvasLayer
 
 signal chosen(cfg: Dictionary)
@@ -44,7 +50,10 @@ var start_resources := "normal"  # Normal | Rich | Thousands | Millions | Random
 # labels are defined once in the helpers below.
 var balloon := "default"
 var cannons := "default"
-var peace_time := 0
+# [O] PERSISTED AS INDEX (SETTINGS-PERSIST §3.3/§5, EV-SP-06): the donor writes
+# this raw tag into custommap on Start only; minutes->seconds is a GEN-TIME
+# conversion (lib/misc.script:4281), NEVER the persisted form (§1/§2/§4.4).
+var peace_time := 0  # donor INDEX TAG (eventcustomgame.inc:79); 0=no peace, never minutes
 var century18 := "default"
 var capture := "default"
 var market_dip := "default"
@@ -220,12 +229,37 @@ func _relief_types() -> Array:
 		"plateaus": "Plateaus", "random": "Random"}
 	return _donor_items(Data.DONOR_RELIEF.keys(), labels)
 
+# [O] DEC-U-MENU-PEACE §3.2 / data/gui/menu.inc/showcustomgame.inc:1126-1150:
+# the lobby walks enum i=0..9 and inserts tag 11 (_15) directly after tag 1
+# (_10). Tag 10 (_reserved) is never added. Labels are verbatim from
+# data/locale/en/gui.txt:555-575; "id" is the DONOR INDEX TAG written by
+# eventcustomgame.inc:79, NOT a minute count. Iterating DONOR_PEACE_TIMES
+# values previously hit int(null) on the reserved slot (F-NULL crash).
 func _peace_items() -> Array:
+	var order := [0, 1, 11, 2, 3, 4, 5, 6, 7, 8, 9]  # §3.2 display order; 10 skipped
+	var labels := {
+		0: "No Peace Time", 1: "10 min", 11: "15 min", 2: "20 min", 3: "30 min",
+		4: "45 min", 5: "60 min", 6: "1.5 hours", 7: "2 hours", 8: "3 hours", 9: "4 hours",
+	}
 	var out := []
-	for m in Data.DONOR_PEACE_TIMES:
-		out.append({"id": str(m), "name": "No" if int(m) == 0 else "%d min" % int(m)})
+	for tag in order:
+		out.append({"id": str(tag), "name": labels[tag]})
 	return out
 
+# [O] DEC-U-MENU-PEACE §4.3 / dogenerate.inc:2060: gbool_peacemode :=
+# (peacetime <> _default); only tag 0 ("No Peace Time") means no peace.
+# [O] §1.2 / misc.script:4278-4279: unmapped/reserved indices -> 0.
+func _peace_tag(id: String) -> int:
+	var tag := int(id)
+	# Index 10 is deliberately absent from the donor seconds table.
+	if not Data.DONOR_PEACE_TIME_INDEX_SECONDS.has(tag):
+		tag = 0
+	return tag
+
+# [O] SETTINGS-PERSIST §5 / dmscript.global:1089-1098: "limit" is the POP CAP
+# index 0-8 -> 500/750/1000/1500/2200/3000/5000/8000, NOT a score or time limit.
+# Victory/score have NO donor key (C1 PORT EXTENSION, POLICY AUDIT §1 P1); the
+# stored index and all labels below stay byte-identical.
 func _pop_items() -> Array:
 	var out := []
 	for n in Data.DONOR_POP_LIMITS:
@@ -737,7 +771,9 @@ func _show_skirmish() -> void:
 	options_body.add_child(_opt_row("Cannons", _donor_items(Data.DONOR_CANNONS,
 		{"default": "Default", "no_cannons_towers_walls": "No Cannons Towers Walls", "expensive_cannons": "Expensive Cannons"}),
 		cannons, func(id: String): cannons = id))
-	options_body.add_child(_opt_row("Peace time", _peace_items(), str(peace_time), func(id: String): peace_time = int(id)))
+	# [O] persisted as the raw donor INDEX tag (SETTINGS-PERSIST §3.3/§5);
+	# _peace_tag stores the tag, not minutes/seconds — conversion is gen-time only.
+	options_body.add_child(_opt_row("Peace time", _peace_items(), str(peace_time), func(id: String): peace_time = _peace_tag(id)))
 	options_body.add_child(_opt_row("18th century", _donor_items(Data.DONOR_CENTURY18,
 		{"default": "Default", "never": "Never", "immediately": "Immediately"}),
 		century18, func(id: String): century18 = id))
@@ -942,9 +978,22 @@ func _emit_start(descr: String) -> void:
 		"difficulty": difficulty, "map_size": map_size, "seed": seed_val,
 		# OWNER-SPEC full donor serialized struct (miscext2.script). Legacy keys
 		# above are kept for old callers; main.gd prefers these canonical keys.
+		# AI/MAP PERSISTENCE [O]/[U] (SETTINGS-PERSIST §3.3/§5, EV-SP-06): these
+		# keys mirror the donor TMap snapshot written on Start -> custommap (gen 8
+		# + additional 13 + players[] + header, randkey0/1=0); struct shape and
+		# write trigger are donor-grounded [O] (classes.script:58-113,
+		# eventcustomgame.inc:123-147, :320-391). [U] native store file bytes and
+		# exit flush are engine natives (EV-SP-14, U-SP5); persistence stays
+		# UNVERIFIED pending the OWNER paired runs U-SP3 (AI) / U-SP4 (map),
+		# zero-mismatch x3. No parity claim; every key/id kept byte-identical.
 		"terraintype": terrain_type, "relieftype": relief,
 		"resourcestart": start_resources, "resourcemines": richness,
 		"mapsize": map_size, "startingunits": start_option,
+		# [O] DEC-U-MENU-PEACE §4.1 / eventcustomgame.inc:79 and §5 / miscext2.script:2375:
+		# "peacetime" carries the DONOR INDEX TAG raw. main.gd/config.gd convert
+		# the minute arm to seconds (misc.script:4281); never emit minutes here.
+		# [O] PERSISTED AS INDEX (SETTINGS-PERSIST §3.3/§5): this tag is what the
+		# donor writes into custommap on Start only; seconds are never persisted.
 		"balloon": balloon, "cannons": cannons, "peacetime": peace_time,
 		"century18": century18, "capture": capture, "marketdip": market_dip,
 		"autosave": autosave, "limit": pop_limit,

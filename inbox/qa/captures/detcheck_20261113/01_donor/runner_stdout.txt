@@ -1,0 +1,2 @@
+[runner] ticket 118 'acapt-detcheck-donor' START (waited 0.00s)
+[runner] ticket 118 'acapt-detcheck-donor' END ok (run 44.73s)

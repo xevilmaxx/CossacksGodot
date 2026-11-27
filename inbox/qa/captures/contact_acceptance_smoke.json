@@ -1,0 +1,99 @@
+{
+  "backend": "Pillow",
+  "image": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\contact_acceptance_smoke.png",
+  "note": "Presentation only. A contact sheet and metrics alone never constitute donor parity; parity=UNVERIFIED.",
+  "resample_filter": null,
+  "rescale_requested": false,
+  "rescale_target": null,
+  "sheet_size": [
+    4108,
+    4184
+  ],
+  "tiles": [
+    {
+      "box": [
+        4,
+        56,
+        1280,
+        720
+      ],
+      "exact_pixels_preserved": true,
+      "label": "cap_arrayatlas.png 1280x720 e927d22e6d7e",
+      "placed_size": [
+        1280,
+        720
+      ],
+      "rescaled": false,
+      "source": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\cap_arrayatlas.png",
+      "source_sha256": "e927d22e6d7e4324ad115ca85f37989a3ac01a992c11d0fd5586e0ab43705fd1",
+      "source_size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "box": [
+        2056,
+        56,
+        1280,
+        720
+      ],
+      "exact_pixels_preserved": true,
+      "label": "cap_millsow.png 1280x720 08b17f005690",
+      "placed_size": [
+        1280,
+        720
+      ],
+      "rescaled": false,
+      "source": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\cap_millsow.png",
+      "source_sha256": "08b17f00569087a621c27b2f7ffee721e249d2bae216f99a3f36936ad0bad618",
+      "source_size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "box": [
+        4,
+        2132,
+        1280,
+        720
+      ],
+      "exact_pixels_preserved": true,
+      "label": "cap_nationmove.png 1280x720 3a3b1548bb69",
+      "placed_size": [
+        1280,
+        720
+      ],
+      "rescaled": false,
+      "source": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\cap_nationmove.png",
+      "source_sha256": "3a3b1548bb694d9444c806b21e8dd38fe2e10ea1e0bbb8e6c94fc9179154cf1f",
+      "source_size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "box": [
+        2056,
+        2132,
+        2048,
+        2048
+      ],
+      "exact_pixels_preserved": true,
+      "label": "map_overview_waterfix.png 2048x2048 9d00f849c374",
+      "placed_size": [
+        2048,
+        2048
+      ],
+      "rescaled": false,
+      "source": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\map_overview_waterfix.png",
+      "source_sha256": "9d00f849c374fc1b1f01313c4a3c47db53c0bc65f5a0261698400964864d6965",
+      "source_size": [
+        2048,
+        2048
+      ]
+    }
+  ],
+  "tool": "contact_sheet.py"
+}

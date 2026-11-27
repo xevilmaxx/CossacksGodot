@@ -397,3 +397,67 @@ All of §9 is `PORT APPROXIMATION` / port-internal. The captures prove only that
 
 *End of §9.17.*
 
+### 9.18 COORD — full-port decomp closeout, exact donor-law implementation, acceptance harness (2026-11-26)
+
+> **PORT APPROXIMATION — candidate snapshots only; donor parity UNVERIFIED.**
+
+- **[O] Residual decomp landed.** `DEC_U_scenecolor_glstate.md` (`sceneColor=(0.2,0.2,0.2,1)` @0x8f58dc, GL_LIGHT_MODEL_TWO_SIDE=0x0B52 startup GL_FALSE), `DEC_U_alpha_pass_quad.md` (GL_ALPHA_TEST enable at 0x4ef97d/0x4ef987 via cached `sub_88f0f0`, one display list per cell, exact 0x48→0x50 quad record, `tiaAlphaFromIntensity=1` only), `DEC_U_water_runtime.md` + `DEC_U_water_fbo.md` (sampler/matrix sites [O], texture provenance [U] with GL-capture tests), `DEC_U_entities_art_collision.md`, `DEC_U_aaf_art_audit.md` (66 shipped skins, donor art present), `DEC_U_skirmish.md` + `DEC_U_skirmish_impl_patch.md` + `DEC_U_skirmish_tables.md`, `DEC_U_fog_camera_hud.md`, `DEC_U_gen_seed.md`.
+- **[O] Exact donor laws implemented.** Terrain renderer binds `sceneColor=0.2`, GL-state/blend telemetry and quad-record map; skirmish has famine/market/RNG/capture/camera/tick laws plus 78 weapon rows, 33 protection rows, `_misc_DoDamage` and start tables; collision callers, donor vision/cadence/pick-priority/minimap/camera pins; AAF export 8→40 actions across 66 sids (6.51 MB); donor ghost/rally/FX art derived and wired. All still-[U] items carry explicit capture experiments; no invented constants.
+- **[O] Static gates.** All 18 edited GDScript files pass `--check-only`; `game.gd:314` parse error from the skirmish worker fixed by COORD; acceptance tools (`variant3d/tools/acceptance/`) pass `py_compile`, a 4-frame contact sheet and a zero-MAE self-comparison that still prints `parity=UNVERIFIED`.
+- **[O] MCP protocol verified live.** `cossacksgodotmcp` handshake checked against the running Godot host: `initialize` 200 with integer id echo, requested protocol `2025-03-26` echoed, `serverInfo.name=cossacksgodotmcp`, 6 `tools/list` schemas, `notifications/initialized` and `GET /mcp` 202 empty, strict `game.tick {}` refusal with exact reason. Host now listens BEFORE the donor-240 map build so the port is never dead during multi-minute terrain generation; live play tools return exact `game not initialized` until boot completes.
+- **[O] MCP host fully verified live (QA 64×64 donor-backend map).** All six tools exercised: `game.status` (map 64×64, 19 entities, seed 20261113), `game.tick` (0.5 s advance), `camera.pan_to`, `game.screenshot` (1280×720 PNG, valid signature, 933 KB), `game.place_building` (invalid `cen` refused with exact reason; `mil` succeeded `site_id=246`), `video.record_frames` (4 PNG frames). Boot fixes: early-listen, explicit `--screenshot` (user args are a copy), `Data.set_render_mode()` static setter, `data.gd:1106` scope bug, FX ghost declarations + `Mesh.ARRAY_TEX_UV`/`deg_to_rad`. QA map config is a temp file, NOT a parity artifact.
+- **[O] Fresh full-port capture/sequence.** `cap_fullport6.png` (seed 20261113, donor backend, 1280×720) renders buildings/units cleanly; only error is the expected U12 water hard-fail (no reflection texture provenance, no grey fallback). Sequential harness produced 3 frames in `inbox/qa/captures/fullport6_seq2_20261113/` with manifest and labelled contact sheet; `capture_sequence.py` `seq_seconds` KeyError fixed. All outputs print `parity=UNVERIFIED`.
+- **[O] Latest full-size snapshot:** `cap_fullport7.png` (seed 20261113, donor backend) renders buildings/units cleanly; the only error is the now-explicit water `[U4*]` gate (no scalar source captured → no water, no grey fallback). Unit-test gates are not the acceptance path.
+- **[U] Runtime verification pending.** No donor GPU A/B frame under the read-only rule. `RESULT IS NOT GOOD` while `blocking_unverified` is non-empty.
+
+*End of §9.18.*
+
+### 9.19 COORD — residual donor-law closeout continues (2026-11-26)
+
+> **PORT APPROXIMATION — candidate snapshots only; donor parity UNVERIFIED.**
+
+- **[O] Residual law reports landed since §9.18:** renderer material/light slots, water mesh UV/hmap/time, save float/bits/container, full vision table, collision radius/mask census, weapon 77+1/protection 33/12 shield rows + mounts, ghost blink, minimap tail, death families + smoke/explosion/sound, PFX time law, AAF trigger/completion, AI thresholds, fog grid, camera projection/native GL path, tick order/native driver, victory/start/queue, market tail, damage height/dispersion, RNG ledger, place rules, peace menu, friendly-fire/PredictShot, water GPU capture plan. Each report gives file:line evidence, labelled `[U]` residuals with zero-mismatch experiments, and no parity claim.
+- **[O] Implementation lanes landed:** exact rows/telemetry in `data.gd`/`game.gd`/`ai.gd`/`anim3d.gd`/`world3d_fx.gd`/`world3d_entities.gd`/terrain gen/inputs, donor ghost/rally/FX/death art, 12-family death meshes, AAF 8→40 action export, MCP host fixes. All edited GDScript re-parsed after each major batch; `cap_fullport6.png` + 3-frame sequence with manifest/contact sheet are clean apart from the expected U12 water hard-fail.
+- **[DONE] MCP host `cossacksgodotmcp`:** protocol + all six tools verified live on a QA 64×64 donor-backend map (temporary config, not a parity artifact). Root causes fixed: early-listen, explicit `--screenshot`, static-var setter, `data.gd` scope bug, FX declarations/Godot 4 APIs, acceptance `seq_seconds`.
+- **[U] Largest remaining blockers:** water U1/U12 (no reflection texture provenance → no water drawn), FOW grid/occlusion, native player tick interleave, animation blend operator, save transform/checksum, true donor GPU A/B frame. `RESULT IS NOT GOOD` while `blocking_unverified` is non-empty.
+
+*End of §9.19.*
+
+### 9.20 COORD — full donor-law closeout continues (2026-11-26)
+
+> **PORT APPROXIMATION — candidate snapshots only; donor parity UNVERIFIED.**
+
+- **[O] Major corrections landed:** tool attach premise REFUTED (7 tool `.oss` exist → 63 derived skins + 3D attach wiring), team-win is donor-verbatim `_misc_CheckEndGame`, capture has NO progress/majority/cooldown (first passing tick flips ownership), movement speeds defined-but-dead (live 1), `[*] = ;` is a section container (AI ladders ship enabled), FOWColor engine-default-only with no readable tint literals. (Point-in-time §9.20 note: camera focus later superseded — donor start-derived wire found at `doprogress.inc:41`, implemented 2D+3D; height/zoom derivation still `[U]`.)
+- **[O] Exact laws implemented:** RNG S-stream/S0–S4/X21, tick deadlines/cadences, market rational cost-push + 3 delivery sites + resonlife, carry full-load credit/fisher tick, order merge/cancel/accumulation, peace indices/60× fix, upgrades/mount/shield/protection rows, death families/ghost blink/PFX timing/tool attach/state map. Preserve-only configs untouched (`config.json`, `config_donor_capture.json`, `assets/models/manifest.json` hashes recorded).
+- **[DONE] Verification:** MCP host all 6 tools live; `cap_fullport6.png` / `cap_fullport7.png` + 3-frame seq + contact sheet; acceptance protocol `PORT1TO1_acceptance_plan.md` with 12 donor timestamps/ROIs and 8 UNVERIFIED conditions. Every edited GDScript re-parsed after each batch; one tool-helper name collision fixed.
+- **[U] P0 blockers unchanged:** water U12/U4* (no donor GL capture → no water drawn), FOW grid/occlusion, native tick interleave, animation blend curve, save container/transform, RNG stream split, plus selection/projection. `RESULT IS NOT GOOD` while `blocking_unverified` is non-empty.
+
+*End of §9.20.*
+
+### 9.21 COORD — acceptance infrastructure and final guard (2026-11-26)
+
+> **PORT APPROXIMATION — candidate snapshots only; donor parity UNVERIFIED.**
+
+- **[O] Deterministic capture mode landed:** opt-in `--deterministic-capture --capture-ticks N` in `main.gd` + `capture_sequence.py`, fixed `1/32` ticks, authoritative `capture_view3d`, 1280×720 asserts, no CPU fallback, audio seed in manifest; I11 seam and both config hashes unchanged. Fresh `cap_fullport8.png` renders clean apart from the deliberate water U4* hard-fail.
+- **[O] Acceptance evidence:** `PORT1TO1_roi_register.md` (14 verified donor ROIs + NO-ROI table), `PORT1TO1_roi_metrics.md` (14/14 comparisons executed, all `parity=UNVERIFIED`, 0 refusals), `PORT1TO1_owner_decisions.md` (P0/P1 experiments + preserve-only hashes), `PORT1TO1_parity_chain.md` (**0 of 6 conditions closed**), `PORT1TO1_gate_audit.md` (no gate/metric promotes parity; 575/582/585 owner-only unacked) and `PORT1TO1_ack_evidence.md` (owner-optional commands, ack ≠ pass).
+- **[O] Latest exact law corrections:** capture has no progress/cooldown (first passing tick flips ownership), team setup is donor-verbatim SetupTeams/FFA, famine default `bFamine=true`, audio clip-pick uses Delphi G stream with zero pitch/pan RNG, P0 fisher replay RNG fixed to seeded `sim_rng`, donor death art/TTLs recovered, gamma numerics data-only `[U]`.
+- **[O] Port-internal replay demonstrated:** two deterministic capture runs (`inbox/qa/captures/detcheck_20261113/` and `detcheck2_20261113/`, seed 20261113, 64 ticks, 1280×720) produced byte-identical per-frame `sha256_pixels` (`def18ad9…`, `18e1e72…`). This validates the opt-in mode only; it does NOT close donor A/B, camera match, or any `[U]`.
+- **[O] Repeatability gate live:** `--verify-repeat` in `capture_sequence.py` ran two real Godot captures (`repcheck_20261113`, 64 ticks/2 frames) and reported `byte_identical=TRUE`; this is port-internal repeatability only, not donor parity.
+- **[U] Guard unchanged:** no donor GPU A/B frame may be produced under read-only rule; camera match V1/V2 open; water U12/U4*, FOW grid, tick interleave, blend, save container, RNG split remain. `RESULT IS NOT GOOD` while `blocking_unverified` is non-empty.
+
+*End of §9.21.*
+
+### 9.22 COORD — final sign-off state (2026-11-27)
+
+> **PORT APPROXIMATION — donor parity UNVERIFIED.**
+
+- **[O] All implementation/audit lanes complete (point-in-time §9.22).** Plan snapshot at 186 tasks; the current plan is 260+ sequential tasks with the same final state — all worker lanes DONE, only the owner-gated P0 experiments and final review outstanding. Every edited GDScript re-parsed; `py_compile` 6/6 on the P-9 tool set.
+- **[O] Identity hygiene adjudicated:** four `decode_*.py` prefixes differ from old V90/V102 records but `git diff` shows those files byte-identical to HEAD — recorded prefixes are stale, not tampering; no re-baseline/revert needed. Only `config_donor_capture.json` has a recorded baseline and still matches; `config.json` and `manifest.json` are point-in-time hashes with no earlier baseline to certify against.
+- **[O] Final verdict artifacts:** `PORT1TO1_owner_brief.md`, `PORT1TO1_p0_packet_index.md`, `PORT1TO1_hash_manifest.md`, `PORT1TO1_final_gates.md`, `PORT1TO1_claim_final.md`, `PORT1TO1_decision_sim.md`, `PORT1TO1_handoff_checklist.md`. P0 consistency fixes applied to the water packet; most misread-risk labels tightened, with residual gaps logged in `PORT1TO1_claim_recheck6.md`/`claim_recheck7.md` (later fixed where source-side).
+- **[O] Post-label pixel confirmation:** `finalcheck_20261127` and `finalcheck2_20261127` produced identical `sha256_pixels` (`def18ad9…`, `18e1e72…`) after the last label-only edits — final label work has zero pixel effect. Internal repeatability only, never donor parity.
+- **[O] MCP host re-verified on final tree:** protocol handshake (int id echo, `2025-03-26`, 6 schemas, notification/GET 202) and all 6 tools exercised live on the QA 64×64 donor-backend map after the last source edits; valid PNG image block and exact `isError` reason for invalid sid retained. Host stopped; Godot lock free.
+- **[U] Plain screenshot caveat recorded:** `cap_fullport8.png` vs `cap_fullport9.png` (same seed/config, plain `--screenshot --screenshot-frames 10`) differ in raw pixel SHA-256 (`68e55b31…` vs `c0060313…`). This is EXPECTED — plain capture is frame-paced; only opt-in `--deterministic-capture --capture-ticks N` is the byte-identical evidence path. No donor implication; do not cite plain snapshots as replay proof.
+- **[U] Final state:** plan task 186 (final owner review) is marked **BLOCKED**, not TODO — it requires an owner-authorized matched donor GPU A/B frame + camera manifest. Parity `UNVERIFIED`, `parity.claim=NONE`, six-condition chain 0/6 (condition 6 PARTIAL port-internal repeatability), 9 P0 rows open, tickets 575/582/585 unacked (owner-only). **`RESULT IS NOT GOOD`** while `blocking_unverified` is non-empty.
+
+*End of §9.22.*
+

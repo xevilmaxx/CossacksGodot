@@ -5,8 +5,22 @@ class_name C3AI
 const Data = preload("res://scripts/data.gd")
 const C3ConfigScript = preload("res://scripts/config.gd")
 
+# RESOLVED donor cadence [O] — DEC_U_tick_order.md §2.3/§2.4: pai:6 / dg:1486
+# (ProgressAI 2.4 s) and peco:3896-3901 / dg:1487 (seed wheat 60.0+plInd*3).
+# Both ride the SAME absolute-deadline gate primitive (squad.script:754-782),
+# implemented once in game.gd `_check_progress_lasttime_and_increase`; the
+# per-player deadline fields are initialised in game.gd `new_player` as
+# id*0.25 + interval (player.script:131-141). NO PARITY CLAIM: the plInd
+# driver, firing rate and global stage interleave stay [U] (§5 U-O1a/b/c).
+const _TICK_AI_S := 2.4
+const _TICK_SEED_S := 60.0
+const _TICK_SEED_SLOT_S := 3.0
+
 var game: C3Game
 var player: int
+# Retained (unused) for v5 save/config compatibility — the donor 2.4 s
+# absolute-deadline gate below replaces this 1.0 s accumulator as the firing
+# law; Data.AI_THINK_INTERVAL is still consumed by retreat_t (ai.gd:863).
 var think_t := 0.0
 var wave := 0
 var raid_ids: Array = []
@@ -70,10 +84,15 @@ func tick(dt: float) -> void:
 	# T6-W24: accumulate every fixed step, not only think ticks, so the 8 s
 	# donor-style battle interval stays exact and replay-stable.
 	wave_cd = maxf(0.0, wave_cd - dt)
-	think_t -= dt
-	if think_t > 0.0:
+	# RESOLVED donor ProgressAI entry gate [O] (pai:6-18,
+	# squad.script:754-782): CheckProgressLastTimeAndIncrease(
+	# lastprogressaitime, 2, 2.4). Absolute deadline + exact-float cross-player
+	# veto, NOT a countdown. Port has no adviser state, so the pai:11-16
+	# adviser-only else branch is inert; the implicit return is the donor
+	# `SwitchTo('Progress')` (pai:18). Needs bexists (pai:5) — AI brains only
+	# exist for live AI slots here. NO PARITY CLAIM; §5 U-O6 harness.
+	if not game._check_progress_lasttime_and_increase(player, 2, _TICK_AI_S):
 		return
-	think_t = Data.AI_THINK_INTERVAL
 	ai_tier = _tier()
 	# T-PERF-SIM: invalidate the per-tick deposit cache.
 	_dep_cache.clear()
@@ -111,6 +130,10 @@ func tick(dt: float) -> void:
 	_build(res, counts, fin, home, p)
 	_resume(peasants)
 	_economy(peasants, res, p, counts, fin)
+	# Donor Econ sub-stage: _ai_DoSeedWheat on the itype-3 absolute deadline.
+	# Placed after _economy so the gate fires even when _economy early-returns
+	# on zero peasants; no new interleave is invented inside the AI body.
+	_seed_wheat(p)
 	_research(res, fin)
 	_train(peasants, military, res, counts, fin, p)
 	_form_squads(military)
@@ -245,6 +268,23 @@ func _trace(res: Dictionary, p: Dictionary, peasants: Array, military: Array, fi
 		"fields": alive_fields, "fields_depleted": depleted_fields,
 	}
 	print("C3AITrace ", JSON.stringify(row))
+
+# RESOLVED donor seed-wheat gate [O] (progresseconomicai.inc:3896-3901,
+# dmscript.global:1487; itype 3, squad.script:754-782):
+#   if bprocess and CheckProgressLastTimeAndIncrease(lastseedwheattime, 3,
+#                                                      60.0+plInd*3) then _ai_DoSeedWheat.
+# Absolute deadline (init id*0.25+60.0 in game.new_player) + exact-float
+# cross-player veto, NOT the removed global 60 s port timer. The port sow body
+# is game._sow_field_ring (the donor mill/field geometry is already landed in
+# game.gd X22 §4.2); `_demo_mill_enabled` is a protected user mod, kept.
+# NO PARITY CLAIM; §5 U-O5 veto harness covers all four itypes.
+func _seed_wheat(p: Dictionary) -> void:
+	var add: float = _TICK_SEED_S + float(player) * _TICK_SEED_SLOT_S
+	if not game._check_progress_lasttime_and_increase(player, 3, add):
+		return
+	for b in game.buildings_of(player, false):
+		if b.sid == "mil" and b.finished:
+			game._sow_field_ring(b, game._demo_mill_enabled())
 
 # --- economy: target quotas instead of threshold ping-pong ---
 func _economy(peasants: Array, res: Dictionary, p: Dictionary, counts: Dictionary, fin: Dictionary) -> void:
@@ -911,3 +951,1003 @@ func _waves(military: Array, home: Dictionary, p: Dictionary) -> void:
 	if sortied:
 		wave += 1
 		wave_cd = 8.0
+
+# =============================================================================
+# DEC-U-AI-THRESHOLDS :: DONOR-TEXT DATA ANNEX (impl worker IMPL-AI-THRESHOLDS)
+# -----------------------------------------------------------------------------
+# Sole source: docs/terrain_swarm_2026-11-26/reports/DEC_U_ai_thresholds.md §1-§9.
+# Every donor pass pinned t_87f0f3c130b0 (cossacks.exe, 5,768,048 B,
+# sha256 87f0...4e16c); donor read-only, never executed. NO PARITY CLAIM.
+#
+# ACTIVATION CAVEAT (report header, preserved verbatim in intent): every
+# progresseconomicai.inc / progresswarai.inc / progress.inc / progressai.inc
+# line recovered here is stored donor-side as a `[*] = ;`-prefixed text line.
+# Its literal is [O]-TEXT; engine execution of the AI state machine is [U] until
+# the `[*]` binding is proven (U-A6). gAIConst / TAIConst rows (classes.script)
+# and the guard sampler (unit.script) are [LIVE] donor code, not `[*]`-text.
+# NOTHING in this annex is read by tick(), _build(), _train() or _waves(). It is
+# inert labelled data: no behaviour is activated, no existing law is retuned.
+# Wiring any row into runtime is a separate owner-authorised pass that must wait
+# for U-A1..U-A8 (see DONOR_U_EXPERIMENTS below).
+#
+# LABELS: [O] verbatim donor literal (file:line) | [D] deterministic derivation
+#   from [O] | [I] inference, flagged | [U] UNVERIFIED, exact experiment given |
+#   [LIVE] donor live code | [DONOR-TEXT] `[*] = ;` literal, execution [U] |
+#   [PORT APPROXIMATION] pre-existing port estimate, deliberately unchanged.
+# dg = data/scripts/dmscript.global; cls = data/scripts/lib/classes.script;
+# pwar = data/scripts/units/global.inc/progresswarai.inc;
+# peco = .../progresseconomicai.inc; progr = .../progress.inc;
+# pai = .../progressai.inc; us = data/scripts/lib/unit.script.
+# =============================================================================
+
+# §1 dmscript.global — player/squad frame and combat literals [O]/[D].
+const DONOR_DM_FRAME := {
+	"gc_MaxPlayerCount": 12, # dg:97 [O]
+	"gc_player_SquadMoveTick": 10, # dg:155 [O]
+	"gc_player_SquadDismissPercent": 0.25, # dg:156 [O] -> count < basecount*0.25
+	"gc_squad_holdmode_time_s": 37.5, # dg:180 [O] 150*8*gc_frames_to_time(0.03125) = 37.5 [D]
+	"gc_MaxGuardOrderCount": 2, # dg:158 [O]
+	"gc_MaxBuilderCount": 30, # dg:159 [O]
+	"gc_BuilderDist": 1.0, # dg:160 [O]
+	"gc_BuilderShift": 0.5, # dg:161 [O]
+	"officersearchradius_tiles": 24, # dg:205 [O] 1280/gc_pixels_to_tile = 24 [D]
+	"officersearchradius_m": 48.0, # dg:205 [D] 24 tiles x 2 m
+	"gc_gameplay_findminepositionradius": 1.5, # dg:206 [O]
+	"gc_gameplay_resourceDropRadius": 3, # dg:210 [O]
+	"gc_gameplay_repairhp": 20, # dg:211 [O]
+	"gc_gameplay_maxplayersquadcount": 500, # dg:212 [O]
+	"gc_gameplay_meleeguardmaxsearchdist": 2.5, # dg:215 [O]
+	"maxattackers_none": 4, # dg:222 [O]
+	"maxattackers_food": 3, # dg:223 [O]
+	"maxattackers_wood": 2, # dg:224 [O]
+	"maxattackers_stone": 3, # dg:225 [O]
+	"gc_formation_maxcount": 160, # dg:166-168 [O]
+	"gc_formation_mask": [54, 24], # dg:166-168 [O]
+}
+
+# §1 dmscript.global — resource / era / difficulty declarations [O]/[D].
+const DONOR_DM_ECON := {
+	"hitsneeded_food": 22, # dg:799 [O]
+	"hitsneeded_wood": 14, # dg:800 [O]
+	"hitsneeded_stone": 20, # dg:801 [O]
+	"obj_resource_portion_food": 45, # dg:804 [O]
+	"obj_resource_portion_wood": 28, # dg:805 [O]
+	"obj_resource_portion_stone": 40, # dg:806 [O]
+	"gc_obj_foodperunit": 30, # dg:808 [O]
+	"gc_economy_exp": 0.00002, # dg:810 [O]
+	"gc_economy_time": 0.0032, # dg:811 [O] 0.0001*32 [D]
+	"era_food_wood_stone": [0, 1, 2], # dg:484-506 [O]
+	"mercenary_index": 11, # dg:776-786 [O] gc_MaxPlayerCount-1
+	"victorystate_none_win_lose": [0, 1, 2], # dg:776-786 [O]
+	"difficulty_easy_normal_hard_veryhard_impossible": [0, 1, 2, 3, 4], # dg:776-786 [O]
+}
+
+# §1 dmscript.global — AI cadence/distance/radius literals [O]/[D].
+# gc_ai_ScanGridFactor is deliberately NOT a number: it is map-size dependent.
+const DONOR_DM_AI := {
+	"gc_ai_maxupgradelevel": 8, # dg:461 [O]
+	"gc_ai_unit_max_unit": 44, # dg:462 [O]
+	"gc_ai_upgrade_max_types": 64, # dg:463 [O]
+	"gc_ai_max_construction_sites": 12, # dg:464 [O]
+	"gc_ai_UpdateEnemyInfoTick": 200, # dg:465 [O] tick base still [U] (U-A7)
+	"gc_ai_MergeArmyDist": 3, # dg:466 [O]
+	"gc_ai_MergeWaterArmyDist": 5, # dg:467 [O]
+	"gc_ai_MaxNearestArmyDist": -1, # dg:468 [O]
+	"gc_ai_SafePositionDist": 3, # dg:469 [O]
+	"gc_ai_ArcherGridRes": 2, # dg:470 [O]
+	"gc_ai_MaxArcherGridSize": 20, # dg:471 [O]
+	"gc_ai_ArcherArrayFactor": 0.3, # dg:472 [O] 0.6/2 [D]
+	"gc_ai_MaxDiverArmies": 2, # dg:473 [O]
+	"gc_ai_AgressorsCount": 5, # dg:474 [O]
+	"gc_ai_OfficerWaitTime": 20, # dg:475 [O] seconds, normal speed; call-site arithmetic [U] U-A3
+	"gc_ai_GreArmyBattleDist": 2, # dg:476 [O]
+	"gc_ai_ArmyBattleDist": 4, # dg:477 [O]
+	"gc_ai_BitvaInterval": 8, # dg:478 [O] already landed as wave_cd=8.0 (ai.gd:20,913)
+	"gc_ai_CityDangerDist": 20, # dg:479 [O]
+	"gc_ai_MergeArmyCityDist": 25, # dg:480 [O]
+	"gc_ai_MergeApproachDist": 10, # dg:481 [O]
+	"gc_ai_MinStoreHouseDist": 9, # dg:482 [O]
+	"gc_ai_max_guards": 120, # dg:500 [O]
+	"gc_ai_dist_mines_lvl1": 30, # dg:503 [O]
+	"gc_ai_dist_mines_lvl2": 60, # dg:504 [O]
+	"gc_ai_dist_mines_expansion": 85, # dg:506 [O]
+	"gc_unit_runawaydelay": 1.3, # dg:195 [O]
+	"gc_unit_runawaydist": 3.5, # dg:196 [O]
+	"gc_unit_searchvictimattargetdist": 6, # dg:197 [O]
+	"gc_progress_searchenemyweight": 10, # dg:198-200 [O]
+	"gc_ai_ScanGridFactor_expr": "gc_scangrid_countx / 64", # pwar:10 [O] NOT a fixed literal; do not hard-code
+}
+
+# §1 role/army/spec/order enum ranges and the only named order literal in text.
+const DONOR_DM_ROLES := {
+	"gc_ai_unit_range": [0, 54], # dg:341-398 [O]
+	"army_type_range": [0, 15], # dg:403-418 [O]
+	"spec_range": [0, 8], # dg:420-428 [O]
+	"order_range": [0, 8], # dg:430-446 [O]
+	"armyorder_attackwall": 8, # dg:438 [O] no wall-breach priority beyond this enum [U] U-A4
+}
+
+# §2 army-type enum order = scan priority (first fit, ascending i) [D].
+const DONOR_ARMY_TYPE_ORDER: Array = [
+	"lightinf", "shootinf", "fasthorse", "hardhorse", "horseshooter", "cannon",
+	"grenadier", "peasant", "weakunit", "supermortar", "mortar", "archerinf",
+	"galley", "frigate", "battleship", "transport",
+] # cls:403-418,560-576 [O]; order IS priority [D]
+
+# §2 TAIConst live row shapes [LIVE] (gAIConst.Init cls:8101; consumers lib/ai.script:1108,1223,1237).
+const DONOR_TAICONST := {
+	# cls:4784-4799 [O]. Indexed by DONOR_ARMY_TYPE_ORDER.
+	"armyMinCount": [36, 16, 16, 16, 16, 1, 16, 16, 25, 4, 1, 16, 1, 1, 1, 1],
+	# cls:4801-4816 [O]. Identical EXCEPT lightinf 4.
+	"defArmyMinCount": [4, 16, 16, 16, 16, 1, 16, 16, 25, 4, 1, 16, 1, 1, 1, 1],
+	# cls:4818-4833 [O]. Enforced at squad split pwar:708,722 (squad full at >= armyMaxCount[aType]).
+	"armyMaxCount": [256, 256, 256, 256, 256, 36, 256, 16, 256, 256, 36, 256, 1, 1, 1, 1],
+	# cls:4835-4843 [O]: [0]=5, [1]=8, [2]=12, [i>=3]=15; only [0..1] live (MaxDiverArmies=2).
+	"maxDivers": [5, 8, 12, 15],
+	"maxDivers_live_count": 2, # dg:473 [O]
+	"selector": "defenceStage ? defArmyMinCount[i] : armyMinCount[i]", # pwar:565-568 [DONOR-TEXT]
+	"first_fit": "i = 0..15 ascending; first arCount[i] >= minCount wins", # pwar:560-576 [DONOR-TEXT]
+}
+
+# §2-§3 army assembly / retreat / re-engagement [DONOR-TEXT] unless marked [LIVE].
+const DONOR_ARMY_RULES := {
+	"agressor_trigger": "not peacemode and agressorsSent = 0 and agressors.GetCount >= 5", # pwar:3562 [DONOR-TEXT]
+	"agressor_count": 5, # dg:474 / pwar:3562 [O]
+	"agressor_pull": 5, # pwar:3564-3567 [O] exactly 5 units into agressor-spec army
+	"agressor_sent_initial": 0, # pwar:3562 [O]
+	"agressor_sent_reset_in_file": false, # pwar:3564-3567 [D] single first-wave trigger per player
+	"mobilization_min_dist": 50, # pwar:3015 [O] cMobilizationMinDist, nearestEnemyDist in [0,50)
+	"mobilization_units": ["freewarriors", "defenders"], # pwar:3017-3034 [O] ALL of both into agressors
+	"retreat_home_bonus": [[10, 8], [25, 2]], # pwar:2391-2404 [O] dist < band*ScanGridFactor -> myForce *= factor
+	"retreat_cap_unit_count_gt": 200, # pwar:2341-2342 [O]
+	"retreat_cap_force_gt": 3800.0, # pwar:2341-2342 [O]
+	"retreat_cap_force_set": 100000.0, # pwar:2341-2342 [O] unbeatable -> never retreats [D]
+	"retreat_when": "enForce > 0 and enForce > myForce and not isArtOnly", # pwar:2402-2404 [DONOR-TEXT]
+	"battle_window_grenadier": [2, 3], # pwar:2346-2358 [O] rMin/enDist * ScanGridFactor
+	"battle_window_else": [4, 7], # pwar:2346-2358 [O] rMin/enDist * ScanGridFactor
+	"reengagement_s": 8, # pwar:1122,1182 [O] per-army fLastBattleTime, NOT a global wave timer [D]
+	"diver_gate": "aCount < 2 and count > maxDivers[aCount]", # pwar:2973 [DONOR-TEXT]
+	"officer_wait_s": 20, # dg:475 [O]
+	"enemy_info_tick": 200, # dg:465 [O] stale by one window [I], tick base [U] U-A7
+}
+
+# §3 target priority [DONOR-TEXT]. No per-sid preference table exists in donor
+# text; anything beyond these rows is [U] (U-A4), never invented here.
+const DONOR_TARGET := {
+	"scan_order": "army enum 0..15 ascending = first fit, not a weight", # pwar:560-576 [D]
+	"fear_my_force": "squad[0].count", # pwar:2799 [O]
+	"fear_enemy_force_terms": ["cavalry", "infantry", "shooters"], # pwar:2800-2810 [O]
+	"fear_mortars_in_enemy_force": false, # pwar:2810 COMMENT-DISABLED [O]; labelled data, NOT behaviour
+	"fear_dist_lt": 30.0, # pwar:2805 [O] dist < 30 and enForce > myForce -> fear (skip attack)
+	"fear_near_dist_lt": 400.0, # pwar:2812 [O] dist < 400 and enForce <= myForce and dist < nearDist
+	"fear_cell_search_radius": 4, # pwar:2832-2838 [O] _unit_SearchEnemyInCell(go, enX, enY, 4)
+	"fear_fallback_enforce_gt": 6.0, # pwar:2892-2898 [O]
+	"fear_fallback_dist_lt": 40.0, # pwar:2892-2898 [O]
+	"fear_fallback_path": "retreat-to-safe-position", # pwar:2907+ [DONOR-TEXT]
+	"bitva_flag": true, # pwar:1167-1183 [O] bsearchenemy := True on every squad unit
+	"bitva_link": "ArmyBitvaLinkExt", # pwar:1167-1183 [O]
+	"bitva_water_check": "_ai_CheckArmyWaterBitva", # pwar:1127-1130 [O]
+	"radii": { # all [O], see §1 / §3 item 4
+		"CityDangerDist": 20, # dg:479
+		"MergeArmyCityDist": 25, # dg:480
+		"MergeApproachDist": 10, # dg:481
+		"MergeArmyDist": 3, # dg:466
+		"SafePositionDist": 3, # dg:469
+		"MinStoreHouseDist": 9, # dg:482
+		"GreArmyBattleDist": 2, # dg:476
+		"ArmyBattleDist": 4, # dg:477
+		"MaxNearestArmyDist": -1, # dg:468
+	},
+	"archer_grid": {"res": 2, "max_size": 20, "array_factor": 0.3}, # dg:470-472 [O]/[D]
+	"not_in_donor_text": [ # §3 item 5 [U] U-A4 - do not fill with guesses
+		"no per-sid target-preference table",
+		"no building-vs-unit weight",
+		"no wall-breach priority beyond armyorder_attackwall = 8 (dg:438)",
+	],
+}
+
+# §4 resbalance / food / peasant / officer / quota / artillery ladders
+# [DONOR-TEXT] unless marked. All rows stay inert pending U-A1/U-A5.
+const DONOR_ECON := {
+	"food_required_expr": "resbalance[food][0] + (farmused div 350)*5", # peco:971-976 [DONOR-TEXT]
+	"farmused_divisor": 350, # peco:971-976 [O]
+	"farmused_factor": 5, # peco:971-976 [O]
+	"food_modifier_pikeman_upgraded": 1.0, # peco:1992-1996 [O]
+	"food_modifier_other": 1.3, # peco:1992-1996 [O]
+	"pikeman_upgraded_when": {"produced_gt": 20, "upg1_ge": 3, "upg2_ge": 3}, # peco:1991 [O]
+	"peasant_count_thresholds": [30, 45, 85, 120], # peco:1999-2030 [O]
+	"peasant_food_non_rus_pol": [12, 21, 27, 36, 45], # peco:1999-2030 [O]
+	"peasant_food_rus_pol": [16, 24, 31, 40, 49], # peco:1999-2030 [O]
+	"food_override_late": {"center_ge": 3, "ba17_ge": 2, "peacount_gt": 150, "value": 65, "non_millions_only": true}, # peco:2044-2047 [O]
+	"food_override_any_center": {"center_gt": 3, "peacount_gt": 250, "value": 85}, # peco:2064-2067 [O]
+	"food_override_millions": 60, # peco:2076-2080 [O]
+	"wood_stone_split": { # peco:1960-1988 [O]
+		"default": [60, 40],
+		"ukr": [80, 20],
+		"alg_tur_normal_start": [50, 50], # peco:1973-1977 [O]
+		"alg_tur_else": [75, 25],
+		"rus_ba17_ge4_non_millions": [60, 40],
+		"late_center_ge3_ba17_ge2": [50, 50], # peco:2048-2049 [O]
+		"millions": [15, 25], # peco:2078-2080 [O]
+	},
+	"gold_iron_coal_base": [1, 1, 0], # peco:1956-1958 [O]
+	"gold_iron_coal_mid": [7, 1, 1], # peco:2039-2062 [O]
+	"gold_iron_coal_late": [7, 7, 1], # peco:2071-2073 [O] ba18>0 + century + 18c-grade
+	"peasant_order": "centerCount*2", # peco:2087 [DONOR-TEXT]
+	"peasant_continue_any_faction_lt": 400, # peco:2088 [O]
+	"peasant_continue_own_lt": 30, # peco:2088 [O]
+	"peasant_food_gate": "not res[food] > 700 -> centerCount*2 else 1", # peco:2094-2097 [O] DSL not = current-value read [D]
+	"peasant_food_gate_value": 700, # peco:2094-2097 [O]
+	"peasant_start_boost_lt": 25, # peco:3183-3184 [O]
+	"peasant_start_boost_time_lt": 4.0, # peco:3183-3184 [O]
+	"priests": 1, # peco:2101 [O]
+	"officer_divisor": 36, # peco:2105-2107,2261 [O] pikemanCount div 36
+	"officer18_divisor": 36, # peco:2261 [O] inf18Count div 36
+	"officer_gt_28_to_1": 28, # peco:2261 [O] 0 + pikemanCount > 28 -> 1
+	"officer_hire_gate": "drummer/officer < numOfficers and academi > 0 and not gold > 300", # peco:2125 [DONOR-TEXT]
+	"officer_hire_gold_gate": 300, # peco:2125 [O]
+	"officer18_hire": 1, # peco:2285-2288 [O] one each while below ratio
+	"sco_inf18_factor": 2, # peco:2262-2269 [O] numInf18 = stableCount*2
+	"sco_upgrade_gt": 40, # peco:2262-2269 [O]
+	"barracks_factor": 2, # peco:2111 [O] bar_count = ba17Count*2
+	"archer_cap_alg_land_div": 3, # peco:2141-2147 [O] farmused div 3
+	"archer_cap_alg_water_div": 5, # peco:2141-2147 [O] farmused div 5
+	"non_alg_pikeman_le": 372, # peco:2152-2158 [O] 36*7 + 120 [D]
+	"cav17_factor": 2, # peco:2108 [O] stableCount*2
+	"inf18_factor": 2, # peco:2109,2273-2275 [O] ba18Count*2
+	"cav18_factor": 2, # peco:2273-2275 [O] stableCount*2
+	"ukr_light_dip": 5, # peco:2301-2302 [O] iff guards active and guards < 120
+	"dragundip": 32, # peco:2306-2310 [O] {36} at :2310 is comment-disabled [O], stored next line
+	"dragundip_comment_alt": 36, # peco:2310 COMMENT-DISABLED [O]; data only, NOT activated
+	"dragundip_gold_gt": 3600, # peco:2306-2310 [O]
+	"dragundip_difficulty_gt": "normal", # peco:2306-2310 [O]
+	"archerdip": 36, # peco:2312-2318 [O]
+	"grendip": 36, # peco:2312-2318 [O]
+	"dip_gold_le": 1000, # peco:2312-2318 [O]
+	"dip_grendip_lt": 16, # peco:2312-2318 [O]
+	"dip_alg_archer_lt": 16, # peco:2312-2318 [O]
+	"cossackdip_lt": 6, # peco:2323-2326 [O]
+	"numdiver_by_difficulty": {"normal": 0, "hard": 2, "veryhard": 4, "impossible": 4}, # peco:2323-2326 [O] already landed
+	"diver_order_factor": 10, # peco:2331 [O] order 10*numdiver
+	"millions_dragundip": {"eur": 200, "ukr": 800, "other": 600}, # peco:2335-2342 [O]
+	"depo_min_gt": 1, # peco:2344-2380 [O] artillery only if num_depo > 1
+	"cannon": {"mul": 6, "min": 6, "max": 30, "easy_div": 2}, # peco:2344-2355 [O]
+	"howitzer": {"mul": 2, "min": 2, "max": 8, "skip_easy": true}, # peco:2349-2355 [O]
+	"mortar": {"mul": 8, "min": 8, "max": 40, "skip_easy": true}, # peco:2349-2355 [O] mortar row
+	"artillery_cap_exprs": ["Min(num_depo_my_cid, ...)", "Min(num_depo_my_cid*2, ...)", "Min(2, ...)"], # peco:2344-2380 [O]
+	"famine_recall_fn": "SendFreePeasantsToGainFood(plind, deficit, onFood)", # peco:707-804,975-988 [DONOR-TEXT]
+	"famine_deficit": "requiredFood - onFood", # peco:975-988 [O]
+	"famine_sweep_radius": 25, # peco:748-772,774-800 [O]
+	"famine_first_sweep_all": true, # peco:748-772 [O]
+	"famine_ai_sweep_keep_first": 4, # peco:774-800 [O] count > onFood*1.1 break; SetCount(count-4)
+	"famine_break_expr": "count > onFood*1.1", # peco:774-800 [DONOR-TEXT]
+	"famine_reduce_expr": "SetCount(count - 4)", # peco:774-800 [DONOR-TEXT]
+	"famine_port_floor": 4, # ai.gd:38,349-361 [PORT APPROXIMATION]; same outcome, different mechanism [I]
+	"crew_mine_min_max": [5, 5], # us:9098 [LIVE]
+	"crew_farm_min_max": [2, 2], # us:9104 [LIVE]
+	"crew_generic_min_expr": "bcount div 2", # us:9095-9120 [LIVE]
+	"crew_buildtime_expr": "Round(buildtime*32/10)", # us:9095-9120 [LIVE]
+	"crew_buildtime_limits": [100, 1000, 2000], # us:9095-9120 [LIVE]
+	"crew_buildtime_max_exprs": ["bcount div 2", "bcount*2 div 3", "bcount*3 div 4", "bcount"], # us:9095-9120 [LIVE]
+	"crew_star_text_delta": { # peco:3442-3458 [DONOR-TEXT] DIFFERS from LIVE; do not substitute [I]
+		"generic_min": "bcount div 2", # peco:3452 [O]
+		"special": "buildtime < 1000 and free < 5 -> bcount*2 div 3", # peco:3452-3457 [O]
+		"source_branch": "LIVE unit.script:9095-9120 wins", # §4 [D]
+	},
+	"max_construction_sites": 12, # dg:464 [O]
+	"active_count_guard": "GetCount - 4", # peco:795-797 [DONOR-TEXT]
+	"idea_in_progress_guard": "CheckIdeaIsAlreadyInProgress < count (houses < 3)", # peco:1366-1427 [DONOR-TEXT]
+	"mine_dist_levels": [30, 60], # dg:503-506 [O]; mine level wiring [U] U-A5
+}
+
+# §5 guard sampler / classification [LIVE] (us:3601-3713) — DATA ONLY, NOT wired.
+# IMPL-GUARDS / DEC-U-GUARD-SAMPLER §1-§4; every row cites its selecting line.
+# Dead band [D] §1: guards.GetCount == 120 satisfies NEITHER `> 120` (overflow
+# :3649) NOR `< 120` (sampler caps :3638/:3644/:3658/:3665) — a one-wide hole.
+# Counter distinction [D] §4: guards.GetCount = posted handle list size (LIVE);
+# guardsCount = undefended-building count (TEXT recompute, consumed LIVE :3638);
+# guardsTotal = accumulated posting demand (TEXT only, never read by classifier).
+# Draw law [D] §3: all sampler draws are sim stream S (RandomExt), never G; the
+# AI arm takes 1 draw when freewarriors hits else 2 (short-circuit, free-roll
+# then defender-roll); non-AI armed arms take 0-or-1. The `<=1` in the landed
+# RNG annex (S5-a) is the disclosed undercount, corrected here; that annex is
+# preserved verbatim and is NOT reverted.
+const DONOR_GUARD := {
+	"land_only": true, # us:3621-3622 [LIVE]; water :3674-3676 is TODO, no add
+	"guard_order_skip": true, # us:3623 [LIVE]; _unit_IsGuard order-scan :3491-3508
+	"defenders_direct": ["light_dip"], # us:3626-3627 [LIVE] unconditional, no draw, both owners
+	"agressors_direct": ["mortar", "cannon", "fasthorse", "archer", "supermortar", "mcannon"], # us:3630-3634 [LIVE] unconditional, no draw
+	"branch_types": ["hardhorse", "shooter", "grenadier", "horseshooter"], # us:3635 [LIVE]
+	"ai_branch": "guardsCount > 0 AND guards.GetCount < 120 -> defenders; ELSE agressors", # us:3636-3641 [LIVE], 0 draws; guardsCount (:3638) != guards.GetCount (:3638)
+	"non_ai_branch": "(shooter OR grenadier) AND guards.GetCount < 120 AND RandomExt < 3000/32768 -> defenders; ELSE NO list (case ends :3646)", # us:3643-3645 [LIVE]/[D4]; NOT agressors — correction to AI-THRESHOLDS §5
+	"non_ai_no_defenders_path": "hardhorse/horseshooter + failed 3000 rolls -> NO list (never agressors)", # us:3646 [LIVE]/[D4]; prior us:3633 cite was the wrong arm
+	"priest_freewarrior_gate": "bPriest OR (freewarriors.GetCount > 15 AND guards.GetCount > 120) -> agressors", # us:3649-3650 [LIVE]; STRICT > on both; dead band at 120
+	"sampler_ai": [ # us:3653-3662 [LIVE], stream S, 1-2 draws, short-circuit
+		"draw1: RandomExt < 10000/32768 AND freewarriors.GetCount < 20 -> freewarriors", # us:3655-3656; draw1 ALWAYS consumed
+		"draw2: only when draw1 arm false (roll fail OR freewarriors >= 20); RandomExt < 6000/32768 AND guards.GetCount < 120 -> defenders", # us:3658-3659
+		"else -> agressors", # us:3660-3662; draw2 consumed here too
+	],
+	"sampler_non_ai_lightinf": "usage=lightinfantry AND guards.GetCount < 120 AND RandomExt < 20000/32768 -> defenders; ELSE NO list (no else-add)", # us:3663-3667 [LIVE]/[D]; 0 draws if gate false, else 1
+	"rand_divisor": 32768, # misc.script:486-490 [O] RandToRandom(v)=v/32768; gc_c1rand_to_random dg:176
+	"roll_probability_pct": {"3000": 9.16, "6000": 18.31, "10000": 30.52, "20000": 61.04}, # §1 [D] roundings of exact 3000/32768=9.1552734375%, 6000/32768=18.310546875%, 10000/32768=30.517578125%, 20000/32768=61.03515625%
+	"guard_cap": 120, # dg:500 [O]; gate `< 120`, overflow `> 120`, exactly 120 = dead band
+	"removal": "AI-owner non-building non-peasant despawn: defenders.Remove -> guards.IndexOf/Delete -> _ai_DefBuildingRemoveGuard -> agressors.Remove -> freewarriors.Remove", # us:3688-3713 [LIVE]; buildings spill posted guards to defenders us:3564-3576
+	"posted_guard_writer": "_ai_ProgressDefenders moves defenders/freewarriors -> guards (TEXT [*], activation [U]-G1c)", # pwar:3388-3440 [DONOR-TEXT] — labelled data, NOT activated
+	"fear_non_interference": "fear is a TEXT target-selection bool only; NEVER adds/removes guards", # pwar:2798-2838 [*] [DONOR-TEXT]/[D], [U]-G1e
+	"shooter_runaway_gate": ["standtime = 0", "standtime > 1.3", "non-AI and difficulty <= normal"], # us:7366-7368 [LIVE]; DATA ONLY, never called here, [U]-G1e
+	"shooter_search_victim_dist": 6, # us:8427 [O]
+}
+
+# §5-§6 squad lifecycle/cadence [DONOR-TEXT] unless marked. Existing port
+# behaviour (ai.gd:20,72,76,868-913) is unchanged by these rows.
+const DONOR_SQUAD_CADENCE := {
+	"disband_non_ai_only": true, # progr:15,30,174-175 [DONOR-TEXT] AI squads NEVER auto-disband [D]
+	"disband_count_lt_basecount_factor": 0.25, # dg:156 / progr:15,30 [O]
+	"hold_progress_increment": "dt/37.5", # progr:160-164 [DONOR-TEXT]
+	"hold_seconds": 37.5, # progr:160-164 [O]/[D]
+	"hold_conditions": ["standGround", "not hold", "not aggressive", "moveCount 0", "hold-bonuses-differ"], # progr:160-164 [O]
+	"hold_trigger": ">= 1 -> holdMode = True, progress = 0", # progr:165-169 [DONOR-TEXT]
+	"TimeEpsilon": 0.025, # dg:1476 [O]
+	"TimeIdleGrid": 3.075, # dg:1477-1478 [O]/[D] 0.1*31 - 0.025
+	"TimeScanGrid": 1.675, # dg:1477-1478 [O]/[D] 0.1*17 - 0.025
+	"TimeCheckCapture": 1.875, # dg:1479 [O]/[D] already landed (capture law preserved)
+	"TimeCheckCaptureArt": 0.475, # dg:1480 [O]/[D] already landed (capture law preserved)
+	"TimeProgressAI": 2.4, # pai:6 / dg:1486 [DONOR-TEXT] default still 1.0 via config.json (U-A6/U-A7)
+	"ProgressAI_gate": "CheckProgressLastTimeAndIncrease(lastprogressaitime, 2, 2.4)", # pai:6 [DONOR-TEXT]
+	"ProgressAI_else": "adviser-only path", # pai:11-16 [DONOR-TEXT]
+	"ProgressAI_always": "SwitchTo('Progress')", # pai:18 [DONOR-TEXT]
+	"TimeCheckExists": 2.0, # dg:1484 / progr:56-61 [DONOR-TEXT]
+	"exists_stagger": "0.125*plInd", # progr:56-61 [O]
+	"exists_offset_bexists": 8.0, # progr:56-61 [O] 4*2.0 [D]
+	"exists_offset_no_bexists": 24.0, # progr:56-61 [O] 12*2.0 [D]
+	"TimeCalcSquadsMoveCount": 0.3, # progr:150-154 [DONOR-TEXT]
+	"squad_move_stagger": "0.001*plInd + 0.3", # progr:150-154 [O]
+	"squad_move_non_ai_only": true, # progr:150-154 [DONOR-TEXT]
+	"TimeSeedWheat": 60.0, # peco:3896 [O] 0.03*2000 [D]
+	"seed_wheat_stagger": "plInd*3", # peco:3896 [O]
+	"seed_wheat_index": 3, # peco:3896 [O]
+	"mine_idea_maxpeasants": [5, 2], # us:9098,9104 [LIVE]
+	"resbalance_reeval_s": 2.4, # §6 [D] rides ProgressAI tick; no separate timer in-file
+	"upgrade_caps": { # peco:2202-2213,2396-2407 [O]; port config AI_TIER_EFFECTS unchanged
+		"unit_att": {"easy": 0, "normal": 2, "hard": 7, "veryhard": 7, "impossible": 7},
+		"unit_def": {"easy": 0, "normal": 3, "hard": 7, "veryhard": 7, "impossible": 7},
+		"econ_att": {"easy": 1, "normal": 2, "hard": 7, "veryhard": 7, "impossible": 7},
+		"econ_def": {"easy": 2, "normal": 3, "hard": 7, "veryhard": 7, "impossible": 7},
+	},
+}
+
+# §7 port gap: pre-existing PORT APPROXIMATION values are deliberately kept.
+# §9 items 1-2 (data.gd/config.gd defaults: 1.0 s think, 260/260/160 thresholds,
+# 260 attack force, 40 peasants) are NOT changed by this worker: config.json
+# overrides win, and changing defaults before U-A6/U-A7 would be activation.
+const DONOR_PORT_GAP_NOTES: Array = [
+	"ai.gd:76 think_t = Data.AI_THINK_INTERVAL (1.0 default) vs donor 2.4 s -- PORT APPROXIMATION, U-A6/U-A7",
+	"ai.gd:31-38,155-158 food floors + 45 s horizon + upkeep*45+230 -- donor requiredFood ladder has NO horizon",
+	"ai.gd:257-268 economy shares 0.50/0.25/0.15 -- donor resbalance percent tables",
+	"ai.gd:638 peasants < 40 -- donor any-faction < 400 or own < 30 + center*2 order",
+	"ai.gd:868 force < 260 global wave gate -- donor has per-army enForce vs myForce only",
+	"ai.gd:412-477 flat cost pre-gates -- donor CanApplyCost + CheckAccessControl + count + idea-in-progress",
+	"ai.gd:46-47,683-686 class-population quotas -- donor per-army assembly min/max; right numbers, wrong loop",
+	"min_cav 6, raid 12, drums/officers 1+bar/2, repair hp<0.7->2, defense 45/25, morale/rout 20 s -- no donor literal",
+	"guard sampler absent in runtime (data.gd:254-256 comment only) -- rows above are DATA, not activation",
+	"fear selector absent in runtime (data.gd:254-256 comment only) -- rows above are DATA, not activation",
+] # §7 items 1-10 [I]/[U]; no value here is used by the simulation
+
+# §8 still-[U] register: each item keeps the report's fixed-seed experiment.
+# Donor binary is never executed; pass criteria are recorded, not claimed.
+const DONOR_U_EXPERIMENTS := {
+	"U-A1": {"state": "bestprojects priority among _ai_TryUnit quotas", "text": "peco:3268-3400,3553-3588,3783-3914", "experiment": "fixed seed, 1 AI vs 1 idle human, Small map; log bestprojects choice + buildprojects[].gohnd per ProgressAI tick for 600 s", "pass": "port ai.gd:_build choice sequence byte-identical for 3 seeds, 0 mismatches"},
+	"U-A2": {"state": "tick driver + defenceStage setters", "text": "_ai_CheckMinArmyCreationAbility callers + defenceStage writers pwar:3044-3490", "experiment": "fixed-seed skirmish, force donor armyMinCount composition into agressors; log army creation tick + spec", "pass": "tick + composition identical across 3 seeds, 0 mismatches"},
+	"U-A3": {"state": "OfficerWaitTime call-site arithmetic", "text": "_ai_CreateOfficerSquad tail pwar:3675-3800 + OfficerWaitTime consumers", "experiment": "officer + 36 pikemen sandbox, log squad-form game-time", "pass": "+/-1 tick on fixed seed, 0 mismatches over 5 runs"},
+	"U-A4": {"state": "per-sid target weights beyond scan order/fear/radii", "text": "none in donor text", "experiment": "two equidistant enemy groups (infantry vs cannon), fixed seed, log first BitvaLinkExt target over 20 trials", "pass": "deterministic choice; port matches 20/20"},
+	"U-A5": {"state": "resbalance a0/a1/a2 mine-level values per era", "text": "grep _ai_SetResouceBalance mine callers", "experiment": "mine at dist <30 / 30-60 / >60, log reqlevel + offered upgrade", "pass": "3/3 distances match, 0 mismatches"},
+	"U-A6": {"state": "[*] activation: is the AI tick live in skirmish?", "text": "pwar/progr/pai ExecuteState gating progr:177-178, pai:6-18", "experiment": "fixed-seed AI skirmish, instrument lastprogressaitime + aidata list growth", "pass": "lists grow on 2.4 s cadence in unmodded donor-attached game (observed; never executed by this worker)"},
+	"U-A7": {"state": "think-interval + plInd stagger interleave", "text": "2.4 s + 0.125*plInd grounded", "experiment": "DEC_U_tick_order.md §5 U-O1c block-boundary permutation + §5 U-O6 AI-tick gate harness, TICK_ORDER v1 frozen, fixed seed; NOT a generic TABLES §9-O1 pass", "pass": "3 seeds, 0 hash mismatches; surviving permutation + losing permutations documented before any reorder"},
+	"U-A8": {"state": "RNG stream attribution at AI draw sites", "text": "RandToRandom divisors + floor(list*random) peco:742", "experiment": "X21 20-vector fixture + per-site draw-count test per TABLES §9-G1", "pass": "floor(RandomExt*n) at every AI draw, 0 mismatches"},
+} # all [U]; unresolved list also includes TABLES tails [T1-tail,D1,Q1,G1-tail,R1,V1,V2,F1,E1,O1-tail]; C1/T2/S closed
+
+# =============================================================================
+# DEC-U-RNG-LEDGER :: S5 AI RNG DRAW LEDGER / STREAM IDENTITY / X21 TELEMETRY
+# (impl worker IMPL-RNG-AI; APPEND ONLY - no line above this header is touched)
+# -----------------------------------------------------------------------------
+# Sole source: docs/terrain_swarm_2026-11-26/reports/DEC_U_rng_ledger.md
+#   §2 (formula), §3 (Bankers), §4-S5 (AI draw sites/call order), §5 ([U] register),
+#   §6 (X21 20-vector fixture), §7 (port change list).
+# Every donor claim pinned t_87f0f3c130b0 (cossacks.exe, 5,768,048 B,
+# sha256 87f0...4e16c); donor read-only, never executed. NO PARITY CLAIM.
+#
+# LABELS: [O] verbatim donor literal (file:line) | [D] deterministic derivation |
+#   [I] inference, flagged | [U] UNVERIFIED, exact zero-mismatch capture given |
+#   [PORT APPROXIMATION] pre-existing port substitute, deliberately unchanged.
+#
+# SCOPE: appended labelled DATA + INERT helpers only. Nothing below is read by
+# tick()/_economy()/_build()/_train()/_waves(); no existing draw, threshold,
+# deadline, stream or save key is changed. `game.rng` is never touched here.
+# The landed AI-THRESHOLDS annex and TICK-ORDER gate (above) are preserved
+# verbatim: this annex only ADDS facts. game.gd/data.gd sites belong to their own
+# workers; exact recommendations are in this worker's final report, not here.
+# =============================================================================
+
+# §2 stream identity [D]/[O]. ONE sim RandomExt stream (S). key0 (high word)
+# NEVER feeds the recurrence: the 0x406718 cross term lands in EDX and is
+# discarded by 0x4067b8 mod 2^32 (X21 §4.3); (K0,K1) == (0,K1), including draw 1.
+# No stream split is guessed: the Delphi G stream at S5-b stays [U]-G1 (count only).
+const DONOR_RNG_STREAM := {
+	"stream_name": "RandomExt (S)", # sim LCG, global 0x9048d4/d8 at fire time
+	"lcg": "s = (s*64525 + 1013904223) & 0xFFFFFFFF", # X21 §2 / D02 §4.2 [D]
+	"output": "RandomExt = float32(s / 4294967296.0) in [0,1)", # fstp dword is the only rounding
+	"get_random": "GetRandom(n) = floor(RandomExt*n)", # dogenerate.inc:990-997 [O]
+	"get_random_range": "a + floor(RandomExt*(b-a+1))", # dogenerate.inc:994-997 [O]
+	"key0": "discarded - (K0,K1) == (0,K1)", # X21 §4.3 [O]/[D]; D02 §4.2 'first-output' superseded
+	"reseeds": "identity same-key reseeds (DEC-U-SKIRMISH §2.10) - no new stream derivation",
+	"second_stream": "Delphi Random() (G) free-runs from QPC/TickCount (GEN-SEED §2.2); per-line S/G attribution at S5-b is [U]-G1 - count, do not assume",
+}
+
+# §4-S5 cadence [O]. Already landed as the TICK-ORDER edits above; restated here
+# as provenance ONLY (not re-edited). Every site below fires PER GATE FIRING,
+# not per frame. Cross-site interleave stays [U]-U-A7.
+const DONOR_RNG_S5_CADENCE := {
+	"progress_ai": {
+		"gate": "CheckProgressLastTimeAndIncrease(lastprogressaitime, 2, 2.4)",
+		"cite": "pai:6 / dg:1486",
+		"port": "_TICK_AI_S (landed; untouched here)",
+	},
+	"seed_wheat": {
+		"gate": "CheckProgressLastTimeAndIncrease(lastseedwheattime, 3, 60.0+plInd*3)",
+		"cite": "peco:3896-3901 / dg:1487",
+		"port": "_TICK_SEED_S + player*_TICK_SEED_SLOT_S (landed; untouched here)",
+	},
+}
+
+# §4-S5 - AI/economy draw sites, stream and IN-SITE order [O]. Order within a
+# site is top-to-bottom as written (ledger §4 notation). Counts marked [U] are
+# NOT invented: see DONOR_RNG_U_EXPERIMENTS at the end of this annex.
+const DONOR_RNG_S5_SITES := [
+	{
+		"id": "S5-a", "site": "guard sampler", "cite": "unit.script:3638-3668 (us:3653-3666 LIVE)",
+		"stream": "S", "draws": "<=1",
+		"order": ["RandomExt < v/32768 (one draw per candidate)"],
+		"threshold_arg": [3000, 6000, 10000, 20000], "divisor": 32768,
+		"probability_pct": [9.16, 18.31, 30.52, 61.04], # §5 [D]
+		"note": "stored selection; no extra draw added by the port annex above",
+	},
+	{
+		"id": "S5-b", "site": "scatter + 4096/32768 gate", "cite": "progresswarai.inc:1749-1750,2681",
+		"stream": "S 1-2 + G <=1", "draws": "count only",
+		"order": [
+			"floor(RandomExt*(max+1-min)) [S]",
+			"4096/32768 ~= 12.5% gate (per-line S/G attribution [U]-G1)",
+		],
+		"gate_literal": "4096/32768", "gate_pct": 12.5,
+		"stream_cite": "DEC_U_skirmish_tables §8 [O]-shape; exact G/S attribution per line is [U]-G1",
+	},
+	{
+		"id": "S5-c", "site": "mine-position floor draws", "cite": "progresseconomicai.inc:78,3142",
+		"stream": "S", "draws": "k [U]",
+		"order": ["GetRandom(position) per mine candidate"],
+		"k_dependency": "minesdensity / gRecordGeneratorVersion (GENSEED XU3 analogue)",
+		"note": "count per version; k never invented",
+	},
+	{
+		"id": "S5-d", "site": "fear selector", "cite": "progresswarai.inc:2798-2832",
+		"stream": "none", "draws": "0",
+		"order": ["dist < 30 / 400 force-distance rule - NO draw"],
+	},
+	{
+		"id": "S5-e", "site": "market trade + recovery", "cite": "lib/res.script:313-344,291-308",
+		"stream": "none", "draws": "0",
+		"order": ["floor(sell*cost/buycost)", "weight pushes", "exponential dt - NO draw"],
+	},
+]
+# Ledger row order, NOT a claimed runtime call sequence: the cross-site
+# interleave inside one ProgressAI firing is [U]-U-A7 and is not guessed here.
+const DONOR_RNG_S5_SITE_ORDER: Array = ["S5-a", "S5-b", "S5-c", "S5-d", "S5-e"]
+
+# §2 / §7 item 5 - the port lacks an f32 `floor(RandomExt*n)` wrapper:
+# data.gd:1647-1648 donor_get_random() uses a bare f64 product
+# (PORT APPROXIMATION), and game.gd:5411-5412 delegates to it on the single `rng`.
+# The helpers below implement the donor law verbatim and are INERT: they take an
+# already-drawn RandomExt value, never draw from `game.rng`, and are not wired
+# into runtime. DScript f32-vs-f64 promotion is [U]-G1-e; both variants are kept.
+const DONOR_LCG_M := 64525               # 0xFC0D                 (X21 §2 [D])
+const DONOR_LCG_C := 1013904223           # 0x3C6EF35F             (X21 §2 [D])
+const DONOR_LCG_DIVISOR := 4294967296.0   # 0x4F800000 f32         (X21 §2 [O])
+
+# Godot-4 spelling of the ledger's `Float32Array` round-trip (X21 §6): a single
+# store into PackedFloat32Array is the only f32 truncation, matching donor
+# `fstp dword`. No tolerance, no pre-rounding of the input.
+static func _donor_f32(r: float) -> float:
+	var buf := PackedFloat32Array()
+	buf.append(r)
+	return buf[0]
+
+# §2 GetRandom(n) = floor(RandomExt*n), f32 input / f64 product [D].
+static func donor_get_random_f32(r: float, n: int) -> int:
+	return int(floorf(_donor_f32(r) * float(n)))
+
+# Comparison variant for [U]-G1-e only (fixture shows no divergence for
+# n in {3,5,10,256}); never substituted for the f32 path.
+static func donor_get_random_f64(r: float, n: int) -> int:
+	return int(floorf(r * float(n)))
+
+# §2 GetRandomRange(a,b) = a + floor(RandomExt*(b-a+1)) [O].
+static func donor_get_random_range_f32(r: float, a: int, b: int) -> int:
+	return a + donor_get_random_f32(r, b - a + 1)
+
+# §6 X21 20-vector fixture - canonical oracle, pinned verbatim [D]. Synthetic
+# pair (key0=0x44A108F9, key1=0x00000001); `bits` (LE) is the strongest key.
+# TELEMETRY ONLY: no runtime path reads these rows; no parity claim.
+const DONOR_RNG_FIXTURE_KEY0 := 0x44A108F9
+const DONOR_RNG_FIXTURE_KEY1 := 0x00000001
+const DONOR_RNG_FIXTURE_20 := [
+	{"n": 1, "s_hex": "0x3C6FEF6C", "s_dec": 1013968748, "r_f32": 0.236083001, "bits": "bebf713e", "floor": [0, 1, 2, 60]},
+	{"n": 2, "s_hex": "0x7DCC6BDB", "s_dec": 2110548955, "r_f32": 0.491400480, "bits": "d898fb3e", "floor": [1, 2, 4, 125]},
+	{"n": 3, "s_hex": "0xD9FC017E", "s_dec": 3657171326, "r_f32": 0.851501524, "bits": "01fc593f", "floor": [2, 4, 8, 217]},
+	{"n": 4, "s_hex": "0x5FB30EC5", "s_dec": 1605570245, "r_f32": 0.373825967, "bits": "1e66bf3e", "floor": [1, 1, 3, 95]},
+	{"n": 5, "s_hex": "0x5B109F60", "s_dec": 1527816032, "r_f32": 0.355722398, "bits": "3f21b63e", "floor": [1, 1, 3, 91]},
+	{"n": 6, "s_hex": "0x39298B3F", "s_dec": 959023935, "r_f32": 0.223290160, "bits": "2da6643e", "floor": [0, 1, 2, 57]},
+	{"n": 7, "s_hex": "0x089D0992", "s_dec": 144509330, "r_f32": 0.0336461999, "bits": "99009d3d", "floor": [0, 0, 0, 8]},
+	{"n": 8, "s_hex": "0x41D427C9", "s_dec": 1104422857, "r_f32": 0.257143497, "bits": "50a8833e", "floor": [0, 1, 2, 65]},
+	{"n": 9, "s_hex": "0x6B5ED494", "s_dec": 1801376916, "r_f32": 0.419415742, "bits": "a9bdd63e", "floor": [1, 2, 4, 107]},
+	{"n": 10, "s_hex": "0x09816EE3", "s_dec": 159477475, "r_f32": 0.0371312425, "bits": "ee16183d", "floor": [0, 0, 0, 9]},
+	{"n": 11, "s_hex": "0x212908E6", "s_dec": 556337382, "r_f32": 0.129532397, "bits": "24a4043e", "floor": [0, 0, 1, 33]},
+	{"n": 12, "s_hex": "0x5046CF0D", "s_dec": 1346817805, "r_f32": 0.313580453, "bits": "9e8ea03e", "floor": [0, 1, 3, 80]},
+	{"n": 13, "s_hex": "0x03D84308", "s_dec": 64504584, "r_f32": 0.015018644, "bits": "c210763c", "floor": [0, 0, 0, 3]},
+	{"n": 14, "s_hex": "0x50663AC7", "s_dec": 1348876999, "r_f32": 0.314059913, "bits": "76cca03e", "floor": [0, 1, 3, 80]},
+	{"n": 15, "s_hex": "0xF37BD37A", "s_dec": 4084978554, "r_f32": 0.951108158, "bits": "d37b733f", "floor": [2, 4, 9, 243]},
+	{"n": 16, "s_hex": "0x7DE4C891", "s_dec": 2112145553, "r_f32": 0.491772205, "bits": "91c9fb3e", "floor": [1, 2, 4, 125]},
+	{"n": 17, "s_hex": "0xD67BDEBC", "s_dec": 3598442172, "r_f32": 0.837827623, "bits": "df7b563f", "floor": [2, 4, 8, 214]},
+	{"n": 18, "s_hex": "0x0FFA52EB", "s_dec": 268063467, "r_f32": 0.062413391, "bits": "2fa57f3d", "floor": [0, 0, 0, 15]},
+	{"n": 19, "s_hex": "0x75C47D4E", "s_dec": 1975811406, "r_f32": 0.460029453, "bits": "fb88eb3e", "floor": [1, 2, 4, 117]},
+	{"n": 20, "s_hex": "0xA2C21855", "s_dec": 2730629205, "r_f32": 0.635774136, "bits": "18c2223f", "floor": [1, 3, 6, 162]},
+]
+# §6 word-order facts [D]: key0 discarded; no stick, no fixed point.
+const DONOR_RNG_FIXTURE_WORD_ORDER := {
+	"identical": "(key0,key1) = (0,1) gives the same stream - key0 discarded",
+	"swapped": ["0x3D718404", "0x19269793", "0x809959D6"], # (1,0x44A108F9)
+	"high_only": ["0x3C6EF35F", "0x85A2D332", "0x4D98E4E9"], # (K0,0)
+	"zero_state": ["0x3C6EF35F", "0x85A2D332", "0x4D98E4E9", "0xAE87EF34", "0xE8CD4903"],
+	"guard": "no test/jz guard in 0x60f64c-0x60f696 [D]; live-replay equivalence stays [U] (execution prohibited)",
+}
+
+# INERT telemetry: replay the single S stream from key1 (key0 discarded) and
+# report exact-state + exact-floor mismatches over the FULL 20-vector series.
+# Never draws from game.rng, never mutates game state. `r_f32`/`bits` are pinned
+# for the owner harness (X21 rng_model.py); they are NOT compared with a rounded
+# decimal tolerance here - no tolerance, no weakened test.
+static func donor_rng_telemetry(key0: int = DONOR_RNG_FIXTURE_KEY0, key1: int = DONOR_RNG_FIXTURE_KEY1) -> Dictionary:
+	var buf := PackedFloat32Array()
+	var mismatches: Array = []
+	var s: int = key1 & 0xFFFFFFFF # key0 discarded (X21 §4.3)
+	for row in DONOR_RNG_FIXTURE_20:
+		s = (s * DONOR_LCG_M + DONOR_LCG_C) & 0xFFFFFFFF
+		buf.clear()
+		buf.append(float(s) / DONOR_LCG_DIVISOR)
+		var r: float = buf[0]
+		var want: Array = row["floor"]
+		var ok: bool = donor_get_random_f32(r, 3) == want[0] \
+			and donor_get_random_f32(r, 5) == want[1] \
+			and donor_get_random_f32(r, 10) == want[2] \
+			and donor_get_random_f32(r, 256) == want[3] \
+			and s == int(row["s_dec"])
+		if not ok:
+			mismatches.append(int(row["n"]))
+	return {
+		"key0": key0, "key1": key1, "vectors": int(DONOR_RNG_FIXTURE_20.size()),
+		"mismatches": mismatches, "zero_mismatches": mismatches.is_empty(),
+	}
+
+# §5 - all eight G1 items stay [U] with their EXACT zero-mismatch captures.
+# Termination (§5): run the FULL series; ANY mismatch keeps the item [U] and
+# forbids wiring; zero mismatches across the FULL series closes it. No draw
+# order, G value or stream split is fitted to make a capture pass.
+const DONOR_RNG_U_EXPERIMENTS := {
+	"G1-a": {
+		"state": "round() Bankers on binary address",
+		"static": "semantics settled §3 [D]; native @Round code address open",
+		"cite": "weapon.script:349-362 / System.Round",
+		"capture": "Series R20: donor_round over {3.25,6.5,13,8.125,16.25,24.375,5.5,11,16,1,2.5,5,7.5,2*1.625,4*1.625,8*1.625,2*2.75,4*2.75,8*2,2*0.5,5*0.5,10*0.5,15*0.5} + all 14 PUSSTRELA time_frames via donor_weapon_row()",
+		"expect": "{3,6,13,8,16,24,6,11,16,1,2,5,8,...}",
+		"close": "zero mismatches -> drop [U]-G1 on donor_round; any -> single-site override table, never floor(x+0.5)",
+	},
+	"G1-b": {
+		"state": "GetRandom ledger / stream split",
+		"static": "order [O] §4; cross-stream attribution [U]",
+		"cite": "dogenerate.inc:990-997 / §4-S6",
+		"capture": "Series L20: fixed-seed 1v1 §4-S6, 20 S draws asserted against X21 §5.1 (s hex + bits LE + floor(r*{3,5,10,256})); G draws asserted ONLY as counts",
+		"expect": "S sequence 3C6FEF6C...A2C21855; G VALUE mismatch is NOT a failure (count only)",
+		"close": "any S divergence -> [U]; zero S mismatches + correct G counts -> close",
+	},
+	"G1-c": {
+		"state": "per-site draw counts (musket 0-scatter / archer 2 / cannon 2+frnd)",
+		"static": "sites [O] §4-S3; counts [U]",
+		"cite": "unit.script:11520-11554 / weapon.script:1046-1051",
+		"capture": "Series C300: flat map, cannon/archer/musket shooters x fixed target at 10/20/30 m, 100 shots each (300)",
+		"expect": "S draws/shot: musket 1 (frnd) + S3-c 7; archer 3 + 7; cannon 3 + 7; stand +2; random1/random +4 (1 rotspeed + 3 ThrowRandom)",
+		"close": "zero count mismatches -> close; any extra draw -> [U]",
+	},
+	"G1-d": {
+		"state": "uniqrnd source + WriteProj frnd order",
+		"static": "spawn site [O] unit.script:2726; order [O] §4-S3-b",
+		"cite": "unit.script:2726,11520-11554",
+		"capture": "Series U50: spawn 50 units, log per-unit uniqrnd vs S positions 1,3,5,7,...; fire 50 musket shots, assert scatter-precedes-frnd (S3-b)",
+		"expect": "one S draw per spawn at :2726; scatter draws strictly before stored frnd",
+		"close": "zero mismatches -> close; scatter-after-frnd or missing spawn draw -> [U]; corrects game.gd:6547 comment (§7 item 6)",
+	},
+	"G1-e": {
+		"state": "DScript floor(RandomExt*n) promotion (f32 vs f64 product)",
+		"static": "20 vectors no-divergence [D]-sample; proof open [U]",
+		"cite": "dogenerate.inc:990-997 / X21 §6",
+		"capture": "Series F1M: sweep n in {1..512, 100000} x all 20 S values, compare floor(f32(r)*n) vs floor(f64(r)*n) + GetRandomRange edges",
+		"expect": "no divergence in the pinned 20 vectors for n in {3,5,10,256}",
+		"close": "zero divergences -> document f32 promotion as safe for tested range (still [U] beyond); any boundary divergence -> wire f32 path verbatim",
+	},
+	"G1-f": {
+		"state": "signed key0 edge (product-high bit 31)",
+		"static": "X21 §8 item 3 [U]",
+		"cite": "X21 §4.3 / §8",
+		"capture": "Series K0: key0 in {0x00000000,0x44A108F9,0x80000000,0xFFFFFFFF} x key1=0, first-draw assert",
+		"expect": "u32 model for first two (0x3C6EF35F, 0x3C6FEF6C); last two asserted WITHOUT claiming donor behaviour (no donor run)",
+		"close": "any port crash/NaN -> [U], keep guard; u32 first-two zero mismatches -> close those cases",
+	},
+	"G1-g": {
+		"state": "AI/capture/economy draw attribution",
+		"static": "sites [O]-shape §4-S2/S5; per-line G/S [U]",
+		"cite": "unit.script:3638-3668 / progresswarai.inc:1749-1750,2681 / progresseconomicai.inc:78,3142",
+		"capture": "Series A600: 1 AI vs 1 idle human, 600 s, log every AI/capture/economy draw with stream tag",
+		"expect": "guard-sampler S counts + die-roll G counts + slow-death S floor(.*300) per §4; headshot G gate + zero-S bonus",
+		"close": "zero mismatches -> close; any stream flip -> [U]",
+	},
+	"G1-h": {
+		"state": "GenerateMapRandKey / saved-map key bytes",
+		"static": "XU1/XU2 inherited [U]",
+		"cite": "GENSEED (generation-owned)",
+		"capture": "NOT a skirmish-sim item - listed for ledger completeness only; no capture proposed in DEC-U-RNG-LEDGER §5",
+		"expect": "n/a",
+		"close": "stays [U] with GENSEED; never closed by an AI-side capture",
+	},
+}
+
+# Explicit non-claims for this annex (ledger §8): no invented draws, no stream
+# split guess, no weakened test, no parity assertion.
+const DONOR_RNG_NONCLAIMS: Array = [
+	"NO PARITY CLAIM: no donor binary executed, no donor GPU A/B frame captured by this worker",
+	"no G-stream VALUE snapshotted into a fixture - Delphi free-runs from QPC (GEN-SEED §2.2); count only",
+	"no S3-g victim-loop m+n count invented (spawn/version-gated)",
+	"no S5-c minesdensity / gRecordGeneratorVersion k invented - count per version",
+	"no stream split guessed at S5-b: per-line G/S attribution is [U]-G1 (G1-b/G1-g)",
+	"no native @Round code address re-anchored: only Bankers semantics are settled (G1-a)",
+	"inert helper donor_get_random_f64 is a G1-e comparison variant, not a f32-path substitute",
+	"fixture r_f32/bits columns are pinned verbatim; telemetry compares exact integer state + exact floors only",
+]
+
+# =============================================================================
+# DEC-U-GUARD-SAMPLER :: GUARD CLASSIFIER / SAMPLER / REMOVAL LAW (IMPL-GUARDS)
+# (APPEND ONLY - no line above this header is edited by this worker)
+# -----------------------------------------------------------------------------
+# Sole source: docs/terrain_swarm_2026-11-26/reports/DEC_U_guard_sampler.md §1
+# (exact branches), §3 (draw order), §4 (removal + counters), §5 (fear/runaway),
+# §6 ([U] register), §7 items 3-4/7 (port change list). Every donor claim pinned
+# t_87f0f3c130b0 (cossacks.exe, 5,768,048 B, sha256 87f0...4e16c); donor read-only,
+# never executed. NO PARITY CLAIM: no donor binary run, no port capture compared.
+#
+# SCOPE: labelled DATA + INERT / UNCALLED helper only. tick(), _economy(),
+# _build(), _train(), _waves(), _defense(), _raids() do NOT call anything below.
+# No existing draw, threshold, deadline, stream, save key or annex row changes;
+# the landed AI-THRESHOLDS, TICK-ORDER and RNG-AI annexes above stay verbatim.
+# Posting / mobilization / agressor-drain / fear rows remain [DONOR-TEXT] `[*]`
+# data, NOT activated; runaway and fear never touch guard lists here. Exact
+# game.gd/data.gd patch recommendations are in this worker's final report.
+# =============================================================================
+
+# §1-§4 LIVE rows as data (us:3601-3713). Order = donor source order. No class,
+# draw count or stream is invented; `none` = NO list added by this call ([D] §1-D4).
+const DONOR_GUARD_LIVE_ROWS := [
+	{"arm": "entry_guard_order", "gate": "_unit_IsGuard order-type scan", "list": "none", "draws": 0, "cite": "us:3623 / 3491-3508"},
+	{"arm": "7_building_leg", "gate": "peasant OR any building -> _unit_AIAddDefendingBuilding (priority us:3525-3536)", "list": "none", "draws": 0, "cite": "us:3681-3682"},
+	{"arm": "entry_todo", "gate": "officer/drummer or water media -> TODO empty branch", "list": "none", "draws": 0, "cite": "us:3614-3617 / 3674-3676"},
+	{"arm": "1_light_dip", "gate": "airole = gc_ai_unit_light_dip (52)", "list": "defenders", "draws": 0, "cite": "us:3626-3627 / dg:395"},
+	{"arm": "2_direct", "gate": "mortar/cannon/fasthorse/archer/supermortar/mcannon", "list": "agressors", "draws": 0, "cite": "us:3630-3634"},
+	{"arm": "3a_ai_group", "gate": "AI + hardhorse/shooter/grenadier/horseshooter + guardsCount>0 AND guards.GetCount<120", "list": "defenders", "draws": 0, "cite": "us:3638-3639"},
+	{"arm": "3a_ai_group_else", "gate": "AI + same group, gate false (includes guardsCount=0)", "list": "agressors", "draws": 0, "cite": "us:3640-3641"},
+	{"arm": "3b_nonai_3000", "gate": "non-AI + (shooter OR grenadier) + guards.GetCount<120 + RandomExt<3000/32768", "list": "defenders", "draws": 1, "cite": "us:3644-3645"},
+	{"arm": "3b_nonai_no_list", "gate": "non-AI hardhorse/horseshooter OR failed 3000 roll OR cap fail - case ends, NO else-add", "list": "none", "draws": 0, "cite": "us:3646 [D4]"},
+	{"arm": "4_overflow", "gate": "bPriest OR (freewarriors.GetCount>15 AND guards.GetCount>120), strict > both", "list": "agressors", "draws": 0, "cite": "us:3649-3650"},
+	{"arm": "5a_ai_free", "gate": "AI + draw1 RandomExt<10000/32768 AND freewarriors.GetCount<20", "list": "freewarriors", "draws": 1, "cite": "us:3655-3656"},
+	{"arm": "5b_ai_def", "gate": "AI + draw2 (only after draw1 arm false) RandomExt<6000/32768 AND guards.GetCount<120", "list": "defenders", "draws": 2, "cite": "us:3658-3659"},
+	{"arm": "5c_ai_else", "gate": "AI + draw2 consumed, both arms false", "list": "agressors", "draws": 2, "cite": "us:3660-3662"},
+	{"arm": "6_nonai_lightinf", "gate": "non-AI usage=lightinfantry AND guards.GetCount<120 AND RandomExt<20000/32768", "list": "defenders", "draws": 1, "cite": "us:3665-3666"},
+	{"arm": "6_nonai_no_list", "gate": "non-AI non-lightinfantry reacher OR failed 20000 roll OR cap fail - no else-add", "list": "none", "draws": 0, "cite": "us:3666-3667 [D]"},
+	{"arm": "7_else_no_list", "gate": "unlisted usage reaching sampler else - defaults to NO list [U]-G1a, never agressors", "list": "none", "draws": 0, "cite": "us:3647 [U]-G1a"},
+]
+
+# §4 counter distinction [D] - three DIFFERENT quantities; never collapse them.
+const DONOR_GUARD_COUNTERS := {
+	"guards_GetCount": "posted guard handles, live list; cap gates use < 120, overflow uses > 120", # us:3644/3649/3658/3665
+	"guardsCount": "undefended-building count, recomputed in TEXT drain (pwar:3360-3369) but consumed LIVE at us:3638", # [U]-G1d tainted input
+	"guardsTotal": "accumulated posting demand, TEXT only (pwar:3374); never read by the live classifier", # [U]-G1d
+	"dead_band": 120, # exactly 120 satisfies neither >120 nor <120 ([D] §1)
+}
+
+# §3 draw law [D] - sim stream S only; short-circuit; G NEVER interleaved here.
+const DONOR_GUARD_DRAW_LAW := {
+	"stream": "S (sim RandomExt LCG)", # us:3644/3655/3658/3665 all capital-E RandomExt [O]
+	"comparison": "RandomExt < v/32768", # misc.script:486-490 [O], divisor dg:176
+	"thresholds": {"nonai_shooter_grenadier": 3000, "ai_second_defender": 6000, "ai_first_freewarrior": 10000, "nonai_lightinfantry": 20000}, # §1 literal set, complete
+	"ai_draws": "1 when freewarrior arm hits; else 2 (draw1 always, draw2 only when draw1 arm false; free-roll then defender-roll)", # §3 [D]; corrects RNG annex S5-a `<=1`
+	"nonai_draws": "0 or 1 (draw only when usage+cap gate true)", # §3 [D]
+	"g_counter": "unchanged by classifier; G neighbour is cell-scan only us:4796 [O], attribution [U]-G1f",
+}
+
+static func donor_guard_result(list: String, arm: String, draws: int, cite: String) -> Dictionary:
+	return {"list": list, "arm": arm, "s_draws_used": draws, "cite": cite, "label": "[U]-G1a/G1b UNCALLED"}
+
+# §1 arms 1-7 verbatim, INERT/UNCALLED [U]-G1a/G1b. `c` keys are donor lvalues
+# 1:1 (guards_count=guardsCount, guards_getcount=guards.GetCount,
+# freewarriors_count=freewarriors.GetCount). `s_draws` is a fixed-seed vector of
+# already-f32 sim-stream S RandomExt values supplied by the harness; this helper
+# never touches game.rng/sim_rng (RNG-AI annex discipline). Precondition: vector
+# holds at least `s_draws_used` entries (§6 S200/B40). f32/f64 comparison
+# promotion stays [U]-G1-e; no new stream, class or count is invented.
+static func donor_guard_classify_spawn(c: Dictionary, s_draws: Array) -> Dictionary:
+	var is_building := bool(c.get("is_building", false))
+	var is_peasant := bool(c.get("is_peasant", false))
+	var todo_branch := bool(c.get("is_officer_or_drummer", false)) or bool(c.get("is_water", false))
+	var has_guard_order := bool(c.get("has_guard_order", false))
+	var usage := str(c.get("usage", ""))
+	var airole := str(c.get("airole", ""))
+	var bai := bool(c.get("bai", false))
+	var is_priest := bool(c.get("is_priest", false))
+	var gc: int = int(c.get("guards_count", 0))
+	var gp: int = int(c.get("guards_getcount", 0))
+	var fw: int = int(c.get("freewarriors_count", 0))
+	var used := 0
+	# Entry gates - all produce NO four-list add here (LIVE).
+	if is_building or is_peasant:
+		return donor_guard_result("none", "7_building_leg", 0, "us:3681-3682")
+	if todo_branch:
+		return donor_guard_result("none", "entry_todo", 0, "us:3614-3617 / 3674-3676")
+	if has_guard_order:
+		return donor_guard_result("none", "entry_guard_order", 0, "us:3623 / 3491-3508")
+	# Arm 1 - unconditional, both owners, 0 draws.
+	if airole == "light_dip":
+		return donor_guard_result("defenders", "1_light_dip", 0, "us:3626-3627 / dg:395")
+	# Arm 2 - unconditional, 0 draws.
+	if usage in ["mortar", "cannon", "fasthorse", "archer", "supermortar", "mcannon"]:
+		return donor_guard_result("agressors", "2_direct", 0, "us:3630-3634")
+	# Arm 3 - four-type group; note the two DISTINCT counters at :3638.
+	if usage in ["hardhorse", "shooter", "grenadier", "horseshooter"]:
+		if bai:
+			if gc > 0 and gp < 120:
+				return donor_guard_result("defenders", "3a_ai_group", 0, "us:3638-3639")
+			return donor_guard_result("agressors", "3a_ai_group_else", 0, "us:3640-3641")
+		# Non-AI leg: ONLY shooter/grenadier roll; case ends :3646 with NO else-add.
+		if (usage == "shooter" or usage == "grenadier") and gp < 120:
+			var r3000: float = float(s_draws[used])
+			used += 1
+			if r3000 < 3000.0 / 32768.0:
+				return donor_guard_result("defenders", "3b_nonai_3000", 1, "us:3644-3645")
+			return donor_guard_result("none", "3b_nonai_3000_fail", 1, "us:3646")
+		return donor_guard_result("none", "3b_nonai_no_list", 0, "us:3646")
+	# Arm 4 - strict > on both counts; gp==120 falls through (dead band).
+	if is_priest or (fw > 15 and gp > 120):
+		return donor_guard_result("agressors", "4_overflow", 0, "us:3649-3650")
+	# Arm 5 - AI sampler: draw1 ALWAYS consumed; draw2 only if arm1 false.
+	if bai:
+		var r10000: float = float(s_draws[used])
+		used += 1
+		if r10000 < 10000.0 / 32768.0 and fw < 20:
+			return donor_guard_result("freewarriors", "5a_ai_free", 1, "us:3655-3656")
+		var r6000: float = float(s_draws[used])
+		used += 1
+		if r6000 < 6000.0 / 32768.0 and gp < 120:
+			return donor_guard_result("defenders", "5b_ai_def", 2, "us:3658-3659")
+		return donor_guard_result("agressors", "5c_ai_else", 2, "us:3660-3662")
+	# Arm 6 - non-AI lightinfantry; usage+cap gate precede the single draw.
+	if usage == "lightinfantry" and gp < 120:
+		var r20000: float = float(s_draws[used])
+		used += 1
+		if r20000 < 20000.0 / 32768.0:
+			return donor_guard_result("defenders", "6_nonai_lightinf", 1, "us:3665-3666")
+		return donor_guard_result("none", "6_nonai_lightinf_fail", 1, "us:3666-3667")
+	# Unlisted usage in the sampler else arm: NO list until G1a closes.
+	return donor_guard_result("none", "7_else_no_list", 0, "us:3647 [U]-G1a")
+
+# §6 - six guard-sampler [U] items keep the EXACT zero-mismatch captures.
+# Termination (§6): run the FULL series; ANY single mismatch keeps the item [U]
+# and forbids wiring; zero mismatches across the FULL series closes it. No class,
+# draw order or stream split is fitted to make a capture pass. Donor binary is
+# never executed by this worker (captures are owner-authorised replays/hashes).
+const DONOR_GUARD_U_EXPERIMENTS := {
+	"G1a": {
+		"state": "Usage->branch map for unlisted usages: named usages grounded §1; full gc_obj_usage_* enum NOT transcribed",
+		"cite": "us:3601-3684 (arm sites 3626/3630/3635/3649/3653/3663/3647)",
+		"capture": "Series B40: spawn one unit of every usage enum value (both bai settings, guardsCount=0 then >0, guards=x/119/120/121), log _unit_AddToAIData list outcome WITHOUT rolls (force S stream to fixed vector)",
+		"expect": "§1 table reproduced exactly; unlisted usages land in sampler else arm",
+		"pass": "40/40 outcomes match, 0 mismatches; until green, unlisted usages default to NO-list (never agressors)",
+	},
+	"G1b": {
+		"state": "Per-tier value selection + draw count/order: 3000/6000/10000/20000 literals + S stream + 1-2-draw short-circuit [O/D]; live pacing [U]",
+		"cite": "us:3644/3655/3658/3665; misc.script:486-490",
+		"capture": "Series S200: AI-owner sampler-reachers x100 + non-AI shooter/grenadier x50 + non-AI lightinfantry x50, fixed X21 vector, log S draws consumed per candidate in order (roll values + count gates)",
+		"expect": "AI 1-or-2 draws (second iff first arm false), non-AI exactly 1, G counter UNCHANGED",
+		"pass": "draw counts + list outcomes identical across 3 seeds, 0 mismatches",
+	},
+	"G1c": {
+		"state": "Removal / posting / mobilization activation: Removal + spill LIVE §4; posting/mobilization/agressor TEXT",
+		"cite": "us:3688-3713,3564-3576; pwar:3388-3440,3020-3034,3562-3568",
+		"capture": "Series R300: (i) despawn one member of each list + one posted guard + one defbuilding -> assert LIVE removal/spill §4 rows; (ii) force guardsCount>0 + defenders pool -> assert TEXT posting defenders->guards move + quota + reverse-iterate order; (iii) force mobilization + agressor trigger -> assert ALL-move + exact-5 pull",
+		"expect": "all three sub-series reproduce §4 rows",
+		"pass": "all three sub-series 0 mismatches; any divergence -> that sub-row stays [U]",
+	},
+	"G1d": {
+		"state": "guardsCount/guardsTotal recompute inputs: Formula TEXT :3360-3378; aipriority table LIVE :3525-3536",
+		"cite": "pwar:3360-3378; us:3525-3536 (consumed LIVE at us:3638)",
+		"capture": "Series C60: 0-15 defbuildings x priority mix (center/mill/house/academi), 0-10 posted guards each, log guardsCount/guardsTotal/buildIndex/reqDef",
+		"expect": "pwar:3367-3376 arithmetic byte-identical (curStr=aipriority-count, doubled when nonzero)",
+		"pass": "60/60 match, 0 mismatches; until green, :3638 AI class-arm input stays [U]-tainted",
+	},
+	"G1e": {
+		"state": "Runaway x guard-order resolution + fear non-interference: Runaway gate + guard keep LIVE §5; engine resolution + fear activation [U]",
+		"cite": "us:7175-7239,7330-7374,8151-8153; pwar:2798-2838,2892-2903",
+		"capture": "Series F100: posted guards + free defenders + agressors, fixed threat at sub-minsearchdist, both bai, difficulties 0-4, standtime 0/>1.3; log _unit_DoRunAway issues + order0 itype/progress + guard-list membership before/after; parallel fear setup (dist<30 stronger / dist<400 weaker) asserting NO guard-list delta",
+		"expect": "runaway issues match us:7366-7368 gate; guard lists unchanged by fear runs",
+		"pass": "100/100 issues match AND guard lists unchanged by fear, 0 mismatches",
+	},
+	"G1f": {
+		"state": "RNG stream attribution at guard sites: Sampler S [O]; cell-scan G neighbour [O]; cross-stream ORDER [U]",
+		"cite": "us:3644/3655/3658/3665 (S); us:4796 (G cell-scan); RNG-LEDGER §5-G1b/G1c",
+		"capture": "Series L20+C300 per RNG-LEDGER §5-G1b/G1c extended: 20-vector S assert at sampler rolls + 300-shot scatter/count assert; G draws asserted as COUNTS only (Delphi free-run)",
+		"expect": "sampler draws from §3 order with zero G interleaving",
+		"pass": "any stream flip -> [U]; zero mismatches closes",
+	},
+}
+
+# §8 non-claims for this annex: no parity assertion, no donor execution, no
+# invented class/draw/count/stream, no weakened capture, no activation of any
+# `[*]` text row. Posting/mobilization/fear/runaway stay labelled data/UNCALLED.
+const DONOR_GUARD_NONCLAIMS: Array = [
+	"NO PARITY CLAIM: no donor binary executed, no donor GPU A/B frame, no port capture compared by this worker",
+	"no invented usage class, draw count or counter: unlisted usages default to NO-list under [U]-G1a",
+	"non-AI hardhorse/horseshooter and failed non-AI rolls land in NO list (us:3646), NEVER agressors - D4 correction",
+	"guardsCount != guards.GetCount != guardsTotal; guards.GetCount==120 is a one-wide dead band ([D] §1)",
+	"AI sampler is 1-2 S draws with short-circuit (free-roll then defender-roll); RNG annex S5-a `<=1` is the disclosed undercount, left untouched",
+	"fear/runaway never add/remove guards; posting/mobilization/agressor rows are `[*]` DONOR-TEXT, NOT activated ([U]-G1c/G1e)",
+	"game.gd/data.gd items are OUT OF SCOPE here: exact patch recommendations are in this worker's final report only",
+]
+
+# =============================================================================
+# DEC-U-FEAR-RUNAWAY :: LIVE RUNAWAY LAW / FEAR TEXT ROWS / R1-R7 (IMPL-FEAR-AI)
+# (APPEND ONLY - no line above this header is edited by this worker)
+# -----------------------------------------------------------------------------
+# Sole source: docs/terrain_swarm_2026-11-26/reports/DEC_U_fear_runaway.md
+#   §1 (IsRunAway / DoRunAway / trigger gate), §2 (distance/delay sources),
+#   §3 (guard preservation), §4 (fear set/clear TEXT rows), §6 ([U] register),
+#   §7 items 3-4/7 (port change list), §8 (non-claims). Every donor claim pinned
+#   t_87f0f3c130b0 (cossacks.exe, 5,768,048 B, sha256 87f0...4e16c); donor
+#   read-only, never executed. NO PARITY CLAIM: no donor binary run, no capture
+#   compared by this worker. visual_parity_claim = false.
+#
+# LABELS: [O] verbatim donor literal (file:line) | [D] deterministic derivation |
+#   [I] inference, flagged | [U] UNVERIFIED, exact zero-mismatch capture given |
+#   [LIVE] verbatim live path, still represented as DATA here |
+#   [DONOR-TEXT] / `[*]` engine-bound/disabled text, NOT activated.
+#
+# SCOPE: labelled DATA + INERT / UNCALLED telemetry helpers only. Nothing below
+# is read by tick()/_economy()/_build()/_train()/_waves()/_defense()/_raids().
+# No existing draw, threshold, deadline, stream, save key or annex row changes;
+# the landed AI-THRESHOLDS, TICK-ORDER, RNG-AI and GUARD-SAMPLER annexes above
+# stay byte-for-byte verbatim - this annex only ADDS facts, never re-edits them.
+# The runaway helper NEVER references `fear` or `SearchEnemyInCell`. Fear rows
+# are transcribed inertly (`[*]` TEXT); no clearing site was found (R7) and no
+# per-frame auto-clear is assumed. No behaviour is wired: engine resolution of
+# guard+runaway stays [U]-G1e / F100, exactly as landed in GUARD-SAMPLER §6.
+# =============================================================================
+
+# §2 / §7 item 2 - runaway constants, verbatim [O] (dmscript.global).
+# The two delay/dist literals are the SAME pair already landed at ai.gd:1054-1055.
+# The line windows differ (AI-THRESHOLDS dg:195-196 vs DEC-U §2 dg:198-199);
+# that variance is DISCLOSED, not "fixed" - the landed rows stay untouched.
+const DONOR_FEAR_RUNAWAY_CONST := {
+	"runawaydelay": 1.3,           # dg:198 (AI-THRESHOLDS window dg:195) [O]
+	"runawaydist": 3.5,            # dg:199 (AI-THRESHOLDS window dg:196) [O]
+	"move_mode_runaway": 2,        # dg:657 gc_obj_order_move_mode_runaway [O]
+	"searchvictimattargetdist": 6, # dg:197 [O]; identity with us:8427 literal-6 [U]-R6
+	"do_runaway_eps_factor": 3.0,  # us:7189-7197 3*epsilon lower clamp [O]
+	"edge_margin": 0.25,           # us:7182-7239 clamp 0.25 inside map edge [O]
+}
+const DONOR_FEAR_RUNAWAY_PARITY_CLAIM := false # §7 item 7: visual_parity_claim=false
+
+# §1 LIVE runaway law, verbatim [O] (lib/unit.script). DATA + inert telemetry.
+const DONOR_RUNAWAY_LIVE := {
+	"is_runaway": "orders[0].itype = move AND orders[0].info.progress = move_mode_runaway(2)", # us:7175-7179 [LIVE][O]
+	"do_runaway_step": "deltadst := Clamp(minsearchdist - dst, 3*epsilon, 3.5); point AWAY from threat; clamp +/- (hm - 0.25); drop pre-existing runaway order; _unit_OrderMove(..., mode 2, True)", # us:7182-7239 [LIVE][O]
+	"trigger_gate": "(standtime = 0) or (standtime > 1.3) or (non-AI owner and difficulty <= normal)", # us:7366-7368 [LIVE][O]; fires on a sub-minsearchdist victim
+	"trigger_gate_duplicate": "(standtime = 0) or (standtime > 1.3) or (non-AI owner and difficulty <= normal)", # us:8151-8153 [LIVE][O] duplicate of :7366-7368
+	"no_usage_whitelist": true, # §1.4 / [U]-R1: the two `//` "less annoying" notes (:7367,:8152) are intent comments, NOT eligibility; gate on the verbatim predicate only
+	"no_rng_on_path": true, # §1.4 / [U]-R5: no draw in any read line, but NOT proven draw-free; never assumed
+	"guard_keep_bremove": "bRemove = (attackobj) and (not _unit_IsGuard)", # us:7337-7340 [LIVE][O]
+	"guard_keep_or_order": "... or order = guard", # us:7332 [LIVE][O] alternative preserve on retarget
+	"control_refuses_reassign": "control layer refuses move/attack reassignment on guard holders", # control.script:317,398 [LIVE][O]
+	"do_runaway_no_guard_exclusion": true, # §3: _unit_DoRunAway carries NO guard exclusion in any read line
+	"guard_x_runaway_resolution": "engine dispatch - UNVERIFIED", # [U]-G1e / F100 (GUARD-SAMPLER §6); NOT wired
+	"runaway_as_exclusion": "miscext.script:1225,1258,1274; unit.inc/nothing.inc:262-264; onendpointreached.inc:19", # §3 cite-only [U]-R3; semantics NOT transcribed, NOT modelled
+}
+
+# §4 fear rows - ALL `[*]` DONOR-TEXT, inert data only (progresswarai.inc).
+# NO `fear := true` branch, NO cell-search call, NO save key is added here.
+# No clearing site found in any read line [U]-R7: never assume auto-clear.
+const DONOR_FEAR_TEXT := {
+	"activation": "[*] engine-bound/disabled text - selector execution [U], literal values [O]-text", # AI-THRESHOLDS header / §4
+	"set_site": "myForce = squad[0].count; per enemy army enForce = cavalry+infantry+shooters (mortars COMMENTED OUT); dist<30 and enForce>myForce -> fear (skip attack)", # pwar:2798-2832 [O]-text
+	"near_weaker_track": "elif dist<400 and enForce<=myForce and dist<nearDist -> track nearest weaker; not fear and nearDist<MaxInt -> cell search radius 4", # pwar:2832-2838 [O]-text (call site inert)
+	"fallback_track": "enForce>6 and dist<40 and dist<minDist -> retreat-to-safe-position", # pwar:2892-2903 [O]-text
+	"clearing_site_found": false, # §4 / R7: NO `fear := false` / re-init site in any read line; do NOT assume per-frame auto-clear
+	"lifetime": "per-call local vs persistent across ticks - UNVERIFIED", # [U]-R7
+	"no_cross_writes": true, # §5: fear writes NO stat/rout/guard-list/order; never touches guards or the runaway path
+	"guard_list_delta": "none", # §4/§5: fear NEVER adds/removes guards/defenders/freewarriors/agressors
+}
+
+# §1-§2 INERT / UNCALLED telemetry helpers. They encode the LIVE donor law
+# verbatim and NEVER draw from game.rng, NEVER touch game state, and are NEVER
+# called by tick()/_economy()/_build()/_train()/_waves()/_defense()/_raids().
+# Wiring the gate into runtime is R2-gated and stays UNCALLED ([U]-R2), per
+# DEC-U §7 item 5. No helper references `fear` or `SearchEnemyInCell`.
+
+static func donor_is_runaway(order0: Dictionary) -> bool:
+	return str(order0.get("itype", "")) == "move" and int(order0.get("progress", -1)) == int(DONOR_FEAR_RUNAWAY_CONST["move_mode_runaway"])
+
+static func donor_runaway_gate(standtime: float, bai: bool, diff_le_normal: bool) -> bool:
+	# us:7366-7368 [LIVE]; duplicate us:8151-8153. `diff_le_normal` is evaluated
+	# by the harness from the donor numeric difficulty enum (0..4); the exact
+	# enum->normal mapping is NOT transcribed ([U]-R1/R2), never guessed here.
+	var delay: float = float(DONOR_FEAR_RUNAWAY_CONST["runawaydelay"])
+	return standtime == 0.0 or standtime > delay or (not bai and diff_le_normal)
+
+static func donor_do_runaway_step(minsearchdist: float, dst: float, self_x: float, self_y: float, threat_x: float, threat_y: float, hm: float, epsilon: float) -> Dictionary:
+	# us:7182-7239 [LIVE] verbatim: Clamp(minsearchdist-dst, 3*eps, 3.5), point
+	# AWAY from threat, clamp +/- (hm-0.25). No RNG, no fear, no cell search.
+	var deltadst: float = clampf(minsearchdist - dst, float(DONOR_FEAR_RUNAWAY_CONST["do_runaway_eps_factor"]) * epsilon, float(DONOR_FEAR_RUNAWAY_CONST["runawaydist"]))
+	var dx := self_x - threat_x
+	var dy := self_y - threat_y
+	var px := self_x
+	var py := self_y
+	var l2 := dx * dx + dy * dy
+	if l2 > 0.0:
+		var l := sqrt(l2)
+		px = self_x + dx / l * deltadst
+		py = self_y + dy / l * deltadst
+	var lim := hm - float(DONOR_FEAR_RUNAWAY_CONST["edge_margin"])
+	px = clampf(px, -lim, lim)
+	py = clampf(py, -lim, lim)
+	return {"deltadst": deltadst, "x": px, "y": py, "mode": int(DONOR_FEAR_RUNAWAY_CONST["move_mode_runaway"]), "cite": "us:7182-7239", "label": "[U]-R2 UNCALLED"}
+
+# §6 - all seven items stay [U] with their EXACT zero-mismatch captures.
+# Termination (§6): run the FULL series; ANY single mismatch keeps the item [U]
+# and forbids wiring; zero mismatches across the FULL series closes it. No usage
+# gate, draw, stream, distance or reset is fitted to make a capture pass. Donor
+# binary is never executed by this worker (captures are owner-authorised).
+const DONOR_FEAR_RUNAWAY_U_EXPERIMENTS := {
+	"R1": {"state": "Runaway unit eligibility (which usages enter)", "cite": "us:7366-7368; two `//` notes :7367/:8152 are intent comments", "capture": "Series E60: one unit of every usage enum, both bai, difficulties 0-4, standtime 0 then >1.3, fixed sub-minsearchdist threat, not standground; log _unit_DoRunAway issued/not per unit", "expect": "issue pattern matches :7366-7368 predicate with NO usage term", "pass": "60/60 match, 0 mismatches; until green gate on verbatim predicate only, never a usage whitelist"},
+	"R2": {"state": "Runaway x guard-order resolution + fear non-interference (adopts GUARD-SAMPLER F100 verbatim)", "cite": "us:7175-7239,7330-7374,8151-8153; pwar:2798-2838,2892-2903", "capture": "Series F100: posted guards + free defenders + agressors, fixed sub-minsearchdist threat, both bai, difficulties 0-4, standtime 0/>1.3; log issues + order0 itype/progress + guard lists before/after; parallel fear setup asserting NO guard-list delta", "expect": "runaway issues match :7366-7368 gate 100/100 AND guard lists unchanged by fear", "pass": "100/100 issues + unchanged guard lists, 0 mismatches; until green helper UNCALLED"},
+	"R3": {"state": "Runaway-as-exclusion sites", "cite": "miscext.script:1225,1258,1274; unit.inc/nothing.inc:262-264; onendpointreached.inc:19", "capture": "Series X30: gather/target/end-point flows with order0 move/runaway preset vs normal move; log branch at each site", "expect": "exclusion taken exactly when _unit_IsRunAway true", "pass": "30/30 match, 0 mismatches; until green model ONLY the :7175-7179 predicate as data"},
+	"R4": {"state": "Second trigger :7603 + standground search :8415-8433 exact predicates", "cite": "us:7603,8151-8153,8415-8433", "capture": "Series T40: standground + moving shooters vs closing threat at minsearchdist +/- eps, difficulties 0-4; log victim-search branch + runaway issue at all four sites", "expect": ":7366-7368 = :8151-8153 always; :7603/:8415-8433 logged as-observed", "pass": "40/40 on grounded sites, 0 mismatches; other two stay [U] until transcribed + matched"},
+	"R5": {"state": "RNG-stream attribution on the runaway path", "cite": "us:7366-7368,8151-8153 + _unit_DoRunAway motion", "capture": "Series D50: fixed X21 vector, S/G counters snapshotted around each gate evaluation and each motion step", "expect": "zero S draws, zero G draws on this path", "pass": "50/50 runs with 0 deltas, 0 mismatches; any delta -> site recorded as drawing, never ignored"},
+	"R6": {"state": "searchvictimattargetdist=6 vs us:8427 literal-6 identity", "cite": "dg:197 / us:8415-8433", "capture": "Series V20: vary donor const (owner-authorised) or transcription-compare full :8415-8433 text; log :8427 radius argument", "expect": "argument is literal 6 or the named const - recorded, never assumed", "pass": "verbatim text match, 0 mismatches"},
+	"R7": {"state": "Fear scope/lifetime/clearing (biggest fear unknown)", "cite": "pwar:2798-2838,2892-2903; NO clearing site found", "capture": "Series C40: force fear setup (dist<30, stronger enemy), remove threat beyond 400 / destroy it, step AI; log fear value + attack resumption tick over 40 runs", "expect": "recorded as-observed (local re-init vs persist)", "pass": "deterministic lifetime rule reproduced 40/40, 0 mismatches, PLUS full `[*]`-binding proof before any port wiring; until then fear stays DATA-only"},
+}
+
+# §8 non-claims for this annex: no donor execution, no parity assertion, no
+# invented usage gate / draw / stream / distance / reset, no weakened capture,
+# no activation of any `[*]` text row, no behaviour wired into runtime.
+const DONOR_FEAR_RUNAWAY_NONCLAIMS: Array = [
+	"NO PARITY CLAIM: no donor binary executed, no donor GPU A/B frame, no port capture compared by this worker; visual_parity_claim=false",
+	"no invented usage whitelist: gate on the verbatim us:7366-7368 predicate only; the two `//` notes are intent, not eligibility ([U]-R1)",
+	"no auto-clear assumed: no `fear := false` / re-init site exists in any read line ([U]-R7); fear rows stay inert `[*]` DONOR-TEXT",
+	"fear never touches guard lists or the runaway path; runaway never sets fear or calls a cell search - two disjoint mechanisms ([U]-R2)",
+	"no guard-order strip on retarget: bRemove=(attackobj) and (not _unit_IsGuard) us:7337-7340 and `or order = guard` us:7332 preserved as data",
+	"no RNG draw, stream, distance or reset fitted to a capture; every R1-R7 series terminates on zero mismatches over the FULL run",
+	"guard+runaway engine resolution stays [U]-G1e / F100 (GUARD-SAMPLER §6); runaway-as-exclusion stays [U]-R3; helpers are UNCALLED ([U]-R2)",
+	"the two dmscript.global line windows (dg:195-196 vs dg:198-199) are the SAME delay/dist literals - disclosed variance, landed rows untouched",
+	"game.gd/data.gd items are OUT OF SCOPE here: this worker edited only variant3d/scripts/ai.gd (plus its .bak-FEARAI backup)",
+]

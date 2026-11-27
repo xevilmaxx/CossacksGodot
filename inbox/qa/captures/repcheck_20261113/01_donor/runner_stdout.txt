@@ -1,0 +1,2 @@
+[runner] ticket 120 'acapt-repcheck-donor' START (waited 0.00s)
+[runner] ticket 120 'acapt-repcheck-donor' END ok (run 47.88s)

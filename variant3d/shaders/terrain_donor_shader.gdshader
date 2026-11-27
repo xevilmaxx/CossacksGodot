@@ -1,371 +1,266 @@
 shader_type spatial;
 
 // ============================================================================
-// TERRAIN-SWARM-2026-11-26 / I10 — DONOR-FIRST terrain shader.
-// SUBCELLS pass owner file: variant3d/shaders/terrain_donor_shader.gdshader
+// TERRAIN-SWARM-2026-11-26 / I10+RENDER1TO1 — DONOR 1:1 terrain shader.
+// AUTHORED FILE (only): variant3d/shaders/terrain_donor_shader.gdshader.
 //
-// PROVENANCE (all donor material READ-ONLY; no donor binary was run or copied):
-//   reports/DEC_VIS_01_uv_mapping.md §4/§6      — tsDouble 8x8 RGB subcell selector
-//   spec/06_TILE_AND_ATLAS.md (F05 + F06 + X06)  — tile ids, atlas, alpha truth
-//   spec/05_WATER_SHORE.md    (D06 + F06 + A02)  — three water levels, hmapTex key
-//   reports/D08_tile_select_bin.md               — eye-plane texgen, blend factors,
-//                                                   defaults, tile id dictionary
-//   reports/F06_alpha_masks.md                   — alpha.bmp / alphavert / alphanull
-//   reports/X11_water_translation.md             — water/shore boundary, hmapTex key
-//   reports/X17_blendfunc_verification.md        — bmTransparency == framebuffer crossfade
-//   variant3d/shaders/terrain_tileindex.gdshader (READ-ONLY reference) — lighting rig
-//   variant3d/scripts/world3d_terrain.gd:137-141 (READ-ONLY) — sun/ambient colours
+// AUTHORITY (all donor material READ-ONLY; no donor binary run or copied):
+//   docs/terrain_swarm_2026-11-26/reports/PORT1TO1_terrain_renderer.md
+//     §3.5 LUTs (RGB 0x8f5cd7 + five full-variant ranges; ALPHA 16 pairs 0x8f5d00)
+//     §4.3/§4.4 tsDouble 8x8 subcell + rotation/mirror/V-flip call-site constants
+//     §5.1 corrected alpha patch axes (col=p/AlphaCols, row=p%AlphaCols;
+//           p+16 shifts u by +0.5, NOT v by +1.0) + base-only insets 0.1/0.2
+//     §5.4 fixed-function bmTransparency / alpha-test GL enums
+//     §6   lighting product, effective specular zero, sceneColor [O] (0.2,0.2,0.2)
+//     §8   Godot rewrite plan (baked uv0/uv1 + base/overlay surfaces)
+//   reports/X17_blendfunc_verification.md, D08, F06, X35, DEC_SMALL_light_products
 //
-// visual_parity_claim:false
-//   No donor GPU A/B frame exists. Every PORT APPROXIMATION / [U] below is a
-//   labelled substitute, NOT donor truth (CHARTER.md:43-44,125).
+// visual_parity_claim:false. No donor GPU A/B frame exists. Every [U] below is
+// an UNVERIFIED binding with an explicit slot and/or sentinel; no value is
+// invented, no approximation is silently accepted, no parity is claimed.
 //
-// CONTRACT WITH I08 (terrain_donor_mesh.gd):
-//   UV2.x = integer tile id, donor presets range [0,123]
-//           # donor data/terrain/tiles/terrain.presets:6-129 (spec 06 §1; D08 ev_e742...)
-//   UV2.y = face mode {0=ground, 1=verticalfront, 2=verticalside}
-//           # donor refkeys data/terrain/ref/reftile.mat:1-170; UV2 transport is PORT APPROX
-//   NORMAL = height-derived normal supplied by I08. This shader computes donor
-//            Blinn-Phong from it; it does NOT bake, tilt or promote face art.
-//
-// BLEND CONTRACT (X17 §3.4; D08 §3.5 / §5 implications #4):
-//   This shader is the MASKED OVERLAY. A base opaque layer must already be in
-//   the framebuffer (composer I11/N14), else ALPHA<1 reveals sky. Godot
-//   `blend_mix` == donor glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-//   # donor cossacks.exe VA 0x4ef991/0x88fba4/0x88fbb0, table 0x8fb1c4/0x8fb1c8 (X17 §3.1)
-//   # donor data/terrain/ref/reftile.mat:17 (bmTransparency), enum idx 1 at cossacks.exe:949234
-//   The mask enters ALPHA ONLY — the legacy `rgb * a` at
-//   terrain_tileindex.gdshader:427 is deliberately NOT reproduced.
-//   Number of fixed-function composite passes is [U] CONFIRMED_UNVERIFIED
-//   (X17 §3.3/U-X17-1, six passes; D08 §7 #5). `blend_pass_count` is a
-//   labelled telemetry uniform with NO default claim (0 = UNSET sentinel).
-//
-// NOT PRESENT BY DESIGN (no fakery, CHARTER.md:83-84, S-25-09):
-//   no shadow sampler / PCF, no AO, no fog, no dither/noise/warp field,
-//   no forced cliff promotion, no wave-height texture bound to hmapTex.
-// ============================================================================
+// ----------------------------------------------------------------------------
+// MESH CONTRACT (terrain_donor_mesh.gd; DEC_U_alpha_pass_quad §6, U-10 [O]):
+//   producer 0x48-byte layer record: RGB uv +0x05..+0x24 (FUN_00812b4c),
+//     alpha uv +0x25..+0x44 (FUN_00812ccc); consumer 0x50-byte quad record:
+//     vertex-index header +0x00..+0x0f (B,A,C,D), RGB uv +0x10..+0x2f,
+//     alpha uv +0x30..+0x4f; UV payload shifted +0x0b.
+//   UV   = that record's baked RGB uv0 (tsDouble/tsSingle paths both baked)
+//   UV2  = that record's baked alpha uv1 (insets + rot=2 + V-flip applied)
+//   COLOR.r = resolved tile id [0,123]  (selects the 1024^2 donor block layer)
+//   COLOR.g = layer index (0 = base, 1..3 = overlays, ascending distinct tag)
+//   COLOR.b = alpha patch index p = ALPHA_index(mask, variant)
+//   COLOR.a = occupancy mask (8/2/4/1 corner weights; 0 for base tsDouble)
+//   NORMAL  = donor gl_Normal input at the corner vertex (port stencil, labelled)
+// No mod/fract/id-bit/LUT arithmetic and no textureGrad/LOD inset exists here:
+// all selectors are resolved on the CPU, exactly as the donor display list does.
+// ----------------------------------------------------------------------------
+// BLEND CONTRACT (X17 §3.1/§3.2; D08 §3.5; DEC_U_alpha_pass_quad §4/§5):
+//   donor case bmTransparency (enum 1) calls sub_88f0f0 at 0x4ef97f (cap 2 =
+//   GL_BLEND) and 0x4ef989 (cap 0 = GL_ALPHA_TEST): the alpha test is ENABLED,
+//   not disabled; glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) at 0x4ef995.
+// Godot `blend_mix` == that factor pair. The mask enters ALPHA ONLY; there is
+// no `rgb *= a` anywhere in either donor fragment (hf.pvl.smx3.frag:17,50).
+// Case 1 issues NO glAlphaFunc: no terrain-specific comparator to reproduce, so
+// this optional discard stays OFF; residual [U] U-6b is a leaked GL_GEQUAL/ref
+// from cases 3/4 (glAlphaFunc 0.5f/1.0f). Do not invent a threshold/discard.
+// U-9 [O]/[D]: FUN_00818920 emits ONE glNewList(GL_COMPILE) per cell with all
+// layer quads in producer order; the two Godot surfaces are a state translation,
+// NOT two donor draw passes. Residual [U] U-9b: final glCallList count per cell.
+// ----------------------------------------------------------------------------
+// SHORE-ALPHA LABELS (DEC_U_shore_alpha.md §4/§5/§7) — LABELS/telemetry ONLY.
+// No behaviour, no parity claim, no invented threshold or patch index, and no
+// test weakening. These comments record findings; they change no uniform value.
+//   * PORT-ONLY KEYS: features.water.alpha_confine=true / shore_prox=false exist
+//     only as config/config.gd getters + water3d telemetry. NO donor constant
+//     backs either; shore_prox is REMOVED port art (water3d.gdshader:533). This
+//     terrain shader consumes NEITHER; no confine threshold/prox weight is here.
+//   * NEAR-WATER p: an overlay quad carries COLOR.b=p=alpha_index(mask,variant)
+//     over the 32-entry DAT_008f5d00 set (lo 0..15, +16 on variant&1). The base
+//     quad carries p in {0,16} only (both authored 255, F06-E10 -> a=1.0). Live
+//     shore tile ids are sandsea1=93 / sandsea5=97 / sandsea6=98 (X28 §3.3,
+//     F05 §3). NO single "shore patch number" exists; the per-cell instance is
+//     [U] without the runtime (mask&0xff, variant&1) pair — see U-SA4.
+//   * GL ALPHA FUNC: case 1 bmTransparency issues NO glAlphaFunc -> optional
+//     discard stays OFF; cases 3/4 use glAlphaFunc(GL_GEQUAL,0.5f/1.0f). The
+//     case-1 comparator/ref is [U U-SA5] (GL default or a leaked 3/4 value);
+//     never default 0.5/1.0, never invent a discard (DEC_U_shore_alpha §5.1).
+//   * tiaAlphaFromIntensity=1 [O] enum; byte arithmetic stays [U U-SA3] pending
+//     the fixed-camera GL_ALPHA byte-dump probe; the alpha_atlas texel feeds
+//     ALPHA directly (hf.pvl.smx3.frag:50) — no intensity/luma math on alpha.
+// ----------------------------------------------------------------------------
 
-// `unshaded`: PORT render-mode decision — donor assembles final colour in-shader
-// (hf.pvl.smx3.frag:17,50) so Godot must not shade ALBEDO twice (reference :31-37).
-// `cull_disabled`: PORT GUARD for mesh winding (donor is fcCull, reftile.mat:18).
+// `unshaded`: donor assembles the final colour in-shader (hf.pvl.smx3.frag:17,50).
+// `cull_disabled`: PORT GUARD for donor fcCull (reftile.mat:18) — not a donor claim.
 render_mode blend_mix, unshaded, cull_disabled;
 
 // ----------------------------------------------------------------------------
-// Samplers. Donor HeightField has TWO samplers: texUnit0 (RGB) and texUnit1 (alpha)
-// bound to units 0/1 (data/shaders/shaders.lib:34-49), read at
-// data/shaders/obj/hf.pvl.smx3.frag:13-14. A third sampler carries the face
-// refkey's alphavert projection (data/terrain/ref/reftile.mat:122,148).
+// Samplers. DONOR texUnit0 = RGB block, texUnit1 = alpha mask (shaders.lib:34-49;
+// 0x818428 pushes 0x84c0/0x84c1). The donor binds 112 SEPARATE 1024^2 DXT1
+// blocks, so the authoritative port sampler is sampler2DArray with one layer
+// per used tile id. The 2D atlas remains a labelled fallback transport only.
 // ----------------------------------------------------------------------------
+uniform sampler2DArray tile_array : filter_nearest_mipmap, repeat_enable;
 uniform sampler2D tile_atlas : filter_nearest_mipmap, repeat_enable;
-// Donor RGB blocks are 1024x1024 DXT1 with 11 mips (data/terrain/tiles/textures/grass1.dds
-// header, D08 §3.1). Donor filtering is maNearest + miNearestMipmapLinear + tfIsotropic
-// (reftile.mat:24-49; F05 §5), so magnification stays nearest, minification uses the
-// mip chain, and anisotropy is not enabled. B02 supplies that required runtime mip chain;
-// no dither/AA substitute is added. Packed 16x8 id layout remains PORT APPROXIMATION
-// (spec 06 §2); the recovered 8x8 subcell selector is applied INSIDE each packed cell.
-
-uniform sampler2D tile_map : filter_nearest;
-// SUBCELLS: L8 _w x _h image built from I08 _tex. Sample at integer world-cell
-// texel centres; never interpolate UV2.x across a triangle (DEC-VIS-01 §6.2).
+uniform bool use_tile_array = false;
+// false = 2D atlas fallback ([U] PORT APPROXIMATION; not donor layout).
+//   Experiment E-ATLAS-LAYOUT: dump reftile.lib descriptor + glTexImage2D atlas
+//   uploads and compare grid/packing/UV bytes; terminate on zero mismatch.
+// true  = one 1024^2 donor-derived block per id, sampled at baked uv0.
 
 uniform sampler2D alpha_atlas : filter_nearest, repeat_enable;
-// Converted donor alpha.bmp: 512x256, 8 bpp, data@1070, 8 cols x 4 rows of 64x64
-// patches. # donor data/terrain/tiles/textures/alpha.bmp header (F06-E7);
-// # donor data/terrain/ref/reftile.lib:10-12 (commented AlphaRows/AlphaCols/AlphaTileSize);
-// # donor data/terrain/ref/reftilealpha.mat:30-37 (imagealpha=tiaAlphaFromIntensity, tfAlpha).
-// CONTRACT for I05: donor intensity MUST be written into the PNG ALPHA channel;
-// exact intensity->alpha formula is [U] (F06 U-F06-3).
-
+// donor alpha.bmp 512x256, 8x4 grid of 64^2 patches (F06-E7/E9/E10).
 uniform sampler2D alphavert_atlas : filter_nearest, repeat_enable;
-// Converted donor alphavert.bmp: 1024x512, 24 bpp near-grey (F06-E11).
-// # donor data/terrain/tiles/textures/alphavert.bmp header (F06-E11);
-// # donor data/terrain/ref/reftilealpha.mat:126-146 (tfAlpha, maNearest/miNearest).
-
-uniform sampler2D hmapTex;
-// PARAMETER KEY ONLY — do NOT sample here and NEVER bind heightmapwaves0.tga.
-// # donor data/shaders/water/water.dev.frag:18 (declared sampler2D hmapTex);
-// # donor cossacks.exe VA 0x853ad4 / descriptor +0x54 (D06 §4: 30 string keys,
-//   NO texture lookup/sampler bind);
-// # donor data/water/water.mat:86-106 (HeightMapWaves0 block fully commented);
-//   heightmapwaves0.tga alpha = 255 on all 65,536 px (D06 P18) — disproved as hmapTex.
-// Water rendering itself belongs to water3d.gdshader (X11); this terrain shader
-// supplies only shore tile ids and the crossfade blend.
+// donor alphavert.bmp 1024x512 (F06-E11/E12); face refkey projection stays [U].
+uniform sampler2D tile_map : filter_nearest;
+// RETAINED transport/diagnostic only — RGB no longer fetches a per-cell id here.
 
 // ----------------------------------------------------------------------------
-// Atlas layout. 16x8 grid of 124 preset cells is a PORT APPROXIMATION, not a
-// recovered donor layout (D08 §3.1; spec 06 §2). No index remapping.
+// Descriptor bytes (loader FUN_00544548 / reftile.lib): no numeric invention.
 // ----------------------------------------------------------------------------
-uniform vec2 atlas_grid = vec2(16.0, 8.0);
-// PORT APPROX: # donor data/terrain/ref/reftile.lib:3-12 (tsDouble/ttExtended,
-// sub-rect values commented); 16x8 is the port id packing (spec 06 §2).
-
-uniform vec2 map_cells = vec2(1.0);
-// I08 map dimensions in cells; bound from the ingested height/_tex grid.
-uniform float donor_rows = 8.0;
-uniform float donor_cols = 8.0;
-// DEC-VIS-01 §4.1/§4.2 active tsDouble defaults (ev_1d5e6e/ev_b2e664).
-uniform float donor_tile_size = 64.0;
-// Producer selector unit; cancels in normalized UV (DEC-VIS-01 §4.2/§6.2).
-uniform float donor_rgb_block_size = 1024.0;
-// Shipped DDS width/height (D08 §3.1); 1024 / 8 = 128 effective subcell pixels.
+uniform int tile_scheme = 1;   // +0xc: 0=tsSingle, 1=tsDouble (shipped)
+uniform int tile_type = 1;     // +0xd: 0=ttUsual, 1=ttExtended (reftile.lib)
+uniform vec2 atlas_grid = vec2(16.0, 8.0);  // [U] FALLBACK 16x8 packing, PORT APPROX (E-ATLAS-LAYOUT)
+uniform int donor_rows = 8;    // +0x24 = 8 (tsDouble)
+uniform int donor_cols = 8;    // +0x25 = 8 (tsDouble)
+uniform int donor_alpha_rows = 8;   // +0x2c
+uniform int donor_alpha_cols = 4;   // +0x2d
 
 // ----------------------------------------------------------------------------
-// Eye-plane texgen — donor EQUATIONS retained, POSITION SPACE corrected (W04).
-// data/shaders/obj/hf.pvl.sm.vert:9,25-32:
-//   realpos = gl_ModelViewMatrix * gl_Vertex;                          :9
-//   s = dot(POSITION, gl_EyePlaneS[0]); t = dot(POSITION, gl_EyePlaneT[0]); :30-31
-//   gl_TexCoord[0] = gl_TextureMatrix[0] * gl_TexCoord[0];             :32
-// SHADER-SIDE FIX: POSITION is `MODEL_MATRIX * VERTEX` (WORLD space), NOT the
-// eye-space `realpos`. Doting the identity planes with eye-space realpos made
-// t = eye-space Y (height mixed with view depth): the world-XZ tiling swims
-// with the camera and collapses into the diagonal/terrace bands of
-// cap_donor_240c.png at shallow camera angles. Port mesh ground is world XZ
-// (donor Z-up -> Godot Y-up, TERRAIN2-01 §2.5; world3d_terrain.gd:664-729).
-// SAME FIX ALREADY LANDED in the read-only sibling
-// terrain_tileindex.gdshader:94-122,280-314 (TRN-SHADER / V3D-02 P2/F1).
-//
-// DONOR DEFAULT vs PORT FALLBACK — no plane constant is invented:
-//   donor BINARY defaults S=(1,0,0,0) T=(0,1,0,0) R=(0,0,1,0) Q=(0,0,0,1)
-//     # cossacks.exe:0x8f4aa4/0x8f4ab4/0x8f4ac4/0x8f4ad4 (D08 §3.6).
-//   Effective per-frame values are CONFIRMED_UNVERIFIED (D08 §7 #6; the
-//   sub_4be364 setter takes runtime pointers). The binary T default (0,1,0,0)
-//   is donor Z-up ground-Y; on the Y-up port that axis is HEIGHT, so the
-//   documented PORT FALLBACK below uses T=(0,0,1,0) = world Z. All planes stay
-//   exposed uniforms: rebind if I08/COORD ever recovers the runtime pair.
+// Layer / blend state. Set per surface by terrain_donor_mesh.gd.
 // ----------------------------------------------------------------------------
-uniform vec4 eye_plane_s = vec4(1.0, 0.0, 0.0, 0.0);
-// # donor cossacks.exe:0x8f4aa4 (default S plane, f32) == PORT FALLBACK world X.
-uniform vec4 eye_plane_t = vec4(0.0, 0.0, 1.0, 0.0);
-// # donor cossacks.exe:0x8f4ab4 binary default T=(0,1,0,0) [U] at runtime;
-//   PORT FALLBACK T=(0,0,1,0) (Godot Y-up world Z) — cf. terrain_tileindex.gdshader:121.
-uniform vec4 eye_plane_r = vec4(0.0, 0.0, 1.0, 0.0);
-// # donor cossacks.exe:0x8f4ac4 (default R plane, f32); unused by HeightField ground.
-uniform vec4 eye_plane_q = vec4(0.0, 0.0, 0.0, 1.0);
-// # donor cossacks.exe:0x8f4ad4 (default Q plane, f32); unused by HeightField ground.
-uniform mat4 texture_matrix = mat4(1.0);
-// # donor hf.pvl.sm.vert:32; GL identity default, runtime value [U] (D08 §7 #6).
-//   R/Q dot products are left untouched by the ground path.
-
-uniform vec2 uv_repeat = vec2(0.5, 0.5);
-// DONOR-GROUNDED metre -> map-cell conversion retained for the alpha/debug phase.
-// V08 §3/C2 reads `gc_meters_to_tile = 2` (dmscript.global:171) as 2 m per cell.
-// RGB no longer repeats one packed tile every 2 m: tile_rgb() below applies the
-// recovered world-cell 8x8 subcell selector (DEC-VIS-01 §6.2). If a recovered
-// runtime matrix already emits cell units, bind uv_repeat=(1,1) for alpha/debug.
-uniform float alpha_uv_scale = 1.0;
-// Escape hatch for the mask phase. PORT APPROX (donor MultiTexCoord1 values [U]).
-uniform float mask_uv_source = 0.0;
-// 0 = derive flat mask UV from tile id + eye-plane phase (PORT APPROX, F06 §5.2);
-// 1 = use mesh UV as the donor gl_MultiTexCoord1 analogue
-//     # donor data/shaders/obj/hf.pvl.sm.vert:34 (mesh-supplied mask UV).
-// Donor tile-id+direction -> patch rule is [U] (D08 §7 #4; F06 U-F06-7).
+uniform bool base_pass = false;
+// true: donor base layer, ALPHA = 1.0 (alpha patch 0/16 is authored 255, F06-E10).
+uniform bool base_full_opacity = true;
+uniform bool alpha_test_enabled = false;
+// Donor case 1 bmTransparency: GL_ALPHA_TEST is ENABLED (0x4ef989, cap 0 via
+// sub_88f0f0) and GL_BLEND is ENABLED (0x4ef97f, cap 2). No glAlphaFunc is
+// issued in case 1, so there is no terrain comparator to reproduce: this
+// optional discard stays OFF. Residual [U] U-6b: last-set GL_GEQUAL/0.5|1.0
+// may leak from cases 3/4; no threshold is invented.
+uniform float alpha_test_ref = -1.0;       // 0.5=bmAlphaTest50, 1.0=bmAlphaTest100
+// Donor: glAlphaFunc(GL_GEQUAL, ref) -> discard when a < ref (0x8fb18c[7]=518).
+uniform bool face_alpha_enabled = false;
+uniform int face_mode = 0;    // [U] U-8 refkey projection not carried per vertex
+uniform float face_scale = 0.125;  // reftile.mat:124-126,150-152
 
 // ----------------------------------------------------------------------------
-// DEBUG ONLY — every switch defaults OFF and every numeric control defaults to
-// zero. COORD may bind these at runtime for pinned-candidate A/B captures; they
-// are not donor constants and must not ship enabled. No noise/dither is used.
-// ----------------------------------------------------------------------------
-uniform bool DEBUG_ALPHA_BYPASS = false;
-// true: skip alpha/alphavert sampling and write ALPHA=1.0.
-uniform bool DEBUG_TILE_ID_FLAT = false;
-// true: replace tile art + lighting with a flat, deterministic tile-id colour.
-uniform bool DEBUG_UV_GRID = false;
-// true: magenta = RGB repeat boundary; green = alpha-patch phase boundary.
-uniform float DEBUG_MIP_BIAS = 0.0;
-// LOD bias in mip levels: positive = coarser, negative = sharper.
-uniform bool DEBUG_FORCE_LOD = false;
-// When true, sample DEBUG_FORCED_LOD instead of the derivative-derived LOD.
-uniform float DEBUG_FORCED_LOD = 0.0;
-
-// Face alpha projection (second sampler swap). Donor values are recovered;
-// the Z-up -> Godot Y-up axis remap is an INFERRED PORT APPROX.
-uniform float face_scale = 0.125;
-// # donor data/terrain/ref/reftile.mat:124-126 (verticalfront TextureScale XYZ),
-// # donor data/terrain/ref/reftile.mat:150-152 (verticalside TextureScale XYZ).
-// front planes S=(1,0,0,0) T=(0,0,1,0) # donor reftile.mat:130-141 (tmmEyeLinear :129)
-// side  planes S=(0,1,0,0) T=(0,0,1,0) # donor reftile.mat:156-167 (tmmEyeLinear :155)
-// Godot Y-up: donor T(Z)=height -> v_eye.y, donor S(Y) -> v_eye.z
-// # donor variant3d/scripts/world3d_terrain.gd:57-58 (TERRAIN2-01 §2.5) [I] PORT APPROX.
-
-// ----------------------------------------------------------------------------
-// Blend telemetry — pass count is [U]; ZERO default claim.
-// ----------------------------------------------------------------------------
-uniform int blend_pass_count = 0;
-// 0 = UNSET sentinel, NOT a donor value and NOT a claim. Shader does not use it.
-// # donor bmTransparency enum idx 1 at cossacks.exe:949234 (X17 §3.1);
-//   composite draw-pass count CONFIRMED_UNVERIFIED (X17 §3.3/U-X17-1, D08 §7 #5).
-
-// ----------------------------------------------------------------------------
-// Donor Blinn-Phong constants, from the port's existing world3d_terrain path
-// (READ-ONLY) with donor citations. Vertex-packed at
-// # donor data/shaders/obj/hf.pvl.sm.vert:12-15,18-22,37-38;
-// combined at # donor data/shaders/obj/hf.pvl.smx3.frag:17.
+// Lighting — exact donor product formation (PORT1TO1 §6).
+// ambient  = sceneColor + material.ambient(0.15686) * light.ambient
+// diffuse  = max(dot(l,n),0) * material.diffuse(0.78125) * light.diffuse
+// specular = material.specular(0) * light.specular = 0  (reftile.mat:70-76,98-104)
+// P-MAT §7.1: terrain glMaterialfv vectors [U-MAT] at 0x88f446/474/4a2/4d0 +
+// 0x88f418; emission 0/specular 0/shininess 16 text-only (reftile.mat:52-104);
+// effective specular stays vec3(0).
 // ----------------------------------------------------------------------------
 uniform vec3 donor_sun_position = vec3(-0.344731152057648, 0.938701450824738, 0.0);
-// # donor variant3d/scripts/world3d_terrain.gd:137 -> data/env/lights/light.cfg:26-29
-// lsParallel (light.cfg:17): consumed as a constant DIRECTION, not a point.
+// light.cfg:26-29, lsParallel (:17): constant direction, no point subtraction.
 uniform vec3 ambient_rgb = vec3(0.196078434586525, 0.184313729405403, 0.129411771893501);
-// # donor variant3d/scripts/world3d_terrain.gd:139 -> light.cfg:3-8 (Ambient)
 uniform vec3 diffuse_rgb = vec3(0.811764717102051, 0.780392169952393, 0.694117665290833);
-// # donor variant3d/scripts/world3d_terrain.gd:140 -> light.cfg:11-16 (Diffuse)
 uniform vec3 specular_rgb = vec3(0.0);
-// # donor X35 §5 "Effective terrain specular" = vec3(0) for the normal refkey.
-//   light.cfg:20-23 is the nonzero LIGHT colour; the donor multiplies it by the
-//   material specular (0,0,0,1) at hf.pvl.sm.vert:23 -> product zero
-//   (reftile.mat:70-74 Back / :98-102 Front). The legacy reference :160 is 0 too.
-//   Donor-faithful default; the old "preserved contradiction" note is resolved.
+// Effective terrain product is zero; light.cfg:20-23 colour is NOT used bare.
 uniform vec3 material_specular_rgb = vec3(0.0);
-// # donor data/terrain/ref/reftile.mat:70-74 (BackProperties) and :98-102
-//   (FrontProperties), normal refkey: Specular = (0,0,0,1). X35 §5. Kept as a
-//   labelled uniform because the caller terrain_donor_mesh.gd:538 binds
-//   specular_rgb from light.cfg:20-23 (the nonzero LIGHT colour): multiplying
-//   by this donor material term reproduces the fixed-function product even
-//   when that binding is present. No new constant is invented — zero is cited.
-uniform float shininess = 16.0;
-// # donor data/terrain/ref/reftile.mat:76,104 (cited by read-only reference shader :165);
-// material/runtime binding UNVERIFIED — no world3d_terrain constant exists for it.
+// Caller binds the nonzero light colour; this exact donor material factor
+// cancels it (hf.pvl.sm.vert:23). Preserve this multiply; never set to 1.
+uniform float material_ambient = 0.15686;  // reftile.mat:53-55,81-83
+uniform float material_diffuse = 0.78125;  // reftile.mat:59-61,87-89
+uniform float shininess = 16.0;            // reftile.mat:76,104
+// P-LIGHT §7.2: w+modelview at 0x4d0963 [U-LIGHT]; lsParallel is text-only
+// (light.cfg:17); W=1 is file text (light.cfg:30), not the submitted w.
+uniform vec3 scene_color = vec3(0.2, 0.2, 0.2);  // [O] 0x8f58dc, DEC_U_scenecolor_glstate U-1 CLOSED
+// [O]: sceneColor is the 16-B static copy at 0x8f58dc = (0.2,0.2,0.2,1.0),
+// submitted by glLightModelfv(GL_LIGHT_MODEL_AMBIENT, *(renderer+0x11c)+0x18)
+// at 0x4d13f1. Only .rgb is consumed by hf.pvl.sm.vert:18 (alpha 1.0 is
+// fidelity-only). Residual [U] U-R1: no static proof no runtime/computed-pointer
+// write mutates that vector; keep as its own uniform, do NOT fold into ambient,
+// do NOT use 0.0 / light.cfg ambient / colors.lib Ambient=255.
+// Two-sided lighting [O]: pname 0x0B52 GL_LIGHT_MODEL_TWO_SIDE at both sites
+// (0x4d1404/0x4d1412), boolean byte[renderer+0x123]&8 = 0 at startup
+// (constructor stores 5) -> GL_FALSE. No Godot uniform required; residual
+// [U] U-R2: a runtime bit-3 toggle cannot be excluded. No parity claim.
 
-// ----------------------------------------------------------------------------
-// LIGHT-MATCH — PORT CONSISTENCY CALIBRATION, opt-in features.terrain.light_match.
-// The ONE composer rig (terrain_donor_world.gd:180-207) already lights ordinary
-// spatial entity/prop materials with AMBIENT_ENERGY = 1.40 (:69) and
-// SUN_ENERGY = 2.00 (:70) applied to the SAME donor ambient/diffuse colours.
-// This `unshaded` terrain shader is outside that rig, so the caller must hand
-// it the two rig values explicitly. NO new brightness fudge and NO gamma /
-// exposure lift is invented here (DEC_SMALL_light_products §1.3, §4(4), §6.3:
-// every exposure/gamma path is [U]; no compensation is authorised by it).
-// Defaults are NEUTRAL 1.0 so the commit-default terrain stays byte-identical;
-// terrain_donor_mesh.gd binds the real rig values only under the opt-in flag.
-// This is a PORT consistency calibration, NOT donor parity.
-// ----------------------------------------------------------------------------
+// PORT CALIBRATION (explicitly NOT donor): opt-in energies/gain from the shared
+// composer rig; neutral defaults keep the donor equation byte-identical.
+// PORT CALIBRATION ONLY (config.json:18,31) — neutral at 1.0 is byte-identical
+// to the donor equation; P-GAMMA §7.3 forbids any gamma/exposure fold-in here.
+// P-GAMMA-SEL/LUT/FADE/TONE/CONT §7: no gamma/exposure/saturation/vignette
+// fold-in here; gain is PORT ONLY, 1.0 = donor (hf.pvl.smx3.frag:17 linear law).
 uniform float light_rig_ambient_energy = 1.0;
-// # shared scene rig AMBIENT_ENERGY (terrain_donor_world.gd:69) via its
-//   _lighting_stats() (:461-476); 1.0 = unscaled donor colour (current default).
 uniform float light_rig_sun_energy = 1.0;
-// # shared scene rig SUN_ENERGY (terrain_donor_world.gd:70) via the same
-//   telemetry surface; 1.0 = unscaled donor colour (current default).
-
-// ----------------------------------------------------------------------------
-// COLOR-UNIFY — PORT CALIBRATION, opt-in features.terrain.color_unify.
-// The full rig lift MEASURED on the candidate overshot global grass from
-// [72.0,74.4,20.3] (PHOTO_LED_mine_colour_seam.md §1) to [134.1,139.2,42.9]
-// (HANDOFF §9.15, cap_donor_240_lightmatch.png). This uniform applies ONLY the
-// missing fraction of THAT SAME lift, per channel, derived from the measured
-// halo/grass and the donor-direction cue:
-//   G  = [72.0,74.4,20.3]          global grass (PHOTO_LED §1)
-//   O  = [134.1,139.2,42.9]        full-rig overshoot (HANDOFF §9.15)
-//   L  = O-G = [62.1,64.8,22.6]    existing rig lift
-//   H  = [76.3,78.4,25.4]          mine halo (PHOTO_LED §1)
-//   V  = [78.0,80.0,36.0]          donor-video grass DIRECTION only (PHOTO_LED §2)
-//   T  = [H.r,H.g,V.b] = [76.3,78.4,36.0]   (V.b ~= measured disc b 35.9)
-//   N  = T-G = [4.3,4.0,15.7]      missing lift (grass->halo seam + blue)
-//   f  = N/L = [0.06924,0.06173,0.69469]
-//   g  = 1 + f*(O/G - 1) = T/G = [1.05972,1.05376,1.77340]
-// These are ratios of measured candidate pixels, NOT a new donor constant and
-// NOT a gamma/exposure operation. Default vec3(1.0) is byte-identical to the
-// previous unscaled Blinn-Phong path. terrain_donor_mesh.gd binds the gain only
-// under the opt-in and leaves the rig energies neutral to prevent stacking;
-// light_match remains an independent flag. No shadow/AO/emissive/noise fill.
-// PORT CALIBRATION — NO donor parity claim.
-// ----------------------------------------------------------------------------
 uniform vec3 color_unify_gain = vec3(1.0);
 
-// ----------------------------------------------------------------------------
-// Shore / water levels — THREE DISTINCT LEVELS, never conflated, never used as
-// the shader plane Y (which belongs to water3d.gdshader and is [U], X11 §7.1).
-// Shore tiles are selected on the CPU by texturemap.inc:463-529 (sandsea1/5/6,
-// 8x45-degree sectors); I07/I08 supply the resulting UV2.x. This shader only
-// consumes that id and supplies the blend — no tile id is fabricated here.
-// ----------------------------------------------------------------------------
-uniform float water_height_basin = -1.1;
-// # donor data/scripts/common.inc/generatemap.inc:7 (cWaterHeight generation basin)
-uniform float water_field_offset_y = -0.5;
-// # donor data/scripts/common.inc/generatemap.inc:688,704 (cOffsetY -> WaterFieldAdd)
-// [U] runtime: GSC line is comment-prefixed (spec 05 §1; X11 §7.1).
-uniform float water_height_classify = -0.25;
-// # donor data/scripts/common.inc/texturemap.inc:29-30,466-467 (cWaterHeight -> bWater)
-uniform float water_shore_height = -0.1;
-// # donor data/scripts/common.inc/texturemap.inc:31,463-472 (cWaterShoreHeight)
-// shore band width [D] = 0.15; smoothing gate is mask.b + height, not height alone
-// (spec 05 §2; texturemap.inc:580-643). No shading threshold is invented below.
+// DEBUG switches: defaults OFF, no noise/dither, no donor value is modified.
+uniform bool DEBUG_ALPHA_BYPASS = false;
+uniform bool DEBUG_TILE_ID_FLAT = false;
+
+varying vec2 v_eye_uv;     // donor gl_TexCoord[0].xy analogue (face projection)
+varying vec3 v_eye;        // donor realpos.xyz
+varying vec3 v_packed;     // donor gl_TexCoord[4] = sceneColor + ambient + diffuse
+varying vec3 v_specular;   // donor gl_TexCoord[5] = specular (zero for ground)
 
 // ----------------------------------------------------------------------------
-// Vertex contract (transport only; donor has no such mesh stream):
-//   UV2.x = tile id [0,123]  # donor terrain.presets:6-129
-//   UV2.y = face {0,1,2}     # donor reftile.mat:1-170 refkeys; PORT APPROX transport
+// Reference LUTs — kept as executable, cited code. Donor produces uv0/uv1 on
+// the CPU, so the shipped tsDouble path does not call these in fragment(); they
+// are retained so the tsSingle path and the p index are auditable in one place.
 // ----------------------------------------------------------------------------
-varying vec2 v_st;         // donor gl_TexCoord[0].xy after texture matrix
-varying vec2 v_world_xz;   // stable world XZ for integer-cell map/subcell selection
-varying vec2 v_alpha_uv;   // donor gl_TexCoord[1].xy analogue (PORT APPROX phase)
-varying float v_tile;      // integer-valued tile id from UV2.x (faces/diagnostics)
-varying float v_face;      // 0 / 1 / 2
-varying vec3 v_eye;        // donor realpos.xyz (eye space)
-varying vec3 v_packed;     // donor gl_TexCoord[4].xyz = ambient + diffuse
-varying vec3 v_specular;   // donor gl_TexCoord[5].xyz = specular
-
-void vertex() {
-	// # donor data/shaders/obj/hf.pvl.sm.vert:9 — realpos = ModelView * vertex.
-	// Retained for Blinn-Phong and the recovered face-alpha eye planes — NOT for
-	// ground texgen (W04 fix below; cf. terrain_tileindex.gdshader:275-281).
-	vec4 realpos = VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
-	v_eye = realpos.xyz;
-
-	// W04 SHADER-SIDE TEXGEN FIX — stable WORLD position for ground texgen.
-	// Eye-space realpos + identity planes collapsed the world-XZ tiling into
-	// camera-relative diagonal/terrace bands. The donor eye-plane equation is
-	// unchanged; only the POSITION fed to the dot is now world space.
-	vec4 worldpos = MODEL_MATRIX * vec4(VERTEX, 1.0);
-	v_world_xz = worldpos.xz;
-
-	// # donor hf.pvl.sm.vert:30-32 — eye-plane texgen (s, t, texture matrix).
-	vec2 st = vec2(dot(worldpos, eye_plane_s), dot(worldpos, eye_plane_t));
-	v_st = (texture_matrix * vec4(st, 0.0, 1.0)).xy;
-
-	// # donor hf.pvl.sm.vert:34 — mask UV is a second mesh-supplied coordinate.
-	// The donor per-tile MultiTexCoord1 writer is [U] (D08 §7 #4); phase below is
-	// a labelled PORT APPROXIMATION, overridable to mesh UV via mask_uv_source.
-	// With worldpos texgen the phase is world-stable too (no camera swimming).
-	// Use the POST-texture-matrix coordinate, matching RGB; the donor mask UV is
-	// mesh-supplied [U], so this shared phase remains a PORT APPROXIMATION.
-	v_alpha_uv = v_st * uv_repeat * alpha_uv_scale;
-
-	// # donor hf.pvl.sm.vert:12-15,18-22 — Blinn-Phong from the supplied NORMAL.
-	vec3 e = normalize(-realpos.xyz);                                   // :12
-	// lsParallel: constant donor sun direction (# donor light.cfg:17), no realpos
-	// subtraction. VIEW_MATRIX rotates the world direction into eye space:
-	// PORT APPROX of gl_LightSource modelview (engine-side, UNVERIFIED).
-	vec3 sun_world = normalize(donor_sun_position);                      // :13
-	vec3 l = normalize((VIEW_MATRIX * vec4(sun_world, 0.0)).xyz);        // :13
-	vec3 h = normalize(l + e);                                           // :14
-	vec3 n = normalize((VIEW_MATRIX * MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz); // :15
-	// PORT APPROX of gl_NormalMatrix (inverse-transpose is engine-side, UNVERIFIED).
-
-	// LIGHT-MATCH [PORT CONSISTENCY]: the ambient and diffuse terms now receive
-	// the SAME two energies the scene-prop rig applies to these donor colours.
-	// With the neutral 1.0 defaults this reduces byte-for-byte to the original
-	// unscaled donor Blinn-Phong fields above. Blinn-Phong structure, zero
-	// material specular, shadow-free lighting and all debug defaults are intact.
-	vec3 ambient = ambient_rgb * light_rig_ambient_energy;               // :18 [U rig]
-	vec3 diffuse = max(dot(l, n), 0.0) * diffuse_rgb * light_rig_sun_energy; // :19 [U rig]
-	// Donor clamps away-facing slopes to zero diffuse; ambient-only dark sides
-	// are therefore expected. Do not add fill, abs(dot), or tune light colours
-	// to conceal authored rock/prop art (X35 §5/§7).
-	// COLOR-UNIFY [PORT CALIBRATION]: scale ONLY the packed ambient+diffuse
-	// light term by the per-channel fraction of the MEASURED rig lift needed to
-	// close the grass->halo seam and restore donor-direction blue. Multiplying
-	// in vertex space keeps the donor equation shape and the single varying;
-	// specular (donor material zero) is untouched. vec3(1) = previous path.
-	v_packed = (ambient + diffuse) * color_unify_gain;                   // :18,:37
-	// Donor fixed-function product (hf.pvl.sm.vert:23; X35 §5): bound light colour
-	// x donor material specular (0,0,0,1) -> zero for normal ground and faces.
-	v_specular = pow(max(dot(h, n), 0.0), shininess) * specular_rgb * material_specular_rgb; // :22,:38
-
-	v_tile = UV2.x;
-	v_face = UV2.y;
+int rgb_lut15(int m) {
+	// DAT_008f5cd7, 15 bytes (ev_a03439ea…)
+	if (m == 0) return 46;
+	if (m == 1) return 4;
+	if (m == 2) return 8;
+	if (m == 3) return 12;
+	if (m == 4) return 1;
+	if (m == 5) return 5;
+	if (m == 6) return 9;
+	if (m == 7) return 13;
+	if (m == 8) return 2;
+	if (m == 9) return 6;
+	if (m == 10) return 10;
+	if (m == 11) return 14;
+	if (m == 12) return 3;
+	if (m == 13) return 7;
+	if (m == 14) return 11;
+	return 0;  // donor tables stop at 14; no byte is invented beyond it
 }
 
-// DEBUG helper: direct cell-coordinate encoding, flat per tile id. The small
-// offset keeps id 0 visible; this is a diagnostic display, not scene art.
+int rgb_index(int mask, int variant, int ttype) {
+	// FUN_0050db08 (ev_70c790f9…); 0x8f5ce6/ea/fe u32 words are PADDING.
+	int v = variant & 0xff;
+	if (ttype == 0) {
+		if (mask < 15) return rgb_lut15(mask);
+		if (mask == 15) {
+			if ((v & 1) != 0) return 15;             // 0x8f5ce8: 00 0f
+			return 0;
+		}
+		return 0;
+	}
+	if (ttype == 1) {
+		if (mask < 15) return rgb_lut15(mask);
+		if (mask == 15) {
+			if (v < 0x88) {
+				// 0x8f5cec: 00 0f 10 11 12 13
+				if (v % 6 == 0) return 0;
+				if (v % 6 == 1) return 15;
+				if (v % 6 == 2) return 16;
+				if (v % 6 == 3) return 17;
+				if (v % 6 == 4) return 18;
+				return 19;
+			}
+			if (((v + 0x78) & 0xff) < 0x44) {                // 0x8f5cf2
+				int k = v & 3;
+				return (k == 0) ? 20 : ((k == 1) ? 21 : ((k == 2) ? 22 : 23));
+			}
+			if (((v + 0x34) & 0xff) < 0x22) {                // 0x8f5cf6
+				int k = v & 3;
+				return (k == 0) ? 24 : ((k == 1) ? 25 : ((k == 2) ? 26 : 27));
+			}
+			if (((v + 0x12) & 0xff) < 0x12) {                // 0x8f5cfa
+				int k = v & 3;
+				return (k == 0) ? 28 : ((k == 1) ? 29 : ((k == 2) ? 30 : 31));
+			}
+			return 0;  // implicit return 0 of FUN_0050db08
+		}
+	}
+	return 0;
+}
+
+int alpha_index(int mask, int variant) {
+	// DAT_008f5d00 little-endian pairs (ev_8d1f6535…); high byte = low+16.
+	// Near-water overlay p = alpha_index(mask,variant) over the 32-entry set;
+	// per-cell instance stays [U-SA4]; no single "shore patch" is asserted
+	// (DEC_U_shore_alpha.md §4.2). LUT below is unchanged.
+	int m = mask & 0xff;
+	int lo = 0;
+	if (m == 0) lo = 0;   else if (m == 1) lo = 2;   else if (m == 2) lo = 1;
+	else if (m == 3) lo = 3;   else if (m == 4) lo = 8;   else if (m == 5) lo = 10;
+	else if (m == 6) lo = 9;   else if (m == 7) lo = 11;  else if (m == 8) lo = 4;
+	else if (m == 9) lo = 6;   else if (m == 10) lo = 5;  else if (m == 11) lo = 7;
+	else if (m == 12) lo = 12; else if (m == 13) lo = 14; else if (m == 14) lo = 13;
+	else if (m == 15) lo = 15;
+	if ((variant & 1) != 0) return lo + 16;
+	return lo;
+}
+
 vec3 tile_id_debug_color(float idx) {
 	float id = clamp(floor(abs(idx) + 0.5), 0.0, 127.0);
 	vec2 cell = vec2(mod(id, 16.0), floor(id / 16.0));
@@ -374,195 +269,99 @@ vec3 tile_id_debug_color(float idx) {
 		0.25 + 0.75 * mod(id, 2.0));
 }
 
-// DEBUG helper: derivative-width line at each integer UV boundary. This runs
-// only when DEBUG_UV_GRID is enabled and adds no stochastic dither/noise.
-float uv_grid_line(vec2 uv) {
-	vec2 dist_to_line = abs(fract(uv + 0.5) - 0.5);
-	vec2 width = max(fwidth(uv), vec2(1e-5));
-	vec2 line = vec2(1.0) - smoothstep(vec2(0.0), width, dist_to_line);
-	return max(line.x, line.y);
-}
+// ----------------------------------------------------------------------------
+// vertex(): NO texgen math. uv0/uv1 arrive baked as UV/UV2 from the CPU.
+// The donor eye-plane equation survives only for the unresolved face-refkey
+// projection (U-7/U-8) and is explicitly labelled; ground RGB uses baked UV.
+// ----------------------------------------------------------------------------
+void vertex() {
+	vec4 realpos = VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
+	v_eye = realpos.xyz;
+	// U-7: donor effective gl_EyePlaneS/T[0] + gl_TextureMatrix[0] are [U].
+	// Retained slot only; default planes are documented in the mesh telemetry.
+	vec4 worldpos = MODEL_MATRIX * vec4(VERTEX, 1.0);
+	v_eye_uv = worldpos.xz * 0.5;   // PORT FALLBACK, not donor ground texgen
 
-// Atlas cell lookup: cell i -> (i mod 16, floor(i / 16)) (spec 06 §2).
-// PORT APPROX id packing; no donor remap, no warp/noise (CHARTER S-25-09).
-// DEC-VIS-01 §6.2 selects one 1/Rows x 1/Cols subrect INSIDE that packed cell.
-vec3 tile_rgb(float idx, vec2 selected_subcell, vec2 local, vec2 world_cells) {
-	vec2 grid = max(atlas_grid, vec2(1.0));
-	vec2 subgrid = max(vec2(donor_rows, donor_cols), vec2(1.0));
-	vec2 cell = vec2(mod(idx, grid.x), floor(idx / grid.x));
-	vec2 cell_px = max(vec2(textureSize(tile_atlas, 0)) / grid, vec2(1.0));
+	// hf.pvl.sm.vert:12-15,18-22 — Blinn-Phong on the supplied corner NORMAL.
+	vec3 e = normalize(-realpos.xyz);                                    // :12
+	vec3 sun_world = normalize(donor_sun_position);                      // :13
+	vec3 l = normalize((VIEW_MATRIX * vec4(sun_world, 0.0)).xyz);         // :13 [U engine] — modelview at 0x4d0963 [U-LIGHT P-LIGHT]
+	vec3 h = normalize(l + e);                                           // :14
+	vec3 n = normalize((VIEW_MATRIX * MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz); // :15 [U normal matrix]
 
-	// The producer's TileSize unit cancels in normalized UV. Keep the recovered
-	// Rows/Cols/TileSize arithmetic explicit instead of hiding it in a magic 1/8.
-	float tile_size = max(donor_tile_size, 1.0);
-	vec2 selector_step = vec2(tile_size) / (subgrid * vec2(tile_size));
-	vec2 cell_local = (selected_subcell + local) * selector_step;
-
-	// LOD is measured in the DONOR block's effective 128x128 subcell, not in the
-	// packed atlas's 16x16 subrect. Compensate the packed cell's downsample ratio
-	// so its mip chain follows the same nearest-mipmap-linear intent as the DDS.
-	vec2 block_px = vec2(donor_rgb_block_size);
-	vec2 subcell_px = max(block_px / subgrid, vec2(1.0)); // 1024 / 8 = 128
-	float donor_to_packed = max(block_px.x / cell_px.x, block_px.y / cell_px.y);
-	float packed_lod_offset = log2(max(donor_to_packed, 1e-6));
-	vec2 dx_donor_px = dFdx(world_cells) * subcell_px;
-	vec2 dy_donor_px = dFdy(world_cells) * subcell_px;
-	float donor_footprint = max(length(dx_donor_px), length(dy_donor_px));
-	float donor_raw_lod = log2(max(donor_footprint, 1e-6));
-	float raw_lod = donor_raw_lod - packed_lod_offset;
-
-	// W04 / B02 MIP FIX: world_cells is UNWRAPPED. Never differentiate fract(local)
-	// or the discrete subcell selector: either would spike at repeat boundaries.
-	// The outer packed-cell guard still grows with the actual packed mip level so
-	// coarse nearest-mipmap-linear samples cannot bleed into adjacent id cells.
-	float max_lod = floor(log2(min(cell_px.x, cell_px.y)));
-	float guard_lod = clamp(ceil(raw_lod + DEBUG_MIP_BIAS), 0.0, max_lod);
-	if (DEBUG_FORCE_LOD) {
-		guard_lod = clamp(DEBUG_FORCED_LOD, 0.0, max_lod);
-	}
-	vec2 inset = clamp((0.5 * exp2(guard_lod)) / cell_px, vec2(0.0), vec2(0.5));
-	vec2 guarded_local = mix(inset, vec2(1.0) - inset, cell_local);
-
-	// d(uv)/d(world_cells) includes both the 8x8 subrect and affine inset.
-	// DEBUG_FORCE_LOD replaces the derivative-derived LOD; DEBUG_MIP_BIAS offsets
-	// it in mip levels. Both controls keep their existing defaults (OFF / zero).
-	vec2 grad_x = dFdx(world_cells) * selector_step / grid;
-	vec2 grad_y = dFdy(world_cells) * selector_step / grid;
-	vec2 inset_scale = max(vec2(1.0) - 2.0 * inset, vec2(1e-6));
-	vec2 lod_scale;
-	if (DEBUG_FORCE_LOD) {
-		lod_scale = vec2(exp2(DEBUG_FORCED_LOD - raw_lod));
-	} else {
-		lod_scale = inset_scale * vec2(exp2(DEBUG_MIP_BIAS));
-	}
-	return textureGrad(tile_atlas, (cell + guarded_local) / grid,
-		grad_x * lod_scale, grad_y * lod_scale).rgb;
-	// # donor data/shaders/obj/hf.pvl.smx3.frag:13 (RGB from texUnit0)
-}
-
-// alpha.bmp sub-rect sampling. Geometry is donor-observed:
-// # donor data/terrain/tiles/textures/alpha.bmp (F06-E7/E9/E10: 8x4 patches of 64x64)
-// # donor data/terrain/ref/reftile.lib:10-12 (commented AlphaRows=8/AlphaCols=4/AlphaTileSize=64)
-// The tile-id bit decomposition below is a PORT APPROXIMATION: the donor
-// tile-id+direction -> patch rule is [U] CONFIRMED_UNVERIFIED (D08 §7 #4,
-// F06 §5.2 / U-F06-7). Constant patches (0,0)/(4,0)=255 and (3,3)/(7,3)=0 are
-// donor-authored (F06 §3.2); they are sampled as-is, never neutralised by a guard.
-vec2 alpha_patch_uv(float tile, vec2 local) {
-	float id = floor(abs(tile));
-	float dir = mod(id, 4.0);                        // PORT APPROX stand-in for edge direction
-	float variant = mod(floor(id / 4.0), 4.0);       // PORT APPROX column variant
-	float half = mod(floor(id / 16.0), 2.0);         // PORT APPROX half (cols 0-3 / 4-7)
-	float opposite = mod(floor(id / 64.0), 2.0);     // PORT APPROX opposite-tile stand-in
-	float row = mix(dir, 3.0 - dir, opposite);       // PORT APPROX 180-degree counterpart
-	variant = mix(variant, 3.0 - variant, opposite); // PORT APPROX same-half counterpart
-	vec2 cell = vec2(half * 4.0 + variant, row);
-	// Half-texel inset inside each 64x64 patch (# donor reftile.lib:10-12 commented;
-	// # donor alpha.bmp 512x256 data@1070, F06-E7/E9/E10).
-	vec2 t = clamp(local, 0.5 / 64.0, 1.0 - 0.5 / 64.0);
-	return (cell + t) / vec2(8.0, 4.0);
+	// Exact product formation (reftile.mat x light.cfg), then PORT calibration.
+	vec3 amb_term = material_ambient * ambient_rgb * light_rig_ambient_energy;
+	vec3 dif_term = max(dot(l, n), 0.0) * material_diffuse * diffuse_rgb
+		* light_rig_sun_energy;
+	v_packed = scene_color + amb_term + dif_term;                        // :18,:37
+	v_packed *= color_unify_gain;   // PORT CALIBRATION only, neutral at 1.0
+	// texel law hf.pvl.smx3.frag:17 [O]; gain is PORT ONLY, 1.0 = donor.
+	// Numeric gamma lives downstream in colorCurveSampler+fade (U-G1/U-G2,
+	// probes P-GAMMA-LUT §7.2 / P-GAMMA-FADE §7.3) — never folded into v_packed.
+	// hf.pvl.sm.vert:23 — effective terrain specular product is vec3(0).
+	v_specular = pow(max(dot(h, n), 0.0), shininess)
+		* specular_rgb * material_specular_rgb;                          // :22,:38
 }
 
 void fragment() {
-	// # donor data/shaders/obj/hf.pvl.smx3.frag:13 — RGB from texUnit0.
-	// DEC-VIS-01 §6.2: map-cell coordinates select the authored 8x8 art matrix.
-	// The nearest L8 fetch is constant per integer world cell; UV2.x remains the
-	// unchanged face/alpha/diagnostic transport and cannot smear ids across tris.
-	vec2 world_cells = v_world_xz * 0.5;
-	vec2 cell = floor(world_cells + map_cells * 0.5);
-	vec2 map_cell = clamp(cell, vec2(0.0), map_cells - vec2(1.0));
-	vec2 selected_subcell = mod(cell + map_cells * 0.5,
-		vec2(donor_rows, donor_cols));
-	// DEC_SMALL_cell_rotation_flip: tsDouble RGB call site passes mirror=1,
-	// V-flip=0, rot=0, so corner slot = 3 - corner. In a continuous subrect this
-	// is exactly local.y := 1 - local.y. No per-cell rotation metadata exists.
-	vec2 local = fract(world_cells);
-	local.y = 1.0 - local.y;
-	float map_tile = texture(tile_map, (map_cell + 0.5) / map_cells).r;
-	float sampled_tile = clamp(floor(map_tile * 255.0 + 0.5), 0.0, 123.0);
-	bool is_alphanull = (abs(sampled_tile - 86.0) < 0.5)
-		|| (abs(sampled_tile - 110.0) < 0.5)
-		|| (abs(sampled_tile - 123.0) < 0.5);
+	float id_f = COLOR.r;
+	float layer_index = COLOR.g;
+	float p = COLOR.b;
+	float mask = COLOR.a;
+	int id = int(clamp(floor(id_f + 0.5), 0.0, 123.0));
 
-	// DEBUG_TILE_ID_FLAT skips both the atlas fetch and lighting so the original
-	// UV2.x diagnostic can still be compared directly with RGB/alpha overlays.
-	vec3 rgb = DEBUG_TILE_ID_FLAT
-		? tile_id_debug_color(v_tile)
-		: tile_rgb(sampled_tile, selected_subcell, local, world_cells);
+	vec3 rgb;
+	if (DEBUG_TILE_ID_FLAT) {
+		rgb = tile_id_debug_color(id_f);
+	} else {
+		vec3 uv0 = vec3(UV, float(id));
+		if (use_tile_array) {
+			// DONOR texUnit0: one 1024^2 block per tile id, baked 8x8 subcell UV.
+			rgb = texture(tile_array, uv0).rgb;
+		} else {
+			// LABELLED FALLBACK (16x8 packed atlas, NOT donor layout): uv0 is
+			// still the exact baked donor subcell coordinate inside that cell.
+			vec2 grid = max(atlas_grid, vec2(1.0));
+			vec2 cell = vec2(mod(id_f, grid.x), floor(id_f / grid.x));
+			rgb = texture(tile_atlas, (cell + UV) / grid).rgb;
+		}
+	}
 
-	// # donor data/shaders/obj/hf.pvl.smx3.frag:14 — alpha from texUnit1.
-	// DEBUG_ALPHA_BYPASS skips both mask fetches and forces full coverage.
+	// ---- alpha: donor texUnit1, sampled ONLY at the baked uv1 ---------------
 	float a = 1.0;
 	if (!DEBUG_ALPHA_BYPASS) {
-		int face = int(v_face + 0.5);
-		if (face == 1 || face == 2) {
-			// Face refkeys swap texUnit1 to alphavert:
-			// # donor data/terrain/ref/reftile.mat:122,148 (Texture2Name=alphavert)
-			// front S=(1,0,0,0) T=(0,0,1,0) # donor reftile.mat:130-141
-			// side  S=(0,1,0,0) T=(0,0,1,0) # donor reftile.mat:156-167
-			// Scale 0.125 # donor reftile.mat:124-126,150-152.
-			// Z-up -> Godot Y-up remap is [I] PORT APPROX (world3d_terrain.gd:57-58).
-			vec2 mask_uv = (face == 1)
+		if (face_alpha_enabled && face_mode != 0) {
+			// [U] U-8 refkey projection; front S=(1,0,0) T=(0,0,1),
+			// side S=(0,1,0) T=(0,0,1), scale 0.125 (reftile.mat:122-167).
+			vec2 mask_uv = (face_mode == 1)
 				? vec2(v_eye.x, v_eye.y) * face_scale
 				: vec2(v_eye.z, v_eye.y) * face_scale;
 			a = texture(alphavert_atlas, mask_uv).a;
 		} else {
-			vec2 mask_local = mask_uv_source > 0.5 ? UV : fract(v_alpha_uv);
-			// alphanull tiles bind the all-zero alphanull mask:
-			// # donor data/terrain/tiles/tiles.mat:346-359 (alpha0a/b/c -> alphanull);
-			// # donor data/terrain/tiles/terrain.presets:6-129 (ids 86/110/123),
-			// # donor data/terrain/tiles/textures/alphanull.bmp (all pixel indices 0, F06-E14).
-			a = is_alphanull ? 0.0 : texture(alpha_atlas, alpha_patch_uv(v_tile, mask_local)).a;
-			// DEC_SMALL_corner_tag_writer: a uniform donor cell writes four equal
-			// corner tags, mask=0, and LUT patch 0/16; both are constant 255.
-			// Sample the nearest neighbours from the same per-cell tile map; no
-			// corner tags are invented and no random byte is synthesised.
-			vec2 tstep = 1.0 / max(map_cells, vec2(1.0));
-			vec2 lo = map_cells - vec2(1.0);
-			float tid_l = floor(texture(tile_map, (clamp(map_cell + vec2(-1.0, 0.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
-			float tid_r = floor(texture(tile_map, (clamp(map_cell + vec2( 1.0, 0.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
-			float tid_d = floor(texture(tile_map, (clamp(map_cell + vec2(0.0, -1.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
-			float tid_u = floor(texture(tile_map, (clamp(map_cell + vec2(0.0,  1.0), vec2(0.0), lo) + 0.5) * tstep).r * 255.0 + 0.5);
-			bool uniform_tile = abs(tid_l - sampled_tile) < 0.5
-				&& abs(tid_r - sampled_tile) < 0.5
-				&& abs(tid_d - sampled_tile) < 0.5
-				&& abs(tid_u - sampled_tile) < 0.5;
-			bool shore_sandsea = (abs(sampled_tile - 93.0) < 0.5)
-				|| (abs(sampled_tile - 97.0) < 0.5)
-				|| (abs(sampled_tile - 98.0) < 0.5);
-			bool shore_sandrock = (sampled_tile >= 87.0 && sampled_tile <= 90.0);
-			if ((shore_sandsea || shore_sandrock) && !is_alphanull) {
+			// Base layer: p = ALPHA_index(0,variant) = 0 or 16, both authored
+			// constant 255 (F06 §3.2 / E10) => exact full opacity.
+			if (base_pass && base_full_opacity) {
 				a = 1.0;
+			} else {
+				bool is_alphanull = (id == 86 || id == 110 || id == 123);
+				a = is_alphanull ? 0.0 : texture(alpha_atlas, UV2).a;
 			}
-			if (uniform_tile && !is_alphanull) {
-				a = 1.0;
-			}
+		}
+		// bmAlphaTest50/100: glAlphaFunc(GL_GEQUAL, ref) == discard if a < ref.
+		if (alpha_test_enabled && alpha_test_ref >= 0.0 && a < alpha_test_ref) {
+			discard;
 		}
 	}
 
-	if (DEBUG_TILE_ID_FLAT) {
-		ALBEDO = rgb;
-		ALPHA = a;
-	} else {
-		// # donor data/shaders/obj/hf.pvl.smx3.frag:17 — packed lighting + specular.
-		// NO mask multiply: the legacy terrain_tileindex.gdshader:427 `rgb * a` is a
-		// PORT APPROXIMATION and is deliberately not reproduced (D08 §3.5, X17 §3.2).
+	// hf.pvl.smx3.frag:17 — product lighting; NO rgb*=a (PORT APPROX forbidden).
+	// [O] text: rgb from texUnit0 ONLY (:13), a from texUnit1 ONLY (:14),
+	// NO rgb*=a (:17,50); ImageGamma=1/imagebrightness=1 (reftile.mat:25-26);
+	// numeric gamma curve [U-GAMMA P-GAMMA] — no pow/LUT here.
+	// No pow/LUT/fade in terrain (hf.pvl.smx3.frag:13-17,50); post tail is
+	// P-GAMMA-SEL §7.1 (U-G5); ImageGamma=1 is not a curve (DEC-U-GAMMA-LUT §3).
+	if (!DEBUG_TILE_ID_FLAT) {
 		rgb = rgb * v_packed + v_specular;
-
-		if (DEBUG_UV_GRID) {
-			float rgb_grid = uv_grid_line(v_st * uv_repeat);
-			float alpha_grid = uv_grid_line(v_alpha_uv);
-			rgb = mix(rgb, vec3(1.0, 0.0, 1.0), 0.85 * rgb_grid);
-			// Green is visible only where the alpha phase is not coincident with RGB.
-			rgb = mix(rgb, vec3(0.0, 1.0, 0.0), 0.85 * alpha_grid * (1.0 - rgb_grid));
-		}
-
-		// # donor hf.pvl.smx3.frag:50 — gl_FragColor = color (mask alpha intact).
-		// Tile 0 -> alpha patch (0,0), donor-authored constant 255, so ordinary land
-		// reaches ALPHA=1 and cannot darken RGB through this blend path (W03 §3.3).
-		// Framebuffer crossfade, not albedo modulation:
-		// dst.rgb' = src.rgb*src.a + dst.rgb*(1-src.a), GL_FUNC_ADD
-		// # donor cossacks.exe VA 0x4ef991/0x88fba4/0x88fbb0, table 0x8fb1c4/0x8fb1c8
-		ALBEDO = rgb;
-		ALPHA = a;
 	}
+	ALBEDO = rgb;
+	ALPHA = a;   // fixed-function bmTransparency crossfade via blend_mix
 }

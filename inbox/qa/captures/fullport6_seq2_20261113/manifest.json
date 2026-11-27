@@ -1,0 +1,123 @@
+{
+  "capture_semantics": "windowed seq = real viewport frames (frame_post_draw)",
+  "deterministic": true,
+  "finished_utc": "2026-11-26T19:52:43+00:00",
+  "generated_utc": "2026-11-26T19:51:27+00:00",
+  "godot_on_path": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Microsoft\\WinGet\\Links\\godot.EXE",
+  "headless": false,
+  "mode": "seq",
+  "parallelism": {
+    "godot_processes": "one at a time via godot_runner.py FIFO",
+    "harness_lock": "inbox\\qa\\captures\\fullport6_seq2_20261113\\.capture.lock",
+    "submissions": "strictly sequential"
+  },
+  "parity": "UNVERIFIED",
+  "project": "variant3d",
+  "requested_frames_per_view": 2,
+  "runner": "variant3d\\tools\\godot_runner.py",
+  "runner_python": "C:\\Python314\\python.exe",
+  "schema": 1,
+  "seed": "20261113",
+  "seq_seconds": 2.0,
+  "status": "ok",
+  "step_s": 1.0,
+  "timeouts": {
+    "engine_s": 670.0,
+    "max_wait_s": 3600.0,
+    "runner_s": 700.0
+  },
+  "tool": "capture_sequence.py",
+  "views": [
+    {
+      "argv_plain": "'C:\\Python314\\python.exe' 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py' run --id acapt-fullport6-donor --timeout 700 --max-wait 3600 -- --path variant3d -- --config 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json' --seed 20261113 --seq 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor' --seq-seconds 2 --seq-step 1 --timeout 670",
+      "command_line": [
+        "C:\\Python314\\python.exe",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py",
+        "run",
+        "--id",
+        "acapt-fullport6-donor",
+        "--timeout",
+        "700",
+        "--max-wait",
+        "3600",
+        "--",
+        "--path",
+        "variant3d",
+        "--",
+        "--config",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json",
+        "--seed",
+        "20261113",
+        "--seq",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor",
+        "--seq-seconds",
+        "2",
+        "--seq-step",
+        "1",
+        "--timeout",
+        "670"
+      ],
+      "command_line_text": "C:\\Python314\\python.exe \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py\" run --id acapt-fullport6-donor --timeout 700 --max-wait 3600 -- --path variant3d -- --config \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json\" --seed 20261113 --seq \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\" --seq-seconds 2 --seq-step 1 --timeout 670",
+      "complete": true,
+      "config": "variant3d\\config_donor_capture.json",
+      "config_abs": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json",
+      "config_controlled": true,
+      "config_sha256_file": "aa857480474399dc4674104744ea292bf84094d8321cdd4d0889c24cf9a202da",
+      "engine_stderr": "variant3d\\.godot_queue\\results\\00000049_acapt-fullport6-donor\\stderr.txt",
+      "engine_stdout": "variant3d\\.godot_queue\\results\\00000049_acapt-fullport6-donor\\stdout.txt",
+      "frame_count": 3,
+      "frames": [
+        {
+          "file": "inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\frame_0000.png",
+          "height": 720,
+          "sha256_file": "6fc7dfab26ea04429db165c4327604908b892cfa4707605d5eda32e8a6f4ba80",
+          "sha256_pixels": "36400d9cb2a25cb17be07db6cb1fc21837859ff172fe55043bd851812986632e",
+          "width": 1280
+        },
+        {
+          "file": "inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\frame_0001.png",
+          "height": 720,
+          "sha256_file": "bbdec7c59c7ff4799480361810a27169c41e935a550b4b08a119756429ffe2e4",
+          "sha256_pixels": "0aa40d389576a057ef8d44839d3ca5d23b9636e31b70a04e4720af6cee647efa",
+          "width": 1280
+        },
+        {
+          "file": "inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\frame_0002.png",
+          "height": 720,
+          "sha256_file": "aa657352e5f659984a337fa211272daf926ad68784dc0c29708eacb61cd47676",
+          "sha256_pixels": "7135f4d4df7ab175c2ce7ca6b27f7e5f9f0438021cbbe355ef5cd991cd23c2d5",
+          "width": 1280
+        }
+      ],
+      "name": "donor",
+      "output_dir": "inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor",
+      "requested_frames": 2,
+      "resolution_matches_request": true,
+      "resolution_observed": {
+        "height": 720,
+        "width": 1280
+      },
+      "resolution_requested": {
+        "height": 720,
+        "source": "variant3d\\config_donor_capture.json",
+        "width": 1280
+      },
+      "runner_duration_s": 76.094,
+      "runner_exit": 0,
+      "runner_harness_rc": 0,
+      "runner_run_s": 73.35141277313232,
+      "runner_status": "ok",
+      "runner_stderr": "inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\runner_stderr.txt",
+      "runner_stdout": "inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\runner_stdout.txt",
+      "runner_ticket": 49,
+      "runner_wait_s": 0.001338958740234375,
+      "seq_index": {
+        "frames": 3,
+        "mode": "window",
+        "seconds": 2.0,
+        "sim_seconds": 2.1875,
+        "step": 1.0
+      }
+    }
+  ]
+}

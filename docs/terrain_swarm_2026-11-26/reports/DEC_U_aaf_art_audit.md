@@ -1,0 +1,200 @@
+---
+id: DEC-U-AAF-ART-AUDIT
+swarm: TERRAIN-SWARM-2026-11-26 / PORT1TO1-NO-APPROXIMATION
+role: "WORKER DEC-AAF-ART — donor 1:1 AAF/actor art inventory for all shipped sids"
+owner_file: docs/terrain_swarm_2026-11-26/reports/DEC_U_aaf_art_audit.md
+status: DELIVERED__READ_ONLY__ONE_REPORT_ONLY__NO_CODE_ASSET_CONFIG_GODOT_GIT_EDIT
+created: 2026-11-26
+labels: [O, D, I, U, NO_PARITY_CLAIM, NO_APPROXIMATION]
+parity_guard: "NO DONOR PARITY IS CLAIMED. No same-camera donor/port A/B frame was produced or examined. Every donor statement is a read-only file/line observation; every port statement is a read-only source line. 'Required derived-asset conversion' names work to be done, not work done."
+scope_guard: "Exactly one repo file written (this report). No source, shader, config, asset, fixture, test, runner, Godot, git or user-mod edit. Donor binary and donor data tree read READ-ONLY; no donor executable run, no donor bytes copied into the repo. Singleplayer skirmish only."
+donor_pin: "t_87f0f3c130b0 = C:\\Games\\Cossacks 3\\cossacks.exe (PE x86, 5,768,048 B, sha256 87f0f3c130b0...). Data tree C:\\Games\\Cossacks 3\\data read READ-ONLY. Pin cited, binary not executed here; data passes below are text/directory reads."
+port_scope: "variant3d/scripts/{anim3d,world3d_entities,world3d_fx}.gd + variant3d/assets/models/skin/index.json + variant3d/tools/{convert_skins,bake_sprites}.py (read-only line citations)"
+prior_reports_read:
+  - docs/terrain_swarm_2026-11-26/reports/DEC_U_entities_art_collision.md (U2/U14 gap framing, ghost/rally/death anchors)
+  - docs/terrain_swarm_2026-11-26/reports/PORT1TO1_objects_anim_collisions_fx.md (§1.5 AAF census, §3 FX, §5 port diff D1-D5/D11/D14-D17)
+  - docs/coord_swarm_2026-11-25/reports/DANIM_01_action_ranges.md (246-file / 62-name catalog, §4 state map, §5 clip table)
+  - docs/coord_swarm_2026-11-25/reports/BUILD_SKIN_01.md (55-sid scope note)
+---
+
+# DEC-U — donor AAF / actor art audit (1:1 donor port)
+
+> READ-ONLY. Singleplayer skirmish only. No parity claim. No approximation endorsed.
+> Each `[U]` ends in either a static verdict with cited bytes/lines, or a named GPU/runtime capture. Nothing is closed by a port fallback. Nothing is synthesised.
+
+## 0. Method, labels, passes
+
+- **[O]** = observed donor file line / directory entry / port line. **[D]** = arithmetic over cited [O]. **[I]** = reading without runtime proof. **[U]** = unresolved after the passes here.
+- Path shorthands: `D:` = `C:\Games\Cossacks 3\data\` (read-only). `P:` = workspace `variant3d\`.
+- `ev_` ids below are not Craft Anything binary-decomp ids (no binary decomp was run in this worker); the evidence is the cited donor `path:line` itself, verified by a second read pass where noted.
+
+### 0.1 Pass ledger (multiple passes; strange-read log inline)
+
+| Pass | Operation (read-only) | Result |
+|---|---|---|
+| P1 | `Get-ChildItem D:animations/aaf -Filter *.aaf` count + `Get-Content peaukr.aaf / musketeer.aaf / grenadier.aaf / cannon.aaf / yacht.aaf` full-row reads | 194 unit/building `.aaf` + 52 `aaf/pfx/*.aaf`; peasant 18 rows, musketeer 17 rows, grenadier 30+1 commented rows, cannon 4 rows, yacht 4×`1..280` [O] (§1) |
+| P2 | `Get-Content P:assets/models/skin/index.json` header + per-entry `actions` scan | `count=66`, `actions_requested=[idle,idle0,walk,walk0,death,attack0,attack1,construct]`, 7 naval sids `skipped` (.osm hull, no skin tracks); 9 peasant sids carry `construct`, 0/66 carry any work/carry/reaction row [O] (§1) |
+| P3 | Second read of `D:animations/aaf/peaukr.aaf:1-20` byte stream (Encoding Byte) + text lines | Byte stream `AAF CRLF 18 CRLF "idle",64,113,morph ...` matches text read; bounds inclusive, token `morph` only [O] |
+| P4 | `Get-ChildItem D:actors/{units,buildings,misc,env,pfx,ref}` + `D:materials/**` filtered listings | units 126 `.oss` / 65 `.osm` / 120 `.actor`; misc `box.osm + rallypoint.osm` present; `box.dds + rallypoint.dds` present; `scaffold/debris(.w).dds` present; `eurmil_death1/2.osm` present, `..._death1a/2a` child meshes NOT separately listed under `commoneur` [O] (§2) |
+| P5 | `Get-Content D:objects/misc/{constructiondummy,rallypoint}.prop` + `D:actors/misc/{box,rallypoint}.actor` + `D:objects/units/peaukr.prop:1-60` + `D:actors/units/peaukr.actor:1-6` | Ghost = `box.mesh`/`box` material; rally = `rallypoint.mesh`/`rallypoint` @ `DefaultScale 0.0525³` + `DefaultRollAngle 45` + `ocoTerrainWater`; peasant tool attach = 7 `.mesh` names (`axe,bag,cart,hammer,hoe,lumber,pick`) with material `peaaustools`, no matching `peaukr_*.oss` file in `D:actors/units` [O] (§2-§3) |
+| P6 | `Get-Content D:actors/buildings/commoneur/eurmil.actor` + `D:objects/buildings/eurmil.prop:1-118` full + `D:animations/aaf/{eurmilanim,yacht}.aaf` | `eurmil.actor` lists base + `1..4` stage meshes + `_death1/_death2` meshes; `.prop` lists 5×5 diamond `Mask`, AABB, `DefaultScale 0.43`, child table `eurmila/eurmil1a..4a/_death1a/_death2a` with `scaffold×5/debris×2`; `eurmilanim.aaf` = `idle 1..249`; `yacht.aaf` = 4× `1..280` [O] (§2-§3) |
+| P7 | `Select-String` port scripts for `ACTION_ALIAS/_frame_at/ACTION_SELECTION_STATUS/BUILDING_DEATH_STATUS/GHOST_OK/RALLY_TTL/LIFE/buildingsmoke` | Port line anchors for §5 change list [O] |
+| P8 | Cross-check against DANIM_01 §3 (62 names, modal ranges) + PORT1TO1 §1.5 (66-entry census) + DEC_U §4 (ghost/rally/death anchors) | All three agree on peasant 18-row table, `attack1 [99,124]`, `construct [186,198]`; disagreements: none on facts, only scope (DANIM 55 vs this index 66) — recorded, not resolved [D] |
+
+**Strange-read log:** none. The only anomaly met was PowerShell `Select-Object Name` returning blank `Name` columns on the donor tree (encoding of the listing, not of the files); switching to `-ExpandProperty Name` / `-LiteralPath` returned correct names. No branch polarity was guessed; no binary bytes were interpreted.
+
+---
+
+## 1. Shipped-sid census and the AAF action names/ranges they need
+
+### 1.1 What "shipped" means here [O]
+
+`P:assets/models/skin/index.json` header (single-line JSON, read in full):
+
+- `schema=c3_skin_v1`, `generator=variant3d/tools/convert_skins.py (V7-78)`, `frames_per_action=6`
+- `actions_requested=["idle","idle0","walk","walk0","death","attack0","attack1","construct"]`
+- `label="PORT APPROXIMATION — NOT DONOR PARITY"`, `visual="UNVERIFIED"`
+- `count=66`, `total_bytes=4489087`
+- 66 `entries[]` with per-sid `donor_oss`, `donor_aaf`, `actions` (sampled donor frame indices), plus 7 `skipped[]` naval entries (`yacht/yachttur/fishboat/frigate/galley/battleship/xebec`, reason `donor .osm/IDP2 hull (no skin tracks; V7-63 ships are static)`).
+
+**[D]:** the port ships 66 skinned unit sids (the "55 shipped sids" in older DANIM/BUILD_SKIN notes is a stale subset count; the on-disk index is 66 — discrepancy recorded, not papered over).
+
+### 1.2 Per-sid donor AAF truth (what the port must read per sid, never hard-code)
+
+The donor AAF is **per sid**. The port converter already honours this (`convert_skins.py:80-81` per-sid ranges; `anim3d.gd:918-934` per-sid lookup). The table below gives the **authoritative donor rows actually read in this job** plus the DANIM_01-catalogued rows for families not re-read line-by-line here (marked DANIM-cited so the reader knows which pass each row comes from).
+
+| Family (shipped sid example) | Donor AAF file [O] | Action rows needed (first..last inclusive, `morph`) | Port skin today [O] |
+|---|---|---|---|
+| Peasant ×9 (`peaukr/pearus/peapol/peaaus/peaeng/peaspa/peatur/peasco/peasant`) | `D:animations/aaf/peaukr.aaf:1-20` (18 rows, re-read P1/P3) | `idle 64..113 :3`, `idle0 64..113 :4`, `walk 1..20 :5`, `death 115..149 :6`, `attack0 237..254 :7`, `workfood 278..299 :8`, `workwood 237..254 :9`, `workstone 217..234 :10`, `idlefood 405..454 :11`, `idlewood 354..403 :12`, `idlestone 303..352 :13`, `walkfood 257..276 :14`, `walkwood 22..41 :15`, `walkstone 43..62 :16`, `construct 186..198 :17`, `reaction 456..481 :18`, `prepare0 64..65 :19`, `unprepare0 64..65 :20` | `idle/idle0/walk/death/attack0/construct` sampled (6 frames each, e.g. `walk [1,5,9,12,16,20]`); `work*/idle*/walkfood/walkwood/walkstone/reaction/prepare0/unprepare0` **0/66** |
+| Musketeer family (`musketeer/musketeer18/musketeer18bav/grenadier/serdiuk/jannisary/pandur/chasseur/highlander/musketeersco`) | `D:animations/aaf/musketeer.aaf` (17 rows, re-read P1: `attack1 99..124`, `death 433..495`, `death1 498..559`, `death0 564..628`, `idle 153..202`, `idle0 204..254`, `idle1 256..305`, `prepare0 307..328`, `unprepare0 329..350`, `prepare1 353..379`, `unprepare1 380..405`, `trans01 408..419`, `trans10 420..430`, `walk 1..24`, `walk0 26..49`, `walkprepare0 50..73`, `walkunprepare0 74..97`); `grenadier.aaf` (30 active rows + 1 `//`-commented `attack2 630..679`, re-read P1: adds `attack0 126..141`, `attack1 99..114`, `walk2 1..24`, `idle2 153..202`, `attack2 153..154` stub, `prepare2/unprepare2 153..154` stubs, `trans02 329..351`, `trans12 380..405`, `trans20 307..328`, `trans21 353..378`, `death2 433..495`, `attack2before 630..663`, `attack2after 664..679`) | All rows in file; state map needs at minimum `idle/idle0/idle1/idle2/walk/walk0/walkprepare0/walkunprepare0/attack0/attack1/attack2(+before/after)/death/death0/death1/death2/trans*/prepare*/unprepare*` | `idle/idle0/walk/walk0/death/attack0/attack1` sampled; `death0/1/2`, `idle1/2`, `walkprepare0/walkunprepare0`, `trans*/prepare*/unprepare*`, `attack2*` **absent from every shipped skin `actions` map** |
+| Pikeman/archer/cannon families (`pikeman/pikeman18/pikemanrus/pikeman18swe/pikemansco/archer/archersco/cannon/howitzer/mortar/multicannon/framegun`) | `D:animations/aaf/cannon.aaf` (4 rows, re-read P1: `idle 1..1`, `walk 1..99`, `attack0 301..337`, `attack1 301..337`); archer/pikeman rows per DANIM_01 §3.3 + index `actions` (DANIM-cited, not re-read line-by-line here) | `idle/walk/death/attack0` + family extras (`attack1`, `idle0/walk0`, `prepare/unprepare/trans` families per DANIM_01 62-name catalog) | `idle/idle0/walk/walk0/death/attack0(+attack1 where AAF has it)` sampled; `death0/1/2`, `trans*/prepare*` absent |
+| Cavalry (`cossacksich/dragoon18/dragoon/hussar/hetman/cuirassier/reiter/tatar/sipahi/spakh/mameluke/vityaz/cossackdon/cossackregister/hackapell/croat/...`) | DANIM-cited (not re-read line-by-line here): modal `idle 505..589` (85 frames, 2.833 s), `walk 614..637` or `1..16`, `attack0 592..604 / 640..654 / 656..669`, `death 49..119` | `idle(/idle0)/walk/death/attack0` + `prepare/unprepare/walkprepare0/walkunprepare0` where present | `idle/idle0/walk/death/attack0(+attack1 for tatar)` sampled; `death0/1/2`, `prepare*/trans*` absent |
+| Support (`drummer/drummer18/bagpiper/officer/officer18/priest/padre/pope/mullah/roundshier/lightinfantry/swordsmansco/...`) | DANIM-cited: `idle 26..131` variants, `walk 1..24` (or `143..166` for lightinfantry/swordsmen), `death 26..139` variants, `attack0` per-sid | Same pattern as above | `idle/idle0/walk/death/attack0` sampled; 5 non-combat sids have **no `death`** in shipped skin (PORT1TO1 §1.5: `death` 61/66) |
+| Naval (7 `skipped`, NOT shipped as skins) | `D:animations/aaf/yacht.aaf` (4 rows, re-read P1/P6: `idle/walk/death/attack0` all `1..280`) | `1..280` full-timeline aliases (9.333 s), naval transform via `yacht.tlf` + `.osm` hull, **not** `.oss` skin tracks | Skipped by design (`no skin tracks; V7-63 ships are static`); no conversion specified for skins |
+
+**Donor state→name authority** (DANIM_01 §4.2, not re-cited line-by-line here — carried, not re-derived): `dmscript.global:868-926` `gc_anim_*` constants + `unit.script:10856-11090` / `ontagstates.inc:302-589` selection, incl. `_unit_IsAnimationExists` fallback (`unit.script:11048-11051`, `11092-11093`) and peasant tool-by-action map (`unit.script:6993-7009`: `workfood→hoe, workwood→axe, workstone→pick, construct→hammer, walk/idlefood→bag, walk/idlewood→lumber, walk/idlestone→cart`).
+
+**[D] gap statement:** `actions_requested` covers 8 names; the donor needs up to 30 (grenadier) per sid. The 0/66 work/carry/reaction figure from IMPL-ENTITIES-1TO1 / DEC_U is **confirmed against the on-disk index** (no `workfood/workwood/workstone/idlefood/idlewood/idlestone/walkfood/walkwood/walkstone/reaction/prepare0/unprepare0` key appears in any of the 66 `actions` maps).
+
+### 1.3 Loop / one-shot / blend (not in AAF, must not be re-invented)
+
+- All re-read AAF rows carry only the token `morph`; 0 other flags [O] (P1/P3). DANIM_01 M1 confirms `1,434/1,434 morph` across 246 files.
+- Loop/one-shot/blend are donor-authored **outside** AAF: `showdebuganimations.inc:45-66,113-155` (`bPlayOnce`; attacks+deaths `True`, walks/idles/work/construct `False`), `movie.script:648-656` (`acmPlayOnce/acmLoop/acmNone`), `unit.script:10808-10809,10852` (death `acmPlayOnce/aamPlayOnce`; hidden `acmNone/aamNone`), ACL `CyclesList=False` + `acoSmoothAnimation/acoRandomFrame/acoRandomCycle/acoSkipActions`, blend `minFrameBlend=6/maxFrameBlend=8` (`unit.script:10846-10847`, `initial.inc:17-19`) — all DANIM_01 §4.3 [O]-carried, not re-read here.
+- Port `_frame_at` fposmod loop is therefore **not donor-proven** (port self-labels `UNVERIFIED [U] U2` at `anim3d.gd:104`). Fix is in §5 (P2).
+
+---
+
+## 2. Donor `data/actors/**` inventory (what art exists on disk)
+
+### 2.1 Units — body tracks exist; tool attaches do not (as `.oss`) [SUPERSESSION-FIX: point-in-time/historical claim, not current — SUPERSEDED by `DEC_U_tool_attach.md` §1/§2.3 (56 `pea<nat>_<tool>.oss` under `attach/`; parent-glob refutation; impl tasks 98/102/106); T-A/T-B stay [U]; parity UNVERIFIED — NO PARITY CLAIM.]
+
+| Item | Donor path [O] | Verdict |
+|---|---|---|
+| 126 `.oss` + 65 `.osm` + 120 `.actor` under `D:actors/units/` (P4 directory census) | `D:actors/units/` | **[O]** present; body skin tracks available for every shipped sid (index `donor_oss`/`donor_aaf` pairs resolve) |
+| `peaukr.actor:1-6`: `ShaderLODList 18/11`, `Animations.LoadFromFile=...\peaukr.aaf`, `peaukr.mesh → .\data\actors\units\peaukr.oss` | `D:actors/units/peaukr.actor:1-6` (P5) | **[O]** body binding proven |
+| `peaukr.prop` auto-children: 7 meshes `peaukr_axe/bag/cart/hammer/hoe/lumber/pick.mesh`, material `peaaustools` | `D:objects/units/peaukr.prop` autochildren block (P5) | **[O]** tool attach list proven |
+| `peaukr_axe.oss / ..._hoe.oss / ...` on disk | `D:actors/units/` filtered `*pea*` = 16 files, all body `pea<nat>.actor/.oss`, **no `peaukr_*` tool file** (P8 follow-up) | **[O]** absent: tool meshes exist only as `.mesh` names in the `.prop`; no separate bone-track `.oss` was found in this pass. Conversion of tool motion therefore cannot reuse the body-track baker; see [U]-T in §4 [SUPERSESSION-FIX: point-in-time/historical "no `peaukr_*` tool file / no bone-track `.oss` this pass" claim, not current — SUPERSEDED by `DEC_U_tool_attach.md` §1/§2.3 (56 attach `.oss`; parent-glob refutation); T-A/T-B stay [U]; parity UNVERIFIED — NO PARITY CLAIM.] |
+| Naval hulls: `yacht.actor` = `aamLoop/afpNone/aarTransform`, `Animations=yacht.aaf`, `TransformationFrameList=yacht.tlf`, hull `yacht.osm + yacht1/2/3.osm` | `D:actors/units/yacht.actor` + `D:animations/aaf/yacht.aaf` (P6) | **[O]** naval art is `.osm` rigid hull + `.tlf` transform list, not skin tracks — matches the 7-sid `skipped` reason |
+
+### 2.2 Buildings — stage/death meshes exist; child `*a` meshes need a second look
+
+| Item | Donor path [O] | Verdict |
+|---|---|---|
+| `eurmil.actor`: base `eurmil.mesh→eurmil.osm` + stages `eurmil1..4.mesh→.osm` + ruins `eurmil_death1.mesh→eurmil_death1.osm`, `eurmil_death2.mesh→eurmil_death2.osm` | `D:actors/buildings/commoneur/eurmil.actor` (P6, full file) | **[O]** present: all 7 meshes |
+| `eurmil.osm + eurmil1..4.osm + eurmil_death1/2.osm` on disk | `D:actors/buildings/commoneur/eurmil*` listing (follow-up: 8 files incl. `.actor`) | **[O]** present |
+| Child table `eurmila/eurmil1a..4a/_death1a/_death2a` with `scaffold×5/debris×2`, `achildRequered` | `D:objects/buildings/eurmil.prop:64-104` (P6) | **[O]** proven; `scaffold.dds/scaffoldw.dds/debris.dds/debrisw.dds` all present under `D:materials/buildings/constructor/` (P4 follow-up) |
+| `eurmil*a.osm` files on disk | `commoneur/eurmil*` listing shows **no `*a.osm`** in this pass (only base/stage/death files) | **[O]** not found in `commoneur/` in this pass — either stored under a sibling nation dir or named differently. **Not declared absent**; the port change (§5 P5) must glob all `D:actors/buildings/**/` before claiming a gap. If the glob still finds nothing, raise [U]-B with a capture instead of synthesising |
+| `eurmil.prop` mask `00100/01110/11111/01110/00100`, AABB `(-0.70,-0.15,-0.60)..(0.60,2.20,0.65)`, scale `0.43`, roll `45` | `D:objects/buildings/eurmil.prop:45-62,106-118` (P6) | **[O]** proven |
+| `eurmilanim.aaf`: `idle 1..249` (mill-sail attach, 1098 verts per MILLFIX) | `D:animations/aaf/eurmilanim.aaf:3` (carried from PORT1TO1 §1.5, re-cited) | **[O]** present; attach conversion is a `convert_models`-class `.osm` job, not a skin job |
+
+### 2.3 Misc (ghost / rally) — both meshes + both textures exist
+
+| Item | Donor path [O] | Verdict |
+|---|---|---|
+| Ghost dummy: `constructiondummy.prop` = `LODActorName=box`, `DefaultMeshName=box.mesh`, material `box/UseableMaterials[0]=box` (16 lines, full file) | `D:objects/misc/constructiondummy.prop` (P5) | **[O]** proven |
+| `box.actor` = `box.mesh → .\data\actors\misc\box.osm` | `D:actors/misc/box.actor` (P5) | **[O]** proven |
+| `box.osm` on disk; `box.dds` under `D:materials/misc/` | P4 listings | **[O]** present |
+| Rally: `rallypoint.prop` = `rallypoint.mesh`, material `rallypoint`, `DefaultScale 0.0525³`, `DefaultRollAngle 45`, `OffsetCollideOption=ocoTerrainWater` (30 lines, full file) | `D:objects/misc/rallypoint.prop` (P5) | **[O]** proven |
+| `rallypoint.actor` = `rallypoint.mesh → rallypoint.osm` | `D:actors/misc/rallypoint.actor` (P5) | **[O]** proven |
+| `rallypoint.osm` on disk; `rallypoint.dds` under `D:materials/misc/` | P4 listings | **[O]** present |
+| Ghost colour/blink + rally TTL/pennant | No key in either `.prop`; 0 `constructiondummy/rallypoint/ghost` strings in binary (DEC_U P1e-f) | **[U]-G / [U]-R** in §4 — art exists, behaviour does not |
+
+### 2.4 PFX / FX sheets — descriptors exist; sheets are a texture-conversion job
+
+| Item | Donor path [O] | Verdict |
+|---|---|---|
+| `D:pfx/{source.pfx,manager.lib,fx.tree,material.mat,material.ref,source.ref}` + `textures/` dir | P4 listing | **[O]** present |
+| 52 `D:animations/aaf/pfx/*.aaf` (`pfxshotmusket1..3`, `pfxshotcannon1..8`, `pfximpdust*`, `pfximpwater*`, `pfxtrail*`, `pfxexpl*`, `pfxbuildfire*/pfxbuildsmoke*`) | P4 listing (60-name sample) | **[O]** present |
+| `shotmusket` 5-child composition, `musketsmoke` bases (`PixelRatio 175, Interval 10, FrameRate 100, FreeToPool, AlphaTime/Power 1.5`), `bullettrail` ribbon keys, `buildingsmoke` 4-layer `parentrandom=true` | `D:pfx/fx.tree:4-63,417-442` + `D:pfx/source.pfx:30-64,1734-1763,1808-2199` (carried from DEC_U P8-P10 / PORT1TO1 §3.1, not re-read here) | **[O]**-carried; conversion needs the `.dds` sheets under `D:pfx/textures/` + `D:materials/pfx/` |
+
+---
+
+## 3. Construct / death / work / carry / ghost / rally / FX — existence verdicts
+
+| Need | Donor art on disk [O] | Port today [O] | Conversion verdict |
+|---|---|---|---|
+| `construct` (9 peasant sids) | `pea*.aaf` rows `186..198` (13 frames, 0.433 s) + body `.oss` tracks present | Shipped (6 sampled frames, e.g. `[186,188,191,193,196,198]`) | **Convert more frames** (§5 C1). No new art needed |
+| `death` incl. `death0/1/2` | Body `.oss` + AAF rows present for 61/66 sids (`death`), 37/114-file `death0`, 25-file `death1`, 7-file `death2` families (DANIM_01 §3.3) | `death` shipped 61/66; `death0/1/2` 0/66 | **Convert** `death0/1/2` rows where the sid's AAF has them (§5 C1) |
+| `workfood/workwood/workstone` (peasant ×9) | AAF rows present (`278..299 / 237..254 / 217..234`); body `.oss` covers those frame indices (same track block, `k=483` frames) | 0/66 | **Convert** with existing baker (§5 C1). No new art needed — same `.oss`, new frame window |
+| `idlefood/idlewood/idlestone` + `walkfood/walkwood/walkstone` carry (peasant ×9) | AAF rows present (`405..454 / 354..403 / 303..352 / 257..276 / 22..41 / 43..62`); body tracks present | 0/66 | **Convert** body windows (§5 C1) + **[U]-T** for the carried tool prop (bag/lumber/cart): body motion is convertible, tool-mesh attach art has no `.oss` in this pass |
+| `reaction` (peasant ×9, `456..481` 26 frames) | AAF row + body tracks present | 0/66 | **Convert** (§5 C1) |
+| `prepare0/unprepare0` + `prepare1/unprepare1/prepare2/unprepare2` + `trans*` + `walkprepare0/walkunprepare0` | AAF rows present (2-frame stubs `64..65` et al. through 34-frame `attack2before`) | 0/66 | **Convert** where the state machine needs them; 2-frame stubs are cheap (1 extra sampled frame each) |
+| `attack1` / `attack2` | `attack1` rows in 29 files (modal `99..124`); `attack2 153..154` stub + `before 630..663 / after 664..679` in 7 grenadier files; cannon `attack0/attack1 301..337` | `attack1` shipped 14/66 (only sids whose AAF has it); `attack2*` 0/66 | **Convert** `attack1` for remaining 15 AAFs that have it but were not requested per-sid; **convert** `attack2before/after` for grenadier family if the sim needs grenade-throw states |
+| Ghost dummy | `box.osm` + `box.dds` + `box` material + `.prop` + `.actor` all present | Procedural green/red quads (`world3d_fx.gd:145-146,582-606,1089,1720`) | **Convert** `.osm`→mesh + `.dds`→texture through the approved model/material pipeline (§5 P5). Colour/blink = [U]-G |
+| Rally point | `rallypoint.osm` + `rallypoint.dds` + material + `.prop` (scale/roll/offset) + `.actor` all present | Procedural pole + TTL 2.0 s (`world3d_fx.gd:163,1201-1232,1425,1703`) | **Convert** mesh+texture at `0.0525³` + roll 45 + `ocoTerrainWater` (§5 P6). Lifetime = [U]-R |
+| Building death (`_death1/_death2` + `debris` + `buildingsmoke`) | `_death1/2.osm` + `debris(.w).dds` + `scaffold(.w).dds` + `source.pfx` sheets present; `*a` child meshes **not found in `commoneur/` this pass** (see §2.2) | Scaffold-only pass, no ruin/burn/smoke (`world3d_entities.gd:2428-2513`, `BUILDING_DEATH_STATUS`) | **Convert** `_death1/2.osm` + debris/scaffold materials + 4 smoke sheets (§5 P5/P7); `*a` meshes need a full-tree glob first, else [U]-B |
+| FX sprites/ribbons | `source.pfx` keys + `aaf/pfx/*.aaf` + `manager.lib` + `fx.tree` present; sheets live under `D:pfx/textures/` + `D:materials/pfx/` | Plain quads/spheres + `LIFE` table + `no-RNG-by-design` | **Convert** sheets/materials + implement 8-float RNG + `FreeToPool` + ribbon path (§5 P3/P4/P7). `PixelRatio/Interval→world/time` = [U]-F (needs capture, §4) |
+
+No row above invents art. Where the mesh/texture file was seen, the verdict is "convert"; where it was not, the verdict is a labelled [U] with a capture, never a synthesis.
+
+---
+
+## 4. True gaps [U] — precise runtime captures required (do NOT synthesise)
+
+- **[U]-G ghost behaviour.** Art is fully present (§2.3). Missing: colour source (key-colour index? `box` material tint?) + blink function/period. **Capture:** order a building in singleplayer skirmish; video-capture the ghost from placement start to confirm/cancel at fixed camera; log per-frame mesh id (expect `box.mesh`), material colour, alpha/visibility toggling + frame counter. Success = (mesh, colour frames, blink period/amplitude, scale) with capture ids. Until then the port keeps procedural quads labelled stand-in and must not tint `box.mesh` by guess.
+- **[U]-R rally lifetime/pennant.** Art is fully present (§2.3). Missing: lifetime/TTL + whether any flag/pennant animates beyond the 45°-roll mesh. **Capture:** set a rally point in skirmish; capture mesh + lifetime until auto-remove + any child/pennant motion. Success = (start event, stop event, TTL seconds) with capture ids. Until then `RALLY_TTL=2.0` stays labelled a port choice.
+- **[U]-T peasant tool attaches.** The 7 `.mesh` names + `peaaustools` material are proven in `peaukr.prop`, but no `peaukr_*.oss` bone-track file was found in `D:actors/units/` this pass. Missing: whether tool motion is (a) rigid attach to a body bone, (b) separate single-bone `.oss` elsewhere, or (c) baked into the body vertices. **Capture + glob:** first glob `D:actors/**/*pea*` and `*tool*`/`*attach*/` tree-wide; if still absent, runtime-capture a peasant doing `workfood/workwood/workstone/construct` + `walkfood/walkwood/walkstone` close-up and log `_unit_ManagePeasantAttach` handle + visible tool mesh per action. Success = per-action (tool mesh, parent bone, rigid vs animated) with capture ids. Until then convert **body** carry windows and leave the tool prop detached and labelled — do not skin a guessed tool. [SUPERSESSION-FIX: point-in-time/historical "no `peaukr_*.oss` bone-track file found this pass" claim, not current — SUPERSEDED by `DEC_U_tool_attach.md` §1/§2.3 (56 attach `.oss` exist; parent-glob refutation); T-A/T-B stay [U]; parity UNVERIFIED — NO PARITY CLAIM.]
+- **[U]-B building `*a` child meshes.** `_death1/2.osm` + scaffold/debris textures are proven; `eurmil*a.osm` was not found in `commoneur/` this pass. **Glob + capture:** glob `D:actors/buildings/**/` for `*a.osm` / `*a.actor`; if absent, capture mill birth (expect scaffold child visible) and death (expect `…a` + debris swap + `_unit_DoExplosion` flash + `buildingsmoke` attach/detach frames). Success = child mesh path per stage + swap frames + smoke TTL. Until then swap base stages and label the child slot unresolved.
+- **[U]-F PFX world/time scale.** Keys (`PixelRatio/Interval/FrameRate/AlphaTime/AlphaPower/MirrorU/V/MarkWidth/VertLimit/MinDistance/TimeLimit/msFaceCamera`) are proven in `source.pfx` + `fx.tree`; the 8-float RNG rule is proven in `pfx.script:39-86`. Missing: `PixelRatio→metres` divisor, `Interval/FrameRate→seconds` law (`71.4286 ≈ 1000/14` but `100/10 = 10 ≠ 100`, so no single law is proven), `AlphaTime/Power` curve shape, ribbon spawn law. **Capture:** spawn `shotmusket` once per capture at fixed camera/distance; vary only `PixelRatio` (175→350) then only `Interval` (10→14); record quad world width over frames `0..127` + behaviour reads. Success = fitted `worldSize=f(PixelRatio,distance)` + `secPerFrame=g(Interval,FrameRate)` with capture ids. Until then port quads stay labelled stand-ins.
+- **[U]-S seed.** `FillRand` + `parentrandom` sharing are proven; the `Random` seed call (`Randomize/RandSeed`) and sim-stream isolation are not. **Capture:** fixed-map skirmish, trigger `shotmusket` N=50 with no other FX, log 8 `rand` values per spawn; reload same map/seed, repeat. Success = seeded vs time-seeded verdict + reseed call id.
+
+---
+
+## 5. Exact port change list (file/line; no code written here)
+
+Each row: port site **[O]**, donor fact **[O]/[D]**, required replacement + required donor assets. **No row claims implementation.**
+
+| # | Port file:line (current [O]) | Donor fact (this job [O]/[D]) | Required donor-faithful replacement + required donor assets |
+|---|---|---|---|
+| C1 | `P:assets/models/skin/index.json` header `actions_requested=[idle,idle0,walk,walk0,death,attack0,attack1,construct]`; per-sid `actions` maps (66 entries; work/carry/reaction keys 0/66) | Peasant AAF needs 18 rows incl. `workfood 278..299 / workwood 237..254 / workstone 217..234 / idlefood 405..454 / idlewood 354..403 / idlestone 303..352 / walkfood 257..276 / walkwood 22..41 / walkstone 43..62 / reaction 456..481 / prepare0/unprepare0 64..65` (`peaukr.aaf:8-20`); musketeer/grenadier need `death0/1/2`, `idle1/2`, `walkprepare0/walkunprepare0`, `trans*/prepare*/unprepare*`, `attack2*` | Re-run the approved offline baker (`variant3d/tools/convert_skins.py` + `bake_sprites.py:118-143 qmat/skin`) with an expanded per-sid request list drawn from **each sid's own AAF** (never copy peasant ranges onto other sids): add `workfood/workwood/workstone/idlefood/idlewood/idlestone/walkfood/walkwood/walkstone/reaction/prepare0/unprepare0` for the 9 peasant sids; add `death0/death1/death2/idle1/idle2/walkprepare0/walkunprepare0/trans01/trans10(/trans02/trans12/trans20/trans21 + prepare1/unprepare1/prepare2/unprepare2 + attack2before/attack2after)` wherever the sid's AAF declares them; keep `frames_per_action=6` deterministic decimation. Assets: existing `.oss` + per-sid `.aaf` (already on disk) — no new donor art |
+| C2 | `P:scripts/anim3d.gd:71-90` `AAF_ACTIONS` (peaukr 18-row table); `:94-96` `ACTION_ALIAS {"attack":"attack0"}`; `:103-104` alias/loop status; `:172,563` alias resolve; `:634-640,669` `_frame_at` fposmod loop | AAF tokens are `attack0/attack1(/attack2)` etc. (`peaukr.aaf:7`, `musketeer.aaf:7`, `grenadier.aaf`); no `attack` token; all rows `morph` with no loop flag; loop/one-shot/blend live in scripts/ACL (§1.3) | After C1 lands: resolve ranges from the resolved sid's own `actions` (drop peaukr fallback for registered sids); add `attack1` branch gated by per-sid `actions` + weapon/order and `attack2before/after` for the grenadier family; implement per-action loop/clamp/once (`death/attack*` clamp or completion signal per `acmPlayOnce/aamPlayOnce`, walks/idles/work/construct loop) + `minFrameBlend 6 / maxFrameBlend 8` nearest-frame policy; until then keep `visual UNVERIFIED` labels, never silent-fallback to idle |
+| C3 | `P:scripts/world3d_entities.gd:273` `ACTION_SELECTION_STATUS` (work/carry/reaction → gap telemetry); `:1719-1741` `_unit_action` (only `death/construct/walk/idle`) | Donor state map needs `attack0/attack1/attack2`, `workfood/workwood/workstone`, `walkfood/walkwood/walkstone`, `idlefood/idlewood/idlestone`, `reaction`, `construct`, weapon/carry-gated (`unit.script:10856-11090`, `6993-7009`) | Add `attack0/attack1(/attack2)` (weapon/order-gated) + `work*/walk*/idle*` carry + `reaction` branches, each gated by per-sid `actions` availability with `_unit_IsAnimationExists`-style fallback (`attack2→attack0→idle` chain per donor); extend skin export first (C1) so no branch reads a missing window |
+| P5 | `P:scripts/world3d_fx.gd:145-146` `GHOST_OK/BAD`; `:582-606` ghost section; `:1089` `_ghost_mat`; `:1720` ghost colour; `P:scripts/world3d_entities.gd:275` `BUILDING_DEATH_STATUS` + `:2367-2388` stage + `:2428-2513` scaffold-only pass | Ghost = `box.mesh` + `box` material (`constructiondummy.prop`, `box.actor`); death = `<sid>_death1/2.mesh→.osm` + child `…a` + `debris` vs `scaffold`, state-driven (`eurmil.actor`, `eurmil.prop:64-104`, `ontagstates.inc:240-311` carried) | Ghost: convert `D:actors/misc/box.osm`→mesh + `D:materials/misc/box.dds`→texture via the approved model/material pipeline; attach at placement with donor scale; remove coloured quads after [U]-G lands (colour/blink by capture only). Death: convert `D:actors/buildings/**/<sid>_death1/2.osm`→meshes + `debris(.w)/scaffold(.w).dds`→textures; swap base→`_death1/2` on the donor hp/stage selector, apply child `scaffold×5/debris×2` materials, clear misc children, fire `_unit_DoExplosion` on the stated transition; `*a` meshes pending §2.2 glob else [U]-B |
+| P6 | `P:scripts/world3d_fx.gd:163` `RALLY_TTL=2.0` (self-labelled port choice); `:1201-1232` procedural pole; `:1425` ttl status; `:1703` ttl read | Rally = `rallypoint.mesh→rallypoint.osm` + `rallypoint` material, `DefaultScale 0.0525³`, `DefaultRollAngle 45`, `ocoTerrainWater` (`rallypoint.prop`, `rallypoint.actor`) | Convert `rallypoint.osm`→mesh + `rallypoint.dds`→texture; place at `0.0525` scale + roll 45 with terrain/water offset; keep 2.0 s only as labelled placeholder until [U]-R lands |
+| P7 | `P:scripts/world3d_fx.gd:99-115` `LIFE/DEFAULT_LIFE`; `:218-221` RNG recorded-not-reproduced; `:256,295,304-307` `buildingsmoke`/4-layer notes; `:538-553,1102-1199` plain quads/spheres; `:632-639,1584,1740-1768` `FreeToPool` opt-in; `:697-700` 4-layer gate | `shotmusket` 5 children + `musketsmoke` bases (`PixelRatio 175/Interval 10/FrameRate 100/FreeToPool/Alpha 1.5`), `musketflash` (`PixelRatio 350/Interval 100/FrameRate 10`), `bullettrail` ribbon keys, `buildingsmoke` 4 layers `parentrandom=true`; exact 8-float `ClampInt/Round/Lerp` + `FillRand` rule (`pfx.script:39-86` carried) | Convert `D:pfx/source.pfx` sheets (`musketsmoke/musketflash/bullettrail/firearrowtrail/fragtrail/building{fire,smoke}[start]/tower*` + 52 `aaf/pfx/*.aaf` ranges) + `D:pfx/textures/` + `D:materials/pfx/` via the approved texture pipeline; implement the 8-float RNG + `FreeToPool` removal + `AlphaTime/Power` curve + `msFaceCamera` ribbon path; replace `LIFE` table + 220-cap with donor pool behaviour after [U]-F/[U]-S land; attach `buildingsmoke` 4 children on burning state |
+
+Port sim/renderer rows outside this worker's AAF/art scope (`game.gd` blockers Radii/masks/tags, `picking3d.gd` AABB chain, `data.gd` radius tables, `anim3d.gd` yaw/LOD) are specified in PORT1TO1 §5 / DEC_U §6 and are **not restated** here to avoid a second source of truth.
+
+Required donor asset manifest (must be sourced through the approved converters; **not copied here**): `D:animations/aaf/*.aaf` (194, per-sid ranges) + `D:animations/aaf/pfx/*.aaf` (52, FX ranges); `D:actors/units/*.oss` (126, body tracks incl. all work/carry frame windows) + `D:actors/units/*.actor` (120); `D:actors/misc/box.osm + rallypoint.osm` + `D:actors/misc/*.actor`; `D:actors/buildings/**/<sid>{,_death1,_death2}.osm` + stage meshes + (pending glob) `*a` child meshes; `D:objects/{units,buildings,misc}/*.prop` (masks, AABB, scale, children, materials); `D:materials/{misc/box.dds,misc/rallypoint.dds,buildings/constructor/scaffold(w).dds,buildings/constructor/debris(w).dds,pfx/*}` + `D:pfx/{source.pfx,manager.lib,fx.tree,textures/*}`; `D:objects/ref/{refunit,refbuilding,refmisc}.prop` (scales, AABB, states).
+
+---
+
+## 6. Claim register
+
+| # | Claim | Label |
+|---|---|---|
+| 1 | 194 unit/building AAFs + 52 pfx AAFs; peasant 18 rows, musketeer 17, grenadier 30+1 commented, cannon 4, yacht 4×`1..280`; all re-read rows `morph`, bounds inclusive | [O] P1/P3/P6 |
+| 2 | 66 shipped skins (`actions_requested` 8 names); 9 peasant sids carry `construct`; `attack1` 14/66; `death` 61/66; work/carry/reaction/`prepare0/unprepare0` 0/66 | [O] P2 (index header + `actions` maps) |
+| 3 | Body `.oss` covers every missing work/carry window (same track block, new frame range); tool `.oss` files not found in `D:actors/units/` this pass | [O] P4/P8 + [U]-T for tool motion [SUPERSESSION-FIX: point-in-time/historical claim, not current — SUPERSEDED by `DEC_U_tool_attach.md` §1/§2.3 (56 attach `.oss` exist); T-A/T-B stay [U]; parity UNVERIFIED — NO PARITY CLAIM.] |
+| 4 | Ghost `box.osm+box.dds` and rally `rallypoint.osm+rallypoint.dds` + materials/props/actors all present; colour/blink/TTL not in props | [O] art, [U]-G/[U]-R behaviour |
+| 5 | Building `_death1/2.osm` + scaffold/debris textures present; `*a` child meshes not found in `commoneur/` this pass (full-tree glob still required) | [O] + [U]-B |
+| 6 | FX descriptors + pfx AAFs present; sheets live under `D:pfx/textures/` + `D:materials/pfx/`; world/time scale + seed unrecovered | [O] + [U]-F/[U]-S |
+| 7 | Port differs at the §5 sites; each has a donor-faithful conversion + capture plan; no row is implemented here | [O] port lines + donor facts |
+| 8 | Every [U] has a concrete capture ([U]-G/R/T/B/F/S); none is closed by a port fallback and no art is synthesised | [D] this report |
+| 9 | Any port visual equals donor motion/colour/FX | **Denied** — no same-camera donor/port A/B exists; parity UNVERIFIED |
+
+## 7. Scope statement
+
+Exactly one repository file was written by this worker: this report. All donor reads were read-only against pin `t_87f0f3c130b0`'s data tree (`C:\Games\Cossacks 3\data`). No source, shader, config, asset, fixture, test, runner, Godot, git or user-mod state was changed. No donor parity, similarity score, threshold or gate PASS is claimed. Network is out of scope.
+
+*End of DEC-U-AAF-ART-AUDIT.*

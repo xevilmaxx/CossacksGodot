@@ -1,0 +1,288 @@
+# PORT1TO1_PLAN — full 1:1 Cossacks 3 donor port (singleplayer skirmish)
+
+Date: 2026-11-26  
+Rule: no approximations, no synthetic assets/noise, no invented constants, no weakened tests, no parity claim without a donor GPU A/B frame. Donor binaries are read-only and never executed. Network/multiplayer is OUT OF SCOPE. All prior user modifications are preserve-only.
+
+Status legend: DONE = landed with evidence/backups; DOING = active worker; TODO = queued; BLOCKED = needs runtime/GPU experiment.
+
+## Master task list (current)
+
+| # | Task | Status | Owner / evidence | Notes |
+|---:|---|---|---|---|
+| 1 | Terrain generation bible + 1:1 implementation | DONE | `PORT1TO1_terrain_generation.md`, `IMPL-GEN-1TO1` | Exact stages/RNG/reseeds/records/placement; gen+inputs parse checked |
+| 2 | Terrain renderer bible + 1:1 implementation | DONE | `PORT1TO1_terrain_renderer.md`, `IMPL-RENDER1TO1`, `IMPL-U-TERRAIN-GLSTATE` | Records/LUTs/tsDouble/lighting/state; `sceneColor=0.2` [O] bound |
+| 3 | Water/shore bible + 1:1 implementation | DONE | `PORT1TO1_water_shore.md`, `DEC_U_water_runtime.md`, `IMPL-WATER-COMPILE` | BUILTIN `[D]` default + donor literals/labels; U12/U4* hard-fail (no water, no grey fallback) pending owner GPU capture |
+| 4 | Skirmish logic bible + implementation | DONE | `PORT1TO1_skirmish_logic.md`, `DEC_U_skirmish.md`, `DEC_U_skirmish_impl_patch.md`, `IMPL-SKIRMISH-LAWS` | 8 donor law sets implemented in game.gd/data.gd; parse error at game.gd:314 fixed by COORD; remaining [U] labelled with experiments |
+| 5 | Objects/anim/collision/FX bible + implementation | DONE | above + `IMPL-AAF-ART`, `IMPL-FX-ART`, `IMPL-BUILDING-DEATH`, `IMPL-TOOL-WIRING` | 40 actions, donor art/tool attach/death families/ghost blink/PFX time; FX scale/seed/TTL residuals [U] with captures |
+| 6 | Full project approximation audit | DONE | `PORT1TO1_full_project_audit.md` | ~45 approximations, P0–P3 sequence, user mods listed |
+| 7 | Video/web target taxonomy | DONE | `PORT1TO1_video_targets.md` | `cZW0AEupCaI` timestamps/ROIs, 9 defect classes |
+| 8 | Terrain GL/alpha/pass/quad residuals | DONE | `DEC_U_scenecolor_glstate.md`, `DEC_U_alpha_pass_quad.md` | sceneColor [O], alpha-test/blend enums [O], one display list/cell [O], quad record [O] |
+| 9 | Water runtime residuals | DONE | `DEC_U_water_runtime.md`, `DEC_U_water_fbo.md`, deep passes | U3/U4/U5/identity chain recovered; U1/U12 texture provenance still [U] with owner GPU packet |
+| 10 | Entities art/collision residuals | DONE | `DEC_U_entities_art_collision.md` | RNG/PFX/ghost/rally/death/mask/pick semantics + experiments |
+| 11 | Skirmish residuals | DONE | `DEC_U_skirmish.md`, `DEC_U_skirmish_impl_patch.md`, `IMPL-SKIRMISH-LAWS` | 8 law sets implemented; remaining items moved to task 16 |
+| 12 | Fog/camera/HUD residuals | DONE | `DEC_U_fog_camera_hud.md`, `IMPL-FOG-HUD`, `IMPL-FOG-PATCHES` | donor vision/cadence/pick-prio/minimap/camera pins landed; FOW grid/FOV/projection stay [U] |
+| 13 | AAF/art conversion audit | DONE | `DEC_U_aaf_art_audit.md` | 66 skins, 0/66 work/carry/reaction; donor art present; conversion jobs C1–C3/P5–P7 |
+| 14 | Godot-native MCP host `cossacksgodotmcp` | DONE | protocol + all 6 tools VERIFIED live on QA 64×64 donor-backend game | fixes: early-listen, explicit `--screenshot`, `Data.set_render_mode()`, `data.gd:1106` scope, FX declarations/Godot 4 APIs; `game.status/tick/camera.pan_to/game.screenshot/place_building/video.record_frames` all exercised (place_building refused invalid sid with exact reason, `mil` succeeded site_id=246) |
+| 15 | Snapshot/video acceptance loop | DONE | `variant3d/tools/acceptance/` + captures/runbook | deterministic seq/repeat gate, contact sheets/MP4, 14 ROI metrics, MCP host; no donor A/B |
+| 16 | Skirmish per-sid tables / save contract | DONE | `DEC_U_skirmish_tables.md`, `IMPL-SKIRMISH-ROWS` | 77 weapon rows + 33 protection rows, T2 damage, C1/S/A1/O1/G1 heads in data.gd/game.gd; save bytes/AI tail remain [U] |
+| 17 | Generation seed / quad producer residuals | DONE | `DEC_U_gen_seed.md`, `IMPL-GEN-SEED` | Delphi LCG [O], callback producer [O]; seed source/randkey derivation/indirect copy stay [U] with probes |
+| 18 | AAF trigger/completion signals | DONE | `DEC_U_aaf_triggers.md`, `IMPL_U_aaf_triggers.md`, `IMPL-AAF-TRIGGERS` | T1–T26 table/resolver/cycle policy in anim3d.gd; completion + entity-side patch recs stay [U] |
+| 19 | Renderer material/light/alpha residuals | DONE | `DEC_U_renderer_residual.md` | slot→enum maps [O]; floats/w/modelview/alpha arithmetic/fog/callList stay [U] with zero-mismatch probes |
+| 20 | Water mesh UV / hmap identity residuals | DONE | `DEC_U_water_mesh_uv.md` | UV divisor/winding, hmap sources, time formula [O]/[U] with zero-mismatch GL captures |
+| 21 | Save contract byte framing | DONE | `DEC_U_save_contract.md`, `IMPL-SAVE-CONTRACT` | 19-section order + widths [O] documented in game.gd; wire format/v5 keys byte-unchanged; float bytes/container [U] |
+| 22 | AI decision thresholds | DONE | `DEC_U_ai_thresholds.md`, `IMPL-AI-THRESHOLDS` | 380-line inert donor-data annex in ai.gd with exact cites; activation stays [U] with fixed-seed experiments |
+| 23 | FOW grid / occlusion rule | DONE | `DEC_U_fow_grid.md` | cell size/combine/occlusion/persistence/LOS sampling stay [U] with zero-mismatch transects |
+| 24 | Port guard / preserve-mod audit | DONE | `DEC_U_port_guard_audit.md`, COORD label fixes | PASS: no new approximation/parity claim, user mods + backups intact; 3 minor `[U]` label gaps fixed in shader/inputs |
+| 25 | Camera projection / marquee residuals | DONE | `DEC_U_camera_projection.md` | 58/−32/400 + drag epsilon [O]; FOV sensor/near-far/marquee/minimap quad [U] with captures |
+| 26 | PFX world/time scale | DONE | `DEC_U_pfx_scale.md`, `IMPL-PFX-TIMING` | secPerFrame law + TTLs [O] wired; PixelRatio size/RNG seed/pool [U]; ghost declarations + Godot 4 API compile fixes landed |
+| 27 | Death families / smoke law | DONE | above + `IMPL-DEATH-FAMILIES` | 44 derived meshes + 11 texture rows, 12 family stems, stage machine, no death-edge smoke, `grenadeexp`/`expflash` + deathbuilding sound; 30/30 never visual TTL |
+| 28 | Save float/container bytes | DONE | `DEC_U_save_float.md` | Float 4B LE + ANSI strings [D], victorystate 0/1/2 [O]; container/checksum/transform [U] with paired-save captures |
+| 29 | Tile atlas exact layout | DONE | `DEC_U_atlas_layout.md` | donor uses per-block 1024² DXT1, NO 2D atlas; 16×8 stays labelled `[U]` fallback until byte-dump |
+| 30 | Full per-sid vision table | DONE | `DEC_U_vision_audit.md` | 117 `Set...` sites + 7 direct writes, full sid→vision table, loop-expression keys never match real sids |
+| 31 | Ghost colour / blink law | DONE | `DEC_U_ghost_blink.md` | exact `TXLifeColorEffect 'blink'` alpha keys/period [O]; no green/red tint on live path; mesh identity strong inference [U] |
+| 32 | Save float additive keys | DONE | `DEC_U_save_float.md`, `IMPL-SAVE-FLOAT` | victorystate_int 0/1/2 + setres/lanres/uniqrnd/orders12 + save_donor_version=92 additive; v5 wire byte-compatible |
+| 33 | Full per-sid vision implementation | DONE | `DEC_U_vision_audit.md`, `IMPL-VISION-TABLE` | 140 literal sid rows in data.gd; expression keys removed; unwritten buildings stay helper default 0 |
+| 34 | Ghost blink implementation | DONE | `DEC_U_ghost_blink.md`, `IMPL-GHOST-BLINK` | donor 3-key triangle alpha + BAD red emission live; green/red tint + sin pulse retired; box transport labelled; stale test flagged not weakened |
+| 35 | Minimap scale/tint tail | DONE | `DEC_U_minimap_tail.md` | bottom-right geometry/DPI [O], resource tint arm [O], unit name-swap [O]; scale/frustum/FOW tint [U] |
+| 36 | Full collision radius/mask audit | DONE | `DEC_U_collision_full.md` | per-sid radius table, 354/369 mask census, centred-origin + inertia [O]; LOS/engine impl [U] |
+| 37 | Weapon table tail rows | DONE | `DEC_U_weapon_tail.md` | 77+1 definition CLOSED, protection 33/33 CLOSED; 12 shield writes + mount rows [O] |
+| 38 | Minimap donor geometry/tints | DONE | `IMPL-MINIMAP-TAIL` | DPI-scaled bottom-right panel + strict `los > 0` resource law; unit name-swap only; scale/quad/FOW tint [U] |
+| 39 | Death FX composition | DONE | `IMPL-DEATH-FX` | `grenadeexp` 4-child + `expflash` 2-child routed; looper TTLs absent; spawn/rate [U] |
+| 40 | Shield/mount row implementation | DONE | `DEC_U_weapon_tail.md`, `IMPL-SHIELD-ROWS` | 12 shield rows + 18 mount tuples; howitzer 75/mortar 25 corrected; 77-of-77 comment fixed |
+| 41 | Collision exact rows (game side) | DONE | `DEC_U_collision_full.md`, `IMPL-COLLISION-ROWS` | exact per-sid ship radii, centred-origin/inertia/mask telemetry; ship fallback only for unknown sid |
+| 42 | Global tick interleave order | DONE | `DEC_U_tick_order.md` | stage order + all cadences [O], absolute-deadline progress gate [O]; native plInd driver/interleave [U] |
+| 43 | Save Boolean bits/container | DONE | `DEC_U_save_bits.md`, `IMPL-SAVE-BITS` | Boolean 1-byte 0/1 not bit-packed [D], `.map` envelope [D], TProj order [O]; telemetry only, wire unchanged |
+| 44 | Collision exact rows (data side) | DONE | `DEC_U_collision_full.md`, `IMPL-COLLISION-DATA` | 14 radius rows, inertia/mask census/centred-origin telemetry; no fabricated bitmaps |
+| 45 | Selection predicate / marquee exact | DONE | `DEC_U_selection.md` | full pick chain/prio gates/protocol [O]; XZ distance, engine AABB, marquee/drag [U] with captures |
+| 46 | Save Boolean/container implementation | DONE | `IMPL-SAVE-BITS` | 1-byte Boolean + `.map` envelope + TProj order telemetry; wire unchanged |
+| 47 | Selection exact ordering implementation | DONE | `DEC_U_selection.md`, `IMPL-SELECTION` | donor 0.5 seed as cited nil-arm data, winner-only FOW veto, strict `<` min; engine ray/marquee [U] |
+| 48 | Victory / start / queue constants | DONE | `DEC_U_victory_start.md` | defeat law [O], score/time-limit victory ABSENT, peace table corrected, starts/queue timings [O]; camera literal [U] |
+| 49 | Tick order implementation | DONE | `DEC_U_tick_order.md`, `IMPL-TICK-ORDER` | absolute-deadline progress gate + all cadences + progresstick id*2; native interleave [U]; parses OK |
+| 50 | Water U1/U12 GPU capture plan | DONE | `DEC_U_water_capture.md` | ordered one-session breakpoints/GL dumps, sentinels, zero-mismatch gates, outcome→port diffs, hard-fail matrix |
+| 51 | Market tail / delivery radius | DONE | `DEC_U_market_tail.md` | rational cost-push [O], garr_res_dlt live [O], 3 delivery sites [O], resonlife surplus [O]; port wrong-shape sites identified |
+| 52 | Terrain placement exact rules | DONE | `DEC_U_placement.md` | pixel→class/stars/starts/mines/fields/prop/RNG order [O]; G=0 closed as zero; 9 [U] with probes |
+| 53 | Victory/start donor data | DONE | `DEC_U_victory_start.md`, `IMPL-VICTORY-DATA` | corrected peace table, MaxOrderCount 12, queue literals; score stays PORT EXTENSION; team-win later PROVEN donor-verbatim (task 71), superseding this note |
+| 55 | Native tick driver plInd | DONE | `DEC_U_tick_driver.md` | two script reads/zero writers → native driver; rotation/firing rate/interleave [U] with fixed-seed harnesses |
+| 56 | Placement donor rules implementation | DONE | `DEC_U_placement.md`, `IMPL-PLACEMENT` | G=127 terrain gate, desert families/fan-out, NULL border stub, mask-pick draw moved; parses OK |
+| 57 | Damage height/dispersion residual | DONE | `DEC_U_damage_height.md` | dispersion shifts impact point (±dist·px/2000, 2 draws), height range-only/downhill, addradius idle bonus [O]; flight native [U] |
+| 58 | Market rational/delivery implementation | DONE | `DEC_U_market_tail.md`, `IMPL-MARKET-TAIL` | rational cost-push, live dlt law, 3 delivery sites, resonlife surplus arm; parses OK |
+| 59 | Upgrade/research timing Q2 | DONE | `DEC_U_upgrade_q2.md` | duration=country.upgrade.time, six-price cost/refund, 12-slot queue/preempt, 20-itype completion [O]; per-upgrade rows [U] |
+| 60 | Damage height/dispersion data rows | DONE | `DEC_U_damage_height.md`, `IMPL-DAMAGE-DATA` | dispersion square/height range/addradius/uniqrnd [O] data+law in data.gd; flight [U]; parses OK |
+| 61 | Skirmish RNG draw ledger G1 | DONE | `DEC_U_rng_ledger.md` | LCG/f32/key0/Bankers [O], full S/G ledger + X21 20-vector [O]; 8 [U] with zero-mismatch captures |
+| 62 | Native GL perspective deep recovery | DONE | `DEC_U_gl_perspective.md` | custom glFrustum/glOrtho path, projection bypasses gluPerspective; sensor/near/far [U] with matrix dumps; 17.27° stays APPROX |
+| 63 | RNG ledger game-side implementation | DONE | `DEC_U_rng_ledger.md`, `IMPL-RNG-GAME` | exact S stream + S0–S4 draw order + X21 telemetry + additive save key; two report bit typos flagged; parses OK |
+| 64 | Peace menu index mapping | DONE | `DEC_U_menu_peace.md` | enum/labels/display order [O], 60× minutes→seconds defect found, index 10 reserved/unselectable |
+| 65 | Friendly fire / PredictShot residuals | DONE | `DEC_U_ff_predict.md` | PredictShot registry stub + literal cooldown, 3 veto layers, 7-site RNG ledger [O]; shot-series [U] |
+| 66 | RNG ledger data-side labels | DONE | `DEC_U_rng_ledger.md`, `IMPL-RNG-DATA` | 12/12 stream labels + inert f32 wrapper + Bankers cite; live draws unchanged |
+| 67 | Peace menu exact indices | DONE | `DEC_U_menu_peace.md`, `IMPL-PEACE-MENU` | index tags/labels/order, 60× minutes→seconds, reserved 10 skipped; parses OK |
+| 68 | Animation blend operator U-B | DONE | `DEC_U_blend_op.md` | 8-arg switch/(6,8) table/7 bypass sites/ACL tree/AttackEnd re-attack [O]; weight curve [U] |
+| 69 | Damage height game-side law | DONE | `DEC_U_damage_height.md`, `IMPL-DAMAGE-GAME` | downhill range bonus/idle addradius/PredictShot registry/flight tag; reconciled with S3 scatter, parses OK |
+| 70 | FOW explored persistence | DONE | `DEC_U_fow_persist.md` | reset/merge lifecycle [O]; grid/combine/occlusion/persistence [U] with transect/reload captures |
+| 71 | Scenario trigger victory | DONE | `DEC_U_scenario_win.md` | team-win IS donor-verbatim (CheckEndGame), 32/99 trigger kinds, precedence order [O]; mission mapping [U] |
+| 72 | Save TObj/TProj field order | DONE | `DEC_U_save_tobj.md` | TObj 63 fields/866 B, TProj 15/60 B unregistered [D]; nested orders trg [U] |
+| 73 | Remaining `[U]` definitive register | DONE | `DEC_U_final_register.md` | all 45 DEC_U reports audited; P0 = water U12/U1/U3/U5/U6, FOW grid, tick interleave, blend/completion, save container, RNG, selection/projection |
+| 74 | Water.lib shipped scalar params | DONE | `DEC_U_water_lib_params.md` | deep/shallow + Speed + enables [D], 11 scalars diverge [U]-U4*, WaveDirs slots [U], MaxHeight 2.96 classification only |
+| 75 | Water.lib settled value bindings | DONE | `DEC_U_water_lib_params.md`, `IMPL-WATER-LIB` | [D] colors/Speed/enables; two verbatim scalar tuples + explicit source gate; no water until U4* captured |
+| 76 | AI activation A6 | DONE | `DEC_U_ai_activation.md` | `[*] = ;` is section container, not comment — ladders SHIP ENABLED; report's "port 1.0 s gate" claim rebutted by current `ai.gd:94` (2.4 s) |
+| 77 | Endgame/save TObj combined implementation | DONE | `DEC_U_scenario_win.md`, `DEC_U_save_tobj.md`, `IMPL-ENDGAME-SAVE` | donor two-phase CheckEndGame team law + precedence, TObj/TProj telemetry; v5 intact, parses OK |
+| 78 | Inertia RTTI numeric fields | DONE | `DEC_U_inertia_rtti.md` | `3XCollisionInertia` .rsrc name with 0 xrefs; text-side ship/class values [D], RTTI offsets/solver [U] |
+| 79 | Projectile flight native integration | DONE | `DEC_U_flight_native.md` | script inputs/speed chain/FramesToTime/gravity remap/TProj lifecycle [O]; integrator/unit/time-step [U] with N1–N7 captures |
+| 80 | Flight donor data rows | DONE | `DEC_U_flight_native.md`, `IMPL-FLIGHT-DATA` | speed chain/FramesToTime/gravity remap/victim cap [O] data; integrator/unit [U] |
+| 81 | Water scalar source U4* selection | DONE | `DEC_U_water_scalar_select.md` | single layerPtr branch 0→ENGINE / nonzero→FILE [O], atomic block, no per-scalar mix; live tuple [U] |
+| 82 | Config build queue limit 12 | DONE | `IMPL-QUEUE-LIMIT` | both DEFAULT/apply defaults 12 with donor cite; config.json override 10 preserved; slot↔job [U] |
+| 83 | Water scalar branch labels | DONE | `IMPL-WATER-BRANCH-LABELS` | layerPtr branch + per-scalar bit-push evidence as labels, UNSET gate/U12 hard-fail kept |
+| 84 | Guard sampler exact law | DONE | `DEC_U_guard_sampler.md` | live classifier/removal, 1–2 S draws, no-list correction, dead band 120; 6 captures [U] |
+| 85 | hmap texture identity U3 | DONE | `DEC_U_hmap_identity.md` | hmapTex chain/slot/target/identity passthrough [D]; shipped numbers [U] with U3 captures |
+| 86 | hmap identity chain labels | DONE | `IMPL-HMAP-LABELS` | hmapTex/W/H/Min/Max chain labels + capture register; values [U], gates intact |
+| 87 | Guard sampler ai-side law | DONE | `DEC_U_guard_sampler.md`, `IMPL-GUARD-SAMPLER` | 16 live arms + 1–2 S draws + no-list correction in ai.gd; text rows inert |
+| 88 | Inertia donor text rows | DONE | `DEC_U_inertia_rtti.md`, `IMPL-INERTIA-DATA` | ship CI/class/gate values [D] as data; RTTI offsets/solver [U] |
+| 89 | FOW grid native deep | DONE | `DEC_U_fow_grid_deep.md` | 24-name binding block + engine-only knobs/RTTI [O]; all five F1-GRID fields [U] with transects |
+| 90 | Guard sampler data labels | DONE | `DEC_U_guard_sampler.md`, `IMPL-GUARD-DATA` | exact predicate fractions/dead-band/short-circuit data; sampler values + rows untouched |
+| 91 | Fear / runaway gate | DONE | `DEC_U_fear_runaway.md` | runaway LIVE law + guard keep [O]; fear text-only, no clearing site (R7); 7 captures [U] |
+| 92 | Flight tail donor laws | DONE | `DEC_U_flight_native.md`, `IMPL-FLIGHT-TAILS` | timed airburst totals + additive TProj mirrors + victim cap/owner exclusion; parses OK |
+| 93 | FOW engine knobs values | DONE | `DEC_U_fow_knobs.md` | active bindings [O]; 8 tuning knobs engine-default-only [U], no ini/script writers; RTTI active/layout [U] |
+| 94 | Runaway live law ai side | DONE | `DEC_U_fear_runaway.md`, `IMPL-FEAR-AI` | IsRunAway/DoRunAway/guard keep telemetry annex; fear text inert, R1–R7 [U] |
+| 95 | Terrain relief stamp exact | DONE | `DEC_U_relief_stamps.md` | ReplaceForWater/Replace/Smooth formulas + Min/Max/Offset [O]; 12 [U] with byte-dump probes |
+| 96 | FOW knob status telemetry | DONE | `IMPL-FOW-KNOBS` | active bindings + engine-default-only knobs as labels; comment-only, grid values [U] |
+| 97 | Relief stamp label-only application | DONE | `IMPL-RELIEF-LABELS` | formula/pattern-layout authority labels in gen+mesh, 12 [U] probes kept; parses OK |
+| 98 | Entity state→action map full | DONE | `DEC_U_state_map.md` | Nothing-only engine state, ACL completion events, full T1–T26 map, 9 captures [U] |
+| 99 | Peasant tool attach art | DONE | `DEC_U_tool_attach.md` | 7 tool .oss DO exist (parent-glob refutation), per-action map [O], identity transform in text; T-A/T-B [U] |
+| 100 | Per-sid movement speed rows | DONE | `DEC_U_move_speed.md` | per-sid speeds defined-but-dead [D], live rotatespeed/speedperc law [O], accel/cost absent; 7 traces [U] |
+| 101 | Shore alpha / intensity law | DONE | `DEC_U_shore_alpha.md`, `IMPL-SHORE-ALPHA` | 32-entry alpha set/sandsea ids/case-1 no glAlphaFunc [O labels]; intensity arithmetic [U], configs untouched |
+| 102 | Entity state map labels | DONE | `IMPL-STATE-MAP` | T1–T26 table + ACL completion labels in anim3d/world3d_entities; 9 [U] captures kept; parses OK |
+| 103 | Peasant tool skin export | DONE | `DEC_U_tool_attach.md`, `IMPL-TOOL-BAKER` | 63 derived tool skins (9 sids × 7), additive index attach blocks; default export byte-identical |
+| 104 | Movement speed donor data | DONE | `DEC_U_move_speed.md`, `IMPL-MOVE-SPEED` | dead speed table/live turn+speedperc data, 7 traces [U]; parses OK |
+| 105 | Owner acceptance protocol | DONE | `PORT1TO1_acceptance_plan.md` | 12 donor timestamps/ROIs, runner+harness sequence, contact sheets/MP4, 8 UNVERIFIED cases, P0 blockers |
+| 106 | Carry/gather capacity law | DONE | `DEC_U_carry.md` | hitsneeded 22/14/20/10, +1/hit, full-load-only credit, AAF cadence, fisher 1000/12s [O]; 5 traces [U] |
+| 107 | Peasant tool 3D attach wiring | DONE | `IMPL-TOOL-WIRING` | anim3d attach sampler + one tool child/identity transform; 63 assets, T-A/T-B [U]; helper renamed for parse |
+| 108 | Movement label-only game side | DONE | `IMPL-MOVE-LABELS` | rally/formation/effective_speed/_step_move PORT APPROX tags, 0 code changes; T-SPEED..T-UPG [U] |
+| 109 | Per-upgrade cost/time rows | DONE | `DEC_U_upgrade_rows.md` | 7 frame literals + 6 seconds overwrites + explicit blocks [O]; per-nation pack matrix [U] with R-MATRIX |
+| 110 | Carry donor data rows | DONE | `DEC_U_carry.md`, `IMPL-CARRY-DATA` | hitsneeded/increment/AAF windows/fisher/drop data; GATHER values unchanged, 5 traces [U] |
+| 111 | Per-nation upgrade pack matrix | DONE | `DEC_U_upgrade_matrix.md` | 157 _aus rows + 6 sword rows + tur/alg overrides + cannon/howitzer split [O]; 5 captures [U] |
+| 112 | Order slot vs job law | DONE | `DEC_U_order_slots.md` | TOrderInfo/append/remove/batch/bDoFirst/full-queue laws [O]; 7 captures, slot↔job [U] |
+| 123 | ResourcePoint offsets / port fallback | DONE | `DEC_U_res_point.md` | 27/27 offsets + full GetPortResourcePoint ring scan [O], rotation resolved negative; 5 traces [U] |
+| 113 | Carry donor game law | DONE | `IMPL-CARRY-GAME` | reset-if-different, full-load-only credit, fisher tick consumer; 1.25/U-CAD stays [U] |
+| 114 | Upgrade matrix donor rows | DONE | `DEC_U_upgrade_matrix.md`, `IMPL-UPGRADE-MATRIX` | 157 rows + 6 sword + 12 artillery + deltas as inert data; byte-exact prefix extension, parses OK |
+| 115 | FOW explored tint colors | DONE | `DEC_U_fow_tint.md` | no readable tint literals/`.sel` RGB; engine-default-only FOWColor; 6 captures [U] |
+| 116 | Order slot game law | DONE | `DEC_U_order_slots.md`, `IMPL-ORDER-SLOTS` | merge-first/collision/per-unit refund/accumulation + head dispatch; 7 captures, slot↔job [U]; parses OK |
+| 117 | FOW tint label telemetry | DONE | `IMPL-FOW-TINT` | comment-only labels: resource arm corroboration, no RGB/interval invented, 6 [U] captures open |
+| 118 | Attack delay/cooldown law | DONE | `DEC_U_attack_delay.md` | mount.pause source + frames*0.03125 + upgrade scaling [O], literal-1 13 sites [O]; 8 captures [U] |
+| 119 | Start positions / first camera | DONE | `DEC_U_start_positions.md` | fixed-map sentinel/white-pixel/dedup/rescale [O], CreateStartPoint/shuffle [O]; camera wire proven absent [U] |
+| 120 | Attack delay donor rows | DONE | `IMPL-ATTACK-DELAY` | 22 conversions + upgrade/gate/decay/pause data as inert consts; U-D1…D8 open |
+| 121 | Per-sid train time rows | DONE | `DEC_U_train_time.md`, `IMPL-TRAIN-TIME` | 118-site census/26 building rows/time bases + 27 resourcePoint constants; parses OK |
+| 122 | ResourcePoint game-side law | DONE | `IMPL-RES-POINT` | 27 offsets + ring-scan fallback, unrotated; C3 peace label; data constants follow-up |
+| 123 | Start camera negative labels | DONE | `IMPL-START-CAMERA` | `camera.gd` comment-only negative proof + PORT CHOICE [U]-CAM focus tag; parses OK |
+| 124 | Port policy / approximation audit | DONE | `DEC_U_policy_audit.md` | P1–P14 classified; 3 label fixes (config C1 owner-gated, C2/C3 routed to file owners) |
+| 125 | Team setup / ally matrix | DONE | `DEC_U_teams.md` | SetupTeams/FFA/ally-neutral layers [O] + 10 [U] captures; vision labels in fog |
+| 126 | Capture flush order law | DONE | `DEC_U_capture_flush.md` | verbatim 0..11 flush/ClearOrders/SetSTO(0)/loser refund [O]; 8 [U] with cancel-arm correction |
+| 127 | Building capture state machine | DONE | `DEC_U_capture_state.md` | donor has NO progress/majority/cooldown; first-passing-tick flip + exact ownership strip [O]; garrison port-only |
+| 128 | Team setup / ally matrix | DONE | `DEC_U_teams.md` | SetupTeams forward-absorb, FFA→sim teams, two-layer enemy/friend model, vision sharing [O]; 10 [U] |
+| 129 | Team vision sharing | DONE | `IMPL-TEAM-VISION` | exact `_fow_viewer_players` loop + terminal-victory int/string gate; U-T1…T8 [U]; R1–R6 recs |
+| 130 | FOW territory repaint on capture | DONE | `DEC_U_fog_territory.md` | capture re-keys ScanGrid but ZERO FOW writes; engine-lazy repaint, explored retained [U] |
+| 131 | Endgame stamp exact law | DONE | `DEC_U_endgame_stamp.md` | 14 write statements/7 files [O], no FOW field written, LAN tails excluded; 8 captures [U] |
+| 132 | Settings persistence law | DONE | `DEC_U_settings_persist.md` | ini startup-only, victory/score absent, peace/map/AI persist [O]; native profile bytes [U] |
+| 133 | FOW territory labels | DONE | `IMPL-FOG-TERRITORY` | ScanGrid/engine-lazy/no-FOW-write labels in fog+hud, 4 transects [U]; parses OK |
+| 134 | Morale-approx audit | DONE | `DEC_U_morale_audit.md` | all morale stack donor-absent/labelled; famine grace/drain zero readers; 5 inline gaps |
+| 135 | Settings persistence labels | DONE | `IMPL-SETTINGS-LABELS` | code-only donor-absent/persist labels; config.json + config_donor_capture.json hashes unchanged |
+| 136 | Morale inline labels | DONE | `IMPL-MORALE-LABELS` | seven U10 trailers at all five audit gaps; code bytes unchanged |
+| 137 | Capture state remaining items | DONE | `DEC_U_capture_state2.md` | protector veto/counter ledger/enter-hide/FOW effects [O]; 6 traces [U] |
+| 138 | Team setup donor law | DONE | `IMPL-TEAM-SETUP` | verbatim SetupTeams/FFA/ally-neutral masks + `_sim_team` dense ids + FOW hooks; parses OK |
+| 139 | Endgame FOW re-resolve callers | DONE | `DEC_U_endgame_fow.md` | ALL victory/team paths skip immediate re-resolve; lazy R1–R4 flips [O], 8 captures [U] |
+| 140 | Full evidence index | DONE | `PORT1TO1_evidence_index.md` | 300 reports indexed in 5 domains, 6 flagged contradictions, parity UNVERIFIED |
+| 141 | Capture FOW/selection labels | DONE | `IMPL-CAPTURE-FOW` | re-key/live-owner/selection/G-09 PORT RULE labels in fog+hud; 6 [U] kept |
+| 142 | Replay determinism audit | DONE | `PORT1TO1_determinism_audit.md` | P0 fisher global RNG + wall-clock/frame/user-mod divergences [U]; port-vs-port replay INCOMPLETE |
+| 143 | Endgame FOW lazy labels | DONE | `IMPL-ENDGAME-FOW` | lazy R1–R4/cadence + zero-hook census in fog, 8 [U] kept; parses OK |
+| 144 | Capture state game-side items | DONE | `IMPL-CAPTURE-STATE-GAME` | protector veto/±5× ledger/CanGoInside gates + P0 fisher RNG fixed; parses OK |
+| 145 | Acceptance ROI register | DONE | `PORT1TO1_roi_register.md` | 14 verified ROIs + copy-paste compare commands; NO-ROI table and refusal conditions; 2 plan discrepancies flagged |
+| 146 | Fixed-step capture mode design | DONE | `PORT1TO1_fixed_step_plan.md` | opt-in flags/decoupled ticks/no fallback design; implementation in task 149 |
+| 147 | Endgame stamp vision labels | DONE | `IMPL-ENDGAME-STAMP-FOG` | 14-write census + 8 captures as labels, no FOW hook; parses OK |
+| 148 | Owner decision register | DONE | `PORT1TO1_owner_decisions.md` | all P0/P1 blockers + experiments + preserve-only hashes, RESULT IS NOT GOOD |
+| 149 | Deterministic capture mode | DONE | `IMPL-FIXED-STEP` + COORD two-run test | opt-in flags/fixed ticks/no fallback + audio_seed; two runs byte-identical `sha256_pixels` (`detcheck`/`detcheck2`); port-internal replay demonstrated |
+| 150 | Audio RNG determinism | DONE | `DEC_U_audio_rng.md` | clip-pick Delphi G stream [O], pitch/pan RNG absent [O], no sim effect; 3 captures [U] |
+| 151 | ROI metric execution | DONE | `PORT1TO1_roi_metrics.md` | 14/14 comparisons executed, all parity=UNVERIFIED, 14 diffs+JSONs, 0 refusals |
+| 152 | Parity chain audit | DONE | `PORT1TO1_parity_chain.md` | 0/6 conditions closed; P0 [U] open, no donor A/B, RESULT IS NOT GOOD |
+| 153 | Color/gamma exact chain | DONE | `DEC_U_color_gamma.md` | material floats/light path/gamma shape/texel law [O]; numeric curve [U]-GAMMA, color_unify preserved |
+| 154 | Atlas/feed N17 gaps | DONE | `DEC_U_n17_gaps.md` | file bytes [O]/[D], 17 runtime gaps [U] with byte-dump probes; condition 5 blocked |
+| 155 | Renderer/feed label application | DONE | `IMPL-FEED-LABELS` | material/light/gamma-shape+N17 labels + U-G1..G5 probes; sceneColor/color_unify preserved |
+| 156 | Gamma LUT deep decode | DONE | `DEC_U_gamma_lut.md` | shape [O], numerics data-only [D], 5 GL-dump residuals [U]; labels routed to feed worker |
+| 157 | Acceptance gate audit | DONE | `PORT1TO1_gate_audit.md` | all gates inventoried; 575/582/585 unacked; no gate/metric promotes parity |
+| 158 | Unit death/debris art law | DONE | `DEC_U_unit_death_art.md` | land/artillery/ship death law + 9 TTLs + corpse fade [O], wall-clock unit [U], 6 captures |
+| 159 | Famine profile default | DONE | `DEC_U_famine_profile.md` | bFamine shipped TRUE [O], reads/writes/merc slot 11 [O]; 4 captures [U], port U11-M kept |
+| 160 | Owner ack evidence packet | DONE | `PORT1TO1_ack_evidence.md` | 575/582/585 identities/gaps + owner-only ack commands, ack ≠ pass |
+| 161 | Unit death donor law | DONE | `IMPL-UNIT-DEATH` | weapon-gated clips/artillery prop/ship suffixes/9 TTLs + corpse law; wall-clock unit [U] |
+| 162 | Artifact layout report | DONE | `PORT1TO1_artifact_layout.md` | full artifact map/regeneration/preserve hashes recorded (3 configs/manifest baseline) |
+| 163 | Final parity-string guard | DONE | `PORT1TO1_final_guard_audit.md` + COORD label fixes | PASS; GF1/GF2/GF3 label gaps fixed, GF4 conditional verdict corrected |
+| 164 | Famine donor labels | DONE | `IMPL-FAMINE-LABELS` | bFamine TRUE + merc slot-11/FP-3 labels, zero non-comment changes; parses OK |
+| 165 | Deterministic acceptance runbook | DONE | `PORT1TO1_acceptance_runbook.md` + COORD caveat | preflight/4K+seq/contact+MP4/ROI/MCP/two-run hash/verdict; plain `--screenshot` is frame-paced, NOT replay evidence |
+| 166 | Endgame experiment protocol | DONE | `PORT1TO1_endgame_protocol.md` | fixed-seed T0–T8 setup/trigger/log schema + consolidated zero-mismatch criteria |
+| 167 | Repeat-hash gate | DONE | `REPEAT-GATE` + COORD end-to-end test | `--verify-repeat` two Godot runs, `byte_identical=TRUE` in `repcheck_20261113`, port-internal only |
+| 168 | Parity chain recheck | DONE | `PORT1TO1_parity_recheck.md` | stale deterministic claim corrected → condition 6 PARTIAL; still 0/6 CLOSED, parity UNVERIFIED |
+| 169 | Water owner GPU protocol | DONE | `PORT1TO1_water_owner_protocol.md` | pinned VAs/breakpoints/GL dumps/outcome→port diff, hard-fail until owner runs |
+| 170 | Concise owner brief | DONE | `PORT1TO1_owner_brief.md` | 7 exact-vs-U bullets, 6 P0 experiments, verification status, verdict template |
+| 171 | Updated `[U]` register | DONE | `PORT1TO1_u_register_update.md` | 9 P0 rows + 16 closed-since-register + 16 new items, STATIC/RUNTIME class |
+| 172 | Evidence index addendum | DONE | `PORT1TO1_evidence_index_addendum.md` | 23 post-index reports, 6 contradictions; COORD copied cap_fullport6/7/8 into inbox/qa/captures |
+| 173 | Port-internal validation summary | DONE | `PORT1TO1_internal_validation.md` | 8 artifacts with exact evidence + "does NOT prove", verdict template |
+| 174 | FOW owner experiment packet | DONE | `PORT1TO1_fow_owner_protocol.md` | pinned VAs + 6-phase fixed-seed transects + outcome→port change, no invented cell/colour |
+| 175 | Blend owner experiment packet | DONE | `PORT1TO1_blend_owner_protocol.md` | R-B1..B4/R-C1..C2 traces, 7 bypass sites, outcome→port change; no curve invented |
+| 176 | Tick interleave owner packet | DONE | `PORT1TO1_tick_owner_protocol.md` | 12-player/3600-frame/3-seed harness + log schema + outcome→port change |
+| 177 | Selection/projection owner packet | DONE | `PORT1TO1_selection_owner_protocol.md` | matrix dump/drag anchor/marquee/prio distance units, T1–T10 gates |
+| 178 | Save container owner packet | DONE | `PORT1TO1_save_owner_protocol.md` | one-field-at-a-time paired saves, hexdump procedure, additive outcome |
+| 179 | Final gate/status review | DONE | `PORT1TO1_final_gates.md` | 5 validation families, 575/582/585 unacked, 0/6 chain, no gate promotes parity |
+| 180 | P0 experiment packet index | DONE | `PORT1TO1_p0_packet_index.md` | six owner packets + ordering advice (advice-only) |
+| 181 | P0 packet consistency | DONE | `PORT1TO1_p0_consistency.md` + COORD fixes | all cited reports/VAs exist; F2 citation + F3 verdict fixed in water packet |
+| 182 | Final claim audit | DONE | `PORT1TO1_claim_final.md` + COORD label fixes | no unguarded parity claim; C6 misread-risk strings relabelled in source/reports |
+| 183 | Owner hash manifest | DONE | `PORT1TO1_hash_manifest.md` | 25 hashed rows; identity only, not fidelity |
+| 184 | Owner decision simulation | DONE | `PORT1TO1_decision_sim.md` | Route A vs no-Route-A branches, minimum evidence per chain condition |
+| 185 | Handoff checklist | DONE | `PORT1TO1_handoff_checklist.md` + COORD adjudication | 68 unchecked boxes; P-9 four tool prefixes stale vs git HEAD, py_compile 6/6 OK |
+| 186 | Final owner review | BLOCKED | owner-gated: matched donor GPU A/B frame + camera manifest | 9 P0 rows open, parity chain 0/6, 575/582/585 owner-only unacked; `RESULT IS NOT GOOD` while `blocking_unverified` non-empty |
+| 187 | U12 FBO provenance deep pass | DONE | `DEC_U12_deep.md` | copy thunk chain + FBO/pbuffer singletons mapped, no water-anchored caller; still [U] |
+| 188 | FOW grid numeric deep pass | DONE | `DEC_U_fow_numeric_deep.md` | zero FOW numeric assignments; anchors are string-table DATA; all grid fields [U] with transects |
+| 189 | Blend operator native deep pass | DONE | `DEC_U_blend_deep.md` | 8-arg prototype + ACL/class tables [O]; B1/B2/FB semantics/P1 still [U] with captures |
+| 190 | Save profile native deep pass | DONE | `DEC_U_save_deep.md` | profile verb clusters + 2 shipped .map heads/tail + nested widths; container/transform [U] |
+| 191 | RNG split owner packet | DONE | `PORT1TO1_rng_owner_protocol.md` | X21 oracle vs harness seed separated, 6 series + S/G/stored route table, P0-7 packet gap closed |
+| 192 | Tick scheduler native deep pass | DONE | `DEC_U_tick_deep.md` | player-handle API CODE cluster localized; no dispatch loop/order; interleave [U] with hash captures |
+| 193 | Selection/projection native deep pass | DONE | `DEC_U_select_deep.md` | FOV API signatures + `viewportdimension`, aspect divisor, ray/AABB shapes [O]; V1/V2 [U] |
+| 194 | Water shader live-path deep pass | DONE | `DEC_U_water_shader_deep.md` | 30-key CODE tables + selector bytes [O]; embedded pair ≠ file shaders, U1 [U] |
+| 195 | Shipped-map hmap numerics | DONE | `DEC_U_hmap_num_deep.md` | f32 clamp ±2.9639999866 [D]; per-map hmapW/H/Min/Max [U] with U-NUM/MAP/TEX/REG dumps |
+| 196 | Current-tree consistency recheck | DONE | `PORT1TO1_tree_recheck.md` + COORD plan fixes | PASS values/hashes/tests; TR-1 refined to case-sensitive literal-ID scan, TR-2..TR-4 fixed |
+| 197 | Port-internal P0 dry-run map | DONE | `PORT1TO1_p0_dryrun.md` | 8 checks classified A/B/C with "does NOT prove" lines; no P0 closed |
+| 198 | Owner brief deep-pass addendum | DONE | `PORT1TO1_owner_brief_addendum.md` | 9-row per-P0 table + 7 new [D] facts, no P0 closed |
+| 199 | Water shader deep report completion | DONE | `DEC_U_water_shader_deep.md` (71 lines) | full §2–§7 restored, lost counts marked not-recovered, no `[truncated` marker |
+| 200 | Post-deep parity-claim recheck | DONE | `PORT1TO1_claim_recheck2.md` | 17 new reports scanned, no unguarded claim; 12 C6 label gaps with fixes |
+| 201 | Owner P0 session plan | DONE | `PORT1TO1_p0_session_plan.md` | 7 dedicated owner sessions (4 GPU, 1 save, 1 RNG, 1 harness), new pins mapped |
+| 202 | Owner session failure modes | DONE | `PORT1TO1_session_risks.md` | 7 failure-mode tables, exact dumps, REPEAT/KEEP-OPEN rules only |
+| 203 | Evidence index deep supplement | DONE | `PORT1TO1_evidence_index_deep_supplement.md` | 28 new reports indexed, 353 total; water-shader repair recorded, no gate PASS |
+| 204 | Water time writer deep pass | DONE | `DEC_U_water_time_deep.md` | `+0xc8` store shapes [O] but no water-object link; U5 [U] with watchpoint capture |
+| 205 | Water UV/winding deep pass | DONE | `DEC_U_water_uv_deep.md` | TRIANGLES/generic supplier/BUILTIN P.xz UVs [D]; U6 [U] with 5 captures |
+| 206 | FOW persistence deep pass | DONE | `DEC_U_fow_persist_deep.md` | FOW API CODE tables + arg contracts [O]; no save field/API, persistence [U] with transects |
+| 207 | Save trg uid/handle deep pass | DONE | `DEC_U_save_trg_deep.md` | in-memory trg = handle [O]; save-time translation engine-opaque, E-T1..T1c [U] |
+| 208 | Building death timing deep pass | DONE | `DEC_U_bld_death_time.md` | clock API CODE table [D], raw 30 + mine ×2 [O], event-driven smoke stop [D]; time base/burn [U] |
+| 209 | FOW occlusion source deep pass | DONE | `DEC_U_fow_occ_deep.md` | TLOS names [O], no blocker/slope/step bytes; occlusion [U] with transect |
+| 210 | Capture protector veto deep pass | DONE | `DEC_U_capture_veto_deep.md` | byte-proven gate order table [D], no accumulator/majority, single live veto; G-09 kept labelled |
+| 211 | Animation completion handler deep pass | DONE | `DEC_U_anim_complete_deep.md` | CODE tables + ACL callback slot arity 2 [D]; C1 end-rule/C2 ticks [U] with captures |
+| 212 | Endgame team-win native deep pass | DONE | `DEC_U_endgame_team_deep.md` | engine API table + wrapper arities [O], precedence chain [O], stamp native bytes [U] |
+| 213 | Generation LCG seed deep pass | DONE | `DEC_U_genseed_deep.md` | QPC/GTC imports + 3 seeder callers + 7 state-slot hits [O]; per-run override [U] with dump |
+| 214 | Peace expiry native deep pass | DONE | `DEC_U_peace_deep.md` | no CODE peace table; gametime source [O]; equality tick [U] with capture |
+| 215 | Unit speed consumer deep pass | DONE | `DEC_U_speed_consumer_deep.md` | native step/interval API [O], no speed argument; 17 per-sid rows dead; base speed [U] |
+| 216 | Unit state→action deep pass | DONE | `DEC_U_state_deep.md` | ACL item→state direction [D], no state→animation native key; U2 [U] with 8 captures |
+| 217 | Start position native deep pass | DONE | `DEC_U_start_deep.md` | first-camera wire FOUND at `doprogress.inc:41` (supersedes absent verdict), wrapper arities [O] |
+| 218 | Final deep-pass index | DONE | `PORT1TO1_deep_index2.md` | 14 new reports, 368 total, start-camera supersession flagged |
+| 219 | Final P0 status table | DONE | `PORT1TO1_p0_final_status.md` | 9 rows all OPEN; new U-base-speed noted; no deep pass promoted a value |
+| 220 | Remaining [U] classification | DONE | `PORT1TO1_u_classify.md` | 71 open [U]: A42 donor-runtime / B14 static-possible / C5 owner / D10 cosmetic |
+| 221 | Donor first-camera wire implementation | DONE | `IMPL-START-CAMERA-WIRE` | one-shot startx/starty target + map-generation-finished flag; parses OK; height/time [U] |
+| 222 | Post-deep parity-claim recheck 3 | DONE | `PORT1TO1_claim_recheck3.md` | 19 new reports clean; only label-only misread phrasings, no promoted value |
+| 223 | Minimal owner bundle index | DONE | `PORT1TO1_bundle_index.md` | 34 files, all paths verified, each with a "does NOT support" guard |
+| 224 | U12 copy-helper caller walk | DONE | `DEC_U12_caller_walk.md` | glCopyTexImage2D/glTexImage2D chain + registrar/pool [D]; no ctor→C+0x4c link, U12 [U] |
+| 225 | U3 texture registry xref sweep | DONE | `DEC_U3_reg_sweep.md` | schema→slot map [D]; per-map vs generic layer [U] with 5 GL dump experiments |
+| 226 | Collision mask census deep pass | DONE | `DEC_U_coll_census_deep.md` | full 369/354 census [D], rotation identity [D], renderer+0x40 disjoint; copy site [U] |
+| 227 | 3D first-camera wire | DONE | `IMPL-START-CAMERA-3D` | 3D per-frame consumer via one-shot helper, no new constants; parses OK |
+| 228 | Smooth kernel / version class-B angles | DONE | `DEC_U_smooth_kernel_deep.md`, `DEC_U_tver_deep.md` | mb:Integer [D]; shipped 53/320²-384² envelope, port 92/240² not byte-matched; selectors [U] |
+| 229 | Economy class-B static angle | DONE | `DEC_U_econ_deep.md` | 20+ economy terms 0 CODE hits, helper arities [O]; no value promoted, tails [U] |
+| 230 | Placement seed class-B static angle | DONE | `DEC_U_place_seed_deep.md` | randkey API VAs/arities [O], identity passes [D], derivation/runtime discard [U] |
+| 231 | B-angle outcome index | DOING | `B-ANGLE-INDEX` active | 14 class-B candidates executed/not-executed with reports |
+| 232 | Class-C owner decisions | DONE | `PORT1TO1_c_decisions.md` | 5 owner-policy items + preserve-only hash/witness table |
+| 233 | Class-D cosmetic tails | DONE | `PORT1TO1_d_cosmetic.md` | 10 tails; D4 market semantics flagged non-cosmetic if prices in scope; none CLOSED |
+| 234 | Final plan sync audit | DOING | `PLAN-SYNC` active | task/report consistency, numbering, active-worker list |
+| 235 | Final handoff sync | DONE | `PORT1TO1_handoff_sync.md` | correction list, implemented-vs-reported, plan/verification state, unchanged verdict |
+| 236 | D4 market residual reclassification | DOING | `D4-RECLASS` active | U6-T/DLT price semantics: cosmetic only if out of scope |
+| 237 | Final parity claim recheck 4 | DOING | `CLAIM-RECHECK4` active | re-scan after handoff sync + camera-wire implementations |
+
+## Current active workers (3)
+
+- `B-ANGLE-INDEX` — read-only class-B outcome index
+- `PLAN-SYNC` — read-only final plan consistency audit
+- `HANDOFF-SYNC` — read-only final handoff addendum
+- `CLAIM-RECHECK4` — read-only final parity-claim recheck
+- `DEC-U-SMOOTH-KERNEL-DEEP` — read-only T-SMOOTH static angle
+- `DEC-U-TVER-DEEP` — read-only T-VER static angle
+- `DEEP-INDEX2` — read-only final deep-pass report index
+- `P0-FINAL-STATUS` — read-only definitive P0 status table
+- `U-CLASSIFY` — read-only remaining-U classification
+- `DEC-U-SAVE-TRG-DEEP` — read-only save trg routing re-attack
+- `DEC-U-BLD-DEATH-TIME` — read-only death-timer time base re-attack
+- `DEC-U-FOW-OCC-DEEP` — read-only LOS blocker/sampling re-attack
+- MCP host DONE (all 6 tools verified); final deterministic repeat `byte_identical=TRUE`; Godot free
+
+## Global done vs to-do
+
+- Decomp/spec layer: complete; every remaining `[U]` has an explicit static/runtime settling experiment and an owner-only packet where donor GPU/runtime is needed.
+- Implementation layer: all worker-executable lanes DONE; donor laws/rows/art implemented file-scoped with backups and parse checks. Water stays hard-failed until U12/U4* captured; no approximations promoted.
+- Verification layer: MCP host all 6 tools live; deterministic repeat gate byte-identical; 14 ROI metrics UNVERIFIED; snapshots/video and owner runbook landed. Unit-test gates are explicitly NOT acceptance. Final owner review BLOCKED on matched donor A/B + camera manifest.
+- Unknowns: no silent fallbacks; every `[U]` labelled; BUILTIN water default `[D]`; parity chain 0/6 with 9 P0 rows open.
+
+## Preserve-only user mods (never overwrite without owner instruction)
+
+- `variant3d/config.json`: donor backend default, `color_unify`, comments. Point-in-time SHA-256 recorded 2026-11-26 (no earlier baseline exists): `223767E57B506577EAD54633708380A425A0B8AA439C8E3C28478C15C8ED44E2`.
+- `variant3d/config_donor_capture.json`: SHA-256 `AA857480474399DC4674104744EA292BF84094D8321CDD4D0889C24CF9A202DA` (`demo_mill=true` preserved).
+- `variant3d/assets/models/manifest.json`: SHA-256 `36F6A378548F3116DC1585D7CDD34526A17B5C46D1DED02E3A93C7C736F22731`.
+- `variant3d/assets/models/manifest.json`: nation move (`ukr/buildings`), EUR aliases, field/palm/desert conversions.
+- `main.gd`/`world3d.gd` I11 seam, `.bak-COORD-I11`.
+- `game.gd` demo-mill/fields/builder stands/v5 save state, backups `.bak-FIELDS`, `.bak-SPAWN`, `.bak-BUILDERSTANDS`, `.bak-MILLSOW`, `.bak-COLLCALL`.
+- Shader/mesh opt-ins: W04 texgen, tile-map binding, neutral shore alpha, hires/array-atlas/light-match/color-unify, exact `sceneColor=0.2`.
+- Temporary capture configs under `%TEMP%\opencode\v42\` and `inbox/qa/captures/`.
+
+## Watchdog
+
+Automation `Port1to1 plan watchdog` runs every 20 minutes: checks this plan, promotes queued tasks, verifies MCP host, updates statuses. No polling by main agent.
+
+*No parity claim. Donor GPU frame does not exist under the read-only rule.*

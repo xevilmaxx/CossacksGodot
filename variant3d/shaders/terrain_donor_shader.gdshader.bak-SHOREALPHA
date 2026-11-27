@@ -1,0 +1,326 @@
+shader_type spatial;
+
+// ============================================================================
+// TERRAIN-SWARM-2026-11-26 / I10+RENDER1TO1 — DONOR 1:1 terrain shader.
+// AUTHORED FILE (only): variant3d/shaders/terrain_donor_shader.gdshader.
+//
+// AUTHORITY (all donor material READ-ONLY; no donor binary run or copied):
+//   docs/terrain_swarm_2026-11-26/reports/PORT1TO1_terrain_renderer.md
+//     §3.5 LUTs (RGB 0x8f5cd7 + five full-variant ranges; ALPHA 16 pairs 0x8f5d00)
+//     §4.3/§4.4 tsDouble 8x8 subcell + rotation/mirror/V-flip call-site constants
+//     §5.1 corrected alpha patch axes (col=p/AlphaCols, row=p%AlphaCols;
+//           p+16 shifts u by +0.5, NOT v by +1.0) + base-only insets 0.1/0.2
+//     §5.4 fixed-function bmTransparency / alpha-test GL enums
+//     §6   lighting product, effective specular zero, sceneColor [O] (0.2,0.2,0.2)
+//     §8   Godot rewrite plan (baked uv0/uv1 + base/overlay surfaces)
+//   reports/X17_blendfunc_verification.md, D08, F06, X35, DEC_SMALL_light_products
+//
+// visual_parity_claim:false. No donor GPU A/B frame exists. Every [U] below is
+// an UNVERIFIED binding with an explicit slot and/or sentinel; no value is
+// invented, no approximation is silently accepted, no parity is claimed.
+//
+// ----------------------------------------------------------------------------
+// MESH CONTRACT (terrain_donor_mesh.gd; DEC_U_alpha_pass_quad §6, U-10 [O]):
+//   producer 0x48-byte layer record: RGB uv +0x05..+0x24 (FUN_00812b4c),
+//     alpha uv +0x25..+0x44 (FUN_00812ccc); consumer 0x50-byte quad record:
+//     vertex-index header +0x00..+0x0f (B,A,C,D), RGB uv +0x10..+0x2f,
+//     alpha uv +0x30..+0x4f; UV payload shifted +0x0b.
+//   UV   = that record's baked RGB uv0 (tsDouble/tsSingle paths both baked)
+//   UV2  = that record's baked alpha uv1 (insets + rot=2 + V-flip applied)
+//   COLOR.r = resolved tile id [0,123]  (selects the 1024^2 donor block layer)
+//   COLOR.g = layer index (0 = base, 1..3 = overlays, ascending distinct tag)
+//   COLOR.b = alpha patch index p = ALPHA_index(mask, variant)
+//   COLOR.a = occupancy mask (8/2/4/1 corner weights; 0 for base tsDouble)
+//   NORMAL  = donor gl_Normal input at the corner vertex (port stencil, labelled)
+// No mod/fract/id-bit/LUT arithmetic and no textureGrad/LOD inset exists here:
+// all selectors are resolved on the CPU, exactly as the donor display list does.
+// ----------------------------------------------------------------------------
+// BLEND CONTRACT (X17 §3.1/§3.2; D08 §3.5; DEC_U_alpha_pass_quad §4/§5):
+//   donor case bmTransparency (enum 1) calls sub_88f0f0 at 0x4ef97f (cap 2 =
+//   GL_BLEND) and 0x4ef989 (cap 0 = GL_ALPHA_TEST): the alpha test is ENABLED,
+//   not disabled; glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) at 0x4ef995.
+// Godot `blend_mix` == that factor pair. The mask enters ALPHA ONLY; there is
+// no `rgb *= a` anywhere in either donor fragment (hf.pvl.smx3.frag:17,50).
+// Case 1 issues NO glAlphaFunc: no terrain-specific comparator to reproduce, so
+// this optional discard stays OFF; residual [U] U-6b is a leaked GL_GEQUAL/ref
+// from cases 3/4 (glAlphaFunc 0.5f/1.0f). Do not invent a threshold/discard.
+// U-9 [O]/[D]: FUN_00818920 emits ONE glNewList(GL_COMPILE) per cell with all
+// layer quads in producer order; the two Godot surfaces are a state translation,
+// NOT two donor draw passes. Residual [U] U-9b: final glCallList count per cell.
+// ----------------------------------------------------------------------------
+
+// `unshaded`: donor assembles the final colour in-shader (hf.pvl.smx3.frag:17,50).
+// `cull_disabled`: PORT GUARD for donor fcCull (reftile.mat:18) — not a donor claim.
+render_mode blend_mix, unshaded, cull_disabled;
+
+// ----------------------------------------------------------------------------
+// Samplers. DONOR texUnit0 = RGB block, texUnit1 = alpha mask (shaders.lib:34-49;
+// 0x818428 pushes 0x84c0/0x84c1). The donor binds 112 SEPARATE 1024^2 DXT1
+// blocks, so the authoritative port sampler is sampler2DArray with one layer
+// per used tile id. The 2D atlas remains a labelled fallback transport only.
+// ----------------------------------------------------------------------------
+uniform sampler2DArray tile_array : filter_nearest_mipmap, repeat_enable;
+uniform sampler2D tile_atlas : filter_nearest_mipmap, repeat_enable;
+uniform bool use_tile_array = false;
+// false = 2D atlas fallback ([U] PORT APPROXIMATION; not donor layout).
+//   Experiment E-ATLAS-LAYOUT: dump reftile.lib descriptor + glTexImage2D atlas
+//   uploads and compare grid/packing/UV bytes; terminate on zero mismatch.
+// true  = one 1024^2 donor-derived block per id, sampled at baked uv0.
+
+uniform sampler2D alpha_atlas : filter_nearest, repeat_enable;
+// donor alpha.bmp 512x256, 8x4 grid of 64^2 patches (F06-E7/E9/E10).
+uniform sampler2D alphavert_atlas : filter_nearest, repeat_enable;
+// donor alphavert.bmp 1024x512 (F06-E11/E12); face refkey projection stays [U].
+uniform sampler2D tile_map : filter_nearest;
+// RETAINED transport/diagnostic only — RGB no longer fetches a per-cell id here.
+
+// ----------------------------------------------------------------------------
+// Descriptor bytes (loader FUN_00544548 / reftile.lib): no numeric invention.
+// ----------------------------------------------------------------------------
+uniform int tile_scheme = 1;   // +0xc: 0=tsSingle, 1=tsDouble (shipped)
+uniform int tile_type = 1;     // +0xd: 0=ttUsual, 1=ttExtended (reftile.lib)
+uniform vec2 atlas_grid = vec2(16.0, 8.0);  // [U] FALLBACK 16x8 packing, PORT APPROX (E-ATLAS-LAYOUT)
+uniform int donor_rows = 8;    // +0x24 = 8 (tsDouble)
+uniform int donor_cols = 8;    // +0x25 = 8 (tsDouble)
+uniform int donor_alpha_rows = 8;   // +0x2c
+uniform int donor_alpha_cols = 4;   // +0x2d
+
+// ----------------------------------------------------------------------------
+// Layer / blend state. Set per surface by terrain_donor_mesh.gd.
+// ----------------------------------------------------------------------------
+uniform bool base_pass = false;
+// true: donor base layer, ALPHA = 1.0 (alpha patch 0/16 is authored 255, F06-E10).
+uniform bool base_full_opacity = true;
+uniform bool alpha_test_enabled = false;
+// Donor case 1 bmTransparency: GL_ALPHA_TEST is ENABLED (0x4ef989, cap 0 via
+// sub_88f0f0) and GL_BLEND is ENABLED (0x4ef97f, cap 2). No glAlphaFunc is
+// issued in case 1, so there is no terrain comparator to reproduce: this
+// optional discard stays OFF. Residual [U] U-6b: last-set GL_GEQUAL/0.5|1.0
+// may leak from cases 3/4; no threshold is invented.
+uniform float alpha_test_ref = -1.0;       // 0.5=bmAlphaTest50, 1.0=bmAlphaTest100
+// Donor: glAlphaFunc(GL_GEQUAL, ref) -> discard when a < ref (0x8fb18c[7]=518).
+uniform bool face_alpha_enabled = false;
+uniform int face_mode = 0;    // [U] U-8 refkey projection not carried per vertex
+uniform float face_scale = 0.125;  // reftile.mat:124-126,150-152
+
+// ----------------------------------------------------------------------------
+// Lighting — exact donor product formation (PORT1TO1 §6).
+// ambient  = sceneColor + material.ambient(0.15686) * light.ambient
+// diffuse  = max(dot(l,n),0) * material.diffuse(0.78125) * light.diffuse
+// specular = material.specular(0) * light.specular = 0  (reftile.mat:70-76,98-104)
+// ----------------------------------------------------------------------------
+uniform vec3 donor_sun_position = vec3(-0.344731152057648, 0.938701450824738, 0.0);
+// light.cfg:26-29, lsParallel (:17): constant direction, no point subtraction.
+uniform vec3 ambient_rgb = vec3(0.196078434586525, 0.184313729405403, 0.129411771893501);
+uniform vec3 diffuse_rgb = vec3(0.811764717102051, 0.780392169952393, 0.694117665290833);
+uniform vec3 specular_rgb = vec3(0.0);
+// Effective terrain product is zero; light.cfg:20-23 colour is NOT used bare.
+uniform vec3 material_specular_rgb = vec3(0.0);
+// Caller binds the nonzero light colour; this exact donor material factor
+// cancels it (hf.pvl.sm.vert:23). Preserve this multiply; never set to 1.
+uniform float material_ambient = 0.15686;  // reftile.mat:53-55,81-83
+uniform float material_diffuse = 0.78125;  // reftile.mat:59-61,87-89
+uniform float shininess = 16.0;            // reftile.mat:76,104
+uniform vec3 scene_color = vec3(0.2, 0.2, 0.2);  // [O] 0x8f58dc, DEC_U_scenecolor_glstate U-1 CLOSED
+// [O]: sceneColor is the 16-B static copy at 0x8f58dc = (0.2,0.2,0.2,1.0),
+// submitted by glLightModelfv(GL_LIGHT_MODEL_AMBIENT, *(renderer+0x11c)+0x18)
+// at 0x4d13f1. Only .rgb is consumed by hf.pvl.sm.vert:18 (alpha 1.0 is
+// fidelity-only). Residual [U] U-R1: no static proof no runtime/computed-pointer
+// write mutates that vector; keep as its own uniform, do NOT fold into ambient,
+// do NOT use 0.0 / light.cfg ambient / colors.lib Ambient=255.
+// Two-sided lighting [O]: pname 0x0B52 GL_LIGHT_MODEL_TWO_SIDE at both sites
+// (0x4d1404/0x4d1412), boolean byte[renderer+0x123]&8 = 0 at startup
+// (constructor stores 5) -> GL_FALSE. No Godot uniform required; residual
+// [U] U-R2: a runtime bit-3 toggle cannot be excluded. No parity claim.
+
+// PORT CALIBRATION (explicitly NOT donor): opt-in energies/gain from the shared
+// composer rig; neutral defaults keep the donor equation byte-identical.
+uniform float light_rig_ambient_energy = 1.0;
+uniform float light_rig_sun_energy = 1.0;
+uniform vec3 color_unify_gain = vec3(1.0);
+
+// DEBUG switches: defaults OFF, no noise/dither, no donor value is modified.
+uniform bool DEBUG_ALPHA_BYPASS = false;
+uniform bool DEBUG_TILE_ID_FLAT = false;
+
+varying vec2 v_eye_uv;     // donor gl_TexCoord[0].xy analogue (face projection)
+varying vec3 v_eye;        // donor realpos.xyz
+varying vec3 v_packed;     // donor gl_TexCoord[4] = sceneColor + ambient + diffuse
+varying vec3 v_specular;   // donor gl_TexCoord[5] = specular (zero for ground)
+
+// ----------------------------------------------------------------------------
+// Reference LUTs — kept as executable, cited code. Donor produces uv0/uv1 on
+// the CPU, so the shipped tsDouble path does not call these in fragment(); they
+// are retained so the tsSingle path and the p index are auditable in one place.
+// ----------------------------------------------------------------------------
+int rgb_lut15(int m) {
+	// DAT_008f5cd7, 15 bytes (ev_a03439ea…)
+	if (m == 0) return 46;
+	if (m == 1) return 4;
+	if (m == 2) return 8;
+	if (m == 3) return 12;
+	if (m == 4) return 1;
+	if (m == 5) return 5;
+	if (m == 6) return 9;
+	if (m == 7) return 13;
+	if (m == 8) return 2;
+	if (m == 9) return 6;
+	if (m == 10) return 10;
+	if (m == 11) return 14;
+	if (m == 12) return 3;
+	if (m == 13) return 7;
+	if (m == 14) return 11;
+	return 0;  // donor tables stop at 14; no byte is invented beyond it
+}
+
+int rgb_index(int mask, int variant, int ttype) {
+	// FUN_0050db08 (ev_70c790f9…); 0x8f5ce6/ea/fe u32 words are PADDING.
+	int v = variant & 0xff;
+	if (ttype == 0) {
+		if (mask < 15) return rgb_lut15(mask);
+		if (mask == 15) {
+			if ((v & 1) != 0) return 15;             // 0x8f5ce8: 00 0f
+			return 0;
+		}
+		return 0;
+	}
+	if (ttype == 1) {
+		if (mask < 15) return rgb_lut15(mask);
+		if (mask == 15) {
+			if (v < 0x88) {
+				// 0x8f5cec: 00 0f 10 11 12 13
+				if (v % 6 == 0) return 0;
+				if (v % 6 == 1) return 15;
+				if (v % 6 == 2) return 16;
+				if (v % 6 == 3) return 17;
+				if (v % 6 == 4) return 18;
+				return 19;
+			}
+			if (((v + 0x78) & 0xff) < 0x44) {                // 0x8f5cf2
+				int k = v & 3;
+				return (k == 0) ? 20 : ((k == 1) ? 21 : ((k == 2) ? 22 : 23));
+			}
+			if (((v + 0x34) & 0xff) < 0x22) {                // 0x8f5cf6
+				int k = v & 3;
+				return (k == 0) ? 24 : ((k == 1) ? 25 : ((k == 2) ? 26 : 27));
+			}
+			if (((v + 0x12) & 0xff) < 0x12) {                // 0x8f5cfa
+				int k = v & 3;
+				return (k == 0) ? 28 : ((k == 1) ? 29 : ((k == 2) ? 30 : 31));
+			}
+			return 0;  // implicit return 0 of FUN_0050db08
+		}
+	}
+	return 0;
+}
+
+int alpha_index(int mask, int variant) {
+	// DAT_008f5d00 little-endian pairs (ev_8d1f6535…); high byte = low+16.
+	int m = mask & 0xff;
+	int lo = 0;
+	if (m == 0) lo = 0;   else if (m == 1) lo = 2;   else if (m == 2) lo = 1;
+	else if (m == 3) lo = 3;   else if (m == 4) lo = 8;   else if (m == 5) lo = 10;
+	else if (m == 6) lo = 9;   else if (m == 7) lo = 11;  else if (m == 8) lo = 4;
+	else if (m == 9) lo = 6;   else if (m == 10) lo = 5;  else if (m == 11) lo = 7;
+	else if (m == 12) lo = 12; else if (m == 13) lo = 14; else if (m == 14) lo = 13;
+	else if (m == 15) lo = 15;
+	if ((variant & 1) != 0) return lo + 16;
+	return lo;
+}
+
+vec3 tile_id_debug_color(float idx) {
+	float id = clamp(floor(abs(idx) + 0.5), 0.0, 127.0);
+	vec2 cell = vec2(mod(id, 16.0), floor(id / 16.0));
+	return vec3(0.1 + 0.9 * cell.x / 15.0,
+		0.1 + 0.9 * cell.y / 7.0,
+		0.25 + 0.75 * mod(id, 2.0));
+}
+
+// ----------------------------------------------------------------------------
+// vertex(): NO texgen math. uv0/uv1 arrive baked as UV/UV2 from the CPU.
+// The donor eye-plane equation survives only for the unresolved face-refkey
+// projection (U-7/U-8) and is explicitly labelled; ground RGB uses baked UV.
+// ----------------------------------------------------------------------------
+void vertex() {
+	vec4 realpos = VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0);
+	v_eye = realpos.xyz;
+	// U-7: donor effective gl_EyePlaneS/T[0] + gl_TextureMatrix[0] are [U].
+	// Retained slot only; default planes are documented in the mesh telemetry.
+	vec4 worldpos = MODEL_MATRIX * vec4(VERTEX, 1.0);
+	v_eye_uv = worldpos.xz * 0.5;   // PORT FALLBACK, not donor ground texgen
+
+	// hf.pvl.sm.vert:12-15,18-22 — Blinn-Phong on the supplied corner NORMAL.
+	vec3 e = normalize(-realpos.xyz);                                    // :12
+	vec3 sun_world = normalize(donor_sun_position);                      // :13
+	vec3 l = normalize((VIEW_MATRIX * vec4(sun_world, 0.0)).xyz);         // :13 [U engine]
+	vec3 h = normalize(l + e);                                           // :14
+	vec3 n = normalize((VIEW_MATRIX * MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz); // :15 [U normal matrix]
+
+	// Exact product formation (reftile.mat x light.cfg), then PORT calibration.
+	vec3 amb_term = material_ambient * ambient_rgb * light_rig_ambient_energy;
+	vec3 dif_term = max(dot(l, n), 0.0) * material_diffuse * diffuse_rgb
+		* light_rig_sun_energy;
+	v_packed = scene_color + amb_term + dif_term;                        // :18,:37
+	v_packed *= color_unify_gain;   // PORT CALIBRATION only, neutral at 1.0
+	// hf.pvl.sm.vert:23 — effective terrain specular product is vec3(0).
+	v_specular = pow(max(dot(h, n), 0.0), shininess)
+		* specular_rgb * material_specular_rgb;                          // :22,:38
+}
+
+void fragment() {
+	float id_f = COLOR.r;
+	float layer_index = COLOR.g;
+	float p = COLOR.b;
+	float mask = COLOR.a;
+	int id = int(clamp(floor(id_f + 0.5), 0.0, 123.0));
+
+	vec3 rgb;
+	if (DEBUG_TILE_ID_FLAT) {
+		rgb = tile_id_debug_color(id_f);
+	} else {
+		vec3 uv0 = vec3(UV, float(id));
+		if (use_tile_array) {
+			// DONOR texUnit0: one 1024^2 block per tile id, baked 8x8 subcell UV.
+			rgb = texture(tile_array, uv0).rgb;
+		} else {
+			// LABELLED FALLBACK (16x8 packed atlas, NOT donor layout): uv0 is
+			// still the exact baked donor subcell coordinate inside that cell.
+			vec2 grid = max(atlas_grid, vec2(1.0));
+			vec2 cell = vec2(mod(id_f, grid.x), floor(id_f / grid.x));
+			rgb = texture(tile_atlas, (cell + UV) / grid).rgb;
+		}
+	}
+
+	// ---- alpha: donor texUnit1, sampled ONLY at the baked uv1 ---------------
+	float a = 1.0;
+	if (!DEBUG_ALPHA_BYPASS) {
+		if (face_alpha_enabled && face_mode != 0) {
+			// [U] U-8 refkey projection; front S=(1,0,0) T=(0,0,1),
+			// side S=(0,1,0) T=(0,0,1), scale 0.125 (reftile.mat:122-167).
+			vec2 mask_uv = (face_mode == 1)
+				? vec2(v_eye.x, v_eye.y) * face_scale
+				: vec2(v_eye.z, v_eye.y) * face_scale;
+			a = texture(alphavert_atlas, mask_uv).a;
+		} else {
+			// Base layer: p = ALPHA_index(0,variant) = 0 or 16, both authored
+			// constant 255 (F06 §3.2 / E10) => exact full opacity.
+			if (base_pass && base_full_opacity) {
+				a = 1.0;
+			} else {
+				bool is_alphanull = (id == 86 || id == 110 || id == 123);
+				a = is_alphanull ? 0.0 : texture(alpha_atlas, UV2).a;
+			}
+		}
+		// bmAlphaTest50/100: glAlphaFunc(GL_GEQUAL, ref) == discard if a < ref.
+		if (alpha_test_enabled && alpha_test_ref >= 0.0 && a < alpha_test_ref) {
+			discard;
+		}
+	}
+
+	// hf.pvl.smx3.frag:17 — product lighting; NO rgb*=a (PORT APPROX forbidden).
+	if (!DEBUG_TILE_ID_FLAT) {
+		rgb = rgb * v_packed + v_specular;
+	}
+	ALBEDO = rgb;
+	ALPHA = a;   // fixed-function bmTransparency crossfade via blend_mix
+}

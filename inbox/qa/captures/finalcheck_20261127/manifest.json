@@ -1,0 +1,141 @@
+{
+  "capture_semantics": "windowed seq = real viewport frames (frame_post_draw)",
+  "capture_ticks": 64,
+  "deterministic": true,
+  "deterministic_capture": true,
+  "engine_fps_anchor": "variant3d/scripts/data.gd:246",
+  "expected_resolution": [
+    1280,
+    720
+  ],
+  "expected_sim_seconds": 2.0,
+  "finished_utc": "2026-11-26T23:01:15+00:00",
+  "generated_utc": "2026-11-26T23:00:25+00:00",
+  "godot_on_path": "C:\\Users\\Maxym.Oboyshev\\AppData\\Local\\Microsoft\\WinGet\\Links\\godot.EXE",
+  "headless": false,
+  "mode": "seq",
+  "parallelism": {
+    "godot_processes": "one at a time via godot_runner.py FIFO",
+    "harness_lock": "inbox\\qa\\captures\\finalcheck_20261127\\.capture.lock",
+    "submissions": "strictly sequential"
+  },
+  "parity": "UNVERIFIED",
+  "project": "variant3d",
+  "repeat_verification": {
+    "byte_identical": true,
+    "mismatch_count": 0,
+    "note": "port-internal repeatability only; never donor parity",
+    "path": "inbox\\qa\\captures\\finalcheck_20261127\\repeat_verification.json",
+    "status": "pass"
+  },
+  "requested_frames_per_view": 2,
+  "runner": "variant3d\\tools\\godot_runner.py",
+  "runner_python": "C:\\Python314\\python.exe",
+  "schema": 1,
+  "seed": "20261113",
+  "seq_seconds": 2.0,
+  "status": "ok",
+  "step_s": 1.0,
+  "timeouts": {
+    "engine_s": 670.0,
+    "max_wait_s": 3600.0,
+    "runner_s": 700.0
+  },
+  "tool": "capture_sequence.py",
+  "views": [
+    {
+      "argv_plain": "'C:\\Python314\\python.exe' 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py' run --id acapt-finalcheck-donor --timeout 700 --max-wait 3600 -- --path variant3d -- --config 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json' --seed 20261113 --deterministic-capture --capture-ticks 64 --seq 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\finalcheck_20261127\\01_donor' --seq-seconds 2 --seq-step 1 --timeout 670",
+      "audio_seed": 20261113,
+      "audio_seed_note": "cosmetic-only audio_rng seed (not a simulation RNG stream)",
+      "command_line": [
+        "C:\\Python314\\python.exe",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py",
+        "run",
+        "--id",
+        "acapt-finalcheck-donor",
+        "--timeout",
+        "700",
+        "--max-wait",
+        "3600",
+        "--",
+        "--path",
+        "variant3d",
+        "--",
+        "--config",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json",
+        "--seed",
+        "20261113",
+        "--deterministic-capture",
+        "--capture-ticks",
+        "64",
+        "--seq",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\finalcheck_20261127\\01_donor",
+        "--seq-seconds",
+        "2",
+        "--seq-step",
+        "1",
+        "--timeout",
+        "670"
+      ],
+      "command_line_text": "C:\\Python314\\python.exe \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py\" run --id acapt-finalcheck-donor --timeout 700 --max-wait 3600 -- --path variant3d -- --config \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json\" --seed 20261113 --deterministic-capture --capture-ticks 64 --seq \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\finalcheck_20261127\\01_donor\" --seq-seconds 2 --seq-step 1 --timeout 670",
+      "complete": true,
+      "config": "variant3d\\config_donor_capture.json",
+      "config_abs": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json",
+      "config_controlled": true,
+      "config_sha256_file": "aa857480474399dc4674104744ea292bf84094d8321cdd4d0889c24cf9a202da",
+      "engine_stderr": "variant3d\\.godot_queue\\results\\00000122_acapt-finalcheck-donor\\stderr.txt",
+      "engine_stdout": "variant3d\\.godot_queue\\results\\00000122_acapt-finalcheck-donor\\stdout.txt",
+      "frame_count": 2,
+      "frames": [
+        {
+          "file": "inbox\\qa\\captures\\finalcheck_20261127\\01_donor\\frame_0000.png",
+          "height": 720,
+          "sha256_file": "a776159f6233de53ea51eeb1e8fa9fe91655091f60ed2821aa941e5996b7c876",
+          "sha256_pixels": "def18ad94e6abb22d698679be77cba96e3b21dda739eee8779315efffcc9842f",
+          "width": 1280
+        },
+        {
+          "file": "inbox\\qa\\captures\\finalcheck_20261127\\01_donor\\frame_0001.png",
+          "height": 720,
+          "sha256_file": "167764bffe19ec7a8421e3b4d36528e08a20aaf85245d28477b2a2ef4c64ea3b",
+          "sha256_pixels": "18e1e7217aac9c6680f91f1504922dcd92d00545bd67c427a993209a467f7265",
+          "width": 1280
+        }
+      ],
+      "name": "donor",
+      "output_dir": "inbox\\qa\\captures\\finalcheck_20261127\\01_donor",
+      "requested_frames": 2,
+      "resolution_matches_request": true,
+      "resolution_observed": {
+        "height": 720,
+        "width": 1280
+      },
+      "resolution_requested": {
+        "height": 720,
+        "source": "variant3d\\config_donor_capture.json",
+        "width": 1280
+      },
+      "runner_duration_s": 50.307,
+      "runner_exit": 0,
+      "runner_harness_rc": 0,
+      "runner_run_s": 48.39836573600769,
+      "runner_status": "ok",
+      "runner_stderr": "inbox\\qa\\captures\\finalcheck_20261127\\01_donor\\runner_stderr.txt",
+      "runner_stdout": "inbox\\qa\\captures\\finalcheck_20261127\\01_donor\\runner_stdout.txt",
+      "runner_ticket": 122,
+      "runner_wait_s": 0.0006222724914550781,
+      "seq_index": {
+        "capture_ticks": 64,
+        "deterministic": true,
+        "frames": 2,
+        "mode": "window",
+        "seconds": 2.0,
+        "sim_seconds": 2.0,
+        "step": 1.0,
+        "ticks_done": 64,
+        "ticks_per_frame": 32,
+        "winner": -1
+      }
+    }
+  ]
+}

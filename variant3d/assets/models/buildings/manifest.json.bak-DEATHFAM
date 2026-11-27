@@ -1,0 +1,253 @@
+{
+  "schema": "impl-building-death/assets/v1",
+  "worker": "IMPL-BUILDING-DEATH",
+  "date": "2026-11-26",
+  "donor_root_policy": "C:/Games/Cossacks 3 (read-only private install); no donor binary executed or copied",
+  "generator": "offline Python driver calling the approved variant3d/tools/convert_models.py functions (read_osm/write_obj_exact/write_mtl/convert_texture)",
+  "converters_modified": [],
+  "donor_citations": {
+    "death_mesh_slots": "actors/buildings/commoneur/eurmil.actor:20-27 (eurmil_death1.mesh / eurmil_death2.mesh -> .osm)",
+    "attach_mesh_slots": "actors/buildings/commoneur/attach/eurmila.actor:2-28 (eurmila / eurmil_death1a / eurmil_death2a -> .osm)",
+    "death_state_rule": "scripts/units/building.inc/ontagstates.inc:240-259 (birth stage) and :264-311 (death swap, child0 ...a + debris, misc clear, children hide, _unit_DoExplosion)",
+    "child_materials": "scripts/units/building.inc/ontagstates.inc:257 (scaffold) / :286 (debris); objects/buildings/eurmil.prop:64-104 (child table scaffold x5 / debris x2)",
+    "building_albedo": "materials/buildings/commoneur/eurmil.dds (eurmil.actor base material via refbuilding.actor)",
+    "full_tree_glob": "1647 *a.osm under data/actors/buildings/**; commoneur/attach/eurmil{,_death1,_death2}a.osm confirmed present (IMPL-FX-ART handoff)"
+  },
+  "counts": {
+    "derived_obj": 6,
+    "derived_mtl": 6,
+    "derived_png": 3,
+    "donor_binaries_copied": 0,
+    "synthetic_art": 0,
+    "color_retouch": 0
+  },
+  "meshes": [
+    {
+      "stem": "eurmil",
+      "donor": "data/actors/buildings/commoneur/eurmil.osm",
+      "donor_bytes": 128876,
+      "donor_sha256": "3abc5e7d16764aef42ba3e3f637b0df533c9ef33247fb87c196c85710a1931f2",
+      "obj": "variant3d/assets/models/buildings/models/eurmil.obj",
+      "mtl": "variant3d/assets/models/buildings/models/eurmil.mtl",
+      "obj_sha256": "fb1e8be1652eef7d77973cd6bcfa7b6c0af3f79e2b44fb8268f3eabafa46d042",
+      "mtl_sha256": "271d4a705bd0a2452e190a918c4647bc8c2707cf65f72d68e874986cb9cac251",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 2949,
+      "uvs": 4133,
+      "faces": 2020,
+      "bbox_donor_xyz": [
+        -2.425523519515991,
+        2.778339147567749,
+        -2.4005842208862305,
+        2.3941283226013184,
+        -0.002850709017366171,
+        5.914005756378174
+      ],
+      "mtl_material": "eurmil",
+      "mtl_texture_reference": "../tex/eurmil.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl"
+    },
+    {
+      "stem": "eurmil_death1",
+      "donor": "data/actors/buildings/commoneur/eurmil_death1.osm",
+      "donor_bytes": 174580,
+      "donor_sha256": "ea992a2ca03e7300e5061f90c1074a630a558f4b0cd9b0fe6e3d729f96d4f568",
+      "obj": "variant3d/assets/models/buildings/models/eurmil_death1.obj",
+      "mtl": "variant3d/assets/models/buildings/models/eurmil_death1.mtl",
+      "obj_sha256": "9b2ab4fafcb632fb3d513493a02fe850b39937d4bdcefb233eebd3d43ba4ecc4",
+      "mtl_sha256": "271d4a705bd0a2452e190a918c4647bc8c2707cf65f72d68e874986cb9cac251",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 4424,
+      "uvs": 4484,
+      "faces": 2824,
+      "bbox_donor_xyz": [
+        -2.425523519515991,
+        3.372446060180664,
+        -3.7239184379577637,
+        2.7921931743621826,
+        -0.01583714224398136,
+        5.883222579956055
+      ],
+      "mtl_material": "eurmil",
+      "mtl_texture_reference": "../tex/eurmil.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl"
+    },
+    {
+      "stem": "eurmil_death2",
+      "donor": "data/actors/buildings/commoneur/eurmil_death2.osm",
+      "donor_bytes": 136748,
+      "donor_sha256": "89402c836ce35af495d5d9ada9b1519d8e53e049e02d91067951d4d9884152fd",
+      "obj": "variant3d/assets/models/buildings/models/eurmil_death2.obj",
+      "mtl": "variant3d/assets/models/buildings/models/eurmil_death2.mtl",
+      "obj_sha256": "c2140296bc3a4e3995abc70083eeb61f4ea14e7a1578c00163a3f372674da12c",
+      "mtl_sha256": "271d4a705bd0a2452e190a918c4647bc8c2707cf65f72d68e874986cb9cac251",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 2921,
+      "uvs": 5902,
+      "faces": 1777,
+      "bbox_donor_xyz": [
+        -3.9711546897888184,
+        3.372446060180664,
+        -3.7239184379577637,
+        2.7921929359436035,
+        -0.02461826428771019,
+        3.681155204772949
+      ],
+      "mtl_material": "eurmil",
+      "mtl_texture_reference": "../tex/eurmil.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl"
+    },
+    {
+      "stem": "eurmila",
+      "donor": "data/actors/buildings/commoneur/attach/eurmila.osm",
+      "donor_bytes": 96740,
+      "donor_sha256": "be2dad7f4d87221aeee3232c1eb1a3f71775313186fd6609106ed4e28d3a57a4",
+      "obj": "variant3d/assets/models/buildings/models/eurmila.obj",
+      "mtl": "variant3d/assets/models/buildings/models/eurmila.mtl",
+      "obj_sha256": "bede1cec1827de9a8588df0e2539420af1c078bdcdbace4177ca1a31f6b7f0b4",
+      "mtl_sha256": "8540517ba39b8d8829d436af3d93826b5e0f2f54504d77b7fc31d7472208447b",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 2004,
+      "uvs": 2138,
+      "faces": 1976,
+      "bbox_donor_xyz": [
+        -3.2980575561523438,
+        1.9635372161865234,
+        -3.782853603363037,
+        2.1877989768981934,
+        -0.019344106316566467,
+        1.0502349138259888
+      ],
+      "mtl_material": "scaffold",
+      "mtl_texture_reference": "../tex/scaffold.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl"
+    },
+    {
+      "stem": "eurmil_death1a",
+      "donor": "data/actors/buildings/commoneur/attach/eurmil_death1a.osm",
+      "donor_bytes": 20620,
+      "donor_sha256": "2e468c1f70324bb2827fcc622ec83c9d2ab66618b9e5aede0b83ec7eb544dbd5",
+      "obj": "variant3d/assets/models/buildings/models/eurmil_death1a.obj",
+      "mtl": "variant3d/assets/models/buildings/models/eurmil_death1a.mtl",
+      "obj_sha256": "e1206f92c8ace300e92487b9097d548b50c9e44940da084431c05dc4eb632ba9",
+      "mtl_sha256": "7322146e10864bf30ab54fa6e56417fe18d8e0cd1eca47d419735fcb9dd4807f",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 531,
+      "uvs": 537,
+      "faces": 320,
+      "bbox_donor_xyz": [
+        -3.2225661277770996,
+        3.8849000930786133,
+        -4.302734375,
+        1.1526908874511719,
+        -0.20185384154319763,
+        0.7433592081069946
+      ],
+      "mtl_material": "debris",
+      "mtl_texture_reference": "../tex/debris.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl"
+    },
+    {
+      "stem": "eurmil_death2a",
+      "donor": "data/actors/buildings/commoneur/attach/eurmil_death2a.osm",
+      "donor_bytes": 29380,
+      "donor_sha256": "74d630347ca7c93413f917d24d016555bd417e08bf4ef7b938c2531dfcd16e20",
+      "obj": "variant3d/assets/models/buildings/models/eurmil_death2a.obj",
+      "mtl": "variant3d/assets/models/buildings/models/eurmil_death2a.mtl",
+      "obj_sha256": "92b4d036a0a56b571d35b8372c49f364deb8948255559002bc3888f177936223",
+      "mtl_sha256": "7322146e10864bf30ab54fa6e56417fe18d8e0cd1eca47d419735fcb9dd4807f",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 760,
+      "uvs": 766,
+      "faces": 456,
+      "bbox_donor_xyz": [
+        -3.2225661277770996,
+        3.8849000930786133,
+        -4.302734375,
+        3.1740169525146484,
+        -0.2960607707500458,
+        0.7433592081069946
+      ],
+      "mtl_material": "debris",
+      "mtl_texture_reference": "../tex/debris.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl"
+    }
+  ],
+  "textures": [
+    {
+      "stem": "eurmil",
+      "donor": "data/materials/buildings/commoneur/eurmil.dds",
+      "donor_bytes": 5592560,
+      "donor_sha256": "3ae922afa85fe95a0943155f66d05a7cfefbf5342ff1aa33750d98b952f24c06",
+      "output": "variant3d/assets/models/buildings/tex/eurmil.png",
+      "output_bytes": 3998174,
+      "output_sha256": "1d647e47dfeaa908a9d8bd65b1e8dc7258664993f7a2beacf368111371083558",
+      "output_decoded_mode": "RGB",
+      "output_decoded_size": [
+        2048,
+        2048
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (force_opaque=True, Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded base level re-encoded as PNG, garbage donor alpha dropped for opaque building material"
+    },
+    {
+      "stem": "scaffold",
+      "donor": "data/materials/buildings/constructor/scaffold.dds",
+      "donor_bytes": 2796344,
+      "donor_sha256": "02ec576cb41bbac9ea79ed24ea0452dd8257c23a1c49bf53a78c717407487bc4",
+      "output": "variant3d/assets/models/buildings/tex/scaffold.png",
+      "output_bytes": 3700187,
+      "output_sha256": "d7c259ae35f13f6662cec9c70f3ae292e4786a6187926360cdca63524e8b1007",
+      "output_decoded_mode": "RGB",
+      "output_decoded_size": [
+        2048,
+        2048
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (force_opaque=True, Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded base level re-encoded as PNG, garbage donor alpha dropped for opaque building material"
+    },
+    {
+      "stem": "debris",
+      "donor": "data/materials/buildings/constructor/debris.dds",
+      "donor_bytes": 699192,
+      "donor_sha256": "839bf86fadb8541a2efcfcb020e1cc6ba256c5440fa5ded11f1a2455c7ef5837",
+      "output": "variant3d/assets/models/buildings/tex/debris.png",
+      "output_bytes": 1067469,
+      "output_sha256": "d69a64811cae3ef98f048407a620d40db642090f7be76e7768d2d70ad885aadb",
+      "output_decoded_mode": "RGB",
+      "output_decoded_size": [
+        1024,
+        1024
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (force_opaque=True, Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded base level re-encoded as PNG, garbage donor alpha dropped for opaque building material"
+    }
+  ],
+  "unresolved": [
+    "[U]-BURN burn duration / smoke stop / loop count: NOT recovered from donor lines; no TTL is invented. gc_building_deathtime_0/1=30 (dmscript.global) is NOT endorsed as a visual TTL. E-U14 GPU/runtime capture required.",
+    "[U]-EX _unit_DoExplosion exact visual/sound payload: donor call site recovered (ontagstates.inc:309-311) but no effect key; port explode stand-in only, labelled, no parity claim.",
+    "[U]-14 precise stage->death visual mapping for stage_2/stage_3 and wall/gate death: donor `case` covers only stage_0/stage_1; no invention.",
+    "[U]-OTHER death art for the other 11 mapped building families was NOT converted in this additive lane (scope: eurmil only); no death mesh is invented for them."
+  ],
+  "limitations": [
+    "Static/offline conversion only: no Godot editor, importer, runner, render, capture or git command was run.",
+    "Donor DDS mip levels dropped; each derived PNG holds only the decoded base level, re-encoded with force_opaque=True (donor building textures carry a garbage alpha channel; the game draws them opaque).",
+    "OBJ/MTL carry raw donor coordinates (Z-up, metres); the runtime applies the established donor Z-up -> Godot Y-up mapping from world3d_entities.gd:_bake_mesh plus the donor bbox centring/grounding.",
+    "No .import sidecars generated; the runtime uses ResourceLoader.exists()/load() with the same pattern as the other derived model tiers.",
+    "Float serialization is shortest round-trip repr via write_obj_exact (bit-identical to read_osm output); winding/UV order copied verbatim.",
+    "NO donor/port A/B frame was produced or examined: visual parity is UNVERIFIED and NOT CLAIMED."
+  ],
+  "visual_parity_claim": false
+}

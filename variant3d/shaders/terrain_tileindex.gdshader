@@ -117,9 +117,9 @@ uniform vec2 atlas_grid;                 // (cols, rows); NO donor default
 // never a recovered donor literal. The face alpha planes are different: those
 // ARE recovered donor literals (see fragment()).
 // ----------------------------------------------------------------------------
-uniform vec4 eye_plane_s = vec4(1.0, 0.0, 0.0, 0.0);        // PORT APPROX: world X
-uniform vec4 eye_plane_t = vec4(0.0, 0.0, 1.0, 0.0);        // PORT APPROX: world Z
-uniform mat4 texture_matrix = mat4(1.0);                    // APPROX (engine value UNVERIFIED)
+uniform vec4 eye_plane_s = vec4(1.0, 0.0, 0.0, 0.0);        // [U] PORT APPROX: world X (E-EYEPLANE: dump gl_TexCoord[0] planes, zero mismatch)
+uniform vec4 eye_plane_t = vec4(0.0, 0.0, 1.0, 0.0);        // [U] PORT APPROX: world Z (E-EYEPLANE)
+uniform mat4 texture_matrix = mat4(1.0);                    // [U] APPROX (engine value UNVERIFIED; E-TEXMAT dump, zero mismatch)
 
 // Donor-cited constant. `TextureScale X/Y/Z = 0.125` on BOTH face refkeys:
 // verticalfront reftile.mat:124-126; verticalside reftile.mat:150-152.
@@ -201,9 +201,9 @@ uniform vec3 fog_color = vec3(0.2352941176, 0.3921568627, 0.5882352941);
 // Donor default palette Fog (60,100,150,1) colors.lib:23 (TERRAIN2-01 E65);
 // decimals are 60/255, 100/255, 150/255 written literally (Godot defaults
 // require constant expressions, not divisions).
-uniform float fog_density = 0.0;         // gl_Fog.density, engine-bound APPROX
-uniform float fog_end = 0.0;             // gl_Fog.end, engine-bound APPROX
-uniform float fog_scale = 0.0;           // gl_Fog.scale, engine-bound APPROX
+uniform float fog_density = 0.0;         // [U] gl_Fog.density, engine-bound APPROX (E-FOGSTATE dump, zero mismatch)
+uniform float fog_end = 0.0;             // [U] gl_Fog.end, engine-bound APPROX (E-FOGSTATE)
+uniform float fog_scale = 0.0;           // [U] gl_Fog.scale, engine-bound APPROX (E-FOGSTATE)
 uniform float fog_use_abs_z = 0.0;
 // Donor vendor branch: 0 -> `length(realpos)` (hf.pvl.sm.vert:45, non-ATI),
 // 1 -> `abs(realpos.z)` (hf.pvl.sm.vert:43, #vendor_ifdef ATI). Exposed.

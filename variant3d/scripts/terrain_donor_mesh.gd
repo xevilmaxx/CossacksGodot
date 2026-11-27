@@ -17,13 +17,15 @@ extends Node3D
 # synthetic noise/dither, no art-face promotion on relief cells, no shadow/AO
 # fakery and no HEIGHT_SCALE fudge multiplier.
 #
-# Geometry contract translated verbatim from the proven port implementation
-# (world3d_terrain.gd:1286-1428): ONE indexed ArrayMesh, ONE surface, ONE draw
-# call; w*h vertices at cell centres; (w-1)*(h-1)*2 triangles; NORMAL from the
-# SAME height field via the 1-cell forward-difference stencil
-# (world3d_terrain.gd:901-917, :1387); UV2 = (float(tex_id), float(face))
-# (world3d_terrain.gd:1315-1318, :1407). HEIGHT_SCALE is the labelled PORT
-# contract 1.0 (world3d_terrain.gd:131, :1311) — never multiplied again.
+# Geometry contract (RENDER1TO1, PORT1TO1 §8.1): ONE indexed ArrayMesh with
+# TWO surfaces (opaque base then blend_mix overlays); 4 vertices per distinct
+# corner tag at DONOR CELL CORNERS, 2 triangles per layer quad; vertex count
+# 4*sum(distinct_count), NOT w*h. NORMAL comes from the same height field via
+# the 1-cell forward-difference stencil (world3d_terrain.gd:901-917, :1387)
+# evaluated at corner vertices (PORT SUBSTITUTE — gl_NormalMatrix [U]).
+# UV=baked RGB uv0, UV2=baked alpha uv1, COLOR=(id,layer,p,mask); the old
+# cell-centre / UV2=(tex_id,face) transport is REPLACED. HEIGHT_SCALE remains
+# the labelled PORT contract 1.0 (world3d_terrain.gd:131, :1311).
 #
 # Relief is consumed ONLY as geometry (vertex Y) and as the input to the donor
 # Blinn-Phong normal stencil. Z04-C guard: a cell marked in the additive
@@ -54,6 +56,18 @@ extends Node3D
 # Default tier, hires opt-in, shader, masks, geometry and sim stay untouched.
 # NO synthetic upscaling, NO invented art, NO donor visual parity claim: all
 # new state is labelled telemetry only and never feeds back into sim.
+#
+# RENDER1TO1 — FULL DONOR PRODUCER (authority: docs/terrain_swarm_2026-11-26/
+# reports/PORT1TO1_terrain_renderer.md, §§3-8). The old cell-centre, one-quad-
+# per-tile geometry is REPLACED by the donor's per-cell / per-distinct-tag
+# display list: 4 corner tags + 1 variant byte -> 2x2 override -> dedup +
+# ascending sort -> one 4-vertex quad per distinct tag with baked RGB uv0 and
+# alpha uv1, emitted as an opaque base surface plus blend_mix overlay surfaces.
+# Every numeric selector is byte-cited; every unresolved binding is a labelled
+# [U] slot/sentinel in stats["donor_renderer"] and is NEVER silently defaulted
+# to a donor-looking value. NO DONOR VISUAL PARITY CLAIM (U-13 stays open).
+# Flags that do not conflict (hires_atlas, array_atlas, light_match,
+# color_unify, season, water) are preserved as labelled opt-ins.
 
 # ---------------------------------------------------------------------------
 # Donor constants (every value carries its donor path:line citation)
@@ -68,6 +82,9 @@ const DONOR_RGB_TILE_SIZE: int = 64        # DEC-VIS-01 §4.1; reftile.lib activ
 const DONOR_RGB_BLOCK_SIZE: int = 1024     # D08 §3.1 grass1.dds header (1024x1024, 11 mips)
 const DONOR_RGB_SUBCELL_PX: int = DONOR_RGB_BLOCK_SIZE / DONOR_RGB_ROWS  # 128, DEC-VIS-01 §4.2
 const HEIGHT_SCALE: float = 1.0            # world3d_terrain.gd:131,1311 — PORT contract, NO multiplier
+# DEC_U_relief_stamps §7 R-10 (IMPL-RELIEF-LABELS): relief amplitude is applied
+# ONLY by terrain_donor_gen.gd's height field. This mesh never re-applies
+# Scale/Min/Offset/TerrainScale — no double application of the §2 formula.
 const WATER_LEVEL: float = -0.25           # texturemap.inc:29-30,466-467 cWaterHeight (tile classify)
 const SHORE_LEVEL: float = -0.1            # texturemap.inc:31,463-472 cWaterShoreHeight
 const DONOR_WATER_BASIN_H: float = -1.1    # generatemap.inc:7 cWaterHeight (generation basin, NOT plane Y)
@@ -77,9 +94,96 @@ const DONOR_CDIFF1: float = 0.5            # texturemap.inc:63 (4-neighbour stee
 const DONOR_CDIFF2: float = 0.55           # texturemap.inc:64 (diagonal steep test)
 const MAX_TILE_ID: int = 123               # terrain.presets:6-129 / spec/06:9 (124 ids, 0..123)
 const WATER_SENTINEL: int = 255            # game.gd:52 BLK_WATER — PORT ONLY, not a donor tile id
-const ATLAS_GRID_EXPECTED := Vector2(16.0, 8.0)  # V7-85 manifest:23-26; spec/06:19 (index-preserving 16x8)
+const ATLAS_GRID_EXPECTED := Vector2(16.0, 8.0)  # V7-85 manifest:23-26; spec/06:19 (index-preserving 16x8) # [U] U-10/N17-G1 FALLBACK grid, manifest-labelled APPROX (E-ATLAS-LAYOUT §6); never a donor claim
 const ALPHA_SRC_FACTOR := "GL_SRC_ALPHA"  # donor bmTransparency glBlendFunc (cossacks.exe:949234; D08/X17)
 const ALPHA_DST_FACTOR := "GL_ONE_MINUS_SRC_ALPHA"  # donor bmTransparency (cossacks.exe:949234; D08/X17)
+
+# ---- SHORE-ALPHA LABELS (DEC_U_shore_alpha.md §4/§5/§7) — LABELS/telemetry ----
+# No behaviour change, no parity claim, no invented threshold/patch index and no
+# test weakening. These comments/telemetry strings record findings only; they
+# add no uniform, no threshold, no proximity weight and no confine gate.
+#   * PORT-ONLY KEYS: features.water.alpha_confine=true / shore_prox=false live
+#     only in config/config.json(+_donor_capture), config.gd getters and water3d
+#     telemetry. NO donor constant backs either; shore_prox is REMOVED port art
+#     (water3d.gdshader:533, absent from donor water.dev.frag:227). This mesh
+#     consumes NEITHER. Do not fold "true" into any donor truth or add a gate.
+#   * NEAR-WATER p: overlay quads carry COLOR.b=p=_alpha_index(mask,variant)
+#     over the 32-entry DAT_008f5d00 set (lo 0..15, +16 on variant&1); base quads
+#     carry p in {0,16} only (both authored 255, F06-E10 -> a=1.0). Live shore
+#     tile ids are sandsea1=93 / sandsea5=97 / sandsea6=98 (X28 §3.3, F05 §3).
+#     NO single "shore patch number" exists; per-cell p stays [U-SA4] without
+#     the runtime (mask&0xff, variant&1) pair. LUT constants below are unchanged.
+#   * GL ALPHA FUNC: case 1 bmTransparency issues NO glAlphaFunc, so the terrain
+#     comparator/ref is [U U-SA5] (GL default or a leaked case-3/4 value); cases
+#     3/4 use glAlphaFunc(GL_GEQUAL,0.5f/1.0f). No threshold is baked; discard
+#     stays OFF; do not add alpha_scissor/step/clamp/rgb*=a substitutes.
+#   * tiaAlphaFromIntensity=1 [O] enum; byte arithmetic stays [U U-SA3] pending
+#     the fixed-camera GL_ALPHA byte-dump probe; the mask texel feeds ALPHA
+#     directly (hf.pvl.smx3.frag:50) — no intensity/luma math on alpha.
+# ---------------------------------------------------------------------------
+
+# ---- GLSTATE / ALPHA-PASS recovered constants (DEC_U_* reports, all [O]) ----
+# sceneColor: 16-B static copy at 0x8f58dc = cdcc4c3e x3 + 0000803f, submitted
+# by glLightModelfv(GL_LIGHT_MODEL_AMBIENT, *(renderer+0x11c)+0x18) at 0x4d13f1.
+const DONOR_SCENE_COLOR := Vector3(0.2, 0.2, 0.2)   # f32 0x3E4CCCCD; alpha 1.0 unused by fragment
+const DONOR_SCENE_COLOR_A: float = 1.0
+# glLightModeli pname at 0x4d1404/0x4d1412 is 0x0B52 (GL_LIGHT_MODEL_TWO_SIDE,
+# NOT 0x0B51 LOCAL_VIEWER); boolean byte[renderer+0x123]&8, constructor value 5
+# -> 5&8==0 -> GL_FALSE at startup.
+const DONOR_LIGHT_MODEL_TWO_SIDE: int = 0x0B52
+const DONOR_TWO_SIDE_GL_FALSE: bool = false
+# Capability table 0x8fb0dc: [0]=3008=0x0BC0 GL_ALPHA_TEST, [2]=3042=0x0BE2 GL_BLEND.
+const DONOR_CAP_ALPHA_TEST: int = 0
+const DONOR_CAP_BLEND: int = 2
+# DEC_U_alpha_pass_quad §6: 0x48 producer layer record -> 0x50 consumer quad record.
+const DONOR_QUAD48_STRIDE: int = 0x48
+const DONOR_QUAD50_STRIDE: int = 0x50
+const DONOR_QUAD48_RGB_UV_BASE: int = 0x05     # RGB uv payload +0x05..+0x24
+const DONOR_QUAD48_ALPHA_UV_BASE: int = 0x25   # alpha uv payload +0x25..+0x44
+const DONOR_QUAD50_UV_SHIFT: int = 0x0b        # 0x05+0x0b=0x10, 0x25+0x0b=0x30
+# Emitted corner A,B,C,D -> 0x50 record field byte offsets (ev_8abea401, raw
+# pushes 0x819774-0x819b52). Vertex indices are *0xb into the 0x2c-stride vertex.
+const DONOR_QUAD50_INDEX_OFF := [0x04, 0x00, 0x08, 0x0c]   # B,A,C,D header (+0x00..+0x0f)
+const DONOR_QUAD50_RGB_UV_OFF := [0x18, 0x10, 0x20, 0x28]  # +0x10..+0x2f RGB block
+const DONOR_QUAD50_ALPHA_UV_OFF := [0x38, 0x30, 0x40, 0x48] # +0x30..+0x4f alpha block
+
+# ---- PORT1TO1 §3.5 / §4.2 / §5.1 byte tables and descriptor defaults --------
+# Corner slot -> mask weight, raw compares at 0x813125-0x813145 (ev_58d7418c).
+const DONOR_CORNER_WEIGHTS := [8, 2, 4, 1]   # t0=8, t1=2, t2=4, t3=1
+# DAT_008f5cd7, 15 bytes (ev_a03439ea); mask 0..14 -> RGB subcell index.
+const DONOR_RGB_MASK_LUT := [46, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11]
+# FUN_0050db08 full-variant tables (ev_70c790f9); 0x8f5ce6/ea/fe are padding.
+const DONOR_RGB_PLAIN_FULL := [0, 15]            # 0x8f5ce8 (2 B)
+const DONOR_RGB_EXT_LOW := [0, 15, 16, 17, 18, 19]  # 0x8f5cec (6 B)
+const DONOR_RGB_EXT_A := [20, 21, 22, 23]        # 0x8f5cf2 (4 B)
+const DONOR_RGB_EXT_B := [24, 25, 26, 27]        # 0x8f5cf6 (4 B)
+const DONOR_RGB_EXT_C := [28, 29, 30, 31]        # 0x8f5cfa (4 B)
+# DAT_008f5d00 low bytes, 16 pairs (ev_8d1f6535); high = low+16 for variant&1.
+const DONOR_ALPHA_PAIR_LO := [0, 2, 1, 3, 8, 10, 9, 11, 4, 6, 5, 7, 12, 14, 13, 15]
+# Descriptor +0x2c/+0x2d/+0x30 (reftilealpha.mat / reftile.lib).
+const DONOR_ALPHA_ROWS: int = 8
+const DONOR_ALPHA_COLS: int = 4
+const DONOR_ALPHA_TILE_SIZE: int = 64
+const DONOR_ALPHA_W_PX: int = DONOR_ALPHA_ROWS * DONOR_ALPHA_TILE_SIZE   # 512
+const DONOR_ALPHA_H_PX: int = DONOR_ALPHA_COLS * DONOR_ALPHA_TILE_SIZE   # 256
+# art+0x1c / art+0x20 (reftile.lib overrides 0.1 / 0.2), base layer mask==0 ONLY.
+const DONOR_ALPHA_INSET_X: float = 0.1
+const DONOR_ALPHA_INSET_Y: float = 0.2
+# Call-site immediates (ev_58d7418c §4.4): rot/mirror/vflip per UV writer.
+const RGB_SINGLE_ROT: int = 0
+const RGB_SINGLE_MIRROR: bool = false
+const RGB_SINGLE_VFLIP: bool = true
+const RGB_DOUBLE_ROT: int = 0
+const RGB_DOUBLE_MIRROR: bool = true
+const RGB_DOUBLE_VFLIP: bool = false
+const ALPHA_DOUBLE_ROT: int = 2
+const ALPHA_DOUBLE_MIRROR: bool = false
+const ALPHA_DOUBLE_VFLIP: bool = true
+# reftile.mat material factors x light.cfg (PORT1TO1 §6.2).
+const DONOR_MATERIAL_AMBIENT: float = 0.15686
+const DONOR_MATERIAL_DIFFUSE: float = 0.78125
+# [U-MAT] uploads at 0x88f3e8 (glMaterialfv/i slots 0x88f446/474/4a2/4d0 +
+# 0x88f418), probed by P-MAT §7.1; text floats [O] (reftile.mat:52-104).
 
 # Procedural assets (I05 output root, V11 ledger G8/G9; never the legacy root)
 const NEW_ATLAS_DIR := "res://assets/terrain_new/atlas/"
@@ -148,6 +252,8 @@ const DONOR_AMBIENT := Color(0.196078434586525, 0.184313729405403, 0.12941177189
 const DONOR_DIFFUSE := Color(0.811764717102051, 0.780392169952393, 0.694117665290833)   # light.cfg:11-16
 const DONOR_SPECULAR := Color(0.278431385755539, 0.266666680574417, 0.211764708161354)  # light.cfg:20-23
 const DONOR_SUN_POS := Vector3(-0.344731152057648, 0.938701450824738, 0.0)              # light.cfg:26-29
+# [U-LIGHT] glLightfv(GL_POSITION) at 0x4d0963 after glMultMatrixf, probed by
+# P-LIGHT §7.2; light.cfg:2-38 numbers [O] text, submitted w + modelview [U].
 const DONOR_FACE_SCALE: float = 0.125       # reftile.mat:124-126,150-152 (face alpha projection)
 const FACE_TILT_DEG: float = 25.0           # tiles.lib:119-296,543-719 (reported, NOT applied here)
 
@@ -205,6 +311,27 @@ var _mip_source: String = ""
 var _shader_path_used: String = ""
 var _shader_params: Dictionary = {}
 var _alpha_contract: Dictionary = {}
+
+# ---- RENDER1TO1 donor producer state (additive, read-only ingest) ------------
+var _tags4 := PackedByteArray()          # 4 corner tags per cell (record24 +0..+3)
+var _variant_bytes := PackedByteArray()  # 1 byte per cell (record24 +4)
+var _tags_source: String = ""
+var _variant_source: String = ""
+var _override_source: String = ""
+var _override_gate: bool = false          # terrain+0xa4 gate (absent => closed)
+var _rec13_override_tile := PackedByteArray()    # record13 +8 per cell
+var _rec13_override_variant := PackedByteArray() # record13 +9 per cell
+var _tag_fallback_from_tex: bool = true   # true until a real tags array arrives
+var _tile_array_texture: Texture2DArray = null
+var _id_to_layer: Dictionary = {}         # donor tile id -> texture-array layer
+var _tile_array_info: Dictionary = {}
+var _donor_cell: Dictionary = {}
+var _donor_lut: Dictionary = {}
+var _donor_layers: Dictionary = {}
+var _donor_alpha: Dictionary = {}
+var _donor_lighting: Dictionary = {}
+var _base_material: Material = null
+var _overlay_material: Material = null
 
 
 # ---------------------------------------------------------------------------
@@ -387,6 +514,53 @@ func _ingest() -> bool:
 		_collision.resize(n)
 		for i in range(n):
 			_collision[i] = cc[i] if i < cc.size() else 0
+		# RENDER1TO1: optional additive donor cell-record streams. NOTHING is
+		# synthesised: absent arrays stay labelled PORT SUBSTITUTE / closed gate.
+		var tgv: Variant = _first(source_dicts, ["corner_tags4", "corner_tags"], null)
+		var tg := _as_byte_array(tgv)
+		_tags4 = PackedByteArray()
+		_tags4.resize(n * 4)
+		for i in range(n * 4):
+			_tags4[i] = tg[i] if i < tg.size() else 0
+		_tag_fallback_from_tex = tg.size() < n * 4
+		_tags_source = ("DONOR RECORD24 +0..+3 (additive corner_tags4)"
+			if not _tag_fallback_from_tex else
+			"PORT SUBSTITUTE — uniform cell from I08 _tex; donor corner-tag stream absent from I06 (U-11/U-12)")
+		var bv: Variant = _first(source_dicts, ["variant_bytes", "variant_byte"], null)
+		var bb := _as_byte_array(bv)
+		_variant_bytes = PackedByteArray()
+		_variant_bytes.resize(n)
+		for i in range(n):
+			_variant_bytes[i] = bb[i] if i < bb.size() else 0
+		_variant_source = ("DONOR RECORD24 +4 (additive variant_bytes)"
+			if bb.size() >= n else
+			"PORT SUBSTITUTE 0 — donor image-state read 0 (ev_4f8831fd); generation LCG seed [U] U-3")
+		var otv: Variant = _first(source_dicts, ["rec13_override_tile"], null)
+		var ot := _as_byte_array(otv)
+		_rec13_override_tile = PackedByteArray()
+		_rec13_override_tile.resize(n)
+		for i in range(n):
+			_rec13_override_tile[i] = ot[i] if i < ot.size() else 0
+		var ovv: Variant = _first(source_dicts, ["rec13_override_variant"], null)
+		var ov := _as_byte_array(ovv)
+		_rec13_override_variant = PackedByteArray()
+		_rec13_override_variant.resize(n)
+		for i in range(n):
+			_rec13_override_variant[i] = ov[i] if i < ov.size() else 0
+		var gv: Variant = _first(source_dicts, ["rec13_gate", "terrain_override_gate"], null)
+		if gv is bool:
+			_override_gate = bool(gv)
+		elif gv is int or gv is float:
+			_override_gate = int(gv) != 0
+		else:
+			var ga := _as_byte_array(gv)
+			_override_gate = ga.size() > 0
+		if not _override_gate or ot.size() < n:
+			_override_gate = false   # fail closed: never zero tags from an absent array
+			_override_source = ("CLOSED — donor record13+8 override requires terrain+0xa4 gate; "
+				+ "13-byte default template address [U] U-5, flag names [U] U-12")
+		else:
+			_override_source = "DONOR RECORD13 +8 override (gate open; additive rec13_override_tile)"
 		_w = w
 		_h = h
 		_n = n
@@ -439,9 +613,280 @@ func _build_tile_map_texture() -> ImageTexture:
 
 
 # ---------------------------------------------------------------------------
+# RENDER1TO1 — donor producer helpers. Every method below is a direct port of
+# a cited producer step; all unresolved inputs are labelled in stats, never
+# filled with a plausible-looking number.
+# ---------------------------------------------------------------------------
+func tile_scheme_int() -> int:
+	# descriptor +0xc — reftile.lib activates tsDouble (shipped terrain).
+	return 1
+
+
+func tile_type_int() -> int:
+	# descriptor +0xd — reftile.lib activates ttExtended (RGB full-variant bins).
+	return 1
+
+
+func _cell_in_bounds(x: int, z: int) -> bool:
+	return x >= 0 and z >= 0 and x < _w and z < _h
+
+
+func _tex_id_at(x: int, z: int) -> int:
+	if not _cell_in_bounds(x, z):
+		return 0
+	var tid: int = int(_tex[z * _w + x])
+	return tid if tid >= 0 and tid <= MAX_TILE_ID else 0
+
+
+func _corner_tag_at(x: int, z: int, slot: int) -> int:
+	if not _cell_in_bounds(x, z):
+		return 0
+	if _tag_fallback_from_tex:
+		# Uniform-cell reading of the port's existing single tile byte. This is
+		# the donor degenerate case ("4 equal corner tags"), NOT invented art;
+		# the true per-corner stream is absent from I06 (U-11/U-12).
+		return _tex_id_at(x, z)
+	return int(_tags4[(z * _w + x) * 4 + slot])
+
+
+func _resolved_tags(x: int, z: int) -> Array:
+	# PORT1TO1 §3.2: 24B read then 2x2 override probe at ((x+b)*2,(y+a)*2)
+	# for slot a*2+b; record13+8 replaces the tag only when the gate fires.
+	var out: Array = []
+	for slot in range(4):
+		var a: int = slot / 2
+		var b: int = slot % 2
+		out.append(_corner_tag_at(x, z, slot))
+		if _override_gate:
+			var px: int = (x + b) * 2
+			var pz: int = (z + a) * 2
+			if _cell_in_bounds(px, pz):
+				out[slot] = int(_rec13_override_tile[pz * _w + px])
+	return out
+
+
+func _distinct_sorted(tags: Array) -> Array:
+	# 0x813055-0x8130b4 unique, 0x8130b6-0x8130fa ascending bubble sort.
+	var out: Array = []
+	for t in tags:
+		if not out.has(t):
+			out.append(int(t))
+	for i in range(out.size() - 1):
+		for j in range(i + 1, out.size()):
+			if int(out[j]) < int(out[i]):
+				var tmp: int = int(out[i])
+				out[i] = out[j]
+				out[j] = tmp
+	return out
+
+
+func _mask_for(tag: int, tags: Array) -> int:
+	# Raw compare pairs 0x813125-0x813145: t0=8, t1=2, t2=4, t3=1.
+	var m: int = 0
+	if tag == int(tags[0]): m += 8
+	if tag == int(tags[2]): m += 4
+	if tag == int(tags[1]): m += 2
+	if tag == int(tags[3]): m += 1
+	return m
+
+
+func _rgb_index(mask: int, variant: int, ttype: int) -> int:
+	# FUN_0050db08 (ev_70c790f9); used by the tsSingle path only.
+	var v: int = variant & 0xff
+	if ttype == 0:
+		if mask >= 0 and mask < 15:
+			return int(DONOR_RGB_MASK_LUT[mask])
+		if mask == 15:
+			return int(DONOR_RGB_PLAIN_FULL[v & 1])
+		return 0
+	if ttype == 1:
+		if mask >= 0 and mask < 15:
+			return int(DONOR_RGB_MASK_LUT[mask])
+		if mask == 15:
+			if v < 0x88:
+				return int(DONOR_RGB_EXT_LOW[v % 6])
+			if ((v + 0x78) & 0xff) < 0x44:
+				return int(DONOR_RGB_EXT_A[v & 3])
+			if ((v + 0x34) & 0xff) < 0x22:
+				return int(DONOR_RGB_EXT_B[v & 3])
+			if ((v + 0x12) & 0xff) < 0x12:
+				return int(DONOR_RGB_EXT_C[v & 3])
+			return 0   # donor implicit return 0
+	return 0
+
+
+func _alpha_index(mask: int, variant: int) -> int:
+	# DAT_008f5d00 pair[(mask&0xff)*2][variant&1] (ev_8d1f6535, ev_d7e71e03).
+	# Near-water overlay p over the 32-entry set; per-cell instance [U-SA4],
+	# no single shore patch asserted (DEC_U_shore_alpha.md §4.2). LUT unchanged.
+	var lo: int = int(DONOR_ALPHA_PAIR_LO[mask & 0xff])
+	return lo + 16 if (variant & 1) else lo
+
+
+func _rgb_uv_corners_tsdouble(x: int, z: int) -> Array:
+	# 0x813235-0x8132c3: BOTH axes divide by Rows (+0x24); round(x)+W/2 and
+	# round(y)+H/2, mod Rows, times TileSize. Normalised by Rows for Godot UV
+	# (the gl_TextureMatrix[0] scale that maps TileSize units into the block is
+	# [U] U-7; no factor is invented here).
+	var rows: int = maxi(DONOR_RGB_ROWS, 1)
+	var u0: int = (x + int(_w / 2)) % rows
+	var v0: int = (z + int(_h / 2)) % rows
+	if u0 < 0: u0 += rows
+	if v0 < 0: v0 += rows
+	var step: float = 1.0 / float(rows)
+	var u: float = float(u0) * step
+	var v: float = float(v0) * step
+	# FUN_00812b4c base slots s0..s3 before the call-site corner transform.
+	return [Vector2(u, v), Vector2(u + step, v),
+		Vector2(u + step, v + step), Vector2(u, v + step)]
+
+
+func _alpha_uv_corners(p: int, with_inset: bool) -> Array:
+	# CORRECTED axes (PORT1TO1 §5.1): col=p/AlphaCols, row=p%AlphaCols;
+	# u=col/AlphaRows, v=row/AlphaCols. p+16 => u+=0.5 (NOT v+=1.0).
+	var col: int = (p & 0xff) / DONOR_ALPHA_COLS
+	var row: int = (p & 0xff) % DONOR_ALPHA_COLS
+	var u0: float = float(col) / float(DONOR_ALPHA_ROWS)
+	var u1: float = float(col + 1) / float(DONOR_ALPHA_ROWS)
+	var v0: float = float(row) / float(DONOR_ALPHA_COLS)
+	var v1: float = float(row + 1) / float(DONOR_ALPHA_COLS)
+	var ix: float = DONOR_ALPHA_INSET_X if with_inset else 0.0
+	var iy: float = DONOR_ALPHA_INSET_Y if with_inset else 0.0
+	# FUN_00812ccc base slots s0..s3 with +/-insetX / +/-insetY.
+	return [Vector2(u0 + ix, v0 + iy), Vector2(u1 - ix, v0 + iy),
+		Vector2(u1 - ix, v1 - iy), Vector2(u0 + ix, v1 - iy)]
+
+
+func _uv_slot(corner: int, rot: int, mirror: bool) -> int:
+	# FUN_00812b14: slot=(corner+rot)&3, then slot=3-slot when mirrored.
+	var s: int = (corner + rot) & 3
+	if mirror:
+		s = 3 - s
+	return s
+
+
+func _corner_offset(corner: int) -> Vector2:
+	# s0=(xpx,ypx), s1=(xpx+S,ypx), s2=(xpx+S,ypx+V), s3=(xpx,ypx+V).
+	if corner == 0: return Vector2(0.0, 0.0)
+	if corner == 1: return Vector2(1.0, 0.0)
+	if corner == 2: return Vector2(1.0, 1.0)
+	return Vector2(0.0, 1.0)
+
+
+func _height_at_corner(x: int, z: int, ox: int, oz: int) -> float:
+	# PORT SUBSTITUTE: donor corner height sampling is [U]; mean of the up to
+	# four adjacent cell-centre heights avoids cracks at cell boundaries.
+	var sx: int = x + ox
+	var sz: int = z + oz
+	var sum: float = 0.0
+	var count: int = 0
+	for dz in range(-1, 1):
+		for dx in range(-1, 1):
+			var cx: int = sx + dx
+			var cz: int = sz + dz
+			if _cell_in_bounds(cx, cz):
+				sum += _height[cz * _w + cx]
+				count += 1
+	return sum / float(count) if count > 0 else 0.0
+
+
+func _normal_at_corner(x: int, z: int, ox: int, oz: int) -> Vector3:
+	# Same labelled substitute as the height: mean of the adjacent stencil
+	# normals, evaluated at the corner vertex (§8.1 item 3).
+	var sx: int = x + ox
+	var sz: int = z + oz
+	var sum := Vector3.ZERO
+	var count: int = 0
+	for dz in range(-1, 1):
+		for dx in range(-1, 1):
+			var cx: int = sx + dx
+			var cz: int = sz + dz
+			if _cell_in_bounds(cx, cz):
+				sum += _normal_at(_height, _w, _h, cx, cz)
+				count += 1
+	return sum.normalized() if count > 0 else Vector3(0.0, 1.0, 0.0)
+
+
+func _collect_block_sources() -> Dictionary:
+	# Read-only id -> 1024^2 donor block PNG map from the legacy manifest.
+	var manifest := _read_manifest_full(LEGACY_ATLAS_MANIFEST)
+	var layout: Variant = manifest.get("layout", null)
+	var out: Dictionary = {}
+	if not (layout is Array):
+		return out
+	for entry in (layout as Array):
+		if not (entry is Dictionary):
+			continue
+		var raw_png: Variant = (entry as Dictionary).get("source_png", null)
+		if raw_png == null or str(raw_png).is_empty():
+			continue
+		var sz: Variant = (entry as Dictionary).get("source_size", null)
+		if not (sz is Array) or (sz as Array).size() != 2:
+			continue
+		if int((sz as Array)[0]) != ARRAY_ATLAS_BLOCK_PX or int((sz as Array)[1]) != ARRAY_ATLAS_BLOCK_PX:
+			continue   # no upscaling of 256^2 donor blocks
+		out[int((entry as Dictionary).get("index", -1))] = str(raw_png)
+	return out
+
+
+func _build_donor_tile_array() -> bool:
+	# DONOR texUnit0 geometry: one 1024^2 block per used tile id in a real
+	# sampler2DArray. No synthesis; missing/foreign-size blocks are skipped.
+	_tile_array_texture = null
+	_id_to_layer = {}
+	_tile_array_info = {}
+	var sources := _collect_block_sources()
+	if sources.is_empty():
+		_tile_array_info = {"active": false, "reason": "no 1024^2 donor block manifest/layout"}
+		return false
+	var counts := _used_tile_id_counts()
+	var ids: Array = []
+	for key in counts.keys():
+		ids.append(int(key))
+	ids.sort()
+	var images: Array[Image] = []
+	for idv in ids:
+		var id: int = int(idv)
+		if not sources.has(id):
+			continue
+		var block := Image.new()
+		var err: int = block.load(BLOCKS_DIR + str(sources[id]))
+		if err != OK:
+			err = block.load(ProjectSettings.globalize_path(BLOCKS_DIR + str(sources[id])))
+		if err != OK or block.get_size() != Vector2i(ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX):
+			continue
+		if block.get_format() != Image.FORMAT_RGBA8:
+			block.convert(Image.FORMAT_RGBA8)
+		if block.generate_mipmaps(false) != OK:
+			continue
+		_id_to_layer[id] = images.size()
+		images.append(block)
+	if images.is_empty():
+		_tile_array_info = {"active": false, "reason": "no used id had a readable 1024^2 block"}
+		return false
+	var arr := Texture2DArray.new()
+	if arr.create_from_images(images) != OK:
+		_tile_array_info = {"active": false, "reason": "Texture2DArray.create_from_images failed"}
+		return false
+	_tile_array_texture = arr
+	_tile_array_info = {
+		"active": true,
+		"label": ("DONOR texUnit0 GEOMETRY — one 1024^2 donor-derived block per used "
+			+ "tile id; NO packed atlas approximation on this path; no parity claim"),
+		"layers": images.size(),
+		"id_to_layer": _id_to_layer.duplicate(true),
+		"block_px": ARRAY_ATLAS_BLOCK_PX,
+		"mipmaps": "CPU generate_mipmaps(false); first image fixes format/mip flag for all layers",
+		"cite": "cossacks.exe 0x84c0 texUnit0; 112 DDS blocks D08 §3.1; reftile.mat:24-49",
+	}
+	return true
+
+
+# ---------------------------------------------------------------------------
 # Normals: proven 1-cell forward difference (one-sided backward at last
 # row/column), world3d_terrain.gd:901-917. TILE_M stays 2.0 m and NO vertex or
-# index is added. Donor analogue of hf.pvl.sm.vert normals (shaders.lib:16-19),
+# index is added by THIS stencil (the RENDER1TO1 builder emits donor corner
+# vertices). Donor analogue of hf.pvl.sm.vert normals (shaders.lib:16-19),
 # which feed the donor Blinn-Phong light equations (hf.pvl.smx3.frag:13-17).
 # This is the ONLY normal source in this module: no face tilt, no AO, no fake.
 # ---------------------------------------------------------------------------
@@ -589,6 +1034,8 @@ func _color_unify_calibration() -> Dictionary:
 	# The shader multiplies g into the packed donor Blinn-Phong term only. With
 	# g = vec3(1) this is byte-identical to today's unscaled lighting. No gamma,
 	# exposure, shadow, AO, emissive fill, noise or new donor constant is used.
+	# guard: measured-ROI PORT calibration; independent of U-G1..U-G5 donor post
+	# state (DEC-U-GAMMA-LUT §8 L-5) — no gamma/exposure fold-in here.
 	var lift := COLOR_UNIFY_FULL_RIG - COLOR_UNIFY_GRASS_BASE
 	var need := COLOR_UNIFY_TARGET - COLOR_UNIFY_GRASS_BASE
 	var lx := maxf(lift.x, 1e-6)
@@ -1042,6 +1489,8 @@ func _load_atlas() -> bool:
 	_atlas_grid = _atlas_loader.call("atlas_grid")
 	if _atlas_grid.x <= 0.0 or _atlas_grid.y <= 0.0:
 		_atlas_grid = ATLAS_GRID_EXPECTED
+	# N17-G1/G2 terminate only on §6 E-ATLAS-LAYOUT zero-mismatch byte-dump;
+	# this fallback grid is never promoted to a donor claim.
 	_atlas_info = _atlas_loader.call("get_reassembly_info")
 	var masks: Array = _atlas_loader.call("get_mask_textures")
 	if masks.size() < 2:
@@ -1079,7 +1528,7 @@ func _bind_known_params(mat: ShaderMaterial, params: Dictionary) -> Dictionary:
 	return {"bound": bound, "unbound": unbound}
 
 
-func _make_material(atlas_ready: bool = true) -> Material:
+func _make_material(atlas_ready: bool = true, base_pass: bool = false) -> Material:
 	if not atlas_ready or _tile_map_tex == null:
 		# Geometry still builds; no shader sampler is bound to a null atlas/map.
 		material_model = "PORT APPROXIMATION — plain material (atlas/tile map unavailable)"
@@ -1148,22 +1597,41 @@ func _make_material(atlas_ready: bool = true) -> Material:
 	_color_unify["rig_energies_left_neutral"] = color_unify
 	_color_unify["bound_gain"] = ([cu_gain.x, cu_gain.y, cu_gain.z]
 		if color_unify else [1.0, 1.0, 1.0])
+	# RENDER1TO1: the donor display list bakes uv0/uv1; the shader only samples.
+	# sceneColor is RECOVERED [O] = (0.2,0.2,0.2,1.0), a 16-B static copy at
+	# 0x8f58dc submitted at 0x4d13f1; bound as its own vec3 uniform (.rgb used),
+	# with alpha 1.0 recorded in telemetry only. Two-side GL_FALSE is telemetry.
 	var params := {
+		# DONOR texUnit0: 1024^2 block per tile id; 2D atlas is fallback only.
+		"tile_array": _tile_array_texture,
+		"use_tile_array": _tile_array_texture != null,
 		"tile_atlas": _atlas_texture,
 		"tile_map": _tile_map_tex,
 		"alpha_atlas": _alpha_tex,
 		"alphavert_atlas": _alphavert_tex,
 		"atlas_grid": _atlas_grid,
-		# DEC-VIS-01 §6.2: integer world-cell lookup + map-half-offset 8x8 select.
-		"map_cells": Vector2(float(_w), float(_h)),
-		"donor_rows": float(DONOR_RGB_ROWS),
-		"donor_cols": float(DONOR_RGB_COLS),
-		"donor_tile_size": float(DONOR_RGB_TILE_SIZE),
-		"donor_rgb_block_size": float(DONOR_RGB_BLOCK_SIZE),
-		# Donor Blinn-Phong terms from light.cfg (donor path:line cited above).
+		"tile_scheme": 1,        # +0xc tsDouble (shipped; reftile.lib)
+		"tile_type": 1,          # +0xd ttExtended (drives full-variant bins)
+		"donor_rows": DONOR_RGB_ROWS,
+		"donor_cols": DONOR_RGB_COLS,
+		"donor_alpha_rows": DONOR_ALPHA_ROWS,
+		"donor_alpha_cols": DONOR_ALPHA_COLS,
+		"base_pass": base_pass,
+		"base_full_opacity": true,  # patch 0/16 authored constant 255 (F06-E10)
+		"alpha_test_enabled": false,  # case 1 has NO donor comparator; GL test itself is ON (0x4ef989)
+		"alpha_test_ref": -1.0,       # [U] U-6b/N17-G15: leaked GL_GEQUAL/0.5|1.0 not proven; no threshold invented
+		"face_alpha_enabled": false,  # U-8 refkey projection not per-vertex
+		"face_mode": 0,
+		"face_scale": DONOR_FACE_SCALE,
+		# Donor Blinn-Phong PRODUCT factors from reftile.mat x light.cfg.
+		"material_ambient": DONOR_MATERIAL_AMBIENT,
+		"material_diffuse": DONOR_MATERIAL_DIFFUSE,
 		"ambient_rgb": Vector3(DONOR_AMBIENT.r, DONOR_AMBIENT.g, DONOR_AMBIENT.b),
 		"diffuse_rgb": Vector3(DONOR_DIFFUSE.r, DONOR_DIFFUSE.g, DONOR_DIFFUSE.b),
-		"specular_rgb": Vector3(DONOR_SPECULAR.r, DONOR_SPECULAR.g, DONOR_SPECULAR.b),
+		"specular_rgb": Vector3(0.0, 0.0, 0.0),  # effective product; light colour NOT used bare
+		"material_specular_rgb": Vector3(0.0, 0.0, 0.0),
+		"shininess": 16.0,
+		"scene_color": DONOR_SCENE_COLOR,  # [O] 0x8f58dc (0.2,0.2,0.2); alpha 1.0 unused
 		"donor_sun_position": DONOR_SUN_POS,
 		# LIGHT-MATCH: SAME rig energies scene props already receive; 1.0 when off.
 		"light_rig_ambient_energy": ambient_energy,
@@ -1171,7 +1639,7 @@ func _make_material(atlas_ready: bool = true) -> Material:
 		# COLOR-UNIFY: calibrated per-channel fraction of the measured rig lift;
 		# vec3(1) when off (byte-identical), neutral rig energies when on.
 		"color_unify_gain": cu_gain if color_unify else Vector3.ONE,
-		"face_scale": DONOR_FACE_SCALE,
+		"gamma_probe": "P-GAMMA-SEL/LUT/FADE/TONE/CONT §7 (program+LUT+fade+tone+cont dumps, zero-mismatch)",
 		"shadow_enabled": 0.0,   # no shadow map shipped; no shadow fakery
 		"fog_mode": 0.0,         # FogMode=0 (colors.lib:23,34-43)
 		# Donor alpha: separate framebuffer channel, NOT an albedo multiply.
@@ -1266,9 +1734,10 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 	return {
 		"module": "res://scripts/terrain_donor_mesh.gd",
 		"ticket": "I08",
-		"grid": {"w": _w, "h": _h, "cells": nverts},
+		"grid": {"w": _w, "h": _h, "cells": _n},
 		"tile_m": TILE_M,
 		"height_scale": HEIGHT_SCALE,
+		"relief_single_application": ("DEC_U_relief_stamps §7 R-10 label: relief amplitude comes ONLY from terrain_donor_gen.gd height field; mesh never re-applies Scale/Min/Offset/TerrainScale (no double application). HEIGHT_SCALE=1.0 PORT contract; corner height/normal PORT SUBSTITUTE; bind_height_grid read-only. No parity claim."),
 		"height_min_m": hmin,
 		"height_max_m": hmax,
 		"height_hist_deciles": dec,
@@ -1276,13 +1745,13 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 		"mesh_vertices": nverts,
 		"mesh_triangles": ntris,
 		"mesh_surfaces": surfaces,
-		"terrain_draw_calls_expected": 1,
+		"terrain_draw_calls_expected": surfaces,  # Godot surfaces only; ONE donor display list/cell [O]/[D] U-9, no duplicate draws
 		"normals": ("1-cell forward difference on the same height[] field "
 			+ "(world3d_terrain.gd:901-917,:1387); donor Blinn-Phong input; "
 			+ "no tilt/AO/shadow fakery"),
-		"uv": "cell-centre ((x+0.5)/w,(z+0.5)/h) over the full map",
-		"uv2": ("x=float(tile id 0..123), y=float(face 0/1/2) "
-			+ "(world3d_terrain.gd:1315-1318,:1407)"),
+		"uv": "RENDER1TO1: baked RGB uv0 per donor corner (FUN_00812b4c; tsDouble 8x8 subcell)",
+		"uv2": ("RENDER1TO1: baked alpha uv1 per donor corner (FUN_00812ccc; "
+			+ "corrected col=p/4,row=p%4 axes + rot=2 + V-flip + base-only insets)"),
 		"tile_ids": {
 			"max": MAX_TILE_ID,
 			"water_sentinel": WATER_SENTINEL,
@@ -1331,6 +1800,240 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 		"color_unify": _color_unify.duplicate(true),
 		"array_atlas": _array_atlas.duplicate(true),
 		"alpha": _alpha_contract.duplicate(true),
+		"donor_renderer": {
+			"impl": "RENDER1TO1 — per-cell 24B/13B-equivalent producer, not a shader-only patch",
+			"authority": "docs/terrain_swarm_2026-11-26/reports/PORT1TO1_terrain_renderer.md §§3-8",
+			"cell_record_24b": {
+				"stride": 24,
+				"corner_tags": "+0..+3 (u8 x4)",
+				"variant": "+4 (u8)",
+				"reserved": "+5..+7 — [U] U-12, never read by this port",
+				"collision_words": "+8..+0x17 (four u32; port narrows to u8 collision array, [U])",
+				"default_template": "0x8f6164 (ev_3b31d24a); OOB pointer table 0x8fc33c (ev_e20be950)",
+			},
+			"cell_record_13b": {
+				"stride": 13,
+				"fields": "+0..+3 s8; +4..+7 flags [U] U-12; +8 override tile id; +9 override random; +10/+11 controls [U]; +12 loaded/dirty",
+				"default_template_va": "U-5 UNVERIFIED — no loaded DATA 13-byte default recovered; .rsrc hits rejected (ev_ff4fffbe)",
+			},
+			"tags_source": _tags_source,
+			"variant_source": _variant_source,
+			"override_source": _override_source,
+			"override_gate_open": _override_gate,
+			"corner_weight_map": {"t0": 8, "t1": 2, "t2": 4, "t3": 1},
+			"corner_weight_cite": "0x813125-0x813145 raw compares (ev_58d7418c); DEC-VIS-01 8/4/2/1 order refined",
+			"override_probe": "slot=a*2+b -> FUN_00830754(map,(x+b)*2,(y+a)*2) (PORT1TO1 §3.2)",
+			"dedup_sort": "ascending unique 0x813055-0x8130b4 / bubble 0x8130b6-0x8130fa",
+			"luts": {
+				"rgb_mask_table": {"va": "0x8f5cd7", "bytes": 15,
+					"values": DONOR_RGB_MASK_LUT, "evidence": "ev_a03439ea"},
+				"rgb_full_variant": {
+					"tables": {"0x8f5ce8": DONOR_RGB_PLAIN_FULL, "0x8f5cec": DONOR_RGB_EXT_LOW,
+						"0x8f5cf2": DONOR_RGB_EXT_A, "0x8f5cf6": DONOR_RGB_EXT_B,
+						"0x8f5cfa": DONOR_RGB_EXT_C},
+					"selector": "FUN_0050db08 (ev_70c790f9); tileType 0 -> [v&1]; tileType 1 -> v<0x88 then 4 bins; implicit 0",
+					"padding_not_selector": ["0x8f5ce6", "0x8f5cea", "0x8f5cfe"],
+				},
+				"alpha_pairs": {"va": "0x8f5d00", "pairs": 16,
+					"low_bytes": DONOR_ALPHA_PAIR_LO, "high": "low+16 for variant&1",
+					"evidence": "ev_8d1f6535 / ev_d7e71e03"},
+			},
+			"alpha_axes": {
+				"col": "p / AlphaCols(4)", "row": "p % AlphaCols(4)",
+				"u": "col / AlphaRows(8)", "v": "row / AlphaCols(4)",
+				"p_plus_16": "u += 0.5 (four columns right); NOT v += 1.0",
+				"correction": "supersedes DEC-VIS-01 §5.4 transposition; F06 patch means (0,1)=45.6 vs (4,1)=82.8",
+			},
+			"insets": {
+				"x": DONOR_ALPHA_INSET_X, "y": DONOR_ALPHA_INSET_Y,
+				"condition": "mask==0 base layer ONLY (0x813330-0x813345); transition layers zero",
+				"cite": "art+0x1c / art+0x20; reftile.lib overrides 0.1/0.2",
+			},
+			"rotation_call_sites": {
+				"rgb_single": {"rot": RGB_SINGLE_ROT, "mirror": RGB_SINGLE_MIRROR, "vflip": RGB_SINGLE_VFLIP, "va": "0x813227"},
+				"rgb_tsdouble": {"rot": RGB_DOUBLE_ROT, "mirror": RGB_DOUBLE_MIRROR, "vflip": RGB_DOUBLE_VFLIP, "va": "0x8132c3"},
+				"alpha_tsdouble": {"rot": ALPHA_DOUBLE_ROT, "mirror": ALPHA_DOUBLE_MIRROR, "vflip": ALPHA_DOUBLE_VFLIP, "va": "0x813380"},
+				"vflip_one": "0x3f800000 at 0x812c90 / 0x812e30 (ev_1db801be / ev_47db71da)",
+				"no_per_cell_rotation_metadata": true,
+			},
+			"rgb_tsdouble": {
+				"selector": "((round(x)+W>>1) mod Rows, (round(y)+H>>1) mod Rows), BOTH axes / Rows",
+				"cite": "0x813235-0x8132c3 (ev_58d7418c); +0x25 Cols used only in tsSingle",
+				"texture_matrix_scale": "U-7 UNVERIFIED — godot UV normalised by Rows, no factor invented",
+			},
+			"layers": _donor_layers.duplicate(true),
+			"alpha_detail": _donor_alpha.duplicate(true),
+			"blend": {
+				"src": ALPHA_SRC_FACTOR, "dst": ALPHA_DST_FACTOR,
+				"equation": "GL_FUNC_ADD (0x8006); glBlendEquation not imported (X17 §5.3)",
+				"gl_enums": {"GL_SRC_ALPHA": "770=0x302 @0x8fb1ac[6]",
+					"GL_ONE_MINUS_SRC_ALPHA": "771=0x303 @0x8fb1ac[7]",
+					"GL_GEQUAL": "518=0x206 @0x8fb18c[7]",
+					"alpha_ref_50": "0x3f000000", "alpha_ref_100": "0x3f800000",
+					"GL_BLEND": "3042=0x0be2 @0x8fb0dc[2]",
+					"GL_ALPHA_TEST": "3008=0x0bc0 @0x8fb0dc[0]"},
+				"composite": "dst.rgb'=src.rgb*src.a+dst.rgb*(1-src.a)",
+				"rgb_mask_multiply": false,
+				"case1_bmTransparency": ("U-6 RESOLVED [O]/[D] (DEC_U_alpha_pass_quad §4): "
+					+ "0x4ef97f sub_88f0f0(cap 2) => glEnable(GL_BLEND); "
+					+ "0x4ef989 sub_88f0f0(cap 0) => glEnable(GL_ALPHA_TEST); "
+					+ "0x4ef995 glBlendFunc(0x302,0x303). GL_ALPHA_TEST is ENABLED, not disabled."),
+				"alpha_test": ("case 1 bmTransparency enables GL_ALPHA_TEST but issues NO glAlphaFunc: "
+					+ "no terrain-specific compare function/reference is set; "
+					+ "cases 3/4 call glAlphaFunc(GL_GEQUAL,0.5f/1.0f) (ev_da1b30dd/ev_645fe58e)"),
+				"alpha_test_comparator_carried": false,
+				"case1_alpha_test_leak": ("[U] U-6b: the last-set compare func/ref (GL default "
+					+ "GL_ALWAYS/ref 0, or a leaked GL_GEQUAL/0.5|1.0 from cases 3/4) is NOT proven "
+					+ "at terrain draw time; no comparator/discard invented, no parity claim"),
+				"pass_count": ("U-9 RESOLVED STRUCTURALLY [O]/[D] (DEC_U_alpha_pass_quad §5): "
+					+ "FUN_00818920 emits ONE glNewList(GL_COMPILE) at 0x81937c per cell and "
+					+ "glEndList;ret at 0x819b65/0x819b6a after all layer quads in producer order "
+					+ "(base first). The two Godot surfaces are a rendering-state translation of "
+					+ "that one list, NOT two donor draw passes and NOT duplicate draws. "
+					+ "Residual [U] U-9b: final heightfield glCallList count per cell not proven."),
+			},
+			"lighting": _donor_lighting.duplicate(true),
+			# N17-G6: pattern.lib Objects[] instancing ABSENT by design; terminate
+			# only on a per-pattern Objects[] export diff with zero mismatches.
+			"tile_array": _tile_array_info.duplicate(true),
+			"corner_height_source": "PORT SUBSTITUTE — mean of adjacent cell-centre heights; donor corner sampling [U]",
+			"corner_normal_source": "PORT SUBSTITUTE — mean of adjacent 1-cell stencil normals at corner; gl_NormalMatrix [U]",
+			"unknowns": ["U-R1", "U-R2", "U-3", "U-4", "U-5", "U-6b", "U-7", "U-8",
+				"U-9b", "U-10b", "U-11", "U-12", "U-13"],
+			"resolved_this_pass": {
+				"U-1": "[O]/[D] sceneColor=(0.2,0.2,0.2,1.0) at 0x8f58dc; residual U-R1",
+				"U-2": "[O] pname 0x0B52 GL_LIGHT_MODEL_TWO_SIDE, startup GL_FALSE; residual U-R2",
+				"U-6": "[O]/[D] GL_ALPHA_TEST enabled in case 1; residual U-6b comparator leak",
+				"U-9": "[O]/[D] ONE display list per cell, layers in order; residual U-9b call count",
+				"U-10": ("[O] 0x48 producer -> 0x50 consumer map; NB-5 copy-site STATIC map "
+					+ "[D]; residual [U] U-10b value-level byte dump"),
+			},
+			"u10_quad_expansion": {
+				"status": ("U-10 RESOLVED [O] / +0x0b relation [D]; NB-5 copy-site STATIC map "
+					+ "CLOSED [D] (invocation chain, 2x32 B rep movsd row lifts, 4-way scatter, "
+					+ "+0x0b anchored at both ends); residual [U] U-10b value-level byte dump "
+					+ "(owner write-breakpoint probe must reach zero mismatches)"),
+				"producer_record": {"stride": DONOR_QUAD48_STRIDE,
+					"header": "+0x00 u32 material/tag + mirror byte (+2/+3 padding)",
+					"rgb_uv": "+0x05..+0x24 (four f32 pairs, FUN_00812b4c)",
+					"alpha_uv": "+0x25..+0x44 (four f32 pairs, FUN_00812ccc)",
+					"tail": "+0x45..+0x47"},
+				"consumer_record": {"stride": DONOR_QUAD50_STRIDE,
+					"vertex_index_header": ("+0x00 B, +0x04 A, +0x08 C, +0x0c D; "
+						+ "each u32 *0xb indexes the 0x2c-stride vertex array"),
+					"rgb_uv": "+0x10..+0x2f (B +0x10, A +0x18, C +0x20, D +0x28)",
+					"alpha_uv": "+0x30..+0x4f (B +0x30, A +0x38, C +0x40, D +0x48)"},
+				"relation": ("16-byte vertex-index header prepended; UV payload shifted +0x0b "
+					+ "(0x05->0x10 RGB, 0x25->0x30 alpha); 0x10+0x40=0x50"),
+				"emitted_ABCD_offsets": {"index": DONOR_QUAD50_INDEX_OFF,
+					"rgb_uv": DONOR_QUAD50_RGB_UV_OFF, "alpha_uv": DONOR_QUAD50_ALPHA_UV_OFF},
+				"mesh_attributes": {
+					"ARRAY_VERTEX": "four donor cell-corner positions, emitted A,B,C,D",
+					"ARRAY_TEX_UV": "RGB uv baked from producer +0x05..+0x24 (consumer +0x10..+0x2f)",
+					"ARRAY_TEX_UV2": "alpha uv baked from producer +0x25..+0x44 (consumer +0x30..+0x4f)",
+					"ARRAY_COLOR": "r=tag/layer id, g=layer index, b=alpha patch p, a=mask — port selectors, NOT donor attributes",
+					"corner_order": "local corners 0..3 emitted A,B,C,D via DONOR_QUAD50_*_OFF above",
+					"triangles": ("donor GL_QUADS emits (A,B,C),(A,C,D); this port keeps its existing "
+						+ "+Y-facing Godot index pair with cull_disabled (PORT representation, no parity claim)"),
+					"no_0x48_vertex_stride": true,
+				},
+				"cite": ("ev_8abea401 (raw 0x819774-0x819b52), ev_6f767eed, ev_696bc518; "
+					+ "DEC_U_alpha_pass_quad §6 — 0x48 is a staging stride, 0x50 the donor quad stride"),
+				# ---- NB-5 (DEC_U_nb5.md) — donor-settled STATIC facts, labelled data only [STATIC [D] ONLY — NO DONOR PARITY; live values [U]] ----
+				# The 0x48 -> 0x50 transport is NOT a memcpy: two 32 B `rep movsd` row
+				# lifts plus a 4-iteration field scatter. Every constant below is quoted
+				# from decoded donor instruction bytes; no stride, offset or donor value is
+				# invented and no donor code/GPU frame was executed. The value-level byte
+				# dump stays [U] U-10b with the owner-only probe in nb5_residual_u. This
+				# adds TELEMETRY ONLY: no geometry, mesh attribute, shader or sim change.
+				"nb5_invocation_chain": {
+					"label": "[D] byte-proven chain; read-only, no donor execution",
+					"chain": ("sub_818920 --0x8192f3--> sub_818824 --0x81887e--> "
+						+ "sub_81ac54 --0x81ac68 call [ebx+0x40]--> sub_812e34"),
+					"branch": ("sub_818824 --0x818900--> sub_81aa3c "
+						+ "(row lifts -> 4-way quad scatter)"),
+					"entry": "sub_812e34 has 0 direct callers (purely indirect)",
+					"cite": ("DEC_U_nb5.md §2; ev_d5a27e12/ev_7cea513c/ev_5952cf12/"
+						+ "ev_9b6e6b47/ev_30df199a/ev_ce26ac4e"),
+				},
+				"nb5_trampoline_args": {
+					"label": "[D] sub_81ac54 (13 insn) register map at the 0x81ac68 call",
+					"eax": "[renderer+0x44] terrain descriptor (812e34 reads dims at esi+0xa0)",
+					"edx": "renderer+0x50 — 0x48-record row-array base R",
+					"ecx": "incoming edx — count-out pointer",
+					"stack": "2 forwarded stack dwords from sub_818824 (height-table words)",
+					"call": "0x81ac68 call dword ptr [ebx+0x40]",
+					"cite": "DEC_U_nb5.md §2.1/§2.2; ev_5952cf12/ev_20db8cc5",
+				},
+				"nb5_row_lifts": {
+					"label": "[O] two 32 B rep movsd lifts — NOT memcpy",
+					"rgb": ("0x8188d3 lea esi,[ebx+eax*8+0x55] -> edi=[ebp-0x54]; "
+						+ "0x8188d7 mov ecx,8 / rep movsd = renderer+0x55+0x48*i -> row+0x05..+0x24"),
+					"alpha": ("0x8188e3 lea esi,[ebx+eax*8+0x75] -> edi=[ebp-0x34]; "
+						+ "0x8188e7 mov ecx,8 / rep movsd = renderer+0x75+0x48*i -> row+0x25..+0x44"),
+					"index_scale": "eax = esi+esi*8 = 9*esi @0x8188cf; [ebx+eax*8] = +0x48*i",
+					"staging": "0x50 B contiguous at edx=[ebp-0x64]: 4 index dwords, 32 B RGB, 32 B alpha",
+					"cite": "DEC_U_nb5.md §2.3/§3.2; ev_20db8cc5",
+				},
+				"nb5_scatter": {
+					"label": "[O] sub_81aa3c 0x81aae3-0x81ab8a — 4 iterations, zero gaps",
+					"loop": ("[ebp-4]=0..3; eax=[ebp-0x48]+8/iter; [ebp-8]=[ebp-0x58]+4/iter; "
+						+ "edx = quad-slot base + 0x50"),
+					"passes": [
+						{"pass": 1, "va": "0x81ab0d-0x81ab0f", "dest": "Q+0x00/+0x04/+0x08/+0x0c",
+							"bytes_per_iter": 4, "field": "vertex indices B,A,C,D"},
+						{"pass": 2, "va": "0x81ab3a-0x81ab43", "dest": "Q+0x10..+0x2f",
+							"bytes_per_iter": 8, "field": "RGB uv pairs B,A,C,D"},
+						{"pass": 3, "va": "0x81ab6e-0x81ab78", "dest": "Q+0x30..+0x4f",
+							"bytes_per_iter": 8, "field": "alpha uv pairs B,A,C,D"},
+					],
+					"control": ("0x81ab7c inc [ebp-4]; 0x81ab7f add eax,8; 0x81ab82 add [ebp-8],4; "
+						+ "0x81ab86 cmp [ebp-4],4; jne 0x81aae3"),
+					"coverage": ("4*(4+8+8) = 80 B = one 0x50 record, zero gaps/zero overlap; "
+						+ "-0x50/-0x40/-0x20 land on Q+0x00/+0x10/+0x30"),
+					"cite": "DEC_U_nb5.md §3.2/§3.3; ev_f95cb91d",
+				},
+				"nb5_shift_anchor": {
+					"label": "[D] +0x0b anchored at both ends; all 80 bytes mapped",
+					"row_base": "R = renderer+0x50 (0x81ac60 lea edx,[eax+0x50])",
+					"rgb": "read renderer+0x55+0x48*i = R+0x05+0x48*i; producer row+0x05 @0x812b89; delta 0",
+					"alpha": "read renderer+0x75+0x48*i = R+0x25+0x48*i; producer row+0x25 @0x812cf7; delta 0",
+					"shift": ("+0x0b on BOTH blocks: R+0x05 -> Q+0x10, R+0x25 -> Q+0x30 "
+						+ "(DEC-U-ALPHA-PASS-QUAD §6.4 relation, now instruction-anchored)"),
+					"shared_0x50": ("independent on both sides: trampoline lea vs rep movsd ecx=0x14 "
+						+ "(80 B staging) vs Q stride 0x50 in sub_818920 @0x819364/0x81978d"),
+					"strides_cited": {"producer": DONOR_QUAD48_STRIDE,
+						"consumer": DONOR_QUAD50_STRIDE, "uv_shift": DONOR_QUAD50_UV_SHIFT},
+					"cite": "DEC_U_nb5.md §3.4 (arithmetic closure)",
+				},
+				"nb5_registration": {
+					"label": "[O] installer clones + registrar — closes no value",
+					"default_install": "0x8178b1 mov [eax+0x44],ebx; 0x8178b4 mov [eax+0x40],0x812e34",
+					"installer_clones": ["0x813b80", "0x8140ab", "0x814fe0", "0x8178b4"],
+					"registrar": ("sub_8127b8 push eax; push 0x812e34; call 0x812ae0 -> "
+						+ "stores [eax+0xb0]/[eax+0xb4], flags [eax+0xc8]"),
+					"cite": ("DEC_U_nb5.md §4; ev_9ce28a17/ev_c2d1ba32/"
+						+ "ev_f476ca55/ev_3fec38bf"),
+				},
+				"nb5_residual_u": {
+					"label": ("[U] U-10b value-level byte dump — static map [D], donor VALUES "
+						+ "still UNVERIFIED"),
+					"experiment": ("owner-only write-breakpoint probe: (1) write-breakpoint "
+						+ "renderer+0x40 @0x8178b4, expect 0x812e34; (2) exec-breakpoint 0x81ac68, "
+						+ "log ebx/[ebx+0x44]/ecx/stack args; (3) @0x8188d3/0x8188e3 dump 0x48 B "
+						+ "source rows for all i<[ebp-9]; (4) at sub_81aa3c exit dump 0x50 B Q "
+						+ "records; (5) TERMINATE iff every row+0x05..+0x44 byte equals the "
+						+ "corresponding Q+0x10..+0x4f byte AND the four index words equal "
+						+ "base-{4,2,1,3}, with zero mismatches across >=3 cells including a "
+						+ "multi-tag cell"),
+					"until_then": "port keeps §6.4/§3 field transport only; no donor value cited",
+					"cite": "DEC_U_nb5.md §5 (zero-mismatch termination) / §0 verdict row 3",
+				},
+			},
+			"u11_u12_inputs": "U-11/U-12 UNVERIFIED — setter callers and record13 flag names; additive ingest keys are fail-closed",
+			"u13_parity": "U-13 OPEN — visual parity needs a donor GPU A/B frame; explicitly NOT claimed",
+			"parity_claim": false,
+		},
 		"visual_parity_claim": visual_parity_claim,
 		"fed_back_into_sim": false,
 		"ingest": {
@@ -1357,7 +2060,8 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 		"donor_references": {
 			"cell_size": "data.gd:23; donor dmscript.global:171 (gc_meters_to_tile=2)",
 			"height_scale": "world3d_terrain.gd:131,1311 (PORT contract 1.0)",
-			"mesh_topology": "world3d_terrain.gd:1288-1289,1408-1428",
+			"mesh_topology": ("PORT1TO1 §8.1 donor corner vertices, 4 vertices per distinct "
+				+ "tag layer (was world3d_terrain.gd:1288-1289,1408-1428 cell-centre)"),
 			"normals": "world3d_terrain.gd:901-917,1387; shaders.lib:16-19",
 			"uv2": "world3d_terrain.gd:1315-1318,1407",
 			"atlas": "terrain.presets:6-129; spec/06:19; V7-85 manifest:23-26",
@@ -1380,7 +2084,8 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 
 
 # ---------------------------------------------------------------------------
-# Build: ONE indexed ArrayMesh, ONE surface, ONE draw call.
+# Build: ONE indexed ArrayMesh with two Godot surfaces (a rendering-state
+# translation of ONE donor display list per cell, NOT two donor draw passes).
 # ---------------------------------------------------------------------------
 func build() -> bool:
 	invalidate()
@@ -1409,70 +2114,261 @@ func build() -> bool:
 		_array_atlas["unmapped_cells"] = _unmapped_cells
 	var tile_map_ok: bool = _tile_map_tex != null
 	var atlas_ok := _load_atlas()   # resolve samplers BEFORE the material is made
-	var nverts: int = _n
-	var ntris: int = (_w - 1) * (_h - 1) * 2
-	var verts := PackedVector3Array()
-	var norms := PackedVector3Array()
-	var uvs := PackedVector2Array()
-	var uvs2 := PackedVector2Array()
-	var inds := PackedInt32Array()
-	verts.resize(nverts)
-	norms.resize(nverts)
-	uvs.resize(nverts)
-	uvs2.resize(nverts)
-	inds.resize(ntris * 3)
+	# RENDER1TO1: build the authoritative 1024^2 block-per-id texture array.
+	# Failure is labelled and leaves the existing 2D atlas tier intact.
+	_build_donor_tile_array()
+	var mat_ready: bool = atlas_ok and tile_map_ok
 	var cx: float = float(_w) * 0.5
 	var cz: float = float(_h) * 0.5
 	_face_hist = {"0": 0, "1": 0, "2": 0}
 	_water_sentinel_cells = 0
 	_out_of_atlas_cells = 0
 	_relief_guard_cells = 0
-	for z in range(_h):
-		for x in range(_w):
-			var i: int = z * _w + x
-			# HEIGHT_SCALE is the labelled PORT contract 1.0 — no fudge multiplier.
-			verts[i] = Vector3((float(x) + 0.5 - cx) * TILE_M,
-				_height[i] * HEIGHT_SCALE,
-				(float(z) + 0.5 - cz) * TILE_M)
-			uvs[i] = Vector2((float(x) + 0.5) / float(_w),
-				(float(z) + 0.5) / float(_h))
-			norms[i] = _normal_at(_height, _w, _h, x, z)
-			var raw_tid: int = int(_tex[i])
-			if raw_tid == WATER_SENTINEL:
-				_water_sentinel_cells += 1
-			if raw_tid < 0 or raw_tid > MAX_TILE_ID:
-				_out_of_atlas_cells += 1
-				raw_tid = 0   # port water sentinel 255 is clamped; labelled PORT APPROX
-			# Z04-C guard: relief cells never promote a face; relief affects ONLY
-			# vertex Y and the height-field normal. No cliff/shore/desert rewrite.
-			var face: int = 0
-			if _relief_mask[i] != 0:
-				_relief_guard_cells += 1
-			else:
-				face = _face_mode_at(_height, _w, _h, x, z, _collision)
-			uvs2[i] = Vector2(float(raw_tid), float(face))
-			_face_hist[str(face)] = int(_face_hist.get(str(face), 0)) + 1
-	var k: int = 0
-	for z in range(_h - 1):
-		for x in range(_w - 1):
-			var i00: int = z * _w + x
-			var i10: int = i00 + 1
-			var i01: int = i00 + _w
-			var i11: int = i01 + 1
-			# +Y facing: cross(Z, X) = +Y, hence i00,i01,i10 order.
-			inds[k] = i00;      inds[k + 1] = i01;  inds[k + 2] = i10
-			inds[k + 3] = i10;  inds[k + 4] = i01;  inds[k + 5] = i11
-			k += 6
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = norms
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_TEX_UV2] = uvs2
-	arrays[Mesh.ARRAY_INDEX] = inds
+	var quad_total: int = 0
+	var quad_base: int = 0
+	var quad_overlay: int = 0
+	var distinct_hist: Dictionary = {}
+	var mask_hist: Dictionary = {}
+	var p_hist: Dictionary = {}
+	var inset_layers: int = 0
+	# Two surfaces: surface 0 = base (ALPHA=1), surface 1 = bmTransparency
+	# overlays. Both are generated in one mesh; draw order is surface order.
+	# U-9 [O]/[D]: the donor emits ONE display list per cell (glNewList at
+	# 0x81937c, glEndList;ret at 0x819b65/0x819b6a) with base then overlay quads
+	# in producer order INSIDE that one list. These two surfaces are a Godot
+	# state translation, NOT two donor passes and NOT duplicate draws. Residual
+	# [U] U-9b: the final heightfield glCallList count per cell is not proven.
 	mesh = ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, _make_material(atlas_ok and tile_map_ok))
+	var total_verts: int = 0
+	var total_tris: int = 0
+	for pass_index in range(2):
+		var want_base: bool = (pass_index == 0)
+		var verts := PackedVector3Array()
+		var norms := PackedVector3Array()
+		var uvs := PackedVector2Array()
+		var uvs2 := PackedVector2Array()
+		var cols := PackedColorArray()
+		var inds := PackedInt32Array()
+		for z in range(_h):
+			for x in range(_w):
+				var i: int = z * _w + x
+				if pass_index == 0:
+					var raw_tid: int = int(_tex[i])
+					if raw_tid == WATER_SENTINEL:
+						_water_sentinel_cells += 1
+					if raw_tid < 0 or raw_tid > MAX_TILE_ID:
+						_out_of_atlas_cells += 1
+					if _relief_mask[i] != 0:
+						_relief_guard_cells += 1
+				var tags: Array = _resolved_tags(x, z)
+				var distinct: Array = _distinct_sorted(tags)
+				var variant: int = int(_variant_bytes[i])
+				var layer_index: int = 0
+				for tagv in distinct:
+					var tag: int = int(tagv)
+					var raw_mask: int = _mask_for(tag, tags)
+					var mask: int = 0
+					var p: int = 0
+					var with_inset: bool = false
+					var rgb_uvs: Array
+					var alpha_uvs: Array
+					var rgb_rot: int = RGB_DOUBLE_ROT
+					var rgb_mirror: bool = RGB_DOUBLE_MIRROR
+					var rgb_flip: bool = RGB_DOUBLE_VFLIP
+					if tile_scheme_int() == 0:
+						# tsSingle RGB index path (not shipped); §3.5 + §4.3.
+						mask = 15 if (distinct.size() == 1 or layer_index == 0) else raw_mask
+						var ridx: int = _rgb_index(mask, variant, tile_type_int())
+						var srow: int = ridx / maxi(DONOR_RGB_COLS, 1)
+						var scol: int = ridx % maxi(DONOR_RGB_COLS, 1)
+						var su: float = float(scol) / float(maxi(DONOR_RGB_COLS, 1))
+						var sv: float = float(srow) / float(maxi(DONOR_RGB_ROWS, 1))
+						var du: float = 1.0 / float(maxi(DONOR_RGB_COLS, 1))
+						var dv: float = 1.0 / float(maxi(DONOR_RGB_ROWS, 1))
+						rgb_uvs = [Vector2(su, sv), Vector2(su + du, sv),
+							Vector2(su + du, sv + dv), Vector2(su, sv + dv)]
+						rgb_rot = RGB_SINGLE_ROT
+						rgb_mirror = RGB_SINGLE_MIRROR
+						rgb_flip = RGB_SINGLE_VFLIP
+					else:
+						# tsDouble shipped path: RGB uv from world-cell position;
+						# base mask forced to 0, full-cut 0xf -> 0 (§5.2).
+						mask = 0 if (layer_index == 0 or raw_mask == 15) else raw_mask
+						rgb_uvs = _rgb_uv_corners_tsdouble(x, z)
+						p = _alpha_index(mask, variant)
+						with_inset = (mask == 0)
+						alpha_uvs = _alpha_uv_corners(p, with_inset)
+					if pass_index == 0:
+						var dk: String = str(distinct.size())
+						distinct_hist[dk] = int(distinct_hist.get(dk, 0)) + 1
+						var mk: String = str(mask)
+						mask_hist[mk] = int(mask_hist.get(mk, 0)) + 1
+						var pk: String = str(p)
+						p_hist[pk] = int(p_hist.get(pk, 0)) + 1
+						quad_total += 1
+						if layer_index == 0:
+							quad_base += 1
+						else:
+							quad_overlay += 1
+						if with_inset:
+							inset_layers += 1
+					if (layer_index == 0) != want_base:
+						layer_index += 1
+						continue
+					var first: int = verts.size()
+					# U10 [O]/[D]: this quad is exactly ONE 0x50-byte consumer record
+					# (FUN_00818920). Local corners 0..3 are emitted A,B,C,D and read
+					# the record fields at DONOR_QUAD50_INDEX_OFF / RGB_UV_OFF /
+					# ALPHA_UV_OFF below; UV values are baked from the 0x48 producer
+					# payload (+0x05 RGB, +0x25 alpha) shifted by +0x0b. The arrays
+					# written here ARE the mesh attributes: ARRAY_VERTEX, ARRAY_TEX_UV,
+					# ARRAY_TEX_UV2, ARRAY_COLOR. No 0x48 stride is a vertex format.
+					for corner in range(4):
+						var off: Vector2 = _corner_offset(corner)
+						var ox: int = int(off.x)
+						var oz: int = int(off.y)
+						verts.append(Vector3((float(x + ox) - cx) * TILE_M,
+							_height_at_corner(x, z, ox, oz) * HEIGHT_SCALE,
+							(float(z + oz) - cz) * TILE_M))
+						norms.append(_normal_at_corner(x, z, ox, oz))
+						var rs: int = _uv_slot(corner, rgb_rot, rgb_mirror)
+						var ru: float = rgb_uvs[rs].x
+						var rv: float = rgb_uvs[rs].y
+						if rgb_flip:
+							rv = 1.0 - rv
+						# ARRAY_TEX_UV <- consumer +0x10..+0x2f RGB uv pair for this corner
+						# (A +0x18, B +0x10, C +0x20, D +0x28).
+						uvs.append(Vector2(ru, rv))
+						var au: float = 0.0
+						var av: float = 0.0
+						if tile_scheme_int() != 0:
+							var aslot: int = _uv_slot(corner, ALPHA_DOUBLE_ROT, ALPHA_DOUBLE_MIRROR)
+							au = alpha_uvs[aslot].x
+							av = alpha_uvs[aslot].y
+							if ALPHA_DOUBLE_VFLIP:
+								av = 1.0 - av
+						# ARRAY_TEX_UV2 <- consumer +0x30..+0x4f alpha uv pair for this
+						# corner (A +0x38, B +0x30, C +0x40, D +0x48).
+						uvs2.append(Vector2(au, av))
+						# COLOR.r id / .g layer / .b alpha patch p / .a mask.
+						# ARRAY_COLOR is a port selector transport, NOT a donor attribute.
+						cols.append(Color(float(tag), float(layer_index), float(p), float(mask)))
+					# +Y facing order (c0,c3,c1) and (c1,c3,c2); cull is disabled.
+					inds.append(first);      inds.append(first + 3); inds.append(first + 1)
+					inds.append(first + 1);  inds.append(first + 3); inds.append(first + 2)
+					layer_index += 1
+		if verts.size() > 0:
+			var arrays := []
+			arrays.resize(Mesh.ARRAY_MAX)
+			arrays[Mesh.ARRAY_VERTEX] = verts
+			arrays[Mesh.ARRAY_NORMAL] = norms
+			arrays[Mesh.ARRAY_TEX_UV] = uvs
+			arrays[Mesh.ARRAY_TEX_UV2] = uvs2
+			arrays[Mesh.ARRAY_COLOR] = cols
+			arrays[Mesh.ARRAY_INDEX] = inds
+			mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+			var surf: int = mesh.get_surface_count() - 1
+			total_verts += verts.size()
+			total_tris += inds.size() / 3
+			_base_material = _make_material(mat_ready, true)
+			_overlay_material = _make_material(mat_ready, false)
+			# PORT GUARD: force base-before-overlay ordering inside the mesh.
+			# Not a donor number; one donor display list/cell [O]/[D] U-9, not two passes.
+			# Godot: HIGHER render_priority sorts IN FRONT (renders first).
+			_base_material.render_priority = 1
+			_overlay_material.render_priority = 0
+			if surf == 0:
+				mesh.surface_set_material(surf, _base_material)
+			else:
+				mesh.surface_set_material(surf, _overlay_material)
+	_donor_layers = {
+		"quads_total": quad_total,
+		"base_quads": quad_base,
+		"overlay_quads": quad_overlay,
+		"vertices_per_quad": 4,
+		"triangles_per_quad": 2,
+		"distinct_tag_count_hist": distinct_hist,
+		"mask_hist": mask_hist,
+		"alpha_p_index_hist": p_hist,
+		"base_inset_layers": inset_layers,
+		"layer_count_rule": "1..4 distinct corner tags, ascending; one quad per tag",
+		"base_rule": "count==1 or layer_index==0 -> mask=0xf (§3.4); tsDouble rewrites base mask to 0 (§5.2)",
+		"draw_order": ("U-9 [O]/[D]: ONE donor display list per cell emits base quads first, "
+			+ "then overlay quads in ascending distinct-tag order, all in that one list "
+			+ "(glNewList 0x81937c, glEndList;ret 0x819b65/0x819b6a). Godot surface 0 = "
+			+ "base (ALPHA=1), surface 1 = overlays (blend_mix) is a STATE translation, "
+			+ "not two donor passes and not duplicate draws."),
+		"depth_state": ("PORT GUARD — render_priority base=1/overlay=0 enforces base-before-overlay (higher renders first); "
+			+ "Godot transparent depth write differs from donor fixed-function; "
+			+ "one display list/cell [O]/[D] U-9, residual [U] U-9b call count, "
+			+ "GL_ALPHA_TEST enabled in case 1 [O]/[D] U-6, no parity claim"),
+	}
+	_donor_alpha = {
+		"alpha_index": "DAT_008f5d00 pair[(mask&0xff)*2][variant&1]; baked into COLOR.b",
+		"axes": "col=p/AlphaCols(4), row=p%AlphaCols(4); u=col/8, v=row/4",
+		"p_plus_16": "u+=0.5 (NOT v+=1.0) — earlier transposition withdrawn",
+		"insets_x_y": [DONOR_ALPHA_INSET_X, DONOR_ALPHA_INSET_Y],
+		"inset_layers": inset_layers,
+		"base_patch": "p=0/16 constant 255 (F06-E10)",
+		"alphanull_ids": [86, 110, 123],
+		# DEC_U_shore_alpha.md §4/§5 label-only telemetry (no behaviour, no parity).
+		"alpha_index_set": {"entries": 32, "low_entries": 16, "variant_bit": 1,
+			"table": "DAT_008f5d00 pair[(mask&0xff)*2][variant&1]; lo 0..15, +16 on variant&1"},
+		"shore_tile_ids": {"sandsea1": 93, "sandsea5": 97, "sandsea6": 98,
+			"cite": "X28 §3.3 / F05 §3 (near water only; no single shore patch index, per-cell p [U-SA4])"},
+		"shore_alpha_labels": ("DEC_U_shore_alpha.md §4/§5 — LABELS ONLY, no behaviour: "
+			+ "port-only keys alpha_confine=true / shore_prox=false are config/config.gd getters "
+			+ "+ water3d telemetry; NO donor constant backs either, shore_prox is REMOVED port art "
+			+ "(absent from donor water.dev.frag:227) and this mesh consumes neither. "
+			+ "Near-water p=_alpha_index(mask,variant) over the 32-entry DAT_008f5d00 set, base p in "
+			+ "{0,16} (both 255); shore ids sandsea1/5/6=93/97/98; no single shore p and no "
+			+ "threshold invented. Case 1 bmTransparency issues NO glAlphaFunc (comparator/ref [U "
+			+ "U-SA5], discard OFF); cases 3/4 glAlphaFunc(GL_GEQUAL,0.5f/1.0f). "
+			+ "tiaAlphaFromIntensity=1 [O] enum, arithmetic [U U-SA3] pending fixed-camera GL_ALPHA "
+			+ "byte-dump probe; ALPHA is the mask texel directly, no intensity/luma math."),
+		"intensity_to_alpha": ("[U] U-4 (DEC_U_alpha_pass_quad §3): enum TOSWTextureImageAlpha "
+			+ "value 1 = tiaAlphaFromIntensity is recovered [O], but the intensity->alpha "
+			+ "ARITHMETIC is NOT statically isolated. No identity A=intensity assumption is "
+			+ "baked in; converted mask textures are used as-is. Closure probe (§3.3): after "
+			+ "reftilealpha.mat parse assert ImageAlpha==1, breakpoint glTexImage2D for "
+			+ "GL_ALPHA(0x1906) with 512x256 / 1024x512, dump pixels before consumption, "
+			+ "compare to V(idx)=max(0,idx-3) (identity / 255-V / round(255*sqrt(V/255)) / "
+			+ "emit 256-entry LUT), terminate on zero mismatches with p=0,16->255 and "
+			+ "p=15,31->0. No substitute value until that probe completes."),
+	}
+	_donor_lighting = {
+		"equation": "rgb = tex0 * (sceneColor + 0.15686*La + max(dot(l,n),0)*0.78125*Ld) + specular",
+		"specular_effective": "vec3(0) — material specular (0,0,0,1) x light colour (reftile.mat:70-76,98-104)",
+		"material_ambient": DONOR_MATERIAL_AMBIENT,
+		"material_diffuse": DONOR_MATERIAL_DIFFUSE,
+		"light_rgb": {"ambient": [DONOR_AMBIENT.r, DONOR_AMBIENT.g, DONOR_AMBIENT.b],
+			"diffuse": [DONOR_DIFFUSE.r, DONOR_DIFFUSE.g, DONOR_DIFFUSE.b],
+			"specular_colour_unused_bare": [DONOR_SPECULAR.r, DONOR_SPECULAR.g, DONOR_SPECULAR.b],
+			"cite": "light.cfg:3-13,20-29 (ev_ed96da32); lsParallel :17"},
+		"scene_color": ("[O] U-1 CLOSED — 16-B static copy at 0x8f58dc = "
+			+ "vec4(0.2,0.2,0.2,1.0), submitted by glLightModelfv(GL_LIGHT_MODEL_AMBIENT, "
+			+ "*(renderer+0x11c)+0x18) at 0x4d13f1. Bound as vec3(0.2,0.2,0.2) (.rgb used; "
+			+ "alpha 1.0 unused), NOT folded into ambient, no 0.0 placeholder, no exposure lift. "
+			+ "Residual [U] U-R1: runtime/computed-pointer mutation not statically excluded."),
+		"light_model_two_side": ("[O] U-2 CLOSED — glLightModeli pname 0x0B52 = "
+			+ "GL_LIGHT_MODEL_TWO_SIDE at both 0x4d1404 and 0x4d1412 (NOT 0x0B51 "
+			+ "LOCAL_VIEWER); boolean byte[renderer+0x123]&8, constructor stores 5 => "
+			+ "5&8==0 => GL_FALSE at startup. No Godot uniform required. Residual [U] U-R2: "
+			+ "a runtime bit-3 toggle cannot be excluded; no parity claim."),
+		"debug_defaults": "no shadow sampler, no fog, no AO, no gamma/exposure constant",
+		"probe_register": {
+			"P-MAT": "[U-MAT] glMaterialfv/i vectors at 0x88f446/474/4a2/4d0 + 0x88f418; text floats [O] reftile.mat:52-104; terminate on zero float mismatches",
+			"P-LIGHT": "[U-LIGHT] glLightfv(GL_POSITION) at 0x4d0963 w + 16-float modelview; light.cfg:26-31 [O] text; terminate on zero mismatches",
+			"P-GAMMA": "[U-GAMMA] post ToneGamma/ToneContGamma program + colorCurveSampler bytes + fade; terrain frag linear (hf.pvl.smx3.frag:13-17,50), no pow/LUT; superseded by the five split probes below (DEC-U-GAMMA-LUT §7)",
+		},
+		"gamma_lut_u_register": {
+			"U-G1": "[U] colorCurveSampler texel bytes (+dims/format): LUT shape [O] tonegamma.frag:32-34; bytes absent from disk/binary [O-negative/D]; P-GAMMA-LUT §7.2: dump target/size/format + glGetTexImage + ramp re-sample, zero mismatches across two captures",
+			"U-G2": "[U] fade float: mix(c0,LUT(c0),fade) shape [O] tonegamma.frag:36, declaration-only (zero assignments tree-wide); P-GAMMA-FADE §7.3: glGetUniformfv dump + ROI post==mix(c0,LUT(c0),fade), zero mismatches",
+			"U-G3": "[U] tone floats blurOpacity/hdrIntencity/mulColor(4)/brightMax: yd law [O] tonegamma.frag:25-28, zero assignments; P-GAMMA-TONE §7.4: uniform dump + yd ROI verify, zero mismatches",
+			"U-G4": "[U] Cont floats bright/saturate/contrast/avgLumR/G/B/afterBlur/vignetteInner/Outer/Adjust: tonecontgamma.frag:48-93; 0.7/1.75/1.25 are comments NOT uploads; P-GAMMA-CONT §7.5 (N/A if non-Cont program): dump + chain verify, zero mismatches",
+			"U-G5": "[U] bound post program during a terrain frame: 22-pair table posteffects.shaders:8-52, runtime selection; P-GAMMA-SEL §7.1: name bound row + source hashes, zero ambiguity; non-gamma Tone* twin terminates gamma N/A for U-G1/U-G2",
+		},
+	}
 	mesh_instance = MeshInstance3D.new()
 	mesh_instance.name = "DonorTerrainMesh"
 	mesh_instance.mesh = mesh
@@ -1480,7 +2376,7 @@ func build() -> bool:
 	add_child(mesh_instance)
 	_make_water(_w, _h)
 	_built = true
-	stats = _make_stats(nverts, ntris, mesh.get_surface_count())
+	stats = _make_stats(total_verts, total_tris, mesh.get_surface_count())
 	stats["atlas"]["loaded"] = atlas_ok
 	return true
 
@@ -1516,6 +2412,25 @@ func invalidate() -> void:
 	array_atlas = false
 	_alpha_contract = {}
 	_mip_source = ""
+	_tags4 = PackedByteArray()
+	_variant_bytes = PackedByteArray()
+	_tags_source = ""
+	_variant_source = ""
+	_override_source = ""
+	_override_gate = false
+	_rec13_override_tile = PackedByteArray()
+	_rec13_override_variant = PackedByteArray()
+	_tag_fallback_from_tex = true
+	_tile_array_texture = null
+	_id_to_layer = {}
+	_tile_array_info = {}
+	_donor_cell = {}
+	_donor_lut = {}
+	_donor_layers = {}
+	_donor_alpha = {}
+	_donor_lighting = {}
+	_base_material = null
+	_overlay_material = null
 	_built = false
 	stats = {}
 

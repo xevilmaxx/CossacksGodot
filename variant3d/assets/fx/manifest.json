@@ -1,0 +1,334 @@
+{
+  "schema": "impl-fx-art/fx-assets/v1",
+  "worker": "IMPL-FX-ART",
+  "date": "2026-11-26",
+  "donor_root_policy": "C:/Games/Cossacks 3 (read-only private install); no donor binary executed or copied",
+  "generator": "offline Python driver calling the approved variant3d/tools/convert_models.py functions (read_osm/write_obj_exact/write_mtl/convert_texture)",
+  "converters_modified": [],
+  "counts": {
+    "derived_obj": 2,
+    "derived_mtl": 2,
+    "derived_png": 11,
+    "donor_binaries_copied": 0,
+    "synthetic_art": 0,
+    "color_retouch": 0
+  },
+  "donor_citations": {
+    "ghost": "objects/misc/constructiondummy.prop:5-6,13-14; actors/misc/box.actor:3; actors/misc/box.osm; materials/misc/box.dds; objects/ref/refmisc.prop:210-214 (inherited DefaultScale 0.5^3)",
+    "rally": "objects/misc/rallypoint.prop:16-17,22-23,26,31; actors/misc/rallypoint.actor:3; actors/misc/rallypoint.osm; materials/misc/rallypoint.dds",
+    "fx": "pfx/source.pfx + pfx/material.mat + pfx/fx.tree (literal sheet geometry recorded below)",
+    "rng_rule": "scripts/lib/pfx.script:39-86 (8-float ClampInt/Round/Lerp), :196-255 (FillRand/parentrandom)"
+  },
+  "sprite_sheet_geometry_literal": {
+    "musketsmoke": {
+      "source": "source.pfx:41-49",
+      "end_frame": 127,
+      "frame_w": 256,
+      "frame_h": 128,
+      "image_w": 2048,
+      "image_h": 2048
+    },
+    "musketflash": {
+      "source": "source.pfx:114-161",
+      "end_frame": 3,
+      "frame_w": 256,
+      "frame_h": 128,
+      "image_w": 512,
+      "image_h": 256
+    },
+    "musketsparks": {
+      "source": "source.pfx:192-247",
+      "end_frame": 47,
+      "frame_w": 170,
+      "frame_h": 128,
+      "image_w": 2048,
+      "image_h": 512
+    },
+    "musketsmokeup": {
+      "source": "source.pfx:269-277",
+      "end_frame": 63,
+      "frame_w": 256,
+      "frame_h": 256,
+      "image_w": 2048,
+      "image_h": 2048
+    },
+    "musketflashup": {
+      "source": "source.pfx:308-361",
+      "end_frame": 3,
+      "frame_w": 128,
+      "frame_h": 128,
+      "image_w": 256,
+      "image_h": 256
+    },
+    "firesmoke": {
+      "source": "source.pfx:1817-1825/2011-2019/2108-2116/2205-2213 (LibMaterialName buildingfire/buildingsmoke -> material.mat:450-458,480-481)",
+      "end_frame": 127,
+      "frame_w": 128,
+      "frame_h": 256,
+      "image_w": 2048,
+      "image_h": 2048
+    },
+    "cannonflash": {
+      "source": "source.pfx:2385-2401 (towerflash, LibMaterialName cannonflash)",
+      "end_frame": 15,
+      "frame_w": 256,
+      "frame_h": 128,
+      "image_w": 1024,
+      "image_h": 512
+    }
+  },
+  "ribbon_textures_literal": {
+    "bullettrail": "source.pfx:1734/1768/2307 LibSourceName bullettrail -> material.mat:443-444"
+  },
+  "textures": [
+    {
+      "stem": "box",
+      "donor": "data/materials/misc/box.dds",
+      "output": "variant3d/assets/fx/tex/box.png",
+      "donor_bytes": 174904,
+      "donor_sha256": "091363b71315186144e2883c22e1530e38c1a1f88c0c41868db258f7b6b5eeef",
+      "output_bytes": 2199,
+      "output_sha256": "6cf01b382f73772b95de589b14c674e0b254a6528bab443ae8484e174b1aadaf",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        512
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "rallypoint",
+      "donor": "data/materials/misc/rallypoint.dds",
+      "output": "variant3d/assets/fx/tex/rallypoint.png",
+      "donor_bytes": 43832,
+      "donor_sha256": "e3a6f322b8b06382d1353e2e50de28dbb182b2fc7391409e9e5b5b9faea3ac11",
+      "output_bytes": 858,
+      "output_sha256": "4c627031ca24a38d2094a3cdd824ffb607989f09939d2eb15691bb58b334ae9b",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        256,
+        256
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "musketsmoke",
+      "donor": "data/pfx/textures/musketsmoke.dds",
+      "output": "variant3d/assets/fx/tex/musketsmoke.png",
+      "donor_bytes": 5592560,
+      "donor_sha256": "956cf380788b67f0052bdbc9bfbc92f600388a3c650e156b93cc68065622fdd6",
+      "output_bytes": 3329334,
+      "output_sha256": "8080bdc3df4b7ef1cdcbdbfc4ad3869fae2015df7586ff39955c5638034609df",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        2048,
+        2048
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "musketflash",
+      "donor": "data/pfx/textures/musketflash.dds",
+      "output": "variant3d/assets/fx/tex/musketflash.png",
+      "donor_bytes": 87528,
+      "donor_sha256": "8438f9db584f1b683f9eed9b2a2d810dc1014a28fcc187db099ff09c375aa256",
+      "output_bytes": 63620,
+      "output_sha256": "ad830b6cb2c97254af3054773c78a35b957e47db99d4d59d01209c49585ed045",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "musketsparks",
+      "donor": "data/pfx/textures/musketsparks.dds",
+      "output": "variant3d/assets/fx/tex/musketsparks.png",
+      "donor_bytes": 699208,
+      "donor_sha256": "bbdca4ccbc08c6cba472f2a59f7fc98807568c8b8814eff728d9394c715ae50b",
+      "output_bytes": 168476,
+      "output_sha256": "91daf77a9f957782e70c8e07ef3367aa349e2aa879918989303a6083a16b87f3",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        2048,
+        512
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "musketsmokeup",
+      "donor": "data/pfx/textures/musketsmokeup.dds",
+      "output": "variant3d/assets/fx/tex/musketsmokeup.png",
+      "donor_bytes": 5592560,
+      "donor_sha256": "aaea654bebc5eda89e187d18caa0d92ca3764b0ab04122c54135f13d87b8dcc1",
+      "output_bytes": 2326046,
+      "output_sha256": "8bbd7aafd8e7ad39ce145f1155690eb12e2b3fce0f18905994c43760844905db",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        2048,
+        2048
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "musketflashup",
+      "donor": "data/pfx/textures/musketflashup.dds",
+      "output": "variant3d/assets/fx/tex/musketflashup.png",
+      "donor_bytes": 43832,
+      "donor_sha256": "c3c49c1ba48335107e8fa428d662288a02759699d683a211346ba4bbe577adfd",
+      "output_bytes": 33808,
+      "output_sha256": "bbca291a1febd6fabdb7686be0c6c7bb88cf622fd044ec34a350b97dc607d484",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        256,
+        256
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "bullettrail",
+      "donor": "data/pfx/textures/bullettrail.bmp",
+      "output": "variant3d/assets/fx/tex/bullettrail.png",
+      "donor_bytes": 393270,
+      "donor_sha256": "dfb709db1214fe405121a8c399794f2c4dc7730a2b5999141ae500e9c916463a",
+      "output_bytes": 26013,
+      "output_sha256": "e5652d6ccb394304857ea4768c3a44a3ea5a847673d054ee695fa0b1397a93b0",
+      "donor_decoded_mode": "RGB",
+      "donor_decoded_size": [
+        512,
+        256
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "firesmoke",
+      "donor": "data/pfx/textures/firesmoke.dds",
+      "output": "variant3d/assets/fx/tex/firesmoke.png",
+      "donor_bytes": 5592560,
+      "donor_sha256": "f4e8b9860801c97ca4c7912f7e780d3f2f52e432536dffd78001c7c3abb1ba71",
+      "output_bytes": 2574797,
+      "output_sha256": "7b4901d3dfb123069c93f0f28be90eb7b7fd66b1a2180167631116fea85a47e1",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        2048,
+        2048
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "firepalette",
+      "donor": "data/pfx/textures/firepalette.dds",
+      "output": "variant3d/assets/fx/tex/firepalette.png",
+      "donor_bytes": 1160,
+      "donor_sha256": "51190bdb50d0792093f33bc6b2d803192c73ec3bec0ddca40d8dd2d15501aa80",
+      "output_bytes": 323,
+      "output_sha256": "a51f63d1a863a1f4693599c4477ccc23482c05639f06bb3b50654297d3a79afb",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        256,
+        4
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    },
+    {
+      "stem": "cannonflash",
+      "donor": "data/pfx/textures/cannonflash.dds",
+      "output": "variant3d/assets/fx/tex/cannonflash.png",
+      "donor_bytes": 699216,
+      "donor_sha256": "72a8bf37de125933fbc7fe86cbf047abac5be435ecd2ceb3f8abfddbe997f009",
+      "output_bytes": 417665,
+      "output_sha256": "04d96e1ead7d3d5af7530a6f12396e53e5fa505e42f788d17cfa892420e936d1",
+      "donor_decoded_mode": "RGBA",
+      "donor_decoded_size": [
+        1024,
+        512
+      ],
+      "converter": "variant3d/tools/convert_models.py:convert_texture (Image.open/load/Pillow PNG save)",
+      "retouch": "none; donor decoded RGBA re-encoded as PNG base level"
+    }
+  ],
+  "meshes": [
+    {
+      "stem": "box",
+      "donor": "data/actors/misc/box.osm",
+      "obj": "variant3d/assets/fx/models/box.obj",
+      "mtl": "variant3d/assets/fx/models/box.mtl",
+      "donor_bytes": 660,
+      "donor_sha256": "a2d949091f920473e81d31d6c4bb0373c0a9a5bec22108f3da2c2055a05fc875",
+      "obj_sha256": "0bbb3996ac9bb52b1d6aab3ecbf878a9106586eb18ef30e5b9d39714f030fb8f",
+      "mtl_sha256": "21c5b463b251acac2b3d25282da8633a20264a8574affa461dd2ea109bbf14b7",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 8,
+      "uvs": 12,
+      "faces": 12,
+      "bbox_donor_xyz": [
+        -0.5,
+        0.5,
+        -0.5,
+        0.5,
+        0.0,
+        1.0
+      ],
+      "mtl_texture_reference": "../tex/box.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl",
+      "float_serialization": "shortest round-trip repr; bit-identical to read_osm output"
+    },
+    {
+      "stem": "rallypoint",
+      "donor": "data/actors/misc/rallypoint.osm",
+      "obj": "variant3d/assets/fx/models/rallypoint.obj",
+      "mtl": "variant3d/assets/fx/models/rallypoint.mtl",
+      "donor_bytes": 1956,
+      "donor_sha256": "3f5e1022f7311807e25bdd6fb8d6b43380907d417db17e1779d9994f1c5252cc",
+      "obj_sha256": "4ee93f5bedcec963620591c044fe779bce156a868ace0e6428594bf9af327883",
+      "mtl_sha256": "5058189b6803d8498fde6b73372577ae817b136e3adc1a74668c44c8f950b712",
+      "format": "osm",
+      "version": 8,
+      "frame_name": "FRAME 000......",
+      "verts": 40,
+      "uvs": 56,
+      "faces": 30,
+      "bbox_donor_xyz": [
+        -11.077815055847168,
+        11.077814102172852,
+        -11.003950119018555,
+        11.003949165344238,
+        0.0,
+        0.9442772269248962
+      ],
+      "mtl_texture_reference": "../tex/rallypoint.png",
+      "converter": "variant3d/tools/convert_models.py:read_osm/write_obj_exact/write_mtl",
+      "float_serialization": "shortest round-trip repr; bit-identical to read_osm output"
+    }
+  ],
+  "unresolved": [
+    "[U]-G ghost colour source + blink function/period: NOT converted, port GHOST_OK/GHOST_BAD + sin pulse stay labelled stand-ins (DEC_U_entities_art_collision.md \u00a74.2 E-U14)",
+    "[U]-R rally TTL/pennant behaviour: NOT converted; RALLY_TTL=2.0 s stays a labelled port placeholder (E-U14)",
+    "[U]-F PixelRatio/Interval/FrameRate -> world size / seconds: NOT converted; port quads/life/cap stay labelled stand-ins (E-U3)",
+    "[U]-S PFX Random seed/stream: NOT recovered; 8-float rule only, no injected stream = no fabricated random value (E-U7)"
+  ],
+  "limitations": [
+    "Static/offline conversion only: no Godot editor, importer, runner, render, capture or git command was run.",
+    "Donor DDS mip levels are dropped; each derived PNG holds only the decoded base level.",
+    "No .import sidecars are generated; the runtime loader must fall back to Image.load_from_file when ResourceLoader has no imported texture.",
+    "OBJ/MTL are raw donor coordinates (Z-up, metres); the runtime applies the established donor Z-up -> Godot Y-up mapping from world3d_entities.gd:1689-1691 plus the exact prop scale.",
+    "Frame geometry above is literal donor data; no seconds-per-frame or metres-per-pixel conversion is claimed.",
+    "firepalette.png is derived from material.mat:199-350 (ShaderTexEx LibName firepalette) but is NOT bound at runtime: the donor shader palette lookup has no approved Godot equivalent ([U]-F). No substitute palette was invented.",
+    "bullettrail.bmp decodes to RGB (no alpha); its derived PNG is kept RGB and the donor Alpha 0.2 literal (source.pfx:1742) is applied by the runtime material, not baked into the pixels.",
+    "NO donor/port A/B frame was produced or examined: visual parity is UNVERIFIED and NOT CLAIMED."
+  ],
+  "visual_parity_claim": false
+}

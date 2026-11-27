@@ -1,0 +1,2 @@
+[runner] ticket 123 'acapt-finalcheck-donor' START (waited 0.00s)
+[runner] ticket 123 'acapt-finalcheck-donor' END ok (run 43.92s)

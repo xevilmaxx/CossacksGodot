@@ -1005,6 +1005,9 @@ func _setup_water_overlay() -> void:
 	# T6-W04: donor water-plane Y feeds waveheight = clamp(WL*3-1.5,0,1)
 	# (water.dev.frag:174). 1.0 is a mid-range port choice inside the donor's
 	# 0..2 range; the port's -0.25 terrain-classification threshold is NOT it.
+	# [U] U18 / full audit W-2: donor plane Y, hmapTex bind, FBO and foam width
+	# are unresolved. Decomp plan: second instrument (Ghidra + GL trace), never
+	# retune 1.0 to hide a seam; the -0.25 classify literal stays separate.
 	water_mat.set_shader_parameter("water_level", 1.0)
 	# T6-W04: ONE wave sampler (donor waveMap = diffusewaves0). The wave1,
 	# wave2 and foam_tex uniforms were removed from water_overlay.gdshader;

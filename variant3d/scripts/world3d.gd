@@ -20,7 +20,10 @@ extends Node3D
 #   view_scale (data)       -> this file (Data.PIXELS_PER_METER, data.gd:113).
 #   view_rect (data)        -> this file (Camera3D ground frustum -> canvas px;
 #                              axis-aligned under yaw is a PORT APPROXIMATION,
-#                              V71 §6 Q5 / study open Q9).
+#                              V71 §6 Q5 / study open Q9). [U] U16/U17:
+#                              decomp plan = engine projection + camera.cfg
+#                              runtime pair (skirmish_logic §9); never video-
+#                              derived; framing-only, gameplay-neutral.
 #   fx_layer (node)         -> this file: aliases the composed world3d_fx node.
 #   world_to_px(p) (data)   -> this file: p * view_scale, canvas px (world.gd:350).
 #   fog_explored/fog_vis    -> world3d_fog arrays, ALIASED after fog.bind()

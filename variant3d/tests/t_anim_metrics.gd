@@ -20,7 +20,7 @@ const NAVAL_PATH := "res://assets/models/anim/naval_units/index.json"
 # ADJ-P45 / P-45: the single `duration = frames*0.09` rule came from GUIDE4
 # DO-L7.06, but DO-L7.08 assigns DIFFERENT cadences to cavalry and artillery,
 # and the baker writes donor AAF range / 30 fps (bake_sprites.py:246).
-# Observed: 45/54 walks are donor-exact; the other 9 are the explicit DO-L7.06
+# Observed in donor text: 45/54 walks use the cited donor cadence (NOT donor-frame parity); the other 9 are the explicit DO-L7.06
 # n*0.09 peasant correction. Bands are SECONDS FOR A 12-FRAME walk, one per
 # donor-measured class (citations in docs/audit/ANIM_ADJUDICATION.md); they scale
 # linearly for any other frame count. Each is tight enough to still catch the

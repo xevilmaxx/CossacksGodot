@@ -3,8 +3,46 @@
 extends Node
 class_name C3Input
 
+# ─── DEC-U-FOG-CAMERA-HUD §4 — IMPL-FOG-HUD selection-law layer ────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_camera_hud.md.
+# [O] control.script:156-274 (_control_GetUnitUnderCursor): early-out on
+#     GetGUIMinimapUnderMouse; Playable ∧ Visible ∧ CollisionDetection;
+#     RayCastAABB(cPos->mPos); priority table dmscript.global:227-233
+#     (my=1, wood=2, food=3, stone=4, goinside=5, build=6, enemy=7);
+#     winner = min((1+dist)/prio) with XZ distance (misc.script:663-669);
+#     FOW veto (not GetFOWEnable) or GetFOWLOSData(x,z)>0 (:270-273).
+# [O] control.script:30-31 / misc.script:6418-6470 write protocol:
+#     Begin -> Start('spmRunTime') -> SetGameObjectPicked* -> Cancel-once,
+#     with TSquad.fSelected vs gSelectedObjects split.
+# [O] brushes/selection.cfg:1 — yellow RGBA(1,1,0,1), 1 px, solid, LineStep=1.
+# UNRESOLVED [U] — NOT substituted: V2-BOX marquee inside predicate, V2-PROJ
+#     screen->world rect, engine ray/LOS; picking3d.gd remains the 3D candidate
+#     source and needs the exact patch in IMPL-FOG-HUD's report. NO PARITY CLAIM.
 const Data = preload("res://scripts/data.gd")
 const ConfigScript = preload("res://scripts/config.gd")
+
+# Donor selection priority table — dmscript.global:227-233 [O].
+const DONOR_PICK_MY: int = 1
+const DONOR_PICK_WOOD: int = 2
+const DONOR_PICK_FOOD: int = 3
+const DONOR_PICK_STONE: int = 4
+const DONOR_PICK_GOINSIDE: int = 5
+const DONOR_PICK_BUILD: int = 6
+const DONOR_PICK_ENEMY: int = 7
+# Donor selection write protocol mode — control.script:30-31 [O].
+const DONOR_SELECTION_MODE: String = "spmRunTime"
+# DEC-U-SELECTION IMPL-SELECTION: drag/Shift union mode — onmousemove.inc:156-157
+# [O] `GameManagerStartSelection('spmAdd')` when GetGUIShiftStateShift, else
+# 'spmRunTime' (:162). The port keeps its existing Shift-union set logic; only
+# the protocol mode string is threaded through, null-safe as before.
+const DONOR_SELECTION_MODE_ADD: String = "spmAdd"
+# control.script:180 [O] — `var prio : Float = 0.5`, the live per-candidate
+# seed overwritten per arm (§1.1(4)/§1.2). RECONCILIATION: IMPL-FOG-PATCHES
+# removed `DEC_U_PICK_PRIO_SEED=0.5` as an UN-CITED blanket per-baseid estimate.
+# This constant is the re-read donor line, routed ONLY through the donor's
+# nil/unknown overwrite arms below; it is labelled donor data, not the old
+# approximation. Reachability of those arms stays [U] E-U13-pick (§2.1(b)).
+const DONOR_PICK_SEED: float = 0.5
 
 var game: C3Game
 # V7-52: world/camera are untyped so 3D mode can receive the Node3D world and
@@ -39,6 +77,9 @@ var _drag_current := Vector2.INF
 # (onmousemove.inc:145-146); the separate first-move _sel_ground_start keeps the
 # two-phase epsilon reference. PORT APPROXIMATION: donor's geometric anchor is
 # the first-move ground point, not the press point (DSEL-01 claim 3).
+# [U] U16 / skirmish_logic §9: engine-side inside-box predicate and world→px
+# projection are UNVERIFIED. Decomp plan: Ghidra + GL trace (audit Q-4) to
+# recover the predicate and projection; keep the painter labelled until then.
 var _rect_ground_anchor := Vector2.INF
 # SEL-01: viewport-pixel marquee overlay, created by bind_3d() only.
 var sel_rect_overlay = null
@@ -337,7 +378,14 @@ func get_selected() -> Array:
 			out.append(e)
 	return out
 
-func _set_selection(arr: Array) -> void:
+func _set_selection(arr: Array, mode: String = DONOR_SELECTION_MODE) -> void:
+	# DEC-U §1.4 [O] write protocol, in donor order:
+	# ClearGameManagerPickedObjects -> SetSquadsSelection(false) ->
+	# Begin -> Start(mode: 'spmRunTime' single / 'spmAdd' Shift-drag) ->
+	# per-handle Picked + squad fSelected split -> Cancel ONCE on last Picked ->
+	# UpdateSelection. Calls are null-safe no-ops when the port game has no
+	# donor GM bridge, so shipped behaviour is unchanged (R-SEL-PROTO).
+	_donor_selection_begin(mode)
 	for id in selected_ids:
 		var e: Dictionary = game.by_id.get(id, {})
 		if not e.is_empty():
@@ -347,6 +395,8 @@ func _set_selection(arr: Array) -> void:
 		selected_ids.append(e.id)
 		e["selected"] = true
 	game.bld_dirty += 1
+	_donor_squad_selected_split(arr)
+	_donor_selection_cancel()  # exactly once per apply, after the last Picked
 	hud.refresh_selection(get_selected())
 	# AUDIO-SEL-02: donor fires the selection acknowledgement on unit-control
 	# rebuild (gui\menu.inc\showunitcontrol.inc:1024-1027), i.e. ONCE per
@@ -646,6 +696,11 @@ func _screen_to_world(p: Vector2) -> Vector2:
 	var xform := get_viewport().get_canvas_transform().affine_inverse()
 	return (xform * p) / world.view_scale
 
+# [U] V2-BOX / V2-PROJ — the donor marquee inside predicate and screen->world
+# rect mapping are engine-side (DEC-U §4.2, P5 negative expected). Everything
+# below stays PORT APPROXIMATION with experiment V2-BOX (grid of idle peasants,
+# scripted inset/outset drags, log GetCountGameManagerPickedObjects membership);
+# no inside rule is promoted to donor fact.
 # B-SELRECT-FIX (PORT APPROXIMATION): ground AABB of all FOUR marquee corners.
 # Same ray+march path as _screen_to_world (picking3d.ground_point world ground
 # coords + world epsilon, DSEL_02-carried); no new projection method. Fixes the
@@ -699,7 +754,180 @@ func _apply_rect_selection(rect: Rect2) -> void:
 	c_ids.sort()
 	if a_ids == c_ids:
 		return
-	_set_selection(arr)
+	# onmousemove.inc:154-162 [O] — Shift => Begin -> Start('spmAdd'), else
+	# 'spmRunTime'. The port's Shift union above stays as the marked [U] V2-BOX
+	# additive approximation; only the protocol mode is donor-faithful.
+	var proto_mode: String = DONOR_SELECTION_MODE_ADD if Input.is_key_pressed(KEY_SHIFT) else DONOR_SELECTION_MODE
+	_set_selection(arr, proto_mode)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEC-U §4.1 — resolved donor single-click predicate. Candidate AABB/ray is
+# owned by picking3d.gd in 3D (see report for the exact patch); these helpers
+# are the canonical priority/score/veto source for the 2D path and for callers.
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _minimap_under_mouse() -> bool:
+	# control.script:161/282 — GetGUIMinimapUnderMouse early-out.
+	var r := _minimap_screen_rect()
+	if r == Rect2() or get_viewport() == null:
+		return false
+	return r.has_point(get_viewport().get_mouse_position())
+
+
+func _selected_units_can_attack() -> bool:
+	# Donor `enemyMask ∧ SelectedUnitsCanAttack` (control.script:225-231).
+	# Port has `def.weapons`; an empty list means the selection cannot attack.
+	for e in get_selected():
+		if int(e.get("player", -1)) != 0 or str(e.get("kind", "")) != "unit":
+			continue
+		var def: Dictionary = e.get("def", {})
+		var w: Variant = def.get("weapons", [])
+		if w is Array and not (w as Array).is_empty():
+			return true
+	return false
+
+
+# ── DEC-U-SELECTION §1.2 per-arm gates (IMPL-SELECTION) ───────────────────────
+# Each helper is a donor gate [O] with a labelled read-only port predicate.
+# Where the port has no equivalent, the mapping stays [U] E-U13-pick; none of
+# these is promoted to a donor formula.
+
+# control.script:208-211 [O] reads `TRes(pres).brised`. [U] E-U13-pick: the port
+# res node has no TRes pointer, so a harvestable food node (hits > 0, as before)
+# is the closest read-only stand-in.
+func _donor_food_brised(e: Dictionary) -> bool:
+	return int(e.get("hits", 0)) > 0
+
+# control.script:247-250 [O] gate `gbool_gui_peasantselected`. [U] E-U13-pick:
+# the port has no global flag; derive it from the live selection (a selected
+# player-0 peasant), the closest read-only equivalent.
+func _donor_peasant_selected() -> bool:
+	for e in get_selected():
+		if int(e.get("player", -1)) == 0 and str(e.get("sid", "")) == "peasant":
+			return true
+	return false
+
+# control.script:236-238 [O] gate `_unit_UnitsCanBuild(goHnd, gSelectedObjects)`.
+# [U] E-U13-pick: no direct port predicate; a selected player-0 peasant is the
+# only build-capable selection in the shipped sim (never silently "always").
+func _donor_units_can_build(_e: Dictionary) -> bool:
+	return _donor_peasant_selected()
+
+# control.script:240-242 [O] gate `_unit_IsUnitCanAbsorbInside(goHnd)`. [U]
+# E-U13-pick: port has no such predicate; a finished building with worker
+# slots is the harvest/absorb carrier.
+func _donor_can_absorb_inside(e: Dictionary) -> bool:
+	var def: Dictionary = e.get("def", {})
+	return int(def.get("slots", 0)) > 0
+
+# control.script:245-250 [O] `usage = gc_obj_usage_mine`. [U] E-U13-pick: the
+# port has no `usage` field; the `mine_*` sid family is the read-only classifier.
+func _donor_is_mine(e: Dictionary) -> bool:
+	return str(e.get("sid", "")).to_lower().begins_with("mine_")
+
+
+func donor_pick_priority(e: Dictionary) -> float:
+	# dmscript.global:227-233 [O] table + control.script:180 [O] Float seed.
+	# Float return is required to carry the donor's 0.5 nil/unknown arms.
+	var prio: float = DONOR_PICK_SEED
+	if not (e is Dictionary) or bool(e.get("dead", false)) or bool(e.get("hidden", false)):
+		return 0.0
+	if not e.has("def"):  # gc_baseid_res arm, control.script:199-218
+		# [U] TRes nil-ness / itype mapping: food/wood/stone are the known port
+		# itypes. Other types take the donor nil/unknown arm and KEEP the cited
+		# 0.5 seed (reachability [U] E-U13-pick §2.1(b)). The donor collision-tag
+		# gate GetMapCollisionTag(X,Z,True)=0 (:204) is NOT substituted: the port
+		# dec_u_collision_tag_at() returns 87/101, never 0 ([U] U13-tag).
+		match str(e.get("type", "")):
+			"wood":
+				prio = float(DONOR_PICK_WOOD)                                    # :209
+			"food":
+				prio = float(DONOR_PICK_FOOD) if _donor_food_brised(e) else 0.0   # :206-217
+			"stone":
+				prio = float(DONOR_PICK_STONE)                                   # :210
+			_:
+				prio = DONOR_PICK_SEED                                           # pres=nil / unknown
+		return prio
+	# gc_baseid_obj arm, control.script:220-256.
+	# benemy := enemyMask ∧ myplmask<>0, bmy := not benemy (:223-229).
+	# [U] E-U13-pick: port has no masks; player > 0 is the read-only stand-in.
+	var pi := int(e.get("player", -1))
+	var benemy := pi > 0
+	if benemy:
+		if _selected_units_can_attack():                                        # :225-231
+			prio = float(DONOR_PICK_ENEMY)
+		# benemy ∧ !bcanbetarget ∧ !bmy -> seed stays 0.5 (donor :227-229).
+	else:
+		prio = float(DONOR_PICK_MY)                                              # :229
+	if str(e.get("sid", "")).to_lower() == "fogreveal":
+		# unit.script:11572 — fogreveal objects are excluded from vision/picks.
+		return 0.0
+	if str(e.get("kind", "")) == "building":
+		# Donor tests bbuilt / absorb only on the building branch (:233-254).
+		var finished := bool(e.get("finished", true))
+		if not finished:
+			# :234-238 — not bbuilt ∧ UnitsCanBuild -> 6, else KEEP PRIOR.
+			if _donor_units_can_build(e):
+				prio = float(DONOR_PICK_BUILD)
+		elif _donor_can_absorb_inside(e):
+			# :240-254 — bbuilt ∧ absorb; non-mine -> 5, mine -> peasant ? 5 : keep.
+			if not _donor_is_mine(e) or _donor_peasant_selected():
+				prio = float(DONOR_PICK_GOINSIDE)
+	return prio
+
+
+func donor_pick_score(e: Dictionary, mpos: Vector2) -> float:
+	# control.script:260-266 [O] — relativeDst := (1+dist)/prio, minimum wins.
+	# dist = _misc_GetDistancePos(mpos, pos, False) = XZ VectorDistance
+	# (misc.script:663-669); port pos is already Vector2 X/Z so distance_to()
+	# is the XZ metric. Distance UNITS/frame stay [U] E-U13-pick, not invented.
+	var prio := donor_pick_priority(e)
+	if prio <= 0.0 or not (e.has("pos")):
+		return INF
+	return (1.0 + mpos.distance_to(e.pos)) / prio
+
+
+func _donor_los_ok(e: Dictionary) -> bool:
+	# control.script:270-273 — bVisible := (not GetFOWEnable) or LOS>0.
+	if e.is_empty() or world == null:
+		return true
+	if world.has_method("is_visible_at"):
+		return bool(world.call("is_visible_at", e.pos))
+	return true
+
+
+func _donor_selection_begin(mode: String = DONOR_SELECTION_MODE) -> void:
+	# misc.script:6418-6421 [O] — Begin -> Start('spmRunTime'); drag/Shift path
+	# onmousemove.inc:154-162 [O] uses Begin -> Start('spmAdd'/'spmRunTime').
+	# Null-safe shims unchanged; only the mode string is threaded through.
+	if game == null:
+		return
+	if game.has_method("game_manager_begin_selection"):
+		game.call("game_manager_begin_selection")
+	if game.has_method("game_manager_start_selection"):
+		game.call("game_manager_start_selection", mode)
+
+
+func _donor_selection_cancel() -> void:
+	# Cancel once per apply, on the LAST picked object (misc.script:6458-6470).
+	if game != null and game.has_method("game_manager_cancel_selection"):
+		game.call("game_manager_cancel_selection")
+
+
+func _donor_squad_selected_split(arr: Array) -> void:
+	# misc.script:6418-6444 — squad members go to TSquad.fSelected while the
+	# officer/drummer stay in gSelectedObjects. The port keeps `selected` on
+	# each entity; mirroring it onto the squad dict is additive-only.
+	if game == null or not (game.get("squads") is Dictionary):
+		return
+	var ids: Dictionary = {}
+	for e in arr:
+		ids[int(e.id)] = true
+	for key in (game.get("squads") as Dictionary):
+		var s: Dictionary = (game.get("squads") as Dictionary)[key]
+		var on: bool = int(s.get("officer", 0)) in ids or int(s.get("drummer", 0)) in ids
+		s["fSelected"] = on
+
 
 func _pick(pw: Vector2, players_only := true) -> Dictionary:
 	# V7-52 3D seam. picking3d.pick(screen, players_only) applies the SAME
@@ -708,34 +936,57 @@ func _pick(pw: Vector2, players_only := true) -> Dictionary:
 	# the 2 m any-entity fallback is unconditional in both modes. Forward the
 	# caller's flag verbatim so the guard site (:493 true) and the left-click,
 	# right-order and cursor sites (:551/:645/:1156 false) keep 2D parity.
+	# control.script:161/282 — GetGUIMinimapUnderMouse early-out.
+	if _minimap_under_mouse():
+		return {}
 	if render_mode == "3d" and picking != null:
 		if not is_finite(_pick_screen.x) or not is_finite(_pick_screen.y):
 			return {}
-		return picking.pick(_pick_screen, players_only)
-	# T-PERF-RENDER: single pass. The old code scanned all entities twice on
-	# every miss (the common case: clicking empty ground) â€” once for the
-	# radius test, once for the 2 m fallback. Both best-candidates are tracked
-	# in one loop with identical hit semantics.
+		# picking3d.gd owns the candidate AABB/ray set (report patch R-PICK) and
+		# now runs the donor gate order with NO per-candidate FOW test. The
+		# winner-only veto (control.script:270-273) is applied here, once/apply.
+		var got: Dictionary = picking.pick(_pick_screen, players_only)
+		return got if _donor_los_ok(got) else {}
+	# DEC-U-SELECTION §1.1 [O] chain: minimap-exit (above) -> MouseRay ->
+	# SortList -> triple gate -> ownership -> AABB -> strict min (1+dist)/prio
+	# -> winner-only FOW veto. The 2D path has no AABB (engine-side [U]), so
+	# game.pick_radius() stays its labelled PORT APPROXIMATION stand-in.
+	# T-PERF-RENDER: one pass tracking the legacy nearest pair and the donor
+	# winner together; FOW is checked ONCE below on the final winner only.
 	var best: Dictionary = {}
 	var best_d := 1e9
 	var fb: Dictionary = {}
 	var fb_d := 1e9
+	var donor_best: Dictionary = {}
+	var donor_best_score := INF
 	for e in game.entities:
 		if e.dead:
 			continue
 		var d: float = e.pos.distance_to(pw)
-		if not players_only or e.player == 0:
+		if not players_only or e.player == 0:  # ownership gate (bMyPlayerOnly)
 			var r: float = game.pick_radius(e)
-			if d < r and d < best_d:
-				best_d = d
-				best = e
-		if d < 2.0 and d < fb_d:
+			if d < r:
+				if d < best_d:
+					best_d = d
+					best = e
+				if game.has_method("dec_u_pick_eligible") and not bool(game.call("dec_u_pick_eligible", e)):
+					continue  # Playable ∧ Visible ∧ CollisionDetection [O]
+				var score := donor_pick_score(e, pw)
+				if is_finite(score) and score < donor_best_score:
+					donor_best_score = score
+					donor_best = e
+		if d < 2.0 and d < fb_d:  # port-only fallback; no per-candidate veto
 			fb_d = d
 			fb = e
-	# fall back: any entity close by (enemies selectable for info/attack)
-	if best.is_empty():
-		return fb
-	return best
+	# Winner selection order stays port-legacy (donor winner -> nearest -> 2 m
+	# fallback); the FOW veto is applied exactly once to the chosen winner,
+	# mirroring `if not bVisible then nearestHnd := 0` (control.script:270-273).
+	var picked: Dictionary = donor_best
+	if picked.is_empty():
+		picked = best
+	if picked.is_empty():
+		picked = fb  # enemies selectable for info/attack (port-only fallback)
+	return picked if _donor_los_ok(picked) else {}
 
 # W4-2: pure input translation â€” a wheel event becomes one or more camera
 # zoom requests. No interpolation, easing, clamp or cursor math is computed
@@ -1170,7 +1421,7 @@ func _sel_formation(sel: Array) -> String:
 func _formation_targets(sel: Array, center: Vector2) -> Array:
 	return game.formation_targets(sel, center, _sel_formation(sel))
 
-# --- P-33: donor hotkeys.cfg parity ----------------------------------------
+# --- P-33: donor hotkeys.cfg KEY MAP [O] static text only; NOT donor parity -------
 # PORT-SIM owns config.gd/config.json, so the donor-only combos below cannot be
 # added to Data.HOTKEYS here. If a matching action is added there later it
 # wins; otherwise the literal donor binding from hotkeys.cfg is used.

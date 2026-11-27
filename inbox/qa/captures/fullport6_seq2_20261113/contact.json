@@ -1,0 +1,78 @@
+{
+  "backend": "Pillow",
+  "image": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\fullport6_seq2_20261113\\contact.png",
+  "note": "Presentation only. A contact sheet and metrics alone never constitute donor parity; parity=UNVERIFIED.",
+  "resample_filter": null,
+  "rescale_requested": false,
+  "rescale_target": null,
+  "sheet_size": [
+    2572,
+    1528
+  ],
+  "tiles": [
+    {
+      "box": [
+        4,
+        56,
+        1280,
+        720
+      ],
+      "exact_pixels_preserved": true,
+      "label": "frame_0000.png 1280x720 6fc7dfab26ea",
+      "placed_size": [
+        1280,
+        720
+      ],
+      "rescaled": false,
+      "source": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\frame_0000.png",
+      "source_sha256": "6fc7dfab26ea04429db165c4327604908b892cfa4707605d5eda32e8a6f4ba80",
+      "source_size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "box": [
+        1288,
+        56,
+        1280,
+        720
+      ],
+      "exact_pixels_preserved": true,
+      "label": "frame_0001.png 1280x720 bbdec7c59c7f",
+      "placed_size": [
+        1280,
+        720
+      ],
+      "rescaled": false,
+      "source": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\frame_0001.png",
+      "source_sha256": "bbdec7c59c7ff4799480361810a27169c41e935a550b4b08a119756429ffe2e4",
+      "source_size": [
+        1280,
+        720
+      ]
+    },
+    {
+      "box": [
+        4,
+        804,
+        1280,
+        720
+      ],
+      "exact_pixels_preserved": true,
+      "label": "frame_0002.png 1280x720 aa657352e5f6",
+      "placed_size": [
+        1280,
+        720
+      ],
+      "rescaled": false,
+      "source": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\fullport6_seq2_20261113\\01_donor\\frame_0002.png",
+      "source_sha256": "aa657352e5f659984a337fa211272daf926ad68784dc0c29708eacb61cd47676",
+      "source_size": [
+        1280,
+        720
+      ]
+    }
+  ],
+  "tool": "contact_sheet.py"
+}

@@ -1,5 +1,25 @@
 # Core simulation: map, entities, orders, gathering, building, combat, victory.
 # All numbers come from ../scripts/data.gd (original game files, see MECHANICS.md).
+#
+# ─── PORT1TO1 SKIRMISH UNVERIFIED / APPROXIMATION REGISTER ───────────────────
+# NO PARITY CLAIM. Network / multiplayer is OUT OF SCOPE.
+# Authority: docs/terrain_swarm_2026-11-26/reports/PORT1TO1_skirmish_logic.md
+#   §13 U1-U20 + §14 items 1-18, PLUS DEC_U_skirmish_tables.md §10 port change
+#   list (T1 weapon/prot rows, T2 damage, C1 capture tail, S starts, A1 head,
+#   O1 stagger/lose-stamp, G1 ledger sites, R1 framing inventory). Values added
+#   by that ticket are DONOR-VERBATIM [O] text with file:line cites; every still-*
+#   [U] tail keeps its exact §9 experiment. NO PARITY CLAIM. Protected mods —
+#   demo-mill, builder stands, v5 save keys, I11 seam — are NOT reverted.
+# Every port-side value below keeps its [U] tag
+#   and decomp plan in place; no number was invented, no gate was weakened and
+#   no user modification (demo-mill, builder stands, I11 seam) was reverted.
+# Donor-grounded consumers already here, do NOT re-tag:
+#   UPKEEP_DIVISOR=625, MINE_INCOME=13*32/250, DELIVERY_RADIUS=3 tiles,
+#   RESOURCE_WORKERS caps, gold-fire-stop <4 gold + 100-frame delay,
+#   archer dispersion 175 px, FPS=32, X09 mask grammar, D07 owner BFS shape.
+# Blocked-by-scope: U19 (ai.gd), U11/U10 (config.gd keys + selftest.gd morale
+#   and heal steps own those consumers; none of those files are authorized).
+# ─────────────────────────────────────────────────────────────────────────────
 extends Node
 class_name C3Game
 
@@ -11,6 +31,9 @@ const C3ConfigScript = preload("res://scripts/config.gd")
 # passability grid changes so every planned route is invalidated.
 var nav = Nav.new()
 var nav_version := 1
+# [U] U2 / §14 item 8: group-move NAV budget is a port perf invention, not a
+# donor order predicate. Decomp plan: unit.script move/attack fns + misc.script
+# stand checker → literal arrival/stuck/giveup predicates; then retag or remove.
 const NAV_PER_TICK := 2          # spread big group orders over several frames
 var _nav_tick_budget := NAV_PER_TICK
 
@@ -24,6 +47,9 @@ const MINE_DISCOVER_R := 30.0
 # radius-0 deposits; they do not need the 14-tile tree/stone keep-clear, so a
 # guaranteed gold/iron/coal deposit may sit 6..14 tiles (12..28 m) from the
 # hall.  Worst case after the last-resort widen is MINE_SERVED_R (16 tiles).
+# [U] §14 item 9: MINE_SERVED_R / NEAR_LO / NEAR_HI / MIN_SEP are port service
+# rings, NOT the donor D07 mine bands (14+8R/32+10R/70+12R/22+16R, rounds 3/4/5).
+# Decomp plan: recover D07 placement + served-radius operands before any retune.
 const MINE_SERVED_R := 16.0     # tiles: nearest ore per kind from the hall
 const MINE_NEAR_LO := 6.0       # tiles: inner edge of the guaranteed band
 const MINE_NEAR_HI := 14.0      # tiles: outer edge (short walk from town)
@@ -61,6 +87,11 @@ var tbl_smooth: Array = []
 var tbl_idx := {}
 var res_nodes: Array = []
 var map_starts: Array = []  # start positions of the generated map (groves near them are sacred)
+# DEC-U-START-DEEP §3 (EV-FLAG-1 / EV-WIRE-1): port equivalent of the donor
+# `gbool_gui_mapgenerationfinished` (dmscript.global:2071, default False,
+# dmscript.source:4). Armed once at the generation tail; consumed one-shot by
+# camera.gd's existing jump_to_world() API. See consume_start_camera_target().
+var gui_mapgenerationfinished := false
 var cluster_zones: Array = []  # claimed {pos, r} so clusters never overlap
 # Donor mechanism: real .pattern footprints stamped through C3PatternGen's
 # gPatternMask (misc.script:3384). Replaces the old per-tile blob placement.
@@ -139,7 +170,19 @@ var entities: Array = []
 var by_id: Dictionary = {}
 var next_id := 1
 var players: Array = []
+# [O] DEC_U_teams §2 / classes.script:4048-4092: gEnemyInfoList, rebuilt by
+# SetupTeams and again on every team merge/split. Populated by _setup_teams /
+# _rebuild_enemy_info below. Lookup is by team, never by player index.
+var enemy_info_list: Array = []
 var battle_mode := false
+# DEC-U-SCENARIO-WIN §7-3 / EV-S (progress.inc:54): donor `gScenario.bactive`
+# gates the whole per-player exists/income/AI slice. The port has NO trigger
+# engine yet — per-mission trigger→victory mapping is [U]-F1 (fixed-seed export
+# capture required), so this flag defaults false and is never set from a
+# mission name. When a future trigger engine sets it true, ONLY the exists
+# defeat scan and the single-winner auto path are suppressed; the donor team
+# law (`_misc_check_end_game`, nothing.inc:646) still runs every global tick.
+var scenario_active := false
 var time_s := 0.0
 var winner := -1
 var rng := RandomNumberGenerator.new()
@@ -150,8 +193,61 @@ var rng := RandomNumberGenerator.new()
 var gen_rng := RandomNumberGenerator.new()
 const GEN_STAGES := ["terrain", "starts_legacy", "starts", "starts_team", "patterns",
 	"forests", "mines", "finish"]
+
+# ── DEC-U-RNG-LEDGER §2/§6: ONE donor RandomExt sim stream (additive, no stream split) ──
+# [D] donor bytes 0x60f64c-0x60f696 (X21 §2, D02 §4.2 as corrected):
+#     s <- (s*64525 + 1013904223) & 0xFFFFFFFF ; RandomExt = f32(s / 2^32).
+#     `fstp dword` is the ONLY rounding -> f32 output, never an f64 quotient used
+#     directly. Every `floor(RandomExt*n)` goes through random_f32().
+# [D] key0 (high word) is DISCARDED: SetRandomExtKey64(k0,k1) -> lo=k1, hi=k0;
+#     the mod-2^32 helper drops the product-high cross term, so (K0,K1)==(0,K1)
+#     for ANY draw including the first (X21 §4.3). s=0 does NOT stick: draw #1
+#     = 0x3C6EF35F (0.236067966); no test/jz guard exists in the donor range.
+# [U] live-replay equivalence, DScript f32-vs-f64 product promotion (G1-e), the
+#     S/G stream split (G1-b) and per-site COUNTS (G1-c/G1-g) stay [U] with the
+#     §5 zero-mismatch captures. NO PARITY CLAIM. Generation-owned rng/gen_rng/
+#     brng are untouched; this is a separate sim stream, not a replacement.
+class DonorRandomExt:
+	const DONOR_LCG_M := 64525            # 0xFC0D, X21 §2
+	const DONOR_LCG_C := 1013904223       # 0x3C6EF35F, X21 §2
+	const DONOR_DIVISOR := 4294967296.0   # 0x4F800000 f32, 0x60f698
+	const U32_MASK := 0xFFFFFFFF
+	var state: int = 0
+	var _f32buf: PackedFloat32Array = PackedFloat32Array([0.0])
+
+	func set_state(s: int) -> void:
+		state = s & U32_MASK
+
+	func get_state() -> int:
+		return state
+
+	# donor SetRandomExtKey64(k0,k1): key0 discarded, k1 is the fed low word.
+	func set_key(k0: int, k1: int) -> void:
+		var _discarded_key0: int = k0      # X21 §4.3: never feeds the recurrence
+		state = k1 & U32_MASK
+
+	func next_u32() -> int:
+		state = (state * DONOR_LCG_M + DONOR_LCG_C) & U32_MASK
+		return state
+
+	# EXACT f32 output: the f64 quotient is rounded once through a 32-bit slot.
+	func random_f32() -> float:
+		_f32buf[0] = float(next_u32()) / DONOR_DIVISOR
+		return _f32buf[0]
+
+	# donor GetRandom(n) := floor(RandomExt*n) (dogenerate.inc:990-997).
+	# [U]-G1-e: f32-vs-f64 product promotion is sampled no-divergence over the
+	# X21 20 vectors; the §5-F1M proof is still required, never claimed here.
+	func get_random(n: int) -> int:
+		return int(floorf(random_f32() * float(n)))
+
+var sim_rng := DonorRandomExt.new()  # DEC-U-RNG-LEDGER §4 single skirmish-sim S stream
 var events: Array = []   # {type, pos, kind} consumed by world/hud each frame
-var projectiles: Array = []  # delayed shells/arrows: {pos,target,kind,dmg,splash,owner,t,total}
+# Donor TProj additive mirror [O] classes.script:4351-4367: `pos`=px launch,
+# `target`=dx aim (NOT the same point); `trg`=locked-target uid (0 ground aim),
+# `ownerpl`, `uniqrnd` (0/0.0 defaults on old/unkeyed projectiles). Timed rows
+# add `timed`/`ballistic_total`/`airburst_done` (§8 item 3, both terminations).
+var projectiles: Array = []  # delayed shells/arrows: {pos,target,kind,dmg,splash,owner,ownerpl,trg,t,total,uniqrnd}
 var corpses: Array = []  # fading dead units for the battlefield look (capped)
 var rubble: Array = []  # lingering destroyed-building rubble (capped)
 var squads: Dictionary = {}  # squad_id -> {officer, drummer, members, formation, player}
@@ -183,15 +279,34 @@ func _block_rects_ensure() -> void:
 		if b.dead:
 			continue
 		var r: Rect2 = b.get("block_rect", Rect2())
-		if r.has_area():
-			var entry := [r, int(b.id)]
+		# DEC-U §5.3/P12: a supplied donor mask is bucketed alongside the
+		# user-added true-scale ink box. No mask data is invented: an empty
+		# `collision_mask` leaves the pre-existing ink-box behaviour intact.
+		var mask_rows: Array = b.get("collision_mask", [])
+		if r.has_area() or not mask_rows.is_empty():
+			var entry := [r, int(b.id), mask_rows, Vector2(b.pos)]
 			_block_rects.append(entry)
-			for c in bld_rect_cells(r):
-				var cell: Vector2i = c
-				var key := cell.x + cell.y * MAP_W
-				if not _block_rects_by_cell.has(key):
-					_block_rects_by_cell[key] = []
-				(_block_rects_by_cell[key] as Array).append(entry)
+			if r.has_area():
+				for c in bld_rect_cells(r):
+					var cell: Vector2i = c
+					var key := cell.x + cell.y * MAP_W
+					if not _block_rects_by_cell.has(key):
+						_block_rects_by_cell[key] = []
+					(_block_rects_by_cell[key] as Array).append(entry)
+			else:
+				var cs: float = Data.DEC_U_COLLISION_CELL_M
+				var centre := Vector2i(int(b.pos.x / cs), int(b.pos.y / cs))
+				var cells: Array = dec_u_mask_cells_centred(mask_rows, centre, int(b.id), false, {})
+				for c in cells:
+					var cell: Vector2i = c
+					var wp := Vector2((float(cell.x) + 0.5) * cs, (float(cell.y) + 0.5) * cs)
+					var bt := tile_of(wp)
+					if bt.x < 0 or bt.y < 0 or bt.x >= MAP_W or bt.y >= MAP_H:
+						continue
+					var key := bt.x + bt.y * MAP_W
+					if not _block_rects_by_cell.has(key):
+						_block_rects_by_cell[key] = []
+					(_block_rects_by_cell[key] as Array).append(entry)
 	_block_rects_ver = bld_dirty
 # T-PERF-SIM: can_place building scan margin. Must exceed the largest
 # block_r on the map (gameplay radii are a few metres); 16 m is generous.
@@ -235,6 +350,8 @@ func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 	# A point inside a rect is always inside one of bld_rect_cells(rect), so the
 	# bucket is a superset of every rect that could contain p; build_target skip
 	# and Rect2.has_point are unchanged. Buildings never move between rebuilds.
+	# DEC-U §5.3/P12: the centred donor mask test is ADDITIVE here; the ink box
+	# (a user-added true-scale mod) stays authoritative, so no user mod is lost.
 	_block_rects_ensure()
 	# Inline tile_of()'s arithmetic to avoid a Vector2i allocation per probe.
 	var cell_key := int(p.x / TILE) + int(p.y / TILE) * MAP_W
@@ -243,6 +360,9 @@ func _blocked_for(e: Dictionary, p: Vector2) -> bool:
 			continue
 		if (br[0] as Rect2).has_point(p):
 			return true
+		if br.size() > 3 and not (br[2] as Array).is_empty():
+			if dec_u_mask_blocks_point(br[2] as Array, Vector2(br[3]), p):
+				return true
 	for g in gates:
 		if g.dead:
 			continue
@@ -258,13 +378,24 @@ var deposits: Dictionary = {}  # "gold"/"iron"/"coal" remaining
 
 func _init() -> void:
 	rng.seed = Data.RANDOM_SEED
+	# DEC-U-RNG-LEDGER §4-S6 fixture: sim stream starts at the seed with ZERO
+	# generation draws (generation is GENSEED-owned and excluded). key0 discarded.
+	sim_rng.set_state(int(Data.RANDOM_SEED))
 
-# P-31: reseed the STAGE stream only. Key = seed + stage slot + generator version
-# (inferred port adaptation of SetRandomKey: a per-stage derived key rather than
-# the donor's same-key skip-ahead, chosen so the legacy rng never shifts).
+# RESOLVED (DEC-U §2.10, D02/X03/V01): 11+3 SetRandomKey/SetRandomExtKey64
+# identity reseeds re-set the SAME key (key0 discarded). No derived key, no
+# mix64. Deletes seed + si*1000003 + ver*10007 (PORT APPROXIMATION, no donor
+# counterpart). GEN_STAGES and all eight call sites stay as provenance only.
+# Stream splitting / floor(RandomExt*n) wrapper / brng removal remain [U]-G1
+# (X21 20-vector ledger + per-site draw-count experiment) — NOT wired here.
+# NO PARITY CLAIM.
 func _reseed_stage(stage: String) -> void:
-	var si: int = GEN_STAGES.find(stage)
-	gen_rng.seed = (int(Data.RANDOM_SEED) + si * 1000003 + int(Data.GENERATOR_VERSION) * 10007) & 0x7fffffff
+	var _ignored_stage: String = stage  # identity reseed: donor re-sets the SAME key; stage slot ignored.
+	gen_rng.seed = int(Data.RANDOM_SEED)
+	# DEC-U-RNG-LEDGER §7 item 3: rng/gen_rng stay identity reseeds (landed),
+	# key0 discarded (X21 §4.3). sim_rng is deliberately NOT reseeded per stage:
+	# generation draws are GENSEED-owned/excluded (§4), and the §6 sim fixture
+	# assumes zero generation draws. No derived key is reintroduced.
 
 func _grid_rebuild() -> void:
 	grid.clear()
@@ -341,15 +472,63 @@ func res_list() -> Array:
 		out.append(float(Data.START_RESOURCES.get(r, 0.0)))
 	return out
 
+# RESOLVED donor cadence literals [O] — DEC_U_tick_order.md §2.3/§2.4:
+# player.script:131-141 (init phases), progr:56-61 (exists), progr:150-154
+# (squad move), pai:6 (ProgressAI), peco:3896-3901 (seed wheat),
+# dmscript.global:1484-1487. All four deadlines share the SAME gate primitive
+# squad.script:754-782 (see _check_progress_lasttime_and_increase below).
+# NO PARITY CLAIM; plInd driver/firing rate stay [U] with §5 U-O1a/b harness.
+const _TICK_INIT_PHASE_S := 0.25          # player.script:131-141 (id*0.25)
+const _TICK_CALCSQUADS_S := 0.3           # progr:150-154 / dg:1485
+const _TICK_AI_S := 2.4                   # pai:6 / dg:1486
+const _TICK_SEED_S := 60.0                # peco:3896 / dg:1487
+const _TICK_SEED_SLOT_S := 3.0            # peco:3896 (plInd*3)
+
 func new_player(index: int, name: String, is_ai: bool) -> Dictionary:
 	return {"index": index, "name": name, "res": res_list(), "is_ai": is_ai,
 		# T-MENU-ROSTER: every player carries an explicit team key. -1 means
 		# free-for-all; setup_begin overwrites it from Data.TEAMS when the
-		# roster picked real teams. _is_ally() ignores negative teams, so an
-		# FFA slot is never mistaken for an ally of another FFA slot.
+		# roster picked real teams, then runs the donor SetupTeams law
+		# (DEC_U_teams §2/§8): -1 -> 0 at that boundary and dense ids >= 1
+		# afterwards. _is_ally() ignores negative teams, so an FFA slot is
+		# never mistaken for an ally of another FFA slot.
 		"team": -1,
+		# R3 [O] DEC_U_teams §4 — two-layer diplomacy. `enemy_mask` mirrors
+		# TPlayer.enemyplmask (classes.script:3674-3698); built pairwise FFA-safe
+		# at setup (initmapgen.inc:154-165: 0 vs anything = enemy), mutated ONLY
+		# by set_ally / set_enemy / set_neutral (trigger 18/19/20). `bneutral` is
+		# the TPlayer boolean (scenario.script:2225-2249), read by the fog module
+		# when present (world3d_fog.gd:_is_bneutral :708-716).
+		"enemy_mask": 0, "bneutral": false,
+		# DEC-U-SCENARIO-WIN §7-1/§7-5: roster-side `bexists` (gMap.players[i]
+		# in miscext2.script:3775-3788) is a SEPARATE flag from the dynamic sim
+		# bexists (`_player_bexists`). Every generated port slot is rostered;
+		# there is no spectator purge counterpart (initmapgen.inc:255-263).
+		# `bleave` is written only by _surrender (miscext2.script:3848-3895).
+		"roster_bexists": true, "bleave": false,
+		# [O] victorystate table none=0/win=1/lose=2 dmscript.global:777-779;
+		# mirrors the display string. victorystategametime = TPlayer:F stamp
+		# (classes.script:3674-3720) written iff 0 on first transition.
+		"victorystate_int": 0, "victorystategametime": 0.0,
 		"farm_cap": 0, "score": 0, "entities": [], "ai_state": {}, "starving": false,
-		"famine_t": 0.0, "famine": false,
+		# RESOLVED donor absolute-deadline init [O] (DEC_U §2.4,
+		# player.script:131-141): lastprogresstime:=0; progresstick:=id*2;
+		# searchenemy{prev,last,cur}:=0; searchenemylasttime:=0;
+		# lastcheckexists:=id*0.25+2.0; lastcalcsquadsmovecounttime:=id*0.25+0.3;
+		# lastprogressaitime:=id*0.25+2.4; lastseedwheattime:=id*0.25+60.0.
+		"lastprogresstime": 0.0, "progresstick": index * 2,
+		"searchenemyprev": 0, "searchenemylast": 0, "searchenemycur": 0,
+		"searchenemylasttime": 0.0,
+		"lastcheckexists": float(index) * _TICK_INIT_PHASE_S + float(Data.DONOR_TICK_EXISTS_ALIVE_S),
+		"lastcalcsquadsmovecounttime": float(index) * _TICK_INIT_PHASE_S + _TICK_CALCSQUADS_S,
+		"lastprogressaitime": float(index) * _TICK_INIT_PHASE_S + _TICK_AI_S,
+		"lastseedwheattime": float(index) * _TICK_INIT_PHASE_S + _TICK_SEED_S,
+		# RESOLVED donor flags (DEC-U §2.1, player.script:294-321) + accumulator
+		# state (DEC-U §2.1, player.script:240-322). famine_t/gold_famine_t stay
+		# for v5 save + HUD compatibility; rebellion is the donor gold flag.
+		"famine_t": 0.0, "famine": false, "rebellion": false,
+		"upkeep_remains": [0.0, 0.0, 0.0],
+		"resonlife": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
 		"damage_mult": {"sword": 1.0, "pike": 1.0, "bullet": 1.0, "arrow": 1.0, "firearrow": 1.0, "cannonball": 1.0, "cannister": 1.0},
 		"gather_mult": {"food": 1.0, "wood": 1.0, "stone": 1.0},
 		"hp_mult": 1.0, "prot_bonus": 0,
@@ -357,7 +536,16 @@ func new_player(index: int, name: String, is_ai: bool) -> Dictionary:
 		"cav_damage_mult": {}, "cav_dmg_add": 0, "cav_prot_bonus": 0,
 		"train_speed_mult": 1.0, "art_cost_mult": 1.0, "art_build_mult": 1.0,
 		"upgrades": [], "research": {},
-		"market_rate": Data.MARKET_RATE}
+		# market_rate is a display-only mirror (hud.gd:878); market_cost is the
+		# RESOLVED per-resource buy/sell state (DEC-U §2.2, res.script:247-248).
+		# RESOLVED garr_res_dlt/garr_res_trg init 0 (DEC-U-MARKET-TAIL §5.2,
+		# res.script:184) and LIVE in skirmish: GetProjectModeInt=2 = game,
+		# not editor (dmscript.global:1418-1420).
+		# [U]-DLT: Lerp/ClampInt float semantics await fixed-seed capture DLT
+		# (600 ticks, quiet+active windows, zero-mismatch). NO PARITY CLAIM.
+		"market_rate": Data.MARKET_RATE, "market_cost": {},
+		"market_dlt": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+		"market_trg": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
 
 func setup(mode: String) -> void:
 	setup_begin(mode)
@@ -415,6 +603,7 @@ func setup_begin(mode: String) -> void:
 	TICK_MAX = Data.TICK_MAX
 	Data.load_extra_anim_index()  # P-41: separate nation-unique anim index
 	rng.seed = Data.RANDOM_SEED
+	sim_rng.set_state(int(Data.RANDOM_SEED))  # §4-S6: fresh sim stream, key0 discarded
 	terrain.resize(MAP_W * MAP_H)
 	blocked.resize(MAP_W * MAP_H)
 	height.resize(MAP_W * MAP_H)
@@ -443,6 +632,15 @@ func setup_begin(mode: String) -> void:
 		if i < Data.TEAMS.size():
 			pl["team"] = int(Data.TEAMS[i])
 		players.append(pl)
+		# RESOLVED donor market init (res.script:247-248): costs start at def.
+		_ensure_market_cost(pl)
+	# R1 [O] DEC_U_teams §2/§8, player.script:2139-2173: replace the raw lobby-id
+	# copy above with the donor SetupTeams law. Enemy masks are built FIRST
+	# (initmapgen.inc:154-165), then sim teams are enumerated from the donor's
+	# 0 sentinel; `map_info` picks the grouping key — lobby for skirmish
+	# (dogenerate.inc:2052), sim for mission/editor (initmap.inc:66).
+	_init_enemy_masks()
+	_setup_teams(mode != "mission")
 	objectives = []
 	deposits = {}
 	for r in Data.RES_NAMES:
@@ -467,6 +665,34 @@ func setup_begin(mode: String) -> void:
 	_st_mscale = clampf(float(MAP_W) / 160.0, 1.0, 2.0)
 	_st_forest = PackedFloat32Array()
 
+# ─── DEC-U-START-DEEP §3 — donor first-camera one-shot gate [O] ────────────────
+# [O] doprogress.inc:36-44: on the FIRST DoProgress tick after generation,
+#     `if (gbool_gui_mapgenerationfinished) and (myPlHnd<>0) then
+#        gbool_gui_mapgenerationfinished := False;
+#        _control_MoveCameraToPosition(gMap.players[myPlInd].startx,
+#                                      gMap.players[myPlInd].starty, 0, True);`
+#     One-shot clear, then a 4-param wrapper call carrying the LOCAL interface
+#     player's post-shuffle startx/starty (args verbatim: time=0, bSetMaxHeight=True).
+# [O] dogenerate.inc:1939: producer `gbool_gui_mapgenerationfinished := True` at
+#     the end of DoGenerate (after unit spawn :1914-1923 and final SetRandomKey
+#     :1927). Port arm sits at the tail of setup_spawns(), the shared gen tail of
+#     both setup() and the async loader, after _spawn_starts() units.
+# Port seam: `map_starts[local]` is the port's gMap.players[myPlInd].startx/starty;
+# `local = 0` is the human interface slot (the same slot main.gd reads via
+# buildings_of(0)). The donor wrapper's ArcTan height offset + native clamp, and
+# the time=0 smoothing, are ENGINE-INTERNAL and stay [U] CAM-derive / CAM-0 with
+# the §6 fixed-seed captures. No numeric constant and no FOV is invented here;
+# this exposes ONLY the start-derived target to the port camera API. NO PARITY CLAIM.
+func consume_start_camera_target() -> Variant:
+	if not gui_mapgenerationfinished:
+		return null
+	gui_mapgenerationfinished = false  # one-shot: donor clears the flag in the consumer
+	# `myPlHnd<>0` equivalent: the local interface player must exist and carry a start.
+	var local_pl := 0
+	if players.is_empty() or map_starts.is_empty() or local_pl >= map_starts.size():
+		return null
+	return map_starts[local_pl] as Vector2
+
 func setup_spawns() -> void:
 	_ensure_start_slots()
 	# T-MINES-START-FIX: now that map_starts is FINAL (water snap + appended
@@ -477,6 +703,10 @@ func setup_spawns() -> void:
 	# Must run AFTER start buildings block tiles: scan's BFS uses the post-spawn
 	# blocked map, so an earlier pass would see a larger, wrong reach set.
 	_repair_start_reach()
+	# DEC-U-START-DEEP §3 / EV-FLAG-1: arm the donor one-shot first-camera gate
+	# at the shared generation tail (after _spawn_starts units). Consumer is
+	# camera.gd:_consume_start_camera_wire() via the existing jump_to_world() API.
+	gui_mapgenerationfinished = true
 
 func _nation_name(i: int, pn: Variant) -> String:
 	var pns: Array = Data.PLAYER_NATIONS if Data.PLAYER_NATIONS is Array else []
@@ -509,6 +739,8 @@ func complete_objective(i: int) -> void:
 		objectives[i].done = true
 		say("Objective complete: %s" % objectives[i].text)
 
+# [U] U-formation/U-walkinterval — rally target is PORT APPROX slot positioning
+# only (DEC_U_move_speed.md §5.1/§7-S6, T-FORM); no donor speed scalar exists.
 func set_rally(b: Dictionary, pos: Vector2) -> void:
 	if b.is_empty() or b.kind != "building":
 		return
@@ -571,6 +803,310 @@ func bld_rect_cells(rect: Rect2) -> Array:
 			var tr := Rect2(float(x) * TILE, float(y) * TILE, TILE, TILE)
 			if tr.intersects(rect):
 				out.append(Vector2i(x, y))
+	return out
+
+# ─── DEC-U COLLISION CALLERS (§5.3 / §6 P11–P15) ──────────────────────────────
+# Donor-exact caller arithmetic from DEC_U_entities_art_collision.md, refined by
+# DEC_U_collision_full.md §1-§7. NO PARITY CLAIM. No mask bitmap is invented
+# here: rows come from real D:objects/**/*.prop data supplied by the caller
+# (asset manifest, still unported). Rotation/mirror is ABSENT IN SAMPLED FILES
+# (§5: Rotate=0/tmoRotate=False) and stays [U] U12-rot for unscanned files with
+# capture C-CAP-1; engine LOS/OctreeRayCast/ctpo stays [U] U13-impl with C-CAP-4.
+
+# ─── DONOR MASK BITMAP EXTRACTION — LABELLED LOADER METADATA (§2) ────────────
+# [O] Each D:objects/<kind>/<sid>.prop carries {refurl=.\data\objects\ref\<ref>.prop}
+# and only the sections it overrides. Rows live in collisionmaskproperty ->
+# Mask -> struct.begin -> [*] = <01-string> (algcen.prop:46-56, ev_21bc…);
+# reference props define class defaults and carry NO Mask rows. '1' = blocked.
+# Extraction method (read-only, nothing copied into the repo): Get-Content -Raw
+# the .prop, regex for [*] = ([01]+) inside collisionmaskproperty, h = row
+# count, w = first-row length (a ragged file fails closed as [U], no resize).
+# Census [O] §2.2: 354/369 building props carry own rows; 15 mask-less
+# (algaca/algart/algbar/algbla/algdip/algsta/algtem/misdecor1..misdecor8);
+# 0/140 unit props carry rows (units are AABB/CI-only). Cell stride 0.5 m
+# (gc_collision_size, ev_fc13…). §2.3 verbatim sampled bitmaps (mil/tow/sto/
+# mar/cen/wall) remain in the report and are NOT embedded here. [U] U12-mask:
+# full 369-file dump, 15-file fallback, Rotate scan (C-CAP-1) still open.
+
+# ─── CENTRED MASK RECORD SEMANTICS (§5, ev_8655…, LABELLED) ──────────────────
+# sub_764e04: bounds-check 0<=edx<W / 0<=ecx<H, then write rowTable[[obj+0xa8]]
+# [edx][ecx]. sub_755168: add (W-1)>>1 / (H-1)>>1 to centre the write on the
+# target cell (even W/H bias by >>1 truncation). sub_7550f8: test the
+# -W/2..+W/2 window, add W>>1 / H>>1 back for the centred read. sub_75505c:
+# gate on [esi+0x65]!=0, then write the occupant id at record +0x1c. In the
+# helpers below, `enabled` models the +0x65 gate and `occupants` models the
+# +0x1c slot (donor-cell key -> occupant id); 0xa8 is the row table itself.
+func dec_u_mask_cells_centred(mask_rows: Array, centre_cell: Vector2i,
+		occupant_id: int, enabled: bool, occupants: Dictionary) -> Array:
+	var out: Array = []
+	if mask_rows.is_empty():
+		return out
+	var first_v: Variant = mask_rows[0]
+	var w: int = 0
+	if first_v is String:
+		w = str(first_v).length()
+	elif first_v is Array:
+		w = (first_v as Array).size()
+	else:
+		return out
+	var h: int = mask_rows.size()
+	var cx: int = (w - 1) >> 1
+	var cy: int = (h - 1) >> 1
+	for r in range(h):
+		var row_v: Variant = mask_rows[r]
+		for c in range(w):
+			var bit: bool = false
+			if row_v is String:
+				bit = c < str(row_v).length() and str(row_v)[c] == "1"
+			elif row_v is Array:
+				bit = c < (row_v as Array).size() and int((row_v as Array)[c]) != 0
+			if not bit:
+				continue
+			var cell := Vector2i(centre_cell.x + c - cx, centre_cell.y + r - cy)
+			out.append(cell)
+			if enabled:
+				occupants[cell] = occupant_id
+	return out
+
+# sub_7550f8 / sub_75505c centred READ (ev_8655…): test the -W/2..+W/2 window
+# then add W>>1 / H>>1 before the row lookup. §5.3 denies this as the footprint
+# test; it is only the centred occupancy read (donor caller is the scan grid).
+func dec_u_mask_test_centred(mask_rows: Array, dx: int, dy: int) -> bool:
+	if mask_rows.is_empty():
+		return false
+	var first_v: Variant = mask_rows[0]
+	var w: int = 0
+	if first_v is String:
+		w = str(first_v).length()
+	elif first_v is Array:
+		w = (first_v as Array).size()
+	else:
+		return false
+	var h: int = mask_rows.size()
+	var hw: int = w >> 1
+	var hh: int = h >> 1
+	if dx < -hw or dx > hw or dy < -hh or dy > hh:
+		return false
+	var c: int = dx + hw
+	var r: int = dy + hh
+	if c < 0 or c >= w or r < 0 or r >= h:
+		return false
+	var row_v: Variant = mask_rows[r]
+	if row_v is String:
+		return c < str(row_v).length() and str(row_v)[c] == "1"
+	if row_v is Array:
+		return c < (row_v as Array).size() and int((row_v as Array)[c]) != 0
+	return false
+
+# Port adapter: donor cells are gc_collision_size=0.5 m, port tiles are 2 m.
+func dec_u_mask_blocks_point(mask_rows: Array, centre_pos: Vector2, p: Vector2) -> bool:
+	if mask_rows.is_empty():
+		return false
+	var cs: float = Data.DEC_U_COLLISION_CELL_M
+	var cell := Vector2i(int(p.x / cs), int(p.y / cs))
+	var centre := Vector2i(int(centre_pos.x / cs), int(centre_pos.y / cs))
+	return dec_u_mask_test_centred(mask_rows, cell.x - centre.x, cell.y - centre.y)
+
+# Centred mask write wired to the port `blocked` grid. Inert until a real donor
+# mask is supplied; never called with an invented bitmap.
+func dec_u_stamp_mask_centred(mask_rows: Array, centre_pos: Vector2, value: bool,
+		occupant_id: int, occupants: Dictionary) -> Array:
+	var cs: float = Data.DEC_U_COLLISION_CELL_M
+	var centre := Vector2i(int(centre_pos.x / cs), int(centre_pos.y / cs))
+	var cells: Array = dec_u_mask_cells_centred(mask_rows, centre, occupant_id, true, occupants)
+	var v: int = 1 if value else 0
+	var changed := false
+	for cell in cells:
+		var wp := Vector2((float(cell.x) + 0.5) * cs, (float(cell.y) + 0.5) * cs)
+		var t := tile_of(wp)
+		if t.x < 0 or t.y < 0 or t.x >= MAP_W or t.y >= MAP_H:
+			continue
+		if blocked[_t(t.x, t.y)] != v:
+			blocked[_t(t.x, t.y)] = v
+			changed = true
+	if changed:
+		nav_version += 1
+	return cells
+
+# LABELLED telemetry for the centred-record binary facts above (§5, ev_8655…).
+# Documentation only: no gameplay consumer, no donor-parity claim.
+func dec_u_mask_binary_telemetry() -> Dictionary:
+	return {
+		"origin_x": "(W-1)>>1", "origin_y": "(H-1)>>1",
+		"row_table_off": 0xA8, "gate_off": 0x65, "occupant_off": 0x1C,
+		"bounded_write": "sub_764e04", "centred_write": "sub_755168",
+		"centred_read": "sub_7550f8", "gated_read": "sub_75505c",
+		"rotation": "[U] U12-rot (absent in sampled props) / C-CAP-1",
+		"authority": "DEC_U_collision_full.md §5 ev_8655…",
+	}
+
+# LABELLED loader metadata for donor mask bitmaps (§2, ev_21bc…/ev_fc13…).
+# No bitmap is embedded or fabricated: the loader only consumes caller-supplied
+# `collision_mask` rows. Counts and method are all statically recovered [O].
+func dec_u_mask_loader_metadata() -> Dictionary:
+	return {
+		"source": "D:objects/<kind>/<sid>.prop -> collisionmaskproperty -> Mask -> struct.begin -> [*] = <01>+",
+		"extraction": ["Get-Content <sid>.prop -Raw",
+			"regex for [*] = ([01]+) inside collisionmaskproperty",
+			"h = row count, w = first-row length (ragged fails closed as [U])"],
+		"cell_m": Data.DEC_U_COLLISION_CELL_M,
+		"buildings_with_rows": 354, "buildings_total": 369,
+		"mask_less": ["algaca", "algart", "algbar", "algbla", "algdip", "algsta",
+			"algtem", "misdecor1", "misdecor2", "misdecor3", "misdecor4",
+			"misdecor5", "misdecor6", "misdecor7", "misdecor8"],
+		"unit_props_with_rows": 0, "unit_props_total": 140,
+		"embedded_bitmaps": "NONE (caller-supplied collision_mask only)",
+		"open": "[U] U12-mask-a/b/c (369-file dump, 15-file fallback, Rotate scan) / C-CAP-1",
+		"authority": "DEC_U_collision_full.md §2 ev_21bc…/ev_fc13…",
+	}
+
+# misc.script:2381-2420 (ev_3080…), clamped-point test. §5.3: this is NOT the
+# building footprint test; its only donor script caller is the scan-grid list.
+func misc_circle_intersect_rect(centre: Vector2, r: float, rect: Rect2) -> bool:
+	var q := Vector2(clampf(centre.x, rect.position.x, rect.end.x),
+		clampf(centre.y, rect.position.y, rect.end.y))
+	return (q - centre).length_squared() <= r * r
+
+# Donor collision TAG at a port cell (ev_fb59…): water=87 (ctpoEqual), land=101
+# (ctpoGreater). Border/stretch tags (110/109/85) need the donor per-cell tag
+# array, which is not in this port's state: [U] U13-tag, experiment E-U13-tag.
+# Engine OctreeRayCast / GetGameObjectRayCastAABBByHandle argument types and
+# ctpoEqual/ctpoGreater comparison operands remain [U] U13-impl; their typed
+# signature + truth table is capture C-CAP-4. No engine ray implementation here.
+func dec_u_collision_tag_at(p: Vector2) -> int:
+	if _is_water(p):
+		return Data.DEC_U_TAG_WATER
+	return Data.DEC_U_TAG_TERRAIN
+
+func dec_u_collision_tag_ok(p: Vector2, want_water: bool, want_land: bool) -> bool:
+	var tag: int = dec_u_collision_tag_at(p)
+	if want_water and Data.dec_u_collision_test(tag, Data.DEC_U_TAG_WATER, Data.DEC_U_WATER_TEST):
+		return true
+	if want_land and Data.dec_u_collision_test(tag, Data.DEC_U_TAG_TERRAIN, Data.DEC_U_LAND_TEST):
+		return true
+	return false
+
+# §5.3/P11 + DEC_U_collision_full.md §1.3: single-source donor radius in metres.
+# Ship sid->slot is now [O] (unit.script:1855-2036 shell read): the branch nesting
+# is exact, so the earlier labelled MINIMUM ship floor is replaced by the exact
+# per-sid row. Values stay single-sourced in Data.DEC_U_R_SHIPS_*; only the
+# sid->index association lives here. Formation rows stay defined-but-unconsumed.
+const DEC_U_SHIP_SID_INDEX := {
+	"fishboat": 0, "ferry": 1, "yacht": 2, "yachttur": 3, "chaika": 4,
+	"galley": 5, "frigate": 6, "xebec": 7, "battleship": 8,
+}
+
+func dec_u_collision_radius(e: Dictionary) -> float:
+	if str(e.get("kind", "")) != "unit":
+		return 0.0
+	var d: Dictionary = e.get("def", {})
+	if bool(d.get("naval", false)):
+		var sid: String = str(e.get("sid", ""))
+		if DEC_U_SHIP_SID_INDEX.has(sid):
+			var idx: int = int(DEC_U_SHIP_SID_INDEX[sid])
+			if idx >= 0 and idx < Data.DEC_U_R_SHIPS_M.size():
+				return float(Data.DEC_U_R_SHIPS_M[idx])
+		# [U] U12-ships-open: a naval sid with no donor branch (e.g. a future
+		# transport hull) has no statically recovered radius. Keep the labelled
+		# MINIMUM floor, never a guessed per-sid value; C-CAP-2 decides it.
+		var m: float = float(Data.DEC_U_R_SHIPS_M[0])
+		for v in Data.DEC_U_R_SHIPS_M:
+			m = minf(m, float(v))
+		return m
+	if bool(d.get("artillery", false)) or str(d.get("cavalry", "")) != "":
+		return Data.DEC_U_R_MOUNT_M
+	return Data.DEC_U_R_DEFAULT_M
+
+# §4 [O] ev_4fef…: 8 px / 12 px formation rows are DEFINED but the only sampled
+# consumer (group.script:122-160) is commented out; live pitch is unitRadius*0.8
+# with dispRadius*0.5 gated by gFormation.mask. NOT slot pitch.
+func dec_u_formation_radius(slot: int) -> float:
+	if slot < 0 or slot >= Data.DEC_U_R_FORMATION_M.size():
+		return Data.DEC_U_R_DEFAULT_M
+	return float(Data.DEC_U_R_FORMATION_M[slot])
+
+func dec_u_radius_telemetry() -> Dictionary:
+	return {
+		"default_m": Data.DEC_U_R_DEFAULT_M,
+		"mount_artillery_m": Data.DEC_U_R_MOUNT_M,
+		"ship_sid_to_px": {
+			"fishboat": 40.0, "ferry": 70.0, "yacht": 35.0, "yachttur": 50.0,
+			"chaika": 45.0, "galley": 80.0, "frigate": 90.0, "xebec": 80.0,
+			"battleship": 90.0,
+		},
+		"ship_nesting": "fishboat | yacht/yachttur(tur overrides) | galley | frigate/xebec/battleship/chaika(frigate base, each override) | ferry",
+		"ship_unknown_sid": "[U] labelled MINIMUM floor / C-CAP-2",
+		"formation_defined_m": [float(Data.DEC_U_R_FORMATION_M[0]), float(Data.DEC_U_R_FORMATION_M[1])],
+		"formation_consumer": "[U] U12-form-open - commented out; live pitch unitRadius*0.8",
+		"formation_capture": "C-CAP-3",
+		"authority": "DEC_U_collision_full.md §1.3/§4 ev_4fef…",
+	}
+
+# ─── DEC-U INERTIA (DEC_U_collision_full.md §6; TEXT [O], ENGINE [U]) ─────────
+# [O] dmscript.global:969-974 (ev_c875…): mass default/stand/attack = 1/1.5/3;
+#     CI intersect radius default/stand/attack = 0.16/0.1/0.1 m.
+# [O] refunit/refbuilding CI block (ev_ae79…): Mass=1, CIIntersectRadius=0.16,
+#     CIMaxDistKoef=2, CIDeltaStep=0.005, CIRotationSpeed=5, CIStuckAngle=5,
+#     CIEpsilonAngle=4, CIEpsilonShift=0.001, CIEpsilonMove=0.02,
+#     CIDistExtPointEpsilon=0.005, CIAvoidPointMaxAngle=60,
+#     CIMaxCollideCounter=7, UncollideDelta=0.05; units movable, buildings not.
+# [O] unit.script:11163-11169: on build CI radius = gc_collision_radius_default*0
+#     (=0.0 m) with CIMovable=False; leaving build restores 0.16 m + movable.
+# [U] U13-inertia: stand/attack rows have no sampled script consumer and the
+#     XCollisionInertia .rsrc numeric fields are unrecovered (Data.DEC_U_COLLISION_INERTIA
+#     sentinel stays null). LABELLED TELEMETRY ONLY: nothing here is wired into
+#     the CI solver or gameplay; the runtime two-unit shove capture (§6) is the
+#     terminator. NO PARITY CLAIM.
+const DEC_U_INERTIA_MASS := {"default": 1.0, "stand": 1.5, "attack": 3.0}
+const DEC_U_INERTIA_RADIUS_M := {"default": 0.16, "stand": 0.1, "attack": 0.1}
+const DEC_U_CI_BLOCK := {
+	"mass": 1.0, "ci_intersect_radius_m": 0.16, "ci_max_dist_koef": 2.0,
+	"ci_delta_step": 0.005, "ci_rotation_speed": 5.0, "ci_stuck_angle": 5.0,
+	"ci_epsilon_angle": 4.0, "ci_epsilon_shift": 0.001, "ci_epsilon_move": 0.02,
+	"ci_dist_ext_point_epsilon": 0.005, "ci_avoid_point_max_angle": 60.0,
+	"ci_max_collide_counter": 7, "uncollide_delta": 0.05,
+	"units_movable": true, "buildings_movable": false,
+}
+
+func dec_u_inertia_telemetry() -> Dictionary:
+	return {
+		"mass": DEC_U_INERTIA_MASS,
+		"radius_m": DEC_U_INERTIA_RADIUS_M,
+		"ci": DEC_U_CI_BLOCK,
+		"build_ci_radius_m": 0.0,
+		"restore_ci_radius_m": 0.16,
+		"engine_state": "[U] U13-inertia (stand/attack rows have no sampled consumer)",
+		"rsrc_inertia": "[U] Data.DEC_U_COLLISION_INERTIA sentinel = null",
+		"authority": "DEC_U_collision_full.md §6 ev_c875…/ev_ae79… + unit.script:11163-11169",
+	}
+
+# §5.3/P14 donor pick chain: playable ∧ visible ∧ collision-detection.
+# Engine SetGameObjectRayCastIntersectEnabled is [U] U13 (E-U13), so the closest
+# safe port predicate is a live, unhidden, selectable entity with geometry [I].
+func dec_u_pick_eligible(e: Dictionary) -> bool:
+	if not (e is Dictionary):
+		return false
+	if bool(e.get("dead", false)) or bool(e.get("hidden", false)):
+		return false
+	var kind: String = str(e.get("kind", ""))
+	if kind != "unit" and kind != "building":
+		return false
+	return e.has("pos") and e.has("def")
+
+# Pick AABB extents (metres) from the single-source donor table. eurmil is [O]
+# ev_3f82…; every other sid is [U] U12 and uses the labelled block_r fallback.
+func dec_u_pick_aabb(e: Dictionary) -> Dictionary:
+	var out := {"min": Data.DEC_U_UNIT_AABB_MIN, "max": Data.DEC_U_UNIT_AABB_MAX, "scale": 1.0}
+	if str(e.get("kind", "")) != "unit":
+		if str(e.get("sid", "")) == "mil":
+			out["min"] = Data.DEC_U_EURMIL_AABB_MIN
+			out["max"] = Data.DEC_U_EURMIL_AABB_MAX
+			out["scale"] = Data.DEC_U_EURMIL_SCALE
+		else:
+			var r: float = bld_block_r(e)
+			out["min"] = Vector3(-r, 0.0, -r)
+			out["max"] = Vector3(r, r * 2.0, r)
+			out["scale"] = 1.0
 	return out
 
 func _add_res(type: String, pos: Vector2, hits: int, radius: float) -> void:
@@ -1934,9 +2470,11 @@ func _unblock_building(e: Dictionary) -> void:
 func pick_radius(e: Dictionary) -> float:
 	# click target size: visual footprint for sprite-drawn buildings (clicking
 	# the drawn walls works), gameplay radius + grab margin otherwise.
-	if e.get("kind", "") == "building":
-		return bld_block_r(e) + 1.4
-	return float(e.def.radius) + 1.4
+	# DEC-U §5.3/P11/P14: consume the px-derived donor collision radius as a
+	# single-source floor. Additive maxf: it never shrinks the existing click
+	# target (user mod / 2D parity preserved). Exact SelectionSize is [U] U12.
+	var base: float = bld_block_r(e) + 1.4 if str(e.get("kind", "")) == "building" else float(e.def.radius) + 1.4
+	return maxf(base, dec_u_collision_radius(e))
 
 func _load_image_tex(path: String) -> Image:
 	# Export-safe Image load: res:// PNGs are imported as CompressedTexture2D.
@@ -2609,8 +3147,17 @@ func mine_deposits(kinds: Array) -> Array:
 func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictionary:
 	var is_unit: bool = Data.UNITS.has(sid)
 	var def: Dictionary = Data.UNITS[sid] if is_unit else Data.BUILDINGS[sid]
+	# DEC-U-RNG-LEDGER §4-S0 (sim stream S, once per entity NOT per tick):
+	# S0-a unit.script:2726 `obj.uniqrnd := RandomExt` (1 draw, stored).
+	# S0-b unit.script:2706-2707 `obj.progresstick := floor(RandomExt*32)` (1 draw).
+	# ORDER is the §6 canonical fixture (uniqrnd then progresstick); the raw
+	# file-line order is [U] and NOT invented here. TObj.progresstick is distinct
+	# from TPlayer.progresstick (player.script:131-141, index*2) — both kept.
+	var birth_uniqrnd: float = sim_rng.random_f32()          # S0-a
+	var birth_progresstick: int = sim_rng.get_random(32)     # S0-b
 	var e := {
 		"id": next_id, "kind": "unit" if is_unit else "building", "player": player, "sid": sid,
+		"uniqrnd": birth_uniqrnd, "progresstick": birth_progresstick,
 		"def": def, "pos": pos, "hp": def.hp, "max_hp": def.hp, "dead": false,
 		"order": {"type": "none"}, "cooldown": 0.0, "carry": 0, "carry_type": "",
 		"inside_of": 0, "moving": false, "finished": finished, "progress": def.build_time if finished else 0.0,
@@ -2618,6 +3165,23 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 		"morale": Data.MORALE_BASE, "routing": false, "deploy_t": 0.0, "stuck_t": 0.0, "hit_t": 0.0,
 		"death_t": -1.0, "fire_t": -1.0, "acq_t": 0.0, "aur_off": false, "aur_dru": false,
 	}
+	# DEC-U-RES-POINT §5.2 (donor objcustom.cfg via country.script:4164-4169):
+	# populate the resource_point key that _store_drop_point/_port_resource_point
+	# already read. Values are DONOR-EXACT [O] (27/27 table in DEC_U_res_point §1);
+	# the single source of truth is data.gd (RESOURCE_POINT / PORT_SID_TO_DONOR),
+	# which is OUT OF SCOPE for this worker. Read both by name from the script's
+	# own constant map so this file compiles before data.gd lands and so NO
+	# offset is copied/invented here. Port generic sids are grounded by data.gd's
+	# own prop cites: sto->eursto.prop (:3059), mil->eurmil.prop (:3053),
+	# cen->algcen.prop (:3068). DONOR rotation is NEGATIVE (§3): the consumers
+	# below add the Vector2 unrotated — no face/rotation/scale transform.
+	# NO PARITY CLAIM; T-OFF/T-ROT fixed-camera traces still required (§4).
+	if e.kind == "building":
+		var sid_map: Dictionary = Data.PORT_SID_TO_DONOR
+		var rp_table: Dictionary = Data.RESOURCE_POINT
+		var donor_sid: String = str(sid_map.get(sid, ""))
+		if donor_sid != "" and rp_table.has(donor_sid):
+			e["resource_point"] = rp_table[donor_sid]
 	if is_unit:
 		e["hp"] = int(float(def.hp) * players[player].get("hp_mult", 1.0))
 		e["max_hp"] = e["hp"]
@@ -2688,6 +3252,8 @@ func spawn(sid: String, player: int, pos: Vector2, finished := true) -> Dictiona
 
 # W3-1: shared default rally for trainers, used both on completion and after a
 # capture (X1 C10) so _on_building_finished is not the only place that sets it.
+# [U] U-formation/U-walkinterval — default rally exit point is PORT APPROX
+# positioning, not a donor speed law (§7-S6/T-FORM); no speed scalar is wired.
 func _default_rally(e: Dictionary) -> Vector2:
 	return e.pos + Vector2(0, float(e.get("block_r", e.def.radius)) + 2.0)
 
@@ -2964,17 +3530,15 @@ func _tick_fields(dt: float) -> void:
 	fields_anim = any
 
 # Donor progresseconomicai.inc:3688-3700,3896 + dmscript.global:1487
-# (gc_global_TimeSeedWheat = 0.03*2000, ~60 s). Only AI mills re-seed: the
-# human adviser path is deferred by the skirmish-only charter. Field regrowth
-# maps donor HP -> port hits (nothing.inc:78-84, derived).
-# T-FIELDS-GFX: the legacy bulk restore now respects the mill gate too.
+# (gc_global_TimeSeedWheat = 0.03*2000, ~60 s). Field regrowth maps donor HP ->
+# port hits (nothing.inc:78-84, derived).
+# T-FIELDS-GFX: the legacy bulk restore respects the mill gate (kept below).
+# DEC-U-TICK-ORDER §6-3/§6-5: the old global sow_t pass re-seeded every AI mill
+# on one UNGATED 60 s timer. The donor law is a PER-PLAYER absolute-deadline
+# gate (itype 3, 60.0+plInd*3, init id*0.25+60.0), now in ai.gd `_seed_wheat`;
+# the duplicate ungated sow loop is removed here so there is only one seeded
+# path. The human adviser branch stays deferred by the skirmish-only charter.
 func _tick_field_growth() -> void:
-	for pi in players.size():
-		if not bool(players[pi].get("is_ai", false)):
-			continue
-		for b in buildings_of(pi, false):
-			if b.sid == "mil" and b.finished:
-				_sow_field_ring(b, _demo_mill_enabled())
 	for n in res_nodes:
 		if n.type == "food" and n.has("mill") and int(n.hits) <= 0 and int(n.max_hits) > 0:
 			if _field_mill_id(n) != 0:
@@ -3191,6 +3755,79 @@ func _repair_start_reach() -> void:
 				if placed:
 					break
 
+# ── DEC-U §4 starts: DONOR-VERBATIM tables now live in data.gd ──────────────────
+# 6-resource addresources per startid, the X09-7 double-add quirk, the role→airole
+# map and the mask counts/strings are transcribed there. Only statically present
+# data is used: no mask string is invented where §4.3 only gives counts.
+const _DONOR_STARTID_BY_KEY := {"default": 0, "armysmall": 1, "armymedium": 2,
+	"armylarge": 3, "peasantslot": 4}
+
+func _donor_startid() -> int:
+	return int(_DONOR_STARTID_BY_KEY.get(str(Data.START_OPTION), -1))
+
+func _apply_donor_start_resources(pi: int, startid: int) -> void:
+	# dogenerate.inc:255-292 — one top-level addresources block, then the SAME
+	# block again per matched country (2x). dataversionmin=60/max=1000 (port 91).
+	if not (Data.GENERATOR_VERSION >= Data.DONOR_START_DATAVERSION[0]
+			and Data.GENERATOR_VERSION <= Data.DONOR_START_DATAVERSION[1]):
+		return
+	var nation: String = str(players[pi].get("nation", ""))
+	var add: Array = Data.donor_start_resources(startid, nation)
+	for k in range(6):
+		players[pi].res[k] += float(add[k])
+
+# [I] PORT MAPPING: airole -> generic port sid. The donor resolves airole to a
+# country member id via `_country_GetMemberIDByAIRole` (dogenerate.inc:293-377);
+# that full static table was not recovered and is [U]-T1-tail. This minimal map
+# only names port sids that already exist, then delegates to Data.resolve_sid().
+func _donor_role_to_sid(role: int, nation: String) -> String:
+	var generic: String = ""
+	match role:
+		1: generic = "peasant"
+		21: generic = "officer"
+		22: generic = "drummer"
+		23: generic = "pikeman"
+		25: generic = "musketeer"
+		26: generic = "reiter"
+		34: generic = "archer"
+		_: return ""
+	return Data.resolve_sid(nation, generic)
+
+func _spawn_donor_start_mask(pi: int, centre: Vector2, startid: int) -> void:
+	# Only VERBATIM rows from §4.3 are spawned; count-only rows are skipped and
+	# stay tagged [U]-S-mask (experiment §9: re-read startingsettings.cfg lines).
+	var nation: String = str(players[pi].get("nation", ""))
+	var group: String = str(startid) + ":" + nation
+	if not Data.DONOR_START_MASKS.has(group):
+		group = str(startid) + ":default"
+	if not Data.DONOR_START_MASKS.has(group):
+		return
+	var entry: Dictionary = Data.DONOR_START_MASKS[group]
+	if not bool(entry.get("verbatim", false)):
+		return
+	var leg: Dictionary = entry.get("counts", {})
+	var p_role: int = int(Data.DONOR_START_P_ROLE.get(group,
+		Data.DONOR_START_P_ROLE.get(str(startid) + ":default", 23)))
+	# donor unitradius = gc_obj_radius_default*tiles_to_pixels*4; in port metres
+	# that is the 10 px default radius (DEC_U_R_DEFAULT_M = 0.375 m) times 4.
+	var cell_size: float = float(Data.DEC_U_R_DEFAULT_M) * float(Data.DONOR_START_UNIT_RADIUS_FACTOR)
+	var rows: Array = entry.get("rows", [])
+	for ri in rows.size():
+		var row: String = str(rows[ri])
+		for ci in row.length():
+			var ch: String = row.substr(ci, 1)
+			var role: int = int(Data.DONOR_ROLE_TO_AIROLE.get(ch, 0))
+			if ch == "P":
+				role = p_role
+			if ch == "Q" or ch == "W":
+				continue                      # basename legends, no static sid
+			var sid: String = _donor_role_to_sid(role, nation)
+			if sid == "" or not Data.UNITS.has(sid):
+				continue
+			var pos: Vector2 = centre + Vector2(float(ci) * cell_size, float(ri) * cell_size)
+			var u := spawn(sid, pi, pos)
+			u.face = deg_to_rad(Data.DONOR_START_DIR_DEG)
+
 func _spawn_starts() -> void:
 	# The donor reads startx/starty from the chosen mask's white markers;
 	# spawning at fixed corners would leave the player far from its guaranteed
@@ -3201,7 +3838,14 @@ func _spawn_starts() -> void:
 		var c := starts[i]
 		var cen := spawn("cen", i, c)
 		var cr: float = float(cen.get("block_r", cen.def.radius))
-		players[i].res[0] += float(opt.get("food", 0))
+		# §4 donor start resources replace the legacy single `food` shortcut for
+		# the four mapped startids (double-add quirk included); default keeps the
+		# pre-existing port behaviour byte-identically.
+		var donor_sid: int = _donor_startid()
+		if donor_sid > 0:
+			_apply_donor_start_resources(i, donor_sid)
+		else:
+			players[i].res[0] += float(opt.get("food", 0))
 		var peasant_cols := maxi(1, int(ceil(float(Data.START_PEASANTS) * 0.5)))
 		var peasant_spacing := 1.8
 		for k in Data.START_PEASANTS:
@@ -3236,6 +3880,11 @@ func _spawn_starts() -> void:
 					var a := TAU * ring / maxf(1.0, float(total))
 					spawn(_spawn_sid(i, sid), i, c + Vector2(cos(a), sin(a)) * (cr + 3.0 + (ring % 4) * 1.5))
 					ring += 1
+		# §4.3 mask legend spawn (dir=-90, donor cell radius*4). Only verbatim
+		# rows are spawned; count-only rows stay [U]-S-mask. Guarded against the
+		# legacy army preset so the same unit is never spawned twice.
+		if donor_sid > 0 and not battle_mode and float(opt.get("army_mult", 0.0)) <= 0.0:
+			_spawn_donor_start_mask(i, c, donor_sid)
 	if _demo_mill_enabled():
 		_spawn_demo_mill(starts[0])
 
@@ -3445,9 +4094,12 @@ func _mine_debug(res: String) -> String:
 		out.append("%s/%s fin=%s dep=%s dead=%s" % [b.sid, b.player, b.finished, b.get("deposit_left", -1), b.dead])
 	return "[" + ", ".join(out) + "]"
 
-# Single team predicate shared by every target-selection path. A negative team
-# id (the new_player default, -1) means free-for-all: never an alliance. Two
-# players are allies only when both carry a real (>= 0) team id that matches.
+# Single predicate shared by every target-selection path. DEC_U_teams §4 has
+# TWO layers: Layer A (team id) is the win/FOW/AI key — dense >= 1 after
+# _setup_teams; Layer B (enemy_mask) is the targeting key. Trigger action 18
+# (set_enemy) makes a same-team pair mutually hostile WITHOUT rewriting team,
+# so the win stays shared (U-T5) while targeting sees enemies. Both layers must
+# pass here. A negative team is the legacy pre-setup FFA sentinel.
 func _is_ally(a: int, b: int) -> bool:
 	if a < 0 or b < 0 or a >= players.size() or b >= players.size() or a == b:
 		return false
@@ -3457,7 +4109,156 @@ func _is_ally(a: int, b: int) -> bool:
 	var tb := int(players[b].team)
 	if ta < 0 or tb < 0:
 		return false
-	return ta == tb
+	if ta != tb:
+		return false
+	# Layer B — donor gPlayer[].enemyplmask (control.script:225, ai.script:786+).
+	var ma: int = int(players[a].get("enemy_mask", 0))
+	var mb: int = int(players[b].get("enemy_mask", 0))
+	if (ma & (1 << b)) != 0 or (mb & (1 << a)) != 0:
+		return false
+	return true
+
+# ── R1–R4: donor team setup + two-layer diplomacy (DEC_U_teams §§2/4/5/8) ──────
+# Everything below is game.gd-owned. The fog module is NEVER edited here; R4
+# only CALLS its existing rebuild_fow_enable() (world3d_fog.gd:671-693).
+
+# [O] initmapgen.inc:154-165 / initmap.inc:52-64 / serial.script:83-94 —
+# pairwise FFA-safe mask init, run BEFORE the SetupTeams snapshot:
+#   if (myteam <> histeam) or (histeam = 0) or (myteam = 0) then ENEMY
+#   else FRIEND
+# so lobby 0 vs anything (including 0 vs 0) is hostile. Port -1 -> 0 here.
+func _init_enemy_masks() -> void:
+	var n: int = players.size()
+	for i in n:
+		var ti: int = int(players[i].get("team", -1))
+		if ti < 0:
+			ti = 0
+		var mask: int = 0
+		for j in n:
+			if i == j:
+				continue
+			var tj: int = int(players[j].get("team", -1))
+			if tj < 0:
+				tj = 0
+			if ti != tj or ti == 0 or tj == 0:
+				mask |= (1 << j)
+		players[i]["enemy_mask"] = mask
+	# `bneutral` starts false in new_player() (TPlayer init [O] player.script:
+	# 119-124); only trigger 19/20 mutate it, via _clear_bneutral/set_neutral.
+
+# [O] player.script:2139-2173 VERBATIM. The port has ONE `team` field, so the
+# incoming lobby key is snapshotted separately and the sim field is reset to
+# the donor pre-setup sentinel 0 before the outer scan. map_info=true uses the
+# lobby key as grouping label (dogenerate.inc:2052); false uses the sim field
+# (initmap.inc:66). curTeam is DENSE assignment order, never the lobby label.
+func _setup_teams(map_info: bool) -> void:
+	var n: int = players.size()
+	var key: Array = []
+	for i in n:
+		var t: int = int(players[i].get("team", -1))
+		key.append(0 if t < 0 else t)    # -1 -> 0 at this boundary, then forget -1
+		players[i]["team"] = 0           # gPlayer[].team pre-setup sentinel [O]
+	enemy_info_list = []                 # gEnemyInfoList.Clear
+	var cur: int = 1
+	for i in n:
+		if int(players[i].get("team", 0)) != 0:
+			continue
+		players[i]["team"] = cur                       # (a) claim next sim team
+		enemy_info_list.append({                       # TEnemyInfo, one per hit
+			"team": cur,
+			"enemyMask": int(players[i].get("enemy_mask", 0)),
+			"changed": false})
+		var my_team: int = key[i] if map_info else int(players[i].get("team", 0))  # (b)
+		if my_team > 0:
+			for j in range(i + 1, n):
+				var jt: int = key[j] if map_info else int(players[j].get("team", 0))
+				if jt == my_team:
+					players[j]["team"] = cur          # (c) forward-only absorb
+		cur += 1                                       # (d) ALWAYS increments
+
+# [O] player.script:2177-2211 `_player_MakeAlly` + scenario.script:2198-2224
+# (trigger 19): the ONLY runtime op that changes the win-law team grouping.
+# Merge team ids into a's team, then rebuild masks (donor complement mask =
+# all bits not owned by the merged team; same pairwise FFA-safe rule).
+func set_ally(a: int, b: int) -> void:
+	if a == b or a < 0 or b < 0 or a >= players.size() or b >= players.size():
+		return
+	var ta: int = int(players[a].get("team", -1))
+	var tb: int = int(players[b].get("team", -1))
+	if ta == tb:                          # donor guard: no-op if already same team
+		return
+	for p in players:
+		if int(p.get("team", -1)) == tb:
+			p["team"] = ta
+	_init_enemy_masks()                   # complement mask after merge
+	_rebuild_enemy_info()                 # absorbed TEnemyInfo reset / winner changed
+	_clear_bneutral(a, b)                 # :2211 bneutral:=False around slot 0
+	_notify_fow_rebuild()                 # R4 — team merge -> re-resolve FOW
+
+# [O] scenario.script:2175-2197 (trigger 18): mask + engine handles ONLY. The
+# two `_player_MakeEnemy` calls are COMMENTED OUT (:2176-2179), so team ids are
+# never rewritten here — the win team must not split (U-T5). The port has no
+# engine friend/enemy handles; the mask bit is the observable targeting write.
+func set_enemy(a: int, b: int) -> void:
+	if a == b or a < 0 or b < 0 or a >= players.size() or b >= players.size():
+		return
+	players[a]["enemy_mask"] = int(players[a].get("enemy_mask", 0)) | (1 << b)
+	players[b]["enemy_mask"] = int(players[b].get("enemy_mask", 0)) | (1 << a)
+	_clear_bneutral(a, b)                 # bneutral:=False on slots involving 0
+
+# [O] scenario.script:2225-2249 (trigger 20): mask only — clear both bits
+# (neutral is FRIEND at the engine layer) and set bneutral on the non-zero slot
+# when slot 0 is involved. Team ids UNCHANGED.
+func set_neutral(a: int, b: int) -> void:
+	if a == b or a < 0 or b < 0 or a >= players.size() or b >= players.size():
+		return
+	players[a]["enemy_mask"] = int(players[a].get("enemy_mask", 0)) & ~(1 << b)
+	players[b]["enemy_mask"] = int(players[b].get("enemy_mask", 0)) & ~(1 << a)
+	if a == 0:
+		players[b]["bneutral"] = true
+	elif b == 0:
+		players[a]["bneutral"] = true
+
+func _clear_bneutral(a: int, b: int) -> void:
+	if a == 0:
+		players[b]["bneutral"] = false
+	elif b == 0:
+		players[a]["bneutral"] = false
+
+# [O] player.script:2158-2170 — gEnemyInfoList is rebuilt on team merge/split;
+# lookup is by team (_misc_GetPlayerEnemyInfo, misc.script:3003-3026).
+func _rebuild_enemy_info() -> void:
+	enemy_info_list = []
+	var seen: Dictionary = {}
+	for p in players:
+		var t: int = int(p.get("team", -1))
+		if seen.has(t):
+			continue
+		seen[t] = true
+		enemy_info_list.append({"team": t,
+			"enemyMask": int(p.get("enemy_mask", 0)), "changed": false})
+
+# R4 [O] DEC_U_teams §5 point 4: FOW must re-resolve on every team merge/split
+# and every victorystate transition (player.script:451-478). game.gd owns the
+# CALL; the fog module is a child of the composed world, a sibling of this Node
+# under Main (world3d.gd:_instantiate :231-244). No fog source is edited here.
+func _notify_fow_rebuild() -> void:
+	if not is_inside_tree() or get_tree() == null:
+		return
+	var fog := _find_fow_module(get_tree().root)
+	if fog != null and fog.has_method("rebuild_fow_enable"):
+		fog.call("rebuild_fow_enable")
+
+func _find_fow_module(n: Node) -> Object:
+	if n == null:
+		return null
+	if n.has_method("rebuild_fow_enable"):
+		return n
+	for c in n.get_children():
+		var hit := _find_fow_module(c)
+		if hit != null:
+			return hit
+	return null
 
 # DONOR capture-mode semantics (R02 claim 3): the skirmish option governs WHAT
 # may change owner, not who may lean on a capture point. Modes:
@@ -3610,9 +4411,12 @@ func cmd_gather(e: Dictionary, res_node: Dictionary) -> void:
 	if e.kind != "unit" or e.dead or e.sid != "peasant":
 		return
 	_leave_building(e)
-	# a load of something else is dropped when the peasant changes its mind
-	e.carry = 0
-	e.carry_type = ""
+	# DEC-U-CARRY §5 P-CARRY-4 / donor unit.script:5541-5545 [O]: a carried
+	# load is discarded ONLY when the new resource type DIFFERS. A same-res
+	# reorder keeps the load (it counts toward the next full load, :9708).
+	if e.carry_type != "" and e.carry_type != res_node.type:
+		e.carry = 0
+		e.carry_type = ""
 	if res_node.type in ["gold", "iron", "coal"]:
 		var mine := nearest_mine(e.pos, res_node.type, int(e.player))
 		if mine.is_empty():
@@ -3707,13 +4511,63 @@ func cmd_attack_ground(e: Dictionary, pos: Vector2) -> void:
 		return
 	e.order = {"type": "attackground", "pos": pos}
 
+# ── IMPL-CAPTURE-STATE-GAME §7 item 4 — DONOR absorber gate (TEXT [O]) ───────────
+# _unit_CanGoInside (unit.script:10048-10056) verbatim: building target =>
+# allowed ONLY trg.usage=mine AND unit.usage=peasant (:10052-10053);
+# non-building target => trg.transport>0 AND unit non-building AND media=land
+# (:10054-10055). Towers/centres/barracks have peasantabsorber=0, transport=0
+# => False; there is NO donor line permitting tower/centre entry.
+# Mine: peasantabsorber=5 + produce[gold/iron/coal]=13 (unit.script:2315-2321);
+# ferry: transport=80+40=120, usage=transport, bnohungry (:2043-2045).
+# Capacity: _unit_IsUnitCanAbsorbInside (:10027-10044) needs bbuilt and
+# absorber+transport+addabsorber+addtransport > inCount; _unit_OrderGoInside
+# (:5556-5590) reserves insidereserved+=1, refuses when full or trgHnd=0.
+# NO PARITY CLAIM; CS-GARRISON [U] 3-run zero-mismatch retained.
+func _donor_can_go_inside(e: Dictionary, b: Dictionary) -> bool:
+	if str(b.get("kind", "building")) == "building":
+		return str(b.sid).begins_with("mine_") and str(e.sid) == "peasant"
+	# [O] unit.script:10054-10055: transport>0 + non-building + land media.
+	return int(b.def.get("transport", 0)) > 0 and e.kind == "unit" and not _is_naval(e)
+
 func cmd_enter(e: Dictionary, b: Dictionary) -> void:
 	if e.dead or e.kind != "unit" or e.player != b.player or b.dead or not b.finished:
+		return
+	# IMPL-CAPTURE-STATE-GAME §7 item 4 [O] DONOR GATE, checked FIRST:
+	# _unit_CanGoInside (unit.script:10048-10056) — mines + transports only;
+	# tower/centre returns False. This branch implements the donor-settled
+	# peasant->mine case; the tow/cen case below stays as PORT_GARRISON.
+	if _donor_can_go_inside(e, b):
+		# [O] DoHideInside (unit.script:3087-3099): AddInside (insideofuid :=
+		# trgUID + winner resincome += produce, :3018-3032) -> FullClearOrders
+		# (all 12 slots static-cleared, :2884-2890) -> tag visual_hide [+
+		# essential_birth iff current essential <> birth] (:3092-3098) ->
+		# SetTagStates (unit.script:358-365). Port mirrors: inside_of, order
+		# none, hidden. NO essential-tag field exists => the birth co-tag is a
+		# LABEL only, no hide gate invented.
+		# Hide transitions represented as LABELS [O]
+		# units/unit.inc/ontagstates.inc:851-884 (Visible(False),
+		# CollisionDetection(False), STO-keyed inside.Add guarded by
+		# peasantAbsorber+transport>0, client/replay ClearOrders, hide+none
+		# impossible/error-logged); birth arm :888-901 (Playable(False), CI
+		# radius shrink, Picked(False), gSelectedObjects.Remove,
+		# gGuiUpdateHighlights.Add, ScanGridRemoveUnit,
+		# SelectedGroupRemoveUnit); buildings mirror
+		# units/building.inc/ontagstates.inc:170-190. Port has no STO /
+		# selection / scangrid-write on this path — labels only, CS-HIDE [U].
+		_leave_building(e)
+		e.inside_of = b.id
+		e.order = {"type": "none"}
+		e["hidden"] = true
 		return
 	if not str(b.sid) in ["tow", "cen"]:
 		return
 	if e.def.get("artillery", false) or e.def.get("cavalry", "") != "":
 		return
+	# PORT_GARRISON (NO donor counterpart; CS-GARRISON [U]) — tow/cen cap-10
+	# garrison is a playtested port rule, KEPT VERBATIM, never donor-cited.
+	# Donor CanGoInside (unit.script:10052-10053) returns False for every one
+	# of these targets; the mine absorber cite (unit.script:2315-2321)
+	# justifies the donor branch above, NOT this port path.
 	if int(b.get("garrison", 0)) >= 10:
 		return
 	_leave_building(e)
@@ -3723,12 +4577,21 @@ func cmd_enter(e: Dictionary, b: Dictionary) -> void:
 	b["garrison"] = int(b.get("garrison", 0)) + 1
 
 func cmd_unload(b: Dictionary) -> void:
+	# IMPL-CAPTURE-STATE-GAME §7 item 4 [O] un-hide restore represented as
+	# LABELS: units/unit.inc/ontagstates.inc:904-918 (none arm restores
+	# Playable + CollisionDetection + highlight, SetSTO(0), ScanGridProgress)
+	# and RemoveFromInside (unit.script:3034-3083: inside.Remove, resincome -=
+	# produce per resource, clear insideofuid/bLeaveRequested). Port has no
+	# STO / resincome / scangrid-write here — labels only; CS-HIDE [U] 3-run
+	# zero-mismatch retained, no hide gate invented, NO PARITY CLAIM.
 	if b.dead or b.kind != "building":
 		return
 	var k := 0
 	for e in live_units:
 		if e.dead or e.inside_of != b.id or not bool(e.get("hidden", false)):
 			continue
+		# [O] insideofuid cleared + resincome -= produce (:3058-3083); port
+		# only mirrors the id/hidden/pos/order restore.
 		e.inside_of = 0
 		e["hidden"] = false
 		e.pos = b.pos + Vector2(cos(k * 2.4), sin(k * 2.4)) * (float(b.get("block_r", b.def.radius)) + 1.0)
@@ -4048,6 +4911,10 @@ func _squad_order_members(off_id: int, dest: Vector2, attack: bool) -> void:
 			u.moving = true
 
 # Shared box/line/column/square layout for group orders.
+# [U] U-formation (T-FORM): FORMATIONS shape mults + FORMATION_SPACING are PORT
+# APPROX slot positioning only (DEC_U_move_speed.md §5.1/§7-S6); donor pitch is
+# unitRadius*0.8/*0.5 (group.script:131-148). Inert DONOR_FORMATION_PITCH stays
+# unread; no formation speed factor is invented.
 func formation_targets(sel: Array, center: Vector2, formation := "none") -> Array:
 	var n := sel.size()
 	if n == 0:
@@ -4244,9 +5111,25 @@ func apply_upgrade_to_building(b: Dictionary, uid: String) -> void:
 		b["rof_mult"] = float(b.get("rof_mult", 1.0)) * float(eff.tower_rof)
 	post_event("upgraded", b.pos, uid)
 
-# Market barter: give 100 of one resource, receive rate-adjusted amount of
-# another. The rate drifts down as you dump one resource (video-visible
-# exchange with commission).
+# RESOLVED donor market law (DEC-U §2.2, lib/res.script:180-344). NO PARITY
+# CLAIM. Costs are per-resource [min, def, max] triplets; costs init to def
+# (res.script:247-248). Old v3/v4 saves have no market_cost, so fill lazily
+# without changing any other player key (v5 round-trip preserved).
+func _ensure_market_cost(p: Dictionary) -> void:
+	var d: Dictionary = {}
+	if p.has("market_cost") and p["market_cost"] is Dictionary:
+		d = p["market_cost"]
+	for rn in Data.RES_NAMES:
+		var key := str(rn)
+		if not d.has(key):
+			var bt: Array = Data.market_triplet(key, true)
+			var st: Array = Data.market_triplet(key, false)
+			d[key] = {"buy": float(bt[1]), "sell": float(st[1])}  # :247-248 init to def
+	p["market_cost"] = d
+
+# Market barter: give one resource, receive floor(sellamount*sellcost/buycost).
+# Donor trade pushes BOTH costs toward max on the buy side and toward min on
+# the sell side, weight = amount*gc_economy_exp (0.00002).
 func trade(player: int, give: String, want: String, amount := 100.0) -> bool:
 	if not Data.BUILDINGS.has("mar"):
 		return false
@@ -4265,29 +5148,98 @@ func trade(player: int, give: String, want: String, amount := 100.0) -> bool:
 	if float(p.res[gi]) < amount:
 		_say_human(player, "Not enough %s to trade." % give)
 		return false
-	var rate: float = float(p.get("market_rate", Data.MARKET_RATE))
-	var got := amount * rate
-	p.res[gi] = float(p.res[gi]) - amount
-	p.res[wi] = float(p.res[wi]) + got
-	p.market_rate = maxf(0.35, rate - Data.MARKET_DRIFT * amount / 100.0)
-	stats.gathered["trade"] = int(stats.gathered.get("trade", 0)) + int(got)
+	_ensure_market_cost(p)
+	var mc: Dictionary = p["market_cost"]
+	var sellcost: float = float((mc[give] as Dictionary)["sell"])
+	var buycost: float = float((mc[want] as Dictionary)["buy"])
+	var buyamount: int = int(floorf(amount * sellcost / buycost))
+	if buyamount <= 0:
+		return false
+	var sellamt: float = minf(amount, float(p.res[gi]))   # `not res` = value read
+	p.res[gi] = float(p.res[gi]) - sellamt
+	p.res[wi] = float(p.res[wi]) + float(buyamount)
+	# RESOLVED donor cost-push (DEC-U-MARKET-TAIL §1 / res.script:337-342):
+	# rational blend (c + bound*w)/(1+w), NOT the old linear (c+(bound-c)*w).
+	# Fixed order: buy side toward max FIRST, then sell side toward min. Exactly
+	# two rows (buyres, sellres) — the old all-resource loop was wrong-shape.
+	# :340 reads gEconomy[buyres].sellexp (quirk; buyexp==sellexp so inert) —
+	# preserved structurally via the single Data.MARKET_EXP constant.
+	# [U]-U6-T: floor/Lerp float semantics await fixed-seed capture U6-T
+	# (36 floats, zero-mismatch). NO PARITY CLAIM.
+	var wbuy: float = float(buyamount) * Data.MARKET_EXP
+	var bcb: Dictionary = mc[want]
+	var btrip: Array = Data.market_triplet(want, true)
+	var bstrip: Array = Data.market_triplet(want, false)
+	bcb["buy"] = clampf((float(bcb["buy"]) + float(btrip[2]) * wbuy) / (1.0 + wbuy), float(btrip[0]), float(btrip[2]))
+	bcb["sell"] = clampf((float(bcb["sell"]) + float(bstrip[2]) * wbuy) / (1.0 + wbuy), float(bstrip[0]), float(bstrip[2]))
+	var wsell: float = sellamt * Data.MARKET_EXP   # donor :340 uses buyres.sellexp == MARKET_EXP
+	var scb: Dictionary = mc[give]
+	var strip: Array = Data.market_triplet(give, false)
+	var sbtrip: Array = Data.market_triplet(give, true)
+	scb["sell"] = clampf((float(scb["sell"]) + float(strip[0]) * wsell) / (1.0 + wsell), float(strip[0]), float(strip[2]))
+	scb["buy"] = clampf((float(scb["buy"]) + float(sbtrip[0]) * wsell) / (1.0 + wsell), float(sbtrip[0]), float(sbtrip[2]))
+	stats.gathered["trade"] = int(stats.gathered.get("trade", 0)) + buyamount
 	post_event("trade", Vector2.ZERO, give + ">" + want)
 	return true
 
-# PORT-CONTROL hand-off: trade() pushes the rate down to a 0.35 floor; this
-# slowly recovers it toward Data.MARKET_RATE. Cadence is INFERRED (no donor
-# number), exposed as Data.MARKET_RECOVERY_PER_S for tuning.
-func tick_market(dt: float) -> void:
-	var target: float = float(Data.MARKET_RATE)
-	var step: float = maxf(0.0, float(Data.MARKET_RECOVERY_PER_S)) * maxf(0.0, dt)
-	if step <= 0.0:
-		return
-	for p in players:
-		var cur: float = float(p.get("market_rate", target))
-		if cur < target:
-			p.market_rate = minf(target, maxf(0.35, cur + step))
+# RESOLVED donor exponential recovery (DEC-U §2.2, res.script:291-308): the
+# old linear buytime*deltatime block is commented out in the donor. Live law
+# bc = bc - (bc-bcd)*dt, dt = deltatime*0.025*Max(1, dlt*0.01); bcd = def cost.
+# CORRECTION (DEC-U-MARKET-TAIL §2, supersedes the old "project-mode-gated =>
+# 0 => factor 1" reading): garr_res_dlt is LIVE in skirmish — GetProjectModeInt
+# = 2 = game, not editor (dmscript.global:1418-1420; res.script:254). Init 0
+# (:184); per tick dlt := round(Lerp(dlt, ClampInt(r-trg, 1, 1000), deltatime)),
+# trg := r (:262-263), where r is the total stock over ALL player slots (:261).
+# [U]-DLT: Lerp/ClampInt/round engine float semantics await fixed-seed capture
+# DLT (600 ticks incl. quiet + active windows; zero-mismatch). NO PARITY CLAIM.
+# BUYTIME/SELLTIME stay unconsumed (donor :279-286 commented out).
+func _ensure_market_dlt(p: Dictionary) -> void:
+	if not (p.has("market_dlt") and p["market_dlt"] is Array and (p["market_dlt"] as Array).size() == Data.RES_NAMES.size()):
+		p["market_dlt"] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	if not (p.has("market_trg") and p["market_trg"] is Array and (p["market_trg"] as Array).size() == Data.RES_NAMES.size()):
+		p["market_trg"] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-# Officer aura: nearby officer raises damage, drummer raises speed/morale.
+func tick_market(dt: float) -> void:
+	for p in players:
+		_ensure_market_cost(p)
+		_ensure_market_dlt(p)
+		var mc: Dictionary = p["market_cost"]
+		var dlt: Array = p["market_dlt"]
+		var trg: Array = p["market_trg"]
+		for ri in Data.RES_NAMES.size():
+			var key := str(Data.RES_NAMES[ri])
+			if not mc.has(key):
+				continue
+			# donor :255-263: gflt_res_dlt>0 gate subsumed (any dt>0 updates).
+			# Store arrays are held by reference; index writes persist per player.
+			var r_total: float = 0.0
+			for q in players:
+				if ri < (q.res as Array).size():
+					r_total += float(q.res[ri])
+			if dt > 0.0:
+				dlt[ri] = roundf(lerpf(float(dlt[ri]), clampf(r_total - float(trg[ri]), 1.0, 1000.0), dt))
+				trg[ri] = r_total
+			# :291 factor — NO hardcoded 1 any more.
+			var rdt: float = dt * Data.MARKET_RECOVERY_RATE * maxf(1.0, float(dlt[ri]) * 0.01)
+			var trip_b: Array = Data.market_triplet(key, true)
+			var trip_s: Array = Data.market_triplet(key, false)
+			var cb: Dictionary = mc[key]
+			cb["buy"] = clampf(float(cb["buy"]) - (float(cb["buy"]) - float(trip_b[1])) * rdt, float(trip_b[0]), float(trip_b[2]))
+			cb["sell"] = clampf(float(cb["sell"]) - (float(cb["sell"]) - float(trip_s[1])) * rdt, float(trip_s[0]), float(trip_s[2]))
+
+# ── DEC-U MOVE-SPEED §5.1/§5.3 / §7-S3/S6 — drummer/rally/formation tags ──────
+# [U] U-formation/U-walkinterval (T-FORM / T-SPEED), ZERO wiring, NO PARITY CLAIM.
+# Donor sampled script has NO formation/squad/march speed factor (P11-T grep x0)
+# and NO drummer speed row: group.script:131-148 is a POSITION pitch
+# (unitRadius*0.8, dispRadius*0.5; 8/12 px constants //dead), formations.cfg
+# bonuses are damage/shield only, and walkintervalfactor (unit.script:595-598,
+# :11054-11173 SetGameObjectIntervalFactorByHandle) is ANIM cadence, not proven
+# velocity. Rally staggering / FORMATIONS shape mults / DRUMMER_SPEED_BONUS +12%
+# remain PORT APPROXIMATION — values kept, NO retune. The inert
+# Data.DONOR_FORMATION_PITCH / DONOR_WALK_INTERVALS / DONOR_ROTATE_* tables are
+# deliberately NOT read here. Every [U] closes only on a FULL zero-mismatch
+# fixed-seed trace; do not invent a formation/carry/walk speed scalar.
+# Officer aura: nearby officer raises damage, drummer raises speed/morale.   # PORT INVENTION (U10) — no donor officer/drummer aura radius
 func officer_near(pos: Vector2, player: int) -> bool:
 	if player < 0 or player > 1:
 		return false
@@ -4308,12 +5260,41 @@ func drummer_near(pos: Vector2, player: int) -> bool:
 			return true
 	return false
 
+# ── DEC-U MOVE-SPEED §7 / IMPL-MOVE-LABELS — GAME-SIDE LABEL REGISTER ──────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_move_speed.md §1-§8/§10.
+# LABELS ONLY — comments in this ticket. NO behaviour change, NO retune, NO
+# activation, NO test weakening, NO DONOR PARITY CLAIM (no donor/port A/B).
+# Inert Data.DONOR_SPEED_* / DONOR_ROTATE_* / DONOR_FORMATION_* / DONOR_WALK_*
+# tables are deliberately NOT read by gameplay code. Donor text was read
+# READ-ONLY; no donor binary executed, no donor bytes copied.
+# CONVERSIONS KEPT AS-IS: PX_TO_M = 1/26.6666666 and TILE_M are donor-derived
+# (dmscript.global:170-175); never substitute the estimated tile stride.
+# NO speedperc site exists here: Data.DONOR_SPEED_DIVISOR_INIT (:618/:516),
+# DONOR_UPG_SPEEDPERC (country.script:3639) and DONOR_SPEED_FORMULA[_DETAIL]
+# (player.script:1930-1943) stay INERT. Do NOT wire s := 1/(s*(1+v/100)) or
+# Floor(interval*s) until T-UPG is GREEN; water-gate + stacking stay open.
+# SEVEN [U] traces stay OPEN; termination for ALL: run the FULL stated series;
+# ANY single positional/temporal mismatch vs the stated donor expectation keeps
+# the item [U] and FORBIDS wiring; ZERO mismatches across the FULL series closes
+# it. Never fit or invent a rate, ramp, scalar or gate.
+#   T-SPEED   U-speed-consumer: ladder DEFINED-BUT-UNCONSUMED (unit.script:618)
+#   T-TURN    U-turn/U-motionstyle: rotatespeed*2.225 (unit.script:11066)
+#   T-ACCEL   U-accel: zero sampled accel rows; port step integrator
+#   T-TERRAIN U-terrain: zero cost rows; donor movement gates are binary
+#   T-FORM    U-formation: position pitch only (group.script:131-148)
+#   T-CARRY   U-carry: resamount credits restotal, economy not velocity
+#   T-UPG     U-upg-gate/U-upg-stack: speedperc divisor + Floor rewrite
+# ─────────────────────────────────────────────────────────────────────────────
+# §7-S3: both speed multipliers below are PORT APPROXIMATION [U] U-carry/
+# U-formation family (T-FORM/T-CARRY) — §5.4 full-lib drummer.*speed|
+# march.*bonus grep x0; donor runaway issues a move-mode order with NO speed
+# scalar (DEC_U_guard_sampler §5). Values kept verbatim: NO retune/removal.
 func effective_speed(e: Dictionary) -> float:
 	var s: float = e.def.speed
 	if bool(e.get("aur_dru", false)):
-		s *= 1.0 + Data.DRUMMER_SPEED_BONUS
+		s *= 1.0 + Data.DRUMMER_SPEED_BONUS  # PORT APPROXIMATION +12% [U] U-carry/U-formation family (T-FORM/T-CARRY); no donor drummer speed row
 	if e.get("routing", false):
-		s *= 1.35  # routing troops run
+		s *= 1.35  # routing troops run — PORT APPROXIMATION x1.35 [U] U-carry/U-formation family (T-FORM/T-CARRY); donor runaway has no speed scalar
 	return s
 
 func effective_damage(player: int, kind: String, pos: Vector2, e: Dictionary = {}) -> float:
@@ -4324,7 +5305,7 @@ func effective_damage(player: int, kind: String, pos: Vector2, e: Dictionary = {
 		if not str(e.get("cavalry", "")).is_empty():
 			m *= float(p.get("cav_damage_mult", {}).get(kind, 1.0))
 	if officer_near(pos, player):
-		m *= 1.0 + Data.OFFICER_DAMAGE_BONUS
+		m *= 1.0 + Data.OFFICER_DAMAGE_BONUS   # PORT INVENTION (U10) — no donor officer damage aura
 	return m
 
 func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
@@ -4359,7 +5340,11 @@ func can_place(player: int, sid: String, pos: Vector2) -> Dictionary:
 		return {"ok": true, "reason": ""}
 	var t := tile_of(pos)
 	var terr: int = terrain[_t(t.x, t.y)]
-	if terr == 3:
+	# DEC-U §5.3/P13: read the donor collision tag (water=87, ctpoEqual) in the
+	# live placement gate. dec_u_collision_tag_at maps port terrain 3 to 87, so
+	# this is identical to the pre-existing `terr == 3` check — no user mod and
+	# no save-format change; border/stretch tags remain [U] U13-tag (E-U13-tag).
+	if terr == 3 or dec_u_collision_tag_ok(pos, true, false):
 		return {"ok": false, "reason": "Too wet - cannot build on water."}
 	# T-PERF-SIM: my_r hoisted (old code re-queried bld_rm per node/building);
 	# resource footprint via the spatial hash, buildings via the entity grid.
@@ -4510,6 +5495,43 @@ func _naval_spawn_pos(b: Dictionary) -> Vector2:
 				return p
 	return Vector2(-1.0, -1.0)
 
+# ── DEC-U-ORDER-SLOTS donor order-slot law — LABELLED TELEMETRY, NO slot array ─
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_order_slots.md §9/§10,
+# pin t_87f0f3c130b0; donor TEXT read-only, binary NEVER executed. NO PARITY
+# CLAIM. The port `queue` is a dynamic Array of job dicts, NOT the donor's fixed
+# `TObj.orders[12]` (dmscript.global:113,1763); there is NO matching slot
+# concept on the live sim path, so NO slot array is invented here. These facts
+# are exposed as labelled telemetry only, with their exact [U] captures:
+#   Q-SLOT-JOB  slot<->job equivalence UNPROVEN (§10). `BUILD_QUEUE_LIMIT=12`
+#               is the donor SLOT COUNT adopted as a limit, NOT an equivalence.
+#   Q-TAIL      bDoFirst preempts slot 0; OrdersOffset(0,1) destroys tail slot
+#               11 without refund (§5.2 [D] from two [O]). No port counterpart.
+#   Q-MERGE     mercenary costpercent/restype merge fork (unit.script:6017)
+#               [U]: port has no per-unit costpercent/restype data.
+#   Q-NEG       -5 endless fan-out: donor yields ONE live infinite slot, not 5
+#               (§4.2 [O] law / [U] observable count).
+#   Q-ROT       infinite completion rotates to tail only if a free slot exists
+#               (doprogressorders.inc:295-313 [O] / [U] tail position in port).
+#   Q-FULL      charge-then-drop on full queue (§6.3 [D], behaviour [U]).
+#   Q-CAPTURE   capture flush of queued batches (miscext.script:1116-1132 [O],
+#               port counterpart NOT audited [U]).
+# The additive `orders12` SAVE telemetry (serialize():8447-8474) is a default-
+# zero donor-shape dump, NOT a live slot array; it is preserved verbatim.
+const DONOR_ORDER_SLOT_TELEMETRY := {
+	"slot_vocab": "[O] dmscript.global:113 gc_obj_MaxOrderCount=12; :1763 orders=TOrder[12]; :1678-1702 TOrderInfo trg:I,x,y,dx,dy,dir,z:F,upgradeid,produceid,restype,amount:I,progress:F [O]",
+	"merge_first": "[O] unit.script:5995-6053 _unit_OrderProduce merges same-produceid batch (:6004-6042) before needing a slot (:6043-6052); no free-slot precheck [O-absence]",
+	"collision": "[O] unit.script:6011-6015 finite<->infinite -> CancelUnitProduction + bExit; :6035-6038 infinite-on-infinite -> bExit+break [O]",
+	"costpercent_restype": "[O] unit.script:6017 costpercent in (100,0) or unitcount=restype -> merge; branch taken [U]-Q-MERGE (fixed-seed zero-mismatch capture)",
+	"bDoFirst": "[O] unit.script:4320-4328 head bexecute=False + OrdersOffset(0,1); tail slot 11 destroyed no refund [D] unit.script:2846-2866 [U]-Q-TAIL; no port slot concept [U]-Q-SLOT-JOB",
+	"cancel_per_unit": "[O] unit.script:5893-5991 loop Abs(amount) (:5900), amount-=1 + per-unit refund (:5920-5921,:5960-5977), remove at 0/convert (:5979-5981); convert-in-progress forfeits refund (:5916-5917) [D]",
+	"tick_progress": "[O] doprogressorders.inc:120 head-only orders[0]; :221 deltatime/buildtime; :232-234 progress+=, clamp 1; :235-239 AI capturer pin 0.995 [U] not ported; :139-205 start gates",
+	"scope": "visual_parity_claim=false; slot<->job equivalence UNPROVEN; unresolved=[Q-SLOT-JOB,Q-FULL,Q-TAIL,Q-MERGE,Q-NEG,Q-ROT,Q-CAPTURE]",
+}
+
+# DEC-U-CAPTURE-FLUSH §9 item 2 [O] unit.script:5995-6053: post-capture
+# re-training by the capturer uses this SAME merge-first path; the flush
+# (miscext.script:1116-1132) writes ONLY to the victim's queue, never the
+# capturer's. Q-CAPTURER [U] fixed-seed 3-run zero-mismatch — NO code change.
 func train_unit(player: int, building: Dictionary, sid: String, amount: int = 1, infinite: bool = false) -> bool:
 	if not building.finished:
 		return false
@@ -4547,17 +5569,60 @@ func train_unit(player: int, building: Dictionary, sid: String, amount: int = 1,
 			return false
 	# T5MOD: donor carries the batch amount INSIDE one order (D19).  Plain=1,
 	# Shift=5, Ctrl+Alt=100, Ctrl=endless, Ctrl+Shift=5x endless.
+	# [U] U5 / §14 item 13: batch sizes 5/100, endless flag and the 10-slot
+	# BUILD_QUEUE_LIMIT are port-side. Decomp plan: player.script producer fns
+	# → donor cost/time/cap literals; hud.gd queue labels stay PORT APPROXIMATION.
 	var free_slots: int = Data.BUILD_QUEUE_LIMIT - building.queue.size()
-	if free_slots <= 0:
-		return false
 	var price: Dictionary = Data.UNITS[rsid].price
 	var jobs: int = maxi(1, amount)
+	# DEC-U-ORDER-SLOTS §9 item 2 / §4.1 [O] unit.script:5995-6053: MERGE-FIRST.
+	# Donor never pre-checks a free slot to accept an order: OrderProduce scans
+	# live produce slots for the same produceid (:6004-6009) and folds the new
+	# amount in (:6019-6032); only a genuinely new sid needs a slot (:6043-6052).
+	# Port `count` is the HUD view of donor `amount`; these jobs are NOT slots
+	# (§10 Q-SLOT-JOB [U]). Tag: PORT APPROXIMATION (donor: merge-or-new-slot,
+	# no free-slot precheck). No slot mapping or parity claim is made.
+	if infinite:
+		for i in range(building.queue.size()):
+			var cj: Dictionary = building.queue[i]
+			if str(cj.get("sid", "")) != rsid:
+				continue
+			if bool(cj.get("infinite", false)):
+				# [O] :6035-6038 infinite request onto an infinite batch:
+				# bExit + break — duplicate endless silently dropped. Q-NEG [U].
+				return false
+			# [O] :6011-6015 infinite request onto a positive batch:
+			# cancel existing + exit new; Abs(produce_infinite)=1 -> one unit.
+			cancel_train(building, rsid, 1)
+			return false
+	else:
+		for i2 in range(building.queue.size()):
+			var cj2: Dictionary = building.queue[i2]
+			if str(cj2.get("sid", "")) != rsid:
+				continue
+			if bool(cj2.get("infinite", false)):
+				# [O] :6011-6015 finite request onto an infinite batch:
+				# cancel existing + exit new (full cancel of the endless job).
+				cancel_train(building, rsid, -1)
+				return false
+			break
 	if not infinite:
 		var cap_free: int = int(players[player].farm_cap) - unit_count(player) - queue_count(player)
 		if cap_free <= 0:
 			_say_human(player, "Need more houses â€” unit limit reached.")
 			return false
-		jobs = mini(jobs, mini(free_slots, cap_free))
+		jobs = mini(jobs, cap_free)
+		var merge_i: int = -1
+		for i3 in range(building.queue.size()):
+			var mj0: Dictionary = building.queue[i3]
+			if str(mj0.get("sid", "")) == rsid and not bool(mj0.get("infinite", false)):
+				merge_i = i3
+				break
+		if merge_i < 0 and free_slots <= 0:
+			# [U]-Q-FULL: donor charges before AddOrder and drops on nil
+			# (charge-then-drop [D] §6.3); port refuses before charge — the
+			# behaviour stays a capture, not an asserted donor law.
+			return false
 		# Charge only the affordable subset; unaffordable units are skipped.
 		var probe: Dictionary = {}
 		var affordable := 0
@@ -4576,21 +5641,44 @@ func train_unit(player: int, building: Dictionary, sid: String, amount: int = 1,
 		for k in price.keys():
 			paid[k] = float(price[k]) * float(affordable)
 		Data.pay(players[player].res, paid)
+		if merge_i >= 0:
+			# MERGE [O] :6004-6042/:6019-6032 — amount accrual in ONE existing
+			# batch; head timer/progress untouched, no slot consumed. The
+			# costpercent/restype fork (:6017) is [U]-Q-MERGE: the port has no
+			# per-unit costpercent/restype, so the default merge branch is taken.
+			var mj: Dictionary = building.queue[merge_i]
+			mj["count"] = maxi(1, int(mj.get("count", 1))) + affordable
+			building.queue[merge_i] = mj
+			return true
+		# §9 item 4 [O] unit.script:6051: one job dict carries the whole batch
+		# in `count` (= donor `amount`); never fan a batch into N jobs.
 		building.queue.append({"sid": rsid, "t": Data.UNITS[rsid].build_time,
-			"count": affordable, "infinite": false})
+			"progress": 0.0, "count": affordable, "infinite": false})
 		return true
 	# Endless: one paid-ahead unit per infinite job.  Each later cycle is
 	# charged on completion; the job is dropped when resources/requirements fail.
+	if free_slots <= 0:
+		return false
 	jobs = mini(jobs, free_slots)
 	if jobs <= 0 or not pay_cost(player, price):
 		return false
 	for _j in jobs:
 		building.queue.append({"sid": rsid, "t": Data.UNITS[rsid].build_time,
-			"count": 1, "infinite": true})
+			"progress": 0.0, "count": 1, "infinite": true})
 	return true
 
 # T5MOD: RMB on a training icon cancels one queued job of sid and refunds it.
-func cancel_train(building: Dictionary, sid: String) -> bool:
+# DEC-U-ORDER-SLOTS §9 item 5 [O] unit.script:5893-5991: cancel is PER UNIT.
+# `CancelUnitProduction` loops Abs(amount) times (:5900), decrements the batch
+# `amount` by 1 and refunds ONE unit's cost per iteration (:5920-5921,
+# :5960-5977), and removes the slot only at 0/convert (:5979-5981). `count` is
+# the HUD view of donor `amount`. `units=-1` (default) = full job — the donor
+# Abs(amount) loop intent [I], byte-identical to the old RMB shape; `units=1`
+# = single-unit cancel (:5920-5927, :5979-5981), which keeps the job until 0.
+# [O] :5916-5917 converting an IN-PROGRESS batch to endless forfeits that
+# unit's refund [D]. The port has NO convert-on-cancel path, so this law is
+# labelled ONLY — no convert branch or refund delta is invented.
+func cancel_train(building: Dictionary, sid: String, units: int = -1) -> bool:
 	if building.is_empty() or building.queue.is_empty():
 		return false
 	for i in range(building.queue.size() - 1, -1, -1):
@@ -4598,12 +5686,28 @@ func cancel_train(building: Dictionary, sid: String) -> bool:
 		if str(job.get("sid", "")) != sid:
 			continue
 		var n: int = 1 if bool(job.get("infinite", false)) else maxi(1, int(job.get("count", 1)))
+		var take: int = n if units < 0 else mini(n, maxi(0, units))
+		if take <= 0:
+			return false
 		var cost: Dictionary = Data.UNITS.get(sid, {}).get("price", {})
+		# [O] :5960-5977 per-unit floor(price * costmodifier) over all six
+		# resources; port refund() int(round()) is a labelled PORT APPROXIMATION
+		# (integer price rows make the two equal). No mercenary costpercent
+		# curve invented — that fork stays [U]-Q-MERGE.
+		# DEC-U-CAPTURE-FLUSH §9 item 3 [O] unit.script:5929-5977: payee is the
+		# building's CURRENT owner; at capture that owner is the LOSER
+		# (players[old]), NEVER players[capturer]. The capture-time flush routes
+		# its per-unit refund while e.player is still `old` — [U]-Q-REFUND-PROD
+		# fixed-seed 3-run zero-mismatch. NO formula change here.
 		var refund: Dictionary = {}
 		for k in cost.keys():
-			refund[k] = float(cost[k]) * float(n)
+			refund[k] = float(cost[k]) * float(take)
 		Data.refund(players[int(building.player)].res, refund, 1.0)
-		building.queue.remove_at(i)
+		if bool(job.get("infinite", false)) or take >= n:
+			building.queue.remove_at(i)
+		else:
+			job["count"] = n - take
+			building.queue[i] = job
 		return true
 	return false
 
@@ -4622,6 +5726,41 @@ func _leave_building(e: Dictionary) -> void:
 		e.inside_of = 0
 
 # ---------------------------------------------------------------- tick
+# [U] U1 / §14 item 16: this whole per-tick sequence (ai_cheat → grid → fields
+# → field growth 60 s → compact 5 s → entities → projectiles → ageing →
+# separate ×2 → cleanup → upkeep → market → victory) is PORT-ORDERED. Donor
+# per-tick order is NOT recovered; FPS=32 is the only grounded tick constant.
+# Decomp plan: player.script process fns + unit.script tick fns → cited
+# stage table; until then freeze as `TICK_ORDER v1 PORT APPROXIMATION` and keep
+# determinism (fixed seed + fixed order → fixed hash). Do not reorder to guess.
+#
+# RESOLVED INTERNAL global stage order [O] — DEC_U_tick_order.md §1,
+# progress.inc\nothing.inc (guarded body, pause gate first/last):
+#   economy (_res_ProcessEconomy) → scenario (zones/state/movie/proj-points)
+#   → path batch (water list preferred iff non-empty AND land list empty OR
+#     progresstick mod 2 = 0; land=TopologyGetPath / water=...Ext)
+#   → section-max budgets → SearchEnemy adaptive scheduler
+#   → _misc_SyncUnitsParams iff progresstick mod 53 = 0 → _misc_CheckEndGame
+#   → topology flush → peacetime expiry (wall clock) → LAN writes → statistics
+#   → _ai_CheckProcessEnemyInfo(progressTick) + top zones.
+# Two DISTINCT counters [O]: gProgress.progresstick (global, mod 2 / mod 53)
+# and gProgress.progressTick (passed to AI enemy-info). Never merge them.
+# PORT STAGE MAP: only economy (`tick_market`, DEC §2.2) and endgame
+# (`_check_victory`) exist here; no scenario, global path batch, section-max,
+# sync queue, topology, peacetime, LAN or enemy-info stage exists in this
+# skirmish-only port, so NONE is invented. Where an [O] stage does not exist,
+# there is nothing to implement; where the existing stages sit relative to
+# entities/per-player slice is [U]-O1c and stays FROZEN per DEC §6-2.
+# DEC-U-SCENARIO-WIN §4/§7-3: the existing `_check_victory()` call STAYS at
+# this post-slice position (nothing.inc:646 reads the fresh sim bexists from
+# the per-player exists scan in the same frame). Inside it `_misc_check_end_game()`
+# runs UNGATED first, the `scenario_active` flag then suppresses the skirmish-
+# only auto paths (progress.inc:54 gate), and the peacetime gate follows. The
+# donor's global scenario trigger stage HAS NO PORT COUNTERPART ([U]-F1) and is
+# not invented; no existing stage is moved.
+# Pointer: docs/terrain_swarm_2026-11-26/reports/DEC_U_tick_order.md §5 U-O1c
+# (block-boundary permutation harness, 3 seeds, 0 hash mismatches). Never
+# default to plInd-ascending all-players-per-frame as donor law.
 func tick(dt: float) -> void:
 	if paused or winner != -1:
 		return
@@ -4680,8 +5819,8 @@ func tick(dt: float) -> void:
 			res_dirty += 1
 	_separate_units()
 	_tick_cleanup(dt)
-	_tick_upkeep(dt)
-	tick_market(dt)  # PORT-CONTROL hand-off: recover post-trade market rate
+	_tick_players_slice(dt)  # RESOLVED per-player slice; global interleave [U]-O1
+	tick_market(dt)  # RESOLVED donor exponential recovery (DEC-U §2.2)
 	_check_victory()
 
 # T-SIM-HOTSPOTS: int hash keys replace Vector2i keys (no 19 allocations per
@@ -4788,6 +5927,79 @@ var _sep_bld_ver := -1
 
 # T-PERF-SIM: upkeep slot order (food/gold/stone) into Data.RES_NAMES indices.
 const _UPKEEP_RES_IDX := [0, 3, 2]
+# RESOLVED donor law (DEC-U §2.1): unit.inc/nothing.inc:450-506,
+# lib/misc.script:493-498, dmscript.global:176. NO PARITY CLAIM.
+const C1RAND_TO_RANDOM := 32768          # gc_c1rand_to_random
+const FAMINE_ROLL_HARD := 50             # difficulty>1 (or lan_cached)
+const FAMINE_ROLL_NORMAL := 12          # difficulty=1
+const FAMINE_ROLL_EASY := 5             # difficulty=0
+const REBEL_ROLL_HARD := 6000
+const REBEL_ROLL_NORMAL := 200
+const REBEL_ROLL_EASY := 100
+# donor difficulty ints: 0=easy, 1=normal, >1=hard/veryhard/impossible.
+# lan_cached is false — network/multiplayer is OUT OF SCOPE.
+static func _donor_difficulty() -> int:
+	match str(Data.AI_DIFFICULTY):
+		"easy":
+			return 0
+		"normal":
+			return 1
+		_:
+			return 2
+
+# DEC-U-RNG-LEDGER §4-S1a/S1b: donor `RandomInt := floor(random*32768)` is the
+# Delphi G stream (misc.script:493-498, dmscript.global:176). The G/S stream
+# split stays [U]-G1-b/G1-g; with ONE recovered sim stream this G-attributed
+# draw is routed through sim_rng and LABELLED — no donor G VALUE is claimed
+# (G free-runs from QPC/TickCount, GEN-SEED §2.2). §5-L20/A600 zero-mismatch
+# captures are required to close; thresholds are never retuned to pass.
+func _misc_random_int() -> int:
+	return int(floorf(sim_rng.random_f32() * float(C1RAND_TO_RANDOM)))
+
+# §2 exact sim wrapper: GetRandom(n) = floor(RandomExt*n), RandomExt is f32 and
+# key0 is discarded. [U]-G1-e promotion proof stays open (§5-F1M). `rng` (Godot,
+# generation-owned) is untouched; identity reseeds (§7 item 3) are untouched.
+func _donor_get_random(n: int) -> int:
+	return sim_rng.get_random(n)
+
+# ── §4-S3 shot path: exact S draw order scatter -> frnd -> pick -> 6x orientation ──
+# [O] weapon.script:627-646 / unit.script:11520-11554 / weapon.script:1046-1051.
+# Zero-dispersion mounts (muskets) scatter NOTHING (§4-S3-b). Gated draws S3-d
+# (rotspeed/ThrowRandom/stand) and S3-g victim-loop counts stay [U] with §5-C300.
+func _donor_dispertion_px(e: Dictionary, w: Dictionary) -> float:
+	var kind: String = str(w.get("kind", ""))
+	if kind == "bullet":
+		return 0.0   # foot musket: donor dispertion=0 => no scatter, 0 S draws
+	var sid: String = str(e.get("sid", ""))
+	var row: Dictionary = C3Data.DONOR_MOUNT_ROWS.get(sid, {}) as Dictionary
+	var mounts: Array = row.get("mounts", []) as Array
+	if not mounts.is_empty():
+		var px: float = float((mounts[0] as Dictionary).get("dispertion_px", -1))
+		if px > 0.0:
+			return px   # cannon idx0 225 / tower 100 / rus 125 / howitzer 300 ...
+	if kind == "arrow" or kind == "firearrow":
+		return 175.0    # [O] archer weapon.script:1001-1047; per-sid foot mapping [U]
+	return 0.0          # no invented dispersion for an uncited mount
+
+# S3-b: two INDEPENDENT (1-RandomExt*2)*maxdisp draws, X then Z (uniform SQUARE).
+func _donor_shot_scatter(dist_m: float, disp_px: float) -> Vector2:
+	if disp_px <= 0.0:
+		return Vector2.ZERO
+	var maxdisp: float = C3Data.donor_max_dispersion(dist_m, disp_px)
+	var dx: float = C3Data.donor_dispersion_axis_offset(maxdisp, sim_rng.random_f32())
+	var dz: float = C3Data.donor_dispersion_axis_offset(maxdisp, sim_rng.random_f32())
+	return Vector2(dx, dz)
+
+# S3-c: shot-point pick floor(RandomExt*count), then 6 orientation RandomExt.
+# Stand pitch (1 draw) and S3-d rotspeed/ThrowRandom are propagation-gated [U]
+# and NOT added here — no invented draw (§4-S3-c/d, §6 minimal musket branch).
+func _donor_shot_pick_and_orientation(count: int) -> Dictionary:
+	var pick: int = sim_rng.get_random(count)
+	var orientation: Array = []
+	for _i in 6:
+		orientation.append(sim_rng.random_f32())
+	return {"shot_point": pick, "orientation": orientation}
+
 # DONOR T6-M01 (unit.script:8185-8201): bturnoff units stop firing while the
 # owner has <4 gold, with a 100-frame attack delay. Port has no bturnoff flag;
 # the deterministic analogue is gold-upkeep units (def.eat.gold), which
@@ -4796,15 +6008,13 @@ const _UPKEEP_RES_IDX := [0, 3, 2]
 # tunable - data.gd/config.gd are owned by another worker.
 const _GOLD_FIRE_STOP_RES := 4.0
 const _GOLD_FIRE_STOP_S := 100.0 / 32.0
-func _tick_upkeep(dt: float) -> void:
-	# Upkeep, ported from player.script _player_ProcessResourceConsume
-	# (speed 20000, gc_time_to_frames = 32): each unit eats consume/625 units
-	# of food (or gold) per second. Video pass: prolonged famine first shows
-	# the warning, then the original starves the army - slow HP drain after a
-	# grace period so a test never dies instantly (estimated).
-	# T-PERF-SIM: one shared pass accumulates every player's upkeep (index
-	# 0/1/2 = food/gold/stone); the old code re-scanned live_units/live_blds
-	# once per player. Drain loops use live_units, not the full entity list.
+# T-PERF-SIM: one shared pass accumulates every player's upkeep (index
+# 0/1/2 = food/gold/stone); the old code re-scanned live_units/live_blds
+# once per player. RESOLVED donor accumulator (DEC-U §2.1, player.script
+# 240-322): mult=100, speed=20000, bank=remains/100+resconsume*dt,
+# value=floor(bank/speed), leftover remains carry the fractional bank.
+# NO PARITY CLAIM. The grace timer / HP drain are DELETED (donor has neither).
+func _tick_upkeep_totals() -> Array:
 	var totals: Array = []
 	for _pi in players.size():
 		totals.append([0.0, 0.0, 0.0])
@@ -4835,40 +6045,146 @@ func _tick_upkeep(dt: float) -> void:
 		tb[0] += float(be.get("food", 0.0)) / Data.UPKEEP_DIVISOR
 		tb[1] += float(be.get("gold", 0.0)) / Data.UPKEEP_DIVISOR
 		tb[2] += float(be.get("stone", 0.0)) / Data.UPKEEP_DIVISOR
+	return totals
+
+# RESOLVED donor gate primitive [O] (squad.script:754-782, EV-T3 of
+# DEC_U_tick_order.md): `_player_CheckProgressLastTimeAndIncrease` is an
+# ABSOLUTE-DEADLINE SETTER with an exact-float cross-player veto, NOT a
+# countdown accumulator. R1: on fire `lasttime := gametime+addtime` — no
+# catch-up, no `+=` loop, late firings permanently phase-shift the deadline.
+# R2: skip (no write) if ANY player's same-itype deadline MINUS THIS CALL'S
+# addtime bit-equals gametime — exact float equality, no tolerance.
+# R3: only the caller's deadline is written; the other players are read-only.
+# NO PARITY CLAIM; veto-reachability harness is §5 U-O5.
+const _TICK_DEADLINE_KEY := {
+	0: "lastcheckexists", 1: "lastcalcsquadsmovecounttime",
+	2: "lastprogressaitime", 3: "lastseedwheattime",
+}
+
+func _check_progress_lasttime_and_increase(pi: int, itype: int, addtime: float) -> bool:
+	if time_s <= float(players[pi].get(_TICK_DEADLINE_KEY[itype], 0.0)):
+		return false
+	var key: String = _TICK_DEADLINE_KEY[itype]
+	# Donor veto loop spans gc_MaxPlayerCount; the port roster is players.size().
+	for i in players.size():
+		if float(players[i].get(key, 0.0)) - addtime == time_s:
+			return false
+	players[pi][key] = time_s + addtime
+	return true
+
+# Zero + recount walk-tagged members per squad [O] (player.script:2591-2606).
+# The donor "walk tag" has no port field; `_nav_wanted` is the labelled [U]-O1
+# substitute predicate, NOT a claimed donor predicate.
+func _tick_calc_squads_move_count(pi: int) -> void:
+	for sid in squads:
+		var s: Dictionary = squads[sid]
+		if int(s.get("player", -1)) != pi:
+			continue
+		var count := 0
+		for uid in s.get("members", []):
+			var u: Dictionary = by_id.get(int(uid), {})
+			if not u.is_empty() and not u.dead and _nav_wanted(u):
+				count += 1
+		s["movecount"] = count
+
+# RESOLVED per-player tick slice (DEC_U §2, progress.inc:37-181):
+# exists gate (itype 0) -> income/consume UNGATED -> CalcSquadsMoveCount gate
+# (itype 1, non-AI) -> per-player counters. ProgressAI (itype 2) is gated at
+# the ai.gd dispatch point; seed wheat (itype 3) lives in ai.gd Econ. Global
+# interleave stays [U]-O1c; no rotation is invented (DEC §4.1b / §5).
+# TICK_ORDER v1 PORT APPROXIMATION per DEC §6-2: surrounding stages frozen.
+func _tick_players_slice(dt: float) -> void:
+	var totals: Array = _tick_upkeep_totals()
 	for pi in players.size():
 		var p: Dictionary = players[pi]
-		p["famine_msg_t"] = maxf(0.0, float(p.get("famine_msg_t", 0.0)) - dt)
-		var eat: Array = totals[pi]
-		for k in 3:
-			if eat[k] > 0:
-				var idx: int = _UPKEEP_RES_IDX[k]
-				var have: float = p.res[idx]
-				var need: float = float(eat[k]) * dt
-				if have >= need:
-					p.res[idx] = have - need
-					if k == 0:
-						p["famine"] = false
-						p["famine_t"] = 0.0
-					if k == 1:
-						p["gold_famine_t"] = 0.0
-				else:
-					p.res[idx] = 0.0
-					if k == 0:
-						p["famine"] = true
-						p["famine_t"] = float(p.get("famine_t", 0.0)) + dt
-						if float(p["famine_t"]) >= Data.FAMINE_GRACE_S:
-							if float(p.get("famine_msg_t", 0.0)) <= 0.0:
-								p["famine_msg_t"] = 10.0
-								say("Famine! %s is starving." % p.name)
-							for eu in live_units:
-								if not eu.dead and eu.player == pi:
-									eu.hp -= Data.FAMINE_DRAIN_PER_S * dt
-					if k == 1:
-						p["gold_famine_t"] = float(p.get("gold_famine_t", 0.0)) + dt
-						if float(p["gold_famine_t"]) >= 60.0:
-							for eu2 in live_units:
-								if not eu2.dead and eu2.player == pi and (eu2.def.get("eat", {}) as Dictionary).has("gold"):
-									eu2["morale"] = maxf(0.0, float(eu2.get("morale", 70.0)) - 10.0 * dt)
+		var pi_f: float = float(pi)
+		# [U]-O1a/O1b: native plInd driver and firing rate are UNVERIFIED. The
+		# port still visits every roster slot once per global frame in index
+		# order; no round-robin/section-budget rotation is invented.
+		# exists gate (itype 0): 0.125*plInd + (8.0|24.0) s [O].
+		var exists_add: float = float(Data.DONOR_TICK_EXISTS_SLOT_S) * pi_f \
+			+ (float(Data.DONOR_TICK_EXISTS_ALIVE_S) if _player_bexists(pi) \
+			else float(Data.DONOR_TICK_EXISTS_DEAD_S))
+		# DEC-U-SCENARIO-WIN §7-3 / EV-B (progress.inc:54): the whole exists
+		# slice is inside `not gScenario.bactive`. In scenario mode skip the
+		# scan AND its deadline write; no auto-defeat. The landed TICK/MARKET
+		# income + squad + AI paths stay untouched (no law reverted).
+		if not scenario_active and _check_progress_lasttime_and_increase(pi, 0, exists_add):
+			_check_player_exists(pi)
+		# income/consume stays UNGATED every firing (DEC §2.2) — untouched.
+		_tick_upkeep_for_player(pi, dt, totals)
+		# CalcSquadsMoveCount (itype 1), non-AI only: 0.001*plInd + 0.3 s [O].
+		if not bool(p.get("is_ai", false)):
+			var move_add: float = float(Data.DONOR_TICK_MOVECOUNT_SLOT_S) * pi_f + _TICK_CALCSQUADS_S
+			if _check_progress_lasttime_and_increase(pi, 1, move_add):
+				_tick_calc_squads_move_count(pi)
+		# ProgressAI (itype 2, 2.4 s) is gated in ai.gd.tick() at the dispatch
+		# point; the adviser-only else branch is inert in this skirmish port.
+		# donor per-player stamp (progress.inc:181).
+		p["progresstick"] = int(p.get("progresstick", 0)) + 1
+		p["lastprogresstime"] = time_s
+
+func _tick_upkeep_for_player(pi: int, dt: float, totals: Array) -> void:
+	var p: Dictionary = players[pi]
+	p["famine_msg_t"] = maxf(0.0, float(p.get("famine_msg_t", 0.0)) - dt)
+	var eat: Array = totals[pi]
+	for k in 3:
+		if eat[k] > 0:
+			var idx: int = _UPKEEP_RES_IDX[k]
+			# donor bank accumulator: remains/100 + resconsume*dt, /speed, floor;
+			# leftover remains carry the fractional bank.
+			var rem: Array = p.get("upkeep_remains", [0.0, 0.0, 0.0])
+			var bank: float = float(rem[k]) / Data.UPKEEP_MULT + float(eat[k]) * Data.UPKEEP_SPEED * dt
+			var value: int = int(floorf(bank / Data.UPKEEP_SPEED))
+			var have: float = p.res[idx]
+			if value > 0 and have >= float(value):
+				p.res[idx] = have - float(value)
+				rem[k] = (bank - float(value) * Data.UPKEEP_SPEED) * Data.UPKEEP_MULT
+				# RESOLVED donor resonlife (DEC-U-MARKET-TAIL §4 / player.script:292):
+				# Integer stats counter += value ONLY on value<>0 ticks (surplus).
+				# [U]-LIFE: port container holds integral floats; capture LIFE +
+				# save round-trip must assert Integer semantics. NO PARITY CLAIM.
+				var rl_s: Array = p.get("resonlife", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+				rl_s[idx] = floorf(float(rl_s[idx]) + float(value))
+				p["resonlife"] = rl_s
+				# donor: bfamine:=False iff res[food] > 0 OR consume<=0;
+				#        brebellion:=False iff res[gold] >= 2 OR consume<=0.
+				if k == 0 and float(p.res[idx]) > 0.0:
+					p["famine"] = false
+					p["famine_t"] = 0.0
+				if k == 1 and float(p.res[idx]) >= 2.0:
+					p["rebellion"] = false
+					p["gold_famine_t"] = 0.0
+			elif value > 0:
+				p.res[idx] = 0.0
+				rem[k] = 0.0
+				# donor :301: resonlife += not res[i] (the WHOLE remaining stock)
+				# on the shortfall tick. `have` was read before the zeroing above.
+				var rl_f: Array = p.get("resonlife", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+				rl_f[idx] = floorf(float(rl_f[idx]) + have)
+				p["resonlife"] = rl_f
+				# RESOLVED donor flags (player.script:294-321): famine on food
+				# shortfall; rebellion on gold shortfall ONLY when gold consume
+				# > gold income. No grace, no HP drain.
+				if k == 0:
+					p["famine"] = true
+					p["famine_t"] = float(p.get("famine_t", 0.0)) + dt
+					if float(p.get("famine_msg_t", 0.0)) <= 0.0:
+						p["famine_msg_t"] = 10.0
+						say("Famine! %s is starving." % p.name)
+				if k == 1:
+					p["gold_famine_t"] = float(p.get("gold_famine_t", 0.0)) + dt
+					var gold_income: float = 0.0
+					for b in live_blds:
+						if not b.dead and int(b.player) == pi and str(b.sid).begins_with("mine_") and int(b.workers) > 0:
+							gold_income += Data.MINE_INCOME_PER_S * float(b.workers) * float(p.get("mine_mult", 1.0))
+					if float(eat[k]) > gold_income:
+						p["rebellion"] = true
+			else:
+				# donor player.script:288: value=0 writes NOTHING to resonlife.
+				# DELETED the port-invented `resonlife += have` zero-value write.
+				rem[k] = bank * Data.UPKEEP_MULT
+			p["upkeep_remains"] = rem
 
 func _tick_cleanup(dt: float) -> void:
 	for e in entities:
@@ -4901,7 +6217,9 @@ func _kill(e: Dictionary, killer = null, loud := true) -> void:
 		if killer != null and not killer.is_empty():
 			stats.kills += 1
 	else:
-		# garrison dies with the building (siege feel); unload first to find them
+		# PORT APPROXIMATION (DEC-U-CAPTURE-STATE §4.4 [O-absence]): garrison
+		# dies with the building (siege feel) — no donor counterpart; kept.
+		# Unload first to find them.
 		var hid: Array = []
 		for u in live_units:
 			if not u.dead and int(u.get("inside_of", 0)) == e.id and bool(u.get("hidden", false)):
@@ -5088,6 +6406,27 @@ func _nav_repath(e: Dictionary, target: Vector2) -> void:
 	e["nav_ver"] = nav_version
 	e["nav_cd"] = 0.6
 
+# [U] U2 / §14 item 12: arrival radii (0.15/0.9/1.2/1.8 m), stuck/giveup timers
+# (2 s move, 6 s attack restuck, 8 s fallback), 60 s mine wait and 4 m
+# fallback-out are port inventions. Decomp plan: unit.script move/attack fns +
+# misc.script stand checker → literal predicates/radii; retag each or remove.
+# Do not tune these to "feel" donor — no donor value is recovered.
+# ── DEC-U MOVE-SPEED §7-S4 — integrator labels (BEHAVIOUR UNCHANGED) ───────────
+# Authority: DEC_U_move_speed.md §2 / §3.3 / §4 / §8. NO PARITY CLAIM.
+# (a) NO accel state: `step = minf(speed*dt, d)` is an instant target speed with
+#     no velocity state. Donor has ZERO sampled accel rows (P11-T grep x0; only
+#     projectile Deceleration weapon.script:924) — absence agreement only,
+#     [U] U-accel, terminator T-ACCEL (zero mismatches to close).
+# (b) NO turn-rate state: `e.face = d2.angle()` snaps to the probe direction.
+#     Donor `rotatespeed*2.225, 50, epsilon, True` (unit.script:11066) is NOT
+#     modelled; engine-native (P3 strings x0 / P7 0-xref) — [U] U-turn, T-TURN.
+# (c) NO donor-derived terrain-cost scalar: donor movement gates are BINARY
+#     (miscext.script:280/380/459/527/558, unit.script:6091-6093/10804) with
+#     zero cost rows (P11-T grep x0) — [U] U-terrain, terminator T-TERRAIN.
+#     The 0.6 uphill factor below is a PORT APPROXIMATION only — never present
+#     it as donor-derived, and do not retune until T-TERRAIN is green.
+# Inert Data.DONOR_MOVE_SPEED_ZERO_ROWS / DONOR_ROTATE_SPEEDS / DONOR_ROTATE_LAW
+# are deliberately unread here: no consumer wiring in this ticket.
 func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive := 0.15, giveup := false) -> bool:
 	# T5GEN F2/F4: a blocked destination is never appended to the A* path, so
 	# d_goal must measure a reachable point, not the raw blocked one.  Snap once
@@ -5158,7 +6497,7 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 		aim = dest
 		to = aim - e.pos
 		d = to.length()
-	var step: float = minf(speed * dt, d)
+	var step: float = minf(speed * dt, d)  # [U] U-accel: no velocity/accel state — instant step (§7-S4a, T-ACCEL)
 	var dir: Vector2 = to / maxf(d, 0.001)
 	for i in 13:
 		var ang := 0.0
@@ -5173,11 +6512,11 @@ func _step_move(e: Dictionary, target: Vector2, speed: float, dt: float, arrive 
 				continue
 			var esp := speed
 			if not _is_naval(e) and height_at(np) > height_at(e.pos) + 0.05 and sl > 0.25:
-				esp *= 0.6
+				esp *= 0.6  # PORT APPROXIMATION uphill scalar: no donor terrain-cost row [U] U-terrain (§7-S4c, T-TERRAIN)
 				if esp * dt < step:
 					np = e.pos + d2 * esp * dt
 			e.pos = np
-			e.face = d2.angle()
+			e.face = d2.angle()  # [U] U-turn: no turn-rate/rotatespeed state — instant snap (§7-S4b, T-TURN)
 			e["stuck_t"] = 0.0
 			if giveup and d_goal - step < arrive_eff:
 				e.moving = false
@@ -5272,6 +6611,8 @@ func _spawn_slot(e: Dictionary, dir: Vector2, brexit: float, idx: int, naval: bo
 
 # T5GEN F1: stagger rally targets into a small formation (rows across the exit
 # direction, columns along it) with the player's chosen point as the centre.
+# [U] U-formation/U-walkinterval — PORT APPROX slot position only (§7-S6/T-FORM);
+# donor walkinterval is anim cadence; inert DONOR_WALK_INTERVALS stays unread.
 func _rally_slot(center: Vector2, dir: Vector2, idx: int) -> Vector2:
 	var tang := Vector2(-dir.y, dir.x)
 	var row := idx % 5
@@ -5279,13 +6620,18 @@ func _rally_slot(center: Vector2, dir: Vector2, idx: int) -> Vector2:
 	return center + tang * (float(row) - 2.0) * 1.2 + dir * float(col) * 1.2
 
 func _tick_unit(e: Dictionary, dt: float) -> void:
+	# RESOLVED donor famine/rebellion roll (DEC-U §2.1). Unit-only gate;
+	# replaces the wrong-shape grace/HP-drain path in _tick_upkeep.
+	_tick_famine_rebellion(e)
+	if e.dead:
+		return
 	e.cooldown = maxf(0.0, e.cooldown - dt)
 	e.acq_t = float(e.get("acq_t", 0.0)) - dt
 	if e.acq_t <= 0.0:
 		e.acq_t = 0.125
 		e["acq_now"] = true
 		e.aur_off = officer_near(e.pos, e.player)
-		e.aur_dru = drummer_near(e.pos, e.player)
+		e.aur_dru = drummer_near(e.pos, e.player)  # [U] U-formation/U-walkinterval — aura cadence PORT APPROX; inert Data.DONOR_WALK_INTERVALS unread
 	else:
 		e["acq_now"] = false
 	# deployed crews: standing still readies the gun
@@ -5324,12 +6670,14 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 					e.order = {"type": "none"}
 		"attackmove":
 			var en: Dictionary = {}
+			# [O] unit.script:7893-7906 detectradiusmax+rbonus (same bonusrng as
+			# radiusmax); port detectradiusmax = e.def.search, order point = o.pos.
 			if bool(e.get("acq_now", false)):
-				en = enemies_preferred(e.pos, e.player, float(e.def.search), e)
+				en = enemies_preferred(e.pos, e.player, _donor_detect_radius_m(e, o.pos), e)
 				e["acq_target"] = en.id if not en.is_empty() else 0
 			else:
 				en = by_id.get(int(e.get("acq_target", 0)), {})
-				if not en.is_empty() and (en.dead or en.player == e.player or en.pos.distance_to(e.pos) > float(e.def.search)):
+				if not en.is_empty() and (en.dead or en.player == e.player or en.pos.distance_to(e.pos) > _donor_detect_radius_m(e, o.pos)):
 					en = {}
 			if not en.is_empty() and not bool(e.get("hold_fire", false)):
 				e.order = {"type": "attack", "target": en.id, "resume": o.pos}
@@ -5377,7 +6725,14 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 				# mortars can only attack buildings: hold fire, keep the order
 				e.moving = false
 				return
-			if d > w.max + tr:
+			# DEC-U-DAMAGE-HEIGHT §4 Site A: downhill-only ADDITIVE range bonus
+			# (k=4 artillery / 2 else, 0.25-tile floor, melee excluded) and the
+			# idle-stance addradius bonus. Applied here to radiusmax (w.max);
+			# detectradiusmax (e.def.search) is extended in the acquire branches.
+			var hb_m: float = _donor_height_range_bonus_m(e, t.pos, w)
+			var idle_m: float = _donor_idle_range_bonus_m(e, _donor_mount_index(e, w), t)
+			var reach_m: float = float(w.max) + hb_m + idle_m
+			if d > reach_m + tr:
 				e.moving = true
 				_step_move(e, t.pos, effective_speed(e), dt)
 				if not e.moving:
@@ -5404,10 +6759,8 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 					if e.def.get("artillery", false):
 						w = w.duplicate()
 						w["max"] = float(w.max) * float(players[e.player].get("art_range", 1.0))
-					var hd: float = height_at(e.pos) - height_at(t.pos)
-					if hd > 0.6 and str(w.kind) in ["bullet", "arrow", "firearrow", "cannonball", "cannister"]:
-						w = w.duplicate()
-						w["max"] = float(w.max) * 1.25
+					# height/idle bonuses were added to reach_m above; no
+					# separate fire-time multiplier (donor never edits damage).
 					_fire(e, t, w)
 		"guard":
 			var gt: Dictionary = by_id.get(o.get("target", 0), {})
@@ -5418,11 +6771,11 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 			var gd: float = e.pos.distance_to(gt.pos)
 			var foe: Dictionary = {}
 			if bool(e.get("acq_now", false)):
-				foe = enemies_preferred(e.pos, e.player, float(e.def.search), e)
+				foe = enemies_preferred(e.pos, e.player, _donor_detect_radius_m(e, gt.pos), e)
 				e["acq_target"] = foe.id if not foe.is_empty() else 0
 			else:
 				foe = by_id.get(int(e.get("acq_target", 0)), {})
-				if not foe.is_empty() and (foe.dead or foe.player == e.player or foe.pos.distance_to(e.pos) > float(e.def.search)):
+				if not foe.is_empty() and (foe.dead or foe.player == e.player or foe.pos.distance_to(e.pos) > _donor_detect_radius_m(e, gt.pos)):
 					foe = {}
 			if not foe.is_empty() and has_weapon(e) and not bool(e.get("hold_fire", false)):
 				e.order = {"type": "attack", "target": foe.id, "resume_guard": gt.id}
@@ -5435,13 +6788,14 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 		"patrol":
 			var a: Vector2 = o.get("a", e.pos)
 			var b: Vector2 = o.get("b", e.pos)
+			var op: Vector2 = b if int(o.get("leg", 0)) == 0 else a
 			var foe2: Dictionary = {}
 			if bool(e.get("acq_now", false)):
-				foe2 = enemies_preferred(e.pos, e.player, float(e.def.search), e)
+				foe2 = enemies_preferred(e.pos, e.player, _donor_detect_radius_m(e, op), e)
 				e["acq_target"] = foe2.id if not foe2.is_empty() else 0
 			else:
 				foe2 = by_id.get(int(e.get("acq_target", 0)), {})
-				if not foe2.is_empty() and (foe2.dead or foe2.player == e.player or foe2.pos.distance_to(e.pos) > float(e.def.search)):
+				if not foe2.is_empty() and (foe2.dead or foe2.player == e.player or foe2.pos.distance_to(e.pos) > _donor_detect_radius_m(e, op)):
 					foe2 = {}
 			if not foe2.is_empty() and has_weapon(e) and not bool(e.get("hold_fire", false)):
 				e.order = {"type": "attack", "target": foe2.id, "resume_patrol": true, "a": a, "b": b}
@@ -5451,6 +6805,12 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 			_step_move(e, dest, effective_speed(e), dt, 1.0)
 			if not e.moving:
 				o.leg = 1 - int(o.get("leg", 0))
+		"fish":
+			# D3 call site (DEC-U-MARKET-TAIL §5.3). [U]-E1/T-FISH: the donor
+			# loop that issues this order has NO port producer, so the
+			# donor-law producer (_tick_fisher) runs inside _fisher_deliver
+			# behind that label — no order source is fabricated here.
+			_fisher_deliver(e, dt)
 		"gather":
 			_tick_gather(e, dt)
 		"resow":
@@ -5561,9 +6921,79 @@ func _tick_unit(e: Dictionary, dt: float) -> void:
 					en = by_id.get(int(e.get("acq_target", 0)), {})
 					if not en.is_empty() and (en.dead or en.player == e.player or en.pos.distance_to(e.pos) > float(e.def.search)):
 						en = {}
+				# No order point in the idle branch: apply the SAME detect gate
+				# to the acquired candidate ([U]-H1-detect: beyond-base-search
+				# acquisition is not added — no search geometry invented).
+				if not en.is_empty() and en.pos.distance_to(e.pos) > _donor_detect_radius_m(e, en.pos):
+					en = {}
 				if not en.is_empty():
 					e.order = {"type": "attack", "target": en.id}
 
+# RESOLVED donor famine/rebellion roll (DEC-U §2.1; unit.inc/nothing.inc:450-506,
+# lib/misc.script:493-498, dmscript.global:176). NO PARITY CLAIM.
+# gProfile.bFamine shipped default TRUE (profile.script:39, _profile_SetDefault;
+# field classes.script:5122) — [O] literal read, not an inference. Reads:
+# nothing.inc:450 (unit death gate), doprogress.inc:239 (HUD/log warning),
+# progresseconomicai.inc:748,975,2920,3059 (AI samplers of the player flag).
+# Only the native store bytes / boot load-overwrite stay [U]-P-store
+# (profile.script:642,729-736): no script-side write and no cfg/menu writer.
+# The port gate FAMINE_PROFILE_ENABLED matches the shipped default but stays
+# an explicit labelled PORT gate, never claimed as a donor literal.
+# bplayable/spectator and bnohungry have no port counterpart (all slots
+# playable; no tag) => default pass.
+func _tick_famine_rebellion(e: Dictionary) -> void:
+	if e.kind != "unit" or e.dead:
+		return
+	var pl: int = int(e.player)
+	if pl < 0 or pl >= players.size():
+		return
+	var p: Dictionary = players[pl]
+	if not bool(Data.FAMINE_PROFILE_ENABLED) or not bool(p.get("famine", false)):
+		return
+	if bool(e.get("bnohungry", false)):
+		return
+	var diff: int = _donor_difficulty()
+	var ri: int = _misc_random_int()
+	var thresh: int = FAMINE_ROLL_EASY if diff == 0 else (FAMINE_ROLL_NORMAL if diff == 1 else FAMINE_ROLL_HARD)
+	if ri < thresh:
+		_kill(e, null, true)   # donor _unit_SetTagStates(go, essential_death)
+		return
+	# Rebellion gate [O] nothing.inc:487-495: brebellion and bmercenary and
+	# plInd<>mercenaryind and bplayable (game/spectator at :489). Roll law
+	# nothing.inc:492 via floor(random*32768) stays verbatim above. Donor flip
+	# target RECOVERED: player slot 11 (gc_player_mercenaryind =
+	# gc_MaxPlayerCount-1, dmscript.global:776,97; GetPlayerHandleByIndex ->
+	# _misc_ChangePlayer(go, mercHnd, False, False, True), nothing.inc:494-495,
+	# miscext.script:894-958). bmercenary is a per-sid TObjProp flag (dip-sid
+	# rule, unit.script:612-614). Port mercenary indirection (flag/slot) stays
+	# [U]-U11-M / [U]-U11-M-port: the port has no slot-11 mercenary player and
+	# no dip-sid flag table; do NOT invent a mercenary faction/player — FP-3
+	# capture decides. The guard below keeps the port's existing behaviour.
+	if not bool(p.get("rebellion", false)):
+		return
+	if not bool(e.get("mercenary", false)) or int(e.get("mercenaryind", -1)) == pl:
+		return
+	var rr: int = _misc_random_int()
+	var rthresh: int = REBEL_ROLL_EASY if diff == 0 else (REBEL_ROLL_NORMAL if diff == 1 else REBEL_ROLL_HARD)
+	if rr < rthresh:
+		var merc: int = int(e.get("mercenaryind", -2))
+		if merc >= 0 and merc < players.size() and merc != pl:
+			# donor _misc_ChangePlayer(go, mercHnd, False, False, True)
+			players[pl].entities.erase(e.id)
+			players[merc].entities.append(e.id)
+			e.player = merc
+			e.order = {"type": "none"}
+
+# [U] U10 / §14 item 4: the whole numeric morale stack below is a PORT
+# INVENTION — the donor has NO numeric morale (2,559 files / 373 code files,
+# 0 hits for morale/rout/panic/flee/veteran/experience; DFORM-01). Donor squad
+# disband is a count fraction < basecount*0.25 (dmscript.global:156;
+# progress.inc:5-35) and shooter retreat is move-mode runaway=2 with
+# runawaydelay=1.3 / runawaydist=3.5 (dmscript.global:198-199,657).
+# Decomp plan: MORALE-02..06 quarantine → toggle → disband-fraction + runaway
+# mode → donor famine roll → delete invented constants. BLOCKED here: ai.gd:855
+# consumes `routing` and selftest.gd:411-415 asserts the numeric model; both
+# are outside the authorized file set. Keep behaviour, keep label, no parity.
 func _update_morale(e: Dictionary, dt: float) -> void:
 	if e.kind != "unit" or e.def.get("support", false):
 		return
@@ -5572,7 +7002,7 @@ func _update_morale(e: Dictionary, dt: float) -> void:
 	var want := Data.MORALE_BASE
 	if bool(e.get("aur_off", false)):
 		want += Data.MORALE_OFFICER_BONUS
-	if bool(e.get("aur_dru", false)):
+	if bool(e.get("aur_dru", false)):  # [U] U-formation/U-walkinterval — drummer morale aura kept; no donor speed scalar, inert data unread
 		want += Data.MORALE_DRUMMER_BONUS
 	if e.hp < e.max_hp * 0.3:
 		want -= Data.MORALE_LOW_HP_PENALTY
@@ -5628,6 +7058,17 @@ func _priest_heal(e: Dictionary, dt: float) -> void:
 			if rng.randf() < dt * 2.0:
 				post_event("heal", u.pos, "priest", "")
 
+# DEC-U-SKIRMISH-TABLES §10 item 3 / §9-D1: `_misc_DoDamage` has NO height,
+# dispersion, flight-time or cap term. The old +25% height bonus and dist/30
+# flight were REPLACED: range now uses the §4 additive law
+# (_donor_height_range_bonus_m) and flight uses the donor speed table with a
+# [U]-U1 native-TXThrowBehaviour tag (no gravity tuning). Remaining estimates
+# below stay `[U]-D1` (shot-path grep + volley σ experiment).
+# [U] U8 / §14 item 12: ONLY the 175 px archer value is donor-grounded
+# (weapon.script archer). CANNON 225 / TOWER 100, the 0.5-1.6 clamp, 512 cap,
+# splash half-to-rim and the wall-between test are video-pass estimates.
+# Decomp plan: weapon.script/unit.script shot fns → verbatim
+# per-weapon damage/prot/dispersion/cooldown/range; else individual tags.
 func _dispersion_px(kind: String, sid: String) -> float:
 	# Video pass: musket volleys puff smoke and land tight, arrows scatter,
 	# cannonballs scream across half the screen and throw dirt everywhere.
@@ -5638,6 +7079,293 @@ func _dispersion_px(kind: String, sid: String) -> float:
 			return Data.TOWER_DISPERSION_PX * Data.PX_TO_M
 		return Data.CANNON_DISPERSION_PX * Data.PX_TO_M
 	return 0.0
+
+# ── DEC-U-DAMAGE-HEIGHT §4/§10-1 — DOWNHILL additive range bonus ─────────────
+# [O] unit.script:7855-7873 (Site A), :6332-6356 (Site C). Port height_at() is
+# METRES; donor engine Y is TILES (TILE_M=2.0). The k=4 artillery / k=2 else,
+# 0.25-tile floor and melee exclusion are the data.gd donor helpers — no new
+# literal is invented. RANGE ONLY: never damage, never dispersion, and never
+# subtracted uphill (MaxFloat(...,0)).
+func _donor_height_range_bonus_m(e: Dictionary, target_pos: Vector2, w: Dictionary) -> float:
+	if w.is_empty():
+		return 0.0
+	if C3Data.donor_height_is_melee(float(w.get("max", 0.0)) / C3Data.TILE_M):
+		return 0.0   # :7869-7872 rbonus := 0 when radiusmax <= 3.5 tiles
+	var py_tiles: float = height_at(e.pos) / C3Data.TILE_M
+	var ty_tiles: float = height_at(target_pos) / C3Data.TILE_M
+	return C3Data.donor_height_bonusrng_tiles(py_tiles, ty_tiles,
+		bool((e.get("def", {}) as Dictionary).get("artillery", false))) * C3Data.TILE_M
+
+# Port `w` may be a duplicate (art_range user mod): match by kind, not identity.
+func _donor_mount_index(e: Dictionary, w: Dictionary) -> int:
+	var ws: Array = (e.get("def", {}) as Dictionary).get("weapons", []) as Array
+	for i in ws.size():
+		if str((ws[i] as Dictionary).get("kind", "")) == str(w.get("kind", "")):
+			return i
+	return 0
+
+# DONOR_MOUNT_ROWS keys are generic; map only the port sids that have a cited row.
+func _donor_mount_row(e: Dictionary) -> Dictionary:
+	var sid: String = str(e.get("sid", ""))
+	var key_map := {"tow": "tower", "yachttur": "yacht.yachttur",
+		"xebec": "frigate.xebec", "battleship": "frigate.battleship",
+		"chaika": "frigate.chaika"}
+	if key_map.has(sid):
+		sid = str(key_map[sid])
+	return C3Data.DONOR_MOUNT_ROWS.get(sid, {}) as Dictionary
+
+# [O] unit.script:8026-8031 / data.gd DONOR_MOUNT_ROWS addradius_px: 32 px ->
+# 0.6 tiles while idle, weakwall kicker +0.36 tiles, -1 keep-prior => 0.
+# DONOR-absent foot mounts have NO row -> 0 (never back-filled from 32).
+func _donor_idle_range_bonus_m(e: Dictionary, widx: int, t: Dictionary) -> float:
+	var mounts: Array = _donor_mount_row(e).get("mounts", []) as Array
+	if widx < 0 or widx >= mounts.size():
+		return 0.0
+	var px: float = float((mounts[widx] as Dictionary).get("addradius_px", -1))
+	# Port has no `usage` field: wal/gat (and the Ukrainian weakwall row) are
+	# the closest weak-wall target class — [D] mapping, tagged [U]-H1-weakwall.
+	var is_weakwall: bool = t.kind == "building" and str(t.get("sid", "")) in ["wal", "gat", "weakwall"]
+	return C3Data.donor_idle_range_bonus_tiles(px, not bool(e.get("moving", false)),
+		is_weakwall) * C3Data.TILE_M
+
+# [O] unit.script:7893-7906 — detectradiusmax+rbonus grows with the SAME
+# bonusrng as radiusmax. Port detectradiusmax = `e.def.search` (metres); Site A
+# reads the ORDER TARGET's height, so each caller supplies its order position.
+func _donor_detect_radius_m(e: Dictionary, order_pos: Vector2) -> float:
+	return float((e.get("def", {}) as Dictionary).get("search", 0.0)) \
+		+ _donor_height_range_bonus_m(e, order_pos, weapon_of(e))
+
+# [O] weapon.script:872: speed(tiles/s) = floor(phys*1000)/53.3333333 * 0.001 *
+# gc_time_to_frames(32); metres = x TILE_M. Only fly/random/random1/randomsimulate
+# prototypes carry a SPEED in physvalue — angle carries DEGREES and stand/
+# slightup carry nothing, so those keep the labelled fallback ([U]-U1).
+func _donor_speed_mps(physvalue: float) -> float:
+	var px: float = floorf(physvalue * 1000.0)
+	var tiles_per_s: float = px / C3Data.DEC_U_PX_PER_TILE * 0.001 * (1.0 / C3Data.FRAMES_TO_TIME)
+	return tiles_per_s * C3Data.TILE_M
+
+func _donor_projectile_speed_mps(e: Dictionary, w: Dictionary, fallback: float) -> float:
+	var mounts: Array = _donor_mount_row(e).get("mounts", []) as Array
+	var widx: int = _donor_mount_index(e, w)
+	if widx < mounts.size():
+		var wid: String = str((mounts[widx] as Dictionary).get("weaponsid", ""))
+		var proto: Array = C3Data.DONOR_WEAPON_PROTOS.get(wid, []) as Array
+		if proto.size() > 4 and str(proto[3]) in ["fly", "random", "random1", "randomsimulate"]:
+			var v: float = _donor_speed_mps(float(proto[4]))
+			if v > 0.0:
+				return v
+	if str(w.get("kind", "")) in ["arrow", "firearrow"]:
+		return _donor_speed_mps(25.0)   # STRELA fly physvalue 25 [O] weapon.script:1067 -> 30 m/s
+	return fallback                    # engine CalcSpeedByDirAndTrgPos, [U]-U1
+
+# ── DEC-U-FLIGHT-NATIVE §8 item 3 / §3.3 — timed airburst rows [O/D] ───────────
+# weapon.script:41-43,900,984-985: time<0 Infinite, =0 PlayOnce, >0 timed. For
+# time>0 the donor ALSO schedules `DelayExecuteStateByHandle(...,'OnStopEvent',
+# time)` (timed airburst) ON TOP of the ballistic terminus — both events fire.
+# §8 item 3 wires the resolved seconds into `total`; N3-BURST is the capture gate.
+# Scope: NUCLM FramesToTime(2)=0.0625 s + the 14 PUSSTRELA FramesToTime(round())
+# rows. STRELDEZ's 950-frame `stand` timer is a different row, NOT in this change.
+# C3Data.donor_weapon_row() parses the VERBATIM time_expr through
+# C3Data.donor_round() (Bankers half-to-even; native @Round address [U]-G1 /
+# X21 20-vector fixture) — no floor(x+0.5), no pre-rounded literal.
+func _donor_timed_row_seconds(e: Dictionary, w: Dictionary) -> float:
+	var mounts: Array = _donor_mount_row(e).get("mounts", []) as Array
+	var widx: int = _donor_mount_index(e, w)
+	if widx >= mounts.size():
+		return 0.0
+	var wid: String = str((mounts[widx] as Dictionary).get("weaponsid", ""))
+	if not (wid == "NUCLM" or wid.begins_with("PUSSTRELA")):
+		return 0.0
+	var row: Dictionary = C3Data.donor_weapon_row(wid)
+	if row.is_empty():
+		return 0.0
+	return float(row.get("time_seconds", 0.0))
+
+# §8 item 3: keep BOTH donor terminations until N3 closes. `total` is the timed
+# airburst; `ballistic_total` is the pre-existing speed-derived landing time
+# (formula unchanged). Non-timed rows keep the single `total` path verbatim.
+func _donor_projectile_timing(e: Dictionary, w: Dictionary, flight: float) -> Dictionary:
+	var timed: float = _donor_timed_row_seconds(e, w)
+	if timed > 0.0:
+		return {"total": timed, "ballistic_total": flight, "timed": true}
+	return {"total": flight, "timed": false}
+
+# [O] doexplode.inc:73 — buildings take NO locked-target damage from a
+# non-CheckWeaponTargetable propagation. The port projectile dict carries only
+# kind/dmg/splash (NO propagation field) and no donor targetable list is
+# recovered, so a live gate would have to invent one. Telemetry only, [U]-N4.
+const _DONOR_BUILDING_IMMUNE_NONTARGETABLE := {
+	"law": "buildings immune to non-CheckWeaponTargetable propagations [O] doexplode.inc:73",
+	"wired": false,
+	"status": "[U]-N4",
+	"reason": "port projectile has no propagation field; no donor targetable list recovered",
+}
+
+# [O] miscext2.script:641-728 — DEC_U_flight_native §4.3 records the PSimulatePoint
+# law as a PROSE SUMMARY (LCG constants, sigma, dst<=1.3 tiles, damagetime window,
+# 2048-slot ring) but NOT the full verbatim body (Box-Muller formulas, exact
+# damagetime expression, ring dispatch). §8 item 7: verbatim or explicit
+# non-support; NO uniform-scatter fake. POINTOTVZRIV / POINTOTVZRIVFRAME stay
+# PORT-UNSUPPORTED with N6 red.
+const _DONOR_SIMULATE_POINTS_STATUS := "PORT-UNSUPPORTED [U]-N6 — full _misc_ProjSimulatePoint law not recovered; no fake scatter"
+
+func donor_flight_native_telemetry() -> Dictionary:
+	var timed_rows: Dictionary = {}
+	for key in C3Data.DONOR_FLIGHT_TIME_ROWS:
+		var sid: String = str(key)
+		if sid == "NUCLM" or sid.begins_with("PUSSTRELA"):
+			timed_rows[sid] = float((C3Data.DONOR_FLIGHT_TIME_ROWS[key] as Dictionary).get("seconds", 0.0))
+	return {
+		"authority": "DEC_U_flight_native.md §8 items 3/5/6/7 + §3.3/§4.3/§4.4; weapon.script:349-362,872,984-985; classes.script:4351-4367; miscext2.script:562-604,583,641-728; doexplode.inc:73",
+		"timed_rows_wired": timed_rows,          # total = donor time; [U]-G1 Bankers, [U]-N3 gate
+		"ballistic_terminus_kept": true,         # donor schedules both (§8 item 3)
+		"tproj_additive_keys": ["trg", "ownerpl", "uniqrnd"],
+		"tproj_pos_vs_target": "pos=px launch, target=dx aim [O] classes.script:4351-4367",
+		"victim_cap": "Floor(1+sqr(r/0.35)) [O] miscext2.script:562-604 — wired as count cap; pick order [U]-N4",
+		"owner_round_exclusion": "wired: u.id==owner.id skipped in splash [O] miscext2.script:583; owner still eligible as locked direct victim",
+		"building_nontargetable_immunity": _DONOR_BUILDING_IMMUNE_NONTARGETABLE,
+		"simulate_points": _DONOR_SIMULATE_POINTS_STATUS,
+		"native_unverified": C3Data.DONOR_FLIGHT_NATIVE_UNVERIFIED.duplicate(true),
+		"visual_parity_claim": false,
+	}
+
+# ── DEC-U-FF-PREDICT §2/§5 — donor-law helper data (labelled, [O] cites) ──────
+# [O] weapon.script:751 `_weapon_CheckWeapon`; :795-803 `_weapon_PredictShot`.
+const _DONOR_PREDICT_PASS_PROP := ["immediate", "fly", "angle"]
+# [O] onaclanimationreachedattack.inc:107-108,135-136 — bare literal 1 ("1 s" is [D]).
+const _DONOR_PREDICT_DENY_COOLDOWN := 1.0
+# [O] DEC_U_ff_predict §2 verbatim cited chains ONLY — no other child/sync row
+# invented. Unknown chains ALLOW ([U]-F4), never a guessed denial of a valid gun.
+const _DONOR_WEAPON_CHILD_SYNC := {
+	"STRELDEZPRO": ["STRELDEZ", "POINT"],   # stand + random -> no fly child
+	"PPOINTT": ["SHOTCANNON", "NUCL2P"],     # sync fly child -> allowed
+}
+
+func _donor_check_weapon(wid: String) -> bool:
+	var proto: Array = C3Data.DONOR_WEAPON_PROTOS.get(wid, []) as Array
+	return proto.size() > 3 and str(proto[3]) in _DONOR_PREDICT_PASS_PROP
+
+func _donor_get_fly_child(wid: String) -> String:
+	if _donor_check_weapon(wid):
+		return wid
+	for child in _DONOR_WEAPON_CHILD_SYNC.get(wid, []):
+		if _donor_check_weapon(str(child)):
+			return str(child)
+	return ""
+
+func _donor_predict_shot(e: Dictionary, w: Dictionary) -> bool:
+	var mounts: Array = _donor_mount_row(e).get("mounts", []) as Array
+	var widx: int = _donor_mount_index(e, w)
+	if widx >= mounts.size():
+		return true   # [U]-F4 no mount row: allow, no invented denial
+	var wid: String = str((mounts[widx] as Dictionary).get("weaponsid", ""))
+	# [U]-F4: port has no complete child/sync table; an uncited chain ALLOWS.
+	if wid.is_empty() or ((not _DONOR_WEAPON_CHILD_SYNC.has(wid)) and (not _donor_check_weapon(wid))):
+		return true
+	return not _donor_get_fly_child(wid).is_empty()
+
+# [O] weapon.script:56,482-492 — bcheckfriendonline defaults True; these 10
+# sids opt out of the FriendOnLine ray entirely.
+const _DONOR_FF_RAY_OPT_OUT := ["STRELA", "OSTRELA", "SHOTMUSKET",
+	"SHOTBLOCKHOUSE", "NUCLGRE", "PSMPOINTTPUS", "DIMMORT1", "DIMMORT2NEW",
+	"PSMPOINTT", "DIMMORT2KOR"]
+# [O] unit.script:5336-5441 — [radius tiles, dst tiles, line weight, multi weight].
+const _DONOR_FF_CANNISTER_FAN := [
+	[0.47, 0.75, 4, 5], [0.94, 1.5, 4, 4], [1.41, 3.0, 4, 3],
+	[2.35, 4.875, 4, 1], [2.82, 6.75, 4, 1], [3.29, 8.625, 2, 1],
+]
+
+func _donor_ff_sid_opted_out(e: Dictionary) -> bool:
+	var mounts: Array = _donor_mount_row(e).get("mounts", []) as Array
+	if mounts.is_empty():
+		return false
+	return str((mounts[0] as Dictionary).get("weaponsid", "")) in _DONOR_FF_RAY_OPT_OUT
+
+# [O] unit.script:8263-8268 — ANY building on the py+0.5 -> dst+0.5 ray vetoes
+# (ownership is NOT consulted). Port is 2-D XZ, so the +0.5-tile Y lift is not
+# representable: 2-D projection only, tagged [U]-F5c.
+func _donor_ff_building_on_ray(a: Vector2, b: Vector2) -> bool:
+	var ab: Vector2 = b - a
+	var l2: float = ab.length_squared()
+	if l2 < 0.0001:
+		return false
+	for u in grid_query((a + b) * 0.5, sqrt(l2) * 0.5 + 4.0):
+		if u.dead or u.kind != "building":
+			continue
+		var s: float = clampf((u.pos - a).dot(ab) / l2, 0.0, 1.0)
+		if (a + ab * s).distance_to(u.pos) <= float(u.get("block_r", u.def.radius)):
+			return true
+	return false
+
+func _donor_ff_ray_veto(e: Dictionary, t: Dictionary) -> bool:
+	if _donor_ff_sid_opted_out(e):
+		return false
+	return _donor_ff_building_on_ray(e.pos, t.pos)
+
+# [O] unit.script:5290-5332 + data.gd DONOR_FF_PRECHECK_*: TRUE = VETO (deny).
+# 2-D radius scan (NO height term), MOUNT-0 dispertion, enemy >= friend*4;
+# empties (0>=0) ALLOW. Helper/telemetry only: no lock-target flag exists in
+# the port, so a live veto would over-deny ([U]-F5a pending F4/F5 series).
+func _donor_ff_explosion_veto(e: Dictionary, t: Dictionary) -> bool:
+	var ws: Array = (e.get("def", {}) as Dictionary).get("weapons", []) as Array
+	var disp: float = _donor_dispertion_px(e, ws[0] if not ws.is_empty() else {})
+	var dist_tiles: float = e.pos.distance_to(t.pos) / C3Data.TILE_M
+	var key: String = "mortar" if str(e.get("sid", "")) in ["mortar", "howitzer"] else "other"
+	var dmg_rad: float = float(C3Data.DONOR_FF_PRECHECK_DMG_RADIUS_TILES.get(key, 1.25))
+	var scan_m: float = (C3Data.donor_max_dispersion(dist_tiles, disp) + dmg_rad) * C3Data.TILE_M
+	var foes: int = 0
+	var friends: int = 0
+	for u in grid_query(t.pos, scan_m):
+		if u.dead or int(u.id) == int(e.id) or int(u.player) == int(e.player):
+			continue
+		if _is_ally(int(e.player), int(u.player)):
+			friends += 1
+		else:
+			foes += 1
+	return foes < friends * int(C3Data.DONOR_FF_PRECHECK_ENEMY_RATIO)
+
+# [O] unit.script:5336-5441 — 6 forward fans, weighted 4:1; bLockTarget bypass
+# is NOT modelled ([U]-F5b). Port has no bCheckInFront flag: facing dir used.
+func _donor_ff_cannister_veto(e: Dictionary, t: Dictionary) -> bool:
+	var multi: bool = str(e.get("sid", "")) == "multicannon"
+	var facing: Vector2 = Vector2(cos(float(e.get("face", 0.0))), sin(float(e.get("face", 0.0))))
+	var aim: Vector2 = t.pos - e.pos
+	var dir: Vector2 = facing if facing.length_squared() > 0.0001 else aim
+	if dir.length_squared() < 0.0001:
+		dir = aim
+	if dir.length_squared() > 0.0001:
+		dir = dir.normalized()
+	var foes: int = 0
+	var friends: int = 0
+	for fan in _DONOR_FF_CANNISTER_FAN:
+		var centre: Vector2 = e.pos + dir * (float(fan[1]) * C3Data.TILE_M)
+		var radius_m: float = float(fan[0]) * C3Data.TILE_M
+		var weight: int = int(fan[3] if multi else fan[2])
+		for u in grid_query(centre, radius_m):
+			if u.dead or int(u.id) == int(e.id) or int(u.player) == int(e.player):
+				continue
+			if _is_ally(int(e.player), int(u.player)):
+				friends += weight
+			else:
+				foes += weight
+	return foes < friends * int(C3Data.DONOR_FF_PRECHECK_ENEMY_RATIO)
+
+# Telemetry only — class-level, NOT an entity key, so the v5 save wire is untouched.
+var donor_ff_last_precheck: Dictionary = {}
+
+func donor_ff_telemetry() -> Dictionary:
+	return {
+		"authority": "DEC_U_ff_predict.md §§2/5/8; weapon.script:751-803/:482-492; unit.script:5290-5332/:5336-5441/:8263-8282",
+		"predict_pass_propagation": _DONOR_PREDICT_PASS_PROP.duplicate(),
+		"predict_denial_literal": 1.0,   # [O] inc:107-108,135-136; "1 s" is [D]
+		"ff_ray_opt_out": _DONOR_FF_RAY_OPT_OUT.duplicate(),
+		"ff_dmg_radius_tiles": C3Data.DONOR_FF_PRECHECK_DMG_RADIUS_TILES.duplicate(),
+		"ff_enemy_ratio": C3Data.DONOR_FF_PRECHECK_ENEMY_RATIO,
+		"ff_cannister_fan": _DONOR_FF_CANNISTER_FAN.duplicate(true),
+		"last_precheck": donor_ff_last_precheck.duplicate(true),
+		"live_gates": false,   # [U]-F4/F5: child/sync, lock flag, 2nd stream, series red
+		"visual_parity_claim": false,
+	}
 
 # Walls block direct fire: flat-trajectory shots stop at the first segment
 # between shooter and target (howitzers/mortars arc over; wiki Wall).
@@ -5669,8 +7397,11 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 	if not cost.is_empty() and not Data.can_pay(players[e.player].res, cost):
 		e.cooldown = 1.0
 		return
-	# DONOR T6-M01: gold-upkeep units (incl. ships) stop firing when the owner
-	# has <4 gold; deterministic state check, no new RNG.
+	# DONOR T6-M01 (grounded, unit.script:8185-8201): gold-upkeep units stop
+	# firing below 4 gold; the 100-frame delay is wired as FRAMES (100/32 s)
+	# per U9 acceptance — do NOT retune to a guessed second value.
+	# [U] U9: artillery deploy 2.0 s and the remaining fire gates are port
+	# estimates; decomp plan: verify frame→s via gc_time_to_frames=32.
 	if (e.def.get("eat", {}) as Dictionary).has("gold") \
 			and float(players[e.player].res[_UPKEEP_RES_IDX[1]]) < _GOLD_FIRE_STOP_RES:
 		e.cooldown = _GOLD_FIRE_STOP_S
@@ -5689,6 +7420,19 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 		if height_at(mid) > maxf(height_at(e.pos), height_at(t.pos)) + 0.8:
 			e.cooldown = 0.5
 			return
+	# [U]-F4 PredictShot (DEC_U_ff_predict §2/§8-2): only cited no-fly-child
+	# chains deny; uncited chains ALLOW so no donor-valid gun is disarmed by a
+	# missing port child/sync table. Donor literal 1 for attackdelay/attackmaxdelay;
+	# denial appends NO projectile and does NOT increment stats.shots.
+	if not _donor_predict_shot(e, w):
+		e.cooldown = _DONOR_PREDICT_DENY_COOLDOWN
+		return
+	# [U]-F5 FF prechecks are HELPER/telemetry only: port has no lock-target
+	# flag, no second RNG stream, and F4/F5 series stay red. The donor law is
+	# encoded above; NO threshold is tuned to make a gate pass.
+	donor_ff_last_precheck = {"ray": _donor_ff_ray_veto(e, t),
+		"explosion": _donor_ff_explosion_veto(e, t),
+		"cannister": _donor_ff_cannister_veto(e, t)}
 	Data.pay(players[e.player].res, cost)
 	var rof: float = 1.0
 	if e.kind == "building":
@@ -5698,7 +7442,7 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 	e.cooldown = w.cd * rof
 	e.fire_t = time_s
 	stats.shots += 1
-	# officer aura + researched powder upgrades multiply the listed damage
+	# officer aura [PORT INVENTION (U10) — no donor officer aura] + researched powder upgrades (donor) multiply the listed damage
 	var mult: float = effective_damage(e.player, w.kind, e.pos, e)
 	var base_dmg := int(round(float(w.dmg) * mult)) + _formation_atk(e, w.kind) + bonus
 	if str(w.kind) in ["sword", "pike"]:
@@ -5707,36 +7451,102 @@ func _fire(e: Dictionary, t: Dictionary, w: Dictionary, bonus := 0) -> void:
 			base_dmg += int(players[e.player].get("cav_dmg_add", 0))
 	post_event("shot", e.pos, w.kind, e.sid)
 	if int(t.get("player", 0)) == -1:
-		var disp := _dispersion_px("cannonball", e.sid) * float(players[e.player].get("art_acc", 1.0))
-		var aim: Vector2 = t.pos + Vector2(rng.randf_range(-disp, disp), rng.randf_range(-disp, disp)) * 0.5
+		# §4-S3-b/c exact draw order: scatter X, scatter Z, frnd, pick, 6x orient.
+		# art_acc is a landed PORT APPROXIMATION multiplier (kept, never reverted).
+		var disp_px: float = _donor_dispertion_px(e, w) * float(players[e.player].get("art_acc", 1.0))
+		var dist0: float = e.pos.distance_to(t.pos)   # donor dist = shooter->target
+		var aim: Vector2 = t.pos + _donor_shot_scatter(dist0, disp_px)
+		var frnd: float = sim_rng.random_f32()                      # S3-b frnd
+		var sod: Dictionary = _donor_shot_pick_and_orientation(1)    # S3-c
+		e["donor_last_shot"] = {"frnd": frnd, "shot_point": sod["shot_point"], "orientation": sod["orientation"]}
 		var dist: float = e.pos.distance_to(aim)
-		var flight := clampf(dist / 30.0, 0.5, 1.6)
-		projectiles.append({"pos": e.pos, "target": aim, "kind": "cannonball",
+		# [U]-U1 TXThrowBehaviour (weapon.script:855-986): the native ballistic
+		# integrator is the boundary — script sets Speed/Gravity/Direction only.
+		# `total` now uses the DONOR speed table (weapon.script:872) where the
+		# prototype physvalue is a speed; linear dist/speed + clamp stay PORT
+		# APPROXIMATION. Gravity is NOT tuned (engine-internal units, [U]-U1).
+		var flight := clampf(dist / _donor_projectile_speed_mps(e, w, 30.0), 0.5, 1.6)
+		var tm: Dictionary = _donor_projectile_timing(e, w, flight)
+		# Additive TProj mirror [O] classes.script:4351-4367: pos=px (launch),
+		# target=dx (aim). trg=locked-target uid (0 for ground aim), ownerpl,
+		# uniqrnd. Absent keys default 0/0.0 — NO version bump, NO key rename.
+		var pro: Dictionary = {"pos": e.pos, "target": aim, "kind": "cannonball",
 			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
-			"owner": e.id, "player": e.player, "t": 0.0, "total": flight})
+			"owner": e.id, "ownerpl": e.player,
+			"trg": (int(t.get("id", 0)) if int(t.get("player", 0)) != -1 else 0),
+			"player": e.player, "t": 0.0, "total": float(tm.get("total", flight)),
+			"uniqrnd": frnd, "donor_shot": sod}
+		if bool(tm.get("timed", false)):
+			pro["ballistic_total"] = float(tm.get("ballistic_total", flight))
+			pro["airburst_done"] = false
+		projectiles.append(pro)
 		if projectiles.size() > 512:
 			projectiles.pop_front()
 		return
 	if w.kind == "bullet":
 		post_event("smoke", e.pos, w.kind, e.sid)
+		# §6 seq 10-12: musket (disp=0) draws NO scatter but still draws frnd
+		# then pick + 6 orientation (weapon.script:1046-1051 shape). Stored as
+		# telemetry; the direct-hit law is unchanged (no invented hit roll).
+		var frnd: float = sim_rng.random_f32()
+		var sod: Dictionary = _donor_shot_pick_and_orientation(1)
+		e["donor_last_shot"] = {"frnd": frnd, "shot_point": sod["shot_point"], "orientation": sod["orientation"]}
 		_apply_hit(e, t, w, base_dmg, t.pos)
 	elif w.kind == "cannonball":
-		# lobbed shell: lands after a flight, scatters, hurts everyone
-		var disp := _dispersion_px(w.kind, e.sid) * float(players[e.player].get("art_acc", 1.0))
-		var aim: Vector2 = t.pos + Vector2(rng.randf_range(-disp, disp), rng.randf_range(-disp, disp)) * 0.5
+		# lobbed shell: §4-S3-b/c scatter -> frnd -> pick -> 6x orientation.
+		var disp_px: float = _donor_dispertion_px(e, w) * float(players[e.player].get("art_acc", 1.0))
+		var dist0: float = e.pos.distance_to(t.pos)
+		var aim: Vector2 = t.pos + _donor_shot_scatter(dist0, disp_px)
+		var frnd: float = sim_rng.random_f32()
+		var sod: Dictionary = _donor_shot_pick_and_orientation(1)
+		e["donor_last_shot"] = {"frnd": frnd, "shot_point": sod["shot_point"], "orientation": sod["orientation"]}
 		var dist: float = e.pos.distance_to(aim)
-		var flight := clampf(dist / 30.0, 0.5, 1.6)
-		projectiles.append({"pos": e.pos, "target": aim, "kind": w.kind,
+		# [U]-U1 TXThrowBehaviour (weapon.script:855-986): the native ballistic
+		# integrator is the boundary — script sets Speed/Gravity/Direction only.
+		# `total` now uses the DONOR speed table (weapon.script:872) where the
+		# prototype physvalue is a speed; linear dist/speed + clamp stay PORT
+		# APPROXIMATION. Gravity is NOT tuned (engine-internal units, [U]-U1).
+		var flight := clampf(dist / _donor_projectile_speed_mps(e, w, 30.0), 0.5, 1.6)
+		var tm: Dictionary = _donor_projectile_timing(e, w, flight)
+		# Additive TProj mirror [O] classes.script:4351-4367 — same key set as
+		# the ground-aim branch; pos=px launch, target=dx aim, trg=locked uid.
+		var pro: Dictionary = {"pos": e.pos, "target": aim, "kind": w.kind,
 			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
-			"owner": e.id, "player": e.player, "t": 0.0, "total": flight})
+			"owner": e.id, "ownerpl": e.player,
+			"trg": (int(t.get("id", 0)) if int(t.get("player", 0)) != -1 else 0),
+			"player": e.player, "t": 0.0, "total": float(tm.get("total", flight)),
+			"uniqrnd": frnd, "donor_shot": sod}
+		if bool(tm.get("timed", false)):
+			pro["ballistic_total"] = float(tm.get("ballistic_total", flight))
+			pro["airburst_done"] = false
+		projectiles.append(pro)
 		if projectiles.size() > 512:
 			projectiles.pop_front()
 	elif w.kind == "arrow" or w.kind == "firearrow":
-		var disp2 := _dispersion_px(w.kind, e.sid) * float(players[e.player].get("art_acc", 1.0))
-		var aim2: Vector2 = t.pos + Vector2(rng.randf_range(-disp2, disp2), rng.randf_range(-disp2, disp2)) * 0.4
-		projectiles.append({"pos": e.pos, "target": aim2, "kind": w.kind,
+		# §4-S3-b/c: archer 175 px scatter (2 draws) + frnd + pick + 6 orient.
+		var disp_px: float = _donor_dispertion_px(e, w) * float(players[e.player].get("art_acc", 1.0))
+		var dist0: float = e.pos.distance_to(t.pos)
+		var aim2: Vector2 = t.pos + _donor_shot_scatter(dist0, disp_px)
+		var frnd: float = sim_rng.random_f32()
+		var sod: Dictionary = _donor_shot_pick_and_orientation(1)
+		e["donor_last_shot"] = {"frnd": frnd, "shot_point": sod["shot_point"], "orientation": sod["orientation"]}
+		# [U]-U1 donor SPEED table: STRELA fly physvalue 25 -> 30 m/s
+		# (weapon.script:872/:1067); linear dist/speed + clamp is the
+		# PORT APPROXIMATION of native TXThrowBehaviour flight (no gravity tuning).
+		var flight := clampf(dist0 / _donor_projectile_speed_mps(e, w, 30.0), 0.5, 1.6)
+		var tm: Dictionary = _donor_projectile_timing(e, w, flight)
+		# Additive TProj mirror [O] classes.script:4351-4367 — same key set as
+		# the shell branches; pos=px launch, target=dx aim, trg=locked uid.
+		var pro: Dictionary = {"pos": e.pos, "target": aim2, "kind": w.kind,
 			"dmg": base_dmg, "splash": float(w.get("splash", 0.0)),
-			"owner": e.id, "player": e.player, "t": 0.0, "total": 0.45})
+			"owner": e.id, "ownerpl": e.player,
+			"trg": (int(t.get("id", 0)) if int(t.get("player", 0)) != -1 else 0),
+			"player": e.player, "t": 0.0, "total": float(tm.get("total", flight)),
+			"uniqrnd": frnd, "donor_shot": sod}
+		if bool(tm.get("timed", false)):
+			pro["ballistic_total"] = float(tm.get("ballistic_total", flight))
+			pro["airburst_done"] = false
+		projectiles.append(pro)
 		if projectiles.size() > 512:
 			projectiles.pop_front()
 	else:
@@ -5748,11 +7558,33 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 	if t.kind == "unit" and str(t.sid) == "peasant" and e.kind == "unit" \
 			and e.player != t.player and not e.def.get("support", false) \
 			and bool(Data.CAPTURE_ENABLED) and str(e.sid) != "peasant":
+		# C1 tail (§3 / miscext.script:1093-1099,1147-1173):
+		# birth/hide gate — non-building + essential_birth + visible-hide-unset
+		# -> essential_death. Port has no `essential_birth` flag, so an ABSENT
+		# flag means the gate is off (no invented flag value).
+		if bool(t.get("essential_birth", false)) and not bool(t.get("hidden", false)):
+			_kill(t, null, false)
+			return
+		# AI die rolls. [I] bEasy mapping: donor aidifficulty < veryhard; port
+		# exposes easy/normal/hard. AI-owned peasant + !easy dies; human victim
+		# captured by AI + !easy dies; otherwise peasant roll > 0.546875.
+		var bEasyUnit: bool = str(Data.AI_DIFFICULTY) == "easy"
+		var capturer_is_ai: bool = bool(players[int(e.player)].get("is_ai", false))
+		var victim_is_ai: bool = bool(players[int(t.player)].get("is_ai", false))
+		# §4-S2-c peasant die roll >0.546875: G-attributed [U]-G1-g; single sim
+		# stream supplies it, labelled, donor G VALUE never claimed. Short-circuit
+		# preserves the donor branch gate (draw only when earlier terms are false).
+		var bDieUnit: bool = (victim_is_ai and not bEasyUnit) \
+			or (not victim_is_ai and capturer_is_ai and not bEasyUnit) \
+			or (sim_rng.random_f32() > float(Data.DONOR_AI_DIE_ROLL["peasant"]))
+		if bDieUnit:
+			_kill(t, null, false)               # essential_death
+			return
 		var oldp: int = int(t.player)
 		t.player = e.player
 		t.order = {"type": "none"}
 		t.inside_of = 0
-		t["morale"] = 70.0
+		t["morale"] = 70.0   # PORT INVENTION (U10) — donor has no numeric morale (value unchanged)
 		players[oldp].entities.erase(t.id)
 		players[int(e.player)].entities.append(t.id)
 		post_event("capture", t.pos, "unit")
@@ -5761,7 +7593,10 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 	# towers are fortifications: only artillery, grenades and arrows hurt them
 	if t.kind == "building" and t.sid in ["tow", "wal", "gat"] and not str(w.kind) in ["cannonball", "cannister", "arrow", "firearrow"]:
 		return
-	# protection + researched armor, upgrade-aware
+	# T2 — `_misc_DoDamage` exact law (DEC-U §2 / miscext2.script:274-465).
+	# Researched protection upgrades add to protection[kind] (§1.4 player.script:1798)
+	# and stay in `prot`; the formation shield/damage bonuses are SEPARATE donor
+	# squad-hold terms now carried by ctx (they were previously folded into prot).
 	var prot: Array = (t.get("prot", [0, 0, 0, 0, 0, 0]) as Array).duplicate()
 	var pb: int = int(players[t.player].get("prot_bonus", 0))
 	if not str(t.get("cavalry", "")).is_empty():
@@ -5769,29 +7604,71 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 	if pb != 0:
 		for i in prot.size():
 			prot[i] = int(prot[i]) + pb
-	var fb := _formation_def(t)
-	if fb != 0:
-		for i in prot.size():
-			prot[i] = int(prot[i]) + fb
+	var wk: String = str(w.kind)
+	var is_priest: bool = bool((e.get("def", {}) as Dictionary).get("healer", false)) or wk == "heal"
+	var can_headshot: bool = (wk == "arrow" or wk == "bullet") and t.kind != "building"
+	# DEC-U-RNG-LEDGER §4-S4: `random<0.05` is ONE G-attributed draw
+	# (miscext2.script:420, :334 bCanHeadShot gate). G/S split stays [U]-G1-g:
+	# the single recovered sim stream supplies it, VALUE not claimed donor-pinned.
+	# `uniqrnd` is a STORED per-unit value, NOT a draw; its spawn site IS recovered:
+	# unit.script:2726 `obj.uniqrnd := RandomExt` (§4-S0-a) — the old "no site"
+	# comment was stale. An absent key still resolves to 0.0 (old saves).
+	var headshot_roll: bool = false
+	if can_headshot:
+		headshot_roll = sim_rng.random_f32() < 0.05
+
+	var fast_horse_bullet: bool = can_headshot and str(t.get("cavalry", "")) == "fast" \
+		and bool(t.get("moving", false))
 	var tmp := {"cavalry": t.get("cavalry", ""), "moving": t.get("moving", false),
 		"shield": t.get("shield", 0), "finished": t.get("finished", true), "prot": prot}
-	var dealt: int = C3Data.apply_damage(dmg, w.kind, tmp)
+	var dctx := {
+		"priest_attacker": is_priest, "process_logic": true,
+		"defender_hold": bool(t.get("hold", false)),
+		"defender_shield": _formation_def(t), "defender_shield_hold": _formation_def(t),
+		"attacker_hold": bool(e.get("hold", false)),
+		"attacker_damage": _formation_atk(e, wk), "attacker_damage_hold": _formation_atk(e, wk),
+		"can_headshot": can_headshot, "headshot_roll": headshot_roll,
+		"uniqrnd": float(t.get("uniqrnd", 0.0)), "fast_horse_bullet": fast_horse_bullet,
+	}
+	var dealt: int = C3Data.donor_do_damage(int(dmg), wk, tmp, dctx)
+	if is_priest:
+		t.hp = mini(float(t.get("max_hp", t.hp)), float(t.hp) + float(dealt))
+		return                                  # priest heal path skips protection
 	t.hp -= dealt
 	if t.kind == "building":
 		bld_dirty += 1
-	# morale shock when hit
+	# morale shock when hit   # PORT INVENTION (U10) — no donor morale-shock law
 	if t.kind == "unit":
-		t["morale"] = float(t.get("morale", Data.MORALE_BASE)) - 4.0
+		t["morale"] = float(t.get("morale", Data.MORALE_BASE)) - 4.0   # PORT INVENTION (U10)
 	stats.hits += 1
 	if killer_pair(e, t):
+		# donor :443-464 — killer.score += 2*target.score + 3*each inside unit.
+		var inside_scores: Array = []
+		for iu in live_units:
+			if not iu.dead and int(iu.get("inside_of", 0)) == int(t.id):
+				inside_scores.append(int(iu.def.get("score", 0)))
+		players[e.player].score += C3Data.donor_kill_score(int(t.def.get("score", 0)), inside_scores)
 		stats.kills += 1
 		_award_squad_xp(e)  # RB G-13: surviving squad gains veteran XP
 		_morale_shock(t.pos, t.player)
-	# splash hurts everyone (video: friendly fire is real), half to the rim
+	# splash hurts everyone (video: friendly fire is real), half to the rim.
+	# PORT APPROXIMATION — donor wall splash is a separate hard/weak-wall engine
+	# call (miscext2.script:240-256, [U]-U3); this generic 0.5x splash is not a
+	# donor law. Kept verbatim, not claimed as 1:1.
 	if float(w.get("splash", 0.0)) > 0.0:
 		post_event("explode", at, w.kind, e.sid)
+		# [O] miscext2.script:562-604 — victim cap Floor(1+sqr(r/0.35)), r in
+		# TILES (w.splash is metres). Wired as a hard count cap; the donor victim
+		# ORDER is engine-side, so grid_query order is kept and tagged [U]-N4.
+		var round_cap: int = C3Data.donor_round_damage_victim_cap(float(w.splash) / C3Data.TILE_M)
+		var round_count: int = 0
 		for u in grid_query(at, float(w.get("splash", 0.0)) + 2.0):
-			if u.dead or u.id == t.id:
+			if round_count >= round_cap:
+				break
+			# [O] miscext2.script:583 / doexplode.inc:83 — owner excluded as
+			# dmgHnd in the round loop (owner<>dmgHnd); the owner CAN still be
+			# the locked direct victim above (suicide-by-lock). Never skip `t`.
+			if u.dead or u.id == t.id or int(u.id) == int(e.id):
 				continue
 			var rr: float = float(w.splash) + (float(u.def.radius) if u.kind == "building" else 0.0)
 			if u.pos.distance_to(at) <= rr:
@@ -5802,6 +7679,7 @@ func _apply_hit(e: Dictionary, t: Dictionary, w: Dictionary, dmg: int, at: Vecto
 					"shield": u.get("shield", 0), "finished": u.get("finished", true), "prot": vp}
 				var sd: int = C3Data.apply_damage(int(float(dmg) * 0.5), w.kind, utmp)
 				u.hp -= sd
+				round_count += 1
 				if u.kind == "building":
 					bld_dirty += 1
 	post_event("hit", at, w.kind, e.sid)
@@ -5811,7 +7689,7 @@ func _morale_shock(pos: Vector2, player: int) -> void:
 		if u.dead or u.kind != "unit" or u.player != player:
 			continue
 		if u.pos.distance_to(pos) <= 10.0:
-			u["morale"] = float(u.get("morale", Data.MORALE_BASE)) - 6.0
+			u["morale"] = float(u.get("morale", Data.MORALE_BASE)) - 6.0   # PORT INVENTION (U10) — no donor AoE morale shock
 
 func _tick_projectiles(dt: float) -> void:
 	if projectiles.is_empty():
@@ -5819,29 +7697,43 @@ func _tick_projectiles(dt: float) -> void:
 	var keep: Array = []
 	for p in projectiles:
 		p.t += dt
-		if p.t < float(p.total):
+		var is_timed: bool = bool(p.get("timed", false))
+		# §8 item 3: donor schedules BOTH the timed airburst and the ballistic
+		# terminus (weapon.script:984-985). `total` is the donor time for timed
+		# rows; `ballistic_total` keeps the pre-existing landing path intact.
+		if is_timed and p.t >= float(p.total) and not bool(p.get("airburst_done", false)):
+			p["airburst_done"] = true
+			_impact_projectile(p, true)
+		var land_total: float = float(p.get("ballistic_total", p.total)) if is_timed else float(p.total)
+		if p.t < land_total:
 			keep.append(p)
 			continue
-		var owner: Dictionary = by_id.get(p.get("owner", 0), {})
-		# find who is actually at the impact point (friendly fire included)
-		var victim: Dictionary = {}
-		var best_d := 2.0
-		for u in grid_query(p.target, 8.0):
-			if u.dead:
-				continue
-			var d: float = u.pos.distance_to(p.target)
-			var rr: float = 1.2 + float(u.get("block_r", u.def.radius))
-			if d <= rr and d < best_d:
-				best_d = d
-				victim = u
-		if victim.is_empty():
-			post_event("explode" if p.kind == "cannonball" else "hit", p.target, p.kind, "")
-		else:
-			if owner.is_empty():
-				owner = {"id": 0, "player": p.player, "pos": p.pos}
-			_apply_hit(owner, victim, {"kind": p.kind, "splash": p.splash}, int(p.dmg), p.target)
-		post_event("crater" if p.kind == "cannonball" else "hit", p.target, p.kind, "")
+		_impact_projectile(p, false)
 	projectiles = keep
+
+# Impact/terminus chain. `airburst` marks the §8 item 3 timed event; the port
+# has no native curve, so the burst point is the stored aim point (PORT
+# APPROXIMATION [U]-N3). Victim pick stays nearest-in-8 m [U]-N4 (untouched).
+func _impact_projectile(p: Dictionary, airburst: bool) -> void:
+	var owner: Dictionary = by_id.get(p.get("owner", 0), {})
+	# find who is actually at the impact point (friendly fire included)
+	var victim: Dictionary = {}
+	var best_d := 2.0
+	for u in grid_query(p.target, 8.0):
+		if u.dead:
+			continue
+		var d: float = u.pos.distance_to(p.target)
+		var rr: float = 1.2 + float(u.get("block_r", u.def.radius))
+		if d <= rr and d < best_d:
+			best_d = d
+			victim = u
+	if victim.is_empty():
+		post_event("explode" if (p.kind == "cannonball" or airburst) else "hit", p.target, p.kind, "")
+	else:
+		if owner.is_empty():
+			owner = {"id": 0, "player": p.player, "pos": p.pos}
+		_apply_hit(owner, victim, {"kind": p.kind, "splash": p.splash}, int(p.dmg), p.target)
+	post_event("crater" if p.kind == "cannonball" else "hit", p.target, p.kind, "")
 
 func killer_pair(attacker: Dictionary, target: Dictionary) -> bool:
 	return target.hp <= 0 and not target.dead
@@ -5850,9 +7742,13 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 	var o: Dictionary = e.order
 	var res: String = o.res
 	if e.carry_type != "" and e.carry_type != res:
-		# deliver first
-		_gather_deliver(e, dt)
-		return
+		# DEC-U-CARRY §5 P-CARRY-4 / donor unit.script:5541-5545 [O]: a
+		# different-res reorder DISCARDS the load with NO credit. cmd_gather
+		# already does this at order-issue time; this arm only catches stale
+		# saves / external order writes. Never route it through the credit
+		# path (donor has no partial-load credit).
+		e.carry = 0
+		e.carry_type = ""
 	if res in ["gold", "iron", "coal"]:
 		var mine: Dictionary = by_id.get(o.get("node", 0), {})
 		var valid: bool = not mine.is_empty() and not mine.dead and mine.sid == "mine_" + res \
@@ -5895,11 +7791,18 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 	# consumed immediately - food never reached the player (t_mill_logic).
 	var node: Dictionary = by_id.get(o.get("node", 0), {})
 	var full_load: int = int(Data.GATHER.get(res, {}).get("hits", 1))
-	if e.carry >= full_load or (e.carry > 0 and not node.is_empty() and int(node.get("hits", 0)) <= 0):
+	# DEC-U-CARRY §5 P-CARRY-2/3 / donor unit.script:9707-9713 [O]: the ONLY
+	# credit path is a FULL load at the store (resamount >= hitsneeded). A
+	# partial load (0 < carry < hits) is NEVER credited here — it stays on
+	# the unit while it waits / retargets (:9828-9846), and the order is
+	# cleared only when no same-res node exists (:9889-9893), load intact.
+	if e.carry >= full_load:
 		_gather_deliver(e, dt)
 		return
 	var avoid_n := _bad_id(e, "bad_node", "bad_t")
 	if node.is_empty() or node.get("hits", 0) <= 0:
+		# Node depleted with a partial load: keep carry/carry_type and look for
+		# the nearest node of the SAME resource. Never deliver/credit here.
 		node = nearest_res(e.pos, res, 30.0, true, avoid_n)
 		if node.is_empty():
 			e.order = {"type": "none"}
@@ -5951,6 +7854,8 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 	e.moving = false
 	e.face = (node.pos - e.pos).angle()
 	e["hit_t"] = (e.get("hit_t", 0.0) + dt)
+	# [U] U-CAD: Data.GATHER interval stays 1.25 (PORT APPROXIMATION) until
+	# T-CAD closes; no per-(action,nation) AAF window table is wired here.
 	if e.hit_t < Data.GATHER[res].interval:
 		return
 	e.hit_t = 0.0
@@ -5974,8 +7879,241 @@ func _tick_gather(e: Dictionary, dt: float) -> void:
 				set_blocked_circle(node.pos, node.radius, false)
 			post_event("depleted", node.pos, res)
 			res_dirty += 1
-	if e.carry >= Data.GATHER[res].hits or node.hits <= 0:
+	# DEC-U-CARRY §5 P-CARRY-3 / donor unit.script:9828-9846/:9889-9893 [O]:
+	# depleting the node mid-load does NOT deliver. A full load goes to the
+	# store; a partial load stays on the unit and is retargeted next tick.
+	if e.carry >= Data.GATHER[res].hits:
 		_gather_deliver(e, dt)
+
+# --- Three delivery call sites (DEC-U-MARKET-TAIL §3 / §5.3) ---------------
+# D1 global default gc_gameplay_resourceDropRadius = 3 and …Sqr = 9
+# (dmscript.global:210,220). NOT consumed at D2/D3: no donor global-consumer
+# call site was proven, so the port's DELIVERY_RADIUS_M is left [U] and is no
+# longer read at either local site. NO PARITY CLAIM.
+# D2 peasant->storehouse local shadow: unit.script:9704 (dstSqr < 0.5).
+# D3 fisher->port local shadow: unit.script:12032 (4*4); literal at :12005.
+const GLOBAL_DROP_RADIUS := 3.0            # dmscript.global:210 [U]-E1: no proven consumer
+const GLOBAL_DROP_RADIUS_SQR := 3.0 * 3.0   # dmscript.global:220 [U]-E1: no proven consumer
+const STORE_DROP_RADIUS_SQR := 0.5
+const FISHER_DROP_RADIUS_SQR := 4.0 * 4.0
+const FISHER_RADIUS_MOVE_CHANGE := 15.0
+
+# DEC-U-CARRY §5 P-CARRY-5 / donor unit.script:1865-1866 [O]: base fisher
+# fishingspeed := 50 div 4 = 12 units/s and fishingmax := 1000. NO per-sid
+# capacity/rate is invented; upgrades stay a documented [U]-E1/T-FISH gap
+# (donor upgrade arms :11933-11934 / player.script:1812-1831 are unported).
+const FISHER_SPEED_BASE := 12.0
+const FISHER_MAX_BASE := 1000.0
+
+# [U]-E1/T-FISH telemetry: the port has NO producer that issues a "fish" order
+# (RA_ROSTER G04), so this is the donor-law CONSUMER only — no order source is
+# fabricated. Donor unit.script:12110-12118 [O], while the fishing order holds:
+#   addFish := fishingspeed*dt + orders[0].info.progress
+#   resamount += Floor(addFish); progress := addFish - Floor(addFish)
+# Port carries the fractional remainder in e.progress (no per-order slot).
+# The clamp at :11954 is applied at the return gate in _fisher_deliver below.
+func _tick_fisher(e: Dictionary, dt: float) -> void:
+	if str(e.order.get("type", "")) != "fish":
+		return
+	var addf: float = FISHER_SPEED_BASE * dt + float(e.get("progress", 0.0))
+	var add: int = int(floorf(addf))
+	e["resamount"] = int(e.get("resamount", 0)) + add
+	e["progress"] = addf - float(add)
+
+# D2 point correction [O] unit.script:9702: dstSqr is measured against the
+# storehouse position + gCustomObjPoints[cid][id].resourcePoint. The plain
+# centre-distance line (:9703) is DEAD in the donor — do not port it as law.
+# DEC-U-RES-POINT §5.3: E1-OFF wired via spawn() + data.gd::RESOURCE_POINT
+# (donor objcustom.cfg 27/27 table, §1; x/z verbatim at country.script:4167/4169,
+# y forced 0 at :4168). Centre fallback remains ONLY when the key is absent;
+# never substitute the global 3/9 here. Rotation is unrotated addition (§3,
+# negative P6) — no transform. T-OFF/T-ROT fixed-camera zero-mismatch traces
+# (§4) still required before removing the PORT APPROXIMATION label.
+# NO PARITY CLAIM. Body below is byte-identical to the pre-RESPOINT file.
+func _store_drop_point(b: Dictionary) -> Vector2:
+	var off: Variant = b.get("resource_point", b.get("resourcePoint", Vector2.ZERO))
+	if off is Vector2:
+		return b.pos + (off as Vector2)
+	if off is Array and (off as Array).size() >= 2:
+		return b.pos + Vector2(float(off[0]), float(off[1]))
+	return b.pos
+
+# D3 point correction [O] unit.script:12028: measured against
+# _misc_GetPortResourcePoint(storehouseHnd, resx, resz, True).
+# DONOR two-arm law (misc.script:4506-4636), reproduced structurally:
+#   Arm 1 (:4509-4518) bui-child absolute position, gated on the object's
+#     `bbuilt` (:4513). Port has NO bui-child concept: an explicit point key is
+#     the Arm-1 analogue; a finished dock with no such key stays [U] E1-PORT
+#     (T-PORT-BUILT) — no bui position is fabricated.
+#   Arm 2 (:4520-4634) water-ring fallback; bPrecise=True at every in-repo
+#     caller on the fisher path (:4439,:5627,:11925,:12028,:12062 + .inc files).
+#     Implemented verbatim in _port_water_ring_point below.
+# DONOR Arm 2 (misc.script:4520-4634; bPrecise=True at all fisher callers).
+# 72 rays x step 5deg; probe at 11 m (collision-radius-1 water test); innermost
+# water cell along 3..10 m; x1.1 penalty at ray index 1 and 6 (evaluated §2 [D]);
+# winner = min fDistance > 0; floor 7.5 m. Result=False (no water): x/z are
+# untouched, so the caller keeps the incoming centre fallback; donor callers
+# :12028/:12062/:11925 IGNORE Result ([U] E1-FAIL, T-PORT-DRY), only
+# :5627/:4668 and the .inc callers branch on it. Fast arm (tries=16,
+# :4577-4622, 75deg wedge quirk :4625) is NOT ported — no bPrecise=False caller
+# exists on this path; that quirk stays labelled donor data (telemetry below).
+# NO PARITY CLAIM.
+func _port_resource_point(b: Dictionary) -> Vector2:
+	# Arm-1 analogue: an explicit donor/legacy point wins. has_explicit gates the
+	# ZERO default so Arm 2 is reachable when no key exists (donor :4520).
+	var has_explicit: bool = b.has("port_resource_point") or b.has("resource_point") or b.has("resourcePoint")
+	var off: Variant = b.get("port_resource_point", b.get("resource_point", b.get("resourcePoint", Vector2.ZERO)))
+	if has_explicit:
+		if off is Vector2:
+			return b.pos + (off as Vector2)
+		if off is Array and (off as Array).size() >= 2:
+			return b.pos + Vector2(float(off[0]), float(off[1]))
+	# Arm 2 — only reached when Arm 1 yielded no point (donor :4520).
+	var ring: Variant = _port_water_ring_point(b)
+	if ring is Vector2:
+		return ring as Vector2
+	return b.pos
+
+# [U] T-PORT-RAW binding: the port has no GetMapCollisionTagInRadius octree query
+# (donor cCollisionRad=1 at :4541/:4585). Bind the donor water-tag probe to the
+# SAME predicate can_place uses for water (line 5062: terrain==3 /
+# dec_u_collision_tag_ok). Point-sample only: the radius-1 disc and the exact XZ
+# sign of VectorRotateY (:4630) are engine-defined [U], NEVER invented here.
+func _port_ring_is_water(p: Vector2) -> bool:
+	return _is_water(p)
+
+# DONOR Arm 2 precise scan (misc.script:4520-4621), bPrecise=True path.
+# Returns the donor-formula Vector2 when a water cell is found, else null
+# (= Result=False; caller keeps incoming x/z). Literal provenance:
+#   :4525 minDistance=gc_MaxFloat; :4526 minIndex=-1; :4527 minDist=9;
+#   :4528 maxDist=11; :4532 minDist:=9-6=3; :4533 cPresiseCalc=72 (donor spelling);
+#   :4538 angle=i*(360/tries)=i*5; :4541 cCollisionRad=1 probe at maxDist;
+#   :4548-4554 innermost water j=floor(minDist)..floor(maxDist)-1 = 3..10;
+#   :4556-4561 case a/angle..b/angle x1.1 -> evaluated match i=1 AND i=6 only;
+#   :4568-4575 winner=min fDistance>0; :4625 angle:=minIndex*5 (hardcoded 72 grid);
+#   :4626-4627 floor 7.5; :4630 VectorRotateY; :4631-4632 x/z := port + dir.
+# The donor i=0 case evaluates x/0 at :4556 (engine-defined [U]); this port does
+# not synthesise that undefined division and applies no penalty at i=0 — stays
+# [U] under T-PORT-RAW. Fast arm (tries=16, minDist=9, :4579-4622) is NOT ported:
+# no bPrecise=False caller on this path (§2 quirk 3); its 75deg wedge stays
+# telemetry-only. NO PARITY CLAIM; T-PORT-RAW / T-PORT-DRY traces still required.
+func _port_water_ring_point(b: Dictionary) -> Variant:
+	var tries: int = 72                          # cPresiseCalc :4533
+	var min_dist: int = 3                        # :4527 9 - 6 (:4532)
+	var max_dist: int = 11                       # :4528
+	var step_deg: float = 360.0 / float(tries)   # :4538 i*(360/tries) = 5
+	var min_distance: float = 1e30               # gc_MaxFloat sentinel :4525 [U]
+	var min_index: int = -1                      # :4526
+	for i in range(tries):
+		var theta: float = deg_to_rad(float(i) * step_deg)
+		var dir := Vector2(cos(theta), sin(theta))
+		# probe at maxDist with collision radius 1 (:4541, gc_collisiontag_water)
+		if not _port_ring_is_water(b.pos + dir * float(max_dist)):
+			continue
+		for j in range(min_dist, max_dist):      # floor(3)..floor(11)-1 = 3..10
+			if not _port_ring_is_water(b.pos + dir * float(j)):
+				continue
+			var fd: float = float(j)
+			# verbatim x1.1 guard (:4556-4561); evaluated [D] matches are i=1
+			# (5deg, 0..6) and i=6 (30deg, 174..186) ONLY. The 84..96, 264..276
+			# and 354..366 guards are DEAD — reproduced, not fixed.
+			if i == 1 or i == 6:
+				fd *= 1.1
+			# innermost water cell: break at first water j (:4554 / :4600)
+			if fd > 0.0 and fd < min_distance:
+				min_distance = fd
+				min_index = i
+			break
+	if min_index < 0:
+		return null                              # Result=False, x/z untouched
+	# :4625 hardcoded minIndex*5 (72-grid) in BOTH arms; reproduced verbatim.
+	var out_theta: float = deg_to_rad(float(min_index) * 5.0)
+	# :4626-4627 floor 7.5 can override the innermost-water result outward.
+	var out_dist: float = maxf(min_distance, 7.5)
+	return b.pos + Vector2(cos(out_theta), sin(out_theta)) * out_dist
+
+# DEC-U-RES-POINT — LABELLED donor telemetry. DOCUMENTATION ONLY: no gameplay
+# consumer, no new caller, no value invented, NO PARITY CLAIM.
+func dec_u_res_point_telemetry() -> Dictionary:
+	return {
+		"authority": "DEC_U_res_point.md §§1-5 (ev_2b6e…/ev_9f2c…/ev_41d0…/ev_77c3…/ev_0d31…)",
+		"parse_law": "[O] country.script:4111-4170: objcustom.cfg -> gCustomObjPoints[cid][id].resourcePoint; x/z stored verbatim (:4167,:4169), y FORCED 0 (:4168); container TPos3f (classes.script:4272). Runtime key (cid,id) via sid match. Setter _unit_SetResourcePoint (unit.script:10714-10719) has ZERO callers -> file values stand.",
+		"rotation": "[D] NEGATIVE (P6 ev_0d31…): no VectorRotateY/direction/counter-rotation term at any of the 5 consumers (unit.script:9591,9626,9642,9702,9756-9757). Exact replication = unrotated world-axis Vector2 addition; NO rotation transform, NO visual scale/roll factor. Engine pre-rotation of local frames unread -> T-ROT [U].",
+		"offsets_27": [
+			["swecen", 0.02, -3.68, "objcustom.cfg:1452"],
+			["prucen", -0.06, -3.07, "objcustom.cfg:3714"],
+			["polcen", -0.06, -2.63, "objcustom.cfg:5274"],
+			["turcen", 0.49, -3.41, "objcustom.cfg:7597"],
+			["algcen", 0.80, -3.20, "objcustom.cfg:7744"],
+			["spacen", 0.10, -3.35, "objcustom.cfg:9020"],
+			["eurmil", -0.02, -1.61, "objcustom.cfg:10952"],
+			["ukrcen", -1.30, -3.16, "objcustom.cfg:12330"],
+			["ruscen", -0.28, -3.22, "objcustom.cfg:14011"],
+			["auscen", -0.11, -3.34, "objcustom.cfg:15051"],
+			["engcen", -0.50, -3.67, "objcustom.cfg:16801"],
+			["fracen", 0.01, -3.12, "objcustom.cfg:18652"],
+			["vencen", 0.07, -3.86, "objcustom.cfg:20826"],
+			["eursto", 0.20, -1.69, "objcustom.cfg:21428"],
+			["russto", 0.19, -1.50, "objcustom.cfg:21591"],
+			["tursto", 0.17, -1.67, "objcustom.cfg:21766"],
+			["rusmil", 0.04, -1.09, "objcustom.cfg:21879"],
+			["turmil", -0.44, -2.56, "objcustom.cfg:22078"],
+			["dencen", -0.10, -2.20, "objcustom.cfg:29341"],
+			["netcen", 0.43, -2.23, "objcustom.cfg:32119"],
+			["bavcen", -1.45, -3.07, "objcustom.cfg:34233"],
+			["saxcen", 0.24, -3.25, "objcustom.cfg:35963"],
+			["scocen", 0.00, -0.72, "objcustom.cfg:38373"],
+			["porcen", 0.30, -3.17, "objcustom.cfg:41015"],
+			["huncen", 1.39, -2.25, "objcustom.cfg:44398"],
+			["piecen", -0.25, -2.42, "objcustom.cfg:47168"],
+			["swicen", -1.82, -2.51, "objcustom.cfg:50098"],
+		],
+		"port_sid_map": "[D] port generic sids grounded by their OWN prop cites: sto->eursto (eursto.prop, data.gd:3059) = (0.20,-1.69); mil->eurmil (eurmil.prop, :3053) = (-0.02,-1.61); cen->algcen (algcen.prop, :3068) = (0.80,-3.20). dock->'' (NO objcustom.cfg block; uses Arm 2). Unmapped nation rows are quoted in offsets_27, NOT wired.",
+		"get_port_resource_point": {
+			"arm1": "[O] misc.script:4509-4518: bui-child absolute position via GetGameObjectAbsolutePositionByHandle, gated on TObj(pobj).bbuilt (:4513). Port has no bui-child -> [U] E1-PORT (T-PORT-BUILT), not fabricated.",
+			"arm2_precise": "[O] misc.script:4520-4634: cPresiseCalc=72 (:4533), minDist=3 (:4532), maxDist=11 (:4528), cCollisionRad=1 (:4541), innermost water j=3..10 (:4548-4554), winner=min>0 (:4568-4575), floor 7.5 (:4626-4627). Ported in _port_water_ring_point.",
+			"arm2_fast_not_ported": "[O] misc.script:4577-4622 (cFastCalc=16 :4579, minDist=9 :4527). NOT ported: bPrecise=True at every fisher caller; no bPrecise=False caller exists (§2 quirk 3). No caller invented.",
+			"penalty_verbatim": "[O] case i of 84/angle..96/angle, 174/angle..186/angle, 264/angle..276/angle, 354/angle..366/angle, 0/angle..6/angle: fDistance[i]*1.1 (:4556-4561 precise; identical :4602-4607 fast).",
+			"penalty_evaluated_precise": "[D] angle=5i; guard a/angle..b/angle contains i iff 5*i^2 in [a,b]. Matches i=1 (5deg, 0..6) and i=6 (30deg, 180 in 174..186) ONLY. 84..96/264..276/354..366 match NO integer i (DEAD guards, reproduced not fixed). i=0 evaluates x/0 -> engine-defined [U].",
+			"penalty_evaluated_fast": "[D] angle=22.5i: i=2 (45deg, 84..96) and i=4 (90deg, 354..366); i=0 div-by-zero [U]. Telemetry only (arm not ported).",
+			"quirk_wedge": "[O] :4625 angle:=minIndex*5 hardcoded for the 72-grid in BOTH arms -> fast arm emits only a 75deg wedge. Reproduced verbatim as labelled data; NOT fixed and NOT wired.",
+			"quirk_floor": "[O] :4626-4627 minDistance floor 7.5 overrides the innermost-water result outward (water at 3 m still yields 7.5 m). Reproduced verbatim; NOT clamped to the water cell.",
+			"quirk_dead_guards": "[O] see penalty_evaluated_precise: three of five case guards match no integer i; retained, not repaired.",
+			"quirk_ignored_result": "[O] Result=False leaves x/z untouched; _TryFishing (:12028), re-path (:12062) and DoReturnToPort (:11925) IGNORE Result and steer/deliver on the incoming values. Only _RemoveShipDummy (:5627), _CanPlaceBuilding (:4668) and .inc callers branch. Stale-value content engine-defined [U] E1-FAIL (T-PORT-DRY).",
+			"callers_bprecise": "[O] True: unit.script:4439,5627,11925,12028,12062; doprogressorders.inc:21,58,100,270; initial.inc:218,236; ontagstates.inc:100; miscext2.script:1148,1175; player.script:2961,3038. misc.script:4668 passes its own bPrecise through.",
+			"predicate_binding": "[U] T-PORT-RAW: port lacks GetMapCollisionTagInRadius(radius=1); _port_ring_is_water binds to the same water predicate as can_place (:5062). Radius-1 disc and VectorRotateY XZ sign are engine-defined [U]; no value invented.",
+		},
+		"fixed_camera_zero_mismatch_traces": {
+			"T-OFF": "E1-OFF: fixed seed, 1 peasant + sto/mil/cen, camera locked on storehouse; log per-tick dstSqr vs _store_drop_point and drop tick, 20 seeded runs/building. Oracle dstSqr<0.5 vs (0.20,-1.69)/(-0.02,-1.61)/(0.80,-3.20). Zero-mismatch = drop tick + credited amount + re-target on 60/60 runs.",
+			"T-ROT": "E1-R: same setup, rotate building facing if supported (4 facings x 5 runs). Oracle drop tick identical across facings (unrotated law). Zero-mismatch across facings, else port the facing-dependence VERBATIM from the trace — never pre-rotate on assumption.",
+			"T-PORT-BUILT": "E1-PORT: fixed seed, finished dock, laden fishboat. Arm 1 oracle = donor bui absolute position (strings pending E1-BUI text read). Zero-mismatch on point + dstSqr<16 credit tick, 20/20 runs.",
+			"T-PORT-RAW": "E1-PORT: same with unfinished dock (Arm 1 gated on bbuilt -> water ring). Log resx/resz per tick; oracle = §2 scan on the same collision grid (tries=72, innermost water 3..10, x1.1 at i in {1,6}, winner-pick, 7.5 floor). Zero-mismatch on point + dstSqr<16 credit tick, 20/20 runs.",
+			"T-PORT-DRY": "E1-FAIL: landlocked port (no water within 11 m), laden fishboat. Log behaviour/tick. Port keeps centre fallback (no invented hold/credit rule). Zero-mismatch on the decided rule, 10/10 runs; the rule itself stays [U].",
+			"E1-BUI": "[U] gc_racename_misc / gc_basename_bui are [O] identifiers; string VALUES unread. Settling = grep both assignments in dmscript.global, cite file:line. No trace needed.",
+			"D1": "[O] global resourceDropRadius=3 / Sqr=9 (dmscript.global:210,220); no proven consumer (market-tail §3). No trace; reopen only on a newly found consumer call site.",
+		},
+		"open": "[U] E1-OFF (wiring + T-OFF), E1-R (T-ROT), E1-PORT (T-PORT-BUILT/RAW), E1-FAIL (T-PORT-DRY), E1-BUI (text read), D1 (no consumer).",
+		"untouched": "[O] radii kept: STORE_DROP_RADIUS_SQR=0.5 (unit.script:9704), FISHER_DROP_RADIUS_SQR=16 (:12032), FISHER_RADIUS_MOVE_CHANGE=15 (:12005), FISHER_SPEED_BASE=12 / MAX=1000 (:1865-1866). GLOBAL_DROP_RADIUS[_SQR] and DELIVERY_RADIUS_M stay unread [U].",
+	}
+
+# D3 port lookup: port container choice for the donor's storehouseHnd field.
+# "dock" is the port's usage=port building. No rate or radius invented.
+func _fisher_port(e: Dictionary) -> Dictionary:
+	var pid: int = int(e.get("port", e.get("port_id", 0)))
+	if pid != 0:
+		var held: Dictionary = by_id.get(pid, {})
+		if not held.is_empty() and not held.dead and bool(held.get("finished", false)):
+			return held
+	var best: Dictionary = {}
+	var best_d := 1e9
+	for b in buildings_of(e.player):
+		if not bool(b.get("finished", false)) or str(b.sid) != "dock":
+			continue
+		var d: float = b.pos.distance_to(e.pos)
+		if d < best_d:
+			best_d = d
+			best = b
+	return best
 
 func _gather_deliver(e: Dictionary, dt: float) -> void:
 	var res: String = e.carry_type
@@ -5991,8 +8129,13 @@ func _gather_deliver(e: Dictionary, dt: float) -> void:
 		e.carry = 0
 		e.carry_type = ""
 		return
-	var d: float = e.pos.distance_to(store.pos)
-	if d > Data.DELIVERY_RADIUS_M + store.def.radius:
+	# D2 (unit.script:9702-9705): squared test < 0.5 against the resourcePoint-
+	# corrected storehouse point. The old unified 3 m / DELIVERY_RADIUS_M centre
+	# test is REMOVED at this site. Centre fallback stays PORT APPROXIMATION
+	# [U]-E1 until capture D2 recovers the per-building offset.
+	var store_pt: Vector2 = _store_drop_point(store)
+	var dst_sqr: float = e.pos.distance_squared_to(store_pt)
+	if dst_sqr >= STORE_DROP_RADIUS_SQR:
 		e.moving = true
 		e["delivering"] = true
 		_step_move(e, store.pos, e.def.speed, dt)
@@ -6005,9 +8148,15 @@ func _gather_deliver(e: Dictionary, dt: float) -> void:
 	e.moving = false
 	e["delivering"] = false
 	var portion: int = Data.GATHER.get(res, {}).get("carry", 20)
-	var hits: int = Data.GATHER.get(res, {}).get("hits", 1)
 	var mult_g: float = float(players[e.player].gather_mult.get(res, 1.0))
-	var amount := int(round(float(portion) * minf(e.carry, hits) / hits * mult_g))
+	# DEC-U-CARRY §5 P-CARRY-2/6 / donor unit.script:9557-9560 [O]:
+	# amount := (portion * eff) div 100 — Integer division, eff is a percent
+	# with default 100 (player.script:109). Callers gate on a FULL load
+	# (resamount >= hitsneeded, :9708), so the port's old
+	# min(carry,hits)/hits partial-load ratio is DELETED (not kept as a bonus)
+	# and round() becomes int() truncation to match donor `div`.
+	# Credit path below is unchanged (_res_AddResToPlayerByIndex + restotal).
+	var amount := int(float(portion) * mult_g)
 	if amount > 0:
 		players[e.player].res[Data.RES_NAMES.find(res)] += amount
 		stats.gathered[res] = int(stats.gathered.get(res, 0)) + amount
@@ -6033,18 +8182,281 @@ func _gather_deliver(e: Dictionary, dt: float) -> void:
 		else:
 			e.order = {"type": "none"}
 
+# D3 (fisher->port) golden path [O] unit.script:12027-12050: squared test
+# dstSqr < 16 vs GetPortResourcePoint; credit boat resamount + restotal
+# (:11993-11998); resamount := 0; new water target (0.5+random)*15.0
+# (:12039, gc_fisher_radius_move_change=15.0 at :12005).
+# [U]-E1/T-FISH: the water-ring fallback (misc.script:4520-4543) AND the
+# fishing-loop order producer are not ported (RA_ROSTER G04). The donor-law
+# accumulation tick (_tick_fisher) is wired in below behind this label — it
+# consumes a "fish" order; it never creates one. No rate/radius beyond the
+# donor literals (12/s, 1000, 4*4, 15.0) is invented. NO PARITY CLAIM.
+# Target centre at the fisher's current position is [I] (port container choice);
+# the radius literal and multiplier are donor-exact.
+func _fisher_deliver(e: Dictionary, dt: float) -> void:
+	# [U]-E1/T-FISH: continuous producer, donor unit.script:12110-12118.
+	_tick_fisher(e, dt)
+	# DEC-U-CARRY §5 P-CARRY-5 / donor :11951-11954 [O]: return-to-port gate is
+	# resamount >= fishingmax and the load is clamped to fishingmax at that
+	# check. Below capacity the boat stays on the water accumulating; it does
+	# not walk to port and is not credited.
+	var cap: int = int(FISHER_MAX_BASE)
+	var load: int = int(e.get("resamount", 0))
+	if load > cap:
+		load = cap
+		e["resamount"] = load
+	if load < cap:
+		e.moving = false
+		return
+	var port: Dictionary = _fisher_port(e)
+	if port.is_empty():
+		e.moving = false
+		return
+	var port_pt: Vector2 = _port_resource_point(port)
+	var dst_sqr: float = e.pos.distance_squared_to(port_pt)
+	if dst_sqr >= FISHER_DROP_RADIUS_SQR:
+		e.moving = true
+		e["delivering"] = true
+		_step_move(e, port_pt, e.def.speed, dt)
+		return
+	e.moving = false
+	e["delivering"] = false
+	# clamped to cap above, so this is the donor's credit of fishingmax
+	# (:11993-11998); existing credit path below is unchanged.
+	var amount: int = maxi(0, int(e.get("resamount", 0)))
+	if amount > 0:
+		# donor _unit_FisherAddResToPlayerByIndex(pl, go, food)
+		players[e.player].res[0] += float(amount)
+		stats.gathered["food"] = int(stats.gathered.get("food", 0)) + amount  # restotal
+	e["resamount"] = 0
+	# P0 REPLAY FIX — COORD determinism audit (PORT1TO1_determinism_audit.md):
+	# the two bare global randf() draws here were UNSEEDED, so the same seed could
+	# pick a different fisher water target on replay. Replaced with the ALREADY-
+	# PRESENT seeded donor-controlled sim stream `sim_rng.random_f32()` (class at
+	# :205-239, single sim S stream at :239) — NO new stream is invented.
+	# [O] donor literal (0.5+random)*gc_fisher_radius_move_change, radius 15.0
+	# (unit.script:12039 + :12005; second site :12090), cited via
+	# docs/terrain_swarm_2026-11-26/reports/DEC_U_market_tail.md §D3 / P11 lines
+	# 35,155-156,298-302. LITERAL AND RADIUS ARE UNCHANGED.
+	# [U] exact donor `random` STREAM attribution is UNRESOLVED — donor text gives
+	# `random`, not which stream; using sim_rng is a deterministic port choice,
+	# NOT a donor-stream claim. CS-D3 [U] 3-run zero-mismatch retained; no test
+	# weakened, no parity claim, visual_parity_claim=false.
+	var rr: float = (0.5 + sim_rng.random_f32()) * FISHER_RADIUS_MOVE_CHANGE
+	var ang: float = sim_rng.random_f32() * TAU
+	e["fish_target"] = e.pos + Vector2(cos(ang), sin(ang)) * rr
+	e.order = {"type": "move", "pos": e["fish_target"]}
+
+# ── IMPL-CAPTURE-FLUSH / IMPL-CAPTURE-STATE — donor capture-law telemetry ───────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_capture_flush.md §§1-9
+# and DEC_U_capture_state.md §§1-8, pin t_87f0f3c130b0; donor TEXT read-only,
+# binary NEVER executed. NO PARITY CLAIM: visual_parity_claim=false. The port
+# has a dynamic `queue` (Array of job dicts), NOT `orders[12]`
+# (dmscript.global:113); the ascending 0..11 slot loop maps to ascending port
+# job index ONLY where structurally possible. NO slot/state/threshold invented.
+# Every [U] below keeps its fixed-seed 3-run zero-mismatch experiment — no test
+# is weakened and no [U] is closed by a port fallback.
+const DONOR_CAPTURE_FLUSH_TELEMETRY := {
+	"flush_law": "[O] miscext.script:1116-1132: ascending 0..11 BEFORE ChangePlayer(:1178); produce+amount<>0(:1120) -> ProduceUnit(old-owner handle,[goHnd],cid,produceid,amount,False,False,True)(:1124) then amount:=0(:1125); performupgrade -> CancelUpgradePerform(:1129-1130); ClearOrders static-preserving(:1132) + SetSTO(goHnd,0)(:1133)",
+	"call_arm": "[O] unit.script:10351 signature; bState=False at :1124 selects CANCEL arm :10459-10465 (CancelUnitProduction(bld,cid,id,1,False)); NOT the withdrawn re-order reading; bcheckres=False = no cost gate :10435; blan=True = network tail OUT OF SCOPE",
+	"upgrade_refund": "[O] unit.script:5845 full cost (no progress scaling), :5859-5864 refund to CURRENT owner (LOSER at flush), :5855-5856 inprogress:=False/timestart:=0; exact port res stream [U]-Q-REFUND-UPG",
+	"second_strip": "[O] miscext.script:908-910 after swap: RemoveOrder every non-none/non-move slot, NO refund; :922-947 mine-insider recursion; :1093-1099/:1106-1109/:1180-1181 wall/bAutoKill/birth-hide/non-building NEVER reach ChangePlayer",
+	"scope": "[U]-Q-SLOT-JOB slot<->job equivalence UNPROVEN; DEC-U-CAPTURE-FLUSH §9 item 6 (data.gd cite) OUT OF SCOPE — game.gd only; NO PARITY CLAIM",
+	"visual_parity_claim": false,
+	"Q-FLUSH-SEM": "[U] Seed S: queue ONE finite batch N=5 (affordable, farm/art-capped-safe); capture mid-queue (progress<1); dump slots + loser res[] + winner res[] per tick across the capture tick. Zero-mismatch: 3 runs identical; EITHER (a) loser res[] increases by exactly ONE floor(price*costmodifier) unit AND slot remainder truncated (cancel reading), OR (b) a new same-sid produce slot/amount appears under loser handle with a fresh cost charge (re-order reading) — quote which. No third outcome without a verbatim cite. Port implements the CALL, never the reading.",
+	"Q-REFUND-PROD": "[U] Seed S: queue N=3 finite + capture; log loser res[] delta tick-before->after, winner delta (=0 expected), slot dump. Zero-mismatch: 3 runs identical; assert delta equals 0, 1, or N unit-prices — quote exact count; assert payee is loser.",
+	"Q-REFUND-UPG": "[U] Seed S: start blacksmith upgrade cost C, capture at 50% progress. Log loser res[] delta, upgstate.inprogress/timestart, slot dump. Zero-mismatch: 3 runs identical; assert delta=+C to loser, inprogress=False, timestart=0, winner gains no state.",
+	"Q-STATIC": "[U] Seed S: hand-craft (owner debug) one static=True produce slot amount=2, capture. Dump post-:1132 (pre-ChangePlayer if observable) + post-capture slots. Zero-mismatch: 3 runs identical; report survive-stage-1?/removed-stage-2? as observed. Port keeps orders12 zero-dump until then.",
+	"Q-MOVE": "[U] Seed S: queue a move order on a capturable building if reachable (else record UNREACHABLE with the failed call's file:line), capture. Dump slots. Zero-mismatch: 3 runs identical; assert kept move at head or twelve none. Port log-and-drop guard stays until then.",
+	"Q-CAPTURER": "[U] Seed S: capturer owns a producing barracks (2 batches queued) while its peasants capture a second building. Dump capturer-building slots before/after. Zero-mismatch: 3 runs identical; assert byte-identical slots + progress continuity (no reset).",
+	"Q-MINE": "[U] Seed S: 3 peasants inside a mine, capture the mine. Dump insider orders[], STO, inside list, both players' counter.resincome[]. Zero-mismatch: 3 runs identical; assert owner flip + STO re-point + resincome delta = produce[i]*3.",
+	"Q-WALL": "[U] Seed S: attempt capture of a wall segment + (if reachable) an essential_birth unit. Zero-mismatch: 3 runs identical; assert essential_death with NO flush writes (no res delta, no slot churn) — quote the taken branch. Do NOT initialise bAutoKill in the port.",
+	"unresolved": "[Q-FLUSH-SEM,Q-REFUND-UPG,Q-REFUND-PROD,Q-STATIC,Q-MOVE,Q-MINE,Q-WALL,Q-CAPTURER]",
+}
+
+const DONOR_CAPTURE_STATE_TELEMETRY := {
+	"state_law": "[O] miscext.script:963-1185 boolean-instant flip on first passing lasttimecheckcapture tick; building.inc/nothing.inc:300-326 + unit.inc/nothing.inc:510-535 cadence gate; dmscript.global:1476-1480 TimeCheckCapture=1.875s / Art=0.475s; EV-CS-NOCAP zero-hit: NO capture_t/progress/cooldown field in donor script text",
+	"no_majority": "[O] miscext.script:1041-1072 single-protector veto (NOT a majority vote); :1036-1040 blockshot 3.125s attack delay only; §2.4 no post-capture cooldown — next test gated solely by lasttimecheckcapture",
+	"garrison": "[O-absence] donor garrisons ONLY mines (peasantabsorber=5, produce=13, unit.script:2311-2322) and ferry (transport=120, unit.script:2043); tow/cen cap-10 + fire/heal/capture-halving is PORT APPROXIMATION (CS-GARRISON [U]), NOT donor law",
+	"transfer": "[O] miscext.script:894-959 ChangePlayer pipeline; counter arithmetic unit.script:3787-4001; score -5x/+5x capture swing; built/all/total/farm/resconsume/art mirrored; produced/killed UNCHANGED on capture",
+	"visual_parity_claim": false,
+	"CS-PROGRESS": "[U] Seed S: 1 peasant in radius of empty built barracks, no protectors, default mode. Dump lasttimecheckcapture/TObj.pl per Nothing tick +/-10. Zero-mismatch: 3 runs identical; assert pl flips on a tick where gametime>lasttimecheckcapture with NO intermediate partial state; quote lasttimecheckcapture before/after (unchanged by flip). Port deletes capture_t rate law meanwhile.",
+	"CS-COOLDOWN": "[U] Seed S x2: (a) recapture race — flip A->B, hold a second enemy unit in radius, dump ticks to re-flip B->A; (b) AI-artillery table — AI gun, protectors 1..4 with capturers at/below/above each threshold, bEasy both ways. Zero-mismatch: 3 runs identical each; (a) re-test at next lasttimecheckcapture with no extra delay; (b) death iff table+random>0.5 gate else veto-hold — quote protectorsCount/capturerCount/random draws.",
+	"CS-TRANSFER": "[U] Seed S: capture a built mine (3 peasants inside) + a barracks (queued produce x2 + upgrade mid-progress — flush owns queue arm, this owns COUNTER arm). Dump full ledger tick-before->after + 3 ticks later. Zero-mismatch: 3 runs identical; assert loser -5xscore, winner +5xscore, built/all/total/farm/resconsume/art +/-1 mirrors, produced/killed UNCHANGED, resincome moved by produce*insideCount, scangrid key=winner, highlight contains go.",
+	"CS-LEDGER": "[U] Seed S: capture built mine (3 insiders) + queued barracks. Dump loser/winner score + counter.built/all/total/farmused/resconsume[6]/artlimit/artcount/stat.produced/killed tick-before -> tick-after -> +3 ticks. Zero-mismatch: 3 runs identical; assert loser -5xscore AND winner +5xscore (loser clamped at 0) per unit.script:3836-3841,3940-3950, mirrored +/-1 counter deltas, produced/killed UNCHANGED, resincome moved by produce*insideCount. Quote EVERY delta; no delta invented. Port score now implements the 5x swing (structural support exists); all remaining counter/resincome/art fields stay [U] and are NOT invented. NO PARITY CLAIM.",
+	"CS-VETO": "[U] Seed S x3: (a) live guard order on victim + 1 capturer in radius, NO protector -> assert flip (guard does NOT block); dump guard orders[] + TObj.pl per tick. (b) same + 1 in-radius non-bcapture protector -> assert NO flip, bcapture=False hold; dump protectorsCount/capturerCount. (c) AI-owned artillery, protectors 1..4 with capturers at/below/above each threshold, bEasy both ways -> assert death iff (prot=1 and cap>=prot) or (prot=2 and cap>3) or (prot=3 and cap>7) or (prot=4 and cap>10) AND (not bEasy or random>0.5), else veto-hold; quote protectorsCount/capturerCount/random draws. Zero-mismatch: 3 runs identical each; ANY guard-block, general-path count-comparison or prot>=5 death FAILS. Port G-09 guard-block is PORT RULE placed AFTER the veto, never donor-cited; bEasy mapping [I].",
+	"CS-GARRISON": "[U] Seed S: 3 peasants DoHideInside a mine, capture the mine; separately attempt OrderGoInside peasant->tower (expect False/empty per unit.script:10052-10053). Zero-mismatch: 3 runs identical; mine case: assert insider pl=winner, STO=mine, resincome delta=13x3 gold (or per-sid produce), queues untouched; tower case: assert refusal with the failing call's file:line quoted. Port keeps garrison meanwhile, tagged.",
+	"CS-HIDE": "[U] Seed S: (a) essential_birth non-building in radius, hide-unset -> expect essential_death, no ChangePlayer; (b) hidden peasant inside mine NOT captured but in radius -> expect _unit_Stop, ownership unchanged; (c, editor/cheat only) hidden building ChangePlayer -> expect swap WITHOUT order-strip. Zero-mismatch: 3 runs identical; quote taken branch + orders[] dump for (c).",
+	"CS-FOW": "[U] Seed S: unit with vision V captured via mine-insider path + building captured directly. Dump _unit_GetVision (expect 20+4V iff visible/built/alive else 0), scangrid cell membership, minimap-primitive presence, gSelectedObjects/ctrlgroup membership, key-colour index. Zero-mismatch: 3 runs identical; assert radius same, attribution=winner; fog-texture observations quoted, never asserted as law.",
+	"CS-RALLY": "[U] Seed S: building with rally set, capture, dump STO/bRally/rallyX/rallyY before/after + first produced unit's exit path. Zero-mismatch: 3 runs identical; report observed values. Port _default_rally re-arm stays tagged until then.",
+	"unresolved_behaviour": "[CS-VETO(behaviour),CS-LEDGER(values),CS-GARRISON,CS-HIDE(c),CS-FOW(engine),CS-RALLY]; closed textually: guard-irrelevance, protector veto law, AI-artillery table, transfer pipeline, score/counter arithmetic, hide transitions + capture gates, absorber/CanGoInside/DoHideInside law",
+}
+
+# [O] miscext.script:1116-1132 verbatim flush, mapped to the port's dynamic
+# `queue`. Called BEFORE e.player flips so each refund pays players[old].
+func _donor_capture_flush(e: Dictionary, old: int) -> void:
+	# [O] :1093-1099/:1106-1109/:1180-1181 wall / bAutoKill / birth-hide /
+	# non-building exclusions: NO flush writes. Port `finished`+`capture` gate
+	# is the structural exclusion [D]; explicit refusal tagged [U]-Q-WALL.
+	if str(e.get("kind", "building")) != "building" or not bool(e.get("finished", false)):
+		return
+	if str(e.get("sid", "")) in ["wal", "gat", "weakwall"]:
+		return
+	# [O] :1116 ASCENDING loop, before ChangePlayer(:1178). Port jobs are a
+	# dense FIFO Array; ascending index is the only structural mapping
+	# (Q-SLOT-JOB [U]) — no orders[12] array is invented.
+	var i: int = 0
+	while i < e.queue.size():
+		var job: Dictionary = e.queue[i]
+		var sid: String = str(job.get("sid", ""))
+		if not Data.UNITS.has(sid):
+			i += 1
+			continue   # no produce/upgrade shape -> strip stage, [U]-Q-MOVE
+		# [O] :1120 amount<>0 filter: finite>0 AND infinite=-1 both pass; 0
+		# is skipped. Port `infinite` maps to donor
+		# gc_obj_order_produce_infinite=-1 (dmscript.global:660) [O]; no -5
+		# is synthesised by the flush.
+		var amount: int = -1 if bool(job.get("infinite", false)) else int(job.get("count", 0))
+		if amount != 0:
+			# VERBATIM CALL [O] :1124 with OLD-owner handle and the exact three
+			# flags. bState=False = CANCEL arm (unit.script:10459-10465),
+			# NEVER the withdrawn "re-order under capturer" reading.
+			_donor_produce_unit_call(e, old, sid, amount, false, false, true)
+			# [O] :1125 unconditional amount:=0 AFTER the call — no further
+			# refund for the truncated remainder ([U]-Q-REFUND-PROD).
+			job["count"] = 0
+		i += 1
+	# [O] :1129-1130 performupgrade -> CancelUpgradePerform: port single
+	# `research` slot; full cost refund to LOSER + inprogress cleared.
+	_donor_cancel_upgrade_flush(e, old)
+	# [O] :1132 ClearOrders is static-preserving (unit.script:2870-2880); the
+	# port has no `static` field ([U]-Q-STATIC) so the capture block's
+	# `queue=[]` clears every port job. :1133 SetSTO(0) maps to that block's
+	# `erase("rally")` + re-arm — both statements are PRESERVED there, NOT
+	# duplicated here. [O] :908-910 second strip keeps only none/move; the
+	# port has no such job shape ([U]-Q-MOVE); no refund on the strip [O].
+
+# [O] unit.script:10351 _unit_ProduceUnit(plHnd,list,cid,id,tryamount,
+# bState,bcheckres,blan) — verbatim signature carried in this helper. The
+# :1124 call passes plHnd=OLD owner, list=[goHnd], id=produceid, bState=False,
+# bcheckres=False, blan=True. bState=False selects the CANCEL arm
+# (:10459-10465 CancelUnitProduction(bld,cid,id,1,False)+amountproceed+=1);
+# the ORDER arm (:10433-10458) is NEVER taken. bcheckres=False means no
+# CanApplyCost gate; blan=True is a network tail, OUT OF SCOPE.
+func _donor_produce_unit_call(_e: Dictionary, old: int, sid: String, amount: int, bState: bool, bcheckres: bool, blan: bool) -> void:
+	if amount == 0:
+		return   # [O] :1120 filter — caller already skipped; defensive only
+	if bState or bcheckres:
+		return   # [O] ORDER arm / cost gate — unreachable from the :1124 call
+	if blan:
+		pass     # [O] network tail only — no port effect, OUT OF SCOPE
+	# [O] :10459-10465 one CancelUnitProduction(...,1,False) per iteration;
+	# its port per-unit refund leg is unit.script:5960-5977 to the building's
+	# CURRENT owner — the LOSER at flush time. `amount` is accepted verbatim;
+	# the exact iteration count/payee delta stays [U]-Q-FLUSH-SEM + Q-REFUND-
+	# PROD and is NOT resolved into an invented slot/state/threshold.
+	var cost: Dictionary = (Data.UNITS.get(sid, {}) as Dictionary).get("price", {})
+	if not cost.is_empty():
+		Data.refund(players[old].res, cost, 1.0)
+
+# [O] miscext.script:1129-1130 performupgrade -> CancelUpgradePerform;
+# unit.script:5837-5885: full cost price (:5845, no progress scaling), refund
+# per resource to the CURRENT owner (:5859-5864 = LOSER at flush),
+# inprogress:=False + timestart:=0 (:5855-5856). Port has no upgstate field;
+# the preserved `e["research"]=null` IS inprogress:=False, and no timestart
+# value is invented ([U]-Q-REFUND-UPG). LAN/stat tails OUT OF SCOPE.
+func _donor_cancel_upgrade_flush(e: Dictionary, old: int) -> void:
+	var r: Variant = e.get("research", null)
+	if r == null:
+		return
+	var rd: Dictionary = r
+	var uid: String = str(rd.get("uid", ""))
+	var u: Dictionary = Data.UPGRADES.get(uid, {})
+	var cost: Dictionary = u.get("cost", {})
+	if not cost.is_empty():
+		Data.refund(players[old].res, cost, 1.0)
+
+# [O] miscext.script:908-910 second strip (keep none/move, NO refund) and
+# :922-947 mine-insider recursion. Called AFTER the ownership swap. Port jobs
+# are all unit jobs, so the strip is a labelled no-op ([U]-Q-MOVE); insider
+# owner flip + entity-list move are the structurally possible part, STO
+# re-point + resincome move stay [U]-Q-MINE (no port resincome field).
+func _donor_change_player_strip(e: Dictionary, old: int, capturer: int) -> void:
+	if int(e.get("garrison", 0)) <= 0 and not str(e.get("sid", "")).begins_with("mine_"):
+		return
+	for u in entities:
+		if u.dead or int(u.get("inside_of", 0)) != int(e.id):
+			continue
+		if not bool(u.get("hidden", false)) or int(u.get("player", -1)) != int(old):
+			continue
+		u["player"] = capturer
+		if players[old].entities.has(u.id):
+			players[old].entities.erase(u.id)
+		if not players[capturer].entities.has(u.id):
+			players[capturer].entities.append(u.id)
+		# IMPL-CAPTURE-STATE-GAME §7 item 3 [O] miscext.script:924-948: each
+		# gc_argunit_inside handle is itself ChangePlayer(trg,newPlHnd,bCapture,
+		# bCustom,blan) (:934), then ScanGridRemoveUnit(trg) + SetSTO(trg,goMine)
+		# re-pointed at the mine under its new owner (:935-936); if usage=mine,
+		# resincome[i] +/-= produce[i]*insideCount moves loser->winner (:938-945).
+		# [U]-Q-MINE / CS-GARRISON: port has NO STO / resincome / scangrid-write
+		# field, so only the owner + entity-list flip above is structurally
+		# possible. No STO value, resincome delta or hide gate is invented;
+		# 3-run zero-mismatch retained, visual_parity_claim=false.
+
 func _tick_building(e: Dictionary, dt: float) -> void:
 	# production queue
+	# DEC-U-ORDER-SLOTS §9 item 6 [O] doprogressorders.inc:120: `orders[0]` is
+	# the ONLY slot that advances; slots 1..11 are inert storage. Port
+	# `e.queue[0]` + `pop_front()` on the last unit + a dense queue is the
+	# matching operation (unit.script:2812-2842 SortOrders compaction), FIFO
+	# by job index. NO slot<->job mapping asserted (§10 Q-SLOT-JOB [U]).
+	# DEC-U-CAPTURE-FLUSH §9 item 4 [O]/[U]-Q-MOVE: donor ChangePlayer keeps
+	# `move` orders (miscext.script:909) but they carry no build_time. A
+	# captured building must NEVER train from an unexpected surviving non-unit
+	# head job: log-and-drop it before the head-only advance. No slot mapping.
+	if e.finished and e.queue.size() > 0 \
+			and not Data.UNITS.has(str((e.queue[0] as Dictionary).get("sid", ""))):
+		e.queue.pop_front()   # LOG [U]-Q-MOVE: non-training head job dropped
 	if e.finished and e.queue.size() > 0:
 		var job: Dictionary = e.queue[0]
+		var bt: float = maxf(0.0001, float(Data.UNITS.get(job.sid, {}).get("build_time", 1.0)))
+		# §9 item 3 [O] doprogressorders.inc:221-234: progress += dt/buildtime,
+		# clamped to 1; `t` is kept as a v5-save/HUD mirror, t = bt*(1-progress).
+		var gain: float = dt / bt
+		# [O] :222-231 AI-nonhuman difficulty scale ONLY (human owner unscaled):
+		# 0.3/0.5/0.75/1/1.25 -> Data.DONOR_AI_TRAIN_DIFFICULTY_MULT (data.gd:313).
+		if bool(players[e.player].get("is_ai", false)):
+			gain *= float(Data.DONOR_AI_TRAIN_DIFFICULTY_MULT.get(str(Data.AI_DIFFICULTY), 0.5))
+		# PORT EXTENSION (landed upgrade effects, game.gd:4804-4809): mounted
+		# Harnesses / Metalworking. NOT donor law; kept on the sim path so the
+		# landed upgrade edit is NOT reverted. NO parity claim.
 		var tsm: float = 1.0
 		if not str(Data.UNITS.get(job.sid, {}).get("cavalry", "")).is_empty():
 			tsm = float(players[e.player].get("train_speed_mult", 1.0))
 		if e.sid == "art":
 			tsm = float(players[e.player].get("art_build_mult", 1.0))
-		job.t -= dt * tsm
+		gain *= tsm
+		var base: float = 0.0
+		if job.has("progress"):
+			base = float(job.get("progress", 0.0))
+		else:
+			# v5-save compat [U]: legacy jobs stored `t` only; derive progress.
+			base = clampf(1.0 - float(job.get("t", bt)) / bt, 0.0, 1.0)
+		var prog: float = clampf(base + gain, 0.0, float(Data.DONOR_TRAIN_PROGRESS_CLAMP))
+		# [O] :235-239 AI capturer-near pins progress := 0.995. NOT applied:
+		# capturer-near detection is [U]-E1 and no value/threshold is invented;
+		# labelled telemetry only (DONOR_ORDER_SLOT_TELEMETRY.tick_progress).
+		job["progress"] = prog
+		job["t"] = bt * (1.0 - prog)
 		e.queue[0] = job
-		if job.t <= 0.0:
+		# START GATES [O] doprogressorders.inc:139-205, re-checked every tick:
+		# farmused<farm, total<32000, artcount<artlimit, port cMinDist=3,
+		# infinite-cost recheck. Port counterparts: pop cap at train_unit()
+		# and the infinite-cost recheck at re-arm below; donor total/artcount/
+		# port gates have NO port counterpart and are NOT invented ([U], §7.4).
+		# No existing gate was weakened or removed.
+		if prog >= float(Data.DONOR_TRAIN_PROGRESS_CLAMP):
 			# T5MOD: do NOT pop blindly.  Finite jobs carry count; endless jobs
 			# (infinite=true) re-arm until cancelled or resources run out.
 			var brexit: float = float(e.get("block_r", e.def.radius))
@@ -6072,7 +8484,13 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 			# T5MOD: advance the job instead of always removing it.
 			if bool(job.get("infinite", false)):
 				if pay_cost(e.player, Data.UNITS.get(job.sid, {}).get("price", {})):
-					job.t = float(Data.UNITS.get(job.sid, {}).get("build_time", 1.0))
+					# §9 item 7 [O] doprogressorders.inc:295-313: an infinite
+					# completion rotates to the tail ONLY if a free slot exists;
+					# with 0 free slots it re-trains at head. Port re-arms in
+					# place (no slot array); tail rotation stays [U]-Q-ROT and is
+					# NOT invented. progress restarts at 0 (:275).
+					job["progress"] = 0.0
+					job.t = bt
 					e.queue[0] = job
 				else:
 					e.queue.pop_front()  # endless stops when resources/requirements fail
@@ -6080,9 +8498,12 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				var left: int = maxi(1, int(job.get("count", 1))) - 1
 				if left > 0:
 					job["count"] = left
-					job.t = float(Data.UNITS.get(job.sid, {}).get("build_time", 1.0))
+					job["progress"] = 0.0
+					job.t = bt
 					e.queue[0] = job
 				else:
+					# FIFO [O] unit.script:2812-2842: last unit -> pop_front;
+					# the next live job compacts to head with progress=0.
 					e.queue.pop_front()
 	# research queue (one upgrade at a time per blacksmith/academy)
 	if e.finished and e.get("research") != null:
@@ -6107,8 +8528,18 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 		if not nd.is_empty():
 			nd["left"] = maxf(0.0, float(nd.get("left", 0.0)) - amount)
 		var idx: int = Data.RES_NAMES.find(e.def.mine)
-		players[e.player].res[idx] += amount
-		stats.gathered[e.def.mine] = float(stats.gathered.get(e.def.mine, 0.0)) + amount
+		# RESOLVED donor income accumulator (DEC-U §2.1, player.script:240-266):
+		# speed = 256/1.024 = 250 exactly; same bank shape as upkeep. The raw
+		# resconsume[gold] row stays [U]-T1; MINE_INCOME_PER_S is not retuned.
+		var mine_rem: float = float(e.get("income_remains", 0.0))
+		var bank: float = mine_rem / Data.UPKEEP_MULT + amount * Data.INCOME_SPEED
+		var value: int = int(floorf(bank / Data.INCOME_SPEED))
+		if value > 0:
+			players[e.player].res[idx] += float(value)
+			stats.gathered[e.def.mine] = float(stats.gathered.get(e.def.mine, 0.0)) + float(value)
+			e["income_remains"] = (bank - float(value) * Data.INCOME_SPEED) * Data.UPKEEP_MULT
+		else:
+			e["income_remains"] = bank * Data.UPKEEP_MULT
 		if e.deposit_left <= 0:
 			_kill(e, null)
 			say("A %s mine is exhausted." % e.def.mine)
@@ -6123,26 +8554,70 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				if w.get("only_buildings", false) and en.kind != "building":
 					return
 				if en.pos.distance_to(e.pos) >= w.min:
+					# [O-absence] PORT APPROXIMATION (DEC-U-CAPTURE-STATE §4.4):
+					# 2x garrison fire is a port rule, NOT donor law (CS-GARRISON [U]).
 					_fire(e, en, w, 2 * int(e.get("garrison", 0)))
+	# [O-absence] PORT APPROXIMATION (DEC-U-CAPTURE-STATE §4.4): 2.0/s garrison
+	# heal is a port rule, NOT donor law (CS-GARRISON [U]). Kept, not deleted.
 	# garrisoned units heal while inside
 	if int(e.get("garrison", 0)) > 0:
 		for u in live_units:
 			if not u.dead and int(u.get("inside_of", 0)) == e.id and bool(u.get("hidden", false)):
 				u.hp = mini(u.max_hp, int(u.hp + 2.0 * dt))
-	# capture: peasants do it properly, soldiers only lean on it.
-	# Video pass: a white flag goes up and the bar fills while peasants swarm
-	# an empty building; garrisoned towers resist.
+	# C1 — RESOLVED capture head + tail (DEC-U §3 / miscext.script:963-1185).
+	# Cadence is `lasttimecheckcapture` = 1.875 s (art 0.475 s) with a
+	# random*interval jitter at spawn (miscext2.script:2757). The old port name
+	# `cap_check_t` is kept as an additive mirror so existing v5 saves still load;
+	# there is NO post-capture cooldown in the donor — cooldown tail CONFIRMED
+	# ABSENT [D] (only lasttimecheckcapture gates re-checks). `cap_evt_t` below is
+	# a chat-event throttle, not a capture cooldown.
 	# DONOR mode semantics: artillery_only never checks buildings; the
 	# no-peasants-or-centres mode freezes the town hall itself.
-	if e.finished and e.def.get("capture", false) and _building_capture_allowed(e):
+	var cap_interval: float = Data.DONOR_CAPTURE_INTERVAL_S
+	if bool(e.def.get("artillery", false)):
+		cap_interval = Data.DONOR_CAPTURE_ART_INTERVAL_S
+	var cap_check_t: float = float(e.get("cap_check_t", -1.0))
+	if cap_check_t < 0.0:
+		# §4-S0-c/S2: donor jitter `random*TimeCheckCapture` (miscext2.script:2757)
+		# is G-attributed; G/S split stays [U]-G1-g. Single sim stream supplies it,
+		# LABELLED, VALUE not claimed donor-pinned (§5-L20/A600 zero-mismatch gate).
+		cap_check_t = sim_rng.random_f32() * cap_interval   # donor jitter init
+	e["lasttimecheckcapture"] = cap_check_t        # donor-named mirror
+	var capture_due: bool = cap_check_t <= 0.0
+	if capture_due:
+		cap_check_t = cap_interval
+	else:
+		cap_check_t -= dt
+	e["cap_check_t"] = cap_check_t
+	e["lasttimecheckcapture"] = cap_check_t
+	# Local guard ONLY — do not skip tower fire / research / mine income.
+	if capture_due and e.finished and e.def.get("capture", false) and _building_capture_allowed(e):
 		var peasants_allowed := bool(Data.CAPTURE_ENABLED)
 		var peas := 0
 		var sols := 0
 		var capturer := -1
 		for u in grid_query(e.pos, 8.0 + e.def.radius):
+			var cd: float = u.pos.distance_to(e.pos)
 			if not u.dead and u.kind == "unit" and u.player != e.player \
 					and _capture_unit_allowed(u) \
-					and u.pos.distance_to(e.pos) < 8.0 + e.def.radius:
+					and cd < 8.0 + e.def.radius:
+				# RESOLVED donor capturer filter (DEC-U §2.3): skip bcapture or
+				# media=water, require distSqr < captureradiusSqr, and give a
+				# non-peasant inside blockshot radius a 100-frame attack lock.
+				# Unit-label caveat [U]-E1 (metres vs tiles) is NOT resolved here.
+				if _is_naval(u):            # donor media=water
+					continue
+				if bool((u.def as Dictionary).get("bcapture", false)):
+					continue                # donor bcapturer flag
+				# Donor radii are TILES (dmscript.global:207-219), converted
+				# tile = px/53.3333333, m = tile*2. 214 px = 4.0125 tiles = 8.025 m;
+				# 160 px = 3.0 tiles = 6.0 m (the old "≈4.01 m" was tiles, not metres).
+				var cap_r_m: float = Data.DONOR_CAPTURE_PX / Data.DEC_U_PX_PER_TILE * Data.TILE_M
+				var block_r_m: float = Data.DONOR_BLOCKSHOT_PX / Data.DEC_U_PX_PER_TILE * Data.TILE_M
+				if cd >= cap_r_m:
+					continue                # captureradius, px->tiles->m
+				if cd < block_r_m and u.sid != "peasant":
+					u.cooldown = maxf(float(u.cooldown), float(Data.DONOR_BLOCKSHOT_LOCK_FRAMES) / 32.0)
 				if u.sid == "peasant":
 					if peasants_allowed:
 						peas += 1
@@ -6151,9 +8626,52 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				else:
 					sols += 1
 				capturer = u.player
+		# §3 protector scan (miscext.script:1041-1072): own-mask cells inside the
+		# protection radius (426 px = 7.9875 tiles = 15.975 m); skip bcapture
+		# protectors; ANY single in-radius protector sets bcapture := False. There
+		# is NO count comparison for the general case and NO usage filter.
+		var protectors: int = 0
+		var prot_r_m: float = Data.DONOR_PROTECTION_PX / Data.DEC_U_PX_PER_TILE * Data.TILE_M
+		var capturers: int = peas + sols
+		for u in grid_query(e.pos, prot_r_m + e.def.radius):
+			if u.dead or u.kind != "unit" or int(u.player) != int(e.player):
+				continue
+			if bool((u.def as Dictionary).get("bcapture", false)):
+				continue
+			if u.pos.distance_to(e.pos) < prot_r_m:
+				protectors += 1
+		if protectors > 0:
+			capturer = -1                       # ANY-protector veto
+		# IMPL-CAPTURE-STATE-GAME §7 item 1 [O] miscext.script:1073-1088 — the
+		# SOLE exception to the protector veto, verbatim: only if owner bai AND
+		# target bartillery, and only after the non-wall hp gate (:1034):
+		# (prot=1 and cap>=prot) or (prot=2 and cap>3) or (prot=3 and cap>7) or
+		# (prot=4 and cap>10) -> if (not bEasy) or (random>0.5) -> essential_death,
+		# exit. prot>=5 has NO row: 5+ protectors on an AI gun can NEVER trigger
+		# this death — it falls through to the normal veto, which already set
+		# bcapture:=False [D]. C3Data.donor_capture_ai_art_suicide(protectors,
+		# capturers) carries the table verbatim. ONLY OPEN GAP: [I] bEasy mapping
+		# — donor aidifficulty<veryhard (4+ step enum) vs port easy/normal/hard
+		# string; CS-VETO [U] 3-run zero-mismatch, no value invented.
+		var bEasy: bool = str(Data.AI_DIFFICULTY) == "easy"
+		if bool(players[e.player].get("is_ai", false)) and bool(e.def.get("artillery", false)) \
+				and C3Data.donor_capture_ai_art_suicide(protectors, capturers) \
+				and (not bEasy or sim_rng.random_f32() > 0.5):  # §4-S2-b G-attributed [U]-G1-g
+			_kill(e, null, false)               # essential_death, no player change
+			return
 		if capturer >= 0:
-			# G-09: a live guard order on this building blocks capture until the
-			# defender is gone (RB_MECHANICS S5). The defender need not shoot.
+			# PORT RULE G-09 (RB_MECHANICS S5) — NO DONOR COUNTERPART, KEPT AFTER
+			# the donor veto (miscext.script:1041-1072), NEVER merged into it.
+			# A live guard order on this building blocks capture until the
+			# defender is gone (playtested siege feel); the defender need not
+			# shoot. Donor capture path (miscext.script:963-1185) NEVER reads
+			# order_type_guard / GuardOrderCount: _unit_OrderGuard
+			# (unit.script:5608-5615) and _player_OrderUnitsToGuard
+			# (player.script:2399-2444, 3 nearest, bcapture-excluded, cap 2) are
+			# combat-assist orders, NEVER a capture predicate. The ONLY donor
+			# veto is _unit_SearchProtectors + distSqr<protectionradiusSqr ->
+			# bcapture:=False (miscext.script:1041-1072; unit.script:4617-4637),
+			# already applied above. visual_parity_claim=false; CS-VETO [U].
 			for u in live_units:
 				if u.dead or int(u.player) == capturer:
 					continue
@@ -6162,19 +8680,51 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 					capturer = -1
 					break
 		if capturer >= 0:
-			var speed_c: float = float(peas) * 1.0 + float(sols) * 0.25
-			if int(e.get("garrison", 0)) > 0:
-				speed_c *= 0.5
-			e.capture_t += dt * speed_c
+			# DEC-U-CAPTURE-STATE §1/§7 item 1 [O] building.inc/nothing.inc:300-326,
+			# dmscript.global:1476-1480, miscext.script:963-1185: the ONLY capture
+			# timer is `lasttimecheckcapture` (cadence literals preserved at
+			# :8103-8119). The FIRST passing tick flips ownership BOOLEAN-INSTANT;
+			# no accumulator exists (EV-CS-NOCAP zero-hit). Port rate law
+			# (peas*1.0+sols*0.25, garrison*0.5, need=5+maxhp/2500) is PORT
+			# APPROXIMATION, WITHDRAWN here — no rate/need/threshold invented.
+			# `capture_t` stays a dormant v5 key (no v5 key changed).
 			e["cap_evt_t"] = float(e.get("cap_evt_t", 0.0)) - dt
 			if float(e.get("cap_evt_t", 0.0)) <= 0.0 and peas > 0:
 				e["cap_evt_t"] = 0.5
-				post_event("capture", e.pos, e.sid)
-			var need: float = 5.0 + float(e.max_hp) / 2500.0
-			if e.capture_t >= need:
+				post_event("capture", e.pos, e.sid)   # chat throttle, NOT capture cooldown
+			var bCapture: bool = true   # [O] predicate passed on this cadence tick
+			if bCapture:
 				var old: int = e.player
+				# DEC-U-CAPTURE-FLUSH §9 item 1 [O] miscext.script:1116-1132:
+				# verbatim flush BEFORE ChangePlayer (:1178) so every refund pays
+				# the LOSER. Wall/birth/non-building exclusions (:1093-1099,
+				# :1106-1109, :1180-1181) are refused in the helper; bAutoKill
+				# is NOT initialised [I]. visual_parity_claim=false.
+				_donor_capture_flush(e, old)
+				# §3 Change-player tail (:1147-1182): owner-AI building die roll
+				# random>0.25 => essential_death; otherwise slow-death hp :=
+				# 1999 - floor(RandomExt*300) when bbuilt+bslowdeath. The port has
+				# no `slowdeath` flag, so an ABSENT flag means no slow death — no
+				# value is invented. Victim-human + peasant + capturer-AI + !easy
+				# also dies, but that unit branch is not this building path.
+				var bDie := false
+				if bool(players[old].get("is_ai", false)):
+					# §4-S2-c AI die roll: G-attributed `random>0.25` — [U]-G1-g.
+					if sim_rng.random_f32() > float(Data.DONOR_AI_DIE_ROLL["building"]):
+						bDie = true
+					elif bool(e.get("finished", false)) and bool(e.get("slowdeath", false)):
+						# §4-S2-d slow death: 1999 - GetRandom(300), SIM stream S,
+						# exact f32 floor(RandomExt*n) via sim_rng.get_random().
+						e.hp = float(Data.DONOR_SLOW_DEATH_HP) - float(
+							sim_rng.get_random(Data.DONOR_SLOW_DEATH_RAND))
+				if bDie:
+					e.capture_t = 0.0
+					_kill(e, null, false)       # essential_death, no ChangePlayer
+					return
 				e.capture_t = 0.0
 				e.player = capturer
+				# _misc_ChangePlayer(go, newPl, True, False, True) — production
+				# flush / rally re-arm / score / farm transfer are below.
 				# G-07: capturing a foreign town hall unlocks that nation's
 				# unit variants for the capturer (RB_MECHANICS S5).
 				if e.sid == "cen":
@@ -6184,17 +8734,80 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 						if not cn.has(old_nation):
 							cn.append(old_nation)
 						players[capturer]["captured_nations"] = cn
+				# IMPL-CAPTURE-STATE-GAME §7 item 3 [O] miscext.script:916-918:
+				# SetGameObjectPlayerHandleByHandle + TObj.pl := newPlInd — this
+				# loser/winner entity-list move IS the donor ownership swap.
+				# `captured_nations` above is G-07 PORT roster projection, NO donor
+				# counterpart; kept labelled, never donor-cited.
 				players[old].entities.erase(e.id)
 				players[capturer].entities.append(e.id)
-				players[capturer].score += e.def.get("score", 0)
+				# IMPL-CAPTURE-STATE-GAME §7 item 2 [O] unit.script:3787-4001 —
+				# verbatim ChangePlayer counter order: RemoveObjFromPlayerCounters
+				# under the LOSER (:915) then AddObjToPlayerCounters under the
+				# WINNER (:920). Scores are DELIBERATELY asymmetric: ADD
+				# scores += score*(5 if captured else 1) (:3836-3841); REMOVE
+				# scores -= score*(5 if captured, else 3 if rebellion+mercenary,
+				# else 2), clamped at 0 (:3940-3950). Net of one capture flip:
+				# loser -5xscore, winner +5xscore = a 10xscore swing, NOT a move
+				# [D]. The port HAS both score fields, so the old `+1x` HALF-SWING
+				# is CORRECTED here; `1x` is never cited as donor law.
+				# Cross-cite only: port _kill :6116 (`score -= 1x`) is the DEATH
+				# path (killed+1, 2x non-capture remove :3943-3947), NOT capture.
+				# CS-LEDGER [U] still owns the exact deltas (3-run zero-mismatch).
+				var cap_score: int = int(e.def.get("score", 0))
+				players[old].score = maxi(0, int(players[old].score) - 5 * cap_score)
+				players[capturer].score = int(players[capturer].score) + 5 * cap_score
+				# [O] unit.script:3804-3805 / 3890-3891: farm +/- prop.farm mirrored
+				# under loser/winner (port farm_cap move). `deposit_left` retention
+				# is port-side engine state (no donor line) — preserved, untouched.
 				if e.def.has("farm"):
 					players[old].farm_cap = maxi(0, int(players[old].farm_cap) - int(e.def.get("farm", 0)))
 					players[capturer].farm_cap += e.def.farm
 				if e.sid.begins_with("mine_"):
 					e["deposit_left"] = float(e.get("deposit_left", 0.0))
+				# DEC-U-CAPTURE-STATE2 §7 item 3 [O] miscext.script:894-959
+				# ChangePlayer verbatim order: hidden-target conditional (:902-912),
+				# bbuilt snapshot (:914), loser counters (:915), owner swap
+				# (:916-918), winner counters + gGuiUpdateHighlights.Add (:920-921),
+				# mine-insider recursion (:924-948), LAN tail (:951-958, OUT OF
+				# SCOPE). Second strip (keep none/move :908-910) + insider recursion
+				# (:922-947) run AFTER the ownership swap, as in donor.
+				_donor_change_player_strip(e, old, capturer)
+				# [U]-CS-LEDGER TODO — donor ledger fields with NO port counterpart.
+				# NOT invented, NOT claimed, no test weakened; each keeps its fixed-
+				# seed 3-run zero-mismatch experiment. Donor law for the gaps:
+				# counter.built/all/total +/-1 (:3801/:3887, :3847/:3969,
+				# :3850/:3972); resconsume[i] +/- consume[i] all 6 (:3809-3810/
+				# :3895-3896); farmused +/-1 + resconsume[food] +/-= 30 unless
+				# bnohungry (:3819-3821/:3905-3907); artlimit += artdepo[type] and
+				# artcount[artind] += 1 (:3826-3833 / :3930-3937); resincome +/-=
+				# produce[i]*insideCount (:938-945); produced +1 ONLY when NOT
+				# captured AND NOT custom (:3813-3814), killed +1 ONLY when NOT
+				# captured (:3899-3900) — captures NEVER inflate either stat.
+				# Mine insiders additionally need per-insider ScanGridRemoveUnit +
+				# SetSTO(trg,goMine) re-point (:935-936); port has no STO field,
+				# so only the entity-list flip in _donor_change_player_strip exists
+				# ([U]-CS-GARRISON). visual_parity_claim=false.
 				# R12-04: donor _unit_ClearOrders / _unit_CancelUpgradePerform
 				# (miscext.script:1115-1132) fire on capture - queued production
 				# and any in-progress upgrade are lost; no refund to old owner.
+				# DEC-U-ORDER-SLOTS §9 item 8 [U]-Q-CAPTURE: donor RE-ORDERS queued
+				# produce batches under the capturer before ClearOrders
+				# (miscext.script:1116-1132: produce amount<>0 replayed through
+				# ProduceUnit, performupgrade cancelled, ClearOrders static-
+				# preserving). That replay/refund counterpart was NOT audited by
+				# this ticket and has NO port counterpart — it stays [U] with the
+				# fixed-seed zero-mismatch experiment §10 Q-CAPTURE. The landed
+				# `queue=[]`/`research=null` behaviour above is PRESERVED verbatim;
+				# no replay, cancel-refund or ClearOrders density is invented.
+				# DEC-U-CAPTURE-FLUSH §9 SUPERSEDES the re-order gloss above [O]:
+				# the verbatim :1124 call passes bState=False = CANCEL arm
+				# (unit.script:10459-10465), NOT a re-order under the capturer.
+				# The CALL + loser refunds now run in _donor_capture_flush /
+				# _donor_cancel_upgrade_flush; exact semantic (Q-FLUSH-SEM) and
+				# refund deltas (Q-REFUND-*) stay [U] with fixed-seed 3-run
+				# zero-mismatch. These three statements are the port's :1132
+				# ClearOrders + :1133 SetSTO(0) + :908-910 strip, PRESERVED.
 				e["queue"] = []
 				e["research"] = null
 				e.erase("rally")
@@ -6206,65 +8819,224 @@ func _tick_building(e: Dictionary, dt: float) -> void:
 				# R02 claim 11 / P-44: do not spam the human chat for AI captures.
 				_say_human(capturer, "A building was captured!")
 		else:
-			e.capture_t = maxf(0.0, e.capture_t - dt)
+			# DEC-U-CAPTURE-STATE §2.4 [O]: no post-capture lockout/cooldown and no
+			# accumulator decay — next test is gated ONLY by lasttimecheckcapture.
+			# Port `capture_t` decay (rate law) WITHDRAWN; no capture_lock field
+			# invented. `cap_evt_t` is a chat throttle, NOT a capture cooldown.
+			pass
 
-func _winner_of_loser(loser: int) -> int:
-	# Team game: a surviving member of the opposing team (allies never win).
-	# Free-for-all: any surviving player - the 2-player case reduces to 1 - pi.
-	var lt: int = int(players[loser].get("team", -1))
-	var alive: Array[int] = []
-	for pi in players.size():
-		if pi == loser:
-			continue
-		if buildings_of(pi).is_empty() and units_of(pi).is_empty():
-			continue
-		if lt >= 0 and int(players[pi].get("team", -1)) == lt:
-			continue
-		alive.append(pi)
-	return alive[0] if not alive.is_empty() else -1
+# ── DEC-U-SCENARIO-WIN §5 / EV-E — DONOR team-win law (NOT port policy) ────────
+# `lib/miscext2.script:3769-3844` `_misc_CheckEndGame`, called UNGATED on every
+# global tick (`progress.inc/nothing.inc:646`) and from `_misc_Surrender`.
+# Phase 1 (`:3775-3788`): roster-side bexists gate over gMap.players[i].bexists;
+# collect gPlayer[i].team (SIM teams); two distinct teams => bSecondTeamExist,
+# otherwise return False with NO writes. Phase 2 (`:3791-3803`): pairwise over
+# sim bexists AND NOT bleave; any distinct-team pair => bOneTeamLeft=False.
+# Stamp (`:3804-3841`): every live non-leaver with victorystate<>win => win
+# (+ victorystategametime iff 0). LAN-human fixups (`:3819-3834`) and the net
+# result send are OUT OF SCOPE and are NOT ported. NO PARITY CLAIM.
+# Port mapping: `roster_bexists` is the roster flag (all generated slots are
+# rostered; no spectator purge counterpart). R2 [O] DEC_U_teams §8 change 2:
+# after R1's `_setup_teams` every sim team is a DENSE id >= 1 (FFA
+# `[0,0,0,0]` -> `[1,2,3,4]`; shared `[1,1,2,2]` -> `[1,1,2,2]`). The old
+# port `-1 -> -(pi+2)` uniqueness branch is REMOVED — it was a substitute for
+# the donor SetupTeams law (player.script:2140-2172). Keep this as the single
+# layer-A accessor for the win gate, FOW (world3d_fog.gd:_sim_team_key) and AI.
+func _sim_team(pi: int) -> int:
+	return int(players[pi].get("team", -1))
 
-func _team_alive(team: int) -> bool:
-	for pi in players.size():
-		if int(players[pi].get("team", -1)) != team:
+func _misc_check_end_game() -> bool:
+	# Phase 1 — roster gate [O] miscext2.script:3775-3788.
+	var first_team: int = 0
+	var have_team := false
+	var second_team_exist := false
+	for i in players.size():
+		if not bool(players[i].get("roster_bexists", true)):
 			continue
-		if not buildings_of(pi).is_empty() or not units_of(pi).is_empty():
+		var rt: int = _sim_team(i)
+		if not have_team:
+			first_team = rt
+			have_team = true
+		elif rt != first_team:
+			second_team_exist = true
+			break
+	if not second_team_exist:
+		return false
+	# Phase 2 — live gate [O] :3791-3803 (sim bexists, leavers excluded).
+	var live_team: int = 0
+	var have_live := false
+	var one_team_left := true
+	for i in players.size():
+		if not bool(players[i].get("roster_bexists", true)):
+			continue
+		if bool(players[i].get("bleave", false)):
+			continue
+		if not _player_bexists(i):
+			continue
+		var lt: int = _sim_team(i)
+		if not have_live:
+			live_team = lt
+			have_live = true
+		elif lt != live_team:
+			one_team_left = false
+			break
+	if not one_team_left:
+		return false
+	# Stamp [O] :3804-3841 — EVERY live non-leaver non-win, not one pick.
+	var stamped: Array[int] = []
+	for i in players.size():
+		var p: Dictionary = players[i]
+		if not bool(p.get("roster_bexists", true)):
+			continue
+		if bool(p.get("bleave", false)) or not _player_bexists(i):
+			continue
+		if str(p.get("victorystate", "")) == "win":
+			continue
+		p["victorystate"] = "win"
+		p["victorystate_int"] = 1
+		if float(p.get("victorystategametime", 0.0)) == 0.0:
+			p["victorystategametime"] = time_s
+		stamped.append(i)
+	if stamped.is_empty():
+		return false
+	# R4 [O] DEC_U_teams §5 point 4: ANY terminal victorystate disables FOW
+	# (player.script:454-456); re-resolve the viewer set once after the stamp
+	# batch. No-op in sim-only/CLI runs (no fog node in the tree).
+	_notify_fow_rebuild()
+	# Port compatibility ONLY: HUD/save expose one scalar `winner`; no donor
+	# field corresponds to it. The donor law is the per-player stamps above.
+	# Emit once, for the first stamped slot.
+	if winner == -1:
+		winner = stamped[0]
+		game_over.emit(winner)
+		say("%s wins!" % players[winner].name)
+	return true
+
+# `_misc_Surrender` (miscext2.script:3848-3895): bleave + caller lose stamp,
+# then CheckEndGame. Not wired to UI/net (network OUT OF SCOPE); this is the
+# additive API the §5 live gate reads. No LAN result send is invented.
+func _surrender(pi: int) -> void:
+	if pi < 0 or pi >= players.size():
+		return
+	var p: Dictionary = players[pi]
+	p["bleave"] = true
+	if str(p.get("victorystate", "")) != "lose":
+		p["victorystate"] = "lose"
+		p["victorystate_int"] = 2
+		if float(p.get("victorystategametime", 0.0)) == 0.0:
+			p["victorystategametime"] = time_s
+	p["lose_t"] = time_s
+	# R4 [O] DEC_U_teams §5 point 4 — caller lose stamp flips its FOW too.
+	_notify_fow_rebuild()
+	for e in entities:                       # donor _misc_KillPlayerUnits
+		if not e.dead and int(e.player) == pi:
+			_kill(e, null, false)
+	_misc_check_end_game()
+
+# RESOLVED donor bexists (DEC-U §2.5; progress.inc:60-148). [I] mapping of
+# donor visual_none+essential_none tags -> port "not dead and not hidden".
+# gMap.bbattle => always alive; else farmused>0, with the 0<farmused<100
+# fallback scanning for a live peasant / human inside-transport / built center.
+func _player_bexists(pi: int) -> bool:
+	if battle_mode:                 # gMap.bbattle ⇒ bexists=True always
+		return true
+	var p: Dictionary = players[pi]
+	var farmused: int = int(p.get("farm_cap", 0))
+	if farmused > 100:
+		return true
+	if farmused <= 0:
+		return false
+	# 0 < farmused < 100: live peasant (essential_none/visual_none), or a
+	# human-owned unit inside transport.
+	for e in live_units:
+		if e.dead or int(e.player) != pi:
+			continue
+		if str(e.sid) == "peasant" and not bool(e.get("hidden", false)):
+			return true
+		if bool(e.get("hidden", false)) and not bool(p.get("is_ai", false)):
+			return true
+	# built usage=center
+	for b in live_blds:
+		if not b.dead and int(b.player) == pi and bool(b.get("finished", false)) and str(b.sid) == "cen":
 			return true
 	return false
 
+# RESOLVED donor defeat transition (DEC-U §2.5, progress.inc:60-148):
+# not bexists and (AI or human) => _misc_KillPlayerUnits and first-transition
+# victorystate=lose + GetGameTime. _misc_LanServerSendResult is NOT wired —
+# network/multiplayer is OUT OF SCOPE.
+func _check_player_exists(pi: int) -> void:
+	var alive: bool = _player_bexists(pi)
+	if alive or bool(players[pi].get("eliminated", false)):
+		return
+	players[pi]["eliminated"] = true
+	players[pi]["victorystate"] = "lose"
+	players[pi]["victorystate_int"] = 2       # [O] dmscript.global:777-779
+	if float(players[pi].get("victorystategametime", 0.0)) == 0.0:
+		players[pi]["victorystategametime"] = time_s
+	players[pi]["lose_t"] = time_s           # port-only mirror, kept verbatim
+	# R4 [O] DEC_U_teams §5 point 4 — first-transition lose stamp flips FOW.
+	_notify_fow_rebuild()
+	for e in entities:                       # donor _misc_KillPlayerUnits
+		if not e.dead and int(e.player) == pi:
+			_kill(e, null, false)
+
+# [U] U12-tail: score limit / peace-time final literals are still UNVERIFIED
+# (menu cfg uncited). The RESOLVED bexists liveness head is wired via
+# _player_bexists(); the score branch is an explicit non-1:1 opt-in.
+# DEC-U-SCENARIO-WIN §4/§7-3 — precedence: global scenario (if bactive) →
+# CheckEndGame (ALWAYS) → peacetime expiry. The port has NO trigger engine
+# ([U]-F1: per-mission trigger mapping NOT statically recoverable), so the
+# scenario stage stamps nothing; `scenario_active` only suppresses the
+# skirmish auto-defeat/auto-win paths (progress.inc:54). NO TRIGGER INVENTED.
 func _check_victory() -> void:
-	# T-MENU-ROSTER donor "Peace Time": no victory is awarded before the
-	# configured number of seconds has elapsed. Combat itself is unchanged.
+	# [O] nothing.inc:646 — _misc_CheckEndGame runs on EVERY global tick,
+	# ungated by bactive/gamemode, BEFORE peacetime expiry. It reads the fresh
+	# sim bexists written by the per-player slice earlier in this same frame
+	# (DEC-U-SCENARIO-WIN §6). Keep this call site post-slice (tick() :5342+).
+	_misc_check_end_game()
+	if winner != -1:
+		return
+	# Scenario/mission mode: trigger win/lose stamps (scenario.script:2995-3064)
+	# would run HERE when a trigger engine lands; [U]-F1 requires a fixed-seed
+	# export capture per mission first. Until then nothing is emitted. The
+	# donor §5 law already ran above; no auto-defeat here either.
+	if scenario_active:
+		return
+	# T-MENU-ROSTER donor "Peace Time": no victory before the configured number
+	# of seconds. Donor key surface is gbool_peacemode / gfloat_peacetime
+	# (nothing.inc:658, serial.script:272; default 0). Final literals stay [U].
+	# NOTE: this gate now sits AFTER CheckEndGame (donor precedence §4.3);
+	# peacetime expiry never wrote victorystate in the donor either.
+	# DEC-U-POLICY-AUDIT §8 C3 (boundary; LABEL ONLY): donor expiry is STRICT
+	# `gametime > gfloat_peacetime` (DEC_U_menu_peace.md §4,
+	# progress/progress.inc/nothing.inc:658; at exact equality peace still
+	# holds). Port `time_s < Data.PEACE_TIME` is the logical complement, but the
+	# time-base identity `time_s == gametime` and the exact-equality boundary
+	# TICK are NOT proven: PORT APPROXIMATION [U]. The seconds SOURCE chain is
+	# labelled above (dogenerate.inc:2059-2060, x60 misc.script:4281); this
+	# label changes NO behaviour, value or save key. Close with the fixed-seed
+	# peace-expiry capture (U-M6: last true tick gametime <= peacetime, first
+	# false tick > peacetime) plus E-R1a paired saves differing only in
+	# gfloat_peacetime. NO PARITY CLAIM.
 	if Data.PEACE_TIME > 0.0 and time_s < Data.PEACE_TIME:
 		return
-	# "destroy_all": the side that has nothing left loses (the port's default,
-	# estimated - the original skirmish condition was not in readable files).
-	# "score": the first side to reach the score limit wins.
-	if Data.VICTORY == "score":
+	# "score": PORT EXTENSION — absent in all readable donor scripts; reachable
+	# only behind the named non-1:1 opt-in Data.PORT_EXTENSION_SCORE_VICTORY
+	# (default false). Kept for config compatibility, never a 1:1 law.
+	if Data.VICTORY == "score" and bool(Data.PORT_EXTENSION_SCORE_VICTORY):
 		for pi in players.size():
 			if winner == -1 and players[pi].score >= Data.SCORE_LIMIT:
 				winner = pi
 				game_over.emit(winner)
 				say("%s wins!" % players[winner].name)
 		return
-	for pi in players.size():
-		if winner != -1:
-			break
-		# T5SIM: a player is alive if they hold EITHER buildings OR units.
-		# The old `and` treated "buildings but no units" (e.g. a famine/wave
-		# wiped army with a working town hall) as eliminated, handing an
-		# unearned instant victory to the opponent. Elimination now requires
-		# BOTH to be empty.
-		if not buildings_of(pi).is_empty() or not units_of(pi).is_empty():
-			continue
-		# A player eliminated while a teammate survives is NOT a team defeat.
-		var team: int = int(players[pi].get("team", -1))
-		if team >= 0 and _team_alive(team):
-			continue
-		winner = _winner_of_loser(pi)
-		if winner < 0:
-			return
-		game_over.emit(winner)
-		say("%s wins!" % players[winner].name)
+	# The old single-winner pick (`_winner_of_loser` + `_team_alive` over
+	# units/buildings emptiness) is RETIRED: donor law stamps EVERY live
+	# non-leaver (miscext2.script:3804-3841), never one picked player, and
+	# reads sim bexists (player.script/progress.inc:60-148), not an entity
+	# count. A roster rejected by phase 1 (single team) gets NO winner — that
+	# is the donor no-write branch, not a missing fallback to invent.
 
 func _vec_enc(v: Variant) -> Variant:
 	if v is Vector2:
@@ -6301,8 +9073,294 @@ func _vec_dec(v: Variant) -> Variant:
 		return a
 	return v
 
+# PORT1TO1 §10: pattern_stamps are C3PatternGen.Stamp OBJECTS (not Dictionaries),
+# so JSON.stringify(game.serialize()) in main.gd needs a plain-data form. These
+# two helpers round-trip the seven authored Stamp fields without inventing any
+# value and without changing the live stamp consumers (world3d_relief.gd,
+# terrain_donor_world.gd, main.gd all still see Stamp objects after a load).
+func _stamps_enc(stamps: Array) -> Array:
+	var out: Array = []
+	for s in stamps:
+		var cells: Array = []
+		for c in (s.get("cells", []) as Array):
+			cells.append([int(c.x), int(c.y)])
+		out.append({"family": str(s.get("family", "")), "name": str(s.get("name", "")),
+			"kind": str(s.get("kind", "")), "res": str(s.get("res", "")),
+			"x": int(s.get("x", 0)), "y": int(s.get("y", 0)), "cells": cells})
+	return out
+
+func _stamps_dec(rows: Array) -> Array:
+	var out: Array = []
+	for row in rows:
+		if not (row is Dictionary):
+			continue
+		var d: Dictionary = row
+		var st := C3PatternGen.Stamp.new()
+		st.family = str(d.get("family", ""))
+		st.name = str(d.get("name", ""))
+		st.kind = str(d.get("kind", ""))
+		st.res = str(d.get("res", ""))
+		st.x = int(d.get("x", 0))
+		st.y = int(d.get("y", 0))
+		for c in (d.get("cells", []) as Array):
+			if c is Array and (c as Array).size() == 2:
+				st.cells.append(Vector2i(int(c[0]), int(c[1])))
+		out.append(st)
+	return out
+
+# DEC-U §10 item 9 / §6 R1 framing inventory — ADDITIVE ledger only. The donor
+# byte order inside each write*/read* record is still [U]-R1 (experiment §9);
+# this is a PORT EXTENSION contract, NOT a byte-parity claim. Every v5 key stays.
+# DEC-U-SAVE-FLOAT §7 additive donor mirrors (DEC_U_save_float.md):
+#   victorystate_int [O] dmscript.global:777-779 none=0/win=1/lose=2 — derived
+#     from the port display string beside it; the string is NEVER replaced and
+#     no behaviour changes. Only the three table values are ever emitted.
+#   setres/lanres [O] classes.script:3674-3720 res/setres/lanres triple; default
+#     copies the live res row per the donor `<92` triple repair (§P8).
+# Telemetry keys only: no v5 key renamed/removed, no version bump, no float bytes.
+func _donor_progress_enc() -> Dictionary:
+	var rows: Array = []
+	for p in players:
+		var vs_str: String = str(p.get("victorystate", ""))
+		var vs_int: int = 0
+		if vs_str == "lose":
+			vs_int = 2
+		elif vs_str == "win":
+			vs_int = 1
+		var res_row: Array = p.get("res", []) as Array
+		var setres_row: Array = res_row
+		if p.get("setres") is Array:
+			setres_row = p.get("setres") as Array
+		var lanres_row: Array = res_row
+		if p.get("lanres") is Array:
+			lanres_row = p.get("lanres") as Array
+		rows.append({"progresstick": int(p.get("progresstick", 0)),
+			"lastprogresstime": float(p.get("lastprogresstime", 0.0)),
+			"lastcheckexists": float(p.get("lastcheckexists", 0.0)),
+			"eliminated": bool(p.get("eliminated", false)),
+			"victorystate": vs_str,
+			"victorystate_int": vs_int,
+			# DEC-U-SCENARIO-WIN §7-5 ADDITIVE mirrors (no v5 key renamed,
+			# removed or version-bumped). roster_bexists = gMap.players[i].bexists
+			# (miscext2.script:3775-3788); bleave = the phase-2 leaver exclusion
+			# (:3791-3803); victorystategametime = TPlayer:F stamp iff 0
+			# (classes.script:3674-3720, miscext2.script:3806-3807). Old v3/v4/v5
+			# saves simply lack these keys and load with the defaults below.
+			"roster_bexists": bool(p.get("roster_bexists", true)),
+			"bleave": bool(p.get("bleave", false)),
+			"victorystategametime": float(p.get("victorystategametime", 0.0)),
+			"setres": setres_row.duplicate(true),
+			"lanres": lanres_row.duplicate(true),
+			"lose_t": float(p.get("lose_t", 0.0)),
+			# DEC-U-TICK-ORDER §6-7 additive deadline mirrors (player.script:
+			# 131-141). No existing v5 key renamed/removed/reordered; no version
+			# bump. Required so the R1-R3 gate law survives a save/load round trip.
+			"lastcalcsquadsmovecounttime": float(p.get("lastcalcsquadsmovecounttime", 0.0)),
+			"lastprogressaitime": float(p.get("lastprogressaitime", 0.0)),
+			"lastseedwheattime": float(p.get("lastseedwheattime", 0.0))})
+	return {"tick_order": "TICK_ORDER v1 PORT APPROXIMATION [U]-O1",
+		"capture_interval": Data.DONOR_CAPTURE_INTERVAL_S,
+		"capture_art_interval": Data.DONOR_CAPTURE_ART_INTERVAL_S,
+		"players": rows, "uniqrnd": "[O] unit.script:2726 obj.uniqrnd := RandomExt (spawn site recovered; IMPL-RNG-GAME wires S0 draw at spawn)"}
+
+# ── DEC-U-SAVE-CONTRACT §§1-8 [O] framing ledger — ADDITIVE DOCUMENTATION ─────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_save_contract.md
+# (EV-SAVE-01..11). NOTHING in this ledger is written to or read from the save:
+# no v5 key renamed/removed/reordered, no version bump (still version:5), no
+# invented Float bytes and no invented .sav container. NO PARITY CLAIM (§10).
+# The 40 write*/read* net/replay pairs (§6) are EXCLUDED from the save contract.
+# `:I/:F/:L/:B/:S` below are donor TYPES in recovered order, NOT asserted on-disk
+# widths: F width = 4 B LE IEEE-754 single [D]-R1b, S = I32 LE byte-length + ANSI
+# codepage bytes [D]-R1c (both statically recovered donor widths, TELEMETRY ONLY —
+# never emitted on the v5 JSON wire), Boolean = 1 B 0/1 sequential [D]-R1b
+# (DEC-U-SAVE-BITS §1: 1:1:1:1 Write/Read/Size/Seek cardinality, NO mask/shift;
+# E-R1b is a confirmation only). E-R1b/E-R1c are retained confirmations, not skipped.
+#
+# §1 header [O] (EV-SAVE-01 serial.script:27-28,37,58): first word =
+#   WriteInteger(gDataVersion), LE Int32, current donor gDataVersion=92; the reader
+#   stores it in gSerialVersion and gates every version repair on it.
+# §1 serialized: body order [O] (EV-SAVE-02 dmscript.source:337-356): 19 positional
+#   sections, no per-section magic — count prefixes + reflection order only:
+#   1 gEconomy, 2 gMap, 3 gGOPathList, 4 gWaterPathList, 5 gPlayer,
+#   6 gEnemyInfoList, 7 gCtrlGroups, 8 gSelectedObjects, 9 gScanGrid,
+#   10 gResGrid, 11 gInterface, 12 gScenario, 13 gWallSystem, 14 gIslands,
+#   15 gbool_editor_peacemode, 16 gfloat_peacetime, 17 gbool_peacemode,
+#   18 gWriteNewRequestList, 19 gbool_recordwascleared.
+#   The port mirrors this at KEY level (JSON), never at byte level (§9-D, §6).
+#
+# §2 primitives: Integer 4 B LE [O] width+endian (header 35 00 00 00), two's
+#   complement signedness [D]; Byte 1 B unsigned [O]; Boolean 1 B 0/1 [D]-R1b
+#   (SizeOf serial.script:1179-1181, 1247-1249; DEC-U-SAVE-BITS §1: ONE
+#   WriteBoolean/ReadBoolean/SizeOf(Boolean)/SeekBoolean call per field —
+#   1:1:1:1 cardinality, no mask/shift/bit-seek primitives, hence no bit-packing;
+#   E-R1b fStandGround true/false pair is CONFIRMATION ONLY);
+#   String I32 LE byte-length + raw bytes [O] shape (serial.script:1185), encoding
+#   ANSI codepage [D]-R1c (font atlases 1250/1251/1252/1254; 1-based byte-oriented
+#   StrLength/SubStr), SBCS length unit = bytes [D]; E-R1c "Test" vs "Testé"
+#   retained as runtime confirmation, NOT emitted on the v5 wire;
+#   TIntegerList itemsize:I32 + count:I32 + count×itemsize bytes [O]
+#   (serial.script:666-667,692-701,708); handles stored as stable uid:I32 [O]
+#   (serial.script:671-684,713-723,811-828,954-966,1024-1033).
+#   Float width = 4 B LE IEEE-754 Single [D]-R1b from pinned donor image bytes
+#   (0x8f6164: four 00 00 80 3F = 1.0f; 0x4cb368: 0.0f/180.0f/-180.0f) —
+#   E-R1b rallyx=1.0/rallyy=2.0 hexdump retained as runtime confirmation.
+#   No float byte is emitted here: v5 JSON keeps GDScript float (double) values.
+#   Outer container is a .map written by engine builtin UserProfileSaveMap
+#   (misc.script:3181) — [D]-R1a (DEC-U-SAVE-BITS §2): recovered OSWMap13 +
+#   GameMapSnapShotBegin/End + GameMapRecordBegin/End + GameMapEnd envelope;
+#   NO .sav exists and NO container magic/bytes are emitted on the v5 wire.
+#   E-R1a paired saves differing only in gfloat_peacetime remain confirmation.
+#
+# §3 TObj wire order [O] (EV-SAVE-03 dmscript.global:1690-1815). Where a port
+#   entity key corresponds to a donor field it sits in THIS order; fields with no
+#   port counterpart are simply unmapped (no key invented). trghnd/artHnd and
+#   orders[].info.trg are stored as uid:I, never session handles [O]:
+#   baseid,id,uid,pl,cid,hp,kill,resamount,restype:I, buildprogress:F,
+#   bdead,bbuilt,bstandground,bsearchenemy:L, insideofuid,insidereserved,squad:I,
+#   brally:L, rallyx,rallyy,rallytmpx,rallytmpy,standtime,attackdelay,
+#   attackmaxdelay,exitdelay,lastprogresstime:F, progresstick:I,
+#   idlegridx,idlegridy,scangridx,scangridy,ctrlgroupmask:I,
+#   bpathrequested,bleaverequested,bhiderequested:L, trghnd:I(uid),topzone:I,
+#   scenariogroupid,smokecount,wallvariation:B, inbattle:L, artx,arty:F,
+#   arthnd:I(uid),artdistfactor,uniqrnd:F,
+#   individual{benabled:L,upglevel:I,attackrate:F,addpeasantabsorber:I,addtransport:I},
+#   orders[12]{itype:I,info:TOrderInfo,bexecute:L,bremove:L,static:L},
+#   sndwalkproc:L,sndwalkdst:F,sndwalktype:I,prevstouid:I(uid),
+#   lastsearchenemy,lasttimecheckcapture,lasttimeidlegrid,lasttimescangrid,
+#   lasttimetopology,lasttimebestposition:F.
+#   [U]-R1d: engine transform (pos/orientation/scale/STO/statetag) is NOT in TObj;
+#   its save placement is unverified — E-R1d mid-move unit at known pos, vary x only,
+#   assert exactly one adjacent IEEE-754 word diverges.
+#
+# §4 TSquad framing [O] (EV-SAVE-05 serial.script:1018-1300): list header I32 count,
+#   then per squad in this order (member/grid uids are I32 uids, translated to
+#   handles on load [O]):
+#   memberCount:I, memberCount×uid:I, fHeight:I, fWidth:I, fHeight×fWidth×gridUid:I,
+#   fFormation:I, fBaseCount:I, fStandGround:L, fSearchVictim:L, fSelected:L,
+#   fIndex:I, fOfficerID:I, fPlIndex:I, fGroupName:S, fHoldMode:L, fAddDamage:I,
+#   fAddShield:I, fAddDamageHold:I, fAddShieldHold:I, fDirX:F, fDirZ:F,
+#   [ver>=1] fArmy:I, fType:I, fWarType:I,
+#   [ver>=7] fAgressive:L, [ver>=8] fAttackMode:L, [ver>=9] fHoldModeProgress:F,
+#   [ver>=16] fNeedRebuild:L (else false),
+#   [ver>=19] fMoveCount:I, fAttackCount:I, fTag:F, fCurX:F, fCurZ:F,
+#   [ver>=22] fDelayCount:I, [ver>=37] fUID:I.
+#   Port `next_squad` ↔ squad fUID/fNextUID:I (§4 [>=37]); the [>=40] fUID resequence
+#   and fNextUID clamp are §7 post-load fixups, documented, not re-emitted.
+#
+# §5 TPlayer wire order [O] (EV-SAVE-04 classes.script:3674-3720). Port player
+#   fields and donor_progress player rows map here in THIS order:
+#   id:I, objbase[24][80]:TObjBase, cid:I, csid:S,
+#   res[7]:I, setres[7]:I, lanres[7]:I, resefficiency[24][7]:I,
+#   fieldlife:I, victorystate:I(!), victorystategametime:F,
+#   unitcount:I, farm:I, myplmask:I, enemyplmask:I, team:I, difficulty:I,
+#   bexists,bgeology,bballoon,bfamine,brebellion,bai,bneutral:L,
+#   aidata:TAiData, squads:TSquadList(§4),
+#   lastattacktime:F, lastprogresstime:F, lastcheckexists:F,
+#   lastcalcsquadsmovecounttime:F, lastprogressaitime:F, lastseedwheattime:F,
+#   progresstick:I, searchenemyprev:I, searchenemylast:I, searchenemycur:I,
+#   searchenemylasttime:F, artlimit[types]:I, artcount[types]:I,
+#   counter:TPlayerCounters, stat:TPlayerStatistics,
+#   upgstate[24][upgcount]{sid:S,done/enabled/inprogress/grey:L,timestart:F,
+#   timedone:F,bscenariodisabled:L}, lists:TPlayerLists, playeradviser:TPlayerAdviser.
+#   donor_progress[].progresstick = TPlayer.progresstick:I; lastprogresstime and
+#   lastcheckexists are the adjacent F words; `victorystate` stays the port STRING
+#   display mirror — `victorystate_int` is the additive [O] donor mirror, none=0/
+#   win=1/lose=2 (dmscript.global:777-779, R1e closed [O]); derived from the string,
+#   never replacing it; `lose_t` is port-only, kept verbatim.
+#   `<91` objbase.speed:=1 and `<92` res/lanres/setres triple repair are §7 fixups.
+#
+# §5b TProj (EV-SAVE-04 classes.script:4351-4367): full declaration order now
+#   recovered [O] — see the DEC-U-SAVE-BITS §3 ledger below; owner/trg uid:I [O].
+#   No field invented; tail beyond the declaration [U]-R1f (E-R1f one projectile,
+#   vary one word, assert one divergence). Recording this is TELEMETRY ONLY.
+#
+# §7 post-load fixups [O] reproduced as effects only, NOT re-emitted as bytes:
+#   topzone:=-1; uniqrnd=0→random; timer jitter; squad uid→handle; version repairs
+#   <9/<15/<26/<28/<36/<40/<42-54/68-74/<88/<89/<91/<92; tail mode/version reset.
+#   Port keeps the STORED value on load (no RNG draw invented here); the spawn
+#   source site IS recovered and wired: unit.script:2726 `obj.uniqrnd := RandomExt`.
+#
+# §8 register, updated by DEC-U-SAVE-BITS §§1-4: R1a container CLOSED [D] —
+#   saves are .map, no .sav (E-R1a is confirmation only); R1b float 4 B single
+#   [D] + Boolean 1 B 0/1 sequential [D] (E-R1b/E-R1c confirmations only);
+#   R1c ANSI [D]; R1e victorystate table [O]. STILL [U]: R1d engine transform
+#   placement (E-R1d), R1f wall/grid/interface/map/projectile tails (E-R1f),
+#   R1g checksum/compression (E-R1g paired identical-state bit-compare). None
+#   filled by guesswork or invented bytes. See _save_contract_telemetry() for
+#   the same ledger as data.
+#
+# ── DEC-U-SAVE-BITS §§1-4 — ADDITIVE [D]/[O]/[U] TELEMETRY (NO wire bytes) ─────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_save_bits.md §§1-4.
+# DOCUMENTATION ONLY: nothing below is written to or read from the save dict;
+# version stays 5, every v3/v4/v5 key and the landed SAVEFLOAT layer stay verbatim.
+#
+# §1 Boolean wire form [D] (closes R1b fully): ONE byte 0/1 per Boolean field,
+#   declaration order, NEVER bit-packed — serial.script:1036-1038 WriteBoolean×3
+#   (fStandGround,fSearchVictim,fSelected), :1107-1109 ReadBoolean×3,
+#   :1179-1181 SizeOf(Boolean)×3, :1247-1249 SeekBoolean×3. The same 1:1:1:1
+#   Write/Read/Size/Seek cardinality holds for fHoldMode, fAgressive,
+#   fAttackMode, fNeedRebuild, TArmy.fSpecialOrder/fActive/fOnEnemyLand and
+#   TAiData.centerfound/defenceStage/bFlags[i]. A bitfield would be ONE byte +
+#   mask/shift ops + bit-offset seeks; none exist in the serial layer (P8: the
+#   only shl/or is gameplay `enemyplmask or (1 shl j)` :89/:170; skips are whole
+#   unit SeekBuffer). Adjacent Booleans carry no padding. E-R1b (true/false
+#   squad pair, single-byte divergence at fStandGround) is CONFIRMATION ONLY:
+#   the 1 B sequential conclusion is structural, not dependent on that run.
+#
+# §2 Outer container [D] (closes R1a as non-existent): a donor save IS a .map
+#   written by engine builtin UserProfileSaveMap(filename) (misc.script:3181;
+#   saveMapFileName.autosave.N.map rotation :3133/3164/3168; scenario editor
+#   name+'.autosave.1.map' scenario.script:3108). Zero *.sav ship (P11). Shipped
+#   ausmis1.map envelope [O] (P10): I32(53)=gDataVersion word, ASCII
+#   OSWMap13.Map.Ver[0.0]Build.Ver[2.0.0.2843]Core.Ver[1], then I32-length +
+#   ASCII GameMapSnapShotBegin / GameMapSnapShotEnd / GameMapRecordBegin / …
+#   GameMapRecordEnd … I32(0x0A)+GameMapEnd. Every tag is I32-LE-length + ANSI
+#   bytes (the §2 String shape). NO envelope/magic/checksum byte is emitted on
+#   the v5 JSON wire — [D] telemetry only. E-R1a paired saves (gfloat_peacetime)
+#   remain as envelope confirmation, never as invented container bytes.
+#
+# §3 TProj field order [O] (classes.script:4351-4367): baseid,weaponid,owner,
+#   trg:I, px,py,pz,dx,dy,dz:F, ownerpl,ownercid,ownerid,ownerweaponind:I,
+#   uniqrnd:F — projectiles DO carry script-side kinematics, unlike TObj;
+#   owner/trg are uid:I [O]. Tail beyond the declaration stays [U]-R1f (E-R1f:
+#   one projectile, vary one word, assert single divergence). Telemetry only:
+#   no projectile key is renamed, added or reordered here.
+#
+# §4 Still-[U] register — kept UNVERIFIED, no bytes invented:
+#   R1d engine transform placement: pos/orientation/scale/STO/statetag are NOT
+#     in TObj (reflection-bounded by SaveStreamTypeBase, serial.script:817-819);
+#     whether the engine appends a transform block outside the reflected structs
+#     stays [U]. E-R1d: mid-move unit at known pos, vary x by a known delta,
+#     assert exactly one adjacent IEEE-754 word diverges and record its section;
+#     rest-unit control; re-randomised lasttime* fields (:868-875) excluded from
+#     the zero-mismatch criterion. Nothing emitted, nothing silently filled.
+#   R1g checksum/compression/trailer: no checksum/compress/crc literal in
+#     serial.script (P7: 0 hits), no container magic beyond §2; ~44 MB size is
+#     uncompressed-consistent [I], not proof. Stays [U]. E-R1g piggybacks E-R1a
+#     at zero cost: paired identical-state saves bit-compared end-to-end — 100%
+#     identical ⇒ declare no checksum/compression; any trailer divergence ⇒
+#     isolate as a checksum/compress flag, never force-fit. NO checksum byte or
+#     container magic is written here.
 func serialize() -> Dictionary:
 	var ents: Array = []
+	# DEC-U-SAVE-FLOAT §7 additive donor telemetry (DEC_U_save_float.md). The
+	# 12-slot TOrderInfo shape is [O] (§0-P10, dmscript.global:1678-1691):
+	# trg:I,x,y,dx,dy,dir,z:F,upgradeid,produceid,restype,amount:I,progress:F.
+	# Port values are unknown -> default 0; NO port-order->donor-field mapping is
+	# invented (that would be an approximation). An existing orders12 is preserved
+	# verbatim and padded to 12, never truncated.
+	# DEC-U-CAPTURE-FLUSH §9 item 5 [O] dmscript.global:1678-1702: same field
+	# order. Post-flush donor dump = twelve `none` slots except possibly kept
+	# `move` / surviving `static` entries (§§2,5); the port default-zero dump
+	# stays, tagged [U]-Q-STATIC until Q-STATIC's fixed-seed 3-run zero-mismatch
+	# capture passes. Never truncate/pad differently, never bump version.
+	# DEC-U-CAPTURE-STATE §5/§7 [O]: capture writes no new v5 key here; CS-*
+	# items stay [U] with their fixed-seed traces; NO PARITY CLAIM.
+	var orders12_default: Array = []
+	for _slot in range(12):
+		orders12_default.append({"trg": 0, "x": 0.0, "y": 0.0, "dx": 0.0,
+			"dy": 0.0, "dir": 0.0, "z": 0.0, "upgradeid": 0, "produceid": 0,
+			"restype": 0, "amount": 0, "progress": 0.0})
 	for e in entities:
 		if e.dead:
 			continue
@@ -6313,6 +9371,19 @@ func serialize() -> Dictionary:
 			d[k] = _vec_enc(e[k])
 		d["order"] = _vec_enc(e.order.duplicate(true))
 		d["queue"] = _vec_enc(e.queue.duplicate(true))
+		# Additive donor keys [O]: uniqrnd:F (TObj; engine draws random when 0 per
+		# serial.script:841-842 — port keeps the stored value, NO RNG draw invented);
+		# orders12 = 12-slot TOrderInfo. Both default when absent; no v5 key touched.
+		d["uniqrnd"] = float(e.get("uniqrnd", 0.0))
+		var o12_src: Variant = e.get("orders12", null)
+		var o12: Array = []
+		if o12_src is Array and not (o12_src as Array).is_empty():
+			o12 = (o12_src as Array).duplicate(true)
+			while o12.size() < 12:
+				o12.append(orders12_default[0].duplicate(true))
+		else:
+			o12 = orders12_default.duplicate(true)
+		d["orders12"] = _vec_enc(o12)
 		ents.append(d)
 	var nodes: Array = []
 	for n in res_nodes:
@@ -6326,8 +9397,22 @@ func serialize() -> Dictionary:
 		for k in p:
 			pd[k] = _vec_enc(p[k])
 		pls.append(pd)
-	return {
-		"version": 4, "seed": int(Data.RANDOM_SEED),
+	# DEC-U-SAVE-CONTRACT key→donor map (recovered order; additive documentation
+	# only — the literal below is byte-identical to game.gd.bak-SAVECONTRACT):
+	#   version/seed/time_s/winner/next_id/battle_mode: port scalars. `next_squad`
+	#     ↔ TSquad.fUID/fNextUID:I (§4 [ver>=37]); [>=40] resequence is §7 post-load.
+	#   terrain/blocked/height/map_w/map_h: gMap §1 position 2; per-tile word layout
+	#     [U]-R1f (no byte claim on the base64 payload).
+	#   entities: TObj §3 order (handles/uids [O]); res_nodes: gResGrid §1 position 10
+	#     [U]-R1f; players: TPlayer §5 order; squads: TSquadList §4 order/framing.
+	#   deposits/stats/objectives: gEconomy/gInterface/gScenario tails [U]-R1f.
+	#   rng_state/gen_rng_state/tileblock/mine_mask/relief_*/pattern_stamps/map_*,
+	#     cluster_zones/nav_version/projectiles: v5 PORT EXTENSION — no donor byte
+	#     mapping claimed, kept verbatim.
+	#   donor_progress: v5 PORT EXTENSION; its player rows hold the only donor-
+	#     mapped progress words (TPlayer §5 order), kept verbatim — see helper above.
+	var save_v5 := {
+		"version": 5, "seed": int(Data.RANDOM_SEED),
 		"time_s": time_s, "winner": winner, "next_id": next_id,
 		"next_squad": next_squad, "battle_mode": battle_mode,
 		"terrain": Marshalls.raw_to_base64(terrain), "blocked": Marshalls.raw_to_base64(blocked),
@@ -6336,10 +9421,41 @@ func serialize() -> Dictionary:
 		"entities": ents, "res_nodes": nodes, "players": pls,
 		"squads": squads.duplicate(true), "deposits": deposits.duplicate(),
 		"stats": stats.duplicate(true), "objectives": objectives.duplicate(true),
+		# PORT1TO1 §10 minimum: v4 lost these, so a reload diverged from the
+		# saved sim state. v5 stores full RNG positions, in-flight shots and the
+		# tile/stamp state that drives art and navigation. No new values are
+		# invented — these are the live engine states already held in memory.
+		"rng_state": int(rng.get_state()), "gen_rng_state": int(gen_rng.get_state()),
+		# DEC-U-RNG-LEDGER §7 item 8: ADDITIVE stream-state key only. No v5 key
+		# renamed/removed; no version bump; no delphi_state (G/S split stays [U]).
+		"sim_rng_state": sim_rng.get_state(),
+		"tileblock": Marshalls.raw_to_base64(tileblock),
+		"mine_mask": Marshalls.raw_to_base64(mine_mask),
+		"relief_donor_mask": Marshalls.raw_to_base64(_relief_donor_mask),
+		"relief_stamp_mask": Marshalls.raw_to_base64(_relief_stamp_mask),
+		"pattern_stamps": _stamps_enc(pattern_stamps),
+		"projectiles": _vec_enc(projectiles.duplicate(true)),
+		"map_starts": _vec_enc(map_starts.duplicate(true)),
+		"map_meta": _vec_enc(map_meta.duplicate(true)),
+		"cluster_zones": _vec_enc(cluster_zones.duplicate(true)),
+		"nav_version": nav_version,
+		# ADDITIVE only — no existing v5 key removed, renamed or version-bumped.
+		"donor_progress": _donor_progress_enc(),
+		# DEC-U-SAVE-FLOAT §7 [O] gDataVersion=92 (serial.script:27-28,37,58).
+		# Telemetry scalar beside the wire version:5 — NOT a version bump and NOT
+		# read by deserialize (old v3/v4/v5 loads ignore this additive key).
+		"save_donor_version": 92,
+		# DEC-U-SCENARIO-WIN §7-3/§7-5 ADDITIVE mirror of `gScenario.bactive`
+		# (serialized section 12, dmscript.source:337-356). NOT a version bump;
+		# old v3/v4/v5 saves lack the key and load with scenario_active=false.
+		"scenario_active": scenario_active,
 	}
+	return save_v5
 
 func deserialize(d: Dictionary) -> bool:
-	if int(d.get("version", 0)) not in [3, 4]:
+	# v5 = PORT1TO1 §10 full-state save (RNG/projectiles/tile/stamps added).
+	# v3/v4 stay loadable verbatim — no weakened test, no forced migration.
+	if int(d.get("version", 0)) not in [3, 4, 5]:
 		return false
 	MAP_W = int(d.map_w); MAP_H = int(d.map_h)
 	terrain = Marshalls.base64_to_raw(str(d.terrain))
@@ -6358,7 +9474,15 @@ func deserialize(d: Dictionary) -> bool:
 	time_s = float(d.time_s); winner = int(d.winner)
 	next_id = int(d.next_id); next_squad = int(d.next_squad)
 	battle_mode = bool(d.battle_mode)
+	# DEC-U-SCENARIO-WIN §7-3 ADDITIVE restore: old v3/v4/v5 saves lack the key
+	# and keep the default false (skirmish). No load gate weakened.
+	scenario_active = bool(d.get("scenario_active", false))
 	entities.clear(); by_id.clear()
+	# DEC-U-SAVE-FLOAT §7 additive entity telemetry keys uniqrnd/orders12, when
+	# present in a save, round-trip through _vec_dec into the live entity dicts;
+	# absent keys keep the serialize()-side defaults (uniqrnd 0.0, 12 zero-slot
+	# TOrderInfo). NO RNG draw on uniqrnd=0 ([U]-G1): a deterministic round-trip
+	# beats donor jitter emulation. No existing entity key is renamed or dropped.
 	for ed in d.entities:
 		var e: Dictionary = (_vec_dec(ed) as Dictionary).duplicate(true)
 		var sid: String = str(e.sid)
@@ -6398,4 +9522,354 @@ func deserialize(d: Dictionary) -> bool:
 	if d.has("seed"):
 		Data.RANDOM_SEED = int(d.seed)
 	_assign_tileblocks()
+	# PORT1TO1 §10: v5 restores the states v4 dropped. Tile/stamp/mask data is
+	# applied AFTER _assign_tileblocks() (which rebuilds art deterministically)
+	# so a save-time tileblock is not overwritten. restores are additive: a
+	# v3/v4 snapshot simply skips them and keeps the legacy reload behaviour.
+	if int(d.get("version", 0)) >= 5:
+		var cell_count := MAP_W * MAP_H
+		var tb := Marshalls.base64_to_raw(str(d.get("tileblock", "")))
+		if tb.size() == cell_count:
+			tileblock = tb
+		var mm := Marshalls.base64_to_raw(str(d.get("mine_mask", "")))
+		if mm.size() == cell_count:
+			mine_mask = mm
+		var rd := Marshalls.base64_to_raw(str(d.get("relief_donor_mask", "")))
+		if rd.size() == cell_count:
+			_relief_donor_mask = rd
+		var rs := Marshalls.base64_to_raw(str(d.get("relief_stamp_mask", "")))
+		if rs.size() == cell_count:
+			_relief_stamp_mask = rs
+		pattern_stamps = _stamps_dec(d.get("pattern_stamps", []) as Array)
+		projectiles = (_vec_dec(d.get("projectiles", [])) as Array).duplicate(true)
+		map_starts = (_vec_dec(d.get("map_starts", [])) as Array).duplicate(true)
+		map_meta = (_vec_dec(d.get("map_meta", {})) as Dictionary).duplicate(true)
+		cluster_zones = (_vec_dec(d.get("cluster_zones", [])) as Array).duplicate(true)
+		nav_version = int(d.get("nav_version", nav_version))
+		if d.has("rng_state"):
+			rng.set_state(int(d.rng_state))
+		if d.has("gen_rng_state"):
+			gen_rng.set_state(int(d.gen_rng_state))
+		# §7 item 8 ADDITIVE restore: old v5 saves simply lack this key and keep
+		# the §4-S6 seed-start behaviour (no invented value, no version bump).
+		if d.has("sim_rng_state"):
+			sim_rng.set_state(int(d.sim_rng_state))
+		else:
+			sim_rng.set_state(int(Data.RANDOM_SEED))
+		# DEC-U §10 item 9 — additive donor-progress restore. Missing keys default;
+		# a v3/v4 snapshot (or an older v5 save) simply keeps legacy behaviour.
+		# DEC-U-SAVE-CONTRACT §5/§7 key→donor map + DEC-U-SAVE-FLOAT §5/§7 additive:
+		# progresstick = TPlayer.progresstick:I, then lastprogresstime and
+		# lastcheckexists = the adjacent F words in recovered TPlayer order;
+		# eliminated/victorystate/lose_t are port-only mirrors kept verbatim. The
+		# additive victorystate_int is the [O] donor mirror (none=0/win=1/lose=2,
+		# dmscript.global:777-779, R1e closed), derived from the display string and
+		# NEVER replacing it; setres/lanres default to the res row (<92 repair).
+		if d.has("donor_progress"):
+			var dp: Dictionary = d["donor_progress"] as Dictionary
+			var prows: Array = dp.get("players", []) as Array
+			for i in range(mini(prows.size(), players.size())):
+				var pr: Dictionary = prows[i] as Dictionary
+				players[i]["progresstick"] = int(pr.get("progresstick", 0))
+				players[i]["lastprogresstime"] = float(pr.get("lastprogresstime", 0.0))
+				players[i]["lastcheckexists"] = float(pr.get("lastcheckexists", 0.0))
+				# §6-7 additive restore. Absent keys (older v5 / v3 / v4) fall
+				# back to the donor init id*0.25+interval (player.script:131-141)
+				# so the R1 absolute-deadline phases are not lost on load.
+				players[i]["lastcalcsquadsmovecounttime"] = float(pr.get("lastcalcsquadsmovecounttime", float(i) * _TICK_INIT_PHASE_S + _TICK_CALCSQUADS_S))
+				players[i]["lastprogressaitime"] = float(pr.get("lastprogressaitime", float(i) * _TICK_INIT_PHASE_S + _TICK_AI_S))
+				players[i]["lastseedwheattime"] = float(pr.get("lastseedwheattime", float(i) * _TICK_INIT_PHASE_S + _TICK_SEED_S))
+				players[i]["eliminated"] = bool(pr.get("eliminated", false))
+				players[i]["victorystate"] = str(pr.get("victorystate", ""))
+				players[i]["lose_t"] = float(pr.get("lose_t", 0.0))
+				# DEC-U-SCENARIO-WIN §7-5 ADDITIVE restore (defaults keep old
+				# v3/v4/v5 saves loadable). These are the flags §5 reads.
+				players[i]["roster_bexists"] = bool(pr.get("roster_bexists", true))
+				players[i]["bleave"] = bool(pr.get("bleave", false))
+				players[i]["victorystategametime"] = float(pr.get("victorystategametime", 0.0))
+				# DEC-U-SAVE-FLOAT §5/§7 additive donor mirrors. The port display
+				# STRING stays authoritative: derive the [O] int from it (none=0/
+				# win=1/lose=2, dmscript.global:777-779) and NEVER change the string.
+				# A stored int is telemetry only, not trusted over the string.
+				var vs_str2: String = str(players[i].get("victorystate", ""))
+				if vs_str2 == "lose":
+					players[i]["victorystate_int"] = 2
+				elif vs_str2 == "win":
+					players[i]["victorystate_int"] = 1
+				else:
+					players[i]["victorystate_int"] = 0
+				var pr_res: Array = players[i].get("res", []) as Array
+				if pr.get("setres") is Array:
+					players[i]["setres"] = (pr.get("setres") as Array).duplicate(true)
+				else:
+					players[i]["setres"] = pr_res.duplicate(true)
+				if pr.get("lanres") is Array:
+					players[i]["lanres"] = (pr.get("lanres") as Array).duplicate(true)
+				else:
+					players[i]["lanres"] = pr_res.duplicate(true)
 	return true
+
+# DEC-U-SAVE-CONTRACT — additive STATIC telemetry. Deliberately NOT called by
+# serialize()/deserialize(): it never enters the save dict, so the v3/v4/v5 wire
+# contract and the donor_progress extension remain byte-identical to the backup.
+# Exposes the recovered [O] framing as introspectable data for a static audit;
+# every [U] entry names its paired-save experiment. NO PARITY CLAIM (§10).
+func _save_contract_telemetry() -> Dictionary:
+	return {
+		"claim": "PORT EXTENSION / NO PARITY CLAIM (contract §10)",
+		"authority": "DEC_U_save_contract.md EV-SAVE-01..11",
+		"header": "LE Int32 WriteInteger(gDataVersion)=92 [O] serial.script:27-28,37,58",
+		"sections_order": [
+			"gEconomy", "gMap", "gGOPathList", "gWaterPathList", "gPlayer",
+			"gEnemyInfoList", "gCtrlGroups", "gSelectedObjects", "gScanGrid",
+			"gResGrid", "gInterface", "gScenario", "gWallSystem", "gIslands",
+			"gbool_editor_peacemode", "gfloat_peacetime", "gbool_peacemode",
+			"gWriteNewRequestList", "gbool_recordwascleared"
+		],
+		"primitives": {
+			"Integer": "4B LE [O] width+endian; two's complement signedness [D]",
+			"Byte": "1B unsigned [O]",
+			"Boolean": "R1b-[D]-bool-1B-sequential: 1B 0/1 [D]-R1b (DEC-U-SAVE-BITS §1: 1:1:1:1 Write/Read/Size/Seek cardinality serial.script:1036-1038/1107-1109/1179-1181/1247-1249, no mask/shift/bit-seek, no padding, never bit-packed; E-R1b true/false pair is CONFIRMATION ONLY)",
+			"String": "I32 LE byte-length + ANSI codepage bytes [O] shape/[D] encoding (font atlases 1250/1251/1252/1254); E-R1c retained, never emitted",
+			"Float": "4B LE IEEE-754 Single [D]-R1b (pinned donor 0x8f6164 00 00 80 3F / 0x4cb368 0.0f,180.0f,-180.0f); E-R1b retained; no float byte emitted",
+			"IntegerList": "itemsize:I32 + count:I32 + count*itemsize raw bytes [O]",
+			"Handle": "stored as stable uid:I32 [O]"
+		},
+		"tobj_order": [
+			"baseid:I,id:I,uid:I,pl:I,cid:I,hp:I,kill:I,resamount:I,restype:I,buildprogress:F",
+			"bdead:L,bbuilt:L,bstandground:L,bsearchenemy:L,insideofuid:I,insidereserved:I,squad:I,brally:L",
+			"rallyx:F,rallyy:F,rallytmpx:F,rallytmpy:F,standtime:F,attackdelay:F,attackmaxdelay:F,exitdelay:F,lastprogresstime:F,progresstick:I",
+			"idlegridx:I,idlegridy:I,scangridx:I,scangridy:I,ctrlgroupmask:I,bpathrequested:L,bleaverequested:L,bhiderequested:L",
+			"trghnd:I(uid),topzone:I,scenariogroupid:B,smokecount:B,wallvariation:B,inbattle:L,artx:F,arty:F,arthnd:I(uid),artdistfactor:F,uniqrnd:F",
+			"individual{benabled:L,upglevel:I,attackrate:F,addpeasantabsorber:I,addtransport:I}",
+			"orders[12]{itype:I,info:TOrderInfo,bexecute:L,bremove:L,static:L}",
+			"sndwalkproc:L,sndwalkdst:F,sndwalktype:I,prevstouid:I(uid)",
+			"lastsearchenemy:F,lasttimecheckcapture:F,lasttimeidlegrid:F,lasttimescangrid:F,lasttimetopology:F,lasttimebestposition:F"
+		],
+		"squad_order": [
+			"memberCount:I,memberCount×uid:I,fHeight:I,fWidth:I,fHeight×fWidth×gridUid:I,fFormation:I,fBaseCount:I",
+			"fStandGround:L,fSearchVictim:L,fSelected:L,fIndex:I,fOfficerID:I,fPlIndex:I,fGroupName:S,fHoldMode:L",
+			"fAddDamage:I,fAddShield:I,fAddDamageHold:I,fAddShieldHold:I,fDirX:F,fDirZ:F",
+			"[ver>=1] fArmy:I,fType:I,fWarType:I",
+			"[ver>=7] fAgressive:L", "[ver>=8] fAttackMode:L", "[ver>=9] fHoldModeProgress:F",
+			"[ver>=16] fNeedRebuild:L", "[ver>=19] fMoveCount:I,fAttackCount:I,fTag:F,fCurX:F,fCurZ:F",
+			"[ver>=22] fDelayCount:I", "[ver>=37] fUID:I"
+		],
+		"squad_list_framing": "I32 squadCount then per-squad order; size/seek gate every field [O] serial.script:1018-1300",
+		"tplayer_order": [
+			"id:I,objbase[24][80]:TObjBase,cid:I,csid:S",
+			"res[7]:I,setres[7]:I,lanres[7]:I,resefficiency[24][7]:I",
+			"fieldlife:I,victorystate:I,victorystategametime:F",
+			"unitcount:I,farm:I,myplmask:I,enemyplmask:I,team:I,difficulty:I",
+			"bexists:L,bgeology:L,bballoon:L,bfamine:L,brebellion:L,bai:L,bneutral:L",
+			"aidata:TAiData,squads:TSquadList",
+			"lastattacktime:F,lastprogresstime:F,lastcheckexists:F,lastcalcsquadsmovecounttime:F,lastprogressaitime:F,lastseedwheattime:F",
+			"progresstick:I,searchenemyprev:I,searchenemylast:I,searchenemycur:I,searchenemylasttime:F",
+			"artlimit[types]:I,artcount[types]:I,counter:TPlayerCounters,stat:TPlayerStatistics",
+			"upgstate[24][upgcount]{sid:S,done/enabled/inprogress/grey:L,timestart:F,timedone:F,bscenariodisabled:L}",
+			"lists:TPlayerLists,playeradviser:TPlayerAdviser"
+		],
+		"tproj": "[O] full declaration order classes.script:4351-4367: baseid,weaponid,owner,trg:I,px,py,pz,dx,dy,dz:F,ownerpl,ownercid,ownerid,ownerweaponind:I,uniqrnd:F; owner/trg uid:I [O]; tail beyond declaration [U]-R1f (E-R1f) — telemetry only, no key renamed/added/reordered",
+		# DEC-U-SAVE-TOBJ §1/§3 ADDITIVE telemetry only — NO wire byte, NO new
+		# save key, NO version bump. Field order = declaration order
+		# (dmscript.global:1712-1777, serial.script:803-829 useproc=false), and
+		# widths are [O]/[D] from that report; offsets are [D] sums with no pad.
+		"tobj_fields_63": [
+			"1 baseid:I:4", "2 id:I:4", "3 uid:I:4", "4 pl:I:4", "5 cid:I:4",
+			"6 hp:I:4", "7 kill:I:4", "8 resamount:I:4", "9 restype:I:4",
+			"10 buildprogress:F:4", "11 bdead:L:1", "12 bbuilt:L:1",
+			"13 bstandground:L:1", "14 bsearchenemy:L:1", "15 insideofuid:I:4",
+			"16 insidereserved:I:4", "17 squad:I:4", "18 brally:L:1",
+			"19 rallyx:F:4", "20 rallyy:F:4", "21 rallytmpx:F:4", "22 rallytmpy:F:4",
+			"23 standtime:F:4", "24 attackdelay:F:4", "25 attackmaxdelay:F:4",
+			"26 exitdelay:F:4", "27 lastprogresstime:F:4", "28 progresstick:I:4",
+			"29 idlegridx:I:4", "30 idlegridy:I:4", "31 scangridx:I:4",
+			"32 scangridy:I:4", "33 ctrlgroupmask:I:4", "34 bpathrequested:L:1",
+			"35 bleaverequested:L:1", "36 bhiderequested:L:1",
+			"37 trghnd:I(uid):4", "38 topzone:I:4", "39 scenariogroupid:Y:1",
+			"40 smokecount:Y:1", "41 wallvariation:Y:1", "42 inbattle:L:1",
+			"43 artx:F:4", "44 arty:F:4", "45 arthnd:I(uid):4",
+			"46 artdistfactor:F:4", "47 uniqrnd:F:4", "48 individual.benabled:L:1",
+			"49 individual.upglevel:I:4", "50 individual.attackrate:F:4",
+			"51 individual.addpeasantabsorber:I:4", "52 individual.addtransport:I:4",
+			"53 orders[0..11]:12xTOrder(55B):660", "54 sndwalkproc:L:1",
+			"55 sndwalkdst:F:4", "56 sndwalktype:I:4", "57 prevstouid:I(uid):4",
+			"58 lastsearchenemy:F:4", "59 lasttimecheckcapture:F:4",
+			"60 lasttimeidlegrid:F:4", "61 lasttimescangrid:F:4",
+			"62 lasttimetopology:F:4", "63 lasttimebestposition:F:4"
+		],
+		"tobj_record_telemetry": "[D] 63 fields, fixed 866 B (arithmetic declaration-order sum, no pad); ZERO gSerialVersion gates in serial.script:797-884 (EV-T10) — no version-gated TObj field at any serial version. E-T2 hexdump confirms the span/offsets; telemetry only",
+		"tproj_fields_15": [
+			"1 baseid:I:4", "2 weaponid:I:4", "3 owner:I(uid):4", "4 trg:I(uid):4",
+			"5 px:F:4", "6 py:F:4", "7 pz:F:4", "8 dx:F:4", "9 dy:F:4", "10 dz:F:4",
+			"11 ownerpl:I:4", "12 ownercid:I:4", "13 ownerid:I:4",
+			"14 ownerweaponind:I:4", "15 uniqrnd:F:4"
+		],
+		"tproj_record_telemetry": "[D] 15 fields, fixed 60 B, no pad; ZERO gSerialVersion gates in serial.script:945-1007 (EV-T10). serialproc registry dmscript.source:358-548 has NO type=TProj entry — ProjWriter/Reader/Size/Post/Seek are DEFINED but UNREGISTERED; projectiles are transient state-machine args (`args arg_proj : TProj`, gc_argproj_proj=0) culled on load by onafterload.inc. The v5 `projectiles` key is a PORT EXTENSION and MUST NOT be cited as donor bytes (E-T3/E-T5).",
+		"orders_info_trg_routing": "[U]-R1f-T1 / E-T1 (DEC-U-SAVE-TOBJ §2/§5): nested orders[i].info.trg uid-vs-session-handle routing is decided inside engine SaveStreamTypeBase (useproc=false at serial.script:900); ObjWriter's manual translation is COMMENTED OUT (:807-809, :821-823). Fixed-seed paired save, one unit/one order with live target T vs T2: exactly one 4 B word must diverge at @169+55i+4 and equal uid(T)→uid(T2). NO routing claimed.",
+		"uid_translation": "handle->uid at write, uid->handle post-load [O] serial.script:671-684,713-723",
+		"post_load_fixups": "[O] topzone:=-1; uniqrnd=0->random; timer jitter; squad uid->handle; repairs <9/<15/<26/<28/<36/<40/<42-54/68-74/<88/<89/<91/<92; port keeps stored uniqrnd=0 [U]-G1",
+		"unverified": {
+			"R1a": "CLOSED [D] (DEC-U-SAVE-BITS §2): no .sav exists; a save is a .map via UserProfileSaveMap (misc.script:3181) with OSWMap13/GameMapSnapShotBegin-End/GameMapRecordBegin-End/GameMapEnd envelope; no magic bytes emitted; E-R1a paired saves (gfloat_peacetime) are confirmation only",
+			"R1b": "CLOSED [D] (DEC-U-SAVE-BITS §1): Float 4B LE single + Boolean 1B 0/1 sequential, never bit-packed; E-R1b rally floats + fStandGround true/false are CONFIRMATIONS ONLY",
+			"R1c": "String = I32 LE length + ANSI codepage [D]; E-R1c ASCII vs non-ASCII group name retained as runtime confirmation",
+			"R1d": "engine transform placement [U] — E-R1d mid-move unit, vary x only",
+			"R1e": "victorystate table none=0/win=1/lose=2 [O] dmscript.global:777-779; TOrderInfo/AI/list tails still [U] — E-R1e retained",
+			"R1f": "wall/grid/interface/scenario/map/projectile per-word tails [U] — E-R1f single-word variation, one divergence",
+			"R1g": "checksum/compression/trailer [U] — paired identical-state saves bit-compare"
+		},
+		"save_float_additive": {
+			"authority": "DEC_U_save_float.md §7 + [O]/[D]/[U] verdicts",
+			"victorystate_int": "[O] none=0/win=1/lose=2 dmscript.global:777-779; donor_progress[].players[] mirror derived from the port display string, never replacing it",
+			"setres_lanres": "[O] classes.script:3674-3720 res/setres/lanres triple; donor_progress[].players[], default copies res row (<92 repair)",
+			"uniqrnd": "[O] TObj F field, per-entity; default 0.0, stored value kept (no RNG draw, [U]-G1)",
+			"orders12": "[O] 12-slot TOrderInfo trg:I,x,y,dx,dy,dir,z:F,upgradeid,produceid,restype,amount:I,progress:F; per-entity, defaults zero, never truncated",
+			"save_donor_version": "[O] gDataVersion=92 serial.script:27-28,37,58; top-level telemetry scalar, NOT a version bump"
+		},
+		"save_bits_additive": {
+			"authority": "DEC_U_save_bits.md §§1-4 + [D]/[O]/[U] verdicts; TELEMETRY ONLY, NO wire bytes, NO version bump",
+			"bool_wire": "R1b-[D]-bool-1B-sequential: one byte 0/1 per Boolean field, declaration order, 1:1:1:1 Write/Read/Size/Seek cardinality, no mask/shift/bit-seek, no padding, NEVER bit-packed; E-R1b true/false pair is CONFIRMATION ONLY",
+			"outer_container": "[D] §2: .map (not .sav) via UserProfileSaveMap (misc.script:3181); OSWMap13 + GameMapSnapShotBegin/End + GameMapRecordBegin/End + GameMapEnd envelope recovered from shipped ausmis1.map; NO container magic/checksum/bytes emitted",
+			"tproj_order": "[O] §3 classes.script:4351-4367: baseid,weaponid,owner,trg:I,px,py,pz,dx,dy,dz:F,ownerpl,ownercid,ownerid,ownerweaponind:I,uniqrnd:F; telemetry only, no key renamed/added/reordered",
+			"R1d_transform": "[U] engine-side transform placement outside TObj; E-R1d mid-move unit, vary x, single adjacent IEEE-754 word divergence + section ID; nothing emitted, nothing silently filled",
+			"R1g_checksum": "[U] no checksum/compress literal in script; E-R1g paired identical-state saves bit-compared (piggybacks E-R1a); NO checksum byte or container magic written"
+		},
+		"save_endgame_additive": {
+			"authority": "DEC_U_scenario_win.md §7 item 5 + §8 U-E1/U-E2/U-E3 + DEC_U_save_tobj.md §9; ADDITIVE mirrors only",
+			"scenario_active": "[O] gScenario.bactive gate (progress.inc:54) / serialized section 12; top-level additive key, default false on old v3/v4/v5 loads; NO trigger invented ([U]-F1)",
+			"roster_bexists": "[O] gMap.players[i].bexists (miscext2.script:3775-3788) phase-1 roster gate; donor_progress[].players[] + live player row",
+			"bleave": "[O] leaver exclusion in phase 2 (miscext2.script:3791-3803) set by _surrender (:3848-3895); donor_progress[].players[] + live player row",
+			"victorystategametime": "[O] TPlayer:F stamp written iff 0 (classes.script:3674-3720, miscext2.script:3806-3807); beside the display string, never replacing it",
+			"wire_effect": "scenario_active added at top level; three mirrors added inside the already-additive donor_progress[].players[] rows. No existing key renamed/removed/reordered, no version bump, in[3,4,5] gate untouched, all old saves load with defaults."
+		},
+		"wire_contract": "UNCHANGED (SAVEBITS telemetry-only): version:5, in[3,4,5] load gate, all prior v5 keys verbatim, donor_progress + SAVEFLOAT additive keys intact; ENDGAMESAVE adds ONLY scenario_active + donor_progress player mirrors (roster_bexists/bleave/victorystategametime); no byte emitted from telemetry, no version bump"
+	}
+
+# ── DEC-U-RNG-LEDGER §6: X21 20-vector fixture exposed as TELEMETRY ─────────
+# Verbatim [D] oracle, pair (key0=0x44A108F9, key1=0x00000001). `bits LE` is the
+# strongest I07 comparison key. Each row: [s_hex, f32, bits_LE, floor*3/5/10/256].
+func donor_rng_x21_fixture() -> Array:
+	return [
+		[0x3C6FEF6C, 0.236083001, "bebf713e", 0, 1, 2, 60],
+		[0x7DCC6BDB, 0.491400480, "d898fb3e", 1, 2, 4, 125],
+		[0xD9FC017E, 0.851501524, "01fc593f", 2, 4, 8, 217],
+		[0x5FB30EC5, 0.373825967, "1e66bf3e", 1, 1, 3, 95],
+		[0x5B109F60, 0.355722398, "3f21b63e", 1, 1, 3, 91],
+		[0x39298B3F, 0.223290160, "2da6643e", 0, 1, 2, 57],
+		[0x089D0992, 0.0336461999, "99009d3d", 0, 0, 0, 8],
+		[0x41D427C9, 0.257143497, "50a8833e", 0, 1, 2, 65],
+		[0x6B5ED494, 0.419415742, "a9bdd63e", 1, 2, 4, 107],
+		[0x09816EE3, 0.0371312425, "ee16183d", 0, 0, 0, 9],
+		[0x212908E6, 0.129532397, "24a4043e", 0, 0, 1, 33],
+		[0x5046CF0D, 0.313580453, "9e8ea03e", 0, 1, 3, 80],
+		[0x03D84308, 0.015018644, "c210763c", 0, 0, 0, 3],
+		[0x50663AC7, 0.314059913, "76cca03e", 0, 1, 3, 80],
+		[0xF37BD37A, 0.951108158, "d37b733f", 2, 4, 9, 243],
+		[0x7DE4C891, 0.491772205, "91c9fb3e", 1, 2, 4, 125],
+		[0xD67BDEBC, 0.837827623, "df7b563f", 2, 4, 8, 214],
+		[0x0FFA52EB, 0.062413391, "2fa57f3d", 0, 0, 0, 15],
+		[0x75C47D4E, 0.460029453, "fb88eb3e", 1, 2, 4, 117],
+		[0xA2C21855, 0.635774136, "18c2223f", 1, 3, 6, 162],
+	]
+
+# Static (no Godot run, no donor binary) round-trip assertions against §6.
+func donor_rng_x21_selfcheck() -> Dictionary:
+	var fx: Array = donor_rng_x21_fixture()
+	var t := DonorRandomExt.new()
+	t.set_key(0x44A108F9, 0x00000001)
+	var s_mismatch: Array = []
+	var f_mismatch: Array = []
+	for i in fx.size():
+		var r: float = t.random_f32()
+		var row: Array = fx[i]
+		if t.get_state() != int(row[0]):
+			s_mismatch.append(i + 1)
+		if absf(r - float(row[1])) > 1e-9:
+			f_mismatch.append(i + 1)
+	# (K0,K1) == (0,K1): key0 discarded for every draw, including the first.
+	var k0a := DonorRandomExt.new(); k0a.set_key(0x44A108F9, 0x00000001)
+	var k0b := DonorRandomExt.new(); k0b.set_key(0, 0x00000001)
+	var key0_mismatch: bool = false
+	for _i in 20:
+		if k0a.random_f32() != k0b.random_f32():
+			key0_mismatch = true
+	# s=0 no stick: draw #1 = 0x3C6EF35F, no fixed point / no test-jz guard.
+	var z := DonorRandomExt.new(); z.set_state(0)
+	var zero_states: Array = []
+	for _i in 5:
+		zero_states.append(z.next_u32())
+	var sw := DonorRandomExt.new(); sw.set_key(0x00000001, 0x44A108F9)
+	var swapped: Array = []
+	for _i in 3:
+		swapped.append(sw.next_u32())
+	var ko := DonorRandomExt.new(); ko.set_key(0x44A108F9, 0x00000000)
+	var k0_only: Array = []
+	for _i in 3:
+		k0_only.append(ko.next_u32())
+	return {
+		"fixture_states": 20,
+		"s_state_mismatch_rows": s_mismatch,
+		"f32_mismatch_rows": f_mismatch,
+		"key0_discarded": not key0_mismatch,
+		"s0_first_state": "0x%08X" % zero_states[0],
+		"s0_states": zero_states,
+		"s0_no_stick": zero_states[0] == 0x3C6EF35F,
+		"swapped_key_states": swapped,           # expect 3D718404,19269793,809959D6
+		"key0_only_states": k0_only,             # expect 3C6EF35F,85A2D332,4D98E4E9
+		"bits_le_discrepancy": {
+			"rows": [7, 12],
+			"ledger_verbatim": ["99009d3d", "9e8ea03e"],
+			"static_recompute": ["99d0093d", "9e8da03e"],
+			"note": "[U]-RPT: §6 bits_LE rows 7/12 are digit transpositions of the IEEE-754 f32; s and f32 columns agree with the exact LCG. Fixture above stays LEDGER VERBATIM — recompute is labelled, no donor frame claimed.",
+		},
+		"static_only": true,                     # NO donor binary executed
+	}
+
+func donor_rng_telemetry() -> Dictionary:
+	return {
+		"claim": "EXACT donor LCG arithmetic / f32 output / key0 discard / s=0 no-stick; NO PARITY CLAIM",
+		"authority": "DEC_U_rng_ledger.md §2/§4/§6/§7; X21 §2/§5; D02 §4.2",
+		"stream": {
+			"name": "sim_rng", "kind": "single donor RandomExt stream (no split claimed)",
+			"cites": "0x60f64c-0x60f696; SetRandomExtKey64 key0 discarded X21 §4.3",
+			"key0_discarded": true, "s0_no_stick": true, "generation_draws": 0,
+		},
+		"constants": {
+			"DONOR_LCG_M": 64525, "DONOR_LCG_C": 1013904223,
+			"DONOR_DELPHI_M": 134775813, "DONOR_DELPHI_C": 1,
+			"divisor_f32": 4294967296.0, "cite": "X21 §2 / D02 §4.2 / dogenerate.inc:990-997",
+		},
+		"x21_fixture": {
+			"pair": "key0=0x44A108F9, key1=0x00000001",
+			"columns": ["s_hex", "f32", "bits_LE", "floor3", "floor5", "floor10", "floor256"],
+			"vectors": donor_rng_x21_fixture(),
+		},
+		"x21_selfcheck": donor_rng_x21_selfcheck(),
+		"draw_order": {
+			"S0": "uniqrnd=RandomExt then progresstick=floor(RandomExt*32) (§6 fixture order; unit.script:2726/:2706-2707)",
+			"S1": "famine/rebellion RandomInt=floor(random*32768) (G-attributed, [U]-G1-g)",
+			"S2": "jitter, easy-gate, die-roll (G [U]-G1-g) then slow-death GetRandom(300) (S)",
+			"S3": "scatter X, scatter Z, frnd, pick=floor(RandomExt*count), 6x orientation (weapon.script:627-646/:1046-1051)",
+			"S4": "headshot gate random<0.05 (G [U]-G1-g); floor(uniqrnd*500) is STORED, not a draw",
+		},
+		"still_unverified": {
+			"G1-a": "[U] round() Bankers semantics [D]-settled; native @Round address open; Series R20 zero-mismatch required",
+			"G1-b": "[U] GetRandom ledger / S-G stream split; Series L20; G values count-only, never pinned",
+			"G1-c": "[U] per-site draw counts (musket 0-scatter / archer 2 / cannon 2+frnd); Series C300",
+			"G1-d": "[U] uniqrnd source/WriteProj frnd order (site [O]); Series U50 zero-mismatch required",
+			"G1-e": "[U] DScript f32-vs-f64 product promotion; Series F1M; no-divergence sample only",
+			"G1-f": "[U] signed key0 edge; Series K0; high-bit asserts WITHOUT donor behaviour claim",
+			"G1-g": "[U] AI/capture/economy G/S attribution; Series A600; values count-only",
+			"S3-a/f": "[U] friendly-fire / DoExplode SetRandomKey(floor(random*MaxInt)) reseeds — port has no cannister/explode site; NOT wired, no invented reseed",
+			"S3-d": "[U] rotspeed/ThrowRandom/stand propagation-gated draws — NOT wired (no invented order)",
+			"S3-g": "[U] victim-loop m+n counts spawn-gated — NOT invented",
+			"S5-c": "[U] minesdensity/gRecordGeneratorVersion counts — NOT invented",
+		},
+		"save_additive": ["sim_rng_state (new S stream)", "uniqrnd per unit/projectile (already present)"],
+		"data_gd_patch_recommendations": [
+			"§7-2: tag Data.DONOR_RNG_DRAW_SITES rows with stream S/G/stored; add DONOR_DELPHI_M/C + DONOR_LCG_M/C consts (file OUT OF SCOPE here)",
+			"§7-1: keep donor_round + donor_weapon_row verbatim; cite weapon.script:349-362; keep [U]-G1-a until Series R20 green",
+		],
+		"out_of_scope": ["data.gd", "ai.gd", "native round address", "donor binary execution", "Godot/runner/git"],
+		"visual_parity_claim": false,
+	}

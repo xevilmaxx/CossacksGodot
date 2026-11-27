@@ -1,0 +1,386 @@
+---
+id: PORT1TO1-ACCEPTANCE-PLAN
+swarm: TERRAIN-SWARM-2026-11-26 / PORT1TO1-NO-APPROXIMATION
+role: WORKER ACCEPTANCE-PLAN — exact owner-runnable snapshot/video acceptance protocol (read-only planning)
+owner_file: docs/terrain_swarm_2026-11-26/reports/PORT1TO1_acceptance_plan.md
+status: DELIVERED__READ_ONLY_PLANNING__ONE_REPORT_ONLY__NO_CODE_GODOT_GIT_DONOR_EXECUTION
+created: 2026-11-26
+labels: [OBSERVED, DERIVED, UNVERIFIED, "PORT APPROXIMATION"]
+parity_status: UNVERIFIED
+parity_claim: false
+scope_guard: "Exactly one repo file written (this report). No source, shader, asset, config, test, fixture, result JSON, git state, Godot process or donor binary touched. No capture, no MP4, no ROI metric and no donor A/B frame was produced by this worker."
+governing_sources:
+  - docs/terrain_swarm_2026-11-26/reports/PORT1TO1_video_targets.md
+  - docs/terrain_swarm_2026-11-26/reports/DEC_U_final_register.md
+  - docs/terrain_swarm_2026-11-26/reports/HANDOFF.md (§9.18/§9.19)
+  - docs/terrain_swarm_2026-11-26/reports/DEC_U_port_guard_audit.md
+  - docs/terrain_swarm_2026-11-26/reports/W05_video_capture.md
+  - docs/terrain_swarm_2026-11-26/reports/PREP_VIDEO_assembly.md
+  - docs/terrain_swarm_2026-11-26/reports/SEQ_WIDE_analysis.md
+  - docs/terrain_swarm_2026-11-26/reports/SEQ_CLOSE_analysis.md
+  - docs/terrain_swarm_2026-11-26/reports/W08_visual_acceptance_criteria.md
+  - variant3d/tools/acceptance/{README.md,capture_sequence.py,contact_sheet.py,compare_frames.py,imgio.py}
+  - variant3d/tools/{godot_runner.py,seq_to_mp4.py,full_map_shot.py}
+---
+
+# PORT1TO1 — owner acceptance protocol (snapshot / video path)
+
+> **Required reviewer line, verbatim (W05 §7.3 / PREP-VIDEO §5 / W08 §0):**
+> PORT APPROXIMATION — internal consistency only; donor parity UNVERIFIED. No donor GPU A/B frame exists; this review certifies neither donor fidelity nor a gate pass.
+
+> **Owner acceptance is snapshot/video-driven, not unit-test gates.** The harness under `variant3d/tools/acceptance/` captures, arranges and measures frames; a human makes the verdict. `parity=UNVERIFIED` is printed by `capture_sequence.py` and **always** by `compare_frames.py`. No MAE/RMSE/correlation/histogram/SSIM value, contact sheet or MP4 constitutes donor parity. Unit-test gates are not the acceptance path (HANDOFF §9.19).
+
+> **This worker produced no capture, no frame, no MP4 and no donor A/B.** The commands below are a planned, owner-runnable packet. All currently named images/sequences are read-only evidence from prior workers. Parity stays UNVERIFIED and `blocking_unverified` stays non-empty, so the honest overall verdict today is `RESULT IS NOT GOOD` (W08 §5 / HANDOFF §9.19).
+
+---
+
+## 0. What exists at this pass (read-only inventory) [O]
+
+| Artifact | Path | Role in acceptance |
+|---|---|---|
+| Fresh full snapshots | `inbox/qa/captures/cap_fullport6.png`, `cap_fullport7.png` | 1280×720 port snapshots, seed 20261113, donor backend. `fullport6`: only expected U12 water hard-fail. `fullport7`: explicit `[U4*]` water gate (no scalar source → no water, no grey fallback). Buildings/units render cleanly. |
+| Fresh 3-frame sequence | `inbox/qa/captures/fullport6_seq2_20261113/` | `manifest.json` (status `ok`, 1 view `donor`, 3 frames `frame_0000..0002.png`, 1280×720, `resolution_matches_request=true`, `headless=false`, `capture_semantics="windowed seq = real viewport frames (frame_post_draw)"`, seed 20261113, config SHA `aa857480…202da`, runner ticket 49, `parity=UNVERIFIED`), `contact.png`, `contact.json`, `01_donor/{frame_*.png, seq_index.json, runner_stdout.txt, runner_stderr.txt}`. |
+| Other port evidence | `inbox/qa/captures/{cap_donor_240*.png, cap_mapreuse.png, cap_millsow.png, cap_nationmove.png, cap_palmdesert.png, map_overview_4k.png, map_overview_waterfix.png, contact_*.png, donor_240*.mp4, donor_64_final.mp4}` | Earlier point-in-time candidate-internal images/videos, not A/B frames. `map_overview_4k.png` is 4096×4096 (top-down plan view, diagnostic compositor — §2.1). |
+| Donor frames (read-only) | `%TEMP%\opencode\donor_videos\selected\cZW0AEupCaI\t_*.png` (12 files, confirmed on disk: `t_0, t_60, t_120, t_300, t_600, t_900, t_1200, t_1500, t_1800, t_2100, t_2260, t_2370`) | Third-party H.264 extracts, 1280×720. Direction-of-appearance only; unknown build/map/camera/zoom/compression. |
+| Donor video target | `https://www.youtube.com/watch?v=cZW0AEupCaI` (`Cossacks 3 - GAMEPLAY [PC/HD]`, 40:21.901) | Identity provenance for the above frames. No new frame may be extracted by this worker. |
+| Acceptance harness | `variant3d/tools/acceptance/` (4 scripts + README), `py_compile` + smoke passed (HANDOFF §9.18) | Owner-runnable capture / contact / ROI comparison. |
+
+---
+
+## 1. Donor timestamps and ROIs to use [O]/[D]
+
+Source: `PORT1TO1_video_targets.md` §0.1, §3, §4 (worker's direct reads); `SEQ_WIDE_analysis.md` §3; `SEQ_CLOSE_analysis.md` §4. **Every donor-vs-port line is PORT APPROXIMATION, a direction of appearance, not a threshold.**
+
+### 1.1 Timestamp → scene class (use only these 12; no new extraction)
+
+| File | Video time | Scene class / use |
+|---|---|---|
+| `t_0.png` | 00:00 | town/forest edge, opening meadow; D1 ground, D4 forest |
+| `t_60.png` | 00:01:00 | field + mill town; D6 field, D4 forest |
+| `t_120.png` | 00:02:00 | mature wheat square around windmill; D6 primary |
+| `t_300.png` | 00:05:00 | rocky multi-peak ridge + forest fringe; D3 land-margin grammar, D8 light |
+| `t_600.png` | 00:10:00 | dense mixed conifer belt, red building, mine works; D4 primary |
+| `t_900.png` | 00:15:00 | large golden field, windmill, troop lines, stone blocks; D6/D7 |
+| `t_1200.png` | 00:20:00 | wooden minehead on clustered rock + forest + church; D5 primary, D7 |
+| `t_1500.png` | 00:25:00 | stone city, market/stable blocks; D7 |
+| `t_1800.png` | 00:30:00 | wheat wrapping mill, army, wall, two mines; D5/D6/D8 |
+| `t_2100.png` | 00:35:00 | ridge behind forested middle ground, cavalry mass; D4/D7/D8 |
+| `t_2260.png` | 00:37:40 | **water-candidate NEGATIVE** (uniforms/UI/dark vegetation) |
+| `t_2370.png` | 00:39:30 | **water-candidate NEGATIVE** (battle/woods) |
+
+Second reference `ljlCn4KSSU4` (Raptor, 37:33) is context only for mine/rock integration grammar; no new timestamp is set from it (`PORT1TO1_video_targets.md` §0.1).
+
+### 1.2 Exact re-measure ROIs (1280×720, `[x0,y0,x1,y1)`, origin top-left)
+
+These are locator boxes for same-camera re-shoots, **not thresholds**. The port-side boxes were estimated on older captures (P-WIDE/P-COL/P-NAT/P-DEF/P-SHORE); the human must re-locate them on the fresh captures before measuring. No numeric donor threshold is attached.
+
+| Defect | Donor ROI (donor file) | Port ROI (port capture class) |
+|---|---|---|
+| D1 grass | `t_0.png [400,350,900,650)` meadow; `t_1200.png [400,350,900,600)` inter-rock grass | P-WIDE frame 0020 playfield centre; P-COL `[100,450,600,700)` |
+| D2 water | **none admissible** (`t_2260/t_2370` negatives recorded) | P-WATER-TOP each blob bbox + rim band (blocked) |
+| D3 shore | `t_300.png [640,500,1100,700)` ridge-foot feathering (land-margin grammar only) | P-SHORE block boundary + step fringe; P-WATER-TOP blob rims |
+| D4 forest | `t_600.png [0,60,640,360)` belt + glades; `t_2100.png [0,0,1280,360)` middle ground | P-NAT right belt `[950,80,1280,500)`; P-COL same |
+| D5 mine | `t_1200.png [900,140,1080,290)` hut+apron; `t_1800.png [1060,220,1170,330)` rock pile | P-NAT halos `[230,560,420,650)`, `[280,140,400,210)`, `[1050,440,1190,530)`; P-DEF same |
+| D6 field | `t_120.png [920,140,1280,390)` parcel; `t_1800.png [380,280,910,560)` parcel | P-COL checkerboard `[1080,230,1280,400)`; mill clearing `[1010,180,1130,340)` |
+| D7 buildings | `t_1500.png` market/stable rows; `t_1200.png [400,230,500,330)` church | P-COL church `[540,130,750,380)` + huts |
+| D8 light/shadow | `t_600.png` tree shadows; `t_1800.png` unit shadows on grass | prop bases + halo bands in P-NAT/P-COL; band faces P-WIDE f0000 |
+| D9 camera | all 12 donor frames (oblique grammar) | P-WIDE `capture.json` pose vs donor oblique |
+
+Additional support ROIs reused from the sequence analyses (same donor-direction rule, no threshold):
+- Wide clean grass `[500,500,900,700)` (`SEQ_WIDE` §2.3); wide relief column profiles §2.2; shore plateau f14–18 §2.4.
+- Close interior `x[330,950] y[40,330)`, edge `x[100,1180] y[380,540)`, grass `x[100,1180] y[580,710)` (`SEQ_CLOSE` §1).
+
+**Admissibility:** if any ROI lands on sky/HUD/units/void, or the frame is not 1280×720 non-blank, the dependent read is UNVERIFIED — it is not retried until green (W08 §1, G0-a…e).
+
+### 1.3 Blocked classes — do not score
+
+- **Water colour / level / foam width (PT-V2)** and **shore sand/foam band geometry (PT-V3)**: no certifiable water or land→beach→foam→water frame exists in `t_0…t_2370`; `t_2260/t_2370` are negatives. Status stays **UNVERIFIED / BLOCKED REFERENCE** for this video. Never infer a target from the pale land blobs in `map_overview_waterfix.png` or `map_overview_4k.png`.
+- **PT-V4** exact world-scale tree spacing, **PT-V5** mine/rock placement transform, **PT-V6** native sceneColor/exposure runtime, **PT-V7** field decal under donor blend/mips, **PT-V8** unsampled intervals: all UNVERIFIED with named settling experiments (`PORT1TO1_video_targets.md` §4).
+- **PT-V1** donor parity of any pixel: UNVERIFIED (third-party H.264, no same-camera A/B).
+
+---
+
+## 2. Capture protocol — exact owner-runnable commands
+
+All commands are PowerShell from the repo root:
+`C:\Users\Maxym.Oboyshev\Documents\Craft Anything\cossacks-3-3`.
+
+### 2.0 Non-negotiable runner rules [D]
+
+- Every Godot launch goes through `python variant3d/tools/godot_runner.py run` (FIFO ticket, hard timeout, isolated spool under `variant3d/.godot_queue/`). **Never invoke `godot` directly.** `capture_sequence.py` and `full_map_shot.py --gen-dump` already do this internally.
+- Submit **one** job, wait for its terminal result, inspect status/artifacts, then submit the next. Never re-submit a queued/running ticket; never run a second harness, `record_session.py`, `video_build.py` or a manual Godot alongside a capture.
+- If `python variant3d/tools/godot_runner.py status` shows pending work, a held `godot.lock`, `now_serving != next_ticket`, or any `timed-out|error|skipped`, STOP. Do **not** use `reset`, `doctor`, `cancel`, `unwedge`, result deletion or `--ignore-history` to manufacture a clean run (W05 §6).
+- Use a fresh output subdirectory per run; the harness refuses to overwrite `frame_*.png` from an earlier capture. If `.capture.lock`/`manifest.json` blocks a run, inspect them first; do not delete real captures.
+
+### 2.1 Static preflight (no Godot)
+
+```powershell
+python -m py_compile variant3d/tools/acceptance/imgio.py `
+  variant3d/tools/acceptance/capture_sequence.py `
+  variant3d/tools/acceptance/contact_sheet.py `
+  variant3d/tools/acceptance/compare_frames.py
+python variant3d/tools/godot_runner.py status
+python variant3d/tools/assert_clean.py --json
+Get-Command ffmpeg,ffprobe -ErrorAction SilentlyContinue
+python -c "import PIL; print(PIL.__version__)"
+Test-Path "$env:TEMP\opencode\donor_videos\selected\cZW0AEupCaI\t_600.png"
+```
+
+Accept only `py_compile` exit 0, a quiet/clean runner, ffmpeg + ffprobe + Pillow present (PREP-VIDEO §1), and the donor frames present. Absence of ffmpeg is a hard block for MP4 — `seq_to_mp4.py` returns 0 with only a contact sheet if ffmpeg is missing (PREP-VIDEO §2 trap).
+
+### 2.2 4K overview (whole-map plan view — diagnostic, NOT donor-legal)
+
+`map_overview_4k.png` is a 4096×4096 deterministic whole-map compositor output (confirmed on disk). Produce/reproduce it with `variant3d/tools/full_map_shot.py`: its `--gen-dump` step launches Godot only through the runner (`t2full-*` ids); the compositor itself is headless Python reading `--dump-map` JSON and real port block PNGs.
+
+```powershell
+python variant3d/tools/full_map_shot.py --gen-dump --seed 20261113 `
+  --config variant3d/config_donor_capture.json `
+  --dump "$env:TEMP\opencode\v42\acceptance\map_overview_dump.json" `
+  --out "$env:TEMP\opencode\v42\acceptance\map_overview_4k.png" --tile-px 64
+```
+
+Rules for its use:
+- Fidelity caveat (`full_map_shot.py` header): it reproduces tile choice/placement/season tint/water/resources, **not** Godot's SmoothTiles cross-fade, water shader, lighting, fog or sprites. It is a layout/confrontation diagnostic, not a beauty comparison.
+- Use it only for plan-view questions: water-blob identity/shape, prop-in-water exclusion, shore-ring geometry, whole-map repetition. A 4096×4096 top-down plan view is **not** a donor-legal high three-quarter RTS frame and must never be fed to `compare_frames.py` against a 1280×720 donor frame (resolution refusal) or used to claim water parity.
+- Require the sidecar assertions: `png_width == map_w*tile_px`, `png_height == map_h*tile_px`, actual seed 20261113, and no undisclosed `--tile-px` fallback.
+- The existing `inbox/qa/captures/map_overview_4k.png` and `map_overview_waterfix.png` remain read-only observations; they show pale grey/white blobs with dark rims on flat olive, not a certified water body.
+
+### 2.3 Close/wide sequences via the acceptance harness (port-internal evidence)
+
+`capture_sequence.py` is the only legal harness for serial viewport sequences; it submits to `godot_runner.py run` internally, one view at a time. Default is a **windowed** real viewport capture (`--seq` + `frame_post_draw`). `--headless` captures a CPU map timelapse, **not** viewport frames — never compare a headless map image to a donor gameplay frame.
+
+Prepare two **temp config copies** (the repo config must stay byte-unchanged, §7):
+
+```powershell
+$Acc = Join-Path $env:TEMP 'opencode\v42\acceptance'
+New-Item -ItemType Directory -Force -Path $Acc | Out-Null
+Copy-Item variant3d\config_donor_capture.json (Join-Path $Acc 'wide_config.json') -Force
+Copy-Item variant3d\config_donor_capture.json (Join-Path $Acc 'close_config.json') -Force
+# In close_config.json set ONLY camera.start_zoom = 2.9 (height 20 m, donor-legal min),
+# keep pitch -32, fov 17.27, 1280x720, random_seed 20261113, backend donor.
+# Record both SHA-256 values in the run notes.
+```
+
+Wide + close capture (one call, two views submitted strictly in order):
+
+```powershell
+python variant3d/tools/acceptance/capture_sequence.py `
+  --seed 20261113 --frames 24 --step 1 --label accept1 `
+  --view wide=(Join-Path $Acc 'wide_config.json') `
+  --view close=(Join-Path $Acc 'close_config.json') `
+  --mode seq --timeout 240 --max-wait 3600 `
+  --out inbox/qa/captures/accept1_20261126
+```
+
+Constraints from `capture_sequence.py` (read from source): `--frames` 1..600; `--step` 0.25..30; `seq_seconds = frames * step` must be in [1,600]; `--label` is a slug; view names unique; `--seed` integer or literal `random` (recorded `deterministic=false`); `--view NAME` with no `=` means engine-default/uncontrolled config. A winner early stop records `complete=false` and `seq_index.json` and exits non-zero.
+
+Admissibility gate on the produced `manifest.json` (per frame and per view):
+- `status=ok`, every view `complete=true`, `runner_status=ok`, `runner_exit=0`;
+- `headless=false`, `capture_semantics="windowed seq = real viewport frames (frame_post_draw)"`;
+- `resolution_observed == 1280×720` and `resolution_matches_request==true`; **any 800×600 or CPU-fallback frame is a failed capture** (W05 §0/§1.2: windowed `--seq` reads the root viewport and can silently substitute `_render_headless_image(800,600)`, while `seq_index.json` still says `mode="window"`) — the manifest resolution check is the discriminator;
+- config SHA-256 recorded and equal to the temp copy actually used; seed and backend as requested;
+- per-frame `sha256_file` + `sha256_pixels` present; `parity=UNVERIFIED`.
+
+The already-landed `fullport6_seq2_20261113/manifest.json` satisfies these mechanical checks (3 frames, 1280×720, `resolution_matches_request=true`, runner ticket 49 status `ok`), so it is admissible **as port-internal evidence only** — still no donor A/B.
+
+**Tier B (required for a genuine donor-GPU motion A/B, NOT executed here):** W05 §4.2/§4.3 specifies a COORD-owned `variant3d/tests/t_terrain_motion_capture.gd` atom (real `Screenshot3DViewport`, frozen sim, exact pan, `frame_%04d.png`, outside-repo `capture.json`, donor-backend validation). It is **absent** at this pass; W05's packet intentionally fails fast on the current tree. Under the read-only rule no worker may create it or run it. It stays a named owner task; its absence is one reason parity cannot be claimed.
+
+### 2.4 Donor-GPU A/B is forbidden here
+
+No donor binary was executed, no donor GPU frame captured, no port frame compared by this worker. Under the read-only rule **no donor A/B frame may be produced**. All captures above are port-internal. This is the controlling reason the verdict is UNVERIFIED (§6).
+
+---
+
+## 3. Contact sheets and MP4 assembly
+
+### 3.1 Contact sheets (pixel-preserving by default)
+
+```powershell
+python variant3d/tools/acceptance/contact_sheet.py `
+  --manifest inbox/qa/captures/accept1_20261126/manifest.json `
+  --out inbox/qa/captures/accept1_20261126/contact.png --cols 4 --hash-labels
+```
+
+- Sources from `--frame` (repeatable), `--dir` (with `--pattern`, default `frame_*.png`) and/or `--manifest` (optionally `--view NAME`), de-duplicated and sorted.
+- Default **no rescale**: each frame pasted 1:1, label band above pixels, differently sized frames padded. Sidecar `<out>.json` records `rescaled=false`, `exact_pixels_preserved=true`, source SHA-256 and box. `contact.json` of `fullport6_seq2_20261113` is the landed example.
+- `--fit 320x180` explicitly rescales (label says `RESCALED … <- …`, sidecar `rescaled=true`, `exact_pixels_preserved=false`). Use only for overview slides; never for fine-pattern judging.
+- Without Pillow, `--fit` is refused and labels use the 5×7 fallback font.
+
+### 3.2 MP4 assembly (post-capture only; fail-fast packet from PREP-VIDEO §4)
+
+`seq_to_mp4.py` flags: `--dir`, `--fps` (int, default 10), `--out` (default `<dir>/journey.mp4`), `--contact-only`. It encodes with `-framerate <fps> -i frame_%04d.png -c:v libx264 -pix_fmt yuv420p -crf 20` and writes `<dir>/contact.png`. It **never reads fps from a manifest**; pass fps explicitly from the capture's `capture.json`/`seq_index.json`. It reads four-digit `frame_%04d.png` names (a three-digit `frame_%03d.png` sequence will fail — naming trap).
+
+```powershell
+python variant3d/tools/seq_to_mp4.py `
+  --dir "$env:TEMP\opencode\v42\acceptance\wide240" --fps 6 `
+  --out "$env:TEMP\opencode\v42\acceptance\wide240.mp4"
+python variant3d/tools/seq_to_mp4.py `
+  --dir "$env:TEMP\opencode\v42\acceptance\close64" --fps 8 `
+  --out "$env:TEMP\opencode\v42\acceptance\close64.mp4"
+```
+
+Mandatory guards (PREP-VIDEO §4 / W05 §8.1) — do not trust the tool's exit code:
+1. `Get-Command ffmpeg` preflight; missing ffmpeg returns 0 with only the contact sheet.
+2. `Assert-FrameSet`: count equals manifest frame count and names are contiguous `frame_0000.png…frame_{N-1}.png`.
+3. `Assert-Video`: MP4 exists, non-empty; `ffprobe -count_frames nb_read_frames` equals frame count; duration equals `frame_count/fps` within `max(0.25s, 1/fps)`.
+4. Assert `contact.png` exists after assembly (regenerate with `--contact-only` if absent).
+5. Extract six diagnostic frames at 0/20/40/60/80/100% by exact index `round(p/100*(N-1))`:
+   `ffmpeg -y -loglevel error -i <mp4> -vf "select=eq(n\,IDX)" -fps_mode passthrough -frames:v 1 <diag>\frame_IDX_pPPP.png`
+6. Write a SHA-256 manifest (`VIDEO_SHA256SUMS.json`) enumerating artifacts **before** writing the manifest, outside the repo.
+7. Human review: open `contact.png`, then the six full-resolution diagnostics; confirm the MP4 plays at the declared fps and duration. A clean MP4 built from bad frames is still a failed capture — re-encoding is never a remedy.
+
+---
+
+## 4. ROI metrics — `compare_frames.py`
+
+```powershell
+python variant3d/tools/acceptance/compare_frames.py `
+  --donor "$env:TEMP\opencode\donor_videos\selected\cZW0AEupCaI\t_600.png" `
+  --port inbox/qa/captures/accept1_20261126\01_wide\frame_0000.png `
+  --roi 400,350,500,250 `
+  --roi-source "manual ROI: donor video cZW0AEupCaI t=600, inter-rock/mill-class ground; port side re-located on fresh wide frame (locator only)" `
+  --camera wide `
+  --out-diff inbox/qa/captures/accept1_20261126\diff_t600_wide.png `
+  --report inbox/qa/captures/accept1_20261126\diff_t600_wide.json
+```
+
+Mechanical contract (from source):
+- `--donor`, `--port`, `--roi x,y,w,h`, `--roi-source` (≥10 chars), `--camera` are mandatory. Same pixel box on both frames; no rescaling, no clamping, no guessed alignment. `--roi` needs `x,y>=0`, `w,h>=1`.
+- Refusals (exit 2, no comparison): missing any mandatory arg; ROI outside either frame; **different frame resolutions** (donor 1280×720 vs port must match); and, if both `--config-donor`/`--config-port` are supplied, differing SHA-256. Do not compare the 4096×4096 overview to a 1280×720 donor frame.
+- Output per channel R/G/B: MAE, RMSE, max absolute error, differing-pixel count/fraction, Pearson pixel correlation, histogram correlation/intersection/chi-square, plus exact absolute-difference PNG (`--amplify N` only brightens and is labelled). `overall` gives mean MAE, RMSE across channels, max, differing pixels any channel.
+- Report JSON carries both file SHA-256 values, ROI, `--roi-source`, `--camera`, config paths, `hist_bins`, per-channel/overall metrics, difference-image SHA-256, `parity=UNVERIFIED`, `claim=null`.
+- Optional human assertion: add `--assert-ab-verified "Owner confirmed A/B pairing after viewing both full frames and the contact sheet"`. This prints `claim=owner-supplied` and writes it to the report. **It never promotes `parity=UNVERIFIED` to PASS** and cannot verify donor identity or camera/ROI metadata.
+
+Interpretation rule: these numbers quantify a pair of images. They support the eye's read; they never prove donor parity, and no threshold is defined here (W08 §1 / README honesty contract). Keep metric fields, temporal port-internal observations and donor-direction notes in separate report fields.
+
+---
+
+## 5. Precise conditions under which the result is still UNVERIFIED
+
+A result is UNVERIFIED (and no parity claim is admissible) whenever **any** of the following holds:
+
+1. **No donor GPU A/B frame.** This is the controlling condition at this pass. A third-party H.264 frame from `cZW0AEupCaI` has unknown build/map/camera/zoom/compression; no same-scene/same-camera/same-seed matched pair with a demonstrated match exists (PT-V1, X39 Route D, W05 §7.3). Even an owner-supplied donor PNG is necessary but not sufficient.
+2. **`--assert-ab-verified` used.** The tool records `claim=owner-supplied` but still prints `parity=UNVERIFIED`; it cannot confirm donor identity, camera equality or ROI correctness.
+3. **Only metrics/contact sheets/MP4 exist.** MAE/RMSE/correlation/histogram overlap/SSIM, contact sheets and videos are presentation/support cues, never parity (README §Honesty contract, W08 §1).
+4. **Water or shore scored.** No admissible reference in this video (`t_2260/t_2370` negatives); PT-V2/PT-V3 stay UNVERIFIED/BLOCKED REFERENCE. Do not score water from `map_overview_4k.png` / `map_overview_waterfix.png`.
+5. **ROI lands on sky/HUD/units/void, or the frame is not 1280×720 non-blank** (W08 G0-a…e). Do not retry until green.
+6. **Capture admissibility failure:** any 800×600/CPU-fallback frame, root-viewport read, wrong actual backend/seed/map size, blank frame, non-contiguous or incomplete sequence, script error (stderr), watchdog/timeout, concurrent Godot, or a capture artifact written inside the repo (W05 §8.2).
+7. **MP4 failure:** missing ffmpeg, empty MP4, wrong decoded frame count or duration — exit code alone is not proof (PREP-VIDEO §2).
+8. **Blocking `[U]` non-empty** (§6): `RESULT IS NOT GOOD` while any P0 item is open (HANDOFF §9.18/§9.19, W08 §5). No worker may close a RUNTIME item.
+
+---
+
+## 6. Blocking `[U]` that invalidate a parity claim
+
+Definitive register: `DEC_U_final_register.md` §0 (P0-1…P0-8), §§1–5; HANDOFF §9.19. **P0 = blocks a donor-faithful visible or simulation result.** Every item below has a named zero-mismatch experiment; "close" never counts. All RUNTIME items require an owner-authorised donor GPU/runtime session and are forbidden to workers. Tails (ghost colour/blink, rally TTL, minimap tail, market blend edge, death-smoke TTL, PFX PixelRatio/Interval, tool-attach, `*a` child meshes, score/time-limit absence, team-win policy) are explicitly NOT blocking and must never be promoted. [SUPERSESSION-FIX: point-in-time/historical "team-win policy" tail label, not current — superseded by `DEC_U_scenario_win.md` §5/§7 (donor-verbatim team law); tail status unchanged; parity UNVERIFIED — NO PARITY CLAIM.]
+
+| P0 | Blocking ID(s) | Why it invalidates a parity claim | Terminating experiment (owner, zero mismatches) | Current port state |
+|---|---|---|---|---|
+| P0-1 | **WATER U12** — A (reflection provenance FBO/copy/upload), B/C (size/mips/sampler/unit `C+0xf8`), T (projective matrix + viewport/scissor), S/P (`DiffuseWaves2` alias / pbuffer) | Port **hard-fails** water draw without it (`water3d.gd:520-527`, `bind_reflection_map` null-refusal); no water pixels → no water parity. `cap_fullport6`: U12 hard-fail; `cap_fullport7`: `[U4*]` gate. | GL hooks: `GL_FRAMEBUFFER_BINDING` + FBO/copy/upload call lists (unanimous a/b/c class, 2 frames + move); `glGetTexLevelParameteriv` + filter/wrap + `glUniform1i(reflectionMap)`; dump 4×4 matrix at caller `+0x60` + viewport, level vs pitched; upload-name/pbuffer sweep | No water drawn; no grey fallback. Keep hard-fail. |
+| P0-1b | **WATER U4\*** — ctor defaults vs `water.lib` layer scalars (`C+0x88..+0xc4`, Speed `+0xc4=1.0`); live tuple still `[U]` | Wrong scalar source = wrong water colour/phase; `cap_fullport7` shows explicit gate, so no water can be scored. | Break `FUN_00851bdc`, record `param_2` layer ptr + scalar block; distinguish engine-default vs layer path, identical 2 frames; single layerPtr branch 0→ENGINE / nonzero→FILE, no per-scalar mix (`DEC_U_water_scalar_select.md`) | UNSET gate kept; two verbatim tuples + explicit source gate; no water. |
+| P0-2 | **WATER U1 / U3 / U5 / U6** — shader path DEV/BUILTIN/LEGACY; hmap numerics/identity; `time` writer; UV/winding | Wrong path/numbers/animation phase = wrong water pixels even if U12 lands. | `glShaderSource` hook (PATH/C+0x184/globals/program-hash, 2 draws + move); 4 pushed `hmapMin/Max/W/H` (0 differing bits); `glActiveTexture`/`glBindTexture`/`glGetTexLevelParameteriv` identity; `glUniform1f(time)` ≥3 frames/≥2 s or HW watchpoint on `+0xc8`; vtable `+0x98` UV dump (`max|uv_pred-uv_actual|==0.0`) and index/cull trace | BUILTIN labelled `[D]` default; U12 hard-fail retained; no parity. |
+| P0-3 | **FOW GRID a–e + persistence** — cell size (metres/cell), multi-viewer combine, LOS occlusion, explored-vs-visible persistence/clears, `GetFOWLOSData` sampling | Visibility gates AI, picking and tint vetoes; provisional `1 res = 1 m` driver is not donor. Any pick/tint result is unverifiable until the grid is right. | E-GRID-a…e: single-viewer + fogreveal transects (1.0 + 0.25 steps, visions 0/3/8 → one linear scale k, 0 mismatching cells); overlapping-disc combine + 3-stack removal + team split; hill/forest/wall interposition + rotated 2nd transect; walk-away/player-switch/victory/reload matrix ×2; 0.25 fine sampling with enumerated domain and edge rule ×3 | Labelled provisional driver; no donor grid claim. |
+| P0-4 | **Tick interleave O1a–O1g + driver D1–D3** — plInd rotation, per-player firing rate, global/player/unit/projectile interleave, mod-cohort alignment, section micro-order | `TICK_ORDER v1` is **PORT APPROXIMATION**; wrong order = deterministic simulation divergence, so no behavioural/visual parity claim is possible. | Fixed-seed hash harness (headless fixed-dt, canonical JSON state hash per tick/firing, 12 mixed players, 3600 frames, 3 seeds + restarts) → byte-identical hash sequences, 0 mismatches, single surviving order, losers listed | `TICK_ORDER v1` labelled PORT APPROXIMATION (game.gd). |
+| P0-5 | **Animation blend B1/B2 + completion C1/C2 + triggers W/S/A/R** — blend weight curve `w(t)`, window unit, frame fetch, `acmPlayOnce` hold-vs-return, handler timing, weapon→`attack1/2`, death family, prepare/reaction triggers | No interpolation permitted until bounded; port fetches ONE nearest frame; attack↔idle seam, death hold-vs-return and weapon gating unverified → any motion/animation visual read is unverifiable. | R-B1/R-B2 (`walk 1..20 → idle 64..113` seam, ticks [-2,+10], `(6,8)` vs `(0,0)`, joint/vertex hash, 3/3 byte-identical); R-C1 (`attack1 [99,124]`, `death [115,149]`, 30 Hz); R-C2 (cannon handler offsets); R-W/W2/S/A/R fixed-camera batteries with 3/3 verdicts | No interpolation; one nearest frame; labelled. |
+| P0-6 | **Save container R1a–R1g** — outer container (`.sav` unknown; `.map` `OSWMap13` wrapper `[O]`), float Single-vs-Double + Boolean 0/1, string codepage, transform placement, `victorystate` int table + tails, checksum/trailer | Save is a **PORT EXTENSION** with no byte parity; round-trip determinism only. Cannot claim save/state fidelity. | E-R1a…g paired-save batteries (vary one field → single-word divergence; identical-state re-save bit-compare); until then contract = key-order parity + round-trip determinism, never byte parity; v5 wire unchanged | v5 keys additive-only (game.gd:7097-7125); no byte-parity claim. |
+| P0-7 | **RNG ledger G1** — `round()` Bankers, S-vs-G stream split, per-site draw counts (musket/archer/cannon/`stand`+2/`random1`+4), `uniqrnd`/frnd order, f32/f64 promotion, signed-key0, AI/capture/economy attribution | Wrong stream = desync; even a visually matching frame cannot prove the simulation used donor draws. | Series R20/L20/C300/U50/F1M/K0/A600 vs X21 20-vector oracle `(0x44A108F9,0x00000001)`; exact S sequence `3C6FEF6C…A2C21855`, counts exact, G values count-only, 0 mismatches | `[U]-G1` labelled in game.gd/terrain_donor_inputs.gd; no parity. |
+| P0-8 | **Selection E-U13 + projection V1-SENSOR/V2-PROJ** — distance units, `SortRayCastList` order, engine AABB, FOW veto; sensor width→FOV, near/far/aspect, drag anchor, marquee inside-test, minimap affine/frustum | Wrong pick = wrong sim input; port `FOV 17.27°`, `cull_disabled`, `nearest-single`, depth-tie-break and screen-UV bias are scaffolding. Pick/geometry visuals cannot be certified. | E-U13 pick + V2-BOX/V2-DRAG + V1-SENSOR/V2-PROJ + V2-MINI with ≥5 surveyed points 0 px, clip boundary exact, all rects incl. 1-px edges 0 mismatches, exact-tie + FOW-veto probes | `17.27°` stays APPROX; scaffolding retained. |
+
+Additional RUNTIME-only blockers that feed visual acceptance (from the same register, non-P0 but still `[U]` and parity-invalidating if claimed): terrain seed/randkey derivation (T-SEED/T-CALLBACK), per-sid collision radius/mask census + rotation (E-COLL), damage/FF shot series including `PredictShot` known mismatch (E-DMG/FF), weapon shields/mounts live sim (E-WPN/SHIELD), vision/selection table tails (E-VIS/SEL), skirmish per-sid tables (S-SKIRM), AI build-order/threshold (S-AI-A1–A8), market/upgrades/victory/peace (S-MKT/Q2/VIC/PEACE). Each carries a zero-mismatch experiment in `DEC_U_final_register.md` §§2–4 and may not be closed by a port fallback.
+
+**Render scaffolding that must remain labelled, not claimed as donor:** `sceneColor=0.2` is `[O]` bound, but terrain material floats / light modelview / alpha arithmetic / fog / `glCallList` (W-R1) and the `tiaAlphaFromIntensity` converter arithmetic stay `[U]`; U4 enum, U6 ENABLED, U9 one-list-per-cell, U10 0x48→0x50 map are `[O]` closed. `16×8` atlas packing is a `[U]` PORT APPROX fallback; donor uses per-block 1024² DXT1 (`DEC_U_atlas_layout.md`).
+
+---
+
+## 7. Preserve-only config checks (verify before and after every capture)
+
+Owner rule: all prior user modifications are preserve-only (PORT1TO1_PLAN.md header). `DEC_U_port_guard_audit.md` §3 verdict PASS; the three owner-mod files are **not in `git diff`**. A capture run must not change any of the following; record SHA-256 before and after.
+
+| Check | Exact preserved value / location |
+|---|---|
+| `variant3d/config.json` renderer | `features.terrain.backend = "donor"` (`:29`), `features.terrain.relief_stamps = true` (`:30`), `features.terrain.color_unify = true` (`:31`). Do not flip backend to legacy to make a defect disappear. |
+| `variant3d/config_donor_capture.json` QA flags | `features.terrain.backend = "donor"` (`:31`), `features.terrain.demo_mill = true` (`:32`). `demo_mill` is an owner mod — do not remove. |
+| Water preserve keys (both configs) | `features.water.alpha_confine = true`, `features.water.shore_prox = false` (`config.json:33-36`, `config_donor_capture.json:34-37`). These values are preserved by task; byte-presence confirmed, nothing more. |
+| Camera contract (both configs) | `camera.pitch_degrees = -32.0`, `camera.min_height = 20.0`, `camera.max_height = 58.0`, `camera.start_zoom = 0.3448276`, `camera.fov_deg = 17.27`, `display.window_width/height = 1280/720`, `display.pixels_per_meter = 16.0`. `17.27°` is PORT APPROX / UNVERIFIED — carry the label, do not promote. |
+| Seed / map | `gameplay.random_seed = 20261113`, map 240×240, `render_mode = "3d"`. Pin in both overlay and CLI; verify actual dump/sidecar. |
+| I11 seam | `main.gd:125 terrain_backend := "legacy"`, `:189-191`, guards at `:593-594`/`:1112-1113`; `world3d.gd:147 terrain_backend := "legacy"` and late-switch refusal `:223-227`. **Never re-apply the seam or flip the default.** Backups `main.gd.bak-COORD-I11 = 3859B6056…`, `world3d.gd.bak-COORD-I11 = 44EE96C0…` must remain exact (V102 §Seam). |
+| Manifest owner mods | `variant3d/assets/models/manifest.json` nation move `ukr/buildings`, `commoneur/eur*.osm` aliases, sid `field` → `field1.osm`/`shared/terrain/field` — PRESENT, unmodified. Rollback is id-level removal only, never whole-file restore. |
+| Implementation preserves | demo-mill / fields / builder stands (`game.gd`), v5 save keys additive-only (`game.gd:7097-7125`), shader/mesh opt-ins (`scene_color=vec3(0.2)`, `sampler2DArray tile_array`, `color_unify_gain=vec3(1.0)` neutral, specular zero) — all present. |
+| Preserved donor contradictions — DO NOT "fix" | `TileSmoothPasses=6` (cfg) vs `SmoothTileMap(...,3)` (script): use **3** for skirmish, carry **6** as editor anomaly, runtime consumption of 6 is `[U]`. `tilesmooth.cfg` vs `tilesmooth_scripts.cfg`: port the weighted script table; keep plain table editor-only. `m_swamp_12_old` 17×20 (lib) vs 18×23 (binary): binary authority, quarantine with warning, never abort parse. Port 8 id-mod-64 zeros vs donor `alphanull` 86/110/123: keep sets distinct, port guard stays PORT APPROX. `specular_rgb` effective terrain product `vec3(0)` vs light-only reading: preserve labelled contradiction. `lake_big := plain*2*0` must not be "repaired". |
+| Config hash witness | `fullport6_seq2_20261113/manifest.json` records `config_donor_capture.json` SHA-256 `aa857480474399dc4674104744ea292bf84094d8321cdd4d0889c24cf9a202da`. Compare any new run's config hash against this before treating it as the same capture contract. |
+| Runner hygiene | Never `reset`/`doctor`/`cancel`/`unwedge`, never delete result JSONs or hand-edit status, never `--ignore-history`; ack only with evidence-backed reasons (V102 §3). Temp configs/frames live under `%TEMP%` or `inbox/qa/captures/`; no capture artifact written to `variant3d/`. |
+
+---
+
+## 8. Evidence artifact layout
+
+```
+docs/terrain_swarm_2026-11-26/reports/PORT1TO1_acceptance_plan.md   <-- this planning report (only repo file written)
+inbox/qa/captures/
+  cap_fullport6.png                       # fresh full snapshot; U12 water hard-fail (expected)
+  cap_fullport7.png                       # fresh full snapshot; explicit [U4*] water gate
+  fullport6_seq2_20261113/                # landed 3-frame seq (read-only witness)
+    manifest.json                         # argv, config SHA, per-frame sha256_file/pixels, status=ok, parity=UNVERIFIED
+    contact.png / contact.json            # pixel-preserving sheet + sidecar
+    01_donor/frame_0000.png..frame_0002.png
+    01_donor/seq_index.json               # frames=3, mode=window, seconds=2.0, sim_seconds=2.1875, step=1.0
+    01_donor/runner_stdout.txt / runner_stderr.txt
+  accept1_20261126/                       # NEW per-run directory (owner creates)
+    manifest.json                         # per-view hashes, resolution, runner ticket/status
+    01_wide/frame_0000.png.. + seq_index.json + runner_stdout.txt/stderr.txt
+    02_close/frame_0000.png.. + seq_index.json + runner_stdout.txt/stderr.txt
+    contact.png + contact.json            # from contact_sheet.py (exact, no --fit)
+    diff_t600_wide.png + diff_t600_wide.json   # compare_frames.py per ROI (parity=UNVERIFIED)
+    diff_t1200_mine.png + ...json
+  map_overview_4k.png / map_overview_waterfix.png   # existing plan-view diagnostics (not A/B)
+%TEMP%\opencode\donor_videos\selected\cZW0AEupCaI\   # read-only donor frames t_*.png (12 files)
+%TEMP%\opencode\v42\acceptance\            # owner temp configs + dumps + assembled videos (outside repo)
+  wide_config.json / close_config.json    # copied from config_donor_capture.json; hashes recorded
+  map_overview_dump.json / map_overview_4k.png
+  wide240/frame_%04d.png + capture.json + contact.png ; wide240.mp4 ; wide240_diag/ (0..100%)
+  close64/frame_%04d.png + capture.json + contact.png ; close64.mp4 ; close64_diag/
+  VIDEO_SHA256SUMS.json                   # enumerated BEFORE writing itself
+variant3d\.godot_queue\results\            # runner tickets (e.g. 00000049_acapt-fullport6-donor/stdout.txt,stderr.txt)
+```
+
+Each artifact's permitted claim:
+- `manifest.json` / runner results → capture provenance and self-determinism only.
+- `contact*.png` / MP4 → presentation and temporal port-internal stability only.
+- `diff_*.json` metrics → support cues for a human read; `parity=UNVERIFIED` always.
+- Donor frames → direction-of-appearance only; never an A/B certificate.
+- `map_overview_4k.png` → plan-view layout diagnostic only; never a gameplay/beauty reference.
+
+---
+
+## 9. Owner verdict template (choose exactly one)
+
+```
+PORT APPROXIMATION — internal consistency only; donor parity UNVERIFIED. No donor GPU A/B
+frame exists; this review certifies neither donor fidelity nor a gate pass.
+
+RESULT IS NOT GOOD — <one blocking item, e.g. water U12/U4*, FOW grid a-e, tick interleave,
+animation blend, save container, RNG G1, or absent donor A/B>.
+parity.claim = NONE
+parity.status = UNVERIFIED
+blocking_unverified = <non-empty list from §6>
+```
+
+The alternative (`RESULT IS GOOD — DONOR-GROUNDED STRUCTURE VERIFIED + SELF-CONSISTENT VISUAL; donor parity UNVERIFIED (declared, accepted)`) is admissible **only** when tier-2 G0-a…e checks pass, the required property is visible, the forbidden artifact is absent, metric and visual fields are separated, the reviewer line is verbatim, and no §6 blocker is in the blocking set. Even then, no class reaches "donor parity" — no tier above 2 exists in the vocabulary (W08 §5).
+
+Forbidden phrasing: "matches donor", "close to donor", "donor parity", "similarity %", "donor threshold PASS", "gate PASS" derived from a capture, or treating `--assert-ab-verified` as verification.
+
+---
+
+## 10. Claim register
+
+| # | Claim | Label |
+|---|---|---|
+| 1 | Owner acceptance is snapshot/video-driven; unit tests are not the gate; harness prints `parity=UNVERIFIED` and no metric constitutes parity | [O] README / source |
+| 2 | 12 donor timestamps and the §1.2 ROIs are the only admissible visual targets; water/shore is blocked in this video | [O]/[D] `PORT1TO1_video_targets.md` |
+| 3 | Fresh captures `cap_fullport6/7.png` and `fullport6_seq2_20261113/` exist with the stated manifest fields; they are port-internal evidence | [O] read-only file reads |
+| 4 | The capture/contact/compare/MP4 commands above are exact, owner-runnable, and serialised through `godot_runner.py` | [D] source reads of harness + tools |
+| 5 | No donor A/B frame was produced; parity stays UNVERIFIED; `RESULT IS NOT GOOD` while §6 blockers remain | [U] guard, HANDOFF §9.18/§9.19 |
+| 6 | Every preserve-only value in §7 is byte-preserved in the current tree per `DEC_U_port_guard_audit.md` §3; a capture run must not alter it | [O]/[D] |
+| 7 | This worker wrote exactly one repo file (this report); no code/Godot/git/donor execution occurred | [O] scope |
+
+*End of PORT1TO1_acceptance_plan. Read-only planning; exactly one repository file written. No donor GPU A/B frame produced; parity UNVERIFIED; no approximation and no parity claim.*

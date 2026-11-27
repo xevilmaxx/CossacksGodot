@@ -80,6 +80,36 @@ extends Node3D
 #   per sid, decodes its DXT5 alpha, and applies the donor mix formula per
 #   pixel. PORT APPROXIMATION — NOT DONOR PARITY: the recovery is CPU-side,
 #   no donor render is compared, and visual result stays UNVERIFIED.
+#
+# BLDDEATH-1TO1 / IMPL-DEATH-FAMILIES (2026-11-26) — DONOR DEATH ART IS PRESENT.
+#   DEC-U death_families §3/§5: all 12 mapped families ship the same 4-file set
+#   (<base>_death1/2.osm + attach/<base>_death1a/2a.osm) bound by the same
+#   7-slot actor/attach actor + Mesh[5..6]=debris prop pattern, driven by ONE
+#   selector (settagstates.inc:32-53, deathstage1/2.inc, ontagstates.inc:264-311).
+#   IMPL-BUILDING-DEATH derived eurmil; IMPL-DEATH-FAMILIES now derives the other
+#   11 families (cen/hou/bar/sta/bla/aca/art/dip/sto/mar/tow) through the same
+#   approved convert_models.py functions (read_osm/write_obj_exact/write_mtl),
+#   driven externally. variant3d/assets/models/buildings/{models,tex}/ holds
+#   DERIVED OBJ/MTL/PNG; manifest.json records donor paths+SHA256 and keeps
+#   visual_parity_claim:false. No donor bytes copied, no donor binary executed,
+#   no art synthesised, no eurmil mesh reused for another sid. The 660 B
+#   eursto/eurtow attach stubs are converted as-is and keep [U]-STUB + R-STUB.
+#   Shared stage rule (settagstates.inc:32-53): death forces visual stage_0,
+#   then DeathStage1 after deathtime_0=30 forces stage_1, then DeathStage2 after
+#   deathtime_1=30 destroys; each :264-311 pass swaps the base -> _death1/_death2,
+#   child0 -> ...a + debris, clears misc children, hides 1..n-1. Birth-death
+#   forces stage_1 immediately (:34-39). The two 30s are STAGE TIMERS, never a
+#   visual/smoke TTL; their wall-clock base stays [U] U14 (E-U14-ttl).
+#   DEC-U smoke_burn_ttl B1: donor attaches ZERO smoke at death. Damage smoke is
+#   pre-death HP/count-driven, max 1 per 7th progresstick, roll-gated, parented
+#   to misc/'point', gated not bdead (nothing.inc:19,293) -> no attach after
+#   death; stop is event-driven (MyGameObjectPFXClear ontagstates.inc:88 +
+#   misc-child EffectClear :289-298 + stage transition + holder destroy), never
+#   a timed TTL. B2: explosion = grenadeexp + expflash (PUEXPBUILDINGDEATH),
+#   replacing the old 'explode' stand-in. B5: death sound deathbuilding1/2 is
+#   recovered and wired as labelled data (timing [U] until E-U14-snd); burn1..7
+#   stays registered-but-unbound, NOT wired.
+#   NO donor/port A/B frame exists: visual parity UNVERIFIED, NOT CLAIMED.
 
 const OBJ_DIR: String = "res://assets/models/obj/"
 const GLB_DIR: String = "res://assets/models/glb/"
@@ -195,15 +225,16 @@ const PORT_LABEL: String = "PORT APPROXIMATION — NOT DONOR PARITY"
 # donor-parity skeletal deformation and the rendered result is UNVERIFIED.
 const ANIM_STATUS: String = "DONOR-SAMPLED FLAT-ROOT MORPH — " + PORT_LABEL + " (V7-2 3.3/4.3 Table B1: .oss bone parents unreadable; flat-root skin via anim3d.gd.pose_for; visual UNVERIFIED)"
 const MORPH_POSE_SOURCE: String = "donor_flat_root_morph"   # anim3d.gd:96
-const MORPH_ACTION_MAP: String = "dead->death / build|repair->construct when measured speed < gate / moving->walk / else idle (PORT policy over donor AAF names anim3d.gd:63-82; UNVERIFIED)"
-# B_ANIM_DIAG2 refresh (2026-11-25): the shipped peasant skin NOW exports
-# construct frames [186,188,191,193,196,198] (skin/peasant.json:1
-# actions.construct, via convert_skins.py:80-81 DEFAULT_ACTIONS). A stationary
-# build/repair order therefore resolves 'construct' to real donor frames; the
-# old "no construct frames / snap to death 149 / attack0 237" claim is stale.
-# Gather/resow/carry/attack still have no branch and resolve to idle/walk.
-# No parity claim.
-const CONSTRUCT_SKIN_STATUS: String = PORT_LABEL + " — 'construct' selected for build/repair; shipped peasant skin exports construct frames [186,188,191,193,196,198] (skin/peasant.json:1 actions.construct, convert_skins.py:80-81); pose_for resolves construct without death/attack0 snap; gather/resow/carry/attack still resolve to idle/walk (no branch); visual UNVERIFIED"
+const MORPH_ACTION_MAP: String = "dead->death / build|repair->construct / attack order + bullet weapon->attack1 then attack0, explicit donor attack2/attack2before/after request->attack2 family (weapon gating [U] U2) / gather|resow->work<food|wood|stone>, carry->idle<res> stationary | walk<res> moving / explicit donor 'reaction' request->reaction / moving->walk / else idle; every branch gated by anim3d.has_action(sid,action) with donor-style fallback chain (attack2→attack1→attack0→idle), never a silent substitution of another sid's clip; donor state→AAF map [U] U2, visual UNVERIFIED (DEC-U-AAF-ART C3)"
+# DEC-U-AAF-ART C1/C3 (2026-11-26): shipped skins now export each sid's OWN
+# donor AAF windows, including construct [186,188,191,193,196,198] for the 9
+# peasant sids and the work/carry/reaction/prepare0/unprepare0 rows from the
+# same per-sid AAF (convert_skins.py C1, index.json actions_requested = 40
+# names). Gather/resow/carry/attack/reaction branches therefore read real
+# exported windows where the sid declares them; a sid's missing action still
+# records a per-sid DATA GAP instead of borrowing another unit's clip.
+# No donor parity is claimed and no art is synthesised.
+const CONSTRUCT_SKIN_STATUS: String = PORT_LABEL + " — 'construct' selected for build/repair when the resolved sid exports it; frames come from that sid's own AAF (convert_skins.py C1 / skin index); work/carry/reaction/attack2* windows are exported where the sid's AAF declares them, never synthesized; donor state→AAF trigger map [U] U2; peasant tool-mesh attach wired per DEC_U_tool_attach.md §2.1/§5 C4 (hammer actorInd 3); [U]-T-A/T-B fixed-camera captures open; visual UNVERIFIED"
 
 # NATION-MODEL-01 — honest labels for the nation mesh selector. Both are
 # presentation only; neither claims donor visual parity.
@@ -238,21 +269,290 @@ const NATION_PEASANT_SIDS: Dictionary = {
 # stage/ghost art stays nation-blind. No parity claim; visual UNVERIFIED.
 const NATION_STAGE_GHOST_BLOCKED_STATUS: String = PORT_LABEL + " — BLOCKED: nation-specific construction-stage/ghost art unavailable on disk; base stage/ghost mesh reused; NOT a nation stage render; visual UNVERIFIED"
 
-# MOTION-ANIM-01 — presentation-only fixes for the VID-AN-01 faults. Every
-# number and rule here is a PORT APPROXIMATION over MEASURED sim values; none
-# is a donor-authored animation constant and no donor parity is claimed.
+# MOTION-ANIM-01 — presentation-only fixes for the VID-AN-01 faults. The
+# MEASUREMENT of sim displacement is port policy over observed sim values;
+# no visual parity is claimed.
 #   VID-AN-01 §3: unit 10 moves 0.357..0.450 m per 0.375 s capture for f00..f07
 #   (~0.95..1.20 m/s) then ~0.0005 m (~0.001 m/s) f08..f15 while `moving` stays
-#   true. A 0.15 m/s gate is 6x below the slowest measured march and 150x above
-#   the measured stall: it swaps a stopped unit off the donor walk cycle.
+#   true. The old 0.15 m/s gate was port-invented; PORT1TO1-ENT1TO1 replaces it
+#   with the donor MoveStep-derived rate below (D6), not a visual claim.
 #   DANIM-01 §4.2 documents the donor state map; its blending is authored as
 #   minFrameBlend=6 / maxFrameBlend=8 (unit.script:10846-10847) but the engine
 #   semantics are UNVERIFIED (DANIM-01 §4.3/§9 Q3), so the clamp below is NOT a
 #   donor blend reproduction.
-const WALK_SPEED_GATE_M_S: float = 0.15
-const YAW_MAX_RATE_RAD_S: float = 0.7853981633974483  # 45 deg/s, PORT APPROX
-const MOTION_GATE_STATUS: String = PORT_LABEL + " — walk/idle chosen from MEASURED SIM displacement per sync; donor state map DANIM-01 §4.2 readable, donor blend semantics UNVERIFIED"
-const YAW_CLAMP_STATUS: String = PORT_LABEL + " — PORT APPROX per-sync yaw clamp; donor ACL minFrameBlend=6/maxFrameBlend=8 semantics UNVERIFIED, no donor parity claim"
+# PORT1TO1-ENT1TO1 (D6/D7) — the old 0.15 m/s gate and 45 deg/s clamp were
+# port-invented. Donor literals are now the constant SOURCE; the measurement
+# gate / presentation clamp themselves remain port policy until the donor state
+# map is decompiled ([U] U2 / U1).
+const DONOR_MOVE_STEP_M: float = 0.03                 # refunit.prop:176 MoveStep
+const DONOR_MOVE_STEP_INTERVAL_S: float = 0.025       # refunit.prop:177 MoveStepInterval=25 ms
+const WALK_SPEED_GATE_M_S: float = DONOR_MOVE_STEP_M / DONOR_MOVE_STEP_INTERVAL_S  # 1.2 m/s [D]
+const DONOR_TURN_STEP_DEG: float = 10.0                # refunit.prop:190 TurnStep
+const DONOR_TURN_STEP_INTERVAL_S: float = 0.05        # refunit.prop:191 TurnStepInterval=50 ms
+const YAW_MAX_RATE_RAD_S: float = (DONOR_TURN_STEP_DEG * PI / 180.0) / DONOR_TURN_STEP_INTERVAL_S  # 200 deg/s [D]
+const MOTION_GATE_STATUS: String = PORT_LABEL + " — walk/idle chosen from MEASURED SIM displacement; gate constant now donor-derived from MoveStep 0.03 m / 25 ms (refunit.prop:176-177); donor state→action map [U] U2; blend semantics UNVERIFIED"
+const YAW_CLAMP_STATUS: String = PORT_LABEL + " — rate now donor-derived: TurnStep 10 deg / 50 ms = 200 deg/s (refunit.prop:190-191); final-angle wrap constants 0/+180/-180 and sub_890d34 argument contract [U] U1 (PORT1TO1_objects_anim_collisions_fx.md §2.4/§6 U1); no donor parity claim"
+const YAW_FINAL_TURN_STATUS: String = "UNVERIFIED [U] U1 — _xf() keeps the 2D-bake PI/2-face offset because donor direction/up (0,1,0)/(1,0,0, refunit.prop:247-270) and the renderer final turn (sub_4cb27c, 0x4cb368/0x4cb36c/0x4cb370) have no recovered argument contract; no rotation is invented"
+
+# DEC-U-AAF-ART C3 — prop state -> AAF selection by PER-SID availability and a
+# donor-style fallback chain. Donor AAF names are [O] (peaukr.aaf:3-20,
+# musketeer.aaf:7, grenadier.aaf:28-30). Work/carry/reaction/attack2* are no
+# longer absent from every shipped skin: C1 exported them from each sid's own
+# AAF. The state->action map and bullet->attack1 / attack2 choice remain [I]
+# with decomp target [U] U2 (DEC_U §1.2/§4); no donor completion behaviour is
+# claimed. Tool attach is now wired from DEC_U_tool_attach.md §2.1 through
+# anim3d.attach_for(); no clip, frame, value or nation's tool is invented.
+const ACTION_SELECTION_STATUS: String = PORT_LABEL + " — per-sid AAF availability gate + donor-style fallback chain; attack order weapon-gated (attack2→attack1→attack0→idle); work*/carry*/reaction resolved from the sid's own exported windows where declared, else explicit per-sid DATA GAP; state→AAF map and weapon/order gating [U] U2; tool-mesh attach driven by the resolved token per DEC_U_tool_attach.md §2.1/§5 C4; [U]-T-A/T-B fixed-camera captures open; visual UNVERIFIED"
+const AAF_ATTACK2_TOKENS: Array = ["attack2", "attack2before", "attack2after"]
+const DONOR_FALLBACK_STATUS: String = "UNVERIFIED [U] U2 — donor _unit_IsAnimationExists fallback (unit.script:11048-11051,11092-11093) and attack2→attack0→idle chain (DEC_U §5 C3) carried as an ORDER of candidate AAF names; which states fire them is not recovered; no parity claim"
+const ATTACK_ORDER_TYPES: Array[String] = ["attack", "attackmove", "attackground", "guard", "patrol"]
+
+# ── DEC-U-TOOL-ATTACH / IMPL-TOOL-WIRING — one donor tool child per peasant ──
+# Donor slot order from dmscript.global:928-934 + unit.script:6991-7012; the
+# action->tool map itself is read from index.entries[sid].attach.action_tool_map
+# (never duplicated here), and anim3d.attach_for() resolves port "attack" to
+# donor "attack0" through ACTION_ALIAS before the lookup.
+const TOOL_ACTOR_INDEX: Dictionary = {
+	"axe": 0, "bag": 1, "cart": 2, "hammer": 3,
+	"hoe": 4, "lumber": 5, "pick": 6,
+}
+# units.mat:18-19: peaaustools -> data/materials/units/peaaustools.dds, ONE
+# shared tool texture for all 8 nations. The approved offline DDS->PNG path
+# (bake_sprites.py:497 converts the same DDS for the 2D bake) is the canonical
+# importable location; a missing PNG degrades to the labelled plain material,
+# never to a body texture or another nation's art.
+const TOOL_MATERIAL_PATH: String = "res://assets/models/tex/shared/land_units/peaaustools.png"
+const TOOL_MATERIAL_CITE: String = "data/materials/units/units.mat:18-19 → peaaustools.dds (shared by all 8 attach sets); variant3d/tools/bake_sprites.py:497 (approved DDS→PNG); DEC_U_tool_attach.md §1.3"
+const TOOL_ATTACH_STATUS: String = PORT_LABEL + " — one MeshInstance3D tool child on the resolved peasant, driven by the already-resolved action token through DEC_U_tool_attach.md §2.1; donor actorInd axe=0/bag=1/cart=2/hammer=3/hoe=4/lumber=5/pick=6; material peaaustools via approved DDS→PNG; identity relative transform (no donor offset/rotation/scale keys exist); unmapped actions hide the child; visual UNVERIFIED"
+const TOOL_GAP_STATUS: String = PORT_LABEL + " — DATA GAP: attach slot missing/not exported/no body frame; tool child hidden with per-sid label, never a body mesh and never another nation's tool (DEC_U_tool_attach.md §4)"
+# Both [U] items stay OPEN and keep their fixed-camera close-up captures with a
+# zero-mismatch termination criterion. Nothing here closes either one.
+const TOOL_U_STATUS: String = "UNRESOLVED [U]-T-A/T-B — T-A: donor runtime child-0 swap/visibility trace, fixed camera close-up per action, log (actionWindowFrame, actorInd, visible, mesh) over FULL windows, terminate at 0 mismatches vs DEC_U_tool_attach.md §2.1; T-B: port 3D tool-mask pixel diff = 0 per action window at the same donor frame index plus occlusion parity, hidden cases 0 tool pixels. No same-camera A/B exists; no parity claim; no synthesized art"
+
+# DEC-U-AAF-TRIGGERS / IMPL-U-AAF-TRIGGERS — STATIC donor-selector wiring.
+# anim3d.gd's resolve_donor_action(sid, fields) is the ONLY new selector entry.
+# It walks the donor set-site branch order (hide T26 -> death T21 ->
+# extract/build/attack T1-T7 -> carry T8-T13 -> weapon-state T14-T17 ->
+# sticky readback T18-T20) and gates the concrete token with has_action(sid,
+# token) — the runtime mirror of _unit_IsAnimationExists (unit.script:369-373,
+# :10888). A miss is a labelled gap; the preserved port chain below is the
+# fallback, never a substitution. Per-site blend intent ("0,0" bypass vs
+# "6,8" deferred) is LOGGED ONLY: the engine operator stays [U]-B / R-B and
+# no interpolation is performed. Completion stays [U]-C1/C2 with clamp-at-last
+# labelled (R-C1/R-C2). No donor parity is claimed.
+const DONOR_TRIGGER_STATUS: String = PORT_LABEL + " — donor set-site selector resolved through anim3d.gd.resolve_donor_action(sid,fields) in donor branch order T26->T21->T1-T7->T8-T13->T14-T17->T18-T20; per-site blend 0,0/6,8 is LOGGED INTENT ONLY (engine operator [U]-B / R-B, no interpolation); existence gate has_action(sid,token) mirrors _unit_IsAnimationExists (unit.script:369-373,10888); completion [U]-C1/C2 clamp-at-last stand-in; orphans explicitly labelled, explicit anim_action only; no donor parity claim"
+# Orphan / readback-only / vocabulary-only tokens (DEC-U T23-T25, §1.1) are
+# CLASSIFIED, never selected. `reaction`, `attack2before/after`, `walk1`
+# (donor-dead name), `prepare*/unprepare*/trans*/walkprepare*/walkunprepare*`
+# (readback-only) and `turn*/collide*` (vocabulary-only) have NO donor set-site.
+# anim3d.gd.is_donor_orphan_token()/donor_orphan_note() label them; the resolver
+# returns token="" for T23-T25. The only port path stays the explicit,
+# availability-gated, gap-recorded anim_action DATA request (DEC-U §7 F7).
+const DONOR_TRIGGER_ORPHAN_STATUS: String = PORT_LABEL + " — T23 attack2before/after, T24 reaction, T25 prepare*/trans* readback-only: NO donor set-site, NO invented selector, explicit anim_action DATA request only, availability-gated + gap-recorded; walk1 (T16 dead name) never requested by the resolver; turn*/collide* vocabulary-only; captures R-W/R-R/R-A required before any auto-trigger; [U]-A/R/W"
+
+# DEC-U-STATE-MAP (2026-11-26) §6 F1-F9 — donor-settled facts as LABELS/TELEMETRY
+# ONLY. F1 keep resolver branch order; F2 keep the deliberate empty-request -> false
+# port guard (donor _unit_IsAnimationExists empty -> true is a NO-OP, not idle);
+# F3 keep resolver-first + intent-only blend; F4 keep T4 build/repair-order tag ->
+# construct (NO donor Build state; aix sets bBlend=True then the same 0,0 switch);
+# F5 keep carry chain and never request walk1; F6 keep explicit-index-first weapon;
+# F7 keep explicit-only orphan path + gap chains; F8 keep stateless walk/idle (T18-T20
+# sticky readback stays dormant until R-S); F9 keep the death branch (weapon split is
+# [U]-W2, not invented here). No branch, trigger, completion hook or parity claim is
+# added; the canonical 26-row per-site table and the 194-AAF per-sid family table
+# live in anim3d.gd (DONOR_STATE_MAP_ROWS / DONOR_SID_FAMILIES), exposed there.
+const DONOR_STATE_MAP_LABEL: String = PORT_LABEL + " — DEC-U-STATE-MAP §1.1 corrected scoping [O]: Nothing is the ONLY readable unit engine state (nothing.inc:1-13); Work/Construct/Attack are ACL completion events (not states) each ending SwitchTo('Nothing'); NO Build state/handler/constant exists — build/repair is order gc_obj_order_type_build/repair + action tag gc_statetag_action_build -> construct (T4, unit.script:10877). Full T1-T26 blend/gate/loop-or-clamp/advancing-event table + 194-AAF per-sid family availability are telemetry in anim3d.gd. Nine [U] captures R-W/W2/S/A/R/C1/C2/B/T stay open; no parity claim."
+const DONOR_STATE_MAP_COMPLETION_LABEL: String = PORT_LABEL + " — DEC-U-STATE-MAP §1.3/§2 completion-event effects [O], LABEL ONLY, NONE fired by this module: death -> OnDeath -> delayed DeathStage1 after gc_unit_deathtime_0 (unit.script:11075,11085; all four OnState*Reached cleared :10811-10816; artillery <basename>_death prop reload :11096-11099; 0.7+random*0.6 desync :11103); Attack -> ...Attack damage/cost/pause/projectile per weapind (onaclanimationreachedattack.inc:15-29,54-110) + ...AttackEnd re-issues _unit_TryAttack(trg,True) (:9-12) -> SwitchTo('Nothing'); Work -> res HP / resamount+1 on gainres (...work.inc:9,15-51) -> SwitchTo('Nothing') :59; Construct -> buildprogress/hp or repair HP on build/repair (...construct.inc:9,23-43) -> SwitchTo('Nothing') :51. [U]-C1/C2 clamp stands; no completion event invented."
+# BLDDEATH-1TO1 / IMPL-DEATH-FAMILIES: death art is PRESENT/DERIVED for all 12
+# mapped families, not absent. No parity claimed (manifest visual_parity_claim:false).
+const BUILDING_DEATH_STATUS: String = PORT_LABEL + " — donor death art PRESENT/DERIVED for all 12 mapped families (eurmil + cen/hou/bar/sta/bla/aca/art/dip/sto/mar/tow): each <base>_death1/2.osm + attach/<base>_death1a/2a.osm converted through the approved convert_models.py into assets/models/buildings (manifest visual_parity_claim:false); [U]-STUB eursto/eurtow 660 B attach stubs converted as-is, no eurmil reuse, no synthesis. Stage = floor(hp/maxhp*4) / wall 1+stage div 3 (ontagstates.inc:240-259); shared settagstates.inc:32-53 rule: death -> visual stage_0 (_death1), DeathStage1 after deathtime_0=30 -> stage_1 (_death2), DeathStage2 after deathtime_1=30 -> destroy; each pass :264-311 swaps mesh, child0->...a + debris, hides 1..n-1, clears misc children; birth-death forces stage_1 immediately (:34-39). ZERO smoke on the death edge; stop is event-driven (MyGameObjectPFXClear :88 + misc EffectClear :289-298 + stage transition + holder destroy). Explosion grenadeexp+expflash (PUEXPBUILDINGDEATH); sound deathbuilding1/2 as labelled data. 30/30 are STAGE TIMERS, NEVER a visual TTL; time base [U] U14; visual UNVERIFIED"
+const BLD_DEATH_DIR: String = "res://assets/models/buildings/"
+const BLD_DEATH_MANIFEST: String = BLD_DEATH_DIR + "manifest.json"
+# Port sid -> donor actor stem (DEC_U_death_families.md §3/§5). One stem per
+# generic port sid; the EUR aliases eursto/eurmar/eurtow resolve to the same
+# donor bases, so no separate alias row is needed. A sid without a stem gets
+# no death art and no invented mesh.
+const BLD_DEATH_STEMS: Dictionary = {"mil": "eurmil", "cen": "ukrcen", "hou": "ukrhou", "bar": "ukrbar", "sta": "ukrsta", "bla": "ukrbla", "aca": "ukraca", "art": "ukrart", "dip": "ukrdip", "sto": "eursto", "mar": "eurmar", "tow": "eurtow"}
+# Damage-smoke donor key. It is kept ONLY as a labelled key for a future
+# HP-driven pre-death damage-smoke path (nothing.inc:43-82, gated not bdead).
+# It is NEVER attached on the death edge: donor attaches 0 smoke at death and
+# clears all holders via MyGameObjectPFXClear (ontagstates.inc:88) plus
+# misc-child BehaviourClear/EffectClear (:289-298).
+const BLD_DEATH_SMOKE_KEY: String = "buildingsmoke"
+# Donor death-schedule stage timers: gc_building_deathtime_0/_1 = 30
+# (dmscript.global:183-184) schedule DeathStage1 -> DeathStage2 -> destroy
+# (settagstates.inc:32-53, deathstage1.inc:7-11, deathstage2.inc:8-15; mine x2
+# at settagstates.inc:46-48). THESE ARE STAGE TIMERS, NEVER A VISUAL/SMOKE TTL.
+# The port advances them with the already-labelled
+# Data.DEC_U_BUILDING_DEATHTIME_S_SHOWN (30 x FRAMES_TO_TIME); that conversion
+# is [I] and the real time base stays [U] U14 (E-U14-ttl). No value is invented
+# here and no stage timer is passed to any effect life/TTL argument.
+const BLD_DEATH_STAGE_TIMER_UNITS: int = 30
+# Explosion payload recovered statically (DEC_U_smoke_burn_ttl §4): the
+# PUEXPBUILDINGDEATH projectile visual is 'grenadeexp' (weapon.script:275,367;
+# fx.tree:215-252) and _unit_DoExplosion tails with 'expflash' (unit.script:11509;
+# fx.tree:397-414). The old 'explode' stand-in is superseded; no parity claim.
+const BLD_DEATH_EXPLOSION_KEYS: Array[String] = ["grenadeexp", "expflash"]
+const BLD_DEATH_EXPLOSION_STATUS: String = "UNVERIFIED [U]-EX — STATICALLY resolved: PUEXPBUILDINGDEATH fx 'grenadeexp' (weapon.script:275,367, fx.tree:215-252) + _unit_DoExplosion tail 'expflash' (unit.script:11509, fx.tree:397-414) on the recovered ontagstates.inc:309-311 gate; old port 'explode' stand-in removed. Spawn positions/rates [U] U14; no visual/sound parity claim"
+const BLD_DEATH_BURN_STATUS: String = "UNVERIFIED [U]-BURN — donor damage smoke is HP/count-driven, max 1 attach per 7th progresstick, roll-gated, parented to misc/'point', both branches gated not bdead (nothing.inc:15,19,31-115,293,336-419); ZERO attaches at/after death; stop is event-driven (MyGameObjectPFXClear ontagstates.inc:88 + misc-child BehaviourClear/EffectClear :289-298 + stage transitions + holder destroy), NOT a timed TTL. No duration/loop count invented; E-U14-burn capture required"
+# Death sound key recovered (gc_snd_ind_deathbld=53 -> deathbuilding1..2,
+# sound.script:128-129, requested at ontagstates.inc:84-85 gated non-weakwall).
+# Wired as labelled DATA only: this module records the key/status; the port's
+# death-event path already plays deathbuilding1 (main.gd:1795-1797). Timing is
+# UNVERIFIED until E-U14-snd; burn1..7 is registered-but-unbound and NOT wired.
+const BLD_DEATH_SOUND_KEY: String = "deathbuilding1"
+const BLD_DEATH_SOUND_STATUS: String = "UNVERIFIED [U]-BURN-SND — deathbuilding1/2 key recovered (sound.script:128-129, ontagstates.inc:84-85) and recorded as labelled data; played by the existing death-event path (main.gd:1795-1797), timing [U] until E-U14-snd; burn1..7 registered-but-unbound, NOT wired"
+
+# ── DEC-U-UNIT-DEATH-ART / IMPL-UNIT-DEATH (2026-11-26) ──────────────────────
+# Donor-settled UNIT death facts from DEC_U_unit_death_art.md §2/§3/§6, added as
+# presentation mirrors, labels and telemetry. NOTHING here claims donor visual
+# parity (no same-camera donor/port A/B exists). No art, TTL, roll or sound value
+# is invented; the six [U] captures E-T/C/A/W/S/X keep their zero-mismatch
+# termination criteria. The building-death / FX / ghost-blink / capture edits
+# above are left byte-identical.
+
+# U1 — weapon-tag -> death AAF clip with exists-fallback (ontagstates.inc:580-590,
+# unit.script:11086-11093). Acceptance is checked against the RESOLVED sid's OWN
+# shipped AAF through anim3d.has_action(); a miss falls back to plain `death`, a
+# second miss is recorded as a per-sid DATA GAP (never another sid's clip).
+const DONOR_DEATH_ACTION_BY_WEAPON: Dictionary = {
+	"none": "death", "0": "death0", "1": "death1", "2": "death2",
+}
+const DONOR_DEATH_ACTION_FALLBACK: String = "death"
+# [O] cited AAF death windows, recorded as DATA (never synthesised, §3.1/P10).
+const DONOR_DEATH_AAF_WINDOWS: Dictionary = {
+	"peaukr": {"death": [115, 149]},
+	"hussar": {"death": [49, 119]},
+	"musketeer": {"death": [433, 495], "death1": [498, 559], "death0": [564, 628]},
+	"cannon_death": {"death": [1, 33]},
+	"frigate": {"death": [1, 280]},
+}
+
+# U2 — artillery prop reload `<base>_death` (ontagstates.inc:593-596). Material
+# stays the BASE albedo (e.g. `cannon`), cycles `<base>_death`, single "death"
+# clip (cannon_death.aaf [1,33]). Infantry/cavalry: NO prop reload/mesh swap.
+const DONOR_ARTILLERY_DEATH_BASES: Array[String] = [
+	"cannon", "howitzer", "mortar", "multicannon", "framegun",
+]
+const DONOR_ARTILLERY_DEATH_PROP_SUFFIX: String = "_death"
+const DONOR_ARTILLERY_DEATH_MATERIAL: String = "base_albedo"  # NOT debris
+
+# U3 — infantry-only +/-55 deg scatter and visual-only anim-speed desync
+# (DoDeath + ontagstates.inc:~599). The donor Random/RandomExt stream stays [U]
+# (no generator/seed is known): only the BANDS are recorded, no value is drawn
+# by this module. Cavalry/artillery/ships do not roll.
+const DONOR_DEATH_ROLL_MIN_DEG: float = -55.0
+const DONOR_DEATH_ROLL_SPAN_DEG: float = 110.0
+const DONOR_DEATH_DESYNC_BASE: float = 0.7
+const DONOR_DEATH_DESYNC_SPAN: float = 0.6
+const DONOR_DEATH_ROLL_STATUS: String = PORT_LABEL + " — [O] inf only: GameObjectMyRoll(-55+random*110) deg; IntervalFactor=0.7+random*0.6 (visual only, NOT a stage delay); donor Random stream [U], no value fabricated; visual UNVERIFIED"
+
+# U4/U5 — corpse visual law (deathstage1/2/3.inc). Key 'death' is a SEPARATE
+# effect from the placement ghost's 'blink' (DEC_U_ghost_blink §2) and must
+# never reuse GHOST_OK/BAD_ALPHA. Ships skip BOTH fades (alpha stays 1).
+const DONOR_CORPSE_FADE_KEY: String = "death"
+const DONOR_CORPSE_FADE_ALPHAS: Array = [1.0, 0.4, 0.0]  # DS1 1->0.4, DS3 0.4->0
+const DONOR_CORPSE_FADE_FLAGS: Dictionary = {
+	"use_color": false, "use_alpha_channel": true, "loop": false,
+	"blend": "bmTransparency", "zwrite": true, "ztest": true,
+	"face_culling": "fcCull", "recurse_children": true,
+}
+const DONOR_CORPSE_SINK_NODES: int = 10
+const DONOR_CORPSE_SINK_STEP_M: Dictionary = {
+	"inf": 0.05, "cav": 0.05, "art": 0.125, "ship": 0.625,
+}  # 10 nodes -> 0.5 / 0.5 / 1.25 / 6.25 m [D]
+const DONOR_CORPSE_SINK_SPEED: Dictionary = {
+	"land": 0.011, "art": 0.022, "ship": 0.055,
+}  # 0.022*2.5 ship, x speedFactor/10 (engine operator [U])
+const DONOR_CORPSE_VISUAL_STATUS: String = PORT_LABEL + " — [O] DS1 fade 1->0.4 (key 'death', UseAlpha/NoColor, Loop=False, bmTransparency, ZWrite/ZTest, fcCull, children recursed), DS2 10-node lsmBezierSpline sink 0.05/0.125/0.625 + DeltaTime->0.99 kick, DS3 fade 0.4->0, DS4 BehaviourClear + RequestToDestroy; ships skip fades; curve [U] E-C; ghost 'blink' keys NOT reused; visual UNVERIFIED"
+
+# U6 — ships: `_death1` -> `_death2` + `<parent>_deathNa` child visible, children
+# 1..n-1 hidden, PARENT ship material. The donor `debris` assignment exists only
+# as a COMMENTED-OUT line (ontagstates.inc:992) beside a yacht hard-code, so a
+# ship corpse in this port gets NO debris material.
+const DONOR_SHIP_DEATH_SIDS: Array[String] = [
+	"frigate", "chaika", "ferry", "fishboat", "galley",
+	"battleship", "xebec", "yacht", "yachttur",
+]
+const DONOR_SHIP_DEATH_SUFFIX_STAGE0: String = "_death1"
+const DONOR_SHIP_DEATH_SUFFIX_STAGE1: String = "_death2"
+const DONOR_SHIP_DEATH_CHILD_SUFFIX: String = "a"
+const DONOR_SHIP_DEATH_MATERIAL_STATUS: String = PORT_LABEL + " — [O] attach child keeps the PARENT ship material (e.g. frigate); `SetGameObjectMaterialNameByHandle(child,'debris')` is a COMMENTED-OUT line (ontagstates.inc:992) with a yacht parent-actor hard-code; no debris on ship corpses; swap frame/anim [U]-S / E-S; visual UNVERIFIED"
+
+# U7 — `_unit_DoExplosion` gate (unit.script:11420ff). Land units never explode;
+# grenadeexp/expflash are building/ship-death FX only. DoDeath runs
+# MyGameObjectPFXClear first -> zero smoke/debris/ghost attaches on the edge.
+const DONOR_UNIT_EXPLOSION_GATE: String = "(bbuilding and usage<>weakwall) or (bship and usage<>fisher)"
+const DONOR_UNIT_DEATH_EXPLOSION_KEYS: Array[String] = ["grenadeexp", "expflash"]
+const DONOR_UNIT_DEATH_FX_STATUS: String = PORT_LABEL + " — [O] gate buildings (non-weakwall) / ships (non-fisher) only; LAND corpse = 0 explosion, 0 smoke, 0 debris, 0 ghost (MyGameObjectPFXClear + P9 negative grep); grenadeexp/expflash compositions unchanged from the building lane; NO PARITY CLAIM"
+
+# U10 — death sounds [O] sound.script:127-136. Land plays once at death entry;
+# ship only on the `none`-entry; hide-branch and unbuilt ships stay silent.
+const DONOR_UNIT_DEATH_SOUNDS: Dictionary = {
+	"inf": "deathinf", "cav": "deathcav", "art": "deathart", "ship": "deathship",
+}
+const DONOR_UNIT_DEATH_SOUND_STATUS: String = PORT_LABEL + " — [O] deathinf1-6 / deathcav1-6 / deathart1-2 / deathship x3 samples; played at death ENTRY, not at stage fires; ship only when iOldEssential=none and built; hide/unbuilt-ship silent; binding [U]-X / E-X; NO PARITY CLAIM"
+
+# U11 — corpse removal is the DS1->DS4 chain (BehaviourClear + RequestToDestroy
+# after `_3`/`_3ship`), never sim `dead=true` alone. The wall-clock clock is
+# [U]-T, so no stage timer is converted or fabricated here.
+const DONOR_UNIT_DEATH_DESTROY_STATUS: String = PORT_LABEL + " — [O] DS4 BehaviourClear + GameObjectRequestToDestroyByHandle after gc_unit_deathtime_3(_ship); OnDestroy re-fires OnDeath iff not bdead; hide-branch destroys directly after `_3`; DS1->DS4 wall-clock [U]-T pending E-T, no invented seconds"
+
+# U9 companion — the state-map completion label above is left BYTE-IDENTICAL;
+# these are the appended donor death facts it asked for once U8 landed.
+const DONOR_UNIT_DEATH_COMPLETION_LABEL: String = PORT_LABEL + " — DEC-U-STATE-MAP §1.3 completion label APPEND (DEC-U-unit-death §6 U9): death -> OnDeath -> DS1 after gc_unit_deathtime_0 (2 land / 10 ship) -> DS1 fade 1->0.4 after _1 (20) -> DS2 sink after _2 (20 / 30 art / 35 ship) -> DS3 fade 0.4->0 after _3 (4 / 30 ship) -> DS4 destroy; DS1/DS2/DS3 dispersion land-only `(2,2+t] / [t/6,t) / (2,2+t]`, art+ships skip it; 0.7+random*0.6 desync is anim-speed only; time base [U]-T, no seconds claimed"
+
+const DONOR_UNIT_DEATH_ART_STATUS: String = PORT_LABEL + " — DEC-U-unit-death-ART §2/§6: LAND = same mesh, weapon-gated death/death0/1/2 + exists-fallback, inf-only +/-55 deg roll, 0.7+random*0.6 desync, PFX cleared, ZERO debris/ghost/smoke/explosion; ART = <base>_death prop reload with base-albedo material + single death clip [1,33]; SHIP = _death1->_death2 + ...a child, parent material (debris line commented out), explosion+deathship on none-entry only; TTL DATA in world3d_fx.gd DONOR_UNIT_DEATH_TTL (2/20/20/30/4/10/10/35/30, [U]-T); no art/TTL/roll invented; six [U] E-captures keep zero-mismatch termination; visual UNVERIFIED"
+
+# PORT1TO1-ENT1TO1 (D9) — exact donor LOD [O] actors/ref/refobj.actor:36-52 and
+# :88-105. Mesh LOD is 0..150; shader LOD and child pool are 0..2500 with
+# ChildPoolMax=2500 / DistanceMax=2500. The metre meaning of these donor
+# distances and the per-sid overrides remain [U] U5; no value is invented.
+const DONOR_LOD_MESH_MIN_DIST: float = 0.0       # refobj.actor:93 DistanceMin
+const DONOR_LOD_MESH_MAX_DIST: float = 150.0     # refobj.actor:94 DistanceMax
+const DONOR_LOD_SHADER_MIN_DIST: float = 0.0     # refobj.actor:46 MinDistIM
+const DONOR_LOD_SHADER_MAX_DIST: float = 2500.0  # refobj.actor:49 MaxDistIM / :52 DistanceMax
+const DONOR_LOD_CHILD_POOL_MAX: int = 2500       # refobj.actor:39 ChildPoolMax
+const LOD_STATUS: String = PORT_LABEL + " — donor ranges 0..150 mesh / 0..2500 shader+pool applied as visibility/meta on each batch; donor distance→Godot metre scale and per-sid LOD overrides [U] U5; VisibilityCulling=vcInherited (refobj.actor:59-60); visual UNVERIFIED"
+# PORT1TO1-ENT1TO1 / D25 — per-instance material state. Key colour on building
+# + children is already donor-sourced (13 slots, misc.script:5070). Season
+# material index selection (UseableSummer/WinterMaterials, eurmil.prop:16-18)
+# and scaffold/debris child material binding are [U] U10/U14; no per-batch
+# material is invented.
+const MATERIAL_STATE_STATUS: String = PORT_LABEL + " — key colour (13 donor slots) retained; UseSeasonMaterial summer/winter index [U] U10, scaffold/debris material + death child [U] U14; inventory owner must supply donor art; visual UNVERIFIED"
+
+# PORT1TO1-ENT1TO1 (D23/D21/D22/D24) — donor collision data, [O]+[D], exposed
+# here as the donor-authoritative source. This module does NOT own the blocked
+# circle (game.gd:set_blocked_circle), the radius table (data.gd), pick margin
+# (game.gd:pick_radius/picking3d.gd) or LOS (picking3d.gd) — those files are
+# OUTSIDE this worker's authorization. No mask grid, tag or ray test is
+# invented here; U12 (mask origin/rotation) and U13 (octree LOS) remain
+# explicit decomp targets in the implementation bible §6.
+const DONOR_UNIT_RADIUS_M: Dictionary = {
+	"default": 0.375,          # 10 px / 53.3333 px/tile * 2 m/tile, dmscript.global:665
+	"horse": 0.5625,           # 15 px, :666
+	"artillery": 0.5625,       # 15 px, :667
+	"formation_default": 0.30, # 8 px, :677
+	"formation_horse": 0.45,   # 12 px, :678
+	"fishboat": 1.5,           # 40 px, :668
+	"ferry": 2.625,            # 70 px, :669
+	"yacht": 1.3125,           # 35 px, :670
+	"yachttur": 1.875,         # 50 px, :671
+	"chaika": 1.6875,          # 45 px, :672
+	"galley": 3.0,             # 80 px, :673
+	"frigate": 3.375,          # 90 px, :674
+	"xebec": 3.0,              # 80 px, :675
+	"battleship": 3.375,       # 90 px, :676
+}
+const DONOR_COLLISION_TAGS: Dictionary = {
+	"none": 0, "bridge": 10, "building": 80, "terrain": 101, "water": 87,
+	"waterborder": 110, "landborder": 109, "stretchland": 85, "wall": 95,
+}  # dmscript.global:83-92 [O]; renderer enum 3 is NOT donor water tag 87
+const DONOR_UNIT_AABB: Dictionary = {
+	"min": [-0.25, -0.10, -0.25], "max": [0.25, 0.90, 0.25],
+	"sphere": 0.32, "inertia_radius": 0.16, "uncollide_delta": 0.05,
+}  # refunit.prop:73-121 [O], donor Z-up metres
+const COLLISION_MODEL_STATUS: String = PORT_LABEL + " — donor radii/tags/AABB are [O]+[D] from dmscript.global/refunit.prop; building masks are per-.prop 0/1 grids with 0.5-map-cell cells (eurmil.prop:45-53, engcen.prop:45-60, dmscript.global:178), NOT an ink-box circle; mask origin/rotation [U] U12, octree/AABB LOS and ctpoEqual/ctpoGreater priority [U] U13; port blocked-circle/radius/pick/LOS callers are outside this file's authorization and remain unchanged"
 
 # MILLFIX (2026-11-24) — rotor + field visuals. AUTHORIZED EXCEPTION to the
 # V7-14 "no assets/models/anim" rule in this file's header: this ticket
@@ -393,7 +693,7 @@ const FIELD_CROP_FOOTPRINT_STATUS: String = PORT_LABEL + " — 49 existing crop 
 const BUILD_STAGE_STEPS: int = 4                          # donor number, unit.script:6596
 const BUILD_WALL_MAX_STAGE: int = 2                       # donor number, ontagstates.inc:247-248
 const BUILD_STAGE_SUFFIXES: Array[String] = ["1", "2", "3", "4"]  # ontagstates.inc:240-251
-const BUILD_STAGE_LABEL: String = PORT_LABEL + " — donor floor(progress*4) / wall 1+stage div 3 selector; converted <sid>1..4 OBJ bound when present (per-stage manifest bbox), base donor mesh reused otherwise; visual UNVERIFIED"
+const BUILD_STAGE_LABEL: String = PORT_LABEL + " — donor floor(hp/max_hp*4) / wall 1+stage div 3 selector (unit.script:6583-6596, ontagstates.inc:240-251); converted <sid>1..4 OBJ bound when present (per-stage manifest bbox), base donor mesh reused otherwise; visual UNVERIFIED"
 const BUILD_SCAFFOLD_LABEL: String = PORT_LABEL + " — donor stage-synced scaffold auto-child (engcen.prop:72-112); converted <sid>1a..4a OBJ bound and visible when present, hidden structural placeholder otherwise; visual UNVERIFIED"
 
 # Deliberately UNTYPED: the integration seam passes the live C3Game (a Node)
@@ -410,9 +710,26 @@ var _slot: Dictionary = {}          # entity id -> {"key":String,"index":int,"cl
 var _refs: Dictionary = {}          # entity id -> entity Dictionary (sim object, read-only)
 var _nodes: Dictionary = {}         # building id -> MeshInstance3D
 var _rotors: Dictionary = {}        # MILLFIX: building id -> MillRotor_<id> child
+# DEC-U-TOOL-ATTACH: ONE tool MeshInstance3D child per peasant unit id, plus
+# donor-vert meshes keyed by sid|tool|donor frame and the shared tool material.
+var _unit_tools: Dictionary = {}        # unit id -> Tool_<sid>_<id> MeshInstance3D
+var _tool_mesh_cache: Dictionary = {}   # sid|tool|f<frame> -> ArrayMesh (donor verts only)
+var _tool_material: Material = null     # peaaustools via approved DDS->PNG
 # BUILD-STAGES-01: presentation mirrors only, never written back to the sim.
 var _build_scaffolds: Dictionary = {}   # building id -> Scaffold_<sid>_<id> child
 var _stage_mesh_cache: Dictionary = {} # sid|suffix|kind -> {"mesh":Mesh,"source":String}
+# BLDDEATH-1TO1: presentation mirrors only, never written back to the sim.
+var _death_mesh_cache: Dictionary = {}  # sid|suffix|kind -> derived death art info
+var _death_prev: Dictionary = {}        # id -> {"dead":bool,"finished":bool,"stage":int}
+var _death_materials: Dictionary = {}   # derived debris/scaffold texture+material cache
+# DEC-U-unit-death §6 U7/U10: presentation-only unit death-edge mirrors. These
+# never write to the sim; the first-sight flag is the labelled [U] proxy for the
+# donor `iOldEssential=none` entry (no such state exists in this port's API).
+var _unit_death_prev: Dictionary = {}   # unit id -> bool (was already dead)
+var _unit_death_fx_fired: Dictionary = {}  # unit id -> bool (gated FX fired once)
+# world3d_fx.gd sibling (same add_child'd world Node3D as anim3d.gd), found once.
+var _fx = null
+var _fx_checked: bool = false
 # MOTION-ANIM-01/ROTOR: one warning per process, even with many mills. Never
 # reset in bind(): the fallback is a project/import state, not a per-game state.
 var _rotor_fallback_warned: bool = false
@@ -428,6 +745,18 @@ var _anim_t: float = 0.0
 # id -> {"pos": Vector2, "t": float}: last SIM position/anim-clock sampled in
 # sync(), used to MEASURE displacement speed instead of trusting `moving`.
 var _motion_sample: Dictionary = {}
+# PORT1TO1-ENT1TO1: "sid|action" -> count of donor AAF actions that exist in the
+# unit's own AAF but are absent from its shipped skin export. Diagnostic only.
+var _action_gaps: Dictionary = {}
+# DEC-U-AAF-TRIGGERS: "sid|tid|token|blend|OK|GAP" -> count of statically
+# resolved donor selector outcomes, and "sid|tid|chain-as-tried" -> count of
+# misses. Intent-only diagnostics (DEC-U §7 F3/F9): they never drive a pose,
+# a blend interpolation or a completion event. No donor parity is claimed.
+var _donor_trigger_intents: Dictionary = {}
+var _donor_trigger_gaps: Dictionary = {}
+# token -> anim3d donor_orphan_note() for explicit DATA requests only. Label
+# only: no selector, no fallback, no auto-trigger (DEC-U T23-T25).
+var _donor_orphan_labels: Dictionary = {}
 # id -> float: yaw-smoothed SIM face (radians, wrapped to -PI..PI). PORT APPROX.
 var _face_smooth: Dictionary = {}
 # id -> int: donor frame actually bound to a mesh batch, so a frozen sim can
@@ -491,10 +820,31 @@ func bind(g) -> void:
 	_motion_sample.clear()
 	_face_smooth.clear()
 	_applied_pose_frame.clear()
+	_action_gaps.clear()
+	_donor_trigger_intents.clear()
+	_donor_trigger_gaps.clear()
+	_donor_orphan_labels.clear()
 	_rotors.clear()
+	# DEC-U-TOOL-ATTACH: drop the previous game's tool children/meshes/materials.
+	for uid in _unit_tools.keys():
+		var old_tool = _unit_tools[uid]
+		if old_tool is Node and is_instance_valid(old_tool):
+			(old_tool as Node).free()
+	_unit_tools.clear()
+	_tool_mesh_cache.clear()
+	_tool_material = null
 	# BUILD-STAGES-01: rebuild presentation mirrors from the new game.
 	_build_scaffolds.clear()
 	_stage_mesh_cache.clear()
+	# BLDDEATH-1TO1: rebuild derived death mirrors from the new game.
+	_death_mesh_cache.clear()
+	_death_prev.clear()
+	_death_materials.clear()
+	# DEC-U-unit-death: drop the previous game's unit death-edge mirrors.
+	_unit_death_prev.clear()
+	_unit_death_fx_fired.clear()
+	_fx = null
+	_fx_checked = false
 	_field_visual.clear()
 	for fid in _field_decals.keys():
 		var decal = _field_decals[fid]
@@ -606,8 +956,35 @@ func bind(g) -> void:
 		"donor_morph_action_map": MORPH_ACTION_MAP,
 		"motion_gate_label": MOTION_GATE_STATUS,
 		"motion_walk_gate_m_s": WALK_SPEED_GATE_M_S,
+		"motion_walk_gate_label": MOTION_GATE_STATUS,
 		"motion_yaw_clamp_label": YAW_CLAMP_STATUS,
 		"motion_yaw_max_rate_rad_s": YAW_MAX_RATE_RAD_S,
+		"motion_yaw_final_turn_label": YAW_FINAL_TURN_STATUS,
+		# PORT1TO1-ENT1TO1 — donor telemetry, no parity claim.
+		"action_selection_label": ACTION_SELECTION_STATUS,
+		"action_selection_fallback_label": DONOR_FALLBACK_STATUS,
+		"action_selection_attack2_tokens": AAF_ATTACK2_TOKENS.duplicate(),
+		"construct_skin_label": CONSTRUCT_SKIN_STATUS,
+		"action_selection_gaps": _action_gaps.duplicate(true),
+		# DEC-U-AAF-TRIGGERS: additive telemetry only; every pre-existing key
+		# (death-art, AAF action-map, v5 save seam) is left untouched.
+		"donor_trigger_selector_label": DONOR_TRIGGER_STATUS,
+		"donor_trigger_orphan_label": DONOR_TRIGGER_ORPHAN_STATUS,
+		# DEC-U-STATE-MAP — additive LABEL/TELEMETRY only; no behaviour change.
+		"donor_state_map_label": DONOR_STATE_MAP_LABEL,
+		"donor_state_map_completion_label": DONOR_STATE_MAP_COMPLETION_LABEL,
+		"donor_trigger_intents": _donor_trigger_intents.duplicate(true),
+		"donor_trigger_gaps": _donor_trigger_gaps.duplicate(true),
+		"donor_trigger_orphans": _donor_orphan_labels.duplicate(true),
+		"donor_lod_label": LOD_STATUS,
+		"donor_lod_mesh_range": [DONOR_LOD_MESH_MIN_DIST, DONOR_LOD_MESH_MAX_DIST],
+		"donor_lod_shader_range": [DONOR_LOD_SHADER_MIN_DIST, DONOR_LOD_SHADER_MAX_DIST],
+		"donor_lod_child_pool_max": DONOR_LOD_CHILD_POOL_MAX,
+		"donor_material_state_label": MATERIAL_STATE_STATUS,
+		"donor_collision_label": COLLISION_MODEL_STATUS,
+		"donor_unit_radius_m": DONOR_UNIT_RADIUS_M.duplicate(true),
+		"donor_collision_tags": DONOR_COLLISION_TAGS.duplicate(true),
+		"donor_unit_aabb": DONOR_UNIT_AABB.duplicate(true),
 		"motion_frozen_refresh_label": "PORT APPROX — frozen sim (measured speed below gate) still re-samples pose and rebinds the batch mesh; visual confirmation UNVERIFIED",
 		"donor_morph_normals": "generated from morphed donor faces (donor .oss emits positions only); tangents unset - UNVERIFIED",
 		"no_2d_sprite_sheets": true,
@@ -646,8 +1023,17 @@ func bind(g) -> void:
 		# BUILD-STAGES-01 telemetry (structural/numeric only, no visual claim).
 		"build_stage_label": BUILD_STAGE_LABEL,
 		"build_stage_visual": "UNVERIFIED",
-		"build_stage_rule": "floor(clamp(progress/build_time,0,1)*4) -> suffix 1..4; unit.script:6596, doprogressorders.inc:84, ontagstates.inc:240-251",
+		"build_stage_rule": "floor(clamp(hp/max_hp,0,1)*4) -> suffix 1..4; unit.script:6583-6596, ontagstates.inc:240-251 (PORT1TO1-ENT1TO1 D10: progress/build_time removed)",
 		"build_stage_wall_rule": "sid 'wal': 1 + stage div 3 -> suffix 1..2; ontagstates.inc:247-248",
+		"build_death_stage_rule": "floor(hp/max_hp*4) read directly from hp/max_hp, wall 1+stage div 3; ontagstates.inc:240-259; NOT build_time",
+		"build_death_art_manifest": BLD_DEATH_MANIFEST,
+		"build_death_art_status": BUILDING_DEATH_STATUS,
+		"build_death_burn_status": BLD_DEATH_BURN_STATUS,
+		"build_death_explosion_status": BLD_DEATH_EXPLOSION_STATUS,
+		"build_death_schedule_rule": "settagstates.inc:32-53 — death forces visual stage_0 (_death1), DeathStage1 after deathtime_0=%d -> stage_1 (_death2), DeathStage2 after deathtime_1=%d -> destroy; birth-death forces stage_1 immediately (:34-39); STAGE TIMERS, NOT a visual TTL; time base [U] U14" % [BLD_DEATH_STAGE_TIMER_UNITS, BLD_DEATH_STAGE_TIMER_UNITS],
+		"build_death_sound_key": BLD_DEATH_SOUND_KEY,
+		"build_death_sound_status": BLD_DEATH_SOUND_STATUS,
+		"build_death_explosion_keys": BLD_DEATH_EXPLOSION_KEYS.duplicate(),
 		"build_stage_scaffold_label": BUILD_SCAFFOLD_LABEL,
 		"build_stage_obj_sids": stage_obj_sids,
 		"build_scaffold_obj_sids": scaffold_obj_sids,
@@ -692,6 +1078,24 @@ func bind(g) -> void:
 		"decor_mine_scale": ENV_SCALE["mine"],
 		"decor_mine_jitter_band": "none",
 		"decor_mine_ground_disc": MINE_DISC_STATUS,
+		# DEC-U-unit-death §6 telemetry (structural/label only; no visual claim).
+		"unit_death_art_status": DONOR_UNIT_DEATH_ART_STATUS,
+		"unit_death_visual": "UNVERIFIED",
+		"unit_death_land_rule": "same mesh; weapon-gated death/death0/1/2 + exists-fallback; inf-only +/-55 deg roll; 0.7+random*0.6 desync; PFX cleared; 0 debris/smoke/ghost/explosion",
+		"unit_death_artillery_rule": "<base>_death prop reload, base-albedo material, single death clip [1,33]",
+		"unit_death_ship_rule": "_death1 -> _death2 + <parent>_deathNa child, parent material (debris commented out at ontagstates.inc:992), explosion+deathship on none-entry only",
+		"unit_death_weapon_map": DONOR_DEATH_ACTION_BY_WEAPON.duplicate(),
+		"unit_death_aaf_windows": DONOR_DEATH_AAF_WINDOWS.duplicate(),
+		"unit_death_roll_status": DONOR_DEATH_ROLL_STATUS,
+		"unit_death_visual_law": DONOR_CORPSE_VISUAL_STATUS,
+		"unit_death_ship_material_status": DONOR_SHIP_DEATH_MATERIAL_STATUS,
+		"unit_death_fx_status": DONOR_UNIT_DEATH_FX_STATUS,
+		"unit_death_explosion_gate": DONOR_UNIT_EXPLOSION_GATE,
+		"unit_death_sound_keys": DONOR_UNIT_DEATH_SOUNDS.duplicate(),
+		"unit_death_sound_status": DONOR_UNIT_DEATH_SOUND_STATUS,
+		"unit_death_destroy_status": DONOR_UNIT_DEATH_DESTROY_STATUS,
+		"unit_death_completion_label": DONOR_UNIT_DEATH_COMPLETION_LABEL,
+		"unit_death_ttl_source": "world3d_fx.gd DONOR_UNIT_DEATH_TTL (DATA ONLY, [U]-T, no seconds invented)",
 	}
 	push_warning("world3d_entities: " + ANIM_STATUS)
 
@@ -1705,40 +2109,523 @@ func _find_anim():
 	return _anim
 
 
-# PORT-LEVEL state -> donor AAF name policy, NOT a donor statement. All three
-# names exist in anim3d.gd AAF_ACTIONS (:64 idle, :66 walk, :67 death) and are
-# taken from data/animations/aaf/peaukr.aaf:3-5. The sim fields are the same
-# ones the 2D renderer reads (t_entities3d.gd:118/124, game.gd entities).
-# No keyframe is invented: the actual frame and verts come from pose_for().
-#
-# MOTION-ANIM-01: `moving` alone is not a motion measurement. VID-AN-01 §3/§5
-# measured `moving:true` at ~0.001 m/s for f08..f15 while the donor walk frame
-# kept cycling, so walk is now gated on displacement measured in sync(). The
-# measured speed is supplied by the caller; speed < 0 means "not measured", in
-# which case the V7-74 `moving` fallback is kept for direct/stub callers.
+# DEC-U-AAF-ART C3 — prop state -> donor AAF selection by PER-SID availability
+# with a donor-style fallback chain (_unit_IsAnimationExists,
+# unit.script:11048-11051,11092-11093; attack2→attack0→idle, DEC_U §5 C3).
+# Every donor-named branch is gated by anim3d.has_action(sid,...) reading that
+# sid's OWN shipped AAF export (C1). No state->AAF trigger is invented: the
+# only extra hook is an explicit `anim_action` DATA request on the entity,
+# kept [U] U2 (DEC_U §1.2/§4). A missing action is recorded in _action_gaps,
+# never replaced by another sid's clip. `moving` alone is not a motion
+# measurement (VID-AN-01 §3/§5): measured speed wins; speed < 0 keeps the
+# direct/stub-caller fallback unchanged.
+# DEC-U-AAF-TRIGGERS adds a PURE static resolver attempt ahead of this chain:
+# no sim mutation, no frame interpolation, no orphan selector. See
+# DONOR_TRIGGER_STATUS / DONOR_TRIGGER_ORPHAN_STATUS for the carry labels.
 func _unit_action(ed: Dictionary, speed: float = -1.0) -> String:
-	if bool(ed.get("dead", false)):
-		return "death"
-	# BUILD-ANIM-DIAG-01 §5 step 1 — donor build state tag maps to AAF
-	# 'construct' (dmscript.global:13,926; unit.script:10877;
-	# data/animations/aaf/peaukr.aaf:17). The 2D sibling already does this
-	# (world.gd:489-490). PORT APPROXIMATION: only when the measured speed is
-	# below the MOTION-ANIM-01 gate — a builder still travelling keeps 'walk'.
-	# Dead-first priority and every other branch below stay byte-identical.
 	var od = ed.get("order", null)
+	var otype := ""
 	if od is Dictionary:
-		var otype := str((od as Dictionary).get("type", ""))
-		if otype == "build" or otype == "repair":
-			if speed >= 0.0:
-				if speed < WALK_SPEED_GATE_M_S:
-					return "construct"
-			elif not bool(ed.get("moving", false)):
-				return "construct"
-	if speed >= 0.0:
-		return "walk" if speed >= WALK_SPEED_GATE_M_S else "idle"
-	if bool(ed.get("moving", false)):
-		return "walk"
-	return "idle"
+		otype = str((od as Dictionary).get("type", ""))
+	var measured: bool = speed >= 0.0
+	var moving: bool = (speed >= WALK_SPEED_GATE_M_S) if measured else bool(ed.get("moving", false))
+	var sid := str(ed.get("sid", ""))
+	var dead: bool = bool(ed.get("dead", false))
+	var explicit := str(ed.get("anim_action", ""))
+	# DEC-U-AAF-TRIGGERS: STATIC donor resolver attempt, in the donor's own
+	# set-site branch order (hide T26 -> death T21 -> extract/build/attack
+	# T1-T7 -> carry T8-T13 -> weapon-state T14-T17 -> sticky readback T18-T20;
+	# anim3d.gd:1356-1440). The resolver is PURE and gates every concrete token
+	# with has_action(sid,token) (_unit_IsAnimationExists, unit.script:369-373,
+	# :10888): an orphan row (T23-T25) or a hide row returns token="", never an
+	# invented selector. A miss is recorded with the donor chain as tried; the
+	# preserved C3 port chain below stays the fallback, never a substitution.
+	# A live explicit DATA request keeps its C3 precedence (the ONLY path for
+	# orphans); donor death keeps its existing precedence over explicit.
+	# DEC-U-STATE-MAP §6 F1/F3 [O]: the branch order and resolver-first placement
+	# are KEPT verbatim; the full T1-T26 blend/gate/loop-or-clamp/advancing-event
+	# table is LABEL/TELEMETRY ONLY (anim3d.gd DONOR_STATE_MAP_ROWS). Blend "0,0"
+	# vs "6,8" is logged intent, not an applied operator ([U]-B / R-B).
+	if explicit == "" or dead:
+		var dres := _resolve_donor_action(sid, ed, speed, otype)
+		var dtok := str(dres.get("token", ""))
+		if dtok != "":
+			_record_donor_trigger_intent(sid, str(dres.get("tid", "")), dtok,
+				str(dres.get("blend", "")), true)
+			return dtok
+		if bool(dres.get("attempted", false)):
+			var rd = dres.get("resolved", {})
+			if not (rd is Dictionary):
+				rd = {}
+			var rdd := rd as Dictionary
+			var tid := str(rdd.get("trigger_id", ""))
+			var mtok := str(rdd.get("token", ""))
+			_record_donor_trigger_intent(sid, tid, mtok,
+				str(rdd.get("blend", "")), false)
+			_record_donor_trigger_gap(sid, tid, _donor_trigger_chain(tid, mtok))
+	# DEC-U-STATE-MAP §6 F9 [O]: donor selects death/death0/death1/death2 by
+	# iWeapon with a weapon-token -> plain death fallback (unit.script:11086-11093),
+	# then DoDeath -> delayed DeathStage1 after gc_unit_deathtime_0 (:11075,:11085).
+	# The weapon split stays a LABEL until R-W2 lands ([U]-W2); this branch is
+	# unchanged and no token is invented.
+	if dead:
+		# IMPL-UNIT-DEATH §6 U1 [O]: resolve the death clip by the LIVE weapon
+		# tag with an exists-fallback to plain `death`, gated on this sid's OWN
+		# AAF census. No clip is invented; a miss is a labelled per-sid gap.
+		return _donor_death_action(sid, ed)   # ontagstates.inc:580-590 / :264-311
+	# Explicit donor action request carried as DATA. No sim-state -> AAF table
+	# for reaction/attack2 was recovered ([U] U2), so none is invented here.
+	# Orphan allow-list (DEC-U T23 attack2before/after, T24 reaction,
+	# T25 prepare*/trans*/walkprepare*/walkunprepare* readback-only; plus
+	# turn*/collide* vocabulary-only and the donor-dead walk1): NO donor
+	# set-site, no selector and no fallback invented on this path.
+	if explicit != "":
+		_label_donor_orphan(explicit)
+		if _action_available(sid, explicit):
+			return explicit
+		if explicit in AAF_ATTACK2_TOKENS:
+			var atk2 := _donor_action_fallback(sid, ["attack2", "attack1", "attack0", "idle"])
+			if atk2 != "":
+				return atk2
+		_record_action_gap(sid, explicit, "idle", "")
+	# build/repair -> construct (dmscript.global:13,926; unit.script:10877;
+	# peaukr.aaf:17). A builder still travelling keeps its travel action.
+	# DEC-U-STATE-MAP §6 F4 [O]: this is the T4 order/action-tag row
+	# (gc_obj_order_type_build/repair + gc_statetag_action_build -> construct), NOT
+	# a Build engine state — no Build state/handler/constant exists. The aix mirror
+	# sets bBlend=True at ontagstates.inc:297,317 then funnels to the same 0,0
+	# early-out (:329-358). LABEL ONLY: no behaviour change here.
+	if (otype == "build" or otype == "repair") and not moving \
+			and _action_available(sid, "construct"):
+		return "construct"
+	# work / carry family (peaukr.aaf:8-16). C1 exports these windows from each
+	# sid's own AAF; the state ordering mirrors world.gd:521-537 (port [O],
+	# donor trigger [U] U2). Every candidate is availability-gated; a miss is
+	# a per-sid DATA GAP, never donor truth and never a foreign sid's clip.
+	# DEC-U-STATE-MAP §6 F5 [O]: T8-T13 are the res x move matrix
+	# (unit.script:10898-10923 + mirror :367+). `walk1` is a donor-dead name and is
+	# never requested; the animidle existence re-check before carry idles stays
+	# dormant until R-S proves dwell ([U]-S), so this chain is UNCHANGED.
+	var res := _donor_resource_suffix(ed, od, otype)
+	if res != "":
+		var work_action := "work" + res
+		var walk_action := "walk" + res
+		var idle_action := "idle" + res
+		var gathering: bool = otype == "gather" or otype == "resow"
+		var carrying: bool = int(ed.get("carry", 0)) > 0
+		if gathering or carrying:
+			var chain: Array = []
+			if gathering and not moving:
+				chain = [work_action, idle_action, walk_action, "idle"]
+			elif moving:
+				chain = [walk_action, idle_action, "walk", "idle"]
+			else:
+				chain = [idle_action, walk_action, "idle"]
+			var carried := _donor_action_fallback(sid, chain)
+			if carried != "":
+				return carried
+			_record_action_gap(sid, work_action, idle_action, walk_action)
+	# attack0/attack1(/attack2) (peaukr.aaf:7, musketeer.aaf:7,
+	# grenadier.aaf:28-30). Bullet weapon -> attack1 then attack0
+	# (world.gd:515-516 [O]; weapon gating [I]/[U] U2). The attack2 family is
+	# only selected by the explicit request above: no grenade trigger exists in
+	# this sim's data (data.gd WK has no grenade kind), so none is invented.
+	# DEC-U-STATE-MAP §6 F6 [O]: the donor gates on the iWeapon TAG slot
+	# (unit.script:10878-10883), not ammo kind; its Attack handler maps
+	# none/0->0, 1->1, 2->2 (...attack.inc:15-21). The bullet->1 mapping below
+	# stays the labelled [U]-W fallback; "2" is never produced without an explicit
+	# index plus R-W proof. Attack completion = ...Attack damage/cost/pause/
+	# projectile + ...AttackEnd _unit_TryAttack re-issue, both ending
+	# SwitchTo('Nothing') — LABEL ONLY, no completion event is fired here.
+	if otype in ATTACK_ORDER_TYPES and not moving:
+		var weapon := _weapon_kind(ed)
+		var attack_chain: Array = []
+		if weapon == "bullet":
+			attack_chain = ["attack1", "attack0", "idle"]
+		else:
+			attack_chain = ["attack0", "attack1", "idle"]
+		var fired := _donor_action_fallback(sid, attack_chain)
+		if fired != "":
+			return fired
+		_record_action_gap(sid, attack_chain[0], attack_chain[1], attack_chain[2])
+	# donor 'reaction' (peaukr.aaf:18) is exported since C1 but has no recovered
+	# sim trigger ([U] U2); only the explicit DATA request above selects it.
+	# DEC-U-STATE-MAP §6 F8 [O]: the donor turn/idle path is a stateful readback
+	# (T18-T20, unit.script:10977-11029) with a 6,8 vs 0,0 split. This stateless
+	# return is KEPT; a one-slot sticky name may be added only after R-S proves
+	# dwell ([U]-S). No token, state or behaviour is invented here.
+	return "walk" if moving else "idle"
+
+
+# True only when the RESOLVED sid's own shipped donor AAF exports the action.
+# DEC-U §7 F7 / unit.script:369-373: donor _unit_IsAnimationExists treats
+# anim=='' as TRUE (an empty request is a NO-OP, not 'idle'). This port gate
+# deliberately returns false for an empty action so no token is invented;
+# empty requests never reach a selector or a pose call. No silent substitution.
+func _action_available(sid: String, action: String) -> bool:
+	if sid.is_empty() or action.is_empty():
+		return false
+	var anim = _find_anim()
+	if anim != null and anim.has_method("has_action"):
+		return bool(anim.call("has_action", sid, action))
+	return false
+
+
+# DEC-U-AAF-ART C3: donor-style _unit_IsAnimationExists chain
+# (unit.script:11048-11051,11092-11093; attack2→attack0→idle per DEC_U §5 C3).
+# Candidates are tried in ORDER on the RESOLVED sid only. Returns "" when none
+# exists so the caller records a per-sid DATA GAP instead of borrowing a clip.
+func _donor_action_fallback(sid: String, chain: Array) -> String:
+	for candidate in chain:
+		var a := str(candidate)
+		if a != "" and _action_available(sid, a):
+			return a
+	return ""
+
+
+# DEC-U-unit-death §6 U1 — weapon-gated death clip with exists-fallback
+# (ontagstates.inc:580-590, unit.script:11086-11093). The tag is the sim's live
+# iWeapon/weapon_index or the already-labelled bullet mapping; a token is
+# accepted only if the RESOLVED sid's own AAF exports it, else plain `death`,
+# else an explicit per-sid gap — never another sid's clip.
+func _donor_death_action(sid: String, ed: Dictionary) -> String:
+	var weapon := _donor_weapon_index(ed)
+	var token := str(DONOR_DEATH_ACTION_BY_WEAPON.get(weapon, DONOR_DEATH_ACTION_FALLBACK))
+	if _action_available(sid, token):
+		return token
+	if token != DONOR_DEATH_ACTION_FALLBACK \
+			and _action_available(sid, DONOR_DEATH_ACTION_FALLBACK):
+		return DONOR_DEATH_ACTION_FALLBACK
+	_record_action_gap(sid, token, DONOR_DEATH_ACTION_FALLBACK, "")
+	return ""
+
+
+# DEC-U-unit-death §2.1/§2.2/§2.3 — donor unit class from the sim def
+# (def.naval / def.artillery / def.cavalry, all [O] in data.gd UNITS_BASE).
+# `inf` is the residual class and is the ONLY one that rolls at death. The sid
+# checks are a stub-safe fallback; no class is invented for an unknown sid.
+func _donor_unit_class(ed: Dictionary) -> String:
+	var def: Dictionary = {}
+	var dv = ed.get("def", null)
+	if dv is Dictionary:
+		def = dv as Dictionary
+	if bool(def.get("naval", false)):
+		return "ship"
+	if bool(def.get("artillery", false)):
+		return "art"
+	if str(def.get("cavalry", "")) != "":
+		return "cav"
+	var sid := str(ed.get("sid", ""))
+	if sid in DONOR_SHIP_DEATH_SIDS:
+		return "ship"
+	if sid in DONOR_ARTILLERY_DEATH_BASES:
+		return "art"
+	return "inf"
+
+
+# DEC-U-unit-death §2/§6 — one READ-ONLY donor-law descriptor for a dead unit.
+# No stage clock is invented and no RNG is consumed: bands/keys/windows are
+# returned as data only; the wall-clock conversion stays [U]-T (E-T). The
+# `none`-entry proxy is the FIRST sight of death (the port has no iOldEssential
+# state API), explicitly labelled [U] and never presented as donor proof.
+func _donor_unit_death_law(ed: Dictionary) -> Dictionary:
+	var cls := _donor_unit_class(ed)
+	var ship := cls == "ship"
+	var def: Dictionary = {}
+	var dv = ed.get("def", null)
+	if dv is Dictionary:
+		def = dv as Dictionary
+	var weapon := _donor_weapon_index(ed)
+	var clip := str(DONOR_DEATH_ACTION_BY_WEAPON.get(weapon, DONOR_DEATH_ACTION_FALLBACK))
+	var step := float(DONOR_CORPSE_SINK_STEP_M.get(cls, 0.05))
+	var none_entry := not bool(_unit_death_prev.get(int(ed.get("id", -1)), false))
+	var built_proxy := bool(ed.get("built", true)) and bool(ed.get("finished", true))
+	var explosion_allowed := ship and str(def.get("usage", "")) != "fisher" \
+			and none_entry and built_proxy
+	return {
+		"class": cls,
+		"clip": clip,
+		"weapon_tag": weapon,
+		"prop_reload": (DONOR_ARTILLERY_DEATH_PROP_SUFFIX if cls == "art" else ""),
+		"prop_material": (DONOR_ARTILLERY_DEATH_MATERIAL if cls == "art" else "base_albedo_kept"),
+		"art_prop": (_donor_artillery_death_prop(str(ed.get("sid", ""))) if cls == "art" else {}),
+		"roll_min_deg": (DONOR_DEATH_ROLL_MIN_DEG if cls == "inf" else 0.0),
+		"roll_span_deg": (DONOR_DEATH_ROLL_SPAN_DEG if cls == "inf" else 0.0),
+		"desync_base": DONOR_DEATH_DESYNC_BASE,
+		"desync_span": DONOR_DEATH_DESYNC_SPAN,
+		"fade_key": DONOR_CORPSE_FADE_KEY,
+		"fade_alphas": (DONOR_CORPSE_FADE_ALPHAS.duplicate() if not ship else []),
+		"fade_flags": DONOR_CORPSE_FADE_FLAGS.duplicate(),
+		"sink_nodes": DONOR_CORPSE_SINK_NODES,
+		"sink_step_m": step,
+		"sink_total_m": DONOR_CORPSE_SINK_NODES * step,
+		"ship_suffix": (DONOR_SHIP_DEATH_SUFFIX_STAGE0 if ship else ""),
+		"ship_mesh": (_donor_ship_death_mesh(str(ed.get("sid", "")), 0) if ship else {}),
+		"ship_stage1_suffix": (DONOR_SHIP_DEATH_SUFFIX_STAGE1 if ship else ""),
+		"ship_child_suffix": (DONOR_SHIP_DEATH_CHILD_SUFFIX if ship else ""),
+		"ship_child_material": ("parent_ship_material" if ship else ""),
+		"debris_material": "commented_out_ontagstates_992",
+		"explosion_gate": DONOR_UNIT_EXPLOSION_GATE,
+		"explosion_allowed": explosion_allowed,
+		"explosion_keys": (DONOR_UNIT_DEATH_EXPLOSION_KEYS.duplicate() if explosion_allowed else []),
+		"sound": str(DONOR_UNIT_DEATH_SOUNDS.get(cls, "")),
+		"sound_none_entry_only": ship,
+		"pfx_cleared": true,
+		"smoke_attached": 0,
+		"debris_attached": 0,
+		"ghost_attached": 0,
+		"none_entry_proxy": none_entry,
+		"built_proxy": built_proxy,
+		"destroy": DONOR_UNIT_DEATH_DESTROY_STATUS,
+		"time_base": "[U]-T",
+		"visual": "UNVERIFIED",
+	}
+
+
+# DEC-U-unit-death §6 U2 — derive the artillery death prop/actor/cycles set
+# from the base sid (cannon -> cannon_death). DISK-PROBED only: a missing asset
+# is a labelled DATA GAP, never a synthesized mesh or a reused unit skin.
+# Material stays the BASE albedo (the gun keeps its paint, no debris).
+func _donor_artillery_death_prop(sid: String) -> Dictionary:
+	if not (sid in DONOR_ARTILLERY_DEATH_BASES):
+		return {}
+	var art_sid := sid + DONOR_ARTILLERY_DEATH_PROP_SUFFIX
+	var path := AssetPaths.existing(art_sid, "obj")
+	var on_disk := ResourceLoader.exists(path)
+	return {
+		"base": sid,
+		"prop": art_sid + ".prop",
+		"actor": art_sid + ".actor",
+		"cycles": art_sid,
+		"clip": "death",
+		"material": sid,
+		"aaf_window": DONOR_DEATH_AAF_WINDOWS.get(art_sid, {}),
+		"obj_path": path,
+		"on_disk": on_disk,
+		"status": ("derived donor death prop on disk" if on_disk
+			else "DATA GAP: no converted <base>_death OBJ; no art fabricated"),
+	}
+
+
+# DEC-U-unit-death §6 U6 — derive a ship's numbered ruin hull + attach child.
+# stage_0 -> _death1, stage_1 -> _death2 (the DS1 swap stays [U]-T clocked, so
+# no stage timer is advanced here). The attach child keeps the PARENT ship
+# material; the donor `debris` line is commented out (ontagstates.inc:992).
+func _donor_ship_death_mesh(sid: String, stage: int) -> Dictionary:
+	if not (sid in DONOR_SHIP_DEATH_SIDS):
+		return {}
+	var suffix := DONOR_SHIP_DEATH_SUFFIX_STAGE1 if stage >= 1 else DONOR_SHIP_DEATH_SUFFIX_STAGE0
+	var art_sid := sid + suffix
+	var path := AssetPaths.existing(art_sid, "obj")
+	var attach_sid := art_sid + DONOR_SHIP_DEATH_CHILD_SUFFIX
+	var attach_path := AssetPaths.existing(attach_sid, "obj")
+	var hull_ok := ResourceLoader.exists(path)
+	var attach_ok := ResourceLoader.exists(attach_path)
+	return {
+		"stage": stage,
+		"hull": art_sid,
+		"hull_suffix": suffix,
+		"attach": attach_sid,
+		"hull_path": path,
+		"attach_path": attach_path,
+		"hull_on_disk": hull_ok,
+		"attach_on_disk": attach_ok,
+		"material": sid,
+		"debris_status": "commented_out_ontagstates_992",
+		"status": ("donor ship ruin art on disk" if hull_ok and attach_ok
+			else "DATA GAP: converted _death/_deatha OBJ absent; no art fabricated"),
+	}
+
+
+# Sim resource classes (game.gd:3615-3635, :3034-3052) -> donor work/carry AAF
+# suffix. food/wood/stone map directly; permanent ores mine as 'stone'. [D]/[I]
+# with decomp target [U] U2. resow = sowing food fields.
+func _donor_resource_suffix(ed: Dictionary, od, otype: String) -> String:
+	var res := ""
+	if od is Dictionary:
+		res = str((od as Dictionary).get("res", ""))
+	if res.is_empty():
+		res = str(ed.get("carry_type", ""))
+	if res.is_empty() and otype == "resow":
+		res = "food"
+	if res in ["wood", "lumber"]:
+		return "wood"
+	if res in ["stone", "gold", "iron", "coal"]:
+		return "stone"
+	if res in ["food", "farm", "wheat", "grain"]:
+		return "food"
+	return ""
+
+
+func _weapon_kind(ed: Dictionary) -> String:
+	var def = ed.get("def", null)
+	if def is Dictionary:
+		var ws = (def as Dictionary).get("weapons", [])
+		if ws is Array and not (ws as Array).is_empty():
+			var w = (ws as Array)[0]
+			if w is Dictionary:
+				return str((w as Dictionary).get("kind", ""))
+	return ""
+
+
+# DEC-U-AAF-TRIGGERS §1.2 / IMPL §5 R2 — decode the sim entity into the donor
+# tag fields consumed by anim3d.gd.resolve_donor_action(). Only fields with a
+# recovered donor/port basis are produced: iEssential from ed.dead, iAction
+# from a STATIONARY build/extract/attack order (mirrors the preserved chain's
+# `not moving` gates), iResource from _donor_resource_suffix(), iMove from the
+# same measured-speed gate, and iWeapon ONLY for attack/death from an explicit
+# donor index or the already-labelled port bullet mapping ([U]-W, DEC-U D6).
+# iVisual is pass-through only: no hide state is invented (T26 stays data-
+# driven), and current_anim is NOT supplied so sticky T18-T20 stay dormant
+# until capture R-S (IMPL §5 R6). An explicit donor tag on the entity wins.
+func _donor_tag_fields(ed: Dictionary, speed: float, otype: String) -> Dictionary:
+	var fields: Dictionary = {}
+	var measured: bool = speed >= 0.0
+	var moving: bool = (speed >= WALK_SPEED_GATE_M_S) if measured else bool(ed.get("moving", false))
+	if bool(ed.get("dead", false)):
+		fields["iEssential"] = "death"
+	fields["iMove"] = "walk" if moving else "idle"
+	var gathering: bool = otype == "gather" or otype == "resow"
+	var carrying: bool = int(ed.get("carry", 0)) > 0
+	if gathering or carrying:
+		var res := _donor_resource_suffix(ed, ed.get("order", null), otype)
+		if res != "":
+			fields["iResource"] = res
+	var action := ""
+	if not moving:
+		if gathering:
+			action = "extract"
+		elif otype == "build" or otype == "repair":
+			action = "build"
+		elif otype in ATTACK_ORDER_TYPES:
+			action = "attack"
+	if action != "":
+		fields["iAction"] = action
+	if (action == "attack" or str(fields.get("iEssential", "")) == "death") \
+			and not fields.has("iWeapon"):
+		var wi := _donor_weapon_index(ed)
+		if wi != "":
+			fields["iWeapon"] = wi
+	# Explicit donor tag pass-through (DATA only, never synthesized).
+	for key in ["iAction", "iWeapon", "iResource", "iMove", "iEssential", "iVisual"]:
+		if not ed.has(key) or str(ed.get(key, "")) == "":
+			continue
+		if key == "iWeapon":
+			var iv := str(ed.get(key, ""))
+			if iv in ["0", "1", "2", "none"]:
+				fields[key] = iv
+			continue
+		fields[key] = str(ed.get(key, ""))
+	return fields
+
+
+# Donor iWeapon tag index (unit.script:10837-10843/10878-10883). An explicit
+# index carried on the entity is donor-faithful [O]. `_weapon_kind()=="bullet"`
+# -> "1" is the PORT mapping from world.gd:515-516 (DEC-U D6; [U]-W), used
+# ONLY for attack/death and never presented as donor proof. "2" (grenade) is
+# never produced without an explicit index plus capture R-W.
+func _donor_weapon_index(ed: Dictionary) -> String:
+	for key in ["iWeapon", "weapon_index", "weapon_slot"]:
+		if ed.has(key) and str(ed.get(key, "")) != "":
+			var v := str(ed.get(key, ""))
+			if v in ["0", "1", "2"]:
+				return v
+	if _weapon_kind(ed) == "bullet":
+		return "1"
+	return "none"
+
+
+# DEC-U-AAF-TRIGGERS / IMPL §5 R1 — call anim3d.gd's PURE donor resolver.
+# Returns {"token","tid","blend","resolved","attempted"}. A token is returned
+# only when anim3d actually resolved it AND has_action(sid,token) passed;
+# orphans, hide and misses return an empty token. No pose, no interpolation,
+# no completion event is fired here ([U]-B / [U]-C1/C2 stay open).
+func _resolve_donor_action(sid: String, ed: Dictionary, speed: float, otype: String) -> Dictionary:
+	var out: Dictionary = {"token": "", "tid": "", "blend": "", "resolved": {}, "attempted": false}
+	if sid.is_empty():
+		return out
+	var anim = _find_anim()
+	if anim == null or not anim.has_method("resolve_donor_action"):
+		return out
+	out["attempted"] = true
+	var fields := _donor_tag_fields(ed, speed, otype)
+	var rr = anim.call("resolve_donor_action", sid, fields)
+	if not (rr is Dictionary):
+		return out
+	var r := rr as Dictionary
+	out["resolved"] = r
+	out["tid"] = str(r.get("trigger_id", ""))
+	out["blend"] = str(r.get("blend", ""))
+	var token := str(r.get("token", ""))
+	if token.is_empty() or not bool(r.get("available", false)):
+		return out
+	if bool(r.get("orphan", false)) or token == "walk1":
+		return out   # T23-T25 and the donor-dead name never become selectors
+	out["token"] = token
+	return out
+
+
+# Intent-only ledger (DEC-U §7 F3/F9): the per-site blend ("0,0" bypass vs
+# "6,8" deferred) and the donor chain as tried are RECORDED, never applied.
+# No frame value, no interpolation and no completion event comes from here.
+func _record_donor_trigger_intent(sid: String, tid: String, token: String, blend: String, ok: bool) -> void:
+	var key := sid + "|" + tid + "|" + token + "|" + blend + "|" + ("OK" if ok else "GAP")
+	_donor_trigger_intents[key] = int(_donor_trigger_intents.get(key, 0)) + 1
+
+
+func _record_donor_trigger_gap(sid: String, tid: String, chain: Array) -> void:
+	var tried := ""
+	for c in chain:
+		var a := str(c)
+		if a.is_empty():
+			continue
+		tried += ("," if tried != "" else "") + a
+	if tried.is_empty():
+		return   # T23-T26 have no donor set-site: nothing to append
+	var key := sid + "|" + tid + "|" + tried
+	_donor_trigger_gaps[key] = int(_donor_trigger_gaps.get(key, 0)) + 1
+
+
+# Donor fallback ORDER per cited row (DEC-U §1.2 gate column):
+# weapon death -> plain death (:11092-11093); animidle -> idle (:11036-11037);
+# animwalk -> walk incl. dead walk1 (:11048-11051); attack2 -> attack1 ->
+# attack0 -> idle (DEC_U §5 C3). Logged for R-W/R-W2/R-S audit only.
+func _donor_trigger_chain(tid: String, token: String) -> Array:
+	if tid == "T21":
+		return [token, "death"]
+	if tid in ["T8", "T10", "T12", "T18", "T19", "T20"]:
+		return [token, "idle"]
+	if tid in ["T9", "T11", "T13", "T14", "T15", "T16", "T17"]:
+		return [token, "walk"]
+	if tid == "T7" and token == "attack2":
+		return ["attack2", "attack1", "attack0", "idle"]
+	if token != "":
+		return [token]
+	return []
+
+
+# LABEL ONLY (DEC-U T23-T25): classify an explicit DATA request with anim3d's
+# orphan vocabulary. Never selects, never falls back, never auto-triggers.
+func _label_donor_orphan(token: String) -> void:
+	if _donor_orphan_labels.has(token):
+		return
+	var anim = _find_anim()
+	if anim == null or not anim.has_method("is_donor_orphan_token"):
+		return
+	if not bool(anim.call("is_donor_orphan_token", token)):
+		return
+	var note := ""
+	if anim.has_method("donor_orphan_note"):
+		note = str(anim.call("donor_orphan_note", token))
+	_donor_orphan_labels[token] = note if note != "" else DONOR_TRIGGER_ORPHAN_STATUS
+
+
+func _record_action_gap(sid: String, a: String, b: String, c: String) -> void:
+	for action in [a, b, c]:
+		if str(action).is_empty():
+			continue
+		var key := sid + "|" + str(action)
+		_action_gaps[key] = int(_action_gaps.get(key, 0)) + 1
 
 
 # MOTION-ANIM-01: MEASURE the SIM, never write to it. The entity Dictionary is
@@ -1945,6 +2832,17 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 	mmi.name = "Batch_" + key.replace("|", "_") + "_" + tag
 	mmi.set_meta("anim_status", ANIM_STATUS)
 	mmi.set_meta("mesh_source", str(info.get("source", "?")))
+	# PORT1TO1-ENT1TO1 / D9 — donor LOD is TWO ranges, not one. Mesh LOD 0..150
+	# (refobj.actor:88-105) binds to Godot's visibility range; shader LOD and
+	# child pool 0..2500 (refobj.actor:36-52) are kept DISTINCT as instance
+	# state. No metre meaning, per-sid override or impostor is invented: [U] U5.
+	mmi.visibility_range_begin = DONOR_LOD_MESH_MIN_DIST
+	mmi.visibility_range_end = DONOR_LOD_MESH_MAX_DIST
+	mmi.set_meta("donor_lod_mesh_range", [DONOR_LOD_MESH_MIN_DIST, DONOR_LOD_MESH_MAX_DIST])
+	mmi.set_meta("donor_lod_shader_range", [DONOR_LOD_SHADER_MIN_DIST, DONOR_LOD_SHADER_MAX_DIST])
+	mmi.set_meta("donor_lod_child_pool_max", DONOR_LOD_CHILD_POOL_MAX)
+	mmi.set_meta("donor_lod_status", LOD_STATUS)
+	mmi.set_meta("donor_lod_visual", "UNVERIFIED")
 	if is_morph:
 		mmi.set_meta("donor_pose_source", MORPH_POSE_SOURCE)
 		mmi.set_meta("donor_frame", int(pose.get("frame", -1)))
@@ -2359,21 +3257,157 @@ func _attach_rotor(id: int, parent: MeshInstance3D) -> void:
 	_rotors[id] = rotor
 
 
+# --- DEC-U-TOOL-ATTACH: one tool child per peasant unit ----------------------
+# Material from the ONE shared donor tool texture (units.mat:18-19). The PNG is
+# the approved offline DDS->PNG product; if it is not imported the material is
+# labelled rather than replaced with a body texture or a fabricated colour art.
+func _get_tool_material() -> Material:
+	if _tool_material != null and is_instance_valid(_tool_material):
+		return _tool_material
+	var mat := StandardMaterial3D.new()
+	var tex: Texture2D = null
+	if FileAccess.file_exists(TOOL_MATERIAL_PATH):
+		var img := Image.new()
+		if img.load(TOOL_MATERIAL_PATH) == OK and not img.is_empty():
+			tex = ImageTexture.create_from_image(img)
+	if tex != null:
+		mat.albedo_texture = tex
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+		mat.alpha_scissor_threshold = 0.5
+	else:
+		mat.albedo_texture = null
+		mat.albedo_color = Color(1.0, 1.0, 1.0, 1.0)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+	mat.set_meta("tool_material_cite", TOOL_MATERIAL_CITE)
+	mat.set_meta("tool_material_status",
+		"donor_png_bound" if tex != null else "fallback_white_untextured_DATA_GAP")
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_tool_material = mat
+	return mat
+
+
+# Driven by the ALREADY-RESOLVED _unit_action token. anim3d.attach_for reads the
+# per-sid index attach block and samples anim[0] at the BODY's donor frame.
+# Unmapped actions ('', walk, idle, death, reaction, else) and any DATA GAP keep
+# the single child hidden; no body mesh and no foreign nation's tool is ever
+# bound. The child's transform is the BODY's own instance transform (pass 2 of
+# sync()) — identity relative to the body, since no donor offset/rotation/scale
+# key exists anywhere in the attach prop/ref/hook text (DEC_U §1.2/§2.4).
+func _sync_unit_tool(uid: int, sid: String, action: String,
+		body_frame: int, anim_node) -> Dictionary:
+	var child: MeshInstance3D = null
+	if _unit_tools.has(uid) and is_instance_valid(_unit_tools[uid]):
+		child = _unit_tools[uid] as MeshInstance3D
+	else:
+		child = MeshInstance3D.new()
+		child.name = "Tool_" + sid + "_" + str(uid)
+		child.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		child.set_meta("tool_local_transform", "identity_relative_to_body_instance")
+		child.set_meta("tool_attach_status", TOOL_ATTACH_STATUS)
+		child.set_meta("tool_u_status", TOOL_U_STATUS)
+		child.set_meta("visual_status", "UNVERIFIED")
+		add_child(child)
+		_unit_tools[uid] = child
+	child.visible = false
+	child.set_meta("donor_actor_ind", -1)
+	child.set_meta("donor_tool", "")
+	child.set_meta("donor_tool_asset", "")
+	child.set_meta("donor_frame", body_frame)
+	var result := {"visible": false, "gap": "", "tool": ""}
+	var att: Dictionary = {}
+	if anim_node != null and anim_node.has_method("attach_for"):
+		var a: Variant = anim_node.call("attach_for", sid, action, body_frame)
+		if a is Dictionary:
+			att = a as Dictionary
+	var status := str(att.get("status", "no_anim_module"))
+	if status == "DATA_GAP":
+		result["gap"] = str(att.get("reason", "no detail"))
+		child.set_meta("tool_gap_sid", sid + ": " + str(result["gap"]))
+	elif att.is_empty():
+		result["gap"] = "anim3d.attach_for unavailable"
+	child.set_meta("tool_status", status)
+	child.set_meta("tool_status_label", str(att.get("label", TOOL_GAP_STATUS)))
+	if not bool(att.get("visible", false)):
+		return result
+	# Donor slot gate: actorInd must match its tool; never swap in a foreign art.
+	var tool := str(att.get("tool", ""))
+	var actor_ind := int(att.get("actor_ind", -1))
+	if tool == "" or actor_ind != int(TOOL_ACTOR_INDEX.get(tool, -2)):
+		child.set_meta("tool_gap_sid", sid + ": actorInd mismatch for '" + tool + "'")
+		child.set_meta("tool_status", "DATA_GAP")
+		child.set_meta("tool_status_label", TOOL_GAP_STATUS)
+		result["gap"] = "actorInd mismatch"
+		return result
+	# Donor tool mesh: anim3d skinned these verts at the BODY's donor frame.
+	# convert_skins.py C2 did NOT export .oss face indices, so only donor verts
+	# are drawn (PRIMITIVE_POINTS) — no face, winding or UV is invented. The
+	# pixel proof stays [U]-T-B; no visual parity is claimed.
+	var mkey := sid + "|" + tool + "|f" + str(body_frame)
+	if not _tool_mesh_cache.has(mkey):
+		var vv_v: Variant = att.get("verts", null)
+		if not (vv_v is PackedVector3Array):
+			child.set_meta("tool_gap_sid", sid + ": no donor tool verts")
+			child.set_meta("tool_status", "DATA_GAP")
+			child.set_meta("tool_status_label", TOOL_GAP_STATUS)
+			result["gap"] = "no donor tool verts"
+			return result
+		var info := _mesh_info(sid, "unit")
+		var bbox: Array = _bbox.get(sid, [])
+		var cx := 0.0
+		var cy := 0.0
+		var z0 := 0.0
+		if bbox.size() >= 6:
+			cx = (float(bbox[0]) + float(bbox[1])) * 0.5
+			cy = (float(bbox[2]) + float(bbox[3])) * 0.5
+			z0 = float(bbox[4])
+		var sc := float(info.get("scale", 1.0))
+		var tv: PackedVector3Array = vv_v as PackedVector3Array
+		var out_v := PackedVector3Array()
+		out_v.resize(tv.size())
+		for i in range(tv.size()):
+			var v: Vector3 = tv[i]
+			out_v[i] = Vector3(v.x - cx, v.z - z0, -(v.y - cy)) * sc
+		var arr: Array = []
+		arr.resize(Mesh.ARRAY_MAX)
+		arr[Mesh.ARRAY_VERTEX] = out_v
+		var m := ArrayMesh.new()
+		m.add_surface_from_arrays(Mesh.PRIMITIVE_POINTS, arr)
+		_tool_mesh_cache[mkey] = m
+	child.mesh = _tool_mesh_cache[mkey] as Mesh
+	var tm := _get_tool_material()
+	child.material_override = tm
+	child.visible = true
+	child.set_meta("donor_tool", tool)
+	child.set_meta("donor_tool_asset", str(att.get("asset", "")))
+	child.set_meta("donor_actor_ind", actor_ind)
+	var anim0_v: Variant = att.get("anim", [])
+	if anim0_v is Array:
+		child.set_meta("donor_anim0", (anim0_v as Array).duplicate())
+	child.set_meta("donor_frame", body_frame)
+	child.set_meta("tool_topology", "donor verts only (convert_skins.py C2 exports no faces); PRIMITIVE_POINTS, no invented surface; [U]-T-B pixel proof pending")
+	child.set_meta("tool_material_status", tm.get_meta("tool_material_status", "?"))
+	result["visible"] = true
+	result["tool"] = tool
+	return result
+
+
 # --- BUILD-STAGES-01: donor construction-stage selector ---------------------
 # Presentation-only mirror of the sim; nothing here writes back to `e`.
-# The port's build counter is `progress` / `def.build_time` (game.gd:2193,
-# :4968-4974); the donor's is hp/maxhp (unit.script:6583-6590). Both are
-# clamped to 0..1 before the donor's floor(progress*4) selector is applied.
+# PORT1TO1-ENT1TO1 / D10: the donor stage source is hp/maxhp
+# (unit.script:6583-6596), NOT progress/build_time. The live site's hp is
+# advanced with construction in game.gd:5541 and starts at 25% in
+# game.gd:4483, so hp/max_hp is a read-only donor-faithful source here.
+# No fallback to build_time: an entity without max_hp yields 0 and is
+# recorded as a data gap, never an invented stage.
 func _build_progress01(ed: Dictionary) -> float:
 	if bool(ed.get("finished", true)):
 		return 1.0
-	var def = ed.get("def", null)
-	var build_time := 0.0
-	if def is Dictionary:
-		build_time = float((def as Dictionary).get("build_time", 0.0))
-	if build_time <= 0.0:
+	var max_hp := float(ed.get("max_hp", 0.0))
+	if max_hp <= 0.0:
+		_action_gaps["building|max_hp_missing"] = int(_action_gaps.get("building|max_hp_missing", 0)) + 1
 		return 0.0
-	return clampf(float(ed.get("progress", 0.0)) / build_time, 0.0, 1.0)
+	return clampf(float(ed.get("hp", 0.0)) / max_hp, 0.0, 1.0)
 
 
 # Donor mesh-name suffix: "1".."4" for buildings, "1"/"2" for walls.
@@ -2386,6 +3420,37 @@ func _build_stage_suffix(ed: Dictionary) -> String:
 	if str(ed.get("sid", "")) == "wal":
 		mesh_stage = mini(1 + int(raw / 3), BUILD_WALL_MAX_STAGE)
 	return str(mesh_stage)
+
+
+# BLDDEATH-1TO1 — donor stage is floor(hp/maxhp*4), read DIRECTLY from hp/maxhp,
+# never `_build_progress01`'s `finished` shortcut and never build_time
+# (unit.script:6583-6596, building.inc/ontagstates.inc:240-259). `case iVisual`
+# in the death branch covers stage_0 -> _death1 and stage_1 -> _death2; stage_2/3
+# have no donor line here, so no mesh is invented for them ([U]-14).
+func _donor_raw_stage(ed: Dictionary) -> Dictionary:
+	var max_hp := float(ed.get("max_hp", 0.0))
+	var wall := str(ed.get("sid", "")) == "wal"
+	if max_hp <= 0.0:
+		return {"stage": 0, "wall": wall, "gap": true}
+	var raw := clampi(int(floor(clampf(float(ed.get("hp", 0.0)) / max_hp,
+		0.0, 1.0) * float(BUILD_STAGE_STEPS))), 0, BUILD_STAGE_STEPS - 1)
+	var out := {"stage": raw, "wall": wall, "gap": false}
+	if wall:
+		out["wall_stage"] = mini(1 + int(raw / 3), BUILD_WALL_MAX_STAGE)
+	return out
+
+
+# PORT1TO1-ENT1TO1 / D11 — donor essential `death` selects <sid>_death1 at
+# stage_0 and <sid>_death2 from stage_1 (eurmil.actor:20-27,
+# ontagstates.inc:264-311). The derived ruin OBJ is probed through
+# _death_mesh_info; a missing asset stays an explicit gap, never a fabrication.
+func _donor_death_suffix(ed: Dictionary) -> String:
+	var st := _donor_raw_stage(ed)
+	# No max_hp means no donor stage can be derived: explicit gap, never a
+	# silent fallback to a base mesh labelled as a ruin.
+	if bool(st.get("gap", false)):
+		return ""
+	return "_death1" if int(st.get("stage", 0)) == 0 else "_death2"
 
 
 # Resolve a donor-named converted OBJ. Empty Dictionary means "no art": the
@@ -2421,6 +3486,186 @@ func _stage_mesh_info(sid: String, suffix: String, scaffold: bool) -> Dictionary
 	return out
 
 
+# BLDDEATH-1TO1 — discover the composed world3d_fx.gd sibling once. No edit to
+# world3d.gd is needed (world3d.gd:152-165 add_child's every module under one
+# Node3D); a bare stub test without the sibling keeps the labelled no-op path.
+func _find_fx():
+	if _fx != null and is_instance_valid(_fx):
+		return _fx
+	if _fx_checked:
+		return null
+	_fx_checked = true
+	var parent := get_parent()
+	if parent == null:
+		return null
+	for child in parent.get_children():
+		if child == self:
+			continue
+		if child.has_method("add_impact_fx") and child.has_method("add_fx"):
+			_fx = child
+			break
+	return _fx
+
+
+# BLDDEATH-1TO1 — read a derived death OBJ when Godot has no imported .obj
+# resource (same no-sidecar situation as assets/fx; see world3d_fx.gd:1256-1308).
+# Vertices stay in raw donor Z-up coordinates: _bake_mesh applies the established
+# Z-up -> Y-up mapping. This parses derived donor geometry only; nothing is
+# generated, retouched or invented here.
+func _death_obj_mesh(path: String) -> Mesh:
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return null
+	var vv: PackedVector3Array = PackedVector3Array()
+	var uu: PackedVector2Array = PackedVector2Array()
+	var tris: Array = []
+	while not f.eof_reached():
+		var line := f.get_line().strip_edges()
+		if line.begins_with("v "):
+			var vp := line.split(" ", false)
+			if vp.size() >= 4:
+				vv.append(Vector3(float(vp[1]), float(vp[2]), float(vp[3])))
+		elif line.begins_with("vt "):
+			var vt := line.split(" ", false)
+			if vt.size() >= 3:
+				uu.append(Vector2(float(vt[1]), float(vt[2])))
+		elif line.begins_with("f "):
+			var vf := line.split(" ", false)
+			var corners: Array = []
+			for token in vf.slice(1):
+				var sub := token.split("/", false)
+				if sub.size() < 2:
+					continue
+				corners.append([int(sub[0]) - 1, int(sub[1]) - 1])
+			for j in range(1, corners.size() - 1):
+				tris.append([corners[0], corners[j], corners[j + 1]])
+	f.close()
+	if vv.is_empty() or tris.is_empty():
+		return null
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for tri in tris:
+		for corner in tri:
+			var vi := int(corner[0])
+			var ui := int(corner[1])
+			if vi < 0 or vi >= vv.size():
+				continue
+			if ui >= 0 and ui < uu.size():
+				st.set_uv(uu[ui])
+			st.add_vertex(vv[vi])
+	st.generate_normals()
+	return st.commit()
+
+
+func _death_texture(path: String) -> Texture2D:
+	if _death_materials.has(path + "|tex"):
+		return _death_materials[path + "|tex"] as Texture2D
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	if tex == null and FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load(ProjectSettings.globalize_path(path)) == OK:
+			tex = ImageTexture.create_from_image(img)
+	_death_materials[path + "|tex"] = tex
+	return tex
+
+
+func _death_material(path: String) -> Material:
+	if _death_materials.has(path + "|mat"):
+		return _death_materials[path + "|mat"] as Material
+	var mat := StandardMaterial3D.new()
+	var tex := _death_texture(path)
+	if tex != null:
+		mat.albedo_texture = tex
+	_death_materials[path + "|mat"] = mat
+	return mat
+
+
+# BLDDEATH-1TO1 / IMPL-DEATH-FAMILIES — resolve a derived death mesh:
+# <stem>_death1/2 and the attach child <stem>[a]/_death1a/_death2a, named from
+# the port sid through BLD_DEATH_STEMS (all 12 families). Geometry is
+# centred/grounded with its OWN donor AABB (from the derived mesh, never an
+# invented bbox), then baked with the same Z-up -> Y-up transform as every
+# other donor mesh in this module. A degenerate AABB stays an honest labelled
+# gap — no 1x1x1 cube is substituted for donor art (DEC_U_death_families §4.3).
+func _death_mesh_info(sid: String, suffix: String, scaffold: bool) -> Dictionary:
+	var stem := str(BLD_DEATH_STEMS.get(sid, ""))
+	if stem == "" or not (suffix in ["_death1", "_death2"]):
+		return {}
+	var key := sid + "|" + suffix + "|" + ("debris" if scaffold else "death")
+	if _death_mesh_cache.has(key):
+		return _death_mesh_cache[key] as Dictionary
+	var art_sid := stem + suffix + ("a" if scaffold else "")
+	var path := BLD_DEATH_DIR + "models/" + art_sid + ".obj"
+	var src: Mesh = null
+	var source := ""
+	if ResourceLoader.exists(path):
+		src = load(path) as Mesh
+		if src != null:
+			source = "derived_obj_imported"
+	if src == null and FileAccess.file_exists(path):
+		src = _death_obj_mesh(path)
+		if src != null:
+			source = "derived_obj_runtime_parse"
+	var out: Dictionary = {}
+	var guard_label := ""
+	if src != null:
+		var aabb := src.get_aabb()
+		if aabb.size.z <= 0.0:
+			# IMPL-DEATH-FAMILIES: never fabricate a unit cube for degenerate
+			# donor art. _death_obj_mesh already returns null on zero faces;
+			# keep the honest AABB and label the gap instead.
+			guard_label = "degenerate_z_depth_no_cube_substitution"
+		var bbox: Array = [aabb.position.x, aabb.position.x + aabb.size.x,
+			aabb.position.y, aabb.position.y + aabb.size.y,
+			aabb.position.z, aabb.position.z + aabb.size.z]
+		out = _bake_mesh(src, bbox, 1.0, aabb.size.z, false, sid, "building")
+		out["source"] = source
+		out["sid"] = sid
+		out["kind"] = "building"
+		out["art_sid"] = art_sid
+		out["manifest"] = BLD_DEATH_MANIFEST
+		out["visual"] = "UNVERIFIED"
+		if guard_label != "":
+			out["aabb_guard"] = guard_label
+	_death_mesh_cache[key] = out
+	return out
+
+
+# IMPL-DEATH-FAMILIES / DEC-U smoke_burn_ttl B1-B2 — donor transition effects.
+# ZERO smoke is attached at death: damage smoke is pre-death, HP/count-driven,
+# max 1 per 7th progresstick, roll-gated, parented to misc/'point' and gated
+# not bdead (nothing.inc:19,293); stop is event-driven
+# (MyGameObjectPFXClear ontagstates.inc:88 + misc-child EffectClear :289-298 +
+# stage transitions + holder destroy), never a timed TTL. BLD_DEATH_SMOKE_KEY
+# is retained only for a future HP-driven damage-smoke path (needs E-U14-burn).
+# The recovered _unit_DoExplosion payload is fired through the FX donor-key
+# entry point as 'grenadeexp' + 'expflash' (PUEXPBUILDINGDEATH); no 'explode'
+# stand-in and no TTL argument. No stage timer is passed as a life value.
+func _fire_donor_death_fx(pos, do_explosion: bool) -> Dictionary:
+	var out: Dictionary = {}
+	out["smoke_attached"] = 0
+	out["smoke_status"] = "cleared_at_death — 0 attaches (MyGameObjectPFXClear ontagstates.inc:88 + misc EffectClear :289-298)"
+	var fxm = _find_fx()
+	if fxm == null:
+		_action_gaps["building|fx_module_missing"] = int(
+			_action_gaps.get("building|fx_module_missing", 0)) + 1
+		out["fx_module"] = "missing"
+		return out
+	if do_explosion and fxm.has_method("add_impact_fx"):
+		var ex: Dictionary = {}
+		for key in BLD_DEATH_EXPLOSION_KEYS:
+			ex[key] = fxm.add_impact_fx(key, pos)
+		out["explosion"] = ex
+		out["explosion_keys"] = BLD_DEATH_EXPLOSION_KEYS.duplicate()
+		out["explosion_status"] = BLD_DEATH_EXPLOSION_STATUS
+	else:
+		out["explosion"] = {}
+		out["explosion_status"] = "gate not met on this edge (ontagstates.inc:309-311)"
+	return out
+
+
 # Called once per sync() from the building transform loop. Adds a stage meta
 # record on the existing parent MeshInstance3D and attach/removes a scaffold
 # child in sync with `finished`. The parent's V7-14 static pose identity,
@@ -2431,6 +3676,28 @@ func _sync_building_stages() -> void:
 	var stage_art_hits := 0
 	var stage_approx := 0
 	var scaffold_art_hits := 0
+	var death_art_hits := 0
+	var death_blocked := 0
+	var death_transitions := 0
+	var death_smoke_spawns := 0
+	var death_smoke_cleared := 0
+	var death_explosion_hooks := 0
+	var death_child0_hits := 0
+	var death_hidden_children := 0
+	var death_misc_cleared := 0
+	var death_stage2_swaps := 0
+	var death_destroyed := 0
+	var destroy_ids: Array[int] = []
+	# IMPL-DEATH-FAMILIES: the two 30-valued donor constants are STAGE TIMERS
+	# (settagstates.inc:32-53), never a visual/smoke TTL. Their wall-clock base
+	# stays [U] U14; the port advances them with the already-labelled
+	# Data.DEC_U_BUILDING_DEATHTIME_S_SHOWN (shown, not endorsed).
+	var stage_timer_label := ("settagstates.inc:32-53 deathtime_0/1=%d — STAGE TIMER, "
+		+ "NOT A VISUAL TTL; wall-clock base [U] U14 (E-U14-ttl)") % BLD_DEATH_STAGE_TIMER_UNITS
+	# Drop mirrors of removed buildings; no per-remove hook edit is needed.
+	for stale in _death_prev.keys():
+		if not _nodes.has(stale):
+			_death_prev.erase(stale)
 	for id in _nodes.keys():
 		var mi = _nodes[id]
 		if not is_instance_valid(mi):
@@ -2441,12 +3708,76 @@ func _sync_building_stages() -> void:
 		var e := ed as Dictionary
 		var sid := str(e.get("sid", ""))
 		var finished := bool(e.get("finished", true))
+		var died: bool = bool(e.get("dead", false))
+		# The donor building-death stage schedule is building-only. Unit deaths
+		# keep the previous explicit-gap path (no ruin stem, no stage timer).
+		var is_building := str(e.get("kind", "")) == "building"
+		var donor_stage := _donor_raw_stage(e)
+		var prev: Dictionary = _death_prev.get(int(id), {
+			"dead": false, "finished": finished, "stage": int(donor_stage.get("stage", 0)),
+			"dstage": 0, "dstage_t0": _anim_t, "fx_fired": false})
 		var base_info: Dictionary = _mesh_info(sid, "building")
 		var base_mesh: Mesh = base_info["mesh"] as Mesh
 		var suffix := ""
 		var source := "finished_base_mesh"
 		var chosen: Mesh = base_mesh
-		if not finished:
+		# IMPL-DEATH-FAMILIES — shared donor stage schedule (settagstates.inc:32-53,
+		# deathstage1.inc:7-11, deathstage2.inc:8-15). Death entry forces visual
+		# stage_0 (_death1) for a completed building (:44-51) and stage_1
+		# (_death2) immediately for birth-death (:34-39). DeathStage1 advances
+		# stage_0->stage_1 after deathtime_0 (x2 mines, :46-48), DeathStage2
+		# destroys after deathtime_1 (x2 mines, no doubling on birth shortcut :39).
+		# These are STAGE TIMERS, NOT visual TTLs; base [U] U14.
+		var dstage := int(prev.get("dstage", 0))
+		var dstage_t0 := float(prev.get("dstage_t0", _anim_t))
+		var fx_fired := bool(prev.get("fx_fired", false))
+		if died and is_building:
+			if dstage == 0:
+				dstage = 1 if finished else 2
+				dstage_t0 = _anim_t
+			var span := float(Data.DEC_U_BUILDING_DEATHTIME_S_SHOWN)
+			if finished and sid.begins_with("mine"):
+				span *= 2.0
+			if dstage == 1 and (_anim_t - dstage_t0) >= span:
+				dstage = 2
+				dstage_t0 = _anim_t
+				death_stage2_swaps += 1
+			elif dstage == 2 and (_anim_t - dstage_t0) >= span:
+				# DeathStage2 -> GameObjectRequestToDestroyByHandle. Removal is
+				# deferred to the existing remove() path after this loop.
+				dstage = 3
+				destroy_ids.append(int(id))
+		# Donor death-state mesh decision: after the death edge the ruin art
+		# follows the stage selector, NOT hp. _donor_death_suffix(e) stays as the
+		# labelled [U]-14 hp proxy in meta (no parity claim), never a stage pick.
+		var death_suffix := ""
+		var death_source := "no_derived_death_art"
+		var death_mesh: Mesh = null
+		if died:
+			if is_building:
+				if dstage == 1:
+					death_suffix = "_death1"
+				elif dstage >= 2:
+					death_suffix = "_death2"
+			else:
+				# Non-building deaths keep the prior explicit-gap proxy path;
+				# no building ruin stem and no stage timer for units.
+				death_suffix = _donor_death_suffix(e)
+			if death_suffix != "":
+				var dinfo := _death_mesh_info(sid, death_suffix, false)
+				if not dinfo.is_empty() and dinfo["mesh"] is Mesh:
+					death_mesh = dinfo["mesh"] as Mesh
+					death_source = str(dinfo.get("source", "unknown"))
+					death_art_hits += 1
+				else:
+					death_blocked += 1
+			else:
+				death_blocked += 1
+				death_suffix = "DATA_GAP:max_hp_missing"
+		if death_mesh != null:
+			chosen = death_mesh
+			source = "derived_death_obj_" + death_source
+		elif not finished:
 			suffix = _build_stage_suffix(e)
 			var stage_info := _stage_mesh_info(sid, suffix, false)
 			if not stage_info.is_empty() and stage_info["mesh"] is Mesh:
@@ -2471,10 +3802,91 @@ func _sync_building_stages() -> void:
 		(mi as MeshInstance3D).set_meta("build_stage_source", source)
 		(mi as MeshInstance3D).set_meta("build_stage_label", BUILD_STAGE_LABEL)
 		(mi as MeshInstance3D).set_meta("build_stage_visual", "UNVERIFIED")
+		(mi as MeshInstance3D).set_meta("donor_death_state", death_suffix)
+		(mi as MeshInstance3D).set_meta("donor_death_stage", donor_stage.get("stage", 0))
+		(mi as MeshInstance3D).set_meta("donor_death_wall_stage", donor_stage.get("wall_stage", 0))
+		(mi as MeshInstance3D).set_meta("donor_death_material", "debris" if died else "")
+		# B1: no smoke holder is attached at death. The donor clears it on the
+		# transition; "buildingsmoke" is kept only as the future pre-death
+		# damage-smoke key (needs E-U14-burn), never as a death-edge attach.
+		(mi as MeshInstance3D).set_meta("donor_death_smoke_effect", "cleared_at_death" if died else "")
+		(mi as MeshInstance3D).set_meta("donor_death_status", BUILDING_DEATH_STATUS)
+		(mi as MeshInstance3D).set_meta("donor_death_dstage", dstage)
+		(mi as MeshInstance3D).set_meta("donor_death_stage_timer_units", BLD_DEATH_STAGE_TIMER_UNITS)
+		(mi as MeshInstance3D).set_meta("donor_death_stage_timer_label", stage_timer_label)
+		(mi as MeshInstance3D).set_meta("donor_death_hp_suffix_proxy",
+			_donor_death_suffix(e) if died else "")
+		# IMPL-DEATH-FAMILIES — fire the donor :264-311 transition ONCE per death
+		# (fx_fired flag also covers a death first seen in remove() by the
+		# world3d.gd:362 entity feed). Explosion gate mirrors
+		# "switchEssential=death AND iVisual<>hide AND (oldEssential=none OR
+		# (oldEssential=birth AND oldVisual in {stage_2,stage_3}))"; the port's
+		# finished flag stands in for `none`/`birth` ([U]-14, no state API).
+		if died and not fx_fired:
+			death_transitions += 1
+			var prev_finished := bool(prev.get("finished", true))
+			var old_none := prev_finished
+			var old_birth_late := (not prev_finished) and int(prev.get("stage", 0)) >= 2
+			var do_explosion := old_none or old_birth_late
+			var fxout := _fire_donor_death_fx((mi as MeshInstance3D).global_position, do_explosion)
+			# Donor truth: 0 smoke attaches on the death edge (B1).
+			death_smoke_spawns += int(fxout.get("smoke_attached", 0))
+			death_smoke_cleared += 1
+			if (fxout.get("explosion") is Dictionary) and not (fxout["explosion"] as Dictionary).is_empty():
+				death_explosion_hooks += 1
+			(mi as MeshInstance3D).set_meta("donor_death_transition",
+				"ontagstates.inc:264-311")
+			(mi as MeshInstance3D).set_meta("donor_death_explosion",
+				str(fxout.get("explosion_status", BLD_DEATH_EXPLOSION_STATUS)))
+			(mi as MeshInstance3D).set_meta("donor_death_explosion_keys", BLD_DEATH_EXPLOSION_KEYS)
+			(mi as MeshInstance3D).set_meta("donor_death_smoke_status", BLD_DEATH_BURN_STATUS)
+			(mi as MeshInstance3D).set_meta("donor_death_sound", BLD_DEATH_SOUND_KEY)
+			(mi as MeshInstance3D).set_meta("donor_death_sound_status", BLD_DEATH_SOUND_STATUS)
+			fx_fired = true
+		if dstage == 3:
+			(mi as MeshInstance3D).set_meta("donor_death_destroyed",
+				"DeathStage2 — deathstage2.inc:8-15 (GameObjectRequestToDestroyByHandle)")
+			(mi as MeshInstance3D).visible = false
+			death_destroyed += 1
+		_death_prev[int(id)] = {"dead": died, "finished": finished,
+			"stage": int(donor_stage.get("stage", 0)),
+			"dstage": dstage, "dstage_t0": dstage_t0, "fx_fired": fx_fired}
 		stage_hist[stage_key] = int(stage_hist.get(stage_key, 0)) + 1
 		# Donor scaffold auto-child (engcen.prop:72-112, ontagstates.inc:253-259).
+		# IMPL-DEATH-FAMILIES essential death (:281-304), re-run on every stage
+		# pass (death entry + DeathStage1): child0 -> <actor>a.mesh with the
+		# debris material and visible; misc-racetag children destroyed (the port
+		# mirror of BehaviourClear/EffectClear, B1); remaining children 1..n-1
+		# hidden. No scaffold is freed on death. This runs BEFORE the deferred
+		# DeathStage2 destroy below.
 		var sc = _build_scaffolds.get(int(id), null)
-		if finished:
+		if died:
+			var children := (mi as Node3D).get_children()
+			if children.size() > 0 and not bool(e.get("gate", false)):
+				var c0 = children[0]
+				if c0 is MeshInstance3D and death_suffix in ["_death1", "_death2"]:
+					var dsc := _death_mesh_info(sid, death_suffix, true)
+					if not dsc.is_empty() and dsc["mesh"] is Mesh:
+						(c0 as MeshInstance3D).mesh = dsc["mesh"] as Mesh
+						death_child0_hits += 1
+					(c0 as MeshInstance3D).material_override = _death_material(
+						BLD_DEATH_DIR + "tex/debris.png")
+					(c0 as MeshInstance3D).set_meta("donor_death_child_material", "debris")
+					(c0 as MeshInstance3D).set_meta("donor_death_child_mesh",
+						sid + death_suffix + "a")
+					(c0 as MeshInstance3D).visible = true
+			for i in range(children.size() - 1, -1, -1):
+				var ch = children[i]
+				if not is_instance_valid(ch):
+					continue
+				if str(ch.get_meta("donor_racetag", "")) == "misc":
+					(ch as Node).free()
+					death_misc_cleared += 1
+				elif i >= 1 and ch is Node3D:
+					(ch as Node3D).visible = false
+					death_hidden_children += 1
+			_build_scaffolds.erase(int(id))
+		elif finished:
 			if sc is MeshInstance3D and is_instance_valid(sc):
 				(sc as MeshInstance3D).free()
 			_build_scaffolds.erase(int(id))
@@ -2504,13 +3916,125 @@ func _sync_building_stages() -> void:
 			(sc as MeshInstance3D).set_meta("scaffold_source",
 				"stage_scaffold_obj" if sc_art else "base_mesh_port_approximation_hidden")
 			scaffold_count += 1
+	# DeathStage2 destroy (deathstage2.inc:8-15). Removed after the loop so no
+	# iteration is mutated mid-pass; remove() already defers a still-staging
+	# building, so this is the authoritative end of the donor death schedule.
+	for did in destroy_ids:
+		if _nodes.has(did):
+			_force_remove(did)
 	stats["build_stage_counts"] = stage_hist
 	stats["build_stage_scaffolds"] = scaffold_count
 	stats["build_stage_obj_hits"] = stage_art_hits
 	stats["build_stage_approx_nodes"] = stage_approx
 	stats["build_scaffold_obj_hits"] = scaffold_art_hits
+	stats["build_death_art_hits"] = death_art_hits
+	stats["build_death_blocked"] = death_blocked
+	stats["build_death_transitions"] = death_transitions
+	stats["build_death_smoke_spawns"] = death_smoke_spawns
+	stats["build_death_smoke_cleared"] = death_smoke_cleared
+	stats["build_death_explosion_hooks"] = death_explosion_hooks
+	stats["build_death_child0_hits"] = death_child0_hits
+	stats["build_death_hidden_children"] = death_hidden_children
+	stats["build_death_misc_cleared"] = death_misc_cleared
+	stats["build_death_stage2_swaps"] = death_stage2_swaps
+	stats["build_death_destroyed"] = death_destroyed
+	stats["build_death_manifest"] = BLD_DEATH_MANIFEST
+	stats["build_death_burn_status"] = BLD_DEATH_BURN_STATUS
+	stats["build_death_explosion_status"] = BLD_DEATH_EXPLOSION_STATUS
+	stats["build_death_status"] = BUILDING_DEATH_STATUS
+	stats["build_death_explosion_keys"] = BLD_DEATH_EXPLOSION_KEYS.duplicate()
+	stats["build_death_stage_timer_units"] = BLD_DEATH_STAGE_TIMER_UNITS
+	stats["build_death_stage_timer_label"] = stage_timer_label
+	stats["build_death_sound_key"] = BLD_DEATH_SOUND_KEY
+	stats["build_death_sound_status"] = BLD_DEATH_SOUND_STATUS
 	stats["build_stage_label"] = BUILD_STAGE_LABEL
 	stats["build_stage_visual"] = "UNVERIFIED"
+
+
+# DEC-U-unit-death §6 U7/U10/U11 — presentation-only death-edge telemetry.
+# LAND attaches NOTHING (DoDeath -> MyGameObjectPFXClear: 0 smoke / 0 debris /
+# 0 ghost / 0 explosion). Ships fire the gated grenadeexp+expflash and record
+# `deathship` only on the first-sight `none`-entry proxy. No stage timer is
+# converted to seconds ([U]-T), no RNG is drawn, no sim field is written.
+func _sync_unit_deaths() -> void:
+	# Drop mirrors of units already removed (no per-remove hook edit needed).
+	for stale in _unit_death_prev.keys():
+		if not _slot.has(stale):
+			_unit_death_prev.erase(stale)
+			_unit_death_fx_fired.erase(stale)
+	var deaths := 0
+	var by_class: Dictionary = {}
+	var clips: Dictionary = {}
+	var prop_reloads := 0
+	var art_prop_ok := 0
+	var explosions := 0
+	var sounds: Dictionary = {}
+	var ship_swaps := 0
+	var ship_mesh_ok := 0
+	var pfx_cleared := 0
+	var fx_module := "present"
+	var fxm = _find_fx()
+	if fxm == null:
+		fx_module = "missing"
+	for id in _slot.keys():
+		var sl = _slot[id]
+		if not (sl is Dictionary) or str((sl as Dictionary).get("class", "")) != "unit":
+			continue
+		var ed = _refs.get(int(id))
+		if not (ed is Dictionary):
+			continue
+		var e := ed as Dictionary
+		if not bool(e.get("dead", false)):
+			_unit_death_prev[int(id)] = false
+			continue
+		var law := _donor_unit_death_law(e)
+		var cls := str(law.get("class", "inf"))
+		var clip := str(law.get("clip", ""))
+		deaths += 1
+		by_class[cls] = int(by_class.get(cls, 0)) + 1
+		clips[clip] = int(clips.get(clip, 0)) + 1
+		pfx_cleared += 1
+		if str(law.get("prop_reload", "")) != "":
+			prop_reloads += 1
+			var ap: Dictionary = law.get("art_prop", {})
+			if bool(ap.get("on_disk", false)):
+				art_prop_ok += 1
+		if str(law.get("ship_suffix", "")) != "":
+			ship_swaps += 1
+			var sm: Dictionary = law.get("ship_mesh", {})
+			if bool(sm.get("hull_on_disk", false)) and bool(sm.get("attach_on_disk", false)):
+				ship_mesh_ok += 1
+		# The unit tool child is this module's only per-unit Node3D; set_meta
+		# records the law without changing its mesh, transform or action.
+		var tool = _unit_tools.get(int(id), null)
+		if tool is Node3D and is_instance_valid(tool):
+			(tool as Node3D).set_meta("donor_unit_death_law", law)
+			(tool as Node3D).set_meta("donor_unit_death_visual", "UNVERIFIED")
+		# FX edge once per death; land corpses never reach this branch (gate).
+		if bool(law.get("explosion_allowed", false)) \
+				and not bool(_unit_death_fx_fired.get(int(id), false)):
+			_unit_death_fx_fired[int(id)] = true
+			if fxm != null and fxm.has_method("add_impact_fx"):
+				var p: Vector2 = e.get("pos", Vector2.ZERO)
+				for key in DONOR_UNIT_DEATH_EXPLOSION_KEYS:
+					fxm.add_impact_fx(key, _world_pos(p))
+				explosions += 1
+		if bool(law.get("none_entry_proxy", false)):
+			var sk := str(law.get("sound", ""))
+			if sk != "":
+				sounds[sk] = int(sounds.get(sk, 0)) + 1
+		_unit_death_prev[int(id)] = true
+	stats["unit_death_edges"] = deaths
+	stats["unit_death_by_class"] = by_class
+	stats["unit_death_clips"] = clips
+	stats["unit_death_prop_reloads"] = prop_reloads
+	stats["unit_death_art_prop_on_disk"] = art_prop_ok
+	stats["unit_death_pfx_cleared"] = pfx_cleared
+	stats["unit_death_ship_swaps"] = ship_swaps
+	stats["unit_death_ship_mesh_on_disk"] = ship_mesh_ok
+	stats["unit_death_explosions"] = explosions
+	stats["unit_death_sounds"] = sounds
+	stats["unit_death_fx_module"] = fx_module
 
 
 func _resource_sid(ty: String, pos: Vector2) -> String:
@@ -2574,6 +4098,39 @@ func add_resource(n) -> void:
 
 func remove(id) -> void:
 	var eid := int(id)
+	var ed = _refs.get(eid)
+	# IMPL-DEATH-FAMILIES — donor death-schedule ownership
+	# (settagstates.inc:32-53, deathstage2.inc:8-15): the building object stays
+	# alive through DeathStage1 -> DeathStage2 before destroy. The entity feed
+	# (world3d.gd:362) calls remove() as soon as the sim sets dead=true, so
+	# defer the PRESENTATION removal while the two stage timers run. No sim
+	# state is written here; the authoritative destroy is _force_remove() from
+	# the DeathStage2 branch of _sync_building_stages().
+	if ed is Dictionary and bool((ed as Dictionary).get("dead", false)) \
+			and str((ed as Dictionary).get("kind", "")) == "building":
+		var dp: Dictionary = (_death_prev.get(eid, {}) as Dictionary).duplicate(true)
+		var ds := int(dp.get("dstage", 0))
+		if ds == 0:
+			# First sight of death: seed the same stage record the sync pass
+			# uses, so the FX edge, mesh swaps and clears still fire next frame.
+			var fin := bool((ed as Dictionary).get("finished", true))
+			var hp_stage := _donor_raw_stage(ed as Dictionary)
+			dp["dead"] = true
+			dp["finished"] = fin
+			dp["stage"] = int(hp_stage.get("stage", 0))
+			dp["dstage"] = 1 if fin else 2
+			dp["dstage_t0"] = _anim_t
+			dp["fx_fired"] = false
+			_death_prev[eid] = dp
+			return
+		if ds < 3:
+			return
+	_force_remove(eid)
+
+
+# Original removal body, shared by remove() and the DeathStage2 transition.
+# Behaviour is unchanged for every non-death removal.
+func _force_remove(eid: int) -> void:
 	if _slot.has(eid):
 		_release(eid)
 	if _nodes.has(eid):
@@ -2584,6 +4141,13 @@ func remove(id) -> void:
 			mi.free()
 		_nodes.erase(eid)
 	_rotors.erase(eid)   # child is freed with its parent; drop the mirror
+	# DEC-U-TOOL-ATTACH: the tool child is parented to this world node, not to a
+	# freed building MeshInstance3D, so it must be freed explicitly with the unit.
+	if _unit_tools.has(eid):
+		var tc = _unit_tools[eid]
+		if tc is Node and is_instance_valid(tc):
+			(tc as Node).free()
+		_unit_tools.erase(eid)
 	# BUILD-STAGES-01: the scaffold is a child of the freed parent; drop the
 	# presentation mirror without a second free of an invalid instance.
 	if _build_scaffolds.has(eid):
@@ -2616,6 +4180,9 @@ func sync(dt: float) -> void:
 	var pose_sources: Dictionary = {}
 	var seen_frames: Dictionary = {}
 	var morph_rejects: Dictionary = {}
+	# DEC-U-TOOL-ATTACH: presentation counters only; no parity claim.
+	var tool_visible := 0
+	var tool_gaps: Dictionary = {}
 	# MOTION-ANIM-01: presentation telemetry only (no sim write, no parity claim).
 	var measured_speeds: Dictionary = {}
 	var rendered_actions: Dictionary = {}
@@ -2686,6 +4253,16 @@ func sync(dt: float) -> void:
 					if morphed["mesh"] == null:
 						var why := str(morphed.get("reason", "?"))
 						morph_rejects[why] = int(morph_rejects.get(why, 0)) + 1
+		# DEC-U-TOOL-ATTACH: drive the ONE tool child from the resolved token.
+		# The BODY's sampled donor frame is the only frame index used to sample
+		# the tool's anim[0]; no pose -> no frame -> hidden DATA GAP, no fallback.
+		var body_frame := int(pose.get("frame", -1))
+		var tres := _sync_unit_tool(uid, sid, action, body_frame, anim)
+		if bool(tres.get("visible", false)):
+			tool_visible += 1
+		elif str(tres.get("gap", "")) != "":
+			var gwhy := str(tres.get("gap", "?"))
+			tool_gaps[gwhy] = int(tool_gaps.get(gwhy, 0)) + 1
 		if morphed.has("mesh") and morphed["mesh"] != null:
 			var tint = (sl as Dictionary).get("tint", null)
 			var player := int((sl as Dictionary).get("player", -1))
@@ -2738,6 +4315,12 @@ func sync(dt: float) -> void:
 		if ix < xforms.size():
 			xforms[ix] = xf
 		mm.set_instance_transform(ix, xf)
+		# DEC-U-TOOL-ATTACH: the tool child rides the BODY's own instance
+		# transform — identity relative to the body, no offset/rotation/scale.
+		if _unit_tools.has(int(id)):
+			var tc = _unit_tools[int(id)]
+			if tc is Node3D and is_instance_valid(tc):
+				(tc as Node3D).transform = xf
 	for id in _nodes.keys():
 		var mi = _nodes[id]
 		if is_instance_valid(mi):
@@ -2747,6 +4330,9 @@ func sync(dt: float) -> void:
 	# Runs AFTER the unchanged building transform loop and BEFORE the MILLFIX
 	# rotor block, so rotor relocation/fallback stays byte-identical.
 	_sync_building_stages()
+	# DEC-U-unit-death §6: unit death-edge law/telemetry (no sim write, no new
+	# clock, no RNG, no land FX). Added AFTER the untouched building stage pass.
+	_sync_unit_deaths()
 
 	# MILLFIX F1: spin the donor-baked sail from the SAME `_anim_t` clock that
 	# drives the donor morph pass (no second timer, no RNG). Billboarding uses
@@ -2770,7 +4356,10 @@ func sync(dt: float) -> void:
 		rotor.transform = Transform3D(
 			Basis().rotated(Vector3.FORWARD, rotor_spin), rotor.position)
 		var re = _refs.get(int(id))
-		rotor.visible = re is Dictionary and bool((re as Dictionary).get("finished", true))
+		# BLDDEATH-1TO1: donor death hides every child >= 1
+		# (ontagstates.inc:299-303); do not re-show the rotor on a dead mill.
+		rotor.visible = re is Dictionary and bool((re as Dictionary).get("finished", true)) \
+			and not bool((re as Dictionary).get("dead", false))
 	stats["mill_rotor_angle_rad"] = rotor_spin
 	stats["mill_rotor_count"] = _rotors.size()
 	stats["mill_rotor_label"] = ROTOR_STATUS
@@ -2940,6 +4529,13 @@ func sync(dt: float) -> void:
 	stats["donor_morph_pose_sources"] = pose_sources
 	stats["donor_morph_rejects"] = morph_rejects
 	stats["donor_morph_anim_available"] = anim != null
+	# DEC-U-TOOL-ATTACH: structural telemetry only; [U]-T-A/T-B stay open.
+	stats["donor_tool_children"] = _unit_tools.size()
+	stats["donor_tool_visible"] = tool_visible
+	stats["donor_tool_gaps"] = tool_gaps
+	stats["donor_tool_meshes_cached"] = _tool_mesh_cache.size()
+	stats["donor_tool_status"] = TOOL_ATTACH_STATUS
+	stats["donor_tool_u_status"] = TOOL_U_STATUS
 	# MOTION-ANIM-01: measured presentation telemetry (structural/numeric only;
 	# no sim mutation, no donor-parity or visual claim).
 	stats["motion_measured_speeds_m_s"] = measured_speeds

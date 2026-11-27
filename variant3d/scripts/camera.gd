@@ -7,13 +7,88 @@ class_name C3Camera
 const Data = preload("res://scripts/data.gd")
 const C3ConfigScript = preload("res://scripts/config.gd")
 
+# ─── DEC-U-FOG-CAMERA-HUD §2/§3 — 3D camera pin mirror (58 / -32 / 400) ────────
+# Mirrors camera3d.gd DONOR_HEIGHT_MAX=58 / DONOR_HEIGHT_MIN=20 (camera.cfg:6-10),
+# DONOR_PITCH_DEG=-32 (:32-35) and DONOR_FOCAL=400 (:44-45, Min=Max => fixed zoom).
+# This Camera2D consumes ONLY the height pins, via Data.CAMERA_* in bind()
+# (min_zoom/max_zoom); pitch and focal are published for call-site provenance,
+# not simulated here. FOV 17.27 deg stays PORT APPROXIMATION / UNVERIFIED
+# (V1-SENSOR) in camera3d.gd/config.gd — NEVER a donor-claimed value.
+# Global interleave / framing stay [U] O1/R1. NO PARITY CLAIM.
+# ─── DEC-U-MINIMAP-TAIL §2 — no frustum vertex literal to transcribe ──────────
+# [O] classes.script:6026-6040 GetCameraFrustumQuadrangle (LT/RT/RB/LB, border 8)
+# is consumed ONLY by TSoundManager.CalcFrustum (sea scan) — SOUND, not the
+# minimap. [O] minimap.cfg's lens.0 is the ALARM primitive (miscext2.script:260-272),
+# also not the camera box. Neither is wired as a minimap camera box here; the
+# 2D box stays derived from this camera's transform in hud.gd. Port AABB stays
+# [U] PORT APPROXIMATION pending V2-MINI-QUAD (0 px capture). No parity claim.
+static func donor_camera_pins_mirror() -> Dictionary:
+	return {"height_max_m": 58.0, "height_min_m": 20.0,
+		"pitch_deg": -32.0, "focal": 400.0}
+
+# ─── DEC-U-START-POSITIONS §6/§7-6/§8-CAM + DEC-U-START-DEEP §3 — camera law ────
+# Donor text read-only; pin t_87f0f3c130b0, binary NEVER executed. NO PARITY CLAIM.
+# SUPERSESSION: EV-CAM-1 below is a FILE-SCOPE result (data/scripts only).
+# DEC_U_start_deep.md §3/§7 supersedes its PATH-SCOPE "ABSENT" verdict: the first
+# start-derived camera wire lives in data/gui/menu.inc/doprogress.inc. The
+# file-scope proof still stands; only the path-scope reading flips to WIRED.
+# [O-absence] EV-CAM-1 (generatemap.inc:304-502 + dogenerate.inc; P10/P11 census):
+#   NO startx/y -> camera/focus/select/rally assignment in data/scripts on ANY start
+#   path; zero focus-camera call sites there. No donor first-target literal.
+#   (Path-scope flip: see EV-CAM-8 below.)
+# [O] EV-CAM-2 (control.script:712-726 _control_SetPlayer): InterfaceIO + FOW only
+#   (GUIMiniMapPrimitivesClear / SetPlayerHandleInterfaceIO / _player_UpdateFOW /
+#   _control_DeselectAllUnits(False) / GUIExecuteState('DoUpdateSelection') /
+#   GUIExecuteState('InitMinimap')) — NO camera move/select/focus. Callers
+#   initmapgen.inc:204/214/225-226 + initmap.inc:70, identity+FOW only.
+# [O] EV-CAM-3 (control.script:572-707): movers exist but are called ONLY by
+#   _control_MoveCameraToUnitsListCenter (:669-684) / ToSelectedUnits (:688-707)
+#   — UI/selection flows, never generation. _misc_ZoomCamera (misc.script:6229-6301)
+#   is the same @movecamera helper family, also never start-wired.
+# [O] EV-CAM-4 (scenario.script:1847-1849): a scripted camera-to-point call exists
+#   (trigger gc_trigger_action_map_cameraMoveToZone -> _control_MoveCameraToPosition
+#   (zones[zoneid].x/y, 0, True)) — mission-trigger-gated, NOT the skirmish start wire.
+# [O] EV-CAM-5 (gui/menu.inc/docreate.inc:61-99): menu-state default —
+#   SetCameraPropertiesFromFile, elastic 100 clamp :82, DOF 1200 :86, bounded :88-93.
+# [O] EV-CAM-6 (data/cameras/camera.cfg:1-65): 58/20 height, -32 pitch x4, 400 focal
+#   are LIMITS/params, NOT a target; mirrored above in donor_camera_pins_mirror().
+# [O] EV-CAM-8 (DEC-U-START-DEEP §3; EV-WIRE-1/EV-FLAG-1) — FIRST-CAMERA WIRE.
+#   doprogress.inc:36-44, first DoProgress tick after generation:
+#     `if (gbool_gui_mapgenerationfinished) and (myPlHnd<>0) then
+#        gbool_gui_mapgenerationfinished := False;
+#        _control_MoveCameraToPosition(gMap.players[myPlInd].startx,
+#                                      gMap.players[myPlInd].starty, 0, True);`
+#   Producer dogenerate.inc:1939 sets the flag at the end of DoGenerate (after
+#   unit spawn + final SetRandomKey); the consumer clears it (one-shot). The
+#   start-derived TARGET is donor-settled [O], so the former EV-CAM-7 "engine-
+#   default / PORT CHOICE focus" tag is RETIRED, not merely reworded.
+#   Port seam: game.gd:gui_mapgenerationfinished arms at the setup_spawns() tail;
+#   _consume_start_camera_wire() below consumes it each frame (the per-frame
+#   DoProgress-tick equivalent) through this camera's EXISTING jump_to_world()
+#   API, targeting game.map_starts[0] (local human interface slot). No constant,
+#   no FOV and no zoom write is invented.
+# STILL [U] (fixed-seed captures; NOT claimed): CAM-derive (final first-frame
+#   target height after the wrapper ArcTan offset + native clamp), CAM-0 (time=0
+#   smoothing), S-place, S-ver, N-native. §6/§8-CAM owner-run experiment: fixed
+#   2-start map, seed S, 3 identical input-free runs; zero-mismatch = startx/y
+#   equal the §1 rescale exactly and the camera target repeats byte-identically
+#   (declares ENGINE-DEFAULT-STABLE, never donor law); any jitter is quoted, never
+#   patched. This worker never executes the donor binary.
+# PORT CHOICE [U]-CAM — START zoom (main.gd camera.start_zoom = 0.75) stays a port
+#   usability choice; donor bSetMaxHeight height clamp is [U] CAM-derive, so no
+#   zoom/FOV value is claimed or changed here. main.gd:628-638 I11 seam is intact.
+# The pin block above (58/-32/400) and the DEC-U-MINIMAP-TAIL §2 tags are untouched.
+
 var world: C3World
 var edge_margin := 8.0          # cameracontrol.inc cMargin
 var corner_margin := 24.0       # cCornerMargin
 var key_speed := 24.0 * 4.0     # profile keyscrollspeed*4 (default ~24) — estimated default
 var mouse_speed := 16.0 * 4.0   # profile mousescrollspeed*4 — estimated default
 # Donor camera.cfg SphereHeight=58 / SphereHeightMin=20 bounds zoom to 0.345..2.9.
-# The START zoom is owned by main.gd (camera.start_zoom, port default 0.75).
+# The START zoom is owned by main.gd (camera.start_zoom, port default 0.75) —
+# PORT CHOICE [U]-CAM, NOT donor-derived; donor bSetMaxHeight height stays [U]
+# CAM-derive (DEC-U-START-DEEP §3/§6 fixed-seed capture). First TARGET is now the
+# donor-settled one-shot wire above — do not conflate zoom with that target.
 var min_zoom := 1.0             # camera height 58
 var max_zoom := 2.9             # camera height 20 (58/20)
 var zoom_step_factor := 1.15    # Data.CAMERA_ZOOM_STEP — donor-style base step
@@ -82,12 +157,34 @@ func bind(w: C3World) -> void:
 	var h_max: float = maxf(h_min, Data.CAMERA_MAX_HEIGHT)
 	min_zoom = h_min / h_max
 	max_zoom = h_max / h_min
-	# Startup zoom is applied by main.gd with set_zoom_target(..., immediate=true).
+	# Startup zoom is applied by main.gd with set_zoom_target(..., immediate=true) —
+	# PORT CHOICE [U]-CAM (0.75) stays; the first TARGET is donor-settled via the
+	# game.gd flag consumed by _consume_start_camera_wire() (DEC-U-START-DEEP §3).
 	zoom_target = clampf(1.0, min_zoom, max_zoom)
 	zoom = Vector2.ONE * zoom_target
 	_zoom_anchor_screen = Vector2.INF
 	make_current()
 	position = Vector2(0, 0)
+
+# DEC-U-START-DEEP §3 / EV-WIRE-1 — donor first-camera one-shot wire (port seam).
+# Donor: doprogress.inc:41 `_control_MoveCameraToPosition(startx, starty, 0, True)`
+# gated by one-shot gbool_gui_mapgenerationfinished (producer dogenerate.inc:1939).
+# Port: game.gd exposes that flag plus the local player's start via
+# consume_start_camera_target(); this camera applies it with its EXISTING
+# jump_to_world() API (start coords are SIM metres; view_scale applied there),
+# and the producer side has already cleared the flag (one-shot). No new constant,
+# no FOV and no zoom write — donor time/height args + native clamp stay [U]
+# CAM-derive / CAM-0 with §6 fixed-seed captures. Called from _process so it
+# mirrors the donor's per-frame DoProgress consumer. NO PARITY CLAIM.
+func _consume_start_camera_wire() -> void:
+	if world == null or world.game == null:
+		return
+	var g: Object = world.game
+	if not g.has_method("consume_start_camera_target"):
+		return
+	var target: Variant = g.call("consume_start_camera_target")
+	if target is Vector2:
+		jump_to_world(target as Vector2)
 
 # T-NAV-RESPONSIVE: instant reposition (minimap click/drag). Writes position
 # now, re-clamps with a fresh memo and nudges the world redraw — no waiting
@@ -142,6 +239,11 @@ func _process(dt: float) -> void:
 	# dt is UNSCALED. W5-7 folds its depth/dwell factor into mouse_speed only;
 	# arrow-key and middle-drag pan still match the profile speeds exactly.
 	dt = minf(dt, 0.05)
+	# DEC-U-START-DEEP §3/EV-WIRE-1: donor one-shot first-camera wire, checked every
+	# frame (the port equivalent of the per-frame DoProgress consumer). Runs BEFORE
+	# the pan/clamp writers below so the frame-1 start focus is settled, and with
+	# no input gate — it is a one-shot flag, not a per-input action.
+	_consume_start_camera_wire()
 	_smooth_zoom(dt)  # W4-1: frame-rate-independent zoom, before pan and clamp
 	var vp := get_viewport().get_visible_rect().size
 	var m := get_viewport().get_mouse_position()

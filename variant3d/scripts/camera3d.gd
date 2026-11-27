@@ -59,6 +59,27 @@ const DONOR_HEIGHT_MAX: float = 58.0  # camera.cfg:6 SphereHeight; :9 SphereLeng
 const DONOR_HEIGHT_MIN: float = 20.0  # camera.cfg:7 SphereHeightMin; :10 SphereLengthMin
 const DONOR_FOCAL: float = 400.0      # camera.cfg:44-45 Min/MaxFocalLength
 const DONOR_FOCAL_STEP: float = 5.0   # onmousewheel.inc:326,334 (CTRL screenshot zoom only)
+
+# ─── DEC-U-FOG-CAMERA-HUD §2/§3 — PINNED, RESOLVED ([O]) ───────────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_camera_hud.md.
+# camera.cfg:6-10     SphereHeight/SphereLength = 58, Min = 20  -> DONOR_HEIGHT_*
+# camera.cfg:32-35    all four FreeRotation pitch angles = -32  -> DONOR_PITCH_DEG
+# camera.cfg:44-45    Min/MaxFocalLength = 400, FocalLengthPower = 1 (fixed zoom)
+# camera.cfg:59-64    DynFogStart=0.25, End=0.025, Density=2.0, Power=0.85,
+#                     Offset=0, Depth=False — VISUAL depth fog only, DISABLED in
+#                     the gameplay camera. NEVER fed to gameplay FOW.
+# UNRESOLVED [U] — nothing substituted, each keeps its experiment:
+#   V1-SENSOR sensor width / FOV (17.27 deg stays PORT APPROXIMATION, never donor);
+#   V2-PROJ world->screen matrix / yaw / drag-anchor semantics;
+#   R1 framing / HeightTarget handling.
+# NO PARITY CLAIM.
+const DONOR_PITCH_DEG: float = -32.0
+const DONOR_DYNFOG_START: float = 0.25
+const DONOR_DYNFOG_END: float = 0.025
+const DONOR_DYNFOG_DENSITY: float = 2.0
+const DONOR_DYNFOG_POWER: float = 0.85
+const DONOR_DYNFOG_OFFSET: float = 0.0
+const DONOR_DYNFOG_DEPTH: bool = false
 # MMJUMP-02 — donor minimap-jump literals. Read ONLY by jump_to_world_donor_offset() below;
 # jump_to_world() stays a byte-identical plain-centre entry point for CAM-RV-01.
 #   control.script:595      angleZ = -Lerp(-32,-32,Clamp((h-20)/(58-20),0,1)) = +32
@@ -111,8 +132,8 @@ var max_zoom: float = 2.9
 var zoom: float = 1.0                  # Camera3D has no built-in zoom property
 var zoom_target: float = 1.0
 var zoom_step_factor: float = 1.15     # Data.CAMERA_ZOOM_STEP (data.gd:168)
-var zoom_notch_gain: float = 2.0       # camera.gd:22 (port parity)
-var zoom_smooth_rate: float = 18.0     # camera.gd:25 (port parity)
+var zoom_notch_gain: float = 2.0       # camera.gd:22 (port-internal parity; NOT donor parity [U])
+var zoom_smooth_rate: float = 18.0     # camera.gd:25 (port-internal parity; NOT donor parity [U])
 var _zoom_anchor_screen: Vector2 = Vector2.INF
 
 # DEEPDEC-01 §6 item 1 (E10 `onmousewheel.inc:39-41`, E8 `camera.cfg:9-10`): donor
@@ -141,7 +162,7 @@ var _height_sampler_obj: Object = null
 var _height_sampler_method: String = ""
 var _height_sampler_sim_offset: Vector2 = Vector2.ZERO
 
-# Edge-scroll / depth / dwell tunables: port parity with the shipping 2D camera
+# Edge-scroll / depth / dwell tunables: port-internal parity with the shipping 2D camera (NOT donor parity [U])
 # (camera.gd:11-14, :39-51) and Data.CAMERA_{EDGE,CORNER,KEY,MOUSE} (data.gd:164-167).
 var edge_margin: float = 8.0
 var corner_margin: float = 24.0
@@ -207,8 +228,11 @@ func bind(game: Object, view_scale: float = 1.0) -> void:
 		key_scroll_speed_profile = clampf(cfg.num("camera.keyscrollspeed", 0.5), 0.0, 1.0)
 		mouse_scroll_speed_profile = clampf(cfg.num("camera.mousescrollspeed", 0.5), 0.0, 1.0)
 	# Donor sphere bounds -> 2D zoom interval (camera.gd:81-84).
-	min_zoom = maxf(1.0, Data.CAMERA_MIN_HEIGHT) / maxf(1.0, Data.CAMERA_MAX_HEIGHT)
-	max_zoom = maxf(1.0, Data.CAMERA_MAX_HEIGHT) / maxf(1.0, Data.CAMERA_MIN_HEIGHT)
+	# DEC-U §2.1 — 20/58 pinned from camera.cfg:6-10; Data.CAMERA_*_HEIGHT
+	# carries the same literals but is owned by another worker, so the camera
+	# reads its own donor constants here.
+	min_zoom = DONOR_HEIGHT_MIN / DONOR_HEIGHT_MAX
+	max_zoom = DONOR_HEIGHT_MAX / DONOR_HEIGHT_MIN
 	zoom_target = clampf(1.0, min_zoom, max_zoom)
 	zoom = zoom_target
 	# DEEPDEC-01 §6 item 1 — seed the explicit height state from the 2D start zoom.
@@ -275,11 +299,29 @@ func _apply_transform() -> void:
 	# _target yields the same base, whatever zoom does between calls.
 	var half := _map_half()
 	var base := Vector3(_target.x - half.x, 0.0, _target.y - half.y)
-	var pitch: float = deg_to_rad(Data.CAMERA_PITCH)
+	# DEC-U §2.1 — all four donor pitch angles are -32 (camera.cfg:32-35);
+	# this is a resolved [O] literal, not the port's 17.27-deg FOV estimate.
+	# Data.CAMERA_PITCH (= -32) stays published for other callers, but the
+	# camera transform itself is pinned to the donor value.
+	var pitch: float = deg_to_rad(DONOR_PITCH_DEG)
 	# Camera sits behind+above the ground focus: offset.y = h, offset.z = h/tan(|pitch|).
 	var back: float = h * cos(pitch) / maxf(0.0001, -sin(pitch))
 	global_position = base + Vector3(0.0, h, back)
 	look_at(base, Vector3.UP)
+
+
+# DEC-U §2.1 — DynFog* introspection only. These keys are a VISUAL depth fog
+# and DynFogDepth=False in gameplay (camera.cfg:59-64); returning them makes
+# the seam explicit to any renderer owner but NEVER applies them to the
+# gameplay FOW grid (world3d_fog.gd). No visual-fog shader is invented here.
+func donor_dynfog_visual_params() -> Dictionary:
+	return {
+		"start": DONOR_DYNFOG_START, "end": DONOR_DYNFOG_END,
+		"density": DONOR_DYNFOG_DENSITY, "power": DONOR_DYNFOG_POWER,
+		"offset": DONOR_DYNFOG_OFFSET, "depth": DONOR_DYNFOG_DEPTH,
+		"focal": DONOR_FOCAL, "pitch_deg": DONOR_PITCH_DEG,
+		"height_max": DONOR_HEIGHT_MAX, "height_min": DONOR_HEIGHT_MIN,
+	}
 
 
 # Ground world point (metres, X/Z) -> viewport screen pixels. Camera3D.unproject_position
@@ -394,6 +436,13 @@ func _screen_to_surface(screen: Vector2) -> Vector2:
 # world3d.gd:279. Do NOT shift here: it would double-shift clamp_pos() and the minimap box.
 # See CAM_01_view_rect.md for the world3d.gd:268-274 Vector2-branch change request.
 # The HUD minimap box adapter projects these into minimap pixel space (contract :16).
+# DEC-U-MINIMAP-TAIL §2 [U] V2-MINI-QUAD: this stays the SINGLE minimap quad
+# source; no donor vertex literal exists to transcribe. classes.script:6026-6040
+# GetCameraFrustumQuadrangle (LT/RT/RB/LB) is TSoundManager's SOUND frustum, not
+# minimap geometry, and minimap.cfg lens.0 is the ALARM primitive
+# (miscext2.script:260-272) — neither is wired as a minimap camera box. The
+# derived AABB / adapter quad is a PORT APPROXIMATION until the 0 px capture;
+# FOV (:97-109) stays PORT APPROXIMATION / UNVERIFIED. NO PARITY CLAIM.
 func get_viewport_corners() -> Array:
 	var vp: Vector2 = get_viewport().get_visible_rect().size
 	var out: Array = []
@@ -419,6 +468,28 @@ func get_view_rect() -> Rect2:
 	if seen == 0:
 		return Rect2()
 	return Rect2(min_v, max_v - min_v)
+
+
+# DEC-U-START-DEEP §3 / EV-WIRE-1 — donor first-camera one-shot wire, 3D mirror of
+# camera.gd:_consume_start_camera_wire(). Donor: doprogress.inc:41
+# `_control_MoveCameraToPosition(startx, starty, 0, True)` gated by one-shot
+# gbool_gui_mapgenerationfinished (producer dogenerate.inc:1939). Port: game.gd
+# exposes that flag plus the local player's start via consume_start_camera_target();
+# THIS camera applies it through its EXISTING 3D jump_to_world() API (start coords
+# are SIM metres, the same space as _target — no view_scale factor, and NO new
+# FOV/zoom/pitch/height constant). The one-shot state stays in game.gd's flag,
+# which the consumer clears; calling this helper each frame mirrors the donor's
+# per-frame DoProgress consumer and adds NO duplicate state. Donor time/height
+# args + native clamp stay [U] CAM-derive / CAM-0 with the §6 fixed-seed captures.
+# NO PARITY CLAIM.
+func _consume_start_camera_wire() -> void:
+	if game == null or not is_instance_valid(game):
+		return
+	if not game.has_method("consume_start_camera_target"):
+		return
+	var target: Variant = game.call("consume_start_camera_target")
+	if target is Vector2:
+		jump_to_world(target as Vector2)
 
 
 # T-NAV-RESPONSIVE — minimap click/drag jump. 2D parity: app/scripts/camera.gd:96-104
@@ -589,6 +660,12 @@ func jump_to_world_donor_offset(world_point: Vector2) -> void:
 func _process(dt: float) -> void:
 	# Hitch guard (camera.gd:144): a stall must not teleport the camera.
 	dt = minf(dt, 0.05)
+	# DEC-U-START-DEEP §3/EV-WIRE-1: donor one-shot first-camera wire, checked every
+	# frame (the per-frame DoProgress consumer equivalent). Runs BEFORE _smooth_zoom
+	# and the pan/clamp writers below so the frame-1 start focus is settled first;
+	# no input gate — a one-shot flag, not a per-input action. The flag/one-shot
+	# state lives in game.gd; no new state here. NO PARITY CLAIM.
+	_consume_start_camera_wire()
 	_smooth_zoom(dt)  # zoom before pan/clamp, like 2D camera.gd:145
 	var vp: Vector2 = get_viewport().get_visible_rect().size
 	var m: Vector2 = get_viewport().get_mouse_position()

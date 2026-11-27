@@ -1,0 +1,226 @@
+---
+id: DEC-U-AAF-TRIGGERS
+swarm: TERRAIN-SWARM-2026-11-26 / PORT1TO1-NO-APPROXIMATION
+role: "WORKER DEC-U-AAF-TRIGGERS — donor state/order/weapon/carry to AAF action trigger map"
+owner_file: docs/terrain_swarm_2026-11-26/reports/DEC_U_aaf_triggers.md
+status: DELIVERED__READ_ONLY__ONE_REPORT_ONLY__NO_CODE_ASSET_CONFIG_GODOT_GIT_EDIT
+created: 2026-11-26
+labels: [O, D, I, U, NO_PARITY_CLAIM, NO_APPROXIMATION]
+parity_guard: "NO DONOR PARITY IS CLAIMED. No same-camera donor/port A/B frame was produced or examined. Every donor statement is a read-only file/line observation; every port statement is a read-only source line. No behaviour is closed by a port fallback."
+scope_guard: "Exactly one repo file written (this report). No source, shader, config, asset, fixture, test, runner, Godot, git or user-mod edit. Donor binary and donor data tree READ-ONLY; no donor executable run, no donor bytes copied into the repo. Singleplayer skirmish only."
+donor_pin: "t_87f0f3c130b0 = C:\\Games\\Cossacks 3\\cossacks.exe (PE x86, 5,768,048 B on disk this pass; sha256 prefix 87f0f3c130b0 carried from DEC_U_aaf_art_audit, not recomputed here). Data tree C:\\Games\\Cossacks 3\\data read READ-ONLY. Pin cited, binary not executed; passes below are text/directory reads."
+port_scope: "variant3d/scripts/anim3d.gd + variant3d/scripts/world3d_entities.gd (read-only line citations). No edits."
+prior_reports_read:
+  - docs/terrain_swarm_2026-11-26/reports/DEC_U_aaf_art_audit.md (U2 left open: state-to-AAF map, loop/once flags, completion, min/maxFrameBlend; anim_action data-only hook)
+  - docs/coord_swarm_2026-11-25/reports/DANIM_01_action_ranges.md (§4.2 state map, §4.3 loop/blend, §5 clip table)
+  - docs/terrain_swarm_2026-11-26/reports/PORT1TO1_objects_anim_collisions_fx.md (§1.5 AAF census, §5 port diff)
+---
+
+# DEC-U — donor AAF trigger map: state/order/weapon/carry → action token, loop/once, completion, blend
+
+> READ-ONLY. Singleplayer skirmish only. No parity claim. No approximation endorsed.
+> `[O]` = observed donor file line / port line. `[D]` = arithmetic over cited `[O]`. `[I]` = reading without runtime proof. `[U]` = unresolved after the passes here.
+> Path shorthands: `D:` = `C:\Games\Cossacks 3\data\` (read-only). `P:` = workspace `variant3d\`.
+> `ev_` ids below are per-pass observation ids, not binary-decomp ids; the evidence is the cited donor `path:line` verified by a second read pass where noted. "Address" = `path:line` (scripts/ACL/AAF are text; no binary addresses are read or cited).
+
+## 0. Method, labels, passes
+
+### 0.1 Pass ledger (multiple passes; strange-read log inline)
+
+| Pass | Operation (read-only) | Result |
+|---|---|---|
+| P1 | `Get-Content D:animations/aaf/{peaukr,musketeer,grenadier,cannon,yacht}.aaf` full-row reads | ev_P1a: peasant 18 rows (`walk 1..20` … `reaction 456..481`, all `morph`) [O]; ev_P1b: musketeer 17 rows (`attack1 99..124`, `death0 564..628` …) [O]; ev_P1c: grenadier 30 active rows + 1 `//`-commented `attack2 630..679` (`attack2 153..154` stub, `attack2before 630..663`, `attack2after 664..679`) [O]; ev_P1d: cannon 4 rows (`idle 1..1`, `walk 1..99`, `attack0/attack1 301..337`) [O]; ev_P1e: yacht 4 rows all `1..280` [O] |
+| P2 | Indexed reads of `D:scripts/lib/unit.script` (`:10856-11090`, `:6993-7009`, `:10808-10809`, `:10846-10852`, `:369-373`, `:10774-10777`, `:11095-11104`) | ev_P2a: action-extract/build/attack branch (`workfood/workwood/workstone`, `construct`, `attack0/1/2` by `iWeapon`) [O]; ev_P2b: carry branch (`idlefood/idlewood/idlestone`, `walkfood/walkwood/walkstone` by `iResource`×`iMove`) [O]; ev_P2c: weapon-state idle/walk branch (`idle/idle0/idle1/idle2`, `walk/walk0/walk1[→walk per 10946]/walk2`) [O]; ev_P2d: trans-name readback branch (`trans01/trans10/…` + `prepare*/attack*/idle*` → `idle0/1/2`) [O]; ev_P2e: death branch (`death/death0/1/2` by `iWeapon` + `_death` fallback) + artillery `_death` reload + `0.7+random*0.6` interval factor [O]; ev_P2f: peasant attach map (`workfood→hoe`, `workwood→axe`, `workstone→pick`, `construct→hammer`, `walk/idle+food→bag`, `+wood→lumber`, `+stone→cart`, `walk/idle/death→hide`) [O]; ev_P2g: `_unit_IsAnimationExists` (`GetGameObjectFrameAnimationDataByHandle`, `anim=''` → true) [O]; ev_P2h: duration engine law (`frames:=1+ef-sf`, `frames/30`) [O]; ev_P2i: death `acmPlayOnce/aamPlayOnce` + `stage_0→acmPlayOnce` else `acmLoop` + hide `acmNone/aamNone` [O]; ev_P2j: `minFrameBlend=6/maxFrameBlend=8` locals + blend call sites (incl. deliberate `0,0` no-blend) [O] |
+| P3 | Reads of `D:scripts/dmscript.global:868-926`, `D:scripts/units/unit.inc/initial.inc:1-40`, `D:scripts/units/unit.inc/ontagstates.inc:302-341,435-516,583-596` | ev_P3a: 59 `gc_anim_*` name constants incl. `turn*/turnleft*/turnright*/collide*` families with NO AAF rows found [O]; ev_P3b: `SetGameObjectMinFrameBlend(6)/MaxFrameBlend(8)/DeferredFrameBlend(false)` [O]; ev_P3c: `ontagstates` mirrors of P2 branches (extract/build/attack, trans readback, death fallback, `minFrameBlend/maxFrameBlend` + `0,0` reset) [O] |
+| P4 | Reads of `D:gui/menu.inc/showdebuganimations.inc:45-66,113-156`, `D:scripts/lib/movie.script:648-657`, `D:animations/acl/{cannon,peasant,fasthorse,hardhorse}.acl` spot rows, `D:animations/acl/acl.lib:1-40` | ev_P4a: `bPlayOnce=True` for `attack0/1/2`, `death/death0/death1` (both debug branches) and `False` for `walk/walk0/idle/idle0/1/2/construct/work*/idle*/walk*` [O]; ev_P4b: `bOnce→acmPlayOnce / bLoop→acmLoop / else acmNone` [O]; ev_P4c: cannon ACL `attack0/attack1` blocks (`CyclesList=False`, `acoSmoothAnimation=True`, `actExecuteState OnAclAnimationReachedAttack … actAnimation NumberCycle=1 … OnAclAnimationReachedAttackEnd`) vs plain `idle/walk/death` single-`AnimationName` blocks [O]; ev_P4d: peasant ACL `From/Name/AnimationName` rows for `workfood`, `construct` (grep `[O]`); ev_P4e: `fasthorse/hardhorse.acl` `attack2` rows present [O] |
+| P5 | Negative searches: `unit.script` full-text (`reaction`, `attack2before`, `prepare0`, `trans01` presence test via `py -3` latin-1 read); `scripts/**` recursive `reaction` search; ACL `reaction` search; second read of `unit.script:6993-7009` + `ontagstates.inc:372-388` carry region | ev_P5a: `reaction` = absent from `unit.script` text; absent from all files under `D:scripts` (recursive search, zero hits) [O]; ev_P5b: `attack2before/after` = absent from `unit.script` text (only `gc_anim_attack2` at `:10882`, `:10980`, `:11029`, `:11053-class` readback) [O]; ev_P5c: `prepare0/trans01/walkprepare0` = present ONLY as readback/sticky-state names (`:10977-10980`, `:11026-11029` and `ontagstates` mirrors), never as a set/selected `anim :=` target [O]; ev_P5d: `reaction` = absent from all `D:animations/acl/*.acl` (`Select-String` zero hits; peasant ACL grep confirms `workfood/construct` but no `reaction`) [O]; ev_P5e: carry selection confirmed in both engines (`unit.script:10900-10923` + `ontagstates.inc:372-388` read second time) [O] |
+| P6 | Port reads: `P:scripts/anim3d.gd` (`:76-137` tables/statuses, `:202-283` `play()`, `:398-407` `has_action`, `:607-656` `pose_for`, `:719-760` `_is_once_action/_is_attack_action/_frame_at`, `:763-776` `_frame_blend_fields`, `:1115-1182` `_nearest_exported_frame/_action_range_for/_unknown`); `P:scripts/world3d_entities.gd` (`:198-278` map/status consts, `:1802-1932` `_unit_action/_action_available/_donor_action_fallback/_donor_resource_suffix/_weapon_kind/_record_action_gap`) | ev_P6a: port per-sid gate + fallback chain + `attack2→attack1→attack0→idle` + `bullet→attack1/attack0` orderings all labelled `[U] U2`/`[I]` in situ [O]; ev_P6b: `_frame_at` once-clamp vs `fposmod` loop + nearest-exported-frame + blend-delta diagnostic window [O]; ev_P6c: `anim_action` explicit-data hook + gap recorder, no other trigger for `reaction/attack2` in port data path [O] |
+| P7 | Cross-check vs DANIM_01 §4.2/§4.3, DEC_U §1.2/§5 C2-C3, `world.gd:515-516` (carried, not re-read here) | ev_P7: agreements and deltas recorded in §5 (e.g. `walk1` asymmetry, `attack2before/after` orphan status, `reaction` orphan status) [D] |
+
+**Strange-read log:** `Select-String -Path <dir>` refuses directory paths (P-task retry: pipe `Get-ChildItem -Recurse -File | Select-String`); quoted-pattern escaping differs between `powershell` and `py -3` latin-1 reads (retry: single-token patterns). No branch polarity was guessed. No donor binary was executed; no donor bytes were copied into the repo. Donor `cossacks.exe` size re-observed `5,768,048` B (P-task `Get-Item`); the `t_87f0f3c130b0` pin prefix is carried from `DEC_U_aaf_art_audit.md` §0.1 P1, not re-hashed here.
+
+---
+
+## 1. Exact donor trigger → AAF action-token map (read-only)
+
+### 1.1 Name constants (the token vocabulary) [O] — ev_P3a
+
+`D:scripts/dmscript.global:868-926` declares the full `gc_anim_*` vocabulary the selectors below assign from. Tokens with donor AAF rows are marked; the rest are vocabulary-only (no AAF row found in the 246-file M1 census — DANIM_01 §3.3, carried):
+
+| Constant | Token | AAF rows? |
+|---|---|---|
+| `gc_anim_idle/idle0/idle1/idle2` | `idle/idle0/idle1/idle2` | yes (modal `idle 1..90/505..589`, `idle0 204..254`, `idle1 256..305`, `idle2 153..202` — DANIM_01 §3.3) |
+| `gc_anim_walk/walk0/walk1/walk2` | `walk/walk0/walk1/walk2` | `walk/walk0/walk2` yes (modal `1..24`); **`walk1`: NO row in any of 246 AAFs** (DANIM_01 catalog has no `walk1` entry; `walk_` 1-file outlier is not `walk1`) |
+| `gc_anim_attack0/attack1/attack2` | `attack0/attack1/attack2` | `attack0` 93 files; `attack1` 29 files; `attack2` 7 files (2-frame `153..154` stub) + `attack2before 630..663` + `attack2after 664..679` in the same 7 grenadier files (ev_P1c) |
+| `gc_anim_prepare0/1/2`, `gc_anim_unprepare0/1/2` | `prepare*/unprepare*` | yes where the sid's AAF declares them (modal `prepare0 504..505` 2-frame; peasant `64..65`) |
+| `gc_anim_death/death0/death1/death2` | `death/death0/1/2` | yes (`death` 114 files modal `49..119`; `death0` 37; `death1` 25; `death2` 7) |
+| `gc_anim_trans01/trans10/trans02/trans20/trans12/trans21` | `trans*` | yes where declared (modal `trans01 408..420`, `trans10 420..431`, …) |
+| `gc_anim_turn/turn0/1/2`, `turnleft*`, `turnright*` | `turn*` | **NO rows in any AAF** — vocabulary-only; turning is handled by `GameObjectSetupRotatingToDirection/Target` calls, not by an AAF token (ev_P2d: `turn` state reuses `animidle/animwalk` names) |
+| `gc_anim_walkprepare0/1/2`, `walkunprepare0/1/2` | `walkprepare*/walkunprepare*` | yes (`walkprepare0 50..73`, `walkunprepare0 74..97` modal) |
+| `gc_anim_collide/collide0/1/2` | `collide*` | **NO rows in any AAF** — vocabulary-only |
+| `gc_anim_walkfood/walkwood/walkstone` | `walkfood/walkwood/walkstone` | yes, peasant family only (8 files each: `257..276 / 22..41 / 43..62`, 20-frame) |
+| `gc_anim_workfood/workwood/workstone` | `workfood/workwood/workstone` | yes, peasant family only (8 files: `278..299 / 237..254 / 217..234`) |
+| `gc_anim_idlefood/idlewood/idlestone` | `idlefood/idlewood/idlestone` | yes, peasant family only (8 files: `405..454 / 354..403 / 303..352`, 50-frame) |
+| `gc_anim_construct` | `construct` | yes, peasant family only (8 files: `186..198`, 13-frame) |
+| *(no `gc_anim_reaction` constant exists)* | `reaction` | **orphan**: AAF row `456..481` in 8 peasant AAFs (ev_P1a) but **zero script/ACL references** (ev_P5a/P5d). No constant, no `anim :=` site, no ACL `From/Name`, no `ManagePeasantAttach` case |
+
+### 1.2 Trigger → token table (every row is a donor `path:line` observation) [O]
+
+`iAction/iWeapon/iMove/iResource/iEssential/iVisual` are the tag fields decoded at `unit.script:10837-10843` (ev_P2, second field block). `anim`/`animidle`/`animwalk` are the three locals selected by `DoSetupMoveAnimation` (`:10856-11070`) and mirrored (with `GameObjectMy*` API spellings) in `ontagstates.inc:302-516`. `bSkip=True` marks the early-out branch that plays `anim` immediately with **no blend** (`0,0` + `GameObjectResetFrameAnimationBlend`, `:10891-10894`).
+
+| # | Entity state / order / weapon / carry [O donor trigger] | AAF action token emitted [O] | Donor cite (set-site) | Blend at emission [O] | Existence gate [O] | Port reads it? [O] |
+|---|---|---|---|---|---|---|
+| T1 | `iAction=extract` + target res `food` | `workfood` | `unit.script:10865-10871`; mirror `ontagstates.inc:302-304` | `0,0` no-blend early-out (`:10891-10892` "dont use blend cause it kills animation") | `_unit_IsAnimationExists` `:10888` | yes — `world3d_entities.gd:1842-1860` (`work+res`, gathering branch) gated by `has_action` |
+| T2 | `iAction=extract` + `wood` | `workwood` | `unit.script:10872`; mirror `:305-308` | `0,0` early-out, same site | same `:10888` | yes, same port site |
+| T3 | `iAction=extract` + `stone` | `workstone` | `unit.script:10873`; mirror `:309-312` | `0,0` early-out, same site | same `:10888` | yes, same port site |
+| T4 | `iAction=build` (any res/weapon) | `construct` | `unit.script:10877`; mirror `:316-320` (`bBlend:=True` in aix spelling, then same `0,0` early-out at `:329-343`) | `0,0` early-out (script engine path); aix path also funnels to the same existence-gated switch | same `:10888` | yes — `:1835-1837` (`otype build/repair` + stationary + `has_action(construct)`) |
+| T5 | `iAction=attack` + `iWeapon∈{none,0}` | `attack0` | `unit.script:10878-10880`; mirror `:321-325` | `0,0` early-out | same `:10888` | yes — `:1866-1876` chain `attack1/attack0/idle` or `attack0/attack1/idle` by `_weapon_kind` |
+| T6 | `iAction=attack` + `iWeapon=1` | `attack1` | `unit.script:10881`; mirror `:324` | `0,0` early-out | same `:10888` | yes, same port site (order depends on port `bullet` kind — see [U]-W) |
+| T7 | `iAction=attack` + `iWeapon=2` | `attack2` | `unit.script:10882`; mirror `:325` | `0,0` early-out | same `:10888` | partial — port only via explicit `anim_action` (`:1824-1832`) or `attack2→attack1→attack0→idle` fallback; **no grenade/order trigger in port data** (port comment `:1863-1865` admits it) |
+| T8 | `iResource=food` + `iMove∈{idle,turn}` (no action tag) | `idlefood` (into `animidle`) | `unit.script:10901-10906`; mirror `ontagstates.inc:372-388` region (ev_P5e) | deferred: turn→`min/max` blend (`:11016`), idle→`0,0` reset (`:11042`) | sticky: `animidle` falls back to `gc_anim_idle` if missing (`:11036-11037`) | yes — `:1842-1860` (`idle+res` stationary chain) gated by `has_action` |
+| T9 | `iResource=food` + `iMove=walk` | `walkfood` (into `animwalk`) | `unit.script:10905`; mirror same | deferred: walk→`min/max` blend (`:11055`) | walk: `animwalk` else `gc_anim_walk` (`:11048-11051`) | yes — `:1849-1859` (`walk+res` moving chain) |
+| T10 | `iResource=wood` + idle/turn | `idlewood` | `unit.script:10910-10912` | same deferred split | same sticky fallback | yes, same port site |
+| T11 | `iResource=wood` + walk | `walkwood` | `unit.script:10913` | walk `min/max` | same walk fallback | yes |
+| T12 | `iResource=stone` + idle/turn | `idlestone` | `unit.script:10916-10918` | same deferred split | same sticky fallback | yes |
+| T13 | `iResource=stone` + walk | `walkstone` | `unit.script:10919` | walk `min/max` | same walk fallback | yes |
+| T14 | no action, no resource; `iWeapon=none` + idle/turn/walk | `idle / idle / walk` | `unit.script:10928-10933` | turn `min/max` (`:10970` code present but commented out at `:10963-10972` — turn currently falls to the idle sticky branch `:10973-11018`); idle `0,0` (`:11042`); walk `min/max` (`:11055`) | sticky/walk fallbacks as above | yes — `:1879` (`walk if moving else idle`) |
+| T15 | `iWeapon=0` + idle/turn/walk | `idle0 / idle0 / walk0` | `unit.script:10935-10940` | same split | same | yes — port resolves only if the sid exports them (`has_action`); else falls back down the chain |
+| T16 | `iWeapon=1` + idle/turn/walk | `idle1 / idle1 / walk1` | `unit.script:10942-10947` | same split | same; **note asymmetry**: walk branch tests `_unit_IsAnimationExists(animwalk)` → `walk1`, else plain `walk` — but **no AAF in the 246-file census defines `walk1`** (ev §1.1), so donor walk1 always degrades to `walk` [D] | port chain includes `walk1`? No — port walk chain is `[walk+res, idle+res, walk, idle]`; `walk1` never requested (matches donor reality, but unlabelled — see §5 F6) |
+| T17 | `iWeapon=2` + idle/turn/walk | `idle2 / idle2 / walk2` | `unit.script:10949-10954` | same split | same | yes if exported |
+| T18 | turn/idle sticky readback: current anim ∈ {`trans10`,`trans20`,`walk0`,`prepare0`,`attack0`,`idle0`} | `idle0` | `unit.script:10977-10978` (turn) + `:11027` (idle); mirrors `:435`,`:485` | turn `min/max` (`:11016`); idle `0,0` (`:11042`) | `animidle` existence re-check → `gc_anim_idle` (`:10987-10988`, `:11036-11037`) | **no** — port has no readback/sticky branch (always recomputes from order/moving) — [U]-S (§4) |
+| T19 | readback ∈ {`trans01`,`trans21`,`walk1`,`prepare1`,`attack1`,`idle1`} | `idle1` | `unit.script:10979` + `:11028`; mirrors `:436`,`:486` | same | same | **no** — [U]-S |
+| T20 | readback ∈ {`trans02`,`trans12`,`walk2`,`prepare2`,`attack2`,`idle2`} | `idle2` | `unit.script:10980` + `:11029`; mirrors `:437`,`:487` | same | same | **no** — [U]-S |
+| T21 | `iEssential=death` + `iWeapon=none/0/1/2` | `death/death0/death1/death2` | `unit.script:11086-11090`; mirror `:583-586` | `min/max` blend (`:11100`,`:596`); artillery resets blend after (`:11101-11102`) + `ReloadGameObjectProperties(basename+'_death')` for artillery (`:11099`,`:594-595`) + `0.7+random*0.6` interval desync (`:11103`) | weapon-specific → plain `death` if missing (`:11092-11093`,`:588-589`) | yes — `:1813-1814` (`dead→death`; port does NOT yet select `death0/1/2` by weapon — [U]-W2, §4) |
+| T22 | peasant tool attach (same `anim` value as T1-T13 + `attack0/construct/death`) | attach actor: `hoe/axe/pick/hammer/bag/lumber/cart/hide` | `unit.script:6993-7009` (`_unit_ManagePeasantAttach`, called `:11068-11069` and `movie.script:657`) | n/a (child visibility swap) | peasant `usage` + child count guard (`:11068`) | **no** — port `[U]-T` carried (no tool-attach path; `CONSTRUCT_SKIN_STATUS` labels it) [SUPERSESSION-FIX: point-in-time/historical "port [U]-T carried / no tool-attach path" claim, not current — superseded by task 106 / `DEC_U_tool_attach.md` (attach path wired; 63 skins + 3D attach); T-A/T-B remain [U]; parity UNVERIFIED — NO PARITY CLAIM.] |
+| T23 | `attack2before / attack2after` (grenadier `630..663 / 664..679`) | — (no set-site) | **none found**: zero hits in `unit.script` text; zero hits under `D:scripts/**`; zero `reaction`-family ACL rows (ev_P5b/P5d) | — | only usable via debug button (`showdebuganimations.inc:123,127`) or ACL `attack2` rows in horse ACLs | port: only via explicit `anim_action` request (`:1828-1831`) — orphan confirmed both sides |
+| T24 | `reaction` (`456..481`) | — (no set-site) | **none found**: no `gc_anim_reaction` constant; zero hits in `unit.script`, `D:scripts/**`, `D:animations/acl/*.acl` (ev_P5a/P5d) | — | debug menu does NOT list it either (`:113-156` list `construct/work*/idle*/walk*` but never `reaction`) | port: only via explicit `anim_action` request — orphan confirmed both sides |
+| T25 | `prepare*/unprepare*/trans*/walkprepare*/walkunprepare*` as *selected* clips | — (no `anim :=` set-site; readback-only) | present only as readback names (T18-T20) and as current-anim comparisons; never assigned (ev_P5c) | — | fired by the engine's ACL tree (`GameObjectSwitchToTreeAnimationCyclesBlendByHandle` + ACL `items` chain), not by the script selector | port: only via explicit `anim_action` — [U]-A (§4) |
+| T26 | `iVisual=hide` (inside mine/transport) | anim forced through `DoDeath` + `acmNone/aamNone` + invisible | `unit.script:11076-11080` (`ontagstates` mirror `:583+` region) | n/a | — | port: no hide/visual-tag path in `_unit_action` — outside this worker's ask, noted only |
+
+**[D] peak-frame check (ev_P2h):** `unit.script:10774-10777` computes `frames := 1+ef-sf` and compares `(frames/30)` against the weapon pause — the inclusive `(last-first+1)/30` law from DANIM_01 §3.2 is the donor engine's own arithmetic, not a port invention. `movie.script:854-858` uses the exclusive `(ef-sf)/30` variant for *movie* length — both are donor-authored; the clip table in §1.1 uses the inclusive law.
+
+---
+
+## 2. Loop vs clamp-once (where the flag lives — NOT in AAF) [O]
+
+All re-read AAF rows carry only the token `morph` (ev_P1a-e; 0 other flags). The policy is authored in three places:
+
+| Source [O] | Loop set | Once/clamp set | None set |
+|---|---|---|---|
+| `showdebuganimations.inc:45-66` (`bPlayOnce` param) + `:113-156` call sites (ev_P4a) | `walk/walk0`, `idle/idle0/idle1/idle2`, `construct`, `workfood/workwood/workstone`, `idlefood/idlewood/idlestone`, `walkfood/walkwood/walkstone` (`False`) | `attack0/attack1/attack2`, `death/death0/death1` (`True`). Note: the same three attack tokens are listed a second time with `False` (`:125-127`) — the debug menu offers BOTH loop and once buttons for attacks; the sim path (below) is once | — |
+| `movie.script:648-656` (ev_P4b) | `bLoop→acmLoop` | `bOnce→acmPlayOnce` | else `acmNone` |
+| `unit.script:10808-10809` (`DoDeath`), `:10852/:10854` (stage_0 vs else), `:11079-11080` (hide) (ev_P2i) | `acmLoop` for every non-`stage_0` live unit | `acmPlayOnce+aamPlayOnce` inside `DoDeath` (death path); `acmPlayOnce` for `visual_stage_0` (birth/scaffold stage) | `acmNone+aamNone` when hidden |
+| `cannon.acl:17-45,47-78` (ev_P4c) | — | `attack0/attack1` blocks: `CyclesList=False` + `actAnimation NumberCycle=1` bracketed by `OnAclAnimationReachedAttack / …AttackEnd` execute-states | `idle/walk/death` blocks are single-`AnimationName` with no cycle count |
+
+**Port correspondence (read-only) [O] (ev_P6b):**
+
+- `anim3d.gd:726-739` `_is_once_action` = `death/death0/death1/death2` + every `AAF_ATTACK_TOKENS` member (`attack0/attack1/attack2/attack2before/attack2after`); everything else loops. `AAF_LOOP_STATUS (:129)` and the inline comment (`:719-725`) cite exactly the three donor sources above and label the policy `[U] U2`.
+- `_frame_at (:746-760)`: once → `clamp(first+min(floor(t*30),span-1))`; loop → `fposmod`. This matches the *direction* of the donor policy (death/attack clamp, work/carry/idle/walk loop) but the clamp endpoint and the completion behaviour are port-chosen (see §3).
+
+---
+
+## 3. Completion signals — what fires when a once-clip ends [O/I/U]
+
+### 3.1 Recovered (observed) [O]
+
+1. **Death path is fully sequenced in script** (ev_P2e/P2i): `DoDeath` (`:10801-10826`: playable off, track off, PFX clear, `acmPlayOnce/aamPlayOnce`, controller disabled, all `OnState*Reached` handlers **cleared to `''`**, collision off, infantry roll `±55°`) → tag decode → `GameObjectExecuteStateByHandle(hnd,'OnDeath')` (`:11075`) → `GameObjectDelayExecuteStateByHandle(hnd,'DeathStage1',gc_unit_deathtime_0)` (`:11085`) → switch to weapon death anim with `min/max` blend (`:11100`). Hiding adds `acmNone/aamNone` (`:11079-11080`). **No `OnStateEndCyclesReached`-style completion callback is armed on this path** — all four are blanked at `:10811-10815`. Completion = the delayed `DeathStage1` state, not a cycles-reached event. [O]
+2. **Attack path completion is ACL-authored** (ev_P4c): `cannon.acl:33-45` wraps the single-cycle `actAnimation attack0 NumberCycle=1` with `actExecuteState OnAclAnimationReachedAttack` (before) and `OnAclAnimationReachedAttackEnd` (after). The script's turn/idle branches then forcibly reset the blend (`GameObjectResetFrameAnimationBlend` + `0,0` re-switch at `:11041-11042`, `:11000`, `:11014`) "to prevent 2 shooting animation effect" (donor comment, `:11042`). [O]
+3. **Early-out actions (T1-T7) skip the sequencer entirely**: `bSkip=True` + `0,0` + `GameObjectResetFrameAnimationBlend` (`:10891-10893`). Their "completion" is the next tag evaluation selecting a different `anim` (the T18-T20 sticky readback), not a signal. [O]
+
+### 3.2 Not recovered (the two open completion items) [U]
+
+- **[U]-C1 — attack/death `acmPlayOnce` end-of-cycles consumer.** The mode is set (`unit.script:10808-10809,10852`; `movie.script:650`), but **no readable script assigns a non-empty `SetGameObjectOnStateEndCyclesReachedByHandle` / `OnStateFBEndCyclesReached` / `OnStateEndFrameReached` handler on the unit path** (the only writes found are the four `''` clears at `:10811-10815`; full-`unit.script` search for `CyclesReached|EndFrameReached` returns only those clears — ev_P2 search). Whether the engine auto-returns to idle, holds the last frame, or requires the next tag switch is therefore **engine-side UNVERIFIED**. The port's `clamp-at-last-frame` (`anim3d.gd:750-756`) is a labelled stand-in (`AAF_LOOP_STATUS`), never a recovered signal. Capture R-C1 in §4 closes or bounds it.
+- **[U]-C2 — `NumberCycle=1` attack-end effects.** `OnAclAnimationReachedAttackEnd` is referenced by the ACL but its handler body is not in any readable script/ACL text (no definition found in `unit.script`, `ontagstates.inc`, `movie.script`; ACL files only *name* it). Whether muzzle flash / damage / sound / state advance rides on it is UNVERIFIED. Capture R-C2 in §4 closes or bounds it.
+
+---
+
+## 4. `minFrameBlend / maxFrameBlend` semantics [O + U]
+
+### 4.1 Recovered literals and call pattern [O] (ev_P2j/P3b)
+
+- Definition: `var minFrameBlend : Integer = 6; var maxFrameBlend : Integer = 8;` — `unit.script:10846-10847` (inside `_unit_ForceStateTag`, i.e. per-evaluation locals, not globals).
+- Installation: `SetGameObjectMinFrameBlendByHandle(myHnd,6)` / `Max…(8)` / `DeferredFrameBlend(false)` — `initial.inc:17-19`.
+- Consumption: `GameObjectSwitchToTreeAnimationCyclesBlendByHandle(hnd, anim, False, True/False, False, False, minFrameBlend, maxFrameBlend)` at `unit.script:10970,11016,11055,11100` and `ontagstates.inc:474,513,596` mirrors; artillery death reuses `min/max` then `GameObjectResetFrameAnimationBlend` (`:11100-11102`); idle re-entry and hidden/visual paths deliberately pass `0,0` with donor comments "dont use blend cause it kills animation" (`:10891`) and "to reset blend. needed to prevent 2 shooting animation effect" (`:11042`).
+- ACL side: `acoSmoothAnimation=True` on attack blocks (`cannon.acl:21`); `CyclesList=False` + `acoRandomFrame/acoRandomCycle/acoSkipActions=False` (ev_P4c).
+
+### 4.2 Unrecovered semantics [U]
+
+- **[U]-B — what `6/8` mean inside the engine.** The integers cross the script→engine boundary (`SetGameObjectMin/MaxFrameBlendByHandle`, `…BlendByHandle(…,min,max)`), but **no readable text defines the unit or the operator** (frames of cross-fade? look-ahead window? state-machine delay? interpolation weights?). The donor movie helper's exclusive `(ef-sf)/30` vs the sim's inclusive `frames/30` (§1 [D]) shows even donor-side length has two spellings, so no single law is inferred. The port's `_frame_blend_fields` (`anim3d.gd:768-776`: `delta=|sample-requested|`, `within_window=delta<=8`) is therefore a **diagnostic window over the 6-frame exported subset, not a blend reproduction** — correctly labelled `FRAME_BLEND_STATUS [U] U2`. Capture R-B in §4 bounds it.
+- What IS excluded by the reads: it is not per-AAF data (AAF rows carry no second token), not per-sid data (single `6/8` pair for all units), and not always applied (the `0,0` sites prove the donor itself bypasses it where it "kills animation").
+
+### 4.3 How `min/maxFrameBlend` selects exported frames — port truth (no donor claim) [O] (ev_P6b)
+
+`anim3d.gd:663-695` `_morph_fields` → `_nearest_exported_frame(skin,frame)` (`:1115-1120`: nearest index of the deterministic 6-frame `frames[]` subset; out-of-range returns the requested frame unchanged) → skin at that exported frame. `_frame_blend_fields` reports whether the snap distance fits in `≤8`. **No interpolation is performed; no donor frame is invented.** Correct per the `[U] U2` label; the donor operator remains [U]-B.
+
+---
+
+## 5. Deltas vs prior reports (so U2 can be closed cleanly)
+
+| # | Prior statement | This pass verdict |
+|---|---|---|
+| D1 | DANIM_01 §4.2 table (work/carry/attack/death rows) | **CONFIRMED** line-for-line against `unit.script:10856-11093` + `ontagstates.inc:302-589` second reads (ev_P2/P3). This report adds the per-site blend parameter and the `bSkip` early-out (§1.2), which DANIM_01 did not record. |
+| D2 | DANIM_01 §4.3 "`walk1`" in the `weapon_1` walk row | **CORRECTED**: `unit.script:10946` does select `animwalk := gc_anim_walk1`, but the 246-file census contains **zero `walk1` rows** — donor `walk1` always falls through `_unit_IsAnimationExists → gc_anim_walk` (`:11048-11051`). A port `walk1` request can never resolve from donor data. |
+| D3 | DEC_U §1.2/C3 "`attack2before/after` for the grenadier family" as conversion targets | **SCOPED**: the AAF rows exist (ev_P1c) and the port exports them, but **no sim trigger exists in readable donor text** (ev_P5b). They are reachable in-donor only via the debug buttons. Port must keep them export-only + explicit-`anim_action`-only until R-A lands. |
+| D4 | DEC_U §1.2/C3 "`reaction` convert" | **SCOPED harder**: the AAF row exists but the token is referenced **nowhere** — no constant, no selector, no ACL row, no attach case, no debug button (ev_P5a/P5d). Orphan on both sides. Port must keep it export-only + explicit-request-only until R-R lands; any idle→reaction auto-trigger would be invention. |
+| D5 | DANIM_01 §9 Q5 "should the port clamp at last or return to idle" | **ANSWERED at script level**: neither — the script **re-selects every evaluation** (T18-T20 sticky readback → `idle0/1/2` or `animidle`), with `0,0` blend resets exactly at the attack→idle seam (`:11041-11042`). The remaining unknown is only the engine-internal end-of-`PlayOnce` behaviour between evaluations ([U]-C1). |
+| D6 | `world.gd:515-516` "bullet → attack1" (carried) | **FLAGGED, not confirmed**: donor sim selects `attack1` by **`iWeapon=1`** (`:10881`), not by a `bullet` ammo kind. Port `_weapon_kind` (`world3d_entities.gd:1924-1932`) reads `def.weapons[0].kind=="bullet"` — a port-level mapping whose donor proof (weapon-index ↔ ammo-kind table) was not found in this pass. Kept as [U]-W (R-W). |
+
+---
+
+## 6. True gaps [U] — concrete runtime captures (do NOT synthesise)
+
+Every capture: fixed camera (singleplayer skirmish, paused-then-stepped sim), per-frame log of `(sim_tick, tag_fields(iAction/iWeapon/iMove/iResource/iEssential), selected_anim, AAF first..last, requested_frame, sample_frame, blend_delta, within_window)`, plus the termination criterion. No donor binary is executed by this worker; captures are specified for the runner owner.
+
+- **[U]-W (weapon/order → attack1/attack2).** Missing: donor proof that port `kind=="bullet"` ⇔ donor `iWeapon=1`, and any order/data that yields `iWeapon=2` (grenade). **Capture R-W:** fixed camera on musketeer (`attack1 99..124` in AAF) and grenadier (`attack0 126..141`, `attack1 99..114`, `attack2before/after`) each ordered to attack a ground target and an enemy unit; log `iWeapon` (from tag dump), `selected_anim`, frame index trace `0..span+2` past the last frame. Vary only ammo/weapon upgrade state. **Termination:** `attack1` fires iff `iWeapon=1` print observed ≥3/3 trials per sid AND `attack2before→attack2after` sequence observed on grenade order OR its absence logged with the exact order-scale used; else stays [U].
+- **[U]-W2 (death0/1/2 by weapon).** Missing: does the live sim ever present `iWeapon≠none` at death, and does the fallback (`:11092-11093`) visibly fire? **Capture R-W2:** kill armed (musketeer `death0 564..628`) and unarmed (peasant `death 115..149`) units on fixed camera; log `iWeapon` at death tag + `selected_anim` + interval factor (`0.7+random*0.6` desync makes each death duration differ — log the factor). **Termination:** weapon-death token observed ≥2/2 armed trials with fallback logged when the sid lacks the row, or absence logged.
+- **[U]-S (sticky readback T18-T20).** Missing: engine-visible dwell of `prepare*/trans*/attack*` names between evaluations. Port currently recomputes statelessly. **Capture R-S:** musketeer attack→idle seam at 30 Hz log; record `GetGameObjectFrameAnimationNameByHandle` value per tick for 90 ticks post-attack; check whether any `attack1/trans*/prepare1` name persists ≥1 tick before `idle1`. **Termination:** sticky name observed with count, or 3 clean `attack→idle` seams with zero intermediate names logged.
+- **[U]-A (prepare/unprepare/trans/walkprepare/walkunprepare triggers).** Missing: which spin-up / formation-change / mount states enter these ACL-heavy clips. No `anim :=` site (ev_P5c). **Capture R-A:** order weapon-state changes (armed↔unarmored stance toggles), formation joins/leaves, and cavalry mount/dismount-adjacent orders on fixed camera; log selected anim per tick. **Termination:** at least one reproducible trigger per token family, or explicit absence log after exercising all stance/formation orders.
+- **[U]-R (reaction trigger).** Missing: everything — the token is orphaned (ev_P5a/P5d). **Capture R-R:** expose peasants to raids, deaths nearby, combat start/end, construction complete, and idle-long-tail (≥120 s) on fixed camera with full tag dump; log any `reaction` selection. **Termination:** one reproducible trigger with tag fields, or absence logged across the full stimulus battery (then the token stays export-only and the [U] is bounded, not closed by invention).
+- **[U]-C1 (PlayOnce end behaviour).** Missing: engine action at last frame of `attack*/death*` under `acmPlayOnce`. **Capture R-C1:** musketeer `attack1 [99,124]` single shot, frame-index trace at sim 30 Hz from `t0` to `t0+span+10` frames; record whether index holds at `124`, snaps to `idle1 [256,305]` tick-aligned, or freezes mid-blend; repeat for peasant `death [115,149]`. **Termination:** hold-vs-return verdict with tick numbers, 3/3 trials.
+- **[U]-C2 (ACL attack-end handler).** Missing: effects bound to `OnAclAnimationReachedAttackEnd`. **Capture R-C2:** cannon `attack0/attack1 [301,337]` firing on fixed camera; log muzzle-flash PFX attach frame, damage tick, and sound tick relative to `301..337`. **Termination:** effect-to-frame offsets with 3-trial repeat, or absence logged.
+- **[U]-B (blend operator).** Missing: engine meaning of `6/8`. **Capture R-B:** walk→idle seam (peaukr `walk 1..20` → `idle 64..113`) stepped 1 frame/tick; log rendered-pose vertex hash (or screen-space joint track) for ticks `[-2,+10]` around the switch under `min/max` vs forced `0,0` (debug-forced). Fit step-response length in frames. **Termination:** response length in frames with 3-trial repeat under both blend settings, or explicit non-reproducibility log. Until then the port keeps the nearest-frame diagnostic and performs no interpolation.
+
+---
+
+## 7. Exact port change list (file/line; no code written here)
+
+Each row: port site **[O]**, donor fact **[O]/[D]**, required donor-faithful replacement. **No row is implemented here. No parity is claimed.**
+
+| # | Port file:line (current [O]) | Donor fact (this job [O]/[D]) | Required replacement (donor-faithful; assets already on disk unless noted) |
+|---|---|---|---|
+| F1 | `P:scripts/anim3d.gd:102-104` `ACTION_ALIAS {"attack":"attack0"}` + `:120` `ACTION_ALIAS_STATUS` + `:610,205` alias resolution | Donor has no `attack` token; `attack0` (peaukr.aaf:7), `attack1` (musketeer.aaf:7 `[99,124]`), `attack2` + `before/after` (grenadier.aaf) (ev_P1a-c) | Keep the bridge but extend the alias table with the *reverse* guard: reject bare `attack` from any new caller (assert/log `sid_unknown` path `:1156-1182`); route all sim callers through `_unit_action` chains instead of the alias. No asset needed. |
+| F2 | `P:scripts/anim3d.gd:726-739` `_is_once_action/_is_attack_action` + `:746-760` `_frame_at` once-clamp | Once = `attack*/death*` per `bPlayOnce True` (`showdebuganimations.inc:121-123,129-131`), `acmPlayOnce/aamPlayOnce` (`unit.script:10808-10809,10852`), `NumberCycle=1` (`cannon.acl:40`) (ev_P2i/P4a-c) | Keep clamp direction; add a completion-event hook point (empty callback registry + log site) to be wired ONLY when R-C1/R-C2 land — until then keep clamp-at-last with `AAF_LOOP_STATUS [U] U2` label. No asset needed. |
+| F3 | `P:scripts/anim3d.gd:768-776` `_frame_blend_fields` + `:135-137` `DONOR_MIN/MAX_FRAME_BLEND` + `:1115-1120` `_nearest_exported_frame` | `minFrameBlend=6/maxFrameBlend=8` locals (`unit.script:10846-10847`), installed `6/8` (`initial.inc:17-19`), consumed at blend switches with deliberate `0,0` bypasses (ev §4.1) | Keep diagnostic window; add per-call blend-parameter passthrough (`requested_blend=(6,8)` vs `(0,0)`) mirroring the donor call sites (T1-T7/T14-idle `0,0`; T8-turn/T9/walk/death `6,8`) as *logged intent*, not as interpolation — wire the real operator only when R-B lands. No asset needed. |
+| F4 | `P:scripts/world3d_entities.gd:1866-1876` attack chain + `:1924-1932` `_weapon_kind` (`weapons[0].kind=="bullet"`) | Donor gates on **`iWeapon` tag** (`unit.script:10878-10883`), not on ammo kind (ev_P2a; D6) | Replace/extend `_weapon_kind` with a donor-index path: resolve the sim's weapon slot index for the firing order and map `0→attack0/1→attack1/2→attack2` (T5-T7); keep `bullet`-kind as labelled fallback until R-W proves or refutes the equivalence; add `attack2before→attack2after` sequencing per R-W. No asset needed (clips exported). |
+| F5 | `P:scripts/world3d_entities.gd:1812-1814` dead branch (always `death`) | Donor selects `death/death0/1/2` by `iWeapon` + fallback to `death` (`unit.script:11086-11093`; ev_P2e) | Branch on the entity's weapon-state at death (`death0/1/2→death` via `_donor_action_fallback`, same order as donor); log the fallback when it fires (R-W2 is the proof). Assets: `death0/1/2` windows (already exported per C1 where the sid declares them). |
+| F6 | `P:scripts/world3d_entities.gd:1838-1860` carry chain (`[work, idle+res, walk+res, idle]` / moving `[walk+res, idle+res, walk, idle]`) | Donor stationary-gathering plays the `work*` early-out (T1-T3, `0,0` no-blend); donor walk branch degrades `walk1`→`walk` always (D2); donor sticky re-checks `animidle` existence (ev_P2d) | (a) Preserve `work*`-first order for stationary gathering (already); (b) never request `walk1` (drop it from any chain that contains it — donor-proven dead name); (c) add the `animidle`-existence re-check before returning carry idles (mirror `:11036-11037`). No asset needed. |
+| F7 | `P:scripts/world3d_entities.gd:1824-1832` explicit `anim_action` hook + `:1892-1901` `_donor_action_fallback` | Orphans `reaction/attack2before/after/prepare*/trans*` have no sim trigger (ev_P5a-d); `_unit_IsAnimationExists` returns true for `''` and probes the engine otherwise (`unit.script:369-373`, ev_P2g) | Keep `anim_action` as the ONLY path for orphans (data-only, availability-gated, gap-recorded — already the code's behaviour); add explicit allow-list comment naming T23-T25 as orphan-only until R-R/R-A land; mirror the `''→true` rule in `_action_available` documentation (empty request = no-op, not `idle`). No asset needed. |
+| F8 | `P:scripts/world3d_entities.gd:1879` stateless `walk if moving else idle` return | Donor turn/idle path is stateful readback (T18-T20: current-anim → `idle0/1/2`) with `0,0` vs `min/max` blend split (ev_P2d) | Add a one-slot `last_anim` sticky readback per entity (name only, no pose): if the stored name ∈ a T18-T20 set, prefer the mapped `idle0/1/2` (availability-gated, else `animidle`, else `idle`) — wire AFTER R-S proves dwell; until then keep the stateless return and the `[U]-S` label. No asset needed. |
+| F9 | `P:scripts/anim3d.gd:1156-1182` `_unknown` + `P:scripts/world3d_entities.gd:1935-1941` `_record_action_gap` | Donor fallback orders: walk `animwalk→walk` (`:11048-11051`); death weapon→`death` (`:11092-11093`); sticky `animidle→idle` (`:11036-11037`) (ev_P2d-e) | Extend gap records with the donor fallback *order attempted* (chain as-tried) so R-W/R-W2/R-S can audit which link fired; no silent substitution (already the behaviour). No asset needed. |
+
+Port rows outside this worker's trigger scope (`game.gd` order creation, `data.gd` weapon tables, `world.gd:515-516` bullet mapping, building death visuals, `anim_action` producers) are **not restated** to avoid a second source of truth.
+
+Required donor asset manifest (all already on disk; sourced only through the approved converters, **not copied here**): `D:animations/aaf/*.aaf` (194 per-sid ranges incl. `reaction 456..481`, `attack2before/after`, `prepare*/trans*/walkprepare*` rows) + per-sid `.oss` bodies; `D:animations/acl/*.acl` (`peasant/cannon/fasthorse/hardhorse` trigger context) + `acl.lib`; `D:scripts/dmscript.global:868-926`, `D:scripts/lib/unit.script` (`:369-373`, `:6993-7009`, `:10774-10777`, `:10808-10854`, `:10856-11104`), `D:scripts/units/unit.inc/ontagstates.inc:302-596`, `D:scripts/units/unit.inc/initial.inc:17-19`, `D:gui/menu.inc/showdebuganimations.inc:45-66,113-156`, `D:scripts/lib/movie.script:648-657`.
+
+---
+
+## 8. Claim register
+
+| # | Claim | Label |
+|---|---|---|
+| 1 | T1-T22 trigger→token rows with per-site blend params and existence gates | [O] ev_P2a-f/P3c (two engine spellings each) |
+| 2 | T23-T25 orphan verdicts (`attack2before/after`, `reaction`, `prepare*/trans*` as selected clips have no set-site) | [O] ev_P5a-d (zero-hit searches) |
+| 3 | `turn*/collide*` constants are vocabulary-only (no AAF rows; turning uses rotate calls) | [O] ev_P3a + ev_P2d |
+| 4 | `walk1` is a donor-dead name (selected at `:10946`, never resolvable — zero AAF rows) | [D] ev_P2c + 246-file census |
+| 5 | Loop=work/carry/idle/walk/construct; once=attack*/death* (+dual-listed attack debug buttons); `acmNone` only when hidden; `NumberCycle=1` attack brackets | [O] ev_P4a-c/P2i |
+| 6 | Completion: death sequencing + delayed `DeathStage1` with cleared cycle-handlers; attack ACL `…Attack/…AttackEnd` brackets; early-out `bSkip` skips the sequencer; no armed `EndCyclesReached` handler found on the unit path | [O] ev §3.1; absences [U]-C1/C2 |
+| 7 | `min/maxFrameBlend=6/8` literals, install sites, consume sites, and deliberate `0,0` bypasses; operator UNVERIFIED | [O] literals/sites, [U]-B operator |
+| 8 | Port sites in §7 (alias, once-predicate, clamp clock, blend diagnostic, attack chain, death branch, carry chain, `anim_action` hook, gap recorder) | [O] ev_P6a-c (port lines) |
+| 9 | Every [U] has a named capture with fixed camera + state/frame trace + termination criterion (R-W/R-W2/R-S/R-A/R-R/R-C1/R-C2/R-B) | [D] this report §6 |
+| 10 | Any port motion equalling donor timing/pose/blend, or any trigger claimed without a §1.2 cite | **Denied** — no same-camera donor/port A/B exists; visual UNVERIFIED |
+
+## 9. Scope statement
+
+Exactly one repository file was written by this worker: this report. All donor reads were read-only against pin `t_87f0f3c130b0`'s data tree (`C:\Games\Cossacks 3\data`). No source, shader, config, asset, fixture, test, runner, Godot, git or user-mod state was changed. No donor parity, similarity score, threshold or gate PASS is claimed. Network is out of scope.
+
+*End of DEC-U-AAF-TRIGGERS.*

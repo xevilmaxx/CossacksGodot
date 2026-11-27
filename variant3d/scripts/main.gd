@@ -35,6 +35,8 @@
 # window, no terrain textures and no audio - it is pure simulation.
 # Cross-platform: renderer is gl_compatibility (project.godot), all paths are
 # res:// / user:// or absolute, window flags are guarded by OS.get_name().
+#   --deterministic-capture  opt-in fixed-step capture; windowed --seq/--screenshot only
+#   --capture-ticks <n>      required companion: exact count of 1/Data.FPS ticks
 extends Node
 
 const Data = preload("res://scripts/data.gd")
@@ -170,6 +172,14 @@ var autosave_acc := 0.0
 # an explicit SubViewport texture (the same pattern as world.gd:1894-1993).
 var capture_view3d: SubViewport = null
 
+var capture_deterministic := false
+var capture_ticks_total := 0
+var capture_ticks_done := 0
+var capture_ticks_per_frame := 32
+var capture_error := false
+const CAPTURE_EXPECTED_W := 1280
+const CAPTURE_EXPECTED_H := 720
+
 func _ready() -> void:
 	started_ms = Time.get_ticks_msec()
 	add_to_group("c3_main")
@@ -184,7 +194,7 @@ func _ready() -> void:
 	start_zoom = cfg.num("camera.start_zoom", 0.75)
 	# V7-50 PORT ADDITION: new additive key; 2D is the default when absent.
 	render_mode = str(cfg.text("gameplay.render_mode", "2d")).to_lower()
-	Data.RENDER_MODE = render_mode
+	Data.set_render_mode(render_mode)
 	# I11-SEAM / V05 §4.2: opt-in terrain backend; unknown values coerce to legacy.
 	terrain_backend = str(cfg.text("features.terrain.backend", "legacy")).to_lower()
 	if terrain_backend != "donor":
@@ -218,6 +228,15 @@ func _ready() -> void:
 	else:
 		deadline_ms = 0
 		watchdog = 0.0
+	if capture_deterministic:
+		deadline_ms = 0
+		watchdog = 0.0
+		if is_headless or cli_mode or seed_arg < 0 or capture_ticks_total <= 0:
+			printerr("deterministic-capture: windowed --seq/--screenshot, literal --seed and --capture-ticks > 0 required")
+			_quit(2)
+			return
+		if seq_dir != "":
+			capture_ticks_per_frame = maxi(1, int(round(seq_step * Data.FPS)))
 
 	if cli_mode:
 		_setup_cli_only()
@@ -236,7 +255,7 @@ func _ready() -> void:
 		return
 
 	# Test / capture modes skip the menu so they never wait for input.
-	if bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or battle_requested or journey_mode:
+	if capture_deterministic or bench_mode or screenshot_path != "" or selftest_path != "" or uitest_path != "" or seq_dir != "" or battle_requested or journey_mode:
 		_setup_full_game()
 		if bench_mode:
 			Data.MINIMAP_INTERVAL = 9999.0
@@ -250,6 +269,8 @@ func _ready() -> void:
 			bench_start_ms = Time.get_ticks_msec()
 		if screenshot_path != "":
 			_setup_screenshot_window()
+		if capture_deterministic and seq_dir != "":
+			_setup_screenshot_window()  # authoritative 3D texture for seq
 		return
 
 	_setup_menu()
@@ -355,7 +376,19 @@ func _apply_menu_cfg(cfg: Dictionary) -> void:
 	Data.CAPTURE_MODE = _donor_cfg(cfg, ["capture"], Data.DONOR_CAPTURE, "default")
 	Data.MARKET_DIP_MODE = _donor_cfg(cfg, ["marketdip"], Data.DONOR_MARKET_DIP, "default")
 	Data.POP_LIMIT = clampi(int(cfg.get("limit", Data.POP_LIMIT)), 0, 500)
-	Data.PEACE_TIME = clampf(float(cfg.get("peacetime", Data.PEACE_TIME)), 0.0, 240.0 * 60.0)
+	# [O] DEC-U-MENU-PEACE §1.2 / lib/misc.script:4267-4281: _misc_GetPeaceTime
+	# arms are MINUTES; `Result := Result * 60` (:4281) yields SECONDS. The cfg
+	# value is the DONOR INDEX TAG (eventcustomgame.inc:79) and the data.gd
+	# table holds its minute arm. Tag 10 (_reserved) / any unknown tag takes
+	# `else Result := 0` (:4278-4279) -> 0.0 s. An absent key keeps the value
+	# already applied from the saved config, preserving existing settings.
+	# [D] dogenerate.inc:2060 gbool_peacemode := (tag <> _default): only tag 0
+	# maps to 0 s, so PEACE_TIME > 0 is the port's equivalent flag.
+	# Clamp 0..240*60 is donor max (240 min) and is unchanged.
+	if cfg.has("peacetime"):
+		var peace_tag := int(cfg.get("peacetime", 0))
+		var peace_minutes := int(Data.DONOR_PEACE_TIME_INDEX_SECONDS.get(peace_tag, 0))
+		Data.PEACE_TIME = clampf(float(peace_minutes) * 60.0, 0.0, 240.0 * 60.0)
 	Data.GAME_SPEED = _donor_cfg(cfg, ["gamespeed"], Data.DONOR_GAME_SPEED.keys(), "normal")
 	Data.AUTOSAVE_MODE = _donor_cfg(cfg, ["autosave"], Data.DONOR_AUTOSAVE, "off")
 	Data.ADVISER_MODE = _donor_cfg(cfg, ["adviserassistant"], Data.DONOR_ADVISER, "default")
@@ -1015,8 +1048,8 @@ func _load_self_base(g: C3Game, path: String) -> bool:
 	g.projectiles.clear()
 	g.corpses.clear()
 	g.rubble.clear()
-	# Parity gate: refuse the fast path unless the loaded game reproduces every
-	# serialized field and the non-serialized map arrays byte-for-byte.
+	# PORT-INTERNAL snapshot gate (NOT donor parity): refuse the fast path unless
+	# the loaded game reproduces every serialized field and map array byte-for-byte.
 	var now := g.serialize()
 	var same := _same_json(now, b)
 	if not same:
@@ -1030,7 +1063,7 @@ func _load_self_base(g: C3Game, path: String) -> bool:
 		same = false
 	if g.cluster_zones.size() != (zarr as Array).size():
 		same = false
-	print("SELF-SNAPSHOT fast load parity: ", "OK" if same else "MISMATCH",
+	print("SELF-SNAPSHOT fast load port-internal parity (NOT donor): ", "OK" if same else "MISMATCH",
 		" (", g.MAP_W, "x", g.MAP_H, ", ", g.entities.size(), " ents, seed ", b.seed, ")")
 	return same
 
@@ -1187,6 +1220,8 @@ func _setup_full_game() -> void:
 	if can_play:
 		audio.start_music(str(game.players[0].get("nation", "ukr")))
 	audio.set_meta("can_play", can_play)
+	if capture_deterministic:
+		load_ready = true  # synchronous setup closes all readiness gates
 
 # Screenshot-only: frame the deepest relief window (a ravine cut) instead of
 # the start. Scans game.height with the generator's y*MAP_W+x indexing; water
@@ -1368,6 +1403,12 @@ func _parse_args(args: PackedStringArray) -> void:
 					seed_random = true
 				elif sv.is_valid_int():
 					seed_arg = int(sv)
+				i += 2
+				continue
+			"--deterministic-capture":
+				capture_deterministic = true
+			"--capture-ticks":
+				capture_ticks_total = clampi(int(args[i + 1]) if i + 1 < args.size() else 0, 0, 1000000)
 				i += 2
 				continue
 			"--dump-map":
@@ -1609,7 +1650,7 @@ func _process(dt: float) -> void:
 		if autosave_acc >= interval:
 			autosave_acc = 0.0
 			game_save()
-	if game == null or ais.is_empty():
+	if game == null or ais.is_empty() or (capture_deterministic and not load_ready):
 		return
 	if cli_mode:
 		_run_cli_incremental()
@@ -1621,26 +1662,37 @@ func _process(dt: float) -> void:
 			_quit(1)
 			return
 	# Clamp dt so a slow frame never spirals (cross-platform hitch guard).
-	dt = minf(dt, 0.25)
-	acc += dt * speed
 	var step := 1.0 / Data.FPS
 	var steps := 0
 	var t_tick := 0.0
 	var t_ai := 0.0
-	while acc >= step and steps < 64:
-		acc -= step
-		steps += 1
-		var t0 := Time.get_ticks_usec()
-		game.tick(step)
-		bench_sim_ms += float(Time.get_ticks_usec() - t0) / 1000.0
-		t_tick += float(Time.get_ticks_usec() - t0) / 1000.0
-		t0 = Time.get_ticks_usec()
-		for brain in ais:
-			brain.tick(step)
-		t_ai += float(Time.get_ticks_usec() - t0) / 1000.0
-		# Never block inside the loop: bail out if the frame budget is spent.
-		if steps % 16 == 0 and Time.get_ticks_msec() >= deadline_ms - 500 and deadline_ms > 0:
-			break
+	if capture_deterministic:
+		var dstep := 1.0 / Data.FPS
+		while capture_ticks_done < capture_ticks_total and steps < capture_ticks_per_frame:
+			var t0 := Time.get_ticks_usec()
+			game.tick(dstep)
+			bench_sim_ms += float(Time.get_ticks_usec() - t0) / 1000.0
+			for brain in ais:
+				brain.tick(dstep)
+			capture_ticks_done += 1
+			steps += 1
+	else:
+		dt = minf(dt, 0.25)
+		acc += dt * speed
+		while acc >= step and steps < 64:
+			acc -= step
+			steps += 1
+			var t0 := Time.get_ticks_usec()
+			game.tick(step)
+			bench_sim_ms += float(Time.get_ticks_usec() - t0) / 1000.0
+			t_tick += float(Time.get_ticks_usec() - t0) / 1000.0
+			t0 = Time.get_ticks_usec()
+			for brain in ais:
+				brain.tick(step)
+			t_ai += float(Time.get_ticks_usec() - t0) / 1000.0
+			# Never block inside the loop: bail out if the frame budget is spent.
+			if steps % 16 == 0 and Time.get_ticks_msec() >= deadline_ms - 500 and deadline_ms > 0:
+				break
 	dbg_n += 1
 	dbg_tick += t_tick
 	dbg_ai += t_ai
@@ -1677,7 +1729,7 @@ func _process(dt: float) -> void:
 			return
 	if world != null and is_instance_valid(world) and not (bench_mode and is_headless):
 		var t1 := Time.get_ticks_usec()
-		world.sync(dt)
+		world.sync(float(steps) * (1.0 / Data.FPS) if capture_deterministic else dt)
 		dbg_sync += float(Time.get_ticks_usec() - t1) / 1000.0
 	if journey_mode and camera != null and game != null:
 		journey_cam_t -= dt
@@ -1736,7 +1788,11 @@ func _process(dt: float) -> void:
 			stats_t = 0.0
 			print("frames %d  fps %.1f  units %d  entities %d" % [frames,
 				Performance.get_monitor(Performance.TIME_FPS), game.unit_count(0), game.entities.size()])
-	if screenshot_path != "" and not screenshot_done and frame >= screenshot_frames:
+	if capture_deterministic:
+		if screenshot_path != "" and not screenshot_done and capture_ticks_done >= capture_ticks_total:
+			screenshot_done = true
+			_save_screenshot()
+	elif screenshot_path != "" and not screenshot_done and frame >= screenshot_frames:
 		screenshot_done = true
 		_save_screenshot()
 	elif selftest_path != "" and frame > 4:
@@ -1856,6 +1912,10 @@ func _write_text(given: String, text: String) -> String:
 	return ""
 
 func _save_screenshot() -> void:
+	if capture_deterministic and is_headless:
+		printerr("deterministic-capture: headless CPU screenshot refused")
+		_quit(2)
+		return
 	if is_headless:
 		# No GPU in headless: render a map picture on the CPU instead.
 		var img := _render_headless_image(800, 600)
@@ -1887,6 +1947,11 @@ func _save_screenshot() -> void:
 		_quit(1)
 		return
 	var img := tex.get_image()
+	if capture_deterministic and (img == null or img.is_empty() or _is_blank(img)
+			or img.get_width() != CAPTURE_EXPECTED_W or img.get_height() != CAPTURE_EXPECTED_H):
+		printerr("deterministic-capture: blank/wrong-size screenshot; no fallback")
+		_quit(2)
+		return
 	if render_mode == "3d":
 		# V7-70 diagnostics: always keep the unfiltered GPU image so a blank
 		# result can be distinguished from "2D map substituted for 3D".
@@ -2134,18 +2199,37 @@ func _save_seq_frame() -> void:
 	var img: Image = null
 	if not is_headless:
 		await RenderingServer.frame_post_draw
-		if is_instance_valid(get_viewport()):
+		if capture_deterministic and capture_view3d != null and is_instance_valid(capture_view3d):
+			capture_view3d.render_target_update_mode = SubViewport.UPDATE_ONCE
+			var dtex := capture_view3d.get_texture()
+			if dtex != null:
+				img = dtex.get_image()
+		elif is_instance_valid(get_viewport()):
 			var tex := get_viewport().get_texture()
 			if tex != null:
 				img = tex.get_image()
+	if capture_deterministic and (img == null or img.is_empty() or _is_blank(img)
+			or img.get_width() != CAPTURE_EXPECTED_W or img.get_height() != CAPTURE_EXPECTED_H):
+		printerr("deterministic-capture: blank/wrong-size viewport frame; CPU fallback refused")
+		capture_error = true
+		_quit(2)
+		return
 	if img == null or img.is_empty() or _is_blank(img):
 		img = _render_headless_image(800, 600)
 	_write_bytes(seq_dir.path_join("frame_%04d.png" % idx), img)
 	seq_saving = false
-	if seq_count >= seq_max or game.time_s >= seq_seconds or game.winner != -1:
+	var det_done := capture_deterministic and capture_ticks_done >= capture_ticks_total
+	if seq_count >= seq_max or det_done \
+			or (not capture_deterministic and (game.time_s >= seq_seconds or game.winner != -1)):
 		seq_done = true
 		var index := {"seconds": seq_seconds, "step": seq_step, "frames": seq_count,
 			"sim_seconds": game.time_s, "mode": "headless" if is_headless else "window"}
+		if capture_deterministic:
+			index["deterministic"] = true
+			index["capture_ticks"] = capture_ticks_total
+			index["ticks_done"] = capture_ticks_done
+			index["ticks_per_frame"] = capture_ticks_per_frame
+			index["winner"] = game.winner
 		_write_text(seq_dir.path_join("seq_index.json"), JSON.stringify(index, "  "))
 		print("sequence saved: %d frames in %s" % [seq_count, seq_dir])
 		_quit(0)

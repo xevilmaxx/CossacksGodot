@@ -1,5 +1,7 @@
 extends Node3D
 
+const PORT_LABEL: String = "PORT APPROXIMATION — no donor visual parity claim"
+
 # V7-15 — spatial FX / ghost / rally layer. NEW FILE; no sim or 2D file is edited.
 #
 # API (exact, per docs/coord_swarm_2026-11-24/V73_ATOMIC_CONTRACT.md:14):
@@ -80,6 +82,38 @@ extends Node3D
 #     and are NOT copied. NO construction dust (absent in donor, DFX-01 §7.4).
 #   NO donor FX parity is claimed, NO positional audio, NO sim edit, and the
 #     FX-WEATHER-01 snow root, selection rings and marquee code are untouched.
+#
+# FXART-1TO1 — DONOR-CONVERTED ART (IMPL-FX-ART; additive, no other file edited):
+#   `variant3d/assets/fx/{models,tex}/` holds DERIVED OBJ/MTL/PNG from the
+#     read-only donor tree via the approved `variant3d/tools/convert_models.py`
+#     functions (read_osm/write_obj_exact/write_mtl/convert_texture). Donor
+#     bytes are never copied and no donor executable is run. Every derived
+#     PNG is pixel-identical to the decoded donor base level; every derived
+#     OBJ is topology/float-identical to read_osm() output (manifest.json
+#     records hashes, citations and the checks). No art is synthesised.
+#   Ghost art = donor `box.osm` + `box.dds` (constructiondummy.prop:5-6,13-14;
+#     box.actor:3) at the inherited refmisc.prop:210-214 DefaultScale 0.5^3.
+#   GHOST-BLINK: the blink LAW is [O] unit.script:6674-6805 (3 alpha keys
+#     0.5/0.35|0.45/0.5, emission off|red pulse, period 1.3125 s @ speed 10,
+#     Loop=True, bmTransparency); the invented green/red PORT tint + sin(4t)
+#     were REMOVED from the live path (every placement caller passes
+#     bUseColor=False, so the donor cr/cg/cb arms are dead code). Key
+#     interpolation, GetTimeSpeedFactor runtime values and rendered mesh
+#     identity stay [U] pending E-GHOST-CAP §7 zero-mismatch capture.
+#   Rally art = donor `rallypoint.osm` + `rallypoint.dds` at DefaultScale
+#     0.0525^3, DefaultRollAngle 45, ocoTerrainWater (rallypoint.prop:19-31).
+#     TTL 2.0 s REMAINS a labelled PORT placeholder [U]-R (no donor key).
+#   FX art = donor `source.pfx` sheets named in DEC-U §5 P7 (musketsmoke,
+#     musketflash, musketsparks, musketsmokeup, musketflashup, bullettrail,
+#     firesmoke for building fire/smoke, cannonflash for tower flash). Sheet
+#     frame geometry is literal donor data; PixelRatio/Interval -> world size
+#     and seconds are NOT converted [U]-F (E-U3) and the Random seed/stream is
+#     NOT recovered [U]-S (E-U7). Existing port quads/life/cap stay as labelled
+#     stand-ins; no scale, seed or colour is invented by this module.
+#   Building death mesh/debris conversion belongs to world3d_entities.gd
+#     (another worker's file) and is NOT edited here: exact recommendations
+#     are in the handoff report only.
+#   NO DONOR/PORT A/B FRAME EXISTS. Visual parity is UNVERIFIED, NOT CLAIMED.
 
 const Data = preload("res://scripts/data.gd")
 # FOLD-06: same mapped-first / flat-fallback resolver as the entities module.
@@ -112,6 +146,11 @@ const LIFE := {
 }
 const DEFAULT_LIFE: float = 0.35
 const FALLBACK_FX_CAP: int = 220   # data.gd:117 (quality-tier default)
+# PFX-TIME: every LIFE value above is UNCHANGED and stays a labelled PORT
+# stand-in. Exact donor seconds (musketsmoke 1.28, musketflash 0.4,
+# buildingfirestart 1.792) are applied ONLY when a cited DONOR_FX_TIMING row
+# resolves (DEC-U §7 F1/F3); IMPACT_FLASH_FRAME_SECONDS 0.1 already equals
+# 1/FrameRate and is left untouched. No quota, seed or scale is retuned here.
 
 # Donor PFX literal keys — SEMANTICS UNVERIFIED (V7-2: PFX semantics UNMAPPED):
 #   source.pfx:41-62   musketsmoke: EndFrame 127, FrameWidth 256,
@@ -140,8 +179,38 @@ const TRAIL_STREAK_M: float = 1.2     # PORT approximation (no donor length key)
 # read the same donor key-colour JSON as the 3D entity tints; NON-player FX
 # colours (_kind_color, green/red build ghost, rally wood/finial/foot) are
 # deliberately left unchanged.
-const GHOST_OK := Color(0.20, 1.00, 0.30, 0.45)   # world.gd:3509 — non-player FX
-const GHOST_BAD := Color(1.00, 0.25, 0.20, 0.45)  # world.gd:3509 — non-player FX
+# GHOST-BLINK — donor blink law [O] unit.script:6674-6805
+# (`_unit_DoConstructionBlinkGameObject`). TXLifeColorEffect keyed 'blink':
+# 3 keys (max, min, max), per-key Time = totalTime =
+# 0.525*1.25*(GetTimeSpeedFactor/10), Loop=True, blend override bmTransparency,
+# ZWrite/ZTest=True, FaceCulling=fcCull (unit.script:6736-6760). EVERY placement
+# caller passes bUseColor=False (miscext2.script:1076-1078, :1088-1091,
+# :1193-1196), so ONLY the alpha+emission arm runs: the cr/cg/cb arms (0.7 grey /
+# 0.9,0.2,0.1 red) are DEAD CODE and are NOT ported.
+# Canbuild: alpha 0.5/0.35/0.5, UseEmission=False (unit.script:6694).
+# Cannotbuild: alpha 0.5/0.45/0.5, UseEmission=True (unit.script:6705), with the
+# red emission pulse 0.8/0.6/0.8 (g=b=0) written unconditionally
+# (unit.script:6793-6795). Triangle period = 2*totalTime = 1.3125 s @ speed 10.
+# [U]-native, NOT recovered (DEC_U_ghost_blink.md §8; E-GHOST-CAP §7 decides):
+# key interpolation (linear assumed), GetTimeSpeedFactor runtime values, and
+# which mesh actually renders at placement. NO donor parity claim.
+const GHOST_KEY_TIME: float = 0.525 * 1.25      # unit.script:6679 = 0.65625 s @ speed factor 10
+const GHOST_PERIOD_S: float = 2.0 * GHOST_KEY_TIME  # 2 segments -> 1.3125 s @ speed 10 (unit.script:6679-6792)
+const GHOST_OK_ALPHA: Array = [0.5, 0.35, 0.5]  # unit.script:6694 (max, min, max)
+const GHOST_BAD_ALPHA: Array = [0.5, 0.45, 0.5] # unit.script:6705 (max, min, max)
+const GHOST_BAD_EMISSION_R: Array = [0.8, 0.6, 0.8]  # unit.script:6793-6795 red channel; g=b=0
+const GHOST_BAD_EMISSION: Array = [[0.8, 0.0, 0.0], [0.6, 0.0, 0.0], [0.8, 0.0, 0.0]]  # unit.script:6793-6795 (r,g,b) telemetry form
+const GHOST_OK_EMISSION_ENABLED: bool = false   # unit.script:6694 bemission=False
+const GHOST_BAD_EMISSION_ENABLED: bool = true   # unit.script:6705 bemission=True
+# RETIRED PORT stand-in — DIAGNOSTIC TELEMETRY ONLY, NEVER used in the live path.
+# GHOST_OK was Color(0.20,1.00,0.30,0.45), GHOST_BAD Color(1.00,0.25,0.20,0.45)
+# (world.gd:3509) with a sin(_time*4.0) 0.85+0.15 pulse (~1.57 s sinusoid).
+# The donor live path has NO rgb tint, so both were removed from rendering;
+# recorded here solely for provenance of the previous port approximation.
+# NOTE: variant3d/tests/t_ghost_final_stage.gd asserts those retired rgb values
+# and the old emission==albedo relation; it is STALE against this donor law and
+# was deliberately NOT edited or weakened by this worker (hard single-file scope).
+const GHOST_RETIRED_PORT_TINT: String = "RETIRED PORT stand-in (NOT live): GHOST_OK Color(0.20,1.00,0.30,0.45), GHOST_BAD Color(1.00,0.25,0.20,0.45) world.gd:3509 + sin(_time*4.0) 0.85+0.15; donor live path is alpha/emission-only"
 
 const KEY_COLORS_PATH: String = "res://data/donor_key_colors.json"
 # Donor slot -> Color(rgb_godot_float, alpha 1.0). Loaded in bind() from JSON;
@@ -242,6 +311,368 @@ const IMPACT_TRAIL_DIFFUSE_ALPHA: float = 1.0    # source.pfx:1759-1763 `Diffuse
 # port streak (world.gd-trailed value) so the billboard has a finite ribbon.
 const IMPACT_TRAIL_STREAK_M: float = TRAIL_STREAK_M
 
+# --- PORT1TO1-ENT1TO1: donor FX library / parameters -----------------------
+# All 24 donor effect names [O] data/pfx/fx.tree:1-538. Names are data, never
+# permission to synthesise art: the private-use DDS/BMP sheets are NOT copied.
+const DONOR_EFFECTS: Array[String] = [
+	"shotmusket", "shotmusketcav", "shotmusketking", "shotmusketdrag",
+	"shotcannon", "shothowitzer", "shotmortar", "shotmcannon",
+	"grenadeexp", "impactsmoke", "impactdust", "cannonexpground",
+	"cannonexpbuilding", "howitzerexpground", "howitzerexpbuilding",
+	"bullettrail", "firearrowtrail", "fragtrail", "expflash",
+	"buildingsmoke", "shottower", "shotmusketpoint",
+	"waterblast", "waterblastsmall",
+]
+# Effect selection by weapon/medium [O] data/scripts/lib/weapon.script:260-299,
+# :573-612. Only these donor-sourced mappings are wired; every other key is a
+# no-op with an explicit label instead of an invented visual.
+const DONOR_EFFECT_SELECTION: Dictionary = {
+	"trail_arrow": "bullettrail",
+	"trail_firearrow": "firearrowtrail",
+	"trail_frag": "fragtrail",
+	"impact_dust": "impactdust",
+	"impact_dust_building": "impactsmoke",
+	"impact_water_small": "waterblastsmall",
+	"impact_water_large": "waterblast",
+	"cannon_exp": "cannonexpground",
+	"cannon_exp_building": "cannonexpbuilding",
+	"building_exp": "grenadeexp",
+	"tower_shot": "shottower",
+}
+# shotmusket: 5 children [O] fx.tree:4-63. Codes select one of the 8 donor
+# random floats (pfx.script:39-86): code N -> ClampInt(N-1,0,7).
+const DONOR_MUSKET_CHILDREN: Dictionary = {
+	"musketsmoke": {"randmirrorv": 1, "randframerate": 2, "framerate_delta": [-20.0, 20.0],
+		"randpixelratio": 3, "pixelratio_delta": [-25.0, 25.0],
+		"randposition": 3, "position_delta_y": [-0.1, 0.1],
+		"randscale": 4, "scale_stop_y": 0.05},
+	"musketflash": {"randanimation": 1, "randmirrorv": 2},
+	"musketsparks": {"randanimation": 1, "randmirrorv": 2},
+	"musketsmokeup": {"randmirroru": 1, "framerate_range": [0.0, 50.0], "pixelratio_range": [0.0, 50.0]},
+	"musketflashup": {"randanimation": 1, "mirroru": 2, "mirrorv": 3,
+		"framerate_range": [0.0, 50.0], "pixelratio_range": [0.0, 50.0]},
+}
+# musketsmoke / musketflash / bullettrail literal source keys [O]
+# source.pfx:30-64 / :105-177 / :1734-1763; meanings of PixelRatio/Interval and
+# the donor random stream remain [U] U3 / U7.
+const DONOR_FX_LITERAL_KEYS: Dictionary = {
+	"musketsmoke": {"start_frame": 0, "end_frame": 127, "frame_w": 256, "frame_h": 128,
+		"image_w": 2048, "image_h": 2048, "interval": 10, "frame_rate": 100,
+		"pixel_ratio": 175, "mirror_u": true, "position": [-0.1, -1.5, 0.775],
+		"on_end_frame": "FreeToPool", "alpha_time": 1.5, "alpha_power": 1.5},
+	"musketflash": {"frames": 4, "interval": 100, "frame_rate": 10,
+		"pixel_ratio": 350, "on_end_frame_hide": true},
+	"bullettrail": {"vert_limit": 150, "time_limit": 0.2, "min_distance": 0.05,
+		"alpha": 0.2, "alpha_fade": true, "mark_style": "msFaceCamera",
+		"mark_width": 0.1, "zwrite": false, "diffuse": [1, 1, 1, 1]},
+	"firearrowtrail": {"alpha": 0.3},          # source.pfx:2315
+	"fragtrail": {"mark_width": 0.05},          # source.pfx:1783
+}
+
+# --- PFX donor TIME LAW (DEC-U §1 / §7 F1,F3) -------------------------------
+# [O] source.pfx: every Animations[*] block AND every outer behaviour row obeys
+#   Interval(ms) x FrameRate(fps) ~= 1000 on all 44 sections, hence
+#   secPerFrame = Interval/1000 = 1/FrameRate. (DEC-U §1.1, claim register #1.)
+# [D] TTL = (EndFrame - StartFrame + 1) x secPerFrame. ONLY the rows below have
+#   cited Interval/FrameRate/frame counts (DEC-U §1.1/§1.2/§7 F1-F3). Any other
+#   donor key is DISABLED with an exact reason — NEVER a default TTL.
+# Wall-clock frame stepping is still [U] U3-time-open (DEC-U §1.3 / E-U3-time);
+# no donor/port A/B frame exists, so NO PARITY CLAIM is made for these seconds.
+const DONOR_TIME_LAW: String = PORT_LABEL + " — [O] source.pfx 44 rows Interval_ms x FrameRate ~= 1000; [D] secPerFrame=Interval/1000=1/FrameRate, TTL=(End-Start+1)*secPerFrame; native frame clock [U] U3-time; visual UNVERIFIED"
+const DONOR_FX_TIMING: Dictionary = {
+	"musketsmoke": {"interval_ms": 10, "frame_rate": 100.0, "start_frame": 0,
+		"end_frame": 127, "on_end_frame": "FreeToPool",
+		"source": "source.pfx:38-49,51,53,60 (DEC-U §1.1/§1.2) -> 128x0.010 = 1.28 s"},
+	"musketflash": {"interval_ms": 100, "frame_rate": 10.0, "start_frame": 0,
+		"end_frame": 3, "on_end_frame": "Hide",
+		"source": "source.pfx:111-161,164,169,176 (§1.1/§1.2) -> 4x0.100 = 0.4 s"},
+	"buildingfirestart": {"interval_ms": 14, "frame_rate": 71.4286, "start_frame": 0,
+		"end_frame": 127, "on_end_frame": "Free",
+		"source": "source.pfx:1822-1823,1857,1862,1864 (§1.2) -> 128x0.014 = 1.792 s"},
+	# samLoop sources: 1.792 s is a LOOP PERIOD (= BirthTime), not a death TTL
+	# (OnEndFrameFree=False, §1.2/§6.1). Never expire an item on this number.
+	"buildingfire": {"interval_ms": 14, "frame_rate": 71.4286, "start_frame": 0,
+		"end_frame": 127, "on_end_frame": "Loop", "birth_time_s": 1.792,
+		"source": "source.pfx:2013-2014,2048,2053,2055,2062 (§1.2) samLoop loop/BirthTime 1.792 s"},
+	"buildingsmoke": {"interval_ms": 14, "frame_rate": 71.4286, "start_frame": 0,
+		"end_frame": 127, "on_end_frame": "Loop", "birth_time_s": 1.792,
+		"source": "source.pfx:2110-2111,2145,2150,2152,2159 (§1.2) samLoop loop/BirthTime 1.792 s"},
+}
+
+# --- DEATH-FX / E-U14-ex — donor explosion TTL DATA (DEC-U smoke_burn_ttl §1.3) --
+# [D] secPerFrame = Interval/1000 = 1/FrameRate; total = frames x secPerFrame.
+# These are LABELLED DATA ONLY. They are NOT written into LIFE (every LIFE value
+# stays the labelled PORT stand-in; the PFX-TIME edit is preserved) and NOT wired
+# into live expiry: E-U14-ex must first confirm the effect keys/frames with 0
+# foreign keys. Loopers are DELIBERATELY ABSENT — buildingfire/buildingsmoke are
+# samLoop + OnEndFrameFree=False + BirthTime=1.792 (source.pfx:2050/2055/2062
+# and :2147/2152/2159), so their lifetime is HOLDER-driven, never a per-effect
+# TTL. No native spawn position or rate is invented (the RandomExt-gated spawn
+# counts stay [U] U14-ex). `expflash` has no own source.pfx section: 0.2 s is a
+# derived [D] upper bound = ring StartTime 0.1 + distexpring life 0.1, not a key.
+const DONOR_DEATH_FX_TTL: Dictionary = {
+	"grenadeexp": {"seconds": 1.792, "end_policy": "FreeToPool",
+		"source": "source.pfx:1003-1110,1096,1102 (128x14 ms)"},
+	"grenadesmoke": {"seconds": 1.792, "end_policy": "Hide",
+		"source": "source.pfx:1115-1222,1208,1213-1214 (128x14 ms)"},
+	"distexpflare": {"seconds": 0.05, "end_policy": "Hide",
+		"source": "source.pfx:1590-1654,1641,1646 (1x50 ms)"},
+	"distexpring": {"seconds": 0.1, "start_time_s": 0.1, "end_policy": "Hide",
+		"source": "source.pfx:1656-1720,1710,1714,1716 (1x100 ms + StartTime 0.1)"},
+	"buildingfirestart": {"seconds": 1.792, "end_policy": "Free",
+		"source": "source.pfx:1810-1897,1859,1864 (128x14 ms)"},
+	"buildingsmokestart": {"seconds": 1.792, "end_policy": "Free",
+		"source": "source.pfx:1905-1993,1954,1959 (128x14 ms)"},
+	"expflash": {"seconds": 0.2, "end_policy": "Hide",
+		"source": "[D] fx.tree:397-414 ring bound: StartTime 0.1 + distexpring 0.1 s (no own source.pfx section)"},
+}
+const DONOR_DEATH_FX_TTL_STATUS: String = PORT_LABEL + " — [O] cited source.pfx keys + [D] frame arithmetic; E-U14-ex capture required (exactly grenadeexp+expflash, 0 foreign keys, 3 runs) before any live expiry change; loopers buildingfire/buildingsmoke have NO life entry (samLoop, Free=False, BirthTime=1.792 — holder lifetime only); spawn positions/rates [U] U14-ex; NO PARITY CLAIM"
+
+# --- DEC-U-UNIT-DEATH-ART §6 U8 — UNIT death TTL DATA (NOT a live expiry) -----
+# [O] dmscript.global:183-194 `gc_unit_deathtime_*`, recovered as RAW donor unit
+# numbers (keys are the literal donor suffix names). These are DATA ONLY:
+#   * NOT written into LIFE (every LIFE value above stays the labelled PORT
+#     stand-in; the PFX-TIME edit above is preserved unchanged) and NOT passed
+#     to any effect life/TTL argument.
+#   * NO wall-clock conversion: the unit of DelayExecuteState/Time[i] is [U]-T
+#     (DEC-U §2.4, capture E-T). FRAMES_TO_TIME / 0.03125 / "seconds" would be
+#     an invented clock and would close [U]-T by fiat — none is applied here.
+#   * DONOR_DEATH_FX_TTL (grenadeexp/expflash, building lane) and LIFE values are
+#     NEVER copied across into this table.
+const DONOR_UNIT_DEATH_TTL: Dictionary = {
+	"0": 2,        # gc_unit_deathtime_0     — land death-anim window -> DeathStage1
+	"1": 20,       # gc_unit_deathtime_1     — DS1 fade 1->0.4 -> DeathStage2 (land)
+	"2": 20,       # gc_unit_deathtime_2     — DS2 sink -> DeathStage3 (land inf/cav)
+	"2art": 30,    # gc_unit_deathtime_2art  — DS2 sink for artillery (no dispersion)
+	"3": 4,        # gc_unit_deathtime_3     — DS3 fade 0.4->0 -> DeathStage4 destroy
+	"0ship": 10,   # gc_unit_deathtime_0ship — ship _death1 window -> DS1
+	"1ship": 10,   # gc_unit_deathtime_1ship — ship DS1 window -> DS2 (no fade)
+	"2ship": 35,   # gc_unit_deathtime_2ship — ship sink window -> DS3
+	"3ship": 30,   # gc_unit_deathtime_3ship — ship DS3 window -> DS4 destroy
+}
+# [O] DS1/DS2/DS3 dispersion arithmetics (DEC-U §2.4) — LAND INF/CAV ONLY.
+# Ships and artillery skip dispersion; the 0.7+random*0.6 desync scales the
+# death-anim speed only, never a stage delay. Recorded as strings, never fitted.
+const DONOR_UNIT_DEATH_DISPERSION: Dictionary = {
+	"ds1_land": "time := 2 + time - random*(time/1)  ->  (2, 2+time]",
+	"ds2_land": "disp := random*(time/1.2); time := time - disp  ->  [time/6, time)",
+	"ds3_land": "time := 2 + time - random*time  ->  (2, 2+time]",
+	"skip": "ships and artillery skip dispersion; 0.7+random*0.6 is anim-speed only",
+}
+const DONOR_UNIT_DEATH_TTL_STATUS: String = PORT_LABEL + " — [O] dmscript.global:183-194 raw TTL numbers + DS1-3 dispersion (DEC-U §2.4); DATA ONLY, NOT wired into LIFE/expiry or any stage timer; wall-clock base [U]-T (E-T), NO seconds / FRAMES_TO_TIME conversion; six captures E-T/C/A/W/S/X keep zero-mismatch termination; NO PARITY CLAIM"
+# [O] unit.script:11420ff `_unit_DoExplosion` is gated to buildings (non-
+# weakwall) and ships (non-fisher). Land unit corpses spawn NO grenadeexp /
+# expflash. The composed FX below stay byte-identical and are reached for unit
+# deaths ONLY through the entities-side gated call, never from a land corpse.
+const DONOR_UNIT_EXPLOSION_GATE_STATUS: String = PORT_LABEL + " — [O] (bbuilding and usage<>weakwall) or (bship and usage<>fisher); LAND corpse = 0 explosion / 0 smoke / 0 debris / 0 ghost; grenadeexp+expflash compositions unchanged; NO PARITY CLAIM"
+
+# fx.tree selector / composition -> the ONE source.pfx section whose timing is
+# cited for its primary sheet [O] DEC-U §3 (fx.tree:4-63). This is a KEY mapping,
+# NOT a TTL default: an unmapped key stays disabled with an exact reason.
+const DONOR_EFFECT_TIME_KEY: Dictionary = {
+	"shotmusket": "musketsmoke", "shotmusketcav": "musketsmoke",
+	"shotmusketking": "musketsmoke", "shotmusketdrag": "musketsmoke",
+	"shotmusketpoint": "musketsmoke", "volley_smoke": "musketsmoke",
+	"musketsmoke": "musketsmoke", "musketflash": "musketflash",
+	"muzzle_flash": "musketflash", "shotmusket_flash": "musketflash",
+}
+# [O] pfx.script:39-86,200-252: 8 floats; code N -> rand[ClampInt(N-1,0,7)];
+# mirror=Round(rand)==1, animation=Round(rand*(n-1)), FillRand + prand sharing.
+# Generator/seed [U] U7: pfx_random_stream stays null; no value fabricated.
+const DONOR_PFX_RAND_RULE: String = PORT_LABEL + " — [O] pfx.script:39-86,200-252 8-float FillRand/prand rule; generator+seed [U] U7; no value invented"
+
+# Resolve a caller key to a cited source.pfx timing row. Unknown keys are
+# returned unchanged so _donor_time_for() reports the exact blocking key.
+func _donor_time_key(kind: String, donor_key: String) -> String:
+	var key: String = donor_key if not donor_key.is_empty() else kind
+	if key.is_empty() or DONOR_FX_TIMING.has(key):
+		return key
+	return str(DONOR_EFFECT_TIME_KEY.get(key, key))
+
+
+# The ONLY donor -> seconds conversion in this module. Disabled posture is
+# explicit: no key / no cited row => PORT life retained, no substitute TTL.
+func _donor_time_for(key: String) -> Dictionary:
+	if key.is_empty() or not DONOR_FX_TIMING.has(key):
+		var why: String = key if not key.is_empty() else "no donor key supplied"
+		var why_full: String = "DONOR_TIME_DISABLED — " + why + ": no cited Interval/FrameRate/frame-count row; PORT life retained, no default TTL"
+		return {"ok": false, "key": key, "reason": why_full, "disabled_reason": why_full,
+			"status": "PORT stand-in life retained ([U] U3-time); no donor TTL substituted"}
+	var row: Dictionary = DONOR_FX_TIMING[key]
+	var interval_ms: float = float(row.get("interval_ms", 0.0))
+	var frame_rate: float = float(row.get("frame_rate", 0.0))
+	var frames: int = maxi(0, int(row.get("end_frame", 0)) - int(row.get("start_frame", 0)) + 1)
+	var sec_per_frame: float = interval_ms / 1000.0
+	var product: float = interval_ms * frame_rate
+	var looping: bool = str(row.get("on_end_frame", "")) == "Loop"
+	var disabled_reason: String = ""
+	if looping:
+		disabled_reason = "DONOR_TIME_DISABLED — samLoop: " + str(row.get("birth_time_s", 0.0)) + " s is a LOOP PERIOD/BirthTime, not a death TTL (OnEndFrameFree=False); PORT expiry retained"
+	return {"ok": true, "key": key, "frames": frames,
+		"interval_ms": interval_ms, "frame_rate": frame_rate,
+		"sec_per_frame": sec_per_frame, "ttl_s": float(frames) * sec_per_frame,
+		"interval_x_framerate": product, "disabled_reason": disabled_reason,
+		"clock_law_ok": absf(product - 1000.0) < 1.0,
+		"on_end_frame": str(row.get("on_end_frame", "")), "loop": looping,
+		"loop_period_s": float(row.get("birth_time_s", 0.0)),
+		"source": str(row.get("source", "")),
+		"status": "[O] DEC-U §1 + [D] clock arithmetic; wall-clock frame stepping [U] U3-time; NO PARITY CLAIM"}
+
+
+func _donor_timing_table() -> Dictionary:
+	var out: Dictionary = {}
+	for key in DONOR_FX_TIMING.keys():
+		out[str(key)] = _donor_time_for(str(key))
+	return out
+
+
+# buildingsmoke [O] fx.tree:417-442: parentrandom=true, four children, each
+# randmirroru=2; sources at source.pfx:1808-2199. Never attached today.
+const DONOR_BUILDING_SMOKE_CHILDREN: Array[String] = [
+	"buildingfirestart", "buildingsmokestart", "buildingfire", "buildingsmoke",
+]
+# Exact donor randomisation rule [O] pfx.script:39-86: 8 floats; code 1..8
+# selects rand[code-1]; mirror = Round(rand)==1; animation = Round(rand*(n-1));
+# framerate/pixelratio/position/scale = Lerp(start,stop,rand). parentrandom=true
+# shares one fRand[8] over all children (:206-252). Which generator/seed is
+# used is [U] U7; no stream is fabricated by this module.
+const DONOR_PFX_RAND_COUNT: int = 8
+
+# --- DEATH-FX — donor death-explosion compositions [O] DEC-U smoke_burn_ttl ---
+# fx.tree:215-252 `grenadeexp` = 4 children in donor libeffects order
+# (grenadeexp/grenadesmoke/distexpflare/distexpring), parentrandom=true;
+# fx.tree:397-414 `expflash` = 2 children (distexpflare/distexpring),
+# parentrandom=true, randpixelratio=1:-30 on BOTH children. parentrandom=true
+# means ONE shared 8-float FillRand block (pfx.script:200-252), reproduced by
+# _add_donor_composition(shared_rand=true). `kind` selects an EXISTING labelled
+# port stand-in: NO derived sheet exists in assets/fx/tex for these four keys
+# (IMPL-FX-ART derived only the sheets in DONOR_FX_SHEETS), so no art, position
+# or rate is invented. The pixelratio code/delta is RECORDED, NOT applied
+# ([U] U3-size). Exact seconds live in DONOR_DEATH_FX_TTL above (E-U14-ex).
+const DONOR_DEATH_EXPLOSION_COMPOSITIONS: Dictionary = {
+	"grenadeexp": {"source": "fx.tree:215-252", "parentrandom": true,
+		"children": [
+			{"key": "grenadeexp", "kind": "explode"},
+			{"key": "grenadesmoke", "kind": "smoke"},
+			{"key": "distexpflare", "kind": "shot"},
+			{"key": "distexpring", "kind": "shot"},
+		]},
+	"expflash": {"source": "fx.tree:397-414", "parentrandom": true,
+		"randpixelratio": {"code": 1, "delta": -30},
+		"children": [
+			{"key": "distexpflare", "kind": "shot"},
+			{"key": "distexpring", "kind": "shot"},
+		]},
+}
+const DONOR_DEATH_FX_STATUS: String = PORT_LABEL + " — [O] weapon.script:275,367 cFXBuildingExp='grenadeexp' + unit.script:11509 expflash tail; grenadeexp 4-child / expflash 2-child compositions [O] fx.tree:215-252/:397-414, parentrandom=true; no derived sheets for these 4 keys -> labelled port stand-ins only; exact seconds in DONOR_DEATH_FX_TTL are DATA pending E-U14-ex; spawn positions/rates [U] U14-ex; NO PARITY CLAIM"
+
+# F2 / DEC-U smoke_burn_ttl §3 + §8-F2 — FUTURE ATTACH RULE, NOT IMPLEMENTED HERE.
+# [O] nothing.inc:15,31-82,293,336-387: cSmokeHPLimit=0.85; smokeHPMaxIntense =
+# Max(gc_BuildingSlowDeathHP, maxhp div 4) when bslowdeath else maxhp div 4;
+# cProgressSmokeIncrease=7; maxind = floor((1-(hp-smokeHPMaxIntense)/0.85/
+# (maxhp-smokeHPMaxIntense))*smokeCount); ONE attach only when progresstick mod 7
+# = 0 AND random>freq (freq = Min((1-0.5*diff/smokeCount)*0.8, 0.8)), break after
+# one; BOTH branches enter only under `not bdead` (:19,:293) -> ZERO attaches
+# after death. DOCUMENTATION ONLY: the native progresstick tick rate is [U]
+# (needs E-U14-burn), no attach/detach code exists in this module, and the
+# 4-child buildingsmoke composition below stays byte-identical. Death-edge
+# smoke stays cleared in world3d_entities.gd (another worker's file).
+const DONOR_BUILDING_SMOKE_ATTACH_RULE_STATUS: String = PORT_LABEL + " — [O] nothing.inc:15,19,31-82,293,336-387 future HP->maxind + progresstick mod 7 + random>freq attach rule; native progresstick rate [U] (E-U14-burn); DOCUMENTED ONLY — no attach code, 0 smoke at/after death; shared FillRand 4-child block unchanged; NO PARITY CLAIM"
+
+const DONOR_FX_STATUS: String = PORT_LABEL + " — 24 donor names + recovered literal keys are [O] fx.tree/source.pfx; no donor DDS/BMP copied; PixelRatio/Interval→world [U] U3; random stream + seed [U] U7; building-smoke/rally/ghost art [U] U14; visual UNVERIFIED"
+const DONOR_FX_POOL_STATUS: String = PORT_LABEL + " — donor OnEndFrameState=FreeToPool (source.pfx:60) implemented as opt-in holder reuse; manager types/pool sizes [U] U3; port safety cap kept unchanged; visual UNVERIFIED"
+# --- weather keys [O] clouds.weather:1-23 / particles.snow.cfg:1-39 --------
+const SNOW_WIND_VECTOR: Vector4 = Vector4(-0.74211645, 0.0, -0.86726564, 1.0)  # clouds.weather:1-23 WindVector
+const SNOW_ROTATION: float = 62048.2890625       # particles.snow.cfg:7,47,87,127
+const SNOW_ROTATION_SPEED: float = 0.0           # :8,48,88,128
+const SNOW_SPIRAL_RADIUS: float = 0.1            # :14,54,94,134
+const SNOW_SPIRAL_SPEED: Array = [20.0, 15.0, 13.0, 13.0]  # :15,55,95,135
+const SNOW_CAMERA_SPEED_FACTOR: float = 0.1      # :39,79,119,159
+const SNOW_BILLBOARD_TYPE: String = "btBillboard"  # :12,52,92,132
+const WEATHER_KEYS_STATUS: String = PORT_LABEL + " — wind/spiral/rotation/camera-factor keys are [O] but their per-frame position formula is [U] U4; gate stays donor-derived (Weather=40 < WeatherStart=70); no donor snow art copied; visual UNVERIFIED"
+const GHOST_RALLY_STATUS: String = PORT_LABEL + " — donor box/rallypoint mesh+texture DERIVED via approved converter; ghost scale 0.5^3 (refmisc.prop:211-213) / rally scale 0.0525^3 + roll 45 + ocoTerrainWater (rallypoint.prop:19-31); selection rings stay procedural; ghost blink law [O] unit.script:6674-6805 (interpolation/speed-factor/mesh [U] E-GHOST-CAP §7), no rgb tint on the live path; TTL/pennant [U]-R unresolved; visual UNVERIFIED"
+# GHOST-BLINK status telemetry. Blink LAW is [O]; the three native residuals and
+# the mesh identity stay [U] until the fixed-camera zero-mismatch capture passes.
+const GHOST_BLINK_STATUS: String = PORT_LABEL + " — alpha-key law, emission keys/flag, triangle period formula, loop/blend/ZWrite/ZTest flags are [O] unit.script:6674-6805; key interpolation + GetTimeSpeedFactor runtime values are [U]-native; E-GHOST-CAP §7 zero-mismatch capture required; NO donor parity claim"
+const GHOST_MESH_IDENTITY_STATUS: String = PORT_LABEL + " — STRONG INFERENCE, NOT [O]: player.script:202-218 `_player_CreateConstructionDummyBySID` calls CreatePlayerGameObjectHandleByHandle(plHnd, gc_racename_buildings, sid,...), i.e. the live ghost is the real building object; constructiondummy/box.mesh has ZERO script callers (creation engine-native [U]). The derived box dummy is KEPT as the labelled CURRENT transport — NO mesh-identity switch. E-GHOST-CAP §7(a) discriminates (mesh id constant >=120 ghost frames and matching the inferred source); any mismatch keeps this [U]."
+
+# --- FXART-1TO1 — derived donor asset paths (all under res://assets/fx/) -----
+const FX_ASSET_ROOT: String = "res://assets/fx/"
+const DONOR_BOX_OBJ: String = FX_ASSET_ROOT + "models/box.obj"
+const DONOR_BOX_TEX: String = FX_ASSET_ROOT + "tex/box.png"
+const DONOR_RALLY_OBJ: String = FX_ASSET_ROOT + "models/rallypoint.obj"
+const DONOR_RALLY_TEX: String = FX_ASSET_ROOT + "tex/rallypoint.png"
+const FX_ASSET_MANIFEST: String = FX_ASSET_ROOT + "manifest.json"
+
+# Exact donor prop literals — NOT conversions to Godot metres/seconds.
+# Ghost: constructiondummy.prop refurls refmisc.prop, which sets 0.5^3.
+const DONOR_GHOST_SCALE: float = 0.5           # objects/ref/refmisc.prop:211-213
+# Rally: rallypoint.prop overrides the inherited scale/direction/offset.
+const DONOR_RALLY_SCALE: float = 0.0525        # objects/misc/rallypoint.prop:19-21
+const DONOR_RALLY_ROLL_DEG: float = 45.0       # objects/misc/rallypoint.prop:26
+const DONOR_RALLY_COLLIDE: String = "ocoTerrainWater"  # rallypoint.prop:31
+# refmisc.prop:225-233 Direction=(0,1,0), Up=(1,0,0): donor Y maps to Godot
+# -Z under the established Z-up -> Y-up bake (world3d_entities.gd:1689-1691).
+# The roll SIGN is not donor-proven; it is recorded, not calibrated [U]-R.
+const DONOR_RALLY_ROLL_AXIS: Vector3 = Vector3(0.0, 0.0, -1.0)
+const DONOR_RALLY_ROLL_STATUS: String = PORT_LABEL + " — roll 45 deg donor literal (rallypoint.prop:26) applied about the donor Direction axis mapped to Godot -Z; sign/pennant behaviour [U]-R; no visual parity claim"
+
+# Donor sprite-sheet geometry [O] pfx/source.pfx + pfx/material.mat. Frame
+# dimensions/Image dimensions and EndFrame are copied verbatim; the derived
+# PNG holds only the decoded donor base level (no mip chain, no retouch).
+const DONOR_FX_SHEETS: Dictionary = {
+	"musketsmoke": {"tex": FX_ASSET_ROOT + "tex/musketsmoke.png", "image_w": 2048, "image_h": 2048, "frame_w": 256, "frame_h": 128, "end_frame": 127, "source": "source.pfx:41-49"},
+	"musketflash": {"tex": FX_ASSET_ROOT + "tex/musketflash.png", "image_w": 512, "image_h": 256, "frame_w": 256, "frame_h": 128, "end_frame": 3, "source": "source.pfx:114-161"},
+	"musketsparks": {"tex": FX_ASSET_ROOT + "tex/musketsparks.png", "image_w": 2048, "image_h": 512, "frame_w": 170, "frame_h": 128, "end_frame": 47, "source": "source.pfx:192-247"},
+	"musketsmokeup": {"tex": FX_ASSET_ROOT + "tex/musketsmokeup.png", "image_w": 2048, "image_h": 2048, "frame_w": 256, "frame_h": 256, "end_frame": 63, "source": "source.pfx:269-277"},
+	"musketflashup": {"tex": FX_ASSET_ROOT + "tex/musketflashup.png", "image_w": 256, "image_h": 256, "frame_w": 128, "frame_h": 128, "end_frame": 3, "source": "source.pfx:308-361"},
+	"firesmoke": {"tex": FX_ASSET_ROOT + "tex/firesmoke.png", "image_w": 2048, "image_h": 2048, "frame_w": 128, "frame_h": 256, "end_frame": 127, "source": "source.pfx:1817-1825/2011-2019/2108-2116/2205-2213; material.mat:450-458,480-481"},
+	"cannonflash": {"tex": FX_ASSET_ROOT + "tex/cannonflash.png", "image_w": 1024, "image_h": 512, "frame_w": 256, "frame_h": 128, "end_frame": 15, "source": "source.pfx:2385-2401 (towerflash)"},
+	# Ribbon: no animated frames in source.pfx; size is the decoded BMP size [O].
+	"bullettrail": {"tex": FX_ASSET_ROOT + "tex/bullettrail.png", "image_w": 512, "image_h": 256, "frame_w": 512, "frame_h": 256, "end_frame": 0, "source": "material.mat:443-444; decoded data/pfx/textures/bullettrail.bmp 512x256"},
+}
+# Donor key -> sheet binding [O] source.pfx LibMaterialName + material.mat.
+const DONOR_KEY_SHEET: Dictionary = {
+	"musketsmoke": "musketsmoke", "musketflash": "musketflash",
+	"musketsparks": "musketsparks", "musketsmokeup": "musketsmokeup",
+	"musketflashup": "musketflashup",
+	"bullettrail": "bullettrail", "firearrowtrail": "bullettrail", "fragtrail": "bullettrail",
+	"buildingfirestart": "firesmoke", "buildingsmokestart": "firesmoke",
+	"buildingfire": "firesmoke", "buildingsmoke": "firesmoke",
+	"towersmoke": "musketsmoke", "towerflash": "cannonflash", "towersparks": "musketsparks",
+}
+# 8-float RAND CODES [O] pfx/fx.tree. Code N -> rand[ClampInt(N-1,0,7)],
+# mirror = Round(rand)==1, animation = Round(rand*(n-1)) (pfx.script:39-86).
+# Code 0 means no donor code: the frame stays 0 and no mirror is applied.
+const DONOR_FX_RAND_CODES: Dictionary = {
+	"musketsmoke": {"mirror_v": 1, "animation": 0},        # fx.tree:11-12
+	"musketflash": {"mirror_v": 2, "animation": 1},        # fx.tree:28-29
+	"musketsparks": {"mirror_v": 2, "animation": 1},       # fx.tree:34-35
+	"musketsmokeup": {"mirror_u": 1, "animation": 0},       # fx.tree:40
+	"musketflashup": {"mirror_u": 2, "mirror_v": 3, "animation": 1},  # fx.tree:51-53
+	"buildingfirestart": {"mirror_u": 2, "animation": 0},  # fx.tree:424
+	"buildingsmokestart": {"mirror_u": 2, "animation": 0}, # fx.tree:429
+	"buildingfire": {"mirror_u": 2, "animation": 0},       # fx.tree:434
+	"buildingsmoke": {"mirror_u": 2, "animation": 0},      # fx.tree:439
+	"towersmoke": {"mirror_v": 1, "animation": 0},         # fx.tree:449
+	"towerflash": {"mirror_v": 2, "animation": 0},         # fx.tree:462-463 (randanimation commented)
+	"towersparks": {"mirror_v": 2, "animation": 1},        # fx.tree:468-469
+}
+# FreeToPool is donor-proven only for these KEYS [O] source.pfx:60 musketsmoke,
+# :96 musketsmoketbn, :409 cannonsmoke, :571 howitzersmoke, :772 mortarsmoke,
+# :1102 grenadeexp, :1255 impactsmoke, :1296 impactdust, :1412 cannonexp,
+# :1575 cannonexpbuilding, :2376 towersmoke, :2532 musketsmokepoint,
+# :2839 waterblast, :2882 waterblastsmall. Building fire/smoke instead carry
+# OnEndFrameFree/OnEndFrameHide and are deliberately NOT recycled. Pool reuse
+# stays opt-in; no pool size/manager type is invented ([U] U3).
+const DONOR_FREETOPOOL_KEYS: Array[String] = [
+	"musketsmoke", "musketsmoketbn", "cannonsmoke", "howitzersmoke",
+	"mortarsmoke", "grenadeexp", "impactsmoke", "impactdust",
+	"cannonexp", "cannonexpbuilding", "towersmoke", "musketsmokepoint",
+	"waterblast", "waterblastsmall",
+]
+const FXART_STATUS: String = PORT_LABEL + " — donor OBJ/MTL/PNG derived through variant3d/tools/convert_models.py into assets/fx (pixel/topology exact, see manifest.json); donor sheet frames/mirror codes are [O]; world size/time [U]-F and seed [U]-S stay unresolved; ghost blink law [O] unit.script:6674-6805 (interpolation/speed-factor/mesh [U] E-GHOST-CAP §7, no live rgb tint); TTL [U]-R stays a port label; visual UNVERIFIED"
+
 # --- public state ----------------------------------------------------------
 var game = null
 var consume_events: bool = true    # set false if main.gd already forwards add_fx
@@ -251,6 +682,14 @@ var emit_arrow_trails: bool = true
 # may enable them without editing this module.
 var emit_donor_shot_fx: bool = false     # shot events also spawn muzzle_flash + volley_smoke
 var use_donor_arrow_trail: bool = false  # projectiles use the face-camera arrow_trail instead of the solid-box trail
+# PORT1TO1-ENT1TO1: donor FX randomisation stream. Null = no donor generator is
+# known ([U] U7), so no random value is fabricated. An owner that resolves the
+# Delphi Random/RandomExt stream may inject an object exposing randf().
+var pfx_random_stream = null
+# PORT1TO1-ENT1TO1: opt-in donor FreeToPool holder reuse. Default false keeps
+# every pre-existing caller byte-identical; no pool size is invented.
+var use_donor_fx_pool: bool = false
+var _fx_pool: Dictionary = {}   # kind -> Array[Node3D], invisible recycled holders
 # Subtract from map-origin sim pos to centre the scene (see ORIGIN CONVENTION).
 # Pre-V7-73 this was never assigned; bind() now derives it from the bound game.
 var world_offset: Vector2 = Vector2.ZERO
@@ -262,6 +701,9 @@ var stats: Dictionary = {
 	"rally_active": 0, "ghost_shown": 0,
 	# FX-IMPACT-01 (additive telemetry; no existing key changed)
 	"impact_fx_spawned": 0, "impact_last_kind": "",
+	# PFX-TIME (additive telemetry; no existing key changed)
+	"donor_time_applied": 0, "donor_time_disabled": 0,
+	"donor_time_last_reason": "",
 	# FIX-SELECTVIS: measured ring/owner-colour counts for probes + reports.
 	"selection_rings": 0, "selection_entries": 0, "selection_owner_colors": [],
 }
@@ -285,9 +727,30 @@ var _ghost_building: MeshInstance3D = null
 var _ghost_building_sid: String = ""
 var _ghost_mesh_cache: Dictionary = {}
 var _ghost_mat: StandardMaterial3D = null
+# FXART-1TO1 — donor-art caches/nodes. Loaded lazily; a missing/unreadable
+# derived asset degrades to the EXISTING port stand-in, never to synthetic art.
+var _fx_tex_cache: Dictionary = {}       # path -> Texture2D or null
+var _fx_mesh_cache: Dictionary = {}      # path -> Mesh or null
+var _ghost_donor: MeshInstance3D = null
+var _ghost_donor_mat: StandardMaterial3D = null
+# FXART-1TO1 — the landed donor-art code binds its box dummy through these two
+# names (_init_donor_ghost at :1444-1467, tint at :2303-2305). They were used
+# without a declaration; declare them here with the exact types that code
+# assigns, leaving every existing assignment/branch byte-identical.
+var _donor_ghost: MeshInstance3D = null
+var _donor_ghost_mat: StandardMaterial3D = null
+var _donor_ghost_ready: bool = false
+var _donor_rally_ready: bool = false
 var _ghost_active: bool = false
 var _ghost_ok: bool = true
 var _ghost_sid: String = ""
+# GHOST-BLINK [U]-native: GetTimeSpeedFactor has no script definition and its
+# runtime values were NOT recovered (DEC_U_ghost_blink.md §2/:6681, §8). 1.0 is
+# the donor's documented speed-10 REFERENCE (T=0.65625 s, triangle period
+# 1.3125 s), not a fitted value. A capture harness may inject the logged value;
+# do NOT tune this to fit a picture. The port's elapsed `_time` is used as the
+# effect clock at that reference; the real<->game-time mapping stays [U].
+var ghost_speed_factor: float = 1.0
 var _rally_root: Node3D = null
 var _rally_markers: Dictionary = {}
 # FIX-SELECTVIS: one flat ring + owner pip per selected entity, keyed by sim id.
@@ -318,6 +781,57 @@ func bind(g, world_offset_override = null) -> void:
 	stats["donor_key_colors_loaded"] = _key_colors_loaded
 	stats["donor_key_colors_slots"] = PLAYER_COLORS.size()
 	stats["donor_key_colors_error"] = _key_colors_error
+	# PORT1TO1-ENT1TO1 — donor FX telemetry (structural only, no parity claim).
+	stats["donor_fx_status"] = DONOR_FX_STATUS
+	stats["donor_fx_effects"] = DONOR_EFFECTS.duplicate(true)
+	stats["donor_fx_selection"] = DONOR_EFFECT_SELECTION.duplicate(true)
+	stats["donor_fx_literal_keys"] = DONOR_FX_LITERAL_KEYS.duplicate(true)
+	stats["donor_fx_musket_children"] = DONOR_MUSKET_CHILDREN.duplicate(true)
+	stats["donor_fx_building_smoke_children"] = DONOR_BUILDING_SMOKE_CHILDREN.duplicate(true)
+	stats["donor_fx_pool_status"] = DONOR_FX_POOL_STATUS
+	# FXART-1TO1 — derived art is declared structurally; no resource is loaded
+	# until a ghost/rally/FX actually needs it (see the lazy loaders below).
+	stats["fxart_status"] = FXART_STATUS
+	stats["fxart_manifest"] = FX_ASSET_MANIFEST
+	stats["fxart_manifest_present"] = FileAccess.file_exists(FX_ASSET_MANIFEST)
+	stats["donor_ghost_scale"] = DONOR_GHOST_SCALE
+	stats["donor_rally_scale"] = DONOR_RALLY_SCALE
+	stats["donor_rally_roll_status"] = DONOR_RALLY_ROLL_STATUS
+	stats["donor_fx_sheets"] = DONOR_FX_SHEETS.duplicate(true)
+	stats["donor_fx_rand_codes"] = DONOR_FX_RAND_CODES.duplicate(true)
+	# PFX-TIME — exact clock arithmetic is declared structurally; no parity claim.
+	stats["donor_fx_time_law"] = DONOR_TIME_LAW
+	stats["donor_fx_time_rows"] = _donor_timing_table()
+	stats["donor_fx_rand_rule"] = DONOR_PFX_RAND_RULE
+	stats["donor_freeto_pool_keys"] = DONOR_FREETOPOOL_KEYS.duplicate(true)
+	# DEATH-FX — donor compositions + exact seconds are declared structurally
+	# only; live expiry stays on the labelled PORT stand-ins until E-U14-ex.
+	# No parity claim, no attach rule executed.
+	stats["donor_death_explosion_compositions"] = DONOR_DEATH_EXPLOSION_COMPOSITIONS.duplicate(true)
+	stats["donor_death_explosion_ttl"] = DONOR_DEATH_FX_TTL.duplicate(true)
+	stats["donor_death_explosion_status"] = DONOR_DEATH_FX_STATUS
+	stats["donor_death_ttl_status"] = DONOR_DEATH_FX_TTL_STATUS
+	stats["donor_building_smoke_attach_rule_status"] = DONOR_BUILDING_SMOKE_ATTACH_RULE_STATUS
+	stats["donor_weather_keys_status"] = WEATHER_KEYS_STATUS
+	stats["donor_ghost_rally_status"] = GHOST_RALLY_STATUS
+	# GHOST-BLINK — donor blink law is declared structurally; the three native
+	# residuals stay [U] and no visual parity is asserted.
+	stats["ghost_blink_law"] = {
+		"source": "data/scripts/lib/unit.script:6674-6805 _unit_DoConstructionBlinkGameObject",
+		"effect_key": "TXLifeColorEffect 'blink'",
+		"alpha_ok": GHOST_OK_ALPHA.duplicate(true),
+		"alpha_bad": GHOST_BAD_ALPHA.duplicate(true),
+		"emission_bad": GHOST_BAD_EMISSION.duplicate(true),
+		"emission_ok_enabled": GHOST_OK_EMISSION_ENABLED,
+		"emission_bad_enabled": GHOST_BAD_EMISSION_ENABLED,
+		"key_time_s_at_speed10": GHOST_KEY_TIME,
+		"triangle_period_s_at_speed10": GHOST_PERIOD_S,
+		"loop": true, "blend": "bmTransparency", "zwrite": true, "ztest": true,
+		"bUseColor": false, "rgb_arms_dead_code": true,
+	}
+	stats["ghost_blink_status"] = GHOST_BLINK_STATUS
+	stats["ghost_mesh_identity_status"] = GHOST_MESH_IDENTITY_STATUS
+	stats["ghost_port_tint_retired"] = GHOST_RETIRED_PORT_TINT
 	_ensure_roots()
 	_apply_snow_gate()   # FX-WEATHER-01: default Weather=40 keeps snow OFF
 
@@ -523,7 +1037,7 @@ func sync(dt) -> void:
 
 # Exact signature per contract: add_fx(pos, kind, life). `life` <= 0 means
 # "use the port lifetime table" so a caller may pass -1 / 0 as a sentinel.
-func add_fx(pos, kind, life := -1.0) -> Dictionary:
+func add_fx(pos, kind, life := -1.0, donor_key := "") -> Dictionary:
 	_ensure_roots()
 	var k: String = str(kind)
 	var span: float = float(life)
@@ -534,18 +1048,65 @@ func add_fx(pos, kind, life := -1.0) -> Dictionary:
 	var p3: Vector3 = world_pos(pos)
 	if not _finite3(p3):
 		return {}
+	# PFX-TIME — apply the exact donor clock ONLY for a cited source row.
+	# No donor key / unknown key / samLoop row => DISABLED with an exact reason;
+	# the labelled PORT life above is retained (no default TTL, no fallback).
+	# An explicit caller life is never silently overridden.
+	var time_key: String = _donor_time_key(k, donor_key)
+	var key_source: String = "explicit_donor_key"
+	if donor_key.is_empty():
+		key_source = "port_kind_sheet_map" if not k.is_empty() else "none"
+	elif not DONOR_FX_TIMING.has(donor_key) and DONOR_EFFECT_TIME_KEY.has(donor_key):
+		key_source = "fx_tree_effect_map"
+	var timing: Dictionary = _donor_time_for(time_key)
+	var has_cited_row: bool = bool(timing.get("ok", false)) and not bool(timing.get("loop", false))
+	var donor_ttl_applied: bool = has_cited_row and life <= 0.0
+	if donor_ttl_applied:
+		span = float(timing.get("ttl_s", span))
+		stats["donor_time_applied"] = int(stats.get("donor_time_applied", 0)) + 1
+	else:
+		stats["donor_time_disabled"] = int(stats.get("donor_time_disabled", 0)) + 1
+		if has_cited_row:
+			stats["donor_time_last_reason"] = "DONOR_TIME_DISABLED — caller supplied explicit life; connector life retained"
+		else:
+			stats["donor_time_last_reason"] = str(timing.get("disabled_reason", timing.get("reason", "no donor timing row")))
 	_spawn_index += 1
-	var holder := Node3D.new()
+	# PORT1TO1-ENT1TO1 / D19: donor OnEndFrameState=FreeToPool (source.pfx:60).
+	# Holder reuse is opt-in so existing callers stay byte-identical; no pool
+	# size or manager type is invented ([U] U3).
+	var holder: Node3D = null
+	if use_donor_fx_pool:
+		holder = _pool_acquire(k)
+	if holder == null:
+		holder = Node3D.new()
+		_root.add_child(holder)
 	holder.name = "FX_%s_%d" % [k, _spawn_index]
 	holder.position = p3
-	_root.add_child(holder)
+	holder.rotation = Vector3.ZERO
+	holder.scale = Vector3.ONE
+	holder.visible = true
+	var rand8: Array = _pfx_rand8()
 
 	var item: Dictionary = {
 		"kind": k, "pos": pos, "life": span, "age": 0.0,
 		"node": holder, "mat": null, "light": null,
 		"base_alpha": 1.0, "light_energy": 0.0, "base_y": p3.y,
 		"pr": null, "index": _spawn_index,
+		"pfx_rand8": rand8,
+		"pfx_rand_status": "donor_rule" if not rand8.is_empty() else "UNVERIFIED_U7_no_stream",
+		# PFX-TIME — exact [D] seconds only when a cited donor row resolved.
+		"donor_time_key": time_key,
+		"donor_time_key_source": key_source,
+		"donor_time": timing.duplicate(true),
+		"donor_time_applied": donor_ttl_applied,
+		"donor_loop_period_s": float(timing.get("loop_period_s", 0.0)),
+		"donor_time_status": "EXACT_DONOR_TTL [D] Interval x FrameRate; frame clock [U] U3-time — NO PARITY CLAIM" if donor_ttl_applied else str(timing.get("status", "PORT life retained")),
 	}
+	# FXART-1TO1 — pass the donor child key BEFORE building so the derived
+	# sheet/mirror/frame codes are selected for the right source. An unknown
+	# key never invents art: the kind's labelled port stand-in is kept.
+	if donor_key != "" and DONOR_KEY_SHEET.has(donor_key):
+		item["donor_effect_key"] = donor_key
 	_build_visual(item, k)
 	fx_items.append(item)
 	_enforce_cap()
@@ -555,25 +1116,79 @@ func add_fx(pos, kind, life := -1.0) -> Dictionary:
 
 # FX-IMPACT-01 — donor-key entry point. Accepts the literal donor effect/source
 # keys (DFX-01 §5.2/§7.1-7.3) and maps them to the three additive port kinds.
-# This is a THIN ADAPTER, not a donor translation: visual fidelity is a PORT
-# APPROXIMATION and no donor art is loaded. Unknown keys return {} (no-op),
-# matching the donor's `GetOrCreate` lookup of an absent key -> -1 (pfx.script:353-360).
+# FXART-1TO1: the derived donor sheets are now bound for the mapped kinds and
+# for the two donor compositions (buildingsmoke / shottower). Unknown keys
+# still return {} (no-op), matching donor `GetOrCreate` absent key -> -1
+# (pfx.script:353-360). Size/time remain [U]-F port stand-ins: no parity claim.
 func add_impact_fx(kind, pos, life := -1.0) -> Dictionary:
 	var k: String = str(kind)
+	var donor_key: String = k if k in DONOR_EFFECTS else ""
 	var mapped: String = ""
 	match k:
-		"shotmusket", "musketsmoke", "volley_smoke":
+		# 5-layer musket composition (fx.tree:4-63); port shows 2 stand-in quads.
+		"shotmusket", "shotmusketcav", "shotmusketking", "shotmusketdrag", \
+		"shotmusketpoint", "musketsmoke", "volley_smoke":
 			mapped = "volley_smoke"
+		# DEATH-FX: `expflash` is routed to its 2-child donor composition below
+		# (fx.tree:397-414), not this muzzle-flash stand-in.
 		"musketflash", "shotmusket_flash", "muzzle_flash":
 			mapped = "muzzle_flash"
 		"bullettrail", "firearrowtrail", "fragtrail", "arrow_trail":
 			mapped = "arrow_trail"
+		# Remaining donor effects keep their existing PORT stand-ins except
+		# shottower, which now uses the derived tower sheets below.
+		"shotcannon", "shothowitzer", "shotmortar", "shotmcannon":
+			mapped = "shot"
+		# DEATH-FX: `grenadeexp` is routed to its 4-child donor composition
+		# below (fx.tree:215-252), not this generic explode quad.
+		"cannonexpground", "cannonexpbuilding", \
+		"howitzerexpground", "howitzerexpbuilding":
+			mapped = "explode"
+		"impactsmoke", "impactdust":
+			mapped = "smoke"
+		# Water blobs have no donor-art sheet binding here: no-op, no synthetic
+		# art, explicit telemetry.
+		"waterblast", "waterblastsmall":
+			mapped = ""
+	# FXART-1TO1 — donor compositions now that the sheets are derived.
+	# buildingsmoke = 4 children sharing ONE FillRand block (fx.tree:417-442,
+	# parentrandom=true); shottower = 3 independent children (:443-473).
+	if k == "buildingsmoke":
+		return _add_donor_composition(pos, life, [
+			{"key": "buildingfirestart", "kind": "volley_smoke"},
+			{"key": "buildingsmokestart", "kind": "volley_smoke"},
+			{"key": "buildingfire", "kind": "volley_smoke"},
+			{"key": "buildingsmoke", "kind": "volley_smoke"},
+		], true, "buildingsmoke")
+	if k == "shottower":
+		return _add_donor_composition(pos, life, [
+			{"key": "towersmoke", "kind": "volley_smoke"},
+			{"key": "towerflash", "kind": "muzzle_flash"},
+			{"key": "towersparks", "kind": "volley_smoke"},
+		], false, "shottower")
+	# DEATH-FX — donor building-death explosion payload [O] DEC-U smoke_burn_ttl
+	# §4/§8-B2/F3. The caller (world3d_entities.gd:3155-3158) already passes BOTH
+	# keys via add_impact_fx, so no caller edit is needed. `grenadeexp` = 4 children
+	# and `expflash` = 2 children; both use ONE shared FillRand block. Child keys
+	# are forwarded to add_fx as donor keys, but exact seconds stay DATA-only
+	# (DONOR_DEATH_FX_TTL) until E-U14-ex, and no spawn position/rate is invented.
+	if DONOR_DEATH_EXPLOSION_COMPOSITIONS.has(k):
+		var comp: Dictionary = DONOR_DEATH_EXPLOSION_COMPOSITIONS[k]
+		var defs: Array = comp.get("children", []) as Array
+		return _add_donor_composition(pos, life, defs,
+			bool(comp.get("parentrandom", false)), k)
 	if mapped.is_empty():
+		stats["donor_fx_blocked_key"] = k
+		stats["donor_fx_blocked_status"] = "BLOCKED art/params [U] U3/U14 — " + k
 		return {}
-	var item: Dictionary = add_fx(pos, mapped, life)
+	var item: Dictionary = add_fx(pos, mapped, life, donor_key)
 	if not item.is_empty():
+		item["donor_effect_key"] = donor_key if not donor_key.is_empty() else k
+		item["donor_effect_status"] = DONOR_FX_STATUS
 		stats["impact_fx_spawned"] = int(stats.get("impact_fx_spawned", 0)) + 1
 		stats["impact_last_kind"] = mapped
+		stats["donor_fx_last_key"] = item["donor_effect_key"]
+		stats["donor_fx_last_status"] = DONOR_FX_STATUS
 	return item
 
 
@@ -623,6 +1238,28 @@ func _ghost_entities_provider():
 func _ghost_swap_building_mesh(s: String) -> void:
 	if _ghost_building == null or not is_instance_valid(_ghost_building):
 		return
+	# FXART-1TO1 / GHOST-BLINK — the derived box.mesh dummy REMAINS the labelled
+	# CURRENT transport; there is NO mesh-identity switch here. That the live
+	# donor ghost is the real building object is a STRONG INFERENCE only, not [O]:
+	# player.script:202-218 `_player_CreateConstructionDummyBySID` calls
+	# CreatePlayerGameObjectHandleByHandle(plHnd, gc_racename_buildings, sid,...),
+	# while `constructiondummy`/`box.mesh` has ZERO script callers (creation is
+	# engine-native [U]). E-GHOST-CAP §7(a) discriminates: mesh id must hold for
+	# >=120 consecutive ghost frames and match the script-inferred source; any
+	# mismatch keeps this [U]. Hologram/footprint stay labelled port fallbacks.
+	# Blink is alpha/emission-only on the live path (bUseColor=False everywhere).
+	if _donor_ghost_ready and _ghost_donor != null and is_instance_valid(_ghost_donor):
+		_ghost_donor.visible = true
+		_ghost_building.visible = false
+		_ghost_mesh.visible = false
+		_ghost_building_sid = s
+		stats["ghost_mesh_source"] = "donor_box_dummy|constructiondummy.prop:box.mesh"
+		stats["ghost_mesh_scale"] = DONOR_GHOST_SCALE
+		stats["ghost_colour_blink_status"] = GHOST_BLINK_STATUS
+		stats["ghost_mesh_identity_status"] = GHOST_MESH_IDENTITY_STATUS
+		return
+	if _ghost_donor != null and is_instance_valid(_ghost_donor):
+		_ghost_donor.visible = false
 	if s == _ghost_building_sid and _ghost_building.mesh != null:
 		return
 	_ghost_building_sid = s
@@ -782,6 +1419,7 @@ func clear_all() -> void:
 	for item in fx_items:
 		_free_item(item)
 	fx_items.clear()
+	_clear_fx_pool()
 	for key in _rally_markers.keys():
 		var m: Dictionary = _rally_markers[key]
 		var n = m.get("node")
@@ -818,6 +1456,51 @@ func world_pos(p) -> Vector3:
 	if game != null and game.has_method("height_at"):
 		h += float(game.call("height_at", v2))
 	return Vector3(v2.x - world_offset.x, h, v2.y - world_offset.y)
+
+
+# --- PORT1TO1-ENT1TO1: donor 8-float PFX randomisation ---------------------
+# Rule [O] pfx.script:39-86. The stream itself is [U] U7 (Delphi Random /
+# RandomExt and seed): when no stream is injected this module fabricates no
+# random float at all, so the visual stand-ins stay deterministic.
+func set_pfx_random_stream(stream) -> void:
+	pfx_random_stream = stream
+	stats["donor_fx_rand_stream"] = "injected" if stream != null else "none_U7"
+	stats["donor_fx_rand_status"] = "UNVERIFIED [U] U7 — 8-float rule donor [O] pfx.script:39-86; generator/seed not decompiled; no value invented by this module"
+
+
+func _pfx_rand8() -> Array:
+	var out: Array = []
+	if pfx_random_stream == null or not pfx_random_stream.has_method("randf"):
+		return out
+	for i in range(DONOR_PFX_RAND_COUNT):
+		out.append(float(pfx_random_stream.call("randf")))
+	return out
+
+
+# Code N selects rand[ClampInt(N-1,0,7)] [O] pfx.script:39-86.
+func _pfx_code(rand8: Array, code: int) -> float:
+	if rand8.is_empty() or code <= 0:
+		return 0.0
+	var idx: int = clampi(code - 1, 0, DONOR_PFX_RAND_COUNT - 1)
+	if idx >= rand8.size():
+		return 0.0
+	return float(rand8[idx])
+
+
+# MirrorU/V = Round(rand[i]) == 1; AnimationIndex = Round(rand[i]*(n-1));
+# FrameRate/PixelRatio/Position/Scale = Lerp(start,stop,rand[i]) [O] :39-86.
+func _pfx_mirror(rand8: Array, code: int) -> bool:
+	return roundf(_pfx_code(rand8, code)) == 1.0
+
+
+func _pfx_animation_index(rand8: Array, code: int, count: int) -> int:
+	if count <= 1:
+		return 0
+	return clampi(int(roundf(_pfx_code(rand8, code) * float(count - 1))), 0, count - 1)
+
+
+func _pfx_lerp(rand8: Array, code: int, start: float, stop: float) -> float:
+	return start + (stop - start) * _pfx_code(rand8, code)
 
 
 # --- event stream (peek, never clear or edit the sim) ----------------------
@@ -890,6 +1573,258 @@ func _emit_arrow_trails() -> void:
 			item["base_alpha"] = trail_alpha
 
 
+# --- FXART-1TO1: derived donor asset loaders -------------------------------
+# No Godot import sidecar is generated by the offline converter. Textures are
+# loaded through the imported resource when present, else decoded straight
+# from the derived PNG; OBJ is parsed from the exact donor-derived rows with
+# the same Z-up -> Y-up map the entities module uses. No art is synthesised.
+
+func _fx_texture(path: String) -> Texture2D:
+	if _fx_tex_cache.has(path):
+		return _fx_tex_cache[path] as Texture2D
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path):
+		var loaded: Variant = load(path)
+		if loaded is Texture2D:
+			tex = loaded as Texture2D
+	if tex == null and FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load(ProjectSettings.globalize_path(path)) == OK:
+			tex = ImageTexture.create_from_image(img)
+	_fx_tex_cache[path] = tex
+	return tex
+
+
+func _fx_mesh_from_obj(path: String) -> Mesh:
+	if _fx_mesh_cache.has(path):
+		return _fx_mesh_cache[path] as Mesh
+	var mesh: Mesh = null
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f != null:
+		var vv: Array[Vector3] = []
+		var uu: Array[Vector2] = []
+		var tris: Array = []
+		while not f.eof_reached():
+			var line := f.get_line().strip_edges()
+			if line.begins_with("v "):
+				var pv := line.split(" ", false)
+				if pv.size() >= 4:
+					vv.append(Vector3(float(pv[1]), float(pv[2]), float(pv[3])))
+			elif line.begins_with("vt "):
+				var pt := line.split(" ", false)
+				if pt.size() >= 3:
+					uu.append(Vector2(float(pt[1]), float(pt[2])))
+			elif line.begins_with("f "):
+				var pf := line.split(" ", false)
+				var corners: Array = []
+				for token in pf.slice(1):
+					var sub := token.split("/", false)
+					if sub.size() < 2:
+						continue
+					corners.append([int(sub[0]) - 1, int(sub[1]) - 1])
+				for j in range(1, corners.size() - 1):
+					tris.append([corners[0], corners[j], corners[j + 1]])
+		f.close()
+		if not vv.is_empty() and not tris.is_empty():
+			var st := SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			for tri in tris:
+				for corner in tri:
+					var vi: int = int(corner[0])
+					var ui: int = int(corner[1])
+					if vi < 0 or vi >= vv.size():
+						continue
+					if ui >= 0 and ui < uu.size():
+						st.set_uv(uu[ui])
+					var v: Vector3 = vv[vi]
+					# world3d_entities.gd:1689-1691; both dummy meshes have
+					# donor z=0 as their ground plane, so no extra offset.
+					st.add_vertex(Vector3(v.x, v.z, -v.y))
+			st.generate_normals()
+			mesh = st.commit()
+	if mesh == null and ResourceLoader.exists(path):
+		var loaded: Variant = load(path)
+		if loaded is Mesh:
+			mesh = loaded as Mesh
+	_fx_mesh_cache[path] = mesh
+	return mesh
+
+
+# Bind the donor box dummy (box.mesh + box material) at the inherited prop
+# scale. It stays the labelled CURRENT transport — no mesh-identity switch
+# (the real-building-ghost reading is a STRONG INFERENCE only, not [O]; see
+# GHOST_MESH_IDENTITY_STATUS). Albedo rgb is NOT tinted: the donor live path is
+# alpha/emission-only (bUseColor=False at every placement caller).
+func _init_donor_ghost() -> bool:
+	var mesh: Mesh = _fx_mesh_from_obj(DONOR_BOX_OBJ)
+	if mesh == null:
+		stats["fxart_ghost_status"] = "BLOCKED: derived box OBJ unreadable; B06 port hologram retained"
+		return false
+	var tex: Texture2D = _fx_texture(DONOR_BOX_TEX)
+	if tex == null:
+		stats["fxart_ghost_status"] = "BLOCKED: derived box PNG unreadable; B06 port hologram retained"
+		return false
+	if _ghost_donor == null or not is_instance_valid(_ghost_donor):
+		_donor_ghost_mat = _material(Color(1, 1, 1, 1), false)
+		# GHOST-BLINK — landed FX-ART depth choice is RETAINED byte-identical;
+		# the donor TXLifeColorEffect sets ZWrite=True/ZTest=True and Loop=True,
+		# LoopBackward/BounceBackward=False, blend bmTransparency
+		# (unit.script:6753-6760, recorded in stats["ghost_blink_law"]).
+		# Godot has no per-effect loop flag (the blink is re-driven from _time),
+		# and ZWrite/ZTest observability stays [U] pending E-GHOST-CAP §7.
+		_donor_ghost_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+		_donor_ghost_mat.albedo_texture = tex
+		_donor_ghost = MeshInstance3D.new()
+		_donor_ghost.name = "DonorBoxDummy"
+		_donor_ghost.mesh = mesh
+		_donor_ghost.material_override = _donor_ghost_mat
+		_donor_ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_donor_ghost.scale = Vector3(DONOR_GHOST_SCALE, DONOR_GHOST_SCALE, DONOR_GHOST_SCALE)
+		_donor_ghost.set_meta("donor_source", "data/actors/misc/box.osm + data/materials/misc/box.dds")
+		_donor_ghost.set_meta("donor_prop_scale", DONOR_GHOST_SCALE)
+		_donor_ghost.set_meta("donor_colour_blink_status", GHOST_BLINK_STATUS)
+		_donor_ghost.set_meta("donor_mesh_identity_status", GHOST_MESH_IDENTITY_STATUS)
+		_donor_ghost.set_meta("donor_blink_capture_note", "E-GHOST-CAP §7: fixed camera; log rendered mesh id, alpha period/floor/ceiling, emission, scale/offset and GetTimeSpeedFactor; zero mismatch over >=120 consecutive frames x >=3 cycles in EACH mode required, else item stays [U]")
+		_ghost_root.add_child(_donor_ghost)
+	_donor_ghost.visible = false
+	stats["fxart_ghost_status"] = "donor box mesh+albedo bound at refmisc.prop:211-213 scale 0.5; CURRENT labelled transport (mesh identity [U], strong inference = building); blink law [O] unit.script:6674-6805, interpolation/speed-factor [U] E-GHOST-CAP §7; visual UNVERIFIED"
+	return true
+
+
+# One donor sheet cell as a Y-up billboard quad. UV rows are flipped because
+# donor row 0 is the TOP row while PNG/Godot V=0 is the BOTTOM row.
+func _donor_sheet_frame_mesh(sheet_key: String, frame_index: int,
+		mirror_u: bool, mirror_v: bool, size: Vector2) -> Mesh:
+	var info: Dictionary = DONOR_FX_SHEETS.get(sheet_key, {})
+	if info.is_empty():
+		return null
+	var cols: int = maxi(1, int(info["image_w"]) / maxi(1, int(info["frame_w"])))
+	var rows: int = maxi(1, int(info["image_h"]) / maxi(1, int(info["frame_h"])))
+	var frames: int = int(info["end_frame"]) + 1
+	var idx: int = clampi(frame_index, 0, maxi(0, frames - 1))
+	var col: int = idx % cols
+	var row: int = idx / cols
+	var u0: float = float(col) / float(cols)
+	var u1: float = float(col + 1) / float(cols)
+	var v0: float = 1.0 - float(row + 1) / float(rows)
+	var v1: float = 1.0 - float(row) / float(rows)
+	if mirror_u:
+		var swap_u: float = u0
+		u0 = u1
+		u1 = swap_u
+	if mirror_v:
+		var swap_v: float = v0
+		v0 = v1
+		v1 = swap_v
+	var q := QuadMesh.new()
+	q.size = size
+	var src: Array = q.surface_get_arrays(0)
+	var uv_data: Variant = src[Mesh.ARRAY_TEX_UV]
+	if uv_data is PackedVector2Array:
+		var nu := PackedVector2Array()
+		nu.resize((uv_data as PackedVector2Array).size())
+		for i in range((uv_data as PackedVector2Array).size()):
+			var uv: Vector2 = (uv_data as PackedVector2Array)[i]
+			nu[i] = Vector2(u0 + uv.x * (u1 - u0), v0 + uv.y * (v1 - v0))
+		src[Mesh.ARRAY_TEX_UV] = nu
+	var out := ArrayMesh.new()
+	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, src)
+	return out
+
+
+func _donor_key_for(item: Dictionary, kind: String) -> String:
+	var key: String = str(item.get("donor_effect_key", ""))
+	if not key.is_empty() and DONOR_KEY_SHEET.has(key):
+		return key
+	match kind:
+		"volley_smoke":
+			return "musketsmoke"
+		"muzzle_flash":
+			return "musketflash"
+		"arrow_trail":
+			return "bullettrail"
+	return ""
+
+
+# Add a donor-textured quad. The geometry size and the lifetime are the
+# EXISTING labelled port stand-ins — PixelRatio/Interval -> world/time is
+# [U]-F, so no donor-derived size or seconds are computed here.
+func _add_donor_sheet_mesh(holder: Node3D, item: Dictionary, sheet_key: String,
+		size: Vector2, pos: Vector3, fallback_mat: Material,
+		additive: bool, no_depth_write: bool) -> MeshInstance3D:
+	var info: Dictionary = DONOR_FX_SHEETS.get(sheet_key, {})
+	var tex: Texture2D = null
+	if not info.is_empty():
+		tex = _fx_texture(str(info.get("tex", "")))
+	if tex == null:
+		var q := QuadMesh.new()
+		q.size = size
+		item["donor_sheet_status"] = "UNVERIFIED_U3_no_derived_sheet"
+		return _add_mesh(holder, q, fallback_mat, pos, Vector3.ZERO)
+	var donor_key: String = _donor_key_for(item, str(item.get("kind", "")))
+	var codes: Dictionary = DONOR_FX_RAND_CODES.get(donor_key, {})
+	var rnd: Array = item.get("pfx_rand8", [])
+	var anim_code: int = int(codes.get("animation", 0))
+	var frames: int = int(info.get("end_frame", 0)) + 1
+	var frame_index: int = 0
+	if anim_code > 0:
+		frame_index = _pfx_animation_index(rnd, anim_code, frames)
+	var mu_code: int = int(codes.get("mirror_u", 0))
+	var mv_code: int = int(codes.get("mirror_v", 0))
+	var mu: bool = _pfx_mirror(rnd, mu_code) if mu_code > 0 else false
+	var mv: bool = _pfx_mirror(rnd, mv_code) if mv_code > 0 else false
+	var mesh: Mesh = _donor_sheet_frame_mesh(sheet_key, frame_index, mu, mv, size)
+	if mesh == null:
+		var q2 := QuadMesh.new()
+		q2.size = size
+		item["donor_sheet_status"] = "UNVERIFIED_U3_no_frame_geometry"
+		return _add_mesh(holder, q2, fallback_mat, pos, Vector3.ZERO)
+	var mat := _impact_material(Color(1, 1, 1, 1), additive, no_depth_write)
+	mat.albedo_texture = tex
+	item["mat"] = mat
+	item["base_alpha"] = 1.0
+	item["donor_sheet"] = sheet_key
+	item["donor_sheet_frame"] = frame_index
+	item["donor_sheet_mirror"] = [mu, mv]
+	item["donor_sheet_status"] = "donor sheet pixels; frame/mirror [O]; size/life [U]-F"
+	var mi := _add_mesh(holder, mesh, mat, pos, Vector3.ZERO)
+	mi.set_meta("donor_sheet", sheet_key)
+	mi.set_meta("donor_sheet_source", str(info.get("source", "")))
+	return mi
+
+
+# Donor effect compositions [O] fx.tree:417-442 (4 children, parentrandom=true)
+# and :443-473 (3 tower children, no parentrandom flag). Child keys select the
+# derived sheets; shared_rand reproduces one FillRand block for all children.
+# PFX-TIME: each child forwards its OWN source.pfx key into add_fx(), so only a
+# cited row gets an exact TTL (buildingfirestart 1.792 s); samLoop children keep
+# the PORT expiry with the recovered 1.792 s loop period on labelled telemetry.
+func _add_donor_composition(pos, life: float, defs: Array,
+		shared_rand: bool, donor_key: String) -> Dictionary:
+	var first: Dictionary = {}
+	var rand_block: Array = _pfx_rand8() if shared_rand else []
+	for raw in defs:
+		if not (raw is Dictionary):
+			continue
+		var d := raw as Dictionary
+		var child_key: String = str(d.get("key", ""))
+		var child_kind: String = str(d.get("kind", "volley_smoke"))
+		var child: Dictionary = add_fx(pos, child_kind, life, child_key)
+		if child.is_empty():
+			continue
+		if shared_rand:
+			child["pfx_rand8"] = rand_block.duplicate(true)
+			child["pfx_rand_status"] = "parentrandom_shared_U7"
+		child["donor_composition"] = donor_key
+		child["donor_effect_status"] = FXART_STATUS
+		if first.is_empty():
+			first = child
+	stats["donor_fx_last_key"] = donor_key
+	stats["donor_fx_last_status"] = FXART_STATUS
+	stats["donor_fx_last_children"] = defs.size()
+	return first
+
+
 # --- node construction -----------------------------------------------------
 
 func _ensure_roots() -> void:
@@ -901,12 +1836,17 @@ func _ensure_roots() -> void:
 		_ghost_root = Node3D.new()
 		_ghost_root.name = "BuildGhost3D"
 		_ghost_root.visible = false
+		_ghost_root.set_meta("donor_ghost_rally_status", GHOST_RALLY_STATUS)  # [U] U14
 		add_child(_ghost_root)
-		_ghost_mat = _material(GHOST_OK, false)
+		# GHOST-BLINK — the donor live path has NO rgb tint (bUseColor=False at
+		# every placement caller), so the stand-in starts at neutral white and
+		# only alpha/emission are driven in _update_ghost.
+		_ghost_mat = _material(Color(1, 1, 1, 1), false)
 		# Multi-face building mesh needs no depth write so self-occlusion does
 		# not punch opaque holes in the transparent ghost (cf. snow/impact
 		# materials which already use DEPTH_DRAW_DISABLED, :846/:903). Scoped
-		# to the ghost material only; other FX materials are untouched.
+		# to the ghost material only; other FX materials are untouched. Landed
+		# FX-ART choice retained; donor ZWrite/ZTest=True is recorded in telemetry.
 		_ghost_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 		var bm := BoxMesh.new()
 		bm.size = Vector3(1.0, 0.05, 1.0)
@@ -917,17 +1857,24 @@ func _ensure_roots() -> void:
 		_ghost_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_ghost_root.add_child(_ghost_mesh)
 		# Primary ghost node: FINISHED building mesh (B06 / owner §1b.3),
-		# transparent via the shared _ghost_mat (GHOST_OK/GHOST_BAD + pulse in
-		# _update_ghost). Name changed from the old Stage0 to prevent a stale
+		# transparent via the shared _ghost_mat (donor alpha/emission triangle
+		# in _update_ghost). Name changed from the old Stage0 to prevent a stale
 		# stage-1 label surviving in probes/reports.
 		_ghost_building = MeshInstance3D.new()
 		_ghost_building.name = "GhostBuildingFinished"
 		_ghost_building.material_override = _ghost_mat
 		_ghost_building.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_ghost_root.add_child(_ghost_building)
+		# FXART-1TO1 — donor box.mesh dummy stays the labelled CURRENT transport.
+		# "Ghost = real building mesh" is a STRONG INFERENCE (player.script:202-218),
+		# NOT [O]; the B06 preview above remains the labelled fallback. Blink now
+		# follows the donor [O] alpha/emission law; interpolation/speed-factor/mesh
+		# identity stay [U] pending E-GHOST-CAP §7. No mesh-identity switch here.
+		_donor_ghost_ready = _init_donor_ghost()
 	if _rally_root == null:
 		_rally_root = Node3D.new()
 		_rally_root.name = "Rally3D"
+		_rally_root.set_meta("donor_ghost_rally_status", GHOST_RALLY_STATUS)  # [U] U14
 		add_child(_rally_root)
 	if _selection_root == null:
 		_selection_root = Node3D.new()
@@ -966,6 +1913,25 @@ func _apply_snow_gate() -> void:
 	stats["snow_active"] = active
 	stats["snow_emitter_count"] = _snow_emitters.size()
 	stats["snow_status"] = "PORT APPROXIMATION — NOT DONOR PARITY; unit mapping UNVERIFIED"
+	# PORT1TO1-ENT1TO1 — donor weather keys are recorded verbatim on the layer
+	# and on each emitter. Their per-frame position formula is [U] U4, so no
+	# wind/spiral integration is invented.
+	if _weather_root != null and is_instance_valid(_weather_root):
+		_weather_root.set_meta("donor_wind_vector", SNOW_WIND_VECTOR)
+		_weather_root.set_meta("donor_rotation", SNOW_ROTATION)
+		_weather_root.set_meta("donor_rotation_speed", SNOW_ROTATION_SPEED)
+		_weather_root.set_meta("donor_spiral_radius", SNOW_SPIRAL_RADIUS)
+		_weather_root.set_meta("donor_spiral_speed", SNOW_SPIRAL_SPEED.duplicate(true))
+		_weather_root.set_meta("donor_camera_speed_factor", SNOW_CAMERA_SPEED_FACTOR)
+		_weather_root.set_meta("donor_billboard_type", SNOW_BILLBOARD_TYPE)
+		_weather_root.set_meta("donor_weather_keys_status", WEATHER_KEYS_STATUS)
+	stats["donor_weather_keys"] = {
+		"wind_vector": SNOW_WIND_VECTOR, "rotation": SNOW_ROTATION,
+		"rotation_speed": SNOW_ROTATION_SPEED, "spiral_radius": SNOW_SPIRAL_RADIUS,
+		"spiral_speed": SNOW_SPIRAL_SPEED.duplicate(true),
+		"camera_speed_factor": SNOW_CAMERA_SPEED_FACTOR,
+		"billboard_type": SNOW_BILLBOARD_TYPE,
+	}
 
 
 # Four donor emitters snow1..snow4 (particles.snow.cfg:2,42,82,122), each a
@@ -1158,51 +2124,99 @@ func _build_visual(item: Dictionary, k: String) -> void:
 			_add_mesh(holder, tb, mat, Vector3.ZERO, Vector3.ZERO)
 		# --- FX-IMPACT-01 (additive kinds; legacy branches above untouched) ---
 		"volley_smoke":
-			# PORT APPROXIMATION — NOT DONOR PARITY. Donor `shotmusket` is a
-			# 5-layer animatedsprite composition (fx.tree:4-63) with private-use
-			# DDS sheets; two plain face-camera quads stand in for its smoke and
-			# up-smoke layers (source.pfx:41-62 / :258-294). Donor Position
-			# (-0.1,-1.5,0.775, source.pfx:54-57) is RECORDED but not applied:
-			# donor→Godot axis mapping is UNVERIFIED, so local placement is PORT.
+			# FXART-1TO1 — donor musketsmoke sheet pixels (or building-fire
+			# firesmoke for the 4-layer composition) are derived under
+			# assets/fx/tex and bound by _add_donor_sheet_mesh. The QUAD SIZE
+			# and LIFE remain the labelled PORT stand-ins: PixelRatio → metres
+			# and Interval/FrameRate → seconds are [U]-F (E-U3). Donor Position
+			# (-0.1,-1.5,0.775, source.pfx:54-57) is RECORDED, not applied.
 			var smoke_mat := _impact_material(col, false, false)
 			item["mat"] = smoke_mat
-			var sq := QuadMesh.new()
-			sq.size = Vector2(IMPACT_SMOKE_QUAD_M,
+			var smoke_size := Vector2(IMPACT_SMOKE_QUAD_M,
 				IMPACT_SMOKE_QUAD_M * float(IMPACT_SMOKE_FRAME_H) / float(IMPACT_SMOKE_FRAME_W))
-			_add_mesh(holder, sq, smoke_mat, Vector3(0, 1.2, 0), Vector3.ZERO)
-			var upq := QuadMesh.new()
-			upq.size = Vector2(IMPACT_SMOKE_UP_QUAD_M, IMPACT_SMOKE_UP_QUAD_M * 0.5)
-			_add_mesh(holder, upq, smoke_mat, Vector3(0, 1.9, 0), Vector3.ZERO)
+			var smoke_key: String = str(item.get("donor_effect_key", "musketsmoke"))
+			if not DONOR_KEY_SHEET.has(smoke_key):
+				smoke_key = "musketsmoke"
+			var smoke_node := _add_donor_sheet_mesh(holder, item,
+				DONOR_KEY_SHEET[smoke_key], smoke_size, Vector3(0, 1.2, 0), smoke_mat, false, false)
+			var rnd: Array = item.get("pfx_rand8", [])
+			# Mirror is applied as a UV flip on the donor sheet; the old scale
+			# flip is kept ONLY for the untextured fallback path.
+			if str(item.get("donor_sheet", "")).is_empty() and _pfx_mirror(rnd, 1):
+				smoke_node.scale.y = -1.0
+			item["donor_pfx_codes"] = "musketsmoke randmirrorv=1 (fx.tree:11)" if not rnd.is_empty() else "UNVERIFIED_U7_no_stream"
+			if str(item.get("donor_sheet", "")).is_empty():
+				var upq := QuadMesh.new()
+				upq.size = Vector2(IMPACT_SMOKE_UP_QUAD_M, IMPACT_SMOKE_UP_QUAD_M * 0.5)
+				_add_mesh(holder, upq, smoke_mat, Vector3(0, 1.9, 0), Vector3.ZERO)
 		"muzzle_flash":
-			# PORT APPROXIMATION — NOT DONOR PARITY. Donor = 4 single-frame
-			# animations (source.pfx:112-153) with OnEndFrameHide (source.pfx:176)
-			# and white tint (material.mat:63-81). No donor sheet is copied: one
-			# additive face-camera quad + alpha HOLD (no fade) stands in. The
-			# randanimation/randmirrorv codes (fx.tree:28-29) are NOT reproduced
-			# because this module has no RNG.
+			# FXART-1TO1 — donor musketflash (or towerflash cannonflash) sheet
+			# pixels are bound; 4 single-frame animations (source.pfx:112-153)
+			# and OnEndFrameHide (source.pfx:176) remain the donor [O] ground
+			# truth. Frame index + mirror come from the 8-float rule when a
+			# stream is injected ([U]-S); no stream = frame 0, no mirror, no
+			# fabricated random. Size/life stay [U]-F port stand-ins.
 			var flash_mat := _impact_material(col, true, false)
 			item["mat"] = flash_mat
-			var fq := QuadMesh.new()
-			fq.size = Vector2(IMPACT_FLASH_QUAD_M, IMPACT_FLASH_QUAD_M * 0.5)
-			_add_mesh(holder, fq, flash_mat, Vector3(0, 1.2, 0), Vector3.ZERO)
+			var flash_size := Vector2(IMPACT_FLASH_QUAD_M, IMPACT_FLASH_QUAD_M * 0.5)
+			var flash_key: String = str(item.get("donor_effect_key", "musketflash"))
+			if not DONOR_KEY_SHEET.has(flash_key):
+				flash_key = "musketflash"
+			var flash_node := _add_donor_sheet_mesh(holder, item,
+				DONOR_KEY_SHEET[flash_key], flash_size, Vector3(0, 1.2, 0), flash_mat, true, false)
+			var frnd: Array = item.get("pfx_rand8", [])
+			if not frnd.is_empty():
+				item["donor_flash_frame"] = item.get("donor_sheet_frame",
+					_pfx_animation_index(frnd, 1, IMPACT_FLASH_FRAMES))
+				if str(item.get("donor_sheet", "")).is_empty() and _pfx_mirror(frnd, 2):
+					flash_node.scale.y = -1.0
+			item["donor_pfx_codes"] = "randanimation=1/randmirrorv=2 (fx.tree:28-29)" if not frnd.is_empty() else "UNVERIFIED_U7_no_stream"
 		"arrow_trail":
-			# PORT APPROXIMATION — NOT DONOR PARITY. Donor `MarkStyle =
-			# msFaceCamera` (source.pfx:1745) => billboard quad, NOT the legacy
-			# solid BoxMesh. Width = literal MarkWidth 0.1 (source.pfx:1746);
-			# streak length is a PORT value (donor has no length key);
-			# ZWrite=False (source.pfx:1748) maps to depth-draw-disabled.
+			# FXART-1TO1 — donor bullettrail bitmap is bound to the face-camera
+			# ribbon quad (MarkStyle msFaceCamera, source.pfx:1745; ZWrite=False,
+			# :1748). Alpha = literal donor Alpha 0.2 (:1742). Ribbon spawn law
+			# and streak length remain [U]-F port stand-ins (no length key).
 			var trail_mat := _impact_material(col, false, not IMPACT_TRAIL_ZWRITE)
 			item["mat"] = trail_mat
-			var tq := QuadMesh.new()
-			tq.size = Vector2(IMPACT_TRAIL_WIDTH, IMPACT_TRAIL_STREAK_M)
-			item["mesh"] = _add_mesh(holder, tq, trail_mat, Vector3.ZERO, Vector3.ZERO)
+			var trail_size := Vector2(IMPACT_TRAIL_WIDTH, IMPACT_TRAIL_STREAK_M)
+			item["mesh"] = _add_donor_sheet_mesh(holder, item, "bullettrail",
+				trail_size, Vector3.ZERO, trail_mat, false, not IMPACT_TRAIL_ZWRITE)
+			item["base_alpha"] = IMPACT_TRAIL_ALPHA
+			if item["mat"] != null:
+				(item["mat"] as StandardMaterial3D).albedo_color.a = IMPACT_TRAIL_ALPHA
 
 
 func _make_rally(p3: Vector3, player: int) -> Dictionary:
+	# FXART-1TO1 — donor rallypoint.mesh + rallypoint albedo, at the exact
+	# prop scale/roll/offset keys. TTL stays the labelled port placeholder;
+	# the donor has no lifetime key in rallypoint.prop ([U]-R, E-U14).
+	var donor_mesh: Mesh = _fx_mesh_from_obj(DONOR_RALLY_OBJ)
+	var donor_tex: Texture2D = _fx_texture(DONOR_RALLY_TEX)
+	if donor_mesh != null and donor_tex != null:
+		if not _donor_rally_ready:
+			_donor_rally_ready = true
+			stats["fxart_rally_status"] = "donor rallypoint mesh+albedo bound at 0.0525^3 / roll 45 / ocoTerrainWater; TTL+pennant [U]-R"
 	var holder := Node3D.new()
 	holder.name = "RallyP%d" % player
 	holder.position = p3
+	holder.set_meta("donor_rallypoint_scale", DONOR_RALLY_SCALE)
+	holder.set_meta("donor_rally_roll_deg", DONOR_RALLY_ROLL_DEG)
+	holder.set_meta("donor_rally_collide_option", DONOR_RALLY_COLLIDE)
+	holder.set_meta("donor_rally_roll_status", DONOR_RALLY_ROLL_STATUS)
+	holder.set_meta("donor_rally_ttl_status", "UNVERIFIED [U]-R — port RALLY_TTL 2.0 s; no donor lifetime key recovered")
 	_rally_root.add_child(holder)
+	if donor_mesh != null and donor_tex != null:
+		holder.transform.basis = Basis(DONOR_RALLY_ROLL_AXIS, deg_to_rad(DONOR_RALLY_ROLL_DEG))
+		holder.scale = Vector3(DONOR_RALLY_SCALE, DONOR_RALLY_SCALE, DONOR_RALLY_SCALE)
+		var donor_mat := _material(Color(1, 1, 1, 1), false)
+		donor_mat.albedo_texture = donor_tex
+		var donor_mi := _add_mesh(holder, donor_mesh, donor_mat, Vector3.ZERO, Vector3.ZERO)
+		donor_mi.name = "DonorRallyPoint"
+		donor_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		donor_mi.set_meta("donor_source", "data/actors/misc/rallypoint.osm + data/materials/misc/rallypoint.dds")
+		# Player colour is a PORT choice; donor pixels are left untinted [U]-R.
+		return {"node": holder, "mat": null, "player": player, "seen": _time,
+			"donor_art": true}
 
 	# Pole: wood tone copied from world.gd:3623 (port primitive, not donor art).
 	var wood := _material(Color(0.55, 0.42, 0.25, 1.0), false)
@@ -1236,6 +2250,15 @@ func _set_rally_color(m: Dictionary, player: int) -> void:
 	if int(m.get("player", -1)) == player:
 		return
 	m["player"] = player
+	if bool(m.get("donor_art", false)):
+		# Donor rally pixels stay verbatim: no donor key recolours the marker
+		# by player in rallypoint.prop. The old player tint is a PORT choice
+		# and is deliberately NOT applied to derived donor art ([U]-R).
+		var n = m.get("node")
+		if n is Node3D and is_instance_valid(n):
+			(n as Node3D).set_meta("rally_player_port_only", player)
+			(n as Node3D).set_meta("rally_player_tint_status", "UNVERIFIED [U]-R — no donor player-colour key for rallypoint")
+		return
 	var c: Color = _player_color(player)
 	var mat: StandardMaterial3D = m.get("mat")
 	if mat != null:
@@ -1490,20 +2513,73 @@ func _update_rally() -> void:
 	stats["rally_active"] = _rally_markers.size()
 
 
+# GHOST-BLINK — reconstruct the donor 3-key loop as a 2-segment triangle [O]:
+# key time = 0.525*1.25*(speed/10) (unit.script:6679-6681), keys (max,min,max),
+# Loop=True => period 2*key time (1.3125 s @ speed 10). phase is in [0,1) over
+# one whole loop: segment 1 key0->key1, segment 2 key1->key2.
+# [U]-native: linear interpolation is ASSUMED (TXLifeColorEffect key semantics
+# were not recovered); E-GHOST-CAP §7(b) decides observably. No invented wave.
+func _ghost_blink_triangle(keys: Array, phase: float) -> float:
+	var t: float = clampf(phase, 0.0, 0.9999999)
+	if t < 0.5:
+		return lerpf(float(keys[0]), float(keys[1]), t * 2.0)
+	return lerpf(float(keys[1]), float(keys[2]), (t - 0.5) * 2.0)
+
+
 func _update_ghost() -> void:
 	if _ghost_root == null:
 		return
 	_ghost_root.visible = _ghost_active
 	if not _ghost_active or _ghost_mat == null:
 		return
-	var c: Color = GHOST_OK if _ghost_ok else GHOST_BAD
-	var pulse: float = 0.85 + 0.15 * sin(_time * 4.0)
-	c.a *= pulse
+	# Donor alpha keys are the ONLY live colour arm: every placement caller
+	# passes bUseColor=False (miscext2.script:1076-1078, :1088-1091, :1193-1196),
+	# so the grey/red cr/cg/cb arms are dead code and are NOT applied to albedo.
+	var keys: Array = GHOST_BAD_ALPHA if not _ghost_ok else GHOST_OK_ALPHA
+	var key_time: float = GHOST_KEY_TIME * maxf(ghost_speed_factor, 0.0001)
+	var period: float = 2.0 * key_time
+	var phase: float = fmod(maxf(_time, 0.0), period) / period
+	var alpha: float = _ghost_blink_triangle(keys, phase)
+	# Emission keys are written UNCONDITIONALLY in the donor create path but
+	# gated by UseEmission=bemission (False OK, True BAD, unit.script:6694/6705).
+	var emission_r: float = _ghost_blink_triangle(GHOST_BAD_EMISSION_R, phase)
+	var em_enabled: bool = GHOST_BAD_EMISSION_ENABLED if not _ghost_ok else GHOST_OK_EMISSION_ENABLED
+	var e: Color = Color(emission_r, 0.0, 0.0)   # donor emission g=b=0
+	# Write ALPHA ONLY: preserve every rgb channel of the stand-in albedo.
+	var c: Color = _ghost_mat.albedo_color
+	c.a = alpha
 	_ghost_mat.albedo_color = c
-	_ghost_mat.emission = Color(c.r, c.g, c.b)
+	_ghost_mat.emission_enabled = em_enabled
+	_ghost_mat.emission = e
+	if _donor_ghost_ready and _donor_ghost_mat != null:
+		# Same donor alpha/emission on the derived box, but NO rgb tint of its
+		# albedo_texture (the retired green/red stand-in never touched donor art).
+		var dc: Color = _donor_ghost_mat.albedo_color
+		dc.a = alpha
+		_donor_ghost_mat.albedo_color = dc
+		_donor_ghost_mat.emission_enabled = em_enabled
+		_donor_ghost_mat.emission = e
+	# E-GHOST-CAP §7 capture telemetry — measured values, NOT a parity claim.
+	stats["ghost_blink_alpha"] = alpha
+	stats["ghost_blink_phase"] = phase
+	stats["ghost_blink_period_s"] = period
+	stats["ghost_blink_speed_factor"] = ghost_speed_factor
+	stats["ghost_blink_emission_enabled"] = em_enabled
+	stats["ghost_blink_emission_rgb"] = [e.r, e.g, e.b]
 
 
 # --- small helpers ---------------------------------------------------------
+
+# FXART-1TO1 — FreeToPool is donor-proven only for the KEYS in
+# DONOR_FREETOPOOL_KEYS (source.pfx OnEndFrameState = FreeToPool). Every other
+# kind keeps the port queue_free path even when the opt-in pool flag is on:
+# no pool policy is invented for an OnEndFrameHide/OnEndFrameFree source.
+func _donor_is_freeto_pool(item: Dictionary) -> bool:
+	var key: String = str(item.get("donor_effect_key", ""))
+	if key.is_empty():
+		return false
+	return key in DONOR_FREETOPOOL_KEYS
+
 
 func _enforce_cap() -> void:
 	var cap: int = FALLBACK_FX_CAP
@@ -1516,9 +2592,42 @@ func _enforce_cap() -> void:
 		_free_item(old)
 
 
+# PORT1TO1-ENT1TO1 / D19 — FreeToPool recycle (source.pfx:60). An opt-in path:
+# when disabled the original queue_free behaviour is byte-identical.
+func _pool_acquire(k: String) -> Node3D:
+	var arr: Array = _fx_pool.get(k, [])
+	while not arr.is_empty():
+		var n = arr.pop_back()
+		if n == null or not is_instance_valid(n):
+			continue
+		for ch in (n as Node3D).get_children():
+			(n as Node3D).remove_child(ch)
+			ch.queue_free()
+		_fx_pool[k] = arr
+		return n as Node3D
+	_fx_pool[k] = arr
+	return null
+
+
+func _clear_fx_pool() -> void:
+	for k in _fx_pool.keys():
+		for n in (_fx_pool[k] as Array):
+			if n != null and is_instance_valid(n):
+				(n as Node3D).queue_free()
+	_fx_pool.clear()
+
+
 func _free_item(item: Dictionary) -> void:
 	var n = item.get("node")
-	if n != null and is_instance_valid(n):
+	if use_donor_fx_pool and _donor_is_freeto_pool(item) and n != null and is_instance_valid(n):
+		# donor OnEndFrameState=FreeToPool: park the holder, never invent a
+		# manager size. Material/mesh children are rebuilt on next acquire.
+		(n as Node3D).visible = false
+		var kind := str(item.get("kind", "default"))
+		var arr: Array = _fx_pool.get(kind, [])
+		arr.append(n)
+		_fx_pool[kind] = arr
+	elif n != null and is_instance_valid(n):
 		n.queue_free()
 	item["node"] = null
 	item["mat"] = null

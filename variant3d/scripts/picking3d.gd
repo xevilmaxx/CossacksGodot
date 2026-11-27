@@ -26,6 +26,25 @@ extends Node
 #   so the donor's exact pick radius / overlap-depth rule is NOT script-readable.
 #   C:\Games\Cossacks 3\data\gui\menu.inc\oncamera.inc:1-80 — camera control only,
 #   no pick test. Donor pick-depth semantics: UNVERIFIED.
+# DEC-U UPDATE (2026-11-26): eligibility (playable∧visible∧collision) and the
+# AABB test are from DEC_U_entities_art_collision.md §5.3/P14. Priority comes
+# from the live input controller's donor_pick_priority(e) (dmscript.global:
+# 227-233) and the winner is the minimum (1+dist)/prio (control.script:260-266).
+# Engine ray/LOS and the marquee inside predicate stay [U] U13/V2-BOX; the
+# height-field march remains terrain-only. NO PARITY CLAIM.
+#
+# DEC-U-SELECTION (2026-11-26, IMPL-SELECTION) reconciliation — donor
+# control.script:161-273 [O] order is: minimap-exit -> MouseRay -> SortList ->
+# playable∧visible∧collision -> ownership -> engine AABB -> per-arm prio ->
+# strict min (1+dist)/prio -> FOW veto ON THE WINNER ONLY. The earlier sentence
+# claiming a per-candidate veto (:270-273) is SUPERSEDED: the single veto now
+# lives in C3Input._pick (:866), once per apply. The donor 0.5 seed is RE-READ
+# with cite at control.script:180 (DEC_U_selection.md §1.1(4)/§1.2) and is
+# restored below as labelled DONOR DATA on the controller's nil/unknown arms;
+# it is NOT the old un-cited blanket per-baseid estimate that IMPL-FOG-PATCHES
+# removed. Seed-arm REACHABILITY stays [U] E-U13-pick (§2.1(b) capture). Engine
+# ray/AABB inside-test, Sort key, tie-break and distance units stay [U] with
+# the report's zero-mismatch captures; no formula is invented here.
 #
 # Godot 4 Camera3D.size is the diameter of width OR height by keep_aspect
 # (docs.godotengine.org/en/stable/classes/class_camera3d.html, property "size");
@@ -41,9 +60,23 @@ const FALLBACK_REACH_M: float = 2.0     # input_controller.gd:363
 const BODY_LIFT_M: float = 0.8          # PORT APPROXIMATION: body centre above ground; UNVERIFIED
 const TIE_PX: float = 0.5               # screen-px epsilon for the donor id tie-break
 const DEFAULT_VP: Vector2 = Vector2(1280.0, 720.0)  # project.godot:15-16
+# DEC-U-FOG-CAMERA-HUD §4.1 — RESOLVED donor pick law. Priority is the
+# controller's donor_pick_priority(e) table (dmscript.global:227-233; my=1,
+# wood=2, food=3, stone=4, goinside=5, build=6, enemy=7) and the winner is
+# min((1+dist)/prio) (control.script:260-266). The screen-space distance the
+# AABB/ray chain already uses is kept as `dist`; converting it to donor XZ
+# metres is [U] V2-PROJ and is NOT invented here.
+# DEC-U-SELECTION §1.1(4)/§1.2 [O]: control.script:180 declares
+# `prio : Float = 0.5` as the live per-candidate seed, overwritten per arm.
+# The controller's DONOR_PICK_SEED carries that cited donor value; this adapter
+# never applies it as a blanket per-baseid estimate.
 
 var game = null
 var cam = null
+# Live C3Input bound by bind_3d() (picking3d is its child). All donor pick
+# predicates are single-sourced there; a stub/headless bind without it keeps
+# the pre-existing candidate chain (no priority veto, no invented fallback).
+var _input_ctl = null
 # sim(Vector2) = Vector2(world.x, world.z) + _world_to_sim
 var _world_to_sim: Vector2 = Vector2.ZERO
 var _offset_ready: bool = false
@@ -53,7 +86,42 @@ func bind(game, cam) -> void:
 	self.game = game
 	self.cam = cam
 	_offset_ready = false
+	# bind_3d() adds this adapter as a child of the live C3Input, so the donor
+	# priority/LOS predicates are reachable without editing input_controller.gd.
+	_input_ctl = get_parent()
+	if _input_ctl == null or not _input_ctl.has_method("donor_pick_priority"):
+		_input_ctl = null
+		if get_tree() != null:
+			var ctls: Array = get_tree().get_nodes_in_group("c3_input")
+			if not ctls.is_empty() and ctls[0].has_method("donor_pick_priority"):
+				_input_ctl = ctls[0]
 	_recalc_offset()
+
+# Single source: the resolved donor priority table lives on the live controller
+# and now returns Float (control.script:180 seed 0.5 survives the nil arms).
+# A prio<=0 candidate is never the donor winner (control.script:260-266).
+func _donor_prio(e: Dictionary) -> float:
+	if _input_ctl != null and _input_ctl.has_method("donor_pick_priority"):
+		return float(_input_ctl.call("donor_pick_priority", e))
+	return 0.0
+
+# control.script:270-273 — bVisible := (not GetFOWEnable) or LOS>0. Retained for
+# API compatibility; the DEC-U-SELECTION winner-only veto is applied exactly
+# once per apply by C3Input._pick (:866), NEVER per candidate here.
+func _donor_los_ok(e: Dictionary) -> bool:
+	if e.is_empty():
+		return false
+	if _input_ctl != null and _input_ctl.has_method("_donor_los_ok"):
+		return bool(_input_ctl.call("_donor_los_ok", e))
+	return true
+
+# control.script:260-266 [O] — relativeDst := (1+dist)/prio, minimum wins.
+# `dist` is the screen-space stand-in; its conversion to donor XZ metres stays
+# [U] E-U13-pick and is not attempted here.
+func _donor_score(dist: float, prio: float) -> float:
+	if prio <= 0.0 or not is_finite(dist):
+		return INF
+	return (1.0 + dist) / prio
 
 
 # sim = centred world + half the map extent. The rendered 3D scene is centred
@@ -230,6 +298,31 @@ func _depth_of(sim: Vector2, lift: float) -> float:
 	return -local.z
 
 
+# Donor AABB pick test (GetGameObjectRayCastAABBByHandle, ev_9aee…) expressed in
+# the port's projection frame. Extents come from the single-source donor AABB
+# table (game.gd dec_u_pick_aabb). The ENGINE ray/LOS itself stays [U] U13 with
+# experiment E-U13; _ray_heightfield() remains a terrain-only stand-in.
+func _dec_u_aabb_screen_rect(e: Dictionary, ground_sim: Vector2) -> Rect2:
+	if game == null or not game.has_method("dec_u_pick_aabb"):
+		return Rect2()
+	var box_v: Variant = game.call("dec_u_pick_aabb", e)
+	if not (box_v is Dictionary):
+		return Rect2()
+	var box: Dictionary = box_v
+	var mn: Variant = box.get("min")
+	var mx: Variant = box.get("max")
+	if not (mn is Vector3) or not (mx is Vector3):
+		return Rect2()
+	var scale: float = maxf(0.0, float(box.get("scale", 1.0)))
+	var base: Vector3 = _to_world(ground_sim, _height_at_sim(ground_sim))
+	var r := Rect2(_project_world(base), Vector2.ZERO)
+	for sx in [float((mn as Vector3).x) * scale, float((mx as Vector3).x) * scale]:
+		for sy in [float((mn as Vector3).y) * scale, float((mx as Vector3).y) * scale]:
+			for sz in [float((mn as Vector3).z) * scale, float((mx as Vector3).z) * scale]:
+				r = r.expand(_project_world(base + Vector3(sx, sy, sz)))
+	return r
+
+
 # EXACT API -------------------------------------------------------------------
 
 func ground_point(screen: Vector2) -> Vector2:
@@ -247,8 +340,9 @@ func ground_point(screen: Vector2) -> Vector2:
 # (app/scripts/input_controller.gd:345-369, :358): when true only player-0
 # entities receive the pick_radius test; when false every entity does, so
 # enemies are selectable for attack orders / info / cursor. The 2 m fallback
-# is unconditional in both modes (input_controller.gd:363-365). The test is
-# done in screen space and depth orders overlapping hits (nearer wins on a tie).
+# is port-only (input_controller.gd:363-365); IMPL-SELECTION now gates it by the
+# same donor ownership test as the main candidate. The test is done in screen
+# space and depth orders overlapping hits (nearest-depth tie-break is PORT only).
 #
 # HANDOFF: variant3d/scripts/input_controller.gd:396 must pass the flag —
 # `picking.pick(_pick_screen, players_only)` — mirroring its 2D call sites
@@ -272,11 +366,28 @@ func pick(screen: Vector2, players_only: bool = true) -> Dictionary:
 	var best: Dictionary = {}
 	var best_sd: float = 1e9
 	var best_depth: float = 1e9
+	var best_prio: float = 0.0
 	var fb: Dictionary = {}
 	var fb_sd: float = 1e9
 	var fb_depth: float = 1e9
+	var fb_prio: float = 0.0
+	# DEC-U-SELECTION §1.1 [O] chain in donor order:
+	#   minimap-exit      -> enforced by caller C3Input._pick (:857-859);
+	#   1) MouseRay       -> candidate set = game.entities (engine ray [U] U13);
+	#   2) SortList       -> port preserves array order, engine sort key [U]
+	#                        E-U13-pick (no tie-break formula invented here);
+	#   3) triple gate    -> dec_u_pick_eligible (playable∧visible∧collision);
+	#   4) ownership      -> ((not bMyPlayerOnly) or plHnd match), :183;
+	#   5) engine AABB    -> _dec_u_aabb_screen_rect(cPos->mPos), :183-184,
+	#                        port screen-rect stand-in [U];
+	#   6) winner         -> strict min (1+dist)/prio, :258-266;
+	#   7) FOW veto       -> winner only, ONCE in C3Input._pick (:866).
 	for e in game.entities:
 		if not (e is Dictionary) or bool(e.get("dead", false)) or not e.has("pos"):
+			continue
+		# (3) Triple gate BEFORE ownership/AABB/priority (control.script:181).
+		# Guard has_method so a stub game keeps the pre-existing path.
+		if game.has_method("dec_u_pick_eligible") and not bool(game.call("dec_u_pick_eligible", e)):
 			continue
 		var sim: Vector2 = Vector2(e.pos)
 		# FIX-SEL: project the SAME centred world point the 3D renderer draws
@@ -285,18 +396,27 @@ func pick(screen: Vector2, players_only: bool = true) -> Dictionary:
 		var sp: Vector2 = _project_world(w)
 		var sd: float = sp.distance_to(screen)
 		var depth: float = _depth_of(sim, BODY_LIFT_M)
-		if not players_only or int(e.get("player", -1)) == 0:
-			var r: float = _pixel_reach(w, float(game.call("pick_radius", e)))
-			if sd < r and _closer(sd, depth, best_sd, best_depth):
-				best_sd = sd
-				best_depth = depth
-				best = e
-		# Per-entity reach replaces the old fixed `_ppm(30.0)` probe: the 2 m
-		# metre fallback reach is converted at THIS candidate's world point.
+		# (4) Ownership gate precedes the AABB test, as in control.script:183.
+		if players_only and int(e.get("player", -1)) != 0:
+			continue
+		# (5) Engine AABB gate (port screen-rect/PORT APPROXIMATION stand-in).
+		var aabb_hit: bool = _dec_u_aabb_screen_rect(e, sim).has_point(screen)
+		# (6) Priority table (dmscript.global:227-233, incl. cited 0.5 seed arms)
+		# and strict min score. There is deliberately NO per-candidate FOW test.
+		var pr: float = _donor_prio(e)
+		var r: float = _pixel_reach(w, float(game.call("pick_radius", e)))
+		if (sd < r or aabb_hit) and _closer(sd, depth, best_sd, best_depth, pr, best_prio):
+			best_sd = sd
+			best_depth = depth
+			best_prio = pr
+			best = e
+		# Port-only 2 m any-entity fallback (input_controller.gd:895, port-
+		# observed, NOT donor). Same gate order; no veto until the winner.
 		var fb_reach: float = _pixel_reach(w, FALLBACK_REACH_M)
-		if sd < fb_reach and _closer(sd, depth, fb_sd, fb_depth):
+		if (sd < fb_reach or aabb_hit) and _closer(sd, depth, fb_sd, fb_depth, pr, fb_prio):
 			fb_sd = sd
 			fb_depth = depth
+			fb_prio = pr
 			fb = e
 	return best if not best.is_empty() else fb
 
@@ -346,12 +466,25 @@ func pick_res(screen: Vector2) -> Dictionary:
 	return best
 
 
-# Nearer-to-cursor wins; on a near-tie the entity nearer the camera wins
-# (occlusion / depth ordering). Used for entities, where the donor tie rule is
-# nearest-distance (no id tie-break in input_controller.gd:345-369).
-func _closer(sd: float, depth: float, bsd: float, bdepth: float) -> bool:
-	if sd < bsd - TIE_PX:
-		return true
-	if sd > bsd + TIE_PX:
+# RESOLVED donor winner (control.script:258-266) [O]: relativeDst :=
+# (1+dist)/prio, MINIMUM wins with STRICT `<` and nearestHnd=0 initialiser, so
+# the first eligible candidate always installs. prio<=0 is excluded. The
+# screen-space `sd` is the existing AABB/ray measure; converting it to donor
+# XZ metres stays [U] E-U13-pick. On an EXACT score tie the retained camera-
+# depth rule is a PORT tie-break only, NOT a donor law (donor keeps earlier
+# raycast order; Sort key/tie-break [U] E-U13-pick zero-mismatch capture).
+func _closer(sd: float, depth: float, bsd: float, bdepth: float,
+		prio: float = 0.0, bprio: float = 0.0) -> bool:
+	var score: float = _donor_score(sd, prio)
+	var bscore: float = _donor_score(bsd, bprio)
+	if score == INF:
 		return false
-	return depth < bdepth
+	if bscore == INF:
+		return true
+	if score < bscore:
+		return true
+	if score > bscore:
+		return false
+	if absf(depth - bdepth) > 1.0e-4:
+		return depth < bdepth
+	return false
