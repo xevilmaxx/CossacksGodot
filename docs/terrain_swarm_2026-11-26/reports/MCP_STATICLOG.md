@@ -53,4 +53,6 @@ post-fix re-run after the PICKSCREEN-RACE-01 input change (ticket 242) and a
 watchdog-due re-verification (ticket 247: READY `map=64x64`, handshake, 6
 schemas, all six calls, exact refusals retained, 0 parse/script errors).
 This is port-internal protocol/tooling evidence; it is not donor parity and
-does not advance the 0/6 chain.
+does not advance the 0/6 chain. A new-day watchdog cycle re-verified all six
+tools (ticket 248; first `initialize` retried after a connection-refused boot
+race, then handshake/6 tools/4 video frames all clean, 0 parse errors).
