@@ -712,6 +712,14 @@ func _assert_drag_result() -> void:
 
 
 func _assert_click_result() -> void:
+	# CLICK-DIAG: print-only probe, no assertion/threshold change.
+	var pk = _ictl.get("picking")
+	var ps: Variant = _ictl.get("_pick_screen")
+	var gp: Variant = pk.call("ground_point", _p_click) if pk != null else "no-picking"
+	var direct: Variant = pk.call("pick", _p_click, false) if pk != null else {}
+	var los: Variant = _ictl.call("_donor_los_ok", direct) if pk != null else false
+	print("CLICK-DIAG px=%s pick_screen=%s ground=%s direct_pick=%s los=%s selected=%s" % [
+		str(_p_click), str(ps), str(gp), str(direct), str(los), str(_selected_ids())])
 	var ids := _selected_ids()
 	check("short_click_selects_single_unit", ids == [10],
 		"selected=%s expected=[10] (no click-pick regression)" % str(ids))
@@ -752,8 +760,8 @@ func _capture_now(path: String, slot: String) -> Dictionary:
 		_store_capture(slot, rec, null)
 		return rec
 	var p00 := img.get_pixel(0, 0)
-	rec["p00"] = p00.to_string()
-	rec["center"] = img.get_pixel(int(w / 2), int(h / 2)).to_string()
+	rec["p00"] = str(p00)
+	rec["center"] = str(img.get_pixel(int(w / 2), int(h / 2)))
 	if p00.a < 0.5:
 		rec["reason"] = "blank frame: corner alpha < 0.5 (no CPU fallback — fail loudly)"
 		_store_capture(slot, rec, null)
@@ -905,13 +913,13 @@ func _assert_pixels() -> void:
 		centre_base = _img_before.get_pixel(clampi(cx, 0, _img_before.get_width() - 1),
 			clampi(cy, 0, _img_before.get_height() - 1))
 		centre_delta = _channel_delta(centre_c, centre_base)
-	_pixel_samples["centre_during"] = centre_c.to_string() if ready else ""
-	_pixel_samples["centre_baseline"] = centre_base.to_string() if ready else ""
+	_pixel_samples["centre_during"] = str(centre_c) if ready else ""
+	_pixel_samples["centre_baseline"] = str(centre_base) if ready else ""
 	_pixel_samples["centre_delta"] = centre_delta
 	check("quad_no_fill_pixels", ready and not _is_marquee(centre_c)
 		and centre_delta <= PIXEL_TOL_BASELINE,
-		"centre_during=%s baseline=%s delta=%.4f (limit %.4f)" % [centre_c.to_string(),
-		centre_base.to_string(), centre_delta, PIXEL_TOL_BASELINE])
+		"centre_during=%s baseline=%s delta=%.4f (limit %.4f)" % [str(centre_c),
+		str(centre_base), centre_delta, PIXEL_TOL_BASELINE])
 
 	# DECISIVE 4 — colour: every yellow hit matches the configured RGBA within
 	# 16/255 per channel; default [1,1,0,1] unless a config override is declared.
@@ -946,8 +954,8 @@ func _assert_pixels() -> void:
 			d = _channel_delta(ac, bc)
 		if ready and (_is_marquee(ac) or d > PIXEL_TOL_BASELINE):
 			hidden_ok = false
-		after_records.append({"x": h5["x"], "y": h5["y"], "after": ac.to_string(),
-			"baseline": bc.to_string(), "delta": d})
+		after_records.append({"x": h5["x"], "y": h5["y"], "after": str(ac),
+			"baseline": str(bc), "delta": d})
 	_pixel_samples["after_vs_baseline"] = after_records
 	check("quad_hidden_after_pixels", hidden_ok,
 		"checked=%d all_clear=%s (not yellow and <=8/255 vs baseline)" % [hits.size(), str(hidden_ok)])
@@ -1055,3 +1063,4 @@ func _process(_dt: float) -> bool:
 				_assert_click_result()
 				_finish()
 	return false
+

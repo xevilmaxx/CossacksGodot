@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://3f1ov50fs4bw"
-path="res://.godot/imported/aca.png-67fa61d97b87715cab6faa8664878ccc.ctex"
+path="res://.godot/imported/aca.png-14fdea7b20ac12e83a97ff7918c57d9a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/models/tex/shared/buildings/aca.png"
-dest_files=["res://.godot/imported/aca.png-67fa61d97b87715cab6faa8664878ccc.ctex"]
+source_file="res://assets/models/tex/ukr/buildings/aca.png"
+dest_files=["res://.godot/imported/aca.png-14fdea7b20ac12e83a97ff7918c57d9a.ctex"]
 
 [params]
 

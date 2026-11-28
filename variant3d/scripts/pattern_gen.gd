@@ -82,7 +82,12 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# -1 (legacy) every draw stays on the single shared rng stream, so current
 	# callers (game.gd, string relief tiers) are byte-identical.  Unused now.
 	var data := load_data()
+	# LOG-PATTERN diagnostics: stage boundaries (info), counts (debug),
+	# loop rejects sampled to ~10 lines (debug). Read-only: no RNG, gate,
+	# order or behaviour change. Parity UNVERIFIED.
+	C3Log.info("terrain", "pattern_gen.build begin w=%d h=%d seed=%d biome=%s relief=%s richness=%s starts=%d water=%d stage_seed=%d" % [map_w, map_h, int(seed), str(biome), str(relief), str(richness), starts.size(), int(water_id), int(stage_seed)])
 	if data.is_empty():
+		C3Log.warn("terrain", "pattern_gen.build abort empty donor data")
 		return {"stamps": [], "occupied": PackedByteArray()}
 	var families: Dictionary = data.get("families", {})
 	var patterns: Dictionary = data.get("patterns", {})
@@ -93,6 +98,15 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	var occupied := PackedByteArray()
 	occupied.resize(map_w * map_h)
 	var stamps: Array = []
+	# LOG-PATTERN sample budget + reject-cause counters (diagnostic only;
+	# never read by placement, never fed to RNG).
+	var _log_sample := [0]
+	var _log_sample_max := 10
+	var _log_rejects := {"empty": 0, "water": 0, "region": 0, "stand": 0, "bounds": 0, "blocked": 0}
+	var _log_trace := func(msg: String) -> void:
+		if _log_sample[0] < _log_sample_max:
+			_log_sample[0] += 1
+			C3Log.debug("terrain", "pattern_gen " + msg)
 
 	var scaled_cache: Dictionary = {}
 	# start positions arrive in world metres; convert to tile indices
@@ -113,13 +127,19 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		var lst: Array[Vector2i] = []
 		var p: Dictionary = patterns.get(name, {})
 		if p.is_empty():
+			_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+			_log_trace.call("scale_cells ignore name=%s (no donor doc)" % name)
 			scaled_cache[name] = lst
 			return lst
 		var seen: Dictionary = {}
 		for c in p.get("cells", []):
 			var ca: Array = c
-			var dx := int(round(float(ca[0]) * s))
-			var dy := int(round(float(ca[1]) * s))
+			# OCC-SCALE-01: donor pattern footprint cells are 1:1 map cells
+			# (spec/07_RESOURCES.md:87-88; V08 §5). The port's `*s` inflated
+			# every footprint by map_w/DONOR_UNITS, enlarging overlaps and
+			# driving the 23k stand rejects. Use raw donor cell offsets.
+			var dx := int(round(float(ca[0])))
+			var dy := int(round(float(ca[1])))
 			var key := str(dx) + "," + str(dy)
 			if not seen.has(key):
 				seen[key] = true
@@ -153,6 +173,8 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	var pick := func(family: String) -> String:
 		var list: Array = families.get(family, [])
 		if list.is_empty():
+			_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+			_log_trace.call("pick ignore family=%s (no donor family)" % family)
 			return ""
 		var total := 0.0
 		for e in list:
@@ -180,19 +202,38 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 			kind: String, region_idx: int = -1, mask = null) -> int:
 		var fam := home.call(family) as String
 		var done := 0
+		var _rej_empty := 0
+		var _rej_water := 0
+		var _rej_region := 0
+		var _rej_stand := 0
 		for _i in count:
 			for _a in attempts:
 				var name := pick.call(fam) as String
 				if name == "" or not patterns.has(name):
+					_rej_empty += 1
+					_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+					_log_trace.call("stamp_family family=%s reject empty-pattern" % fam)
 					break
 				var cx := rng.randi_range(2, map_w - 3)
 				var cy := rng.randi_range(2, map_h - 3)
 				if terrain[cy * map_w + cx] == water_id:
+					_rej_water += 1
+					_log_rejects["water"] = int(_log_rejects["water"]) + 1
+					_log_trace.call("stamp_family family=%s reject water x=%d y=%d" % [fam, cx, cy])
 					continue
 				if region_idx >= 0 and region_idx < start_tiles.size():
 					var st: Vector2 = start_tiles[region_idx]
-					var r3: float = maxf(CIRCLE3.x, CIRCLE3.y) * s * 1.4
-					if Vector2(float(cx) - st.x, float(cy) - st.y).length() > r3:
+					# OCC-SCALE-02: donor region rule is the C3 ellipse (22x18
+					# cells, dogenerate.inc:413-414), not a circularised 22*1.4*s
+					# with no donor basis. Use raw donor cell semi-axes.
+					var r3x: float = CIRCLE3.x   # 22 cells
+					var r3y: float = CIRCLE3.y   # 18 cells
+					var erx := (float(cx) - st.x) / r3x
+					var ery := (float(cy) - st.y) / r3y
+					if erx * erx + ery * ery > 1.0:
+						_rej_region += 1
+						_log_rejects["region"] = int(_log_rejects["region"]) + 1
+						_log_trace.call("stamp_family family=%s reject outside-start-region" % fam)
 						continue
 				var cells: Array = scale_cells.call(name)
 				if can_stand.call(cells, cx, cy, mask):
@@ -208,6 +249,11 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					stamps.append(st)
 					done += 1
 					break
+				else:
+					_rej_stand += 1
+					_log_rejects["stand"] = int(_log_rejects["stand"]) + 1
+					_log_trace.call("stamp_family family=%s reject occupied name=%s x=%d y=%d" % [fam, name, cx, cy])
+		C3Log.debug("terrain", "pattern_gen stamp_family family=%s kind=%s count=%d done=%d reject empty=%d water=%d region=%d stand=%d" % [fam, kind, count, done, _rej_empty, _rej_water, _rej_region, _rej_stand])
 		return done
 
 	# donor dogenerate.inc: mark the elliptical keep-clear zones of each start
@@ -215,8 +261,11 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		var m = occupied if mask == null else mask
 		var cx: int = int(st.x)
 		var cy: int = int(st.y)
-		var rx := maxf(1.0, r.x * s)
-		var ry := maxf(1.0, r.y * s)
+		# OCC-SCALE-01: donor ellipse args are RAW CELL counts (dogenerate.inc
+		# :407-414, :769/:947/:984). The port's `*s` (map_w/DONOR_UNITS) was
+		# port-invented (spec/07:87-88) and inflated the occupancy ban ~2-5x.
+		var rx := maxf(1.0, r.x)
+		var ry := maxf(1.0, r.y)
 		for y in range(maxi(0, cy - int(ry)), mini(map_h, cy + int(ry) + 1)):
 			for x in range(maxi(0, cx - int(rx)), mini(map_w, cx + int(rx) + 1)):
 				var nx := (float(x) - float(cx)) / rx
@@ -230,10 +279,15 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# SetupTiles: thin tiled-pattern grid (full donor grid would saturate a small map)
 	var tile_step := maxi(6, int(round(60.0 * s)))
 	var tile_fam := home.call("tiles") as String
+	var _tile_done := 0
+	var _tile_skip := 0
 	for gy in range(0, map_h, tile_step):
 		for gx in range(0, map_w, tile_step):
 			var name := pick.call(tile_fam) as String
 			if name == "":
+				_tile_skip += 1
+				_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+				_log_trace.call("tiles ignore grid gx=%d gy=%d (empty pick)" % [gx, gy])
 				continue
 			var cx := mini(map_w - 1, gx + tile_step / 2)
 			var cy := mini(map_h - 1, gy + tile_step / 2)
@@ -249,6 +303,12 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 				for c in cells:
 					st.cells.append(c)
 				stamps.append(st)
+				_tile_done += 1
+			else:
+				_tile_skip += 1
+				_log_rejects["stand"] = int(_log_rejects["stand"]) + 1
+				_log_trace.call("tiles reject occupied name=%s x=%d y=%d" % [name, cx, cy])
+	C3Log.debug("terrain", "pattern_gen tiles family=%s done=%d skip=%d" % [tile_fam, _tile_done, _tile_skip])
 
 	# T5GEN/T-MINES-FIX: `mine_occ` is the COUNT-replay grid only.  It inherits
 	# the shared grid (water via terrain checks in place_at, plus tile/build
@@ -260,8 +320,9 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	for st0 in start_tiles:
 		var cx0: int = int(st0.x)
 		var cy0: int = int(st0.y)
-		var rx0 := maxf(1.0, CIRCLE1.x * s)
-		var ry0 := maxf(1.0, CIRCLE1.y * s)
+		# OCC-SCALE-01: raw donor CIRCLE1 cells (5x7), no port scale.
+		var rx0 := maxf(1.0, CIRCLE1.x)
+		var ry0 := maxf(1.0, CIRCLE1.y)
 		for yy in range(maxi(0, cy0 - int(ry0)), mini(map_h, cy0 + int(ry0) + 1)):
 			for xx in range(maxi(0, cx0 - int(rx0)), mini(map_w, cx0 + int(rx0) + 1)):
 				var nx := (float(xx) - float(cx0)) / rx0
@@ -274,6 +335,11 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# forest/relief RNG stream and occupied[] byte-identical to the baseline,
 	# so the terrain-geometry gates are unaffected by the new mine layout.
 	var replay_kinds := ["mng", "mni", "mnc"]
+	var _replay_done := 0
+	var _replay_empty := 0
+	var _replay_bounds := 0
+	var _replay_water := 0
+	var _replay_stand := 0
 	for si in start_tiles:
 		var st: Vector2 = si
 		for ki in replay_kinds.size():
@@ -283,19 +349,35 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 				for _a in 256:
 					var name := pick.call(fam) as String
 					if name == "":
+						_replay_empty += 1
+						_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+						_log_trace.call("replay family=%s ignore empty-pattern" % fam)
 						break
 					var ang := rng.randf() * TAU
-					var dst := (float(ring[0]) + rng.randf() * (float(ring[1]) - float(ring[0]))) * s
+					# OCC-SCALE-02: donor mine rings are raw cells (spec/07:87-88).
+					var dst := float(ring[0]) + rng.randf() * (float(ring[1]) - float(ring[0]))
 					var cx := int(st.x + cos(ang) * dst)
 					var cy := int(st.y + sin(ang) * dst)
 					if cx < 1 or cy < 1 or cx >= map_w - 1 or cy >= map_h - 1:
+						_replay_bounds += 1
+						_log_rejects["bounds"] = int(_log_rejects["bounds"]) + 1
+						_log_trace.call("replay family=%s reject bounds x=%d y=%d" % [fam, cx, cy])
 						continue
 					if terrain[cy * map_w + cx] == water_id:
+						_replay_water += 1
+						_log_rejects["water"] = int(_log_rejects["water"]) + 1
+						_log_trace.call("replay family=%s reject water x=%d y=%d" % [fam, cx, cy])
 						continue
 					var cells: Array = scale_cells.call(name)
 					if can_stand.call(cells, cx, cy):
 						stand.call(cells, cx, cy)
+						_replay_done += 1
 						break
+					else:
+						_replay_stand += 1
+						_log_rejects["stand"] = int(_log_rejects["stand"]) + 1
+						_log_trace.call("replay family=%s reject occupied name=%s x=%d y=%d" % [fam, name, cx, cy])
+	C3Log.debug("terrain", "pattern_gen replay done=%d reject empty=%d bounds=%d water=%d stand=%d" % [_replay_done, _replay_empty, _replay_bounds, _replay_water, _replay_stand])
 
 	# --- SetupMines (donor D1:522-717) ---------------------------------------
 	# Donor runs 3 ore families x 3 rings x up to 256 random angle tries per
@@ -319,6 +401,8 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	var pick_mine := func(family: String) -> String:
 		var list: Array = families.get(family, [])
 		if list.is_empty():
+			_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+			_log_trace.call("pick_mine ignore family=%s (no donor family)" % family)
 			return ""
 		var total := 0.0
 		for e in list:
@@ -342,13 +426,19 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# (donor _misc_CheckStandPatternExt), then mark the mine occupancy grid.
 	var place_at := func(cx: int, cy: int, ki: int) -> bool:
 		if cx < 1 or cy < 1 or cx >= map_w - 1 or cy >= map_h - 1:
+			_log_rejects["bounds"] = int(_log_rejects["bounds"]) + 1
+			_log_trace.call("place_at kind=%d reject bounds x=%d y=%d" % [ki, cx, cy])
 			return false
 		if terrain[cy * map_w + cx] == water_id:
+			_log_rejects["water"] = int(_log_rejects["water"]) + 1
+			_log_trace.call("place_at kind=%d reject water x=%d y=%d" % [ki, cx, cy])
 			return false
 		var fam := home.call(kinds[ki]) as String
 		for _a in 256:
 			var name := pick_mine.call(fam) as String
 			if name == "":
+				_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+				_log_trace.call("place_at kind=%d ignore empty-pattern" % ki)
 				break
 			var cells: Array = scale_cells.call(name)
 			if can_stand.call(cells, cx, cy, mine_occ):
@@ -364,6 +454,10 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					ms.cells.append(c)
 				stamps.append(ms)
 				return true
+			else:
+				_log_rejects["blocked"] = int(_log_rejects["blocked"]) + 1
+				_log_trace.call("place_at kind=%d reject occupied x=%d y=%d" % [ki, cx, cy])
+		_log_trace.call("place_at kind=%d fail x=%d y=%d (256 tries)" % [ki, cx, cy])
 		return false
 
 	# Pass 1 - guaranteed close cluster per start: one of each ore, spaced
@@ -372,6 +466,8 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# ring0, tight and capped.  KEEP THIS BAND AND ITS RNG DRAW COUNT EXACTLY:
 	# it decides HOW MANY stamps exist (count parity with the pre-fix baseline).
 	# T-MINES-START-FIX only relocates those same stamps at the end of build().
+	# LOG-PATTERN: mine acceptance counted via stamps delta (read-only).
+	var _mines_before := stamps.size()
 	for st in start_tiles:
 		var base := mine_rng.randf() * TAU
 		# Edge-adaptive near radius: the scaled mine footprint is ~10 tiles on a
@@ -424,6 +520,7 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 			var cx := ax + int(round(cos(a) * radius))
 			var cy := ay + int(round(sin(a) * radius))
 			place_at.call(cx, cy, ki)
+	C3Log.debug("terrain", "pattern_gen mines passes added=%d (pass1+pass2)" % [stamps.size() - _mines_before])
 
 	# SetupStartingResources: woodland/stone near (but not inside) each start
 	for si in range(start_tiles.size()):
@@ -508,10 +605,14 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	# wide keep-clear here only prevents giant relief footprints from landing
 	# at all on small maps (6 starts on a 128-tile land sample).
 	for st0 in start_tiles:
-		var rx0 := maxf(CIRCLE1.x, CIRCLE1.y) * s
-		for yy in range(maxi(0, int(st0.y - rx0)), mini(map_h, int(st0.y + rx0) + 1)):
+		# OCC-SCALE-02: raw donor CIRCLE1 ellipse (5x7 cells), no port scale.
+		var rx0 := CIRCLE1.x   # 5 cells
+		var ry0 := CIRCLE1.y   # 7 cells
+		for yy in range(maxi(0, int(st0.y - ry0)), mini(map_h, int(st0.y + ry0) + 1)):
 			for xx in range(maxi(0, int(st0.x - rx0)), mini(map_w, int(st0.x + rx0) + 1)):
-				if Vector2(float(xx) - st0.x, float(yy) - st0.y).length() <= rx0:
+				var ex: float = (float(xx) - st0.x) / float(rx0)
+				var ey: float = (float(yy) - st0.y) / float(ry0)
+				if ex * ex + ey * ey <= 1.0:
 					relief_occ[yy * map_w + xx] = 1
 
 	var relief_can_stand := func(cells: Array, cx: int, cy: int) -> bool:
@@ -536,10 +637,15 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 	var stamp_relief := func(family: String, count: int, kind: String) -> int:
 		var fam := home.call(family) as String
 		var done := 0
+		var _r_empty := 0
+		var _r_stand := 0
 		for _i in count:
 			for _a in 512:
 				var name := pick.call(fam) as String
 				if name == "" or not patterns.has(name):
+					_r_empty += 1
+					_log_rejects["empty"] = int(_log_rejects["empty"]) + 1
+					_log_trace.call("stamp_relief family=%s reject empty-pattern" % fam)
 					break
 				var cx := rng.randi_range(2, map_w - 3)
 				var cy := rng.randi_range(2, map_h - 3)
@@ -557,6 +663,11 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					stamps.append(st1)
 					done += 1
 					break
+				else:
+					_r_stand += 1
+					_log_rejects["stand"] = int(_log_rejects["stand"]) + 1
+					_log_trace.call("stamp_relief family=%s reject occupied name=%s x=%d y=%d" % [fam, name, cx, cy])
+		C3Log.debug("terrain", "pattern_gen stamp_relief family=%s kind=%s needed=%d done=%d reject empty=%d stand=%d" % [fam, kind, count, done, _r_empty, _r_stand])
 		return done
 
 	# Donor size modifier for non-640 maps: 640/((W+H)/2) applied to all four
@@ -575,6 +686,7 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		else:
 			freq_fam = float(preset.get(str(r[1]), 0.0)) / float(r[2]) * RELIEF_PROBLARGE * size_mod
 		if freq_fam <= 0.0:
+			_log_trace.call("relief skip family=%s freq<=0" % str(r[0]))
 			continue
 		# Donor _misc_SetupPatternsByType (misc.script:3695-3700): needed is
 		# floor(W*H*freq); only when that is 0 with freq>0, fall back to
@@ -585,6 +697,7 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 		if needed == 0:
 			needed = int(round(float(map_w * map_h) * freq_fam))
 		if needed <= 0:
+			_log_trace.call("relief skip family=%s needed<=0" % str(r[0]))
 			continue
 		stamp_relief.call(str(r[0]), needed, str(r[3]))
 
@@ -683,6 +796,7 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					pick_idx = mi
 					break
 			if pick_idx < 0:
+				_log_trace.call("mines skip no %s stamp for start (never invent one)" % want)
 				continue  # no such ore exists on this map: never invent one
 			var ms: Stamp = mine_stamps[pick_idx]
 			var cells: Array = ms.cells
@@ -714,6 +828,7 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					break
 			if not done:
 				push_warning("T-MINES-FIX: no open %s site near start (%.0f,%.0f)" % [want, st.x, st.y])
+				C3Log.warn("terrain", "pattern_gen mines no open %s site near start (%.0f,%.0f)" % [want, st.x, st.y])
 
 	# (2) de-overlap every remaining stamp against the finalized footprints.
 	for mi in mine_stamps.size():
@@ -756,5 +871,17 @@ static func build(map_w: int, map_h: int, seed: int, starts: Array,
 					break
 		if not placed:
 			push_warning("T-MINES-FIX: could not de-overlap a %s stamp" % str(ms.res))
+			C3Log.warn("terrain", "pattern_gen mines could not de-overlap a %s stamp" % str(ms.res))
+
+	# LOG-PATTERN exit (read-only kind/res census): no placement change.
+	var _exit_counts := {}
+	var _exit_res := {}
+	for _es in stamps:
+		var _ek := str((_es as Stamp).kind)
+		_exit_counts[_ek] = int(_exit_counts.get(_ek, 0)) + 1
+		var _er := str((_es as Stamp).res)
+		if not _er.is_empty():
+			_exit_res[_er] = int(_exit_res.get(_er, 0)) + 1
+	C3Log.info("terrain", "pattern_gen.build done stamps=%d kinds=%s res=%s rejects=%s samples=%d" % [stamps.size(), str(_exit_counts), str(_exit_res), str(_log_rejects), _log_sample[0]])
 
 	return {"stamps": stamps, "occupied": occupied, "scale": s}

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://si5jnokbt47w"
-path="res://.godot/imported/sta.png-a147e666510cce40c0ee15a22dc2a020.ctex"
+path="res://.godot/imported/sta.png-5b2459de162d511432639b54c1a5e6f5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/models/tex/shared/buildings/sta.png"
-dest_files=["res://.godot/imported/sta.png-a147e666510cce40c0ee15a22dc2a020.ctex"]
+source_file="res://assets/models/tex/ukr/buildings/sta.png"
+dest_files=["res://.godot/imported/sta.png-5b2459de162d511432639b54c1a5e6f5.ctex"]
 
 [params]
 

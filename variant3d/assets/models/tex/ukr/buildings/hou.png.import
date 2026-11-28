@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dhce2twoimvab"
-path="res://.godot/imported/hou.png-166d1015824412adaf1abe631edf1f6e.ctex"
+path="res://.godot/imported/hou.png-ba00a55d3e49460f9ab4ca6cc8f556b7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/models/tex/shared/buildings/hou.png"
-dest_files=["res://.godot/imported/hou.png-166d1015824412adaf1abe631edf1f6e.ctex"]
+source_file="res://assets/models/tex/ukr/buildings/hou.png"
+dest_files=["res://.godot/imported/hou.png-ba00a55d3e49460f9ab4ca6cc8f556b7.ctex"]
 
 [params]
 

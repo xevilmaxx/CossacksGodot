@@ -28,7 +28,8 @@
   "terrain": {
    "backend": "donor",
    "relief_stamps": true,
-   "color_unify": true
+   "color_unify": true,
+   "demo_mill": true
   },
   "water": {
    "surface_y": -0.25,
@@ -85,7 +86,7 @@
    "food": 800,
    "wood": 800,
    "stone": 400,
-   "gold": 200,
+   "gold": 1000,
    "iron": 150,
    "coal": 150
   },
@@ -111,7 +112,8 @@
   "nation0": "rus",
   "nation1": "bav",
   "map_type": "land",
-  "start_option": "default"
+  "start_option": "default",
+  "terrain_type": "land"
  },
  "economy": {
   "gather": {

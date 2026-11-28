@@ -4,14 +4,14 @@ importer="wavefront_obj"
 importer_version=1
 type="Mesh"
 uid="uid://cir40tbp5qgpu"
-path="res://.godot/imported/aca3.obj-35cb4101e8bb4d2bba5626957c2488b4.mesh"
+path="res://.godot/imported/aca3.obj-4373ff977cad52fb8e4e085e2b0e2b0b.mesh"
 
 [deps]
 
-files=["res://.godot/imported/aca3.obj-35cb4101e8bb4d2bba5626957c2488b4.mesh"]
+files=["res://.godot/imported/aca3.obj-4373ff977cad52fb8e4e085e2b0e2b0b.mesh"]
 
-source_file="res://assets/models/obj/shared/buildings/aca3.obj"
-dest_files=["res://.godot/imported/aca3.obj-35cb4101e8bb4d2bba5626957c2488b4.mesh", "res://.godot/imported/aca3.obj-35cb4101e8bb4d2bba5626957c2488b4.mesh"]
+source_file="res://assets/models/obj/ukr/buildings/aca3.obj"
+dest_files=["res://.godot/imported/aca3.obj-4373ff977cad52fb8e4e085e2b0e2b0b.mesh", "res://.godot/imported/aca3.obj-4373ff977cad52fb8e4e085e2b0e2b0b.mesh"]
 
 [params]
 

@@ -657,14 +657,18 @@ var _fog_colors: PackedColorArray = PackedColorArray()
 
 
 func bind(g) -> void:
+	C3Log.info("fog", "bind begin game_null=%s" % str(g == null))
 	game = g
 	if game == null:
+		C3Log.warn("fog", "bind SKIP game is null")
 		return
 	_map_w = int(game.get("MAP_W"))
 	_map_h = int(game.get("MAP_H"))
 	if _map_w <= 0 or _map_h <= 0:
+		C3Log.warn("fog", "bind SKIP bad grid w=%d h=%d; no usable MAP_W/MAP_H" % [_map_w, _map_h])
 		push_error("world3d_fog: game has no usable MAP_W/MAP_H")
 		return
+	C3Log.info("fog", "bind grid w=%d h=%d tiles=%d" % [_map_w, _map_h, _map_w * _map_h])
 	_tile_m = float(Data.TILE_M)
 	var n: int = _map_w * _map_h
 
@@ -696,8 +700,10 @@ func bind(g) -> void:
 	# (control.script:712-720). Rebuilt again at each _update_fog() tick so live
 	# balloon/victory/team changes are honoured without another bind().
 	rebuild_fow_enable()
+	C3Log.debug("fog", "bind fow_enabled=%s viewers=%d occlusion=none combine=fog_counts>0 vision_base=%.1f per=%.1f" % [str(_fow_enabled), _fow_viewers.size(), DONOR_VISION_BASE, DONOR_VISION_PER_POINT])
 	_built = _build_overlay()
 	if not _built:
+		C3Log.warn("fog", "bind SKIP overlay build failed grid=%dx%d" % [_map_w, _map_h])
 		return
 	for i in n:
 		_tile_alpha[i] = _alpha_for(i)
@@ -825,7 +831,9 @@ func _refresh_mesh() -> void:
 
 
 func _update_fog() -> void:
+	C3Log.debug("fog", "update begin tick=%d built=%s fow_enabled=%s viewers=%d" % [_fog_tick, str(_built), str(_fow_enabled), _fow_viewers.size()])
 	if game == null or not _built:
+		C3Log.warn("fog", "update SKIP game_null=%s built=%s" % [str(game == null), str(_built)])
 		return
 	# DEC-U §1.3 — SetFOWEnable mirror, not the raw Data flag: balloon /
 	# victory / editor-flag gates switch FOW off even when the option is on.
@@ -837,8 +845,10 @@ func _update_fog() -> void:
 	# This call is NOT the donor re-resolve hook; no such hook is added here.
 	rebuild_fow_enable()
 	if not _fow_enabled:
+		C3Log.info("fog", "update SKIP fow_disabled viewers=%d grid=%dx%d" % [_fow_viewers.size(), _map_w, _map_h])
 		return
 	if not game.has_method("tile_of"):
+		C3Log.warn("fog", "update SKIP no tile_of; grid=%dx%d" % [_map_w, _map_h])
 		return
 
 	# Cheap change gate, structure verbatim from world.gd:2191-2211. Viewer set
@@ -851,6 +861,7 @@ func _update_fog() -> void:
 	if not any_moved:
 		var ents = game.get("entities")
 		if not (ents is Array):
+			C3Log.debug("fog", "update SKIP no entities array tick=%d" % _fog_tick)
 			return
 		var live_n: int = 0
 		for e in ents:
@@ -864,6 +875,7 @@ func _update_fog() -> void:
 		if not any_moved and live_n != _fog_unit_count:
 			any_moved = true
 	if not any_moved:
+		C3Log.debug("fog", "update SKIP no change tick=%d forced=%s reveals=%s live=%d" % [_fog_tick, str(forced), str(has_reveals), _fog_unit_count])
 		return
 	_fog_last_pos.clear()
 	var ents2 = game.get("entities")
@@ -920,9 +932,11 @@ func _update_fog() -> void:
 	if ents3 is Array:
 		for e in ents3:
 			if not _is_fow_viewer_entity(e):
+				C3Log.trace("fog", "vision SKIP non-viewer id=%s" % str(e.get("id", -1)))
 				continue
 			var res: int = donor_unit_vision(e)
 			if res <= 0:
+				C3Log.trace("fog", "vision SKIP res<=0 id=%s" % str(e.get("id", -1)))
 				continue
 			var r: float = _vision_radius_m(res)
 			var t0: Vector2i = game.tile_of(e.pos - Vector2(r, r))
@@ -952,6 +966,8 @@ func _update_fog() -> void:
 	# wire it to player-switch / victory / save-load legs only — never the flip.
 	var changed: bool = false
 	for i in _map_w * _map_h:
+		if i % 4096 == 0:
+			C3Log.trace("fog", "combine sampled i=%d n=%d" % [i, _map_w * _map_h])
 		var v: int = 1 if fog_counts[i] > 0 else 0
 		if v == 1:
 			fog_explored[i] = 1
@@ -966,6 +982,7 @@ func _update_fog() -> void:
 		if _overlay != null:
 			_overlay.visible = _fow_enabled
 		_refresh_mesh()
+	C3Log.debug("fog", "update done tick=%d live=%d changed=%s occlusion=none combine=fog_counts>0" % [_fog_tick, _fog_unit_count, str(changed)])
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -1283,8 +1300,10 @@ func los_at(pos: Vector2) -> int:
 	# domain are not statically known; this reads the SAME port grid the reveal
 	# pass writes, so picking and tint use one source of truth.
 	if not _fow_enabled or not _built:
+		C3Log.trace("fog", "los SKIP disabled built=%s enabled=%s" % [str(_built), str(_fow_enabled)])
 		return 1
 	if game == null or not game.has_method("tile_of"):
+		C3Log.trace("fog", "los SKIP no tile_of")
 		return 1
 	var t: Vector2i = game.tile_of(pos)
 	if t.x < 0 or t.y < 0 or t.x >= _map_w or t.y >= _map_h:

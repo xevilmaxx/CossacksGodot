@@ -814,6 +814,7 @@ var _mask_native_h: int = 0
 ##   start_selection_mode       : "given" | "v61" | "teams" | "scattered"
 ## Returns the telemetry dictionary (same object as stats()).
 func generate(data: Object, p: Dictionary = {}) -> Dictionary:
+	C3Log.info("terrain", "gen.generate begin params=%d" % p.size())
 	_ledger.clear()
 	_draw_ledger.clear()
 	_draws_by_stage.clear()
@@ -868,9 +869,21 @@ func generate(data: Object, p: Dictionary = {}) -> Dictionary:
 	if wv <= 0 or hv <= 0:
 		_note("generate: no W/H supplied and container is unsized — abort", "unverified")
 		return stats()
-	if not _set_size(data, wv, hv):
-		_note("generate: container refused configure_grid/set_size — abort", "unverified")
-		return stats()
+	# CONFIGURE-WIPE-01: configure_grid() unconditionally reallocates height/tex/
+	# collision to zero arrays (data.gd:178-183). from_live_object() has ALREADY
+	# loaded the live game tileblock (14 distinct ids) before generate() runs, so
+	# re-configuring an already-sized container wipes it -> mesh paints one tile
+	# over the whole map. Skip the resize when dimensions already match; the
+	# container is authoritative and this changes no donor value, no RNG draw.
+	var data_w: int = 0
+	var data_h: int = 0
+	if data != null:
+		data_w = int(data.get("w"))
+		data_h = int(data.get("h"))
+	if data_w != wv or data_h != hv:
+		if not _set_size(data, wv, hv):
+			_note("generate: container refused configure_grid/set_size — abort", "unverified")
+			return stats()
 	_grid_w = wv
 	_grid_h = hv
 	_grid_n = wv * hv
@@ -1263,7 +1276,12 @@ func _mark_site(site: String) -> void:
 
 func _resolve_settings(p: Dictionary) -> void:
 	var ver: int = int(p.get("generator_version", C_BROKEN_GENERATOR_VERSION))
-	var mapsize: int = int(p.get("mapsize", 3 if _grid_w == 256 else 2))
+	# MAPSIZE-01: donor default is mapsize=0 (initmapsettings.inc:10), which
+	# selects 320x320 (donewgame.inc:42-43/48, miscext2.script:19-20/25).
+	# The old grid-derived `3 if _grid_w==256 else 2` was uncited and inverted
+	# the donor mapsize->w flow (MAPSIZE_law.md §4). 240 remains a label-only
+	# port debug alias where explicitly configured, never a donor size.
+	var mapsize: int = int(p.get("mapsize", 0))
 	var md: int = int(p.get("minesdensity", p.get("minerdensity", 1)))
 	if md > 2:
 		_note("minerdensity>2 supplied — donor normalises with one RandomExt draw at dogenerate.inc:1586-1587", "port_approximations")

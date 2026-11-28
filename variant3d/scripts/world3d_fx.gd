@@ -773,6 +773,7 @@ var _weather_month: int = SNOW_MONTH_START       # 1, inside MonthStart/End 1..1
 # derives the centred origin from game.MAP_W/MAP_H; bind(game, offset) accepts an
 # explicit Vector2 (V7-73 integration handoff surface).
 func bind(g, world_offset_override = null) -> void:
+	C3Log.info("fx", "bind begin game_null=%s override=%s" % [str(g == null), str(world_offset_override)])
 	game = g
 	_events_seen = 0
 	_apply_world_offset(world_offset_override)
@@ -832,8 +833,11 @@ func bind(g, world_offset_override = null) -> void:
 	stats["ghost_blink_status"] = GHOST_BLINK_STATUS
 	stats["ghost_mesh_identity_status"] = GHOST_MESH_IDENTITY_STATUS
 	stats["ghost_port_tint_retired"] = GHOST_RETIRED_PORT_TINT
+	C3Log.info("fx", "bind game offset=%s key_colors_loaded=%s slots=%d" % [str(world_offset), str(_key_colors_loaded), PLAYER_COLORS.size()])
 	_ensure_roots()
 	_apply_snow_gate()   # FX-WEATHER-01: default Weather=40 keeps snow OFF
+	C3Log.debug("fx", "bind counts effects=%d sheets=%d life_kinds=%d freeto_pool=%d timing_rows=%d rand_codes=%d" % [DONOR_EFFECTS.size(), DONOR_FX_SHEETS.size(), LIFE.size(), DONOR_FREETOPOOL_KEYS.size(), DONOR_FX_TIMING.size(), DONOR_FX_RAND_CODES.size()])
+	C3Log.debug("fx", "bind scales trail_w=%.3f streak=%.3f smoke_quad=%.3f flash_quad=%.3f snow_emitters=%d" % [TRAIL_WIDTH_M, TRAIL_STREAK_M, IMPACT_SMOKE_QUAD_M, IMPACT_FLASH_QUAD_M, _snow_emitters.size()])
 
 
 # V7-73 public setter, safe to call after bind(): existing FX/ghost/rally nodes

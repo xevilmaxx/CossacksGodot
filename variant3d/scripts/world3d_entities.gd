@@ -804,6 +804,7 @@ var _tint_material_cache: Dictionary = {}  # key -> ShaderMaterial (shared)
 # ---------------------------------------------------------------- bind / stats
 func bind(g) -> void:
 	game = g
+	C3Log.info("world", "entities.bind begin")
 	_load_key_colors()
 	_bbox.clear()
 	_mesh_cache.clear()
@@ -1098,6 +1099,8 @@ func bind(g) -> void:
 		"unit_death_ttl_source": "world3d_fx.gd DONOR_UNIT_DEATH_TTL (DATA ONLY, [U]-T, no seconds invented)",
 	}
 	push_warning("world3d_entities: " + ANIM_STATUS)
+	C3Log.info("world", "entities.bind done manifest_sids=%d bbox_sids=%d obj_available=%d glb_available=%d" % [models, _bbox.size(), obj_available, glb_available])
+	C3Log.debug("world", "entities.bind field preflight skipped=%d converted=%d tree_pool=%d stage_obj=%d scaffold_obj=%d" % [field_skipped.size(), field_converted, tree_pool_available.size(), stage_obj_sids.size(), scaffold_obj_sids.size()])
 
 
 # ---------------------------------------------------------------- mesh loading
@@ -1806,8 +1809,17 @@ func _band_mask(sid: String) -> Image:
 		var cached = _band_mask_cache[sid]
 		if cached is Dictionary and (cached as Dictionary).get("image") is Image:
 			return (cached as Dictionary)["image"] as Image
-	var img := _dxt5_mask(str(_donor_texture_paths.get(sid, "")))
+	var donor_path := str(_donor_texture_paths.get(sid, ""))
+	# BANDMASK-FIX-01: nation-resolved mesh sids (eurmil/eurmar) are not
+	# manifest keys; their byte-identical donor DDS is named by the BASE sid
+	# (mil/mar) at manifest.json:2063-2066/2088-2091 (FIELD_band_mask.md §4).
+	# Narrow explicit base-sid fallback only — never a whole-body tint.
+	if donor_path == "" and sid.begins_with("eur") and sid.length() > 3:
+		donor_path = str(_donor_texture_paths.get(sid.substr(3), ""))
+		C3Log.debug("art", "band_mask eur fallback sid=%s base=%s hit=%s" % [sid, sid.substr(3), str(donor_path != "")])
+	var img := _dxt5_mask(donor_path)
 	if img == null:
+		C3Log.debug("art", "band_mask MISS sid=%s donor_path_empty=%s" % [sid, str(donor_path == "")])
 		return null
 	var w: int = img.get_width()
 	var h: int = img.get_height()
@@ -1894,6 +1906,7 @@ func _tinted_material(base: Material, tint: Color, sid: String, kind: String) ->
 	var mask := _band_mask_texture(sid)
 	if mask == null:
 		push_warning("world3d_entities: no donor band mask for " + sid + " - left UNTINTED, no whole-body fallback")
+		C3Log.warn("art", "tinted_material mask MISS sid=%s kind=%s no whole-body fallback" % [sid, kind])
 		return base.duplicate() if base != null else _default_material(sid, kind)
 	var bm: Material = base
 	if bm == null:
@@ -1919,6 +1932,7 @@ func _tinted_material(base: Material, tint: Color, sid: String, kind: String) ->
 	m.set_shader_parameter("mask_tex", mask)
 	m.set_shader_parameter("custColor", tint)
 	_tint_material_cache[ck] = m
+	C3Log.debug("art", "tinted_material mask HIT sid=%s kind=%s tint=%s" % [sid, kind, str(tint)])
 	return m
 
 
@@ -2076,8 +2090,11 @@ func _mesh_info(sid: String, kind: String) -> Dictionary:
 			source = "obj_zup_bbox_normalised"
 	if src_mesh == null:
 		src_mesh = _proxy_mesh_raw(bbox)
+		C3Log.warn("art", "mesh_info PROXY sid=%s kind=%s source=donor_bbox_proxy" % [sid, kind])
 	var info := _bake_mesh(src_mesh, bbox, scale, target_h, pre_normalised, sid, kind)
 	info["source"] = source
+	if source != "donor_bbox_proxy":
+		C3Log.debug("art", "mesh_info resolved sid=%s kind=%s source=%s" % [sid, kind, source])
 	info["sid"] = sid       # V7-65: needed by per-player material cloning
 	info["kind"] = kind
 	_mesh_cache[key] = info
@@ -2829,6 +2846,7 @@ func _new_batch(key: String, info: Dictionary, cls: String,
 	var is_morph: bool = not pose.is_empty()
 	var tag := "MORPH_a" + str(pose.get("action", "?")) + "_f" + str(pose.get("frame", -1)) \
 		if is_morph else "STATIC_POSE"
+	C3Log.debug("art", "new_batch key=%s morph=%s tag=%s" % [key, str(is_morph), tag])
 	mmi.name = "Batch_" + key.replace("|", "_") + "_" + tag
 	mmi.set_meta("anim_status", ANIM_STATUS)
 	mmi.set_meta("mesh_source", str(info.get("source", "?")))
@@ -4258,6 +4276,8 @@ func sync(dt: float) -> void:
 		# the tool's anim[0]; no pose -> no frame -> hidden DATA GAP, no fallback.
 		var body_frame := int(pose.get("frame", -1))
 		var tres := _sync_unit_tool(uid, sid, action, body_frame, anim)
+		if uid % 128 == 0:
+			C3Log.trace("world", "entities.sync unit id=%d sid=%s action=%s frame=%d" % [uid, sid, action, body_frame])
 		if bool(tres.get("visible", false)):
 			tool_visible += 1
 		elif str(tres.get("gap", "")) != "":
@@ -4546,3 +4566,6 @@ func sync(dt: float) -> void:
 	anim_handoff["morph_units"] = morph_units
 	anim_handoff["label"] = PORT_LABEL
 	anim_handoff["visual"] = "UNVERIFIED"
+	C3Log.info("world", "entities.sync done units=%d res=%d buildings=%d batches=%d" % [units, ress, _nodes.size(), _batches.size()])
+	C3Log.debug("world", "entities.sync morph_units=%d static_units=%d frame_changes=%d frozen_refreshes=%d pose_samples=%d rejects=%s" % [morph_units, static_units, frame_changes, frozen_refreshes, pose_memo.size(), str(morph_rejects)])
+	C3Log.debug("world", "entities.sync field total=%d skipped=%d ripe_mature=%d tool_visible=%d tool_gaps=%s" % [field_total, field_skipped, field_ripe_mature, tool_visible, str(tool_gaps)])

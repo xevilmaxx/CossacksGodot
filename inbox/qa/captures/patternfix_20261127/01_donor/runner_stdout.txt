@@ -1,0 +1,2 @@
+[runner] ticket 154 'acapt-patternfix-donor' START (waited 0.00s)
+[runner] ticket 154 'acapt-patternfix-donor' END ok (run 49.63s)

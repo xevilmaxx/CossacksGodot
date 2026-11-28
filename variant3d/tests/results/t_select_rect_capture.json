@@ -1,0 +1,782 @@
+{
+	"capture_dir": "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42",
+	"capture_method": "SubViewport texture path ONLY (main.capture_view3d); root-window texture rejected under gl_compatibility (Trap B)",
+	"capture_path": "windowed real-input: three PNGs from main.capture_view3d SubViewport texture",
+	"captures": {
+		"after": {
+			"center": "(0.2706, 0.2784, 0.1529, 1.0)",
+			"h": 720,
+			"ok": true,
+			"p00": "(0.2902, 0.2902, 0.2, 1.0)",
+			"path": "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42/d03_selquad_after.png",
+			"reason": "written",
+			"w": 1280
+		},
+		"before": {
+			"center": "(0.2706, 0.2784, 0.1529, 1.0)",
+			"h": 720,
+			"ok": true,
+			"p00": "(0.2902, 0.2902, 0.2, 1.0)",
+			"path": "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42/d03_selquad_before.png",
+			"reason": "written",
+			"w": 1280
+		},
+		"during": {
+			"center": "(0.2706, 0.2784, 0.1529, 1.0)",
+			"h": 720,
+			"ok": true,
+			"p00": "(0.2902, 0.2902, 0.2, 1.0)",
+			"path": "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42/d03_selquad_during.png",
+			"reason": "written",
+			"w": 1280
+		}
+	},
+	"checks": [
+		{
+			"detail": "render_mode=3d MAP=64x64",
+			"expected_pre_fix_failure": false,
+			"name": "boot_real_64_3d_game",
+			"passed": true
+		},
+		{
+			"detail": "hud.visible restored after --screenshot boot",
+			"expected_pre_fix_failure": false,
+			"name": "hud_visible",
+			"passed": true
+		},
+		{
+			"detail": "projection=(1280.0, 720.0) root=(1280.0, 720.0) capture_view3d=(1280.0, 720.0) scale=[1.0, 1.0]",
+			"expected_pre_fix_failure": false,
+			"name": "windowed_capture_geometry",
+			"passed": true
+		},
+		{
+			"detail": "overlay_parent=Screenshot3DViewport capture_view3d=Screenshot3DViewport",
+			"expected_pre_fix_failure": false,
+			"name": "overlay_reparented_into_capture_view3d",
+			"passed": true
+		},
+		{
+			"detail": "color=[1, 1, 0, 1] width=1 override_declared=false",
+			"expected_pre_fix_failure": false,
+			"name": "marquee_config_default_or_declared",
+			"passed": true
+		},
+		{
+			"detail": "ids=[10, 11, 12, 13, 14] (4 friendly units + 1 non-unit building)",
+			"expected_pre_fix_failure": false,
+			"name": "test_entities_exact",
+			"passed": true
+		},
+		{
+			"detail": "input_ctl.game is CmdSpy subclass of C3Game",
+			"expected_pre_fix_failure": false,
+			"name": "cmd_spy_installed",
+			"passed": true
+		},
+		{
+			"detail": "bind_3d() must create the picking3d adapter",
+			"expected_pre_fix_failure": false,
+			"name": "picking3d_bound",
+			"passed": true
+		},
+		{
+			"detail": "p0=(395.262, 273.5391) p1=(917.0836, 457.8879) click=(512.0289, 337.3953) vp=(1280.0, 720.0)",
+			"expected_pre_fix_failure": false,
+			"name": "projected_pixels_in_viewport",
+			"passed": true
+		},
+		{
+			"detail": "unproject=(395.262, 273.5391) world_to_px=(395.262, 273.5391)",
+			"expected_pre_fix_failure": false,
+			"name": "unproject_matches_world_to_px",
+			"passed": true
+		},
+		{
+			"detail": "all five projected entities inside vp=(1280.0, 720.0): { \"10\": [512.028930664063, 337.395263671875], \"11\": [729.407104492188, 407.378570556641], \"12\": [842.471130371094, 263.43603515625], \"13\": [407.173889160156, 471.041107177734], \"14\": [640.0, 360.0] }",
+			"expected_pre_fix_failure": false,
+			"name": "all_entities_projected_in_viewport",
+			"passed": true
+		},
+		{
+			"detail": "|p1-p0|=553.43 px > 6.0 px (input_controller.gd:613,662-663)",
+			"expected_pre_fix_failure": false,
+			"name": "drag_crosses_port_6px_threshold",
+			"passed": true
+		},
+		{
+			"detail": "ground_point(p0)=(52.0, 56.00002) ground_point(p1)=(76.0, 72.0)",
+			"expected_pre_fix_failure": false,
+			"name": "ground_endpoints_finite",
+			"passed": true
+		},
+		{
+			"detail": "world delta=24.0000 m > 0.005 m (DSEL-01 claim 1 / onmousemove.inc:32-34)",
+			"expected_pre_fix_failure": false,
+			"name": "drag_crosses_donor_0.005m_epsilon",
+			"passed": true
+		},
+		{
+			"detail": "path=C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42/d03_selquad_before.png w=1280 h=720 reason=written",
+			"expected_pre_fix_failure": false,
+			"name": "capture_before_ok",
+			"passed": true
+		},
+		{
+			"detail": "input_ctl.drag_start=(395.262, 273.5391) p0=(395.262, 273.5391)",
+			"expected_pre_fix_failure": false,
+			"name": "drag_start_from_real_event",
+			"passed": true
+		},
+		{
+			"detail": "world.sel_rect mirror from input_controller.gd:1164-1172",
+			"expected_pre_fix_failure": false,
+			"name": "world_sel_active_during_drag",
+			"passed": true
+		},
+		{
+			"detail": "path=C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42/d03_selquad_during.png w=1280 h=720 reason=written",
+			"expected_pre_fix_failure": false,
+			"name": "capture_during_ok",
+			"passed": true
+		},
+		{
+			"detail": "node=SelectionRectOverlay api=true visible=true rect=[P: (395.262, 273.5391), S: (521.8215, 184.3488)] expected=[P: (395.262, 273.5391), S: (521.8215, 184.3488)]",
+			"expected_pre_fix_failure": true,
+			"name": "overlay_rect_during_drag",
+			"passed": true
+		},
+		{
+			"detail": "node=SelectionRectOverlay api=true visible=false rect=[P: (0.0, 0.0), S: (0.0, 0.0)] expected=[P: (395.262, 273.5391), S: (521.8215, 184.3488)]",
+			"expected_pre_fix_failure": true,
+			"name": "overlay_hidden_after_release",
+			"passed": true
+		},
+		{
+			"detail": "selected=[10, 11] expected=[10,11] (12/13 outside; building 14 excluded by kind)",
+			"expected_pre_fix_failure": false,
+			"name": "selected_ids_exact",
+			"passed": true
+		},
+		{
+			"detail": "e10.selected=true",
+			"expected_pre_fix_failure": false,
+			"name": "unit10_selected",
+			"passed": true
+		},
+		{
+			"detail": "e11.selected=true",
+			"expected_pre_fix_failure": false,
+			"name": "unit11_selected",
+			"passed": true
+		},
+		{
+			"detail": "e12.selected=false",
+			"expected_pre_fix_failure": false,
+			"name": "unit12_not_selected",
+			"passed": true
+		},
+		{
+			"detail": "e13.selected=false",
+			"expected_pre_fix_failure": false,
+			"name": "unit13_not_selected",
+			"passed": true
+		},
+		{
+			"detail": "building id=14 kind=building player=0 selected=false",
+			"expected_pre_fix_failure": false,
+			"name": "building_not_selected",
+			"passed": true
+		},
+		{
+			"detail": "building pos=(64.0, 64.0) in ground rect=[P: (52.0, 56.00002), S: (24.0, 15.99998)] yet not selected (kind filter)",
+			"expected_pre_fix_failure": false,
+			"name": "building_inside_rect_but_excluded_by_kind",
+			"passed": true
+		},
+		{
+			"detail": "cmd_calls={  }",
+			"expected_pre_fix_failure": false,
+			"name": "cmd_counter_zero_after_drag",
+			"passed": true
+		},
+		{
+			"detail": "path=C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42/d03_selquad_after.png w=1280 h=720 reason=written",
+			"expected_pre_fix_failure": false,
+			"name": "capture_after_ok",
+			"passed": true
+		},
+		{
+			"detail": "edge_hits=4/4 corner_hits=4/4 (need >=3 and >=2); rect=[P: (395.262, 273.5391), S: (521.8215, 184.3488)]",
+			"expected_pre_fix_failure": false,
+			"name": "quad_visible_during_pixels",
+			"passed": true
+		},
+		{
+			"detail": "all_hits_in_grow2=true stray=[] rows=[274, 366, 458]",
+			"expected_pre_fix_failure": false,
+			"name": "quad_position_pixels",
+			"passed": true
+		},
+		{
+			"detail": "centre_during=(0.2745, 0.2627, 0.1922, 1.0) baseline=(0.2745, 0.2627, 0.1922, 1.0) delta=0.0000 (limit 0.0314)",
+			"expected_pre_fix_failure": false,
+			"name": "quad_no_fill_pixels",
+			"passed": true
+		},
+		{
+			"detail": "hits=8 max_delta=0.0000 limit=0.0627 configured=[1, 1, 0, 1] override_declared=false",
+			"expected_pre_fix_failure": false,
+			"name": "quad_colour_pixels",
+			"passed": true
+		},
+		{
+			"detail": "checked=8 all_clear=true (not yellow and <=8/255 vs baseline)",
+			"expected_pre_fix_failure": false,
+			"name": "quad_hidden_after_pixels",
+			"passed": true
+		},
+		{
+			"detail": "during(visible=true rect=[P: (395.262, 273.5391), S: (521.8215, 184.3488)]) after(visible=false rect=[P: (0.0, 0.0), S: (0.0, 0.0)]) expected=[P: (395.262, 273.5391), S: (521.8215, 184.3488)]",
+			"expected_pre_fix_failure": false,
+			"name": "overlay_rect_matches_pixels",
+			"passed": true
+		},
+		{
+			"detail": "selected=[10] expected=[10] (no click-pick regression)",
+			"expected_pre_fix_failure": false,
+			"name": "short_click_selects_single_unit",
+			"passed": true
+		},
+		{
+			"detail": "cmd_calls={  }",
+			"expected_pre_fix_failure": false,
+			"name": "cmd_counter_zero_after_click",
+			"passed": true
+		}
+	],
+	"donor_semantics": {
+		"drag_crosses_both": true,
+		"drag_start": "first LMB-held move (DSEL-01 claim 3)",
+		"port_screen_threshold_px": 6.0,
+		"shift": "add / spmAdd (DSEL-01 claim 4) — port drag ignores Shift (claim 27); declared divergence, not asserted here",
+		"world_epsilon_m": 0.005
+	},
+	"during_yellow_hits": [
+		{
+			"hit": true,
+			"name": "top",
+			"probe": [
+				656,
+				274
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 655,
+			"y": 273
+		},
+		{
+			"hit": true,
+			"name": "bottom",
+			"probe": [
+				656,
+				458
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 655,
+			"y": 457
+		},
+		{
+			"hit": true,
+			"name": "left",
+			"probe": [
+				395,
+				366
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 395,
+			"y": 365
+		},
+		{
+			"hit": true,
+			"name": "right",
+			"probe": [
+				917,
+				366
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 917,
+			"y": 365
+		},
+		{
+			"hit": true,
+			"name": "top_left",
+			"probe": [
+				395,
+				274
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 395,
+			"y": 273
+		},
+		{
+			"hit": true,
+			"name": "top_right",
+			"probe": [
+				917,
+				274
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 916,
+			"y": 273
+		},
+		{
+			"hit": true,
+			"name": "bottom_left",
+			"probe": [
+				395,
+				458
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 395,
+			"y": 457
+		},
+		{
+			"hit": true,
+			"name": "bottom_right",
+			"probe": [
+				917,
+				458
+			],
+			"rgba": [
+				1.0,
+				1.0,
+				0.0,
+				1.0
+			],
+			"x": 916,
+			"y": 457
+		}
+	],
+	"id": "t_select_rect_capture",
+	"marquee_color": [
+		1,
+		1,
+		0,
+		1
+	],
+	"marquee_override_declared": false,
+	"marquee_width_px": 1,
+	"measured": {
+		"camera_target_after_jump": "(64.0, 64.0)",
+		"capture_dir": "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42",
+		"capture_view3d_px": [
+			1280.0,
+			720.0
+		],
+		"click_px": [
+			512.028930664063,
+			337.395263671875
+		],
+		"config": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tests\\fixtures\\small_map_64.json",
+		"drag_px_distance": 553.427673339844,
+		"drag_world_delta_m": 24.0,
+		"entity_projected_px": {
+			"10": [
+				512.028930664063,
+				337.395263671875
+			],
+			"11": [
+				729.407104492188,
+				407.378570556641
+			],
+			"12": [
+				842.471130371094,
+				263.43603515625
+			],
+			"13": [
+				407.173889160156,
+				471.041107177734
+			],
+			"14": [
+				640.0,
+				360.0
+			]
+		},
+		"entity_sim_positions": {
+			"10": [
+				58.0,
+				62.0
+			],
+			"11": [
+				68.0,
+				68.0
+			],
+			"12": [
+				74.0,
+				55.0
+			],
+			"13": [
+				54.0,
+				73.0
+			],
+			"14_building": [
+				64.0,
+				64.0
+			]
+		},
+		"event_coord_scale": [
+			1.0,
+			1.0
+		],
+		"headless": false,
+		"marquee_color": [
+			1,
+			1,
+			0,
+			1
+		],
+		"marquee_override_declared": false,
+		"marquee_width_px": 1,
+		"measured_ground_rect": [
+			52.0,
+			56.0000152587891,
+			76.0,
+			72.0
+		],
+		"overlay_after": {
+			"found": true,
+			"has_api": true,
+			"node": "SelectionRectOverlay",
+			"rect": [
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"visible": false
+		},
+		"overlay_during": {
+			"found": true,
+			"has_api": true,
+			"node": "SelectionRectOverlay",
+			"rect": [
+				395.261993408203,
+				273.539093017578,
+				521.821533203125,
+				184.348815917969
+			],
+			"visible": true
+		},
+		"overlay_name": "SelectionRectOverlay",
+		"overlay_parent": "Screenshot3DViewport",
+		"overlay_parent_is_capture_view3d": true,
+		"p0_px": [
+			395.261993408203,
+			273.539093017578
+		],
+		"p1_px": [
+			917.083557128906,
+			457.887908935547
+		],
+		"projection_viewport_px": [
+			1280.0,
+			720.0
+		],
+		"root_viewport_px": [
+			1280.0,
+			720.0
+		],
+		"screenshot_arg": "C:\\Users\\MAXYM~1.OBO\\AppData\\Local\\Temp\\opencode\\v42\\selquad_menu_skip.png",
+		"viewport_px": [
+			1280.0,
+			720.0
+		],
+		"world_sel_active_after": false,
+		"world_sel_active_during": true,
+		"world_sel_rect_during": [
+			52.0,
+			56.0000152587891,
+			25.5857162475586,
+			15.9999847412109
+		]
+	},
+	"overlay_parent": "Screenshot3DViewport",
+	"overlay_parent_is_capture_view3d": true,
+	"parity_label": "PORT APPROXIMATION — internal visual evidence only; no donor GPU A/B frame; donor parity UNVERIFIED",
+	"passed": true,
+	"passes": 37,
+	"pixel_samples": {
+		"after_vs_baseline": [
+			{
+				"after": "(0.302, 0.3529, 0.1922, 1.0)",
+				"baseline": "(0.302, 0.3529, 0.1922, 1.0)",
+				"delta": 0.0,
+				"x": 655,
+				"y": 273
+			},
+			{
+				"after": "(0.2706, 0.2745, 0.1529, 1.0)",
+				"baseline": "(0.2706, 0.2745, 0.1529, 1.0)",
+				"delta": 0.0,
+				"x": 655,
+				"y": 457
+			},
+			{
+				"after": "(0.2863, 0.2667, 0.2314, 1.0)",
+				"baseline": "(0.2863, 0.2667, 0.2314, 1.0)",
+				"delta": 0.0,
+				"x": 395,
+				"y": 365
+			},
+			{
+				"after": "(0.3059, 0.2863, 0.2549, 1.0)",
+				"baseline": "(0.3059, 0.2863, 0.2549, 1.0)",
+				"delta": 0.0,
+				"x": 917,
+				"y": 365
+			},
+			{
+				"after": "(0.2902, 0.2627, 0.2431, 1.0)",
+				"baseline": "(0.2902, 0.2627, 0.2431, 1.0)",
+				"delta": 0.0,
+				"x": 395,
+				"y": 273
+			},
+			{
+				"after": "(0.2549, 0.2588, 0.1569, 1.0)",
+				"baseline": "(0.2549, 0.2588, 0.1569, 1.0)",
+				"delta": 0.0,
+				"x": 916,
+				"y": 273
+			},
+			{
+				"after": "(0.2392, 0.2431, 0.1451, 1.0)",
+				"baseline": "(0.2392, 0.2431, 0.1451, 1.0)",
+				"delta": 0.0,
+				"x": 395,
+				"y": 457
+			},
+			{
+				"after": "(0.2745, 0.2902, 0.1451, 1.0)",
+				"baseline": "(0.2745, 0.2902, 0.1451, 1.0)",
+				"delta": 0.0,
+				"x": 916,
+				"y": 457
+			}
+		],
+		"centre": [
+			656,
+			366
+		],
+		"centre_baseline": "(0.2745, 0.2627, 0.1922, 1.0)",
+		"centre_delta": 0.0,
+		"centre_during": "(0.2745, 0.2627, 0.1922, 1.0)",
+		"corners": [
+			{
+				"hit": true,
+				"name": "top_left",
+				"probe": [
+					395,
+					274
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 395,
+				"y": 273
+			},
+			{
+				"hit": true,
+				"name": "top_right",
+				"probe": [
+					917,
+					274
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 916,
+				"y": 273
+			},
+			{
+				"hit": true,
+				"name": "bottom_left",
+				"probe": [
+					395,
+					458
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 395,
+				"y": 457
+			},
+			{
+				"hit": true,
+				"name": "bottom_right",
+				"probe": [
+					917,
+					458
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 916,
+				"y": 457
+			}
+		],
+		"edge_midpoints": [
+			{
+				"hit": true,
+				"name": "top",
+				"probe": [
+					656,
+					274
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 655,
+				"y": 273
+			},
+			{
+				"hit": true,
+				"name": "bottom",
+				"probe": [
+					656,
+					458
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 655,
+				"y": 457
+			},
+			{
+				"hit": true,
+				"name": "left",
+				"probe": [
+					395,
+					366
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 395,
+				"y": 365
+			},
+			{
+				"hit": true,
+				"name": "right",
+				"probe": [
+					917,
+					366
+				],
+				"rgba": [
+					1.0,
+					1.0,
+					0.0,
+					1.0
+				],
+				"x": 917,
+				"y": 365
+			}
+		],
+		"expected_rect": [
+			395.261993408203,
+			273.539093017578,
+			521.821533203125,
+			184.348815917969
+		],
+		"max_colour_delta": 0.0,
+		"overlay_logic_after": {
+			"rect": [
+				0.0,
+				0.0,
+				0.0,
+				0.0
+			],
+			"visible": false
+		},
+		"overlay_logic_during": {
+			"rect": [
+				395.261993408203,
+				273.539093017578,
+				521.821533203125,
+				184.348815917969
+			],
+			"visible": true
+		},
+		"row_yellow_counts": [
+			2,
+			2,
+			0
+		],
+		"scanned_rows": [
+			274,
+			366,
+			458
+		],
+		"stray_yellow": []
+	},
+	"run_mode": "windowed_real_input",
+	"runner_declaration": "G01/WAVE-G: to be executed by G04 (sole runner owner), windowed, unique job id; see D03_selection_probe.md §5/§8",
+	"total": 37,
+	"unix_ms": 1795794865311.0
+}

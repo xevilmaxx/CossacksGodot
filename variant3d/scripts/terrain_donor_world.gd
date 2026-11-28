@@ -286,6 +286,7 @@ func bind(g, _h = null) -> void:
 
 
 func build() -> bool:
+	C3Log.info("terrain", "world.build begin")
 	_built = false
 	_gen_applied = false
 	_props_applied = false
@@ -335,6 +336,17 @@ func build() -> bool:
 		_gen_applied = _call_adapt(_gen, "generate", [_data, gen_params])
 		if not _gen_applied:
 			_gen_applied = _call_adapt(_gen, "run", [_data, gen_params])
+		C3Log.info("terrain", "world.build gen applied=%s params=%d" % [str(_gen_applied), gen_params.size()])
+		# TILE-HANDOFF-DIAG: print-only tex distinct count after I07.
+		if _data != null and _data is Object and (_data as Object).has_method("to_live"):
+			var _lv: Variant = (_data as Object).call("to_live")
+			if _lv is Dictionary and (_lv as Dictionary).has("tex") and ((_lv as Dictionary)["tex"]) is PackedByteArray:
+				var _tb: PackedByteArray = (_lv as Dictionary)["tex"]
+				var _dc: Dictionary = {}
+				for _i in range(_tb.size()):
+					var _v := int(_tb[_i])
+					_dc[_v] = int(_dc.get(_v, 0)) + 1
+				C3Log.debug("terrain", "data.after_gen tex n=%d distinct=%d counts=%s" % [_tb.size(), _dc.size(), str(_dc)])
 	# I08: the known contract — bind(game, data), build() -> bool, ONE mesh.
 	var mesh_ok := false
 	if _mesh != null and _mesh is Object:
@@ -353,6 +365,7 @@ func build() -> bool:
 			target.callv("bind", [game, mesh_src])
 		if target.has_method("build"):
 			mesh_ok = bool(target.call("build"))
+			C3Log.info("terrain", "world.build mesh build=%s" % str(mesh_ok))
 	# COORD addendum: I07's donor stamp Dictionaries take precedence. Legacy
 	# game.pattern_stamps remain the fallback and still use Stamp Object adaption.
 	var stamps_v: Variant = _prop(game, "pattern_stamps")

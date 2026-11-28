@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cnh7p42l6sgm4"
+path="res://.godot/imported/eurmar_death1.obj-8e9b9b67f9555bb58f3a78254d3b05ed.mesh"
+
+[deps]
+
+files=["res://.godot/imported/eurmar_death1.obj-8e9b9b67f9555bb58f3a78254d3b05ed.mesh"]
+
+source_file="res://assets/models/buildings/models/eurmar_death1.obj"
+dest_files=["res://.godot/imported/eurmar_death1.obj-8e9b9b67f9555bb58f3a78254d3b05ed.mesh", "res://.godot/imported/eurmar_death1.obj-8e9b9b67f9555bb58f3a78254d3b05ed.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

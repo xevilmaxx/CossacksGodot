@@ -4,14 +4,14 @@ importer="wavefront_obj"
 importer_version=1
 type="Mesh"
 uid="uid://c3vsmbtmognut"
-path="res://.godot/imported/hou4a.obj-3a0097077dff9108de835e927234bfcb.mesh"
+path="res://.godot/imported/hou4a.obj-b81c5eb2e4aa94c5318d9201bddb16d6.mesh"
 
 [deps]
 
-files=["res://.godot/imported/hou4a.obj-3a0097077dff9108de835e927234bfcb.mesh"]
+files=["res://.godot/imported/hou4a.obj-b81c5eb2e4aa94c5318d9201bddb16d6.mesh"]
 
-source_file="res://assets/models/obj/shared/buildings/hou4a.obj"
-dest_files=["res://.godot/imported/hou4a.obj-3a0097077dff9108de835e927234bfcb.mesh", "res://.godot/imported/hou4a.obj-3a0097077dff9108de835e927234bfcb.mesh"]
+source_file="res://assets/models/obj/ukr/buildings/hou4a.obj"
+dest_files=["res://.godot/imported/hou4a.obj-b81c5eb2e4aa94c5318d9201bddb16d6.mesh", "res://.godot/imported/hou4a.obj-b81c5eb2e4aa94c5318d9201bddb16d6.mesh"]
 
 [params]
 

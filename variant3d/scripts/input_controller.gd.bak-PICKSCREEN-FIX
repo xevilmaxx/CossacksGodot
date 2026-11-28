@@ -1,0 +1,1891 @@
+﻿# Mouse + keyboard control: selection, orders, build placement, hotkeys.
+# Bindings follow the original data/game/var/hotkeys.cfg.
+extends Node
+class_name C3Input
+
+# ─── DEC-U-FOG-CAMERA-HUD §4 — IMPL-FOG-HUD selection-law layer ────────────────
+# Authority: docs/terrain_swarm_2026-11-26/reports/DEC_U_fog_camera_hud.md.
+# [O] control.script:156-274 (_control_GetUnitUnderCursor): early-out on
+#     GetGUIMinimapUnderMouse; Playable ∧ Visible ∧ CollisionDetection;
+#     RayCastAABB(cPos->mPos); priority table dmscript.global:227-233
+#     (my=1, wood=2, food=3, stone=4, goinside=5, build=6, enemy=7);
+#     winner = min((1+dist)/prio) with XZ distance (misc.script:663-669);
+#     FOW veto (not GetFOWEnable) or GetFOWLOSData(x,z)>0 (:270-273).
+# [O] control.script:30-31 / misc.script:6418-6470 write protocol:
+#     Begin -> Start('spmRunTime') -> SetGameObjectPicked* -> Cancel-once,
+#     with TSquad.fSelected vs gSelectedObjects split.
+# [O] brushes/selection.cfg:1 — yellow RGBA(1,1,0,1), 1 px, solid, LineStep=1.
+# UNRESOLVED [U] — NOT substituted: V2-BOX marquee inside predicate, V2-PROJ
+#     screen->world rect, engine ray/LOS; picking3d.gd remains the 3D candidate
+#     source and needs the exact patch in IMPL-FOG-HUD's report. NO PARITY CLAIM.
+const Data = preload("res://scripts/data.gd")
+const ConfigScript = preload("res://scripts/config.gd")
+
+# Donor selection priority table — dmscript.global:227-233 [O].
+const DONOR_PICK_MY: int = 1
+const DONOR_PICK_WOOD: int = 2
+const DONOR_PICK_FOOD: int = 3
+const DONOR_PICK_STONE: int = 4
+const DONOR_PICK_GOINSIDE: int = 5
+const DONOR_PICK_BUILD: int = 6
+const DONOR_PICK_ENEMY: int = 7
+# Donor selection write protocol mode — control.script:30-31 [O].
+const DONOR_SELECTION_MODE: String = "spmRunTime"
+# DEC-U-SELECTION IMPL-SELECTION: drag/Shift union mode — onmousemove.inc:156-157
+# [O] `GameManagerStartSelection('spmAdd')` when GetGUIShiftStateShift, else
+# 'spmRunTime' (:162). The port keeps its existing Shift-union set logic; only
+# the protocol mode string is threaded through, null-safe as before.
+const DONOR_SELECTION_MODE_ADD: String = "spmAdd"
+# control.script:180 [O] — `var prio : Float = 0.5`, the live per-candidate
+# seed overwritten per arm (§1.1(4)/§1.2). RECONCILIATION: IMPL-FOG-PATCHES
+# removed `DEC_U_PICK_PRIO_SEED=0.5` as an UN-CITED blanket per-baseid estimate.
+# This constant is the re-read donor line, routed ONLY through the donor's
+# nil/unknown overwrite arms below; it is labelled donor data, not the old
+# approximation. Reachability of those arms stays [U] E-U13-pick (§2.1(b)).
+const DONOR_PICK_SEED: float = 0.5
+
+var game: C3Game
+# V7-52: world/camera are untyped so 3D mode can receive the Node3D world and
+# Camera3D that main.gd (V7-50) builds. 2D mode still binds C3World/C3Camera and
+# runs byte-identically; only the static annotations are relaxed, no symbols change.
+var world = null
+var hud: C3HUD
+var camera = null
+# V7-52 integration seam (V73_ATOMIC_CONTRACT.md:22). "2d" (DEFAULT) keeps the
+# original internals; "3d" routes ONLY _screen_to_world/_pick/_pick_res through
+# picking3d.gd. All game.cmd_* calls, hotkeys, control groups, build ghost and
+# order semantics are untouched. main.gd (V7-50) calls bind_3d(cam) after bind()
+# when gameplay.render_mode == "3d"; this file does NOT edit main.gd.
+var render_mode: String = "2d"
+var picking = null            # picking3d instance, created by bind_3d() only
+# Raw screen pixel that produced the latest _screen_to_world() result. picking3d
+# takes SCREEN pixels (not sim metres), yet every inherited call site feeds the
+# returned world point `pw` to _pick/_pick_res. Recording the source pixel here
+# lets those internals switch adapters without editing a single call site.
+var _pick_screen: Vector2 = Vector2.INF
+var selected_ids: Array = []
+var drag_start := Vector2.INF
+var dragging := false
+# SEL-01: donor drag state. onmousemove.inc:141-147 records the ground anchor on
+# the FIRST LMB-held MOVE (not on press); :152 compares axis-wise X/Z deltas.
+var _sel_ground_start := Vector2.INF
+var _drag_current := Vector2.INF
+# B05 / D04 §7 hunks 1/5/6/7/8: frozen SIM-ground anchor of the marquee, captured
+# ONCE on LMB press with the same pixel the yellow outline starts from. The old
+# code re-unprojected `drag_start` on every frame, so a camera pan/zoom mid-drag
+# slid the world rect away from the visible box. Donor freezes prevSelX/Z
+# (onmousemove.inc:145-146); the separate first-move _sel_ground_start keeps the
+# two-phase epsilon reference. PORT APPROXIMATION: donor's geometric anchor is
+# the first-move ground point, not the press point (DSEL-01 claim 3).
+# [U] U16 / skirmish_logic §9: engine-side inside-box predicate and world→px
+# projection are UNVERIFIED. Decomp plan: Ghidra + GL trace (audit Q-4) to
+# recover the predicate and projection; keep the painter labelled until then.
+var _rect_ground_anchor := Vector2.INF
+# SEL-01: viewport-pixel marquee overlay, created by bind_3d() only.
+var sel_rect_overlay = null
+var attack_move_mode := false
+var ghost_sid := ""
+var hotkeys: Dictionary = {}      # action -> key
+var build_keys: Dictionary = {}    # building id -> key
+var rally_mode := false
+var cursor_tex: Dictionary = {}
+var cursor_now := ""
+# T-PERF-RENDER: hover-scan throttle state for _update_cursor().
+var _cursor_mouse := Vector2.INF
+var _cursor_t_ms := -100000
+var _cursor_sel_n := -1
+var attack_ground_mode := false
+var groups: Dictionary = {}
+var last_click_t := 0.0
+var last_click_sid := ""
+# MICRO #6 / P-33: P waits for two route clicks; G waits for a friendly
+# building. The route overlay is a child of world.fx_layer (no world.gd edit).
+var patrol_mode := false
+var patrol_a := Vector2.INF
+var patrol_b := Vector2.INF
+var guard_mode := false
+var route_node: Node2D = null
+# FIX-SEL: 3D patrol/guard route overlay. A Node2D child of world3d.gd's Node3D
+# fx_layer (world3d.gd:119,604-606) never renders; the 3D branch draws an
+# ImmediateMesh in centred world metres instead. The 2D route_node path below
+# stays byte-identical.
+var route_mesh_node: MeshInstance3D = null
+# T-NAV-RESPONSIVE: minimap geometry is cached. It only changes when the
+# viewport resizes or hud.gd resizes/rebuilds its TextureRect â€” never on mouse
+# events â€” so the per-event path does no Control/layout math or allocations.
+var _mm_rect := Rect2()
+var _mm_rect_dirty := true
+var _mm_dragging := false
+# W3-2: hold a refusal/confirmation hint for a couple of seconds instead of
+# letting the next _process frame overwrite it with "" (or the ghost prompt).
+var _hint_hold_ms := 0
+# W4-2: wheel-delta accumulator. Input translation only (no tween/easing):
+# coalesce fractional high-resolution wheel deltas into whole notch requests.
+var _wheel_accum := 0.0
+
+# --- SEL-01: viewport-pixel selection marquee (labelled PORT APPROXIMATION) ---
+# Donor outline: RGBA(1,1,0,1), 1 px solid, no fill, AntiAliased=False
+# (data\brushes\selection.cfg:3-14, bound at data\resources\resource.lib:47;
+# confirmed by RV-SEL-01 Â§"Visual (authoritative, exact)"). The donor's native
+# inside-box predicate is engine-side/UNVERIFIED, so this outline approximates
+# the donor visual; it is NOT donor parity. It draws the authoritative screen
+# pixels already held here - never world.sel_rect (SIM metres) projected through
+# camera3d.world_to_px(), which expects centred metres (PLAY2FIX_navbox.md:14-29).
+class SelectionRectPainter extends Node2D:
+	var rect_px: Rect2 = Rect2()
+
+	func _draw() -> void:
+		if not rect_px.has_area():
+			return
+		# CONFIG-WIRE-SEL: donor yellow / solid / 1 px defaults now read from the
+		# active feature config; with defaults the draw call is unchanged.
+		# selection.cfg:3-14 - yellow, width 1, solid outline, no fill, no AA.
+		var col: Array = [1, 1, 0, 1]
+		var width := 1.0
+		var cfg = ConfigScript.active
+		if cfg != null:
+			col = cfg.feature_selection_marquee_color()
+			width = float(cfg.feature_selection_marquee_width_px())
+		draw_rect(rect_px, Color(float(col[0]), float(col[1]), float(col[2]), float(col[3])), false, width, false)
+
+
+class SelectionRectOverlay extends CanvasLayer:
+	var selection_rect: Rect2 = Rect2()
+	var _painter: SelectionRectPainter = null
+
+	func _init() -> void:
+		name = "SelectionRectOverlay"
+		set_meta("sel_rect_overlay", true)
+		layer = 10
+		visible = false
+
+	func _ready() -> void:
+		_painter = SelectionRectPainter.new()
+		_painter.name = "SelectionRectPainter"
+		add_child(_painter)
+
+	func get_selection_rect() -> Rect2:
+		return selection_rect
+
+	func set_selection_rect(r: Rect2) -> void:
+		selection_rect = r
+		visible = r.has_area()
+		if _painter != null and is_instance_valid(_painter):
+			_painter.rect_px = r
+			_painter.queue_redraw()
+
+
+func bind(g: C3Game, w, h: C3HUD, cam) -> void:
+	game = g
+	world = w
+	hud = h
+	camera = cam
+	_read_hotkeys()
+	for cn in ["default", "attack", "captureattack", "artillery", "patrol", "construct", "gainfood", "gainwood", "gainstone", "gotomine", "wait"]:
+		var p := "res://assets/ui/cursor_%s.bmp" % cn
+		if FileAccess.file_exists(p):
+			cursor_tex[cn] = load(p)
+	# X1 rank 5: donor rally mode uses the crSetRallyPoint cursor. No donor art
+	# is copied; tint the existing gotomine/construct cursor cyan-green instead.
+	var rbase: Texture2D = cursor_tex.get("gotomine", cursor_tex.get("construct", null))
+	# Imported BMPs are CompressedTexture2D, not ImageTexture; Texture2D.get_image()
+	# works for both (and is null on an uninitialised placeholder).
+	if rbase != null:
+		var src: Image = rbase.get_image()
+		if src != null and src.get_width() > 0:
+			var tinted: Image = src.duplicate()
+			for ty in tinted.get_height():
+				for tx in tinted.get_width():
+					var c: Color = tinted.get_pixel(tx, ty)
+					tinted.set_pixel(tx, ty, Color(c.r * 0.35, minf(1.0, c.g * 1.15), minf(1.0, c.b * 1.25 + 0.15), c.a))
+			cursor_tex["rally"] = ImageTexture.create_from_image(tinted)
+	_set_cursor("default")
+	# Draw the patrol route on the existing fx layer; a child node keeps this
+	# feature entirely inside input_controller.gd (world.gd is not owned here).
+	# FIX-SEL: the 3D world is a Node3D, so use a mesh overlay there; the 2D
+	# branch is unchanged (same Node2D + draw signal as before).
+	_ensure_route_overlay()
+	add_to_group("c3_input")
+	# T-NAV-RESPONSIVE: invalidate the cached minimap rect only on real layout
+	# changes, not on every mouse-motion event.
+	if get_viewport() != null:
+		get_viewport().size_changed.connect(_invalidate_minimap_rect)
+	if hud != null and hud.minimap_rect != null and is_instance_valid(hud.minimap_rect):
+		hud.minimap_rect.resized.connect(_invalidate_minimap_rect)
+
+# V7-52 PUBLIC HANDOFF for main.gd (V7-50). Call AFTER bind(game, world, hud, cam).
+# `cam` is the Camera3D returned by make_camera3d(); the 3D world is the Node3D
+# already passed as `world`. This method ONLY wires the picking adapter and flips
+# render_mode â€” it does not touch any cmd_*, hotkey, group or build-ghost code.
+# Loading is dynamic (no class_name), per V712 report Â§5.
+func bind_3d(cam) -> void:
+	var PickingScript = load("res://scripts/picking3d.gd")
+	if PickingScript == null:
+		push_error("V7-52: res://scripts/picking3d.gd missing; keeping 2D internals")
+		return
+	if picking == null:
+		picking = PickingScript.new()
+		add_child(picking)
+	# Keep the shared `camera` handle on the 3D cam so zoom/minimap/group code
+	# keeps working (those call sites are unchanged).
+	camera = cam
+	picking.bind(game, cam)
+	render_mode = "3d"
+	_ensure_selection_rect_overlay()
+
+# SEL-01: the marquee lives entirely in this file (world3d.gd / hud.gd stay
+# untouched). CanvasLayer + Node2D have no mouse_filter and never consume input.
+func _ensure_selection_rect_overlay() -> void:
+	if render_mode != "3d":
+		return
+	if sel_rect_overlay != null and is_instance_valid(sel_rect_overlay):
+		return
+	sel_rect_overlay = SelectionRectOverlay.new()
+	add_child(sel_rect_overlay)
+
+func _show_selection_rect(r: Rect2) -> void:
+	if sel_rect_overlay == null or not is_instance_valid(sel_rect_overlay):
+		return
+	# B05 / D04 §7 hunk 4 (PORT APPROXIMATION): r arrives in VIEWPORT (event)
+	# pixels, while the CanvasLayer painter draws in CANVAS pixels. Invert the
+	# live canvas transform exactly as the 2D _screen_to_world() does below, so
+	# a non-1280 canvas_items/expand window cannot offset or rescale the yellow
+	# outline away from the cursor. Identity at 1280x720. CanvasLayer + Node2D
+	# consume no input; no mouse_filter change is needed.
+	# NOTE: t_select_rect.gd:525 encodes a wrong Rect2(position, end_px)
+	# expectation, so its overlay_rect_during_drag assertion needs a TEST-owner
+	# update after this fix (see B05 report); the game code is correct.
+	var canvas_r := r
+	var vp := get_viewport()
+	if vp != null:
+		var xf: Transform2D = vp.get_canvas_transform().affine_inverse()
+		canvas_r = Rect2(xf * r.position, xf.basis_xform(r.size))
+	sel_rect_overlay.call("set_selection_rect", canvas_r)
+
+func _hide_selection_rect() -> void:
+	if sel_rect_overlay == null or not is_instance_valid(sel_rect_overlay):
+		return
+	sel_rect_overlay.call("set_selection_rect", Rect2())
+
+# B05 (stuck-quad fix): ONE teardown for every way a drag can end — normal
+# LMB-up, minimap release/press, moving the pointer onto the minimap, build
+# ghost armed mid-drag. The old release path could be bypassed by the minimap
+# early return, leaving drag_start/dragging set so _process painted the box
+# forever. Clearing ALL fields everywhere makes that impossible.
+func _cancel_drag() -> void:
+	drag_start = Vector2.INF
+	dragging = false
+	_sel_ground_start = Vector2.INF
+	_rect_ground_anchor = Vector2.INF
+	_drag_current = Vector2.INF
+	_hide_selection_rect()
+
+# Donor epsilon: 0.005 m default, 0.25 m in attack-point / guard mode
+# (data\gui\menu.inc\onmousemove.inc:32-34, :152). This script's equivalents
+# are attack_ground_mode (:42) and guard_mode (:51). SEL-01 also raises the
+# double-click window 0.35 s -> 0.5 s (data\gui\menu.cfg:33, KeyDoubleDelay).
+# CONFIG-WIRE-SEL: both thresholds now read through the existing config getters;
+# the literal fallbacks are the same defaults, so behaviour is unchanged when
+# no config instance is active (e.g. isolated unit tests).
+func _selection_epsilon_m() -> float:
+	var cfg = ConfigScript.active
+	if attack_ground_mode or guard_mode:
+		return cfg.feature_selection_attack_epsilon_m() if cfg != null else 0.25
+	return cfg.feature_selection_world_epsilon_m() if cfg != null else 0.005
+
+# CONFIG-WIRE-SEL: donor double-click window (menu.cfg:33 KeyDoubleDelay = 0.5 s)
+# via the existing config getter; identical literal fallback when cfg is absent.
+func _double_click_s() -> float:
+	var cfg = ConfigScript.active
+	return cfg.feature_selection_double_click_s() if cfg != null else 0.5
+
+# FIX-SEL: attach the route overlay to the world's FX layer. 2D (Node2D world)
+# keeps the original Node2D + draw-signal path byte-for-byte; 3D (Node3D world)
+# gets a MeshInstance3D/ImmediateMesh because a Node2D child of a Node3D tree
+# never renders. Called from bind(); also callable by tests directly.
+func _ensure_route_overlay() -> void:
+	if world == null or world.fx_layer == null:
+		return
+	if world is Node3D and world.fx_layer is Node3D:
+		if route_mesh_node == null or not is_instance_valid(route_mesh_node):
+			route_mesh_node = MeshInstance3D.new()
+			route_mesh_node.name = "PatrolRoute3D"
+			var mat := StandardMaterial3D.new()
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			mat.albedo_color = Color(1.0, 0.86, 0.30, 0.95)
+			route_mesh_node.material_override = mat
+			world.fx_layer.add_child(route_mesh_node)
+	elif route_node == null:
+		route_node = Node2D.new()
+		route_node.z_index = 5
+		world.fx_layer.add_child(route_node)
+		route_node.draw.connect(_draw_patrol_route)
+
+# The bindings come from the global settings file (config.json); the ones in
+# the original data/game/var/hotkeys.cfg are the values it starts with.
+func _read_hotkeys() -> void:
+	hotkeys.clear()
+	build_keys.clear()
+	for action in Data.HOTKEYS:
+		var spec: Variant = Data.HOTKEYS[action]
+		if action == "build":
+			if spec is Dictionary:
+				for sid in spec:
+					build_keys[sid] = ConfigScript.parse_hotkey(str(spec[sid]))
+			continue
+		if spec is String:
+			hotkeys[action] = ConfigScript.parse_hotkey(str(spec))
+
+# Is this key press the one bound to that action?
+func _is(k: InputEventKey, action: String) -> bool:
+	if not hotkeys.has(action):
+		return false
+	return _matches(k, hotkeys[action])
+
+func _matches(k: InputEventKey, hk: Dictionary) -> bool:
+	if hk.is_empty():
+		return false
+	if k.keycode != int(hk.get("key", 0)):
+		return false
+	if bool(hk.get("ctrl", false)) != k.ctrl_pressed:
+		return false
+	if bool(hk.get("shift", false)) != k.shift_pressed:
+		return false
+	if bool(hk.get("alt", false)) != k.alt_pressed:
+		return false
+	return true
+
+# W3-2: show a HUD hint and stop the idle _process pass from erasing it on the
+# very next frame, so "Need 40 stone" / refund notes are actually readable.
+func _hint(text: String, hold_s := 2.5) -> void:
+	if hud != null and hud.has_method("show_hint"):
+		hud.show_hint(text)
+		_hint_hold_ms = Time.get_ticks_msec() + int(hold_s * 1000.0)
+
+func _price_hint(cost: Dictionary) -> String:
+	var parts: Array = []
+	for k in Data.RES_NAMES:
+		var rk := str(k)
+		if int(cost.get(rk, 0)) > 0:
+			parts.append("%d %s" % [int(cost[rk]), rk])
+	return ", ".join(parts)
+
+func get_selected() -> Array:
+	var out: Array = []
+	for id in selected_ids:
+		var e: Dictionary = game.by_id.get(id, {})
+		if not e.is_empty() and not e.dead:
+			out.append(e)
+	return out
+
+func _set_selection(arr: Array, mode: String = DONOR_SELECTION_MODE) -> void:
+	# DEC-U §1.4 [O] write protocol, in donor order:
+	# ClearGameManagerPickedObjects -> SetSquadsSelection(false) ->
+	# Begin -> Start(mode: 'spmRunTime' single / 'spmAdd' Shift-drag) ->
+	# per-handle Picked + squad fSelected split -> Cancel ONCE on last Picked ->
+	# UpdateSelection. Calls are null-safe no-ops when the port game has no
+	# donor GM bridge, so shipped behaviour is unchanged (R-SEL-PROTO).
+	_donor_selection_begin(mode)
+	for id in selected_ids:
+		var e: Dictionary = game.by_id.get(id, {})
+		if not e.is_empty():
+			e["selected"] = false
+	selected_ids = []
+	for e in arr:
+		selected_ids.append(e.id)
+		e["selected"] = true
+	game.bld_dirty += 1
+	_donor_squad_selected_split(arr)
+	_donor_selection_cancel()  # exactly once per apply, after the last Picked
+	hud.refresh_selection(get_selected())
+	# AUDIO-SEL-02: donor fires the selection acknowledgement on unit-control
+	# rebuild (gui\menu.inc\showunitcontrol.inc:1024-1027), i.e. ONCE per
+	# selection apply, not per unit and not every frame. Kind comes from the
+	# first selected entity: ship tokens / naval sids -> "ship", else "unit".
+	# Reach main's audio through the same c3_main group already used at
+	# :1093/:1098/:1123, and apply main.gd's exact can_play gate (:1675, :1756)
+	# so headless / audio-less runs stay silent.
+	var first: Dictionary = arr[0] if not arr.is_empty() else {}
+	var def: Dictionary = first.get("def", {})
+	var sid_lc := str(first.get("sid", "")).to_lower()
+	# Detection mirrors _select_ships() (:1016) plus audio.gd's naval sid set
+	# (SHIP_SELECT_KINDS, audio.gd:41-44); the clip table itself stays in audio.gd.
+	var is_ship := bool(def.get("ship", false)) or bool(def.get("naval", false)) \
+		or sid_lc.contains("ship") or sid_lc in ["yacht", "yachttur", "fishboat", "galley", "frigate", "xebec", "battleship", "cog"]
+	var kind := "ship" if is_ship else "unit"
+	var tree := get_tree()
+	if tree != null:
+		var m = tree.get_first_node_in_group("c3_main")
+		if m != null:
+			var snd = m.get("audio")
+			if snd != null and is_instance_valid(snd) and bool(snd.get_meta("can_play", false)) and snd.has_method("play_selection"):
+				snd.play_selection(kind, arr.size())
+
+# --- T-NAV-RESPONSIVE: minimap navigation ------------------------------------
+func _invalidate_minimap_rect() -> void:
+	_mm_rect_dirty = true
+
+# Cached screen-space rect of the minimap texture. hud.gd owns the live node;
+# we only read its global rect when a resize signal says it changed.
+func _minimap_screen_rect() -> Rect2:
+	if _mm_rect_dirty:
+		_mm_rect_dirty = false
+		_mm_rect = Rect2()
+		if hud != null and hud.minimap_rect != null and is_instance_valid(hud.minimap_rect) \
+				and hud.minimap_rect.is_visible_in_tree():
+			_mm_rect = hud.minimap_rect.get_global_rect()
+	return _mm_rect
+
+# Screen point -> map metres, using the same rect math as hud.gd. UVs are
+# clamped so a drag that slips off the minimap cannot keep pulling the camera.
+func _minimap_world(screen_pos: Vector2) -> Vector2:
+	var mm := _minimap_screen_rect()
+	if mm.size.x <= 0.0 or mm.size.y <= 0.0 or game == null:
+		return Vector2.INF
+	var u := clampf((screen_pos.x - mm.position.x) / mm.size.x, 0.0, 1.0)
+	var v := clampf((screen_pos.y - mm.position.y) / mm.size.y, 0.0, 1.0)
+	return Vector2(u * game.MAP_W, v * game.MAP_H) * Data.TILE_M
+
+# Instant click/drag reposition: one direct camera write + explicit dirty
+# hop, then camera.process_priority puts the move in front of world.sync() on
+# this very frame (no sim tick / MINIMAP_INTERVAL wait).
+func _minimap_reposition(screen_pos: Vector2) -> void:
+	var wp := _minimap_world(screen_pos)
+	if wp == Vector2.INF or camera == null or world == null:
+		return
+	# V7-66 P0: the 3D camera exposes a metre-space jump_to_world (camera3d.gd); call it
+	# dynamically so the 2D Camera2D path below stays byte-identical and is still the
+	# default (render_mode defaults to "2d" at :21). The old fallback wrote a Vector2
+	# into Camera3D.global_position and scaled metres by 16 px/m, bypassing _target and
+	# the clamp memo â€” a 3D no-op that snaps back on the next _apply_transform().
+	if render_mode == "3d":
+		camera.call("jump_to_world", wp)
+		return
+	if camera.has_method("jump_to_world"):
+		camera.jump_to_world(wp, world.view_scale)
+	else:
+		camera.global_position = wp * world.view_scale
+		camera.clamp_pos()
+		if camera.has_method("mark_dirty"):
+			camera.mark_dirty()
+
+func minimap_order(pos: Vector2) -> void:
+	var sel := get_selected().filter(func(e): return e.player == 0 and e.kind == "unit")
+	if sel.is_empty():
+		return
+	var any_enemy := false
+	for e in game.entities:
+		if not e.dead and e.player != 0 and e.pos.distance_to(pos) < 6.0:
+			any_enemy = true
+			break  # T-PERF-RENDER: one enemy is enough to pick attack-move
+	for e in sel:
+		if any_enemy and game.has_weapon(e):
+			game.cmd_attack_move(e, pos)
+		else:
+			game.cmd_move(e, pos)
+
+func command_from_hud(action: String) -> void:
+	var sel := get_selected()
+	match action:
+		"attack_move":
+			attack_move_mode = true
+			hud.show_hint("Attack-move: right-click the destination")
+		"stand_ground":
+			for e in sel:
+				game.cmd_stand_ground(e)
+		"hold_fire":
+			for e in sel:
+				game.cmd_hold_fire(e, true)
+		"feuer_frei":
+			for e in sel:
+				game.cmd_hold_fire(e, false)
+		"patrol":
+			begin_patrol_waypoints()
+		"guard":
+			begin_guard()
+		"stop":
+			for e in sel:
+				game.cmd_stop(e)
+		"select_idle_peasants":
+			select_idle_peasants()
+		"select_idle_mines":
+			select_idle_mines()
+
+# HUD top-bar buttons (donor eventresourcepanel.inc:35-36) reuse the same
+# select handlers as the idle-peasant / idle-mine hotkeys below.
+func select_idle_peasants() -> void:
+	var arr: Array = []
+	for e in game.units_of(0):
+		if e.sid == "peasant" and e.order.type == "none" and e.inside_of == 0:
+			arr.append(e)
+	_set_selection(arr)
+
+func select_idle_mines() -> void:
+	var arrm: Array = []
+	for b in game.buildings_of(0):
+		if b.sid.begins_with("mine_") and b.finished and int(b.workers) < int(b.get("slots", b.def.get("slots", 5))):
+			arrm.append(b)
+	_set_selection(arrm)
+
+# --- Micro #6: patrol waypoints and guard target ----------------------------
+func _clear_pending_modes() -> void:
+	attack_move_mode = false
+	attack_ground_mode = false
+	rally_mode = false
+	if hud != null:
+		hud.build_ghost_sid = ""
+
+func begin_patrol_waypoints() -> void:
+	patrol_mode = true
+	patrol_a = Vector2.INF
+	patrol_b = Vector2.INF
+	_clear_pending_modes()
+	_route_redraw()
+	if hud != null:
+		hud.show_hint("Patrol: click the first waypoint")
+
+# A missing second click falls back to the port's old +/-6 m segment.
+func _finish_patrol(b: Vector2) -> void:
+	var ordered := 0
+	for e in get_selected():
+		if e.player != 0 or e.kind != "unit":
+			continue
+		if patrol_a != Vector2.INF and b != Vector2.INF:
+			game.cmd_patrol(e, patrol_a, b)
+		else:
+			game.cmd_patrol(e, e.pos + Vector2(-6, 0), e.pos + Vector2(6, 0))
+		ordered += 1
+	patrol_mode = false
+	patrol_a = Vector2.INF
+	patrol_b = Vector2.INF
+	_route_redraw()
+	if hud != null:
+		# hint_label is cleared every frame once the mode ends; use the
+		# timed message line for the confirmation instead.
+		hud._on_message("Patrol order given to %d unit(s)" % ordered if ordered > 0 else "Patrol: no units selected")
+
+# Donor hotkeys.cfg binds G to BOTH guard and cancelguard. The sim now owns
+# cmd_cancel_guard (game.gd:2090); fall back to cmd_stop on an older build.
+func begin_guard() -> void:
+	var had_guard := false
+	for e in get_selected():
+		if e.player == 0 and e.kind == "unit" and str(e.order.get("type", "")) == "guard":
+			if game.has_method("cmd_cancel_guard"):
+				game.cmd_cancel_guard(e)
+			else:
+				game.cmd_stop(e)
+			had_guard = true
+	if guard_mode:
+		guard_mode = false
+		if hud != null:
+			hud.show_hint("")
+		return
+	if had_guard:
+		if hud != null:
+			hud._on_message("Guard cancelled")
+		return
+	guard_mode = true
+	_clear_pending_modes()
+	if hud != null:
+		hud.show_hint("Guard: click a friendly building to protect")
+
+func _draw_patrol_route() -> void:
+	if world == null or route_node == null or patrol_a == Vector2.INF:
+		return
+	# V7-52: explicit type guards â€” `world` is untyped (V71:197 relaxed-typing
+	# seam), so `:=` cannot infer these members; the values/behaviour are unchanged.
+	var a: Vector2 = world.world_to_px(patrol_a)
+	var end_world := patrol_b
+	if end_world == Vector2.INF:
+		end_world = _screen_to_world(get_viewport().get_mouse_position())
+	var b: Vector2 = world.world_to_px(end_world)
+	route_node.draw_line(a, b, Color(1.0, 0.86, 0.30, 0.95), 2.0)
+	for p in [a, b]:
+		route_node.draw_line(p, p + Vector2(0, -15), Color(0.96, 0.90, 0.70, 0.95), 1.5)
+		route_node.draw_colored_polygon([p + Vector2(0, -15), p + Vector2(11, -12), p + Vector2(0, -9)],
+			Color(1.0, 0.82, 0.22, 0.95))
+		route_node.draw_circle(p, 3.0, Color(1, 1, 1, 0.85))
+
+# FIX-SEL: 3D route redraw dispatch. 2D keeps its draw-signal path; 3D writes
+# an ImmediateMesh in the centred world frame used by world3d.gd/camera3d.gd.
+func _route_redraw() -> void:
+	if route_node != null and is_instance_valid(route_node):
+		route_node.queue_redraw()
+	elif route_mesh_node != null and is_instance_valid(route_mesh_node):
+		_draw_patrol_route3d()
+
+func _route_world(p: Vector2) -> Vector3:
+	# sim -> centred metres (world3d_entities.gd:783). Keep the marker just
+	# above the sampled ground so it is not z-fighting with the terrain.
+	var y := 0.18
+	if game != null and game.has_method("height_at"):
+		y += float(game.call("height_at", p))
+	return Vector3(p.x - float(game.MAP_W) * Data.TILE_M * 0.5,
+		y, p.y - float(game.MAP_H) * Data.TILE_M * 0.5)
+
+func _draw_patrol_route3d() -> void:
+	if route_mesh_node == null or not is_instance_valid(route_mesh_node) or game == null:
+		return
+	var im := route_mesh_node.mesh as ImmediateMesh
+	if im == null:
+		im = ImmediateMesh.new()
+		route_mesh_node.mesh = im
+	im.clear_surfaces()
+	if patrol_a == Vector2.INF:
+		return
+	var end_world := patrol_b
+	if end_world == Vector2.INF:
+		end_world = _screen_to_world(get_viewport().get_mouse_position())
+	if not is_finite(end_world.x) or not is_finite(end_world.y):
+		return
+	var a := _route_world(patrol_a)
+	var b := _route_world(end_world)
+	im.surface_begin(Mesh.PRIMITIVE_LINES)
+	im.surface_add_vertex(a)
+	im.surface_add_vertex(b)
+	# End ticks + a small arrow head, matching the 2D route markers.
+	for p in [a, b]:
+		im.surface_add_vertex(p)
+		im.surface_add_vertex(p + Vector3(0.0, 2.0, 0.0))
+	var back: Vector3 = a - b
+	if back.length() > 0.001:
+		back = back.normalized()
+		var side := Vector3(-back.z, 0.0, back.x)
+		im.surface_add_vertex(b)
+		im.surface_add_vertex(b + back * 3.0 + side * 1.5)
+		im.surface_add_vertex(b)
+		im.surface_add_vertex(b + back * 3.0 - side * 1.5)
+	im.surface_end()
+
+# B05 / D04 §7 hunk 2 (PORT APPROXIMATION): InputEvent pixels belong to the node's
+# viewport, but picking3d's rays are built in the Camera3D's projection viewport.
+# They coincide at 1280x720, which is why the green atoms never saw the defect;
+# a canvas_items/expand window at another size (or the screenshot SubViewport)
+# makes them differ and the quad is offset/skewed/missed. Map with the LIVE
+# viewport sizes: no baked 1280 ratio, no invented donor constant. Donor's
+# native event->projection mapping is UNVERIFIED (DSEL-02 claim 2 / §FOV).
+func _event_px_to_cam_px(p: Vector2) -> Vector2:
+	if render_mode != "3d" or camera == null or not is_instance_valid(camera):
+		return p
+	var src := get_viewport()
+	var dst: Viewport = camera.get_viewport()
+	if src == null or dst == null:
+		return p
+	var a: Vector2 = Vector2(src.size)
+	var b: Vector2 = Vector2(dst.size)
+	if a.x <= 0.0 or a.y <= 0.0 or b.x <= 0.0 or b.y <= 0.0 or a.is_equal_approx(b):
+		return p
+	return Vector2(p.x * b.x / a.x, p.y * b.y / a.y)
+
+
+func _screen_to_world(p: Vector2) -> Vector2:
+	# V7-52 3D seam: ground unprojection moves to picking3d.ground_point(screen),
+	# which ray-marches the height field and returns the SAME sim-metre `pw` the
+	# 2D inverse below produced. Record the source pixel so _pick/_pick_res (which
+	# call sites feed `pw`, not the screen point) can use the adapter unchanged.
+	if render_mode == "3d" and picking != null:
+		# B05: _pick_screen must be the CAMERA-space pixel that picking.pick()/
+		# pick_res() consume, not the raw event pixel.
+		var cam_px := _event_px_to_cam_px(p)
+		_pick_screen = cam_px
+		return picking.ground_point(cam_px)
+	# Screen pixels -> map meters through the camera (position + zoom),
+	# otherwise clicks only line up near the map origin.
+	if world == null:
+		return p / 16.0
+	var xform := get_viewport().get_canvas_transform().affine_inverse()
+	return (xform * p) / world.view_scale
+
+# [U] V2-BOX / V2-PROJ — the donor marquee inside predicate and screen->world
+# rect mapping are engine-side (DEC-U §4.2, P5 negative expected). Everything
+# below stays PORT APPROXIMATION with experiment V2-BOX (grid of idle peasants,
+# scripted inset/outset drags, log GetCountGameManagerPickedObjects membership);
+# no inside rule is promoted to donor fact.
+# B-SELRECT-FIX (PORT APPROXIMATION): ground AABB of all FOUR marquee corners.
+# Same ray+march path as _screen_to_world (picking3d.ground_point world ground
+# coords + world epsilon, DSEL_02-carried); no new projection method. Fixes the
+# two-corner under-coverage under -32 deg tilt vs the screen-px marquee.
+func _drag_world_rect(a_px: Vector2, b_px: Vector2, anchor_ground: Vector2 = Vector2.INF) -> Rect2:
+	# B05 / D04 §7 hunk 3: reuse the frozen press anchor for corner c instead of
+	# re-unprojecting a_px every frame. The default keeps every 2-argument call
+	# (2D/harness) byte-identical.
+	var c: Vector2 = anchor_ground if is_finite(anchor_ground.x) and is_finite(anchor_ground.y) else _screen_to_world(a_px)
+	var d := _screen_to_world(b_px)
+	var e := _screen_to_world(Vector2(a_px.x, b_px.y))
+	var f := _screen_to_world(Vector2(b_px.x, a_px.y))
+	var minx := minf(minf(c.x, d.x), minf(e.x, f.x))
+	var miny := minf(minf(c.y, d.y), minf(e.y, f.y))
+	var maxx := maxf(maxf(c.x, d.x), maxf(e.x, f.x))
+	var maxy := maxf(maxf(c.y, d.y), maxf(e.y, f.y))
+	return Rect2(minx, miny, maxx - minx, maxy - miny)
+
+# B05: ONE apply path for the drag result, shared by the live per-frame update
+# (donor `spmFrame` / F03 Finding 2: the selected set updates while held) and the
+# LMB-up finalization. Entity filter, Shift=spmAdd union and _set_selection are
+# the SAME code as before; only a redundant re-apply is skipped.
+func _apply_rect_selection(rect: Rect2) -> void:
+	var arr: Array = []
+	for e in game.entities:
+		if e.dead or e.player != 0 or e.kind != "unit":
+			continue
+		if rect.has_point(e.pos):
+			arr.append(e)
+	if Input.is_key_pressed(KEY_SHIFT):
+		# donor onmousemove.inc:156-157 - Shift => spmAdd: union the rect result
+		# with what was already selected. Ctrl-remove stays commented out in the
+		# donor drag path (onmousemove.inc:159-161).
+		var seen: Dictionary = {}
+		var merged: Array = []
+		for e0 in get_selected():
+			seen[int(e0.id)] = true
+			merged.append(e0)
+		for e1 in arr:
+			if not seen.has(int(e1.id)):
+				seen[int(e1.id)] = true
+				merged.append(e1)
+		arr = merged
+	# Avoid re-playing the selection cue / refreshing the HUD every frame when
+	# the boxed set has not changed. Set comparison, not order comparison.
+	var a_ids: Array = []
+	for e2 in arr:
+		a_ids.append(int(e2.id))
+	a_ids.sort()
+	var c_ids: Array = selected_ids.duplicate()
+	c_ids.sort()
+	if a_ids == c_ids:
+		return
+	# onmousemove.inc:154-162 [O] — Shift => Begin -> Start('spmAdd'), else
+	# 'spmRunTime'. The port's Shift union above stays as the marked [U] V2-BOX
+	# additive approximation; only the protocol mode is donor-faithful.
+	var proto_mode: String = DONOR_SELECTION_MODE_ADD if Input.is_key_pressed(KEY_SHIFT) else DONOR_SELECTION_MODE
+	_set_selection(arr, proto_mode)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEC-U §4.1 — resolved donor single-click predicate. Candidate AABB/ray is
+# owned by picking3d.gd in 3D (see report for the exact patch); these helpers
+# are the canonical priority/score/veto source for the 2D path and for callers.
+# ──────────────────────────────────────────────────────────────────────────────
+
+func _minimap_under_mouse() -> bool:
+	# control.script:161/282 — GetGUIMinimapUnderMouse early-out.
+	var r := _minimap_screen_rect()
+	if r == Rect2() or get_viewport() == null:
+		return false
+	return r.has_point(get_viewport().get_mouse_position())
+
+
+func _selected_units_can_attack() -> bool:
+	# Donor `enemyMask ∧ SelectedUnitsCanAttack` (control.script:225-231).
+	# Port has `def.weapons`; an empty list means the selection cannot attack.
+	for e in get_selected():
+		if int(e.get("player", -1)) != 0 or str(e.get("kind", "")) != "unit":
+			continue
+		var def: Dictionary = e.get("def", {})
+		var w: Variant = def.get("weapons", [])
+		if w is Array and not (w as Array).is_empty():
+			return true
+	return false
+
+
+# ── DEC-U-SELECTION §1.2 per-arm gates (IMPL-SELECTION) ───────────────────────
+# Each helper is a donor gate [O] with a labelled read-only port predicate.
+# Where the port has no equivalent, the mapping stays [U] E-U13-pick; none of
+# these is promoted to a donor formula.
+
+# control.script:208-211 [O] reads `TRes(pres).brised`. [U] E-U13-pick: the port
+# res node has no TRes pointer, so a harvestable food node (hits > 0, as before)
+# is the closest read-only stand-in.
+func _donor_food_brised(e: Dictionary) -> bool:
+	return int(e.get("hits", 0)) > 0
+
+# control.script:247-250 [O] gate `gbool_gui_peasantselected`. [U] E-U13-pick:
+# the port has no global flag; derive it from the live selection (a selected
+# player-0 peasant), the closest read-only equivalent.
+func _donor_peasant_selected() -> bool:
+	for e in get_selected():
+		if int(e.get("player", -1)) == 0 and str(e.get("sid", "")) == "peasant":
+			return true
+	return false
+
+# control.script:236-238 [O] gate `_unit_UnitsCanBuild(goHnd, gSelectedObjects)`.
+# [U] E-U13-pick: no direct port predicate; a selected player-0 peasant is the
+# only build-capable selection in the shipped sim (never silently "always").
+func _donor_units_can_build(_e: Dictionary) -> bool:
+	return _donor_peasant_selected()
+
+# control.script:240-242 [O] gate `_unit_IsUnitCanAbsorbInside(goHnd)`. [U]
+# E-U13-pick: port has no such predicate; a finished building with worker
+# slots is the harvest/absorb carrier.
+func _donor_can_absorb_inside(e: Dictionary) -> bool:
+	var def: Dictionary = e.get("def", {})
+	return int(def.get("slots", 0)) > 0
+
+# control.script:245-250 [O] `usage = gc_obj_usage_mine`. [U] E-U13-pick: the
+# port has no `usage` field; the `mine_*` sid family is the read-only classifier.
+func _donor_is_mine(e: Dictionary) -> bool:
+	return str(e.get("sid", "")).to_lower().begins_with("mine_")
+
+
+func donor_pick_priority(e: Dictionary) -> float:
+	# dmscript.global:227-233 [O] table + control.script:180 [O] Float seed.
+	# Float return is required to carry the donor's 0.5 nil/unknown arms.
+	var prio: float = DONOR_PICK_SEED
+	if not (e is Dictionary) or bool(e.get("dead", false)) or bool(e.get("hidden", false)):
+		return 0.0
+	if not e.has("def"):  # gc_baseid_res arm, control.script:199-218
+		# [U] TRes nil-ness / itype mapping: food/wood/stone are the known port
+		# itypes. Other types take the donor nil/unknown arm and KEEP the cited
+		# 0.5 seed (reachability [U] E-U13-pick §2.1(b)). The donor collision-tag
+		# gate GetMapCollisionTag(X,Z,True)=0 (:204) is NOT substituted: the port
+		# dec_u_collision_tag_at() returns 87/101, never 0 ([U] U13-tag).
+		match str(e.get("type", "")):
+			"wood":
+				prio = float(DONOR_PICK_WOOD)                                    # :209
+			"food":
+				prio = float(DONOR_PICK_FOOD) if _donor_food_brised(e) else 0.0   # :206-217
+			"stone":
+				prio = float(DONOR_PICK_STONE)                                   # :210
+			_:
+				prio = DONOR_PICK_SEED                                           # pres=nil / unknown
+		return prio
+	# gc_baseid_obj arm, control.script:220-256.
+	# benemy := enemyMask ∧ myplmask<>0, bmy := not benemy (:223-229).
+	# [U] E-U13-pick: port has no masks; player > 0 is the read-only stand-in.
+	var pi := int(e.get("player", -1))
+	var benemy := pi > 0
+	if benemy:
+		if _selected_units_can_attack():                                        # :225-231
+			prio = float(DONOR_PICK_ENEMY)
+		# benemy ∧ !bcanbetarget ∧ !bmy -> seed stays 0.5 (donor :227-229).
+	else:
+		prio = float(DONOR_PICK_MY)                                              # :229
+	if str(e.get("sid", "")).to_lower() == "fogreveal":
+		# unit.script:11572 — fogreveal objects are excluded from vision/picks.
+		return 0.0
+	if str(e.get("kind", "")) == "building":
+		# Donor tests bbuilt / absorb only on the building branch (:233-254).
+		var finished := bool(e.get("finished", true))
+		if not finished:
+			# :234-238 — not bbuilt ∧ UnitsCanBuild -> 6, else KEEP PRIOR.
+			if _donor_units_can_build(e):
+				prio = float(DONOR_PICK_BUILD)
+		elif _donor_can_absorb_inside(e):
+			# :240-254 — bbuilt ∧ absorb; non-mine -> 5, mine -> peasant ? 5 : keep.
+			if not _donor_is_mine(e) or _donor_peasant_selected():
+				prio = float(DONOR_PICK_GOINSIDE)
+	return prio
+
+
+func donor_pick_score(e: Dictionary, mpos: Vector2) -> float:
+	# control.script:260-266 [O] — relativeDst := (1+dist)/prio, minimum wins.
+	# dist = _misc_GetDistancePos(mpos, pos, False) = XZ VectorDistance
+	# (misc.script:663-669); port pos is already Vector2 X/Z so distance_to()
+	# is the XZ metric. Distance UNITS/frame stay [U] E-U13-pick, not invented.
+	var prio := donor_pick_priority(e)
+	if prio <= 0.0 or not (e.has("pos")):
+		return INF
+	return (1.0 + mpos.distance_to(e.pos)) / prio
+
+
+func _donor_los_ok(e: Dictionary) -> bool:
+	# control.script:270-273 — bVisible := (not GetFOWEnable) or LOS>0.
+	if e.is_empty() or world == null:
+		return true
+	if world.has_method("is_visible_at"):
+		return bool(world.call("is_visible_at", e.pos))
+	return true
+
+
+func _donor_selection_begin(mode: String = DONOR_SELECTION_MODE) -> void:
+	# misc.script:6418-6421 [O] — Begin -> Start('spmRunTime'); drag/Shift path
+	# onmousemove.inc:154-162 [O] uses Begin -> Start('spmAdd'/'spmRunTime').
+	# Null-safe shims unchanged; only the mode string is threaded through.
+	if game == null:
+		return
+	if game.has_method("game_manager_begin_selection"):
+		game.call("game_manager_begin_selection")
+	if game.has_method("game_manager_start_selection"):
+		game.call("game_manager_start_selection", mode)
+
+
+func _donor_selection_cancel() -> void:
+	# Cancel once per apply, on the LAST picked object (misc.script:6458-6470).
+	if game != null and game.has_method("game_manager_cancel_selection"):
+		game.call("game_manager_cancel_selection")
+
+
+func _donor_squad_selected_split(arr: Array) -> void:
+	# misc.script:6418-6444 — squad members go to TSquad.fSelected while the
+	# officer/drummer stay in gSelectedObjects. The port keeps `selected` on
+	# each entity; mirroring it onto the squad dict is additive-only.
+	if game == null or not (game.get("squads") is Dictionary):
+		return
+	var ids: Dictionary = {}
+	for e in arr:
+		ids[int(e.id)] = true
+	for key in (game.get("squads") as Dictionary):
+		var s: Dictionary = (game.get("squads") as Dictionary)[key]
+		var on: bool = int(s.get("officer", 0)) in ids or int(s.get("drummer", 0)) in ids
+		s["fSelected"] = on
+
+
+func _pick(pw: Vector2, players_only := true) -> Dictionary:
+	# V7-52 3D seam. picking3d.pick(screen, players_only) applies the SAME
+	# radius/fallback rule as the 2D loop below (V7-68): `true` restricts the
+	# radius test to player-0 entities, `false` lets every entity compete, and
+	# the 2 m any-entity fallback is unconditional in both modes. Forward the
+	# caller's flag verbatim so the guard site (:493 true) and the left-click,
+	# right-order and cursor sites (:551/:645/:1156 false) keep 2D parity.
+	# control.script:161/282 — GetGUIMinimapUnderMouse early-out.
+	if _minimap_under_mouse():
+		return {}
+	if render_mode == "3d" and picking != null:
+		if not is_finite(_pick_screen.x) or not is_finite(_pick_screen.y):
+			return {}
+		# picking3d.gd owns the candidate AABB/ray set (report patch R-PICK) and
+		# now runs the donor gate order with NO per-candidate FOW test. The
+		# winner-only veto (control.script:270-273) is applied here, once/apply.
+		var got: Dictionary = picking.pick(_pick_screen, players_only)
+		return got if _donor_los_ok(got) else {}
+	# DEC-U-SELECTION §1.1 [O] chain: minimap-exit (above) -> MouseRay ->
+	# SortList -> triple gate -> ownership -> AABB -> strict min (1+dist)/prio
+	# -> winner-only FOW veto. The 2D path has no AABB (engine-side [U]), so
+	# game.pick_radius() stays its labelled PORT APPROXIMATION stand-in.
+	# T-PERF-RENDER: one pass tracking the legacy nearest pair and the donor
+	# winner together; FOW is checked ONCE below on the final winner only.
+	var best: Dictionary = {}
+	var best_d := 1e9
+	var fb: Dictionary = {}
+	var fb_d := 1e9
+	var donor_best: Dictionary = {}
+	var donor_best_score := INF
+	for e in game.entities:
+		if e.dead:
+			continue
+		var d: float = e.pos.distance_to(pw)
+		if not players_only or e.player == 0:  # ownership gate (bMyPlayerOnly)
+			var r: float = game.pick_radius(e)
+			if d < r:
+				if d < best_d:
+					best_d = d
+					best = e
+				if game.has_method("dec_u_pick_eligible") and not bool(game.call("dec_u_pick_eligible", e)):
+					continue  # Playable ∧ Visible ∧ CollisionDetection [O]
+				var score := donor_pick_score(e, pw)
+				if is_finite(score) and score < donor_best_score:
+					donor_best_score = score
+					donor_best = e
+		if d < 2.0 and d < fb_d:  # port-only fallback; no per-candidate veto
+			fb_d = d
+			fb = e
+	# Winner selection order stays port-legacy (donor winner -> nearest -> 2 m
+	# fallback); the FOW veto is applied exactly once to the chosen winner,
+	# mirroring `if not bVisible then nearestHnd := 0` (control.script:270-273).
+	var picked: Dictionary = donor_best
+	if picked.is_empty():
+		picked = best
+	if picked.is_empty():
+		picked = fb  # enemies selectable for info/attack (port-only fallback)
+	return picked if _donor_los_ok(picked) else {}
+
+# W4-2: pure input translation â€” a wheel event becomes one or more camera
+# zoom requests. No interpolation, easing, clamp or cursor math is computed
+# here; camera.gd (W4-1) owns all of that. The accumulator only coalesces
+# fractional high-resolution wheel deltas into whole notches, which removes
+# one-notch jitter on trackpad-style wheels without changing normal wheels.
+func _zoom_wheel(ev: InputEventMouseButton, sign: float) -> void:
+	if camera == null:
+		return
+	var fv: Variant = ev.get("factor")
+	var f: float = clampf(float(fv), 0.01, 8.0) if fv != null else 1.0
+	_wheel_accum += f
+	var notches: int = int(_wheel_accum)
+	if notches > 0:
+		_wheel_accum -= float(notches)
+		if camera.has_method("zoom_step"):
+			# W4-1 authoritative API: camera owns step size, smoothing and
+			# the clamp. Dynamic call: camera.gd has a float `zoom_step`
+			# member, so a literal call would not compile. Pass the wheel
+			# event position as the zoom-to-cursor anchor.
+			camera.call("zoom_step", sign * float(notches), ev.position)
+	get_viewport().set_input_as_handled()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		# W4-2: wheel translation lives here; set_input_as_handled() makes this
+		# and camera.gd's legacy wheel branch mutually exclusive, so one notch
+		# can never zoom twice regardless of scene-tree order.
+		if mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom_wheel(mb, 1.0 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else -1.0)
+			return
+		var mm := _minimap_screen_rect()
+		# T-NAV-RESPONSIVE: hud.gd's gui_input normally consumes minimap button
+		# presses first. These branches are the same-path fallback so minimap
+		# click = instant jump, left drag = continuous follow and right click =
+		# order, all confined to the cached rect. _screen_to_world() is now
+		# lazy: it is only paid for world-map events, not minimap events.
+		if mb.button_index == MOUSE_BUTTON_LEFT and mm.has_point(mb.position):
+			_mm_dragging = mb.pressed
+			# B05 (stuck-quad fix): this early return used to bypass the LMB-up
+			# cleanup entirely when a WORLD drag was released over the minimap.
+			# Cancel any in-flight drag here, unconditionally on release.
+			if not mb.pressed:
+				_cancel_drag()
+			_minimap_reposition(mb.position)
+			return
+		if mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed and mm.has_point(mb.position):
+			var mw := _minimap_world(mb.position)
+			if mw != Vector2.INF:
+				minimap_order(mw)
+			return
+		if mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed and _mm_dragging:
+			_mm_dragging = false
+			# SEL-01: a world drag that ends over the minimap still releases the
+			# marquee (donor onmousedown.inc:364-365 clears the selection state).
+			_cancel_drag()
+			return
+		var pw := _screen_to_world(mb.position)
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				if patrol_mode:
+					if patrol_a == Vector2.INF:
+						patrol_a = pw
+						if hud != null:
+							hud.show_hint("Patrol: click the second waypoint")
+					else:
+						_finish_patrol(pw)
+					_route_redraw()
+					return
+				if guard_mode:
+					var gtarget := _pick(pw, true)
+					if not gtarget.is_empty() and gtarget.player == 0 and gtarget.kind == "building":
+						for gu in get_selected():
+							if gu.player == 0 and gu.kind == "unit":
+								game.cmd_guard(gu, gtarget)
+						guard_mode = false
+						if hud != null:
+							hud._on_message("Guarding %s" % ConfigScript.building_name(str(gtarget.sid)))
+					elif hud != null:
+						hud.show_hint("Guard: click a friendly building to protect")
+					return
+				if hud.build_ghost_sid != "":
+					var pos := pw
+					var sel_peasants: Array = []
+					for su in game.get_selected():
+						if not su.is_empty() and str(su.get("sid", "")) == "peasant":
+							sel_peasants.append(su)
+					# W3-2 / X1 C2-C5: refuse the click BEFORE the sim call when no
+					# peasant is selected or the escalated cost cannot be paid.
+					# Donor onshortcut.inc:270-276 / unit.script:10164-10177.
+					if sel_peasants.is_empty():
+						_hint("Select at least one peasant to build (right-click cancels)")
+						return
+					if hud.has_method("build_gate"):
+						var cg: Dictionary = hud.build_gate(hud.build_ghost_sid, pos)
+						if not bool(cg.get("ok", false)):
+							_hint(str(cg.get("reason", "Cannot build here.")))
+							return
+					# DO-L8.04: echo the central can_place reason on the HUD hint
+					# line before committing. Do NOT block the click: place_building
+					# re-validates (and handles mine-snap), shift-queue still works.
+					var echo_sid := game.resolve_mine_sid(hud.build_ghost_sid, pos)
+					var chk0: Dictionary = game.can_place(0, echo_sid, pos)
+					if not bool(chk0.get("ok", false)) and hud.has_method("show_hint"):
+						hud.show_hint(str(chk0.get("reason", "Cannot build here.")))
+					var b: Dictionary = game.place_building(0, hud.build_ghost_sid, pos, true, sel_peasants)
+					if not b.is_empty() and not Input.is_key_pressed(KEY_SHIFT):
+						hud.build_ghost_sid = ""
+						_set_selection([b])
+					return
+				drag_start = mb.position
+				dragging = false
+				_drag_current = mb.position
+				_sel_ground_start = Vector2.INF
+				# B05 / D04 §7 hunk 5: freeze the geometric ground anchor ONCE on
+				# press so _drag_world_rect() never re-unprojects drag_start.
+				_rect_ground_anchor = _screen_to_world(mb.position)
+				_hide_selection_rect()
+			else:
+				if drag_start == Vector2.INF:
+					return
+				# SEL-01: donor's click/drag split is driven by the world-ground
+				# epsilon crossed on LMB-held motion (onmousemove.inc:152), not by
+				# the old 6 screen-pixel test. `dragging` is set only by that test.
+				var moved := dragging
+				if moved:
+					# B-SELRECT-FIX / B05: four-corner ground AABB of the full
+					# marquee, using the press-frozen anchor (D04 §7 hunk 6).
+					# Donor keeps the WORLD ground rect (S-25-06): no screen-space
+					# select_in_rect() was introduced by this ticket.
+					var rect := _drag_world_rect(drag_start, mb.position, _rect_ground_anchor)
+					_apply_rect_selection(rect)
+				else:
+					var e := _pick(pw, false)
+					C3Log.debug("input", "click_pick mb=%s pick_screen=%s pw=%s got=%s" % [str(mb.position), str(_pick_screen), str(pw), str(e.get("id", -1))])
+					var now := Time.get_ticks_msec() / 1000.0
+					var shift_held := Input.is_key_pressed(KEY_SHIFT)
+					var ctrl_held := Input.is_key_pressed(KEY_CTRL)
+					if not e.is_empty() and e.sid == last_click_sid and now - last_click_t < _double_click_s():
+						# double click: all same-type units on screen (original behaviour)
+						var arr2: Array = []
+						# V7-52: explicit type guard for the untyped `world` seam (V71:197).
+						var vp: Rect2 = world.view_rect
+						for u in game.entities:
+							if not u.dead and u.player == 0 and u.kind == "unit" and u.sid == e.sid and vp.has_point(u.pos * world.view_scale):
+								arr2.append(u)
+						# B05 / D05 #4: donor select-same-type takes GUI_Shift
+						# (onmousedown.inc:281-291); union instead of replacing.
+						if shift_held and not arr2.is_empty():
+							var seen2: Dictionary = {}
+							var merged2: Array = []
+							for d0 in get_selected():
+								seen2[int(d0.id)] = true
+								merged2.append(d0)
+							for d1 in arr2:
+								if not seen2.has(int(d1.id)):
+									seen2[int(d1.id)] = true
+									merged2.append(d1)
+							arr2 = merged2
+						_set_selection(arr2)
+					elif ctrl_held and not e.is_empty():
+						# B05 / D05 #1-#2 (DONOR_CITED onmousedown.inc:281-344):
+						# Ctrl on an already-selected object removes it; Ctrl on a
+						# new own unit selects all of that type. Shift still adds.
+						if selected_ids.has(int(e.id)):
+							var remain: Array = []
+							for s0 in get_selected():
+								if int(s0.id) != int(e.id):
+									remain.append(s0)
+							_set_selection(remain)
+						elif int(e.player) == 0 and str(e.kind) == "unit":
+							var same: Array = []
+							for u2 in game.units_of(0):
+								if str(u2.sid) == str(e.sid):
+									same.append(u2)
+							if shift_held:
+								var seen3: Dictionary = {}
+								var merged3: Array = []
+								for d2 in get_selected():
+									seen3[int(d2.id)] = true
+									merged3.append(d2)
+								for d3 in same:
+									if not seen3.has(int(d3.id)):
+										seen3[int(d3.id)] = true
+										merged3.append(d3)
+								same = merged3
+							_set_selection(same)
+						else:
+							_set_selection([e])
+					elif shift_held and not e.is_empty():
+						var cur := get_selected()
+						if not cur.has(e):
+							cur.append(e)
+						_set_selection(cur)
+					elif shift_held and e.is_empty():
+						# B05 / D05 #3: donor skips DeselectAll while Shift is held
+						# (onmousedown.inc:346-355). Keep the selection and avoid a
+						# spurious selection cue on an empty-ground Shift click.
+						pass
+					else:
+						_set_selection([e] if not e.is_empty() else [])
+					last_click_t = now
+					last_click_sid = str(e.sid) if not e.is_empty() else ""
+				_cancel_drag()
+		elif mb.button_index == MOUSE_BUTTON_RIGHT and mb.pressed:
+			_right_order(pw)
+	elif event is InputEventMouseMotion:
+		var mm := _minimap_screen_rect()
+		# T-NAV-RESPONSIVE: continuous minimap drag. While the left button is
+		# held the camera follows the pointer every frame; the rect test also
+		# ends an active drag when the pointer leaves the minimap, so it can
+		# never leak into the world selection-drag logic below.
+		if _mm_dragging or ((event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0 and mm.has_point(event.position)):
+			# B05 (stuck-quad fix): hud.gd's minimap gui_input consumes the LMB-up
+			# when the drag ends over the minimap, so the normal release cleanup
+			# never runs and _process kept repainting the yellow box forever.
+			# Tear the drag down here, on the motion that ENTERS the minimap.
+			if drag_start != Vector2.INF:
+				_cancel_drag()
+			if mm.has_point(event.position):
+				_minimap_reposition(event.position)
+			else:
+				_mm_dragging = false
+			return
+		if drag_start != Vector2.INF and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+			# D02 item 34 / donor onmousemove.inc:140: wall/build placement mode
+			# suppresses the marquee completely. The press path already refuses
+			# to start a drag while a ghost is active; this guard also kills a
+			# drag if build mode is armed mid-gesture.
+			if hud != null and hud.build_ghost_sid != "":
+				_cancel_drag()
+				return
+			_drag_current = event.position
+			var saved_pick_screen := _pick_screen
+			var gp := _screen_to_world(event.position)
+			# Donor onmousemove.inc:141-147: the epsilon reference is captured on
+			# the FIRST LMB-held MOVE (two-phase start), never on press. For that
+			# first sample the frozen press-ground point is the comparison
+			# partner (PORT APPROXIMATION of donor's multi-event stream); later
+			# moves compare against the first-move anchor, as donor does. D04
+			# hunk 7: use the FROZEN anchor, never a per-frame re-unprojection.
+			var ref: Vector2 = _rect_ground_anchor if is_finite(_rect_ground_anchor.x) else gp
+			if _sel_ground_start == Vector2.INF:
+				_sel_ground_start = gp
+			else:
+				ref = _sel_ground_start
+			var eps := _selection_epsilon_m()
+			# onmousemove.inc:152 - axis-wise world X/Z delta (gp.y is ground Z).
+			if absf(gp.x - ref.x) > eps or absf(gp.y - ref.y) > eps:
+				dragging = true
+			_pick_screen = saved_pick_screen
+	elif event is InputEventKey and event.pressed and not event.echo:
+		_handle_key(event as InputEventKey)
+
+func _right_order(pw: Vector2) -> void:
+	if patrol_mode:
+		_finish_patrol(Vector2.INF)
+		return
+	if guard_mode:
+		guard_mode = false
+		if hud != null:
+			hud.show_hint("")
+		return
+	if hud.build_ghost_sid != "":
+		hud.build_ghost_sid = ""
+		return
+	if attack_ground_mode:
+		attack_ground_mode = false
+		for e in get_selected():
+			if e.player == 0 and e.def.get("artillery", false):
+				game.cmd_attack_ground(e, pw)
+		return
+	if rally_mode:
+		rally_mode = false
+		for e in get_selected():
+			if e.player == 0 and e.kind == "building" and e.def.get("trains", []).size() > 0:
+				game.set_rally(e, pw)
+				_hint("Rally set (%.1f, %.1f)" % [pw.x, pw.y])
+		if world != null:
+			world.mark_rally_dirty()
+		return
+	var sel_units := get_selected().filter(func(e): return e.player == 0 and e.kind == "unit")
+	# Production buildings selected on their own: right-click sets the rally
+	# point, like the original (no need to press R first).
+	var sel_blds := get_selected().filter(func(e): return e.player == 0 and e.kind == "building" and e.def.get("trains", []).size() > 0)
+	# Damaged friendly building selected + only peasants in the unit
+	# selection: right-click repairs it instead of rallying.
+	var sel_dmg := get_selected().filter(func(e): return e.player == 0 and e.kind == "building" and e.finished and not e.dead and e.hp < e.max_hp)
+	if not sel_dmg.is_empty() and not sel_units.is_empty():
+		var all_peas := true
+		for u in sel_units:
+			if u.sid != "peasant":
+				all_peas = false
+				break
+		if all_peas:
+			for u in sel_units:
+				game.cmd_repair(u, sel_dmg[0])
+			return
+	if sel_units.is_empty():
+		if not sel_blds.is_empty():
+			for b in sel_blds:
+				game.set_rally(b, pw)
+			_hint("Rally set (%.1f, %.1f)" % [pw.x, pw.y])
+			if world != null:
+				world.mark_rally_dirty()
+		return
+	var sel := sel_units
+	var target := _pick(pw, false)
+	# Resource spots are not entities, so look them up directly: right-clicking
+	# a tree/rock/field/deposit with peasants selected orders harvesting.
+	var res := _pick_res(pw) if target.is_empty() or (target.player == 0 and target.kind == "unit") else {}
+	# group orders use the squad formation when the officer leads, else a box
+	var form := _sel_formation(sel)
+	var formation: Array = game.formation_targets(sel, pw, form) if target.is_empty() else []
+	var fi := 0
+	for e in sel:
+		if not res.is_empty() and e.sid == "peasant" and not attack_move_mode:
+			if int(res.get("hits", 1)) <= 0 and str(res.get("type", "")) == "food":
+				game.cmd_resow(e, res)
+			else:
+				game.cmd_gather(e, res)
+		elif target.is_empty():
+			var dest: Vector2 = formation[fi] if fi < formation.size() else pw
+			fi += 1
+			if game.has_weapon(e) and e.sid != "peasant" and attack_move_mode:
+				game.cmd_attack_move(e, dest)
+			else:
+				game.cmd_move(e, dest)
+		elif target.player != 0:
+			game.cmd_attack(e, target)
+		elif target.kind == "building":
+			if target.finished and str(target.sid) in ["tow", "cen"] and e.kind == "unit" and not e.def.get("artillery", false) and e.def.get("cavalry", "") == "":
+				game.cmd_enter(e, target)
+				continue
+			if target.sid.begins_with("mine_") and e.sid == "peasant" and target.finished:
+				var nd := _deposit_near(target)
+				if not nd.is_empty():
+					game.cmd_gather(e, nd)
+				else:
+					game.cmd_move(e, target.pos)
+			elif not target.finished and e.sid == "peasant":
+				game.cmd_build(e, target)
+			else:
+				game.cmd_move(e, target.pos)
+		elif target.kind == "res":
+			if e.sid == "peasant":
+				game.cmd_gather(e, target)
+			else:
+				game.cmd_move(e, target.pos)
+	attack_move_mode = false
+
+func _deposit_near(mine: Dictionary) -> Dictionary:
+	for n in game.res_nodes:
+		if n.type == mine.def.get("mine", "") and n.max_hits == 0 and n.pos.distance_to(mine.pos) < 4.0:
+			return n
+	return {}
+
+# T-PICK-RES: cached spatial hash over game.res_nodes. Right-click harvest used
+# to scan all ~530 resource nodes per click; the hash touches only the cells a
+# click's reach can span. Built lazily (first pick after a change) and invalidated
+# on game.res_dirty / array-size change, so there is no per-frame work. Every
+# node is inserted with NO filtering, which keeps the _pick_res filters and the
+# strict nearest rule byte-for-byte identical to the old brute-force scan.
+# (game's own _res_grid is private and skips depleted nodes, so it cannot be
+# reused without changing behaviour â€” notably for depleted food nodes.)
+const _PICK_RES_GRID_M := 16.0
+var _pick_res_grid: Dictionary = {}       # Vector2i cell -> Array of res node dicts
+var _pick_res_ver := -1                   # game.res_dirty value this grid was built at
+var _pick_res_size := -1                  # res_nodes size at build time
+var _pick_res_max_reach := 2.5            # widest 2.5 + radius over all nodes
+
+func _pick_res_grid_ensure() -> void:
+	if _pick_res_ver == game.res_dirty and _pick_res_size == game.res_nodes.size():
+		return
+	_pick_res_grid.clear()
+	_pick_res_max_reach = 2.5
+	for n in game.res_nodes:
+		_pick_res_max_reach = maxf(_pick_res_max_reach, 2.5 + float(n.radius))
+		var c := Vector2i(int(n.pos.x / _PICK_RES_GRID_M), int(n.pos.y / _PICK_RES_GRID_M))
+		if not _pick_res_grid.has(c):
+			_pick_res_grid[c] = []
+		(_pick_res_grid[c] as Array).append(n)
+	_pick_res_ver = game.res_dirty
+	_pick_res_size = game.res_nodes.size()
+
+# Resource spots (trees, rocks, fields, mine deposits) live outside the entity
+# list, so right-click harvest needs its own lookup. Deposits (max_hits == 0)
+# count too: cmd_gather routes them to a finished mine on the spot.
+func _pick_res(pw: Vector2) -> Dictionary:
+	# V7-52 3D seam. picking3d.pick_res(screen) preserves the donor port's exact
+	# resource filters (skip stump/bush, skip depleted except food, 2.5 + radius,
+	# strict '<', lowest id on tie) and adds camera-depth ordering for overlaps.
+	if render_mode == "3d" and picking != null:
+		if not is_finite(_pick_screen.x) or not is_finite(_pick_screen.y):
+			return {}
+		return picking.pick_res(_pick_screen)
+	_pick_res_grid_ensure()
+	var best: Dictionary = {}
+	var best_d := 2.5
+	var r := _pick_res_max_reach
+	var c0 := Vector2i(int((pw.x - r) / _PICK_RES_GRID_M), int((pw.y - r) / _PICK_RES_GRID_M))
+	var c1 := Vector2i(int((pw.x + r) / _PICK_RES_GRID_M), int((pw.y + r) / _PICK_RES_GRID_M))
+	for cy in range(c0.y, c1.y + 1):
+		for cx in range(c0.x, c1.x + 1):
+			for n in (_pick_res_grid.get(Vector2i(cx, cy), []) as Array):
+				if str(n.get("type", "")) in ["stump", "bush"]:
+					continue
+				if n.max_hits > 0 and n.hits <= 0 and n.type != "food":
+					continue
+				var d: float = n.pos.distance_to(pw)
+				var reach: float = 2.5 + n.radius
+				# Strict `<` as before. res_nodes is append-only (id grows with
+				# index), so an exact-distance tie still resolves to the same
+				# first node the old full-array order would have chosen.
+				var closer: bool = d < reach and d < best_d
+				var tie_first: bool = (d < reach and not best.is_empty() and d == best_d and int(n.id) < int(best.id))
+				if closer or tie_first:
+					best_d = d
+					best = n
+	return best
+
+# Box/line/column/square layout around a point, via the game (squad-aware).
+func _sel_formation(sel: Array) -> String:
+	for e in sel:
+		var s: Dictionary = game.squad_of_unit(e.id)
+		if not s.is_empty():
+			return str(s.get("formation", "line"))
+	return "none"
+
+# Box formation around a point: rows x cols grid, step 1.2 m (FORMATION_SPACING),
+# centered on the click. Single unit keeps the exact click point.
+func _formation_targets(sel: Array, center: Vector2) -> Array:
+	return game.formation_targets(sel, center, _sel_formation(sel))
+
+# --- P-33: donor hotkeys.cfg KEY MAP [O] static text only; NOT donor parity -------
+# PORT-SIM owns config.gd/config.json, so the donor-only combos below cannot be
+# added to Data.HOTKEYS here. If a matching action is added there later it
+# wins; otherwise the literal donor binding from hotkeys.cfg is used.
+func _donor_combo(k: InputEventKey, action: String, fallbacks: Array) -> bool:
+	if hotkeys.has(action) and _matches(k, hotkeys[action]):
+		return true
+	for spec in fallbacks:
+		if _matches(k, ConfigScript.parse_hotkey(str(spec))):
+			return true
+	return false
+
+func _select_military() -> void:
+	var arr: Array = []
+	for u in game.units_of(0):
+		if u.sid != "peasant":
+			arr.append(u)
+	_set_selection(arr)
+	if hud != null:
+		hud._on_message("Selected %d military units" % arr.size())
+
+func _select_ships() -> void:
+	var arr: Array = []
+	for u in game.units_of(0):
+		if u.def.get("ship", false) or str(u.sid).contains("ship") or str(u.sid) in ["yacht", "galley", "cog", "frigate"]:
+			arr.append(u)
+	_set_selection(arr)
+	if hud != null:
+		hud._on_message("Selected %d ships" % arr.size() if not arr.is_empty() else "No naval units in this skirmish")
+
+func _all_same_type(add: bool) -> void:
+	var cur: Array = get_selected() if add else []
+	if cur.is_empty():
+		if hud != null:
+			hud.show_hint("Select a unit first")
+		return
+	var sid: String = str(cur[0].sid)
+	for u in game.units_of(0):
+		if u.sid == sid and not cur.has(u):
+			cur.append(u)
+	_set_selection(cur)
+	if hud != null:
+		hud._on_message("Selected %d %s" % [cur.size(), sid])
+
+func _handle_key(k: InputEventKey) -> void:
+	if k.keycode >= KEY_1 and k.keycode <= KEY_9:
+		var gi: int = k.keycode - KEY_1 + 1
+		if k.ctrl_pressed:
+			var ids: Array = []
+			for e in get_selected():
+				ids.append(e.id)
+			groups[gi] = ids
+			hud.show_hint("Group %d stored (%d)" % [gi, ids.size()])
+		else:
+			var arr: Array = []
+			for id in groups.get(gi, []):
+				var e: Dictionary = game.by_id.get(id, {})
+				if not e.is_empty() and not e.dead:
+					arr.append(e)
+			if not arr.is_empty():
+				_set_selection(arr)
+				if k.shift_pressed and camera != null:
+					# E18 (AUDIT3D-05): the Camera3D branch must not take the
+					# 2D Camera2D write â€” `arr[0].pos * world.view_scale` is a
+					# Vector2 assigned to a Vector3 global_position, and it
+					# bypasses `_target`/clamp_pos() so the next
+					# _apply_transform() snaps back. Route through the same
+					# metre-space `jump_to_world` API as the minimap at :232.
+					# The 2D line below is unchanged (byte-identical text).
+					if render_mode == "3d" and camera.has_method("jump_to_world"):
+						camera.call("jump_to_world", arr[0].pos)
+					else:
+						camera.global_position = arr[0].pos * world.view_scale
+		return
+	# Donor select family (hotkeys.cfg): Ctrl+Alt+A / Ctrl+Shift+A military,
+	# Ctrl+Q ships, Ctrl+Z / Ctrl+Shift+Z all-of-same-type, backtick idle
+	# peasants. None of these actions exists in Data.HOTKEYS yet (P-33).
+	if _donor_combo(k, "select_military_units", ["Ctrl+Alt+A", "Ctrl+Shift+A"]):
+		_select_military()
+		return
+	if _donor_combo(k, "select_all_ships", ["Ctrl+Q"]):
+		_select_ships()
+		return
+	if _donor_combo(k, "select_all_same_type", ["Ctrl+Z"]):
+		_all_same_type(false)
+		return
+	if _donor_combo(k, "add_all_same_type", ["Ctrl+Shift+Z"]):
+		_all_same_type(true)
+		return
+	# Godot 4.7 names the backtick key KEY_QUOTELEFT (96); donor alternative
+	# for select|idlepeasants. Ctrl+` (all peasants) is handled below.
+	if k.keycode == KEY_QUOTELEFT and not k.ctrl_pressed and not k.shift_pressed and not k.alt_pressed:
+		var idle: Array = []
+		for iu in game.units_of(0):
+			if iu.sid == "peasant" and iu.order.type == "none" and iu.inside_of == 0:
+				idle.append(iu)
+		_set_selection(idle)
+		if hud != null:
+			hud._on_message("Selected %d idle peasants" % idle.size())
+		return
+	if k.keycode == KEY_F5:
+		var m = get_tree().get_first_node_in_group("c3_main")
+		if m != null:
+			m.game_save()
+		return
+	if k.keycode == KEY_F9:
+		var m2 = get_tree().get_first_node_in_group("c3_main")
+		if m2 != null:
+			m2.game_load()
+		return
+	# P starts a two-click patrol route (Q stays the instant +/-6 m patrol).
+	# Neither config.gd nor config.json binds P today, so there is no clash.
+	if k.keycode == KEY_P and not k.ctrl_pressed and not k.shift_pressed and not k.alt_pressed:
+		begin_patrol_waypoints()
+		return
+	if k.keycode == KEY_ESCAPE:
+		if patrol_mode:
+			_finish_patrol(Vector2.INF)
+			return
+		if guard_mode:
+			guard_mode = false
+			if hud != null:
+				hud.show_hint("")
+			return
+		if hud.build_ghost_sid != "" or hud.build_menu_open:
+			hud.build_ghost_sid = ""
+			hud.build_menu_open = false
+			hud.refresh_selection(get_selected())
+			# X1 rank 10: the ghost was never paid for, so say so explicitly.
+			_hint("Build cancelled - no resources spent")
+		else:
+			var m3 = get_tree().get_first_node_in_group("c3_main")
+			if m3 != null:
+				m3.toggle_menu_overlay()
+		return
+	if k.keycode == KEY_DELETE:
+		var wiped := false
+		var site_note := ""
+		for e in get_selected():
+			if e.player == 0 and not e.dead:
+				# W3-1 owns the refund: cmd_delete() already calls
+				# cancel_build_site() (game.gd:4222/4239). Only the hint is ours.
+				if e.kind == "building" and not bool(e.get("finished", false)):
+					var paid: Dictionary = e.get("paid_cost", {})
+					site_note = "Site cancelled - %s refunded" % (_price_hint(paid) if not paid.is_empty() else "resources")
+				game.cmd_delete(e)
+				wiped = true
+		if wiped:
+			hud.refresh_selection(get_selected())
+			if site_note != "":
+				_hint(site_note + " (full before work, half once work starts)")
+		return
+	if _is(k, "pause"):
+		game.paused = not game.paused
+		return
+	if _is(k, "hold_fire"):
+		for e in get_selected():
+			if e.player == 0:
+				game.cmd_hold_fire(e, true)
+		return
+	if _is(k, "feuer_frei"):
+		for e in get_selected():
+			if e.player == 0:
+				game.cmd_hold_fire(e, false)
+		return
+	if _is(k, "engage"):
+		for e in get_selected():
+			if e.player == 0:
+				game.cmd_engage(e)
+		return
+	# the build menu comes first: the original shows it when a peasant is
+	# picked, and the building keys are the same letters as the unit orders
+	if hud.build_menu_open:
+		for sid in build_keys:
+			if _matches(k, build_keys[sid]):
+				# X1 C4 / donor onshortcut.inc:276: refuse before opening the
+				# ghost, naming the missing resource instead of a silent no-op.
+				var hk_gate: Dictionary = hud.build_gate(sid)
+				if not bool(hk_gate.get("ok", false)):
+					_hint(str(hk_gate.get("reason", "Cannot build.")))
+					return
+				# "mine" is a single button; the deposit under the cursor
+				# picks gold / iron / coal automatically when placing it.
+				hud.build_ghost_sid = sid
+				return
+	# unit orders
+	if _is(k, "attack_move"):
+		attack_move_mode = true
+	elif _is(k, "squad_form"):
+		if k.shift_pressed:
+			for e in get_selected():
+				var sq: Dictionary = game.squad_of_unit(e.id)
+				if not sq.is_empty():
+					game.squad_disband(int(sq.squad_id))
+					break
+			hud.refresh_selection(get_selected())
+		else:
+			# F on an officer who already leads a squad tops it up first
+			var topped := false
+			for e in get_selected():
+				var sq0: Dictionary = game.squad_of_unit(e.id)
+				if e.player == 0 and not sq0.is_empty() and int(sq0.officer) == e.id:
+					if game.cmd_replenish(e) > 0:
+						topped = true
+						break
+			if not topped:
+				game.squad_form(get_selected())
+			hud.refresh_selection(get_selected())
+	elif _is(k, "squad_disband"):
+		for e in get_selected():
+			var sq2: Dictionary = game.squad_of_unit(e.id)
+			if not sq2.is_empty():
+				game.squad_disband(int(sq2.squad_id))
+				break
+		hud.refresh_selection(get_selected())
+	elif _is(k, "squad_line") or _is(k, "squad_column") or _is(k, "squad_square"):
+		var form := "line" if _is(k, "squad_line") else ("column" if _is(k, "squad_column") else "square")
+		for e in get_selected():
+			var sq3: Dictionary = game.squad_of_unit(e.id)
+			if not sq3.is_empty():
+				game.squad_set_formation(int(sq3.squad_id), form)
+				break
+		hud.refresh_selection(get_selected())
+	elif _is(k, "attack_ground"):
+		var has_arty := false
+		for e in get_selected():
+			if e.player == 0 and e.def.get("artillery", false):
+				has_arty = true
+		if has_arty:
+			attack_ground_mode = true
+			hud.show_hint("Bombard: right-click the ground (artillery only)")
+		else:
+			rally_mode = true
+			hud.show_hint("Rally: right-click the map to set the gather point")
+	elif _is(k, "unload"):
+		for e in get_selected():
+			if e.player == 0 and e.kind == "building":
+				game.cmd_unload(e)
+	elif _is(k, "sow_fields"):
+		# P-51: same "Grain Crops" order as the mill button; right-click resow
+		# of depleted fields is unchanged (cmd_resow).
+		for e in get_selected():
+			if e.player == 0 and e.kind == "building" and e.sid == "mil" and e.finished:
+				var n: int = game.cmd_sow(e)
+				hud.show_hint("Sowed %d grain fields" % n if n > 0 else "No room or gold to sow fields")
+				break
+	elif _is(k, "select_all_peasants"):
+		var arrp: Array = []
+		for e in game.units_of(0):
+			if e.sid == "peasant":
+				arrp.append(e)
+		_set_selection(arrp)
+	elif _is(k, "select_idle_mines"):
+		select_idle_mines()
+	elif _is(k, "add_same_type"):
+		var sel2 := get_selected()
+		if not sel2.is_empty():
+			var sid2: String = sel2[0].sid
+			var cur2 := sel2.duplicate()
+			for e in game.units_of(0):
+				if e.sid == sid2 and not cur2.has(e):
+					cur2.append(e)
+			_set_selection(cur2)
+	elif _is(k, "minimap_toggle"):
+		if hud != null and hud.minimap_rect != null:
+			hud.minimap_rect.get_parent().visible = not hud.minimap_rect.get_parent().visible
+	elif _is(k, "patrol"):
+		# Q is the donor-style instant patrol; P asks for player waypoints.
+		for e in get_selected():
+			if e.player == 0 and e.kind == "unit":
+				game.cmd_patrol(e, e.pos + Vector2(-6, 0), e.pos + Vector2(6, 0))
+	elif _is(k, "stand_ground"):
+		for e in get_selected():
+			game.cmd_stand_ground(e)
+	elif _is(k, "no_stand_ground"):
+		for e in get_selected():
+			game.cmd_no_stand_ground(e)
+	elif _is(k, "guard"):
+		begin_guard()
+	elif _is(k, "stop"):
+		for e in get_selected():
+			game.cmd_stop(e)
+	elif _is(k, "select_all"):
+		var arr: Array = []
+		for e in game.units_of(0):
+			arr.append(e)
+		_set_selection(arr)
+	elif _is(k, "select_idle_peasants"):
+		select_idle_peasants()
+	elif _is(k, "select_all_buildings"):
+		var arr: Array = []
+		for e in game.buildings_of(0):
+			arr.append(e)
+		_set_selection(arr)
+	elif _is(k, "select_same_type"):
+		var sel := get_selected()
+		if not sel.is_empty():
+			var sid: String = sel[0].sid
+			var arr: Array = []
+			for e in game.units_of(0):
+				if e.sid == sid:
+					arr.append(e)
+			_set_selection(arr)
+
+# X1 rank 5: a selected trainer advertises the right-click rally gesture.
+func _has_selected_trainer() -> bool:
+	for e in get_selected():
+		if e.player == 0 and e.kind == "building" and e.def.get("trains", []).size() > 0:
+			return true
+	return false
+
+func _process(_dt: float) -> void:
+	# the Rally button hands over to keyboard mode: next right-click sets it
+	if hud != null and hud.want_rally:
+		hud.want_rally = false
+		rally_mode = true
+		_hint("Rally: right-click the map to set the gather point")
+	# B05: ONE current pixel + ONE press-frozen ground anchor drive both the
+	# world mirror and the yellow outline and the live selection. The old code
+	# mixed get_viewport().get_mouse_position() here with _drag_current below,
+	# so the mirror and the visible box could disagree.
+	var _drag_cur_px := _drag_current if is_finite(_drag_current.x) and is_finite(_drag_current.y) else get_viewport().get_mouse_position()
+	var _drag_rect_sim := Rect2()
+	if dragging and drag_start != Vector2.INF:
+		_drag_rect_sim = _drag_world_rect(drag_start, _drag_cur_px, _rect_ground_anchor)
+	# drag rectangle overlay (drawn by the world in map space)
+	if world != null:
+		if dragging and drag_start != Vector2.INF:
+			# B-SELRECT-FIX / B05: same four-corner helper so mirror, live
+			# selection and the yellow box share one frozen-anchor world rect.
+			world.sel_rect = _drag_rect_sim
+			world.sel_active = true
+		else:
+			world.sel_active = false
+		# FIX-GHOST (F2): in 3D build mode, forward the SAME SIM ground point the
+		# click path places with (_screen_to_world -> picking3d.ground_point,
+		# :455-468/:555/:579-605) to world3d's build ghost. The preview then
+		# tracks the cursor in the frame the click uses it, and the centred-camera
+		# fallback in world3d._ghost_world_pos() is never taken in real play.
+		# 2D is byte-identical: this handoff is gated to render_mode == "3d".
+		if render_mode == "3d" and picking != null and hud != null \
+				and hud.build_ghost_sid != "" and world.has_method("set_build_ghost_pos"):
+			world.set_build_ghost_pos(_screen_to_world(get_viewport().get_mouse_position()))
+	# SEL-01: draw the marquee in viewport pixels from the authoritative screen
+	# pixels already held here (drag_start / last LMB-held mouse position).
+	# NEVER project world.sel_rect: it holds SIM metres while
+	# camera3d.world_to_px() expects centred metres (PLAY2FIX_navbox.md:14-29).
+	if dragging and drag_start != Vector2.INF:
+		# B05 — ROOT CAUSE of the owner's "quad not ok" report:
+		# Rect2(position, size) takes the SECOND argument as a SIZE, not as the
+		# opposite corner. The old Rect2(drag_start, cur) used the ABSOLUTE end
+		# pixel as the size: p0=(395,274), p1=(917,458) drew size=(917,458) and
+		# ended at (1312,732) — outside a 1280x720 viewport, i.e. an oversized
+		# offset box detached from the cursor. The correct size is cur - start.
+		# t_select_rect.gd:525,532 encodes the SAME wrong expectation, which is
+		# why 23/23 never caught it; that test is COORD/TEST-owned and NOT edited.
+		var pixel_rect := Rect2(drag_start, _drag_cur_px - drag_start).abs()
+		_show_selection_rect(pixel_rect)
+		# B05 / D02+F03: the donor box updates the selected set LIVE while the
+		# button is held. Use the SAME world rect and apply path as LMB-up
+		# finalization; 3D only, so the 2D port stays byte-identical.
+		if render_mode == "3d" and _drag_rect_sim.has_area():
+			_apply_rect_selection(_drag_rect_sim)
+	else:
+		_hide_selection_rect()
+	if patrol_mode and patrol_a != Vector2.INF:
+		_route_redraw()
+	# build ghost hint uses the message line, not the units/score label.
+	# A held refusal/confirmation hint wins over the idle modes for a moment.
+	if Time.get_ticks_msec() >= _hint_hold_ms:
+		if hud != null and hud.build_ghost_sid != "" and hud.has_method("show_hint"):
+			hud.show_hint("Placing %s - left-click to build, right-click to cancel" % hud.build_ghost_sid)
+		elif hud != null and patrol_mode and hud.has_method("show_hint"):
+			hud.show_hint("Patrol: click the first waypoint" if patrol_a == Vector2.INF else "Patrol: click the second waypoint")
+		elif hud != null and guard_mode and hud.has_method("show_hint"):
+			# keep the guard prompt set by begin_guard()
+			pass
+		elif hud != null and hud.has_method("show_hint") and _has_selected_trainer():
+			hud.show_hint("Rally: right-click the map to set the gather point [R]")
+		elif hud != null and hud.has_method("show_hint"):
+			hud.show_hint("")
+	_update_cursor()
+
+func _set_cursor(name: String) -> void:
+	if name == cursor_now:
+		return
+	cursor_now = name
+	var t: Texture2D = cursor_tex.get(name, cursor_tex.get("default", null))
+	if t == null:
+		return
+	# donor cursors are 32x32 with the hot spot at top-left tip (8,4)
+	Input.set_custom_mouse_cursor(t, Input.CURSOR_ARROW, Vector2(8, 4))
+
+func _update_cursor() -> void:
+	if game == null or world == null:
+		return
+	if hud != null and hud.build_ghost_sid != "":
+		_set_cursor("construct")
+		return
+	if attack_move_mode:
+		_set_cursor("attack")
+		return
+	if attack_ground_mode:
+		_set_cursor("artillery")
+		return
+	if rally_mode:
+		# W3-2: cyan-tinted donor-style rally cursor, generated in bind().
+		_set_cursor("rally" if cursor_tex.has("rally") else "gotomine")
+		return
+	# T-PERF-RENDER: the hover scan below walks every entity plus every res
+	# node. Throttle it: recompute on mouse moves (>3 px), selection-size
+	# changes, or age (>80 ms bounds staleness when units walk under a still
+	# cursor). Mode switches above stay instant (<100 ms click feedback).
+	var mp := get_viewport().get_mouse_position()
+	var now_ms := Time.get_ticks_msec()
+	var sel_key := selected_ids.size()
+	if mp.distance_to(_cursor_mouse) < 3.0 and now_ms - _cursor_t_ms < 80 \
+			and sel_key == _cursor_sel_n:
+		return
+	_cursor_mouse = mp
+	_cursor_t_ms = now_ms
+	_cursor_sel_n = sel_key
+	var pw := _screen_to_world(mp)
+	var sel := get_selected()
+	var peas := false
+	var military := false
+	for e in sel:
+		if e.player != 0 or e.kind != "unit":
+			continue
+		if e.sid == "peasant":
+			peas = true
+		else:
+			military = true
+	var tgt := _pick(pw, false)
+	if not tgt.is_empty():
+		if tgt.player != 0 and tgt.kind == "building" and military:
+			_set_cursor("captureattack" if bool(Data.CAPTURE_ENABLED) else "attack")
+			return
+		if tgt.player != 0:
+			_set_cursor("attack")
+			return
+		if peas and tgt.kind == "building" and (not tgt.finished or tgt.hp < tgt.max_hp):
+			_set_cursor("construct")
+			return
+		if peas and tgt.kind == "building" and tgt.sid.begins_with("mine_") and tgt.finished:
+			_set_cursor("gotomine")
+			return
+		if military and tgt.kind == "building" and tgt.finished and (tgt.sid == "tow" or tgt.sid == "cen"):
+			_set_cursor("gotomine")
+			return
+	if peas:
+		var r := _pick_res(pw)
+		if not r.is_empty():
+			match str(r.type):
+				"food":
+					_set_cursor("gainfood")
+					return
+				"wood":
+					_set_cursor("gainwood")
+					return
+				"stone":
+					_set_cursor("gainstone")
+					return
+				"gold", "iron", "coal":
+					_set_cursor("gotomine")
+					return
+	_set_cursor("default")

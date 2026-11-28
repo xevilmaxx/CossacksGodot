@@ -1,0 +1,12 @@
+{
+  "capture_ticks": 64,
+  "deterministic": true,
+  "frames": 2,
+  "mode": "window",
+  "seconds": 2.0,
+  "sim_seconds": 2.0,
+  "step": 1.0,
+  "ticks_done": 64,
+  "ticks_per_frame": 32,
+  "winner": -1
+}

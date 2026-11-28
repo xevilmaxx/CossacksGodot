@@ -597,7 +597,7 @@ func _draw_patrol_route() -> void:
 	var a: Vector2 = world.world_to_px(patrol_a)
 	var end_world := patrol_b
 	if end_world == Vector2.INF:
-		end_world = _screen_to_world(get_viewport().get_mouse_position())
+		end_world = _screen_to_world_pure(get_viewport().get_mouse_position())
 	var b: Vector2 = world.world_to_px(end_world)
 	route_node.draw_line(a, b, Color(1.0, 0.86, 0.30, 0.95), 2.0)
 	for p in [a, b]:
@@ -635,7 +635,7 @@ func _draw_patrol_route3d() -> void:
 		return
 	var end_world := patrol_b
 	if end_world == Vector2.INF:
-		end_world = _screen_to_world(get_viewport().get_mouse_position())
+		end_world = _screen_to_world_pure(get_viewport().get_mouse_position())
 	if not is_finite(end_world.x) or not is_finite(end_world.y):
 		return
 	var a := _route_world(patrol_a)
@@ -678,23 +678,29 @@ func _event_px_to_cam_px(p: Vector2) -> Vector2:
 	return Vector2(p.x * b.x / a.x, p.y * b.y / a.y)
 
 
+func _screen_to_world_pure(p: Vector2) -> Vector2:
+	# PICKSCREEN-RACE-01: read-only projection. NEVER touches _pick_screen —
+	# _process() cursor/route/ghost queries call this many times per frame, and
+	# writing the shared pick pixel there made a LMB release pick a stale cursor
+	# point depending on frame order (windowed 1280x720 click test flaked).
+	if render_mode == "3d" and picking != null:
+		return picking.ground_point(_event_px_to_cam_px(p))
+	if world == null:
+		return p / 16.0
+	var xform := get_viewport().get_canvas_transform().affine_inverse()
+	return (xform * p) / world.view_scale
+
+
 func _screen_to_world(p: Vector2) -> Vector2:
-	# V7-52 3D seam: ground unprojection moves to picking3d.ground_point(screen),
-	# which ray-marches the height field and returns the SAME sim-metre `pw` the
-	# 2D inverse below produced. Record the source pixel so _pick/_pick_res (which
-	# call sites feed `pw`, not the screen point) can use the adapter unchanged.
+	# EVENT path only: records the camera-space pixel that _pick/_pick_res use.
+	# Call from mouse-button/motion handlers, never from per-frame cursor work.
 	if render_mode == "3d" and picking != null:
 		# B05: _pick_screen must be the CAMERA-space pixel that picking.pick()/
 		# pick_res() consume, not the raw event pixel.
 		var cam_px := _event_px_to_cam_px(p)
 		_pick_screen = cam_px
 		return picking.ground_point(cam_px)
-	# Screen pixels -> map meters through the camera (position + zoom),
-	# otherwise clicks only line up near the map origin.
-	if world == null:
-		return p / 16.0
-	var xform := get_viewport().get_canvas_transform().affine_inverse()
-	return (xform * p) / world.view_scale
+	return _screen_to_world_pure(p)
 
 # [U] V2-BOX / V2-PROJ — the donor marquee inside predicate and screen->world
 # rect mapping are engine-side (DEC-U §4.2, P5 negative expected). Everything
@@ -709,10 +715,10 @@ func _drag_world_rect(a_px: Vector2, b_px: Vector2, anchor_ground: Vector2 = Vec
 	# B05 / D04 §7 hunk 3: reuse the frozen press anchor for corner c instead of
 	# re-unprojecting a_px every frame. The default keeps every 2-argument call
 	# (2D/harness) byte-identical.
-	var c: Vector2 = anchor_ground if is_finite(anchor_ground.x) and is_finite(anchor_ground.y) else _screen_to_world(a_px)
-	var d := _screen_to_world(b_px)
-	var e := _screen_to_world(Vector2(a_px.x, b_px.y))
-	var f := _screen_to_world(Vector2(b_px.x, a_px.y))
+	var c: Vector2 = anchor_ground if is_finite(anchor_ground.x) and is_finite(anchor_ground.y) else _screen_to_world_pure(a_px)
+	var d := _screen_to_world_pure(b_px)
+	var e := _screen_to_world_pure(Vector2(a_px.x, b_px.y))
+	var f := _screen_to_world_pure(Vector2(b_px.x, a_px.y))
 	var minx := minf(minf(c.x, d.x), minf(e.x, f.x))
 	var miny := minf(minf(c.y, d.y), minf(e.y, f.y))
 	var maxx := maxf(maxf(c.x, d.x), maxf(e.x, f.x))
@@ -1763,7 +1769,7 @@ func _process(_dt: float) -> void:
 		# 2D is byte-identical: this handoff is gated to render_mode == "3d".
 		if render_mode == "3d" and picking != null and hud != null \
 				and hud.build_ghost_sid != "" and world.has_method("set_build_ghost_pos"):
-			world.set_build_ghost_pos(_screen_to_world(get_viewport().get_mouse_position()))
+			world.set_build_ghost_pos(_screen_to_world_pure(get_viewport().get_mouse_position()))
 	# SEL-01: draw the marquee in viewport pixels from the authoritative screen
 	# pixels already held here (drag_start / last LMB-held mouse position).
 	# NEVER project world.sel_rect: it holds SIM metres while
@@ -1843,7 +1849,7 @@ func _update_cursor() -> void:
 	_cursor_mouse = mp
 	_cursor_t_ms = now_ms
 	_cursor_sel_n = sel_key
-	var pw := _screen_to_world(mp)
+	var pw := _screen_to_world_pure(mp)
 	var sel := get_selected()
 	var peas := false
 	var military := false

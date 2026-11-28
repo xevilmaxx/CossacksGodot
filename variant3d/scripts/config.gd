@@ -128,9 +128,12 @@ const DEFAULT := {
 	},
 	"gameplay": {
 		"mode": "skirmish",
-		# CFG-01: Tiny (240) is the port's smallest donor-backed skirmish size.
-		"map_width_tiles": 240,
-		"map_height_tiles": 240,
+		# MAPSIZE-01: donor default mapsize=0 selects 320x320
+		# (initmapsettings.inc:10, donewgame.inc:42-43/48, miscext2.script:19-20/25).
+		# 240 remains a label-only PORT_DEBUG_ALIAS where explicitly configured;
+		# it is NOT a donor size (MAPSIZE_law.md). User config overrides win.
+		"map_width_tiles": 320,
+		"map_height_tiles": 320,
 		"random_seed": 20261113,
 		"nation0": "rus",
 		"nation1": "bav",
@@ -535,8 +538,9 @@ func apply() -> void:
 	Data.CAMERA_ZOOM_STEP = num("camera.zoom_step", 1.15)
 
 	var gp := section("gameplay")
-	Data.MAP_W = maxi(16, int(num("gameplay.map_width_tiles", 240)))
-	Data.MAP_H = maxi(16, int(num("gameplay.map_height_tiles", 240)))
+	# MAPSIZE-01: donor default 320 (mapsize=0); user config still overrides.
+	Data.MAP_W = maxi(16, int(num("gameplay.map_width_tiles", 320)))
+	Data.MAP_H = maxi(16, int(num("gameplay.map_height_tiles", 320)))
 	Data.RANDOM_SEED = int(num("gameplay.random_seed", 20261113))
 	Data.START_PEASANTS = maxi(0, int(num("gameplay.start_peasants", 8)))
 	# [O] donor gc_obj_MaxOrderCount = 12 (dmscript.global:113;

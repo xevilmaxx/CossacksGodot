@@ -1,0 +1,110 @@
+{
+  "byte_identical": true,
+  "capture_ticks": 32,
+  "checks": [
+    {
+      "engine_stderr_path_primary": "variant3d\\.godot_queue\\results\\00000220_acapt-configalign-aligned\\stderr.txt",
+      "engine_stderr_path_repeat": "variant3d\\.godot_queue\\results\\00000221_acapt-configalign-aligned\\stderr.txt",
+      "frame_count_match": true,
+      "frames": [
+        {
+          "index": 0,
+          "primary_file": "inbox\\qa\\captures\\configalign_seq_20261127\\01_aligned\\frame_0000.png",
+          "repeat_file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0000.png",
+          "sha256_file": {
+            "match": true,
+            "primary": "a4a1ec6bedb636639c20cbc6d2e275af91a825369d2dc4869c5f70a5245513b0",
+            "repeat": "a4a1ec6bedb636639c20cbc6d2e275af91a825369d2dc4869c5f70a5245513b0"
+          },
+          "sha256_pixels": {
+            "match": true,
+            "primary": "a62a8a3a2c2154cb54f9b09eda717184b6c09afed1ef2096e2d62751d7cbdebb",
+            "repeat": "a62a8a3a2c2154cb54f9b09eda717184b6c09afed1ef2096e2d62751d7cbdebb"
+          }
+        },
+        {
+          "index": 1,
+          "primary_file": "inbox\\qa\\captures\\configalign_seq_20261127\\01_aligned\\frame_0001.png",
+          "repeat_file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0001.png",
+          "sha256_file": {
+            "match": true,
+            "primary": "04988a0d3c565a68ed930afb6c86b7e2dac7ea5d5f97f7ca10b1ed4398bd0038",
+            "repeat": "04988a0d3c565a68ed930afb6c86b7e2dac7ea5d5f97f7ca10b1ed4398bd0038"
+          },
+          "sha256_pixels": {
+            "match": true,
+            "primary": "e248ec03126dbfb68b72cbb9e78d7d60d86e81f36af800957d93e45f90cb87df",
+            "repeat": "e248ec03126dbfb68b72cbb9e78d7d60d86e81f36af800957d93e45f90cb87df"
+          }
+        },
+        {
+          "index": 2,
+          "primary_file": "inbox\\qa\\captures\\configalign_seq_20261127\\01_aligned\\frame_0002.png",
+          "repeat_file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0002.png",
+          "sha256_file": {
+            "match": true,
+            "primary": "e32522f55ca478c20fc3ee3056feaa9a124236516dd947c7bf0b564052b21c14",
+            "repeat": "e32522f55ca478c20fc3ee3056feaa9a124236516dd947c7bf0b564052b21c14"
+          },
+          "sha256_pixels": {
+            "match": true,
+            "primary": "da554ab15136189bbee7253a7bc881750b8d779965edb3d7172bf1373cb441f7",
+            "repeat": "da554ab15136189bbee7253a7bc881750b8d779965edb3d7172bf1373cb441f7"
+          }
+        },
+        {
+          "index": 3,
+          "primary_file": "inbox\\qa\\captures\\configalign_seq_20261127\\01_aligned\\frame_0003.png",
+          "repeat_file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0003.png",
+          "sha256_file": {
+            "match": true,
+            "primary": "7efe58923737d9444dd6ae4bbb5d38bb50ddebf5d391f1ff3b60b37b8907d23d",
+            "repeat": "7efe58923737d9444dd6ae4bbb5d38bb50ddebf5d391f1ff3b60b37b8907d23d"
+          },
+          "sha256_pixels": {
+            "match": true,
+            "primary": "e6e9e3da965bd7772c3e064259d0346b7a2f0bc45e6d76edb9f1738ee6018f8e",
+            "repeat": "e6e9e3da965bd7772c3e064259d0346b7a2f0bc45e6d76edb9f1738ee6018f8e"
+          }
+        }
+      ],
+      "match": true,
+      "primary_frames": 4,
+      "repeat_frames": 4,
+      "resolution_ok": true,
+      "resolution_primary": {
+        "height": 720,
+        "width": 1280
+      },
+      "resolution_repeat": {
+        "height": 720,
+        "width": 1280
+      },
+      "sim_seconds_match": true,
+      "sim_seconds_primary": 1.0,
+      "sim_seconds_repeat": 1.0,
+      "stderr_clean_primary": true,
+      "stderr_clean_repeat": true,
+      "stderr_violations_primary": [],
+      "stderr_violations_repeat": [],
+      "view": "aligned"
+    }
+  ],
+  "expected_resolution": [
+    1280,
+    720
+  ],
+  "frames": 4,
+  "generated_utc": "2026-11-27T14:56:54+00:00",
+  "kind": "port-internal repeatability gate (NOT donor parity)",
+  "mismatches": [],
+  "parity": "UNVERIFIED (not assessed)",
+  "primary_manifest": "inbox\\qa\\captures\\configalign_seq_20261127\\manifest.json",
+  "repeat_manifest": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\manifest.json",
+  "repeat_out": "inbox\\qa\\captures\\configalign_seq_20261127_repeat",
+  "schema": 1,
+  "seed": "20261113",
+  "status": "pass",
+  "step_s": 0.25,
+  "tool": "capture_sequence.py"
+}

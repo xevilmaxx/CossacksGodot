@@ -192,6 +192,7 @@ const PROCESS_PRIORITY: int = -100  # camera.gd:36 — pan before world.sync()/H
 func bind(game: Object, view_scale: float = 1.0) -> void:
 	self.game = game
 	self.view_scale = view_scale
+	C3Log.info("camera", "bind begin view_scale=%s" % [str(view_scale)])
 	_resolve_height_sampler()
 	projection = PROJECTION_PERSPECTIVE  # G31:225 — donor main view is perspective, not ortho
 	# CONFIG-WIRE-CAM — FOV is now read through the global feature-config getter
@@ -249,6 +250,7 @@ func bind(game: Object, view_scale: float = 1.0) -> void:
 	_own_clamp_target = Vector2.INF
 	make_current()
 	_apply_transform()
+	C3Log.info("camera", "bind done fov=%s pitch_deg=%s height=%s zoom_target=%s target=%s" % [str(fov), str(DONOR_PITCH_DEG), str(height), str(zoom_target), str(_target)])
 
 
 # DEEPDEC-01 §6 item 1 — the camera now carries an explicit HEIGHT state (metres).
@@ -591,6 +593,7 @@ func apply_external_target(sim_pos: Vector2) -> void:
 	# Same order as jump_to_world(): transform :406, clamp :411.
 	_apply_transform()  # unconditional, single SIM->centred subtraction
 	clamp_pos()         # now measures the NEW view's corners, clamps in SIM space
+	C3Log.debug("camera", "apply_external_target sim_pos=%s target=%s" % [str(sim_pos), str(_target)])
 
 
 # MMJUMP-02 — DONOR-OFFSET camera jump, a SEPARATE API for the PRIMARY 3D minimap click.
@@ -789,6 +792,7 @@ func set_zoom_target(target: float, immediate: bool = false, anchor: Vector2 = V
 	zoom_target = clampf(target, min_zoom, max_zoom)
 	height_target = _zoom_to_height(zoom_target)
 	_zoom_anchor_screen = anchor
+	C3Log.debug("camera", "set_zoom_target requested=%s clamped=%s height_target=%s immediate=%s" % [str(target), str(zoom_target), str(height_target), str(immediate)])
 	if immediate:
 		zoom = zoom_target
 		height = height_target

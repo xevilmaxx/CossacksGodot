@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://ddfxj7q4k1if7"
+path="res://.godot/imported/palm2.obj-5d443a5be177b14725c88d6263972ad6.mesh"
+
+[deps]
+
+files=["res://.godot/imported/palm2.obj-5d443a5be177b14725c88d6263972ad6.mesh"]
+
+source_file="res://assets/models/obj/shared/terrain/palm2.obj"
+dest_files=["res://.godot/imported/palm2.obj-5d443a5be177b14725c88d6263972ad6.mesh", "res://.godot/imported/palm2.obj-5d443a5be177b14725c88d6263972ad6.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

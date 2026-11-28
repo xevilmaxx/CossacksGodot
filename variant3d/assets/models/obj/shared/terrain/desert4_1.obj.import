@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://uem316tpsfc3"
+path="res://.godot/imported/desert4_1.obj-f97b852470c5522c4f0e5901c6d70dfa.mesh"
+
+[deps]
+
+files=["res://.godot/imported/desert4_1.obj-f97b852470c5522c4f0e5901c6d70dfa.mesh"]
+
+source_file="res://assets/models/obj/shared/terrain/desert4_1.obj"
+dest_files=["res://.godot/imported/desert4_1.obj-f97b852470c5522c4f0e5901c6d70dfa.mesh", "res://.godot/imported/desert4_1.obj-f97b852470c5522c4f0e5901c6d70dfa.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

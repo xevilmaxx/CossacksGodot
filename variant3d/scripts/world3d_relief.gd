@@ -86,10 +86,12 @@ func _ready() -> void:
 func bind(g, terrain_module) -> void:
 	game = g
 	terrain = terrain_module
+	C3Log.info("world", "relief.bind begin")
 	_load_table()
 	_load_manifest_bboxes()
 	_load_meshes()
 	rebuild()
+	C3Log.info("world", "relief.bind done props=%d batches=%d stamps=%d matched=%d missing_mesh=%d unknown_sid=%d" % [int(stats.get("prop_count", 0)), int(stats.get("batch_count", 0)), int(stats.get("stamp_count", 0)), int(stats.get("matched_stamps", 0)), int(stats.get("skipped_missing_mesh", 0)), int(stats.get("skipped_unknown_sid", 0))])
 
 
 # Rebuild from the CURRENT game.pattern_stamps. Deterministic: no RNG is touched
@@ -350,13 +352,17 @@ func _load_meshes() -> void:
 		# FLATMAP_relief_obj.md). Compare against the exact legacy path instead.
 		if path == AssetPaths.legacy_for(sid, "obj"):
 			push_warning("world3d_relief: relief OBJ map miss for %s — flat diagnostic fallback %s" % [sid, path])
+		C3Log.debug("world", "relief mesh sid=%s path=%s legacy_fallback=%s" % [sid, path, str(path == AssetPaths.legacy_for(sid, "obj"))])
 		# Without a Godot import pass no .import exists; load() then returns null.
 		# Skip with a warning rather than crash any existing gate (Z05 R11).
 		if not ResourceLoader.exists(path):
 			push_warning("world3d_relief: OBJ not imported yet: " + path + " (G04 must run Godot once)")
+			C3Log.debug("world", "relief mesh MISS sid=%s path=%s not-imported" % [sid, path])
 			continue
 		var res: Resource = load(path) as Resource
 		if res is Mesh:
 			_meshes[sid] = res
 		else:
 			push_warning("world3d_relief: " + path + " did not import as Mesh")
+			C3Log.debug("world", "relief mesh SKIP sid=%s path=%s not-a-mesh" % [sid, path])
+	C3Log.info("world", "relief meshes loaded=%d/%d sids=%s" % [_meshes.size(), RELIEF_SIDS.size(), str(_meshes.keys())])

@@ -1,0 +1,112 @@
+{
+  "capture_ticks": 64,
+  "deterministic": true,
+  "deterministic_capture": true,
+  "finished_utc": "2026-11-27T10:56:00+00:00",
+  "frames": 2,
+  "generated_utc": "2026-11-27T10:55:00+00:00",
+  "parity": "UNVERIFIED",
+  "primary_manifest": "inbox\\qa\\captures\\reliefmeta_20261127\\manifest.json",
+  "role": "repeat_verification_pass",
+  "schema": 1,
+  "seed": "20261113",
+  "status": "ok",
+  "step_s": 1.0,
+  "tool": "capture_sequence.py",
+  "views": [
+    {
+      "argv_plain": "'C:\\Python314\\python.exe' 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py' run --id acapt-reliefmeta-donor --timeout 700 --max-wait 3600 -- --path variant3d -- --config 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json' --seed 20261113 --deterministic-capture --capture-ticks 64 --seq 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor' --seq-seconds 2 --seq-step 1 --timeout 670",
+      "audio_seed": 20261113,
+      "audio_seed_note": "cosmetic-only audio_rng seed (not a simulation RNG stream)",
+      "command_line": [
+        "C:\\Python314\\python.exe",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py",
+        "run",
+        "--id",
+        "acapt-reliefmeta-donor",
+        "--timeout",
+        "700",
+        "--max-wait",
+        "3600",
+        "--",
+        "--path",
+        "variant3d",
+        "--",
+        "--config",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json",
+        "--seed",
+        "20261113",
+        "--deterministic-capture",
+        "--capture-ticks",
+        "64",
+        "--seq",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor",
+        "--seq-seconds",
+        "2",
+        "--seq-step",
+        "1",
+        "--timeout",
+        "670"
+      ],
+      "command_line_text": "C:\\Python314\\python.exe \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py\" run --id acapt-reliefmeta-donor --timeout 700 --max-wait 3600 -- --path variant3d -- --config \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json\" --seed 20261113 --deterministic-capture --capture-ticks 64 --seq \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor\" --seq-seconds 2 --seq-step 1 --timeout 670",
+      "complete": true,
+      "config": "variant3d\\config_donor_capture.json",
+      "config_abs": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config_donor_capture.json",
+      "config_controlled": true,
+      "config_sha256_file": "aa857480474399dc4674104744ea292bf84094d8321cdd4d0889c24cf9a202da",
+      "engine_stderr": "variant3d\\.godot_queue\\results\\00000185_acapt-reliefmeta-donor\\stderr.txt",
+      "engine_stdout": "variant3d\\.godot_queue\\results\\00000185_acapt-reliefmeta-donor\\stdout.txt",
+      "frame_count": 2,
+      "frames": [
+        {
+          "file": "inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor\\frame_0000.png",
+          "height": 720,
+          "sha256_file": "f134ec2786de14400e3fe3a0219e754c14a062e4b62e9e4643e7763b2e078dd7",
+          "sha256_pixels": "ec0ad86914202b79cb43779720ac4282e8f786961ffd4a304e4820cd6d2a1645",
+          "width": 1280
+        },
+        {
+          "file": "inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor\\frame_0001.png",
+          "height": 720,
+          "sha256_file": "62fe80d0efdc600a2f3c77da0839ec091751f5c82438542e401913881a3d27df",
+          "sha256_pixels": "f5d49abcc05f24aa2b5716a80e3c02e377c0d4b868be3123b431311213526ccf",
+          "width": 1280
+        }
+      ],
+      "name": "donor",
+      "output_dir": "inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor",
+      "requested_frames": 2,
+      "resolution_matches_request": true,
+      "resolution_observed": {
+        "height": 720,
+        "width": 1280
+      },
+      "resolution_requested": {
+        "height": 720,
+        "source": "variant3d\\config_donor_capture.json",
+        "width": 1280
+      },
+      "runner_duration_s": 60.232,
+      "runner_exit": 0,
+      "runner_harness_rc": 0,
+      "runner_run_s": 57.99998712539673,
+      "runner_status": "ok",
+      "runner_stderr": "inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor\\runner_stderr.txt",
+      "runner_stdout": "inbox\\qa\\captures\\reliefmeta_20261127_repeat\\01_donor\\runner_stdout.txt",
+      "runner_ticket": 185,
+      "runner_wait_s": 0.0007224082946777344,
+      "seq_index": {
+        "capture_ticks": 64,
+        "deterministic": true,
+        "frames": 2,
+        "mode": "window",
+        "seconds": 2.0,
+        "sim_seconds": 2.0,
+        "step": 1.0,
+        "ticks_done": 64,
+        "ticks_per_frame": 32,
+        "winner": -1
+      }
+    }
+  ]
+}

@@ -500,6 +500,7 @@ func bind_height_grid(height: PackedFloat32Array, gw: int, gh: int) -> bool:
 # refused until the owner supplies a real target here. Call AFTER build().
 func bind_reflection_map(tex: Texture2D) -> bool:
 	if tex == null:
+		C3Log.err("water", "bind_reflection_map(null) REFUSED scalar=%s path=%s; [U12] requires a real reflectionMap" % [water_scalar_source_label(), shader_path_label()])
 		push_error("water3d: bind_reflection_map(null) refused; [U12] requires a real reflectionMap")
 		return false
 	_reflection_map = tex
@@ -599,10 +600,13 @@ func _build_field_records() -> Array:
 
 # ---- Finalize: build the merged field mesh + bind every donor uniform ------
 func _finalize_water_node() -> bool:
+	C3Log.debug("water", "finalize begin built=%s height_bound=%s material_null=%s path=%s grid=%dx%d" % [str(_built), str(_height_bound), str(_material == null), shader_path_label(), _grid_w, _grid_h])
 	if not _built or not _height_bound or _material == null:
+		C3Log.warn("water", "finalize SKIP built=%s height_bound=%s material_null=%s; no water node" % [str(_built), str(_height_bound), str(_material == null)])
 		return false
 	_field_centres = _build_field_records()
 	if _field_centres.is_empty():
+		C3Log.err("water", "finalize REFUSED no water fields grid=%dx%d mask_bound=%s; refusing grey quad" % [_grid_w, _grid_h, str(_mask_bound)])
 		push_error("water3d: no water fields generated; refusing to draw a grey quad")
 		return false
 
@@ -614,6 +618,8 @@ func _finalize_water_node() -> bool:
 	uvs.resize(n * 4)
 	inds.resize(n * 6)
 	for i in range(n):
+		if i % 64 == 0:
+			C3Log.trace("water", "finalize fields i=%d n=%d" % [i, n])
 		var f: Dictionary = _field_centres[i]
 		var x0: float = float(f["tz"]) * TILE_M
 		var x1: float = float(f["bz"]) * TILE_M
@@ -658,6 +664,7 @@ func _finalize_water_node() -> bool:
 	# labelled; the raw texel is kept on dry pixels exactly as water.frag does.
 	# Never a neutral 1x1 texel (that is the grey-fallback bug, report §9.5).
 	if _water_shader_path == WaterShaderPath.LEGACY:
+		C3Log.debug("water", "finalize LEGACY check height_bound=%s grid=%dx%d hmapMin=%s hmapMax=%s" % [str(_height_bound), _grid_w, _grid_h, str(-MAX_HEIGHT), str(MAX_HEIGHT)])
 		_material.set_shader_parameter("hmapTex", height_img)
 		_material.set_shader_parameter("hmapTexBound", true)
 		# Exact §4.3 donor keys hmapW/hmapH/hmapMin/hmapMax. Their engine values
@@ -676,7 +683,9 @@ func _finalize_water_node() -> bool:
 	# never a neutral/grey quad. The shader also discards when reflectionMapBound
 	# is false, so an unbound sampler can never produce a grey fallback.
 	if _water_shader_path == WaterShaderPath.BUILTIN:
+		C3Log.debug("water", "finalize BUILTIN check reflection_bound=%s scalar=%s" % [str(_reflection_map != null), water_scalar_source_label()])
 		if _reflection_map == null:
+			C3Log.err("water", "finalize REFUSED BUILTIN reflectionMap unbound scalar=%s; [U12] HARD-FAIL no water drawn" % water_scalar_source_label())
 			push_error("water3d: BUILTIN (labelled default) selected but reflectionMap is unbound "
 				+ "([U12] DEC_U §8 FBO provenance unresolved); HARD-FAIL: no water drawn, "
 				+ "no grey fallback. Use bind_reflection_map() with a real target.")
@@ -711,6 +720,7 @@ func _finalize_water_node() -> bool:
 	stats["height_grid"] = {"w": _grid_w, "h": _grid_h}
 	stats["field_source"] = ("EXACT gMapMask gate (bind_water_mask)" if _mask_bound
 		else "HEIGHT-DERIVED FALLBACK [U] - exact donor gate needs bind_water_mask")
+	C3Log.debug("water", "finalize ok fields=%d verts=%d tris=%d grid=%dx%d mask_bound=%s" % [n, n * 4, n * 2, _grid_w, _grid_h, str(_mask_bound)])
 	return true
 
 
@@ -725,6 +735,7 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 	invalidate()
 	_grid_w = w
 	_grid_h = h
+	C3Log.info("water", "build begin w=%d h=%d path=%s scalar=%s level=%.3f plane_y=%.3f" % [w, h, shader_path_label(), water_scalar_source_label(), WATER_LEVEL, C3_OFFSET_Y])
 
 	# CONFIG-WIRE-WATER (config.gd read-only): config supplies an A/B surface Y;
 	# for the donor path the plane Y is the recovered cOffsetY=-0.5, so the config
@@ -743,12 +754,14 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 	# ENGINE diverge). NO default — unset => push_error + no water. Never invent
 	# a scalar or silently pick one tuple as "the" donor value.
 	if _water_scalar_source == WATER_SCALAR_SOURCE_UNSET:
+		C3Log.err("water", "build REFUSED U4* UNSET scalar_enum=%d label=%s path=%s grid=%dx%d capture=%s" % [_water_scalar_source, water_scalar_source_label(), shader_path_label(), _grid_w, _grid_h, U4_CAPTURE_ID])
 		push_error("water3d: water_scalar_source UNSET [U4*] (FILE vs ENGINE); no water drawn. "
 			+ "Call set_water_scalar_source(\"FILE\"|\"ENGINE\") only after U4* capture: " + U4_CAPTURE_ID)
 		_material = null
 		return false
 	var shader := load(SHADER_PATH) as Shader
 	if shader == null:
+		C3Log.err("water", "build REFUSED shader missing path=%s scalar=%s" % [SHADER_PATH, water_scalar_source_label()])
 		push_error("water3d: cannot load " + SHADER_PATH + " (no water drawn)")
 		return false
 	_material = ShaderMaterial.new()
@@ -785,6 +798,7 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 	# waveMap = diffusewaves0.png, donor-derived and shipped. Missing => hard fail.
 	var wave := _load_png_texture(WAVE_TEX_PATH)
 	if wave == null:
+		C3Log.err("water", "build REFUSED wave texture missing path=%s scalar=%s" % [WAVE_TEX_PATH, water_scalar_source_label()])
 		push_error("water3d: missing donor wave texture " + WAVE_TEX_PATH + "; no water drawn")
 		_material = null
 		return false
@@ -826,6 +840,7 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 		# waveDirs: engine slots unenumerated (§3 W0/W1) => ENGINE tuple has null
 		# dirs; hard-fail rather than invent. FILE dirs are the documented candidate.
 		if scalars["waveDir0"] == null or scalars["waveDir1"] == null:
+			C3Log.err("water", "build REFUSED ENGINE waveDirs UNENUMERATED scalar=%s waveDir0=%s waveDir1=%s" % [water_scalar_source_label(), str(scalars["waveDir0"]), str(scalars["waveDir1"])])
 			push_error("water3d: waveDir0/1 engine slots UNENUMERATED [U4*]; no invented dirs, no water")
 			_material = null
 			return false
@@ -1023,6 +1038,8 @@ func build(w: int = DEFAULT_GRID, h: int = DEFAULT_GRID) -> bool:
 		"grey_fallback_removed": true,
 		"visual_parity_claimed": false,
 	}
+	C3Log.info("water", "build ok path=%s scalar=%s grid=%dx%d level=%.3f plane_y=%.3f" % [label, water_scalar_source_label(), _grid_w, _grid_h, WATER_LEVEL, C3_OFFSET_Y])
+	C3Log.debug("water", "build bound wave=%s reflection_bound=%s height_bound=%s" % [str(wave != null), str(_reflection_map != null), str(_height_bound)])
 	return true
 
 

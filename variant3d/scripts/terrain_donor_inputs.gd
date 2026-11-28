@@ -68,6 +68,11 @@ const COMPACT_MANIFEST := COMPACT_DIR + "manifest.json"
 const COMPACT_FAMILIES := COMPACT_DIR + "families.json"
 const COMPACT_PATTERNS := COMPACT_DIR + "patterns.json"
 const COMPACT_SCHEMA := "terrain_new/patterns_compact/v1"
+# CASE-FIX-01: one explicit donor-cased alias. pattern_decode_manifest.json:3779-3782
+# binds family name "k_ravine_2" to output "K_ravine_2.json" from donor
+# data\pattern\K_ravine_2.pattern. This is a path-only alias, NOT a case-fold
+# and NOT a lookup-key invention: every other name is used verbatim.
+const DONOR_CASE_ALIASES := {"k_ravine_2": "K_ravine_2"}
 
 # GEN1TO1 §G.6 [O] generator.cfg:5-6 — live Land shape folder is `nowater2`
 # (`land` is commented out). Canonicalise only that alias, never other shapes.
@@ -112,6 +117,8 @@ var mask_resample_mode: String = "nearest"
 # Leaf/mixed families stay gated behind this explicit opt-in; default false.
 var include_leaf_forests: bool = false
 var _family_gate_notes: Array[String] = []
+# LOG-PATTERN: CASE-FIX alias hits since the last build() (diagnostic only).
+var _casefix_hits: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -1076,8 +1083,20 @@ func _target_pattern(name: String) -> bool:
 	return false
 
 
+func _pattern_filename(name: String) -> String:
+	# CASE-FIX-01: explicit donor-cased filename for the ONE name whose family
+	# key differs from its on-disk file. Returns the verbatim name otherwise.
+	# LOG-PATTERN: count the explicit alias hit (no lookup change); the first
+	# hit per build() is logged, the count is reported at build() exit.
+	if DONOR_CASE_ALIASES.has(name):
+		_casefix_hits += 1
+		if _casefix_hits == 1:
+			C3Log.debug("terrain", "donor_inputs case-fix alias hit %s -> %s" % [name, str(DONOR_CASE_ALIASES[name])])
+	return str(DONOR_CASE_ALIASES.get(name, name))
+
+
 func _decode_pattern(name: String, skipped: Array) -> Dictionary:
-	var path: String = PATTERN_DIR + name + ".json"
+	var path: String = PATTERN_DIR + _pattern_filename(name) + ".json"
 	if not FileAccess.file_exists(path):
 		skipped.append("ABSENT " + path + " [U] — pattern not stamped")
 		return {}
@@ -1241,10 +1260,10 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 			else:
 				skipped.append("ABSENT " + PATTERN_DIR + n + ".json [U] — pattern not stamped")
 		else:
-			if FileAccess.file_exists(PATTERN_DIR + n + ".json"):
+			if FileAccess.file_exists(PATTERN_DIR + _pattern_filename(n) + ".json"):
 				ordered.append(n)
 			else:
-				skipped.append("ABSENT " + PATTERN_DIR + n + ".json [U] — pattern not stamped")
+				skipped.append("ABSENT " + PATTERN_DIR + _pattern_filename(n) + ".json [U] — pattern not stamped")
 	fam_pattern_names.sort()
 	var pool: Array[String] = []
 	for n in fam_pattern_names:
@@ -1256,7 +1275,7 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 				# manifest. Exact-key lookup never aliases K_ravine_2 to k_ravine_2.
 				continue
 		else:
-			if FileAccess.file_exists(PATTERN_DIR + n + ".json"):
+			if FileAccess.file_exists(PATTERN_DIR + _pattern_filename(n) + ".json"):
 				pool.append(n)
 	if not pool.is_empty():
 		var start: int = _hash32("%d|patterns" % seed) % pool.size()
@@ -1276,7 +1295,7 @@ func _apply_patterns(p: Dictionary, seed: int, skipped: Array, loaded: Array) ->
 		else:
 			decoded = _decode_pattern(n, skipped)
 			if not decoded.is_empty():
-				loaded.append("PATTERN " + PATTERN_DIR + n + ".json")
+				loaded.append("PATTERN " + PATTERN_DIR + _pattern_filename(n) + ".json")
 		if not decoded.is_empty():
 			patterns[n] = decoded
 	p["patterns"] = patterns
@@ -1325,6 +1344,9 @@ func build(game, w: int, h: int) -> Dictionary:
 	var skipped: Array = []
 	var loaded: Array = []
 	_family_gate_notes.clear()
+	_casefix_hits = 0
+	# LOG-PATTERN diagnostics (read-only): entry here, counts at exit below.
+	C3Log.info("terrain", "donor_inputs.build begin w=%d h=%d" % [w, h])
 	var p: Dictionary = {}
 	var seed_info := _derive_seed(game)
 	var seed: int = int(seed_info["seed"])
@@ -1410,6 +1432,22 @@ func build(game, w: int, h: int) -> Dictionary:
 			"pattern.lib:549563-549575; cossacks.exe:0x755f30 (blend flags/math)",
 		],
 	}
+	# LOG-PATTERN exit (read-only census of the locals above): EXACT_PATTERNS
+	# ticket count, decoded family pool, loaded pattern/family counts, skip
+	# totals, CASE-FIX alias hits, conifer-gate notes. No parity claim.
+	var _absent := 0
+	for _sk in skipped:
+		if str(_sk).begins_with("ABSENT"):
+			_absent += 1
+	C3Log.info("terrain", "donor_inputs.build done shape=%s raw=%s mask=%s exact=%d families=%d patterns=%d/%d skipped=%d absent=%d casefix=%d gates=%d source=%s" % [shape, raw_shape, str(mask_info.get("file", "none")), EXACT_PATTERNS.size(), int(pat_info.get("families_loaded", 0)), int(pat_info.get("patterns_loaded", 0)), MAX_PATTERNS, skipped.size(), _absent, _casefix_hits, _family_gate_notes.size(), str(pat_info.get("source", "?"))])
+	C3Log.debug("terrain", "donor_inputs mask_count=%d chains=%d const_ids=%d loaded=%d" % [int(mask_info.get("mask_count", 0)), int(const_info.get("chains", 0)), int(const_info.get("tile_ids", 0)), loaded.size()])
+	if (p.get("patterns", {}) as Dictionary).is_empty():
+		C3Log.warn("terrain", "donor_inputs.build no patterns decoded")
+	var _shown := 0
+	for _sk2 in skipped:
+		if str(_sk2).begins_with("ABSENT") and _shown < 10:
+			C3Log.debug("terrain", "donor_inputs skip " + str(_sk2))
+			_shown += 1
 	return p
 
 

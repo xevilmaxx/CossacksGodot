@@ -4,14 +4,14 @@ importer="wavefront_obj"
 importer_version=1
 type="Mesh"
 uid="uid://ck7k4vasgqqcp"
-path="res://.godot/imported/houa.obj-f0ff53f52a0b0d177cb1991b6ae4af26.mesh"
+path="res://.godot/imported/houa.obj-af26ab7100fe389ca709d176cdf86e50.mesh"
 
 [deps]
 
-files=["res://.godot/imported/houa.obj-f0ff53f52a0b0d177cb1991b6ae4af26.mesh"]
+files=["res://.godot/imported/houa.obj-af26ab7100fe389ca709d176cdf86e50.mesh"]
 
-source_file="res://assets/models/obj/shared/buildings/houa.obj"
-dest_files=["res://.godot/imported/houa.obj-f0ff53f52a0b0d177cb1991b6ae4af26.mesh", "res://.godot/imported/houa.obj-f0ff53f52a0b0d177cb1991b6ae4af26.mesh"]
+source_file="res://assets/models/obj/ukr/buildings/houa.obj"
+dest_files=["res://.godot/imported/houa.obj-af26ab7100fe389ca709d176cdf86e50.mesh", "res://.godot/imported/houa.obj-af26ab7100fe389ca709d176cdf86e50.mesh"]
 
 [params]
 

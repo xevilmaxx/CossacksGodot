@@ -617,6 +617,13 @@ func _do_async_load(cfg: Dictionary) -> void:
 	if not await _loading_tick(0.14, "Shaping land and water...", gen):
 		return
 	game._gen_base()
+	# PATTERN-WIRE-01: setup() calls _gen_patterns() here (game.gd:553); the
+	# staged loader omitted it, so pattern forests/stones/mines/decor never
+	# became sim nodes in INTERACTIVE play (FLATMAP_flora.md). _gen_base caches
+	# the world-independent build (game.gd:1782), so this consumes that cache
+	# with no extra RNG draws and preserves stage order exactly.
+	game._gen_patterns()
+	_async_log("SYNC-ASYNC pattern stage applied")
 	if not await _loading_tick(0.34, "Growing forests...", gen):
 		return
 	game._gen_forests()
@@ -632,6 +639,8 @@ func _do_async_load(cfg: Dictionary) -> void:
 	if not await _loading_tick(0.86, "Mustering armies...", gen):
 		return
 	game.setup_spawns()
+	# PATTERN-WIRE-01: setup() calls _finalize_mine_tiles() last (game.gd:559).
+	game._finalize_mine_tiles()
 	game.game_over.connect(func(w: int) -> void: _on_game_over(w))
 	_apply_menu_post_loadsave(cfg)
 	if not await _loading_tick(0.90, "Loading art...", gen):

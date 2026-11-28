@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://bkevp18gk4ly7"
+path="res://.godot/imported/plantyellow5.obj-eb325300c3bf0dbebd02118e728428b0.mesh"
+
+[deps]
+
+files=["res://.godot/imported/plantyellow5.obj-eb325300c3bf0dbebd02118e728428b0.mesh"]
+
+source_file="res://assets/models/obj/shared/terrain/plantyellow5.obj"
+dest_files=["res://.godot/imported/plantyellow5.obj-eb325300c3bf0dbebd02118e728428b0.mesh", "res://.godot/imported/plantyellow5.obj-eb325300c3bf0dbebd02118e728428b0.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

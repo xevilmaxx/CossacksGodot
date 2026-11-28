@@ -620,6 +620,7 @@ func _selection_radius(e, kind: String) -> float:
 # --- FULL 2D WORLD CONTRACT: API ---------------------------------------------
 
 func bind(g, h = null) -> void:
+	C3Log.info("world", "bind begin backend=%s" % terrain_backend)
 	game = g
 	hud = h
 	view_scale = float(Data.PIXELS_PER_METER)   # world.gd:240; data.gd:113
@@ -662,6 +663,7 @@ func bind(g, h = null) -> void:
 		terrain.bind(game)
 		if _has_height_source(game):
 			terrain.build()   # ONE full-grid mesh; no chunk scheduling
+			C3Log.info("world", "terrain.build done")
 	# Z08: relief props are STATIC — build once here, after terrain.height_at_world
 	# is live, from the already-generated game.pattern_stamps. Read-only on all
 	# sim state; no per-frame work in sync().
@@ -669,6 +671,7 @@ func bind(g, h = null) -> void:
 		relief.bind(game, terrain)
 	if entities != null:
 		entities.bind(game)
+		C3Log.info("world", "entities.bind done")
 		_reconcile_entities()   # V7-62: seed meshes from the live sim collections
 	if fx != null:
 		fx.bind(game)

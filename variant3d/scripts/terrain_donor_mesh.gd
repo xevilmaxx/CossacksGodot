@@ -206,6 +206,19 @@ const BLOCKS_DIR := "res://assets/terrain/blocks/"   # TileAtlasLoader:69, :455
 const ARRAY_ATLAS_BLOCK_PX: int = 1024               # D08 §3.1 / E3; donor block
 const ARRAY_ATLAS_COLS: int = 4                      # compact grid columns
 const ARRAY_ATLAS_MAX_SLOTS: int = 16                # hard VRAM cap: 4x4 x 1024^2 = 64 MiB base
+# IMG-EXPORT-01: export-safe PNG load — ResourceLoader -> Texture2D -> Image
+# before Image.load(res://), which warns "Loaded resource as image file" and
+# breaks in .pck builds. Established pattern: game.gd:_load_image_tex.
+func _load_block_image(path: String) -> Image:
+	var tex: Texture2D = ResourceLoader.load(path) as Texture2D
+	if tex != null:
+		var img: Image = tex.get_image()
+		if img != null:
+			return img
+	var img2 := Image.new()
+	if img2.load(ProjectSettings.globalize_path(path)) != OK:
+		return null
+	return img2
 # LIGHT-MATCH opt-in: PORT CONSISTENCY calibration, NOT donor parity. When true,
 # the terrain material binds the SAME ambient/sun energies the composer already
 # uses for scene props (terrain_donor_world.gd:69-70); when false/absent the
@@ -579,6 +592,7 @@ func _build_tile_map_texture() -> ImageTexture:
 	# a triangle. The L8 image is exactly _w x _h and the shader samples texel
 	# centres from integer world-cell coordinates with a nearest sampler.
 	if _w <= 0 or _h <= 0 or _n != _w * _h or _tex.size() != _n:
+		C3Log.err("terrain", "mesh.tilemap invalid grid w=%d h=%d n=%d tex=%d" % [_w, _h, _n, _tex.size()])
 		push_error("terrain_donor_mesh: tile-map source grid is invalid")
 		return null
 	var pixels := _tex.duplicate()   # source I08 array stays read-only
@@ -604,10 +618,12 @@ func _build_tile_map_texture() -> ImageTexture:
 		pixels[i] = tid
 	var image := Image.create_from_data(_w, _h, false, Image.FORMAT_L8, pixels)
 	if image == null or image.is_empty():
+		C3Log.err("terrain", "mesh.tilemap L8 create failed w=%d h=%d" % [_w, _h])
 		push_error("terrain_donor_mesh: cannot create L8 tile-map image")
 		return null
 	var texture := ImageTexture.create_from_image(image)
 	if texture == null:
+		C3Log.err("terrain", "mesh.tilemap texture create failed w=%d h=%d" % [_w, _h])
 		push_error("terrain_donor_mesh: cannot create tile-map texture")
 	return texture
 
@@ -837,6 +853,7 @@ func _build_donor_tile_array() -> bool:
 	_tile_array_info = {}
 	var sources := _collect_block_sources()
 	if sources.is_empty():
+		C3Log.warn("terrain", "mesh.tile_array no 1024x1024 donor block manifest/layout")
 		_tile_array_info = {"active": false, "reason": "no 1024^2 donor block manifest/layout"}
 		return false
 	var counts := _used_tile_id_counts()
@@ -849,11 +866,8 @@ func _build_donor_tile_array() -> bool:
 		var id: int = int(idv)
 		if not sources.has(id):
 			continue
-		var block := Image.new()
-		var err: int = block.load(BLOCKS_DIR + str(sources[id]))
-		if err != OK:
-			err = block.load(ProjectSettings.globalize_path(BLOCKS_DIR + str(sources[id])))
-		if err != OK or block.get_size() != Vector2i(ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX):
+		var block: Image = _load_block_image(BLOCKS_DIR + str(sources[id]))
+		if block == null or block.get_size() != Vector2i(ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX):
 			continue
 		if block.get_format() != Image.FORMAT_RGBA8:
 			block.convert(Image.FORMAT_RGBA8)
@@ -862,13 +876,16 @@ func _build_donor_tile_array() -> bool:
 		_id_to_layer[id] = images.size()
 		images.append(block)
 	if images.is_empty():
+		C3Log.warn("terrain", "mesh.tile_array no used id had a readable 1024x1024 block ids=%d" % ids.size())
 		_tile_array_info = {"active": false, "reason": "no used id had a readable 1024^2 block"}
 		return false
 	var arr := Texture2DArray.new()
 	if arr.create_from_images(images) != OK:
+		C3Log.err("terrain", "mesh.tile_array create_from_images failed layers=%d" % images.size())
 		_tile_array_info = {"active": false, "reason": "Texture2DArray.create_from_images failed"}
 		return false
 	_tile_array_texture = arr
+	C3Log.debug("terrain", "mesh.tile_array layers=%d ids=%d" % [images.size(), ids.size()])
 	_tile_array_info = {
 		"active": true,
 		"label": ("DONOR texUnit0 GEOMETRY — one 1024^2 donor-derived block per used "
@@ -1118,12 +1135,15 @@ func _used_tile_id_counts() -> Dictionary:
 		if tid < 0 or tid > MAX_TILE_ID:
 			continue
 		counts[tid] = int(counts.get(tid, 0)) + 1
+	# TILE-ID-DIAG: print-only distribution; no behaviour change.
+	C3Log.debug("terrain", "mesh.tile_id_distribution n=%d tex=%d distinct=%d counts=%s" % [_n, _tex.size(), counts.size(), str(counts)])
 	return counts
 
 
 func _array_atlas_fallback(reason: String) -> bool:
 	# EVERY failure is a labelled fallback to the unchanged commit-default
 	# terrain_new tier. No partial atlas is bound and no art is synthesised.
+	C3Log.warn("terrain", "mesh.partial_atlas fallback reason=%s" % reason)
 	_array_atlas = {
 		"feature": ARRAY_ATLAS_FLAG_PATH,
 		"enabled": true,
@@ -1206,11 +1226,8 @@ func _build_partial_array_atlas() -> bool:
 	var blocks: Array[Image] = []
 	for idv2 in kept:
 		var id2 := int(idv2)
-		var block := Image.new()
-		var err := block.load(BLOCKS_DIR + str(sources[id2]))
-		if err != OK:
-			err = block.load(ProjectSettings.globalize_path(BLOCKS_DIR + str(sources[id2])))
-		if err != OK or block.get_size() != Vector2i(ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX):
+		var block: Image = _load_block_image(BLOCKS_DIR + str(sources[id2]))
+		if block == null or block.get_size() != Vector2i(ARRAY_ATLAS_BLOCK_PX, ARRAY_ATLAS_BLOCK_PX):
 			return _array_atlas_fallback("block PNG missing/wrong size for id %d (%s)"
 				% [id2, str(sources[id2])])
 		if block.get_format() != Image.FORMAT_RGBA8:
@@ -1242,6 +1259,7 @@ func _build_partial_array_atlas() -> bool:
 	if _compact_atlas_texture == null:
 		return _array_atlas_fallback("ImageTexture.create_from_image failed for partial atlas")
 	_compact_grid = Vector2(float(cols), float(rows))
+	C3Log.debug("terrain", "mesh.partial_atlas slots=%d dropped=%d w=%d h=%d" % [kept.size(), dropped.size(), w, h])
 	var base_bytes := float(w * h * 4)
 	var base_mib := base_bytes / 1048576.0
 	var mip_mib := base_mib * 4.0 / 3.0
@@ -1421,6 +1439,7 @@ func _repack_mask_alpha(src: Texture2D) -> Texture2D:
 
 func _load_atlas() -> bool:
 	var paths := _atlas_paths()
+	C3Log.info("terrain", "mesh._load_atlas begin path=%s tier=%s manifest=%s" % [str(paths.get("single_atlas_path", "")), str(paths.get("tier", "")), str(paths.get("manifest_path", ""))])
 	_atlas_resolution = _atlas_resolution_info(paths)
 	if hires_atlas:
 		var diag := str(_atlas_resolution.get("diagnostic_warning", ""))
@@ -1428,10 +1447,12 @@ func _load_atlas() -> bool:
 			push_warning("terrain_donor_mesh: " + diag)
 	var loader_script := load(TILE_ATLAS_LOADER_PATH) as Script
 	if loader_script == null or not loader_script.can_instantiate():
+		C3Log.err("terrain", "mesh._load_atlas loader missing path=%s" % TILE_ATLAS_LOADER_PATH)
 		push_error("terrain_donor_mesh: cannot load " + TILE_ATLAS_LOADER_PATH)
 		return false
 	_atlas_loader = loader_script.new(atlas_mode_request, paths)
 	if _atlas_loader == null:
+		C3Log.err("terrain", "mesh._load_atlas loader instantiate failed")
 		return false
 	var use_partial: bool = (array_atlas and not hires_atlas
 		and _compact_atlas_texture != null and not _id_to_slot.is_empty())
@@ -1457,6 +1478,7 @@ func _load_atlas() -> bool:
 		_atlas_resolution["tier"] = atlas_mode
 		var partial_masks: Array = _atlas_loader.call("get_mask_textures")
 		if partial_masks.size() < 2:
+			C3Log.err("terrain", "mesh._load_atlas partial masks=%d" % partial_masks.size())
 			push_error("terrain_donor_mesh: loader returned fewer than 2 masks (partial tier)")
 			return false
 		_alpha_tex = _repack_mask_alpha(partial_masks[0])
@@ -1464,6 +1486,7 @@ func _load_atlas() -> bool:
 		return _alpha_tex != null and _alphavert_tex != null
 	# load() owns single -> split -> array; it reports the CHOSEN mode.
 	if not bool(_atlas_loader.call("load")):
+		C3Log.err("terrain", "mesh._load_atlas load failed err=%s" % str(_atlas_loader.call("get_last_error")))
 		push_error("terrain_donor_mesh: atlas load failed: %s" % str(_atlas_loader.call("get_last_error")))
 		return false
 	var chosen: Variant = _atlas_loader.get("current_mode")
@@ -1475,11 +1498,13 @@ func _load_atlas() -> bool:
 		# ARRAY transport exposes Texture2DArray, not sampler2D. Use a dedicated
 		# split loader for the single 2D atlas sampler (PORT LIMITATION, same as
 		# world3d_terrain.gd:645-658); never stack two atlas resources.
+		C3Log.warn("terrain", "mesh._load_atlas array transport, split fallback for 2D sampler")
 		var split_loader = loader_script.new("split")
 		if split_loader != null and bool(split_loader.call("load")):
 			atlas_texture = split_loader.call("get_atlas_texture")
 	_atlas_texture = _ensure_cpu_mipmaps(atlas_texture)
 	if _atlas_texture == null:
+		C3Log.err("terrain", "mesh._load_atlas atlas texture null after mips")
 		return false
 	var mip_img: Image = null
 	if _atlas_texture is ImageTexture:
@@ -1488,16 +1513,19 @@ func _load_atlas() -> bool:
 		_mip_source = "loader CPU generate_mipmaps before ImageTexture.create_from_image"
 	_atlas_grid = _atlas_loader.call("atlas_grid")
 	if _atlas_grid.x <= 0.0 or _atlas_grid.y <= 0.0:
+		C3Log.warn("terrain", "mesh._load_atlas grid fallback grid=%s" % str(_atlas_grid))
 		_atlas_grid = ATLAS_GRID_EXPECTED
 	# N17-G1/G2 terminate only on §6 E-ATLAS-LAYOUT zero-mismatch byte-dump;
 	# this fallback grid is never promoted to a donor claim.
 	_atlas_info = _atlas_loader.call("get_reassembly_info")
 	var masks: Array = _atlas_loader.call("get_mask_textures")
 	if masks.size() < 2:
+		C3Log.err("terrain", "mesh._load_atlas masks=%d" % masks.size())
 		push_error("terrain_donor_mesh: loader returned fewer than 2 masks")
 		return false
 	_alpha_tex = _repack_mask_alpha(masks[0])
 	_alphavert_tex = _repack_mask_alpha(masks[1])
+	C3Log.debug("terrain", "mesh._load_atlas done mode=%s grid=%s" % [atlas_mode, str(_atlas_grid)])
 	return _alpha_tex != null and _alphavert_tex != null
 
 
@@ -1531,6 +1559,7 @@ func _bind_known_params(mat: ShaderMaterial, params: Dictionary) -> Dictionary:
 func _make_material(atlas_ready: bool = true, base_pass: bool = false) -> Material:
 	if not atlas_ready or _tile_map_tex == null:
 		# Geometry still builds; no shader sampler is bound to a null atlas/map.
+		C3Log.warn("terrain", "mesh.material plain fallback atlas_ready=%s tilemap=%s base=%s" % [str(atlas_ready), str(_tile_map_tex != null), str(base_pass)])
 		material_model = "PORT APPROXIMATION — plain material (atlas/tile map unavailable)"
 		_shader_path_used = "NONE"
 		var plain_fallback := StandardMaterial3D.new()
@@ -1551,6 +1580,7 @@ func _make_material(atlas_ready: bool = true, base_pass: bool = false) -> Materi
 			+ "hard-coded at :475, so true donor framebuffer crossfade is NOT achievable "
 			+ "without I10. PORT APPROXIMATION, NO DONOR PARITY.")
 	if shader == null:
+		C3Log.warn("terrain", "mesh.material no shader base=%s" % str(base_pass))
 		material_model = "no shader — plain PORT APPROXIMATION fallback"
 		_shader_path_used = "NONE"
 		var plain := StandardMaterial3D.new()
@@ -1561,6 +1591,8 @@ func _make_material(atlas_ready: bool = true, base_pass: bool = false) -> Materi
 	var mat := ShaderMaterial.new()
 	mat.shader = shader
 	_shader_path_used = DONOR_SHADER_PATH if is_new_shader else LEGACY_SHADER_PATH
+	if not is_new_shader:
+		C3Log.warn("terrain", "mesh.material legacy shader fallback base=%s" % str(base_pass))
 	# LIGHT-MATCH: bind the shared rig energies only under the opt-in. The
 	# shader uniforms default to 1.0 (unscaled donor colours), so with the flag
 	# off — or with no composer parent to read from — behaviour is unchanged.
@@ -1676,16 +1708,20 @@ func _make_material(atlas_ready: bool = true, base_pass: bool = false) -> Materi
 func _make_water(w: int, height_cells: int) -> bool:
 	var script := load(WATER_SCRIPT_PATH) as Script
 	if script == null or not script.can_instantiate():
+		C3Log.warn("terrain", "mesh.water skip script missing path=%s" % WATER_SCRIPT_PATH)
 		return false
 	var node = script.new()
 	if node == null:
+		C3Log.warn("terrain", "mesh.water skip node null w=%d h=%d" % [w, height_cells])
 		return false
 	if not bool(node.call("build", w, height_cells)):
+		C3Log.warn("terrain", "mesh.water build failed w=%d h=%d" % [w, height_cells])
 		node.free()
 		return false
 	node.call("bind_height_grid", _height, w, height_cells)
 	water = node
 	add_child(node)
+	C3Log.debug("terrain", "mesh.water bound w=%d h=%d" % [w, height_cells])
 	return true
 
 
@@ -2088,6 +2124,7 @@ func _make_stats(nverts: int, ntris: int, surfaces: int) -> Dictionary:
 # translation of ONE donor display list per cell, NOT two donor draw passes).
 # ---------------------------------------------------------------------------
 func build() -> bool:
+	C3Log.info("terrain", "mesh.build begin mode_request=%s season=%s" % [atlas_mode_request, season])
 	invalidate()
 	# HIRES-ATLAS-C: resolve the opt-in once, before any path/sampler binding,
 	# so _atlas_paths(), stats and the loader all see the same tier this build.
@@ -2101,6 +2138,7 @@ func build() -> bool:
 	# COLOR-UNIFY: likewise resolved once per build; independent of light_match.
 	color_unify = _resolve_color_unify_flag()
 	if not _ingest():
+		C3Log.err("terrain", "mesh.build ingest failed")
 		push_error("terrain_donor_mesh: bind() an I06 container / height dump first")
 		return false
 	_mip_source = ""
@@ -2163,6 +2201,8 @@ func build() -> bool:
 				var tags: Array = _resolved_tags(x, z)
 				var distinct: Array = _distinct_sorted(tags)
 				var variant: int = int(_variant_bytes[i])
+				if pass_index == 0 and quad_total < 10:
+					C3Log.trace("terrain", "mesh.cell x=%d z=%d tags=%s distinct=%s variant=%d" % [x, z, str(tags), str(distinct), variant])
 				var layer_index: int = 0
 				for tagv in distinct:
 					var tag: int = int(tagv)
@@ -2375,9 +2415,12 @@ func build() -> bool:
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh_instance)
 	_make_water(_w, _h)
+	C3Log.debug("terrain", "mesh.water gate water=%s w=%d h=%d" % [str(water != null), _w, _h])
 	_built = true
 	stats = _make_stats(total_verts, total_tris, mesh.get_surface_count())
 	stats["atlas"]["loaded"] = atlas_ok
+	C3Log.debug("terrain", "mesh.build cells=%d verts=%d tris=%d surfaces=%d sentinel=%d oor=%d relief_guard=%d unmapped=%d" % [_n, total_verts, total_tris, mesh.get_surface_count(), _water_sentinel_cells, _out_of_atlas_cells, _relief_guard_cells, _unmapped_cells])
+	C3Log.info("terrain", "mesh.build done cells=%d verts=%d tris=%d surfaces=%d mode=%s water=%s" % [_n, total_verts, total_tris, mesh.get_surface_count(), atlas_mode, str(water != null)])
 	return true
 
 

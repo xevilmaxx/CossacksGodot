@@ -1,56 +1,53 @@
 {
-  "passed": true,
+  "passed": false,
   "resources_gathered": {
-    "food": 45,
-    "gold": 244.607999999998,
-    "stone": 120,
-    "trade": 65,
-    "wood": 676
+    "gold": 359.0,
+    "trade": 15
   },
-  "shots_fired": 52,
-  "sim_seconds": 366.375,
+  "shots_fired": 39,
+  "sim_seconds": 435.125,
   "steps": [
     {
       "detail": "walked 5.1 m forward (speed 1.5 m/s)",
       "passed": true,
       "step": "move",
-      "wall_ms": 88
+      "wall_ms": 69
     },
     {
-      "detail": "gathered 84 wood (carry 0 of 28, order 'gather', node hits 18)",
-      "passed": true,
+      "detail": "gathered 0 wood (carry 14 of 28, order 'gather', node hits 46)",
+      "passed": false,
       "step": "act",
-      "wall_ms": 614
+      "wall_ms": 597
     },
     {
-      "detail": "pikeman dealt 75 damage (8 per 1.25 s), target dead",
+      "detail": "pikeman dealt 0 damage (8 per 1.25 s), target dead",
       "passed": true,
       "step": "fight",
-      "wall_ms": 219
+      "wall_ms": 329
     },
     {
       "detail": "house built in 3.1 s of build time (cost 120 wood)",
       "passed": true,
       "step": "build",
-      "wall_ms": 193
+      "wall_ms": 470
     },
     {
       "detail": "peasant trained (100 food, 12.5 s)",
       "passed": true,
       "step": "train",
-      "wall_ms": 110
+      "wall_ms": 536
     },
     {
-      "detail": "mine produced 49.9 gold in 30 s (finished=true worker inside=true workers=1, deposit 18 m away, order=gather res=gold node=1019 dist=2.2)",
+      "detail": "mine produced 49.0 gold in 30 s (finished=true worker inside=true workers=1, deposit 24 m away, order=gather res=gold node=993 dist=2.1)",
       "passed": true,
       "step": "mine",
-      "wall_ms": 743
+      "wall_ms": 1354
     },
     {
       "detail": "resource bar (ok), minimap, selection panel and status text ('units 8/200    score 1160    ') are drawn",
       "passed": true,
       "step": "hud",
-      "wall_ms": 14
+      "wall_ms": 11
     },
     {
       "detail": "min gap 0.20 m vs bodies (want >= -0.25 tolerance)",
@@ -59,40 +56,40 @@
       "wall_ms": 1
     },
     {
-      "detail": "serdiuk fired 2 shots, smoke missing, target hp 74",
+      "detail": "serdiuk fired 1 shots, smoke seen, target dead",
       "passed": true,
       "step": "volley",
-      "wall_ms": 55
+      "wall_ms": 2
     },
     {
       "detail": "priest healed pikeman 30 -> 70 hp",
       "passed": true,
       "step": "heal",
-      "wall_ms": 87
+      "wall_ms": 122
     },
     {
       "detail": "morale 70 near officer, routing false",
       "passed": true,
       "step": "morale",
-      "wall_ms": 108
+      "wall_ms": 178
     },
     {
       "detail": "bla_sword1 researched: yes",
       "passed": true,
       "step": "upgrade",
-      "wall_ms": 106
+      "wall_ms": 181
     },
     {
-      "detail": "traded 100 wood for 65 gold (rate 63%)",
+      "detail": "traded 100 wood for 15 gold (rate 65%)",
       "passed": true,
       "step": "market",
       "wall_ms": 0
     },
     {
-      "detail": "3 peasants captured the hall: yes",
-      "passed": true,
+      "detail": "3 peasants captured the hall: owner 1",
+      "passed": false,
       "step": "capture",
-      "wall_ms": 31
+      "wall_ms": 446
     },
     {
       "detail": "squad formed with 2 soldiers, line targets 2",
@@ -110,79 +107,79 @@
       "detail": "stone wall built",
       "passed": true,
       "step": "wall",
-      "wall_ms": 351
+      "wall_ms": 697
     },
     {
       "detail": "wall ok, rally set, objectives 2",
       "passed": true,
       "step": "shell",
-      "wall_ms": 1
+      "wall_ms": 2
     },
     {
       "detail": "formed bonus +2 (hold +7), lone +0",
       "passed": true,
       "step": "formation_bonus",
-      "wall_ms": 4
+      "wall_ms": 1
     },
     {
       "detail": "2 losses refilled from nearby troops: yes",
       "passed": true,
       "step": "replenish",
-      "wall_ms": 0
+      "wall_ms": 1
     },
     {
-      "detail": "serdiuk fell back from pikes: yes (3.0 -> 3.8 m)",
+      "detail": "serdiuk fell back from pikes: yes (3.0 -> 3.5 m)",
       "passed": true,
       "step": "flee",
-      "wall_ms": 31
+      "wall_ms": 89
     },
     {
       "detail": "garrison 3 hid, unload restored: yes",
       "passed": true,
       "step": "garrison",
-      "wall_ms": 43
+      "wall_ms": 123
     },
     {
-      "detail": "peasant captured: player 0",
-      "passed": true,
+      "detail": "peasant captured: player 1",
+      "passed": false,
       "step": "peasant_capture",
-      "wall_ms": 119
+      "wall_ms": 231
     },
     {
-      "detail": "wild food nodes=0; depleted mill field re-sown: yes; mill: auto=24 restored=1 gold=3308",
+      "detail": "wild food nodes=0; depleted mill field re-sown: yes; mill: auto=46 restored=1 gold=3182",
       "passed": true,
       "step": "resow",
-      "wall_ms": 85
+      "wall_ms": 170
     },
     {
-      "detail": "cannon shells ground: shots 35 -> 42",
+      "detail": "cannon shells ground: shots 19 -> 20",
       "passed": true,
       "step": "attack_ground",
-      "wall_ms": 104
+      "wall_ms": 247
     },
     {
-      "detail": "serialize 69 ents round-trip: ok",
+      "detail": "serialize 66 ents round-trip: ok",
       "passed": true,
       "step": "save_load",
-      "wall_ms": 15699
+      "wall_ms": 14240
     },
     {
       "detail": "grid vs brute force agreed on 10 points",
       "passed": true,
       "step": "grid_equiv",
-      "wall_ms": 0
+      "wall_ms": 1
     },
     {
-      "detail": "farm 500 -> 525 -> 500",
-      "passed": true,
+      "detail": "farm 300 -> 300 -> 300",
+      "passed": false,
       "step": "farm_cap",
-      "wall_ms": 466
+      "wall_ms": 3127
     },
     {
       "detail": "walked around a 24 m wall: yes (dist 1.2 m)",
       "passed": true,
       "step": "nav_detour",
-      "wall_ms": 597
+      "wall_ms": 750
     }
   ],
   "version": 1

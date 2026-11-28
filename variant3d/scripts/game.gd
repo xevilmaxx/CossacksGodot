@@ -154,11 +154,56 @@ const RELIEF_GRID_PLT2 = [
 # k_ravine_1 scale 1 :549568, min/max :549585-549586, Smooth=False :549572;
 # plt2 scale 1, min/max :6805-6806.  Smooth passes are NOT emulated — the
 # smoothing definition is UNVERIFIED (DPATTERN_01 §5.2, §9 Q2).
+# RELIEF-WIN-FIX-01: the CORRECTED donor window offsets are byte-proven by
+# X23_corrected_relief_grids.md §5 and the repo full grids — k_ravine_1 G=2798
+# (46x63), plt2 G=2222 (42x55). The old values 2866/2266 are STALE shifted
+# windows (ANOM_reliefgrid.md, RELIEF_fixdesign.md §2: max diff 0.0 to stale).
+# The live tables below remain the A1/A2 8x10 block MEANS from the stale
+# windows: changing generation math to the full grids is NOT authorised
+# (RELIEF_fixdesign.md §0 point 4 — owner evidence required). These offsets
+# are metadata/provenance only; they do not enter any generation computation.
+# GATE-EXT-01: 14 additional donor ids carry byte-proven full relief grids and
+# HeightField flags in terrain_new/patterns/<id>.json (source_sha256 + byte_closure
+# ok; 11/14 cross-checked digit-for-digit against pattern.lib in
+# RELIEF_gate_verify.md §2). Values below are transcribed from those flags.
+# Smooth=true ids are recorded but smoothing is NOT modelled (definition [U]).
+# ReplaceForWater is recorded; the port's water path is hard-failed [U4*].
+# k_ravine_1 stays BLOCKED/unreachable by donor recipe (DEC_reliefgate.md Q1).
 const RELIEF_GRID_META = {
 	"k_ravine_1": {"scale": 1.0, "min": -2.963627576828003, "max": 3.139820098876953,
-		"w": 46, "h": 63, "offset": 2866, "lib": "pattern.lib:549585-549586"},
+		"w": 46, "h": 63, "offset": 2798, "source_offset_stale": 2866,
+		"lib": "pattern.lib:549585-549586"},
 	"plt2": {"scale": 1.0, "min": -0.07325489819049835, "max": 3.6134116649627686,
-		"w": 42, "h": 55, "offset": 2266, "lib": "pattern.lib:6805-6806"},
+		"w": 42, "h": 55, "offset": 2222, "source_offset_stale": 2266,
+		"lib": "pattern.lib:6805-6806"},
+	"plt1": {"scale": 1.0, "min": -0.0949411764740944, "max": 3.49669814109802,
+		"w": 38, "h": 53, "offset": 1932, "lib": "pattern.lib plt1"},
+	"plt3": {"scale": 0.800000011920929, "min": -0.0298823565244675, "max": 4.74128341674805,
+		"w": 58, "h": 63, "offset": 3542, "lib": "pattern.lib plt3"},
+	"plt4_fixed": {"scale": 1.0, "min": -0.10156861692667, "max": 3.28462719917297,
+		"w": 41, "h": 56, "offset": 2208, "lib": "pattern.lib plt4_fixed"},
+	"plt5": {"scale": 1.5, "min": -0.121568821370602, "max": 2.07207584381104,
+		"w": 41, "h": 59, "offset": 2328, "lib": "pattern.lib plt5"},
+	"f_plt_big_1": {"scale": 1.0, "min": 0.0, "max": 2.96362733840942,
+		"w": 81, "h": 93, "offset": 7368, "lib": "pattern.lib f_plt_big_1"},
+	"f_plt_big_2": {"scale": 1.0, "min": 0.0, "max": 2.96362733840942,
+		"w": 66, "h": 68, "offset": 4363, "lib": "pattern.lib f_plt_big_2"},
+	"f_plt_big_3": {"scale": 1.0, "min": 0.0, "max": 2.96362733840942,
+		"w": 70, "h": 86, "offset": 5873, "lib": "pattern.lib f_plt_big_3"},
+	"f_plt_mid_1": {"scale": 1.0, "min": -0.142846465110779, "max": 2.97172260284424,
+		"w": 49, "h": 51, "offset": 2408, "lib": "pattern.lib f_plt_mid_1"},
+	"f_plt_mid_2": {"scale": 1.0, "min": 0.0, "max": 2.96314740180969,
+		"w": 45, "h": 53, "offset": 2296, "lib": "pattern.lib f_plt_mid_2"},
+	"d_plt1": {"scale": 1.0, "min": -0.620221674442291, "max": 3.3239107131958,
+		"w": 51, "h": 63, "offset": 3108, "smooth_unverified": true, "lib": "pattern.lib d_plt1"},
+	"d_plt2": {"scale": 1.0, "min": 0.0, "max": 3.2039213180542,
+		"w": 57, "h": 58, "offset": 3200, "lib": "pattern.lib d_plt2"},
+	"hil1": {"scale": 0.649999976158142, "min": 0.0, "max": 3.86130237579346,
+		"w": 25, "h": 41, "offset": 968, "lib": "pattern.lib hil1"},
+	"g_hil4": {"scale": 1.0, "min": -4.32127315701247e-13, "max": 1.91698789596558,
+		"w": 33, "h": 59, "offset": 1864, "smooth_unverified": true, "lib": "pattern.lib g_hil4"},
+	"k_ravine_big_stone_1": {"scale": 1.0, "min": -2.96362733840942, "max": 0.173864871263504,
+		"w": 84, "h": 100, "offset": 8225, "smooth_unverified": true, "lib": "pattern.lib k_ravine_big_stone_1"},
 }
 # Staged-loading state: _generate_map runs in 4 chunks so the loading bar can
 # repaint between them (menu Start -> playing). Sync setup() just calls them
@@ -1275,6 +1320,8 @@ func _claim_cluster(pos: Vector2, r_m: float, margin_m := 4.0) -> bool:
 # donor _misc_CheckStandPattern footprint test against gPatternMask, so
 # clusters are discrete and never merge; this replaces blob placement.
 func _gen_patterns() -> void:
+	# LOG-PATTERN entry (read-only): cached stamp count from _gen_base.
+	C3Log.info("terrain", "game._gen_patterns begin cached_stamps=%d map=%dx%d" % [(_pattern_build.get("stamps", []) as Array).size(), MAP_W, MAP_H])
 	_reseed_stage("patterns")  # P-31 / dogenerate.inc:1909 pattern pass
 	# _gen_base already built this (relief stamps must shape height before the
 	# collision pass).  Fall back only for a direct _gen_patterns call.
@@ -1451,6 +1498,9 @@ func _gen_patterns() -> void:
 			ext = maxf(ext, float(maxi(abs(cc.x), abs(cc.y))) * TILE)
 		if kind == "forest" or kind == "stone":
 			_claim_cluster(cpos, maxf(4.0 * TILE, ext), 0.0)
+	# LOG-PATTERN exit (read-only): per-kind stamp counts via the existing
+	# map_meta census + realised sim node count.
+	C3Log.info("terrain", "game._gen_patterns done stamps=%d kinds=%s res_nodes=%d" % [pattern_stamps.size(), str(map_meta.get("stamp_counts", {})), res_nodes.size()])
 
 func _generate_map() -> void:
 	_gen_base()
@@ -1461,22 +1511,53 @@ func _generate_map() -> void:
 	# donor TextureMap -> SmoothTiles -> SmoothForestBorders.
 	_assign_tileblocks()
 
-func _sample_relief_grid(grid: Array, u: float, v: float) -> float:
-	# PORT APPROXIMATION — bilinear sample of a donor-derived 8x10 block-mean
-	# table (DPATTERN_01 Appendix A1/A2, :595-600).  u,v are 0..1 over the
-	# stamp footprint; file row order kept (row flip UNVERIFIED, §9 Q3).
-	var fx := clampf(u, 0.0, 1.0) * float(RELIEF_GRID_W - 1)
-	var fy := clampf(v, 0.0, 1.0) * float(RELIEF_GRID_H - 1)
+# FULLGRID-01: donor-faithful full relief_float_grid arrays (RELIEF_fixdesign.md
+# §3.1 Tier B). The stale 8x10 block-mean tables above are retained as labelled
+# provenance/fallback only; generation now samples the FULL w*h window loaded
+# from the repo-landed pattern JSONs. Row order = file order; donor bilinear
+# kernel and file-row->map-row sign remain UNVERIFIED ([U], X23 §3 / §9 Q3).
+var _full_relief_grids: Dictionary = {}
+
+
+func _load_full_relief_grid(name: String) -> Dictionary:
+	if _full_relief_grids.has(name):
+		return _full_relief_grids[name] as Dictionary
+	var path := "res://assets/terrain_new/patterns/" + name + ".json"
+	var out := {}
+	if FileAccess.file_exists(path):
+		var f := FileAccess.open(path, FileAccess.READ)
+		if f != null:
+			var parsed: Variant = JSON.parse_string(f.get_as_text())
+			f.close()
+			if parsed is Dictionary:
+				var d := parsed as Dictionary
+				var gv: Variant = d.get("relief_float_grid", null)
+				if gv is Array and (gv as Array).size() == int(d.get("w", 0)) * int(d.get("h", 0)):
+					out = {"grid": gv as Array, "w": int(d.get("w")), "h": int(d.get("h")),
+						"offset": int(d.get("grid_offset", 0))}
+	_full_relief_grids[name] = out
+	return out
+
+
+func _sample_relief_grid(grid: Array, u: float, v: float, gw: int, gh: int) -> float:
+	# FULLGRID-01: bilinear sample of the full donor w*h float32 window.
+	# gw/gh come from the pattern JSON (42x55 plt2, 46x63 k_ravine_1). The
+	# interpolation kernel stays a labelled PORT APPROXIMATION (donor
+	# bilinearity UNVERIFIED); row-sign is unchanged from the 8x10 path ([U]).
+	if gw <= 0 or gh <= 0 or grid.is_empty():
+		return 0.0
+	var fx := clampf(u, 0.0, 1.0) * float(gw - 1)
+	var fy := clampf(v, 0.0, 1.0) * float(gh - 1)
 	var ix := int(fx)
 	var iy := int(fy)
-	var jx := mini(ix + 1, RELIEF_GRID_W - 1)
-	var jy := mini(iy + 1, RELIEF_GRID_H - 1)
+	var jx := mini(ix + 1, gw - 1)
+	var jy := mini(iy + 1, gh - 1)
 	var tx := fx - float(ix)
 	var ty := fy - float(iy)
-	var a: float = grid[iy * RELIEF_GRID_W + ix]
-	var b: float = grid[iy * RELIEF_GRID_W + jx]
-	var c: float = grid[jy * RELIEF_GRID_W + ix]
-	var d: float = grid[jy * RELIEF_GRID_W + jx]
+	var a: float = float(grid[iy * gw + ix])
+	var b: float = float(grid[iy * gw + jx])
+	var c: float = float(grid[jy * gw + ix])
+	var d: float = float(grid[jy * gw + jx])
 	return lerpf(lerpf(a, b, tx), lerpf(c, d, tx), ty)
 
 
@@ -1496,24 +1577,32 @@ func _shape_stamp_relief() -> void:
 	_relief_donor_mask.resize(MAP_W * MAP_H)
 	_relief_stamp_mask = PackedByteArray()
 	_relief_stamp_mask.resize(MAP_W * MAP_H)
-	# Buildable ring: a stamp CENTRE may sit outside the pattern-gen keep-clear
-	# while its 48-100-tile footprint still reaches a town.  Flatten that ring
-	# here (before collision) so no start/town/build spot is ever steepened or
-	# blocked by relief - this is the donor's C1/C2/C3 keep-clear contract.
-	var map_scale := float(MAP_W) / C3PatternGen.DONOR_UNITS
-	var protect := maxf(C3PatternGen.CIRCLE2.x, C3PatternGen.CIRCLE2.y) * map_scale * 1.5
+	# STAND-SCALE-01: donor keep-clear is the C3 ellipse (22x18 CELLS) centred
+	# at (start.x, start.y+2) — dogenerate.inc:413-414/947, applied as raw cell
+	# counts with NO map_scale/DONOR_UNITS/1.5 factor (spec/07_RESOURCES.md:87-88
+	# byte-proves donor distances are 1:1 cells; those factors were port-invented
+	# and inflated the ban ~5x, pushing forests far from starts). The old
+	# circular protect used CIRCLE2 and a wrong centre; replaced by the exact
+	# donor ellipse. This is an OCCUPANCY mask only — donor does not flatten
+	# terrain height here (misc.script:3384-3521); the port's height-flatten use
+	# below stays a labelled PORT ADAPTATION, not a donor claim.
+	var prx := C3PatternGen.CIRCLE3.x   # 22.0 cells, dogenerate.inc:413
+	var pry := C3PatternGen.CIRCLE3.y   # 18.0 cells, dogenerate.inc:414
 	var near_start := PackedByteArray()
 	near_start.resize(MAP_W * MAP_H)
 	for sv0 in map_starts:
 		var v0: Vector2 = sv0
 		var sx0 := v0.x / TILE
 		var sy0 := v0.y / TILE
-		for y0 in range(maxi(0, int(sy0 - protect)), mini(MAP_H, int(sy0 + protect) + 1)):
-			for x0 in range(maxi(0, int(sx0 - protect)), mini(MAP_W, int(sx0 + protect) + 1)):
-				if Vector2(float(x0) - sx0, float(y0) - sy0).length() <= protect:
+		var cy0 := sy0 + 2.0             # donor +2 CELLS, not metres or scaled
+		for y0 in range(maxi(0, int(cy0 - pry)), mini(MAP_H, int(cy0 + pry) + 1)):
+			for x0 in range(maxi(0, int(sx0 - prx)), mini(MAP_W, int(sx0 + prx) + 1)):
+				var ex := (float(x0) - sx0) / prx
+				var ey := (float(y0) - cy0) / pry
+				if ex * ex + ey * ey <= 1.0:
 					near_start[y0 * MAP_W + x0] = 1
-					# B03-RELIEF: the start keep-clear ring may border a relief
-					# terrace; suppress rock ART on the step at that boundary too.
+					# B03-RELIEF: PORT ADAPTATION — suppress rock ART on the
+					# boundary of the port's own height-flatten pass. Not donor.
 					_relief_stamp_mask[y0 * MAP_W + x0] = 1
 	for sv in (_pattern_build.get("stamps", []) as Array):
 		var st: Object = sv
@@ -1525,12 +1614,23 @@ func _shape_stamp_relief() -> void:
 		var donor_name := str(st.get("name"))
 		var donor_grid: Array = []
 		var donor_meta: Dictionary = {}
-		if donor_name == "plt2":
-			donor_grid = RELIEF_GRID_PLT2
-			donor_meta = RELIEF_GRID_META["plt2"]
-		elif donor_name == "k_ravine_1":
-			donor_grid = RELIEF_GRID_K_RAVINE_1
-			donor_meta = RELIEF_GRID_META["k_ravine_1"]
+		if RELIEF_GRID_META.has(donor_name):
+			# GATE-EXT-01: sample the full donor window for any id with a
+			# byte-proven META row; fall back to the two legacy 8x10 tables
+			# only if the JSON is missing/unreadable. k_ravine_1 stays BLOCKED
+			# at the recipe level (no donor recipe selects it).
+			var full := _load_full_relief_grid(donor_name)
+			if not full.is_empty():
+				donor_grid = full.get("grid") as Array
+				donor_meta = (RELIEF_GRID_META[donor_name] as Dictionary).duplicate()
+				donor_meta["gw"] = int(full.get("w"))
+				donor_meta["gh"] = int(full.get("h"))
+			elif donor_name == "plt2":
+				donor_grid = RELIEF_GRID_PLT2
+				donor_meta = RELIEF_GRID_META["plt2"]
+			else:
+				donor_grid = RELIEF_GRID_K_RAVINE_1
+				donor_meta = RELIEF_GRID_META["k_ravine_1"]
 		if not donor_grid.is_empty():
 			relief_grid_candidates += 1
 		var amp := 0.0
@@ -1599,7 +1699,9 @@ func _shape_stamp_relief() -> void:
 					# applies no second clamp to donor cells.
 					var gu := 0.5 + float(x - cx) / (2.0 * hx)
 					var gv := 0.5 + float(y - cy) / (2.0 * hy)
-					var gv0 := _sample_relief_grid(donor_grid, gu, gv)
+					var gw: int = int(donor_meta.get("gw", RELIEF_GRID_W))
+					var gh: int = int(donor_meta.get("gh", RELIEF_GRID_H))
+					var gv0 := _sample_relief_grid(donor_grid, gu, gv, gw, gh)
 					var gscale: float = donor_meta.get("scale", 1.0)
 					var gmin: float = donor_meta.get("min", RELIEF_RAVINE)
 					var gmax: float = donor_meta.get("max", RELIEF_PLATEAU)
@@ -1674,17 +1776,19 @@ func _shape_stamp_relief() -> void:
 			_relief_stamp_mask[ri] = 1
 	# RELIEF-LIVE-FIX-01 audit ledger (dump meta only; no height/tile effect).
 	map_meta["relief_grid"] = {
-		"label": "PORT APPROXIMATION — donor engine blend UNVERIFIED (DPATTERN_01 §5.2)",
+		"label": "PORT APPROXIMATION — donor engine blend/bilinear kernel UNVERIFIED (DPATTERN_01 §5.2, X23 §3)",
 		"tables": ["k_ravine_1", "plt2"],
-		"source": "DPATTERN_01 Appendix A1/A2 — 8x10 block means, debug/preview aids only",
+		"source": "FULLGRID-01: full donor relief_float_grid from terrain_new/patterns/<name>.json (plt2 G=2222 42x55, k_ravine_1 G=2798 46x63); 8x10 A1/A2 means retained as fallback only",
 		"candidates": relief_grid_candidates,
 		"applied_cells": relief_grid_cells,
-		"blend": "h = clamp(h_base + donor8x10*HeightFieldScale, HeightFieldMin, HeightFieldMax)",
+		"blend": "h = clamp(h_base + full_grid_sample*HeightFieldScale, HeightFieldMin, HeightFieldMax)",
 		"clamp_reconcile": "donor Min/Max at stamp; single PORT +-2.964 bound on donor cells (donor clamp UNVERIFIED)",
 		"row_flip": "UNVERIFIED",
 	}
 
 func _gen_base() -> void:
+	# LOG-PATTERN entry (read-only): map grid + live config selectors.
+	C3Log.info("terrain", "game._gen_base begin map=%dx%d seed=%d type=%s quality=%s biome=%s relief=%s richness=%s" % [MAP_W, MAP_H, int(Data.RANDOM_SEED), str(Data.MAP_TYPE), str(Data.QUALITY), str(Data.BIOME), str(Data.RELIEF), str(Data.RICHNESS)])
 	# DONOR PIPELINE (data/scripts/common.inc/generatemap.inc -> dogenerate.inc):
 	# 1. pick a hand-authored RGB terrain mask (R relief, G forest/stone,
 	#    B water, white = start) from data/gen/terrainmasks/<terrain>/.
@@ -1866,8 +1970,23 @@ func _gen_base() -> void:
 	# alpha -> ground1/test2/test3; port keeps one simple road).
 	_draw_road(starts[0], (starts[0] + starts[1]) * 0.5)
 	_draw_road((starts[0] + starts[1]) * 0.5, starts[1])
+	# LOG-PATTERN exit (read-only census): cached stamp count, final starts,
+	# height band + water share. No height/terrain/blocked write here.
+	var _hmin := INF
+	var _hmax := -INF
+	for _hv in height:
+		_hmin = minf(_hmin, float(_hv))
+		_hmax = maxf(_hmax, float(_hv))
+	var _water_cells := 0
+	for _tv in terrain:
+		if int(_tv) == 3:
+			_water_cells += 1
+	C3Log.info("terrain", "game._gen_base done stamps=%d starts=%d hmin=%.3f hmax=%.3f water=%d/%d mask_water=%.3f" % [(_pattern_build.get("stamps", []) as Array).size(), map_starts.size(), _hmin, _hmax, _water_cells, terrain.size(), float(map_meta.get("mask_water", -1.0))])
 
 func _gen_forests() -> void:
+	# LOG-PATTERN entry (read-only node count).
+	var _res_before := res_nodes.size()
+	C3Log.info("terrain", "game._gen_forests begin res_nodes=%d starts=%d" % [_res_before, map_starts.size()])
 	_reseed_stage("forests")  # P-31: forest stage (donor forest_* pattern pass)
 	# Global forests are now stamped by _gen_patterns() from the donor's real
 	# forest_* pattern masks. Only the two sacred groves per start remain here
@@ -1885,8 +2004,13 @@ func _gen_forests() -> void:
 		_scatter_forest(st + Vector2(7, -7) * TILE * mscale, int(34.0 * mscale), 3.5 * TILE * mscale)
 		_paint_terrain(st + Vector2(-8, 5) * TILE * mscale, 4.0 * TILE * mscale, 2)
 		_scatter_forest(st + Vector2(-8, 5) * TILE * mscale, int(23.0 * mscale), 3.0 * TILE * mscale)
+	# LOG-PATTERN exit (read-only node count).
+	C3Log.info("terrain", "game._gen_forests done res_nodes=%d added=%d" % [res_nodes.size(), res_nodes.size() - _res_before])
 
 func _gen_resources() -> void:
+	# LOG-PATTERN entry (read-only node count + richness selector).
+	var _ores_before := res_nodes.size()
+	C3Log.info("terrain", "game._gen_resources begin res_nodes=%d richness=%s" % [_ores_before, str(Data.RICHNESS)])
 	_reseed_stage("mines")  # P-31 / dogenerate.inc:1772 SetupMines
 	# Quarries, mines, hills, forest belts and decor are all stamped from
 	# donor pattern masks in _gen_patterns(). Left here: richness ore scaling.
@@ -1901,6 +2025,8 @@ func _gen_resources() -> void:
 	_apply_richness_ores(starts)
 	# T-MINES-PLACE: count-preserving near-start ore guarantee (med/normal only).
 	_ensure_start_ore_clusters(starts)
+	# LOG-PATTERN exit (read-only node count).
+	C3Log.info("terrain", "game._gen_resources done res_nodes=%d added=%d" % [res_nodes.size(), res_nodes.size() - _ores_before])
 
 # P-19 richness: donor Minerals changes how many ore deposits a start ring gets.
 # The amount multiplier is donor-sourced (RC_TERRAIN §2.1 / GUIDE4 L6); the exact
@@ -2085,6 +2211,8 @@ func _ensure_start_ore_clusters(starts: Array[Vector2]) -> void:
 			res_dirty += 1
 
 func _gen_finish() -> void:
+	# LOG-PATTERN entry (read-only node count).
+	C3Log.info("terrain", "game._gen_finish begin res_nodes=%d starts=%d" % [res_nodes.size(), map_starts.size()])
 	_reseed_stage("finish")  # P-31 / dogenerate.inc:1927 final stage
 	var starts: Array[Vector2] = []
 	for sv in map_starts:
@@ -2130,6 +2258,8 @@ func _gen_finish() -> void:
 					var ci := _t(xx, yy)
 					if terrain[ci] == 2:
 						terrain[ci] = 0
+	# LOG-PATTERN exit (read-only): existing ore split census + final nodes.
+	C3Log.info("terrain", "game._gen_finish done res_nodes=%d ore=%s wealth=%.3f" % [res_nodes.size(), str(cnt), float(wealth)])
 
 # TRN-DATA: complete donor transition rules from RV-TRN-02 §7 (all 1,864 lines of
 # gen/tilesmooth_scripts.cfg parsed). 118 ACTIVE lists across 22 Items (0-21),

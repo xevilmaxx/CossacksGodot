@@ -418,6 +418,12 @@ func from_live_object(src: Object) -> bool:
 	if wv <= 0 or hv <= 0 or not (hvarr is PackedFloat32Array) or not (tv is PackedByteArray):
 		_diag("from_live_object: missing typed height/tileblock or W/H")
 		return false
+	# TILE-HANDOFF-DIAG: print-only distribution of the live tileblock at handoff.
+	var _tc: Dictionary = {}
+	for _i in range((tv as PackedByteArray).size()):
+		var _v := int((tv as PackedByteArray)[_i])
+		_tc[_v] = int(_tc.get(_v, 0)) + 1
+	C3Log.debug("terrain", "data.from_live_object tileblock n=%d distinct=%d counts=%s" % [(tv as PackedByteArray).size(), _tc.size(), str(_tc)])
 	if not from_live(hvarr, tv, wv, hv, src.get("collision")):
 		return false
 	_diag("from_live_object: legacy blocked -> collision NOT mapped; I07/I11 must populate collision explicitly")

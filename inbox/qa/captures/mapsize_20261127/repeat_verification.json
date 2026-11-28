@@ -1,0 +1,80 @@
+{
+  "byte_identical": true,
+  "capture_ticks": 64,
+  "checks": [
+    {
+      "engine_stderr_path_primary": "variant3d\\.godot_queue\\results\\00000200_acapt-mapsize-donor\\stderr.txt",
+      "engine_stderr_path_repeat": "variant3d\\.godot_queue\\results\\00000201_acapt-mapsize-donor\\stderr.txt",
+      "frame_count_match": true,
+      "frames": [
+        {
+          "index": 0,
+          "primary_file": "inbox\\qa\\captures\\mapsize_20261127\\01_donor\\frame_0000.png",
+          "repeat_file": "inbox\\qa\\captures\\mapsize_20261127_repeat\\01_donor\\frame_0000.png",
+          "sha256_file": {
+            "match": true,
+            "primary": "4a407a904b1f080dbce4ea6f925c5b19b426474c8561e7a0c14f7e47255be409",
+            "repeat": "4a407a904b1f080dbce4ea6f925c5b19b426474c8561e7a0c14f7e47255be409"
+          },
+          "sha256_pixels": {
+            "match": true,
+            "primary": "4df90e27fde47aa4b76eb97fe5a1e7af6f29e61e3c360fd48886f1a6a767dd23",
+            "repeat": "4df90e27fde47aa4b76eb97fe5a1e7af6f29e61e3c360fd48886f1a6a767dd23"
+          }
+        },
+        {
+          "index": 1,
+          "primary_file": "inbox\\qa\\captures\\mapsize_20261127\\01_donor\\frame_0001.png",
+          "repeat_file": "inbox\\qa\\captures\\mapsize_20261127_repeat\\01_donor\\frame_0001.png",
+          "sha256_file": {
+            "match": true,
+            "primary": "456a7384948621645e6ef530031454383e4581e7f742a2ce23460ebecce3edd5",
+            "repeat": "456a7384948621645e6ef530031454383e4581e7f742a2ce23460ebecce3edd5"
+          },
+          "sha256_pixels": {
+            "match": true,
+            "primary": "aba55e18c4ac4cadc34d5e06f833017d2516b5086227dbec71cfc2e22c19eeb9",
+            "repeat": "aba55e18c4ac4cadc34d5e06f833017d2516b5086227dbec71cfc2e22c19eeb9"
+          }
+        }
+      ],
+      "match": true,
+      "primary_frames": 2,
+      "repeat_frames": 2,
+      "resolution_ok": true,
+      "resolution_primary": {
+        "height": 720,
+        "width": 1280
+      },
+      "resolution_repeat": {
+        "height": 720,
+        "width": 1280
+      },
+      "sim_seconds_match": true,
+      "sim_seconds_primary": 2.0,
+      "sim_seconds_repeat": 2.0,
+      "stderr_clean_primary": true,
+      "stderr_clean_repeat": true,
+      "stderr_violations_primary": [],
+      "stderr_violations_repeat": [],
+      "view": "donor"
+    }
+  ],
+  "expected_resolution": [
+    1280,
+    720
+  ],
+  "frames": 2,
+  "generated_utc": "2026-11-27T12:49:03+00:00",
+  "kind": "port-internal repeatability gate (NOT donor parity)",
+  "mismatches": [],
+  "parity": "UNVERIFIED (not assessed)",
+  "primary_manifest": "inbox\\qa\\captures\\mapsize_20261127\\manifest.json",
+  "repeat_manifest": "inbox\\qa\\captures\\mapsize_20261127_repeat\\manifest.json",
+  "repeat_out": "inbox\\qa\\captures\\mapsize_20261127_repeat",
+  "schema": 1,
+  "seed": "20261113",
+  "status": "pass",
+  "step_s": 1.0,
+  "tool": "capture_sequence.py"
+}

@@ -4,14 +4,14 @@ importer="wavefront_obj"
 importer_version=1
 type="Mesh"
 uid="uid://xkbteypvwkhe"
-path="res://.godot/imported/bar1a.obj-b63a2f226594260818af22035bc807f7.mesh"
+path="res://.godot/imported/bar1a.obj-1c245c4ef842e5450767b380c170431c.mesh"
 
 [deps]
 
-files=["res://.godot/imported/bar1a.obj-b63a2f226594260818af22035bc807f7.mesh"]
+files=["res://.godot/imported/bar1a.obj-1c245c4ef842e5450767b380c170431c.mesh"]
 
-source_file="res://assets/models/obj/shared/buildings/bar1a.obj"
-dest_files=["res://.godot/imported/bar1a.obj-b63a2f226594260818af22035bc807f7.mesh", "res://.godot/imported/bar1a.obj-b63a2f226594260818af22035bc807f7.mesh"]
+source_file="res://assets/models/obj/ukr/buildings/bar1a.obj"
+dest_files=["res://.godot/imported/bar1a.obj-1c245c4ef842e5450767b380c170431c.mesh", "res://.godot/imported/bar1a.obj-1c245c4ef842e5450767b380c170431c.mesh"]
 
 [params]
 

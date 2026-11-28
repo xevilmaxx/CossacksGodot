@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://i7ps55q6l245"
+path="res://.godot/imported/ukrbar_death1a.obj-7b9dab1fee8e3d99c83018e2a83288ad.mesh"
+
+[deps]
+
+files=["res://.godot/imported/ukrbar_death1a.obj-7b9dab1fee8e3d99c83018e2a83288ad.mesh"]
+
+source_file="res://assets/models/buildings/models/ukrbar_death1a.obj"
+dest_files=["res://.godot/imported/ukrbar_death1a.obj-7b9dab1fee8e3d99c83018e2a83288ad.mesh", "res://.godot/imported/ukrbar_death1a.obj-7b9dab1fee8e3d99c83018e2a83288ad.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

@@ -1,5 +1,13 @@
-extends Node
+class_name C3Log
+extends RefCounted
 ## C3Log — leveled, opt-in diagnostic logging for the port.
+##
+## STATIC CLASS (2026-11-27): converted from an autoload Node because the
+## Godot-native MCP host boots with `--script res://tests/t_mcp_host.gd`; in that
+## main-loop mode autoloads are NOT registered, so every `C3Log.*` call failed
+## to compile (main.gd:571) and the host never reached READY. A class_name is
+## resolved from the project class cache in BOTH normal and --script boots.
+## No behaviour change: still print-only, default OFF, same levels and config.
 ##
 ## Log levels (ascending): OFF < ERROR < WARN < INFO < DEBUG < TRACE.
 ## Default OFF: zero output, so every deterministic capture and gate is
@@ -27,12 +35,12 @@ const CONFIG_PATH: String = "res://logging_config.json"
 const ENV_LEVEL: String = "C3_LOG_LEVEL"
 const PREFIX: String = "[C3LOG]"
 
-var _level: int = LEVEL_OFF
-var _modules: Dictionary = {}
-var _loaded: bool = false
+static var _level: int = LEVEL_OFF
+static var _modules: Dictionary = {}
+static var _loaded: bool = false
 
 
-func _level_from_name(name: String) -> int:
+static func _level_from_name(name: String) -> int:
 	match name.strip_edges().to_upper():
 		"ERROR":
 			return LEVEL_ERROR
@@ -48,7 +56,7 @@ func _level_from_name(name: String) -> int:
 			return LEVEL_OFF
 
 
-func _load() -> void:
+static func _load() -> void:
 	if _loaded:
 		return
 	_loaded = true
@@ -69,24 +77,24 @@ func _load() -> void:
 		_level = _level_from_name(env_name)
 
 
-func get_level() -> int:
+static func get_level() -> int:
 	_load()
 	return _level
 
 
-func set_level(level: int) -> void:
+static func set_level(level: int) -> void:
 	_loaded = true
 	_level = clampi(level, LEVEL_OFF, LEVEL_TRACE)
 
 
-func module_enabled(module: String) -> bool:
+static func module_enabled(module: String) -> bool:
 	_load()
 	if not _modules.has(module):
 		return true
 	return bool(_modules.get(module, true))
 
 
-func log_at(level: int, module: String, msg: String) -> void:
+static func log_at(level: int, module: String, msg: String) -> void:
 	_load()
 	if level > _level or level == LEVEL_OFF:
 		return
@@ -97,21 +105,21 @@ func log_at(level: int, module: String, msg: String) -> void:
 	print(PREFIX, "[", tag, "][", module, "] ", msg)
 
 
-func err(module: String, msg: String) -> void:
+static func err(module: String, msg: String) -> void:
 	log_at(LEVEL_ERROR, module, msg)
 
 
-func warn(module: String, msg: String) -> void:
+static func warn(module: String, msg: String) -> void:
 	log_at(LEVEL_WARN, module, msg)
 
 
-func info(module: String, msg: String) -> void:
+static func info(module: String, msg: String) -> void:
 	log_at(LEVEL_INFO, module, msg)
 
 
-func debug(module: String, msg: String) -> void:
+static func debug(module: String, msg: String) -> void:
 	log_at(LEVEL_DEBUG, module, msg)
 
 
-func trace(module: String, msg: String) -> void:
+static func trace(module: String, msg: String) -> void:
 	log_at(LEVEL_TRACE, module, msg)

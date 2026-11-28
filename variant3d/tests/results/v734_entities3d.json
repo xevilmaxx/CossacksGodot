@@ -6,7 +6,7 @@
 			"passed": true
 		},
 		{
-			"detail": "new() -> <Node3D#26793215434>",
+			"detail": "new() -> <Node3D#28840035788>",
 			"name": "instantiates",
 			"passed": true
 		},
@@ -16,12 +16,12 @@
 			"passed": true
 		},
 		{
-			"detail": "before=1 after_add_and_sync=6",
+			"detail": "before=1 after_add_and_sync=8",
 			"name": "node_count_grows",
 			"passed": true
 		},
 		{
-			"detail": "peak=6 after_remove=1",
+			"detail": "peak=8 after_remove=1",
 			"name": "node_count_shrinks",
 			"passed": true
 		},
@@ -44,7 +44,7 @@
 	"counts": {
 		"after": 1,
 		"before": 1,
-		"peak": 6
+		"peak": 8
 	},
 	"id": "v734_entities3d",
 	"internal_errors": 0,
@@ -52,5 +52,5 @@
 	"passed": true,
 	"sprite_check_method": "structural source scan (comment-stripped) + runtime node scan; no runtime ResourceLoader interception in GDScript",
 	"status": "DONE",
-	"unix_ms": 1795596684938.0
+	"unix_ms": 1795775227593.0
 }

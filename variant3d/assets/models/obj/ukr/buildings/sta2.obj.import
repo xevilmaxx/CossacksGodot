@@ -4,14 +4,14 @@ importer="wavefront_obj"
 importer_version=1
 type="Mesh"
 uid="uid://7uopmwo31wlm"
-path="res://.godot/imported/sta2.obj-f61507711ee406392e24607d4f7edc1c.mesh"
+path="res://.godot/imported/sta2.obj-199bb957cc292daab8625b461b61d439.mesh"
 
 [deps]
 
-files=["res://.godot/imported/sta2.obj-f61507711ee406392e24607d4f7edc1c.mesh"]
+files=["res://.godot/imported/sta2.obj-199bb957cc292daab8625b461b61d439.mesh"]
 
-source_file="res://assets/models/obj/shared/buildings/sta2.obj"
-dest_files=["res://.godot/imported/sta2.obj-f61507711ee406392e24607d4f7edc1c.mesh", "res://.godot/imported/sta2.obj-f61507711ee406392e24607d4f7edc1c.mesh"]
+source_file="res://assets/models/obj/ukr/buildings/sta2.obj"
+dest_files=["res://.godot/imported/sta2.obj-199bb957cc292daab8625b461b61d439.mesh", "res://.godot/imported/sta2.obj-199bb957cc292daab8625b461b61d439.mesh"]
 
 [params]
 

@@ -177,6 +177,7 @@ func load(p_mode: String = "") -> bool:
 		set_mode(target)
 	_reset()
 	last_error = ""
+	C3Log.info("terrain", "atlas.load begin mode=%s path=%s manifest=%s" % [mode, single_atlas_path, manifest_path])
 
 	if mode == MODE_ARRAY:
 		return _load_array()
@@ -186,17 +187,22 @@ func load(p_mode: String = "") -> bool:
 	# MODE_SINGLE (default): direct res:// load, no parts, no cache. If the big
 	# PNG is absent (e.g. an LFS clone that skipped it), degrade gracefully.
 	if _load_single():
+		C3Log.info("terrain", "atlas.load done mode=single path=%s" % single_atlas_path)
 		return true
 	var single_reason := last_error
+	C3Log.warn("terrain", "atlas.load single miss reason=%s" % single_reason)
 	push_warning("TileAtlasLoader: single atlas unavailable (%s); falling back to 'split'" % single_reason)
 	_reset()
 	mode = MODE_SPLIT
 	if _load_split():
+		C3Log.info("terrain", "atlas.load done mode=split")
 		return true
 	var split_reason := last_error
+	C3Log.warn("terrain", "atlas.load split miss reason=%s" % split_reason)
 	push_warning("TileAtlasLoader: split atlas unavailable (%s); falling back to 'array'" % split_reason)
 	_reset()
 	mode = MODE_ARRAY
+	C3Log.info("terrain", "atlas.load fallback mode=array")
 	return _load_array()
 
 
@@ -281,11 +287,13 @@ func _load_single() -> bool:
 	_load_grid()
 	var img := _load_image_at(single_atlas_path)
 	if img == null:
+		C3Log.warn("terrain", "atlas.single miss path=%s" % single_atlas_path)
 		return _soft_fail("single atlas unavailable: " + last_error)
 	_atlas_texture = ImageTexture.create_from_image(_prepare_atlas_image(img))
 	if _atlas_texture == null:
 		return _soft_fail("ImageTexture.create_from_image failed for " + single_atlas_path)
 	_load_masks()
+	C3Log.debug("terrain", "atlas.single path=%s masks=%d" % [single_atlas_path, _masks.size()])
 	_loaded = true
 	return true
 
@@ -318,16 +326,22 @@ func _load_grid() -> void:
 
 
 func _load_image_at(path: String) -> Image:
-	# Godot's Image.load accepts res:// paths directly. Try that first: the
-	# project root contains a space ("Craft Anything"), so globalize_path()
-	# is only a fallback, never the primary route.
+	# IMG-EXPORT-01: Image.load("res://...png") routes through the resource
+	# importer and warns "Loaded resource as image file, this will not work
+	# on export". The export-safe pattern is ResourceLoader -> Texture2D ->
+	# get_image() (already established in game.gd:_load_image_tex). Fall back
+	# to Image.load on the globalized absolute path for res:// files that are
+	# NOT imported. Same pixels, no resource-import warning, no new asset.
+	var tex: Texture2D = ResourceLoader.load(path) as Texture2D
+	if tex != null:
+		var tex_img: Image = tex.get_image()
+		if tex_img != null:
+			return tex_img
 	var img := Image.new()
-	var err := img.load(path)
-	if err == OK:
-		return img
-	var abs_err := img.load(ProjectSettings.globalize_path(path))
-	if abs_err != OK:
-		last_error = "cannot load image %s (res err %d, abs err %d)" % [path, err, abs_err]
+	var err := img.load(ProjectSettings.globalize_path(path))
+	if err != OK:
+		last_error = "cannot load image %s (abs err %d)" % [path, err]
+		C3Log.warn("terrain", "atlas.image miss path=%s err=%s" % [path, last_error])
 		return null
 	return img
 
@@ -417,6 +431,7 @@ func _load_split() -> bool:
 	if _atlas_texture == null:
 		return _fail("ImageTexture.create_from_image failed")
 	_load_masks()
+	C3Log.debug("terrain", "atlas.split bytes=%d masks=%d" % [total, _masks.size()])
 	_loaded = true
 	return true
 
@@ -475,6 +490,7 @@ func _load_array() -> bool:
 		return _fail("Texture2DArray.create_from_images failed (error %d)" % derr)
 	_tile_array = ta
 	_load_masks()
+	C3Log.debug("terrain", "atlas.array layout=%d layers=%d skipped=%d masks=%d" % [layout.size(), images.size(), layout.size() - images.size(), _masks.size()])
 	_loaded = true
 	return true
 
@@ -492,3 +508,6 @@ func _load_masks() -> void:
 				break
 		if tex != null:
 			_masks.append(tex)
+		else:
+			C3Log.warn("terrain", "atlas.mask miss name=%s" % name)
+	C3Log.debug("terrain", "atlas.masks count=%d" % _masks.size())

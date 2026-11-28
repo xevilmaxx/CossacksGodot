@@ -1,0 +1,126 @@
+{
+  "capture_ticks": 32,
+  "deterministic": true,
+  "deterministic_capture": true,
+  "finished_utc": "2026-11-27T14:57:57+00:00",
+  "frames": 4,
+  "generated_utc": "2026-11-27T14:56:54+00:00",
+  "parity": "UNVERIFIED",
+  "primary_manifest": "inbox\\qa\\captures\\configalign_seq_20261127\\manifest.json",
+  "role": "repeat_verification_pass",
+  "schema": 1,
+  "seed": "20261113",
+  "status": "ok",
+  "step_s": 0.25,
+  "tool": "capture_sequence.py",
+  "views": [
+    {
+      "argv_plain": "'C:\\Python314\\python.exe' 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py' run --id acapt-configalign-aligned --timeout 240 --max-wait 3600 -- --path variant3d -- --config 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config.json' --seed 20261113 --deterministic-capture --capture-ticks 32 --seq 'C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned' --seq-seconds 1 --seq-step 0.25 --timeout 210",
+      "audio_seed": 20261113,
+      "audio_seed_note": "cosmetic-only audio_rng seed (not a simulation RNG stream)",
+      "command_line": [
+        "C:\\Python314\\python.exe",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py",
+        "run",
+        "--id",
+        "acapt-configalign-aligned",
+        "--timeout",
+        "240",
+        "--max-wait",
+        "3600",
+        "--",
+        "--path",
+        "variant3d",
+        "--",
+        "--config",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config.json",
+        "--seed",
+        "20261113",
+        "--deterministic-capture",
+        "--capture-ticks",
+        "32",
+        "--seq",
+        "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned",
+        "--seq-seconds",
+        "1",
+        "--seq-step",
+        "0.25",
+        "--timeout",
+        "210"
+      ],
+      "command_line_text": "C:\\Python314\\python.exe \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\tools\\godot_runner.py\" run --id acapt-configalign-aligned --timeout 240 --max-wait 3600 -- --path variant3d -- --config \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config.json\" --seed 20261113 --deterministic-capture --capture-ticks 32 --seq \"C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\" --seq-seconds 1 --seq-step 0.25 --timeout 210",
+      "complete": true,
+      "config": "variant3d\\config.json",
+      "config_abs": "C:\\Users\\Maxym.Oboyshev\\Documents\\Craft Anything\\cossacks-3-3\\variant3d\\config.json",
+      "config_controlled": true,
+      "config_sha256_file": "56b078241b880e041666060df25c32425fdae504127000c0f6e755e413680356",
+      "engine_stderr": "variant3d\\.godot_queue\\results\\00000221_acapt-configalign-aligned\\stderr.txt",
+      "engine_stdout": "variant3d\\.godot_queue\\results\\00000221_acapt-configalign-aligned\\stdout.txt",
+      "frame_count": 4,
+      "frames": [
+        {
+          "file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0000.png",
+          "height": 720,
+          "sha256_file": "a4a1ec6bedb636639c20cbc6d2e275af91a825369d2dc4869c5f70a5245513b0",
+          "sha256_pixels": "a62a8a3a2c2154cb54f9b09eda717184b6c09afed1ef2096e2d62751d7cbdebb",
+          "width": 1280
+        },
+        {
+          "file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0001.png",
+          "height": 720,
+          "sha256_file": "04988a0d3c565a68ed930afb6c86b7e2dac7ea5d5f97f7ca10b1ed4398bd0038",
+          "sha256_pixels": "e248ec03126dbfb68b72cbb9e78d7d60d86e81f36af800957d93e45f90cb87df",
+          "width": 1280
+        },
+        {
+          "file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0002.png",
+          "height": 720,
+          "sha256_file": "e32522f55ca478c20fc3ee3056feaa9a124236516dd947c7bf0b564052b21c14",
+          "sha256_pixels": "da554ab15136189bbee7253a7bc881750b8d779965edb3d7172bf1373cb441f7",
+          "width": 1280
+        },
+        {
+          "file": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\frame_0003.png",
+          "height": 720,
+          "sha256_file": "7efe58923737d9444dd6ae4bbb5d38bb50ddebf5d391f1ff3b60b37b8907d23d",
+          "sha256_pixels": "e6e9e3da965bd7772c3e064259d0346b7a2f0bc45e6d76edb9f1738ee6018f8e",
+          "width": 1280
+        }
+      ],
+      "name": "aligned",
+      "output_dir": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned",
+      "requested_frames": 4,
+      "resolution_matches_request": true,
+      "resolution_observed": {
+        "height": 720,
+        "width": 1280
+      },
+      "resolution_requested": {
+        "height": 720,
+        "source": "variant3d\\config.json",
+        "width": 1280
+      },
+      "runner_duration_s": 62.158,
+      "runner_exit": 0,
+      "runner_harness_rc": 0,
+      "runner_run_s": 60.13742923736572,
+      "runner_status": "ok",
+      "runner_stderr": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\runner_stderr.txt",
+      "runner_stdout": "inbox\\qa\\captures\\configalign_seq_20261127_repeat\\01_aligned\\runner_stdout.txt",
+      "runner_ticket": 221,
+      "runner_wait_s": 0.0007293224334716797,
+      "seq_index": {
+        "capture_ticks": 32,
+        "deterministic": true,
+        "frames": 4,
+        "mode": "window",
+        "seconds": 1.0,
+        "sim_seconds": 1.0,
+        "step": 0.25,
+        "ticks_done": 32,
+        "ticks_per_frame": 8,
+        "winner": -1
+      }
+    }
+  ]
+}

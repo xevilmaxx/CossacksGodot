@@ -1,0 +1,2 @@
+[runner] ticket 221 'acapt-configalign-aligned' START (waited 0.00s)
+[runner] ticket 221 'acapt-configalign-aligned' END ok (run 60.14s)

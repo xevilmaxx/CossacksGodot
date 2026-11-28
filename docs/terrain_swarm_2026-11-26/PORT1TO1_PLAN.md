@@ -360,23 +360,76 @@ Status legend: DONE = landed with evidence/backups; DOING = active worker; TODO 
 | 349 | Camera/preset view investigation | DONE | `FLATMAP_camera.md` | preset handling traced, parity UNVERIFIED |
 | 350 | Relief prefix false-positive fix | DONE | `.bak-RELIEFPREFIX` + COORD source fix | world3d_relief.gd:348 exact legacy compare; parse OK |
 | 351 | Leveled C3Log system | DONE | `c3_log.gd`, `logging_config.json`, project.godot autoload | levels OFF..TRACE, config+env, print-only; verified both paths, default OFF |
+| 352 | project.godot autoload section fix | DONE | `.bak-C3LOG` + COORD fix | moved [autoload] after boot_splash keys; game starts clean |
+| 353 | Pattern-stage wiring in interactive loader | DONE | `.bak-PATTERNWIRE` + COORD fix | main.gd async path now calls _gen_patterns + _finalize_mine_tiles like setup() |
+| 354 | Expanded build-pipeline logging | DONE | backups `.bak-C3LOG` ×5 | terrain/world/gen/entities stage markers; DEBUG run emitted 12 lines, 0 script errors |
+| 355 | Field crop art gap probe | DONE | `FIELD_art_gap.md` | 15 PNGs converted but no .import sidecars; Godot import fixes it |
+| 356 | Nation band mask gap probe | DONE | `FIELD_band_mask.md` | eurmil/eurmar query-key miss; base-sid fallback byte-proven |
+| 357 | Minimap vs 3D map divergence | DONE | `FIELD_minimap_div.md` | terrain mesh built once at bind; framing biased to cleared start region |
+| 358 | Case-mismatch filename fix | DONE | `FIELD_case_fix.md` + COORD source fix | explicit one-entry alias; warning count 0 after fix |
+| 359 | Field import sidecar generation | DONE | Godot `--editor --import` via runner | 16 field PNG + 3 OBJ sidecars generated; field-skip warning 0 |
+| 360 | Nation band-mask fallback fix | DONE | `.bak-BANDMASK` + COORD source fix | narrow eur* base-sid fallback; band warning 0, 0 script errors |
+| 361 | Logging — mesh/atlas path | DONE | `.bak-LOGMESH` ×2 | 48 C3Log lines; DEBUG/TRACE/OFF verified; byte-exact revert proof |
+| 362 | Logging — pattern/gen path | DONE | `.bak-LOGPATTERN` ×3 | 48 C3Log lines; DEBUG 183 lines, OFF 0; gen census visible |
+| 363 | Logging — water/FOW path | DONE | `.bak-LOGWATER` ×3 | 38 C3Log lines; DEBUG emits U4*/FOW/FX detail, OFF silent; gate intact |
+| 364 | Logging — entities/camera path | DONE | `.bak-LOGENT` ×3 | 26 C3Log lines; DEBUG 8/8 checks PASS, OFF silent, no behaviour change |
+| 365 | Leak tickets 575/582/585 retirement | DONE | `reconstruct_ticket_results.py` + ack | 3 records reconstructed from surviving evidence, canonical reasons applied, verified |
+| 366 | COORD zero-mismatch ruling | DONE | `PORT1TO1_coord_ruling.md` | port-internal bytes [D], donor A/B NOT ASSESSABLE; chain 0/6 unchanged |
+| 367 | DEBUG-log anomaly: relief grid 0 candidates | DONE | `ANOM_reliefgrid.md` | zero-candidate is exact-name gate, not donor law; stale offsets 2866/2266 vs 2798/2222 |
+| 368 | DEBUG-log anomaly: mountain props 0 matched | DONE | `ANOM_mntprops.md` | matched=0 correct for mediterranean seed; exact-name gate misses temperate mountains [U] |
+| 369 | DEBUG-log anomaly: 23146 stand rejects | DONE | `ANOM_stand.md` | donor ellipses 5x7/12x15/22x18; port circular protect over-broad [D] |
+| 370 | DEBUG-log full audit report | DONE | `ANOM_audit.md` | 585-line ledger; water hard-fail expected; 6 anomalies classified, 3 decomp PENDING |
+| 371 | Relief grid fix design | DONE | `RELIEF_fixdesign.md` | hardcoded tables = stale G2866/2266 (max diff 0); corrected G2798/2222 in JSON; no live change authorised |
+| 372 | Relief grid offset metadata correction | DONE | `.bak-RELIEFWIN` + COORD fix | offsets 2266→2222/2866→2798 as metadata only; generation reads only scale/min/max; repeat byte-identical |
+| 373 | Full donor relief grid implementation | DONE | `.bak-FULLGRID` + COORD fix | full relief_float_grid (42x55/46x63) loaded from pattern JSON, per-pattern sampler; stale 8x10 fallback; 0 errors, repeat byte-identical |
+| 374 | Relief name-gate donor law | DONE | `DEC_reliefgate.md` | 16 ids carry relief windows, port honours 1; extension byte-proven but activation [U] |
+| 375 | Image-load export warnings fix | DONE | `.bak-IMGEXPORT` ×2 | ResourceLoader->Texture2D->Image at 4 sites; 0 warnings, 0 script errors |
+| 376 | Water scalar static-decomp sweep | DONE | `WATER_static_scalars.md` | no static binding: runtime layer pointer, 0 literals/selector; all S1-S11/W0/W1 [U] |
+| 377 | Relief gate extension source verification | DONE | `RELIEF_gate_verify.md` | all 14 ids byte-proven flags + grids; 11/14 cross-checked to pattern.lib exactly |
+| 378 | Relief gate extension implementation | DONE | `.bak-GATEEXT` + COORD fix | 14 ids added to META + name gate; candidates 0→4, applied 0→13839; repeat byte-identical |
+| 379 | Deep water native decompile | DONE | `WATER_deep2.md` | full disasm/xrefs: runtime layer pointer, 0 static writers/scalars; U4* hard-fail correct |
+| 380 | Parity verification recheck | DONE | `PARITY_verify.md` | chain 0/6; no worker action can make RESULT GOOD; owner artifacts listed in §4 |
+| 381 | Parity-check deterministic capture | DONE | `paritycheck_20261127` | byte_identical=TRUE, parity=UNVERIFIED, port-internal |
+| 382 | Water.lib FILE liveness decompile | DONE | `WATER_liveness.md` | gate resolved: 0->ENGINE writer 0x856080, !=0->copier 0x852f5c; FILE population [U] |
+| 383 | Editor build water function recovery | DONE | `WATER_build2.md` | 5719 pairs, editor water strings 0-ref, no static values; liveness [U] |
+| 384 | All-binaries water string sweep | DONE | `WATER_bins.md` | editor.exe only water strings (.rsrc, 0 refs); no liveness from any binary |
+| 385 | Water.lib full scalar ledger | DONE | `WATER_ledger.md` | complete water.lib:1-71 table, port cross-ref, all liveness/reflection [U] |
+| 386 | Consolidated donor water verdict | DONE | `WATER_consolidate.md` | static proof closes at gate+ENGINE block; FILE liveness/runtime trace owner-only; U4* stays |
+| 387 | Final deterministic capture/repeat | DONE | `waterfinal_20261127` | two real Godot runs, byte_identical=TRUE, parity=UNVERIFIED |
+| 388 | Donor mapsize default law | DONE | `MAPSIZE_law.md` | donor 0->320/1->480/2->640/3->256, unset=320; 240 not donor; port inverse uncited |
+| 389 | Mapsize default conformance fix | DONE | `.bak-MAPSIZE` ×2 + COORD fix | code defaults 240->320 (donor mapsize=0); gen fallback inverse->0; user configs untouched; repeat byte-identical |
+| 390 | Camera framing diagnosis | DONE | DEBUG ticket 203 | focus (388,62.5) SIM on 480m map; origin-centred mesh + half-subtraction consistent; not a bug |
+| 391 | Stand-gate scale law resolution | DONE | `STAND_scale_law.md` | donor ellipses raw cells, port map_scale/1.5 invented; restate 23k rejects |
+| 392 | Relief-ring scale fix | DONE | `.bak-STANDSCALE` + COORD fix | game.gd protect -> CIRCLE3 22x18 ellipse at (sx0,sy0+2); 0 errors |
+| 393 | Occupancy-grid scale fix | DONE | `.bak-OCCSCALE` + COORD fix | raw-cell ellipses + footprints; stand 23146->15629, stamps 92->125, res 960->1232, repeat byte-identical |
+| 394 | Remaining occupancy scale fixes | DONE | `.bak-OCC2` + COORD fix | region ellipse/mine ring/relief C1 raw cells; stand 15629->14417, stamps 125->131, res 1232->1269, repeat byte-identical |
+| 395 | One-tile terrain root cause + fix | DONE | `CONFIGURE_WIPE.md`, `.bak-CONFIGUREWIPE` | I07 re-called `configure_grid()` on an already-loaded container, wiping 14 handoff IDs to 0; skip resize when dims match; 19 IDs with I07 live, 0 script errors; false-positive parse error caught and corrected |
+| 396 | Global config aligned to latest visual test | DONE | `.bak-CONFIGALIGN` | owner standing request: gold 200->1000, `terrain_type=land`, `demo_mill=true`; `backend`/`color_unify`/comments preserved; new SHA-256 `56B078241B880E041666060DF25C32425FDAE504127000C0F6E755E413680356` |
+| 397 | Deterministic viewport repeat on aligned config | DONE | `configalign_seq_20261127` | windowed seq 4 frames 1280x720, config sha `56b078…`, `byte_identical=TRUE`, clean stderr, `parity=UNVERIFIED` |
+| 398 | C3Log autoload -> static class | DONE | `.bak-STATICLOG` ×2 + class-cache rescan | `--script` MCP boot skipped autoloads and `main.gd:571` failed to compile; class_name resolves in both boot paths; 0 parse errors, 172 INFO lines |
+| 399 | MCP host re-verified on final tree | DONE | `MCP_STATICLOG.md` | handshake + all 6 tools live on QA 64x64 after the C3Log fix; exact refusals retained; host stopped, queue free |
+| 400 | Enemy-camera video + Muse Spark 1.3 QA | DONE | `ENEMY_VIDEO_MUSESPARK.md` | MCP pan to clamped enemy target; 12 frames + still; Muse Spark ranked 5 visual defects (terrain mottling, tree foliage, resource discs, owner ring, framing); all OPEN, no parity claim |
+| 401 | Click/selection mapping diagnostic | DONE | `t_click_diag.gd` | ground_point(px) error 0.00 m for all entities; pick(px) exact except overlapping clusters; no bottom-right offset in pixel->ground/pick path |
+| 402 | PICKSCREEN-RACE-01 click fix | DONE | `PICKSCREEN_RACE.md`, `.bak-PICKSCREEN-FIX` | `_process` cursor/route/ghost queries mutated event-only `_pick_screen`; split pure projection; windowed real-input capture now stable PASS 37/37 twice, marquee pixels unchanged |
+| 403 | Capture atom Godot 4 API repair | DONE | `.bak-GODOT4STR`, `.bak-CLICKDIAG` | `Color.to_string()` -> `str()` in the pre-existing capture test, assertions/thresholds untouched; test executable again |
+| 404 | Tree foliage defect read-only deep dive | DONE | `TREE_FOLIAGE_DEEPDIVE.md` | 181 wood res nodes, donor OBJ/alpha PNG present, 64.7% face-alpha coverage with wrap; fixed-camera close-up (tickets 245/246) + Muse Spark ruling: trunk-only LOD REFUTED, sparse cross-plane crown SUPPORTED; zoomed crop shows edge-on fixed-yaw billboards (TREE_YAW_STATUS, donor yaw UNVERIFIED); no asset/value changed |
 
 ## Current active workers (0)
 
 - All worker-executable lanes DONE; only the owner-gated final review remains (task 186 BLOCKED).
 - MCP host DONE (all 6 tools verified); deterministic repeats `byte_identical=TRUE`; Godot free
-- MCP host DONE (all 6 tools verified); two deterministic repeats `byte_identical=TRUE`; Godot free
+- MCP host watchdog not due (last fired 2026-11-27T14:40Z, next 15:00Z); host left untouched per owner instruction
 
 ## Global done vs to-do
 
 - Decomp/spec layer: complete; every remaining `[U]` has an explicit static/runtime settling experiment and an owner-only packet where donor GPU/runtime is needed.
 - Implementation layer: all implementation lanes DONE; only final read-only consistency audits remain in flight. Donor laws/rows/art are file-scoped with backups and parse checks; water stays hard-failed until U12/U4* captured; no approximations promoted.
-- Verification layer: MCP host all 6 tools live; deterministic repeat gate byte-identical; 14 ROI metrics UNVERIFIED; snapshots/video and owner runbook landed. Unit-test gates are explicitly NOT acceptance. Final owner review BLOCKED on matched donor A/B + camera manifest.
+- Verification layer: MCP host all 6 tools live/re-verified again after the click fix and on the latest watchdog cycle (tickets 242/247, 0 parse errors); terrain handoff 19 distinct donor tile IDs with I07 active; global config aligned to the tested config; deterministic windowed repeat gate `byte_identical=TRUE` (tickets 220/221); enemy-camera QA video analysed by Muse Spark 1.3 with 5 OPEN visual defects; tree close-up ruled trunk-only LOD refuted / sparse cross-plane crowns supported, fixed-yaw edge-on billboards documented; click race fixed, windowed real-input capture stable PASS 37/37 twice (tickets 239/240); all parity metrics UNVERIFIED. Unit-test gates are explicitly NOT acceptance. Final owner review BLOCKED on matched donor A/B + camera manifest.
 - Unknowns: no silent fallbacks; every `[U]` labelled; BUILTIN water default `[D]`; parity chain 0/6 with 9 P0 rows open.
 
 ## Preserve-only user mods (never overwrite without owner instruction)
 
-- `variant3d/config.json`: donor backend default, `color_unify`, comments. Point-in-time SHA-256 recorded 2026-11-26 (no earlier baseline exists): `223767E57B506577EAD54633708380A425A0B8AA439C8E3C28478C15C8ED44E2`.
+- `variant3d/config.json`: donor backend default, `color_unify`, comments. Original point-in-time SHA-256 (2026-11-26): `223767E57B506577EAD54633708380A425A0B8AA439C8E3C28478C15C8ED44E2` (backup `.bak-CONFIGALIGN`). Owner-requested alignment to the tested config changed gold 200->1000, added `terrain_type=land` and `demo_mill=true`; `backend`, `color_unify` and comments preserved. Current SHA-256: `56B078241B880E041666060DF25C32425FDAE504127000C0F6E755E413680356`.
 - `variant3d/config_donor_capture.json`: SHA-256 `AA857480474399DC4674104744EA292BF84094D8321CDD4D0889C24CF9A202DA` (`demo_mill=true` preserved).
 - `variant3d/assets/models/manifest.json`: SHA-256 `36F6A378548F3116DC1585D7CDD34526A17B5C46D1DED02E3A93C7C736F22731`.
 - `variant3d/assets/models/manifest.json`: nation move (`ukr/buildings`), EUR aliases, field/palm/desert conversions.
